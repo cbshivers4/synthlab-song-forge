@@ -344,13 +344,64 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       setTransport: (t) => setTransportState((s) => ({ ...s, ...t })),
       togglePlay: () => {
         getEngine().init();
-        setTransportState((s) => ({ ...s, playing: !s.playing }));
+        setTransportState((s) => ({ ...s, playing: !s.playing, paused: s.playing }));
       },
+      pause: () => setTransportState((s) => ({ ...s, playing: false, paused: true })),
       toggleRecord: () => {
-        getEngine().init();
-        setTransportState((s) => ({ ...s, recording: !s.recording, playing: !s.recording ? true : s.playing }));
+        const engine = getEngine();
+        engine.init();
+        const armed = tracksRef.current.filter(
+          (t) => t.armed && (t.kind === "audio" || t.kind === "ai-vocal" || t.kind === "sampler"),
+        );
+        if (!transportRef.current.recording) {
+          const target = armed[0];
+          if (target) {
+            void engine
+              .startInputRecording(target.id, transportRef.current.monitor ?? true)
+              .then(() => updateTrack(target.id, { recording: true }))
+              .catch(() =>
+                toast.error("Microphone unavailable", {
+                  description: "Allow microphone access in your browser to record this channel.",
+                }),
+              );
+          } else {
+            toast("Arm a channel first", { description: "Press ● REC on an audio or vocal track, then record." });
+          }
+          setTransportState((s) => ({ ...s, recording: true, playing: true, paused: false }));
+        } else {
+          void finishRecording();
+          setTransportState((s) => ({ ...s, recording: false }));
+        }
       },
-      stop: () => setTransportState((s) => ({ ...s, playing: false, recording: false, step: 0 })),
+      stop: () => {
+        if (transportRef.current.recording) void finishRecording();
+        setTransportState((s) => ({ ...s, playing: false, recording: false, paused: false, step: 0 }));
+      },
+      changeInstrument: (trackId, preset) =>
+        setTracks((ts) =>
+          ts.map((t) =>
+            t.id === trackId ? { ...t, instrument: preset, patch: applyPreset(preset) } : t,
+          ),
+        ),
+      addClip: (trackId, clip) =>
+        setTracks((ts) =>
+          ts.map((t) =>
+            t.id === trackId ? { ...t, clips: [...(t.clips ?? []), clip], activeClipId: clip.id } : t,
+          ),
+        ),
+      setActiveClip: (trackId, clipId) => updateTrack(trackId, { activeClipId: clipId }),
+      removeClip: (trackId, clipId) =>
+        setTracks((ts) =>
+          ts.map((t) =>
+            t.id === trackId
+              ? {
+                  ...t,
+                  clips: (t.clips ?? []).filter((c) => c.id !== clipId),
+                  activeClipId: t.activeClipId === clipId ? undefined : t.activeClipId,
+                }
+              : t,
+          ),
+        ),
       savePreset: (name) => {
         const t = tracks.find((x) => x.id === selectedId);
         if (t?.patch) setUserPresets((p) => [...p, { ...structuredClone(t.patch!), name }]);
