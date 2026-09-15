@@ -109,7 +109,7 @@ interface StudioApi extends StudioState {
   selected: Track | null;
   setPanel: (p: PanelId) => void;
   select: (id: string) => void;
-  addTrack: (kind: TrackKind, name?: string, preset?: string) => void;
+  addTrack: (kind: TrackKind, name?: string, preset?: string) => string;
   updateTrack: (id: string, patch: Partial<Track>) => void;
   removeTrack: (id: string) => void;
   duplicateTrack: (id: string) => void;
@@ -304,13 +304,16 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       selected,
       setPanel,
       select: (id) => setSelectedId(id),
-      addTrack: (kind, name, preset) =>
+      addTrack: (kind, name, preset) => {
+        const id = uid();
         setTracks((ts) => {
-          const t = newTrack(kind, name ?? `TRACK ${ts.length + 1}`, ts.length, preset);
+          const t = { ...newTrack(kind, name ?? `TRACK ${ts.length + 1}`, ts.length, preset), id };
           setSelectedId(t.id);
           setPanel(kind === "drum" ? "drums" : kind === "ai-vocal" ? "vocal" : kind === "audio" ? null : "synth");
           return [...ts, t];
-        }),
+        });
+        return id;
+      },
       updateTrack,
       removeTrack: (id) => {
         getEngine().removeChannel(id);
