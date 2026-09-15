@@ -20,6 +20,10 @@ interface ChannelStrip {
   gain: GainNode;
   pan: StereoPannerNode;
   meter: AnalyserNode;
+  sendReverb: GainNode;
+  sendDelay: GainNode;
+  sendChorus: GainNode;
+  bus: string;
 }
 
 export class SyncLabEngine {
@@ -27,8 +31,12 @@ export class SyncLabEngine {
   master: GainNode | null = null;
   reverb: ConvolverNode | null = null;
   reverbSend: GainNode | null = null;
+  delaySend: GainNode | null = null;
+  chorusSend: GainNode | null = null;
+  private buses = new Map<string, GainNode>();
   private channels = new Map<string, ChannelStrip>();
   private analyser: AnalyserNode | null = null;
+
 
   init() {
     if (this.ctx) {
