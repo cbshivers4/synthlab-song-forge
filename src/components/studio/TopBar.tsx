@@ -37,19 +37,19 @@ export function TopBar() {
   const { transport, setTransport, togglePlay, toggleRecord, stop, addTrack, setPanel, panel } = useStudio();
 
   return (
-    <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur">
-      <div className="flex flex-wrap items-center gap-3 px-4 py-3">
-        <div className="flex min-w-44 items-center pr-2">
+    <header className="rack sticky top-0 z-30 shrink-0">
+      <div className="flex flex-wrap items-center gap-2 px-3 py-2">
+        <div className="flex items-center pr-1">
           <img
             src={synclabLogo}
             alt="SYNCLAB"
             width={1024}
             height={1024}
-            className="h-12 w-auto max-w-48 rounded-md object-cover"
+            className="h-9 w-auto max-w-36 rounded-[3px] object-cover"
           />
         </div>
 
-        <div className="flex items-center gap-1 rounded-lg border border-border bg-surface p-1">
+        <div className="flex items-center gap-0.5 rounded-[3px] border border-border bg-background/70 p-0.5 shadow-[inset_0_1px_0_oklch(1_0_0/0.04)]">
           <Button size="icon" variant="ghost" onClick={togglePlay} aria-label={transport.playing ? "Pause" : "Play"}>
             {transport.playing ? <Pause className="size-4" /> : <Play className="size-4" />}
           </Button>
