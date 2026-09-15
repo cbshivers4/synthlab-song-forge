@@ -625,7 +625,26 @@ export function Timeline() {
         {tracks.map((t, i) => (
           <TrackRow key={t.id} track={t} index={i} />
         ))}
-        <div className="label-xs px-3 py-2">{tracks.length} tracks · press + ADD TRACK to build the arrangement</div>
+        <div
+          className={`m-2 rounded-[3px] border border-dashed px-3 py-3 text-center font-mono text-[10px] tracking-widest uppercase transition-colors ${
+            over ? "border-primary bg-primary/10 text-primary" : "border-border/70 text-muted-foreground"
+          }`}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setOver(true);
+          }}
+          onDragLeave={() => setOver(false)}
+          onDrop={(e) => {
+            setOver(false);
+            const payload = readDrag(e);
+            if (payload?.type !== "instrument") return;
+            e.preventDefault();
+            addTrack("instrument", payload.name.toUpperCase(), payload.preset);
+            toast.success(`${payload.name} added as a new channel`);
+          }}
+        >
+          {tracks.length} tracks · drag an instrument here or press + ADD TRACK
+        </div>
         {transport.loop && (
           <div
             className="pointer-events-none absolute inset-y-0 border-x border-primary/25 bg-primary/[0.04]"
