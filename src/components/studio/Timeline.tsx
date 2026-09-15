@@ -178,6 +178,72 @@ function MidiClip({ track }: { track: Track }) {
   );
 }
 
+function DrumClip({ track }: { track: Track }) {
+  const { setPanel, select } = useStudio();
+  const pads = (track.pads ?? []).filter((p) => p.steps.some((s) => s > 0));
+  if (pads.length === 0)
+    return (
+      <div className="absolute inset-y-1 left-0 right-1 flex items-center justify-center rounded-[3px] border border-dashed border-border">
+        <span className="label-xs">NO PATTERN — OPEN DRUM MACHINE TO PROGRAM BEATS</span>
+      </div>
+    );
+  const shown = pads.slice(0, 8);
+  const steps = track.pads?.[0]?.steps.length ?? 16;
+  const hits = pads.reduce((n, p) => n + p.steps.filter((s) => s > 0).length, 0);
+  return (
+    <div
+      className="absolute inset-y-1 left-0 right-1 overflow-hidden rounded-[3px] border"
+      style={{
+        borderColor: `color-mix(in oklab, ${track.color} 55%, transparent)`,
+        background: `color-mix(in oklab, ${track.color} 8%, var(--background))`,
+      }}
+      onDoubleClick={() => {
+        select(track.id);
+        setPanel("drums");
+      }}
+    >
+      <div
+        className="flex items-center gap-1 px-1.5 py-[2px]"
+        style={{ background: `color-mix(in oklab, ${track.color} 45%, transparent)` }}
+      >
+        <Disc3 className="size-2.5" />
+        <span className="truncate font-mono text-[9px] tracking-wider text-foreground/90">
+          DRUM PATTERN · {hits} HITS · {shown.map((p) => p.name).slice(0, 4).join(" / ")}
+        </span>
+      </div>
+      <div className="relative flex-1" style={{ height: "calc(100% - 14px)" }}>
+        {shown.map((_, r) => (
+          <div
+            key={r}
+            className="absolute left-0 right-0 border-t border-border/25"
+            style={{ top: `${(r / shown.length) * 100}%` }}
+          />
+        ))}
+        {shown.flatMap((p, r) =>
+          p.steps.slice(0, steps).map((vel, i) =>
+            vel > 0 ? (
+              <div
+                key={`${p.id}-${i}`}
+                className="absolute rounded-[1px]"
+                title={`${p.name} · step ${i + 1}`}
+                style={{
+                  left: `${(i / steps) * 100}%`,
+                  width: `${100 / steps - 0.4}%`,
+                  top: `${(r / shown.length) * 100 + 100 / shown.length * 0.18}%`,
+                  height: `${(100 / shown.length) * 0.64}%`,
+                  background: track.color,
+                  opacity: 0.45 + vel * 0.55,
+                  boxShadow: vel >= 1 ? `0 0 6px color-mix(in oklab, ${track.color} 60%, transparent)` : undefined,
+                }}
+              />
+            ) : null,
+          ),
+        )}
+      </div>
+    </div>
+  );
+}
+
 function Lane({ track }: { track: Track }) {
   const isMidi = track.kind === "instrument" || track.kind === "midi" || track.kind === "sampler";
   if (!isMidi && (track.clips?.length ?? 0) > 0) return <Waveform track={track} />;
