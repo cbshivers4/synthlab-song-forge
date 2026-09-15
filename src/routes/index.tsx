@@ -40,6 +40,7 @@ export const Route = createFileRoute("/")({
 
 function Panels() {
   const { selected, tracks, panel, setPanel, select } = useStudio();
+  const [mixerDetached, setMixerDetached] = useState(false);
   const drumTrack = selected?.kind === "drum" ? selected : tracks.find((t) => t.kind === "drum");
   const synthTrack = selected?.patch ? selected : tracks.find((t) => t.patch);
   if (!panel) return null;
