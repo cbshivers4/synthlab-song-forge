@@ -1,10 +1,12 @@
+import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Disc3, FolderOpen, KeyboardMusic, Music2, Piano, SlidersHorizontal, Settings2, Waves, X } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, Disc3, FolderOpen, KeyboardMusic, Music2, Piano, SlidersHorizontal, Settings2, Waves, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStudio, type PanelId } from "@/lib/synclab/store";
 import { TopBar } from "@/components/studio/TopBar";
 import { Timeline } from "@/components/studio/Timeline";
 import { Mixer } from "@/components/studio/Mixer";
+import { MixerWindow } from "@/components/studio/MixerWindow";
 import { SynthEditor } from "@/components/studio/SynthEditor";
 import { DrumMachine } from "@/components/studio/DrumMachine";
 import { PianoRoll } from "@/components/studio/PianoRoll";
