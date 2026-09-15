@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ChevronDown, Disc3, Music2, Piano, SlidersHorizontal, Waves } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { StudioProvider, useStudio, type PanelId } from "@/lib/synclab/store";
+import { useStudio, type PanelId } from "@/lib/synclab/store";
 import { TopBar } from "@/components/studio/TopBar";
 import { Timeline } from "@/components/studio/Timeline";
 import { Mixer } from "@/components/studio/Mixer";
@@ -123,17 +123,15 @@ function Panels() {
 
 function Studio() {
   return (
-    <StudioProvider>
-      <div className="min-h-screen">
-        <TopBar />
-        <main className="mx-auto max-w-[1600px] space-y-4 px-4 py-4">
-          <Timeline />
-          <Panels />
-          <footer className="label-xs pb-8 text-center">
-            SYNCLAB — simple on the surface, professional underneath.
-          </footer>
-        </main>
-      </div>
-    </StudioProvider>
+    <div className="min-h-screen">
+      <TopBar />
+      <main className="mx-auto max-w-[1600px] space-y-4 px-4 py-4">
+        <Timeline />
+        <Panels />
+        <footer className="label-xs pb-8 text-center">
+          SYNCLAB — simple on the surface, professional underneath.
+        </footer>
+      </main>
+    </div>
   );
 }
