@@ -300,12 +300,53 @@ function Lane({ track }: { track: Track }) {
   );
 }
 
+export type DragPayload =
+  | { type: "instrument"; name: string; preset: string }
+  | { type: "plugin"; defId: string };
+
+export const readDrag = (e: React.DragEvent): DragPayload | null => {
+  const raw = e.dataTransfer.getData("application/synclab") || e.dataTransfer.getData("text/plain");
+  if (!raw) return null;
+  try {
+    const v = JSON.parse(raw) as DragPayload;
+    return v?.type === "instrument" || v?.type === "plugin" ? v : null;
+  } catch {
+    return null;
+  }
+};
+
 function TrackRow({ track, index }: { track: Track; index: number }) {
-  const { selectedId, select, updateTrack, removeTrack, duplicateTrack, moveTrack, setPanel, changeInstrument } =
+  const { selectedId, select, updateTrack, removeTrack, duplicateTrack, moveTrack, setPanel, changeInstrument, installedPlugins, addPlugin } =
     useStudio();
   const [renaming, setRenaming] = useState(false);
   const [confirm, setConfirm] = useState(false);
+  const [dropping, setDropping] = useState(false);
   const isSelected = selectedId === track.id;
+
+  const onDrop = (e: React.DragEvent) => {
+    const payload = readDrag(e);
+    setDropping(false);
+    if (!payload) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (payload.type === "instrument") {
+      if (track.patch) {
+        changeInstrument(track.id, payload.preset);
+        select(track.id);
+        setPanel("synth");
+        toast.success(`${payload.name} loaded on ${track.name}`, { description: "MIDI notes kept" });
+      } else {
+        toast("Drop instruments on an instrument channel", { description: "Or drop below the tracks to create a new one." });
+      }
+      return;
+    }
+    const def = installedPlugins.find((d) => d.id === payload.defId);
+    if (def) {
+      addPlugin(track.id, def);
+      select(track.id);
+      setPanel("plugins");
+    }
+  };
 
   const openEditor = () => {
     select(track.id);
