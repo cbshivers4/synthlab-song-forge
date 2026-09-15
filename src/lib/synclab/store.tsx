@@ -594,8 +594,58 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         engine.syncMix(tracksRef.current);
         if (t?.patch) engine.playNote(t.id, t.patch, midi, 0.35, 0.9);
       },
+      installedPlugins,
+      installPlugin: (d) => setInstalledPlugins((ps) => [...ps.filter((x) => x.id !== d.id), d]),
+      uninstallPlugin: (defId) => setInstalledPlugins((ps) => ps.filter((x) => x.id !== defId)),
+      addPlugin: (trackId, d) => {
+        const inst = instantiate(d);
+        setTracks((ts) => ts.map((t) => (t.id === trackId ? { ...t, plugins: [...(t.plugins ?? []), inst] } : t)));
+        toast.success(`${d.name} inserted`, { description: `${d.vendor} · ${d.format}` });
+      },
+      removePlugin: (trackId, instanceId) =>
+        setTracks((ts) =>
+          ts.map((t) => (t.id === trackId ? { ...t, plugins: (t.plugins ?? []).filter((p) => p.id !== instanceId) } : t)),
+        ),
+      togglePluginBypass: (trackId, instanceId) =>
+        setTracks((ts) =>
+          ts.map((t) =>
+            t.id === trackId
+              ? { ...t, plugins: (t.plugins ?? []).map((p) => (p.id === instanceId ? { ...p, bypass: !p.bypass } : p)) }
+              : t,
+          ),
+        ),
+      movePlugin: (trackId, instanceId, dir) =>
+        setTracks((ts) =>
+          ts.map((t) => {
+            if (t.id !== trackId) return t;
+            const list = [...(t.plugins ?? [])];
+            const i = list.findIndex((p) => p.id === instanceId);
+            const j = i + dir;
+            const a = list[i];
+            const b = list[j];
+            if (i < 0 || !a || !b) return t;
+            list[i] = b;
+            list[j] = a;
+            return { ...t, plugins: list };
+          }),
+        ),
+      setPluginParam: (trackId, instanceId, paramId, value) =>
+        setTracks((ts) =>
+          ts.map((t) =>
+            t.id === trackId
+              ? {
+                  ...t,
+                  plugins: (t.plugins ?? []).map((p) =>
+                    p.id === instanceId
+                      ? { ...p, params: p.params.map((x: PluginParam) => (x.id === paramId ? { ...x, value } : x)) }
+                      : p,
+                  ),
+                }
+              : t,
+          ),
+        ),
     };
-  }, [tracks, transport, selectedId, panel, userPresets, buses, updateTrack, finishRecording]);
+  }, [tracks, transport, selectedId, panel, userPresets, buses, installedPlugins, updateTrack, finishRecording]);
 
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>;
 }
