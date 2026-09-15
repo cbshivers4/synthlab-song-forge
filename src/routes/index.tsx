@@ -10,6 +10,7 @@ import { DrumMachine } from "@/components/studio/DrumMachine";
 import { PianoRoll } from "@/components/studio/PianoRoll";
 import { VocalForge } from "@/components/studio/VocalForge";
 import { Settings } from "@/components/studio/Settings";
+import { SplashScreen } from "@/components/studio/SplashScreen";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -104,6 +105,7 @@ function Panels() {
 function Studio() {
   return (
     <div className="min-h-screen">
+      <SplashScreen />
       <TopBar />
       <main className="mx-auto max-w-[1600px] space-y-4 px-4 py-4">
         <Timeline />
