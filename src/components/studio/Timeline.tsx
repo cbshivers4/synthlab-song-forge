@@ -55,7 +55,7 @@ const KindIcon = ({ kind }: { kind: Track["kind"] }) =>
     <Music2 className="size-3.5" />
   );
 
-const INPUTS = ["Microphone", "Guitar / Line 1", "Keyboard / Line 2", "External Instrument", "MIDI Keyboard", "Internal"];
+const INPUTS = ["Microphone", "Guitar / Line 1", "Keyboard / Line 2", "External Instrument", "MIDI Keyboard", "Internal", "Stereo File"];
 
 function Waveform({ track }: { track: Track }) {
   const { setActiveClip, removeClip } = useStudio();
