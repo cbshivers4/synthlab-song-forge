@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Disc3, Music2, Piano, SlidersHorizontal, Waves, X } from "lucide-react";
+import { Disc3, Music2, Piano, SlidersHorizontal, Settings2, Waves, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStudio, type PanelId } from "@/lib/synclab/store";
 import { TopBar } from "@/components/studio/TopBar";
@@ -9,6 +9,7 @@ import { SynthEditor } from "@/components/studio/SynthEditor";
 import { DrumMachine } from "@/components/studio/DrumMachine";
 import { PianoRoll } from "@/components/studio/PianoRoll";
 import { VocalForge } from "@/components/studio/VocalForge";
+import { Settings } from "@/components/studio/Settings";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -44,6 +45,7 @@ function Panels() {
     drums: { title: "DRUM MACHINE", icon: <Disc3 className="size-4" /> },
     piano: { title: "PIANO ROLL", icon: <Piano className="size-4" /> },
     vocal: { title: "VOCAL FORGE", icon: <Waves className="size-4" /> },
+    settings: { title: "SETTINGS", icon: <Settings2 className="size-4" /> },
   };
   const current = config[panel];
 
@@ -79,6 +81,7 @@ function Panels() {
           <p className="text-sm text-muted-foreground">Select an instrument or MIDI track to edit its notes.</p>
         ))}
       {panel === "vocal" && <VocalForge />}
+      {panel === "settings" && <Settings />}
 
       {selected && (
         <div className="flex flex-wrap gap-2 pt-1">

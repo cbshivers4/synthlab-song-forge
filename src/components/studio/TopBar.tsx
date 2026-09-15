@@ -10,6 +10,7 @@ import {
   Piano,
   Play,
   Plus,
+  Settings2,
   SlidersHorizontal,
   Square,
   Timer,
