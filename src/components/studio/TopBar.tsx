@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Slider } from "@/components/ui/slider";
 import { useStudio } from "@/lib/synclab/store";
+import { getEngine } from "@/lib/synclab/audio-engine";
 import { INSTRUMENTS } from "@/lib/synclab/presets";
 import { toast } from "sonner";
 
