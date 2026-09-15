@@ -3,20 +3,26 @@ import {
   Circle,
   Disc3,
   Download,
+  Hash,
+  Headphones,
   Import,
   KeyboardMusic,
+  Layers,
   Mic,
   Music2,
   Pause,
   Piano,
   Play,
   Plus,
+  Repeat,
+  Scissors,
   Settings2,
   SlidersHorizontal,
   Square,
   Timer,
   Waves,
 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -51,68 +57,42 @@ export function TopBar() {
         </div>
 
         <div className="flex items-center gap-0.5 rounded-[3px] border border-border bg-background/70 p-0.5 shadow-[inset_0_1px_0_oklch(1_0_0/0.04)]">
-          <Button size="icon" variant="ghost" onClick={togglePlay} aria-label={transport.playing ? "Pause" : "Play"}>
+          <TBtn label="PLAY" active={transport.playing} onClick={togglePlay}>
             {transport.playing ? <Pause className="size-4" /> : <Play className="size-4" />}
-          </Button>
-          <Button size="icon" variant="ghost" onClick={stop} aria-label="Stop">
+          </TBtn>
+          <TBtn label="STOP" onClick={stop}>
             <Square className="size-4" />
-          </Button>
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={toggleRecord}
-            aria-label="Record"
-            className={transport.recording ? "text-destructive" : ""}
-          >
+          </TBtn>
+          <TBtn label="REC" danger active={transport.recording} onClick={toggleRecord}>
             <Circle className={`size-4 ${transport.recording ? "animate-pulse fill-current" : ""}`} />
-          </Button>
-          <Button
-            size="icon"
-            variant="ghost"
-            aria-label="Metronome"
-            className={transport.metronome ? "text-primary" : ""}
-            onClick={() => setTransport({ metronome: !transport.metronome })}
-          >
-            <Timer className="size-4" />
-          </Button>
-          <span className="mx-1 h-6 w-px bg-border" />
-          {(
-            [
-              ["LOOP", "loop"],
-              ["DUB", "overdub"],
-              ["CNT", "countIn"],
-              ["MON", "monitor"],
-            ] as const
-          ).map(([label, key]) => (
-            <Button
-              key={key}
-              size="sm"
-              variant="ghost"
-              className={`h-7 px-2 font-mono text-[10px] ${transport[key] ? "text-primary" : "text-muted-foreground"}`}
-              aria-pressed={Boolean(transport[key])}
-              onClick={() => {
-                const next = !transport[key];
-                setTransport({ [key]: next });
-                if (key === "monitor") getEngine().setMonitoring(next);
-              }}
-            >
-              {label}
-            </Button>
-          ))}
-          <Button
-            size="sm"
-            variant="ghost"
-            className={`h-7 px-2 font-mono text-[10px] ${transport.punchIn != null ? "text-primary" : "text-muted-foreground"}`}
-            onClick={() =>
-              setTransport(
-                transport.punchIn == null
-                  ? { punchIn: transport.step }
-                  : { punchOut: transport.step },
-              )
-            }
-          >
-            {transport.punchIn == null ? "PUNCH IN" : `PUNCH OUT ${transport.punchIn + 1}`}
-          </Button>
+          </TBtn>
+        </div>
+
+        {/* LCD position display */}
+        <div className="flex items-stretch gap-3 rounded-[3px] border border-border bg-background px-3 py-1 font-mono shadow-[inset_0_1px_3px_oklch(0_0_0/0.6)]">
+          <div>
+            <span className="label-xs">BAR.BEAT</span>
+            <div className="text-base leading-none text-primary">
+              {Math.floor(transport.step / 4) + 1}.{(transport.step % 4) + 1}
+            </div>
+          </div>
+          <span className="w-px bg-border" />
+          <div>
+            <span className="label-xs">TIME</span>
+            <div className="text-base leading-none text-primary">
+              {(() => {
+                const secs = (transport.step / 4) * (60 / transport.bpm);
+                const m = Math.floor(secs / 60);
+                const s = Math.floor(secs % 60);
+                return `${m}:${String(s).padStart(2, "0")}`;
+              })()}
+            </div>
+          </div>
+          <span className="w-px bg-border" />
+          <div>
+            <span className="label-xs">SIG</span>
+            <div className="text-base leading-none text-muted-foreground">4/4</div>
+          </div>
         </div>
 
         <div className="flex items-center gap-3 rounded-[3px] border border-border bg-background/70 px-3 py-1">
@@ -121,7 +101,7 @@ export function TopBar() {
             <div className="font-mono text-base leading-none text-primary">{transport.bpm}</div>
           </div>
           <Slider
-            className="w-28"
+            className="w-24"
             value={[transport.bpm]}
             min={60}
             max={190}
@@ -140,6 +120,55 @@ export function TopBar() {
             />
           </div>
         </div>
+
+        {/* Recording features — labelled like a DAW */}
+        <div className="flex flex-wrap items-center gap-1 rounded-[3px] border border-border bg-background/70 p-1">
+          <FeatBtn
+            label="METRONOME"
+            icon={<Timer className="size-3.5" />}
+            active={transport.metronome}
+            onClick={() => setTransport({ metronome: !transport.metronome })}
+          />
+          <FeatBtn
+            label="COUNT-IN"
+            icon={<Hash className="size-3.5" />}
+            active={transport.countIn}
+            onClick={() => setTransport({ countIn: !transport.countIn })}
+          />
+          <FeatBtn
+            label="LOOP"
+            icon={<Repeat className="size-3.5" />}
+            active={transport.loop}
+            onClick={() => setTransport({ loop: !transport.loop })}
+          />
+          <FeatBtn
+            label="OVERDUB"
+            icon={<Layers className="size-3.5" />}
+            active={transport.overdub}
+            onClick={() => setTransport({ overdub: !transport.overdub })}
+          />
+          <FeatBtn
+            label="INPUT MON"
+            icon={<Headphones className="size-3.5" />}
+            active={transport.monitor}
+            onClick={() => {
+              const next = !transport.monitor;
+              setTransport({ monitor: next });
+              getEngine().setMonitoring(next);
+            }}
+          />
+          <FeatBtn
+            label={transport.punchIn == null ? "PUNCH IN" : `PUNCH OUT @${transport.punchIn + 1}`}
+            icon={<Scissors className="size-3.5" />}
+            active={transport.punchIn != null}
+            onClick={() =>
+              setTransport(
+                transport.punchIn == null ? { punchIn: transport.step } : { punchOut: transport.step },
+              )
+            }
+          />
+        </div>
+
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -233,5 +262,63 @@ export function TopBar() {
         </div>
       </div>
     </header>
+  );
+}
+
+function TBtn({
+  label,
+  active,
+  danger,
+  onClick,
+  children,
+}: {
+  label: string;
+  active?: boolean | undefined;
+  danger?: boolean | undefined;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <Button
+      size="sm"
+      variant="ghost"
+      onClick={onClick}
+      aria-label={label}
+      aria-pressed={Boolean(active)}
+      className={`h-10 flex-col gap-0.5 px-2.5 ${active ? (danger ? "text-destructive" : "text-primary") : ""}`}
+    >
+      {children}
+      <span className="font-mono text-[9px] tracking-wider">{label}</span>
+    </Button>
+  );
+}
+
+function FeatBtn({
+  label,
+  icon,
+  active,
+  onClick,
+}: {
+  label: string;
+  icon: React.ReactNode;
+  active?: boolean | undefined;
+  onClick: () => void;
+}) {
+  return (
+    <Button
+      size="sm"
+      variant="ghost"
+      onClick={onClick}
+      aria-pressed={Boolean(active)}
+      className={`h-7 gap-1 px-2 font-mono text-[10px] tracking-wider ${
+        active
+          ? "bg-primary/15 text-primary shadow-[inset_0_0_0_1px_var(--primary)]"
+          : "text-muted-foreground"
+      }`}
+    >
+      <span className={`size-1.5 rounded-full ${active ? "bg-primary" : "bg-border"}`} />
+      {icon}
+      {label}
+    </Button>
   );
 }
