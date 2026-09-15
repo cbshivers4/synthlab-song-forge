@@ -147,11 +147,11 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
 
   return (
     <div
-      className={`panel flex items-stretch gap-3 p-2 transition-colors ${isSelected ? "ring-1 ring-primary" : ""} ${track.hidden ? "opacity-40" : ""}`}
+      className={`flex items-stretch border-b border-border/80 transition-colors ${isSelected ? "bg-surface-2/40" : "hover:bg-surface/50"} ${track.hidden ? "opacity-40" : ""}`}
       onClick={() => select(track.id)}
     >
-      <div className="w-1.5 rounded-full" style={{ background: track.color }} />
-      <div className="w-56 shrink-0 space-y-1.5">
+      <div className="w-1 shrink-0" style={{ background: track.color, opacity: isSelected ? 1 : 0.65 }} />
+      <div className="w-[240px] shrink-0 space-y-1 border-r border-border bg-surface/70 px-2 py-1.5">
         <div className="flex items-center gap-1.5">
           <span className="text-primary">
             <KindIcon kind={track.kind} />
