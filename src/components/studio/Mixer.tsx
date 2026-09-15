@@ -52,6 +52,7 @@ function useMeters(tracks: Track[], transport: Transport) {
     const loop = () => {
       const engine = getEngine();
       const tracks: Record<string, number> = {};
+      let loudest = 0;
       for (const track of tracksRef.current) {
         const id = track.id;
         const timeline = transportRef.current.playing ? sequencedLevel(track, transportRef.current.step) : 0;
