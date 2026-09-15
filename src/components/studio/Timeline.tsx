@@ -9,6 +9,7 @@ import {
   Headphones,
   Mic,
   MoreVertical,
+  Repeat,
   Music2,
   Piano,
   Settings2,
@@ -24,6 +25,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -39,7 +41,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useStudio } from "@/lib/synclab/store";
-import { KIND_LABEL } from "@/lib/synclab/presets";
+import { INSTRUMENTS, KIND_LABEL } from "@/lib/synclab/presets";
 import type { Track } from "@/lib/synclab/types";
 
 const KindIcon = ({ kind }: { kind: Track["kind"] }) =>
@@ -124,7 +126,8 @@ function Lane({ track }: { track: Track }) {
 }
 
 function TrackRow({ track, index }: { track: Track; index: number }) {
-  const { selectedId, select, updateTrack, removeTrack, duplicateTrack, moveTrack, setPanel } = useStudio();
+  const { selectedId, select, updateTrack, removeTrack, duplicateTrack, moveTrack, setPanel, changeInstrument } =
+    useStudio();
   const [renaming, setRenaming] = useState(false);
   const [confirm, setConfirm] = useState(false);
   const isSelected = selectedId === track.id;
