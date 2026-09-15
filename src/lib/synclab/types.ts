@@ -91,7 +91,7 @@ export interface AudioClip {
   name: string;
   peaks: number[];
   duration: number;
-  url?: string;
+  url?: string | undefined;
 }
 
 export interface Track {
@@ -109,10 +109,10 @@ export interface Track {
   input: string;
   bus: BusId;
   steps: number;
-  patch?: SynthPatch;
-  notes?: MidiNote[];
-  pads?: DrumPad[];
-  clips?: AudioClip[];
+  patch?: SynthPatch | undefined;
+  notes?: MidiNote[] | undefined;
+  pads?: DrumPad[] | undefined;
+  clips?: AudioClip[] | undefined;
 }
 
 export interface Transport {

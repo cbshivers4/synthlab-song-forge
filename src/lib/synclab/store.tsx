@@ -25,7 +25,7 @@ export const newTrack = (kind: TrackKind, name: string, index: number, preset?: 
   id: uid(),
   name,
   kind,
-  color: TRACK_COLORS[index % TRACK_COLORS.length],
+  color: TRACK_COLORS[index % TRACK_COLORS.length] as string,
   volume: 0.8,
   pan: 0,
   muted: false,
@@ -49,7 +49,7 @@ const initialTracks = (): Track[] => {
     id: uid(),
     step: s,
     length: 2,
-    pitch: [36, 36, 43, 39][i],
+    pitch: [36, 36, 43, 39][i] as number,
     velocity: 0.9,
   }));
   const lead = newTrack("instrument", "SYNTH LEAD", 2, "Cybotron Lead");
@@ -57,7 +57,7 @@ const initialTracks = (): Track[] => {
     id: uid(),
     step: s,
     length: 1,
-    pitch: [72, 75, 79, 77, 72][i],
+    pitch: [72, 75, 79, 77, 72][i] as number,
     velocity: 0.75,
   }));
   const pad = newTrack("instrument", "SYNTH PAD", 3, "Warehouse Pad");
@@ -247,9 +247,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         setTracks((ts) => {
           const i = ts.findIndex((t) => t.id === id);
           if (i < 0) return ts;
-          const src = ts[i];
+          const src = ts[i] as Track;
           const copy: Track = {
-            ...structuredClone(src),
+            ...(structuredClone(src) as Track),
             id: uid(),
             name: `${src.name} COPY`,
           };
@@ -265,7 +265,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           const j = i + dir;
           if (i < 0 || j < 0 || j >= ts.length) return ts;
           const next = [...ts];
-          [next[i], next[j]] = [next[j], next[i]];
+          [next[i], next[j]] = [next[j] as Track, next[i] as Track];
           return next;
         }),
       updatePatch: (id, patch) =>
@@ -302,7 +302,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
               ? {
                   ...t,
                   steps,
-                  pads: t.pads?.map((p) => ({
+                  pads: (t.pads ?? []).map((p) => ({
                     ...p,
                     steps: Array.from({ length: steps }, (_, i) => p.steps[i] ?? 0),
                   })),
@@ -364,9 +364,10 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             if (t.id !== trackId || !t.pads) return t;
             const n = t.steps;
             const hit = (chance: number) => (Math.random() < chance ? 1 : 0);
+            const padsList = t.pads;
             return {
               ...t,
-              pads: t.pads.map((p) => {
+              pads: padsList.map((p) => {
                 const steps = Array.from({ length: n }, (_, i) => {
                   const beat = i % 4 === 0;
                   const off = i % 2 === 1;
