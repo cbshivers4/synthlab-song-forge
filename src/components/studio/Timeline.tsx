@@ -176,7 +176,12 @@ function Lane({ track }: { track: Track }) {
       </div>
     );
   if (isMidi) return <MidiClip track={track} />;
-  if ((track.clips?.length ?? 0) > 0) return <Waveform track={track} />;
+  if (track.kind === "audio" || track.kind === "ai-vocal")
+    return (
+      <div className="absolute inset-y-1 left-0 right-1 flex items-center justify-center rounded-[3px] border border-dashed border-border">
+        <span className="label-xs">NO AUDIO — ARM ● REC TO CAPTURE A WAVEFORM</span>
+      </div>
+    );
   const cells = Array.from({ length: 16 });
   const active = (i: number) => {
     if (track.kind === "drum") return track.pads?.some((p) => (p.steps[i] ?? 0) > 0) ?? false;
