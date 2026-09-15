@@ -388,16 +388,68 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
               <DropdownMenuItem onClick={openEditor}>
                 <Settings2 className="size-4" /> Track settings
               </DropdownMenuItem>
-              {track.kind !== "audio" && (
-                <DropdownMenuItem
-                  onClick={() => {
-                    select(track.id);
-                    setPanel("piano");
-                  }}
-                >
-                  <Piano className="size-4" /> Edit in piano roll
-                </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel className="label-xs">Edit</DropdownMenuLabel>
+              {activeClip && (
+                <>
+                  <DropdownMenuItem onClick={splitClip}>
+                    <Scissors className="size-4" /> Split at playhead
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => trimClip("left")}>
+                    <ArrowRightToLine className="size-4" /> Trim start to playhead
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => trimClip("right")}>
+                    <ArrowLeftToLine className="size-4" /> Trim end to playhead
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => clipOp("reverse")}>
+                    <Repeat className="size-4" /> Reverse clip
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => clipOp("normalize")}>
+                    <Volume2 className="size-4" /> Normalize clip
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => clipOp("fade")}>
+                    <Waves className="size-4" /> Fade in / out
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={duplicateClip}>
+                    <Copy className="size-4" /> Duplicate clip
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={deleteActiveClip}>
+                    <Trash2 className="size-4" /> Delete clip
+                  </DropdownMenuItem>
+                </>
               )}
+              {track.kind !== "audio" && (
+                <>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      select(track.id);
+                      setPanel("piano");
+                    }}
+                  >
+                    <Piano className="size-4" /> Edit in piano roll
+                  </DropdownMenuItem>
+                  {(track.notes?.length ?? 0) > 0 && (
+                    <>
+                      <DropdownMenuItem onClick={() => noteOp("quantize")}>
+                        <Grid3x3 className="size-4" /> Quantize notes 1/16
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => noteOp("up")}>
+                        <ChevronUp className="size-4" /> Transpose +12
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => noteOp("down")}>
+                        <ChevronDown className="size-4" /> Transpose −12
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => noteOp("double")}>
+                        <Copy className="size-4" /> Double notes (repeat)
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => noteOp("clear")}>
+                        <Trash2 className="size-4" /> Clear all notes
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </>
+              )}
+
               {track.patch && (
                 <>
                   <DropdownMenuSeparator />
