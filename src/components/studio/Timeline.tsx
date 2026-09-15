@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   ChevronDown,
   ChevronUp,
@@ -555,6 +555,15 @@ export function Timeline() {
           <TrackRow key={t.id} track={t} index={i} />
         ))}
         <div className="label-xs px-3 py-2">{tracks.length} tracks · press + ADD TRACK to build the arrangement</div>
+        {transport.loop && (
+          <div
+            className="pointer-events-none absolute inset-y-0 border-x border-primary/25 bg-primary/[0.04]"
+            style={{
+              left: `calc(244px + (100% - 244px) * ${(transport.loopStart ?? 0) / 16})`,
+              width: `calc((100% - 244px) * ${(Math.max((transport.loopStart ?? 0) + 1, transport.loopEnd ?? 16) - (transport.loopStart ?? 0)) / 16})`,
+            }}
+          />
+        )}
         {transport.playing && (
           <div
             className="pointer-events-none absolute top-0 bottom-0 w-[1.5px] bg-primary/80"
