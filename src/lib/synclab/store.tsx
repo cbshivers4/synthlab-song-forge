@@ -96,7 +96,17 @@ const initialTracks = (): Track[] => {
   return [instrumental, drums, bass, lead, pad, vox];
 };
 
-export type PanelId = "mixer" | "synth" | "drums" | "piano" | "vocal" | "settings" | "keys" | "browser" | null;
+export type PanelId =
+  | "mixer"
+  | "synth"
+  | "drums"
+  | "piano"
+  | "vocal"
+  | "settings"
+  | "keys"
+  | "browser"
+  | "plugins"
+  | null;
 
 interface StudioState {
   tracks: Track[];
@@ -181,8 +191,13 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     master: { volume: 1, muted: false },
   });
 
+  const [installedPlugins, setInstalledPlugins] = useState<PluginDef[]>(BUILT_IN_PLUGINS);
+
   useEffect(() => {
-    if (typeof window !== "undefined" && getEngine().ctx) getEngine().syncMix(tracks);
+    if (typeof window !== "undefined" && getEngine().ctx) {
+      getEngine().syncMix(tracks);
+      for (const t of tracks) getEngine().setInserts(t.id, t.plugins ?? []);
+    }
   }, [tracks]);
 
   useEffect(() => {
