@@ -86,16 +86,18 @@ function Panels() {
       {panel === "vocal" && <VocalForge />}
       {panel === "settings" && <Settings />}
 
+      </div>
+
       {selected && (
-        <div className="flex flex-wrap gap-2 pt-1">
+        <div className="flex flex-wrap items-center gap-1 border-t border-border bg-surface/60 px-3 py-1">
           <span className="label-xs self-center">Selected: {selected.name}</span>
-          <Button size="sm" variant="ghost" onClick={() => setPanel(selected.kind === "drum" ? "drums" : "synth")}>
+          <Button size="sm" variant="ghost" className="h-6 text-[11px]" onClick={() => setPanel(selected.kind === "drum" ? "drums" : "synth")}>
             Open editor
           </Button>
-          <Button size="sm" variant="ghost" onClick={() => setPanel("piano")}>
-            Open piano roll
+          <Button size="sm" variant="ghost" className="h-6 text-[11px]" onClick={() => setPanel("piano")}>
+            Piano roll
           </Button>
-          <Button size="sm" variant="ghost" onClick={() => select(selected.id)}>
+          <Button size="sm" variant="ghost" className="h-6 text-[11px]" onClick={() => select(selected.id)}>
             Track settings
           </Button>
         </div>
@@ -104,18 +106,32 @@ function Panels() {
   );
 }
 
+function StatusBar() {
+  const { tracks, transport, panel } = useStudio();
+  return (
+    <footer className="flex shrink-0 items-center gap-4 border-t border-border bg-surface-2/60 px-3 py-1 font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
+      <span className={transport.recording ? "text-destructive" : transport.playing ? "text-primary" : ""}>
+        {transport.recording ? "● REC" : transport.playing ? "▶ PLAY" : "■ STOP"}
+      </span>
+      <span>{transport.bpm} BPM</span>
+      <span>4/4</span>
+      <span>{tracks.length} CH</span>
+      <span>BAR {Math.floor(transport.step / 4) + 1}.{(transport.step % 4) + 1}</span>
+      <span className="ml-auto hidden sm:inline">{panel ? `${panel} editor open` : "synclab studio"}</span>
+    </footer>
+  );
+}
+
 function Studio() {
   return (
-    <div className="min-h-screen">
+    <div className="flex h-screen flex-col overflow-hidden">
       <SplashScreen />
       <TopBar />
-      <main className="mx-auto max-w-[1600px] space-y-4 px-4 py-4">
+      <main className="flex min-h-0 flex-1 flex-col">
         <Timeline />
         <Panels />
-        <footer className="label-xs pb-8 text-center">
-          SYNCLAB — simple on the surface, professional underneath.
-        </footer>
       </main>
+      <StatusBar />
     </div>
   );
 }
