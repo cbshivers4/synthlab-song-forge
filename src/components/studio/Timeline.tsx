@@ -299,10 +299,110 @@ export const readDrag = (e: React.DragEvent): DragPayload | null => {
 function TrackRow({ track, index }: { track: Track; index: number }) {
   const { selectedId, select, updateTrack, removeTrack, duplicateTrack, moveTrack, setPanel, changeInstrument, installedPlugins, addPlugin } =
     useStudio();
+  const { transport, setNotes } = useStudio();
   const [renaming, setRenaming] = useState(false);
   const [confirm, setConfirm] = useState(false);
   const [dropping, setDropping] = useState(false);
   const isSelected = selectedId === track.id;
+
+  const clips = track.clips ?? [];
+  const activeClip = clips.find((c) => c.id === track.activeClipId) ?? clips[clips.length - 1];
+  const playFrac = Math.min(0.98, Math.max(0.02, ((transport.step ?? 0) % 16) / 16));
+
+  const writeClips = (next: typeof clips, activeId?: string) =>
+    updateTrack(track.id, activeId ? { clips: next, activeClipId: activeId } : { clips: next });
+
+  const splitClip = () => {
+    if (!activeClip) return;
+    const cut = Math.max(1, Math.round(activeClip.peaks.length * playFrac));
+    const a = {
+      ...activeClip,
+      id: `${activeClip.id}-a${Date.now()}`,
+      name: `${activeClip.name} A`,
+      peaks: activeClip.peaks.slice(0, cut),
+      duration: activeClip.duration * playFrac,
+    };
+    const b = {
+      ...activeClip,
+      id: `${activeClip.id}-b${Date.now()}`,
+      name: `${activeClip.name} B`,
+      peaks: activeClip.peaks.slice(cut),
+      duration: activeClip.duration * (1 - playFrac),
+    };
+    writeClips(clips.flatMap((c) => (c.id === activeClip.id ? [a, b] : [c])), a.id);
+    toast.success("Clip split at playhead");
+  };
+
+  const trimClip = (side: "left" | "right") => {
+    if (!activeClip) return;
+    const cut = Math.max(1, Math.round(activeClip.peaks.length * playFrac));
+    const peaks = side === "left" ? activeClip.peaks.slice(cut) : activeClip.peaks.slice(0, cut);
+    const duration = activeClip.duration * (side === "left" ? 1 - playFrac : playFrac);
+    writeClips(clips.map((c) => (c.id === activeClip.id ? { ...c, peaks, duration } : c)));
+    toast.success(side === "left" ? "Start trimmed" : "End trimmed");
+  };
+
+  const clipOp = (op: "reverse" | "normalize" | "fade") => {
+    if (!activeClip) return;
+    let peaks = [...activeClip.peaks];
+    if (op === "reverse") peaks.reverse();
+    if (op === "normalize") {
+      const max = Math.max(0.0001, ...peaks);
+      peaks = peaks.map((p) => Math.min(1, p / max));
+    }
+    if (op === "fade") {
+      const n = peaks.length;
+      const f = Math.max(1, Math.round(n * 0.12));
+      peaks = peaks.map((p, i) => {
+        const inG = Math.min(1, i / f);
+        const outG = Math.min(1, (n - 1 - i) / f);
+        return p * Math.min(inG, outG);
+      });
+    }
+    writeClips(clips.map((c) => (c.id === activeClip.id ? { ...c, peaks } : c)));
+    toast.success(op === "reverse" ? "Clip reversed" : op === "normalize" ? "Clip normalized" : "Fades applied");
+  };
+
+  const duplicateClip = () => {
+    if (!activeClip) return;
+    const copy = { ...activeClip, id: `${activeClip.id}-copy${Date.now()}`, name: `${activeClip.name} COPY` };
+    writeClips([...clips, copy], copy.id);
+    toast.success("Clip duplicated");
+  };
+
+  const deleteActiveClip = () => {
+    if (!activeClip) return;
+    writeClips(clips.filter((c) => c.id !== activeClip.id));
+    toast.success("Clip deleted");
+  };
+
+  const noteOp = (op: "quantize" | "up" | "down" | "double" | "clear") => {
+    const notes = track.notes ?? [];
+    if (op === "clear") {
+      setNotes(track.id, []);
+      toast.success("Notes cleared");
+      return;
+    }
+    if (op === "double") {
+      const span = Math.max(...notes.map((n) => n.step + n.length), 1);
+      setNotes(track.id, [
+        ...notes,
+        ...notes.map((n, i) => ({ ...n, id: `${n.id}-d${i}${Date.now()}`, step: n.step + span })),
+      ]);
+      toast.success("Notes repeated");
+      return;
+    }
+    setNotes(
+      track.id,
+      notes.map((n) => {
+        if (op === "quantize") return { ...n, step: Math.round(n.step) };
+        const pitch = Math.min(120, Math.max(0, n.pitch + (op === "up" ? 12 : -12)));
+        return { ...n, pitch };
+      }),
+    );
+    toast.success(op === "quantize" ? "Notes quantized" : "Notes transposed");
+  };
+
 
   const onDrop = (e: React.DragEvent) => {
     const payload = readDrag(e);
