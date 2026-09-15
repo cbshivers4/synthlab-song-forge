@@ -357,24 +357,9 @@ export class SyncLabEngine {
         }
       }
     }
-
-    // heads/tails: each plugin block already chains internally; link blocks by
-    // connecting the last created node of a block to the first of the next.
-    ch.insertNodes = nodes;
-    let cursor: AudioNode = ch.gain;
-    let idx = 0;
-    for (const pl of active) {
-      const size = { eq: 4, filter: 1, drive: 3, compressor: 2, delay: 5, width: 1, gain: 1 }[pl.kind];
-      const head = nodes[idx];
-      const tail = nodes[idx + size - 1];
-      if (head && tail) {
-        cursor.connect(head);
-        cursor = tail;
-      }
-      idx += size;
-    }
-    cursor.connect(ch.meter);
+    return nodes;
   }
+
 
   syncMix(tracks: Track[]) {
     if (!this.ctx) return;
