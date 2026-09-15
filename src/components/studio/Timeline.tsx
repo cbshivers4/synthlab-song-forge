@@ -62,15 +62,39 @@ function Waveform({ track }: { track: Track }) {
   const clips = track.clips ?? [];
   const active = clips.find((c) => c.id === track.activeClipId) ?? clips[clips.length - 1];
   if (!active) return null;
+
+  const peaks = active.peaks.length > 0 ? active.peaks : [0];
+  const W = 1000;
+  const H = 100;
+  const step = W / Math.max(1, peaks.length - 1);
+  // continuous filled waveform: top edge left→right, bottom edge right→left
+  const top = peaks.map((p, i) => `${(i * step).toFixed(2)},${(50 - Math.max(0.8, p * 48)).toFixed(2)}`);
+  const bottom = [...peaks]
+    .map((p, i) => ({ p, i }))
+    .reverse()
+    .map(({ p, i }) => `${(i * step).toFixed(2)},${(50 + Math.max(0.8, p * 48)).toFixed(2)}`);
+  const path = `M ${top.join(" L ")} L ${bottom.join(" L ")} Z`;
+
   return (
-    <div className="absolute inset-y-1 left-0 right-1 flex flex-col overflow-hidden rounded-[3px] border"
-      style={{ borderColor: `color-mix(in oklab, ${track.color} 55%, transparent)`, background: `color-mix(in oklab, ${track.color} 12%, var(--background))` }}
+    <div
+      className="absolute inset-y-[3px] left-0 right-1 flex flex-col overflow-hidden rounded-[2px]"
+      style={{
+        background: track.color,
+        boxShadow: `inset 0 0 0 1px color-mix(in oklab, ${track.color} 60%, black), 0 1px 2px oklch(0 0 0 / 0.45)`,
+      }}
     >
-      <div className="flex items-center gap-1 px-1.5 py-[2px]" style={{ background: `color-mix(in oklab, ${track.color} 45%, transparent)` }}>
-        <span className="truncate font-mono text-[9px] tracking-wider text-foreground/90">
-          {active.name} · {active.duration.toFixed(1)}s
+      {/* Ableton-style clip title bar */}
+      <div
+        className="flex h-[14px] shrink-0 items-center gap-1 px-1.5"
+        style={{ background: `color-mix(in oklab, ${track.color} 78%, black)` }}
+      >
+        <span className="truncate font-mono text-[9px] font-medium tracking-wider" style={{ color: "oklch(0.98 0 0)" }}>
+          {active.name}
         </span>
-        <div className="ml-auto flex items-center gap-1">
+        <span className="ml-auto shrink-0 font-mono text-[8px]" style={{ color: "oklch(1 0 0 / 0.7)" }}>
+          {active.duration.toFixed(1)}s
+        </span>
+        <div className="flex shrink-0 items-center gap-1">
           {clips.map((c) => (
             <button
               key={c.id}
@@ -80,35 +104,32 @@ function Waveform({ track }: { track: Track }) {
               }}
               onDoubleClick={() => removeClip(track.id, c.id)}
               title="Click to choose take, double-click to delete"
-              className={`size-2 rounded-full border ${c.id === active.id ? "border-foreground bg-foreground" : "border-foreground/50"}`}
+              className="size-[6px] rounded-full border"
+              style={{
+                borderColor: "oklch(1 0 0 / 0.75)",
+                background: c.id === active.id ? "oklch(1 0 0 / 0.95)" : "transparent",
+              }}
             />
           ))}
         </div>
       </div>
-      <div className="relative flex-1 px-1">
-        {/* center line */}
-        <div className="absolute left-1 right-1 top-1/2 h-px -translate-y-1/2" style={{ background: `color-mix(in oklab, ${track.color} 35%, transparent)` }} />
-        <div className="flex h-full items-center gap-[1px]">
-          {active.peaks.map((p, i) => {
-            const h = Math.max(4, Math.round(p * 96));
-            return (
-              <div key={i} className="flex h-full flex-1 flex-col items-center justify-center">
-                <div
-                  className="w-full rounded-[1px]"
-                  style={{
-                    height: `${h}%`,
-                    background: `linear-gradient(to bottom, color-mix(in oklab, ${track.color} 40%, transparent), ${track.color} 50%, color-mix(in oklab, ${track.color} 40%, transparent))`,
-                    boxShadow: p > 0.85 ? `0 0 4px color-mix(in oklab, ${track.color} 70%, transparent)` : undefined,
-                  }}
-                />
-              </div>
-            );
-          })}
-        </div>
+
+      {/* waveform body */}
+      <div className="relative flex-1" style={{ background: `color-mix(in oklab, ${track.color} 92%, white)` }}>
+        <svg
+          viewBox={`0 0 ${W} ${H}`}
+          preserveAspectRatio="none"
+          className="absolute inset-0 h-full w-full"
+          shapeRendering="geometricPrecision"
+        >
+          <line x1="0" y1="50" x2={W} y2="50" stroke="oklch(0 0 0 / 0.25)" strokeWidth="0.6" />
+          <path d={path} fill="oklch(0.16 0.01 255 / 0.88)" />
+        </svg>
       </div>
     </div>
   );
 }
+
 
 const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 
