@@ -100,6 +100,11 @@ interface StudioApi extends StudioState {
   togglePlay: () => void;
   toggleRecord: () => void;
   stop: () => void;
+  pause: () => void;
+  changeInstrument: (trackId: string, preset: string) => void;
+  setActiveClip: (trackId: string, clipId: string) => void;
+  removeClip: (trackId: string, clipId: string) => void;
+  addClip: (trackId: string, clip: AudioClip) => void;
   savePreset: (name: string) => void;
   loadPreset: (trackId: string, name: string) => void;
   generateBeat: (trackId: string, genre: string, energy: number) => void;
