@@ -38,7 +38,7 @@ export const Route = createFileRoute("/")({
   component: Studio,
 });
 
-function Panels() {
+function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: FloatState) => FloatState) => void }) {
   const { selected, tracks, panel, setPanel, select } = useStudio();
   const [mixerDetached, setMixerDetached] = useState(false);
   const drumTrack = selected?.kind === "drum" ? selected : tracks.find((t) => t.kind === "drum");
@@ -64,6 +64,21 @@ function Panels() {
         <h2 className="font-display text-[11px] font-semibold tracking-[0.2em]">{current.title}</h2>
         {selected && <span className="label-xs">· {selected.name}</span>}
         <div className="ml-auto flex items-center gap-1">
+          {(panel === "synth" || panel === "drums") && (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 gap-1.5 font-mono text-[10px] tracking-widest uppercase"
+              onClick={() => {
+                const key = panel === "synth" ? "synth" : "drums";
+                setFloat((f) => ({ ...f, [key]: !f[key] }));
+                setPanel(null);
+              }}
+            >
+              <ArrowUpFromLine className="size-3.5" />
+              {float[panel === "synth" ? "synth" : "drums"] ? "Hide hardware" : "Hardware panel"}
+            </Button>
+          )}
           {panel === "mixer" && (
             <Button
               size="sm"
