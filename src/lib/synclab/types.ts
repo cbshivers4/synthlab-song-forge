@@ -8,16 +8,22 @@ export type TrackKind =
 
 export type BusId = "drums" | "vocals" | "instruments" | "synths" | "fx" | "master";
 
-export type OscWave = "sine" | "triangle" | "sawtooth" | "square";
+export type OscWave = "sine" | "triangle" | "sawtooth" | "square" | "pulse" | "noise";
+
+export type LfoWave = "sine" | "triangle" | "sawtooth" | "square";
 
 export interface OscillatorParams {
   on: boolean;
   wave: OscWave;
   octave: number;
   semitone: number;
+  fine?: number;
   detune: number;
   level: number;
   pan: number;
+  phase?: number;
+  sync?: boolean;
+  pulseWidth?: number;
 }
 
 export interface EnvelopeParams {
@@ -30,9 +36,10 @@ export interface EnvelopeParams {
 export interface LfoParams {
   on: boolean;
   rate: number;
-  wave: OscWave;
+  wave: LfoWave;
   amount: number;
-  destination: "pitch" | "filter" | "volume" | "pan";
+  sync?: boolean;
+  destination: "pitch" | "filter" | "volume" | "pan" | "wavetable";
 }
 
 export interface SynthPatch {
@@ -43,14 +50,19 @@ export interface SynthPatch {
   cutoff: number;
   resonance: number;
   drive: number;
+  keyTracking?: number;
   amp: EnvelopeParams;
   filterEnv: EnvelopeParams & { amount: number };
   lfos: LfoParams[];
   unison: { voices: number; detune: number; width: number };
   glide: number;
+  glideMode?: "always" | "legato";
   fx: {
     distortion: number;
+    saturation?: number;
     chorus: number;
+    flanger?: number;
+    phaser?: number;
     delay: number;
     delayFeedback: number;
     reverb: number;
@@ -59,9 +71,11 @@ export interface SynthPatch {
   arp: {
     on: boolean;
     rate: number; // steps per note
-    direction: "up" | "down" | "updown" | "random";
+    direction: "up" | "down" | "updown" | "random" | "alternate";
     octaves: number;
     gate: number;
+    swing?: number;
+    sync?: boolean;
   };
 }
 
@@ -73,9 +87,18 @@ export interface DrumPad {
   pan: number;
   pitch: number;
   decay: number;
+  attack?: number;
+  sustain?: number;
+  release?: number;
+  start?: number;
+  end?: number;
+  reverse?: boolean;
+  choke?: number;
+  sample?: string | undefined;
   muted: boolean;
   solo: boolean;
   steps: number[]; // velocity 0..1 per step, 0 = off
+  probability?: number[] | undefined;
 }
 
 export interface MidiNote {
@@ -92,6 +115,7 @@ export interface AudioClip {
   peaks: number[];
   duration: number;
   url?: string | undefined;
+  takeOf?: string | undefined;
 }
 
 export interface Track {
@@ -106,18 +130,27 @@ export interface Track {
   armed: boolean;
   frozen: boolean;
   hidden: boolean;
+  monitor?: boolean;
   input: string;
   bus: BusId;
   steps: number;
+  instrument?: string | undefined;
   patch?: SynthPatch | undefined;
   notes?: MidiNote[] | undefined;
   pads?: DrumPad[] | undefined;
   clips?: AudioClip[] | undefined;
+  activeClipId?: string | undefined;
+  recording?: boolean;
 }
 
 export interface Transport {
   playing: boolean;
   recording: boolean;
+  paused?: boolean;
+  overdub?: boolean;
+  punchIn?: number | null;
+  punchOut?: number | null;
+  monitor?: boolean;
   bpm: number;
   swing: number;
   step: number;

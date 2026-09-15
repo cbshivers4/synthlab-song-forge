@@ -11,11 +11,33 @@ import type { Track } from "@/lib/synclab/types";
 import { toast } from "sonner";
 
 export function DrumMachine({ track }: { track: Track }) {
-  const { toggleStep, updatePad, setStepCount, addPad, generateBeat, transport } = useStudio();
+  const { updatePad, setStepCount, addPad, generateBeat, transport } = useStudio();
   const [genre, setGenre] = useState("Detroit Techno");
   const [energy, setEnergy] = useState(6);
   const [openPad, setOpenPad] = useState<string | null>(null);
   const pads = track.pads ?? [];
+
+  // click cycles: off -> ghost -> normal -> accent
+  const cycleStep = (padId: string, steps: number[], i: number) => {
+    const v = steps[i] ?? 0;
+    const next = v === 0 ? 0.35 : v <= 0.35 ? 0.7 : v <= 0.7 ? 1 : 0;
+    updatePad(track.id, padId, { steps: steps.map((x, j) => (j === i ? next : x)) });
+  };
+
+  const humanize = () =>
+    pads.forEach((p) =>
+      updatePad(track.id, p.id, {
+        steps: p.steps.map((v) => (v > 0 ? Math.min(1, Math.max(0.2, v + (Math.random() - 0.5) * 0.3)) : v)),
+      }),
+    );
+
+  const flam = (padId: string, steps: number[]) =>
+    updatePad(track.id, padId, {
+      steps: steps.map((v, i) => (v === 0 && (steps[i - 1] ?? 0) > 0 ? 0.3 : v)),
+    });
+
+  const roll = (padId: string, steps: number[]) =>
+    updatePad(track.id, padId, { steps: steps.map((v, i) => (i % 2 === 0 ? v : Math.max(v, 0.45))) });
 
   return (
     <div className="space-y-3">
@@ -60,6 +82,9 @@ export function DrumMachine({ track }: { track: Track }) {
         <Button variant="secondary" onClick={() => addPad(track.id)}>
           <Plus className="size-4" /> Add pad
         </Button>
+        <Button variant="ghost" onClick={humanize}>
+          Humanize
+        </Button>
         <Button
           variant="ghost"
           onClick={() => toast("Drop samples on a pad", { description: "WAV, MP3, AIFF and OGG are supported." })}
@@ -102,12 +127,14 @@ export function DrumMachine({ track }: { track: Track }) {
                   <button
                     key={i}
                     aria-label={`${pad.name} step ${i + 1}`}
-                    onClick={() => toggleStep(track.id, pad.id, i)}
+                    onClick={() => cycleStep(pad.id, pad.steps, i)}
+                    title={v > 0 ? `velocity ${Math.round(v * 100)}%` : "empty"}
                     className="h-6 flex-1 rounded-[3px] border transition-all"
                     style={{
                       minWidth: 12,
                       borderColor:
                         transport.playing && transport.step === i % 16 ? "var(--neon)" : "var(--color-border)",
+                      opacity: v > 0 ? 0.35 + v * 0.65 : 1,
                       background:
                         v > 0
                           ? "var(--gradient-neon)"
@@ -132,6 +159,63 @@ export function DrumMachine({ track }: { track: Track }) {
                   onChange={(v) => updatePad(track.id, pad.id, { pitch: v })}
                 />
                 <Knob label="DECAY" value={pad.decay} onChange={(v) => updatePad(track.id, pad.id, { decay: v })} />
+                <Knob label="ATK" value={pad.attack ?? 0} onChange={(v) => updatePad(track.id, pad.id, { attack: v })} />
+                <Knob
+                  label="SUS"
+                  value={pad.sustain ?? 0}
+                  onChange={(v) => updatePad(track.id, pad.id, { sustain: v })}
+                />
+                <Knob
+                  label="REL"
+                  value={pad.release ?? 0.2}
+                  onChange={(v) => updatePad(track.id, pad.id, { release: v })}
+                />
+                <Knob label="START" value={pad.start ?? 0} onChange={(v) => updatePad(track.id, pad.id, { start: v })} />
+                <Knob label="END" value={pad.end ?? 1} onChange={(v) => updatePad(track.id, pad.id, { end: v })} />
+                <Knob
+                  label="CHOKE"
+                  min={0}
+                  max={4}
+                  step={1}
+                  value={pad.choke ?? 0}
+                  onChange={(v) => updatePad(track.id, pad.id, { choke: Math.round(v) })}
+                />
+                <div className="flex items-end gap-1">
+                  <Button
+                    size="sm"
+                    variant={pad.reverse ? "default" : "ghost"}
+                    onClick={() => updatePad(track.id, pad.id, { reverse: !pad.reverse })}
+                  >
+                    Reverse
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => flam(pad.id, pad.steps)}>
+                    Flam
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => roll(pad.id, pad.steps)}>
+                    Roll
+                  </Button>
+                  <label className="cursor-pointer rounded-md px-2 py-1 text-xs text-muted-foreground hover:text-foreground">
+                    Load sample
+                    <input
+                      type="file"
+                      accept="audio/*"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        try {
+                          const info = await getEngine().peaksFromFile(file);
+                          updatePad(track.id, pad.id, { sample: file.name });
+                          toast.success(`${file.name} loaded on ${pad.name}`, {
+                            description: `${info.duration.toFixed(2)}s — trim, pitch and reverse from this pad.`,
+                          });
+                        } catch {
+                          toast.error("Could not read that audio file");
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
                 <div className="flex items-end">
                   <Button variant="ghost" size="sm" onClick={() => toast("Sample editor", { description: "Trim, normalise, reverse and time-stretch this pad's sample." })}>
                     Sample editor

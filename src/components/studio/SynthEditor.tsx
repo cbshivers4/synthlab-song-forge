@@ -9,10 +9,10 @@ import { Slider } from "@/components/ui/slider";
 import { Knob } from "./Knob";
 import { useStudio } from "@/lib/synclab/store";
 import { SYNTH_PRESETS } from "@/lib/synclab/presets";
-import type { EnvelopeParams, OscWave, SynthPatch, Track } from "@/lib/synclab/types";
+import type { EnvelopeParams, LfoWave, OscWave, SynthPatch, Track } from "@/lib/synclab/types";
 import { toast } from "sonner";
 
-const WAVES: OscWave[] = ["sine", "triangle", "sawtooth", "square"];
+const WAVES: OscWave[] = ["sine", "triangle", "sawtooth", "square", "pulse", "noise"];
 
 function EnvelopeGraph({ env }: { env: EnvelopeParams }) {
   const total = env.attack + env.decay + 0.6 + env.release || 1;
@@ -122,7 +122,10 @@ export function SynthEditor({ track }: { track: Track }) {
                 [
                   ["OCT", "octave", -3, 3, 1],
                   ["SEMI", "semitone", -12, 12, 1],
+                  ["FINE", "fine", -50, 50, 1],
                   ["DETUNE", "detune", -50, 50, 1],
+                  ["PHASE", "phase", 0, 1, 0.01],
+                  ["PW", "pulseWidth", 0.05, 0.95, 0.01],
                   ["LEVEL", "level", 0, 1, 0.01],
                   ["PAN", "pan", -1, 1, 0.01],
                 ] as const
@@ -133,12 +136,21 @@ export function SynthEditor({ track }: { track: Track }) {
                   min={min}
                   max={max}
                   step={step}
-                  value={osc[key] as number}
+                  value={(osc[key] as number | undefined) ?? 0}
                   onChange={(v) =>
                     set({ oscillators: patch.oscillators.map((o, j) => (j === i ? { ...o, [key]: v } : o)) })
                   }
                 />
               ))}
+              <label className="flex w-16 flex-col items-center gap-1">
+                <span className="label-xs text-[9px]">SYNC</span>
+                <Switch
+                  checked={Boolean(osc.sync)}
+                  onCheckedChange={(v) =>
+                    set({ oscillators: patch.oscillators.map((o, j) => (j === i ? { ...o, sync: v } : o)) })
+                  }
+                />
+              </label>
             </div>
           ))}
           <div className="panel p-3">
@@ -183,7 +195,26 @@ export function SynthEditor({ track }: { track: Track }) {
             <Knob label="CUTOFF" min={40} max={16000} step={10} value={patch.cutoff} onChange={(v) => set({ cutoff: v })} />
             <Knob label="RES" min={0} max={28} step={0.5} value={patch.resonance} onChange={(v) => set({ resonance: v })} />
             <Knob label="DRIVE" value={patch.drive} onChange={(v) => set({ drive: v })} />
+            <Knob
+              label="KEY TRK"
+              min={0}
+              max={1}
+              value={patch.keyTracking ?? 0}
+              onChange={(v) => set({ keyTracking: v })}
+            />
             <Knob label="GLIDE" min={0} max={0.5} value={patch.glide} onChange={(v) => set({ glide: v })} />
+            <Select
+              value={patch.glideMode ?? "always"}
+              onValueChange={(v) => set({ glideMode: v as "always" | "legato" })}
+            >
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="always">glide always</SelectItem>
+                <SelectItem value="legato">glide legato</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </TabsContent>
 
@@ -250,7 +281,7 @@ export function SynthEditor({ track }: { track: Track }) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {["pitch", "filter", "volume", "pan"].map((d) => (
+                  {["pitch", "filter", "volume", "pan", "wavetable"].map((d) => (
                     <SelectItem key={d} value={d}>
                       {d}
                     </SelectItem>
@@ -270,6 +301,30 @@ export function SynthEditor({ track }: { track: Track }) {
                 value={lfo.amount}
                 onChange={(v) => set({ lfos: patch.lfos.map((l, j) => (j === i ? { ...l, amount: v } : l)) })}
               />
+              <Select
+                value={lfo.wave}
+                onValueChange={(v) =>
+                  set({ lfos: patch.lfos.map((l, j) => (j === i ? { ...l, wave: v as LfoWave } : l)) })
+                }
+              >
+                <SelectTrigger className="w-28">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(["sine", "triangle", "sawtooth", "square"] as LfoWave[]).map((w) => (
+                    <SelectItem key={w} value={w}>
+                      {w}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <label className="flex items-center gap-2">
+                <span className="label-xs">SYNC</span>
+                <Switch
+                  checked={Boolean(lfo.sync)}
+                  onCheckedChange={(v) => set({ lfos: patch.lfos.map((l, j) => (j === i ? { ...l, sync: v } : l)) })}
+                />
+              </label>
             </div>
           ))}
           <div className="panel flex flex-wrap items-center gap-3 p-3">
@@ -303,7 +358,10 @@ export function SynthEditor({ track }: { track: Track }) {
             {(
               [
                 ["DIST", "distortion"],
+                ["SAT", "saturation"],
                 ["CHORUS", "chorus"],
+                ["FLANGER", "flanger"],
+                ["PHASER", "phaser"],
                 ["DELAY", "delay"],
                 ["FEEDBK", "delayFeedback"],
                 ["REVERB", "reverb"],
@@ -313,7 +371,7 @@ export function SynthEditor({ track }: { track: Track }) {
               <Knob
                 key={key}
                 label={label}
-                value={patch.fx[key]}
+                value={patch.fx[key] ?? 0}
                 onChange={(v) => set({ fx: { ...patch.fx, [key]: v } })}
               />
             ))}
@@ -334,7 +392,7 @@ export function SynthEditor({ track }: { track: Track }) {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {["up", "down", "updown", "random"].map((d) => (
+                {["up", "down", "updown", "random", "alternate"].map((d) => (
                   <SelectItem key={d} value={d}>
                     {d}
                   </SelectItem>
@@ -350,6 +408,26 @@ export function SynthEditor({ track }: { track: Track }) {
               onChange={(v) => set({ arp: { ...patch.arp, octaves: Math.round(v) } })}
             />
             <Knob label="GATE" value={patch.arp.gate} onChange={(v) => set({ arp: { ...patch.arp, gate: v } })} />
+            <Knob
+              label="RATE"
+              min={0.5}
+              max={4}
+              step={0.5}
+              value={patch.arp.rate}
+              onChange={(v) => set({ arp: { ...patch.arp, rate: v } })}
+            />
+            <Knob
+              label="SWING"
+              value={patch.arp.swing ?? 0}
+              onChange={(v) => set({ arp: { ...patch.arp, swing: v } })}
+            />
+            <label className="flex items-center gap-2">
+              <span className="label-xs">TEMPO SYNC</span>
+              <Switch
+                checked={patch.arp.sync ?? true}
+                onCheckedChange={(v) => set({ arp: { ...patch.arp, sync: v } })}
+              />
+            </label>
           </div>
         </TabsContent>
       </Tabs>

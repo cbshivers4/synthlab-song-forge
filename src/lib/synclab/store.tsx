@@ -8,9 +8,10 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { toast } from "sonner";
 import { getEngine } from "./audio-engine";
 import { TRACK_COLORS, applyPreset, defaultPads, defaultPatch, uid } from "./presets";
-import type { BusId, DrumPad, MidiNote, SynthPatch, Track, TrackKind, Transport } from "./types";
+import type { AudioClip, BusId, DrumPad, MidiNote, SynthPatch, Track, TrackKind, Transport } from "./types";
 
 const busFor = (kind: TrackKind): BusId =>
   kind === "drum"
@@ -100,6 +101,11 @@ interface StudioApi extends StudioState {
   togglePlay: () => void;
   toggleRecord: () => void;
   stop: () => void;
+  pause: () => void;
+  changeInstrument: (trackId: string, preset: string) => void;
+  setActiveClip: (trackId: string, clipId: string) => void;
+  removeClip: (trackId: string, clipId: string) => void;
+  addClip: (trackId: string, clip: AudioClip) => void;
   savePreset: (name: string) => void;
   loadPreset: (trackId: string, name: string) => void;
   generateBeat: (trackId: string, genre: string, energy: number) => void;
@@ -123,6 +129,11 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     countIn: false,
     loop: true,
     bars: 1,
+    paused: false,
+    overdub: false,
+    punchIn: null,
+    punchOut: null,
+    monitor: true,
   });
 
   const tracksRef = useRef(tracks);
@@ -218,6 +229,36 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const updateTrack = useCallback((id: string, patch: Partial<Track>) => {
     setTracks((ts) => ts.map((t) => (t.id === id ? { ...t, ...patch } : t)));
   }, []);
+
+  const finishRecording = useCallback(async () => {
+    const engine = getEngine();
+    if (!engine.isRecording) return;
+    const target = tracksRef.current.find((t) => t.recording);
+    const result = await engine.stopInputRecording();
+    if (!target) return;
+    if (!result) {
+      updateTrack(target.id, { recording: false });
+      return;
+    }
+    const takeNo = (target.clips?.length ?? 0) + 1;
+    const clip: AudioClip = {
+      id: uid(),
+      name: `TAKE ${takeNo}`,
+      peaks: result.peaks,
+      duration: result.duration,
+      url: result.url,
+    };
+    setTracks((ts) =>
+      ts.map((t) =>
+        t.id === target.id
+          ? { ...t, recording: false, clips: [...(t.clips ?? []), clip], activeClipId: clip.id }
+          : t,
+      ),
+    );
+    toast.success(`${clip.name} recorded on ${target.name}`, {
+      description: `${result.duration.toFixed(1)}s captured — pick your best take on the track.`,
+    });
+  }, [updateTrack]);
 
   const api: StudioApi = useMemo(() => {
     const selected = tracks.find((t) => t.id === selectedId) ?? null;
@@ -339,13 +380,64 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       setTransport: (t) => setTransportState((s) => ({ ...s, ...t })),
       togglePlay: () => {
         getEngine().init();
-        setTransportState((s) => ({ ...s, playing: !s.playing }));
+        setTransportState((s) => ({ ...s, playing: !s.playing, paused: s.playing }));
       },
+      pause: () => setTransportState((s) => ({ ...s, playing: false, paused: true })),
       toggleRecord: () => {
-        getEngine().init();
-        setTransportState((s) => ({ ...s, recording: !s.recording, playing: !s.recording ? true : s.playing }));
+        const engine = getEngine();
+        engine.init();
+        const armed = tracksRef.current.filter(
+          (t) => t.armed && (t.kind === "audio" || t.kind === "ai-vocal" || t.kind === "sampler"),
+        );
+        if (!transportRef.current.recording) {
+          const target = armed[0];
+          if (target) {
+            void engine
+              .startInputRecording(target.id, transportRef.current.monitor ?? true)
+              .then(() => updateTrack(target.id, { recording: true }))
+              .catch(() =>
+                toast.error("Microphone unavailable", {
+                  description: "Allow microphone access in your browser to record this channel.",
+                }),
+              );
+          } else {
+            toast("Arm a channel first", { description: "Press ● REC on an audio or vocal track, then record." });
+          }
+          setTransportState((s) => ({ ...s, recording: true, playing: true, paused: false }));
+        } else {
+          void finishRecording();
+          setTransportState((s) => ({ ...s, recording: false }));
+        }
       },
-      stop: () => setTransportState((s) => ({ ...s, playing: false, recording: false, step: 0 })),
+      stop: () => {
+        if (transportRef.current.recording) void finishRecording();
+        setTransportState((s) => ({ ...s, playing: false, recording: false, paused: false, step: 0 }));
+      },
+      changeInstrument: (trackId, preset) =>
+        setTracks((ts) =>
+          ts.map((t) =>
+            t.id === trackId ? { ...t, instrument: preset, patch: applyPreset(preset) } : t,
+          ),
+        ),
+      addClip: (trackId, clip) =>
+        setTracks((ts) =>
+          ts.map((t) =>
+            t.id === trackId ? { ...t, clips: [...(t.clips ?? []), clip], activeClipId: clip.id } : t,
+          ),
+        ),
+      setActiveClip: (trackId, clipId) => updateTrack(trackId, { activeClipId: clipId }),
+      removeClip: (trackId, clipId) =>
+        setTracks((ts) =>
+          ts.map((t) =>
+            t.id === trackId
+              ? {
+                  ...t,
+                  clips: (t.clips ?? []).filter((c) => c.id !== clipId),
+                  activeClipId: t.activeClipId === clipId ? undefined : t.activeClipId,
+                }
+              : t,
+          ),
+        ),
       savePreset: (name) => {
         const t = tracks.find((x) => x.id === selectedId);
         if (t?.patch) setUserPresets((p) => [...p, { ...structuredClone(t.patch!), name }]);
@@ -411,7 +503,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         if (t?.patch) engine.playNote(t.id, t.patch, midi, 0.35, 0.9);
       },
     };
-  }, [tracks, transport, selectedId, panel, userPresets, updateTrack]);
+  }, [tracks, transport, selectedId, panel, userPresets, updateTrack, finishRecording]);
 
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>;
 }

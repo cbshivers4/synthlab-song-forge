@@ -9,6 +9,7 @@ import {
   Headphones,
   Mic,
   MoreVertical,
+  Repeat,
   Music2,
   Piano,
   Settings2,
@@ -24,6 +25,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -39,7 +41,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useStudio } from "@/lib/synclab/store";
-import { KIND_LABEL } from "@/lib/synclab/presets";
+import { INSTRUMENTS, KIND_LABEL } from "@/lib/synclab/presets";
 import type { Track } from "@/lib/synclab/types";
 
 const KindIcon = ({ kind }: { kind: Track["kind"] }) =>
@@ -55,8 +57,51 @@ const KindIcon = ({ kind }: { kind: Track["kind"] }) =>
 
 const INPUTS = ["Microphone", "Guitar / Line 1", "Keyboard / Line 2", "External Instrument", "MIDI Keyboard", "Internal"];
 
+function Waveform({ track }: { track: Track }) {
+  const { setActiveClip, removeClip } = useStudio();
+  const clips = track.clips ?? [];
+  const active = clips.find((c) => c.id === track.activeClipId) ?? clips[clips.length - 1];
+  if (!active) return null;
+  return (
+    <div className="flex flex-1 flex-col gap-1">
+      <div className="flex h-9 items-center gap-[1px] overflow-hidden rounded-md bg-background/60 px-1">
+        {active.peaks.map((p, i) => (
+          <div
+            key={i}
+            className="flex-1 rounded-[1px]"
+            style={{ height: `${Math.max(6, p * 100)}%`, background: track.color, opacity: 0.85 }}
+          />
+        ))}
+      </div>
+      <div className="flex flex-wrap items-center gap-1">
+        <span className="label-xs">TAKES</span>
+        {clips.map((c) => (
+          <button
+            key={c.id}
+            onClick={() => setActiveClip(track.id, c.id)}
+            onDoubleClick={() => removeClip(track.id, c.id)}
+            title="Click to choose take, double-click to delete"
+            className={`rounded-full border px-2 py-0.5 font-mono text-[10px] ${
+              c.id === active.id ? "border-primary text-primary" : "border-border text-muted-foreground"
+            }`}
+          >
+            {c.name} · {c.duration.toFixed(1)}s
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function Lane({ track }: { track: Track }) {
   const { transport } = useStudio();
+  if ((track.clips?.length ?? 0) > 0) return <Waveform track={track} />;
+  if (track.recording)
+    return (
+      <div className="flex flex-1 items-center justify-center rounded-md border border-destructive/60 bg-destructive/10">
+        <span className="animate-pulse font-mono text-[11px] text-destructive">● RECORDING INPUT…</span>
+      </div>
+    );
   const cells = Array.from({ length: 16 });
   const active = (i: number) => {
     if (track.kind === "drum") return track.pads?.some((p) => (p.steps[i] ?? 0) > 0) ?? false;
@@ -81,7 +126,8 @@ function Lane({ track }: { track: Track }) {
 }
 
 function TrackRow({ track, index }: { track: Track; index: number }) {
-  const { selectedId, select, updateTrack, removeTrack, duplicateTrack, moveTrack, setPanel } = useStudio();
+  const { selectedId, select, updateTrack, removeTrack, duplicateTrack, moveTrack, setPanel, changeInstrument } =
+    useStudio();
   const [renaming, setRenaming] = useState(false);
   const [confirm, setConfirm] = useState(false);
   const isSelected = selectedId === track.id;
@@ -139,6 +185,17 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
               <DropdownMenuItem onClick={openEditor}>
                 <Settings2 className="size-4" /> Track settings
               </DropdownMenuItem>
+              {track.patch && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="label-xs">Swap instrument (keeps MIDI)</DropdownMenuLabel>
+                  {INSTRUMENTS.flatMap((g) => g.items).map((name) => (
+                    <DropdownMenuItem key={name} onClick={() => changeInstrument(track.id, name)}>
+                      <Repeat className="size-4" /> {name}
+                    </DropdownMenuItem>
+                  ))}
+                </>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => moveTrack(track.id, -1)}>
                 <ChevronUp className="size-4" /> Move up

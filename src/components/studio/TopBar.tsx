@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Slider } from "@/components/ui/slider";
 import { useStudio } from "@/lib/synclab/store";
+import { getEngine } from "@/lib/synclab/audio-engine";
 import { INSTRUMENTS } from "@/lib/synclab/presets";
 import { toast } from "sonner";
 
@@ -69,6 +70,44 @@ export function TopBar() {
             onClick={() => setTransport({ metronome: !transport.metronome })}
           >
             <Timer className="size-4" />
+          </Button>
+          <span className="mx-1 h-6 w-px bg-border" />
+          {(
+            [
+              ["LOOP", "loop"],
+              ["DUB", "overdub"],
+              ["CNT", "countIn"],
+              ["MON", "monitor"],
+            ] as const
+          ).map(([label, key]) => (
+            <Button
+              key={key}
+              size="sm"
+              variant="ghost"
+              className={`h-7 px-2 font-mono text-[10px] ${transport[key] ? "text-primary" : "text-muted-foreground"}`}
+              aria-pressed={Boolean(transport[key])}
+              onClick={() => {
+                const next = !transport[key];
+                setTransport({ [key]: next });
+                if (key === "monitor") getEngine().setMonitoring(next);
+              }}
+            >
+              {label}
+            </Button>
+          ))}
+          <Button
+            size="sm"
+            variant="ghost"
+            className={`h-7 px-2 font-mono text-[10px] ${transport.punchIn != null ? "text-primary" : "text-muted-foreground"}`}
+            onClick={() =>
+              setTransport(
+                transport.punchIn == null
+                  ? { punchIn: transport.step }
+                  : { punchOut: transport.step },
+              )
+            }
+          >
+            {transport.punchIn == null ? "PUNCH IN" : `PUNCH OUT ${transport.punchIn + 1}`}
           </Button>
         </div>
 

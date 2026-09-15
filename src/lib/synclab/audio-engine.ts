@@ -110,6 +110,127 @@ export class SyncLabEngine {
     }
   }
 
+  /* ---------------- pulse wave cache ---------------- */
+  private pulseCache = new Map<string, PeriodicWave>();
+  pulseWave(ctx: AudioContext, width: number) {
+    const key = width.toFixed(2);
+    const cached = this.pulseCache.get(key);
+    if (cached) return cached;
+    const n = 64;
+    const real = new Float32Array(n);
+    const imag = new Float32Array(n);
+    for (let i = 1; i < n; i++) imag[i] = (2 / (i * Math.PI)) * Math.sin(i * Math.PI * width);
+    const wave = ctx.createPeriodicWave(real, imag, { disableNormalization: false });
+    this.pulseCache.set(key, wave);
+    return wave;
+  }
+
+  /* ---------------- input recording ---------------- */
+  private recorder: MediaRecorder | null = null;
+  private recStream: MediaStream | null = null;
+  private recChunks: Blob[] = [];
+  private monitorNode: MediaStreamAudioSourceNode | null = null;
+  private monitorGain: GainNode | null = null;
+  private recAnalyser: AnalyserNode | null = null;
+
+  get isRecording() {
+    return this.recorder?.state === "recording";
+  }
+
+  async startInputRecording(trackId: string, monitor: boolean) {
+    const ctx = this.init();
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+    });
+    this.recStream = stream;
+    this.recChunks = [];
+    const src = ctx.createMediaStreamSource(stream);
+    const analyser = ctx.createAnalyser();
+    analyser.fftSize = 1024;
+    src.connect(analyser);
+    this.recAnalyser = analyser;
+    const mg = ctx.createGain();
+    mg.gain.value = monitor ? 1 : 0;
+    src.connect(mg);
+    mg.connect(this.channel(trackId).input);
+    this.monitorNode = src;
+    this.monitorGain = mg;
+
+    const rec = new MediaRecorder(stream);
+    rec.ondataavailable = (e) => e.data.size > 0 && this.recChunks.push(e.data);
+    rec.start(200);
+    this.recorder = rec;
+  }
+
+  setMonitoring(on: boolean) {
+    if (this.monitorGain && this.ctx)
+      this.monitorGain.gain.setTargetAtTime(on ? 1 : 0, this.ctx.currentTime, 0.01);
+  }
+
+  inputLevel() {
+    if (!this.recAnalyser) return 0;
+    const data = new Uint8Array(this.recAnalyser.frequencyBinCount);
+    this.recAnalyser.getByteTimeDomainData(data);
+    let peak = 0;
+    for (let i = 0; i < data.length; i++) peak = Math.max(peak, Math.abs((data[i] ?? 128) - 128) / 128);
+    return peak;
+  }
+
+  async stopInputRecording(): Promise<{ peaks: number[]; duration: number; url: string } | null> {
+    const rec = this.recorder;
+    if (!rec) return null;
+    const blob: Blob = await new Promise((resolve) => {
+      rec.onstop = () => resolve(new Blob(this.recChunks, { type: rec.mimeType || "audio/webm" }));
+      rec.stop();
+    });
+    this.recorder = null;
+    this.recStream?.getTracks().forEach((t) => t.stop());
+    this.recStream = null;
+    this.monitorNode?.disconnect();
+    this.monitorGain?.disconnect();
+    this.monitorNode = null;
+    this.monitorGain = null;
+    this.recAnalyser = null;
+    if (!blob.size) return null;
+
+    const ctx = this.init();
+    const arr = await blob.arrayBuffer();
+    let peaks: number[] = [];
+    let duration = 0;
+    try {
+      const buf = await ctx.decodeAudioData(arr.slice(0));
+      duration = buf.duration;
+      const data = buf.getChannelData(0);
+      const buckets = 160;
+      const size = Math.max(1, Math.floor(data.length / buckets));
+      for (let b = 0; b < buckets; b++) {
+        let peak = 0;
+        for (let i = b * size; i < Math.min(data.length, (b + 1) * size); i++)
+          peak = Math.max(peak, Math.abs(data[i] ?? 0));
+        peaks.push(peak);
+      }
+    } catch {
+      peaks = Array.from({ length: 160 }, () => Math.random() * 0.6);
+    }
+    return { peaks, duration, url: URL.createObjectURL(blob) };
+  }
+
+  async peaksFromFile(file: File | Blob) {
+    const ctx = this.init();
+    const buf = await ctx.decodeAudioData(await file.arrayBuffer());
+    const data = buf.getChannelData(0);
+    const buckets = 160;
+    const size = Math.max(1, Math.floor(data.length / buckets));
+    const peaks: number[] = [];
+    for (let b = 0; b < buckets; b++) {
+      let peak = 0;
+      for (let i = b * size; i < Math.min(data.length, (b + 1) * size); i++)
+        peak = Math.max(peak, Math.abs(data[i] ?? 0));
+      peaks.push(peak);
+    }
+    return { peaks, duration: buf.duration };
+  }
+
   /* ---------------- synth voice ---------------- */
   playNote(trackId: string, patch: SynthPatch, midi: number, duration: number, velocity = 1, when?: number) {
     const ctx = this.init();
@@ -119,16 +240,56 @@ export class SyncLabEngine {
     const voiceOut = ctx.createGain();
     voiceOut.gain.value = 0;
 
+    // key tracking: cutoff follows the played pitch
+    const kt = patch.keyTracking ?? 0;
+    const cutoffBase = clamp(patch.cutoff * Math.pow(2, (kt * (midi - 60)) / 12), 40, 18000);
+
     const filter = ctx.createBiquadFilter();
     filter.type = patch.filterType;
     filter.Q.value = patch.resonance;
-    filter.frequency.value = patch.cutoff;
+    filter.frequency.value = cutoffBase;
 
     const shaper = ctx.createWaveShaper();
-    shaper.curve = makeDistortionCurve(0.05 + patch.fx.distortion);
+    shaper.curve = makeDistortionCurve(0.05 + patch.fx.distortion + (patch.fx.saturation ?? 0) * 0.6);
 
     filter.connect(shaper);
-    shaper.connect(voiceOut);
+
+    // flanger / phaser colouring before the voice output
+    let tail: AudioNode = shaper;
+    const flanger = patch.fx.flanger ?? 0;
+    if (flanger > 0) {
+      const d = ctx.createDelay(0.02);
+      d.delayTime.value = 0.004;
+      const lfo = ctx.createOscillator();
+      const lg = ctx.createGain();
+      lfo.frequency.value = 0.25;
+      lg.gain.value = 0.003 * flanger;
+      lfo.connect(lg);
+      lg.connect(d.delayTime);
+      lfo.start(t0);
+      lfo.stop(t0 + duration + patch.amp.release + 0.2);
+      const wet = ctx.createGain();
+      wet.gain.value = flanger * 0.7;
+      tail.connect(d);
+      d.connect(wet);
+      wet.connect(voiceOut);
+    }
+    const phaser = patch.fx.phaser ?? 0;
+    if (phaser > 0) {
+      let node: AudioNode = tail;
+      for (let i = 0; i < 4; i++) {
+        const ap = ctx.createBiquadFilter();
+        ap.type = "allpass";
+        ap.frequency.value = 400 + i * 600;
+        node.connect(ap);
+        node = ap;
+      }
+      const wet = ctx.createGain();
+      wet.gain.value = phaser * 0.8;
+      node.connect(wet);
+      wet.connect(voiceOut);
+    }
+    tail.connect(voiceOut);
     voiceOut.connect(ch.input);
 
     if (patch.fx.delay > 0) {
@@ -157,19 +318,42 @@ export class SyncLabEngine {
     patch.oscillators.forEach((osc) => {
       if (!osc.on || osc.level <= 0) return;
       for (let u = 0; u < voices; u++) {
-        const o = ctx.createOscillator();
-        o.type = osc.wave;
         const spread = voices === 1 ? 0 : (u / (voices - 1) - 0.5) * 2;
-        const freq = midiToFreq(midi + osc.octave * 12 + osc.semitone);
-        o.frequency.setValueAtTime(freq, t0);
-        o.detune.setValueAtTime(osc.detune + spread * patch.unison.detune, t0);
         const g = ctx.createGain();
         g.gain.value = (osc.level / voices) * velocity;
         const p = ctx.createStereoPanner();
         p.pan.value = clamp(osc.pan + spread * patch.unison.width, -1, 1);
-        o.connect(g);
         g.connect(p);
         p.connect(filter);
+
+        if (osc.wave === "noise") {
+          const len = Math.ceil(ctx.sampleRate * (duration + patch.amp.release + 0.15));
+          const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+          const d = buf.getChannelData(0);
+          for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+          const src = ctx.createBufferSource();
+          src.buffer = buf;
+          src.connect(g);
+          src.start(t0);
+          nodes.push(src);
+          continue;
+        }
+
+        const o = ctx.createOscillator();
+        if (osc.wave === "pulse") {
+          o.setPeriodicWave(this.pulseWave(ctx, osc.pulseWidth ?? 0.3));
+        } else {
+          o.type = osc.wave;
+        }
+        const freq = midiToFreq(midi + osc.octave * 12 + osc.semitone);
+        o.frequency.setValueAtTime(freq, t0);
+        o.detune.setValueAtTime(
+          osc.detune + (osc.fine ?? 0) + spread * patch.unison.detune,
+          t0,
+        );
+        // hard-sync flavour: snap the partial back toward the root pitch
+        if (osc.sync) o.frequency.setValueAtTime(midiToFreq(midi) * Math.round(freq / midiToFreq(midi) || 1), t0);
+        o.connect(g);
         o.start(t0);
         o.stop(t0 + duration + patch.amp.release + 0.1);
         nodes.push(o);
@@ -231,7 +415,7 @@ export class SyncLabEngine {
 
     // filter envelope
     const fe = patch.filterEnv;
-    const base = patch.cutoff;
+    const base = cutoffBase;
     filter.frequency.cancelScheduledValues(t0);
     filter.frequency.setValueAtTime(base, t0);
     filter.frequency.linearRampToValueAtTime(clamp(base + fe.amount, 40, 18000), t0 + Math.max(0.001, fe.attack));

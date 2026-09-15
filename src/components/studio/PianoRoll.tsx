@@ -12,10 +12,13 @@ export function PianoRoll({ track }: { track: Track }) {
   const { setNotes, previewNote, transport } = useStudio();
   const [low, setLow] = useState(48);
   const [len, setLen] = useState(1);
+  const [scaleLock, setScaleLock] = useState(false);
+  const SCALE = [0, 2, 3, 5, 7, 8, 10]; // C minor — Detroit default
   const notes = track.notes ?? [];
   const pitches = Array.from({ length: 24 }, (_, i) => low + 23 - i);
 
   const toggle = (pitch: number, step: number) => {
+    if (scaleLock && !SCALE.includes(((pitch % 12) + 12) % 12)) return;
     const hit = notes.find((n) => n.pitch === pitch && step >= n.step && step < n.step + n.length);
     if (hit) setNotes(track.id, notes.filter((n) => n.id !== hit.id));
     else {
@@ -32,6 +35,7 @@ export function PianoRoll({ track }: { track: Track }) {
           ["1/4", 4],
           ["1/8", 2],
           ["1/16", 1],
+          ["1/32", 0.5],
         ].map(([label, v]) => (
           <Button key={label as string} size="sm" variant={len === v ? "default" : "ghost"} onClick={() => setLen(v as number)}>
             {label}
@@ -52,8 +56,45 @@ export function PianoRoll({ track }: { track: Track }) {
         <Button size="sm" variant="ghost" onClick={() => setNotes(track.id, notes.map((n) => ({ ...n, pitch: n.pitch + 12 })))}>
           Transpose +12
         </Button>
-        <Button size="sm" variant="ghost" onClick={() => setNotes(track.id, notes.map((n) => ({ ...n, step: Math.round(n.step / 2) * 2 })))}>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() =>
+            setNotes(
+              track.id,
+              notes.map((n) => ({ ...n, step: Math.round(n.step / Math.max(1, len)) * Math.max(1, len) })),
+            )
+          }
+        >
           Quantize notes
+        </Button>
+        <Button size="sm" variant="ghost" onClick={() => setNotes(track.id, notes.map((n) => ({ ...n, pitch: n.pitch - 12 })))}>
+          Transpose -12
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() =>
+            setNotes(
+              track.id,
+              notes.map((n) => ({
+                ...n,
+                velocity: Math.min(1, Math.max(0.2, n.velocity + (Math.random() - 0.5) * 0.3)),
+              })),
+            )
+          }
+        >
+          Humanize
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => setNotes(track.id, [...notes, ...notes.map((n) => ({ ...n, id: uid(), step: n.step + 8 }))])}
+        >
+          Duplicate
+        </Button>
+        <Button size="sm" variant={scaleLock ? "default" : "ghost"} onClick={() => setScaleLock(!scaleLock)}>
+          Scale lock
         </Button>
         <Button size="sm" variant="ghost" onClick={() => setNotes(track.id, [])}>
           Clear
