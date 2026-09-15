@@ -301,20 +301,54 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
   );
 }
 
+function Ruler() {
+  const { transport } = useStudio();
+  return (
+    <div className="sticky top-0 z-10 flex border-b border-border bg-surface-2/70 backdrop-blur">
+      <div className="flex w-[244px] shrink-0 items-center gap-2 border-r border-border px-3 py-1">
+        <span className="font-display text-[11px] font-semibold tracking-[0.2em]">TIMELINE</span>
+        <span className="label-xs ml-auto">
+          {String(Math.floor(transport.step / 4) + 1).padStart(2, "0")}.{(transport.step % 4) + 1}
+        </span>
+      </div>
+      <div className="relative grid flex-1 grid-cols-[repeat(16,minmax(0,1fr))]">
+        {Array.from({ length: 16 }).map((_, i) => (
+          <div
+            key={i}
+            className={`border-l py-1 pl-1 font-mono text-[9px] ${
+              i % 4 === 0 ? "border-border text-foreground/70" : "border-border/30 text-muted-foreground/50"
+            }`}
+          >
+            {i % 4 === 0 ? `${i / 4 + 1}` : "·"}
+          </div>
+        ))}
+        {transport.playing && (
+          <div
+            className="pointer-events-none absolute top-0 h-full w-[2px] bg-primary"
+            style={{ left: `${(transport.step / 16) * 100}%` }}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function Timeline() {
   const { tracks, transport } = useStudio();
   return (
-    <section className="space-y-2">
-      <div className="flex items-center gap-2">
-        <h2 className="font-display text-sm font-semibold tracking-widest">TIMELINE</h2>
-        <span className="label-xs">
-          {tracks.length} tracks · step {transport.step + 1}/16
-        </span>
-      </div>
-      <div className="space-y-2">
+    <section className="relative flex min-h-0 flex-1 flex-col overflow-hidden border-x border-b border-border bg-background/60">
+      <Ruler />
+      <div className="relative min-h-0 flex-1 overflow-y-auto">
         {tracks.map((t, i) => (
           <TrackRow key={t.id} track={t} index={i} />
         ))}
+        <div className="label-xs px-3 py-2">{tracks.length} tracks · press + ADD TRACK to build the arrangement</div>
+        {transport.playing && (
+          <div
+            className="pointer-events-none absolute top-0 bottom-0 w-[1.5px] bg-primary/80"
+            style={{ left: `calc(244px + (100% - 244px) * ${transport.step / 16})` }}
+          />
+        )}
       </div>
     </section>
   );
