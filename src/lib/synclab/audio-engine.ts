@@ -91,6 +91,8 @@ export class SyncLabEngine {
     fb.connect(delay);
     delay.connect(master);
     this.delaySend = dSend;
+    this.sendOut.set("delay", delay);
+    this.sendFeedback.set("delay", fb);
 
     // chorus send bus
     const cSend = ctx.createGain();
@@ -107,6 +109,9 @@ export class SyncLabEngine {
     cSend.connect(cDelay);
     cDelay.connect(master);
     this.chorusSend = cSend;
+    this.sendOut.set("chorus", cDelay);
+    this.sendOut.set("reverb", conv);
+
 
     for (const id of ["drums", "vocals", "instruments", "synths", "fx", "master"]) {
       const g = ctx.createGain();
