@@ -214,6 +214,13 @@ export function TopBar() {
           <Button variant="ghost" size="sm" onClick={() => toast.success("Bounce queued", { description: "Your session will render to stereo WAV." })}>
             <Download className="size-4" /> EXPORT
           </Button>
+          <Button
+            variant={panel === "settings" ? "secondary" : "ghost"}
+            size="sm"
+            onClick={() => setPanel(panel === "settings" ? null : "settings")}
+          >
+            <Settings2 className="size-4" /> SETTINGS
+          </Button>
         </div>
       </div>
     </header>
