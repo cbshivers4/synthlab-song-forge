@@ -246,6 +246,7 @@ function DrumClip({ track }: { track: Track }) {
 
 function Lane({ track }: { track: Track }) {
   const isMidi = track.kind === "instrument" || track.kind === "midi" || track.kind === "sampler";
+  if (track.kind === "drum") return <DrumClip track={track} />;
   if (!isMidi && (track.clips?.length ?? 0) > 0) return <Waveform track={track} />;
   if (track.recording)
     return (
