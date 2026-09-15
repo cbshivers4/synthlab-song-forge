@@ -148,7 +148,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                variant="destructive"
+
                 onClick={() =>
                   (track.clips?.length ?? 0) > 0 || (track.notes?.length ?? 0) > 0
                     ? setConfirm(true)
@@ -191,7 +191,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
 
         <div className="flex items-center gap-2">
           <Select value={track.input} onValueChange={(v) => updateTrack(track.id, { input: v })}>
-            <SelectTrigger size="sm" className="h-7 flex-1 text-[11px]">
+            <SelectTrigger className="h-7 flex-1 text-[11px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -208,7 +208,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
             min={0}
             max={1}
             step={0.01}
-            onValueChange={([v]) => updateTrack(track.id, { volume: v })}
+            onValueChange={([v = 0]) => updateTrack(track.id, { volume: v })}
           />
         </div>
       </div>

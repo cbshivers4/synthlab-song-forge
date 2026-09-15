@@ -107,7 +107,7 @@ export function SynthEditor({ track }: { track: Track }) {
                   set({ oscillators: patch.oscillators.map((o, j) => (j === i ? { ...o, wave: v as OscWave } : o)) })
                 }
               >
-                <SelectTrigger size="sm" className="w-32">
+                <SelectTrigger className="w-32">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -152,7 +152,7 @@ export function SynthEditor({ track }: { track: Track }) {
                     min={0}
                     max={1}
                     step={0.01}
-                    onValueChange={([v]) =>
+                    onValueChange={([v = 0]) =>
                       set({ oscillators: patch.oscillators.map((x, j) => (j === i ? { ...x, level: v } : x)) })
                     }
                   />
@@ -160,7 +160,7 @@ export function SynthEditor({ track }: { track: Track }) {
               ))}
               <div>
                 <span className="label-xs">NOISE</span>
-                <Slider value={[patch.noise]} min={0} max={1} step={0.01} onValueChange={([v]) => set({ noise: v })} />
+                <Slider value={[patch.noise]} min={0} max={1} step={0.01} onValueChange={([v = 0]) => set({ noise: v })} />
               </div>
             </div>
           </div>
@@ -169,7 +169,7 @@ export function SynthEditor({ track }: { track: Track }) {
         <TabsContent value="filter" className="pt-3">
           <div className="panel flex flex-wrap items-center gap-4 p-3">
             <Select value={patch.filterType} onValueChange={(v) => set({ filterType: v as BiquadFilterType })}>
-              <SelectTrigger size="sm" className="w-36">
+              <SelectTrigger className="w-36">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -246,7 +246,7 @@ export function SynthEditor({ track }: { track: Track }) {
                   set({ lfos: patch.lfos.map((l, j) => (j === i ? { ...l, destination: v as never } : l)) })
                 }
               >
-                <SelectTrigger size="sm" className="w-28">
+                <SelectTrigger className="w-28">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -330,7 +330,7 @@ export function SynthEditor({ track }: { track: Track }) {
               value={patch.arp.direction}
               onValueChange={(v) => set({ arp: { ...patch.arp, direction: v as never } })}
             >
-              <SelectTrigger size="sm" className="w-32">
+              <SelectTrigger className="w-32">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

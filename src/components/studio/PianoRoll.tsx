@@ -38,7 +38,7 @@ export function PianoRoll({ track }: { track: Track }) {
           </Button>
         ))}
         <Select value={String(low)} onValueChange={(v) => setLow(Number(v))}>
-          <SelectTrigger size="sm" className="w-28">
+          <SelectTrigger className="w-28">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

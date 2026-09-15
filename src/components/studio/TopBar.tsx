@@ -83,7 +83,7 @@ export function TopBar() {
             min={60}
             max={190}
             step={1}
-            onValueChange={([v]) => setTransport({ bpm: v })}
+            onValueChange={([v = 0]) => setTransport({ bpm: v })}
           />
           <div className="hidden sm:block">
             <span className="label-xs">Swing</span>
@@ -93,7 +93,7 @@ export function TopBar() {
               min={0}
               max={0.6}
               step={0.01}
-              onValueChange={([v]) => setTransport({ swing: v })}
+              onValueChange={([v = 0]) => setTransport({ swing: v })}
             />
           </div>
         </div>

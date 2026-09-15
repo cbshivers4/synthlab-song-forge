@@ -23,7 +23,7 @@ export function Mixer() {
               min={-1}
               max={1}
               step={0.01}
-              onValueChange={([v]) => updateTrack(t.id, { pan: v })}
+              onValueChange={([v = 0]) => updateTrack(t.id, { pan: v })}
             />
           </div>
           <div className="flex h-40 items-end gap-2">
@@ -34,7 +34,7 @@ export function Mixer() {
               min={0}
               max={1}
               step={0.01}
-              onValueChange={([v]) => updateTrack(t.id, { volume: v })}
+              onValueChange={([v = 0]) => updateTrack(t.id, { volume: v })}
             />
             <div className="h-40 w-2 overflow-hidden rounded-full bg-surface-2">
               <div
@@ -69,7 +69,7 @@ export function Mixer() {
             </Button>
           </div>
           <Select value={t.bus} onValueChange={(v) => updateTrack(t.id, { bus: v as BusId })}>
-            <SelectTrigger size="sm" className="h-7 w-full text-[10px] uppercase">
+            <SelectTrigger className="h-7 w-full text-[10px] uppercase">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

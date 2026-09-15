@@ -21,7 +21,7 @@ export function DrumMachine({ track }: { track: Track }) {
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
         <Select value={String(track.steps)} onValueChange={(v) => setStepCount(track.id, Number(v))}>
-          <SelectTrigger size="sm" className="w-28">
+          <SelectTrigger className="w-28">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -33,7 +33,7 @@ export function DrumMachine({ track }: { track: Track }) {
           </SelectContent>
         </Select>
         <Select value={genre} onValueChange={setGenre}>
-          <SelectTrigger size="sm" className="w-44">
+          <SelectTrigger className="w-44">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -46,7 +46,7 @@ export function DrumMachine({ track }: { track: Track }) {
         </Select>
         <div className="flex items-center gap-2">
           <span className="label-xs">Energy</span>
-          <Slider className="w-24" value={[energy]} min={1} max={10} step={1} onValueChange={([v]) => setEnergy(v)} />
+          <Slider className="w-24" value={[energy]} min={1} max={10} step={1} onValueChange={([v = 0]) => setEnergy(v)} />
         </div>
         <Button
           onClick={() => {

@@ -27,7 +27,7 @@ export function VocalForge() {
         />
         <div className="flex flex-wrap items-center gap-3">
           <Select value={voice} onValueChange={setVoice}>
-            <SelectTrigger size="sm" className="w-52">
+            <SelectTrigger className="w-52">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -40,7 +40,7 @@ export function VocalForge() {
           </Select>
           <div className="flex items-center gap-2">
             <span className="label-xs">Grit</span>
-            <Slider className="w-28" value={[tone]} min={0} max={1} step={0.01} onValueChange={([v]) => setTone(v)} />
+            <Slider className="w-28" value={[tone]} min={0} max={1} step={0.01} onValueChange={([v = 0]) => setTone(v)} />
           </div>
           <Button
             className="glow"
