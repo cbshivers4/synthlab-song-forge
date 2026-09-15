@@ -182,6 +182,17 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
               <DropdownMenuItem onClick={openEditor}>
                 <Settings2 className="size-4" /> Track settings
               </DropdownMenuItem>
+              {track.patch && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="label-xs">Swap instrument (keeps MIDI)</DropdownMenuLabel>
+                  {INSTRUMENTS.flatMap((g) => g.items).map((name) => (
+                    <DropdownMenuItem key={name} onClick={() => changeInstrument(track.id, name)}>
+                      <Repeat className="size-4" /> {name}
+                    </DropdownMenuItem>
+                  ))}
+                </>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => moveTrack(track.id, -1)}>
                 <ChevronUp className="size-4" /> Move up
