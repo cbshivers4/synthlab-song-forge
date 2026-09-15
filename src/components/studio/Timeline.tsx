@@ -63,7 +63,7 @@ function Lane({ track }: { track: Track }) {
     return track.notes?.some((n) => i >= n.step % 16 && i < (n.step % 16) + n.length) ?? false;
   };
   return (
-    <div className="grid flex-1 grid-cols-16 gap-[2px] rounded-md bg-background/50 p-1">
+    <div className="grid flex-1 grid-cols-[repeat(16,minmax(0,1fr))] gap-[2px] rounded-md bg-background/50 p-1">
       {cells.map((_, i) => (
         <div
           key={i}
