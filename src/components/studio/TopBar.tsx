@@ -179,6 +179,20 @@ export function TopBar() {
 
         <div className="ml-auto flex flex-wrap items-center gap-1">
           <Button
+            variant={panel === "drums" ? "secondary" : "ghost"}
+            size="sm"
+            onClick={() => setPanel(panel === "drums" ? null : "drums")}
+          >
+            <Disc3 className="size-4" /> DRUMS
+          </Button>
+          <Button
+            variant={panel === "synth" ? "secondary" : "ghost"}
+            size="sm"
+            onClick={() => setPanel(panel === "synth" ? null : "synth")}
+          >
+            <Music2 className="size-4" /> INSTRUMENTS
+          </Button>
+          <Button
             variant={panel === "mixer" ? "secondary" : "ghost"}
             size="sm"
             onClick={() => setPanel(panel === "mixer" ? null : "mixer")}
