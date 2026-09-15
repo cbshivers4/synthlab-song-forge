@@ -119,6 +119,11 @@ interface StudioApi extends StudioState {
   togglePluginBypass: (trackId: string, instanceId: string) => void;
   movePlugin: (trackId: string, instanceId: string, dir: -1 | 1) => void;
   setPluginParam: (trackId: string, instanceId: string, paramId: string, value: number) => void;
+  midiInputs: MidiPortInfo[];
+  midiInputId: string | null;
+  midiLearning: boolean;
+  enableMidi: () => void;
+  setMidiInput: (id: string | null) => void;
   fxChains: Record<string, PluginInstance[]>;
   addFxPlugin: (target: string, def: PluginDef) => void;
   removeFxPlugin: (target: string, instanceId: string) => void;
