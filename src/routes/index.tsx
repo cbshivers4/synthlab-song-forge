@@ -10,6 +10,7 @@ import { DrumMachine } from "@/components/studio/DrumMachine";
 import { PianoRoll } from "@/components/studio/PianoRoll";
 import { VocalForge } from "@/components/studio/VocalForge";
 import { Settings } from "@/components/studio/Settings";
+import { SplashScreen } from "@/components/studio/SplashScreen";
 
 export const Route = createFileRoute("/")({
   head: () => ({
