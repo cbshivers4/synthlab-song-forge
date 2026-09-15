@@ -127,7 +127,7 @@ const Ctx = (g.__synclabCtx ??= createContext<StudioApi | null>(null));
 export function StudioProvider({ children }: { children: ReactNode }) {
   const [tracks, setTracks] = useState<Track[]>(initialTracks);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [panel, setPanel] = useState<PanelId>("drums");
+  const [panel, setPanel] = useState<PanelId>(null);
   const [userPresets, setUserPresets] = useState<SynthPatch[]>([]);
   const [transport, setTransportState] = useState<Transport>({
     playing: false,
