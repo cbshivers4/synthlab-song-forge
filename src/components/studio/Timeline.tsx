@@ -40,6 +40,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
 import { useStudio } from "@/lib/synclab/store";
 import { INSTRUMENTS, KIND_LABEL } from "@/lib/synclab/presets";
 import type { Track } from "@/lib/synclab/types";
@@ -300,12 +301,53 @@ function Lane({ track }: { track: Track }) {
   );
 }
 
+export type DragPayload =
+  | { type: "instrument"; name: string; preset: string }
+  | { type: "plugin"; defId: string };
+
+export const readDrag = (e: React.DragEvent): DragPayload | null => {
+  const raw = e.dataTransfer.getData("application/synclab") || e.dataTransfer.getData("text/plain");
+  if (!raw) return null;
+  try {
+    const v = JSON.parse(raw) as DragPayload;
+    return v?.type === "instrument" || v?.type === "plugin" ? v : null;
+  } catch {
+    return null;
+  }
+};
+
 function TrackRow({ track, index }: { track: Track; index: number }) {
-  const { selectedId, select, updateTrack, removeTrack, duplicateTrack, moveTrack, setPanel, changeInstrument } =
+  const { selectedId, select, updateTrack, removeTrack, duplicateTrack, moveTrack, setPanel, changeInstrument, installedPlugins, addPlugin } =
     useStudio();
   const [renaming, setRenaming] = useState(false);
   const [confirm, setConfirm] = useState(false);
+  const [dropping, setDropping] = useState(false);
   const isSelected = selectedId === track.id;
+
+  const onDrop = (e: React.DragEvent) => {
+    const payload = readDrag(e);
+    setDropping(false);
+    if (!payload) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (payload.type === "instrument") {
+      if (track.patch) {
+        changeInstrument(track.id, payload.preset);
+        select(track.id);
+        setPanel("synth");
+        toast.success(`${payload.name} loaded on ${track.name}`, { description: "MIDI notes kept" });
+      } else {
+        toast("Drop instruments on an instrument channel", { description: "Or drop below the tracks to create a new one." });
+      }
+      return;
+    }
+    const def = installedPlugins.find((d) => d.id === payload.defId);
+    if (def) {
+      addPlugin(track.id, def);
+      select(track.id);
+      setPanel("plugins");
+    }
+  };
 
   const openEditor = () => {
     select(track.id);
@@ -314,8 +356,14 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
 
   return (
     <div
-      className={`flex items-stretch border-b border-border/80 transition-colors ${isSelected ? "bg-surface-2/40" : "hover:bg-surface/50"} ${track.hidden ? "opacity-40" : ""}`}
+      className={`flex items-stretch border-b border-border/80 transition-colors ${isSelected ? "bg-surface-2/40" : "hover:bg-surface/50"} ${track.hidden ? "opacity-40" : ""} ${dropping ? "ring-1 ring-primary ring-inset" : ""}`}
       onClick={() => select(track.id)}
+      onDragOver={(e) => {
+        e.preventDefault();
+        setDropping(true);
+      }}
+      onDragLeave={() => setDropping(false)}
+      onDrop={onDrop}
     >
       <div className="w-1 shrink-0" style={{ background: track.color, opacity: isSelected ? 1 : 0.65 }} />
       <div className="w-[240px] shrink-0 space-y-1 border-r border-border bg-surface/70 px-2 py-1.5">
@@ -569,7 +617,8 @@ function Ruler() {
 }
 
 export function Timeline() {
-  const { tracks, transport } = useStudio();
+  const { tracks, transport, addTrack } = useStudio();
+  const [over, setOver] = useState(false);
   return (
     <section className="relative flex min-h-0 flex-1 flex-col overflow-hidden border-x border-b border-border bg-background/60">
       <Ruler />
@@ -577,7 +626,26 @@ export function Timeline() {
         {tracks.map((t, i) => (
           <TrackRow key={t.id} track={t} index={i} />
         ))}
-        <div className="label-xs px-3 py-2">{tracks.length} tracks · press + ADD TRACK to build the arrangement</div>
+        <div
+          className={`m-2 rounded-[3px] border border-dashed px-3 py-3 text-center font-mono text-[10px] tracking-widest uppercase transition-colors ${
+            over ? "border-primary bg-primary/10 text-primary" : "border-border/70 text-muted-foreground"
+          }`}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setOver(true);
+          }}
+          onDragLeave={() => setOver(false)}
+          onDrop={(e) => {
+            setOver(false);
+            const payload = readDrag(e);
+            if (payload?.type !== "instrument") return;
+            e.preventDefault();
+            addTrack("instrument", payload.name.toUpperCase(), payload.preset);
+            toast.success(`${payload.name} added as a new channel`);
+          }}
+        >
+          {tracks.length} tracks · drag an instrument here or press + ADD TRACK
+        </div>
         {transport.loop && (
           <div
             className="pointer-events-none absolute inset-y-0 border-x border-primary/25 bg-primary/[0.04]"

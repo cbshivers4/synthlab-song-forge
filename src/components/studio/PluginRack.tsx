@@ -167,7 +167,17 @@ export function PluginRack() {
         <p className="label-xs mb-1.5">PLUGIN RACK — click to insert on {track.name}</p>
         <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-4">
           {installedPlugins.map((d) => (
-            <div key={d.id} className="panel flex items-center gap-2 px-2 py-1.5">
+            <div
+              key={d.id}
+              draggable
+              onDragStart={(e) => {
+                const payload = JSON.stringify({ type: "plugin", defId: d.id });
+                e.dataTransfer.setData("application/synclab", payload);
+                e.dataTransfer.setData("text/plain", payload);
+                e.dataTransfer.effectAllowed = "copy";
+              }}
+              className="panel flex cursor-grab items-center gap-2 px-2 py-1.5 active:cursor-grabbing"
+            >
               <button className="min-w-0 flex-1 text-left" onClick={() => addPlugin(track.id, d)}>
                 <span className="block truncate text-[11px] font-medium">{d.name}</span>
                 <span className="block truncate font-mono text-[9px] tracking-wider text-muted-foreground uppercase">

@@ -207,13 +207,20 @@ export function Browser() {
             </div>
           </div>
           <div>
-            <p className="label-xs mb-1.5">INSTRUMENTS — add as a new channel</p>
+            <p className="label-xs mb-1.5">INSTRUMENTS — drag onto the timeline or click to add a channel</p>
             <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-4">
               {SYNTH_PRESETS.map((p) => (
                 <button
                   key={p.name}
+                  draggable
+                  onDragStart={(e) => {
+                    const payload = JSON.stringify({ type: "instrument", name: p.name, preset: p.name });
+                    e.dataTransfer.setData("application/synclab", payload);
+                    e.dataTransfer.setData("text/plain", payload);
+                    e.dataTransfer.effectAllowed = "copy";
+                  }}
                   onClick={() => addTrack("instrument", p.name.toUpperCase(), p.name)}
-                  className="panel flex items-center gap-2 px-2 py-1.5 text-left transition-colors hover:border-primary/50"
+                  className="panel flex cursor-grab items-center gap-2 px-2 py-1.5 text-left transition-colors hover:border-primary/50 active:cursor-grabbing"
                 >
                   <Music2 className="size-4 shrink-0 text-primary" />
                   <span className="min-w-0">
