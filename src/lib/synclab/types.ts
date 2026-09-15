@@ -133,6 +133,7 @@ export interface Track {
   monitor?: boolean;
   input: string;
   bus: BusId;
+  sends?: { reverb: number; delay: number; chorus: number } | undefined;
   steps: number;
   instrument?: string | undefined;
   patch?: SynthPatch | undefined;
@@ -160,4 +161,9 @@ export interface Transport {
   loopStart?: number;
   loopEnd?: number;
   bars: number;
+}
+
+export interface BusState {
+  volume: number;
+  muted: boolean;
 }

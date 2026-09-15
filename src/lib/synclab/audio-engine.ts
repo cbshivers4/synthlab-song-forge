@@ -20,6 +20,10 @@ interface ChannelStrip {
   gain: GainNode;
   pan: StereoPannerNode;
   meter: AnalyserNode;
+  sendReverb: GainNode;
+  sendDelay: GainNode;
+  sendChorus: GainNode;
+  bus: string;
 }
 
 export class SyncLabEngine {
@@ -27,8 +31,12 @@ export class SyncLabEngine {
   master: GainNode | null = null;
   reverb: ConvolverNode | null = null;
   reverbSend: GainNode | null = null;
+  delaySend: GainNode | null = null;
+  chorusSend: GainNode | null = null;
+  private buses = new Map<string, GainNode>();
   private channels = new Map<string, ChannelStrip>();
   private analyser: AnalyserNode | null = null;
+
 
   init() {
     if (this.ctx) {
@@ -64,7 +72,53 @@ export class SyncLabEngine {
     conv.connect(master);
     this.reverb = conv;
     this.reverbSend = send;
+
+    // delay send bus
+    const dSend = ctx.createGain();
+    dSend.gain.value = 1;
+    const delay = ctx.createDelay(1.5);
+    delay.delayTime.value = 0.32;
+    const fb = ctx.createGain();
+    fb.gain.value = 0.35;
+    dSend.connect(delay);
+    delay.connect(fb);
+    fb.connect(delay);
+    delay.connect(master);
+    this.delaySend = dSend;
+
+    // chorus send bus
+    const cSend = ctx.createGain();
+    cSend.gain.value = 1;
+    const cDelay = ctx.createDelay(0.05);
+    cDelay.delayTime.value = 0.018;
+    const lfo = ctx.createOscillator();
+    const lfoGain = ctx.createGain();
+    lfo.frequency.value = 0.5;
+    lfoGain.gain.value = 0.006;
+    lfo.connect(lfoGain);
+    lfoGain.connect(cDelay.delayTime);
+    lfo.start();
+    cSend.connect(cDelay);
+    cDelay.connect(master);
+    this.chorusSend = cSend;
+
+    for (const id of ["drums", "vocals", "instruments", "synths", "fx", "master"]) {
+      const g = ctx.createGain();
+      g.gain.value = 1;
+      g.connect(master);
+      this.buses.set(id, g);
+    }
     return ctx;
+  }
+
+  busNode(id: string) {
+    this.init();
+    return this.buses.get(id) ?? this.buses.get("master")!;
+  }
+
+  setBus(id: string, volume: number, muted: boolean) {
+    if (!this.ctx) return;
+    this.busNode(id).gain.setTargetAtTime(muted ? 0 : clamp(volume, 0, 1.5), this.ctx.currentTime, 0.02);
   }
 
   getLevel() {
@@ -99,8 +153,20 @@ export class SyncLabEngine {
       input.connect(gain);
       gain.connect(meter);
       meter.connect(pan);
-      pan.connect(this.master!);
-      ch = { input, gain, pan, meter };
+      pan.connect(this.busNode("master"));
+      const sendReverb = ctx.createGain();
+      const sendDelay = ctx.createGain();
+      const sendChorus = ctx.createGain();
+      sendReverb.gain.value = 0;
+      sendDelay.gain.value = 0;
+      sendChorus.gain.value = 0;
+      pan.connect(sendReverb);
+      pan.connect(sendDelay);
+      pan.connect(sendChorus);
+      sendReverb.connect(this.reverbSend!);
+      sendDelay.connect(this.delaySend!);
+      sendChorus.connect(this.chorusSend!);
+      ch = { input, gain, pan, meter, sendReverb, sendDelay, sendChorus, bus: "master" };
       this.channels.set(id, ch);
     }
     return ch;
@@ -114,8 +180,24 @@ export class SyncLabEngine {
       const audible = !t.muted && (!anySolo || t.solo);
       ch.gain.gain.setTargetAtTime(audible ? t.volume : 0, this.ctx.currentTime, 0.02);
       ch.pan.pan.setTargetAtTime(clamp(t.pan, -1, 1), this.ctx.currentTime, 0.02);
+      const bus = t.bus ?? "master";
+      if (ch.bus !== bus) {
+        try {
+          ch.pan.disconnect(this.busNode(ch.bus));
+        } catch {
+          /* not connected */
+        }
+        ch.pan.connect(this.busNode(bus));
+        ch.bus = bus;
+      }
+      const sends = t.sends ?? { reverb: 0, delay: 0, chorus: 0 };
+      ch.sendReverb.gain.setTargetAtTime(clamp(sends.reverb, 0, 1), this.ctx.currentTime, 0.02);
+      ch.sendDelay.gain.setTargetAtTime(clamp(sends.delay, 0, 1), this.ctx.currentTime, 0.02);
+      ch.sendChorus.gain.setTargetAtTime(clamp(sends.chorus, 0, 1), this.ctx.currentTime, 0.02);
     }
   }
+
+
 
   removeChannel(id: string) {
     const ch = this.channels.get(id);

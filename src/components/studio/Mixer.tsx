@@ -3,11 +3,17 @@ import { Slider } from "@/components/ui/slider";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useStudio } from "@/lib/synclab/store";
-import type { BusId, Track, Transport } from "@/lib/synclab/types";
+import type { BusId, BusState, Track, Transport } from "@/lib/synclab/types";
 import { cn } from "@/lib/utils";
 
 const BUSES: BusId[] = ["drums", "vocals", "instruments", "synths", "fx", "master"];
 const DB_TICKS = [6, 0, -6, -12, -24, -48];
+const SEND_KEYS: [keyof NonNullable<Track["sends"]>, string][] = [
+  ["reverb", "REV"],
+  ["delay", "DLY"],
+  ["chorus", "CHO"],
+];
+const BUS_STRIPS: BusId[] = ["drums", "vocals", "instruments", "synths", "fx"];
 
 function toDb(v: number) {
   return 20 * Math.log10(Math.max(0.001, v));
@@ -193,6 +199,37 @@ function Strip({ t, level, selected, onSelect }: { t: Track; level: number; sele
         </button>
       </div>
 
+      {/* fx sends */}
+      <div className="w-full rounded-sm bg-surface-2/60 px-1 py-1">
+        <div className="mb-0.5 text-center font-mono text-[7px] uppercase tracking-widest text-muted-foreground">
+          Sends
+        </div>
+        {SEND_KEYS.map(([key, label]) => {
+          const value = t.sends?.[key] ?? 0;
+          return (
+            <div key={key} className="flex items-center gap-1">
+              <span className="w-5 shrink-0 font-mono text-[7px] uppercase text-muted-foreground">{label}</span>
+              <Slider
+                value={[value]}
+                min={0}
+                max={1}
+                step={0.01}
+                className="h-2 flex-1"
+                onClick={(e) => e.stopPropagation()}
+                onValueChange={([v = 0]) =>
+                  updateTrack(t.id, {
+                    sends: { reverb: 0, delay: 0, chorus: 0, ...(t.sends ?? {}), [key]: v },
+                  })
+                }
+              />
+              <span className="w-4 shrink-0 text-right font-mono text-[7px] text-muted-foreground">
+                {Math.round(value * 100)}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
       {/* bus routing */}
       <Select value={t.bus} onValueChange={(v) => updateTrack(t.id, { bus: v as BusId })}>
         <SelectTrigger
@@ -209,6 +246,37 @@ function Strip({ t, level, selected, onSelect }: { t: Track; level: number; sele
           ))}
         </SelectContent>
       </Select>
+    </div>
+  );
+}
+
+function BusStrip({ id, state, level, onChange }: { id: BusId; state: BusState; level: number; onChange: (p: Partial<BusState>) => void }) {
+  return (
+    <div className="flex w-[64px] shrink-0 flex-col items-center gap-1.5 border-r border-border bg-surface-2/50 px-1.5 py-2">
+      <span className="truncate font-mono text-[9px] font-bold uppercase tracking-wider text-primary">{id}</span>
+      <span className="font-mono text-[7px] uppercase tracking-widest text-muted-foreground">Bus</span>
+      <div className="flex items-stretch gap-1">
+        <Slider
+          orientation="vertical"
+          className="h-44 w-5"
+          value={[state.volume]}
+          min={0}
+          max={1.2}
+          step={0.01}
+          onValueChange={([v = 0]) => onChange({ volume: v })}
+        />
+        <Meter level={level} tall />
+      </div>
+      <span className="font-mono text-[9px] text-muted-foreground">{toDb(state.volume).toFixed(1)}</span>
+      <button
+        onClick={() => onChange({ muted: !state.muted })}
+        className={cn(
+          "h-5 w-full rounded-sm font-mono text-[9px] font-bold transition-colors",
+          state.muted ? "bg-amber-500 text-black" : "bg-surface text-muted-foreground hover:text-foreground"
+        )}
+      >
+        M
+      </button>
     </div>
   );
 }
@@ -242,8 +310,13 @@ function MasterStrip({ level: peak }: { level: number }) {
 }
 
 export function Mixer() {
-  const { tracks, transport, selectedId, select } = useStudio();
+  const { tracks, transport, selectedId, select, buses, setBus } = useStudio();
   const levels = useMeters(tracks, transport);
+  const busLevel = (id: BusId) => {
+    const members = tracks.filter((t) => t.bus === id && !t.muted);
+    const peak = Math.max(0, ...members.map((t) => levels.tracks[t.id] ?? 0));
+    return buses[id].muted ? 0 : peak * Math.min(1, buses[id].volume);
+  };
   return (
     <div className="flex overflow-x-auto border border-border bg-surface">
       {tracks.map((t) => (
@@ -254,6 +327,9 @@ export function Mixer() {
           selected={t.id === selectedId}
           onSelect={() => select(t.id)}
         />
+      ))}
+      {BUS_STRIPS.map((id) => (
+        <BusStrip key={id} id={id} state={buses[id]} level={busLevel(id)} onChange={(p) => setBus(id, p)} />
       ))}
       <MasterStrip level={levels.master} />
     </div>

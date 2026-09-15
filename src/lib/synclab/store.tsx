@@ -11,7 +11,7 @@ import {
 import { toast } from "sonner";
 import { getEngine } from "./audio-engine";
 import { TRACK_COLORS, applyPreset, defaultPads, defaultPatch, uid } from "./presets";
-import type { AudioClip, BusId, DrumPad, MidiNote, SynthPatch, Track, TrackKind, Transport } from "./types";
+import type { AudioClip, BusId, BusState, DrumPad, MidiNote, SynthPatch, Track, TrackKind, Transport } from "./types";
 
 const busFor = (kind: TrackKind): BusId =>
   kind === "drum"
@@ -36,6 +36,7 @@ export const newTrack = (kind: TrackKind, name: string, index: number, preset?: 
   hidden: false,
   input: kind === "audio" ? "Microphone" : kind === "midi" ? "MIDI Keyboard" : "Internal",
   bus: busFor(kind),
+  sends: { reverb: 0, delay: 0, chorus: 0 },
   steps: 16,
   patch: kind === "drum" ? undefined : preset ? applyPreset(preset) : defaultPatch(),
   notes: kind === "drum" ? undefined : [],
@@ -103,10 +104,12 @@ interface StudioState {
   selectedId: string | null;
   panel: PanelId;
   userPresets: SynthPatch[];
+  buses: Record<BusId, BusState>;
 }
 
 interface StudioApi extends StudioState {
   selected: Track | null;
+  setBus: (id: BusId, patch: Partial<BusState>) => void;
   setPanel: (p: PanelId) => void;
   select: (id: string) => void;
   addTrack: (kind: TrackKind, name?: string, preset?: string) => string;
@@ -169,9 +172,23 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const transportRef = useRef(transport);
   transportRef.current = transport;
 
+  const [buses, setBuses] = useState<Record<BusId, BusState>>({
+    drums: { volume: 1, muted: false },
+    vocals: { volume: 1, muted: false },
+    instruments: { volume: 1, muted: false },
+    synths: { volume: 1, muted: false },
+    fx: { volume: 1, muted: false },
+    master: { volume: 1, muted: false },
+  });
+
   useEffect(() => {
     if (typeof window !== "undefined" && getEngine().ctx) getEngine().syncMix(tracks);
   }, [tracks]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !getEngine().ctx) return;
+    for (const [id, b] of Object.entries(buses)) getEngine().setBus(id, b.volume, b.muted);
+  }, [buses]);
 
   // step clock
   useEffect(() => {
@@ -301,7 +318,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       selectedId,
       panel,
       userPresets,
+      buses,
       selected,
+      setBus: (id, patch) => setBuses((b) => ({ ...b, [id]: { ...b[id], ...patch } })),
       setPanel,
       select: (id) => setSelectedId(id),
       addTrack: (kind, name, preset) => {
@@ -539,7 +558,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         if (t?.patch) engine.playNote(t.id, t.patch, midi, 0.35, 0.9);
       },
     };
-  }, [tracks, transport, selectedId, panel, userPresets, updateTrack, finishRecording]);
+  }, [tracks, transport, selectedId, panel, userPresets, buses, updateTrack, finishRecording]);
 
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>;
 }
