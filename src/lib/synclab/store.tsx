@@ -713,6 +713,11 @@ export function StudioProvider({ children }: { children: ReactNode }) {
               : t,
           ),
         ),
+      midiInputs,
+      midiInputId,
+      midiLearning,
+      enableMidi,
+      setMidiInput: setMidiInputId,
       fxChains,
       addFxPlugin: (target, d) => {
         const inst = instantiate(d);
