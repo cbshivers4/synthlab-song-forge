@@ -1,24 +1,139 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { ChevronDown, Disc3, Music2, Piano, SlidersHorizontal, Waves } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { StudioProvider, useStudio, type PanelId } from "@/lib/synclab/store";
+import { TopBar } from "@/components/studio/TopBar";
+import { Timeline } from "@/components/studio/Timeline";
+import { Mixer } from "@/components/studio/Mixer";
+import { SynthEditor } from "@/components/studio/SynthEditor";
+import { DrumMachine } from "@/components/studio/DrumMachine";
+import { PianoRoll } from "@/components/studio/PianoRoll";
+import { VocalForge } from "@/components/studio/VocalForge";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
 export const Route = createFileRoute("/")({
-  component: Index,
+  head: () => ({
+    meta: [
+      { title: "SYNCLAB Studio — One-Page Detroit DAW" },
+      {
+        name: "description",
+        content:
+          "SYNCLAB is a browser DAW: unlimited tracks, a deep three-oscillator synth, a step-sequenced drum machine, piano roll and mixer, all on one page.",
+      },
+      { property: "og:title", content: "SYNCLAB Studio — One-Page Detroit DAW" },
+      {
+        property: "og:description",
+        content:
+          "Add tracks, program beats, design synths and mix a whole record without leaving a single screen.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
+  component: Studio,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
-function Index() {
+function PanelShell({
+  id,
+  title,
+  icon,
+  children,
+}: {
+  id: Exclude<PanelId, null>;
+  title: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  const { panel, setPanel } = useStudio();
+  const open = panel === id;
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+    <section className="panel overflow-hidden">
+      <button
+        className="flex w-full items-center gap-2 px-4 py-3 text-left"
+        onClick={() => setPanel(open ? null : id)}
+        aria-expanded={open}
+      >
+        <span className="text-primary">{icon}</span>
+        <h2 className="font-display text-sm font-semibold tracking-widest">{title}</h2>
+        <ChevronDown className={`ml-auto size-4 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && <div className="border-t border-border p-4">{children}</div>}
+    </section>
+  );
+}
+
+function Panels() {
+  const { selected, tracks, setPanel, select } = useStudio();
+  const drumTrack = selected?.kind === "drum" ? selected : tracks.find((t) => t.kind === "drum");
+  const synthTrack = selected?.patch ? selected : tracks.find((t) => t.patch);
+
+  return (
+    <div className="space-y-2">
+      <PanelShell id="mixer" title="MIXER" icon={<SlidersHorizontal className="size-4" />}>
+        <Mixer />
+      </PanelShell>
+
+      <PanelShell id="synth" title="SYNTH EDITOR" icon={<Music2 className="size-4" />}>
+        {synthTrack ? (
+          <>
+            <p className="label-xs mb-3">Editing {synthTrack.name}</p>
+            <SynthEditor track={synthTrack} />
+          </>
+        ) : (
+          <p className="text-sm text-muted-foreground">Add an instrument track to open the synthesizer.</p>
+        )}
+      </PanelShell>
+
+      <PanelShell id="drums" title="DRUM MACHINE" icon={<Disc3 className="size-4" />}>
+        {drumTrack ? (
+          <DrumMachine track={drumTrack} />
+        ) : (
+          <p className="text-sm text-muted-foreground">Add a drum machine track to program a beat.</p>
+        )}
+      </PanelShell>
+
+      <PanelShell id="piano" title="PIANO ROLL" icon={<Piano className="size-4" />}>
+        {synthTrack ? (
+          <PianoRoll track={synthTrack} />
+        ) : (
+          <p className="text-sm text-muted-foreground">Select an instrument or MIDI track to edit its notes.</p>
+        )}
+      </PanelShell>
+
+      <PanelShell id="vocal" title="VOCAL FORGE" icon={<Waves className="size-4" />}>
+        <VocalForge />
+      </PanelShell>
+
+      {selected && (
+        <div className="flex flex-wrap gap-2 pt-1">
+          <span className="label-xs self-center">Selected: {selected.name}</span>
+          <Button size="sm" variant="ghost" onClick={() => setPanel(selected.kind === "drum" ? "drums" : "synth")}>
+            Open editor
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => setPanel("piano")}>
+            Open piano roll
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => select(selected.id)}>
+            Track settings
+          </Button>
+        </div>
+      )}
     </div>
+  );
+}
+
+function Studio() {
+  return (
+    <StudioProvider>
+      <div className="min-h-screen">
+        <TopBar />
+        <main className="mx-auto max-w-[1600px] space-y-4 px-4 py-4">
+          <Timeline />
+          <Panels />
+          <footer className="label-xs pb-8 text-center">
+            SYNCLAB — simple on the surface, professional underneath.
+          </footer>
+        </main>
+      </div>
+    </StudioProvider>
   );
 }
