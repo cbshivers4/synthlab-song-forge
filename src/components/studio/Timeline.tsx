@@ -64,16 +64,6 @@ function Waveform({ track }: { track: Track }) {
   if (!active) return null;
 
   const peaks = active.peaks.length > 0 ? active.peaks : [0];
-  const W = 1000;
-  const H = 100;
-  const step = W / Math.max(1, peaks.length - 1);
-  // continuous filled waveform: top edge left→right, bottom edge right→left
-  const top = peaks.map((p, i) => `${(i * step).toFixed(2)},${(50 - Math.max(0.8, p * 48)).toFixed(2)}`);
-  const bottom = [...peaks]
-    .map((p, i) => ({ p, i }))
-    .reverse()
-    .map(({ p, i }) => `${(i * step).toFixed(2)},${(50 + Math.max(0.8, p * 48)).toFixed(2)}`);
-  const path = `M ${top.join(" L ")} L ${bottom.join(" L ")} Z`;
 
   // Logic/Audacity-style: thin vertical bars from center on a transparent body
   return (
