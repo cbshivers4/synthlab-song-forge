@@ -474,7 +474,11 @@ export function Mixer() {
       {BUS_STRIPS.map((id) => (
         <BusStrip key={id} id={id} state={buses[id]} level={busLevel(id)} onChange={(p) => setBus(id, p)} />
       ))}
+      {(["reverb", "delay", "chorus"] as const).map((id) => (
+        <SendStrip key={id} id={id} level={levels.master} />
+      ))}
       <MasterStrip level={levels.master} />
+
     </div>
   );
 }
