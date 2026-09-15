@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { getEngine } from "./audio-engine";
 import { TRACK_COLORS, applyPreset, defaultPads, defaultPatch, uid } from "./presets";
 import { BUILT_IN_PLUGINS, instantiate } from "./plugins";
+import { getMidiAccess, listInputs, midiSupported, subscribe, type MidiPortInfo } from "./midi";
 import type {
   AudioClip,
   BusId,
@@ -119,6 +120,11 @@ interface StudioApi extends StudioState {
   togglePluginBypass: (trackId: string, instanceId: string) => void;
   movePlugin: (trackId: string, instanceId: string, dir: -1 | 1) => void;
   setPluginParam: (trackId: string, instanceId: string, paramId: string, value: number) => void;
+  midiInputs: MidiPortInfo[];
+  midiInputId: string | null;
+  midiLearning: boolean;
+  enableMidi: () => void;
+  setMidiInput: (id: string | null) => void;
   fxChains: Record<string, PluginInstance[]>;
   addFxPlugin: (target: string, def: PluginDef) => void;
   removeFxPlugin: (target: string, instanceId: string) => void;
@@ -172,6 +178,96 @@ export function StudioProvider({ children }: { children: ReactNode }) {
 
   const [installedPlugins, setInstalledPlugins] = useState<PluginDef[]>(BUILT_IN_PLUGINS);
   const [fxChains, setFxChains] = useState<Record<string, PluginInstance[]>>({});
+  const [midiInputs, setMidiInputs] = useState<MidiPortInfo[]>([]);
+  const [midiInputId, setMidiInputId] = useState<string | null>(null);
+  const [midiLearning, setMidiLearning] = useState(false);
+  const selectedIdRef = useRef(selectedId);
+  selectedIdRef.current = selectedId;
+  const heldRef = useRef(new Map<number, { id: string; trackId: string; t0: number }>());
+
+  const enableMidi = useCallback(() => {
+    if (!midiSupported()) {
+      toast.error("MIDI not available", {
+        description: "This browser can't see MIDI controllers. Chrome or Edge support them.",
+      });
+      return;
+    }
+    void getMidiAccess().then((a) => {
+      const list = listInputs(a);
+      setMidiInputs(list);
+      if (!list.length) {
+        toast("No MIDI controller found", { description: "Plug one in, then press MIDI again." });
+        return;
+      }
+      setMidiInputId((cur) => cur ?? list[0]?.id ?? null);
+      toast.success(`${list.length} MIDI input${list.length > 1 ? "s" : ""} connected`, {
+        description: list.map((i) => i.name).join(", "),
+      });
+      if (a) a.onstatechange = () => setMidiInputs(listInputs(a));
+    });
+  }, []);
+
+  // Live MIDI controller input: plays the armed/selected instrument and
+  // records notes onto it while the transport is recording.
+  useEffect(() => {
+    if (!midiInputId) {
+      setMidiLearning(false);
+      return;
+    }
+    let off = () => {};
+    let cancelled = false;
+    void getMidiAccess().then((a) => {
+      if (cancelled) return;
+      off = subscribe(a, midiInputId, ({ type, pitch, velocity }) => {
+        const notable = (t: Track) => t.kind === "instrument" || t.kind === "midi" || t.kind === "sampler";
+        const target =
+          tracksRef.current.find((t) => t.armed && notable(t)) ??
+          tracksRef.current.find((t) => t.id === selectedIdRef.current && notable(t)) ??
+          tracksRef.current.find(notable);
+        if (!target) return;
+        const engine = getEngine();
+        engine.init();
+        const tp = transportRef.current;
+        const stepDur = 60 / tp.bpm / 4;
+        if (type === "on") {
+          setMidiLearning(true);
+          engine.syncMix(tracksRef.current);
+          if (target.patch) engine.playNote(target.id, target.patch, pitch, 0.6, Math.max(0.15, velocity));
+          if (tp.recording) {
+            const id = uid();
+            heldRef.current.set(pitch, { id, trackId: target.id, t0: performance.now() });
+            const note: MidiNote = {
+              id,
+              step: tp.step,
+              length: 1,
+              pitch,
+              velocity: Math.max(0.15, velocity),
+            };
+            setTracks((ts) =>
+              ts.map((t) => (t.id === target.id ? { ...t, notes: [...(t.notes ?? []), note] } : t)),
+            );
+          }
+        } else {
+          setMidiLearning(false);
+          const held = heldRef.current.get(pitch);
+          if (!held) return;
+          heldRef.current.delete(pitch);
+          const steps = Math.max(0.25, Math.round(((performance.now() - held.t0) / 1000 / stepDur) * 4) / 4);
+          setTracks((ts) =>
+            ts.map((t) =>
+              t.id === held.trackId
+                ? { ...t, notes: (t.notes ?? []).map((n) => (n.id === held.id ? { ...n, length: steps } : n)) }
+                : t,
+            ),
+          );
+        }
+      });
+    });
+    return () => {
+      cancelled = true;
+      off();
+    };
+  }, [midiInputId]);
 
   useEffect(() => {
     if (typeof window !== "undefined" && getEngine().ctx) {
@@ -457,7 +553,16 @@ export function StudioProvider({ children }: { children: ReactNode }) {
                 }),
               );
           } else {
-            toast("Arm a channel first", { description: "Press ● REC on an audio or vocal track, then record." });
+            const noteArmed = tracksRef.current.find(
+              (t) => t.armed && (t.kind === "instrument" || t.kind === "midi"),
+            );
+            if (noteArmed) {
+              toast("Recording MIDI", { description: `Play your controller — notes land on ${noteArmed.name}.` });
+            } else {
+              toast("Arm a channel first", {
+                description: "Press ● REC on an audio, vocal or instrument track, then record.",
+              });
+            }
           }
           setTransportState((s) => ({ ...s, recording: true, playing: true, paused: false }));
         } else {
@@ -608,6 +713,11 @@ export function StudioProvider({ children }: { children: ReactNode }) {
               : t,
           ),
         ),
+      midiInputs,
+      midiInputId,
+      midiLearning,
+      enableMidi,
+      setMidiInput: setMidiInputId,
       fxChains,
       addFxPlugin: (target, d) => {
         const inst = instantiate(d);
@@ -633,7 +743,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           ),
         })),
     };
-  }, [tracks, transport, selectedId, panel, userPresets, buses, installedPlugins, fxChains, updateTrack, finishRecording]);
+  }, [tracks, transport, selectedId, panel, userPresets, buses, installedPlugins, fxChains, midiInputs, midiInputId, midiLearning, enableMidi, updateTrack, finishRecording]);
 
 
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>;
