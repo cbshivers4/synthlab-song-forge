@@ -96,22 +96,27 @@ export function Keyboard() {
       </div>
 
       <div
-        className="relative h-36 select-none overflow-hidden rounded-[3px] border border-border bg-background/60"
+        className="relative h-36 select-none overflow-hidden rounded-[3px] border border-border bg-black"
         style={{ touchAction: "none" }}
       >
         {/* white keys */}
-        <div className="flex h-full">
+        <div className="flex h-full gap-px bg-black">
           {whiteKeys.map((midi) => (
             <button
               key={midi}
               onPointerDown={() => play(midi)}
-              className={`relative flex-1 rounded-b-[3px] border-r border-border/70 transition-colors ${
-                held === midi ? "bg-primary/70" : "bg-surface-2 hover:bg-surface"
+              className={`relative flex-1 rounded-b-[3px] transition-colors ${
+                held === midi
+                  ? "bg-[oklch(0.75_0.12_250)]"
+                  : "bg-[oklch(0.96_0.005_90)] hover:bg-[oklch(0.9_0.005_90)]"
               }`}
+              style={{
+                backgroundImage: "linear-gradient(180deg, oklch(0.9 0.005 90) 0%, oklch(0.98 0.003 90) 12%, oklch(0.96 0.005 90) 100%)",
+              }}
               aria-label={label(midi)}
             >
               {midi % 12 === 0 && (
-                <span className="absolute bottom-1 left-1/2 -translate-x-1/2 font-mono text-[9px] text-muted-foreground">
+                <span className="absolute bottom-1 left-1/2 -translate-x-1/2 font-mono text-[9px] font-medium text-neutral-500">
                   {label(midi)}
                 </span>
               )}
@@ -123,13 +128,14 @@ export function Keyboard() {
           <button
             key={midi}
             onPointerDown={() => play(midi)}
-            className={`absolute top-0 z-10 h-[58%] rounded-b-[3px] border border-border transition-colors ${
-              held === midi ? "bg-primary" : "bg-background hover:bg-surface"
+            className={`absolute top-0 z-10 h-[58%] rounded-b-[3px] transition-colors ${
+              held === midi ? "bg-[oklch(0.5_0.12_250)]" : "bg-[oklch(0.12_0.005_255)] hover:bg-[oklch(0.2_0.005_255)]"
             }`}
             style={{
-              left: `calc(${(pos / whiteCount) * 100}% - ${100 / whiteCount / 3}%)`,
+              left: `calc(${(pos / whiteCount) * 100}% + ${100 / whiteCount * 0.72}%)`,
               width: `${(100 / whiteCount) * 0.62}%`,
-              boxShadow: "0 3px 6px oklch(0 0 0 / 0.5)",
+              backgroundImage: "linear-gradient(180deg, oklch(0.25 0.005 255) 0%, oklch(0.08 0.005 255) 80%)",
+              boxShadow: "0 3px 6px oklch(0 0 0 / 0.6)",
             }}
             aria-label={label(midi)}
           />
