@@ -178,6 +178,96 @@ export function StudioProvider({ children }: { children: ReactNode }) {
 
   const [installedPlugins, setInstalledPlugins] = useState<PluginDef[]>(BUILT_IN_PLUGINS);
   const [fxChains, setFxChains] = useState<Record<string, PluginInstance[]>>({});
+  const [midiInputs, setMidiInputs] = useState<MidiPortInfo[]>([]);
+  const [midiInputId, setMidiInputId] = useState<string | null>(null);
+  const [midiLearning, setMidiLearning] = useState(false);
+  const selectedIdRef = useRef(selectedId);
+  selectedIdRef.current = selectedId;
+  const heldRef = useRef(new Map<number, { id: string; trackId: string; t0: number }>());
+
+  const enableMidi = useCallback(() => {
+    if (!midiSupported()) {
+      toast.error("MIDI not available", {
+        description: "This browser can't see MIDI controllers. Chrome or Edge support them.",
+      });
+      return;
+    }
+    void getMidiAccess().then((a) => {
+      const list = listInputs(a);
+      setMidiInputs(list);
+      if (!list.length) {
+        toast("No MIDI controller found", { description: "Plug one in, then press MIDI again." });
+        return;
+      }
+      setMidiInputId((cur) => cur ?? list[0]?.id ?? null);
+      toast.success(`${list.length} MIDI input${list.length > 1 ? "s" : ""} connected`, {
+        description: list.map((i) => i.name).join(", "),
+      });
+      if (a) a.onstatechange = () => setMidiInputs(listInputs(a));
+    });
+  }, []);
+
+  // Live MIDI controller input: plays the armed/selected instrument and
+  // records notes onto it while the transport is recording.
+  useEffect(() => {
+    if (!midiInputId) {
+      setMidiLearning(false);
+      return;
+    }
+    let off = () => {};
+    let cancelled = false;
+    void getMidiAccess().then((a) => {
+      if (cancelled) return;
+      off = subscribe(a, midiInputId, ({ type, pitch, velocity }) => {
+        const notable = (t: Track) => t.kind === "instrument" || t.kind === "midi" || t.kind === "sampler";
+        const target =
+          tracksRef.current.find((t) => t.armed && notable(t)) ??
+          tracksRef.current.find((t) => t.id === selectedIdRef.current && notable(t)) ??
+          tracksRef.current.find(notable);
+        if (!target) return;
+        const engine = getEngine();
+        engine.init();
+        const tp = transportRef.current;
+        const stepDur = 60 / tp.bpm / 4;
+        if (type === "on") {
+          setMidiLearning(true);
+          engine.syncMix(tracksRef.current);
+          if (target.patch) engine.playNote(target.id, target.patch, pitch, 0.6, Math.max(0.15, velocity));
+          if (tp.recording) {
+            const id = uid();
+            heldRef.current.set(pitch, { id, trackId: target.id, t0: performance.now() });
+            const note: MidiNote = {
+              id,
+              step: tp.step,
+              length: 1,
+              pitch,
+              velocity: Math.max(0.15, velocity),
+            };
+            setTracks((ts) =>
+              ts.map((t) => (t.id === target.id ? { ...t, notes: [...(t.notes ?? []), note] } : t)),
+            );
+          }
+        } else {
+          setMidiLearning(false);
+          const held = heldRef.current.get(pitch);
+          if (!held) return;
+          heldRef.current.delete(pitch);
+          const steps = Math.max(0.25, Math.round(((performance.now() - held.t0) / 1000 / stepDur) * 4) / 4);
+          setTracks((ts) =>
+            ts.map((t) =>
+              t.id === held.trackId
+                ? { ...t, notes: (t.notes ?? []).map((n) => (n.id === held.id ? { ...n, length: steps } : n)) }
+                : t,
+            ),
+          );
+        }
+      });
+    });
+    return () => {
+      cancelled = true;
+      off();
+    };
+  }, [midiInputId]);
 
   useEffect(() => {
     if (typeof window !== "undefined" && getEngine().ctx) {
