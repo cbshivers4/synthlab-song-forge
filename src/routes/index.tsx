@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ChevronDown, Disc3, Music2, Piano, SlidersHorizontal, Waves } from "lucide-react";
+import { Disc3, Music2, Piano, SlidersHorizontal, Waves, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStudio, type PanelId } from "@/lib/synclab/store";
 import { TopBar } from "@/components/studio/TopBar";
@@ -32,76 +32,53 @@ export const Route = createFileRoute("/")({
   component: Studio,
 });
 
-function PanelShell({
-  id,
-  title,
-  icon,
-  children,
-}: {
-  id: Exclude<PanelId, null>;
-  title: string;
-  icon: React.ReactNode;
-  children: React.ReactNode;
-}) {
-  const { panel, setPanel } = useStudio();
-  const open = panel === id;
-  return (
-    <section className="panel overflow-hidden">
-      <button
-        className="flex w-full items-center gap-2 px-4 py-3 text-left"
-        onClick={() => setPanel(open ? null : id)}
-        aria-expanded={open}
-      >
-        <span className="text-primary">{icon}</span>
-        <h2 className="font-display text-sm font-semibold tracking-widest">{title}</h2>
-        <ChevronDown className={`ml-auto size-4 transition-transform ${open ? "rotate-180" : ""}`} />
-      </button>
-      {open && <div className="border-t border-border p-4">{children}</div>}
-    </section>
-  );
-}
-
 function Panels() {
-  const { selected, tracks, setPanel, select } = useStudio();
+  const { selected, tracks, panel, setPanel, select } = useStudio();
   const drumTrack = selected?.kind === "drum" ? selected : tracks.find((t) => t.kind === "drum");
   const synthTrack = selected?.patch ? selected : tracks.find((t) => t.patch);
+  if (!panel) return null;
+
+  const config: Record<Exclude<PanelId, null>, { title: string; icon: React.ReactNode }> = {
+    mixer: { title: "MIXER", icon: <SlidersHorizontal className="size-4" /> },
+    synth: { title: "INSTRUMENT EDITOR", icon: <Music2 className="size-4" /> },
+    drums: { title: "DRUM MACHINE", icon: <Disc3 className="size-4" /> },
+    piano: { title: "PIANO ROLL", icon: <Piano className="size-4" /> },
+    vocal: { title: "VOCAL FORGE", icon: <Waves className="size-4" /> },
+  };
+  const current = config[panel];
 
   return (
-    <div className="space-y-2">
-      <PanelShell id="mixer" title="MIXER" icon={<SlidersHorizontal className="size-4" />}>
-        <Mixer />
-      </PanelShell>
-
-      <PanelShell id="synth" title="SYNTH EDITOR" icon={<Music2 className="size-4" />}>
-        {synthTrack ? (
+    <section className="border-t border-border pt-4">
+      <div className="mb-4 flex items-center gap-2">
+        <span className="text-primary">{current.icon}</span>
+        <h2 className="font-display text-sm font-semibold tracking-widest">{current.title}</h2>
+        <Button size="icon" variant="ghost" className="ml-auto size-8" onClick={() => setPanel(null)} aria-label="Close editor">
+          <X className="size-4" />
+        </Button>
+      </div>
+      {panel === "mixer" && <Mixer />}
+      {panel === "synth" &&
+        (synthTrack ? (
           <>
             <p className="label-xs mb-3">Editing {synthTrack.name}</p>
             <SynthEditor track={synthTrack} />
           </>
         ) : (
           <p className="text-sm text-muted-foreground">Add an instrument track to open the synthesizer.</p>
-        )}
-      </PanelShell>
-
-      <PanelShell id="drums" title="DRUM MACHINE" icon={<Disc3 className="size-4" />}>
-        {drumTrack ? (
+        ))}
+      {panel === "drums" &&
+        (drumTrack ? (
           <DrumMachine track={drumTrack} />
         ) : (
           <p className="text-sm text-muted-foreground">Add a drum machine track to program a beat.</p>
-        )}
-      </PanelShell>
-
-      <PanelShell id="piano" title="PIANO ROLL" icon={<Piano className="size-4" />}>
-        {synthTrack ? (
+        ))}
+      {panel === "piano" &&
+        (synthTrack ? (
           <PianoRoll track={synthTrack} />
         ) : (
           <p className="text-sm text-muted-foreground">Select an instrument or MIDI track to edit its notes.</p>
-        )}
-      </PanelShell>
-
-      <PanelShell id="vocal" title="VOCAL FORGE" icon={<Waves className="size-4" />}>
-        <VocalForge />
-      </PanelShell>
+        ))}
+      {panel === "vocal" && <VocalForge />}
 
       {selected && (
         <div className="flex flex-wrap gap-2 pt-1">
@@ -117,7 +94,7 @@ function Panels() {
           </Button>
         </div>
       )}
-    </div>
+    </section>
   );
 }
 

@@ -29,6 +29,7 @@ import { useStudio } from "@/lib/synclab/store";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { INSTRUMENTS } from "@/lib/synclab/presets";
 import { toast } from "sonner";
+import synclabLogo from "@/assets/synclab-logo-dark.png";
 
 export function TopBar() {
   const { transport, setTransport, togglePlay, toggleRecord, stop, addTrack, setPanel, panel } = useStudio();
@@ -36,14 +37,14 @@ export function TopBar() {
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur">
       <div className="flex flex-wrap items-center gap-3 px-4 py-3">
-        <div className="flex items-center gap-2 pr-2">
-          <div className="grid size-8 place-items-center rounded-md" style={{ background: "var(--gradient-neon)" }}>
-            <Waves className="size-4 text-neon-foreground" />
-          </div>
-          <div className="leading-none">
-            <h1 className="font-display text-lg font-bold tracking-tight">SYNCLAB</h1>
-            <p className="label-xs">Detroit Studio Engine</p>
-          </div>
+        <div className="flex min-w-44 items-center pr-2">
+          <img
+            src={synclabLogo}
+            alt="SYNCLAB"
+            width={1143}
+            height={242}
+            className="h-9 w-auto max-w-48 object-contain"
+          />
         </div>
 
         <div className="flex items-center gap-1 rounded-lg border border-border bg-surface p-1">

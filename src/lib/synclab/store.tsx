@@ -44,8 +44,23 @@ export const newTrack = (kind: TrackKind, name: string, index: number, preset?: 
 });
 
 const initialTracks = (): Track[] => {
-  const drums = newTrack("drum", "DRUMS", 0);
-  const bass = newTrack("instrument", "BASS", 1, "Sub Bass");
+  const makePeaks = (seed: number, count = 96) =>
+    Array.from({ length: count }, (_, i) => {
+      const pulse = Math.abs(Math.sin((i + seed) * 0.37) * Math.cos((i + seed) * 0.11));
+      return Math.min(1, 0.12 + pulse * (0.55 + 0.3 * Math.sin(i * 0.07) ** 2));
+    });
+  const instrumental = newTrack("audio", "INSTRUMENTAL", 0);
+  const instrumentalClip: AudioClip = {
+    id: uid(),
+    name: "DETROIT LOOP.WAV",
+    peaks: makePeaks(3, 144),
+    duration: 28.4,
+  };
+  instrumental.clips = [instrumentalClip];
+  instrumental.activeClipId = instrumentalClip.id;
+  instrumental.input = "Stereo File";
+  const drums = newTrack("drum", "DRUMS", 1);
+  const bass = newTrack("instrument", "BASS", 2, "Sub Bass");
   bass.notes = [0, 4, 8, 12].map((s, i) => ({
     id: uid(),
     step: s,
@@ -53,7 +68,7 @@ const initialTracks = (): Track[] => {
     pitch: [36, 36, 43, 39][i] as number,
     velocity: 0.9,
   }));
-  const lead = newTrack("instrument", "SYNTH LEAD", 2, "Cybotron Lead");
+  const lead = newTrack("instrument", "SYNTH LEAD", 3, "Cybotron Lead");
   lead.notes = [0, 3, 6, 10, 14].map((s, i) => ({
     id: uid(),
     step: s,
@@ -61,15 +76,23 @@ const initialTracks = (): Track[] => {
     pitch: [72, 75, 79, 77, 72][i] as number,
     velocity: 0.75,
   }));
-  const pad = newTrack("instrument", "SYNTH PAD", 3, "Warehouse Pad");
+  const pad = newTrack("instrument", "SYNTH PAD", 4, "Warehouse Pad");
   pad.notes = [
     { id: uid(), step: 0, length: 8, pitch: 60, velocity: 0.5 },
     { id: uid(), step: 0, length: 8, pitch: 67, velocity: 0.5 },
     { id: uid(), step: 8, length: 8, pitch: 63, velocity: 0.5 },
     { id: uid(), step: 8, length: 8, pitch: 70, velocity: 0.5 },
   ];
-  const vox = newTrack("audio", "VOCAL", 4);
-  return [drums, bass, lead, pad, vox];
+  const vox = newTrack("audio", "VOCAL", 5);
+  const vocalClip: AudioClip = {
+    id: uid(),
+    name: "VERSE TAKE 1.WAV",
+    peaks: makePeaks(19, 112),
+    duration: 16.8,
+  };
+  vox.clips = [vocalClip];
+  vox.activeClipId = vocalClip.id;
+  return [instrumental, drums, bass, lead, pad, vox];
 };
 
 export type PanelId = "mixer" | "synth" | "drums" | "piano" | "vocal" | null;
