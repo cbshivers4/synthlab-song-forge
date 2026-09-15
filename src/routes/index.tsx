@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { ArrowDownToLine, ArrowUpFromLine, Disc3, FolderOpen, KeyboardMusic, Music2, Piano, SlidersHorizontal, Settings2, Waves, X } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, Cpu, Disc3, FolderOpen, KeyboardMusic, Music2, Piano, SlidersHorizontal, Settings2, Waves, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStudio, type PanelId } from "@/lib/synclab/store";
 import { TopBar } from "@/components/studio/TopBar";
@@ -15,6 +15,7 @@ import { Settings } from "@/components/studio/Settings";
 import { Keyboard } from "@/components/studio/Keyboard";
 import { Browser } from "@/components/studio/Browser";
 import { SplashScreen } from "@/components/studio/SplashScreen";
+import { PluginRack } from "@/components/studio/PluginRack";
 import { FloatingDevice } from "@/components/studio/FloatingDevice";
 import synthFace from "@/assets/hw-synth.jpg";
 import drumFace from "@/assets/hw-drum.jpg";
@@ -153,6 +154,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
       {panel === "settings" && <Settings />}
       {panel === "keys" && <Keyboard />}
       {panel === "browser" && <Browser />}
+      {panel === "plugins" && <PluginRack />}
 
       </div>
 
