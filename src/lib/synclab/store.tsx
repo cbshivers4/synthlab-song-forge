@@ -599,8 +599,33 @@ export function StudioProvider({ children }: { children: ReactNode }) {
               : t,
           ),
         ),
+      fxChains,
+      addFxPlugin: (target, d) => {
+        const inst = instantiate(d);
+        setFxChains((c) => ({ ...c, [target]: [...(c[target] ?? []), inst] }));
+        toast.success(`${d.name} inserted on ${target.split(":")[1]?.toUpperCase()}`, {
+          description: `${d.vendor} · ${d.format}`,
+        });
+      },
+      removeFxPlugin: (target, instanceId) =>
+        setFxChains((c) => ({ ...c, [target]: (c[target] ?? []).filter((p) => p.id !== instanceId) })),
+      toggleFxBypass: (target, instanceId) =>
+        setFxChains((c) => ({
+          ...c,
+          [target]: (c[target] ?? []).map((p) => (p.id === instanceId ? { ...p, bypass: !p.bypass } : p)),
+        })),
+      setFxParam: (target, instanceId, paramId, value) =>
+        setFxChains((c) => ({
+          ...c,
+          [target]: (c[target] ?? []).map((p) =>
+            p.id === instanceId
+              ? { ...p, params: p.params.map((x: PluginParam) => (x.id === paramId ? { ...x, value } : x)) }
+              : p,
+          ),
+        })),
     };
-  }, [tracks, transport, selectedId, panel, userPresets, buses, installedPlugins, updateTrack, finishRecording]);
+  }, [tracks, transport, selectedId, panel, userPresets, buses, installedPlugins, fxChains, updateTrack, finishRecording]);
+
 
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>;
 }
