@@ -63,12 +63,50 @@ function Panels() {
         <span className="text-primary">{current.icon}</span>
         <h2 className="font-display text-[11px] font-semibold tracking-[0.2em]">{current.title}</h2>
         {selected && <span className="label-xs">· {selected.name}</span>}
-        <Button size="icon" variant="ghost" className="ml-auto size-7" onClick={() => setPanel(null)} aria-label="Close editor">
-          <X className="size-4" />
-        </Button>
+        <div className="ml-auto flex items-center gap-1">
+          {panel === "mixer" && (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 gap-1.5 font-mono text-[10px] tracking-widest uppercase"
+              onClick={() => setMixerDetached((d) => !d)}
+            >
+              {mixerDetached ? <ArrowDownToLine className="size-3.5" /> : <ArrowUpFromLine className="size-3.5" />}
+              {mixerDetached ? "Dock" : "Pop out"}
+            </Button>
+          )}
+          <Button size="icon" variant="ghost" className="size-7" onClick={() => setPanel(null)} aria-label="Close editor">
+            <X className="size-4" />
+          </Button>
+        </div>
       </div>
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3">
-      {panel === "mixer" && <Mixer />}
+      {panel === "mixer" &&
+        (mixerDetached ? (
+          <MixerWindow onClose={() => setMixerDetached(false)}>
+            <div className="rack flex h-full flex-col">
+              <div className="flex items-center gap-2 border-b border-border bg-surface-2/60 px-3 py-1.5">
+                <SlidersHorizontal className="size-4 text-primary" />
+                <h2 className="font-display text-[11px] font-semibold tracking-[0.2em]">MIXER</h2>
+                <span className="label-xs">· detached</span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="ml-auto h-7 gap-1.5 font-mono text-[10px] tracking-widest uppercase"
+                  onClick={() => setMixerDetached(false)}
+                >
+                  <ArrowDownToLine className="size-3.5" />
+                  Dock
+                </Button>
+              </div>
+              <div className="min-h-0 flex-1 overflow-y-auto p-3">
+                <Mixer />
+              </div>
+            </div>
+          </MixerWindow>
+        ) : (
+          <Mixer />
+        ))}
       {panel === "synth" &&
         (synthTrack ? (
           <>
