@@ -15,6 +15,11 @@ import { Settings } from "@/components/studio/Settings";
 import { Keyboard } from "@/components/studio/Keyboard";
 import { Browser } from "@/components/studio/Browser";
 import { SplashScreen } from "@/components/studio/SplashScreen";
+import { FloatingDevice } from "@/components/studio/FloatingDevice";
+import synthFace from "@/assets/hw-synth.jpg";
+import drumFace from "@/assets/hw-drum.jpg";
+
+type FloatState = { synth: boolean; drums: boolean };
 
 export const Route = createFileRoute("/")({
   head: () => ({
