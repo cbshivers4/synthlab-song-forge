@@ -264,3 +264,61 @@ export function TopBar() {
     </header>
   );
 }
+
+function TBtn({
+  label,
+  active,
+  danger,
+  onClick,
+  children,
+}: {
+  label: string;
+  active?: boolean;
+  danger?: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <Button
+      size="sm"
+      variant="ghost"
+      onClick={onClick}
+      aria-label={label}
+      aria-pressed={Boolean(active)}
+      className={`h-10 flex-col gap-0.5 px-2.5 ${active ? (danger ? "text-destructive" : "text-primary") : ""}`}
+    >
+      {children}
+      <span className="font-mono text-[9px] tracking-wider">{label}</span>
+    </Button>
+  );
+}
+
+function FeatBtn({
+  label,
+  icon,
+  active,
+  onClick,
+}: {
+  label: string;
+  icon: React.ReactNode;
+  active?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <Button
+      size="sm"
+      variant="ghost"
+      onClick={onClick}
+      aria-pressed={Boolean(active)}
+      className={`h-7 gap-1 px-2 font-mono text-[10px] tracking-wider ${
+        active
+          ? "bg-primary/15 text-primary shadow-[inset_0_0_0_1px_var(--primary)]"
+          : "text-muted-foreground"
+      }`}
+    >
+      <span className={`size-1.5 rounded-full ${active ? "bg-primary" : "bg-border"}`} />
+      {icon}
+      {label}
+    </Button>
+  );
+}
