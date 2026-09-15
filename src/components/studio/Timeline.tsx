@@ -48,6 +48,8 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useStudio } from "@/lib/synclab/store";
+import { AddTrackMenu } from "@/components/studio/AddTrackMenu";
+
 import { INSTRUMENTS, KIND_LABEL } from "@/lib/synclab/presets";
 import type { Track } from "@/lib/synclab/types";
 
