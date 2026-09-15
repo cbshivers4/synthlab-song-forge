@@ -63,30 +63,35 @@ function Waveform({ track }: { track: Track }) {
   const active = clips.find((c) => c.id === track.activeClipId) ?? clips[clips.length - 1];
   if (!active) return null;
   return (
-    <div className="flex flex-1 flex-col gap-1">
-      <div className="flex h-9 items-center gap-[1px] overflow-hidden rounded-md bg-background/60 px-1">
+    <div className="absolute inset-y-1 left-0 right-1 flex flex-col overflow-hidden rounded-[3px] border"
+      style={{ borderColor: `color-mix(in oklab, ${track.color} 55%, transparent)`, background: `color-mix(in oklab, ${track.color} 12%, var(--background))` }}
+    >
+      <div className="flex items-center gap-1 px-1.5 py-[2px]" style={{ background: `color-mix(in oklab, ${track.color} 45%, transparent)` }}>
+        <span className="truncate font-mono text-[9px] tracking-wider text-foreground/90">
+          {active.name} · {active.duration.toFixed(1)}s
+        </span>
+        <div className="ml-auto flex items-center gap-1">
+          {clips.map((c) => (
+            <button
+              key={c.id}
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveClip(track.id, c.id);
+              }}
+              onDoubleClick={() => removeClip(track.id, c.id)}
+              title="Click to choose take, double-click to delete"
+              className={`size-2 rounded-full border ${c.id === active.id ? "border-foreground bg-foreground" : "border-foreground/50"}`}
+            />
+          ))}
+        </div>
+      </div>
+      <div className="flex flex-1 items-center gap-[1px] px-1">
         {active.peaks.map((p, i) => (
           <div
             key={i}
-            className="flex-1 rounded-[1px]"
-            style={{ height: `${Math.round(Math.max(6, p * 100))}%`, background: track.color, opacity: 0.85 }}
+            className="flex-1"
+            style={{ height: `${Math.round(Math.max(6, p * 92))}%`, background: track.color, opacity: 0.9 }}
           />
-        ))}
-      </div>
-      <div className="flex flex-wrap items-center gap-1">
-        <span className="label-xs">TAKES</span>
-        {clips.map((c) => (
-          <button
-            key={c.id}
-            onClick={() => setActiveClip(track.id, c.id)}
-            onDoubleClick={() => removeClip(track.id, c.id)}
-            title="Click to choose take, double-click to delete"
-            className={`rounded-full border px-2 py-0.5 font-mono text-[10px] ${
-              c.id === active.id ? "border-primary text-primary" : "border-border text-muted-foreground"
-            }`}
-          >
-            {c.name} · {c.duration.toFixed(1)}s
-          </button>
         ))}
       </div>
     </div>
@@ -98,7 +103,7 @@ function Lane({ track }: { track: Track }) {
   if ((track.clips?.length ?? 0) > 0) return <Waveform track={track} />;
   if (track.recording)
     return (
-      <div className="flex flex-1 items-center justify-center rounded-md border border-destructive/60 bg-destructive/10">
+      <div className="absolute inset-y-1 left-0 right-1 flex items-center justify-center rounded-[3px] border border-destructive/60 bg-destructive/10">
         <span className="animate-pulse font-mono text-[11px] text-destructive">● RECORDING INPUT…</span>
       </div>
     );
@@ -108,18 +113,21 @@ function Lane({ track }: { track: Track }) {
     return track.notes?.some((n) => i >= n.step % 16 && i < (n.step % 16) + n.length) ?? false;
   };
   return (
-    <div className="grid flex-1 grid-cols-[repeat(16,minmax(0,1fr))] gap-[2px] rounded-md bg-background/50 p-1">
+    <div className="absolute inset-y-1 left-0 right-1 grid grid-cols-[repeat(16,minmax(0,1fr))]">
       {cells.map((_, i) => (
-        <div
-          key={i}
-          className="h-9 rounded-[3px] border transition-colors"
-          style={{
-            borderColor: transport.playing && transport.step === i ? "var(--neon)" : "transparent",
-            background: active(i)
-              ? `color-mix(in oklab, ${track.color} 65%, transparent)`
-              : "color-mix(in oklab, var(--surface-2) 70%, transparent)",
-          }}
-        />
+        <div key={i} className="px-[1px] py-[1px]">
+          {active(i) ? (
+            <div
+              className="h-full rounded-[2px]"
+              style={{
+                background: `color-mix(in oklab, ${track.color} 70%, transparent)`,
+                boxShadow: `inset 0 1px 0 color-mix(in oklab, ${track.color} 90%, white)`,
+              }}
+            />
+          ) : (
+            <div className="h-full" />
+          )}
+        </div>
       ))}
     </div>
   );
@@ -139,11 +147,11 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
 
   return (
     <div
-      className={`panel flex items-stretch gap-3 p-2 transition-colors ${isSelected ? "ring-1 ring-primary" : ""} ${track.hidden ? "opacity-40" : ""}`}
+      className={`flex items-stretch border-b border-border/80 transition-colors ${isSelected ? "bg-surface-2/40" : "hover:bg-surface/50"} ${track.hidden ? "opacity-40" : ""}`}
       onClick={() => select(track.id)}
     >
-      <div className="w-1.5 rounded-full" style={{ background: track.color }} />
-      <div className="w-56 shrink-0 space-y-1.5">
+      <div className="w-1 shrink-0" style={{ background: track.color, opacity: isSelected ? 1 : 0.65 }} />
+      <div className="w-[240px] shrink-0 space-y-1 border-r border-border bg-surface/70 px-2 py-1.5">
         <div className="flex items-center gap-1.5">
           <span className="text-primary">
             <KindIcon kind={track.kind} />
@@ -270,7 +278,10 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
         </div>
       </div>
 
-      <Lane track={track} />
+      <div className="lane-grid relative min-h-[76px] flex-1 bg-background/40">
+        <Lane track={track} />
+      </div>
+
 
       <AlertDialog open={confirm} onOpenChange={setConfirm}>
         <AlertDialogContent>
@@ -290,20 +301,54 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
   );
 }
 
+function Ruler() {
+  const { transport } = useStudio();
+  return (
+    <div className="sticky top-0 z-10 flex border-b border-border bg-surface-2/70 backdrop-blur">
+      <div className="flex w-[244px] shrink-0 items-center gap-2 border-r border-border px-3 py-1">
+        <span className="font-display text-[11px] font-semibold tracking-[0.2em]">TIMELINE</span>
+        <span className="label-xs ml-auto">
+          {String(Math.floor(transport.step / 4) + 1).padStart(2, "0")}.{(transport.step % 4) + 1}
+        </span>
+      </div>
+      <div className="relative grid flex-1 grid-cols-[repeat(16,minmax(0,1fr))]">
+        {Array.from({ length: 16 }).map((_, i) => (
+          <div
+            key={i}
+            className={`border-l py-1 pl-1 font-mono text-[9px] ${
+              i % 4 === 0 ? "border-border text-foreground/70" : "border-border/30 text-muted-foreground/50"
+            }`}
+          >
+            {i % 4 === 0 ? `${i / 4 + 1}` : "·"}
+          </div>
+        ))}
+        {transport.playing && (
+          <div
+            className="pointer-events-none absolute top-0 h-full w-[2px] bg-primary"
+            style={{ left: `${(transport.step / 16) * 100}%` }}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function Timeline() {
   const { tracks, transport } = useStudio();
   return (
-    <section className="space-y-2">
-      <div className="flex items-center gap-2">
-        <h2 className="font-display text-sm font-semibold tracking-widest">TIMELINE</h2>
-        <span className="label-xs">
-          {tracks.length} tracks · step {transport.step + 1}/16
-        </span>
-      </div>
-      <div className="space-y-2">
+    <section className="relative flex min-h-0 flex-1 flex-col overflow-hidden border-x border-b border-border bg-background/60">
+      <Ruler />
+      <div className="relative min-h-0 flex-1 overflow-y-auto">
         {tracks.map((t, i) => (
           <TrackRow key={t.id} track={t} index={i} />
         ))}
+        <div className="label-xs px-3 py-2">{tracks.length} tracks · press + ADD TRACK to build the arrangement</div>
+        {transport.playing && (
+          <div
+            className="pointer-events-none absolute top-0 bottom-0 w-[1.5px] bg-primary/80"
+            style={{ left: `calc(244px + (100% - 244px) * ${transport.step / 16})` }}
+          />
+        )}
       </div>
     </section>
   );
