@@ -98,13 +98,88 @@ function Waveform({ track }: { track: Track }) {
   );
 }
 
+const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+
+function MidiClip({ track }: { track: Track }) {
+  const { setPanel, select } = useStudio();
+  const notes = track.notes ?? [];
+  if (notes.length === 0)
+    return (
+      <div className="absolute inset-y-1 left-0 right-1 flex items-center justify-center rounded-[3px] border border-dashed border-border">
+        <span className="label-xs">NO MIDI — OPEN PIANO ROLL TO DRAW NOTES</span>
+      </div>
+    );
+  const pitches = notes.map((n) => n.pitch);
+  const lo = Math.min(...pitches) - 2;
+  const hi = Math.max(...pitches) + 2;
+  const span = Math.max(6, hi - lo);
+  const rows = 12;
+  return (
+    <div
+      className="absolute inset-y-1 left-0 right-1 overflow-hidden rounded-[3px] border"
+      style={{
+        borderColor: `color-mix(in oklab, ${track.color} 55%, transparent)`,
+        background: `color-mix(in oklab, ${track.color} 8%, var(--background))`,
+      }}
+      onDoubleClick={() => {
+        select(track.id);
+        setPanel("piano");
+      }}
+    >
+      <div
+        className="flex items-center gap-1 px-1.5 py-[2px]"
+        style={{ background: `color-mix(in oklab, ${track.color} 45%, transparent)` }}
+      >
+        <Piano className="size-2.5" />
+        <span className="truncate font-mono text-[9px] tracking-wider text-foreground/90">
+          {track.instrument ?? "MIDI"} · {notes.length} NOTES ·{" "}
+          {NOTE_NAMES[Math.min(...pitches) % 12]}
+          {Math.floor(Math.min(...pitches) / 12) - 1}
+        </span>
+      </div>
+      <div className="relative flex-1" style={{ height: "calc(100% - 14px)" }}>
+        {Array.from({ length: rows }).map((_, r) => (
+          <div
+            key={r}
+            className="absolute left-0 right-0 border-t border-border/25"
+            style={{ top: `${(r / rows) * 100}%` }}
+          />
+        ))}
+        {notes.map((n) => (
+          <div
+            key={n.id}
+            className="absolute rounded-[1px]"
+            title={`${NOTE_NAMES[n.pitch % 12]}${Math.floor(n.pitch / 12) - 1}`}
+            style={{
+              left: `${((n.step % 16) / 16) * 100}%`,
+              width: `${(Math.max(1, n.length) / 16) * 100 - 0.4}%`,
+              top: `${(1 - (n.pitch - lo) / span) * 82 + 4}%`,
+              height: "9%",
+              background: track.color,
+              opacity: 0.45 + (n.velocity ?? 0.8) * 0.55,
+              boxShadow: `0 0 6px color-mix(in oklab, ${track.color} 60%, transparent)`,
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function Lane({ track }: { track: Track }) {
-  const { transport } = useStudio();
-  if ((track.clips?.length ?? 0) > 0) return <Waveform track={track} />;
+  const isMidi = track.kind === "instrument" || track.kind === "midi" || track.kind === "sampler";
+  if (!isMidi && (track.clips?.length ?? 0) > 0) return <Waveform track={track} />;
   if (track.recording)
     return (
       <div className="absolute inset-y-1 left-0 right-1 flex items-center justify-center rounded-[3px] border border-destructive/60 bg-destructive/10">
         <span className="animate-pulse font-mono text-[11px] text-destructive">● RECORDING INPUT…</span>
+      </div>
+    );
+  if (isMidi) return <MidiClip track={track} />;
+  if (track.kind === "audio" || track.kind === "ai-vocal")
+    return (
+      <div className="absolute inset-y-1 left-0 right-1 flex items-center justify-center rounded-[3px] border border-dashed border-border">
+        <span className="label-xs">NO AUDIO — ARM ● REC TO CAPTURE A WAVEFORM</span>
       </div>
     );
   const cells = Array.from({ length: 16 });
