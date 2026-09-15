@@ -278,7 +278,10 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
         </div>
       </div>
 
-      <Lane track={track} />
+      <div className="lane-grid relative min-h-[76px] flex-1 bg-background/40">
+        <Lane track={track} />
+      </div>
+
 
       <AlertDialog open={confirm} onOpenChange={setConfirm}>
         <AlertDialogContent>
