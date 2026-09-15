@@ -553,7 +553,16 @@ export function StudioProvider({ children }: { children: ReactNode }) {
                 }),
               );
           } else {
-            toast("Arm a channel first", { description: "Press ● REC on an audio or vocal track, then record." });
+            const noteArmed = tracksRef.current.find(
+              (t) => t.armed && (t.kind === "instrument" || t.kind === "midi"),
+            );
+            if (noteArmed) {
+              toast("Recording MIDI", { description: `Play your controller — notes land on ${noteArmed.name}.` });
+            } else {
+              toast("Arm a channel first", {
+                description: "Press ● REC on an audio, vocal or instrument track, then record.",
+              });
+            }
           }
           setTransportState((s) => ({ ...s, recording: true, playing: true, paused: false }));
         } else {
