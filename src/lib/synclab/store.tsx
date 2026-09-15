@@ -743,7 +743,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           ),
         })),
     };
-  }, [tracks, transport, selectedId, panel, userPresets, buses, installedPlugins, fxChains, updateTrack, finishRecording]);
+  }, [tracks, transport, selectedId, panel, userPresets, buses, installedPlugins, fxChains, midiInputs, midiInputId, midiLearning, enableMidi, updateTrack, finishRecording]);
 
 
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>;
