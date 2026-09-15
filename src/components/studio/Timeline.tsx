@@ -616,7 +616,8 @@ function Ruler() {
 }
 
 export function Timeline() {
-  const { tracks, transport } = useStudio();
+  const { tracks, transport, addTrack } = useStudio();
+  const [over, setOver] = useState(false);
   return (
     <section className="relative flex min-h-0 flex-1 flex-col overflow-hidden border-x border-b border-border bg-background/60">
       <Ruler />
