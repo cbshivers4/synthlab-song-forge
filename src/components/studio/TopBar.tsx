@@ -304,3 +304,54 @@ function FeatBtn({
     </Button>
   );
 }
+
+function MidiControl() {
+  const { midiInputs, midiInputId, midiLearning, enableMidi, setMidiInput, tracks } = useStudio();
+  const armedNote = tracks.find((t) => t.armed && (t.kind === "instrument" || t.kind === "midi"));
+
+  return (
+    <div className="flex items-center gap-1 rounded-[3px] border border-border bg-background/70 p-1">
+      <Button
+        size="sm"
+        variant="ghost"
+        onClick={enableMidi}
+        className={`h-7 gap-1 px-2 font-mono text-[10px] tracking-wider ${
+          midiInputId ? "bg-primary/15 text-primary shadow-[inset_0_0_0_1px_var(--primary)]" : "text-muted-foreground"
+        }`}
+      >
+        <span
+          className={`size-1.5 rounded-full ${midiLearning ? "bg-destructive" : midiInputId ? "bg-primary" : "bg-border"}`}
+        />
+        <KeyboardMusic className="size-3.5" />
+        MIDI IN
+      </Button>
+
+      {midiInputs.length > 0 && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button size="sm" variant="ghost" className="h-7 max-w-40 truncate px-2 font-mono text-[10px] tracking-wider">
+              {midiInputs.find((i) => i.id === midiInputId)?.name ?? "SELECT DEVICE"}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-60">
+            <DropdownMenuLabel className="font-mono text-[10px] tracking-wider">
+              CONTROLLER → {armedNote ? armedNote.name : "SELECTED INSTRUMENT"}
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {midiInputs.map((i) => (
+              <DropdownMenuItem key={i.id} onClick={() => setMidiInput(i.id)}>
+                {i.id === midiInputId ? "● " : "○ "}
+                {i.name}
+              </DropdownMenuItem>
+            ))}
+            <DropdownMenuItem onClick={() => setMidiInput("all")}>
+              {midiInputId === "all" ? "● " : "○ "}ALL DEVICES
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => setMidiInput(null)}>Disconnect</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
+    </div>
+  );
+}
