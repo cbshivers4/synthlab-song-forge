@@ -1,4 +1,4 @@
-import type { DrumPad, SynthPatch, Track } from "./types";
+import type { DrumPad, PluginInstance, SynthPatch, Track } from "./types";
 
 const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
 
@@ -24,6 +24,8 @@ interface ChannelStrip {
   sendDelay: GainNode;
   sendChorus: GainNode;
   bus: string;
+  insertNodes: AudioNode[];
+  insertKey: string;
 }
 
 export class SyncLabEngine {
