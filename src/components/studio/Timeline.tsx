@@ -1,6 +1,12 @@
 import { useRef, useState } from "react";
 import {
+  ArrowLeftToLine,
+  ArrowRightToLine,
+  Grid3x3,
+  Scissors,
+  Waves,
   ChevronDown,
+
   ChevronUp,
   Copy,
   Disc3,
