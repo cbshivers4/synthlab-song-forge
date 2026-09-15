@@ -64,36 +64,22 @@ function Waveform({ track }: { track: Track }) {
   if (!active) return null;
 
   const peaks = active.peaks.length > 0 ? active.peaks : [0];
-  const W = 1000;
-  const H = 100;
-  const step = W / Math.max(1, peaks.length - 1);
-  // continuous filled waveform: top edge left→right, bottom edge right→left
-  const top = peaks.map((p, i) => `${(i * step).toFixed(2)},${(50 - Math.max(0.8, p * 48)).toFixed(2)}`);
-  const bottom = [...peaks]
-    .map((p, i) => ({ p, i }))
-    .reverse()
-    .map(({ p, i }) => `${(i * step).toFixed(2)},${(50 + Math.max(0.8, p * 48)).toFixed(2)}`);
-  const path = `M ${top.join(" L ")} L ${bottom.join(" L ")} Z`;
 
+  // Logic/Audacity-style: thin vertical bars from center on a transparent body
   return (
     <div
-      className="absolute inset-y-[3px] left-0 right-1 flex flex-col overflow-hidden rounded-[2px]"
+      className="group absolute inset-y-[3px] left-0 right-1 flex flex-col overflow-hidden rounded-[2px]"
       style={{
-        background: track.color,
-        boxShadow: `inset 0 0 0 1px color-mix(in oklab, ${track.color} 60%, black), 0 1px 2px oklch(0 0 0 / 0.45)`,
+        background: `color-mix(in oklab, ${track.color} 10%, transparent)`,
+        boxShadow: `inset 0 0 0 1px color-mix(in oklab, ${track.color} 45%, transparent), 0 1px 2px oklch(0 0 0 / 0.35)`,
       }}
     >
-      {/* Ableton-style clip title bar */}
-      <div
-        className="flex h-[14px] shrink-0 items-center gap-1 px-1.5"
-        style={{ background: `color-mix(in oklab, ${track.color} 78%, black)` }}
-      >
-        <span className="truncate font-mono text-[9px] font-medium tracking-wider" style={{ color: "oklch(0.98 0 0)" }}>
+      {/* slim clip name strip */}
+      <div className="flex h-[13px] shrink-0 items-center gap-1 px-1.5" style={{ background: `color-mix(in oklab, ${track.color} 28%, transparent)` }}>
+        <span className="truncate font-mono text-[9px] tracking-wider" style={{ color: `color-mix(in oklab, ${track.color} 55%, white)` }}>
           {active.name}
         </span>
-        <span className="ml-auto shrink-0 font-mono text-[8px]" style={{ color: "oklch(1 0 0 / 0.7)" }}>
-          {active.duration.toFixed(1)}s
-        </span>
+        <span className="ml-auto shrink-0 font-mono text-[8px] text-foreground/50">{active.duration.toFixed(1)}s</span>
         <div className="flex shrink-0 items-center gap-1">
           {clips.map((c) => (
             <button
@@ -106,26 +92,32 @@ function Waveform({ track }: { track: Track }) {
               title="Click to choose take, double-click to delete"
               className="size-[6px] rounded-full border"
               style={{
-                borderColor: "oklch(1 0 0 / 0.75)",
-                background: c.id === active.id ? "oklch(1 0 0 / 0.95)" : "transparent",
+                borderColor: `color-mix(in oklab, ${track.color} 70%, white)`,
+                background: c.id === active.id ? `color-mix(in oklab, ${track.color} 70%, white)` : "transparent",
               }}
             />
           ))}
         </div>
       </div>
 
-      {/* waveform body */}
-      <div className="relative flex-1" style={{ background: `color-mix(in oklab, ${track.color} 92%, white)` }}>
-        <svg
-          viewBox={`0 0 ${W} ${H}`}
-          preserveAspectRatio="none"
-          className="absolute inset-0 h-full w-full"
-          shapeRendering="geometricPrecision"
-        >
-          <line x1="0" y1="50" x2={W} y2="50" stroke="oklch(0 0 0 / 0.25)" strokeWidth="0.6" />
-          <path d={path} fill="oklch(0.16 0.01 255 / 0.88)" />
-        </svg>
-      </div>
+      {/* classic bar waveform */}
+      <svg viewBox={`0 0 ${peaks.length} 100`} preserveAspectRatio="none" className="min-h-0 w-full flex-1">
+        <line x1="0" y1="50" x2={peaks.length} y2="50" stroke="oklch(1 0 0 / 0.18)" strokeWidth="0.15" />
+        {peaks.map((p, i) => {
+          const half = Math.max(1.2, p * 46);
+          return (
+            <rect
+              key={i}
+              x={i + 0.18}
+              y={50 - half}
+              width={0.64}
+              height={half * 2}
+              fill={track.color}
+              opacity={0.55 + p * 0.45}
+            />
+          );
+        })}
+      </svg>
     </div>
   );
 }
