@@ -169,6 +169,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   });
 
   const [installedPlugins, setInstalledPlugins] = useState<PluginDef[]>(BUILT_IN_PLUGINS);
+  const [fxChains, setFxChains] = useState<Record<string, PluginInstance[]>>({});
 
   useEffect(() => {
     if (typeof window !== "undefined" && getEngine().ctx) {
@@ -181,6 +182,12 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     if (typeof window === "undefined" || !getEngine().ctx) return;
     for (const [id, b] of Object.entries(buses)) getEngine().setBus(id, b.volume, b.muted);
   }, [buses]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !getEngine().ctx) return;
+    for (const [target, list] of Object.entries(fxChains)) getEngine().setFxInserts(target, list);
+  }, [fxChains]);
+
 
   // step clock
   useEffect(() => {
