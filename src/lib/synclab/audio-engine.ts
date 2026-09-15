@@ -1,4 +1,4 @@
-import type { DrumPad, SynthPatch, Track } from "./types";
+import type { DrumPad, PluginInstance, SynthPatch, Track } from "./types";
 
 const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
 
@@ -24,6 +24,8 @@ interface ChannelStrip {
   sendDelay: GainNode;
   sendChorus: GainNode;
   bus: string;
+  insertNodes: AudioNode[];
+  insertKey: string;
 }
 
 export class SyncLabEngine {
@@ -166,10 +168,147 @@ export class SyncLabEngine {
       sendReverb.connect(this.reverbSend!);
       sendDelay.connect(this.delaySend!);
       sendChorus.connect(this.chorusSend!);
-      ch = { input, gain, pan, meter, sendReverb, sendDelay, sendChorus, bus: "master" };
+      ch = { input, gain, pan, meter, sendReverb, sendDelay, sendChorus, bus: "master", insertNodes: [], insertKey: "" };
       this.channels.set(id, ch);
     }
     return ch;
+  }
+
+  /** Rebuild the insert (plugin) chain between gain and meter for a track. */
+  setInserts(trackId: string, plugins: PluginInstance[]) {
+    const ctx = this.init();
+    const ch = this.channel(trackId);
+    const active = plugins.filter((pl) => !pl.bypass);
+    const key = JSON.stringify(active.map((pl) => [pl.kind, pl.params.map((x) => x.value)]));
+    if (key === ch.insertKey) return;
+    ch.insertKey = key;
+
+    try {
+      ch.gain.disconnect();
+    } catch {
+      /* noop */
+    }
+    for (const n of ch.insertNodes) {
+      try {
+        n.disconnect();
+      } catch {
+        /* noop */
+      }
+    }
+
+    const nodes: AudioNode[] = [];
+    const val = (pl: PluginInstance, id: string, fallback: number) =>
+      pl.params.find((x) => x.id === id)?.value ?? fallback;
+    const dbToGain = (db: number) => Math.pow(10, db / 20);
+
+    for (const pl of active) {
+      switch (pl.kind) {
+        case "eq": {
+          const low = ctx.createBiquadFilter();
+          low.type = "lowshelf";
+          low.frequency.value = 180;
+          low.gain.value = val(pl, "low", 0);
+          const mid = ctx.createBiquadFilter();
+          mid.type = "peaking";
+          mid.frequency.value = val(pl, "midFreq", 900);
+          mid.Q.value = 1;
+          mid.gain.value = val(pl, "mid", 0);
+          const high = ctx.createBiquadFilter();
+          high.type = "highshelf";
+          high.frequency.value = 4500;
+          high.gain.value = val(pl, "high", 0);
+          const out = ctx.createGain();
+          out.gain.value = dbToGain(val(pl, "mix", 0));
+          low.connect(mid);
+          mid.connect(high);
+          high.connect(out);
+          nodes.push(low, mid, high, out);
+          break;
+        }
+        case "filter": {
+          const f = ctx.createBiquadFilter();
+          const mode = Math.round(val(pl, "type", 0));
+          f.type = mode === 1 ? "highpass" : mode === 2 ? "bandpass" : "lowpass";
+          f.frequency.value = val(pl, "cutoff", 8000);
+          f.Q.value = val(pl, "resonance", 1);
+          nodes.push(f);
+          break;
+        }
+        case "drive": {
+          const ws = ctx.createWaveShaper();
+          ws.curve = makeDistortionCurve(clamp(val(pl, "drive", 0.3), 0, 1));
+          ws.oversample = "2x";
+          const tone = ctx.createBiquadFilter();
+          tone.type = "lowpass";
+          tone.frequency.value = val(pl, "tone", 6000);
+          const out = ctx.createGain();
+          out.gain.value = dbToGain(val(pl, "output", 0));
+          ws.connect(tone);
+          tone.connect(out);
+          nodes.push(ws, tone, out);
+          break;
+        }
+        case "compressor": {
+          const c = ctx.createDynamicsCompressor();
+          c.threshold.value = val(pl, "threshold", -18);
+          c.ratio.value = val(pl, "ratio", 4);
+          c.attack.value = val(pl, "attack", 8) / 1000;
+          c.release.value = val(pl, "release", 140) / 1000;
+          const out = ctx.createGain();
+          out.gain.value = dbToGain(val(pl, "makeup", 0));
+          c.connect(out);
+          nodes.push(c, out);
+          break;
+        }
+        case "delay": {
+          const inNode = ctx.createGain();
+          const d = ctx.createDelay(2);
+          d.delayTime.value = clamp(val(pl, "time", 320) / 1000, 0.01, 2);
+          const fb = ctx.createGain();
+          fb.gain.value = clamp(val(pl, "feedback", 0.35), 0, 0.92);
+          const wet = ctx.createGain();
+          wet.gain.value = clamp(val(pl, "mix", 0.25), 0, 1);
+          const out = ctx.createGain();
+          inNode.connect(out);
+          inNode.connect(d);
+          d.connect(fb);
+          fb.connect(d);
+          d.connect(wet);
+          wet.connect(out);
+          nodes.push(inNode, d, fb, wet, out);
+          break;
+        }
+        case "width": {
+          const w = ctx.createGain();
+          w.gain.value = dbToGain(val(pl, "output", 0));
+          nodes.push(w);
+          break;
+        }
+        case "gain": {
+          const g2 = ctx.createGain();
+          g2.gain.value = dbToGain(val(pl, "gain", 0));
+          nodes.push(g2);
+          break;
+        }
+      }
+    }
+
+    // heads/tails: each plugin block already chains internally; link blocks by
+    // connecting the last created node of a block to the first of the next.
+    ch.insertNodes = nodes;
+    let cursor: AudioNode = ch.gain;
+    let idx = 0;
+    for (const pl of active) {
+      const size = { eq: 4, filter: 1, drive: 3, compressor: 2, delay: 5, width: 1, gain: 1 }[pl.kind];
+      const head = nodes[idx];
+      const tail = nodes[idx + size - 1];
+      if (head && tail) {
+        cursor.connect(head);
+        cursor = tail;
+      }
+      idx += size;
+    }
+    cursor.connect(ch.meter);
   }
 
   syncMix(tracks: Track[]) {

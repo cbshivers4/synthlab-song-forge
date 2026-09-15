@@ -11,7 +11,20 @@ import {
 import { toast } from "sonner";
 import { getEngine } from "./audio-engine";
 import { TRACK_COLORS, applyPreset, defaultPads, defaultPatch, uid } from "./presets";
-import type { AudioClip, BusId, BusState, DrumPad, MidiNote, SynthPatch, Track, TrackKind, Transport } from "./types";
+import { BUILT_IN_PLUGINS, instantiate } from "./plugins";
+import type {
+  AudioClip,
+  BusId,
+  BusState,
+  DrumPad,
+  MidiNote,
+  PluginDef,
+  PluginParam,
+  SynthPatch,
+  Track,
+  TrackKind,
+  Transport,
+} from "./types";
 
 const busFor = (kind: TrackKind): BusId =>
   kind === "drum"
@@ -96,7 +109,17 @@ const initialTracks = (): Track[] => {
   return [instrumental, drums, bass, lead, pad, vox];
 };
 
-export type PanelId = "mixer" | "synth" | "drums" | "piano" | "vocal" | "settings" | "keys" | "browser" | null;
+export type PanelId =
+  | "mixer"
+  | "synth"
+  | "drums"
+  | "piano"
+  | "vocal"
+  | "settings"
+  | "keys"
+  | "browser"
+  | "plugins"
+  | null;
 
 interface StudioState {
   tracks: Track[];
@@ -136,6 +159,14 @@ interface StudioApi extends StudioState {
   loadPreset: (trackId: string, name: string) => void;
   generateBeat: (trackId: string, genre: string, energy: number) => void;
   previewNote: (trackId: string, midi: number) => void;
+  installedPlugins: PluginDef[];
+  installPlugin: (def: PluginDef) => void;
+  uninstallPlugin: (defId: string) => void;
+  addPlugin: (trackId: string, def: PluginDef) => void;
+  removePlugin: (trackId: string, instanceId: string) => void;
+  togglePluginBypass: (trackId: string, instanceId: string) => void;
+  movePlugin: (trackId: string, instanceId: string, dir: -1 | 1) => void;
+  setPluginParam: (trackId: string, instanceId: string, paramId: string, value: number) => void;
 }
 
 // Reuse a single context across hot-reloaded module instances so provider and
@@ -181,8 +212,13 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     master: { volume: 1, muted: false },
   });
 
+  const [installedPlugins, setInstalledPlugins] = useState<PluginDef[]>(BUILT_IN_PLUGINS);
+
   useEffect(() => {
-    if (typeof window !== "undefined" && getEngine().ctx) getEngine().syncMix(tracks);
+    if (typeof window !== "undefined" && getEngine().ctx) {
+      getEngine().syncMix(tracks);
+      for (const t of tracks) getEngine().setInserts(t.id, t.plugins ?? []);
+    }
   }, [tracks]);
 
   useEffect(() => {
@@ -557,8 +593,58 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         engine.syncMix(tracksRef.current);
         if (t?.patch) engine.playNote(t.id, t.patch, midi, 0.35, 0.9);
       },
+      installedPlugins,
+      installPlugin: (d) => setInstalledPlugins((ps) => [...ps.filter((x) => x.id !== d.id), d]),
+      uninstallPlugin: (defId) => setInstalledPlugins((ps) => ps.filter((x) => x.id !== defId)),
+      addPlugin: (trackId, d) => {
+        const inst = instantiate(d);
+        setTracks((ts) => ts.map((t) => (t.id === trackId ? { ...t, plugins: [...(t.plugins ?? []), inst] } : t)));
+        toast.success(`${d.name} inserted`, { description: `${d.vendor} · ${d.format}` });
+      },
+      removePlugin: (trackId, instanceId) =>
+        setTracks((ts) =>
+          ts.map((t) => (t.id === trackId ? { ...t, plugins: (t.plugins ?? []).filter((p) => p.id !== instanceId) } : t)),
+        ),
+      togglePluginBypass: (trackId, instanceId) =>
+        setTracks((ts) =>
+          ts.map((t) =>
+            t.id === trackId
+              ? { ...t, plugins: (t.plugins ?? []).map((p) => (p.id === instanceId ? { ...p, bypass: !p.bypass } : p)) }
+              : t,
+          ),
+        ),
+      movePlugin: (trackId, instanceId, dir) =>
+        setTracks((ts) =>
+          ts.map((t) => {
+            if (t.id !== trackId) return t;
+            const list = [...(t.plugins ?? [])];
+            const i = list.findIndex((p) => p.id === instanceId);
+            const j = i + dir;
+            const a = list[i];
+            const b = list[j];
+            if (i < 0 || !a || !b) return t;
+            list[i] = b;
+            list[j] = a;
+            return { ...t, plugins: list };
+          }),
+        ),
+      setPluginParam: (trackId, instanceId, paramId, value) =>
+        setTracks((ts) =>
+          ts.map((t) =>
+            t.id === trackId
+              ? {
+                  ...t,
+                  plugins: (t.plugins ?? []).map((p) =>
+                    p.id === instanceId
+                      ? { ...p, params: p.params.map((x: PluginParam) => (x.id === paramId ? { ...x, value } : x)) }
+                      : p,
+                  ),
+                }
+              : t,
+          ),
+        ),
     };
-  }, [tracks, transport, selectedId, panel, userPresets, buses, updateTrack, finishRecording]);
+  }, [tracks, transport, selectedId, panel, userPresets, buses, installedPlugins, updateTrack, finishRecording]);
 
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>;
 }

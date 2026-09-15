@@ -118,6 +118,37 @@ export interface AudioClip {
   takeOf?: string | undefined;
 }
 
+export type PluginKind = "eq" | "filter" | "drive" | "compressor" | "delay" | "gain" | "width";
+
+export interface PluginParam {
+  id: string;
+  name: string;
+  value: number;
+  min: number;
+  max: number;
+  unit?: string | undefined;
+}
+
+export interface PluginDef {
+  id: string;
+  name: string;
+  vendor: string;
+  format: "Built-in" | "VST3" | "AU" | "CLAP" | "AAX";
+  kind: PluginKind;
+  params: PluginParam[];
+}
+
+export interface PluginInstance {
+  id: string;
+  defId: string;
+  name: string;
+  vendor: string;
+  format: PluginDef["format"];
+  kind: PluginKind;
+  bypass: boolean;
+  params: PluginParam[];
+}
+
 export interface Track {
   id: string;
   name: string;
@@ -139,6 +170,7 @@ export interface Track {
   patch?: SynthPatch | undefined;
   notes?: MidiNote[] | undefined;
   pads?: DrumPad[] | undefined;
+  plugins?: PluginInstance[] | undefined;
   clips?: AudioClip[] | undefined;
   activeClipId?: string | undefined;
   recording?: boolean;
