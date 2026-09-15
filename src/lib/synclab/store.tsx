@@ -129,6 +129,11 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     countIn: false,
     loop: true,
     bars: 1,
+    paused: false,
+    overdub: false,
+    punchIn: null,
+    punchOut: null,
+    monitor: true,
   });
 
   const tracksRef = useRef(tracks);
