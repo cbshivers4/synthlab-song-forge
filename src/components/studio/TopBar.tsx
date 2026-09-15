@@ -273,8 +273,8 @@ function TBtn({
   children,
 }: {
   label: string;
-  active?: boolean;
-  danger?: boolean;
+  active?: boolean | undefined;
+  danger?: boolean | undefined;
   onClick: () => void;
   children: React.ReactNode;
 }) {
@@ -301,7 +301,7 @@ function FeatBtn({
 }: {
   label: string;
   icon: React.ReactNode;
-  active?: boolean;
+  active?: boolean | undefined;
   onClick: () => void;
 }) {
   return (
