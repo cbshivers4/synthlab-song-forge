@@ -48,7 +48,7 @@ function Strip({ t, selected, onSelect }: { t: Track; selected: boolean; onSelec
       onClick={onSelect}
       className={cn(
         "flex w-[72px] shrink-0 cursor-pointer flex-col items-center gap-1.5 border-r border-border bg-surface px-1.5 py-2 transition-colors",
-        selected && "bg-surface-2 shadow-[inset_0_2px_0_0_var(--glow)]"
+        selected && "bg-surface-2 shadow-[inset_0_2px_0_0_var(--primary)]"
       )}
     >
       {/* name plate */}
