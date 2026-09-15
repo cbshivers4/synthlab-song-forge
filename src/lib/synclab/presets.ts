@@ -1,0 +1,253 @@
+import type { DrumPad, SynthPatch, TrackKind } from "./types";
+
+export const uid = () => Math.random().toString(36).slice(2, 10);
+
+export const defaultPatch = (name = "Init Saw"): SynthPatch => ({
+  name,
+  oscillators: [
+    { on: true, wave: "sawtooth", octave: 0, semitone: 0, detune: 0, level: 0.8, pan: 0 },
+    { on: true, wave: "square", octave: -1, semitone: 0, detune: 8, level: 0.45, pan: -0.2 },
+    { on: false, wave: "triangle", octave: 1, semitone: 7, detune: -6, level: 0.3, pan: 0.2 },
+  ],
+  noise: 0,
+  filterType: "lowpass",
+  cutoff: 2400,
+  resonance: 6,
+  drive: 0.2,
+  amp: { attack: 0.01, decay: 0.2, sustain: 0.6, release: 0.35 },
+  filterEnv: { attack: 0.005, decay: 0.25, sustain: 0.25, release: 0.3, amount: 2600 },
+  lfos: [
+    { on: false, rate: 4, wave: "sine", amount: 0.3, destination: "filter" },
+    { on: false, rate: 0.5, wave: "triangle", amount: 0.2, destination: "pan" },
+  ],
+  unison: { voices: 2, detune: 12, width: 0.5 },
+  glide: 0,
+  fx: { distortion: 0.1, chorus: 0.2, delay: 0.18, delayFeedback: 0.3, reverb: 0.2, bitcrush: 0 },
+  arp: { on: false, rate: 1, direction: "up", octaves: 1, gate: 0.6 },
+});
+
+type PresetDef = { name: string; category: string; mutate: (p: SynthPatch) => void };
+
+export const SYNTH_PRESETS: PresetDef[] = [
+  {
+    name: "Belleville Strings",
+    category: "Detroit Techno",
+    mutate: (p) => {
+      p.oscillators[0].wave = "sawtooth";
+      p.oscillators[1] = { ...p.oscillators[1], on: true, wave: "sawtooth", detune: 14, octave: 0, level: 0.6 };
+      p.cutoff = 1500;
+      p.amp = { attack: 0.35, decay: 0.6, sustain: 0.8, release: 1.4 };
+      p.fx.reverb = 0.5;
+      p.fx.chorus = 0.45;
+    },
+  },
+  {
+    name: "Cybotron Lead",
+    category: "Detroit Electro",
+    mutate: (p) => {
+      p.oscillators[0].wave = "square";
+      p.oscillators[1] = { ...p.oscillators[1], on: true, wave: "sawtooth", octave: 0, detune: -10, level: 0.5 };
+      p.cutoff = 3400;
+      p.resonance = 10;
+      p.amp = { attack: 0.005, decay: 0.15, sustain: 0.4, release: 0.2 };
+      p.fx.delay = 0.35;
+      p.fx.distortion = 0.3;
+    },
+  },
+  {
+    name: "Ghetto Tech Bass",
+    category: "Ghetto Tech",
+    mutate: (p) => {
+      p.oscillators[0].wave = "square";
+      p.oscillators[0].octave = -1;
+      p.oscillators[1] = { ...p.oscillators[1], on: true, wave: "sawtooth", octave: -2, level: 0.7, detune: 4 };
+      p.cutoff = 900;
+      p.resonance = 12;
+      p.amp = { attack: 0.002, decay: 0.18, sustain: 0.2, release: 0.15 };
+      p.filterEnv.amount = 1800;
+      p.fx.distortion = 0.45;
+    },
+  },
+  {
+    name: "303 Acid",
+    category: "Acid",
+    mutate: (p) => {
+      p.oscillators[0].wave = "sawtooth";
+      p.oscillators[1].on = false;
+      p.cutoff = 700;
+      p.resonance = 22;
+      p.filterEnv.amount = 4200;
+      p.filterEnv.decay = 0.22;
+      p.amp = { attack: 0.001, decay: 0.2, sustain: 0.1, release: 0.12 };
+      p.glide = 0.06;
+      p.fx.distortion = 0.5;
+    },
+  },
+  {
+    name: "Warehouse Pad",
+    category: "Pad",
+    mutate: (p) => {
+      p.oscillators[0].wave = "triangle";
+      p.oscillators[1] = { ...p.oscillators[1], on: true, wave: "sawtooth", detune: 16, level: 0.35 };
+      p.oscillators[2] = { ...p.oscillators[2], on: true, level: 0.25 };
+      p.cutoff = 1200;
+      p.amp = { attack: 0.9, decay: 1.2, sustain: 0.85, release: 2.2 };
+      p.fx.reverb = 0.7;
+      p.fx.chorus = 0.5;
+    },
+  },
+  {
+    name: "Deep Keys",
+    category: "Deep House",
+    mutate: (p) => {
+      p.oscillators[0].wave = "triangle";
+      p.oscillators[1] = { ...p.oscillators[1], on: true, wave: "sine", octave: 1, level: 0.3 };
+      p.cutoff = 1800;
+      p.amp = { attack: 0.01, decay: 0.5, sustain: 0.3, release: 0.6 };
+      p.fx.reverb = 0.35;
+    },
+  },
+  {
+    name: "Sub Bass",
+    category: "Bass",
+    mutate: (p) => {
+      p.oscillators[0].wave = "sine";
+      p.oscillators[0].octave = -2;
+      p.oscillators[1].on = false;
+      p.cutoff = 400;
+      p.amp = { attack: 0.005, decay: 0.3, sustain: 0.7, release: 0.2 };
+      p.fx.reverb = 0;
+      p.fx.delay = 0;
+    },
+  },
+  {
+    name: "Metro Pluck",
+    category: "Pluck",
+    mutate: (p) => {
+      p.oscillators[0].wave = "square";
+      p.cutoff = 2600;
+      p.resonance = 8;
+      p.amp = { attack: 0.002, decay: 0.16, sustain: 0, release: 0.2 };
+      p.filterEnv.amount = 3200;
+      p.fx.delay = 0.3;
+    },
+  },
+  {
+    name: "Assembly Line",
+    category: "Industrial",
+    mutate: (p) => {
+      p.oscillators[0].wave = "square";
+      p.noise = 0.25;
+      p.cutoff = 1500;
+      p.fx.distortion = 0.7;
+      p.fx.bitcrush = 0.4;
+      p.amp = { attack: 0.001, decay: 0.12, sustain: 0.3, release: 0.1 };
+    },
+  },
+  {
+    name: "Vocoder Bot",
+    category: "Robotic",
+    mutate: (p) => {
+      p.oscillators[0].wave = "sawtooth";
+      p.oscillators[1] = { ...p.oscillators[1], on: true, wave: "square", detune: 20, level: 0.4 };
+      p.cutoff = 2000;
+      p.fx.bitcrush = 0.6;
+      p.fx.chorus = 0.6;
+      p.amp = { attack: 0.02, decay: 0.3, sustain: 0.5, release: 0.3 };
+    },
+  },
+  {
+    name: "Night Arp",
+    category: "Arp",
+    mutate: (p) => {
+      p.arp = { on: true, rate: 1, direction: "updown", octaves: 2, gate: 0.5 };
+      p.amp = { attack: 0.003, decay: 0.18, sustain: 0.1, release: 0.2 };
+      p.cutoff = 3000;
+      p.fx.delay = 0.4;
+    },
+  },
+  {
+    name: "Void Ambient",
+    category: "Ambient",
+    mutate: (p) => {
+      p.oscillators[0].wave = "sine";
+      p.oscillators[2] = { ...p.oscillators[2], on: true, wave: "triangle", level: 0.3 };
+      p.amp = { attack: 1.6, decay: 2, sustain: 0.9, release: 3 };
+      p.cutoff = 900;
+      p.fx.reverb = 0.85;
+    },
+  },
+];
+
+export const applyPreset = (name: string): SynthPatch => {
+  const base = defaultPatch(name);
+  const def = SYNTH_PRESETS.find((p) => p.name === name);
+  if (def) def.mutate(base);
+  return base;
+};
+
+const padDef = (kind: DrumPad["kind"], name: string, steps: number, seed: number[] = []): DrumPad => ({
+  id: uid(),
+  name,
+  kind,
+  volume: 0.8,
+  pan: 0,
+  pitch: 0,
+  decay: 0.5,
+  muted: false,
+  solo: false,
+  steps: Array.from({ length: steps }, (_, i) => (seed.includes(i) ? 1 : 0)),
+});
+
+export const defaultPads = (steps = 16): DrumPad[] => [
+  padDef("kick", "KICK", steps, [0, 4, 8, 12]),
+  padDef("snare", "SNARE", steps, [4, 12]),
+  padDef("clap", "CLAP", steps, [12]),
+  padDef("hat", "HI-HAT", steps, [2, 6, 10, 14]),
+  padDef("openhat", "OPEN HAT", steps, [14]),
+  padDef("tom", "TOM", steps),
+  padDef("perc", "PERC", steps),
+  padDef("rim", "RIM", steps),
+  padDef("crash", "CRASH", steps),
+  padDef("ride", "RIDE", steps),
+  padDef("fx", "FX", steps),
+];
+
+export const TRACK_COLORS = [
+  "oklch(0.78 0.16 195)",
+  "oklch(0.75 0.19 330)",
+  "oklch(0.82 0.17 95)",
+  "oklch(0.72 0.18 265)",
+  "oklch(0.78 0.18 145)",
+  "oklch(0.75 0.19 30)",
+];
+
+export const KIND_LABEL: Record<TrackKind, string> = {
+  audio: "AUDIO",
+  instrument: "INSTRUMENT",
+  midi: "MIDI",
+  drum: "DRUM MACHINE",
+  sampler: "SAMPLER",
+  "ai-vocal": "AI VOCAL",
+};
+
+export const INSTRUMENTS: { category: string; items: string[] }[] = [
+  { category: "SYNTH", items: ["Cybotron Lead", "Night Arp", "Metro Pluck"] },
+  { category: "BASS", items: ["Sub Bass", "Ghetto Tech Bass", "303 Acid"] },
+  { category: "KEYS", items: ["Deep Keys", "Belleville Strings"] },
+  { category: "PAD", items: ["Warehouse Pad", "Void Ambient"] },
+  { category: "FX", items: ["Assembly Line", "Vocoder Bot"] },
+];
+
+export const GENRES = [
+  "Detroit Techno",
+  "Detroit Electro",
+  "Ghetto Tech",
+  "House",
+  "Hip-Hop",
+  "Trap",
+  "R&B",
+  "Pop",
+  "Breakbeat",
+  "Industrial",
+];
