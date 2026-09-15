@@ -1,4 +1,6 @@
+import { useEffect, useRef, useState } from "react";
 import { Slider } from "@/components/ui/slider";
+import { getEngine } from "@/lib/synclab/audio-engine";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useStudio } from "@/lib/synclab/store";
 import type { BusId, Track } from "@/lib/synclab/types";
@@ -13,6 +15,40 @@ function toDb(v: number) {
 
 function dbToFrac(db: number) {
   return Math.min(1, Math.max(0, (db + 48) / 54));
+}
+
+/** Live peak levels for every channel + master, polled with rAF (fast attack, slow release). */
+function useMeters(trackIds: string[]) {
+  const [levels, setLevels] = useState<{ tracks: Record<string, number>; master: number }>({
+    tracks: {},
+    master: 0,
+  });
+  const smooth = useRef<Record<string, number>>({});
+  const idsKey = trackIds.join(",");
+  useEffect(() => {
+    let raf = 0;
+    const loop = () => {
+      const engine = getEngine();
+      const tracks: Record<string, number> = {};
+      for (const id of idsKey.split(",")) {
+        if (!id) continue;
+        const raw = engine.getTrackLevel(id);
+        const prev = smooth.current[id] ?? 0;
+        const v = raw > prev ? raw : prev * 0.86;
+        smooth.current[id] = v;
+        tracks[id] = dbToFrac(toDb(Math.max(v, 0.0005)));
+      }
+      const mRaw = engine.getLevel();
+      const mPrev = smooth.current.__master ?? 0;
+      const m = mRaw > mPrev ? mRaw : mPrev * 0.86;
+      smooth.current.__master = m;
+      setLevels({ tracks, master: dbToFrac(toDb(Math.max(m, 0.0005))) });
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, [idsKey]);
+  return levels;
 }
 
 /** Segmented LED meter — green body, amber top, red clip. */
@@ -40,9 +76,8 @@ function Meter({ level, tall }: { level: number; tall?: boolean }) {
   );
 }
 
-function Strip({ t, selected, onSelect }: { t: Track; selected: boolean; onSelect: () => void }) {
+function Strip({ t, level, selected, onSelect }: { t: Track; level: number; selected: boolean; onSelect: () => void }) {
   const { updateTrack } = useStudio();
-  const level = t.muted ? 0 : t.volume;
   return (
     <div
       onClick={onSelect}
@@ -153,9 +188,7 @@ function Strip({ t, selected, onSelect }: { t: Track; selected: boolean; onSelec
   );
 }
 
-function MasterStrip() {
-  const { tracks } = useStudio();
-  const peak = Math.max(...tracks.filter((t) => !t.muted).map((t) => t.volume), 0);
+function MasterStrip({ level: peak }: { level: number }) {
   return (
     <div className="flex w-[88px] shrink-0 flex-col items-center gap-1.5 bg-surface-2 px-2 py-2 shadow-[inset_2px_0_0_0_var(--grid-line-strong)]">
       <span className="font-display text-[10px] font-bold uppercase tracking-widest text-primary">Master</span>
@@ -185,12 +218,19 @@ function MasterStrip() {
 
 export function Mixer() {
   const { tracks, selectedId, select } = useStudio();
+  const levels = useMeters(tracks.map((t) => t.id));
   return (
     <div className="flex overflow-x-auto border border-border bg-surface">
       {tracks.map((t) => (
-        <Strip key={t.id} t={t} selected={t.id === selectedId} onSelect={() => select(t.id)} />
+        <Strip
+          key={t.id}
+          t={t}
+          level={t.muted ? 0 : (levels.tracks[t.id] ?? 0)}
+          selected={t.id === selectedId}
+          onSelect={() => select(t.id)}
+        />
       ))}
-      <MasterStrip />
+      <MasterStrip level={levels.master} />
     </div>
   );
 }
