@@ -15,6 +15,11 @@ import { Settings } from "@/components/studio/Settings";
 import { Keyboard } from "@/components/studio/Keyboard";
 import { Browser } from "@/components/studio/Browser";
 import { SplashScreen } from "@/components/studio/SplashScreen";
+import { FloatingDevice } from "@/components/studio/FloatingDevice";
+import synthFace from "@/assets/hw-synth.jpg";
+import drumFace from "@/assets/hw-drum.jpg";
+
+type FloatState = { synth: boolean; drums: boolean };
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -38,7 +43,7 @@ export const Route = createFileRoute("/")({
   component: Studio,
 });
 
-function Panels() {
+function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: FloatState) => FloatState) => void }) {
   const { selected, tracks, panel, setPanel, select } = useStudio();
   const [mixerDetached, setMixerDetached] = useState(false);
   const drumTrack = selected?.kind === "drum" ? selected : tracks.find((t) => t.kind === "drum");
@@ -64,6 +69,21 @@ function Panels() {
         <h2 className="font-display text-[11px] font-semibold tracking-[0.2em]">{current.title}</h2>
         {selected && <span className="label-xs">· {selected.name}</span>}
         <div className="ml-auto flex items-center gap-1">
+          {(panel === "synth" || panel === "drums") && (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 gap-1.5 font-mono text-[10px] tracking-widest uppercase"
+              onClick={() => {
+                const key = panel === "synth" ? "synth" : "drums";
+                setFloat((f) => ({ ...f, [key]: !f[key] }));
+                setPanel(null);
+              }}
+            >
+              <ArrowUpFromLine className="size-3.5" />
+              {float[panel === "synth" ? "synth" : "drums"] ? "Hide hardware" : "Hardware panel"}
+            </Button>
+          )}
           {panel === "mixer" && (
             <Button
               size="sm"
@@ -169,16 +189,48 @@ function StatusBar() {
   );
 }
 
+function FloatingDevices({ float, setFloat }: { float: FloatState; setFloat: (f: (p: FloatState) => FloatState) => void }) {
+  const { selected, tracks } = useStudio();
+  const drumTrack = selected?.kind === "drum" ? selected : tracks.find((t) => t.kind === "drum");
+  const synthTrack = selected?.patch ? selected : tracks.find((t) => t.patch);
+  return (
+    <>
+      {float.synth && synthTrack && (
+        <FloatingDevice
+          title={`SYNTHESIZER · ${synthTrack.name}`}
+          faceplate={synthFace}
+          initial={{ x: 90, y: 80, w: 1020, h: 540 }}
+          onClose={() => setFloat((f) => ({ ...f, synth: false }))}
+        >
+          <SynthEditor track={synthTrack} />
+        </FloatingDevice>
+      )}
+      {float.drums && drumTrack && (
+        <FloatingDevice
+          title={`DRUM MACHINE · ${drumTrack.name}`}
+          faceplate={drumFace}
+          initial={{ x: 160, y: 150, w: 1020, h: 520 }}
+          onClose={() => setFloat((f) => ({ ...f, drums: false }))}
+        >
+          <DrumMachine track={drumTrack} />
+        </FloatingDevice>
+      )}
+    </>
+  );
+}
+
 function Studio() {
+  const [float, setFloat] = useState<FloatState>({ synth: false, drums: false });
   return (
     <div className="flex h-screen flex-col overflow-hidden">
       <SplashScreen />
       <TopBar />
       <main className="flex min-h-0 flex-1 flex-col">
         <Timeline />
-        <Panels />
+        <Panels float={float} setFloat={setFloat} />
       </main>
       <StatusBar />
+      <FloatingDevices float={float} setFloat={setFloat} />
     </div>
   );
 }
