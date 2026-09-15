@@ -110,6 +110,127 @@ export class SyncLabEngine {
     }
   }
 
+  /* ---------------- pulse wave cache ---------------- */
+  private pulseCache = new Map<string, PeriodicWave>();
+  pulseWave(ctx: AudioContext, width: number) {
+    const key = width.toFixed(2);
+    const cached = this.pulseCache.get(key);
+    if (cached) return cached;
+    const n = 64;
+    const real = new Float32Array(n);
+    const imag = new Float32Array(n);
+    for (let i = 1; i < n; i++) imag[i] = (2 / (i * Math.PI)) * Math.sin(i * Math.PI * width);
+    const wave = ctx.createPeriodicWave(real, imag, { disableNormalization: false });
+    this.pulseCache.set(key, wave);
+    return wave;
+  }
+
+  /* ---------------- input recording ---------------- */
+  private recorder: MediaRecorder | null = null;
+  private recStream: MediaStream | null = null;
+  private recChunks: Blob[] = [];
+  private monitorNode: MediaStreamAudioSourceNode | null = null;
+  private monitorGain: GainNode | null = null;
+  private recAnalyser: AnalyserNode | null = null;
+
+  get isRecording() {
+    return this.recorder?.state === "recording";
+  }
+
+  async startInputRecording(trackId: string, monitor: boolean) {
+    const ctx = this.init();
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+    });
+    this.recStream = stream;
+    this.recChunks = [];
+    const src = ctx.createMediaStreamSource(stream);
+    const analyser = ctx.createAnalyser();
+    analyser.fftSize = 1024;
+    src.connect(analyser);
+    this.recAnalyser = analyser;
+    const mg = ctx.createGain();
+    mg.gain.value = monitor ? 1 : 0;
+    src.connect(mg);
+    mg.connect(this.channel(trackId).input);
+    this.monitorNode = src;
+    this.monitorGain = mg;
+
+    const rec = new MediaRecorder(stream);
+    rec.ondataavailable = (e) => e.data.size > 0 && this.recChunks.push(e.data);
+    rec.start(200);
+    this.recorder = rec;
+  }
+
+  setMonitoring(on: boolean) {
+    if (this.monitorGain && this.ctx)
+      this.monitorGain.gain.setTargetAtTime(on ? 1 : 0, this.ctx.currentTime, 0.01);
+  }
+
+  inputLevel() {
+    if (!this.recAnalyser) return 0;
+    const data = new Uint8Array(this.recAnalyser.frequencyBinCount);
+    this.recAnalyser.getByteTimeDomainData(data);
+    let peak = 0;
+    for (let i = 0; i < data.length; i++) peak = Math.max(peak, Math.abs((data[i] ?? 128) - 128) / 128);
+    return peak;
+  }
+
+  async stopInputRecording(): Promise<{ peaks: number[]; duration: number; url: string } | null> {
+    const rec = this.recorder;
+    if (!rec) return null;
+    const blob: Blob = await new Promise((resolve) => {
+      rec.onstop = () => resolve(new Blob(this.recChunks, { type: rec.mimeType || "audio/webm" }));
+      rec.stop();
+    });
+    this.recorder = null;
+    this.recStream?.getTracks().forEach((t) => t.stop());
+    this.recStream = null;
+    this.monitorNode?.disconnect();
+    this.monitorGain?.disconnect();
+    this.monitorNode = null;
+    this.monitorGain = null;
+    this.recAnalyser = null;
+    if (!blob.size) return null;
+
+    const ctx = this.init();
+    const arr = await blob.arrayBuffer();
+    let peaks: number[] = [];
+    let duration = 0;
+    try {
+      const buf = await ctx.decodeAudioData(arr.slice(0));
+      duration = buf.duration;
+      const data = buf.getChannelData(0);
+      const buckets = 160;
+      const size = Math.max(1, Math.floor(data.length / buckets));
+      for (let b = 0; b < buckets; b++) {
+        let peak = 0;
+        for (let i = b * size; i < Math.min(data.length, (b + 1) * size); i++)
+          peak = Math.max(peak, Math.abs(data[i] ?? 0));
+        peaks.push(peak);
+      }
+    } catch {
+      peaks = Array.from({ length: 160 }, () => Math.random() * 0.6);
+    }
+    return { peaks, duration, url: URL.createObjectURL(blob) };
+  }
+
+  async peaksFromFile(file: File | Blob) {
+    const ctx = this.init();
+    const buf = await ctx.decodeAudioData(await file.arrayBuffer());
+    const data = buf.getChannelData(0);
+    const buckets = 160;
+    const size = Math.max(1, Math.floor(data.length / buckets));
+    const peaks: number[] = [];
+    for (let b = 0; b < buckets; b++) {
+      let peak = 0;
+      for (let i = b * size; i < Math.min(data.length, (b + 1) * size); i++)
+        peak = Math.max(peak, Math.abs(data[i] ?? 0));
+      peaks.push(peak);
+    }
+    return { peaks, duration: buf.duration };
+  }
+
   /* ---------------- synth voice ---------------- */
   playNote(trackId: string, patch: SynthPatch, midi: number, duration: number, velocity = 1, when?: number) {
     const ctx = this.init();
