@@ -110,8 +110,84 @@ function Meter({ level, tall }: { level: number; tall?: boolean }) {
   );
 }
 
+function InsertRack({
+  title,
+  list,
+  onAdd,
+  onRemove,
+  onBypass,
+  onParam,
+}: {
+  title: string;
+  list: PluginInstance[];
+  onAdd: (def: import("@/lib/synclab/types").PluginDef) => void;
+  onRemove: (id: string) => void;
+  onBypass: (id: string) => void;
+  onParam: (id: string, paramId: string, value: number) => void;
+}) {
+  const { installedPlugins } = useStudio();
+  const [open, setOpen] = useState<string | null>(null);
+  return (
+    <div>
+      <div className="label-xs mb-1">{title}</div>
+      <div className="space-y-1">
+        {list.length === 0 && <div className="font-mono text-[9px] text-muted-foreground">No effects</div>}
+        {list.map((p) => (
+          <div key={p.id} className="rounded-sm border border-border bg-surface-2/50 px-1.5 py-1">
+            <div className="flex items-center gap-1">
+              <button onClick={() => onBypass(p.id)} title="Bypass">
+                <Power className={cn("size-3", p.bypass ? "text-muted-foreground" : "text-primary")} />
+              </button>
+              <button className="flex-1 truncate text-left font-mono text-[9px] uppercase" onClick={() => setOpen(open === p.id ? null : p.id)}>
+                {p.name}
+                <span className="ml-1 text-muted-foreground">{p.format}</span>
+              </button>
+              <button onClick={() => onRemove(p.id)} title="Remove">
+                <Trash2 className="size-3 text-muted-foreground hover:text-destructive" />
+              </button>
+            </div>
+            {open === p.id &&
+              p.params.map((x) => (
+                <div key={x.id} className="flex items-center gap-1 pt-1">
+                  <span className="w-12 shrink-0 font-mono text-[8px] uppercase text-muted-foreground">{x.name}</span>
+                  <Slider
+                    value={[x.value]}
+                    min={x.min}
+                    max={x.max}
+                    step={(x.max - x.min) / 100}
+                    className="h-2 flex-1"
+                    onValueChange={([v = 0]) => onParam(p.id, x.id, v)}
+                  />
+                  <span className="w-8 shrink-0 text-right font-mono text-[8px] text-muted-foreground">
+                    {x.value.toFixed(1)}
+                  </span>
+                </div>
+              ))}
+          </div>
+        ))}
+      </div>
+      <div className="mt-1.5 grid grid-cols-2 gap-1">
+        {installedPlugins.map((d) => (
+          <button
+            key={d.id}
+            onClick={() => onAdd(d)}
+            className="truncate rounded-sm border border-border bg-surface px-1 py-1 text-left font-mono text-[8px] uppercase text-muted-foreground hover:text-foreground"
+            title={`${d.vendor} · ${d.format}`}
+          >
+            + {d.name}
+          </button>
+        ))}
+      </div>
+      <p className="mt-1 font-mono text-[8px] leading-tight text-muted-foreground">
+        Add 3rd-party plugins in the PLUGINS panel — they appear here.
+      </p>
+    </div>
+  );
+}
+
 function Strip({ t, level, selected, onSelect }: { t: Track; level: number; selected: boolean; onSelect: () => void }) {
-  const { updateTrack } = useStudio();
+  const { updateTrack, addPlugin, removePlugin, togglePluginBypass, setPluginParam } = useStudio();
+
   return (
     <div
       onClick={onSelect}
