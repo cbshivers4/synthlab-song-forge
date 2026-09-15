@@ -157,5 +157,7 @@ export interface Transport {
   metronome: boolean;
   countIn: boolean;
   loop: boolean;
+  loopStart?: number;
+  loopEnd?: number;
   bars: number;
 }

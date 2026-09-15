@@ -154,6 +154,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     metronome: false,
     countIn: false,
     loop: true,
+    loopStart: 0,
+    loopEnd: 16,
     bars: 1,
     paused: false,
     overdub: false,
@@ -242,6 +244,11 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       }
       setTransportState((t) => ({ ...t, step: step % 16 }));
       step += 1;
+      if (tp.loop) {
+        const lo = tp.loopStart ?? 0;
+        const hi = Math.max(lo + 1, tp.loopEnd ?? 16);
+        if (step >= hi) step = lo;
+      }
     };
 
     tick();
