@@ -503,7 +503,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         if (t?.patch) engine.playNote(t.id, t.patch, midi, 0.35, 0.9);
       },
     };
-  }, [tracks, transport, selectedId, panel, userPresets, updateTrack]);
+  }, [tracks, transport, selectedId, panel, userPresets, updateTrack, finishRecording]);
 
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>;
 }
