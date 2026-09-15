@@ -197,19 +197,42 @@ export class SyncLabEngine {
     patch.oscillators.forEach((osc) => {
       if (!osc.on || osc.level <= 0) return;
       for (let u = 0; u < voices; u++) {
-        const o = ctx.createOscillator();
-        o.type = osc.wave;
         const spread = voices === 1 ? 0 : (u / (voices - 1) - 0.5) * 2;
-        const freq = midiToFreq(midi + osc.octave * 12 + osc.semitone);
-        o.frequency.setValueAtTime(freq, t0);
-        o.detune.setValueAtTime(osc.detune + spread * patch.unison.detune, t0);
         const g = ctx.createGain();
         g.gain.value = (osc.level / voices) * velocity;
         const p = ctx.createStereoPanner();
         p.pan.value = clamp(osc.pan + spread * patch.unison.width, -1, 1);
-        o.connect(g);
         g.connect(p);
         p.connect(filter);
+
+        if (osc.wave === "noise") {
+          const len = Math.ceil(ctx.sampleRate * (duration + patch.amp.release + 0.15));
+          const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+          const d = buf.getChannelData(0);
+          for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+          const src = ctx.createBufferSource();
+          src.buffer = buf;
+          src.connect(g);
+          src.start(t0);
+          nodes.push(src);
+          continue;
+        }
+
+        const o = ctx.createOscillator();
+        if (osc.wave === "pulse") {
+          o.setPeriodicWave(this.pulseWave(ctx, osc.pulseWidth ?? 0.3));
+        } else {
+          o.type = osc.wave;
+        }
+        const freq = midiToFreq(midi + osc.octave * 12 + osc.semitone);
+        o.frequency.setValueAtTime(freq, t0);
+        o.detune.setValueAtTime(
+          osc.detune + (osc.fine ?? 0) + spread * patch.unison.detune,
+          t0,
+        );
+        // hard-sync flavour: snap the partial back toward the root pitch
+        if (osc.sync) o.frequency.setValueAtTime(midiToFreq(midi) * Math.round(freq / midiToFreq(midi) || 1), t0);
+        o.connect(g);
         o.start(t0);
         o.stop(t0 + duration + patch.amp.release + 0.1);
         nodes.push(o);
