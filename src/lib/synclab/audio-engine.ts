@@ -19,6 +19,7 @@ interface ChannelStrip {
   input: GainNode;
   gain: GainNode;
   pan: StereoPannerNode;
+  meter: AnalyserNode;
 }
 
 export class SyncLabEngine {
@@ -75,6 +76,16 @@ export class SyncLabEngine {
     return peak;
   }
 
+  getTrackLevel(id: string) {
+    const ch = this.channels.get(id);
+    if (!ch) return 0;
+    const data = new Uint8Array(ch.meter.frequencyBinCount);
+    ch.meter.getByteTimeDomainData(data);
+    let peak = 0;
+    for (let i = 0; i < data.length; i++) peak = Math.max(peak, Math.abs((data[i] ?? 128) - 128) / 128);
+    return peak;
+  }
+
   channel(id: string): ChannelStrip {
     const ctx = this.init();
     let ch = this.channels.get(id);
@@ -82,10 +93,13 @@ export class SyncLabEngine {
       const input = ctx.createGain();
       const gain = ctx.createGain();
       const pan = ctx.createStereoPanner();
+      const meter = ctx.createAnalyser();
+      meter.fftSize = 256;
       input.connect(gain);
       gain.connect(pan);
+      gain.connect(meter);
       pan.connect(this.master!);
-      ch = { input, gain, pan };
+      ch = { input, gain, pan, meter };
       this.channels.set(id, ch);
     }
     return ch;
