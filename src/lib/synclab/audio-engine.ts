@@ -36,8 +36,12 @@ export class SyncLabEngine {
   delaySend: GainNode | null = null;
   chorusSend: GainNode | null = null;
   private buses = new Map<string, GainNode>();
+  private sendOut = new Map<string, AudioNode>();
+  private sendFeedback = new Map<string, AudioNode>();
+  private fxInserts = new Map<string, { key: string; nodes: AudioNode[] }>();
   private channels = new Map<string, ChannelStrip>();
   private analyser: AnalyserNode | null = null;
+
 
 
   init() {
@@ -87,6 +91,8 @@ export class SyncLabEngine {
     fb.connect(delay);
     delay.connect(master);
     this.delaySend = dSend;
+    this.sendOut.set("delay", delay);
+    this.sendFeedback.set("delay", fb);
 
     // chorus send bus
     const cSend = ctx.createGain();
@@ -103,6 +109,9 @@ export class SyncLabEngine {
     cSend.connect(cDelay);
     cDelay.connect(master);
     this.chorusSend = cSend;
+    this.sendOut.set("chorus", cDelay);
+    this.sendOut.set("reverb", conv);
+
 
     for (const id of ["drums", "vocals", "instruments", "synths", "fx", "master"]) {
       const g = ctx.createGain();
@@ -196,10 +205,75 @@ export class SyncLabEngine {
       }
     }
 
+    const nodes = this.buildInsertNodes(ctx, active);
+    ch.insertNodes = nodes;
+    this.linkInsertChain(ch.gain, nodes, active, ch.meter);
+  }
+
+  /** Inserts on a bus ("bus:drums") or an FX send ("send:reverb"). */
+  setFxInserts(targetId: string, plugins: PluginInstance[]) {
+    const ctx = this.init();
+    const master = this.master;
+    if (!master) return;
+    const [kind = "", name = ""] = targetId.split(":");
+    const source: AudioNode | null =
+      kind === "bus"
+        ? this.busNode(name)
+        : name === "reverb"
+          ? this.reverb
+          : name === "delay"
+            ? this.sendOut.get("delay") ?? null
+            : this.sendOut.get("chorus") ?? null;
+    if (!source) return;
+
+    const active = plugins.filter((pl) => !pl.bypass);
+    const key = JSON.stringify(active.map((pl) => [pl.kind, pl.params.map((x) => x.value)]));
+    const prev = this.fxInserts.get(targetId);
+    if (prev?.key === key) return;
+
+    try {
+      source.disconnect();
+    } catch {
+      /* noop */
+    }
+    for (const n of prev?.nodes ?? []) {
+      try {
+        n.disconnect();
+      } catch {
+        /* noop */
+      }
+    }
+    if (kind === "send" && name === "delay") {
+      const fb = this.sendFeedback.get("delay");
+      if (fb) source.connect(fb);
+    }
+    const nodes = this.buildInsertNodes(ctx, active);
+    this.fxInserts.set(targetId, { key, nodes });
+    this.linkInsertChain(source, nodes, active, master);
+  }
+
+  private linkInsertChain(from: AudioNode, nodes: AudioNode[], active: PluginInstance[], to: AudioNode) {
+    let cursor: AudioNode = from;
+    let idx = 0;
+    for (const pl of active) {
+      const size = { eq: 4, filter: 1, drive: 3, compressor: 2, delay: 5, width: 1, gain: 1 }[pl.kind];
+      const head = nodes[idx];
+      const tail = nodes[idx + size - 1];
+      if (head && tail) {
+        cursor.connect(head);
+        cursor = tail;
+      }
+      idx += size;
+    }
+    cursor.connect(to);
+  }
+
+  private buildInsertNodes(ctx: AudioContext, active: PluginInstance[]) {
     const nodes: AudioNode[] = [];
     const val = (pl: PluginInstance, id: string, fallback: number) =>
       pl.params.find((x) => x.id === id)?.value ?? fallback;
     const dbToGain = (db: number) => Math.pow(10, db / 20);
+
 
     for (const pl of active) {
       switch (pl.kind) {
@@ -292,24 +366,9 @@ export class SyncLabEngine {
         }
       }
     }
-
-    // heads/tails: each plugin block already chains internally; link blocks by
-    // connecting the last created node of a block to the first of the next.
-    ch.insertNodes = nodes;
-    let cursor: AudioNode = ch.gain;
-    let idx = 0;
-    for (const pl of active) {
-      const size = { eq: 4, filter: 1, drive: 3, compressor: 2, delay: 5, width: 1, gain: 1 }[pl.kind];
-      const head = nodes[idx];
-      const tail = nodes[idx + size - 1];
-      if (head && tail) {
-        cursor.connect(head);
-        cursor = tail;
-      }
-      idx += size;
-    }
-    cursor.connect(ch.meter);
+    return nodes;
   }
+
 
   syncMix(tracks: Track[]) {
     if (!this.ctx) return;
@@ -757,7 +816,7 @@ const engineGlobal = globalThis as typeof globalThis & { __synclabEngine?: SyncL
 export const getEngine = () => {
   const current = engineGlobal.__synclabEngine;
   // a stale instance from a previous hot reload may lack newer methods
-  if (!current || typeof current.setBus !== "function") {
+  if (!current || typeof current.setBus !== "function" || typeof current.setFxInserts !== "function") {
     engineGlobal.__synclabEngine = new SyncLabEngine();
   }
   return engineGlobal.__synclabEngine!;

@@ -19,6 +19,8 @@ import type {
   DrumPad,
   MidiNote,
   PluginDef,
+  PluginInstance,
+
   PluginParam,
   SynthPatch,
   Track,
@@ -117,7 +119,13 @@ interface StudioApi extends StudioState {
   togglePluginBypass: (trackId: string, instanceId: string) => void;
   movePlugin: (trackId: string, instanceId: string, dir: -1 | 1) => void;
   setPluginParam: (trackId: string, instanceId: string, paramId: string, value: number) => void;
+  fxChains: Record<string, PluginInstance[]>;
+  addFxPlugin: (target: string, def: PluginDef) => void;
+  removeFxPlugin: (target: string, instanceId: string) => void;
+  toggleFxBypass: (target: string, instanceId: string) => void;
+  setFxParam: (target: string, instanceId: string, paramId: string, value: number) => void;
 }
+
 
 // Reuse a single context across hot-reloaded module instances so provider and
 // consumers never end up bound to two different copies of this module.
@@ -163,6 +171,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   });
 
   const [installedPlugins, setInstalledPlugins] = useState<PluginDef[]>(BUILT_IN_PLUGINS);
+  const [fxChains, setFxChains] = useState<Record<string, PluginInstance[]>>({});
 
   useEffect(() => {
     if (typeof window !== "undefined" && getEngine().ctx) {
@@ -175,6 +184,12 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     if (typeof window === "undefined" || !getEngine().ctx) return;
     for (const [id, b] of Object.entries(buses)) getEngine().setBus(id, b.volume, b.muted);
   }, [buses]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !getEngine().ctx) return;
+    for (const [target, list] of Object.entries(fxChains)) getEngine().setFxInserts(target, list);
+  }, [fxChains]);
+
 
   // step clock
   useEffect(() => {
@@ -593,8 +608,33 @@ export function StudioProvider({ children }: { children: ReactNode }) {
               : t,
           ),
         ),
+      fxChains,
+      addFxPlugin: (target, d) => {
+        const inst = instantiate(d);
+        setFxChains((c) => ({ ...c, [target]: [...(c[target] ?? []), inst] }));
+        toast.success(`${d.name} inserted on ${target.split(":")[1]?.toUpperCase()}`, {
+          description: `${d.vendor} · ${d.format}`,
+        });
+      },
+      removeFxPlugin: (target, instanceId) =>
+        setFxChains((c) => ({ ...c, [target]: (c[target] ?? []).filter((p) => p.id !== instanceId) })),
+      toggleFxBypass: (target, instanceId) =>
+        setFxChains((c) => ({
+          ...c,
+          [target]: (c[target] ?? []).map((p) => (p.id === instanceId ? { ...p, bypass: !p.bypass } : p)),
+        })),
+      setFxParam: (target, instanceId, paramId, value) =>
+        setFxChains((c) => ({
+          ...c,
+          [target]: (c[target] ?? []).map((p) =>
+            p.id === instanceId
+              ? { ...p, params: p.params.map((x: PluginParam) => (x.id === paramId ? { ...x, value } : x)) }
+              : p,
+          ),
+        })),
     };
-  }, [tracks, transport, selectedId, panel, userPresets, buses, installedPlugins, updateTrack, finishRecording]);
+  }, [tracks, transport, selectedId, panel, userPresets, buses, installedPlugins, fxChains, updateTrack, finishRecording]);
+
 
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>;
 }

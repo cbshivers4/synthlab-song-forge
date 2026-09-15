@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState } from "react";
+import { Power, Settings2, Trash2 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { getEngine } from "@/lib/synclab/audio-engine";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useStudio } from "@/lib/synclab/store";
-import type { BusId, BusState, Track, Transport } from "@/lib/synclab/types";
+import type { BusId, BusState, PluginInstance, Track, Transport } from "@/lib/synclab/types";
 import { cn } from "@/lib/utils";
+
 
 const BUSES: BusId[] = ["drums", "vocals", "instruments", "synths", "fx", "master"];
 const DB_TICKS = [6, 0, -6, -12, -24, -48];
@@ -107,8 +110,84 @@ function Meter({ level, tall }: { level: number; tall?: boolean }) {
   );
 }
 
+function InsertRack({
+  title,
+  list,
+  onAdd,
+  onRemove,
+  onBypass,
+  onParam,
+}: {
+  title: string;
+  list: PluginInstance[];
+  onAdd: (def: import("@/lib/synclab/types").PluginDef) => void;
+  onRemove: (id: string) => void;
+  onBypass: (id: string) => void;
+  onParam: (id: string, paramId: string, value: number) => void;
+}) {
+  const { installedPlugins } = useStudio();
+  const [open, setOpen] = useState<string | null>(null);
+  return (
+    <div>
+      <div className="label-xs mb-1">{title}</div>
+      <div className="space-y-1">
+        {list.length === 0 && <div className="font-mono text-[9px] text-muted-foreground">No effects</div>}
+        {list.map((p) => (
+          <div key={p.id} className="rounded-sm border border-border bg-surface-2/50 px-1.5 py-1">
+            <div className="flex items-center gap-1">
+              <button onClick={() => onBypass(p.id)} title="Bypass">
+                <Power className={cn("size-3", p.bypass ? "text-muted-foreground" : "text-primary")} />
+              </button>
+              <button className="flex-1 truncate text-left font-mono text-[9px] uppercase" onClick={() => setOpen(open === p.id ? null : p.id)}>
+                {p.name}
+                <span className="ml-1 text-muted-foreground">{p.format}</span>
+              </button>
+              <button onClick={() => onRemove(p.id)} title="Remove">
+                <Trash2 className="size-3 text-muted-foreground hover:text-destructive" />
+              </button>
+            </div>
+            {open === p.id &&
+              p.params.map((x) => (
+                <div key={x.id} className="flex items-center gap-1 pt-1">
+                  <span className="w-12 shrink-0 font-mono text-[8px] uppercase text-muted-foreground">{x.name}</span>
+                  <Slider
+                    value={[x.value]}
+                    min={x.min}
+                    max={x.max}
+                    step={(x.max - x.min) / 100}
+                    className="h-2 flex-1"
+                    onValueChange={([v = 0]) => onParam(p.id, x.id, v)}
+                  />
+                  <span className="w-8 shrink-0 text-right font-mono text-[8px] text-muted-foreground">
+                    {x.value.toFixed(1)}
+                  </span>
+                </div>
+              ))}
+          </div>
+        ))}
+      </div>
+      <div className="mt-1.5 grid grid-cols-2 gap-1">
+        {installedPlugins.map((d) => (
+          <button
+            key={d.id}
+            onClick={() => onAdd(d)}
+            className="truncate rounded-sm border border-border bg-surface px-1 py-1 text-left font-mono text-[8px] uppercase text-muted-foreground hover:text-foreground"
+            title={`${d.vendor} · ${d.format}`}
+          >
+            + {d.name}
+          </button>
+        ))}
+      </div>
+      <p className="mt-1 font-mono text-[8px] leading-tight text-muted-foreground">
+        Add 3rd-party plugins in the PLUGINS panel — they appear here.
+      </p>
+    </div>
+  );
+}
+
 function Strip({ t, level, selected, onSelect }: { t: Track; level: number; selected: boolean; onSelect: () => void }) {
-  const { updateTrack } = useStudio();
+  const { updateTrack, addPlugin, removePlugin, togglePluginBypass, setPluginParam } = useStudio();
+
   return (
     <div
       onClick={onSelect}
@@ -199,53 +278,69 @@ function Strip({ t, level, selected, onSelect }: { t: Track; level: number; sele
         </button>
       </div>
 
-      {/* fx sends */}
-      <div className="w-full rounded-sm bg-surface-2/60 px-1 py-1">
-        <div className="mb-0.5 text-center font-mono text-[7px] uppercase tracking-widest text-muted-foreground">
-          Sends
-        </div>
-        {SEND_KEYS.map(([key, label]) => {
-          const value = t.sends?.[key] ?? 0;
-          return (
-            <div key={key} className="flex items-center gap-1">
-              <span className="w-5 shrink-0 font-mono text-[7px] uppercase text-muted-foreground">{label}</span>
-              <Slider
-                value={[value]}
-                min={0}
-                max={1}
-                step={0.01}
-                className="h-2 flex-1"
-                onClick={(e) => e.stopPropagation()}
-                onValueChange={([v = 0]) =>
-                  updateTrack(t.id, {
-                    sends: { reverb: 0, delay: 0, chorus: 0, ...(t.sends ?? {}), [key]: v },
-                  })
-                }
-              />
-              <span className="w-4 shrink-0 text-right font-mono text-[7px] text-muted-foreground">
-                {Math.round(value * 100)}
-              </span>
-            </div>
-          );
-        })}
-      </div>
+      {/* routing / sends / inserts menu */}
+      <Popover>
+        <PopoverTrigger asChild>
+          <button
+            onClick={(e) => e.stopPropagation()}
+            className="flex h-6 w-full items-center justify-center gap-1 rounded-sm bg-surface-2 font-mono text-[8px] uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <Settings2 className="size-3" /> {t.bus}
+          </button>
+        </PopoverTrigger>
+        <PopoverContent align="start" className="w-64 space-y-3 p-3" onClick={(e) => e.stopPropagation()}>
+          <div>
+            <div className="label-xs mb-1">Bus</div>
+            <Select value={t.bus} onValueChange={(v) => updateTrack(t.id, { bus: v as BusId })}>
+              <SelectTrigger className="h-7 w-full text-xs uppercase">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {BUSES.map((b) => (
+                  <SelectItem key={b} value={b} className="text-xs uppercase">
+                    {b}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <div className="label-xs mb-1">Sends</div>
+            {SEND_KEYS.map(([key, label]) => {
+              const value = t.sends?.[key] ?? 0;
+              return (
+                <div key={key} className="flex items-center gap-2 py-0.5">
+                  <span className="w-7 shrink-0 font-mono text-[9px] uppercase text-muted-foreground">{label}</span>
+                  <Slider
+                    value={[value]}
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    className="h-2 flex-1"
+                    onValueChange={([v = 0]) =>
+                      updateTrack(t.id, {
+                        sends: { reverb: 0, delay: 0, chorus: 0, ...(t.sends ?? {}), [key]: v },
+                      })
+                    }
+                  />
+                  <span className="w-6 shrink-0 text-right font-mono text-[9px] text-muted-foreground">
+                    {Math.round(value * 100)}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+          <InsertRack
+            title="Inserts"
+            list={t.plugins ?? []}
+            onAdd={(def) => addPlugin(t.id, def)}
+            onRemove={(id) => removePlugin(t.id, id)}
+            onBypass={(id) => togglePluginBypass(t.id, id)}
+            onParam={(id, p, v) => setPluginParam(t.id, id, p, v)}
+          />
+        </PopoverContent>
+      </Popover>
 
-      {/* bus routing */}
-      <Select value={t.bus} onValueChange={(v) => updateTrack(t.id, { bus: v as BusId })}>
-        <SelectTrigger
-          className="h-5 w-full border-border bg-surface-2 px-1 font-mono text-[8px] uppercase"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {BUSES.map((b) => (
-            <SelectItem key={b} value={b} className="text-xs uppercase">
-              {b}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
     </div>
   );
 }
@@ -277,9 +372,57 @@ function BusStrip({ id, state, level, onChange }: { id: BusId; state: BusState; 
       >
         M
       </button>
+      <FxMenu target={`bus:${id}`} label="FX" />
     </div>
   );
 }
+
+function FxMenu({ target, label }: { target: string; label: string }) {
+  const { fxChains, addFxPlugin, removeFxPlugin, toggleFxBypass, setFxParam } = useStudio();
+  const list = fxChains[target] ?? [];
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          className={cn(
+            "flex h-5 w-full items-center justify-center gap-1 rounded-sm font-mono text-[8px] uppercase tracking-wider transition-colors",
+            list.length > 0 ? "bg-primary/20 text-primary" : "bg-surface text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <Settings2 className="size-2.5" /> {label}
+          {list.length > 0 ? ` ${list.length}` : ""}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-64 p-3">
+        <InsertRack
+          title={`${target.split(":")[1]?.toUpperCase()} effects`}
+          list={list}
+          onAdd={(def) => addFxPlugin(target, def)}
+          onRemove={(id) => removeFxPlugin(target, id)}
+          onBypass={(id) => toggleFxBypass(target, id)}
+          onParam={(id, p, v) => setFxParam(target, id, p, v)}
+        />
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function SendStrip({ id, level }: { id: "reverb" | "delay" | "chorus"; level: number }) {
+  const { tracks } = useStudio();
+  const amount = Math.max(0, ...tracks.map((t) => (t.muted ? 0 : (t.sends?.[id] ?? 0))));
+  return (
+    <div className="flex w-[64px] shrink-0 flex-col items-center gap-1.5 border-r border-border bg-surface-2/30 px-1.5 py-2">
+      <span className="truncate font-mono text-[9px] font-bold uppercase tracking-wider text-amber-400">{id}</span>
+      <span className="font-mono text-[7px] uppercase tracking-widest text-muted-foreground">Send FX</span>
+      <div className="flex h-44 items-stretch gap-1">
+        <Meter level={level * amount} tall />
+      </div>
+      <span className="font-mono text-[9px] text-muted-foreground">{Math.round(amount * 100)}%</span>
+      <FxMenu target={`send:${id}`} label="FX" />
+    </div>
+  );
+}
+
 
 function MasterStrip({ level: peak }: { level: number }) {
   return (
@@ -331,7 +474,11 @@ export function Mixer() {
       {BUS_STRIPS.map((id) => (
         <BusStrip key={id} id={id} state={buses[id]} level={busLevel(id)} onChange={(p) => setBus(id, p)} />
       ))}
+      {(["reverb", "delay", "chorus"] as const).map((id) => (
+        <SendStrip key={id} id={id} level={levels.master} />
+      ))}
       <MasterStrip level={levels.master} />
+
     </div>
   );
 }
