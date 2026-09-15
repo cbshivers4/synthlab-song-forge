@@ -3,20 +3,26 @@ import {
   Circle,
   Disc3,
   Download,
+  Hash,
+  Headphones,
   Import,
   KeyboardMusic,
+  Layers,
   Mic,
   Music2,
   Pause,
   Piano,
   Play,
   Plus,
+  Repeat,
+  Scissors,
   Settings2,
   SlidersHorizontal,
   Square,
   Timer,
   Waves,
 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
