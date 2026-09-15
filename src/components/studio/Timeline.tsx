@@ -456,7 +456,35 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
 }
 
 function Ruler() {
-  const { transport } = useStudio();
+  const { transport, setTransport } = useStudio();
+  const gridRef = useRef<HTMLDivElement>(null);
+  const lo = transport.loopStart ?? 0;
+  const hi = Math.max(lo + 1, transport.loopEnd ?? 16);
+
+  const stepFromX = (clientX: number) => {
+    const el = gridRef.current;
+    if (!el) return 0;
+    const r = el.getBoundingClientRect();
+    return Math.min(16, Math.max(0, Math.round(((clientX - r.left) / r.width) * 16)));
+  };
+
+  const startDrag = (e: React.PointerEvent) => {
+    e.preventDefault();
+    const s = stepFromX(e.clientX);
+    let end = s;
+    setTransport({ loopStart: s, loopEnd: Math.min(16, s + 4), loop: true });
+    const move = (ev: PointerEvent) => {
+      end = stepFromX(ev.clientX);
+      setTransport({ loopStart: Math.min(s, end), loopEnd: Math.max(Math.min(s, end) + 1, Math.max(s, end)) });
+    };
+    const up = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+  };
+
   return (
     <div className="sticky top-0 z-10 flex border-b border-border bg-surface-2/70 backdrop-blur">
       <div className="flex w-[244px] shrink-0 items-center gap-2 border-r border-border px-3 py-1">
@@ -465,17 +493,47 @@ function Ruler() {
           {String(Math.floor(transport.step / 4) + 1).padStart(2, "0")}.{(transport.step % 4) + 1}
         </span>
       </div>
-      <div className="relative grid flex-1 grid-cols-[repeat(16,minmax(0,1fr))]">
-        {Array.from({ length: 16 }).map((_, i) => (
-          <div
-            key={i}
-            className={`border-l py-1 pl-1 font-mono text-[9px] ${
-              i % 4 === 0 ? "border-border text-foreground/70" : "border-border/30 text-muted-foreground/50"
-            }`}
-          >
-            {i % 4 === 0 ? `${i / 4 + 1}` : "·"}
-          </div>
-        ))}
+      <div
+        ref={gridRef}
+        onPointerDown={startDrag}
+        title="Drag on the ruler to set the loop region"
+        className="relative flex flex-1 cursor-ew-resize select-none"
+      >
+        <div className="grid w-full grid-cols-[repeat(16,minmax(0,1fr))]">
+          {Array.from({ length: 16 }).map((_, i) => (
+            <div
+              key={i}
+              className={`border-l py-1 pl-1 font-mono text-[9px] ${
+                i % 4 === 0 ? "border-border text-foreground/70" : "border-border/30 text-muted-foreground/50"
+              }`}
+            >
+              {i % 4 === 0 ? `${i / 4 + 1}` : "·"}
+            </div>
+          ))}
+        </div>
+
+        {/* dim outside the loop */}
+        {transport.loop && (
+          <>
+            <div className="pointer-events-none absolute inset-y-0 left-0 bg-background/60" style={{ width: `${(lo / 16) * 100}%` }} />
+            <div className="pointer-events-none absolute inset-y-0 right-0 bg-background/60" style={{ width: `${((16 - hi) / 16) * 100}%` }} />
+            {/* loop band */}
+            <div
+              className="pointer-events-none absolute inset-y-0 border-x border-primary/70 bg-primary/15"
+              style={{ left: `${(lo / 16) * 100}%`, width: `${((hi - lo) / 16) * 100}%` }}
+            />
+            {/* markers */}
+            {[lo, hi].map((p, idx) => (
+              <div key={idx} className="pointer-events-none absolute top-0" style={{ left: `calc(${(p / 16) * 100}% - 4px)` }}>
+                <div
+                  className="h-0 w-0 border-x-4 border-x-transparent"
+                  style={{ borderTop: "7px solid var(--primary)" }}
+                />
+              </div>
+            ))}
+          </>
+        )}
+
         {transport.playing && (
           <div
             className="pointer-events-none absolute top-0 h-full w-[2px] bg-primary"
