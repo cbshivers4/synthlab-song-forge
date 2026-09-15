@@ -3,7 +3,7 @@ import { Slider } from "@/components/ui/slider";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useStudio } from "@/lib/synclab/store";
-import type { BusId, Track } from "@/lib/synclab/types";
+import type { BusId, Track, Transport } from "@/lib/synclab/types";
 import { cn } from "@/lib/utils";
 
 const BUSES: BusId[] = ["drums", "vocals", "instruments", "synths", "fx", "master"];
@@ -17,22 +17,45 @@ function dbToFrac(db: number) {
   return Math.min(1, Math.max(0, (db + 48) / 54));
 }
 
-/** Live peak levels for every channel + master, polled with rAF (fast attack, slow release). */
-function useMeters(trackIds: string[]) {
+function sequencedLevel(track: Track, step: number) {
+  const s = step % Math.max(1, track.steps);
+  if (track.kind === "drum") {
+    return Math.max(0, ...(track.pads ?? []).filter((pad) => !pad.muted).map((pad) => pad.steps[s] ?? 0)) * 0.9;
+  }
+  if (track.kind === "instrument" || track.kind === "midi" || track.kind === "sampler") {
+    const active = (track.notes ?? []).filter((note) => {
+      const start = note.step % Math.max(1, track.steps);
+      return s >= start && s < start + Math.max(1, note.length);
+    });
+    return Math.max(0, ...active.map((note) => note.velocity)) * 0.72;
+  }
+  const clip = track.clips?.find((item) => item.id === track.activeClipId) ?? track.clips?.[0];
+  if (!clip?.peaks.length) return 0;
+  const index = Math.floor((s / Math.max(1, track.steps)) * clip.peaks.length) % clip.peaks.length;
+  return (clip.peaks[index] ?? 0) * 0.82;
+}
+
+/** Live audio peaks with sequenced clip activity for channels represented by timeline media. */
+function useMeters(tracks: Track[], transport: Transport) {
   const [levels, setLevels] = useState<{ tracks: Record<string, number>; master: number }>({
     tracks: {},
     master: 0,
   });
   const smooth = useRef<Record<string, number>>({});
-  const idsKey = trackIds.join(",");
+  const idsKey = tracks.map((track) => track.id).join(",");
+  const tracksRef = useRef(tracks);
+  const transportRef = useRef(transport);
+  tracksRef.current = tracks;
+  transportRef.current = transport;
   useEffect(() => {
     let raf = 0;
     const loop = () => {
       const engine = getEngine();
       const tracks: Record<string, number> = {};
-      for (const id of idsKey.split(",")) {
-        if (!id) continue;
-        const raw = engine.getTrackLevel(id);
+      for (const track of tracksRef.current) {
+        const id = track.id;
+        const timeline = transportRef.current.playing ? sequencedLevel(track, transportRef.current.step) : 0;
+        const raw = Math.max(engine.getTrackLevel(id), timeline * track.volume);
         const prev = smooth.current[id] ?? 0;
         const v = raw > prev ? raw : prev * 0.86;
         smooth.current[id] = v;
@@ -217,8 +240,8 @@ function MasterStrip({ level: peak }: { level: number }) {
 }
 
 export function Mixer() {
-  const { tracks, selectedId, select } = useStudio();
-  const levels = useMeters(tracks.map((t) => t.id));
+  const { tracks, transport, selectedId, select } = useStudio();
+  const levels = useMeters(tracks, transport);
   return (
     <div className="flex overflow-x-auto border border-border bg-surface">
       {tracks.map((t) => (

@@ -94,10 +94,11 @@ export class SyncLabEngine {
       const gain = ctx.createGain();
       const pan = ctx.createStereoPanner();
       const meter = ctx.createAnalyser();
-      meter.fftSize = 256;
+      meter.fftSize = 512;
+      meter.smoothingTimeConstant = 0.55;
       input.connect(gain);
-      gain.connect(pan);
       gain.connect(meter);
+      meter.connect(pan);
       pan.connect(this.master!);
       ch = { input, gain, pan, meter };
       this.channels.set(id, ch);
@@ -531,8 +532,8 @@ function setTimeoutBurst(fn: () => void, delay: number) {
   else setTimeout(fn, delay * 1000);
 }
 
-let engine: SyncLabEngine | null = null;
+const engineGlobal = globalThis as typeof globalThis & { __synclabEngine?: SyncLabEngine };
 export const getEngine = () => {
-  if (!engine) engine = new SyncLabEngine();
-  return engine;
+  engineGlobal.__synclabEngine ??= new SyncLabEngine();
+  return engineGlobal.__synclabEngine;
 };
