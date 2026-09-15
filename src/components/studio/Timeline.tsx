@@ -764,6 +764,12 @@ export function Timeline() {
         {tracks.map((t, i) => (
           <TrackRow key={t.id} track={t} index={i} />
         ))}
+        <div className="flex items-center gap-3 px-2 pt-2">
+          <AddTrackMenu size="sm" />
+          <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+            {tracks.length} tracks
+          </span>
+        </div>
         <div
           className={`m-2 rounded-[3px] border border-dashed px-3 py-3 text-center font-mono text-[10px] tracking-widest uppercase transition-colors ${
             over ? "border-primary bg-primary/10 text-primary" : "border-border/70 text-muted-foreground"
@@ -782,8 +788,9 @@ export function Timeline() {
             toast.success(`${payload.name} added as a new channel`);
           }}
         >
-          {tracks.length} tracks · drag an instrument here or press + ADD TRACK
+          drag an instrument here or press + ADD TRACK
         </div>
+
         {transport.loop && (
           <div
             className="pointer-events-none absolute inset-y-0 border-x border-primary/25 bg-primary/[0.04]"
