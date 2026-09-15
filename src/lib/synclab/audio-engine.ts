@@ -36,8 +36,12 @@ export class SyncLabEngine {
   delaySend: GainNode | null = null;
   chorusSend: GainNode | null = null;
   private buses = new Map<string, GainNode>();
+  private sendOut = new Map<string, AudioNode>();
+  private sendFeedback = new Map<string, AudioNode>();
+  private fxInserts = new Map<string, { key: string; nodes: AudioNode[] }>();
   private channels = new Map<string, ChannelStrip>();
   private analyser: AnalyserNode | null = null;
+
 
 
   init() {
