@@ -160,6 +160,14 @@ interface StudioApi extends StudioState {
   loadPreset: (trackId: string, name: string) => void;
   generateBeat: (trackId: string, genre: string, energy: number) => void;
   previewNote: (trackId: string, midi: number) => void;
+  installedPlugins: PluginDef[];
+  installPlugin: (def: PluginDef) => void;
+  uninstallPlugin: (defId: string) => void;
+  addPlugin: (trackId: string, def: PluginDef) => void;
+  removePlugin: (trackId: string, instanceId: string) => void;
+  togglePluginBypass: (trackId: string, instanceId: string) => void;
+  movePlugin: (trackId: string, instanceId: string, dir: -1 | 1) => void;
+  setPluginParam: (trackId: string, instanceId: string, paramId: string, value: number) => void;
 }
 
 // Reuse a single context across hot-reloaded module instances so provider and
