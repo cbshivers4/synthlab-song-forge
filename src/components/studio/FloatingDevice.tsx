@@ -77,10 +77,10 @@ export function FloatingDevice({ title, faceplate, initial, onClose, children }:
           loading="lazy"
           width={1920}
           height={640}
-          className="h-[86px] w-full object-cover"
+          className="h-[70px] w-full object-cover object-center"
           draggable={false}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/10 to-background/80" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/25 to-background/90" />
         <div className="absolute inset-x-0 top-0 flex items-center gap-2 px-3 py-1.5">
           <span className="font-display text-[11px] font-semibold tracking-[0.3em] text-white drop-shadow">{title}</span>
           <div className="ml-auto flex items-center gap-1">
