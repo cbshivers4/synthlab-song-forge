@@ -114,7 +114,7 @@ export function TopBar() {
           </Button>
         </div>
 
-        <div className="flex items-center gap-3 rounded-lg border border-border bg-surface px-3 py-1.5">
+        <div className="flex items-center gap-3 rounded-[3px] border border-border bg-background/70 px-3 py-1">
           <div>
             <span className="label-xs">BPM</span>
             <div className="font-mono text-base leading-none text-primary">{transport.bpm}</div>
