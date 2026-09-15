@@ -117,7 +117,13 @@ interface StudioApi extends StudioState {
   togglePluginBypass: (trackId: string, instanceId: string) => void;
   movePlugin: (trackId: string, instanceId: string, dir: -1 | 1) => void;
   setPluginParam: (trackId: string, instanceId: string, paramId: string, value: number) => void;
+  fxChains: Record<string, PluginInstance[]>;
+  addFxPlugin: (target: string, def: PluginDef) => void;
+  removeFxPlugin: (target: string, instanceId: string) => void;
+  toggleFxBypass: (target: string, instanceId: string) => void;
+  setFxParam: (target: string, instanceId: string, paramId: string, value: number) => void;
 }
+
 
 // Reuse a single context across hot-reloaded module instances so provider and
 // consumers never end up bound to two different copies of this module.
