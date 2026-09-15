@@ -10,7 +10,7 @@ import {
 } from "react";
 import { getEngine } from "./audio-engine";
 import { TRACK_COLORS, applyPreset, defaultPads, defaultPatch, uid } from "./presets";
-import type { BusId, DrumPad, MidiNote, SynthPatch, Track, TrackKind, Transport } from "./types";
+import type { AudioClip, BusId, DrumPad, MidiNote, SynthPatch, Track, TrackKind, Transport } from "./types";
 
 const busFor = (kind: TrackKind): BusId =>
   kind === "drum"
