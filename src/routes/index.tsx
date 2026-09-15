@@ -51,14 +51,16 @@ function Panels() {
   const current = config[panel];
 
   return (
-    <section className="border-t border-border pt-4">
-      <div className="mb-4 flex items-center gap-2">
+    <section className="rack flex max-h-[52vh] min-h-[220px] shrink-0 flex-col border-t-2 border-border">
+      <div className="flex items-center gap-2 border-b border-border bg-surface-2/60 px-3 py-1.5">
         <span className="text-primary">{current.icon}</span>
-        <h2 className="font-display text-sm font-semibold tracking-widest">{current.title}</h2>
-        <Button size="icon" variant="ghost" className="ml-auto size-8" onClick={() => setPanel(null)} aria-label="Close editor">
+        <h2 className="font-display text-[11px] font-semibold tracking-[0.2em]">{current.title}</h2>
+        {selected && <span className="label-xs">· {selected.name}</span>}
+        <Button size="icon" variant="ghost" className="ml-auto size-7" onClick={() => setPanel(null)} aria-label="Close editor">
           <X className="size-4" />
         </Button>
       </div>
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3">
       {panel === "mixer" && <Mixer />}
       {panel === "synth" &&
         (synthTrack ? (
