@@ -202,53 +202,69 @@ function Strip({ t, level, selected, onSelect }: { t: Track; level: number; sele
         </button>
       </div>
 
-      {/* fx sends */}
-      <div className="w-full rounded-sm bg-surface-2/60 px-1 py-1">
-        <div className="mb-0.5 text-center font-mono text-[7px] uppercase tracking-widest text-muted-foreground">
-          Sends
-        </div>
-        {SEND_KEYS.map(([key, label]) => {
-          const value = t.sends?.[key] ?? 0;
-          return (
-            <div key={key} className="flex items-center gap-1">
-              <span className="w-5 shrink-0 font-mono text-[7px] uppercase text-muted-foreground">{label}</span>
-              <Slider
-                value={[value]}
-                min={0}
-                max={1}
-                step={0.01}
-                className="h-2 flex-1"
-                onClick={(e) => e.stopPropagation()}
-                onValueChange={([v = 0]) =>
-                  updateTrack(t.id, {
-                    sends: { reverb: 0, delay: 0, chorus: 0, ...(t.sends ?? {}), [key]: v },
-                  })
-                }
-              />
-              <span className="w-4 shrink-0 text-right font-mono text-[7px] text-muted-foreground">
-                {Math.round(value * 100)}
-              </span>
-            </div>
-          );
-        })}
-      </div>
+      {/* routing / sends / inserts menu */}
+      <Popover>
+        <PopoverTrigger asChild>
+          <button
+            onClick={(e) => e.stopPropagation()}
+            className="flex h-6 w-full items-center justify-center gap-1 rounded-sm bg-surface-2 font-mono text-[8px] uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <Settings2 className="size-3" /> {t.bus}
+          </button>
+        </PopoverTrigger>
+        <PopoverContent align="start" className="w-64 space-y-3 p-3" onClick={(e) => e.stopPropagation()}>
+          <div>
+            <div className="label-xs mb-1">Bus</div>
+            <Select value={t.bus} onValueChange={(v) => updateTrack(t.id, { bus: v as BusId })}>
+              <SelectTrigger className="h-7 w-full text-xs uppercase">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {BUSES.map((b) => (
+                  <SelectItem key={b} value={b} className="text-xs uppercase">
+                    {b}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <div className="label-xs mb-1">Sends</div>
+            {SEND_KEYS.map(([key, label]) => {
+              const value = t.sends?.[key] ?? 0;
+              return (
+                <div key={key} className="flex items-center gap-2 py-0.5">
+                  <span className="w-7 shrink-0 font-mono text-[9px] uppercase text-muted-foreground">{label}</span>
+                  <Slider
+                    value={[value]}
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    className="h-2 flex-1"
+                    onValueChange={([v = 0]) =>
+                      updateTrack(t.id, {
+                        sends: { reverb: 0, delay: 0, chorus: 0, ...(t.sends ?? {}), [key]: v },
+                      })
+                    }
+                  />
+                  <span className="w-6 shrink-0 text-right font-mono text-[9px] text-muted-foreground">
+                    {Math.round(value * 100)}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+          <InsertRack
+            title="Inserts"
+            list={t.plugins ?? []}
+            onAdd={(def) => addPlugin(t.id, def)}
+            onRemove={(id) => removePlugin(t.id, id)}
+            onBypass={(id) => togglePluginBypass(t.id, id)}
+            onParam={(id, p, v) => setPluginParam(t.id, id, p, v)}
+          />
+        </PopoverContent>
+      </Popover>
 
-      {/* bus routing */}
-      <Select value={t.bus} onValueChange={(v) => updateTrack(t.id, { bus: v as BusId })}>
-        <SelectTrigger
-          className="h-5 w-full border-border bg-surface-2 px-1 font-mono text-[8px] uppercase"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {BUSES.map((b) => (
-            <SelectItem key={b} value={b} className="text-xs uppercase">
-              {b}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
     </div>
   );
 }
