@@ -85,14 +85,26 @@ function Waveform({ track }: { track: Track }) {
           ))}
         </div>
       </div>
-      <div className="flex flex-1 items-center gap-[1px] px-1">
-        {active.peaks.map((p, i) => (
-          <div
-            key={i}
-            className="flex-1"
-            style={{ height: `${Math.round(Math.max(6, p * 92))}%`, background: track.color, opacity: 0.9 }}
-          />
-        ))}
+      <div className="relative flex-1 px-1">
+        {/* center line */}
+        <div className="absolute left-1 right-1 top-1/2 h-px -translate-y-1/2" style={{ background: `color-mix(in oklab, ${track.color} 35%, transparent)` }} />
+        <div className="flex h-full items-center gap-[1px]">
+          {active.peaks.map((p, i) => {
+            const h = Math.max(4, Math.round(p * 96));
+            return (
+              <div key={i} className="flex h-full flex-1 flex-col items-center justify-center">
+                <div
+                  className="w-full rounded-[1px]"
+                  style={{
+                    height: `${h}%`,
+                    background: `linear-gradient(to bottom, color-mix(in oklab, ${track.color} 40%, transparent), ${track.color} 50%, color-mix(in oklab, ${track.color} 40%, transparent))`,
+                    boxShadow: p > 0.85 ? `0 0 4px color-mix(in oklab, ${track.color} 70%, transparent)` : undefined,
+                  }}
+                />
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
