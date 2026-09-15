@@ -19,6 +19,8 @@ import type {
   DrumPad,
   MidiNote,
   PluginDef,
+  PluginInstance,
+
   PluginParam,
   SynthPatch,
   Track,
