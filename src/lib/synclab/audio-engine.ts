@@ -616,6 +616,11 @@ function setTimeoutBurst(fn: () => void, delay: number) {
 
 const engineGlobal = globalThis as typeof globalThis & { __synclabEngine?: SyncLabEngine };
 export const getEngine = () => {
-  engineGlobal.__synclabEngine ??= new SyncLabEngine();
-  return engineGlobal.__synclabEngine;
+  const current = engineGlobal.__synclabEngine;
+  // a stale instance from a previous hot reload may lack newer methods
+  if (!current || typeof current.setBus !== "function") {
+    engineGlobal.__synclabEngine = new SyncLabEngine();
+  }
+  return engineGlobal.__synclabEngine!;
 };
+
