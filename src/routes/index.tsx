@@ -104,6 +104,7 @@ function Panels() {
 function Studio() {
   return (
     <div className="min-h-screen">
+      <SplashScreen />
       <TopBar />
       <main className="mx-auto max-w-[1600px] space-y-4 px-4 py-4">
         <Timeline />
