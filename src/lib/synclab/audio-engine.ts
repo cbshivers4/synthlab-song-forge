@@ -130,13 +130,6 @@ export class SyncLabEngine {
     return peak;
   }
 
-    const data = new Uint8Array(this.analyser.frequencyBinCount);
-    this.analyser.getByteTimeDomainData(data);
-    let peak = 0;
-    for (let i = 0; i < data.length; i++) peak = Math.max(peak, Math.abs((data[i] ?? 128) - 128) / 128);
-    return peak;
-  }
-
   getTrackLevel(id: string) {
     const ch = this.channels.get(id);
     if (!ch) return 0;
@@ -160,8 +153,20 @@ export class SyncLabEngine {
       input.connect(gain);
       gain.connect(meter);
       meter.connect(pan);
-      pan.connect(this.master!);
-      ch = { input, gain, pan, meter };
+      pan.connect(this.busNode("master"));
+      const sendReverb = ctx.createGain();
+      const sendDelay = ctx.createGain();
+      const sendChorus = ctx.createGain();
+      sendReverb.gain.value = 0;
+      sendDelay.gain.value = 0;
+      sendChorus.gain.value = 0;
+      pan.connect(sendReverb);
+      pan.connect(sendDelay);
+      pan.connect(sendChorus);
+      sendReverb.connect(this.reverbSend!);
+      sendDelay.connect(this.delaySend!);
+      sendChorus.connect(this.chorusSend!);
+      ch = { input, gain, pan, meter, sendReverb, sendDelay, sendChorus, bus: "master" };
       this.channels.set(id, ch);
     }
     return ch;
@@ -175,8 +180,24 @@ export class SyncLabEngine {
       const audible = !t.muted && (!anySolo || t.solo);
       ch.gain.gain.setTargetAtTime(audible ? t.volume : 0, this.ctx.currentTime, 0.02);
       ch.pan.pan.setTargetAtTime(clamp(t.pan, -1, 1), this.ctx.currentTime, 0.02);
+      const bus = t.bus ?? "master";
+      if (ch.bus !== bus) {
+        try {
+          ch.pan.disconnect(this.busNode(ch.bus));
+        } catch {
+          /* not connected */
+        }
+        ch.pan.connect(this.busNode(bus));
+        ch.bus = bus;
+      }
+      const sends = t.sends ?? { reverb: 0, delay: 0, chorus: 0 };
+      ch.sendReverb.gain.setTargetAtTime(clamp(sends.reverb, 0, 1), this.ctx.currentTime, 0.02);
+      ch.sendDelay.gain.setTargetAtTime(clamp(sends.delay, 0, 1), this.ctx.currentTime, 0.02);
+      ch.sendChorus.gain.setTargetAtTime(clamp(sends.chorus, 0, 1), this.ctx.currentTime, 0.02);
     }
   }
+
+
 
   removeChannel(id: string) {
     const ch = this.channels.get(id);
