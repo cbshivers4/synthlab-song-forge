@@ -2,8 +2,7 @@ import { useState } from "react";
 import { AudioLines, FolderOpen, Music2, Plus, Sparkles, Waves } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStudio } from "@/lib/synclab/store";
-import { SYNTH_PRESETS } from "@/lib/synclab/presets";
-import { uid } from "@/lib/synclab/presets";
+import { SYNTH_PRESETS, uid } from "@/lib/synclab/presets";
 import { toast } from "sonner";
 
 type Tab = "samples" | "plugins" | "presets";
