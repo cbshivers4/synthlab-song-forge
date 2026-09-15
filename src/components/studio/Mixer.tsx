@@ -39,9 +39,9 @@ function useMeters(trackIds: string[]) {
         tracks[id] = dbToFrac(toDb(Math.max(v, 0.0005)));
       }
       const mRaw = engine.getLevel();
-      const mPrev = smooth.current.__master ?? 0;
+      const mPrev = smooth.current["__master"] ?? 0;
       const m = mRaw > mPrev ? mRaw : mPrev * 0.86;
-      smooth.current.__master = m;
+      smooth.current["__master"] = m;
       setLevels({ tracks, master: dbToFrac(toDb(Math.max(m, 0.0005))) });
       raf = requestAnimationFrame(loop);
     };
