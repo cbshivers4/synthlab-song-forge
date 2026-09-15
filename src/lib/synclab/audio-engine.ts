@@ -816,7 +816,7 @@ const engineGlobal = globalThis as typeof globalThis & { __synclabEngine?: SyncL
 export const getEngine = () => {
   const current = engineGlobal.__synclabEngine;
   // a stale instance from a previous hot reload may lack newer methods
-  if (!current || typeof current.setBus !== "function") {
+  if (!current || typeof current.setBus !== "function" || typeof current.setFxInserts !== "function") {
     engineGlobal.__synclabEngine = new SyncLabEngine();
   }
   return engineGlobal.__synclabEngine!;
