@@ -360,6 +360,16 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
               <DropdownMenuItem onClick={openEditor}>
                 <Settings2 className="size-4" /> Track settings
               </DropdownMenuItem>
+              {track.kind !== "audio" && (
+                <DropdownMenuItem
+                  onClick={() => {
+                    select(track.id);
+                    setPanel("piano");
+                  }}
+                >
+                  <Piano className="size-4" /> Edit in piano roll
+                </DropdownMenuItem>
+              )}
               {track.patch && (
                 <>
                   <DropdownMenuSeparator />
