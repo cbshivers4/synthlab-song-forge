@@ -57,6 +57,8 @@
   --color-clip-audio-dark: var(--clip-audio-dark);
   --color-clip-midi: var(--clip-midi);
   --color-clip-midi-dark: var(--clip-midi-dark);
+  --color-clip-drum: var(--clip-drum);
+  --color-clip-drum-dark: var(--clip-drum-dark);
   --color-editor-grid: var(--editor-grid);
   --color-editor-grid-strong: var(--editor-grid-strong);
 }
@@ -102,10 +104,12 @@
   --sidebar-border: oklch(0.3 0.025 255);
   --sidebar-ring: oklch(0.8 0.15 195);
 
-  --clip-audio: oklch(0.82 0.23 142);
-  --clip-audio-dark: oklch(0.25 0.08 145);
-  --clip-midi: oklch(0.93 0.2 112);
-  --clip-midi-dark: oklch(0.27 0.07 112);
+  --clip-audio: oklch(0.73 0.17 155);
+  --clip-audio-dark: oklch(0.29 0.08 155);
+  --clip-midi: oklch(0.7 0.15 275);
+  --clip-midi-dark: oklch(0.28 0.07 275);
+  --clip-drum: oklch(0.79 0.15 78);
+  --clip-drum-dark: oklch(0.31 0.07 78);
   --editor-grid: oklch(0.29 0.008 255);
   --editor-grid-strong: oklch(0.39 0.012 255);
 

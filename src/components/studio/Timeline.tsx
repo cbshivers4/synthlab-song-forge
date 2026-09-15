@@ -66,16 +66,14 @@ function Waveform({ track }: { track: Track }) {
 
   const peaks = active.peaks.length > 0 ? active.peaks : [0];
 
-  const waveformPath = peaks
+  const upperPath = peaks
     .map((p, i) => {
       const x = (i / Math.max(1, peaks.length - 1)) * 100;
       return `${x.toFixed(2)},${(50 - Math.max(2, p * 43)).toFixed(2)}`;
     })
     .join(" ");
-  const mirroredPath = [...peaks]
-    .reverse()
-    .map((p, reverseIndex) => {
-      const i = peaks.length - 1 - reverseIndex;
+  const lowerPath = peaks
+    .map((p, i) => {
       const x = (i / Math.max(1, peaks.length - 1)) * 100;
       return `${x.toFixed(2)},${(50 + Math.max(2, p * 43)).toFixed(2)}`;
     })
@@ -83,13 +81,13 @@ function Waveform({ track }: { track: Track }) {
 
   return (
     <div
-      className="group absolute inset-y-[4px] left-1 right-1 flex flex-col overflow-hidden rounded-[2px] border border-clip-audio-dark/70 bg-clip-audio shadow-sm"
+      className="group absolute inset-y-2 left-1 right-1 flex flex-col overflow-hidden rounded-[3px] border border-clip-audio/30 bg-clip-audio/10 shadow-sm transition-colors hover:bg-clip-audio/15"
     >
-      <div className="flex h-[18px] shrink-0 items-center gap-1 border-b border-clip-audio-dark/30 bg-clip-audio-dark/20 px-1.5">
-        <span className="truncate font-mono text-[9px] font-semibold text-clip-audio-dark">
+      <div className="flex h-[17px] shrink-0 items-center gap-1 bg-clip-audio/10 px-1.5">
+        <span className="truncate font-mono text-[9px] font-semibold text-clip-audio/80">
           {active.name}
         </span>
-        <span className="ml-auto shrink-0 font-mono text-[8px] text-clip-audio-dark/70">{active.duration.toFixed(1)}s</span>
+        <span className="ml-auto shrink-0 font-mono text-[8px] text-clip-audio/55">{active.duration.toFixed(1)}s</span>
         <div className="flex shrink-0 items-center gap-1">
           {clips.map((c) => (
             <button
@@ -102,17 +100,18 @@ function Waveform({ track }: { track: Track }) {
               title="Click to choose take, double-click to delete"
               className="size-[6px] rounded-full border"
               style={{
-                borderColor: "var(--clip-audio-dark)",
-                background: c.id === active.id ? "var(--clip-audio-dark)" : "transparent",
+                borderColor: "var(--clip-audio)",
+                background: c.id === active.id ? "var(--clip-audio)" : "transparent",
               }}
             />
           ))}
         </div>
       </div>
 
-      <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="min-h-0 w-full flex-1 p-[2px]" aria-label={`${active.name} waveform`}>
-        <line x1="0" y1="50" x2="100" y2="50" stroke="var(--clip-audio-dark)" strokeOpacity="0.28" strokeWidth="0.35" />
-        <polygon points={`${waveformPath} ${mirroredPath}`} fill="var(--clip-audio-dark)" fillOpacity="0.72" />
+      <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="min-h-0 w-full flex-1 px-1 pb-1" aria-label={`${active.name} waveform`}>
+        <line x1="0" y1="50" x2="100" y2="50" stroke="var(--clip-audio)" strokeOpacity="0.16" strokeWidth="0.25" />
+        <polyline points={upperPath} fill="none" stroke="var(--clip-audio)" strokeOpacity="0.78" strokeWidth="0.55" vectorEffect="non-scaling-stroke" />
+        <polyline points={lowerPath} fill="none" stroke="var(--clip-audio)" strokeOpacity="0.38" strokeWidth="0.45" vectorEffect="non-scaling-stroke" />
       </svg>
     </div>
   );
@@ -137,41 +136,41 @@ function MidiClip({ track }: { track: Track }) {
   const rows = 12;
   return (
     <div
-      className="absolute inset-y-1 left-1 right-1 overflow-hidden rounded-[2px] border border-clip-midi-dark/70 bg-clip-midi shadow-sm"
+      className="absolute inset-y-2 left-1 right-1 overflow-hidden rounded-[3px] border border-clip-midi/30 bg-clip-midi/10 shadow-sm transition-colors hover:bg-clip-midi/15"
       onDoubleClick={() => {
         select(track.id);
         setPanel("piano");
       }}
     >
       <div
-        className="flex h-[18px] items-center gap-1 border-b border-clip-midi-dark/30 bg-clip-midi-dark/20 px-1.5"
+        className="flex h-[17px] items-center gap-1 bg-clip-midi/10 px-1.5"
       >
         <Piano className="size-2.5" />
-        <span className="truncate font-mono text-[9px] font-semibold text-clip-midi-dark">
+        <span className="truncate font-mono text-[9px] font-semibold text-clip-midi/75">
           {track.instrument ?? "MIDI"} · {notes.length} NOTES ·{" "}
           {NOTE_NAMES[Math.min(...pitches) % 12]}
           {Math.floor(Math.min(...pitches) / 12) - 1}
         </span>
       </div>
-      <div className="relative flex-1" style={{ height: "calc(100% - 18px)" }}>
+      <div className="relative flex-1" style={{ height: "calc(100% - 17px)" }}>
         {Array.from({ length: rows }).map((_, r) => (
           <div
             key={r}
-            className="absolute left-0 right-0 border-t border-clip-midi-dark/15"
+            className="absolute left-0 right-0 border-t border-clip-midi/5"
             style={{ top: `${(r / rows) * 100}%` }}
           />
         ))}
         {notes.map((n) => (
           <div
             key={n.id}
-            className="absolute rounded-[1px] border border-clip-midi-dark/30 bg-clip-midi-dark/70"
+            className="absolute rounded-full bg-clip-midi/55"
             title={`${NOTE_NAMES[n.pitch % 12]}${Math.floor(n.pitch / 12) - 1}`}
             style={{
               left: `${((n.step % 16) / 16) * 100}%`,
               width: `${(Math.max(1, n.length) / 16) * 100 - 0.4}%`,
               top: `${(1 - (n.pitch - lo) / span) * 82 + 4}%`,
-              height: "9%",
-              opacity: 0.55 + (n.velocity ?? 0.8) * 0.4,
+              height: "6%",
+              opacity: 0.5 + (n.velocity ?? 0.8) * 0.35,
             }}
           />
         ))}
@@ -194,25 +193,25 @@ function DrumClip({ track }: { track: Track }) {
   const hits = pads.reduce((n, p) => n + p.steps.filter((s) => s > 0).length, 0);
   return (
     <div
-      className="absolute inset-y-1 left-1 right-1 overflow-hidden rounded-[2px] border border-clip-midi-dark/70 bg-clip-midi shadow-sm"
+      className="absolute inset-y-2 left-1 right-1 overflow-hidden rounded-[3px] border border-clip-drum/30 bg-clip-drum/10 shadow-sm transition-colors hover:bg-clip-drum/15"
       onDoubleClick={() => {
         select(track.id);
         setPanel("drums");
       }}
     >
       <div
-        className="flex h-[18px] items-center gap-1 border-b border-clip-midi-dark/30 bg-clip-midi-dark/20 px-1.5"
+        className="flex h-[17px] items-center gap-1 bg-clip-drum/10 px-1.5"
       >
         <Disc3 className="size-2.5" />
-        <span className="truncate font-mono text-[9px] font-semibold text-clip-midi-dark">
+        <span className="truncate font-mono text-[9px] font-semibold text-clip-drum/75">
           DRUM PATTERN · {hits} HITS · {shown.map((p) => p.name).slice(0, 4).join(" / ")}
         </span>
       </div>
-      <div className="relative flex-1" style={{ height: "calc(100% - 18px)" }}>
+      <div className="relative flex-1" style={{ height: "calc(100% - 17px)" }}>
         {shown.map((_, r) => (
           <div
             key={r}
-            className="absolute left-0 right-0 border-t border-clip-midi-dark/15"
+            className="absolute left-0 right-0 border-t border-clip-drum/5"
             style={{ top: `${(r / shown.length) * 100}%` }}
           />
         ))}
@@ -221,14 +220,14 @@ function DrumClip({ track }: { track: Track }) {
             vel > 0 ? (
               <div
                 key={`${p.id}-${i}`}
-                 className="absolute rounded-[1px] border border-clip-midi-dark/30 bg-clip-midi-dark/75"
+                 className="absolute rounded-full bg-clip-drum/60"
                 title={`${p.name} · step ${i + 1}`}
                 style={{
                   left: `${(i / steps) * 100}%`,
                   width: `${100 / steps - 0.4}%`,
                   top: `${(r / shown.length) * 100 + 100 / shown.length * 0.18}%`,
-                  height: `${(100 / shown.length) * 0.64}%`,
-                  opacity: 0.45 + vel * 0.55,
+                  height: `${Math.max(8, (100 / shown.length) * 0.42)}%`,
+                  opacity: 0.4 + vel * 0.45,
                 }}
               />
             ) : null,
