@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Power, Settings2, Trash2 } from "lucide-react";
+import { AudioLines, Drum, Guitar, Mic, Mic2, Music2, Piano, Power, Radio, Settings2, Trash2 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -185,6 +185,29 @@ function InsertRack({
   );
 }
 
+function KindIcon({ t, className }: { t: Track; className?: string }) {
+  const name = `${t.instrument ?? ""} ${t.name}`.toLowerCase();
+  const Icon =
+    t.kind === "drum"
+      ? Drum
+      : t.kind === "audio"
+        ? Mic
+        : t.kind === "ai-vocal"
+          ? Mic2
+          : t.kind === "sampler"
+            ? AudioLines
+            : /bass/.test(name)
+              ? Guitar
+              : /piano|keys|organ/.test(name)
+                ? Piano
+                : /string|brass|pad/.test(name)
+                  ? Radio
+                  : /guitar|pluck/.test(name)
+                    ? Guitar
+                    : Music2;
+  return <Icon className={className} />;
+}
+
 function Strip({ t, level, selected, onSelect }: { t: Track; level: number; selected: boolean; onSelect: () => void }) {
   const { updateTrack, addPlugin, removePlugin, togglePluginBypass, setPluginParam } = useStudio();
 
@@ -193,9 +216,25 @@ function Strip({ t, level, selected, onSelect }: { t: Track; level: number; sele
       onClick={onSelect}
       className={cn(
         "flex w-[72px] shrink-0 cursor-pointer flex-col items-center gap-1.5 border-r border-border bg-surface px-1.5 py-2 transition-colors",
-        selected && "bg-surface-2 shadow-[inset_0_2px_0_0_var(--primary)]"
+        selected && "bg-surface-2"
       )}
+      style={selected ? { boxShadow: `inset 0 2px 0 0 ${t.color}` } : undefined}
     >
+      {/* colour + instrument badge */}
+      <div
+        className="flex w-full items-center justify-center gap-1 rounded-sm px-1 py-1"
+        style={{
+          background: `color-mix(in oklab, ${t.color} 22%, transparent)`,
+          boxShadow: `inset 0 0 0 1px color-mix(in oklab, ${t.color} 45%, transparent)`,
+        }}
+        title={t.instrument ?? t.kind}
+      >
+        <KindIcon t={t} className="size-3 shrink-0" />
+        <span className="truncate font-mono text-[8px] uppercase tracking-wider" style={{ color: t.color }}>
+          {t.instrument ?? t.kind}
+        </span>
+      </div>
+
       {/* name plate */}
       <div className="flex w-full items-center gap-1">
         <span className="size-1.5 shrink-0 rounded-full" style={{ background: t.color }} />
@@ -203,6 +242,7 @@ function Strip({ t, level, selected, onSelect }: { t: Track; level: number; sele
           {t.name}
         </span>
       </div>
+
 
       {/* pan */}
       <div className="w-full">
