@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Disc3, KeyboardMusic, Music2, Piano, SlidersHorizontal, Settings2, Waves, X } from "lucide-react";
+import { Disc3, FolderOpen, KeyboardMusic, Music2, Piano, SlidersHorizontal, Settings2, Waves, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStudio, type PanelId } from "@/lib/synclab/store";
 import { TopBar } from "@/components/studio/TopBar";
@@ -11,6 +11,7 @@ import { PianoRoll } from "@/components/studio/PianoRoll";
 import { VocalForge } from "@/components/studio/VocalForge";
 import { Settings } from "@/components/studio/Settings";
 import { Keyboard } from "@/components/studio/Keyboard";
+import { Browser } from "@/components/studio/Browser";
 import { SplashScreen } from "@/components/studio/SplashScreen";
 
 export const Route = createFileRoute("/")({
@@ -49,6 +50,7 @@ function Panels() {
     vocal: { title: "VOCAL FORGE", icon: <Waves className="size-4" /> },
     settings: { title: "SETTINGS", icon: <Settings2 className="size-4" /> },
     keys: { title: "KEYBOARD", icon: <KeyboardMusic className="size-4" /> },
+    browser: { title: "BROWSER", icon: <FolderOpen className="size-4" /> },
   };
   const current = config[panel];
 
@@ -88,6 +90,7 @@ function Panels() {
       {panel === "vocal" && <VocalForge />}
       {panel === "settings" && <Settings />}
       {panel === "keys" && <Keyboard />}
+      {panel === "browser" && <Browser />}
 
       </div>
 

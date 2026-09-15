@@ -3,6 +3,7 @@ import {
   Circle,
   Disc3,
   Download,
+  FolderOpen,
   Hash,
   Headphones,
   Import,
@@ -211,6 +212,13 @@ export function TopBar() {
         </DropdownMenu>
 
         <div className="ml-auto flex flex-wrap items-center gap-1">
+          <Button
+            variant={panel === "browser" ? "secondary" : "ghost"}
+            size="sm"
+            onClick={() => setPanel(panel === "browser" ? null : "browser")}
+          >
+            <FolderOpen className="size-4" /> BROWSER
+          </Button>
           <Button
             variant={panel === "drums" ? "secondary" : "ghost"}
             size="sm"
