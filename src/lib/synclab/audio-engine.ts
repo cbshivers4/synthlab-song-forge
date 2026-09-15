@@ -294,7 +294,7 @@ export class SyncLabEngine {
 
     // filter envelope
     const fe = patch.filterEnv;
-    const base = patch.cutoff;
+    const base = cutoffBase;
     filter.frequency.cancelScheduledValues(t0);
     filter.frequency.setValueAtTime(base, t0);
     filter.frequency.linearRampToValueAtTime(clamp(base + fe.amount, 40, 18000), t0 + Math.max(0.001, fe.attack));
