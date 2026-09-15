@@ -1,0 +1,422 @@
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+import { getEngine } from "./audio-engine";
+import { TRACK_COLORS, applyPreset, defaultPads, defaultPatch, uid } from "./presets";
+import type { BusId, DrumPad, MidiNote, SynthPatch, Track, TrackKind, Transport } from "./types";
+
+const busFor = (kind: TrackKind): BusId =>
+  kind === "drum"
+    ? "drums"
+    : kind === "ai-vocal" || kind === "audio"
+      ? "vocals"
+      : kind === "sampler"
+        ? "fx"
+        : "synths";
+
+export const newTrack = (kind: TrackKind, name: string, index: number, preset?: string): Track => ({
+  id: uid(),
+  name,
+  kind,
+  color: TRACK_COLORS[index % TRACK_COLORS.length],
+  volume: 0.8,
+  pan: 0,
+  muted: false,
+  solo: false,
+  armed: false,
+  frozen: false,
+  hidden: false,
+  input: kind === "audio" ? "Microphone" : kind === "midi" ? "MIDI Keyboard" : "Internal",
+  bus: busFor(kind),
+  steps: 16,
+  patch: kind === "drum" ? undefined : preset ? applyPreset(preset) : defaultPatch(),
+  notes: kind === "drum" ? undefined : [],
+  pads: kind === "drum" ? defaultPads(16) : undefined,
+  clips: [],
+});
+
+const initialTracks = (): Track[] => {
+  const drums = newTrack("drum", "DRUMS", 0);
+  const bass = newTrack("instrument", "BASS", 1, "Sub Bass");
+  bass.notes = [0, 4, 8, 12].map((s, i) => ({
+    id: uid(),
+    step: s,
+    length: 2,
+    pitch: [36, 36, 43, 39][i],
+    velocity: 0.9,
+  }));
+  const lead = newTrack("instrument", "SYNTH LEAD", 2, "Cybotron Lead");
+  lead.notes = [0, 3, 6, 10, 14].map((s, i) => ({
+    id: uid(),
+    step: s,
+    length: 1,
+    pitch: [72, 75, 79, 77, 72][i],
+    velocity: 0.75,
+  }));
+  const pad = newTrack("instrument", "SYNTH PAD", 3, "Warehouse Pad");
+  pad.notes = [
+    { id: uid(), step: 0, length: 8, pitch: 60, velocity: 0.5 },
+    { id: uid(), step: 0, length: 8, pitch: 67, velocity: 0.5 },
+    { id: uid(), step: 8, length: 8, pitch: 63, velocity: 0.5 },
+    { id: uid(), step: 8, length: 8, pitch: 70, velocity: 0.5 },
+  ];
+  const vox = newTrack("audio", "VOCAL", 4);
+  return [drums, bass, lead, pad, vox];
+};
+
+export type PanelId = "mixer" | "synth" | "drums" | "piano" | "vocal" | null;
+
+interface StudioState {
+  tracks: Track[];
+  transport: Transport;
+  selectedId: string | null;
+  panel: PanelId;
+  userPresets: SynthPatch[];
+}
+
+interface StudioApi extends StudioState {
+  selected: Track | null;
+  setPanel: (p: PanelId) => void;
+  select: (id: string) => void;
+  addTrack: (kind: TrackKind, name?: string, preset?: string) => void;
+  updateTrack: (id: string, patch: Partial<Track>) => void;
+  removeTrack: (id: string) => void;
+  duplicateTrack: (id: string) => void;
+  moveTrack: (id: string, dir: -1 | 1) => void;
+  updatePatch: (id: string, patch: Partial<SynthPatch>) => void;
+  updatePad: (trackId: string, padId: string, patch: Partial<DrumPad>) => void;
+  toggleStep: (trackId: string, padId: string, step: number) => void;
+  setStepCount: (trackId: string, steps: number) => void;
+  addPad: (trackId: string) => void;
+  setNotes: (trackId: string, notes: MidiNote[]) => void;
+  setTransport: (t: Partial<Transport>) => void;
+  togglePlay: () => void;
+  toggleRecord: () => void;
+  stop: () => void;
+  savePreset: (name: string) => void;
+  loadPreset: (trackId: string, name: string) => void;
+  generateBeat: (trackId: string, genre: string, energy: number) => void;
+  previewNote: (trackId: string, midi: number) => void;
+}
+
+const Ctx = createContext<StudioApi | null>(null);
+
+export function StudioProvider({ children }: { children: ReactNode }) {
+  const [tracks, setTracks] = useState<Track[]>(initialTracks);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [panel, setPanel] = useState<PanelId>(null);
+  const [userPresets, setUserPresets] = useState<SynthPatch[]>([]);
+  const [transport, setTransportState] = useState<Transport>({
+    playing: false,
+    recording: false,
+    bpm: 128,
+    swing: 0,
+    step: 0,
+    metronome: false,
+    countIn: false,
+    loop: true,
+    bars: 1,
+  });
+
+  const tracksRef = useRef(tracks);
+  tracksRef.current = tracks;
+  const transportRef = useRef(transport);
+  transportRef.current = transport;
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && getEngine().ctx) getEngine().syncMix(tracks);
+  }, [tracks]);
+
+  // step clock
+  useEffect(() => {
+    if (!transport.playing) return;
+    const engine = getEngine();
+    engine.init();
+    engine.syncMix(tracksRef.current);
+    let step = 0;
+    let cancelled = false;
+
+    const tick = () => {
+      if (cancelled) return;
+      const tp = transportRef.current;
+      const stepDur = 60 / tp.bpm / 4;
+      const list = tracksRef.current;
+      const anySolo = list.some((t) => t.solo);
+      for (const t of list) {
+        if (t.muted || t.frozen || (anySolo && !t.solo)) continue;
+        const len = t.steps;
+        const s = step % len;
+        if (t.kind === "drum" && t.pads) {
+          const padSolo = t.pads.some((p) => p.solo);
+          for (const pad of t.pads) {
+            if (pad.muted || (padSolo && !pad.solo)) continue;
+            const v = pad.steps[s] ?? 0;
+            if (v > 0) engine.playDrum(t.id, pad, v);
+          }
+        } else if (t.patch && t.notes) {
+          for (const n of t.notes) {
+            if (n.step % len === s) {
+              const dur = (n.length * stepDur) / (t.patch.arp.on ? 2 : 1);
+              if (t.patch.arp.on) {
+                const oct = t.patch.arp.octaves;
+                for (let i = 0; i < n.length; i++) {
+                  const shift = (i % Math.max(1, oct)) * 12;
+                  const dir = t.patch.arp.direction === "down" ? -shift : shift;
+                  engine.playNote(
+                    t.id,
+                    t.patch,
+                    n.pitch + dir,
+                    stepDur * t.patch.arp.gate,
+                    n.velocity,
+                    engine.ctx!.currentTime + i * stepDur,
+                  );
+                }
+              } else {
+                engine.playNote(t.id, t.patch, n.pitch, dur, n.velocity);
+              }
+            }
+          }
+        }
+      }
+      if (tp.metronome) {
+        engine.playDrum(
+          "metronome",
+          {
+            id: "m",
+            name: "click",
+            kind: step % 4 === 0 ? "rim" : "hat",
+            volume: 0.35,
+            pan: 0,
+            pitch: step % 4 === 0 ? 5 : 0,
+            decay: 0,
+            muted: false,
+            solo: false,
+            steps: [],
+          },
+          1,
+        );
+      }
+      setTransportState((t) => ({ ...t, step: step % 16 }));
+      step += 1;
+    };
+
+    tick();
+    const interval = window.setInterval(tick, (60 / transport.bpm / 4) * 1000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, [transport.playing, transport.bpm]);
+
+  const updateTrack = useCallback((id: string, patch: Partial<Track>) => {
+    setTracks((ts) => ts.map((t) => (t.id === id ? { ...t, ...patch } : t)));
+  }, []);
+
+  const api: StudioApi = useMemo(() => {
+    const selected = tracks.find((t) => t.id === selectedId) ?? null;
+    return {
+      tracks,
+      transport,
+      selectedId,
+      panel,
+      userPresets,
+      selected,
+      setPanel,
+      select: (id) => setSelectedId(id),
+      addTrack: (kind, name, preset) =>
+        setTracks((ts) => {
+          const t = newTrack(kind, name ?? `TRACK ${ts.length + 1}`, ts.length, preset);
+          setSelectedId(t.id);
+          setPanel(kind === "drum" ? "drums" : kind === "ai-vocal" ? "vocal" : kind === "audio" ? null : "synth");
+          return [...ts, t];
+        }),
+      updateTrack,
+      removeTrack: (id) => {
+        getEngine().removeChannel(id);
+        setTracks((ts) => ts.filter((t) => t.id !== id));
+        setSelectedId((s) => (s === id ? null : s));
+      },
+      duplicateTrack: (id) =>
+        setTracks((ts) => {
+          const i = ts.findIndex((t) => t.id === id);
+          if (i < 0) return ts;
+          const src = ts[i];
+          const copy: Track = {
+            ...structuredClone(src),
+            id: uid(),
+            name: `${src.name} COPY`,
+          };
+          if (copy.pads) copy.pads = copy.pads.map((p) => ({ ...p, id: uid() }));
+          if (copy.notes) copy.notes = copy.notes.map((n) => ({ ...n, id: uid() }));
+          const next = [...ts];
+          next.splice(i + 1, 0, copy);
+          return next;
+        }),
+      moveTrack: (id, dir) =>
+        setTracks((ts) => {
+          const i = ts.findIndex((t) => t.id === id);
+          const j = i + dir;
+          if (i < 0 || j < 0 || j >= ts.length) return ts;
+          const next = [...ts];
+          [next[i], next[j]] = [next[j], next[i]];
+          return next;
+        }),
+      updatePatch: (id, patch) =>
+        setTracks((ts) =>
+          ts.map((t) => (t.id === id && t.patch ? { ...t, patch: { ...t.patch, ...patch } } : t)),
+        ),
+      updatePad: (trackId, padId, patch) =>
+        setTracks((ts) =>
+          ts.map((t) =>
+            t.id === trackId && t.pads
+              ? { ...t, pads: t.pads.map((p) => (p.id === padId ? { ...p, ...patch } : p)) }
+              : t,
+          ),
+        ),
+      toggleStep: (trackId, padId, step) =>
+        setTracks((ts) =>
+          ts.map((t) =>
+            t.id === trackId && t.pads
+              ? {
+                  ...t,
+                  pads: t.pads.map((p) =>
+                    p.id === padId
+                      ? { ...p, steps: p.steps.map((v, i) => (i === step ? (v > 0 ? 0 : 1) : v)) }
+                      : p,
+                  ),
+                }
+              : t,
+          ),
+        ),
+      setStepCount: (trackId, steps) =>
+        setTracks((ts) =>
+          ts.map((t) =>
+            t.id === trackId
+              ? {
+                  ...t,
+                  steps,
+                  pads: t.pads?.map((p) => ({
+                    ...p,
+                    steps: Array.from({ length: steps }, (_, i) => p.steps[i] ?? 0),
+                  })),
+                }
+              : t,
+          ),
+        ),
+      addPad: (trackId) =>
+        setTracks((ts) =>
+          ts.map((t) =>
+            t.id === trackId && t.pads
+              ? {
+                  ...t,
+                  pads: [
+                    ...t.pads,
+                    {
+                      id: uid(),
+                      name: `PAD ${t.pads.length + 1}`,
+                      kind: "perc",
+                      volume: 0.8,
+                      pan: 0,
+                      pitch: 0,
+                      decay: 0.5,
+                      muted: false,
+                      solo: false,
+                      steps: Array.from({ length: t.steps }, () => 0),
+                    },
+                  ],
+                }
+              : t,
+          ),
+        ),
+      setNotes: (trackId, notes) => updateTrack(trackId, { notes }),
+      setTransport: (t) => setTransportState((s) => ({ ...s, ...t })),
+      togglePlay: () => {
+        getEngine().init();
+        setTransportState((s) => ({ ...s, playing: !s.playing }));
+      },
+      toggleRecord: () => {
+        getEngine().init();
+        setTransportState((s) => ({ ...s, recording: !s.recording, playing: !s.recording ? true : s.playing }));
+      },
+      stop: () => setTransportState((s) => ({ ...s, playing: false, recording: false, step: 0 })),
+      savePreset: (name) => {
+        const t = tracks.find((x) => x.id === selectedId);
+        if (t?.patch) setUserPresets((p) => [...p, { ...structuredClone(t.patch!), name }]);
+      },
+      loadPreset: (trackId, name) => {
+        const user = userPresets.find((p) => p.name === name);
+        setTracks((ts) =>
+          ts.map((t) =>
+            t.id === trackId ? { ...t, patch: user ? structuredClone(user) : applyPreset(name) } : t,
+          ),
+        );
+      },
+      generateBeat: (trackId, genre, energy) =>
+        setTracks((ts) =>
+          ts.map((t) => {
+            if (t.id !== trackId || !t.pads) return t;
+            const n = t.steps;
+            const hit = (chance: number) => (Math.random() < chance ? 1 : 0);
+            return {
+              ...t,
+              pads: t.pads.map((p) => {
+                const steps = Array.from({ length: n }, (_, i) => {
+                  const beat = i % 4 === 0;
+                  const off = i % 2 === 1;
+                  switch (p.kind) {
+                    case "kick":
+                      if (genre === "Detroit Techno" || genre === "House") return beat ? 1 : hit(0.04 * energy);
+                      if (genre === "Trap" || genre === "Hip-Hop")
+                        return i % 8 === 0 ? 1 : hit(0.12 * energy);
+                      if (genre === "Breakbeat" || genre === "Detroit Electro")
+                        return i % 8 === 0 || i % 8 === 6 ? 1 : hit(0.06 * energy);
+                      return beat ? 1 : hit(0.05 * energy);
+                    case "snare":
+                      return i % 8 === 4 ? 1 : hit(0.05 * energy);
+                    case "clap":
+                      return i % 8 === 4 ? (genre === "House" ? 1 : hit(0.5)) : 0;
+                    case "hat":
+                      if (genre === "Trap") return hit(0.55 + 0.04 * energy);
+                      return off ? 1 : hit(0.15 * energy);
+                    case "openhat":
+                      return i % 8 === 6 ? 1 : hit(0.05 * energy);
+                    case "perc":
+                      return hit(0.08 * energy);
+                    case "rim":
+                      return hit(0.06 * energy);
+                    case "tom":
+                      return hit(0.04 * energy);
+                    default:
+                      return 0;
+                  }
+                });
+                return { ...p, steps };
+              }),
+            };
+          }),
+        ),
+      previewNote: (trackId, midi) => {
+        const t = tracksRef.current.find((x) => x.id === trackId);
+        const engine = getEngine();
+        engine.init();
+        engine.syncMix(tracksRef.current);
+        if (t?.patch) engine.playNote(t.id, t.patch, midi, 0.35, 0.9);
+      },
+    };
+  }, [tracks, transport, selectedId, panel, userPresets, updateTrack]);
+
+  return <Ctx.Provider value={api}>{children}</Ctx.Provider>;
+}
+
+export const useStudio = () => {
+  const ctx = useContext(Ctx);
+  if (!ctx) throw new Error("useStudio must be used inside StudioProvider");
+  return ctx;
+};
