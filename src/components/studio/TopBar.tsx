@@ -30,7 +30,8 @@ import { useStudio } from "@/lib/synclab/store";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { INSTRUMENTS } from "@/lib/synclab/presets";
 import { toast } from "sonner";
-import synclabLogo from "@/assets/synclab-logo-dark.png";
+import synclabLogoAsset from "@/assets/synclab-logo.jpg.asset.json";
+const synclabLogo = synclabLogoAsset.url;
 
 export function TopBar() {
   const { transport, setTransport, togglePlay, toggleRecord, stop, addTrack, setPanel, panel } = useStudio();
