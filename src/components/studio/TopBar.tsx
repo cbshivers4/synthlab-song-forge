@@ -220,6 +220,13 @@ export function TopBar() {
             <FolderOpen className="size-4" /> BROWSER
           </Button>
           <Button
+            variant={panel === "plugins" ? "secondary" : "ghost"}
+            size="sm"
+            onClick={() => setPanel(panel === "plugins" ? null : "plugins")}
+          >
+            <Cpu className="size-4" /> PLUGINS
+          </Button>
+          <Button
             variant={panel === "drums" ? "secondary" : "ghost"}
             size="sm"
             onClick={() => setPanel(panel === "drums" ? null : "drums")}
