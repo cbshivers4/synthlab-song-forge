@@ -72,11 +72,64 @@ export class SyncLabEngine {
     conv.connect(master);
     this.reverb = conv;
     this.reverbSend = send;
+
+    // delay send bus
+    const dSend = ctx.createGain();
+    dSend.gain.value = 1;
+    const delay = ctx.createDelay(1.5);
+    delay.delayTime.value = 0.32;
+    const fb = ctx.createGain();
+    fb.gain.value = 0.35;
+    dSend.connect(delay);
+    delay.connect(fb);
+    fb.connect(delay);
+    delay.connect(master);
+    this.delaySend = dSend;
+
+    // chorus send bus
+    const cSend = ctx.createGain();
+    cSend.gain.value = 1;
+    const cDelay = ctx.createDelay(0.05);
+    cDelay.delayTime.value = 0.018;
+    const lfo = ctx.createOscillator();
+    const lfoGain = ctx.createGain();
+    lfo.frequency.value = 0.5;
+    lfoGain.gain.value = 0.006;
+    lfo.connect(lfoGain);
+    lfoGain.connect(cDelay.delayTime);
+    lfo.start();
+    cSend.connect(cDelay);
+    cDelay.connect(master);
+    this.chorusSend = cSend;
+
+    for (const id of ["drums", "vocals", "instruments", "synths", "fx", "master"]) {
+      const g = ctx.createGain();
+      g.gain.value = 1;
+      g.connect(master);
+      this.buses.set(id, g);
+    }
     return ctx;
+  }
+
+  busNode(id: string) {
+    this.init();
+    return this.buses.get(id) ?? this.buses.get("master")!;
+  }
+
+  setBus(id: string, volume: number, muted: boolean) {
+    if (!this.ctx) return;
+    this.busNode(id).gain.setTargetAtTime(muted ? 0 : clamp(volume, 0, 1.5), this.ctx.currentTime, 0.02);
   }
 
   getLevel() {
     if (!this.analyser) return 0;
+    const data = new Uint8Array(this.analyser.frequencyBinCount);
+    this.analyser.getByteTimeDomainData(data);
+    let peak = 0;
+    for (let i = 0; i < data.length; i++) peak = Math.max(peak, Math.abs((data[i] ?? 128) - 128) / 128);
+    return peak;
+  }
+
     const data = new Uint8Array(this.analyser.frequencyBinCount);
     this.analyser.getByteTimeDomainData(data);
     let peak = 0;
