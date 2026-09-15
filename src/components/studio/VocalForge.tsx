@@ -11,7 +11,7 @@ const VOICES = ["Detroit Baritone", "Electro Vocoder", "Soul Alto", "Ghetto Tech
 
 export function VocalForge() {
   const { addTrack } = useStudio();
-  const [voice, setVoice] = useState(VOICES[0]);
+  const [voice, setVoice] = useState<string>(VOICES[0] as string);
   const [lyrics, setLyrics] = useState("");
   const [tone, setTone] = useState(0.5);
 

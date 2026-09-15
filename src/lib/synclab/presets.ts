@@ -26,6 +26,8 @@ export const defaultPatch = (name = "Init Saw"): SynthPatch => ({
   arp: { on: false, rate: 1, direction: "up", octaves: 1, gate: 0.6 },
 });
 
+const O = (p: SynthPatch, i: number) => p.oscillators[i] as import("./types").OscillatorParams;
+
 type PresetDef = { name: string; category: string; mutate: (p: SynthPatch) => void };
 
 export const SYNTH_PRESETS: PresetDef[] = [
@@ -33,8 +35,8 @@ export const SYNTH_PRESETS: PresetDef[] = [
     name: "Belleville Strings",
     category: "Detroit Techno",
     mutate: (p) => {
-      p.oscillators[0].wave = "sawtooth";
-      p.oscillators[1] = { ...p.oscillators[1], on: true, wave: "sawtooth", detune: 14, octave: 0, level: 0.6 };
+      O(p,0).wave = "sawtooth";
+      p.oscillators[1] = { ...O(p,1), on: true, wave: "sawtooth", detune: 14, octave: 0, level: 0.6 };
       p.cutoff = 1500;
       p.amp = { attack: 0.35, decay: 0.6, sustain: 0.8, release: 1.4 };
       p.fx.reverb = 0.5;
@@ -45,8 +47,8 @@ export const SYNTH_PRESETS: PresetDef[] = [
     name: "Cybotron Lead",
     category: "Detroit Electro",
     mutate: (p) => {
-      p.oscillators[0].wave = "square";
-      p.oscillators[1] = { ...p.oscillators[1], on: true, wave: "sawtooth", octave: 0, detune: -10, level: 0.5 };
+      O(p,0).wave = "square";
+      p.oscillators[1] = { ...O(p,1), on: true, wave: "sawtooth", octave: 0, detune: -10, level: 0.5 };
       p.cutoff = 3400;
       p.resonance = 10;
       p.amp = { attack: 0.005, decay: 0.15, sustain: 0.4, release: 0.2 };
@@ -58,9 +60,9 @@ export const SYNTH_PRESETS: PresetDef[] = [
     name: "Ghetto Tech Bass",
     category: "Ghetto Tech",
     mutate: (p) => {
-      p.oscillators[0].wave = "square";
-      p.oscillators[0].octave = -1;
-      p.oscillators[1] = { ...p.oscillators[1], on: true, wave: "sawtooth", octave: -2, level: 0.7, detune: 4 };
+      O(p,0).wave = "square";
+      O(p,0).octave = -1;
+      p.oscillators[1] = { ...O(p,1), on: true, wave: "sawtooth", octave: -2, level: 0.7, detune: 4 };
       p.cutoff = 900;
       p.resonance = 12;
       p.amp = { attack: 0.002, decay: 0.18, sustain: 0.2, release: 0.15 };
@@ -72,8 +74,8 @@ export const SYNTH_PRESETS: PresetDef[] = [
     name: "303 Acid",
     category: "Acid",
     mutate: (p) => {
-      p.oscillators[0].wave = "sawtooth";
-      p.oscillators[1].on = false;
+      O(p,0).wave = "sawtooth";
+      O(p,1).on = false;
       p.cutoff = 700;
       p.resonance = 22;
       p.filterEnv.amount = 4200;
@@ -87,9 +89,9 @@ export const SYNTH_PRESETS: PresetDef[] = [
     name: "Warehouse Pad",
     category: "Pad",
     mutate: (p) => {
-      p.oscillators[0].wave = "triangle";
-      p.oscillators[1] = { ...p.oscillators[1], on: true, wave: "sawtooth", detune: 16, level: 0.35 };
-      p.oscillators[2] = { ...p.oscillators[2], on: true, level: 0.25 };
+      O(p,0).wave = "triangle";
+      p.oscillators[1] = { ...O(p,1), on: true, wave: "sawtooth", detune: 16, level: 0.35 };
+      p.oscillators[2] = { ...O(p,2), on: true, level: 0.25 };
       p.cutoff = 1200;
       p.amp = { attack: 0.9, decay: 1.2, sustain: 0.85, release: 2.2 };
       p.fx.reverb = 0.7;
@@ -100,8 +102,8 @@ export const SYNTH_PRESETS: PresetDef[] = [
     name: "Deep Keys",
     category: "Deep House",
     mutate: (p) => {
-      p.oscillators[0].wave = "triangle";
-      p.oscillators[1] = { ...p.oscillators[1], on: true, wave: "sine", octave: 1, level: 0.3 };
+      O(p,0).wave = "triangle";
+      p.oscillators[1] = { ...O(p,1), on: true, wave: "sine", octave: 1, level: 0.3 };
       p.cutoff = 1800;
       p.amp = { attack: 0.01, decay: 0.5, sustain: 0.3, release: 0.6 };
       p.fx.reverb = 0.35;
@@ -111,9 +113,9 @@ export const SYNTH_PRESETS: PresetDef[] = [
     name: "Sub Bass",
     category: "Bass",
     mutate: (p) => {
-      p.oscillators[0].wave = "sine";
-      p.oscillators[0].octave = -2;
-      p.oscillators[1].on = false;
+      O(p,0).wave = "sine";
+      O(p,0).octave = -2;
+      O(p,1).on = false;
       p.cutoff = 400;
       p.amp = { attack: 0.005, decay: 0.3, sustain: 0.7, release: 0.2 };
       p.fx.reverb = 0;
@@ -124,7 +126,7 @@ export const SYNTH_PRESETS: PresetDef[] = [
     name: "Metro Pluck",
     category: "Pluck",
     mutate: (p) => {
-      p.oscillators[0].wave = "square";
+      O(p,0).wave = "square";
       p.cutoff = 2600;
       p.resonance = 8;
       p.amp = { attack: 0.002, decay: 0.16, sustain: 0, release: 0.2 };
@@ -136,7 +138,7 @@ export const SYNTH_PRESETS: PresetDef[] = [
     name: "Assembly Line",
     category: "Industrial",
     mutate: (p) => {
-      p.oscillators[0].wave = "square";
+      O(p,0).wave = "square";
       p.noise = 0.25;
       p.cutoff = 1500;
       p.fx.distortion = 0.7;
@@ -148,8 +150,8 @@ export const SYNTH_PRESETS: PresetDef[] = [
     name: "Vocoder Bot",
     category: "Robotic",
     mutate: (p) => {
-      p.oscillators[0].wave = "sawtooth";
-      p.oscillators[1] = { ...p.oscillators[1], on: true, wave: "square", detune: 20, level: 0.4 };
+      O(p,0).wave = "sawtooth";
+      p.oscillators[1] = { ...O(p,1), on: true, wave: "square", detune: 20, level: 0.4 };
       p.cutoff = 2000;
       p.fx.bitcrush = 0.6;
       p.fx.chorus = 0.6;
@@ -170,8 +172,8 @@ export const SYNTH_PRESETS: PresetDef[] = [
     name: "Void Ambient",
     category: "Ambient",
     mutate: (p) => {
-      p.oscillators[0].wave = "sine";
-      p.oscillators[2] = { ...p.oscillators[2], on: true, wave: "triangle", level: 0.3 };
+      O(p,0).wave = "sine";
+      p.oscillators[2] = { ...O(p,2), on: true, wave: "triangle", level: 0.3 };
       p.amp = { attack: 1.6, decay: 2, sustain: 0.9, release: 3 };
       p.cutoff = 900;
       p.fx.reverb = 0.85;
