@@ -119,16 +119,56 @@ export class SyncLabEngine {
     const voiceOut = ctx.createGain();
     voiceOut.gain.value = 0;
 
+    // key tracking: cutoff follows the played pitch
+    const kt = patch.keyTracking ?? 0;
+    const cutoffBase = clamp(patch.cutoff * Math.pow(2, (kt * (midi - 60)) / 12), 40, 18000);
+
     const filter = ctx.createBiquadFilter();
     filter.type = patch.filterType;
     filter.Q.value = patch.resonance;
-    filter.frequency.value = patch.cutoff;
+    filter.frequency.value = cutoffBase;
 
     const shaper = ctx.createWaveShaper();
-    shaper.curve = makeDistortionCurve(0.05 + patch.fx.distortion);
+    shaper.curve = makeDistortionCurve(0.05 + patch.fx.distortion + (patch.fx.saturation ?? 0) * 0.6);
 
     filter.connect(shaper);
-    shaper.connect(voiceOut);
+
+    // flanger / phaser colouring before the voice output
+    let tail: AudioNode = shaper;
+    const flanger = patch.fx.flanger ?? 0;
+    if (flanger > 0) {
+      const d = ctx.createDelay(0.02);
+      d.delayTime.value = 0.004;
+      const lfo = ctx.createOscillator();
+      const lg = ctx.createGain();
+      lfo.frequency.value = 0.25;
+      lg.gain.value = 0.003 * flanger;
+      lfo.connect(lg);
+      lg.connect(d.delayTime);
+      lfo.start(t0);
+      lfo.stop(t0 + duration + patch.amp.release + 0.2);
+      const wet = ctx.createGain();
+      wet.gain.value = flanger * 0.7;
+      tail.connect(d);
+      d.connect(wet);
+      wet.connect(voiceOut);
+    }
+    const phaser = patch.fx.phaser ?? 0;
+    if (phaser > 0) {
+      let node: AudioNode = tail;
+      for (let i = 0; i < 4; i++) {
+        const ap = ctx.createBiquadFilter();
+        ap.type = "allpass";
+        ap.frequency.value = 400 + i * 600;
+        node.connect(ap);
+        node = ap;
+      }
+      const wet = ctx.createGain();
+      wet.gain.value = phaser * 0.8;
+      node.connect(wet);
+      wet.connect(voiceOut);
+    }
+    tail.connect(voiceOut);
     voiceOut.connect(ch.input);
 
     if (patch.fx.delay > 0) {
