@@ -11,7 +11,21 @@ import {
 import { toast } from "sonner";
 import { getEngine } from "./audio-engine";
 import { TRACK_COLORS, applyPreset, defaultPads, defaultPatch, uid } from "./presets";
-import type { AudioClip, BusId, BusState, DrumPad, MidiNote, SynthPatch, Track, TrackKind, Transport } from "./types";
+import { BUILT_IN_PLUGINS, instantiate } from "./plugins";
+import type {
+  AudioClip,
+  BusId,
+  BusState,
+  DrumPad,
+  MidiNote,
+  PluginDef,
+  PluginInstance,
+  PluginParam,
+  SynthPatch,
+  Track,
+  TrackKind,
+  Transport,
+} from "./types";
 
 const busFor = (kind: TrackKind): BusId =>
   kind === "drum"

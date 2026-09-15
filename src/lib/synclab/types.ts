@@ -170,6 +170,7 @@ export interface Track {
   patch?: SynthPatch | undefined;
   notes?: MidiNote[] | undefined;
   pads?: DrumPad[] | undefined;
+  plugins?: PluginInstance[] | undefined;
   clips?: AudioClip[] | undefined;
   activeClipId?: string | undefined;
   recording?: boolean;
