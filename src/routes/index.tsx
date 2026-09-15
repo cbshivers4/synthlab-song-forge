@@ -184,16 +184,48 @@ function StatusBar() {
   );
 }
 
+function FloatingDevices({ float, setFloat }: { float: FloatState; setFloat: (f: (p: FloatState) => FloatState) => void }) {
+  const { selected, tracks } = useStudio();
+  const drumTrack = selected?.kind === "drum" ? selected : tracks.find((t) => t.kind === "drum");
+  const synthTrack = selected?.patch ? selected : tracks.find((t) => t.patch);
+  return (
+    <>
+      {float.synth && synthTrack && (
+        <FloatingDevice
+          title={`SYNTHESIZER · ${synthTrack.name}`}
+          faceplate={synthFace}
+          initial={{ x: 90, y: 80, w: 1020, h: 540 }}
+          onClose={() => setFloat((f) => ({ ...f, synth: false }))}
+        >
+          <SynthEditor track={synthTrack} />
+        </FloatingDevice>
+      )}
+      {float.drums && drumTrack && (
+        <FloatingDevice
+          title={`DRUM MACHINE · ${drumTrack.name}`}
+          faceplate={drumFace}
+          initial={{ x: 160, y: 150, w: 1020, h: 520 }}
+          onClose={() => setFloat((f) => ({ ...f, drums: false }))}
+        >
+          <DrumMachine track={drumTrack} />
+        </FloatingDevice>
+      )}
+    </>
+  );
+}
+
 function Studio() {
+  const [float, setFloat] = useState<FloatState>({ synth: false, drums: false });
   return (
     <div className="flex h-screen flex-col overflow-hidden">
       <SplashScreen />
       <TopBar />
       <main className="flex min-h-0 flex-1 flex-col">
         <Timeline />
-        <Panels />
+        <Panels float={float} setFloat={setFloat} />
       </main>
       <StatusBar />
+      <FloatingDevices float={float} setFloat={setFloat} />
     </div>
   );
 }
