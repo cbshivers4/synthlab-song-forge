@@ -171,6 +171,10 @@ export function TopBar() {
           />
         </div>
 
+        <MidiControl />
+
+
+
 
 
 
