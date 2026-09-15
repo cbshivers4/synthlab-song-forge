@@ -43,9 +43,9 @@ export function TopBar() {
           <img
             src={synclabLogo}
             alt="SYNCLAB"
-            width={1143}
-            height={242}
-            className="h-9 w-auto max-w-48 object-contain"
+            width={1024}
+            height={1024}
+            className="h-12 w-auto max-w-48 rounded-md object-cover"
           />
         </div>
 
