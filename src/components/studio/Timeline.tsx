@@ -69,7 +69,7 @@ function Waveform({ track }: { track: Track }) {
           <div
             key={i}
             className="flex-1 rounded-[1px]"
-            style={{ height: `${Math.max(6, p * 100)}%`, background: track.color, opacity: 0.85 }}
+            style={{ height: `${Math.round(Math.max(6, p * 100))}%`, background: track.color, opacity: 0.85 }}
           />
         ))}
       </div>
