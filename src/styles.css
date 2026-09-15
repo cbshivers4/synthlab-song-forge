@@ -175,3 +175,20 @@
 @utility glow {
   box-shadow: var(--shadow-glow);
 }
+
+/* Splash: logo spinning on its vertical axis */
+@keyframes spin-y {
+  from { transform: rotateY(0deg); }
+  to   { transform: rotateY(360deg); }
+}
+.spin-stage {
+  perspective: 1200px;
+  display: flex;
+  justify-content: center;
+}
+.spin-logo {
+  animation: spin-y 6s linear infinite;
+  transform-style: preserve-3d;
+  backface-visibility: visible;
+  will-change: transform;
+}
