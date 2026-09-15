@@ -372,9 +372,57 @@ function BusStrip({ id, state, level, onChange }: { id: BusId; state: BusState; 
       >
         M
       </button>
+      <FxMenu target={`bus:${id}`} label="FX" />
     </div>
   );
 }
+
+function FxMenu({ target, label }: { target: string; label: string }) {
+  const { fxChains, addFxPlugin, removeFxPlugin, toggleFxBypass, setFxParam } = useStudio();
+  const list = fxChains[target] ?? [];
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          className={cn(
+            "flex h-5 w-full items-center justify-center gap-1 rounded-sm font-mono text-[8px] uppercase tracking-wider transition-colors",
+            list.length > 0 ? "bg-primary/20 text-primary" : "bg-surface text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <Settings2 className="size-2.5" /> {label}
+          {list.length > 0 ? ` ${list.length}` : ""}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-64 p-3">
+        <InsertRack
+          title={`${target.split(":")[1]?.toUpperCase()} effects`}
+          list={list}
+          onAdd={(def) => addFxPlugin(target, def)}
+          onRemove={(id) => removeFxPlugin(target, id)}
+          onBypass={(id) => toggleFxBypass(target, id)}
+          onParam={(id, p, v) => setFxParam(target, id, p, v)}
+        />
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function SendStrip({ id, level }: { id: "reverb" | "delay" | "chorus"; level: number }) {
+  const { tracks } = useStudio();
+  const amount = Math.max(0, ...tracks.map((t) => (t.muted ? 0 : (t.sends?.[id] ?? 0))));
+  return (
+    <div className="flex w-[64px] shrink-0 flex-col items-center gap-1.5 border-r border-border bg-surface-2/30 px-1.5 py-2">
+      <span className="truncate font-mono text-[9px] font-bold uppercase tracking-wider text-amber-400">{id}</span>
+      <span className="font-mono text-[7px] uppercase tracking-widest text-muted-foreground">Send FX</span>
+      <div className="flex h-44 items-stretch gap-1">
+        <Meter level={level * amount} tall />
+      </div>
+      <span className="font-mono text-[9px] text-muted-foreground">{Math.round(amount * 100)}%</span>
+      <FxMenu target={`send:${id}`} label="FX" />
+    </div>
+  );
+}
+
 
 function MasterStrip({ level: peak }: { level: number }) {
   return (
