@@ -95,7 +95,7 @@ const initialTracks = (): Track[] => {
   return [instrumental, drums, bass, lead, pad, vox];
 };
 
-export type PanelId = "mixer" | "synth" | "drums" | "piano" | "vocal" | "settings" | null;
+export type PanelId = "mixer" | "synth" | "drums" | "piano" | "vocal" | "settings" | "keys" | null;
 
 interface StudioState {
   tracks: Track[];

@@ -4,6 +4,7 @@ import {
   Disc3,
   Download,
   Import,
+  KeyboardMusic,
   Mic,
   Music2,
   Pause,
@@ -194,6 +195,13 @@ export function TopBar() {
             onClick={() => setPanel(panel === "synth" ? null : "synth")}
           >
             <Music2 className="size-4" /> INSTRUMENTS
+          </Button>
+          <Button
+            variant={panel === "keys" ? "secondary" : "ghost"}
+            size="sm"
+            onClick={() => setPanel(panel === "keys" ? null : "keys")}
+          >
+            <KeyboardMusic className="size-4" /> KEYS
           </Button>
           <Button
             variant={panel === "mixer" ? "secondary" : "ghost"}
