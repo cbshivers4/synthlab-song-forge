@@ -112,7 +112,10 @@ interface StudioApi extends StudioState {
   previewNote: (trackId: string, midi: number) => void;
 }
 
-const Ctx = createContext<StudioApi | null>(null);
+// Reuse a single context across hot-reloaded module instances so provider and
+// consumers never end up bound to two different copies of this module.
+const g = globalThis as typeof globalThis & { __synclabCtx?: React.Context<StudioApi | null> };
+const Ctx = (g.__synclabCtx ??= createContext<StudioApi | null>(null));
 
 export function StudioProvider({ children }: { children: ReactNode }) {
   const [tracks, setTracks] = useState<Track[]>(initialTracks);
