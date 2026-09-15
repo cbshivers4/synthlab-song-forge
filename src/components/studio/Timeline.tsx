@@ -66,21 +66,30 @@ function Waveform({ track }: { track: Track }) {
 
   const peaks = active.peaks.length > 0 ? active.peaks : [0];
 
-  // Logic/Audacity-style: thin vertical bars from center on a transparent body
+  const waveformPath = peaks
+    .map((p, i) => {
+      const x = (i / Math.max(1, peaks.length - 1)) * 100;
+      return `${x.toFixed(2)},${(50 - Math.max(2, p * 43)).toFixed(2)}`;
+    })
+    .join(" ");
+  const mirroredPath = [...peaks]
+    .reverse()
+    .map((p, reverseIndex) => {
+      const i = peaks.length - 1 - reverseIndex;
+      const x = (i / Math.max(1, peaks.length - 1)) * 100;
+      return `${x.toFixed(2)},${(50 + Math.max(2, p * 43)).toFixed(2)}`;
+    })
+    .join(" ");
+
   return (
     <div
-      className="group absolute inset-y-[3px] left-0 right-1 flex flex-col overflow-hidden rounded-[2px]"
-      style={{
-        background: `color-mix(in oklab, ${track.color} 10%, transparent)`,
-        boxShadow: `inset 0 0 0 1px color-mix(in oklab, ${track.color} 45%, transparent), 0 1px 2px oklch(0 0 0 / 0.35)`,
-      }}
+      className="group absolute inset-y-[4px] left-1 right-1 flex flex-col overflow-hidden rounded-[2px] border border-clip-audio-dark/70 bg-clip-audio shadow-sm"
     >
-      {/* slim clip name strip */}
-      <div className="flex h-[13px] shrink-0 items-center gap-1 px-1.5" style={{ background: `color-mix(in oklab, ${track.color} 28%, transparent)` }}>
-        <span className="truncate font-mono text-[9px] tracking-wider" style={{ color: `color-mix(in oklab, ${track.color} 55%, white)` }}>
+      <div className="flex h-[18px] shrink-0 items-center gap-1 border-b border-clip-audio-dark/30 bg-clip-audio-dark/20 px-1.5">
+        <span className="truncate font-mono text-[9px] font-semibold text-clip-audio-dark">
           {active.name}
         </span>
-        <span className="ml-auto shrink-0 font-mono text-[8px] text-foreground/50">{active.duration.toFixed(1)}s</span>
+        <span className="ml-auto shrink-0 font-mono text-[8px] text-clip-audio-dark/70">{active.duration.toFixed(1)}s</span>
         <div className="flex shrink-0 items-center gap-1">
           {clips.map((c) => (
             <button
@@ -93,31 +102,17 @@ function Waveform({ track }: { track: Track }) {
               title="Click to choose take, double-click to delete"
               className="size-[6px] rounded-full border"
               style={{
-                borderColor: `color-mix(in oklab, ${track.color} 70%, white)`,
-                background: c.id === active.id ? `color-mix(in oklab, ${track.color} 70%, white)` : "transparent",
+                borderColor: "var(--clip-audio-dark)",
+                background: c.id === active.id ? "var(--clip-audio-dark)" : "transparent",
               }}
             />
           ))}
         </div>
       </div>
 
-      {/* classic bar waveform */}
-      <svg viewBox={`0 0 ${peaks.length} 100`} preserveAspectRatio="none" className="min-h-0 w-full flex-1">
-        <line x1="0" y1="50" x2={peaks.length} y2="50" stroke="oklch(1 0 0 / 0.18)" strokeWidth="0.15" />
-        {peaks.map((p, i) => {
-          const half = Math.max(1.2, p * 46);
-          return (
-            <rect
-              key={i}
-              x={i + 0.18}
-              y={50 - half}
-              width={0.64}
-              height={half * 2}
-              fill={track.color}
-              opacity={0.55 + p * 0.45}
-            />
-          );
-        })}
+      <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="min-h-0 w-full flex-1 p-[2px]" aria-label={`${active.name} waveform`}>
+        <line x1="0" y1="50" x2="100" y2="50" stroke="var(--clip-audio-dark)" strokeOpacity="0.28" strokeWidth="0.35" />
+        <polygon points={`${waveformPath} ${mirroredPath}`} fill="var(--clip-audio-dark)" fillOpacity="0.72" />
       </svg>
     </div>
   );
@@ -142,48 +137,41 @@ function MidiClip({ track }: { track: Track }) {
   const rows = 12;
   return (
     <div
-      className="absolute inset-y-1 left-0 right-1 overflow-hidden rounded-[3px] border"
-      style={{
-        borderColor: `color-mix(in oklab, ${track.color} 55%, transparent)`,
-        background: `color-mix(in oklab, ${track.color} 8%, var(--background))`,
-      }}
+      className="absolute inset-y-1 left-1 right-1 overflow-hidden rounded-[2px] border border-clip-midi-dark/70 bg-clip-midi shadow-sm"
       onDoubleClick={() => {
         select(track.id);
         setPanel("piano");
       }}
     >
       <div
-        className="flex items-center gap-1 px-1.5 py-[2px]"
-        style={{ background: `color-mix(in oklab, ${track.color} 45%, transparent)` }}
+        className="flex h-[18px] items-center gap-1 border-b border-clip-midi-dark/30 bg-clip-midi-dark/20 px-1.5"
       >
         <Piano className="size-2.5" />
-        <span className="truncate font-mono text-[9px] tracking-wider text-foreground/90">
+        <span className="truncate font-mono text-[9px] font-semibold text-clip-midi-dark">
           {track.instrument ?? "MIDI"} · {notes.length} NOTES ·{" "}
           {NOTE_NAMES[Math.min(...pitches) % 12]}
           {Math.floor(Math.min(...pitches) / 12) - 1}
         </span>
       </div>
-      <div className="relative flex-1" style={{ height: "calc(100% - 14px)" }}>
+      <div className="relative flex-1" style={{ height: "calc(100% - 18px)" }}>
         {Array.from({ length: rows }).map((_, r) => (
           <div
             key={r}
-            className="absolute left-0 right-0 border-t border-border/25"
+            className="absolute left-0 right-0 border-t border-clip-midi-dark/15"
             style={{ top: `${(r / rows) * 100}%` }}
           />
         ))}
         {notes.map((n) => (
           <div
             key={n.id}
-            className="absolute rounded-[1px]"
+            className="absolute rounded-[1px] border border-clip-midi-dark/30 bg-clip-midi-dark/70"
             title={`${NOTE_NAMES[n.pitch % 12]}${Math.floor(n.pitch / 12) - 1}`}
             style={{
               left: `${((n.step % 16) / 16) * 100}%`,
               width: `${(Math.max(1, n.length) / 16) * 100 - 0.4}%`,
               top: `${(1 - (n.pitch - lo) / span) * 82 + 4}%`,
               height: "9%",
-              background: track.color,
-              opacity: 0.45 + (n.velocity ?? 0.8) * 0.55,
-              boxShadow: `0 0 6px color-mix(in oklab, ${track.color} 60%, transparent)`,
+              opacity: 0.55 + (n.velocity ?? 0.8) * 0.4,
             }}
           />
         ))}
@@ -206,30 +194,25 @@ function DrumClip({ track }: { track: Track }) {
   const hits = pads.reduce((n, p) => n + p.steps.filter((s) => s > 0).length, 0);
   return (
     <div
-      className="absolute inset-y-1 left-0 right-1 overflow-hidden rounded-[3px] border"
-      style={{
-        borderColor: `color-mix(in oklab, ${track.color} 55%, transparent)`,
-        background: `color-mix(in oklab, ${track.color} 8%, var(--background))`,
-      }}
+      className="absolute inset-y-1 left-1 right-1 overflow-hidden rounded-[2px] border border-clip-midi-dark/70 bg-clip-midi shadow-sm"
       onDoubleClick={() => {
         select(track.id);
         setPanel("drums");
       }}
     >
       <div
-        className="flex items-center gap-1 px-1.5 py-[2px]"
-        style={{ background: `color-mix(in oklab, ${track.color} 45%, transparent)` }}
+        className="flex h-[18px] items-center gap-1 border-b border-clip-midi-dark/30 bg-clip-midi-dark/20 px-1.5"
       >
         <Disc3 className="size-2.5" />
-        <span className="truncate font-mono text-[9px] tracking-wider text-foreground/90">
+        <span className="truncate font-mono text-[9px] font-semibold text-clip-midi-dark">
           DRUM PATTERN · {hits} HITS · {shown.map((p) => p.name).slice(0, 4).join(" / ")}
         </span>
       </div>
-      <div className="relative flex-1" style={{ height: "calc(100% - 14px)" }}>
+      <div className="relative flex-1" style={{ height: "calc(100% - 18px)" }}>
         {shown.map((_, r) => (
           <div
             key={r}
-            className="absolute left-0 right-0 border-t border-border/25"
+            className="absolute left-0 right-0 border-t border-clip-midi-dark/15"
             style={{ top: `${(r / shown.length) * 100}%` }}
           />
         ))}
@@ -238,16 +221,14 @@ function DrumClip({ track }: { track: Track }) {
             vel > 0 ? (
               <div
                 key={`${p.id}-${i}`}
-                className="absolute rounded-[1px]"
+                 className="absolute rounded-[1px] border border-clip-midi-dark/30 bg-clip-midi-dark/75"
                 title={`${p.name} · step ${i + 1}`}
                 style={{
                   left: `${(i / steps) * 100}%`,
                   width: `${100 / steps - 0.4}%`,
                   top: `${(r / shown.length) * 100 + 100 / shown.length * 0.18}%`,
                   height: `${(100 / shown.length) * 0.64}%`,
-                  background: track.color,
                   opacity: 0.45 + vel * 0.55,
-                  boxShadow: vel >= 1 ? `0 0 6px color-mix(in oklab, ${track.color} 60%, transparent)` : undefined,
                 }}
               />
             ) : null,
@@ -366,7 +347,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
       onDrop={onDrop}
     >
       <div className="w-1 shrink-0" style={{ background: track.color, opacity: isSelected ? 1 : 0.65 }} />
-      <div className="w-[240px] shrink-0 space-y-1 border-r border-border bg-surface/70 px-2 py-1.5">
+      <div className="w-[240px] shrink-0 space-y-1 border-r border-border bg-surface px-2 py-1.5">
         <div className="flex items-center gap-1.5">
           <span className="text-primary">
             <KindIcon kind={track.kind} />
@@ -503,7 +484,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
         </div>
       </div>
 
-      <div className="lane-grid relative min-h-[76px] flex-1 bg-background/40">
+      <div className="lane-grid relative min-h-[92px] flex-1 bg-background/70">
         <Lane track={track} />
       </div>
 

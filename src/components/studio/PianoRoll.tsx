@@ -110,7 +110,7 @@ export function PianoRoll({ track }: { track: Track }) {
   );
 
   return (
-    <div className="space-y-2" onPointerUp={endDrag} onPointerLeave={endDrag}>
+    <div className="space-y-1.5" onPointerUp={endDrag} onPointerLeave={endDrag}>
       {/* toolbar */}
       <div className="flex flex-wrap items-center gap-1.5 rounded-sm border border-border bg-surface/60 p-1.5">
         <span className="label-xs px-1">GRID</span>
@@ -249,15 +249,15 @@ export function PianoRoll({ track }: { track: Track }) {
       </div>
 
       {/* editor */}
-      <div className="flex overflow-hidden rounded-sm border border-border bg-background/60">
-        <div className="w-14 shrink-0 border-r border-border">
+      <div className="flex overflow-hidden rounded-[2px] border border-border bg-background">
+        <div className="w-16 shrink-0 border-r border-border bg-surface-2">
           {pitches.map((p) => (
             <button
               key={p}
               onClick={() => previewNote(track.id, p)}
               style={{ height: ROW_H }}
-              className={`flex w-full items-center justify-end border-b border-border/40 px-1 font-mono text-[9px] ${
-                isBlack(p) ? "bg-surface-2 text-muted-foreground" : "bg-surface text-foreground"
+              className={`flex w-full items-center justify-end border-b border-background px-1 font-mono text-[8px] font-semibold ${
+                 isBlack(p) ? "bg-background text-muted-foreground" : "bg-foreground text-background"
               }`}
             >
               {NOTE_NAMES[((p % 12) + 12) % 12]}
@@ -269,7 +269,7 @@ export function PianoRoll({ track }: { track: Track }) {
         <div className="relative flex-1 overflow-hidden">
           <div
             ref={gridRef}
-            className="relative select-none"
+            className="relative select-none bg-background"
             style={{ height: ROWS * ROW_H }}
             onDoubleClick={addNote}
             onPointerMove={onMove}
@@ -281,9 +281,7 @@ export function PianoRoll({ track }: { track: Track }) {
                 style={{
                   top: i * ROW_H,
                   height: ROW_H,
-                  background: isBlack(p)
-                    ? "color-mix(in oklab, var(--surface-2) 55%, transparent)"
-                    : "color-mix(in oklab, var(--surface) 35%, transparent)",
+                  background: isBlack(p) ? "color-mix(in oklab, var(--surface-2) 70%, transparent)" : "transparent",
                   opacity: scaleLock && !inScale(p) ? 0.35 : 1,
                 }}
               />
@@ -295,7 +293,7 @@ export function PianoRoll({ track }: { track: Track }) {
                 style={{
                   left: `${(s / steps) * 100}%`,
                   width: 1,
-                  background: s % 16 === 0 ? "var(--grid-line-strong)" : s % 4 === 0 ? "var(--grid-line)" : "transparent",
+                   background: s % 16 === 0 ? "var(--editor-grid-strong)" : s % 4 === 0 ? "var(--editor-grid)" : "color-mix(in oklab, var(--editor-grid) 35%, transparent)",
                 }}
               />
             ))}
@@ -317,21 +315,21 @@ export function PianoRoll({ track }: { track: Track }) {
                     e.preventDefault();
                     del(n.id);
                   }}
-                  className="absolute rounded-[2px] border"
+                  className="absolute rounded-[1px] border border-clip-midi-dark/60 bg-clip-midi shadow-sm"
                   style={{
                     left: `${(n.step / steps) * 100}%`,
                     width: `${(n.length / steps) * 100}%`,
                     top: rowIndex * ROW_H + 1,
                     height: ROW_H - 3,
-                    background: `color-mix(in oklab, ${track.color} ${35 + n.velocity * 60}%, transparent)`,
-                    borderColor: selected ? "var(--neon)" : "transparent",
+                    opacity: 0.55 + n.velocity * 0.45,
+                    outline: selected ? "1px solid var(--foreground)" : "none",
                     cursor: "grab",
                   }}
                   title={`${NOTE_NAMES[((n.pitch % 12) + 12) % 12]}${Math.floor(n.pitch / 12) - 1} · vel ${Math.round(n.velocity * 127)}`}
                 >
                   <div
                     onPointerDown={(e) => onNoteDown(e, n, true)}
-                    className="absolute inset-y-0 right-0 w-1.5 cursor-ew-resize rounded-r-[2px] bg-foreground/25"
+                     className="absolute inset-y-0 right-0 w-1.5 cursor-ew-resize bg-clip-midi-dark/35"
                   />
                 </div>
               );
@@ -339,7 +337,7 @@ export function PianoRoll({ track }: { track: Track }) {
           </div>
 
           {/* velocity lane */}
-          <div className="relative h-14 border-t border-border bg-surface/40">
+          <div className="relative h-16 border-t border-border bg-surface/70">
             <span className="label-xs absolute top-0.5 left-1 z-10">VELOCITY</span>
             {notes.map((n) => (
               <div
@@ -365,11 +363,11 @@ export function PianoRoll({ track }: { track: Track }) {
                   window.addEventListener("pointermove", mv);
                   window.addEventListener("pointerup", up);
                 }}
-                className="absolute bottom-0 w-1.5 cursor-ns-resize rounded-t-[2px]"
+                 className="absolute bottom-0 w-1.5 cursor-ns-resize rounded-t-[1px] bg-clip-midi"
                 style={{
                   left: `calc(${(n.step / steps) * 100}% )`,
                   height: `${n.velocity * 100}%`,
-                  background: sel.includes(n.id) ? "var(--neon)" : `color-mix(in oklab, ${track.color} 80%, transparent)`,
+                   outline: sel.includes(n.id) ? "1px solid var(--foreground)" : "none",
                 }}
               />
             ))}
