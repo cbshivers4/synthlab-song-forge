@@ -1,4 +1,5 @@
 import {
+  Cpu,
   AudioLines,
   Circle,
   Disc3,
