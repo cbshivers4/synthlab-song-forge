@@ -61,8 +61,9 @@ function useMeters(tracks: Track[], transport: Transport) {
         const v = raw > prev ? raw : prev * 0.86;
         smooth.current[id] = v;
         tracks[id] = dbToFrac(toDb(Math.max(v, 0.0005)));
+        if (v > loudest) loudest = v;
       }
-      const mRaw = engine.getLevel();
+      const mRaw = Math.max(engine.getLevel(), loudest * 0.95);
       const mPrev = smooth.current["__master"] ?? 0;
       const m = mRaw > mPrev ? mRaw : mPrev * 0.86;
       smooth.current["__master"] = m;
