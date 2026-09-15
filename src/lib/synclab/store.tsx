@@ -224,6 +224,36 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     setTracks((ts) => ts.map((t) => (t.id === id ? { ...t, ...patch } : t)));
   }, []);
 
+  const finishRecording = useCallback(async () => {
+    const engine = getEngine();
+    if (!engine.isRecording) return;
+    const target = tracksRef.current.find((t) => t.recording);
+    const result = await engine.stopInputRecording();
+    if (!target) return;
+    if (!result) {
+      updateTrack(target.id, { recording: false });
+      return;
+    }
+    const takeNo = (target.clips?.length ?? 0) + 1;
+    const clip: AudioClip = {
+      id: uid(),
+      name: `TAKE ${takeNo}`,
+      peaks: result.peaks,
+      duration: result.duration,
+      url: result.url,
+    };
+    setTracks((ts) =>
+      ts.map((t) =>
+        t.id === target.id
+          ? { ...t, recording: false, clips: [...(t.clips ?? []), clip], activeClipId: clip.id }
+          : t,
+      ),
+    );
+    toast.success(`${clip.name} recorded on ${target.name}`, {
+      description: `${result.duration.toFixed(1)}s captured — pick your best take on the track.`,
+    });
+  }, [updateTrack]);
+
   const api: StudioApi = useMemo(() => {
     const selected = tracks.find((t) => t.id === selectedId) ?? null;
     return {
