@@ -8,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { toast } from "sonner";
 import { getEngine } from "./audio-engine";
 import { TRACK_COLORS, applyPreset, defaultPads, defaultPatch, uid } from "./presets";
 import type { AudioClip, BusId, DrumPad, MidiNote, SynthPatch, Track, TrackKind, Transport } from "./types";
