@@ -40,7 +40,7 @@ export function PianoRoll({ track }: { track: Track }) {
   const steps = bars * 16;
   const notes = track.notes ?? [];
   const pitches = Array.from({ length: ROWS }, (_, i) => low + ROWS - 1 - i);
-  const scale = SCALES[scaleName] ?? SCALES.Minor!;
+  const scale = SCALES[scaleName] ?? SCALES["Minor"]!;
   const inScale = (p: number) => scale.includes((((p - root) % 12) + 12) % 12);
   const snap = (v: number) => Math.max(0, Math.round(v / grid) * grid);
   const apply = (fn: (n: MidiNote) => MidiNote) =>
