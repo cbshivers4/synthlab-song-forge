@@ -702,11 +702,13 @@ function BusStrip({
   const tint = (pct: number) => `color-mix(in oklab, ${color} ${pct}%, transparent)`;
   return (
     <div
-      className="flex w-[104px] shrink-0 flex-col border-r border-border"
-      style={{ background: `linear-gradient(${tint(10)}, ${tint(3)}), var(--surface-2, transparent)`, boxShadow: `inset 3px 0 0 0 ${color}` }}
+      className="flex w-[116px] shrink-0 flex-col border-r border-black/50"
+      style={{ background: `linear-gradient(${tint(10)}, ${tint(3)}), ${PANEL}`, boxShadow: `inset 4px 0 0 0 ${color}, inset 0 1px 0 0 rgba(255,255,255,0.08)` }}
     >
-      <div className={cn(ROW.head, "flex items-center justify-center border-b border-border/60 font-mono text-[8px] uppercase tracking-widest text-muted-foreground")} style={{ background: tint(16) }}>
+      <div className={cn(ROW.head, "flex items-center justify-between border-b border-black/50 px-1.5 font-mono text-[8px] uppercase tracking-widest text-muted-foreground")} style={{ background: tint(16) }}>
+        <Screw />
         Bus
+        <Screw />
       </div>
       <div className={cn(ROW.devices, "border-b border-border/60 p-1")}>
         <FxMenu target={`bus:${id}`} label="Devices" />
@@ -794,20 +796,23 @@ function MasterStrip({ level: peak }: { level: number }) {
   }, [peak]);
   return (
     <div
-      className="flex w-[140px] shrink-0 flex-col"
+      className="flex w-[210px] shrink-0 flex-col border-l-2 border-black/60"
       style={{
-        background: `linear-gradient(color-mix(in oklab, ${color} 14%, transparent), transparent), var(--surface-2, transparent)`,
-        boxShadow: `inset 3px 0 0 0 ${color}`,
+        background: `linear-gradient(color-mix(in oklab, ${color} 12%, transparent), transparent), ${PANEL}`,
+        boxShadow: `inset 4px 0 0 0 ${color}, inset 0 1px 0 0 rgba(255,255,255,0.08)`,
       }}
     >
       <div
-        className={cn(ROW.head, "flex items-center justify-center border-b border-border/60 font-mono text-[8px] uppercase tracking-widest")}
+        className={cn(ROW.head, "flex items-center justify-between border-b border-black/50 px-1.5 font-mono text-[8px] uppercase tracking-widest")}
         style={{ background: `color-mix(in oklab, ${color} 22%, transparent)` }}
       >
+        <Screw />
         Main
+        <Screw />
       </div>
-      <div className={cn(ROW.devices, "border-b border-border/60 p-1")}>
-        <FxMenu target="bus:master" label="Master FX" />
+      <div className={cn(ROW.devices, "flex items-center gap-1 border-b border-black/50 px-1.5 py-1")}>
+        <VuMeter level={peak} label="L" />
+        <VuMeter level={peak} label="R" />
       </div>
       <div className={cn(ROW.sends, "border-b border-border/60")} />
       <div className={cn(ROW.sendBars, "border-b border-border/60")} />
