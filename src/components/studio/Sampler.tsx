@@ -156,6 +156,21 @@ export function Sampler() {
   };
 
   const s = track?.sampler;
+  const chops = s?.slices ?? [];
+
+  /** Cuts the trimmed region into n equal chops. */
+  const chopInto = (n: number) => {
+    if (!track || !s) return;
+    const span = s.end - s.start;
+    const next = Array.from({ length: n }, (_, i) => s.start + (span * i) / n);
+    updateSampler(track.id, { slices: next });
+    toast.success(`Chopped into ${n}`, { description: "Each chop plays from the root note upwards." });
+  };
+
+  const removeChop = (i: number) => {
+    if (!track) return;
+    updateSampler(track.id, { slices: chops.filter((_, x) => x !== i) });
+  };
 
   return (
     <div className="space-y-3">
