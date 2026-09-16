@@ -128,3 +128,8 @@ export function useApp(): AppApi {
 }
 
 export type { Theme, ThemeVars };
+
+/** Returns the app state when a provider is above, otherwise null. */
+export function useMaybeApp(): AppApi | null {
+  return useContext(Ctx);
+}
