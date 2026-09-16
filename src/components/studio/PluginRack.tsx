@@ -124,6 +124,38 @@ export function PluginRack() {
     toast.success(`${def.name} installed`, { description: `${def.vendor} · ${def.format}` });
   };
 
+  const scanFolder = (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const seen = new Set(installedPlugins.map((d) => d.name.toLowerCase()));
+    let added = 0;
+    for (const f of Array.from(files)) {
+      const rel = (f as File & { webkitRelativePath?: string }).webkitRelativePath || f.name;
+      const parts = rel.split("/");
+      // A .vst3 / .component bundle is a folder — take the first path segment that carries a known extension.
+      const bundle = parts.find((seg) => {
+        const ext = seg.split(".").pop()?.toLowerCase();
+        return !!ext && ext in PLUGIN_EXT;
+      });
+      if (!bundle) continue;
+      const ext = bundle.split(".").pop()?.toLowerCase() ?? "";
+      const pluginName = bundle.replace(/\.[^.]+$/, "");
+      if (!pluginName || seen.has(pluginName.toLowerCase())) continue;
+      seen.add(pluginName.toLowerCase());
+      const vendorGuess = parts.length > 1 && parts[0] !== bundle ? (parts[0] as string) : "3RD PARTY";
+      installPlugin(makeDef(pluginName, vendorGuess.toUpperCase(), PLUGIN_EXT[ext] ?? "VST3", guessKind(pluginName)));
+      added++;
+    }
+    if (added === 0) {
+      toast("No plugins found in that folder", {
+        description: "Pick your VST3 / Components folder, e.g. /Library/Audio/Plug-Ins/VST3 or C:\\Program Files\\Common Files\\VST3.",
+      });
+    } else {
+      toast.success(`${added} plugin${added === 1 ? "" : "s"} found`, {
+        description: "Names and formats were read from your folder. They run through SYNCLAB's matching DSP, not the original binaries.",
+      });
+    }
+  };
+
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
