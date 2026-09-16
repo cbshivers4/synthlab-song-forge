@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
 import { StudioProvider } from "@/lib/synclab/store";
+import { AppProvider } from "@/lib/synclab/app-state";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 
 function NotFoundComponent() {
