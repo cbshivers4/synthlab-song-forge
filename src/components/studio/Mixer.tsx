@@ -878,7 +878,7 @@ function MasterStrip({ level: peak }: { level: number }) {
 }
 
 export function Mixer() {
-  const { tracks, transport, selectedId, select, buses, setBus, updateTrack } = useStudio();
+  const { tracks, transport, selectedId, select, buses, setBus, updateTrack, addTrack } = useStudio();
   const levels = useMeters(tracks, transport);
   const [narrow, setNarrow] = useState(false);
   const [showBuses, setShowBuses] = useState(true);
