@@ -28,6 +28,7 @@ interface AppApi {
   activeTheme: Theme;
   project: ProjectMeta | null;
   setProject: (p: ProjectMeta) => void;
+  removeRecent: (p: ProjectMeta) => void;
   recents: ProjectMeta[];
   signedIn: boolean;
   setSignedIn: (v: boolean) => void;
@@ -93,6 +94,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const setProject = useCallback((p: ProjectMeta) => {
     setProjectState(p);
     setRecents((r) => [p, ...r.filter((x) => x.name !== p.name)].slice(0, 12));
+  }, []);
+
+  const removeRecent = useCallback((p: ProjectMeta) => {
+    setRecents((r) => r.filter((x) => !(x.name === p.name && x.openedAt === p.openedAt)));
   }, []);
 
   const api: AppApi = useMemo(
