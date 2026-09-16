@@ -94,6 +94,10 @@ interface StudioApi extends StudioState {
   removeTrack: (id: string) => void;
   duplicateTrack: (id: string) => void;
   moveTrack: (id: string, dir: -1 | 1) => void;
+  clipboardName: string | null;
+  copyTrack: (id: string) => void;
+  cutTrack: (id: string) => void;
+  pasteTrack: () => void;
   updatePatch: (id: string, patch: Partial<SynthPatch>) => void;
   updatePad: (trackId: string, padId: string, patch: Partial<DrumPad>) => void;
   toggleStep: (trackId: string, padId: string, step: number) => void;
@@ -182,6 +186,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const [midiInputs, setMidiInputs] = useState<MidiPortInfo[]>([]);
   const [midiInputId, setMidiInputId] = useState<string | null>(null);
   const [midiLearning, setMidiLearning] = useState(false);
+  const [clipboardName, setClipboardName] = useState<string | null>(null);
+  const clipboardRef = useRef<Track | null>(null);
   const selectedIdRef = useRef(selectedId);
   selectedIdRef.current = selectedId;
   const heldRef = useRef(new Map<number, { id: string; trackId: string; t0: number }>());
