@@ -298,7 +298,24 @@ export class SyncLabEngine {
     let cursor: AudioNode = from;
     let idx = 0;
     for (const pl of active) {
-      const size = { eq: 4, filter: 1, drive: 3, compressor: 2, delay: 5, width: 1, gain: 1 }[pl.kind];
+      const size = {
+        eq: 4,
+        filter: 1,
+        drive: 3,
+        compressor: 2,
+        delay: 5,
+        width: 1,
+        gain: 1,
+        reverb: 5,
+        chorus: 4,
+        flanger: 5,
+        phaser: 7,
+        tremolo: 1,
+        autopan: 1,
+        limiter: 1,
+        bitcrusher: 5,
+        gate: 1,
+      }[pl.kind];
       const head = nodes[idx];
       const tail = nodes[idx + size - 1];
       if (head && tail) {
