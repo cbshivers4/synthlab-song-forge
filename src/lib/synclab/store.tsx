@@ -894,7 +894,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           ),
         })),
     };
-  }, [tracks, transport, selectedId, panel, userPresets, buses, installedPlugins, fxChains, midiInputs, midiInputId, midiLearning, clipboardName, enableMidi, updateTrack, finishRecording]);
+  }, [tracks, transport, selectedId, selectedIds, editTool, panel, userPresets, buses, installedPlugins, fxChains, midiInputs, midiInputId, midiLearning, clipboardName, enableMidi, updateTrack, finishRecording, splitClipAtImpl]);
 
 
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>;
