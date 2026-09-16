@@ -230,18 +230,83 @@ function FloatingDevices({ float, setFloat }: { float: FloatState; setFloat: (f:
   );
 }
 
-function Studio() {
+/** Global DAW keyboard shortcuts. */
+function useShortcuts() {
+  const { togglePlay, toggleRecord, stop, selected, duplicateTrack, removeTrack, setPanel } = useStudio();
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement | null;
+      if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
+      const meta = e.metaKey || e.ctrlKey;
+      if (meta && e.key.toLowerCase() === "d" && selected) {
+        e.preventDefault();
+        duplicateTrack(selected.id);
+        return;
+      }
+      if (meta) return;
+      switch (e.key) {
+        case " ":
+          e.preventDefault();
+          togglePlay();
+          break;
+        case "r":
+        case "R":
+          e.preventDefault();
+          toggleRecord();
+          break;
+        case "s":
+        case "S":
+          e.preventDefault();
+          setPanel("mixer");
+          toast("Split", { description: "Use the track ⋮ menu → Split at playhead on the selected clip." });
+          break;
+        case "Escape":
+          stop();
+          break;
+        case "Delete":
+        case "Backspace":
+          if (selected) {
+            e.preventDefault();
+            removeTrack(selected.id);
+          }
+          break;
+        default:
+          break;
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [togglePlay, toggleRecord, stop, selected, duplicateTrack, removeTrack, setPanel]);
+}
+
+function StudioWorkspace() {
   const [float, setFloat] = useState<FloatState>({ synth: false, drums: false });
+  useShortcuts();
   return (
     <div className="flex h-screen flex-col overflow-hidden">
-      <SplashScreen />
+      <MenuBar />
       <TopBar />
-      <main className="flex min-h-0 flex-1 flex-col">
-        <Timeline />
-        <Panels float={float} setFloat={setFloat} />
-      </main>
+      <div className="flex min-h-0 flex-1">
+        <ToolsRail />
+        <main className="flex min-h-0 flex-1 flex-col">
+          <Timeline />
+          <Panels float={float} setFloat={setFloat} />
+        </main>
+      </div>
       <StatusBar />
       <FloatingDevices float={float} setFloat={setFloat} />
     </div>
+  );
+}
+
+function Studio() {
+  const { stage } = useApp();
+  return (
+    <>
+      <SplashScreen />
+      {stage === "welcome" && <WelcomeScreen />}
+      {stage === "start" && <StartScreen />}
+      {stage === "studio" && <StudioWorkspace />}
+    </>
   );
 }
