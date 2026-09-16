@@ -177,6 +177,28 @@ export interface PluginInstance {
   params: PluginParam[];
 }
 
+/** A loaded audio file played back by the sampler instrument. */
+export interface SamplerState {
+  name: string;
+  url: string;
+  duration: number;
+  peaks: number[];
+  /** trim points as 0..1 fractions of the file */
+  start: number;
+  end: number;
+  gain: number;
+  /** extra tuning in semitones */
+  pitch: number;
+  /** midi note that plays the sample at its recorded speed */
+  rootNote: number;
+  loop: boolean;
+  reverse: boolean;
+  /** when off the sample always plays to the trim end */
+  oneShot: boolean;
+  attack: number;
+  release: number;
+}
+
 export interface Track {
   id: string;
   name: string;
@@ -200,6 +222,7 @@ export interface Track {
   pads?: DrumPad[] | undefined;
   plugins?: PluginInstance[] | undefined;
   clips?: AudioClip[] | undefined;
+  sampler?: SamplerState | undefined;
   activeClipId?: string | undefined;
   recording?: boolean;
 }
