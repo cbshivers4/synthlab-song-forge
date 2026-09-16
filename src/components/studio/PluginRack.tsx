@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { ChevronDown, ChevronUp, Cpu, Plus, Power, Trash2 } from "lucide-react";
+import { useRef, useState } from "react";
+import { ChevronDown, ChevronUp, Cpu, FolderSearch, Plus, Power, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
