@@ -68,9 +68,19 @@ export function ToolsRail() {
           return (
             <button
               key={t.id}
-              title={t.label}
+              title={t.drag ? `${t.label} — drag onto the timeline to add a channel` : t.label}
+              draggable={!!t.drag}
+              onDragStart={(e) => {
+                if (!t.drag) return;
+                const payload = JSON.stringify({ type: "tool", ...t.drag });
+                e.dataTransfer.setData("application/synclab", payload);
+                e.dataTransfer.setData("text/plain", payload);
+                e.dataTransfer.effectAllowed = "copy";
+              }}
               onClick={() => (t.panel ? setPanel(t.panel) : toast(t.label, { description: t.soon }))}
               className={`flex w-full items-center gap-2 rounded-[3px] px-2 py-1.5 text-left text-xs transition-colors ${
+                t.drag ? "cursor-grab active:cursor-grabbing" : ""
+              } ${
                 active ? "bg-surface-2 text-primary" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"
               }`}
             >
