@@ -355,8 +355,31 @@ export function Settings() {
       </TabsContent>
 
       <TabsContent value="midi" className="mt-4">
-        <Row label="MIDI input">
-          <Pick value={p.midiInput} options={["All devices", "None", "Keyboard 1", "Pad controller"]} onChange={(v) => set("midiInput", v)} />
+        <Row
+          label="MIDI controller"
+          hint={
+            midiInputs.length
+              ? `${midiInputs.length} connected`
+              : "Connect a controller and press Scan — Chrome and Edge support MIDI hardware"
+          }
+        >
+          <Pick
+            value={
+              midiInputId === "all"
+                ? "All devices"
+                : (midiInputs.find((i) => i.id === midiInputId)?.name ?? "None")
+            }
+            options={["None", "All devices", ...midiInputs.map((i) => i.name)]}
+            onChange={(v) => {
+              if (v === "None") setMidiInput(null);
+              else if (v === "All devices") setMidiInput("all");
+              else setMidiInput(midiInputs.find((i) => i.name === v)?.id ?? null);
+              set("midiInput", v);
+            }}
+          />
+          <Button size="sm" variant="secondary" onClick={enableMidi}>
+            Scan
+          </Button>
         </Row>
         <Row label="MIDI thru" hint="Pass notes to the armed instrument">
           <Switch checked={p.midiThru} onCheckedChange={(v) => set("midiThru", v)} />
