@@ -202,11 +202,11 @@ const padDef = (kind: DrumPad["kind"], name: string, steps: number, seed: number
 });
 
 export const defaultPads = (steps = 16): DrumPad[] => [
-  padDef("kick", "KICK", steps, [0, 4, 8, 12]),
-  padDef("snare", "SNARE", steps, [4, 12]),
-  padDef("clap", "CLAP", steps, [12]),
-  padDef("hat", "HI-HAT", steps, [2, 6, 10, 14]),
-  padDef("openhat", "OPEN HAT", steps, [14]),
+  padDef("kick", "KICK", steps),
+  padDef("snare", "SNARE", steps),
+  padDef("clap", "CLAP", steps),
+  padDef("hat", "HI-HAT", steps),
+  padDef("openhat", "OPEN HAT", steps),
   padDef("tom", "TOM", steps),
   padDef("perc", "PERC", steps),
   padDef("rim", "RIM", steps),
