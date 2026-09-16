@@ -329,23 +329,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
 
   const splitClip = () => {
     if (!activeClip) return;
-    const cut = Math.max(1, Math.round(activeClip.peaks.length * playFrac));
-    const a = {
-      ...activeClip,
-      id: `${activeClip.id}-a${Date.now()}`,
-      name: `${activeClip.name} A`,
-      peaks: activeClip.peaks.slice(0, cut),
-      duration: activeClip.duration * playFrac,
-    };
-    const b = {
-      ...activeClip,
-      id: `${activeClip.id}-b${Date.now()}`,
-      name: `${activeClip.name} B`,
-      peaks: activeClip.peaks.slice(cut),
-      duration: activeClip.duration * (1 - playFrac),
-    };
-    writeClips(clips.flatMap((c) => (c.id === activeClip.id ? [a, b] : [c])), a.id);
-    toast.success("Clip split at playhead");
+    splitClipAt(track.id, playFrac);
   };
 
   const trimClip = (side: "left" | "right") => {
@@ -722,6 +706,102 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
+  );
+}
+
+function EditToolbar() {
+  const {
+    editTool,
+    setEditTool,
+    selectAll,
+    splitAtPlayhead,
+    selected,
+    selectedIds,
+    tracks,
+    cutTrack,
+    copyTrack,
+    pasteTrack,
+    removeTrack,
+    clipboardName,
+  } = useStudio();
+
+  const ToolBtn = ({ tool, icon, label, keys }: { tool: EditTool; icon: React.ReactNode; label: string; keys: string }) => (
+    <Button
+      size="sm"
+      variant={editTool === tool ? "default" : "ghost"}
+      className="h-6 gap-1 px-2 text-[10px]"
+      title={`${label} (${keys})`}
+      onClick={() => setEditTool(tool)}
+    >
+      {icon} {label}
+    </Button>
+  );
+
+  const targets = selectedIds.length > 1 ? selectedIds : selected ? [selected.id] : [];
+
+  return (
+    <div className="flex items-center gap-1 border-b border-border bg-surface-2/60 px-2 py-1">
+      <ToolBtn tool="select" icon={<MousePointer2 className="size-3" />} label="Select" keys="V" />
+      <ToolBtn tool="draw" icon={<Pencil className="size-3" />} label="Draw" keys="B" />
+      <ToolBtn tool="split" icon={<Scissors className="size-3" />} label="Split" keys="C" />
+      <div className="mx-1 h-4 w-px bg-border" />
+      <Button size="sm" variant="ghost" className="h-6 gap-1 px-2 text-[10px]" title="Select all channels (⌘A / Ctrl+A)" onClick={selectAll}>
+        <ListChecks className="size-3" /> All
+      </Button>
+      <Button
+        size="sm"
+        variant="ghost"
+        className="h-6 gap-1 px-2 text-[10px]"
+        title="Split the selected channel's clip or notes at the playhead (S)"
+        onClick={splitAtPlayhead}
+      >
+        <Scissors className="size-3" /> Split at Playhead
+      </Button>
+      <div className="mx-1 h-4 w-px bg-border" />
+      <Button
+        size="sm"
+        variant="ghost"
+        className="h-6 gap-1 px-2 text-[10px]"
+        disabled={targets.length === 0}
+        title="Cut selection (⌘X / Ctrl+X)"
+        onClick={() => targets.forEach((id) => cutTrack(id))}
+      >
+        <Scissors className="size-3" /> Cut
+      </Button>
+      <Button
+        size="sm"
+        variant="ghost"
+        className="h-6 gap-1 px-2 text-[10px]"
+        disabled={targets.length === 0}
+        title="Copy selection (⌘C / Ctrl+C)"
+        onClick={() => targets[0] && copyTrack(targets[0])}
+      >
+        <Copy className="size-3" /> Copy
+      </Button>
+      <Button
+        size="sm"
+        variant="ghost"
+        className="h-6 gap-1 px-2 text-[10px]"
+        disabled={!clipboardName}
+        title="Paste (⌘V / Ctrl+V)"
+        onClick={pasteTrack}
+      >
+        <ClipboardPaste className="size-3" /> Paste
+      </Button>
+      <Button
+        size="sm"
+        variant="ghost"
+        className="h-6 gap-1 px-2 text-[10px] text-destructive"
+        disabled={targets.length === 0}
+        title="Delete selection (Del)"
+        onClick={() => targets.forEach((id) => removeTrack(id))}
+      >
+        <Trash2 className="size-3" /> Delete{targets.length > 1 ? ` ${targets.length}` : ""}
+      </Button>
+      <span className="label-xs ml-auto hidden sm:inline">
+        {selectedIds.length > 1 ? `${selectedIds.length} selected` : `${tracks.length} channels`}
+      </span>
     </div>
   );
 }
