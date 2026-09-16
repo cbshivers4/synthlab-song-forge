@@ -201,7 +201,19 @@ const padDef = (kind: DrumPad["kind"], name: string, steps: number, seed: number
   steps: Array.from({ length: steps }, (_, i) => (seed.includes(i) ? 1 : 0)),
 });
 
-export const defaultPads = (steps = 16): DrumPad[] => [
+export const DRUM_KITS: { id: DrumKitId; name: string; desc: string; decay: number }[] = [
+  { id: "909", name: "TR-909", desc: "Punchy techno classic", decay: 0.5 },
+  { id: "808", name: "TR-808", desc: "Long booming sub kick", decay: 0.9 },
+  { id: "707", name: "TR-707", desc: "Dry digital house kit", decay: 0.4 },
+  { id: "606", name: "TR-606", desc: "Thin snappy drumatix", decay: 0.35 },
+  { id: "linn", name: "LinnDrum", desc: "80s electro-funk", decay: 0.55 },
+  { id: "acoustic", name: "Acoustic", desc: "Natural round kit", decay: 0.65 },
+  { id: "detroit", name: "Detroit", desc: "Hard warehouse kit", decay: 0.45 },
+  { id: "lofi", name: "Lo-Fi", desc: "Dusty tape drums", decay: 0.6 },
+  { id: "trap", name: "Trap", desc: "808 sub + fast hats", decay: 1 },
+];
+
+export const defaultPads = (steps = 16, kit: DrumKitId = "909"): DrumPad[] => [
   padDef("kick", "KICK", steps),
   padDef("snare", "SNARE", steps),
   padDef("clap", "CLAP", steps),
