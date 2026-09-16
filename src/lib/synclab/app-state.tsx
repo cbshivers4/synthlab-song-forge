@@ -116,11 +116,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       activeTheme,
       project,
       setProject,
+      removeRecent,
       recents,
       signedIn,
       setSignedIn,
     }),
-    [stage, mode, themeId, customThemes, allThemes, activeTheme, project, setProject, recents, signedIn],
+    [stage, mode, themeId, customThemes, allThemes, activeTheme, project, setProject, removeRecent, recents, signedIn],
   );
 
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>;
