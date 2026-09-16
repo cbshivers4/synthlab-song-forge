@@ -75,10 +75,14 @@ export type PanelId =
   | "appearance"
   | null;
 
+export type EditTool = "select" | "draw" | "split";
+
 interface StudioState {
   tracks: Track[];
   transport: Transport;
   selectedId: string | null;
+  selectedIds: string[];
+  editTool: EditTool;
   panel: PanelId;
   userPresets: SynthPatch[];
   buses: Record<BusId, BusState>;
@@ -89,6 +93,11 @@ interface StudioApi extends StudioState {
   setBus: (id: BusId, patch: Partial<BusState>) => void;
   setPanel: (p: PanelId) => void;
   select: (id: string) => void;
+  setEditTool: (t: EditTool) => void;
+  selectAll: () => void;
+  toggleSelectId: (id: string) => void;
+  splitClipAt: (trackId: string, frac: number) => void;
+  splitAtPlayhead: () => void;
   addTrack: (kind: TrackKind, name?: string, preset?: string) => string;
   updateTrack: (id: string, patch: Partial<Track>) => void;
   removeTrack: (id: string) => void;
