@@ -24,10 +24,12 @@ interface Tool {
   icon: React.ReactNode;
   panel?: PanelId;
   soon?: string;
+  /** Dragging this tool onto the timeline creates a channel of this kind. */
+  drag?: { kind: TrackKind; name: string; preset?: string };
 }
 
 const TOOLS: Tool[] = [
-  { id: "vocal", label: "Vocal Forge", icon: <Sparkles className="size-4" />, panel: "vocal" },
+  { id: "vocal", label: "Vocal Forge", icon: <Sparkles className="size-4" />, panel: "vocal", drag: { kind: "ai-vocal", name: "Vocal Forge" } },
   { id: "stems", label: "Stem Separator", icon: <Split className="size-4" />, soon: "Stem separation needs its AI backend — it arrives in the AI stage." },
   { id: "voice", label: "Voice Remover", icon: <Volume2 className="size-4" />, soon: "Voice removal needs its AI backend — it arrives in the AI stage." },
   { id: "coproducer", label: "AI Co-Producer", icon: <Bot className="size-4" />, soon: "The Co-Producer needs its AI backend — it arrives in the AI stage." },
