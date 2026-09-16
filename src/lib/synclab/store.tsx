@@ -73,7 +73,17 @@ function triggerNote(
   when?: number,
 ) {
   if (t.kind === "sampler" && t.sampler) {
-    engine.playSample(t.id, t.sampler, midi, dur, vel, when);
+    const s = t.sampler;
+    const chops = s.slices ?? [];
+    const idx = midi - s.rootNote;
+    if (chops.length > 1 && idx >= 0 && idx < chops.length) {
+      // each key from the root upwards plays one chop at its original pitch
+      const start = chops[idx] as number;
+      const end = (chops[idx + 1] ?? s.end) as number;
+      engine.playSample(t.id, { ...s, start, end, loop: false, oneShot: true }, s.rootNote, dur, vel, when);
+      return;
+    }
+    engine.playSample(t.id, s, midi, dur, vel, when);
     return;
   }
   if (t.patch) engine.playNote(t.id, t.patch, midi, dur, vel, when);
