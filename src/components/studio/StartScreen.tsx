@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Clock, FolderOpen, Import, LayoutTemplate, Plus, Sparkles } from "lucide-react";
+import { Clock, FolderOpen, Import, LayoutTemplate, Plus, Sparkles, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import synclabLogoAsset from "@/assets/synclab-logo.jpg.asset.json";
 
 export function StartScreen() {
-  const { setStage, setProject, recents } = useApp();
+  const { setStage, setProject, removeRecent, recents } = useApp();
   const { tracks, addTrack, removeTrack, setTransport } = useStudio();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("Untitled Project");
@@ -99,19 +99,31 @@ export function StartScreen() {
             <h2 className="label-xs">Recent</h2>
             <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
               {recents.map((r) => (
-                <button
+                <div
                   key={`${r.name}-${r.openedAt}`}
-                  onClick={() => {
-                    setProject(r);
-                    setStage("studio");
-                  }}
-                  className="panel p-3 text-left transition-colors hover:bg-surface-2"
+                  className="group panel relative p-3 text-left transition-colors hover:bg-surface-2"
                 >
-                  <div className="font-display text-sm font-semibold">{r.name}</div>
-                  <div className="font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
-                    {r.bpm} BPM · {r.key} · {r.timeSig}
-                  </div>
-                </button>
+                  <button
+                    onClick={() => {
+                      setProject(r);
+                      setStage("studio");
+                    }}
+                    className="block w-full"
+                  >
+                    <div className="font-display text-sm font-semibold">{r.name}</div>
+                    <div className="font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
+                      {r.bpm} BPM · {r.key} · {r.timeSig}
+                    </div>
+                  </button>
+                  <button
+                    aria-label={`Delete recent project ${r.name}`}
+                    title="Remove from recent"
+                    onClick={() => removeRecent(r)}
+                    className="absolute top-2 right-2 rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100"
+                  >
+                    <Trash2 className="size-3.5" />
+                  </button>
+                </div>
               ))}
             </div>
           </section>
