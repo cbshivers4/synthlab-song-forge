@@ -834,7 +834,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         const engine = getEngine();
         engine.init();
         engine.syncMix(tracksRef.current);
-        if (t?.patch) engine.playNote(t.id, t.patch, midi, 0.35, 0.9);
+        if (t) triggerNote(engine, t, midi, 0.35, 0.9);
         // Notes played on screen are captured while the transport records.
         const tp = transportRef.current;
         if (t && tp.recording && (t.kind === "instrument" || t.kind === "midi" || t.kind === "sampler")) {
@@ -842,6 +842,46 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           setTracks((ts) => ts.map((x) => (x.id === t.id ? { ...x, notes: [...(x.notes ?? []), note] } : x)));
         }
       },
+      loadSample: async (trackId, file) => {
+        const engine = getEngine();
+        engine.init();
+        try {
+          const loaded = await engine.loadSampleFile(file, file.name.replace(/\.[^.]+$/, ""));
+          const sampler: SamplerState = {
+            name: loaded.name,
+            url: loaded.url,
+            duration: loaded.duration,
+            peaks: loaded.peaks,
+            start: 0,
+            end: 1,
+            gain: 1,
+            pitch: 0,
+            rootNote: 60,
+            loop: false,
+            reverse: false,
+            oneShot: true,
+            attack: 0.002,
+            release: 0.06,
+          };
+          setTracks((ts) => ts.map((t) => (t.id === trackId ? { ...t, sampler } : t)));
+          toast.success("Sample loaded", {
+            description: `${loaded.name} · ${loaded.duration.toFixed(2)}s`,
+          });
+        } catch {
+          toast.error("That file could not be read", {
+            description: "Try a standard MP3, WAV, AIFF, M4A or OGG file.",
+          });
+        }
+      },
+      updateSampler: (trackId, patch) =>
+        setTracks((ts) =>
+          ts.map((t) => (t.id === trackId && t.sampler ? { ...t, sampler: { ...t.sampler, ...patch } } : t)),
+        ),
+      clearSample: (trackId) => {
+        getEngine().stopSamples(trackId);
+        setTracks((ts) => ts.map((t) => (t.id === trackId ? { ...t, sampler: undefined } : t)));
+      },
+      stopSamples: (trackId) => getEngine().stopSamples(trackId),
       installedPlugins,
       installPlugin: (d) => setInstalledPlugins((ps) => [...ps.filter((x) => x.id !== d.id), d]),
       uninstallPlugin: (defId) => setInstalledPlugins((ps) => ps.filter((x) => x.id !== defId)),
