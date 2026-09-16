@@ -87,10 +87,10 @@ function useMeters(tracks: Track[], transport: Transport) {
 
 /** Segmented LED meter — green body, amber top, red clip. */
 function Meter({ level, tall }: { level: number; tall?: boolean }) {
-  const segs = 18;
+  const segs = 24;
   const lit = Math.round(level * segs);
   return (
-    <div className={cn("flex w-1.5 flex-col-reverse gap-px", tall ? "h-64" : "h-64")}>
+    <div className={cn("flex w-2 flex-col-reverse gap-px", tall ? "h-64" : "h-44")}>
       {Array.from({ length: segs }, (_, i) => (
         <div
           key={i}
@@ -447,23 +447,6 @@ function FxMenu({ target, label }: { target: string; label: string }) {
   );
 }
 
-function SendStrip({ id, level }: { id: "reverb" | "delay" | "chorus"; level: number }) {
-  const { tracks } = useStudio();
-  const amount = Math.max(0, ...tracks.map((t) => (t.muted ? 0 : (t.sends?.[id] ?? 0))));
-  return (
-    <div className="flex w-[84px] shrink-0 flex-col items-center gap-1.5 border-r border-border bg-surface-2/30 px-1.5 py-2">
-      <span className="truncate font-mono text-[9px] font-bold uppercase tracking-wider text-amber-400">{id}</span>
-      <span className="font-mono text-[7px] uppercase tracking-widest text-muted-foreground">Send FX</span>
-      <div className="flex h-64 items-stretch gap-1">
-        <Meter level={level * amount} tall />
-      </div>
-      <span className="font-mono text-[9px] text-muted-foreground">{Math.round(amount * 100)}%</span>
-      <FxMenu target={`send:${id}`} label="FX" />
-    </div>
-  );
-}
-
-
 function MasterStrip({ level: peak }: { level: number }) {
   return (
     <div className="flex w-[124px] shrink-0 flex-col items-center gap-1.5 bg-surface-2 px-2 py-2 shadow-[inset_2px_0_0_0_var(--grid-line-strong)]">
@@ -513,9 +496,6 @@ export function Mixer() {
       ))}
       {BUS_STRIPS.map((id) => (
         <BusStrip key={id} id={id} state={buses[id]} level={busLevel(id)} onChange={(p) => setBus(id, p)} />
-      ))}
-      {(["reverb", "delay", "chorus"] as const).map((id) => (
-        <SendStrip key={id} id={id} level={levels.master} />
       ))}
       <MasterStrip level={levels.master} />
 
