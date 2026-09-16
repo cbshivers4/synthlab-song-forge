@@ -657,7 +657,53 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
         </div>
       </div>
 
-      <div className="lane-grid relative min-h-[92px] flex-1 bg-background/70">
+      <div
+        className={`lane-grid relative min-h-[92px] flex-1 bg-background/70 ${
+          editTool === "draw" ? "cursor-crosshair" : editTool === "split" ? "cursor-col-resize" : ""
+        }`}
+        title={
+          editTool === "draw"
+            ? "Draw tool — click to write a note or drum hit"
+            : editTool === "split"
+              ? "Split tool — click a clip to cut it there"
+              : undefined
+        }
+        onClick={(e) => {
+          if (editTool === "select") return;
+          const r = e.currentTarget.getBoundingClientRect();
+          const frac = Math.min(0.99, Math.max(0, (e.clientX - r.left) / r.width));
+          const step = Math.floor(frac * 16);
+          if (editTool === "draw") {
+            if (track.kind === "instrument" || track.kind === "midi" || track.kind === "sampler") {
+              const notes = track.notes ?? [];
+              const existing = notes.find((n) => n.step % 16 === step);
+              if (existing) {
+                setNotes(track.id, notes.filter((n) => n.id !== existing.id));
+              } else {
+                const note: MidiNote = { id: uid(), step, length: 1, pitch: 60, velocity: 0.9 };
+                setNotes(track.id, [...notes, note]);
+              }
+            } else if (track.kind === "drum") {
+              const pad = track.pads?.[0];
+              if (pad) toggleStep(track.id, pad.id, step);
+              else toast("No pads on this drum channel", { description: "Open the drum machine and add a pad first." });
+            } else {
+              toast("Draw works on note and drum channels", { description: "Audio channels are recorded, not drawn." });
+            }
+            return;
+          }
+          // split tool
+          if (track.kind === "audio" || track.kind === "ai-vocal") {
+            if ((track.clips?.length ?? 0) === 0) {
+              toast("Nothing to split", { description: "Record audio on this channel first." });
+              return;
+            }
+            splitClipAt(track.id, frac);
+          } else {
+            toast("Split audio clips with a click", { description: "For note channels, park the playhead and press S." });
+          }
+        }}
+      >
         <Lane track={track} />
       </div>
 
