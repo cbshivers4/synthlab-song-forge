@@ -353,6 +353,10 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             const v = pad.steps[s] ?? 0;
             if (v > 0) engine.playDrum(t.id, pad, v);
           }
+        } else if (t.kind === "sampler" && t.sampler && t.notes) {
+          for (const n of t.notes) {
+            if (n.step % len === s) triggerNote(engine, t, n.pitch, n.length * stepDur, n.velocity);
+          }
         } else if (t.patch && t.notes) {
           for (const n of t.notes) {
             if (n.step % len === s) {
