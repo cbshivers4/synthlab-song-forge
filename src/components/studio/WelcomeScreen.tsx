@@ -15,8 +15,12 @@ import {
   Waves,
   Cpu,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useApp } from "@/lib/synclab/app-state";
+import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable/index";
 import synclabLogoAsset from "@/assets/synclab-logo.jpg.asset.json";
 import { toast } from "sonner";
 
@@ -40,16 +44,70 @@ const FEATURES: { icon: React.ReactNode; title: string; body: string }[] = [
 
 export function WelcomeScreen() {
   const { setStage, setSignedIn } = useApp();
+  const [mode, setMode] = useState<"signin" | "signup" | null>(null);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
 
-  const enter = () => {
+  const enterStudio = () => {
     setSignedIn(true);
     setStage("start");
   };
 
-  const soon = (what: string) =>
-    toast(`${what} needs an account system`, {
-      description: "Accounts and sign-in arrive in the next stage. Continue to the studio meanwhile.",
+  useEffect(() => {
+    let active = true;
+    void supabase.auth.getSession().then(({ data }) => {
+      if (active && data.session) enterStudio();
     });
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      if (session) enterStudio();
+    });
+    return () => {
+      active = false;
+      sub.subscription.unsubscribe();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (busy) return;
+    setBusy(true);
+    try {
+      if (mode === "signup") {
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { emailRedirectTo: window.location.origin },
+        });
+        if (error) throw error;
+        if (!data.session) {
+          toast("Check your email", { description: "Confirm your address, then sign in." });
+          setMode("signin");
+        }
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not sign in");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const oauth = async (provider: "google" | "apple") => {
+    try {
+      const result = await lovable.auth.signInWithOAuth(provider, {
+        redirect_uri: window.location.origin,
+      });
+      if (result.error) {
+        toast.error(result.error.message ?? "Sign-in failed");
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Sign-in failed");
+    }
+  };
 
   return (
     <div className="min-h-screen overflow-y-auto bg-background">
@@ -69,26 +127,63 @@ export function WelcomeScreen() {
           </p>
 
           <div className="mt-8 flex flex-wrap items-center justify-center gap-2">
-            <Button size="lg" className="glow font-display tracking-wide" onClick={enter}>
+            <Button size="lg" className="glow font-display tracking-wide" onClick={() => setMode("signup")}>
               START FREE TRIAL
             </Button>
-            <Button size="lg" variant="secondary" onClick={enter}>
+            <Button size="lg" variant="secondary" onClick={() => setMode("signin")}>
               SIGN IN
             </Button>
-            <Button size="lg" variant="secondary" onClick={enter}>
+            <Button size="lg" variant="secondary" onClick={() => setMode("signup")}>
               CREATE ACCOUNT
             </Button>
-            <Button size="lg" variant="ghost" onClick={() => soon("Google sign-in")}>
+            <Button size="lg" variant="ghost" onClick={() => void oauth("google")}>
               CONTINUE WITH GOOGLE
             </Button>
-            <Button size="lg" variant="ghost" onClick={() => soon("Apple sign-in")}>
+            <Button size="lg" variant="ghost" onClick={() => void oauth("apple")}>
               CONTINUE WITH APPLE
             </Button>
           </div>
+
+          {mode && (
+            <form onSubmit={submit} className="panel mt-6 w-full max-w-sm space-y-3 p-5 text-left">
+              <h2 className="font-display text-sm font-semibold tracking-wide">
+                {mode === "signup" ? "CREATE YOUR ACCOUNT" : "SIGN IN"}
+              </h2>
+              <Input
+                type="email"
+                required
+                autoComplete="email"
+                placeholder="you@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+              <Input
+                type="password"
+                required
+                minLength={6}
+                autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              <Button type="submit" className="w-full" disabled={busy}>
+                {busy ? "WORKING…" : mode === "signup" ? "CREATE ACCOUNT" : "SIGN IN"}
+              </Button>
+              <button
+                type="button"
+                className="w-full text-center text-xs text-muted-foreground underline-offset-2 hover:underline"
+                onClick={() => setMode(mode === "signup" ? "signin" : "signup")}
+              >
+                {mode === "signup" ? "Already have an account? Sign in" : "New here? Create an account"}
+              </button>
+            </form>
+          )}
+
           <p className="mt-3 font-mono text-[10px] tracking-widest text-muted-foreground/70 uppercase">
             7-day free trial · no card needed yet
           </p>
         </header>
+
 
         <section className="mt-12 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {FEATURES.map((f) => (
