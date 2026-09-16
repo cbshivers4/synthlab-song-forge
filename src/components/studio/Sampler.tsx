@@ -1,5 +1,5 @@
 import { useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
-import { AudioLines, Play, RotateCcw, Square, Trash2, Upload } from "lucide-react";
+import { AudioLines, Play, RotateCcw, Scissors, Square, Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
@@ -23,12 +23,13 @@ function Row({ label, value, children }: { label: string; value: string; childre
   );
 }
 
-/** Waveform with draggable trim handles. */
-function Waveform({ track }: { track: Track }) {
+/** Waveform with draggable trim handles and chop markers. */
+function Waveform({ track, onSlice }: { track: Track; onSlice: (i: number) => void }) {
   const { updateSampler } = useStudio();
   const s = track.sampler!;
   const ref = useRef<HTMLDivElement | null>(null);
-  const [drag, setDrag] = useState<"start" | "end" | null>(null);
+  const [drag, setDrag] = useState<"start" | "end" | number | null>(null);
+  const chops = s.slices ?? [];
 
   const fracAt = (clientX: number) => {
     const box = ref.current?.getBoundingClientRect();
@@ -37,10 +38,15 @@ function Waveform({ track }: { track: Track }) {
   };
 
   const move = (e: ReactPointerEvent) => {
-    if (!drag) return;
+    if (drag === null) return;
     const f = fracAt(e.clientX);
     if (drag === "start") updateSampler(track.id, { start: Math.min(f, s.end - 0.002) });
-    else updateSampler(track.id, { end: Math.max(f, s.start + 0.002) });
+    else if (drag === "end") updateSampler(track.id, { end: Math.max(f, s.start + 0.002) });
+    else {
+      const next = chops.slice();
+      next[drag] = Math.min(Math.max(f, s.start), s.end);
+      updateSampler(track.id, { slices: next.slice().sort((a, b) => a - b) });
+    }
   };
 
   return (
@@ -69,6 +75,30 @@ function Waveform({ track }: { track: Track }) {
 
       <div className="absolute inset-y-0 left-0 bg-background/70" style={{ width: `${s.start * 100}%` }} />
       <div className="absolute inset-y-0 right-0 bg-background/70" style={{ width: `${(1 - s.end) * 100}%` }} />
+
+      {chops.map((c, i) => (
+        <div
+          key={`chop-${i}`}
+          role="slider"
+          tabIndex={0}
+          aria-label={`Chop ${i + 1}`}
+          aria-valuenow={Math.round(c * 100)}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          onPointerDown={(e) => {
+            e.preventDefault();
+            setDrag(i);
+          }}
+          onDoubleClick={() => onSlice(i)}
+          className="absolute inset-y-0 z-20 w-3 -translate-x-1/2 cursor-col-resize"
+          style={{ left: `${c * 100}%` }}
+        >
+          <span className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-accent" />
+          <span className="absolute bottom-1 left-1/2 -translate-x-1/2 rounded-sm bg-accent px-1 font-mono text-[9px] text-accent-foreground">
+            {i + 1}
+          </span>
+        </div>
+      ))}
 
       {(["start", "end"] as const).map((h) => (
         <div
@@ -126,6 +156,21 @@ export function Sampler() {
   };
 
   const s = track?.sampler;
+  const chops = s?.slices ?? [];
+
+  /** Cuts the trimmed region into n equal chops. */
+  const chopInto = (n: number) => {
+    if (!track || !s) return;
+    const span = s.end - s.start;
+    const next = Array.from({ length: n }, (_, i) => s.start + (span * i) / n);
+    updateSampler(track.id, { slices: next });
+    toast.success(`Chopped into ${n}`, { description: "Each chop plays from the root note upwards." });
+  };
+
+  const removeChop = (i: number) => {
+    if (!track) return;
+    updateSampler(track.id, { slices: chops.filter((_, x) => x !== i) });
+  };
 
   return (
     <div className="space-y-3">
@@ -211,7 +256,73 @@ export function Sampler() {
             </div>
           </div>
 
-          <Waveform track={track} />
+          <Waveform track={track} onSlice={removeChop} />
+
+          <div className="space-y-2 rounded-lg border border-border bg-surface-2/40 p-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <Scissors className="size-4 text-primary" />
+              <span className="label-xs">Chop sample</span>
+              {[4, 8, 12, 16].map((n) => (
+                <Button
+                  key={n}
+                  size="sm"
+                  variant="secondary"
+                  className="h-7 font-mono text-[10px] tracking-widest"
+                  onClick={() => chopInto(n)}
+                >
+                  {n}
+                </Button>
+              ))}
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 font-mono text-[10px] tracking-widest"
+                onClick={() =>
+                  updateSampler(track.id, { slices: [...chops, (s.start + s.end) / 2].sort((a, b) => a - b) })
+                }
+              >
+                + Add chop
+              </Button>
+              {chops.length > 0 && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 font-mono text-[10px] tracking-widest text-destructive"
+                  onClick={() => updateSampler(track.id, { slices: [] })}
+                >
+                  Clear chops
+                </Button>
+              )}
+            </div>
+
+            {chops.length > 1 ? (
+              <>
+                <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">
+                  {chops.map((c, i) => (
+                    <button
+                      key={`pad-${i}`}
+                      type="button"
+                      onPointerDown={() => previewNote(track.id, s.rootNote + i)}
+                      className="flex h-14 flex-col items-center justify-center rounded-md border border-border bg-surface-1 font-mono text-[10px] text-muted-foreground transition-colors hover:border-primary hover:bg-primary/15 hover:text-foreground active:bg-primary/30"
+                    >
+                      <span className="text-sm text-foreground">{i + 1}</span>
+                      <span>{(c * s.duration).toFixed(2)}s</span>
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Chop {1} sits on {noteName(s.rootNote)} and each chop after it takes the next key up — play them from
+                  the pads, the keyboard, the piano roll or your MIDI controller. Drag a marker to move a chop, double
+                  click it to delete.
+                </p>
+              </>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Pick 4, 8, 12 or 16 to slice the trimmed part into even chops, or add your own markers and drag them
+                where you want the cuts.
+              </p>
+            )}
+          </div>
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <Row label="Trim start" value={`${(s.start * s.duration).toFixed(2)}s`}>
