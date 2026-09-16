@@ -383,10 +383,11 @@ export const applyPreset = (name: string): SynthPatch => {
   return base;
 };
 
-const padDef = (kind: DrumPad["kind"], name: string, steps: number, seed: number[] = []): DrumPad => ({
+const padDef = (kind: DrumPad["kind"], name: string, steps: number, kit: DrumKitId = "909", seed: number[] = []): DrumPad => ({
   id: uid(),
   name,
   kind,
+  kit,
   volume: 0.8,
   pan: 0,
   pitch: 0,
@@ -409,17 +410,17 @@ export const DRUM_KITS: { id: DrumKitId; name: string; desc: string; decay: numb
 ];
 
 export const defaultPads = (steps = 16, kit: DrumKitId = "909"): DrumPad[] => [
-  padDef("kick", "KICK", steps),
-  padDef("snare", "SNARE", steps),
-  padDef("clap", "CLAP", steps),
-  padDef("hat", "HI-HAT", steps),
-  padDef("openhat", "OPEN HAT", steps),
-  padDef("tom", "TOM", steps),
-  padDef("perc", "PERC", steps),
-  padDef("rim", "RIM", steps),
-  padDef("crash", "CRASH", steps),
-  padDef("ride", "RIDE", steps),
-  padDef("fx", "FX", steps),
+  padDef("kick", "KICK", steps, kit),
+  padDef("snare", "SNARE", steps, kit),
+  padDef("clap", "CLAP", steps, kit),
+  padDef("hat", "HI-HAT", steps, kit),
+  padDef("openhat", "OPEN HAT", steps, kit),
+  padDef("tom", "TOM", steps, kit),
+  padDef("perc", "PERC", steps, kit),
+  padDef("rim", "RIM", steps, kit),
+  padDef("crash", "CRASH", steps, kit),
+  padDef("ride", "RIDE", steps, kit),
+  padDef("fx", "FX", steps, kit),
 ];
 
 export const TRACK_COLORS = [
@@ -441,11 +442,11 @@ export const KIND_LABEL: Record<TrackKind, string> = {
 };
 
 export const INSTRUMENTS: { category: string; items: string[] }[] = [
-  { category: "SYNTH", items: ["Cybotron Lead", "Night Arp", "Metro Pluck"] },
-  { category: "BASS", items: ["Sub Bass", "Ghetto Tech Bass", "303 Acid"] },
-  { category: "KEYS", items: ["Deep Keys", "Belleville Strings"] },
-  { category: "PAD", items: ["Warehouse Pad", "Void Ambient"] },
-  { category: "FX", items: ["Assembly Line", "Vocoder Bot"] },
+  { category: "SYNTH", items: ["Cybotron Lead", "Night Arp", "Metro Pluck", "Supersaw Anthem", "Hoover Rave", "Detroit Stab"] },
+  { category: "BASS", items: ["Sub Bass", "Ghetto Tech Bass", "303 Acid", "Reese Bass", "Moog Mono", "808 Sub Glide", "Neuro Growl"] },
+  { category: "KEYS", items: ["Deep Keys", "Belleville Strings", "Rhodes Soul", "FM Bell", "Trap Bell", "Brass Stab"] },
+  { category: "PAD", items: ["Warehouse Pad", "Void Ambient", "Glass Pad", "Choir Air", "Dub Chord"] },
+  { category: "FX", items: ["Assembly Line", "Vocoder Bot", "Sci-Fi Sweep"] },
 ];
 
 export const GENRES = [
