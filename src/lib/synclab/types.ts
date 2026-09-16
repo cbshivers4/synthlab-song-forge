@@ -195,6 +195,8 @@ export interface SamplerState {
   reverse: boolean;
   /** when off the sample always plays to the trim end */
   oneShot: boolean;
+  /** chop points as sorted 0..1 fractions; slice n spans slices[n]..slices[n+1] */
+  slices?: number[] | undefined;
   attack: number;
   release: number;
 }
