@@ -1,3 +1,5 @@
+// ============= Full file contents =============
+
 import {
   AudioLines,
   Bot,
@@ -41,6 +43,21 @@ const FEATURES: { icon: React.ReactNode; title: string; body: string }[] = [
   { icon: <Users className="size-4" />, title: "Mastering", body: "Finish loud, clean and ready to share." },
   { icon: <Cpu className="size-4" />, title: "Plugin Support", body: "Built-in effects now, native bridge architecture ready." },
 ];
+
+const GOOGLE_ICON = (
+  <svg className="size-5" viewBox="0 0 24 24" aria-hidden>
+    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05" />
+    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.66l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+  </svg>
+);
+
+const APPLE_ICON = (
+  <svg className="size-5 fill-current" viewBox="0 0 24 24" aria-hidden>
+    <path d="M17.05 20.28c-.98.95-2.05 1.79-3.72 1.79-1.63 0-2.21-1.02-4.14-1.02-1.97 0-2.64 1-4.04 1-1.59 0-2.73-1.58-3.72-3.01-2.02-2.92-3.57-8.25-1.5-11.83.99-1.77 2.81-2.89 4.81-2.89 1.54 0 2.62.91 3.73.91 1.05 0 2.51-1.09 4.38-1.09 1.29 0 3.16.48 4.39 2.09-3.48 1.94-2.92 6.51.59 7.94-.91 2.29-2.29 4.67-3.78 6.11zM13 1c0 2.1-1.63 4.2-3.75 4.2-.2 0-.41-.02-.6-.05.15-2.31 1.87-4.15 3.55-5.15.35-.2.57-.28.8-.28V1z" />
+  </svg>
+);
 
 export function WelcomeScreen() {
   const { setStage, setSignedIn } = useApp();
@@ -110,96 +127,147 @@ export function WelcomeScreen() {
   };
 
   return (
-    <div className="min-h-screen overflow-y-auto bg-background">
-      <div className="mx-auto w-full max-w-6xl px-5 py-12">
-        <header className="flex flex-col items-center text-center">
+    <div className="min-h-screen overflow-y-auto bg-background text-foreground">
+      <div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-16 px-6 py-12 lg:grid-cols-12">
+        {/* Brand & features side */}
+        <div className="flex flex-col items-center text-center lg:col-span-7 lg:items-start lg:text-left">
           <img
             src={synclabLogoAsset.url}
             alt="SYNCLAB"
-            className="h-48 w-48 rounded-lg object-contain shadow-[var(--shadow-glow)] sm:h-56 sm:w-56"
+            className="mb-10 h-24 w-24 rounded-2xl border border-white/20 object-cover shadow-[0_0_50px_-10px_hsl(var(--primary)/0.6)]"
           />
-          <h1 className="mt-7 font-display text-3xl font-semibold tracking-tight sm:text-5xl">
-            Create. Record. Produce. Finish.
-          </h1>
-          <p className="mt-4 max-w-2xl text-balance text-sm text-muted-foreground sm:text-base">
-            SYNCLAB combines AI music creation with a complete recording studio — one screen, one project, one
-            timeline. Simple enough to start, powerful enough to finish.
-          </p>
 
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-2">
-            <Button size="lg" className="glow font-display tracking-wide" onClick={() => setMode("signup")}>
-              START FREE TRIAL
-            </Button>
-            <Button size="lg" variant="secondary" onClick={() => setMode("signin")}>
-              SIGN IN
-            </Button>
-            <Button size="lg" variant="secondary" onClick={() => setMode("signup")}>
-              CREATE ACCOUNT
-            </Button>
-            <Button size="lg" variant="ghost" onClick={() => void oauth("google")}>
-              CONTINUE WITH GOOGLE
-            </Button>
-            <Button size="lg" variant="ghost" onClick={() => void oauth("apple")}>
-              CONTINUE WITH APPLE
-            </Button>
+          <div className="mb-12 space-y-6">
+            <h1 className="font-display text-5xl font-black leading-[0.9] tracking-tighter md:text-7xl">
+              CREATE. RECORD.
+              <br />
+              PRODUCE.{" "}
+              <span className="bg-gradient-to-r from-teal-400 to-purple-400 bg-clip-text text-transparent">
+                FINISH.
+              </span>
+            </h1>
+            <p className="max-w-md text-lg font-medium tracking-tight text-muted-foreground">
+              The all-in-one workstation for the next generation of electronic sound design.
+            </p>
           </div>
 
-          {mode && (
-            <form onSubmit={submit} className="panel mt-6 w-full max-w-sm space-y-3 p-5 text-left">
-              <h2 className="font-display text-sm font-semibold tracking-wide">
-                {mode === "signup" ? "CREATE YOUR ACCOUNT" : "SIGN IN"}
-              </h2>
-              <Input
-                type="email"
-                required
-                autoComplete="email"
-                placeholder="you@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-              <Input
-                type="password"
-                required
-                minLength={6}
-                autoComplete={mode === "signup" ? "new-password" : "current-password"}
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-              <Button type="submit" className="w-full" disabled={busy}>
-                {busy ? "WORKING…" : mode === "signup" ? "CREATE ACCOUNT" : "SIGN IN"}
-              </Button>
-              <button
-                type="button"
-                className="w-full text-center text-xs text-muted-foreground underline-offset-2 hover:underline"
-                onClick={() => setMode(mode === "signup" ? "signin" : "signup")}
+          <div className="grid w-full grid-cols-3 gap-3 sm:grid-cols-5">
+            {FEATURES.map((f) => (
+              <div
+                key={f.title}
+                title={f.body}
+                className="group flex aspect-square flex-col items-center justify-center gap-2 rounded-lg border border-border bg-card/50 p-2 text-center transition-all hover:border-primary/50"
               >
-                {mode === "signup" ? "Already have an account? Sign in" : "New here? Create an account"}
-              </button>
-            </form>
-          )}
-
-          <p className="mt-3 font-mono text-[10px] tracking-widest text-muted-foreground/70 uppercase">
-            7-day free trial · no card needed yet
-          </p>
-        </header>
-
-
-        <section className="mt-12 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {FEATURES.map((f) => (
-            <article key={f.title} className="panel flex gap-3 p-4">
-              <span className="mt-0.5 text-primary">{f.icon}</span>
-              <div>
-                <h2 className="font-display text-sm font-semibold tracking-wide">{f.title}</h2>
-                <p className="mt-1 text-xs text-muted-foreground">{f.body}</p>
+                <span className="text-muted-foreground transition-colors group-hover:text-primary">{f.icon}</span>
+                <span className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground transition-colors group-hover:text-foreground">
+                  {f.title}
+                </span>
               </div>
-            </article>
-          ))}
-        </section>
+            ))}
+          </div>
 
-        <footer className="mt-10 text-center font-mono text-[10px] tracking-[0.35em] text-muted-foreground/60 uppercase">
-          SYNCLAB · Detroit Electronic Sound Design
-        </footer>
+          <footer className="mt-12 w-full border-t border-border pt-6 font-mono text-[10px] uppercase tracking-[0.3em] text-muted-foreground/50">
+            SYNCLAB · Detroit Electronic Sound Design
+          </footer>
+        </div>
+
+        {/* Auth side */}
+        <div className="lg:col-span-5">
+          <div className="relative overflow-hidden rounded-[2.5rem] border border-border bg-card/40 p-8 shadow-2xl backdrop-blur-2xl sm:p-10">
+            <div className="absolute right-0 top-0 h-32 w-32 rounded-full bg-purple-500/10 blur-3xl" />
+            <div className="absolute bottom-0 left-0 h-32 w-32 rounded-full bg-teal-500/10 blur-3xl" />
+
+            <div className="relative space-y-8">
+              <div className="space-y-4">
+                <button
+                  className="w-full cursor-pointer rounded-2xl bg-teal-400 py-5 text-lg font-black tracking-wide text-black shadow-[0_0_30px_-5px_rgba(45,212,191,0.5)] transition-all hover:bg-teal-300 active:scale-[0.98]"
+                  onClick={() => setMode("signup")}
+                >
+                  START FREE TRIAL
+                </button>
+                <p className="text-center text-xs font-medium text-muted-foreground">
+                  7-day free trial · no card needed yet
+                </p>
+              </div>
+
+              <div className="relative py-2">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-border" />
+                </div>
+                <div className="relative flex justify-center text-[10px] font-bold uppercase tracking-widest">
+                  <span className="bg-card px-4 text-muted-foreground">or secure login</span>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <button
+                  className="flex w-full cursor-pointer items-center justify-center gap-3 rounded-xl bg-white py-4 font-bold text-black transition-all hover:bg-zinc-100"
+                  onClick={() => void oauth("google")}
+                >
+                  {GOOGLE_ICON}
+                  CONTINUE WITH GOOGLE
+                </button>
+                <button
+                  className="flex w-full cursor-pointer items-center justify-center gap-3 rounded-xl bg-zinc-800 py-4 font-bold text-white transition-all hover:bg-zinc-700"
+                  onClick={() => void oauth("apple")}
+                >
+                  {APPLE_ICON}
+                  CONTINUE WITH APPLE
+                </button>
+              </div>
+
+              {mode ? (
+                <form onSubmit={submit} className="space-y-3 pt-2">
+                  <h2 className="font-mono text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                    {mode === "signup" ? "Create your account" : "Sign in"}
+                  </h2>
+                  <Input
+                    type="email"
+                    required
+                    autoComplete="email"
+                    placeholder="you@email.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                  <Input
+                    type="password"
+                    required
+                    minLength={6}
+                    autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                    placeholder="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                  <Button type="submit" className="w-full" disabled={busy}>
+                    {busy ? "WORKING…" : mode === "signup" ? "CREATE ACCOUNT" : "SIGN IN"}
+                  </Button>
+                  <button
+                    type="button"
+                    className="w-full cursor-pointer text-center text-xs text-muted-foreground underline-offset-2 hover:underline"
+                    onClick={() => setMode(mode === "signup" ? "signin" : "signup")}
+                  >
+                    {mode === "signup" ? "Already have an account? Sign in" : "New here? Create an account"}
+                  </button>
+                </form>
+              ) : (
+                <div className="flex flex-col gap-4 pt-4">
+                  <button
+                    className="w-full cursor-pointer rounded-xl border-2 border-border py-4 font-bold transition-colors hover:border-muted-foreground"
+                    onClick={() => setMode("signin")}
+                  >
+                    SIGN IN
+                  </button>
+                  <button
+                    className="w-full cursor-pointer py-2 text-sm font-semibold text-muted-foreground underline decoration-border underline-offset-4 transition-colors hover:text-foreground"
+                    onClick={() => setMode("signup")}
+                  >
+                    CREATE ACCOUNT
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
