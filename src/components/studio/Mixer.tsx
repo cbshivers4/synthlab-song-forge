@@ -789,6 +789,8 @@ function FxMenu({ target, label }: { target: string; label: string }) {
 }
 
 function MasterStrip({ level: peak }: { level: number }) {
+  const { buses, setBus } = useStudio();
+  const master = buses["master"] as BusState;
   const [clip, setClip] = useState(false);
   const color = BUS_COLOR["master"] as string;
   useEffect(() => {
@@ -814,13 +816,18 @@ function MasterStrip({ level: peak }: { level: number }) {
         <VuMeter level={peak} label="L" />
         <VuMeter level={peak} label="R" />
       </div>
-      <div className={cn(ROW.sends, "border-b border-border/60")} />
+      <div className={cn(ROW.sends, "border-b border-border/60 px-1 py-[2px]")}>
+        <FxMenu target="bus:master" label="Master FX" />
+      </div>
       <div className={cn(ROW.sendBars, "border-b border-border/60")} />
       <div className={cn(ROW.io, "flex items-center justify-center border-b border-border/60 font-mono text-[8px] uppercase tracking-widest text-muted-foreground")}>
         Main out
       </div>
       <div className={cn(ROW.pan, "border-b border-border/60")} />
-      <div className={cn(ROW.fader, "flex items-stretch justify-center gap-1 border-b border-border/60 py-1")}>
+      <div
+        className={cn(ROW.fader, "flex items-stretch justify-center gap-1.5 border-b border-border/60 py-1")}
+        style={{ "--primary": color } as CSSProperties}
+      >
         <div className="flex flex-col justify-between py-1">
           {DB_TICKS.map((db) => (
             <div key={db} className="flex items-center gap-0.5">
@@ -831,6 +838,16 @@ function MasterStrip({ level: peak }: { level: number }) {
             </div>
           ))}
         </div>
+        <Slider
+          orientation="vertical"
+          className={cn("h-full w-8", FADER_CAP)}
+          value={[master.volume]}
+          min={0}
+          max={1.2}
+          step={0.01}
+          onDoubleClick={() => setBus("master", { volume: 1 })}
+          onValueChange={([v = 0]) => setBus("master", { volume: v })}
+        />
         <Meter level={peak} tall color={color} />
         <Meter level={peak} tall color={color} />
       </div>
@@ -876,7 +893,7 @@ export function Mixer() {
     <div className="flex flex-col border border-border bg-surface">
       {/* console toolbar */}
       <div className="flex items-center gap-2 border-b border-border bg-surface-2/70 px-2 py-1.5">
-        <span className="font-display text-[11px] font-bold uppercase tracking-widest text-primary">Mixer</span>
+        <span className="font-display text-[11px] font-bold uppercase tracking-widest text-primary">Mix Console</span>
         <span className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
           {tracks.length} ch · {BUS_STRIPS.length} buses
         </span>
