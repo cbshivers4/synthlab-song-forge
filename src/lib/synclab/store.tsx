@@ -536,6 +536,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         getEngine().removeChannel(id);
         setTracks((ts) => ts.filter((t) => t.id !== id));
         setSelectedId((s) => (s === id ? null : s));
+        setSelectedIds((s) => s.filter((x) => x !== id));
       },
       duplicateTrack: (id) =>
         setTracks((ts) => {
@@ -578,6 +579,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         getEngine().removeChannel(id);
         setTracks((ts) => ts.filter((t) => t.id !== id));
         setSelectedId((s) => (s === id ? null : s));
+        setSelectedIds((s) => s.filter((x) => x !== id));
         toast("Cut", { description: `${src.name} removed and placed on the clipboard.` });
       },
       pasteTrack: () => {
