@@ -1,0 +1,121 @@
+import { useEffect, useState } from "react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { useStudio } from "@/lib/synclab/store";
+import { midiSupported } from "@/lib/synclab/midi";
+
+const KEY = "synclab.devicesetup.done";
+
+export function DeviceSetup() {
+  const { midiInputs, enableMidi } = useStudio();
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [asked, setAsked] = useState(false);
+  const [inputs, setInputs] = useState<string[]>([]);
+  const [outputs, setOutputs] = useState<string[]>([]);
+
+  useEffect(() => {
+    try {
+      if (!localStorage.getItem(KEY)) setOpen(true);
+    } catch {
+      setOpen(true);
+    }
+  }, []);
+
+  const close = () => {
+    try {
+      localStorage.setItem(KEY, "1");
+    } catch {
+      /* ignore */
+    }
+    setOpen(false);
+  };
+
+  const connect = async () => {
+    setBusy(true);
+    try {
+      if (navigator.mediaDevices?.getUserMedia) {
+        try {
+          const s = await navigator.mediaDevices.getUserMedia({ audio: true });
+          s.getTracks().forEach((t) => t.stop());
+        } catch {
+          /* permission denied — handled by empty list below */
+        }
+        const list = await navigator.mediaDevices.enumerateDevices();
+        setInputs(list.filter((d) => d.kind === "audioinput").map((d, i) => d.label || `Input ${i + 1}`));
+        setOutputs(list.filter((d) => d.kind === "audiooutput").map((d, i) => d.label || `Output ${i + 1}`));
+      }
+      enableMidi();
+    } finally {
+      setAsked(true);
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => (v ? setOpen(true) : close())}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Connect your gear</DialogTitle>
+          <DialogDescription>
+            SYNCLAB needs permission to use your audio interface and MIDI controllers. Your browser will ask
+            once — choose Allow so devices like a Volt 1 and your keyboards show up by name.
+          </DialogDescription>
+        </DialogHeader>
+
+        {asked && (
+          <div className="space-y-3 rounded-lg border border-border bg-surface p-3 font-mono text-xs">
+            <div>
+              <div className="label-xs mb-1">Audio inputs</div>
+              {inputs.length ? (
+                inputs.map((n) => <div key={n} className="text-primary">{n}</div>)
+              ) : (
+                <div className="text-muted-foreground">
+                  None found. Allow microphone access, plug in the interface, then press Connect again.
+                </div>
+              )}
+            </div>
+            <div>
+              <div className="label-xs mb-1">Audio outputs</div>
+              {outputs.length ? (
+                outputs.map((n) => <div key={n} className="text-primary">{n}</div>)
+              ) : (
+                <div className="text-muted-foreground">None found.</div>
+              )}
+            </div>
+            <div>
+              <div className="label-xs mb-1">MIDI controllers</div>
+              {midiInputs.length ? (
+                midiInputs.map((m) => <div key={m.id} className="text-primary">{m.name}</div>)
+              ) : (
+                <div className="text-muted-foreground">
+                  {midiSupported()
+                    ? "None found. Connect the controller, then press Connect again."
+                    : "This browser cannot see MIDI hardware — use Chrome or Edge."}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        <p className="text-xs text-muted-foreground">
+          Playback always uses the output your computer is set to. You can re-run this any time from Settings.
+        </p>
+
+        <div className="flex justify-end gap-2">
+          <Button variant="ghost" size="sm" onClick={close}>
+            Skip for now
+          </Button>
+          <Button size="sm" disabled={busy} onClick={() => void connect()}>
+            {busy ? "Connecting…" : asked ? "Connect again" : "Connect devices"}
+          </Button>
+          {asked && (
+            <Button size="sm" variant="secondary" onClick={close}>
+              Done
+            </Button>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
