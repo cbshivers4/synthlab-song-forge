@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useStudio } from "@/lib/synclab/store";
@@ -14,13 +14,55 @@ export function DeviceSetup() {
   const [inputs, setInputs] = useState<string[]>([]);
   const [outputs, setOutputs] = useState<string[]>([]);
 
-  useEffect(() => {
-    try {
-      if (!localStorage.getItem(KEY)) setOpen(true);
-    } catch {
-      setOpen(true);
-    }
+  const listDevices = useCallback(async () => {
+    if (!navigator.mediaDevices?.enumerateDevices) return { ins: [] as string[], outs: [] as string[] };
+    const list = await navigator.mediaDevices.enumerateDevices();
+    const ins = list.filter((d) => d.kind === "audioinput" && d.label).map((d) => d.label);
+    const outs = list.filter((d) => d.kind === "audiooutput" && d.label).map((d) => d.label);
+    setInputs(ins);
+    setOutputs(outs);
+    return { ins, outs };
   }, []);
+
+  // Ask only when the gear is not already connected and allowed.
+  useEffect(() => {
+    let cancelled = false;
+    const check = async () => {
+      let done = false;
+      try {
+        done = localStorage.getItem(KEY) === "1";
+      } catch {
+        /* storage blocked */
+      }
+      if (done) return;
+
+      let granted = false;
+      try {
+        const perm = await navigator.permissions?.query({ name: "microphone" as PermissionName });
+        granted = perm?.state === "granted";
+      } catch {
+        granted = false;
+      }
+      const { ins } = await listDevices();
+      if (cancelled) return;
+
+      if (granted && ins.length) {
+        // Devices are already allowed and visible — connect quietly, never ask.
+        enableMidi();
+        try {
+          localStorage.setItem(KEY, "1");
+        } catch {
+          /* storage blocked */
+        }
+        return;
+      }
+      setOpen(true);
+    };
+    void check();
+    return () => {
+      cancelled = true;
+    };
+  }, [enableMidi, listDevices]);
 
   const close = () => {
     try {
@@ -41,9 +83,7 @@ export function DeviceSetup() {
         } catch {
           /* permission denied — handled by empty list below */
         }
-        const list = await navigator.mediaDevices.enumerateDevices();
-        setInputs(list.filter((d) => d.kind === "audioinput").map((d, i) => d.label || `Input ${i + 1}`));
-        setOutputs(list.filter((d) => d.kind === "audiooutput").map((d, i) => d.label || `Output ${i + 1}`));
+        await listDevices();
       }
       enableMidi();
     } finally {
@@ -59,7 +99,8 @@ export function DeviceSetup() {
           <DialogTitle>Connect your gear</DialogTitle>
           <DialogDescription>
             SYNCLAB needs permission to use your audio interface and MIDI controllers. Your browser will ask
-            once — choose Allow so devices like a Volt 1 and your keyboards show up by name.
+            once — choose Allow so devices like a Volt 1 and your keyboards show up by name. Once everything is
+            connected you will not be asked again; you can check your gear any time in Settings.
           </DialogDescription>
         </DialogHeader>
 
