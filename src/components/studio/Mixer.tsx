@@ -620,7 +620,7 @@ function Strip({
         )}
         <Slider
           orientation="vertical"
-          className="h-full w-7"
+          className={cn("h-full w-8", FADER_CAP)}
           value={[t.volume]}
           min={0}
           max={1}
@@ -723,7 +723,7 @@ function BusStrip({
       >
         <Slider
           orientation="vertical"
-          className="h-full w-7"
+          className={cn("h-full w-8", FADER_CAP)}
           value={[state.volume]}
           min={0}
           max={1.2}
