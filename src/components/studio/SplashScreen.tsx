@@ -1,21 +1,38 @@
 import { useEffect, useState } from "react";
 import synclabLogoAsset from "@/assets/synclab-logo.jpg.asset.json";
 
-const DURATION_MS = 60_000;
+const MAX_MS = 60_000; // hard ceiling — never longer than this
+const MIN_MS = 900; // let the spin read for a moment
 const FADE_MS = 600;
 
 export function SplashScreen() {
   const [phase, setPhase] = useState<"show" | "fade" | "gone">("show");
 
+  // Leave as soon as the app is ready (window load / fonts), capped at 60s.
   useEffect(() => {
-    const t1 = window.setTimeout(() => setPhase("fade"), DURATION_MS);
-    return () => window.clearTimeout(t1);
+    let done = false;
+    const leave = () => {
+      if (done) return;
+      done = true;
+      setPhase("fade");
+    };
+    const start = Date.now();
+    const ready = () => window.setTimeout(leave, Math.max(0, MIN_MS - (Date.now() - start)));
+
+    if (document.readyState === "complete") ready();
+    else window.addEventListener("load", ready, { once: true });
+
+    const cap = window.setTimeout(leave, MAX_MS);
+    return () => {
+      window.clearTimeout(cap);
+      window.removeEventListener("load", ready);
+    };
   }, []);
 
   useEffect(() => {
     if (phase !== "fade") return;
-    const t2 = window.setTimeout(() => setPhase("gone"), FADE_MS);
-    return () => window.clearTimeout(t2);
+    const t = window.setTimeout(() => setPhase("gone"), FADE_MS);
+    return () => window.clearTimeout(t);
   }, [phase]);
 
   if (phase === "gone") return null;
@@ -31,18 +48,20 @@ export function SplashScreen() {
         <img
           src={synclabLogoAsset.url}
           alt="SYNCLAB"
-          className="spin-logo w-[min(72vw,560px)] rounded-2xl shadow-[0_0_80px_hsl(var(--primary)/0.35)]"
+          className="spin-logo w-[min(72vw,560px)] rounded-2xl shadow-[0_0_80px_color-mix(in_oklab,var(--primary)_35%,transparent)]"
         />
       </div>
-      <p className="mt-8 font-mono text-xs tracking-[0.5em] text-muted-foreground uppercase">
-        Sound Design Studio
-      </p>
-      <p className="mt-2 font-mono text-[10px] tracking-[0.3em] text-muted-foreground/60 uppercase">
-        Detroit Electronic
-      </p>
-      <p className="mt-6 animate-pulse font-mono text-[9px] tracking-[0.35em] text-muted-foreground/40 uppercase">
-        Click to enter
-      </p>
+      <p className="mt-8 font-mono text-xs tracking-[0.5em] text-muted-foreground uppercase">Sound Design Studio</p>
+      <p className="mt-2 font-mono text-[10px] tracking-[0.3em] text-muted-foreground/60 uppercase">Detroit Electronic</p>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          setPhase("fade");
+        }}
+        className="mt-7 rounded-[3px] border border-border bg-surface-2 px-5 py-1.5 font-mono text-[10px] tracking-[0.35em] text-foreground uppercase transition-colors hover:bg-surface"
+      >
+        Skip
+      </button>
     </div>
   );
 }
