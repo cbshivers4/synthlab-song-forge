@@ -63,6 +63,22 @@ export const newTrack = (kind: TrackKind, name: string, index: number, preset?: 
 
 const initialTracks = (): Track[] => [];
 
+/** Plays one note: a sampler channel uses its loaded file, everything else the synth. */
+function triggerNote(
+  engine: ReturnType<typeof getEngine>,
+  t: Track,
+  midi: number,
+  dur: number,
+  vel: number,
+  when?: number,
+) {
+  if (t.kind === "sampler" && t.sampler) {
+    engine.playSample(t.id, t.sampler, midi, dur, vel, when);
+    return;
+  }
+  if (t.patch) engine.playNote(t.id, t.patch, midi, dur, vel, when);
+}
+
 export type PanelId =
   | "mixer"
   | "synth"
@@ -256,7 +272,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         if (type === "on") {
           setMidiLearning(true);
           engine.syncMix(tracksRef.current);
-          if (target.patch) engine.playNote(target.id, target.patch, pitch, 0.6, Math.max(0.15, velocity));
+          triggerNote(engine, target, pitch, 0.6, Math.max(0.15, velocity));
           if (tp.recording) {
             const id = uid();
             heldRef.current.set(pitch, { id, trackId: target.id, t0: performance.now() });
