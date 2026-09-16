@@ -208,6 +208,56 @@ function KindIcon({ t, className }: { t: Track; className?: string }) {
   return <Icon className={className} />;
 }
 
+/** Per-channel send menu: reverb / delay / chorus amounts plus each return's FX chain. */
+function SendsMenu({ t }: { t: Track }) {
+  const { updateTrack } = useStudio();
+  const active = SEND_KEYS.filter(([key]) => (t.sends?.[key] ?? 0) > 0).length;
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          onClick={(e) => e.stopPropagation()}
+          className={cn(
+            "flex h-6 w-full items-center justify-center gap-1 rounded-sm font-mono text-[8px] uppercase tracking-wider transition-colors",
+            active > 0 ? "bg-amber-500/20 text-amber-400" : "bg-surface-2 text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <Waves className="size-3" /> Sends{active > 0 ? ` ${active}` : ""}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-72 space-y-3 p-3" onClick={(e) => e.stopPropagation()}>
+        <div className="label-xs">Sends — {t.name}</div>
+        {SEND_KEYS.map(([key, label]) => {
+          const value = t.sends?.[key] ?? 0;
+          return (
+            <div key={key} className="space-y-1 rounded-sm border border-border bg-surface-2/40 px-2 py-1.5">
+              <div className="flex items-center gap-2">
+                <span className="w-12 shrink-0 font-mono text-[9px] uppercase text-muted-foreground">{label}</span>
+                <Slider
+                  value={[value]}
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  className="h-2 flex-1"
+                  onValueChange={([v = 0]) =>
+                    updateTrack(t.id, {
+                      sends: { reverb: 0, delay: 0, chorus: 0, ...(t.sends ?? {}), [key]: v },
+                    })
+                  }
+                />
+                <span className="w-7 shrink-0 text-right font-mono text-[9px] text-muted-foreground">
+                  {Math.round(value * 100)}
+                </span>
+              </div>
+              <FxMenu target={`send:${key}`} label={`${key} return FX`} />
+            </div>
+          );
+        })}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 function Strip({ t, level, selected, onSelect }: { t: Track; level: number; selected: boolean; onSelect: () => void }) {
   const { updateTrack, addPlugin, removePlugin, togglePluginBypass, setPluginParam } = useStudio();
 
