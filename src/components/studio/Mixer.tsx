@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+// Console fader thumb sizing is provided by FADER_CAP below.
 import {
   AudioLines,
   Drum,
