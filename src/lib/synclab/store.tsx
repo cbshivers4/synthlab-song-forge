@@ -539,12 +539,20 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       toggleRecord: () => {
         const engine = getEngine();
         engine.init();
-        const armed = tracksRef.current.filter(
-          (t) => t.armed && (t.kind === "audio" || t.kind === "ai-vocal" || t.kind === "sampler"),
-        );
+        const isNote = (t: Track) => t.kind === "instrument" || t.kind === "midi" || t.kind === "drum";
+        const isAudio = (t: Track) => t.kind === "audio" || t.kind === "ai-vocal" || t.kind === "sampler";
         if (!transportRef.current.recording) {
-          const target = armed[0];
-          if (target) {
+          const selectedTrack = tracksRef.current.find((t) => t.id === selectedIdRef.current);
+          // Auto-arm the selected channel so pressing record always has a target.
+          let armedAudio = tracksRef.current.find((t) => t.armed && isAudio(t));
+          let armedNote = tracksRef.current.find((t) => t.armed && isNote(t));
+          if (!armedAudio && !armedNote && selectedTrack) {
+            if (isAudio(selectedTrack)) armedAudio = selectedTrack;
+            else if (isNote(selectedTrack)) armedNote = selectedTrack;
+            if (armedAudio || armedNote) updateTrack(selectedTrack.id, { armed: true });
+          }
+          if (armedAudio) {
+            const target = armedAudio;
             void engine
               .startInputRecording(target.id, transportRef.current.monitor ?? true)
               .then(() => updateTrack(target.id, { recording: true }))
@@ -553,17 +561,14 @@ export function StudioProvider({ children }: { children: ReactNode }) {
                   description: "Allow microphone access in your browser to record this channel.",
                 }),
               );
+          } else if (armedNote) {
+            toast("Recording notes", {
+              description: `Play your controller or the on-screen keyboard — notes land on ${armedNote.name}.`,
+            });
           } else {
-            const noteArmed = tracksRef.current.find(
-              (t) => t.armed && (t.kind === "instrument" || t.kind === "midi"),
-            );
-            if (noteArmed) {
-              toast("Recording MIDI", { description: `Play your controller — notes land on ${noteArmed.name}.` });
-            } else {
-              toast("Arm a channel first", {
-                description: "Press ● REC on an audio, vocal or instrument track, then record.",
-              });
-            }
+            toast("Select or arm a channel first", {
+              description: "Click a track, or press ● REC on it, then record.",
+            });
           }
           setTransportState((s) => ({ ...s, recording: true, playing: true, paused: false }));
         } else {
@@ -663,6 +668,12 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         engine.init();
         engine.syncMix(tracksRef.current);
         if (t?.patch) engine.playNote(t.id, t.patch, midi, 0.35, 0.9);
+        // Notes played on screen are captured while the transport records.
+        const tp = transportRef.current;
+        if (t && tp.recording && (t.kind === "instrument" || t.kind === "midi" || t.kind === "sampler")) {
+          const note: MidiNote = { id: uid(), step: tp.step, length: 1, pitch: midi, velocity: 0.9 };
+          setTracks((ts) => ts.map((x) => (x.id === t.id ? { ...x, notes: [...(x.notes ?? []), note] } : x)));
+        }
       },
       installedPlugins,
       installPlugin: (d) => setInstalledPlugins((ps) => [...ps.filter((x) => x.id !== d.id), d]),

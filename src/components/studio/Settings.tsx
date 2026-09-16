@@ -158,8 +158,40 @@ function Num({
 }
 
 export function Settings() {
-  const { transport, setTransport } = useStudio();
+  const { transport, setTransport, midiInputs, midiInputId, enableMidi, setMidiInput } = useStudio();
   const [p, setP] = useState<Prefs>(DEFAULTS);
+  const [inputs, setInputs] = useState<{ id: string; label: string }[]>([]);
+  const [outputs, setOutputs] = useState<{ id: string; label: string }[]>([]);
+  const [scanning, setScanning] = useState(false);
+
+  const scanDevices = async (askPermission: boolean) => {
+    if (typeof navigator === "undefined" || !navigator.mediaDevices?.enumerateDevices) return;
+    setScanning(true);
+    try {
+      if (askPermission) {
+        const s = await navigator.mediaDevices.getUserMedia({ audio: true });
+        s.getTracks().forEach((t) => t.stop());
+      }
+      const list = await navigator.mediaDevices.enumerateDevices();
+      setInputs(
+        list
+          .filter((d) => d.kind === "audioinput")
+          .map((d, i) => ({ id: d.deviceId, label: d.label || `Input ${i + 1}` })),
+      );
+      setOutputs(
+        list
+          .filter((d) => d.kind === "audiooutput")
+          .map((d, i) => ({ id: d.deviceId, label: d.label || `Output ${i + 1}` })),
+      );
+      if (askPermission) toast.success("Audio devices detected");
+    } catch {
+      toast.error("Could not read your audio devices", {
+        description: "Allow microphone access in the browser so interfaces can be listed by name.",
+      });
+    } finally {
+      setScanning(false);
+    }
+  };
 
   useEffect(() => {
     try {
@@ -168,6 +200,8 @@ export function Settings() {
     } catch {
       /* ignore */
     }
+    void scanDevices(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const set = <K extends keyof Prefs>(k: K, v: Prefs[K]) => {
@@ -193,19 +227,34 @@ export function Settings() {
       </TabsList>
 
       <TabsContent value="audio" className="mt-4">
-        <Row label="Input device" hint="Microphone, interface or line input">
+        <Row
+          label="Input device"
+          hint={
+            inputs.length
+              ? "Microphone, interface or line input detected on this machine"
+              : "Press Detect devices to list your audio interface"
+          }
+        >
           <Pick
             value={p.inputDevice}
-            options={["System default", "Built-in mic", "Audio interface 1/2", "Loopback"]}
+            options={["System default", ...inputs.map((d) => d.label)]}
             onChange={(v) => set("inputDevice", v)}
           />
         </Row>
-        <Row label="Output device">
+        <Row label="Output device" hint={outputs.length ? "Monitors, headphones or interface outputs" : ""}>
           <Pick
             value={p.outputDevice}
-            options={["System default", "Monitors", "Headphones"]}
+            options={["System default", ...outputs.map((d) => d.label)]}
             onChange={(v) => set("outputDevice", v)}
           />
+        </Row>
+        <Row
+          label="Detect hardware"
+          hint="Browsers only reveal device names after you allow microphone access"
+        >
+          <Button size="sm" variant="secondary" disabled={scanning} onClick={() => void scanDevices(true)}>
+            {scanning ? "Scanning…" : "Detect devices"}
+          </Button>
         </Row>
         <Row label="Sample rate" hint="Higher rates cost more CPU">
           <Pick value={p.sampleRate} options={["44100", "48000", "88200", "96000"]} onChange={(v) => set("sampleRate", v)} width="w-32" />
@@ -306,8 +355,31 @@ export function Settings() {
       </TabsContent>
 
       <TabsContent value="midi" className="mt-4">
-        <Row label="MIDI input">
-          <Pick value={p.midiInput} options={["All devices", "None", "Keyboard 1", "Pad controller"]} onChange={(v) => set("midiInput", v)} />
+        <Row
+          label="MIDI controller"
+          hint={
+            midiInputs.length
+              ? `${midiInputs.length} connected`
+              : "Connect a controller and press Scan — Chrome and Edge support MIDI hardware"
+          }
+        >
+          <Pick
+            value={
+              midiInputId === "all"
+                ? "All devices"
+                : (midiInputs.find((i) => i.id === midiInputId)?.name ?? "None")
+            }
+            options={["None", "All devices", ...midiInputs.map((i) => i.name)]}
+            onChange={(v) => {
+              if (v === "None") setMidiInput(null);
+              else if (v === "All devices") setMidiInput("all");
+              else setMidiInput(midiInputs.find((i) => i.name === v)?.id ?? null);
+              set("midiInput", v);
+            }}
+          />
+          <Button size="sm" variant="secondary" onClick={enableMidi}>
+            Scan
+          </Button>
         </Row>
         <Row label="MIDI thru" hint="Pass notes to the armed instrument">
           <Switch checked={p.midiThru} onCheckedChange={(v) => set("midiThru", v)} />
