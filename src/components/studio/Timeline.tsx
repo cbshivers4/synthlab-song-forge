@@ -456,7 +456,10 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
   return (
     <div
       className={`flex items-stretch border-b border-border/80 transition-colors ${isSelected ? "bg-surface-2/40" : "hover:bg-surface/50"} ${track.hidden ? "opacity-40" : ""} ${dropping ? "ring-1 ring-primary ring-inset" : ""}`}
-      onClick={() => select(track.id)}
+      onClick={(e) => {
+        if (e.metaKey || e.ctrlKey) toggleSelectId(track.id);
+        else select(track.id);
+      }}
       onDragOver={(e) => {
         e.preventDefault();
         setDropping(true);
