@@ -901,6 +901,7 @@ export function Timeline() {
   const [over, setOver] = useState(false);
   return (
     <section className="relative flex min-h-0 flex-1 flex-col overflow-hidden border-x border-b border-border bg-background/60">
+      <EditToolbar />
       <Ruler />
       <div className="relative min-h-0 flex-1 overflow-y-auto">
         {tracks.map((t, i) => (
