@@ -785,13 +785,20 @@ export function Timeline() {
           onDrop={(e) => {
             setOver(false);
             const payload = readDrag(e);
-            if (payload?.type !== "instrument") return;
+            if (!payload) return;
             e.preventDefault();
-            addTrack("instrument", payload.name.toUpperCase(), payload.preset);
-            toast.success(`${payload.name} added as a new channel`);
+            if (payload.type === "instrument") {
+              addTrack("instrument", payload.name.toUpperCase(), payload.preset);
+              toast.success(`${payload.name} added as a new channel`);
+              return;
+            }
+            if (payload.type === "tool") {
+              addTrack(payload.kind, payload.name.toUpperCase(), payload.preset);
+              toast.success(`${payload.name} added as a new channel`);
+            }
           }}
         >
-          drag an instrument here or press + ADD TRACK
+          drag a tool or instrument here or press + ADD TRACK
         </div>
 
         {transport.loop && (
