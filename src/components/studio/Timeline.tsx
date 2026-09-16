@@ -314,7 +314,7 @@ export const readDrag = (e: React.DragEvent): DragPayload | null => {
 function TrackRow({ track, index }: { track: Track; index: number }) {
   const { selectedId, selectedIds, select, toggleSelectId, updateTrack, removeTrack, duplicateTrack, moveTrack, setPanel, changeInstrument, installedPlugins, addPlugin, editTool, splitClipAt, toggleStep } =
     useStudio();
-  const { transport, setNotes } = useStudio();
+  const { transport, setNotes, loadSample } = useStudio();
   const [renaming, setRenaming] = useState(false);
   const [confirm, setConfirm] = useState(false);
   const [dropping, setDropping] = useState(false);
@@ -404,8 +404,21 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
 
 
   const onDrop = (e: React.DragEvent) => {
-    const payload = readDrag(e);
     setDropping(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file && (file.type.startsWith("audio") || /\.(mp3|wav|wave|aif|aiff|m4a|aac|ogg|flac|webm)$/i.test(file.name))) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (track.kind !== "sampler") {
+        toast("Drop audio files on a sampler channel", { description: "Or drop below the tracks to create one." });
+        return;
+      }
+      select(track.id);
+      setPanel("sampler");
+      void loadSample(track.id, file);
+      return;
+    }
+    const payload = readDrag(e);
     if (!payload) return;
     e.preventDefault();
     e.stopPropagation();
@@ -897,7 +910,7 @@ function Ruler() {
 }
 
 export function Timeline() {
-  const { tracks, transport, addTrack } = useStudio();
+  const { tracks, transport, addTrack, setPanel, loadSample } = useStudio();
   const [over, setOver] = useState(false);
   return (
     <section className="relative flex min-h-0 flex-1 flex-col overflow-hidden border-x border-b border-border bg-background/60">
@@ -924,6 +937,14 @@ export function Timeline() {
           onDragLeave={() => setOver(false)}
           onDrop={(e) => {
             setOver(false);
+            const file = e.dataTransfer.files?.[0];
+            if (file && (file.type.startsWith("audio") || /\.(mp3|wav|wave|aif|aiff|m4a|aac|ogg|flac|webm)$/i.test(file.name))) {
+              e.preventDefault();
+              const id = addTrack("sampler", file.name.replace(/\.[^.]+$/, "").toUpperCase().slice(0, 16));
+              setPanel("sampler");
+              void loadSample(id, file);
+              return;
+            }
             const payload = readDrag(e);
             if (!payload) return;
             e.preventDefault();

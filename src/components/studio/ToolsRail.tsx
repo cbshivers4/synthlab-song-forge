@@ -39,7 +39,7 @@ const TOOLS: Tool[] = [
   { id: "drums", label: "Drum Machine", icon: <Disc3 className="size-4" />, panel: "drums", drag: { kind: "drum", name: "Drums" } },
   { id: "beat", label: "Beat Maker", icon: <Grid2x2 className="size-4" />, soon: "The pad-based Beat Maker is built in the instruments stage." },
   { id: "chop", label: "Sample Chopper", icon: <Scissors className="size-4" />, soon: "Slicing onto pads is built in the instruments stage." },
-  { id: "sampler", label: "Sampler", icon: <AudioLines className="size-4" />, panel: "browser", drag: { kind: "sampler", name: "Sampler" } },
+  { id: "sampler", label: "Sampler", icon: <AudioLines className="size-4" />, panel: "sampler", drag: { kind: "sampler", name: "Sampler" } },
   { id: "mixer", label: "Mixer", icon: <SlidersHorizontal className="size-4" />, panel: "mixer" },
   { id: "master", label: "Mastering", icon: <Gauge className="size-4" />, soon: "Mastering and scopes are built in the mix stage." },
 ];
