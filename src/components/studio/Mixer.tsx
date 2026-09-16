@@ -502,21 +502,22 @@ function Strip({
     <div
       onClick={onSelect}
       className={cn(
-        "flex shrink-0 cursor-pointer flex-col border-r border-border transition-colors",
-        narrow ? "w-[84px]" : "w-[120px]"
+        "flex shrink-0 cursor-pointer flex-col border-r border-black/50 transition-colors",
+        narrow ? "w-[92px]" : "w-[132px]"
       )}
       style={{
         background: selected
-          ? `linear-gradient(${tint(22)}, ${tint(8)}), var(--surface-2, transparent)`
-          : `linear-gradient(${tint(12)}, ${tint(4)}), var(--surface, transparent)`,
-        boxShadow: `inset 3px 0 0 0 ${t.color}${selected ? `, inset 0 0 0 1px ${tint(45)}` : ""}`,
+          ? `linear-gradient(${tint(20)}, ${tint(6)}), ${PANEL}`
+          : `linear-gradient(${tint(10)}, ${tint(2)}), ${PANEL}`,
+        boxShadow: `inset 4px 0 0 0 ${t.color}, inset 0 1px 0 0 rgba(255,255,255,0.08)${selected ? `, inset 0 0 0 1px ${tint(45)}` : ""}`,
       }}
     >
       {/* channel header: number, colour, clip LED */}
       <div
-        className={cn(ROW.head, "flex items-center gap-1 border-b border-border/60 px-1.5")}
+        className={cn(ROW.head, "flex items-center gap-1 border-b border-black/50 px-1.5")}
         style={{ background: tint(18) }}
       >
+        <Screw />
         <span className="font-mono text-[9px] font-bold text-muted-foreground">{index + 1}</span>
         <ColorDot t={t} />
         <button
@@ -529,6 +530,7 @@ function Strip({
         >
           CLIP
         </button>
+        <Screw />
       </div>
 
       <DeviceSlots t={t} narrow={narrow} />
