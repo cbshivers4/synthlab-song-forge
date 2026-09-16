@@ -4,6 +4,48 @@ const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
 
 export const midiToFreq = (n: number) => 440 * Math.pow(2, (n - 69) / 12);
 
+function makeImpulse(ctx: AudioContext, decay: number) {
+  const rate = ctx.sampleRate;
+  const len = Math.max(1, Math.floor(rate * decay));
+  const buf = ctx.createBuffer(2, len, rate);
+  for (let ch = 0; ch < 2; ch++) {
+    const d = buf.getChannelData(ch);
+    for (let i = 0; i < len; i++) {
+      d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.4);
+    }
+  }
+  return buf;
+}
+
+function makeBitcrushCurve(bits: number) {
+  const steps = Math.pow(2, bits);
+  const n = 8192;
+  const curve = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    const x = (i / (n - 1)) * 2 - 1;
+    curve[i] = Math.round(x * steps) / steps;
+  }
+  return curve;
+}
+
+function makeGateCurve(threshold: number) {
+  const n = 4096;
+  const curve = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    const x = (i / (n - 1)) * 2 - 1;
+    const a = Math.abs(x);
+    const sign = x < 0 ? -1 : 1;
+    if (a >= threshold) {
+      curve[i] = x;
+    } else {
+      // soft attenuation below threshold (12 dB/oct-ish expansion feel)
+      const r = a / threshold;
+      curve[i] = sign * a * r * r;
+    }
+  }
+  return curve;
+}
+
 function makeDistortionCurve(amount: number) {
   const k = amount * 100;
   const n = 1024;
