@@ -256,7 +256,73 @@ export function Sampler() {
             </div>
           </div>
 
-          <Waveform track={track} />
+          <Waveform track={track} onSlice={removeChop} />
+
+          <div className="space-y-2 rounded-lg border border-border bg-surface-2/40 p-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <Scissors className="size-4 text-primary" />
+              <span className="label-xs">Chop sample</span>
+              {[4, 8, 12, 16].map((n) => (
+                <Button
+                  key={n}
+                  size="sm"
+                  variant="secondary"
+                  className="h-7 font-mono text-[10px] tracking-widest"
+                  onClick={() => chopInto(n)}
+                >
+                  {n}
+                </Button>
+              ))}
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 font-mono text-[10px] tracking-widest"
+                onClick={() =>
+                  updateSampler(track.id, { slices: [...chops, (s.start + s.end) / 2].sort((a, b) => a - b) })
+                }
+              >
+                + Add chop
+              </Button>
+              {chops.length > 0 && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 font-mono text-[10px] tracking-widest text-destructive"
+                  onClick={() => updateSampler(track.id, { slices: [] })}
+                >
+                  Clear chops
+                </Button>
+              )}
+            </div>
+
+            {chops.length > 1 ? (
+              <>
+                <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">
+                  {chops.map((c, i) => (
+                    <button
+                      key={`pad-${i}`}
+                      type="button"
+                      onPointerDown={() => previewNote(track.id, s.rootNote + i)}
+                      className="flex h-14 flex-col items-center justify-center rounded-md border border-border bg-surface-1 font-mono text-[10px] text-muted-foreground transition-colors hover:border-primary hover:bg-primary/15 hover:text-foreground active:bg-primary/30"
+                    >
+                      <span className="text-sm text-foreground">{i + 1}</span>
+                      <span>{(c * s.duration).toFixed(2)}s</span>
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Chop {1} sits on {noteName(s.rootNote)} and each chop after it takes the next key up — play them from
+                  the pads, the keyboard, the piano roll or your MIDI controller. Drag a marker to move a chop, double
+                  click it to delete.
+                </p>
+              </>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Pick 4, 8, 12 or 16 to slice the trimmed part into even chops, or add your own markers and drag them
+                where you want the cuts.
+              </p>
+            )}
+          </div>
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <Row label="Trim start" value={`${(s.start * s.duration).toFixed(2)}s`}>
