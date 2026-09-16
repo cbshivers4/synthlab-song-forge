@@ -1,4 +1,4 @@
-import type { DrumPad, SynthPatch, TrackKind } from "./types";
+import type { DrumKitId, DrumPad, SynthPatch, TrackKind } from "./types";
 
 export const uid = () => Math.random().toString(36).slice(2, 10);
 
@@ -177,6 +177,201 @@ export const SYNTH_PRESETS: PresetDef[] = [
       p.amp = { attack: 1.6, decay: 2, sustain: 0.9, release: 3 };
       p.cutoff = 900;
       p.fx.reverb = 0.85;
+    },
+  },
+  {
+    name: "Supersaw Anthem",
+    category: "Lead",
+    mutate: (p) => {
+      O(p,0).wave = "sawtooth";
+      p.oscillators[1] = { ...O(p,1), on: true, wave: "sawtooth", octave: 0, detune: 22, level: 0.7 };
+      p.oscillators[2] = { ...O(p,2), on: true, wave: "sawtooth", octave: 0, semitone: 0, detune: -22, level: 0.6 };
+      p.unison = { voices: 4, detune: 26, width: 0.9 };
+      p.cutoff = 5200;
+      p.amp = { attack: 0.02, decay: 0.4, sustain: 0.8, release: 0.6 };
+      p.fx.reverb = 0.35;
+      p.fx.chorus = 0.3;
+    },
+  },
+  {
+    name: "Reese Bass",
+    category: "Bass",
+    mutate: (p) => {
+      O(p,0).wave = "sawtooth";
+      O(p,0).octave = -1;
+      p.oscillators[1] = { ...O(p,1), on: true, wave: "sawtooth", octave: -1, detune: 18, level: 0.8 };
+      p.cutoff = 600;
+      p.resonance = 8;
+      p.amp = { attack: 0.01, decay: 0.4, sustain: 0.9, release: 0.25 };
+      p.fx.distortion = 0.3;
+      p.fx.chorus = 0.25;
+    },
+  },
+  {
+    name: "FM Bell",
+    category: "Keys",
+    mutate: (p) => {
+      O(p,0).wave = "sine";
+      p.oscillators[1] = { ...O(p,1), on: true, wave: "sine", octave: 2, semitone: 7, level: 0.35 };
+      p.cutoff = 6000;
+      p.amp = { attack: 0.002, decay: 0.9, sustain: 0.05, release: 1.2 };
+      p.fx.reverb = 0.45;
+      p.fx.delay = 0.2;
+    },
+  },
+  {
+    name: "Rhodes Soul",
+    category: "Keys",
+    mutate: (p) => {
+      O(p,0).wave = "sine";
+      p.oscillators[1] = { ...O(p,1), on: true, wave: "triangle", octave: 1, level: 0.25 };
+      p.cutoff = 2200;
+      p.amp = { attack: 0.008, decay: 0.8, sustain: 0.35, release: 0.7 };
+      p.fx.chorus = 0.4;
+      p.fx.reverb = 0.3;
+    },
+  },
+  {
+    name: "Moog Mono",
+    category: "Bass",
+    mutate: (p) => {
+      O(p,0).wave = "sawtooth";
+      O(p,0).octave = -1;
+      p.oscillators[1] = { ...O(p,1), on: true, wave: "square", octave: -1, detune: 6, level: 0.5 };
+      p.cutoff = 850;
+      p.resonance = 14;
+      p.filterEnv.amount = 2400;
+      p.glide = 0.04;
+      p.amp = { attack: 0.004, decay: 0.3, sustain: 0.6, release: 0.2 };
+    },
+  },
+  {
+    name: "Brass Stab",
+    category: "Brass",
+    mutate: (p) => {
+      O(p,0).wave = "sawtooth";
+      p.oscillators[1] = { ...O(p,1), on: true, wave: "sawtooth", detune: 10, level: 0.55 };
+      p.cutoff = 1600;
+      p.filterEnv = { attack: 0.06, decay: 0.3, sustain: 0.4, release: 0.3, amount: 3200 };
+      p.amp = { attack: 0.03, decay: 0.25, sustain: 0.5, release: 0.3 };
+      p.fx.reverb = 0.25;
+    },
+  },
+  {
+    name: "Glass Pad",
+    category: "Pad",
+    mutate: (p) => {
+      O(p,0).wave = "triangle";
+      p.oscillators[1] = { ...O(p,1), on: true, wave: "sine", octave: 1, detune: 9, level: 0.4 };
+      p.cutoff = 3600;
+      p.amp = { attack: 1.2, decay: 1.5, sustain: 0.8, release: 2.6 };
+      p.lfos[0] = { on: true, rate: 0.3, wave: "sine", amount: 0.25, destination: "filter" };
+      p.fx.reverb = 0.8;
+    },
+  },
+  {
+    name: "Choir Air",
+    category: "Pad",
+    mutate: (p) => {
+      O(p,0).wave = "triangle";
+      p.noise = 0.12;
+      p.oscillators[1] = { ...O(p,1), on: true, wave: "triangle", detune: 12, level: 0.4 };
+      p.cutoff = 2000;
+      p.amp = { attack: 0.7, decay: 1, sustain: 0.9, release: 2 };
+      p.fx.reverb = 0.75;
+      p.fx.chorus = 0.5;
+    },
+  },
+  {
+    name: "Hoover Rave",
+    category: "Rave",
+    mutate: (p) => {
+      O(p,0).wave = "sawtooth";
+      p.oscillators[1] = { ...O(p,1), on: true, wave: "sawtooth", semitone: 7, detune: 24, level: 0.7 };
+      p.oscillators[2] = { ...O(p,2), on: true, wave: "square", octave: -1, level: 0.4 };
+      p.cutoff = 2800;
+      p.resonance = 9;
+      p.glide = 0.08;
+      p.fx.distortion = 0.4;
+      p.fx.chorus = 0.5;
+    },
+  },
+  {
+    name: "Trap Bell",
+    category: "Trap",
+    mutate: (p) => {
+      O(p,0).wave = "sine";
+      p.oscillators[1] = { ...O(p,1), on: true, wave: "triangle", octave: 2, level: 0.3 };
+      p.amp = { attack: 0.001, decay: 0.5, sustain: 0, release: 0.6 };
+      p.cutoff = 5200;
+      p.fx.delay = 0.35;
+      p.fx.reverb = 0.4;
+    },
+  },
+  {
+    name: "808 Sub Glide",
+    category: "Bass",
+    mutate: (p) => {
+      O(p,0).wave = "sine";
+      O(p,0).octave = -2;
+      O(p,1).on = false;
+      p.cutoff = 300;
+      p.glide = 0.12;
+      p.amp = { attack: 0.004, decay: 1.2, sustain: 0.4, release: 0.5 };
+      p.fx.distortion = 0.25;
+    },
+  },
+  {
+    name: "Detroit Stab",
+    category: "Detroit Techno",
+    mutate: (p) => {
+      O(p,0).wave = "sawtooth";
+      p.oscillators[1] = { ...O(p,1), on: true, wave: "square", detune: -8, level: 0.5 };
+      p.cutoff = 2200;
+      p.resonance = 11;
+      p.amp = { attack: 0.002, decay: 0.22, sustain: 0, release: 0.25 };
+      p.fx.reverb = 0.4;
+      p.fx.delay = 0.28;
+    },
+  },
+  {
+    name: "Dub Chord",
+    category: "Dub",
+    mutate: (p) => {
+      O(p,0).wave = "square";
+      p.oscillators[1] = { ...O(p,1), on: true, wave: "sawtooth", detune: 11, level: 0.4 };
+      p.cutoff = 1300;
+      p.amp = { attack: 0.01, decay: 0.3, sustain: 0.1, release: 0.4 };
+      p.fx.delay = 0.55;
+      p.fx.delayFeedback = 0.6;
+      p.fx.reverb = 0.5;
+    },
+  },
+  {
+    name: "Neuro Growl",
+    category: "Bass",
+    mutate: (p) => {
+      O(p,0).wave = "sawtooth";
+      O(p,0).octave = -1;
+      p.oscillators[1] = { ...O(p,1), on: true, wave: "square", octave: -1, detune: 15, level: 0.6 };
+      p.cutoff = 700;
+      p.resonance = 18;
+      p.lfos[0] = { on: true, rate: 6, wave: "sine", amount: 0.6, destination: "filter" };
+      p.fx.distortion = 0.65;
+      p.fx.bitcrush = 0.2;
+    },
+  },
+  {
+    name: "Sci-Fi Sweep",
+    category: "FX",
+    mutate: (p) => {
+      O(p,0).wave = "sawtooth";
+      p.noise = 0.2;
+      p.cutoff = 500;
+      p.filterEnv = { attack: 1.4, decay: 1.2, sustain: 0.6, release: 1.5, amount: 7000 };
+      p.amp = { attack: 0.8, decay: 1.4, sustain: 0.7, release: 2 };
+      p.fx.reverb = 0.7;
+      p.fx.delay = 0.4;
     },
   },
 ];
