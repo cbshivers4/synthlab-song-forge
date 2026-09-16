@@ -72,6 +72,7 @@ export type PanelId =
   | "keys"
   | "browser"
   | "plugins"
+  | "appearance"
   | null;
 
 interface StudioState {
