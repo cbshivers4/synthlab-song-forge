@@ -539,11 +539,21 @@ function ChannelMenu({ t }: { t: Track }) {
   const { updateTrack, duplicateTrack, removeTrack, addPlugin, installedPlugins } = useStudio();
   const quick: [string, string][] = [
     ["eq", "EQ"],
-    ["compressor", "Comp"],
-    ["reverb", "Reverb"],
-    ["delay", "Delay"],
     ["filter", "Filter"],
     ["drive", "Drive"],
+    ["compressor", "Comp"],
+    ["limiter", "Limiter"],
+    ["gate", "Gate"],
+    ["delay", "Delay"],
+    ["reverb", "Reverb"],
+    ["chorus", "Chorus"],
+    ["flanger", "Flanger"],
+    ["phaser", "Phaser"],
+    ["tremolo", "Tremolo"],
+    ["autopan", "Autopan"],
+    ["width", "Width"],
+    ["bitcrusher", "Crusher"],
+    ["gain", "Gain"],
   ];
   const add = (kind: string) => {
     const def =
@@ -1125,7 +1135,7 @@ export function Mixer() {
             />
           ))}
           {showBuses &&
-            BUS_STRIPS.map((id) => (
+            activeBuses.map((id) => (
               <BusStrip key={id} id={id} state={buses[id]} level={busLevel(id)} onChange={(p) => setBus(id, p)} />
             ))}
           <div className="sticky right-0 z-10 bg-surface shadow-[-12px_0_18px_-12px_rgba(0,0,0,0.8)]">

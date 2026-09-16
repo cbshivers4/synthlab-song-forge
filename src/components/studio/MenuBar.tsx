@@ -52,6 +52,11 @@ export function MenuBar() {
             <MenubarItem onClick={notYet("Export is coming in the recording stage", "Bouncing the mix to WAV/MP3 is next up.")}>
               Export
             </MenubarItem>
+            <MenubarSeparator />
+            <MenubarItem onClick={() => setPanel(null)}>Close Editor</MenubarItem>
+            <MenubarItem onClick={() => setStage("start")}>
+              Close Project <MenubarShortcut>⌘W</MenubarShortcut>
+            </MenubarItem>
           </MenubarContent>
         </MenubarMenu>
 
