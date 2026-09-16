@@ -67,6 +67,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
     keys: { title: "KEYBOARD", icon: <KeyboardMusic className="size-4" /> },
     browser: { title: "BROWSER", icon: <FolderOpen className="size-4" /> },
     plugins: { title: "PLUGINS", icon: <Cpu className="size-4" /> },
+    appearance: { title: "APPEARANCE & THEMES", icon: <Palette className="size-4" /> },
   };
   const current = config[panel];
 
