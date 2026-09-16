@@ -935,31 +935,65 @@ export function Mixer() {
             {narrow ? <Maximize2 className="size-3" /> : <Minimize2 className="size-3" />}
             {narrow ? "Wide" : "Narrow"}
           </button>
-          <span className="flex h-6 items-center gap-1 rounded-sm bg-surface px-2 font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
+        <span className="flex h-6 items-center gap-1 rounded-sm bg-surface px-2 font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
             <Palette className="size-3" /> Out {fracToDb(levels.master).toFixed(0)} dB
           </span>
         </div>
       </div>
 
-      <div className="flex overflow-x-auto">
-        <LabelRail />
-        {tracks.map((t, i) => (
-          <Strip
-            key={t.id}
-            t={t}
-            index={i}
-            narrow={narrow}
-            level={t.muted ? 0 : (levels.tracks[t.id] ?? 0)}
-            selected={t.id === selectedId}
-            onSelect={() => select(t.id)}
-          />
-        ))}
-        {showBuses &&
-          BUS_STRIPS.map((id) => (
-            <BusStrip key={id} id={id} state={buses[id]} level={busLevel(id)} onChange={(p) => setBus(id, p)} />
+      {tracks.length === 0 ? (
+        <div className="flex flex-col items-center justify-center gap-3 px-6 py-14 text-center">
+          <Sliders className="size-7 text-muted-foreground/60" />
+          <div className="font-display text-[12px] font-bold uppercase tracking-widest text-foreground">
+            Console empty
+          </div>
+          <p className="max-w-sm font-mono text-[10px] uppercase leading-relaxed tracking-wider text-muted-foreground">
+            Channels appear here as soon as you add tracks. Drag a tool from the left rail onto the timeline, or start
+            with one below.
+          </p>
+          <div className="mt-1 flex flex-wrap items-center justify-center gap-1.5">
+            {(
+              [
+                ["audio", "Audio"],
+                ["midi", "MIDI"],
+                ["instrument", "Synth"],
+                ["drum", "Drums"],
+                ["sampler", "Sampler"],
+              ] as const
+            ).map(([kind, label]) => (
+              <button
+                key={kind}
+                onClick={() => addTrack(kind, label.toUpperCase())}
+                className="h-7 rounded-sm border border-border bg-surface-2 px-3 font-mono text-[9px] uppercase tracking-wider text-foreground transition-colors hover:border-primary/60 hover:text-primary"
+              >
+                + {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="flex overflow-x-auto">
+          <LabelRail />
+          {tracks.map((t, i) => (
+            <Strip
+              key={t.id}
+              t={t}
+              index={i}
+              narrow={narrow}
+              level={t.muted ? 0 : (levels.tracks[t.id] ?? 0)}
+              selected={t.id === selectedId}
+              onSelect={() => select(t.id)}
+            />
           ))}
-        <MasterStrip level={levels.master} />
-      </div>
+          {showBuses &&
+            BUS_STRIPS.map((id) => (
+              <BusStrip key={id} id={id} state={buses[id]} level={busLevel(id)} onChange={(p) => setBus(id, p)} />
+            ))}
+          <div className="sticky right-0 z-10 bg-surface shadow-[-12px_0_18px_-12px_rgba(0,0,0,0.8)]">
+            <MasterStrip level={levels.master} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
