@@ -5,7 +5,8 @@ import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Knob } from "./Knob";
 import { useStudio } from "@/lib/synclab/store";
-import { GENRES } from "@/lib/synclab/presets";
+import { DRUM_KITS, GENRES } from "@/lib/synclab/presets";
+import type { DrumKitId } from "@/lib/synclab/types";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import type { Track } from "@/lib/synclab/types";
 import { toast } from "sonner";
@@ -39,9 +40,28 @@ export function DrumMachine({ track }: { track: Track }) {
   const roll = (padId: string, steps: number[]) =>
     updatePad(track.id, padId, { steps: steps.map((v, i) => (i % 2 === 0 ? v : Math.max(v, 0.45))) });
 
+  const kit = (pads[0]?.kit ?? "909") as DrumKitId;
+  const loadKit = (id: DrumKitId) => {
+    const def = DRUM_KITS.find((k) => k.id === id);
+    pads.forEach((p) => updatePad(track.id, p.id, { kit: id, decay: def?.decay ?? p.decay }));
+    toast.success(`${def?.name ?? id} kit loaded`, { description: "Patterns are kept — only the sounds change." });
+  };
+
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
+        <Select value={kit} onValueChange={(v) => loadKit(v as DrumKitId)}>
+          <SelectTrigger className="w-44">
+            <SelectValue placeholder="Kit" />
+          </SelectTrigger>
+          <SelectContent>
+            {DRUM_KITS.map((k) => (
+              <SelectItem key={k.id} value={k.id}>
+                {k.name} — {k.desc}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Select value={String(track.steps)} onValueChange={(v) => setStepCount(track.id, Number(v))}>
           <SelectTrigger className="w-28">
             <SelectValue />
