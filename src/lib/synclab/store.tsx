@@ -721,7 +721,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           if (armedAudio) {
             const target = armedAudio;
             void engine
-              .startInputRecording(target.id, transportRef.current.monitor ?? true)
+              .startInputRecording(target.id, transportRef.current.monitor ?? false)
               .then(() => updateTrack(target.id, { recording: true }))
               .catch(() =>
                 toast.error("Microphone unavailable", {
