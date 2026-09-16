@@ -227,19 +227,34 @@ export function Settings() {
       </TabsList>
 
       <TabsContent value="audio" className="mt-4">
-        <Row label="Input device" hint="Microphone, interface or line input">
+        <Row
+          label="Input device"
+          hint={
+            inputs.length
+              ? "Microphone, interface or line input detected on this machine"
+              : "Press Detect devices to list your audio interface"
+          }
+        >
           <Pick
             value={p.inputDevice}
-            options={["System default", "Built-in mic", "Audio interface 1/2", "Loopback"]}
+            options={["System default", ...inputs.map((d) => d.label)]}
             onChange={(v) => set("inputDevice", v)}
           />
         </Row>
-        <Row label="Output device">
+        <Row label="Output device" hint={outputs.length ? "Monitors, headphones or interface outputs" : undefined}>
           <Pick
             value={p.outputDevice}
-            options={["System default", "Monitors", "Headphones"]}
+            options={["System default", ...outputs.map((d) => d.label)]}
             onChange={(v) => set("outputDevice", v)}
           />
+        </Row>
+        <Row
+          label="Detect hardware"
+          hint="Browsers only reveal device names after you allow microphone access"
+        >
+          <Button size="sm" variant="secondary" disabled={scanning} onClick={() => void scanDevices(true)}>
+            {scanning ? "Scanning…" : "Detect devices"}
+          </Button>
         </Row>
         <Row label="Sample rate" hint="Higher rates cost more CPU">
           <Pick value={p.sampleRate} options={["44100", "48000", "88200", "96000"]} onChange={(v) => set("sampleRate", v)} width="w-32" />
