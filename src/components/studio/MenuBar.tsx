@@ -14,8 +14,22 @@ import { toast } from "sonner";
 const notYet = (what: string, why: string) => () => toast(what, { description: why });
 
 export function MenuBar() {
-  const { setPanel, addTrack, selected, duplicateTrack, removeTrack, togglePlay, toggleRecord, stop, transport, setTransport } =
-    useStudio();
+  const {
+    setPanel,
+    addTrack,
+    selected,
+    duplicateTrack,
+    removeTrack,
+    togglePlay,
+    toggleRecord,
+    stop,
+    transport,
+    setTransport,
+    copyTrack,
+    cutTrack,
+    pasteTrack,
+    clipboardName,
+  } = useStudio();
   const { setStage, mode, toggleMode, project } = useApp();
 
   const needTrack = (fn: (id: string) => void) => () => {
