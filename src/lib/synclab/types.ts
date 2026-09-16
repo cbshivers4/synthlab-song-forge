@@ -118,7 +118,23 @@ export interface AudioClip {
   takeOf?: string | undefined;
 }
 
-export type PluginKind = "eq" | "filter" | "drive" | "compressor" | "delay" | "gain" | "width";
+export type PluginKind =
+  | "eq"
+  | "filter"
+  | "drive"
+  | "compressor"
+  | "delay"
+  | "gain"
+  | "width"
+  | "reverb"
+  | "chorus"
+  | "flanger"
+  | "phaser"
+  | "tremolo"
+  | "autopan"
+  | "limiter"
+  | "bitcrusher"
+  | "gate";
 
 export interface PluginParam {
   id: string;
