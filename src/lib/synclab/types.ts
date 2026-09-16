@@ -79,9 +79,21 @@ export interface SynthPatch {
   };
 }
 
+export type DrumKitId =
+  | "909"
+  | "808"
+  | "707"
+  | "606"
+  | "linn"
+  | "acoustic"
+  | "detroit"
+  | "lofi"
+  | "trap";
+
 export interface DrumPad {
   id: string;
   name: string;
+  kit?: DrumKitId;
   kind: "kick" | "snare" | "clap" | "hat" | "openhat" | "tom" | "perc" | "rim" | "crash" | "ride" | "fx";
   volume: number;
   pan: number;
