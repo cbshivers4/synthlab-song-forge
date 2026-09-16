@@ -23,6 +23,7 @@ import type {
   PluginInstance,
 
   PluginParam,
+  SamplerState,
   SynthPatch,
   Track,
   TrackKind,
@@ -73,6 +74,7 @@ export type PanelId =
   | "browser"
   | "plugins"
   | "appearance"
+  | "sampler"
   | null;
 
 export type EditTool = "select" | "draw" | "split";
@@ -126,6 +128,10 @@ interface StudioApi extends StudioState {
   loadPreset: (trackId: string, name: string) => void;
   generateBeat: (trackId: string, genre: string, energy: number) => void;
   previewNote: (trackId: string, midi: number) => void;
+  loadSample: (trackId: string, file: File) => Promise<void>;
+  updateSampler: (trackId: string, patch: Partial<SamplerState>) => void;
+  clearSample: (trackId: string) => void;
+  stopSamples: (trackId?: string) => void;
   installedPlugins: PluginDef[];
   installPlugin: (def: PluginDef) => void;
   uninstallPlugin: (defId: string) => void;
