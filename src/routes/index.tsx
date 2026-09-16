@@ -46,6 +46,33 @@ export const Route = createFileRoute("/")({
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { property: "og:url", content: "https://synthlab-song-forge.lovable.app/" },
+    ],
+    links: [{ rel: "canonical", href: "https://synthlab-song-forge.lovable.app/" }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "SoftwareApplication",
+          name: "SYNCLAB",
+          url: "https://synthlab-song-forge.lovable.app/",
+          applicationCategory: "MultimediaApplication",
+          operatingSystem: "Web Browser",
+          description:
+            "SYNCLAB is a browser DAW: unlimited tracks, a deep three-oscillator synth, a step-sequenced drum machine, piano roll and mixer, all on one page.",
+          featureList: [
+            "Multitrack timeline",
+            "Audio and MIDI recording",
+            "Three-oscillator synthesizer",
+            "Step-sequenced drum machine",
+            "Sampler",
+            "Piano roll editor",
+            "Mixing console with buses and sends",
+            "Built-in effects and mastering",
+          ],
+        }),
+      },
     ],
   }),
   component: Studio,
