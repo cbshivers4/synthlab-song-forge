@@ -260,9 +260,40 @@ export function PluginRack() {
         </div>
       </div>
 
+      {/* scan a plugin folder from the computer */}
+      <div className="panel space-y-2 p-2">
+        <p className="label-xs">SCAN PLUGIN FOLDER ON THIS COMPUTER</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            ref={folderRef}
+            type="file"
+            multiple
+            className="hidden"
+            // @ts-expect-error non-standard directory picker attributes
+            webkitdirectory=""
+            directory=""
+            onChange={(e) => {
+              scanFolder(e.target.files);
+              e.target.value = "";
+            }}
+          />
+          <Button size="sm" variant="secondary" className="h-8 gap-1.5 font-mono text-[10px] tracking-widest" onClick={() => folderRef.current?.click()}>
+            <FolderSearch className="size-3.5" />
+            CHOOSE FOLDER
+          </Button>
+          <span className="font-mono text-[9px] tracking-wider text-muted-foreground uppercase">
+            macOS: /Library/Audio/Plug-Ins/VST3 · Windows: C:\Program Files\Common Files\VST3
+          </span>
+        </div>
+        <p className="text-[10px] text-muted-foreground">
+          The browser can read your plugin folder&apos;s names and formats, but it cannot load a native VST/AU binary. Scanned
+          plugins appear in the rack and run through SYNCLAB&apos;s matching built-in processor with editable parameters.
+        </p>
+      </div>
+
       {/* third-party install */}
       <div className="panel space-y-2 p-2">
-        <p className="label-xs">ADD 3RD-PARTY PLUGIN</p>
+        <p className="label-xs">ADD 3RD-PARTY PLUGIN MANUALLY</p>
         <div className="flex flex-wrap items-center gap-2">
           <Input className="h-8 w-44 text-[11px]" placeholder="Plugin name" value={name} onChange={(e) => setName(e.target.value)} />
           <Input className="h-8 w-40 text-[11px]" placeholder="Vendor" value={vendor} onChange={(e) => setVendor(e.target.value)} />
