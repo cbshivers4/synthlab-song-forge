@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Clock, FolderOpen, Import, LayoutTemplate, Plus, Sparkles } from "lucide-react";
+import { Clock, FolderOpen, Import, LayoutTemplate, Plus, Sparkles, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import synclabLogoAsset from "@/assets/synclab-logo.jpg.asset.json";
 
 export function StartScreen() {
-  const { setStage, setProject, recents } = useApp();
+  const { setStage, setProject, removeRecent, recents } = useApp();
   const { tracks, addTrack, removeTrack, setTransport } = useStudio();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("Untitled Project");
