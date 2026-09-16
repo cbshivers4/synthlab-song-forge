@@ -90,7 +90,7 @@ function Meter({ level, tall }: { level: number; tall?: boolean }) {
   const segs = 18;
   const lit = Math.round(level * segs);
   return (
-    <div className={cn("flex w-1.5 flex-col-reverse gap-px", tall ? "h-44" : "h-36")}>
+    <div className={cn("flex w-1.5 flex-col-reverse gap-px", tall ? "h-64" : "h-64")}>
       {Array.from({ length: segs }, (_, i) => (
         <div
           key={i}
@@ -215,7 +215,7 @@ function Strip({ t, level, selected, onSelect }: { t: Track; level: number; sele
     <div
       onClick={onSelect}
       className={cn(
-        "flex w-[72px] shrink-0 cursor-pointer flex-col items-center gap-1.5 border-r border-border bg-surface px-1.5 py-2 transition-colors",
+        "flex w-[108px] shrink-0 cursor-pointer flex-col items-center gap-1.5 border-r border-border bg-surface px-1.5 py-2 transition-colors",
         selected && "bg-surface-2"
       )}
       style={selected ? { boxShadow: `inset 0 2px 0 0 ${t.color}` } : undefined}
@@ -261,7 +261,7 @@ function Strip({ t, level, selected, onSelect }: { t: Track; level: number; sele
 
       {/* fader + scale + meter */}
       <div className="flex items-stretch gap-1">
-        <div className="flex h-44 flex-col justify-between py-1">
+        <div className="flex h-64 flex-col justify-between py-1">
           {DB_TICKS.map((db) => (
             <div key={db} className="flex items-center gap-0.5">
               <span className="font-mono text-[7px] leading-none text-muted-foreground">
@@ -274,7 +274,7 @@ function Strip({ t, level, selected, onSelect }: { t: Track; level: number; sele
         <div className="relative">
           <Slider
             orientation="vertical"
-            className="h-44 w-5"
+            className="h-64 w-7"
             value={[t.volume]}
             min={0}
             max={1}
@@ -387,13 +387,13 @@ function Strip({ t, level, selected, onSelect }: { t: Track; level: number; sele
 
 function BusStrip({ id, state, level, onChange }: { id: BusId; state: BusState; level: number; onChange: (p: Partial<BusState>) => void }) {
   return (
-    <div className="flex w-[64px] shrink-0 flex-col items-center gap-1.5 border-r border-border bg-surface-2/50 px-1.5 py-2">
+    <div className="flex w-[84px] shrink-0 flex-col items-center gap-1.5 border-r border-border bg-surface-2/50 px-1.5 py-2">
       <span className="truncate font-mono text-[9px] font-bold uppercase tracking-wider text-primary">{id}</span>
       <span className="font-mono text-[7px] uppercase tracking-widest text-muted-foreground">Bus</span>
       <div className="flex items-stretch gap-1">
         <Slider
           orientation="vertical"
-          className="h-44 w-5"
+          className="h-64 w-7"
           value={[state.volume]}
           min={0}
           max={1.2}
@@ -451,10 +451,10 @@ function SendStrip({ id, level }: { id: "reverb" | "delay" | "chorus"; level: nu
   const { tracks } = useStudio();
   const amount = Math.max(0, ...tracks.map((t) => (t.muted ? 0 : (t.sends?.[id] ?? 0))));
   return (
-    <div className="flex w-[64px] shrink-0 flex-col items-center gap-1.5 border-r border-border bg-surface-2/30 px-1.5 py-2">
+    <div className="flex w-[84px] shrink-0 flex-col items-center gap-1.5 border-r border-border bg-surface-2/30 px-1.5 py-2">
       <span className="truncate font-mono text-[9px] font-bold uppercase tracking-wider text-amber-400">{id}</span>
       <span className="font-mono text-[7px] uppercase tracking-widest text-muted-foreground">Send FX</span>
-      <div className="flex h-44 items-stretch gap-1">
+      <div className="flex h-64 items-stretch gap-1">
         <Meter level={level * amount} tall />
       </div>
       <span className="font-mono text-[9px] text-muted-foreground">{Math.round(amount * 100)}%</span>
@@ -466,10 +466,10 @@ function SendStrip({ id, level }: { id: "reverb" | "delay" | "chorus"; level: nu
 
 function MasterStrip({ level: peak }: { level: number }) {
   return (
-    <div className="flex w-[88px] shrink-0 flex-col items-center gap-1.5 bg-surface-2 px-2 py-2 shadow-[inset_2px_0_0_0_var(--grid-line-strong)]">
+    <div className="flex w-[124px] shrink-0 flex-col items-center gap-1.5 bg-surface-2 px-2 py-2 shadow-[inset_2px_0_0_0_var(--grid-line-strong)]">
       <span className="font-display text-[10px] font-bold uppercase tracking-widest text-primary">Master</span>
       <div className="mt-3.5 flex items-stretch gap-1">
-        <div className="flex h-44 flex-col justify-between py-1">
+        <div className="flex h-64 flex-col justify-between py-1">
           {DB_TICKS.map((db) => (
             <div key={db} className="flex items-center gap-0.5">
               <span className="font-mono text-[7px] leading-none text-muted-foreground">
