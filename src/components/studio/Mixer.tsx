@@ -318,7 +318,10 @@ function Strip({ t, level, selected, onSelect }: { t: Track; level: number; sele
         </button>
       </div>
 
-      {/* routing / sends / inserts menu */}
+      {/* sends menu — reverb / delay / chorus live here now */}
+      <SendsMenu t={t} />
+
+      {/* routing / inserts menu */}
       <Popover>
         <PopoverTrigger asChild>
           <button
