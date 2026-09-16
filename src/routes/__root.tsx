@@ -84,6 +84,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "description", content: "A one-page Detroit DAW in the browser." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      {
+        name: "google-site-verification",
+        content: "SmgESHOtIFaO_YBAnehPcFwr15VCXGrKznDF082T1QM",
+      },
     ],
     links: [
       {
