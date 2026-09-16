@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { ArrowDownToLine, ArrowUpFromLine, Cpu, Disc3, FolderOpen, KeyboardMusic, Music2, Piano, SlidersHorizontal, Settings2, Waves, X } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, Cpu, Disc3, FolderOpen, KeyboardMusic, Music2, Palette, Piano, SlidersHorizontal, Settings2, Waves, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStudio, type PanelId } from "@/lib/synclab/store";
 import { TopBar } from "@/components/studio/TopBar";
