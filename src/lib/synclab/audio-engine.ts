@@ -770,6 +770,138 @@ export class SyncLabEngine {
     return { peaks, duration: buf.duration };
   }
 
+  /* ---------------- sampler ---------------- */
+  private sampleBuffers = new Map<string, AudioBuffer>();
+  private reversedBuffers = new Map<string, AudioBuffer>();
+  private liveSamples = new Map<string, AudioBufferSourceNode[]>();
+
+  /** Decodes a dropped audio file, keeps the buffer and returns its display data. */
+  async loadSampleFile(file: File | Blob, name: string) {
+    const ctx = this.init();
+    const raw = await (file as File).arrayBuffer();
+    const buf = await ctx.decodeAudioData(raw.slice(0));
+    const url = URL.createObjectURL(file);
+    this.sampleBuffers.set(url, buf);
+    const data = buf.getChannelData(0);
+    const buckets = 480;
+    const size = Math.max(1, Math.floor(data.length / buckets));
+    const peaks: number[] = [];
+    for (let b = 0; b < buckets; b++) {
+      let peak = 0;
+      for (let i = b * size; i < Math.min(data.length, (b + 1) * size); i++)
+        peak = Math.max(peak, Math.abs(data[i] ?? 0));
+      peaks.push(peak);
+    }
+    return { url, name, peaks, duration: buf.duration };
+  }
+
+  hasSample(url: string) {
+    return this.sampleBuffers.has(url);
+  }
+
+  private reversed(url: string) {
+    const cached = this.reversedBuffers.get(url);
+    if (cached) return cached;
+    const src = this.sampleBuffers.get(url);
+    const ctx = this.ctx;
+    if (!src || !ctx) return null;
+    const out = ctx.createBuffer(src.numberOfChannels, src.length, src.sampleRate);
+    for (let c = 0; c < src.numberOfChannels; c++) {
+      const from = src.getChannelData(c);
+      const to = out.getChannelData(c);
+      for (let i = 0, n = from.length; i < n; i++) to[i] = from[n - 1 - i] as number;
+    }
+    this.reversedBuffers.set(url, out);
+    return out;
+  }
+
+  /** Plays the trimmed sample pitched to a midi note through the track channel. */
+  playSample(
+    trackId: string,
+    s: {
+      url: string;
+      start: number;
+      end: number;
+      gain: number;
+      pitch: number;
+      rootNote: number;
+      loop: boolean;
+      reverse: boolean;
+      oneShot: boolean;
+      attack: number;
+      release: number;
+    },
+    midi: number,
+    duration?: number,
+    velocity = 1,
+    when?: number,
+  ) {
+    const ctx = this.init();
+    const base = s.reverse ? this.reversed(s.url) : this.sampleBuffers.get(s.url);
+    if (!base) return;
+    const t0 = when ?? ctx.currentTime;
+    const ch = this.channel(trackId);
+
+    const src = ctx.createBufferSource();
+    src.buffer = base;
+    const rate = Math.pow(2, (midi - s.rootNote + s.pitch) / 12);
+    src.playbackRate.value = clamp(rate, 0.0625, 16);
+
+    const a = clamp(s.start, 0, 0.999);
+    const b = clamp(s.end, a + 0.001, 1);
+    const offset = base.duration * a;
+    const window = base.duration * (b - a);
+    const playable = window / src.playbackRate.value;
+    const len = s.loop ? (duration ?? playable) : s.oneShot ? playable : Math.min(playable, duration ?? playable);
+
+    if (s.loop) {
+      src.loop = true;
+      src.loopStart = offset;
+      src.loopEnd = offset + window;
+    }
+
+    const amp = ctx.createGain();
+    const peak = clamp(s.gain, 0, 2) * clamp(velocity, 0, 1);
+    const atk = Math.max(0.001, s.attack);
+    const rel = Math.max(0.005, s.release);
+    amp.gain.setValueAtTime(0, t0);
+    amp.gain.linearRampToValueAtTime(peak, t0 + atk);
+    amp.gain.setValueAtTime(peak, Math.max(t0 + atk, t0 + len));
+    amp.gain.linearRampToValueAtTime(0.0001, t0 + len + rel);
+
+    src.connect(amp);
+    amp.connect(ch.input);
+    src.start(t0, offset, s.loop ? undefined : window);
+    src.stop(t0 + len + rel + 0.02);
+
+    const live = this.liveSamples.get(trackId) ?? [];
+    live.push(src);
+    this.liveSamples.set(trackId, live);
+    src.onended = () => {
+      try {
+        src.disconnect();
+        amp.disconnect();
+      } catch {
+        /* already gone */
+      }
+      this.liveSamples.set(trackId, (this.liveSamples.get(trackId) ?? []).filter((x) => x !== src));
+    };
+  }
+
+  stopSamples(trackId?: string) {
+    const ids = trackId ? [trackId] : [...this.liveSamples.keys()];
+    for (const id of ids) {
+      for (const src of this.liveSamples.get(id) ?? []) {
+        try {
+          src.stop();
+        } catch {
+          /* already stopped */
+        }
+      }
+      this.liveSamples.set(id, []);
+    }
+  }
+
   /* ---------------- synth voice ---------------- */
   playNote(trackId: string, patch: SynthPatch, midi: number, duration: number, velocity = 1, when?: number) {
     const ctx = this.init();
