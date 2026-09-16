@@ -155,6 +155,8 @@ const Ctx = (g.__synclabCtx ??= createContext<StudioApi | null>(null));
 export function StudioProvider({ children }: { children: ReactNode }) {
   const [tracks, setTracks] = useState<Track[]>(initialTracks);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [editTool, setEditTool] = useState<EditTool>("select");
   const [panel, setPanel] = useState<PanelId>(null);
   const [userPresets, setUserPresets] = useState<SynthPatch[]>([]);
   const [transport, setTransportState] = useState<Transport>({
@@ -429,6 +431,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       tracks,
       transport,
       selectedId,
+      selectedIds,
+      editTool,
       panel,
       userPresets,
       buses,
