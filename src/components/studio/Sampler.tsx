@@ -1,5 +1,5 @@
 import { useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
-import { AudioLines, Play, RotateCcw, Square, Trash2, Upload } from "lucide-react";
+import { AudioLines, Play, RotateCcw, Scissors, Square, Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
