@@ -343,13 +343,20 @@ function DeviceSlots({ t }: { t: Track }) {
 function Strip({ t, level, selected, onSelect }: { t: Track; level: number; selected: boolean; onSelect: () => void }) {
   const { updateTrack } = useStudio();
 
+  const tint = (pct: number) => `color-mix(in oklab, ${t.color} ${pct}%, transparent)`;
   return (
     <div
       onClick={onSelect}
       className={cn(
-        "flex w-[116px] shrink-0 cursor-pointer flex-col border-r border-border bg-surface transition-colors",
-        selected && "bg-surface-2"
+        "flex w-[116px] shrink-0 cursor-pointer flex-col border-r border-border transition-colors",
+        selected ? "bg-surface-2" : "bg-surface"
       )}
+      style={{
+        background: selected
+          ? `linear-gradient(${tint(16)}, ${tint(6)}), var(--surface-2, transparent)`
+          : `linear-gradient(${tint(10)}, ${tint(3)}), var(--surface, transparent)`,
+        boxShadow: `inset 3px 0 0 0 ${t.color}`,
+      }}
     >
       {/* devices */}
       <DeviceSlots t={t} />
@@ -397,7 +404,10 @@ function Strip({ t, level, selected, onSelect }: { t: Track; level: number; sele
       </div>
 
       {/* fader + scale + meter */}
-      <div className={cn(ROW.fader, "flex items-stretch justify-center gap-1 border-b border-border/60 py-1")}>
+      <div
+        className={cn(ROW.fader, "flex items-stretch justify-center gap-1 border-b border-border/60 py-1")}
+        style={{ "--primary": t.color } as React.CSSProperties}
+      >
         <div className="flex flex-col justify-between py-1">
           {DB_TICKS.map((db) => (
             <div key={db} className="flex items-center gap-0.5">
@@ -462,7 +472,10 @@ function Strip({ t, level, selected, onSelect }: { t: Track; level: number; sele
       {/* coloured name plate at the bottom, Ableton style */}
       <div
         className={cn(ROW.name, "flex items-center gap-1 px-1.5")}
-        style={{ background: `color-mix(in oklab, ${t.color} 30%, transparent)` }}
+        style={{
+          background: `color-mix(in oklab, ${t.color} 55%, transparent)`,
+          boxShadow: `inset 0 2px 0 0 ${t.color}`,
+        }}
         title={t.name}
       >
         <KindIcon t={t} className="size-3 shrink-0" />
