@@ -425,6 +425,41 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     });
   }, [updateTrack]);
 
+  const splitClipAtImpl = useCallback(
+    (trackId: string, frac: number) => {
+      const t = tracksRef.current.find((x) => x.id === trackId);
+      const clips = t?.clips ?? [];
+      const active = clips.find((c) => c.id === t?.activeClipId) ?? clips[clips.length - 1];
+      if (!t || !active) {
+        toast("Nothing to split", { description: "That channel has no recorded clip. Record audio first." });
+        return;
+      }
+      const f = Math.min(0.95, Math.max(0.05, frac));
+      const cut = Math.max(1, Math.min(active.peaks.length - 1, Math.round(active.peaks.length * f)));
+      const stamp = Date.now();
+      const a: AudioClip = {
+        ...active,
+        id: `${active.id}-a${stamp}`,
+        name: `${active.name} A`,
+        peaks: active.peaks.slice(0, cut),
+        duration: active.duration * f,
+      };
+      const b: AudioClip = {
+        ...active,
+        id: `${active.id}-b${stamp}`,
+        name: `${active.name} B`,
+        peaks: active.peaks.slice(cut),
+        duration: active.duration * (1 - f),
+      };
+      updateTrack(trackId, {
+        clips: clips.flatMap((c) => (c.id === active.id ? [a, b] : [c])),
+        activeClipId: a.id,
+      });
+      toast.success("Clip split", { description: `${active.name} → ${a.name} + ${b.name}` });
+    },
+    [updateTrack],
+  );
+
   const api: StudioApi = useMemo(() => {
     const selected = tracks.find((t) => t.id === selectedId) ?? null;
     return {
