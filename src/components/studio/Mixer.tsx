@@ -14,6 +14,7 @@ import {
   Power,
   Radio,
   Settings2,
+  Sliders,
   Trash2,
   VolumeX,
   Waves,
