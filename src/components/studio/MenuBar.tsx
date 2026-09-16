@@ -84,6 +84,16 @@ export function MenuBar() {
               Redo <MenubarShortcut>⇧⌘Z</MenubarShortcut>
             </MenubarItem>
             <MenubarSeparator />
+            <MenubarItem onClick={needTrack((id) => cutTrack(id))}>
+              Cut Track <MenubarShortcut>⌘X</MenubarShortcut>
+            </MenubarItem>
+            <MenubarItem onClick={needTrack((id) => copyTrack(id))}>
+              Copy Track <MenubarShortcut>⌘C</MenubarShortcut>
+            </MenubarItem>
+            <MenubarItem onClick={pasteTrack}>
+              Paste{clipboardName ? ` “${clipboardName}”` : ""} <MenubarShortcut>⌘V</MenubarShortcut>
+            </MenubarItem>
+            <MenubarSeparator />
             <MenubarItem onClick={needTrack((id) => duplicateTrack(id))}>
               Duplicate Track <MenubarShortcut>⌘D</MenubarShortcut>
             </MenubarItem>
