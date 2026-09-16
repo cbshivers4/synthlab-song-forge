@@ -22,7 +22,7 @@ import { ToolsRail } from "@/components/studio/ToolsRail";
 import { Appearance } from "@/components/studio/Appearance";
 import { WelcomeScreen } from "@/components/studio/WelcomeScreen";
 import { StartScreen } from "@/components/studio/StartScreen";
-import { useApp } from "@/lib/synclab/app-state";
+import { AppProvider, useApp, useMaybeApp } from "@/lib/synclab/app-state";
 import { toast } from "sonner";
 import synthFace from "@/assets/hw-synth.jpg";
 import drumFace from "@/assets/hw-drum.jpg";
@@ -300,7 +300,7 @@ function StudioWorkspace() {
   );
 }
 
-function Studio() {
+function Stages() {
   const { stage } = useApp();
   return (
     <>
@@ -309,5 +309,17 @@ function Studio() {
       {stage === "start" && <StartScreen />}
       {stage === "studio" && <StudioWorkspace />}
     </>
+  );
+}
+
+function Studio() {
+  // During hot reloads the root provider can briefly be a stale module copy;
+  // mount a local provider in that case instead of crashing the page.
+  const app = useMaybeApp();
+  if (app) return <Stages />;
+  return (
+    <AppProvider>
+      <Stages />
+    </AppProvider>
   );
 }
