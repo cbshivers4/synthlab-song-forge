@@ -312,13 +312,13 @@ export const readDrag = (e: React.DragEvent): DragPayload | null => {
 };
 
 function TrackRow({ track, index }: { track: Track; index: number }) {
-  const { selectedId, select, updateTrack, removeTrack, duplicateTrack, moveTrack, setPanel, changeInstrument, installedPlugins, addPlugin } =
+  const { selectedId, selectedIds, select, toggleSelectId, updateTrack, removeTrack, duplicateTrack, moveTrack, setPanel, changeInstrument, installedPlugins, addPlugin, editTool, splitClipAt, toggleStep } =
     useStudio();
   const { transport, setNotes } = useStudio();
   const [renaming, setRenaming] = useState(false);
   const [confirm, setConfirm] = useState(false);
   const [dropping, setDropping] = useState(false);
-  const isSelected = selectedId === track.id;
+  const isSelected = selectedId === track.id || selectedIds.includes(track.id);
 
   const clips = track.clips ?? [];
   const activeClip = clips.find((c) => c.id === track.activeClipId) ?? clips[clips.length - 1];
