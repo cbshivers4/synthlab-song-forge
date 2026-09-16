@@ -291,14 +291,15 @@ function Lane({ track }: { track: Track }) {
 
 export type DragPayload =
   | { type: "instrument"; name: string; preset: string }
-  | { type: "plugin"; defId: string };
+  | { type: "plugin"; defId: string }
+  | { type: "tool"; kind: Track["kind"]; name: string; preset?: string };
 
 export const readDrag = (e: React.DragEvent): DragPayload | null => {
   const raw = e.dataTransfer.getData("application/synclab") || e.dataTransfer.getData("text/plain");
   if (!raw) return null;
   try {
     const v = JSON.parse(raw) as DragPayload;
-    return v?.type === "instrument" || v?.type === "plugin" ? v : null;
+    return v?.type === "instrument" || v?.type === "plugin" || v?.type === "tool" ? v : null;
   } catch {
     return null;
   }
@@ -427,6 +428,10 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
       } else {
         toast("Drop instruments on an instrument channel", { description: "Or drop below the tracks to create a new one." });
       }
+      return;
+    }
+    if (payload.type === "tool") {
+      toast("Drop tools below the tracks", { description: "That area creates a new channel for the tool." });
       return;
     }
     const def = installedPlugins.find((d) => d.id === payload.defId);
@@ -784,13 +789,20 @@ export function Timeline() {
           onDrop={(e) => {
             setOver(false);
             const payload = readDrag(e);
-            if (payload?.type !== "instrument") return;
+            if (!payload) return;
             e.preventDefault();
-            addTrack("instrument", payload.name.toUpperCase(), payload.preset);
-            toast.success(`${payload.name} added as a new channel`);
+            if (payload.type === "instrument") {
+              addTrack("instrument", payload.name.toUpperCase(), payload.preset);
+              toast.success(`${payload.name} added as a new channel`);
+              return;
+            }
+            if (payload.type === "tool") {
+              addTrack(payload.kind, payload.name.toUpperCase(), payload.preset);
+              toast.success(`${payload.name} added as a new channel`);
+            }
           }}
         >
-          drag an instrument here or press + ADD TRACK
+          drag a tool or instrument here or press + ADD TRACK
         </div>
 
         {transport.loop && (

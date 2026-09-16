@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { AudioLines, Drum, Guitar, Mic, Mic2, Music2, Piano, Power, Radio, Settings2, Trash2 } from "lucide-react";
+import { AudioLines, Drum, Guitar, Mic, Mic2, Music2, Piano, Power, Radio, Settings2, Trash2, Waves } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -87,10 +87,10 @@ function useMeters(tracks: Track[], transport: Transport) {
 
 /** Segmented LED meter — green body, amber top, red clip. */
 function Meter({ level, tall }: { level: number; tall?: boolean }) {
-  const segs = 18;
+  const segs = 24;
   const lit = Math.round(level * segs);
   return (
-    <div className={cn("flex w-1.5 flex-col-reverse gap-px", tall ? "h-44" : "h-36")}>
+    <div className={cn("flex w-2 flex-col-reverse gap-px", tall ? "h-64" : "h-44")}>
       {Array.from({ length: segs }, (_, i) => (
         <div
           key={i}
@@ -208,6 +208,56 @@ function KindIcon({ t, className }: { t: Track; className?: string }) {
   return <Icon className={className} />;
 }
 
+/** Per-channel send menu: reverb / delay / chorus amounts plus each return's FX chain. */
+function SendsMenu({ t }: { t: Track }) {
+  const { updateTrack } = useStudio();
+  const active = SEND_KEYS.filter(([key]) => (t.sends?.[key] ?? 0) > 0).length;
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          onClick={(e) => e.stopPropagation()}
+          className={cn(
+            "flex h-6 w-full items-center justify-center gap-1 rounded-sm font-mono text-[8px] uppercase tracking-wider transition-colors",
+            active > 0 ? "bg-amber-500/20 text-amber-400" : "bg-surface-2 text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <Waves className="size-3" /> Sends{active > 0 ? ` ${active}` : ""}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-72 space-y-3 p-3" onClick={(e) => e.stopPropagation()}>
+        <div className="label-xs">Sends — {t.name}</div>
+        {SEND_KEYS.map(([key, label]) => {
+          const value = t.sends?.[key] ?? 0;
+          return (
+            <div key={key} className="space-y-1 rounded-sm border border-border bg-surface-2/40 px-2 py-1.5">
+              <div className="flex items-center gap-2">
+                <span className="w-12 shrink-0 font-mono text-[9px] uppercase text-muted-foreground">{label}</span>
+                <Slider
+                  value={[value]}
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  className="h-2 flex-1"
+                  onValueChange={([v = 0]) =>
+                    updateTrack(t.id, {
+                      sends: { reverb: 0, delay: 0, chorus: 0, ...(t.sends ?? {}), [key]: v },
+                    })
+                  }
+                />
+                <span className="w-7 shrink-0 text-right font-mono text-[9px] text-muted-foreground">
+                  {Math.round(value * 100)}
+                </span>
+              </div>
+              <FxMenu target={`send:${key}`} label={`${key} return FX`} />
+            </div>
+          );
+        })}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 function Strip({ t, level, selected, onSelect }: { t: Track; level: number; selected: boolean; onSelect: () => void }) {
   const { updateTrack, addPlugin, removePlugin, togglePluginBypass, setPluginParam } = useStudio();
 
@@ -215,7 +265,7 @@ function Strip({ t, level, selected, onSelect }: { t: Track; level: number; sele
     <div
       onClick={onSelect}
       className={cn(
-        "flex w-[72px] shrink-0 cursor-pointer flex-col items-center gap-1.5 border-r border-border bg-surface px-1.5 py-2 transition-colors",
+        "flex w-[108px] shrink-0 cursor-pointer flex-col items-center gap-1.5 border-r border-border bg-surface px-1.5 py-2 transition-colors",
         selected && "bg-surface-2"
       )}
       style={selected ? { boxShadow: `inset 0 2px 0 0 ${t.color}` } : undefined}
@@ -261,7 +311,7 @@ function Strip({ t, level, selected, onSelect }: { t: Track; level: number; sele
 
       {/* fader + scale + meter */}
       <div className="flex items-stretch gap-1">
-        <div className="flex h-44 flex-col justify-between py-1">
+        <div className="flex h-64 flex-col justify-between py-1">
           {DB_TICKS.map((db) => (
             <div key={db} className="flex items-center gap-0.5">
               <span className="font-mono text-[7px] leading-none text-muted-foreground">
@@ -274,7 +324,7 @@ function Strip({ t, level, selected, onSelect }: { t: Track; level: number; sele
         <div className="relative">
           <Slider
             orientation="vertical"
-            className="h-44 w-5"
+            className="h-64 w-7"
             value={[t.volume]}
             min={0}
             max={1}
@@ -318,7 +368,10 @@ function Strip({ t, level, selected, onSelect }: { t: Track; level: number; sele
         </button>
       </div>
 
-      {/* routing / sends / inserts menu */}
+      {/* sends menu — reverb / delay / chorus live here now */}
+      <SendsMenu t={t} />
+
+      {/* routing / inserts menu */}
       <Popover>
         <PopoverTrigger asChild>
           <button
@@ -344,32 +397,6 @@ function Strip({ t, level, selected, onSelect }: { t: Track; level: number; sele
               </SelectContent>
             </Select>
           </div>
-          <div>
-            <div className="label-xs mb-1">Sends</div>
-            {SEND_KEYS.map(([key, label]) => {
-              const value = t.sends?.[key] ?? 0;
-              return (
-                <div key={key} className="flex items-center gap-2 py-0.5">
-                  <span className="w-7 shrink-0 font-mono text-[9px] uppercase text-muted-foreground">{label}</span>
-                  <Slider
-                    value={[value]}
-                    min={0}
-                    max={1}
-                    step={0.01}
-                    className="h-2 flex-1"
-                    onValueChange={([v = 0]) =>
-                      updateTrack(t.id, {
-                        sends: { reverb: 0, delay: 0, chorus: 0, ...(t.sends ?? {}), [key]: v },
-                      })
-                    }
-                  />
-                  <span className="w-6 shrink-0 text-right font-mono text-[9px] text-muted-foreground">
-                    {Math.round(value * 100)}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
           <InsertRack
             title="Inserts"
             list={t.plugins ?? []}
@@ -387,13 +414,13 @@ function Strip({ t, level, selected, onSelect }: { t: Track; level: number; sele
 
 function BusStrip({ id, state, level, onChange }: { id: BusId; state: BusState; level: number; onChange: (p: Partial<BusState>) => void }) {
   return (
-    <div className="flex w-[64px] shrink-0 flex-col items-center gap-1.5 border-r border-border bg-surface-2/50 px-1.5 py-2">
+    <div className="flex w-[84px] shrink-0 flex-col items-center gap-1.5 border-r border-border bg-surface-2/50 px-1.5 py-2">
       <span className="truncate font-mono text-[9px] font-bold uppercase tracking-wider text-primary">{id}</span>
       <span className="font-mono text-[7px] uppercase tracking-widest text-muted-foreground">Bus</span>
       <div className="flex items-stretch gap-1">
         <Slider
           orientation="vertical"
-          className="h-44 w-5"
+          className="h-64 w-7"
           value={[state.volume]}
           min={0}
           max={1.2}
@@ -447,29 +474,12 @@ function FxMenu({ target, label }: { target: string; label: string }) {
   );
 }
 
-function SendStrip({ id, level }: { id: "reverb" | "delay" | "chorus"; level: number }) {
-  const { tracks } = useStudio();
-  const amount = Math.max(0, ...tracks.map((t) => (t.muted ? 0 : (t.sends?.[id] ?? 0))));
-  return (
-    <div className="flex w-[64px] shrink-0 flex-col items-center gap-1.5 border-r border-border bg-surface-2/30 px-1.5 py-2">
-      <span className="truncate font-mono text-[9px] font-bold uppercase tracking-wider text-amber-400">{id}</span>
-      <span className="font-mono text-[7px] uppercase tracking-widest text-muted-foreground">Send FX</span>
-      <div className="flex h-44 items-stretch gap-1">
-        <Meter level={level * amount} tall />
-      </div>
-      <span className="font-mono text-[9px] text-muted-foreground">{Math.round(amount * 100)}%</span>
-      <FxMenu target={`send:${id}`} label="FX" />
-    </div>
-  );
-}
-
-
 function MasterStrip({ level: peak }: { level: number }) {
   return (
-    <div className="flex w-[88px] shrink-0 flex-col items-center gap-1.5 bg-surface-2 px-2 py-2 shadow-[inset_2px_0_0_0_var(--grid-line-strong)]">
+    <div className="flex w-[124px] shrink-0 flex-col items-center gap-1.5 bg-surface-2 px-2 py-2 shadow-[inset_2px_0_0_0_var(--grid-line-strong)]">
       <span className="font-display text-[10px] font-bold uppercase tracking-widest text-primary">Master</span>
       <div className="mt-3.5 flex items-stretch gap-1">
-        <div className="flex h-44 flex-col justify-between py-1">
+        <div className="flex h-64 flex-col justify-between py-1">
           {DB_TICKS.map((db) => (
             <div key={db} className="flex items-center gap-0.5">
               <span className="font-mono text-[7px] leading-none text-muted-foreground">
@@ -513,9 +523,6 @@ export function Mixer() {
       ))}
       {BUS_STRIPS.map((id) => (
         <BusStrip key={id} id={id} state={buses[id]} level={busLevel(id)} onChange={(p) => setBus(id, p)} />
-      ))}
-      {(["reverb", "delay", "chorus"] as const).map((id) => (
-        <SendStrip key={id} id={id} level={levels.master} />
       ))}
       <MasterStrip level={levels.master} />
 
