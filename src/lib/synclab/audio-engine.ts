@@ -985,38 +985,42 @@ export class SyncLabEngine {
       o.stop(t + dur + 0.02);
     };
 
+    const K = DRUM_KIT_VOICES[pad.kit ?? "909"] ?? DRUM_KIT_VOICES["909"]!;
+
     switch (pad.kind) {
       case "kick":
-        tone(130, 42, 0.35 * dec * 2);
-        noiseBurst(0.02, 1800, "highpass");
+        tone(K.kick[0], K.kick[1], K.kick[2] * dec * 2, K.kick[3]);
+        noiseBurst(0.02 * K.click, 1800, "highpass");
         break;
       case "snare":
-        tone(210, 120, 0.12 * dec * 2, "triangle", 0.6);
-        noiseBurst(0.22 * dec * 2, 1600, "highpass");
+        tone(K.snare[0], K.snare[0] * 0.6, 0.12 * dec * 2, "triangle", 0.6 * K.body);
+        noiseBurst(0.22 * dec * 2 * K.snare[2], K.snare[1], "highpass");
         break;
       case "clap":
-        [0, 0.012, 0.024].forEach((o) => setTimeoutBurst(() => noiseBurst(0.16, 1400, "bandpass", 1.6), o));
+        [0, 0.012, 0.024].forEach((o) =>
+          setTimeoutBurst(() => noiseBurst(0.16 * K.snare[2], K.clap, "bandpass", 1.6), o),
+        );
         break;
       case "hat":
-        noiseBurst(0.06 * dec * 2, 7500, "highpass");
+        noiseBurst(0.06 * dec * 2 * K.hatD, K.hatF, "highpass");
         break;
       case "openhat":
-        noiseBurst(0.35 * dec * 2, 6800, "highpass");
+        noiseBurst(0.35 * dec * 2 * K.hatD, K.hatF * 0.9, "highpass");
         break;
       case "tom":
-        tone(200, 90, 0.4 * dec * 2, "sine");
+        tone(K.tom[0], K.tom[1], 0.4 * dec * 2, "sine");
         break;
       case "perc":
-        tone(600, 300, 0.12 * dec * 2, "square", 0.5);
+        tone(K.perc, K.perc / 2, 0.12 * dec * 2, "square", 0.5);
         break;
       case "rim":
-        tone(1700, 900, 0.05, "square", 0.5);
+        tone(K.perc * 2.6, K.perc * 1.4, 0.05, "square", 0.5);
         break;
       case "crash":
-        noiseBurst(1.2 * dec, 5200, "highpass");
+        noiseBurst(1.2 * dec, K.crash, "highpass");
         break;
       case "ride":
-        noiseBurst(0.6 * dec, 9000, "bandpass", 0.8);
+        noiseBurst(0.6 * dec, K.ride, "bandpass", 0.8);
         break;
       default:
         noiseBurst(0.4 * dec, 900, "bandpass", 3);
