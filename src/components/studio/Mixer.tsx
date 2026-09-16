@@ -8,6 +8,7 @@ import {
   Mic,
   Mic2,
   Minimize2,
+  MoreVertical,
   Music2,
   Palette,
   Piano,
@@ -25,6 +26,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useStudio } from "@/lib/synclab/store";
 import { TRACK_COLORS } from "@/lib/synclab/presets";
+import { BUILT_IN_PLUGINS } from "@/lib/synclab/plugins";
 import type { BusId, BusState, PluginInstance, Track, Transport } from "@/lib/synclab/types";
 import { cn } from "@/lib/utils";
 
@@ -391,6 +393,7 @@ function LabelRail() {
   return (
     <div className="sticky left-0 z-10 flex w-[76px] shrink-0 flex-col border-r border-border bg-surface-2/85 backdrop-blur">
       <SectionLabel className={cn(ROW.head, "bg-surface-2")}>Ch</SectionLabel>
+      <SectionLabel className={ROW.eq}>EQ</SectionLabel>
       <SectionLabel className={ROW.devices}>Devices</SectionLabel>
       <SectionLabel className={ROW.sends}>Sends</SectionLabel>
       <SectionLabel className={ROW.sendBars}>R / D / C</SectionLabel>
@@ -646,6 +649,7 @@ function Strip({
         <Screw />
         <span className="font-mono text-[9px] font-bold text-muted-foreground">{index + 1}</span>
         <ColorDot t={t} />
+        <ChannelMenu t={t} />
         <button
           onClick={(e) => { e.stopPropagation(); setClip(false); }}
           title="Clip indicator — click to reset"
@@ -658,6 +662,8 @@ function Strip({
         </button>
         <Screw />
       </div>
+
+      <ChannelEq t={t} />
 
       <DeviceSlots t={t} narrow={narrow} />
 
@@ -835,6 +841,9 @@ function BusStrip({
         Bus
         <Screw />
       </div>
+      <div className={cn(ROW.eq, "flex items-center justify-center border-b border-border/60 font-mono text-[7px] uppercase tracking-widest text-muted-foreground")}>
+        Bus FX below
+      </div>
       <div className={cn(ROW.devices, "border-b border-border/60 p-1")}>
         <FxMenu target={`bus:${id}`} label="Devices" />
       </div>
@@ -936,6 +945,9 @@ function MasterStrip({ level: peak }: { level: number }) {
         <Screw />
         Main
         <Screw />
+      </div>
+      <div className={cn(ROW.eq, "flex items-center justify-center border-b border-border/60 font-mono text-[7px] uppercase tracking-widest text-muted-foreground")}>
+        Main bus
       </div>
       <div className={cn(ROW.devices, "flex items-center gap-1 border-b border-black/50 px-1.5 py-1")}>
         <VuMeter level={peak} label="L" />
