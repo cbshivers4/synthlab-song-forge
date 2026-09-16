@@ -290,6 +290,7 @@ function StudioWorkspace() {
       <div className="flex min-h-0 flex-1">
         <ToolsRail />
         <main className="flex min-h-0 flex-1 flex-col">
+          <h1 className="sr-only">SYNCLAB Studio — browser digital audio workstation</h1>
           <Timeline />
           <Panels float={float} setFloat={setFloat} />
         </main>
