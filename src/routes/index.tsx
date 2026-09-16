@@ -300,7 +300,7 @@ function StudioWorkspace() {
   );
 }
 
-function Studio() {
+function Stages() {
   const { stage } = useApp();
   return (
     <>
@@ -309,5 +309,17 @@ function Studio() {
       {stage === "start" && <StartScreen />}
       {stage === "studio" && <StudioWorkspace />}
     </>
+  );
+}
+
+function Studio() {
+  // During hot reloads the root provider can briefly be a stale module copy;
+  // mount a local provider in that case instead of crashing the page.
+  const app = useMaybeApp();
+  if (app) return <Stages />;
+  return (
+    <AppProvider>
+      <Stages />
+    </AppProvider>
   );
 }
