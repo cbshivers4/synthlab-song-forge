@@ -260,18 +260,30 @@ function FloatingDevices({ float, setFloat }: { float: FloatState; setFloat: (f:
 
 /** Global DAW keyboard shortcuts. */
 function useShortcuts() {
-  const { togglePlay, toggleRecord, stop, selected, duplicateTrack, removeTrack, setPanel } = useStudio();
+  const { togglePlay, toggleRecord, stop, selected, duplicateTrack, removeTrack, setPanel, copyTrack, cutTrack, pasteTrack } =
+    useStudio();
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement | null;
       if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
       const meta = e.metaKey || e.ctrlKey;
-      if (meta && e.key.toLowerCase() === "d" && selected) {
-        e.preventDefault();
-        duplicateTrack(selected.id);
+      if (meta) {
+        const k = e.key.toLowerCase();
+        if (k === "d" && selected) {
+          e.preventDefault();
+          duplicateTrack(selected.id);
+        } else if (k === "c" && selected) {
+          e.preventDefault();
+          copyTrack(selected.id);
+        } else if (k === "x" && selected) {
+          e.preventDefault();
+          cutTrack(selected.id);
+        } else if (k === "v") {
+          e.preventDefault();
+          pasteTrack();
+        }
         return;
       }
-      if (meta) return;
       switch (e.key) {
         case " ":
           e.preventDefault();
