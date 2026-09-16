@@ -468,6 +468,45 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           [next[i], next[j]] = [next[j] as Track, next[i] as Track];
           return next;
         }),
+      clipboardName,
+      copyTrack: (id) => {
+        const src = tracksRef.current.find((t) => t.id === id);
+        if (!src) return;
+        clipboardRef.current = structuredClone(src) as Track;
+        setClipboardName(src.name);
+        toast("Copied", { description: `${src.name} is on the clipboard — press ⌘V / Ctrl+V to paste.` });
+      },
+      cutTrack: (id) => {
+        const src = tracksRef.current.find((t) => t.id === id);
+        if (!src) return;
+        clipboardRef.current = structuredClone(src) as Track;
+        setClipboardName(src.name);
+        getEngine().removeChannel(id);
+        setTracks((ts) => ts.filter((t) => t.id !== id));
+        setSelectedId((s) => (s === id ? null : s));
+        toast("Cut", { description: `${src.name} removed and placed on the clipboard.` });
+      },
+      pasteTrack: () => {
+        const src = clipboardRef.current;
+        if (!src) {
+          toast("Clipboard is empty", { description: "Copy a track first with ⌘C / Ctrl+C." });
+          return;
+        }
+        const copy: Track = { ...(structuredClone(src) as Track), id: uid(), name: `${src.name} COPY`, recording: false };
+        if (copy.pads) copy.pads = copy.pads.map((p) => ({ ...p, id: uid() }));
+        if (copy.notes) copy.notes = copy.notes.map((n) => ({ ...n, id: uid() }));
+        if (copy.clips) copy.clips = copy.clips.map((c) => ({ ...c, id: uid() }));
+        if (copy.plugins) copy.plugins = copy.plugins.map((p) => ({ ...p, id: uid() }));
+        copy.activeClipId = copy.clips?.[0]?.id;
+        setTracks((ts) => {
+          const i = ts.findIndex((t) => t.id === selectedIdRef.current);
+          const next = [...ts];
+          next.splice(i < 0 ? ts.length : i + 1, 0, copy);
+          return next;
+        });
+        setSelectedId(copy.id);
+        toast.success("Pasted", { description: copy.name });
+      },
       updatePatch: (id, patch) =>
         setTracks((ts) =>
           ts.map((t) => (t.id === id && t.patch ? { ...t, patch: { ...t.patch, ...patch } } : t)),
