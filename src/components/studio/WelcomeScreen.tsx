@@ -58,7 +58,7 @@ export function WelcomeScreen() {
           <img
             src={synclabLogoAsset.url}
             alt="SYNCLAB"
-            className="h-32 w-auto max-w-[min(76vw,420px)] rounded-lg object-contain shadow-[var(--shadow-glow)] sm:h-36"
+            className="h-48 w-48 rounded-lg object-contain shadow-[var(--shadow-glow)] sm:h-56 sm:w-56"
           />
           <h1 className="mt-7 font-display text-3xl font-semibold tracking-tight sm:text-5xl">
             Create. Record. Produce. Finish.
