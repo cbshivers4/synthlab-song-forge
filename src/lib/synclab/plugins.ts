@@ -42,6 +42,49 @@ export const PARAMS_BY_KIND: Record<PluginKind, () => PluginParam[]> = {
   ],
   gain: () => [p("gain", "Gain", 0, -24, 12, "dB")],
   width: () => [p("width", "Width", 1, 0, 2, ""), p("output", "Output", 0, -12, 6, "dB")],
+  reverb: () => [
+    p("decay", "Decay", 1.8, 0.2, 8, "s"),
+    p("predelay", "Pre-Delay", 20, 0, 200, "ms"),
+    p("mix", "Mix", 0.3, 0, 1, ""),
+  ],
+  chorus: () => [
+    p("rate", "Rate", 1.2, 0.05, 8, "Hz"),
+    p("depth", "Depth", 0.5, 0, 1, ""),
+    p("mix", "Mix", 0.5, 0, 1, ""),
+  ],
+  flanger: () => [
+    p("rate", "Rate", 0.4, 0.05, 5, "Hz"),
+    p("depth", "Depth", 0.7, 0, 1, ""),
+    p("feedback", "Feedback", 0.5, 0, 0.95, ""),
+    p("mix", "Mix", 0.5, 0, 1, ""),
+  ],
+  phaser: () => [
+    p("rate", "Rate", 0.5, 0.05, 8, "Hz"),
+    p("depth", "Depth", 0.7, 0, 1, ""),
+    p("center", "Center", 800, 200, 4000, "Hz"),
+    p("mix", "Mix", 0.5, 0, 1, ""),
+  ],
+  tremolo: () => [
+    p("rate", "Rate", 5, 0.1, 20, "Hz"),
+    p("depth", "Depth", 0.6, 0, 1, ""),
+  ],
+  autopan: () => [
+    p("rate", "Rate", 1, 0.05, 10, "Hz"),
+    p("depth", "Depth", 0.8, 0, 1, ""),
+  ],
+  limiter: () => [
+    p("ceiling", "Ceiling", -0.3, -12, 0, "dB"),
+    p("release", "Release", 60, 5, 500, "ms"),
+  ],
+  bitcrusher: () => [
+    p("bits", "Bits", 8, 2, 16, "bit"),
+    p("mix", "Mix", 1, 0, 1, ""),
+  ],
+  gate: () => [
+    p("threshold", "Threshold", -45, -80, 0, "dB"),
+    p("attack", "Attack", 2, 0.1, 50, "ms"),
+    p("release", "Release", 80, 5, 1000, "ms"),
+  ],
 };
 
 const def = (name: string, vendor: string, format: PluginDef["format"], kind: PluginKind): PluginDef => ({
@@ -61,6 +104,15 @@ export const BUILT_IN_PLUGINS: PluginDef[] = [
   def("Tape Echo", "SYNCLAB", "Built-in", "delay"),
   def("Stereo Width", "SYNCLAB", "Built-in", "width"),
   def("Utility Gain", "SYNCLAB", "Built-in", "gain"),
+  def("Hall Reverb", "SYNCLAB", "Built-in", "reverb"),
+  def("Studio Chorus", "SYNCLAB", "Built-in", "chorus"),
+  def("Jet Flanger", "SYNCLAB", "Built-in", "flanger"),
+  def("Phase Shifter", "SYNCLAB", "Built-in", "phaser"),
+  def("Tremolo", "SYNCLAB", "Built-in", "tremolo"),
+  def("Auto Panner", "SYNCLAB", "Built-in", "autopan"),
+  def("Brickwall Limiter", "SYNCLAB", "Built-in", "limiter"),
+  def("Bit Crusher", "SYNCLAB", "Built-in", "bitcrusher"),
+  def("Noise Gate", "SYNCLAB", "Built-in", "gate"),
 ];
 
 export const makeDef = (name: string, vendor: string, format: PluginDef["format"], kind: PluginKind) =>
@@ -77,4 +129,21 @@ export const instantiate = (d: PluginDef): PluginInstance => ({
   params: d.params.map((x) => ({ ...x })),
 });
 
-export const PLUGIN_KINDS: PluginKind[] = ["eq", "filter", "drive", "compressor", "delay", "width", "gain"];
+export const PLUGIN_KINDS: PluginKind[] = [
+  "eq",
+  "filter",
+  "drive",
+  "compressor",
+  "limiter",
+  "gate",
+  "delay",
+  "reverb",
+  "chorus",
+  "flanger",
+  "phaser",
+  "tremolo",
+  "autopan",
+  "width",
+  "bitcrusher",
+  "gain",
+];

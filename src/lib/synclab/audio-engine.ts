@@ -4,6 +4,48 @@ const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
 
 export const midiToFreq = (n: number) => 440 * Math.pow(2, (n - 69) / 12);
 
+function makeImpulse(ctx: AudioContext, decay: number) {
+  const rate = ctx.sampleRate;
+  const len = Math.max(1, Math.floor(rate * decay));
+  const buf = ctx.createBuffer(2, len, rate);
+  for (let ch = 0; ch < 2; ch++) {
+    const d = buf.getChannelData(ch);
+    for (let i = 0; i < len; i++) {
+      d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.4);
+    }
+  }
+  return buf;
+}
+
+function makeBitcrushCurve(bits: number) {
+  const steps = Math.pow(2, bits);
+  const n = 8192;
+  const curve = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    const x = (i / (n - 1)) * 2 - 1;
+    curve[i] = Math.round(x * steps) / steps;
+  }
+  return curve;
+}
+
+function makeGateCurve(threshold: number) {
+  const n = 4096;
+  const curve = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    const x = (i / (n - 1)) * 2 - 1;
+    const a = Math.abs(x);
+    const sign = x < 0 ? -1 : 1;
+    if (a >= threshold) {
+      curve[i] = x;
+    } else {
+      // soft attenuation below threshold (12 dB/oct-ish expansion feel)
+      const r = a / threshold;
+      curve[i] = sign * a * r * r;
+    }
+  }
+  return curve;
+}
+
 function makeDistortionCurve(amount: number) {
   const k = amount * 100;
   const n = 1024;
@@ -256,7 +298,24 @@ export class SyncLabEngine {
     let cursor: AudioNode = from;
     let idx = 0;
     for (const pl of active) {
-      const size = { eq: 4, filter: 1, drive: 3, compressor: 2, delay: 5, width: 1, gain: 1 }[pl.kind];
+      const size = {
+        eq: 4,
+        filter: 1,
+        drive: 3,
+        compressor: 2,
+        delay: 5,
+        width: 1,
+        gain: 1,
+        reverb: 5,
+        chorus: 4,
+        flanger: 5,
+        phaser: 7,
+        tremolo: 1,
+        autopan: 1,
+        limiter: 1,
+        bitcrusher: 5,
+        gate: 1,
+      }[pl.kind];
       const head = nodes[idx];
       const tail = nodes[idx + size - 1];
       if (head && tail) {
@@ -362,6 +421,164 @@ export class SyncLabEngine {
           const g2 = ctx.createGain();
           g2.gain.value = dbToGain(val(pl, "gain", 0));
           nodes.push(g2);
+          break;
+        }
+        case "reverb": {
+          const inNode = ctx.createGain();
+          const pre = ctx.createDelay(0.5);
+          pre.delayTime.value = clamp(val(pl, "predelay", 20) / 1000, 0, 0.5);
+          const conv = ctx.createConvolver();
+          conv.buffer = makeImpulse(ctx, clamp(val(pl, "decay", 1.8), 0.2, 8));
+          const wet = ctx.createGain();
+          wet.gain.value = clamp(val(pl, "mix", 0.3), 0, 1);
+          const out = ctx.createGain();
+          inNode.connect(out);
+          inNode.connect(pre);
+          pre.connect(conv);
+          conv.connect(wet);
+          wet.connect(out);
+          nodes.push(inNode, pre, conv, wet, out);
+          break;
+        }
+        case "chorus": {
+          const inNode = ctx.createGain();
+          const d = ctx.createDelay(0.1);
+          d.delayTime.value = 0.02;
+          const lfo = ctx.createOscillator();
+          lfo.frequency.value = clamp(val(pl, "rate", 1.2), 0.05, 8);
+          const lfoGain = ctx.createGain();
+          lfoGain.gain.value = clamp(val(pl, "depth", 0.5), 0, 1) * 0.008;
+          lfo.connect(lfoGain);
+          lfoGain.connect(d.delayTime);
+          lfo.start();
+          const wet = ctx.createGain();
+          wet.gain.value = clamp(val(pl, "mix", 0.5), 0, 1);
+          const out = ctx.createGain();
+          inNode.connect(out);
+          inNode.connect(d);
+          d.connect(wet);
+          wet.connect(out);
+          nodes.push(inNode, d, wet, out);
+          break;
+        }
+        case "flanger": {
+          const inNode = ctx.createGain();
+          const d = ctx.createDelay(0.05);
+          d.delayTime.value = 0.004;
+          const lfo = ctx.createOscillator();
+          lfo.frequency.value = clamp(val(pl, "rate", 0.4), 0.05, 5);
+          const lfoGain = ctx.createGain();
+          lfoGain.gain.value = clamp(val(pl, "depth", 0.7), 0, 1) * 0.003;
+          lfo.connect(lfoGain);
+          lfoGain.connect(d.delayTime);
+          lfo.start();
+          const fb = ctx.createGain();
+          fb.gain.value = clamp(val(pl, "feedback", 0.5), 0, 0.95);
+          d.connect(fb);
+          fb.connect(d);
+          const wet = ctx.createGain();
+          wet.gain.value = clamp(val(pl, "mix", 0.5), 0, 1);
+          const out = ctx.createGain();
+          inNode.connect(out);
+          inNode.connect(d);
+          d.connect(wet);
+          wet.connect(out);
+          nodes.push(inNode, d, fb, wet, out);
+          break;
+        }
+        case "phaser": {
+          const inNode = ctx.createGain();
+          const out = ctx.createGain();
+          const wet = ctx.createGain();
+          wet.gain.value = clamp(val(pl, "mix", 0.5), 0, 1);
+          const center = clamp(val(pl, "center", 800), 200, 4000);
+          const depth = clamp(val(pl, "depth", 0.7), 0, 1);
+          const lfo = ctx.createOscillator();
+          lfo.frequency.value = clamp(val(pl, "rate", 0.5), 0.05, 8);
+          const lfoGain = ctx.createGain();
+          lfoGain.gain.value = center * 0.7 * depth;
+          lfo.connect(lfoGain);
+          let cur: AudioNode = inNode;
+          for (let i = 0; i < 4; i++) {
+            const ap = ctx.createBiquadFilter();
+            ap.type = "allpass";
+            ap.frequency.value = center * (1 + i * 0.5);
+            ap.Q.value = 0.8;
+            lfoGain.connect(ap.frequency);
+            cur.connect(ap);
+            cur = ap;
+            nodes.push(ap);
+          }
+          lfo.start();
+          cur.connect(wet);
+          inNode.connect(out);
+          wet.connect(out);
+          nodes.push(inNode, wet, out);
+          break;
+        }
+        case "tremolo": {
+          const g = ctx.createGain();
+          const depth = clamp(val(pl, "depth", 0.6), 0, 1);
+          g.gain.value = 1 - depth / 2;
+          const lfo = ctx.createOscillator();
+          lfo.frequency.value = clamp(val(pl, "rate", 5), 0.1, 20);
+          const lfoGain = ctx.createGain();
+          lfoGain.gain.value = depth / 2;
+          lfo.connect(lfoGain);
+          lfoGain.connect(g.gain);
+          lfo.start();
+          nodes.push(g);
+          break;
+        }
+        case "autopan": {
+          const pan = ctx.createStereoPanner();
+          const lfo = ctx.createOscillator();
+          lfo.frequency.value = clamp(val(pl, "rate", 1), 0.05, 10);
+          const lfoGain = ctx.createGain();
+          lfoGain.gain.value = clamp(val(pl, "depth", 0.8), 0, 1);
+          lfo.connect(lfoGain);
+          lfoGain.connect(pan.pan);
+          lfo.start();
+          nodes.push(pan);
+          break;
+        }
+        case "limiter": {
+          const c = ctx.createDynamicsCompressor();
+          c.threshold.value = clamp(val(pl, "ceiling", -0.3), -12, 0);
+          c.knee.value = 0;
+          c.ratio.value = 20;
+          c.attack.value = 0.002;
+          c.release.value = clamp(val(pl, "release", 60), 5, 500) / 1000;
+          nodes.push(c);
+          break;
+        }
+        case "bitcrusher": {
+          const bits = Math.round(clamp(val(pl, "bits", 8), 2, 16));
+          const ws = ctx.createWaveShaper();
+          ws.curve = makeBitcrushCurve(bits);
+          const mix = clamp(val(pl, "mix", 1), 0, 1);
+          const inNode = ctx.createGain();
+          const wet = ctx.createGain();
+          wet.gain.value = mix;
+          const dry = ctx.createGain();
+          dry.gain.value = 1 - mix;
+          const out = ctx.createGain();
+          inNode.connect(dry);
+          dry.connect(out);
+          inNode.connect(ws);
+          ws.connect(wet);
+          wet.connect(out);
+          nodes.push(inNode, ws, wet, dry, out);
+          break;
+        }
+        case "gate": {
+          // Downward expander approximation: compressor below-threshold attenuation
+          // via inverted ratio is unavailable in DynamicsCompressor, so use a
+          // waveshaper soft-knee expansion curve around the threshold.
+          const thr = Math.pow(10, clamp(val(pl, "threshold", -45), -80, 0) / 20);
+          const ws = ctx.createWaveShaper();
+          ws.curve = makeGateCurve(thr);
+          nodes.push(ws);
           break;
         }
       }
