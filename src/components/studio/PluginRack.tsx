@@ -17,6 +17,39 @@ import { toast } from "sonner";
 
 const FORMATS: PluginDef["format"][] = ["VST3", "AU", "CLAP", "AAX"];
 
+const PLUGIN_EXT: Record<string, PluginDef["format"]> = {
+  vst3: "VST3",
+  vst: "VST3",
+  dll: "VST3",
+  component: "AU",
+  clap: "CLAP",
+  aaxplugin: "AAX",
+};
+
+/** Guess a DSP category from the plugin's file name so the scanned entry gets sensible controls. */
+function guessKind(fileName: string): PluginKind {
+  const n = fileName.toLowerCase();
+  const map: [RegExp, PluginKind][] = [
+    [/\b(eq|equal|pro-?q|channel ?strip)\b/, "eq"],
+    [/\b(comp|1176|la-?2a|glue|bus ?comp)\b/, "compressor"],
+    [/\b(limit|maxim|l1|l2)\b/, "limiter"],
+    [/\b(gate|expander)\b/, "gate"],
+    [/\b(delay|echo)\b/, "delay"],
+    [/\b(verb|reverb|hall|plate|room)\b/, "reverb"],
+    [/\b(chorus)\b/, "chorus"],
+    [/\b(flang)\b/, "flanger"],
+    [/\b(phas)\b/, "phaser"],
+    [/\b(trem)\b/, "tremolo"],
+    [/\b(pan)\b/, "autopan"],
+    [/\b(filter|ladder|moog)\b/, "filter"],
+    [/\b(sat|drive|tube|tape|dist|crunch)\b/, "drive"],
+    [/\b(width|stereo|imager)\b/, "width"],
+    [/\b(crush|lofi|bit)\b/, "bitcrusher"],
+  ];
+  for (const [re, k] of map) if (re.test(n)) return k;
+  return "eq";
+}
+
 function ParamRow({
   trackId,
   plugin,
