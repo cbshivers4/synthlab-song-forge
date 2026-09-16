@@ -452,47 +452,17 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       },
       toggleSelectId: (id) =>
         setSelectedIds((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id])),
-      splitClipAt: (trackId, frac) => {
-        const t = tracksRef.current.find((x) => x.id === trackId);
-        const clips = t?.clips ?? [];
-        const active = clips.find((c) => c.id === t?.activeClipId) ?? clips[clips.length - 1];
-        if (!t || !active) {
-          toast("Nothing to split", { description: "That channel has no recorded clip. Record audio first." });
-          return;
-        }
-        const f = Math.min(0.95, Math.max(0.05, frac));
-        const cut = Math.max(1, Math.min(active.peaks.length - 1, Math.round(active.peaks.length * f)));
-        const stamp = Date.now();
-        const a: AudioClip = {
-          ...active,
-          id: `${active.id}-a${stamp}`,
-          name: `${active.name} A`,
-          peaks: active.peaks.slice(0, cut),
-          duration: active.duration * f,
-        };
-        const b: AudioClip = {
-          ...active,
-          id: `${active.id}-b${stamp}`,
-          name: `${active.name} B`,
-          peaks: active.peaks.slice(cut),
-          duration: active.duration * (1 - f),
-        };
-        updateTrack(trackId, {
-          clips: clips.flatMap((c) => (c.id === active.id ? [a, b] : [c])),
-          activeClipId: a.id,
-        });
-        toast.success("Clip split", { description: `${active.name} → ${a.name} + ${b.name}` });
-      },
+      splitClipAt: splitClipAtImpl,
       splitAtPlayhead: () => {
         const id = selectedIdRef.current;
         if (!id) {
-          toast("Select a channel first", { description: "Click the channel whose clip you want to split." });
+          toast("Select a channel first", { description: "Click the channel whose clip or notes you want to split." });
           return;
         }
         const step = transportRef.current.step ?? 0;
         const frac = Math.min(0.98, Math.max(0.02, (step % 16) / 16));
         const t = tracksRef.current.find((x) => x.id === id);
-        if (t && (t.kind === "instrument" || t.kind === "midi" || t.kind === "sampler") && (t.notes?.length ?? 0) > 0) {
+        if (t && (t.kind === "instrument" || t.kind === "midi" || t.kind === "sampler")) {
           const cutStep = step % 16;
           const notes = t.notes ?? [];
           const crossing = notes.filter((n) => n.step % 16 < cutStep && (n.step % 16) + n.length > cutStep);
@@ -514,12 +484,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           toast.success(`Split ${crossing.length} note${crossing.length > 1 ? "s" : ""} at the playhead`);
           return;
         }
-        const engine = getEngine();
-        engine.init();
-        const api2 = apiRefSplit;
-        void api2;
-        const call = splitClipAtRef.current;
-        call?.(id, frac);
+        splitClipAtImpl(id, frac);
       },
       addTrack: (kind, name, preset) => {
         const id = uid();
