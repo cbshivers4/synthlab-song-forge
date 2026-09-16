@@ -668,6 +668,12 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         engine.init();
         engine.syncMix(tracksRef.current);
         if (t?.patch) engine.playNote(t.id, t.patch, midi, 0.35, 0.9);
+        // Notes played on screen are captured while the transport records.
+        const tp = transportRef.current;
+        if (t && tp.recording && (t.kind === "instrument" || t.kind === "midi" || t.kind === "sampler")) {
+          const note: MidiNote = { id: uid(), step: tp.step, length: 1, pitch: midi, velocity: 0.9 };
+          setTracks((ts) => ts.map((x) => (x.id === t.id ? { ...x, notes: [...(x.notes ?? []), note] } : x)));
+        }
       },
       installedPlugins,
       installPlugin: (d) => setInstalledPlugins((ps) => [...ps.filter((x) => x.id !== d.id), d]),
