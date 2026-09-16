@@ -151,20 +151,20 @@ export function WelcomeScreen() {
             </p>
           </div>
 
-          <div className="grid w-full grid-cols-3 gap-3 sm:grid-cols-5">
+          <ul className="grid w-full grid-cols-1 gap-x-10 gap-y-3 sm:grid-cols-2">
             {FEATURES.map((f) => (
-              <div
-                key={f.title}
-                title={f.body}
-                className="group flex aspect-square flex-col items-center justify-center gap-2 rounded-lg border border-border bg-card/50 p-2 text-center transition-all hover:border-primary/50"
-              >
-                <span className="text-muted-foreground transition-colors group-hover:text-primary">{f.icon}</span>
-                <span className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground transition-colors group-hover:text-foreground">
-                  {f.title}
+              <li key={f.title} className="group flex items-start gap-3">
+                <span
+                  aria-hidden
+                  className="mt-[7px] size-1.5 shrink-0 rotate-45 bg-primary transition-colors group-hover:bg-foreground"
+                />
+                <span className="text-sm leading-snug">
+                  <span className="font-semibold text-foreground">{f.title}</span>
+                  <span className="text-muted-foreground"> — {f.body}</span>
                 </span>
-              </div>
+              </li>
             ))}
-          </div>
+          </ul>
 
           <footer className="mt-12 w-full border-t border-border pt-6 font-mono text-[10px] uppercase tracking-[0.3em] text-muted-foreground/50">
             SYNCLAB · Detroit Electronic Sound Design
