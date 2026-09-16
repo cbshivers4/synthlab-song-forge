@@ -1,0 +1,4 @@
+# Roadmap
+
+- [ ] Make the original SYNCLAB logo clearly visible on the welcome/login screen
+- [ ] Restyle the welcome/login screen after the user chooses a visual direction
