@@ -41,10 +41,10 @@ export const TEMPLATES: ProjectTemplate[] = [
       { kind: "drum", name: "KICK" },
       { kind: "drum", name: "DRUMS" },
       { kind: "drum", name: "PERCUSSION" },
-      { kind: "instrument", name: "BASS", preset: "Sub Pressure" },
+      { kind: "instrument", name: "BASS", preset: "Sub Bass" },
       { kind: "instrument", name: "SYNTH 1", preset: "Cybotron Lead" },
       { kind: "instrument", name: "SYNTH 2", preset: "Metro Pluck" },
-      { kind: "instrument", name: "PAD", preset: "Belleville Pad" },
+      { kind: "instrument", name: "PAD", preset: "Warehouse Pad" },
       { kind: "audio", name: "FX" },
       { kind: "ai-vocal", name: "VOCAL", preset: "Vocoder Bot" },
     ],
@@ -57,7 +57,7 @@ export const TEMPLATES: ProjectTemplate[] = [
     key: "C Minor",
     tracks: [
       { kind: "drum", name: "808 DRUMS" },
-      { kind: "instrument", name: "ELECTRO BASS", preset: "Sub Pressure" },
+      { kind: "instrument", name: "ELECTRO BASS", preset: "Sub Bass" },
       { kind: "instrument", name: "LEAD", preset: "Cybotron Lead" },
       { kind: "ai-vocal", name: "VOCODER", preset: "Vocoder Bot" },
     ],
@@ -71,7 +71,7 @@ export const TEMPLATES: ProjectTemplate[] = [
     tracks: [
       { kind: "drum", name: "DRUMS" },
       { kind: "sampler", name: "CHOPS", preset: "Metro Pluck" },
-      { kind: "instrument", name: "BASS", preset: "Sub Pressure" },
+      { kind: "instrument", name: "BASS", preset: "Sub Bass" },
       { kind: "audio", name: "VOCAL" },
     ],
   },
@@ -83,9 +83,9 @@ export const TEMPLATES: ProjectTemplate[] = [
     key: "A Minor",
     tracks: [
       { kind: "drum", name: "DRUMS" },
-      { kind: "instrument", name: "BASS", preset: "Sub Pressure" },
+      { kind: "instrument", name: "BASS", preset: "Sub Bass" },
       { kind: "instrument", name: "KEYS", preset: "Deep Keys" },
-      { kind: "instrument", name: "PAD", preset: "Belleville Pad" },
+      { kind: "instrument", name: "PAD", preset: "Warehouse Pad" },
       { kind: "audio", name: "VOCAL" },
     ],
   },
@@ -98,7 +98,7 @@ export const TEMPLATES: ProjectTemplate[] = [
     tracks: [
       { kind: "drum", name: "DRUMS" },
       { kind: "instrument", name: "CHORDS", preset: "Deep Keys" },
-      { kind: "instrument", name: "SUB", preset: "Sub Pressure" },
+      { kind: "instrument", name: "SUB", preset: "Sub Bass" },
       { kind: "audio", name: "VOCAL" },
     ],
   },
@@ -111,7 +111,7 @@ export const TEMPLATES: ProjectTemplate[] = [
     tracks: [
       { kind: "drum", name: "DRUMS" },
       { kind: "sampler", name: "SAMPLE", preset: "Metro Pluck" },
-      { kind: "instrument", name: "808", preset: "Sub Pressure" },
+      { kind: "instrument", name: "808", preset: "Sub Bass" },
       { kind: "audio", name: "LEAD VOCAL" },
       { kind: "audio", name: "AD LIBS" },
     ],
@@ -124,7 +124,7 @@ export const TEMPLATES: ProjectTemplate[] = [
     key: "C Minor",
     tracks: [
       { kind: "drum", name: "DRUMS" },
-      { kind: "instrument", name: "808", preset: "Sub Pressure" },
+      { kind: "instrument", name: "808", preset: "Sub Bass" },
       { kind: "instrument", name: "LEAD", preset: "Metro Pluck" },
       { kind: "audio", name: "VOCAL" },
     ],
@@ -138,7 +138,7 @@ export const TEMPLATES: ProjectTemplate[] = [
     tracks: [
       { kind: "drum", name: "DRUMS" },
       { kind: "instrument", name: "KEYS", preset: "Deep Keys" },
-      { kind: "instrument", name: "BASS", preset: "Sub Pressure" },
+      { kind: "instrument", name: "BASS", preset: "Sub Bass" },
       { kind: "audio", name: "LEAD VOCAL" },
       { kind: "audio", name: "HARMONY" },
     ],
@@ -151,7 +151,7 @@ export const TEMPLATES: ProjectTemplate[] = [
     key: "C Major",
     tracks: [
       { kind: "drum", name: "DRUMS" },
-      { kind: "instrument", name: "BASS", preset: "Sub Pressure" },
+      { kind: "instrument", name: "BASS", preset: "Sub Bass" },
       { kind: "instrument", name: "KEYS", preset: "Deep Keys" },
       { kind: "instrument", name: "SYNTH", preset: "Cybotron Lead" },
       { kind: "audio", name: "LEAD VOCAL" },
@@ -179,8 +179,8 @@ export const TEMPLATES: ProjectTemplate[] = [
     bpm: 72,
     key: "A Minor",
     tracks: [
-      { kind: "instrument", name: "PAD 1", preset: "Belleville Pad" },
-      { kind: "instrument", name: "PAD 2", preset: "Belleville Pad" },
+      { kind: "instrument", name: "PAD 1", preset: "Warehouse Pad" },
+      { kind: "instrument", name: "PAD 2", preset: "Warehouse Pad" },
       { kind: "audio", name: "TEXTURE" },
     ],
   },
