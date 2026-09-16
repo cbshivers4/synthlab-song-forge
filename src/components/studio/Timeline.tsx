@@ -430,6 +430,10 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
       }
       return;
     }
+    if (payload.type === "tool") {
+      toast("Drop tools below the tracks", { description: "That area creates a new channel for the tool." });
+      return;
+    }
     const def = installedPlugins.find((d) => d.id === payload.defId);
     if (def) {
       addPlugin(track.id, def);
