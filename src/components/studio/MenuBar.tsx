@@ -1,0 +1,200 @@
+import {
+  Menubar,
+  MenubarContent,
+  MenubarItem,
+  MenubarMenu,
+  MenubarSeparator,
+  MenubarShortcut,
+  MenubarTrigger,
+} from "@/components/ui/menubar";
+import { useStudio } from "@/lib/synclab/store";
+import { useApp } from "@/lib/synclab/app-state";
+import { toast } from "sonner";
+
+const notYet = (what: string, why: string) => () => toast(what, { description: why });
+
+export function MenuBar() {
+  const { setPanel, addTrack, selected, duplicateTrack, removeTrack, togglePlay, toggleRecord, stop, transport, setTransport } =
+    useStudio();
+  const { setStage, mode, toggleMode, project } = useApp();
+
+  const needTrack = (fn: (id: string) => void) => () => {
+    if (!selected) {
+      toast("Select a track first", { description: "Click a track name in the timeline, then try again." });
+      return;
+    }
+    fn(selected.id);
+  };
+
+  return (
+    <div className="flex items-center gap-2 border-b border-border bg-surface/70 px-2">
+      <Menubar className="h-8 border-0 bg-transparent p-0">
+        <MenubarMenu>
+          <MenubarTrigger className="text-xs">File</MenubarTrigger>
+          <MenubarContent>
+            <MenubarItem onClick={() => setStage("start")}>New Project</MenubarItem>
+            <MenubarItem onClick={() => setStage("start")}>Open Project</MenubarItem>
+            <MenubarSeparator />
+            <MenubarItem onClick={notYet("Saving needs an account", "Cloud projects arrive with the accounts stage.")}>
+              Save <MenubarShortcut>⌘S</MenubarShortcut>
+            </MenubarItem>
+            <MenubarItem onClick={notYet("Save As needs an account", "Cloud projects arrive with the accounts stage.")}>
+              Save As
+            </MenubarItem>
+            <MenubarItem onClick={notYet("Save Template needs an account", "Custom templates are stored with your account.")}>
+              Save Template
+            </MenubarItem>
+            <MenubarSeparator />
+            <MenubarItem onClick={() => setPanel("browser")}>Import Audio</MenubarItem>
+            <MenubarItem onClick={notYet("MIDI file import is not built yet", "Record or draw MIDI in the piano roll meanwhile.")}>
+              Import MIDI
+            </MenubarItem>
+            <MenubarItem onClick={notYet("Export is coming in the recording stage", "Bouncing the mix to WAV/MP3 is next up.")}>
+              Export
+            </MenubarItem>
+          </MenubarContent>
+        </MenubarMenu>
+
+        <MenubarMenu>
+          <MenubarTrigger className="text-xs">Edit</MenubarTrigger>
+          <MenubarContent>
+            <MenubarItem onClick={notYet("Undo history is coming", "Project-wide undo lands with project saving.")}>
+              Undo <MenubarShortcut>⌘Z</MenubarShortcut>
+            </MenubarItem>
+            <MenubarItem onClick={notYet("Redo history is coming", "Project-wide undo lands with project saving.")}>
+              Redo <MenubarShortcut>⇧⌘Z</MenubarShortcut>
+            </MenubarItem>
+            <MenubarSeparator />
+            <MenubarItem onClick={needTrack((id) => duplicateTrack(id))}>
+              Duplicate Track <MenubarShortcut>⌘D</MenubarShortcut>
+            </MenubarItem>
+            <MenubarItem onClick={needTrack((id) => removeTrack(id))}>Delete Track</MenubarItem>
+          </MenubarContent>
+        </MenubarMenu>
+
+        <MenubarMenu>
+          <MenubarTrigger className="text-xs">View</MenubarTrigger>
+          <MenubarContent>
+            <MenubarItem onClick={() => setPanel("mixer")}>Mixer</MenubarItem>
+            <MenubarItem onClick={() => setPanel("piano")}>Piano Roll</MenubarItem>
+            <MenubarItem onClick={() => setPanel("keys")}>Keyboard</MenubarItem>
+            <MenubarItem onClick={() => setPanel("appearance")}>Appearance & Themes</MenubarItem>
+            <MenubarSeparator />
+            <MenubarItem onClick={toggleMode}>
+              {mode === "simple" ? "Switch to Advanced Mode" : "Switch to Simple Mode"}
+            </MenubarItem>
+          </MenubarContent>
+        </MenubarMenu>
+
+        <MenubarMenu>
+          <MenubarTrigger className="text-xs">Project</MenubarTrigger>
+          <MenubarContent>
+            <MenubarItem disabled>{project ? project.name : "Untitled session"}</MenubarItem>
+            <MenubarSeparator />
+            <MenubarItem onClick={() => setPanel("settings")}>Project Settings</MenubarItem>
+            <MenubarItem onClick={() => setStage("start")}>Templates</MenubarItem>
+          </MenubarContent>
+        </MenubarMenu>
+
+        <MenubarMenu>
+          <MenubarTrigger className="text-xs">Track</MenubarTrigger>
+          <MenubarContent>
+            <MenubarItem onClick={() => addTrack("audio", "AUDIO")}>Add Audio Track</MenubarItem>
+            <MenubarItem onClick={() => addTrack("instrument", "INSTRUMENT", "Cybotron Lead")}>Add Instrument</MenubarItem>
+            <MenubarItem onClick={() => addTrack("midi", "MIDI", "Deep Keys")}>Add MIDI Track</MenubarItem>
+            <MenubarItem onClick={() => addTrack("drum", "DRUM MACHINE")}>Add Drum Machine</MenubarItem>
+            <MenubarItem onClick={() => addTrack("sampler", "SAMPLER", "Metro Pluck")}>Add Sampler</MenubarItem>
+            <MenubarItem onClick={() => addTrack("ai-vocal", "AI VOCAL", "Vocoder Bot")}>Add AI Vocal</MenubarItem>
+          </MenubarContent>
+        </MenubarMenu>
+
+        <MenubarMenu>
+          <MenubarTrigger className="text-xs">Audio</MenubarTrigger>
+          <MenubarContent>
+            <MenubarItem onClick={togglePlay}>{transport.playing ? "Pause" : "Play"}</MenubarItem>
+            <MenubarItem onClick={stop}>Stop</MenubarItem>
+            <MenubarItem onClick={toggleRecord}>Record</MenubarItem>
+            <MenubarSeparator />
+            <MenubarItem onClick={() => setTransport({ metronome: !transport.metronome })}>Metronome</MenubarItem>
+            <MenubarItem onClick={() => setTransport({ countIn: !transport.countIn })}>Count-in</MenubarItem>
+            <MenubarItem onClick={() => setPanel("settings")}>Audio Settings</MenubarItem>
+          </MenubarContent>
+        </MenubarMenu>
+
+        <MenubarMenu>
+          <MenubarTrigger className="text-xs">MIDI</MenubarTrigger>
+          <MenubarContent>
+            <MenubarItem onClick={() => setPanel("piano")}>Piano Roll</MenubarItem>
+            <MenubarItem onClick={() => setPanel("keys")}>Virtual Keyboard</MenubarItem>
+            <MenubarItem onClick={() => setPanel("settings")}>MIDI Devices</MenubarItem>
+          </MenubarContent>
+        </MenubarMenu>
+
+        <MenubarMenu>
+          <MenubarTrigger className="text-xs">Tools</MenubarTrigger>
+          <MenubarContent>
+            <MenubarItem onClick={() => setPanel("synth")}>Synthesizer</MenubarItem>
+            <MenubarItem onClick={() => setPanel("drums")}>Drum Machine</MenubarItem>
+            <MenubarItem onClick={() => setPanel("browser")}>Browser</MenubarItem>
+            <MenubarItem onClick={() => setPanel("mixer")}>Mixer</MenubarItem>
+          </MenubarContent>
+        </MenubarMenu>
+
+        <MenubarMenu>
+          <MenubarTrigger className="text-xs">AI</MenubarTrigger>
+          <MenubarContent>
+            <MenubarItem onClick={() => setPanel("vocal")}>Vocal Forge</MenubarItem>
+            <MenubarItem onClick={notYet("Stem separation needs its backend", "It arrives in the AI stage of the build.")}>
+              Stem Separator
+            </MenubarItem>
+            <MenubarItem onClick={notYet("Voice remover needs its backend", "It arrives in the AI stage of the build.")}>
+              Voice Remover
+            </MenubarItem>
+            <MenubarItem onClick={notYet("AI Co-Producer needs its backend", "It arrives in the AI stage of the build.")}>
+              AI Co-Producer
+            </MenubarItem>
+          </MenubarContent>
+        </MenubarMenu>
+
+        <MenubarMenu>
+          <MenubarTrigger className="text-xs">Plugins</MenubarTrigger>
+          <MenubarContent>
+            <MenubarItem onClick={() => setPanel("plugins")}>Plugin Rack</MenubarItem>
+            <MenubarItem onClick={() => setPanel("settings")}>Plugin Settings</MenubarItem>
+          </MenubarContent>
+        </MenubarMenu>
+
+        <MenubarMenu>
+          <MenubarTrigger className="text-xs">Window</MenubarTrigger>
+          <MenubarContent>
+            <MenubarItem onClick={() => setPanel("mixer")}>Mixer (pop out from its header)</MenubarItem>
+            <MenubarItem onClick={() => setPanel(null)}>Close Editor</MenubarItem>
+          </MenubarContent>
+        </MenubarMenu>
+
+        <MenubarMenu>
+          <MenubarTrigger className="text-xs">Help</MenubarTrigger>
+          <MenubarContent>
+            <MenubarItem onClick={() => setPanel("settings")}>Preferences</MenubarItem>
+            <MenubarItem
+              onClick={() =>
+                toast("Keyboard shortcuts", {
+                  description: "Space play/stop · R record · S split · Delete remove · ⌘D duplicate",
+                })
+              }
+            >
+              Keyboard Shortcuts
+            </MenubarItem>
+            <MenubarItem onClick={notYet("Tutorials are coming", "Interactive tutorials land in the final stage.")}>
+              Tutorials
+            </MenubarItem>
+          </MenubarContent>
+        </MenubarMenu>
+      </Menubar>
+
+      <span className="ml-auto font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
+        {project ? `${project.name} · ${project.key} · ${project.timeSig}` : "untitled session"} · {mode} mode
+      </span>
+    </div>
+  );
+}

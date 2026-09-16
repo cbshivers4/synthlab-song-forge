@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
 import { StudioProvider } from "@/lib/synclab/store";
+import { AppProvider } from "@/lib/synclab/app-state";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 
 function NotFoundComponent() {
@@ -123,11 +124,13 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <StudioProvider>
-        {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-        <Outlet />
-        <Toaster position="bottom-right" />
-      </StudioProvider>
+      <AppProvider>
+        <StudioProvider>
+          {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+          <Outlet />
+          <Toaster position="bottom-right" />
+        </StudioProvider>
+      </AppProvider>
     </QueryClientProvider>
   );
 }
