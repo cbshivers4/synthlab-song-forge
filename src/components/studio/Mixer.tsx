@@ -258,44 +258,131 @@ function SendsMenu({ t }: { t: Track }) {
   );
 }
 
+/* ---- Ableton-style section geometry: every column shares these row heights ---- */
+const ROW = {
+  devices: "h-[86px]",
+  sends: "h-7",
+  io: "h-[52px]",
+  pan: "h-[38px]",
+  fader: "h-[260px]",
+  readout: "h-5",
+  buttons: "h-6",
+  name: "h-7",
+} as const;
+
+function SectionLabel({ children, className }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div
+      className={cn(
+        "flex items-center justify-end border-b border-border/60 pr-2 font-mono text-[8px] uppercase tracking-widest text-muted-foreground",
+        className
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
+/** Left-hand label rail, mirrors the strip row heights (Ableton's session-mixer rail). */
+function LabelRail() {
+  return (
+    <div className="sticky left-0 z-10 flex w-[74px] shrink-0 flex-col border-r border-border bg-surface-2/80 backdrop-blur">
+      <SectionLabel className={ROW.devices}>Devices</SectionLabel>
+      <SectionLabel className={ROW.sends}>Sends</SectionLabel>
+      <SectionLabel className={ROW.io}>Audio to</SectionLabel>
+      <SectionLabel className={ROW.pan}>Pan</SectionLabel>
+      <SectionLabel className={cn(ROW.fader, "items-start pt-2")}>Vol</SectionLabel>
+      <SectionLabel className={ROW.readout} />
+      <SectionLabel className={ROW.buttons}>M / S / Rec</SectionLabel>
+      <SectionLabel className={cn(ROW.name, "border-b-0")}>Track</SectionLabel>
+    </div>
+  );
+}
+
+/** Compact device chain shown directly on the strip, like Ableton's device slots. */
+function DeviceSlots({ t }: { t: Track }) {
+  const { addPlugin, removePlugin, togglePluginBypass, setPluginParam } = useStudio();
+  const list = t.plugins ?? [];
+  return (
+    <div className={cn(ROW.devices, "w-full space-y-0.5 overflow-hidden border-b border-border/60 px-1 py-1")}>
+      {list.slice(0, 3).map((p) => (
+        <div key={p.id} className="flex items-center gap-1 rounded-sm bg-surface-2 px-1 py-[3px]">
+          <button onClick={(e) => { e.stopPropagation(); togglePluginBypass(t.id, p.id); }} title="Bypass">
+            <Power className={cn("size-2.5", p.bypass ? "text-muted-foreground" : "text-primary")} />
+          </button>
+          <span className="flex-1 truncate font-mono text-[8px] uppercase">{p.name}</span>
+        </div>
+      ))}
+      {list.length > 3 && (
+        <div className="px-1 font-mono text-[8px] text-muted-foreground">+{list.length - 3} more</div>
+      )}
+      <Popover>
+        <PopoverTrigger asChild>
+          <button
+            onClick={(e) => e.stopPropagation()}
+            className="flex h-5 w-full items-center justify-center gap-1 rounded-sm border border-dashed border-border font-mono text-[8px] uppercase tracking-wider text-muted-foreground hover:text-foreground"
+          >
+            <Settings2 className="size-2.5" /> {list.length ? `Edit ${list.length}` : "Add device"}
+          </button>
+        </PopoverTrigger>
+        <PopoverContent align="start" className="w-64 p-3" onClick={(e) => e.stopPropagation()}>
+          <InsertRack
+            title="Inserts"
+            list={list}
+            onAdd={(def) => addPlugin(t.id, def)}
+            onRemove={(id) => removePlugin(t.id, id)}
+            onBypass={(id) => togglePluginBypass(t.id, id)}
+            onParam={(id, p, v) => setPluginParam(t.id, id, p, v)}
+          />
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}
+
 function Strip({ t, level, selected, onSelect }: { t: Track; level: number; selected: boolean; onSelect: () => void }) {
-  const { updateTrack, addPlugin, removePlugin, togglePluginBypass, setPluginParam } = useStudio();
+  const { updateTrack } = useStudio();
 
   return (
     <div
       onClick={onSelect}
       className={cn(
-        "flex w-[108px] shrink-0 cursor-pointer flex-col items-center gap-1.5 border-r border-border bg-surface px-1.5 py-2 transition-colors",
+        "flex w-[116px] shrink-0 cursor-pointer flex-col border-r border-border bg-surface transition-colors",
         selected && "bg-surface-2"
       )}
-      style={selected ? { boxShadow: `inset 0 2px 0 0 ${t.color}` } : undefined}
     >
-      {/* colour + instrument badge */}
-      <div
-        className="flex w-full items-center justify-center gap-1 rounded-sm px-1 py-1"
-        style={{
-          background: `color-mix(in oklab, ${t.color} 22%, transparent)`,
-          boxShadow: `inset 0 0 0 1px color-mix(in oklab, ${t.color} 45%, transparent)`,
-        }}
-        title={t.instrument ?? t.kind}
-      >
-        <KindIcon t={t} className="size-3 shrink-0" />
-        <span className="truncate font-mono text-[8px] uppercase tracking-wider" style={{ color: t.color }}>
+      {/* devices */}
+      <DeviceSlots t={t} />
+
+      {/* sends */}
+      <div className={cn(ROW.sends, "border-b border-border/60 px-1 py-[2px]")}>
+        <SendsMenu t={t} />
+      </div>
+
+      {/* audio-to routing */}
+      <div className={cn(ROW.io, "flex flex-col justify-center gap-0.5 border-b border-border/60 px-1")}>
+        <Select value={t.bus} onValueChange={(v) => updateTrack(t.id, { bus: v as BusId })}>
+          <SelectTrigger
+            onClick={(e) => e.stopPropagation()}
+            className="h-6 w-full rounded-sm border-border bg-surface-2 px-1 font-mono text-[8px] uppercase"
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {BUSES.map((b) => (
+              <SelectItem key={b} value={b} className="text-xs uppercase">
+                {b}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <div className="truncate text-center font-mono text-[7px] uppercase tracking-wider text-muted-foreground">
           {t.instrument ?? t.kind}
-        </span>
+        </div>
       </div>
-
-      {/* name plate */}
-      <div className="flex w-full items-center gap-1">
-        <span className="size-1.5 shrink-0 rounded-full" style={{ background: t.color }} />
-        <span className="truncate font-mono text-[9px] font-semibold uppercase tracking-wider text-foreground">
-          {t.name}
-        </span>
-      </div>
-
 
       {/* pan */}
-      <div className="w-full">
+      <div className={cn(ROW.pan, "flex flex-col justify-center border-b border-border/60 px-1.5")}>
         <Slider
           value={[t.pan]}
           min={-1}
@@ -310,8 +397,8 @@ function Strip({ t, level, selected, onSelect }: { t: Track; level: number; sele
       </div>
 
       {/* fader + scale + meter */}
-      <div className="flex items-stretch gap-1">
-        <div className="flex h-64 flex-col justify-between py-1">
+      <div className={cn(ROW.fader, "flex items-stretch justify-center gap-1 border-b border-border/60 py-1")}>
+        <div className="flex flex-col justify-between py-1">
           {DB_TICKS.map((db) => (
             <div key={db} className="flex items-center gap-0.5">
               <span className="font-mono text-[7px] leading-none text-muted-foreground">
@@ -321,32 +408,29 @@ function Strip({ t, level, selected, onSelect }: { t: Track; level: number; sele
             </div>
           ))}
         </div>
-        <div className="relative">
-          <Slider
-            orientation="vertical"
-            className="h-64 w-7"
-            value={[t.volume]}
-            min={0}
-            max={1}
-            step={0.01}
-            onValueChange={([v = 0]) => updateTrack(t.id, { volume: v })}
-          />
-        </div>
+        <Slider
+          orientation="vertical"
+          className="h-full w-7"
+          value={[t.volume]}
+          min={0}
+          max={1}
+          step={0.01}
+          onValueChange={([v = 0]) => updateTrack(t.id, { volume: v })}
+        />
         <Meter level={level} tall />
       </div>
 
       {/* dB readout */}
-      <span className={cn("font-mono text-[9px]", level > 0.98 ? "text-red-400" : "text-muted-foreground")}>
-        {toDb(t.volume).toFixed(1)}
-      </span>
+      <div className={cn(ROW.readout, "flex items-center justify-center border-b border-border/60")}>
+        <span className={cn("font-mono text-[9px]", level > 0.98 ? "text-red-400" : "text-muted-foreground")}>
+          {toDb(t.volume).toFixed(1)} dB
+        </span>
+      </div>
 
-      {/* M / S */}
-      <div className="flex w-full gap-1">
+      {/* M / S / arm */}
+      <div className={cn(ROW.buttons, "flex items-center gap-1 border-b border-border/60 px-1")}>
         <button
-          onClick={(e) => {
-            e.stopPropagation();
-            updateTrack(t.id, { muted: !t.muted });
-          }}
+          onClick={(e) => { e.stopPropagation(); updateTrack(t.id, { muted: !t.muted }); }}
           className={cn(
             "h-5 flex-1 rounded-sm font-mono text-[9px] font-bold transition-colors",
             t.muted ? "bg-amber-500 text-black" : "bg-surface-2 text-muted-foreground hover:text-foreground"
@@ -355,10 +439,7 @@ function Strip({ t, level, selected, onSelect }: { t: Track; level: number; sele
           M
         </button>
         <button
-          onClick={(e) => {
-            e.stopPropagation();
-            updateTrack(t.id, { solo: !t.solo });
-          }}
+          onClick={(e) => { e.stopPropagation(); updateTrack(t.id, { solo: !t.solo }); }}
           className={cn(
             "h-5 flex-1 rounded-sm font-mono text-[9px] font-bold transition-colors",
             t.solo ? "bg-primary text-primary-foreground" : "bg-surface-2 text-muted-foreground hover:text-foreground"
@@ -366,61 +447,48 @@ function Strip({ t, level, selected, onSelect }: { t: Track; level: number; sele
         >
           S
         </button>
+        <button
+          onClick={(e) => { e.stopPropagation(); updateTrack(t.id, { armed: !t.armed }); }}
+          title="Arm for recording"
+          className={cn(
+            "h-5 flex-1 rounded-sm font-mono text-[9px] font-bold transition-colors",
+            t.armed ? "bg-red-500 text-black" : "bg-surface-2 text-muted-foreground hover:text-foreground"
+          )}
+        >
+          ●
+        </button>
       </div>
 
-      {/* sends menu — reverb / delay / chorus live here now */}
-      <SendsMenu t={t} />
-
-      {/* routing / inserts menu */}
-      <Popover>
-        <PopoverTrigger asChild>
-          <button
-            onClick={(e) => e.stopPropagation()}
-            className="flex h-6 w-full items-center justify-center gap-1 rounded-sm bg-surface-2 font-mono text-[8px] uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <Settings2 className="size-3" /> {t.bus}
-          </button>
-        </PopoverTrigger>
-        <PopoverContent align="start" className="w-64 space-y-3 p-3" onClick={(e) => e.stopPropagation()}>
-          <div>
-            <div className="label-xs mb-1">Bus</div>
-            <Select value={t.bus} onValueChange={(v) => updateTrack(t.id, { bus: v as BusId })}>
-              <SelectTrigger className="h-7 w-full text-xs uppercase">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {BUSES.map((b) => (
-                  <SelectItem key={b} value={b} className="text-xs uppercase">
-                    {b}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <InsertRack
-            title="Inserts"
-            list={t.plugins ?? []}
-            onAdd={(def) => addPlugin(t.id, def)}
-            onRemove={(id) => removePlugin(t.id, id)}
-            onBypass={(id) => togglePluginBypass(t.id, id)}
-            onParam={(id, p, v) => setPluginParam(t.id, id, p, v)}
-          />
-        </PopoverContent>
-      </Popover>
-
+      {/* coloured name plate at the bottom, Ableton style */}
+      <div
+        className={cn(ROW.name, "flex items-center gap-1 px-1.5")}
+        style={{ background: `color-mix(in oklab, ${t.color} 30%, transparent)` }}
+        title={t.name}
+      >
+        <KindIcon t={t} className="size-3 shrink-0" />
+        <span className="truncate font-mono text-[9px] font-semibold uppercase tracking-wider text-foreground">
+          {t.name}
+        </span>
+      </div>
     </div>
   );
 }
 
 function BusStrip({ id, state, level, onChange }: { id: BusId; state: BusState; level: number; onChange: (p: Partial<BusState>) => void }) {
   return (
-    <div className="flex w-[84px] shrink-0 flex-col items-center gap-1.5 border-r border-border bg-surface-2/50 px-1.5 py-2">
-      <span className="truncate font-mono text-[9px] font-bold uppercase tracking-wider text-primary">{id}</span>
-      <span className="font-mono text-[7px] uppercase tracking-widest text-muted-foreground">Bus</span>
-      <div className="flex items-stretch gap-1">
+    <div className="flex w-[100px] shrink-0 flex-col border-r border-border bg-surface-2/40">
+      <div className={cn(ROW.devices, "border-b border-border/60 p-1")}>
+        <FxMenu target={`bus:${id}`} label="Devices" />
+      </div>
+      <div className={cn(ROW.sends, "border-b border-border/60")} />
+      <div className={cn(ROW.io, "flex items-center justify-center border-b border-border/60 font-mono text-[8px] uppercase tracking-widest text-muted-foreground")}>
+        Master
+      </div>
+      <div className={cn(ROW.pan, "border-b border-border/60")} />
+      <div className={cn(ROW.fader, "flex items-stretch justify-center gap-1 border-b border-border/60 py-1")}>
         <Slider
           orientation="vertical"
-          className="h-64 w-7"
+          className="h-full w-7"
           value={[state.volume]}
           min={0}
           max={1.2}
@@ -429,17 +497,23 @@ function BusStrip({ id, state, level, onChange }: { id: BusId; state: BusState; 
         />
         <Meter level={level} tall />
       </div>
-      <span className="font-mono text-[9px] text-muted-foreground">{toDb(state.volume).toFixed(1)}</span>
-      <button
-        onClick={() => onChange({ muted: !state.muted })}
-        className={cn(
-          "h-5 w-full rounded-sm font-mono text-[9px] font-bold transition-colors",
-          state.muted ? "bg-amber-500 text-black" : "bg-surface text-muted-foreground hover:text-foreground"
-        )}
-      >
-        M
-      </button>
-      <FxMenu target={`bus:${id}`} label="FX" />
+      <div className={cn(ROW.readout, "flex items-center justify-center border-b border-border/60")}>
+        <span className="font-mono text-[9px] text-muted-foreground">{toDb(state.volume).toFixed(1)} dB</span>
+      </div>
+      <div className={cn(ROW.buttons, "flex items-center px-1 border-b border-border/60")}>
+        <button
+          onClick={() => onChange({ muted: !state.muted })}
+          className={cn(
+            "h-5 w-full rounded-sm font-mono text-[9px] font-bold transition-colors",
+            state.muted ? "bg-amber-500 text-black" : "bg-surface text-muted-foreground hover:text-foreground"
+          )}
+        >
+          M
+        </button>
+      </div>
+      <div className={cn(ROW.name, "flex items-center justify-center bg-primary/20")}>
+        <span className="truncate font-mono text-[9px] font-bold uppercase tracking-wider text-primary">{id}</span>
+      </div>
     </div>
   );
 }
@@ -476,10 +550,17 @@ function FxMenu({ target, label }: { target: string; label: string }) {
 
 function MasterStrip({ level: peak }: { level: number }) {
   return (
-    <div className="flex w-[124px] shrink-0 flex-col items-center gap-1.5 bg-surface-2 px-2 py-2 shadow-[inset_2px_0_0_0_var(--grid-line-strong)]">
-      <span className="font-display text-[10px] font-bold uppercase tracking-widest text-primary">Master</span>
-      <div className="mt-3.5 flex items-stretch gap-1">
-        <div className="flex h-64 flex-col justify-between py-1">
+    <div className="flex w-[132px] shrink-0 flex-col bg-surface-2 shadow-[inset_2px_0_0_0_var(--grid-line-strong)]">
+      <div className={cn(ROW.devices, "border-b border-border/60 p-1")}>
+        <FxMenu target="bus:master" label="Master FX" />
+      </div>
+      <div className={cn(ROW.sends, "border-b border-border/60")} />
+      <div className={cn(ROW.io, "flex items-center justify-center border-b border-border/60 font-mono text-[8px] uppercase tracking-widest text-muted-foreground")}>
+        Main out
+      </div>
+      <div className={cn(ROW.pan, "border-b border-border/60")} />
+      <div className={cn(ROW.fader, "flex items-stretch justify-center gap-1 border-b border-border/60 py-1")}>
+        <div className="flex flex-col justify-between py-1">
           {DB_TICKS.map((db) => (
             <div key={db} className="flex items-center gap-0.5">
               <span className="font-mono text-[7px] leading-none text-muted-foreground">
@@ -492,12 +573,24 @@ function MasterStrip({ level: peak }: { level: number }) {
         <Meter level={peak} tall />
         <Meter level={peak} tall />
       </div>
-      <span className={cn("font-mono text-[9px]", peak > 0.98 ? "text-red-400" : "text-muted-foreground")}>
-        {toDb(peak).toFixed(1)} dB
-      </span>
-      <span className="mt-1 rounded-sm bg-surface px-1.5 py-0.5 font-mono text-[8px] uppercase tracking-wider text-muted-foreground">
-        {dbToFrac(toDb(peak)) > 0.99 ? "CLIP" : "OK"}
-      </span>
+      <div className={cn(ROW.readout, "flex items-center justify-center border-b border-border/60")}>
+        <span className={cn("font-mono text-[9px]", peak > 0.98 ? "text-red-400" : "text-muted-foreground")}>
+          {toDb(peak).toFixed(1)} dB
+        </span>
+      </div>
+      <div className={cn(ROW.buttons, "flex items-center justify-center border-b border-border/60")}>
+        <span
+          className={cn(
+            "rounded-sm px-1.5 py-0.5 font-mono text-[8px] uppercase tracking-wider",
+            dbToFrac(toDb(peak)) > 0.99 ? "bg-red-500 text-black" : "bg-surface text-muted-foreground"
+          )}
+        >
+          {dbToFrac(toDb(peak)) > 0.99 ? "CLIP" : "OK"}
+        </span>
+      </div>
+      <div className={cn(ROW.name, "flex items-center justify-center bg-primary/30")}>
+        <span className="font-display text-[10px] font-bold uppercase tracking-widest text-primary">Master</span>
+      </div>
     </div>
   );
 }
@@ -512,6 +605,7 @@ export function Mixer() {
   };
   return (
     <div className="flex overflow-x-auto border border-border bg-surface">
+      <LabelRail />
       {tracks.map((t) => (
         <Strip
           key={t.id}
@@ -525,7 +619,6 @@ export function Mixer() {
         <BusStrip key={id} id={id} state={buses[id]} level={busLevel(id)} onChange={(p) => setBus(id, p)} />
       ))}
       <MasterStrip level={levels.master} />
-
     </div>
   );
 }
