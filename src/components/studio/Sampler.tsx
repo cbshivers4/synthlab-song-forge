@@ -23,12 +23,13 @@ function Row({ label, value, children }: { label: string; value: string; childre
   );
 }
 
-/** Waveform with draggable trim handles. */
-function Waveform({ track }: { track: Track }) {
+/** Waveform with draggable trim handles and chop markers. */
+function Waveform({ track, onSlice }: { track: Track; onSlice: (i: number) => void }) {
   const { updateSampler } = useStudio();
   const s = track.sampler!;
   const ref = useRef<HTMLDivElement | null>(null);
-  const [drag, setDrag] = useState<"start" | "end" | null>(null);
+  const [drag, setDrag] = useState<"start" | "end" | number | null>(null);
+  const chops = s.slices ?? [];
 
   const fracAt = (clientX: number) => {
     const box = ref.current?.getBoundingClientRect();
@@ -37,10 +38,15 @@ function Waveform({ track }: { track: Track }) {
   };
 
   const move = (e: ReactPointerEvent) => {
-    if (!drag) return;
+    if (drag === null) return;
     const f = fracAt(e.clientX);
     if (drag === "start") updateSampler(track.id, { start: Math.min(f, s.end - 0.002) });
-    else updateSampler(track.id, { end: Math.max(f, s.start + 0.002) });
+    else if (drag === "end") updateSampler(track.id, { end: Math.max(f, s.start + 0.002) });
+    else {
+      const next = chops.slice();
+      next[drag] = Math.min(Math.max(f, s.start), s.end);
+      updateSampler(track.id, { slices: next.slice().sort((a, b) => a - b) });
+    }
   };
 
   return (
@@ -69,6 +75,30 @@ function Waveform({ track }: { track: Track }) {
 
       <div className="absolute inset-y-0 left-0 bg-background/70" style={{ width: `${s.start * 100}%` }} />
       <div className="absolute inset-y-0 right-0 bg-background/70" style={{ width: `${(1 - s.end) * 100}%` }} />
+
+      {chops.map((c, i) => (
+        <div
+          key={`chop-${i}`}
+          role="slider"
+          tabIndex={0}
+          aria-label={`Chop ${i + 1}`}
+          aria-valuenow={Math.round(c * 100)}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          onPointerDown={(e) => {
+            e.preventDefault();
+            setDrag(i);
+          }}
+          onDoubleClick={() => onSlice(i)}
+          className="absolute inset-y-0 z-20 w-3 -translate-x-1/2 cursor-col-resize"
+          style={{ left: `${c * 100}%` }}
+        >
+          <span className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-accent" />
+          <span className="absolute bottom-1 left-1/2 -translate-x-1/2 rounded-sm bg-accent px-1 font-mono text-[9px] text-accent-foreground">
+            {i + 1}
+          </span>
+        </div>
+      ))}
 
       {(["start", "end"] as const).map((h) => (
         <div
