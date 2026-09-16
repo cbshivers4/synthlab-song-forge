@@ -158,8 +158,40 @@ function Num({
 }
 
 export function Settings() {
-  const { transport, setTransport } = useStudio();
+  const { transport, setTransport, midiInputs, midiInputId, enableMidi, setMidiInput } = useStudio();
   const [p, setP] = useState<Prefs>(DEFAULTS);
+  const [inputs, setInputs] = useState<{ id: string; label: string }[]>([]);
+  const [outputs, setOutputs] = useState<{ id: string; label: string }[]>([]);
+  const [scanning, setScanning] = useState(false);
+
+  const scanDevices = async (askPermission: boolean) => {
+    if (typeof navigator === "undefined" || !navigator.mediaDevices?.enumerateDevices) return;
+    setScanning(true);
+    try {
+      if (askPermission) {
+        const s = await navigator.mediaDevices.getUserMedia({ audio: true });
+        s.getTracks().forEach((t) => t.stop());
+      }
+      const list = await navigator.mediaDevices.enumerateDevices();
+      setInputs(
+        list
+          .filter((d) => d.kind === "audioinput")
+          .map((d, i) => ({ id: d.deviceId, label: d.label || `Input ${i + 1}` })),
+      );
+      setOutputs(
+        list
+          .filter((d) => d.kind === "audiooutput")
+          .map((d, i) => ({ id: d.deviceId, label: d.label || `Output ${i + 1}` })),
+      );
+      if (askPermission) toast.success("Audio devices detected");
+    } catch {
+      toast.error("Could not read your audio devices", {
+        description: "Allow microphone access in the browser so interfaces can be listed by name.",
+      });
+    } finally {
+      setScanning(false);
+    }
+  };
 
   useEffect(() => {
     try {
@@ -168,6 +200,8 @@ export function Settings() {
     } catch {
       /* ignore */
     }
+    void scanDevices(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const set = <K extends keyof Prefs>(k: K, v: Prefs[K]) => {
