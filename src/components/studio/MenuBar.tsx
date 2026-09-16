@@ -29,6 +29,10 @@ export function MenuBar() {
     cutTrack,
     pasteTrack,
     clipboardName,
+    editTool,
+    setEditTool,
+    selectAll,
+    splitAtPlayhead,
   } = useStudio();
   const { setStage, mode, toggleMode, project } = useApp();
 
@@ -98,6 +102,23 @@ export function MenuBar() {
               Duplicate Track <MenubarShortcut>⌘D</MenubarShortcut>
             </MenubarItem>
             <MenubarItem onClick={needTrack((id) => removeTrack(id))}>Delete Track</MenubarItem>
+            <MenubarSeparator />
+            <MenubarItem onClick={selectAll}>
+              Select All <MenubarShortcut>⌘A</MenubarShortcut>
+            </MenubarItem>
+            <MenubarItem onClick={splitAtPlayhead}>
+              Split at Playhead <MenubarShortcut>S</MenubarShortcut>
+            </MenubarItem>
+            <MenubarSeparator />
+            <MenubarItem onClick={() => setEditTool("select")}>
+              {editTool === "select" ? "✓ " : ""}Select Tool <MenubarShortcut>V</MenubarShortcut>
+            </MenubarItem>
+            <MenubarItem onClick={() => setEditTool("draw")}>
+              {editTool === "draw" ? "✓ " : ""}Draw Tool <MenubarShortcut>B</MenubarShortcut>
+            </MenubarItem>
+            <MenubarItem onClick={() => setEditTool("split")}>
+              {editTool === "split" ? "✓ " : ""}Split Tool <MenubarShortcut>C</MenubarShortcut>
+            </MenubarItem>
           </MenubarContent>
         </MenubarMenu>
 

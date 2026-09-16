@@ -260,7 +260,7 @@ function FloatingDevices({ float, setFloat }: { float: FloatState; setFloat: (f:
 
 /** Global DAW keyboard shortcuts. */
 function useShortcuts() {
-  const { togglePlay, toggleRecord, stop, selected, duplicateTrack, removeTrack, setPanel, copyTrack, cutTrack, pasteTrack } =
+  const { togglePlay, toggleRecord, stop, selected, duplicateTrack, removeTrack, setPanel, copyTrack, cutTrack, pasteTrack, selectAll, splitAtPlayhead, setEditTool } =
     useStudio();
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -281,6 +281,9 @@ function useShortcuts() {
         } else if (k === "v") {
           e.preventDefault();
           pasteTrack();
+        } else if (k === "a") {
+          e.preventDefault();
+          selectAll();
         }
         return;
       }
@@ -297,8 +300,21 @@ function useShortcuts() {
         case "s":
         case "S":
           e.preventDefault();
-          setPanel("mixer");
-          toast("Split", { description: "Use the track ⋮ menu → Split at playhead on the selected clip." });
+          splitAtPlayhead();
+          break;
+        case "v":
+        case "V":
+          setEditTool("select");
+          break;
+        case "b":
+        case "B":
+          setEditTool("draw");
+          toast("Draw tool", { description: "Click a note or drum lane to write or erase a hit." });
+          break;
+        case "c":
+        case "C":
+          setEditTool("split");
+          toast("Split tool", { description: "Click an audio clip to cut it right there." });
           break;
         case "Escape":
           stop();
@@ -316,7 +332,7 @@ function useShortcuts() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [togglePlay, toggleRecord, stop, selected, duplicateTrack, removeTrack, setPanel, copyTrack, cutTrack, pasteTrack]);
+  }, [togglePlay, toggleRecord, stop, selected, duplicateTrack, removeTrack, setPanel, copyTrack, cutTrack, pasteTrack, selectAll, splitAtPlayhead, setEditTool]);
 }
 
 function StudioWorkspace() {

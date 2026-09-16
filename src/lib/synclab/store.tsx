@@ -75,10 +75,14 @@ export type PanelId =
   | "appearance"
   | null;
 
+export type EditTool = "select" | "draw" | "split";
+
 interface StudioState {
   tracks: Track[];
   transport: Transport;
   selectedId: string | null;
+  selectedIds: string[];
+  editTool: EditTool;
   panel: PanelId;
   userPresets: SynthPatch[];
   buses: Record<BusId, BusState>;
@@ -89,6 +93,11 @@ interface StudioApi extends StudioState {
   setBus: (id: BusId, patch: Partial<BusState>) => void;
   setPanel: (p: PanelId) => void;
   select: (id: string) => void;
+  setEditTool: (t: EditTool) => void;
+  selectAll: () => void;
+  toggleSelectId: (id: string) => void;
+  splitClipAt: (trackId: string, frac: number) => void;
+  splitAtPlayhead: () => void;
   addTrack: (kind: TrackKind, name?: string, preset?: string) => string;
   updateTrack: (id: string, patch: Partial<Track>) => void;
   removeTrack: (id: string) => void;
@@ -146,6 +155,8 @@ const Ctx = (g.__synclabCtx ??= createContext<StudioApi | null>(null));
 export function StudioProvider({ children }: { children: ReactNode }) {
   const [tracks, setTracks] = useState<Track[]>(initialTracks);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [editTool, setEditTool] = useState<EditTool>("select");
   const [panel, setPanel] = useState<PanelId>(null);
   const [userPresets, setUserPresets] = useState<SynthPatch[]>([]);
   const [transport, setTransportState] = useState<Transport>({
@@ -414,19 +425,102 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     });
   }, [updateTrack]);
 
+  const splitClipAtImpl = useCallback(
+    (trackId: string, frac: number) => {
+      const t = tracksRef.current.find((x) => x.id === trackId);
+      const clips = t?.clips ?? [];
+      const active = clips.find((c) => c.id === t?.activeClipId) ?? clips[clips.length - 1];
+      if (!t || !active) {
+        toast("Nothing to split", { description: "That channel has no recorded clip. Record audio first." });
+        return;
+      }
+      const f = Math.min(0.95, Math.max(0.05, frac));
+      const cut = Math.max(1, Math.min(active.peaks.length - 1, Math.round(active.peaks.length * f)));
+      const stamp = Date.now();
+      const a: AudioClip = {
+        ...active,
+        id: `${active.id}-a${stamp}`,
+        name: `${active.name} A`,
+        peaks: active.peaks.slice(0, cut),
+        duration: active.duration * f,
+      };
+      const b: AudioClip = {
+        ...active,
+        id: `${active.id}-b${stamp}`,
+        name: `${active.name} B`,
+        peaks: active.peaks.slice(cut),
+        duration: active.duration * (1 - f),
+      };
+      updateTrack(trackId, {
+        clips: clips.flatMap((c) => (c.id === active.id ? [a, b] : [c])),
+        activeClipId: a.id,
+      });
+      toast.success("Clip split", { description: `${active.name} → ${a.name} + ${b.name}` });
+    },
+    [updateTrack],
+  );
+
   const api: StudioApi = useMemo(() => {
     const selected = tracks.find((t) => t.id === selectedId) ?? null;
     return {
       tracks,
       transport,
       selectedId,
+      selectedIds,
+      editTool,
       panel,
       userPresets,
       buses,
       selected,
       setBus: (id, patch) => setBuses((b) => ({ ...b, [id]: { ...b[id], ...patch } })),
       setPanel,
-      select: (id) => setSelectedId(id),
+      select: (id) => {
+        setSelectedId(id);
+        setSelectedIds([id]);
+      },
+      setEditTool,
+      selectAll: () => {
+        const ids = tracksRef.current.map((t) => t.id);
+        setSelectedIds(ids);
+        if (ids.length > 0) setSelectedId(ids[ids.length - 1] ?? null);
+        toast("All channels selected", { description: `${ids.length} channels — delete or cut applies to the selection.` });
+      },
+      toggleSelectId: (id) =>
+        setSelectedIds((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id])),
+      splitClipAt: splitClipAtImpl,
+      splitAtPlayhead: () => {
+        const id = selectedIdRef.current;
+        if (!id) {
+          toast("Select a channel first", { description: "Click the channel whose clip or notes you want to split." });
+          return;
+        }
+        const step = transportRef.current.step ?? 0;
+        const frac = Math.min(0.98, Math.max(0.02, (step % 16) / 16));
+        const t = tracksRef.current.find((x) => x.id === id);
+        if (t && (t.kind === "instrument" || t.kind === "midi" || t.kind === "sampler")) {
+          const cutStep = step % 16;
+          const notes = t.notes ?? [];
+          const crossing = notes.filter((n) => n.step % 16 < cutStep && (n.step % 16) + n.length > cutStep);
+          if (crossing.length === 0) {
+            toast("No note crosses the playhead", { description: "Move the playhead over a note, or split an audio clip." });
+            return;
+          }
+          const next = notes.flatMap((n) => {
+            const s = n.step % 16;
+            if (s < cutStep && s + n.length > cutStep) {
+              return [
+                { ...n, length: cutStep - s },
+                { ...n, id: uid(), step: n.step + (cutStep - s), length: s + n.length - cutStep },
+              ];
+            }
+            return [n];
+          });
+          updateTrack(id, { notes: next });
+          toast.success(`Split ${crossing.length} note${crossing.length > 1 ? "s" : ""} at the playhead`);
+          return;
+        }
+        splitClipAtImpl(id, frac);
+      },
       addTrack: (kind, name, preset) => {
         const id = uid();
         setTracks((ts) => {
@@ -442,6 +536,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         getEngine().removeChannel(id);
         setTracks((ts) => ts.filter((t) => t.id !== id));
         setSelectedId((s) => (s === id ? null : s));
+        setSelectedIds((s) => s.filter((x) => x !== id));
       },
       duplicateTrack: (id) =>
         setTracks((ts) => {
@@ -484,6 +579,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         getEngine().removeChannel(id);
         setTracks((ts) => ts.filter((t) => t.id !== id));
         setSelectedId((s) => (s === id ? null : s));
+        setSelectedIds((s) => s.filter((x) => x !== id));
         toast("Cut", { description: `${src.name} removed and placed on the clipboard.` });
       },
       pasteTrack: () => {
@@ -800,7 +896,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           ),
         })),
     };
-  }, [tracks, transport, selectedId, panel, userPresets, buses, installedPlugins, fxChains, midiInputs, midiInputId, midiLearning, clipboardName, enableMidi, updateTrack, finishRecording]);
+  }, [tracks, transport, selectedId, selectedIds, editTool, panel, userPresets, buses, installedPlugins, fxChains, midiInputs, midiInputId, midiLearning, clipboardName, enableMidi, updateTrack, finishRecording, splitClipAtImpl]);
 
 
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>;

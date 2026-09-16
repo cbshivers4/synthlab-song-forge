@@ -2,7 +2,11 @@ import { useRef, useState } from "react";
 import {
   ArrowLeftToLine,
   ArrowRightToLine,
+  ClipboardPaste,
   Grid3x3,
+  ListChecks,
+  MousePointer2,
+  Pencil,
   Scissors,
   Waves,
   ChevronDown,
@@ -50,8 +54,9 @@ import { toast } from "sonner";
 import { useStudio } from "@/lib/synclab/store";
 import { AddTrackMenu } from "@/components/studio/AddTrackMenu";
 
-import { INSTRUMENTS, KIND_LABEL } from "@/lib/synclab/presets";
-import type { Track } from "@/lib/synclab/types";
+import { INSTRUMENTS, KIND_LABEL, uid } from "@/lib/synclab/presets";
+import type { EditTool } from "@/lib/synclab/store";
+import type { MidiNote, Track } from "@/lib/synclab/types";
 
 const KindIcon = ({ kind }: { kind: Track["kind"] }) =>
   kind === "drum" ? (
@@ -307,13 +312,13 @@ export const readDrag = (e: React.DragEvent): DragPayload | null => {
 };
 
 function TrackRow({ track, index }: { track: Track; index: number }) {
-  const { selectedId, select, updateTrack, removeTrack, duplicateTrack, moveTrack, setPanel, changeInstrument, installedPlugins, addPlugin } =
+  const { selectedId, selectedIds, select, toggleSelectId, updateTrack, removeTrack, duplicateTrack, moveTrack, setPanel, changeInstrument, installedPlugins, addPlugin, editTool, splitClipAt, toggleStep } =
     useStudio();
   const { transport, setNotes } = useStudio();
   const [renaming, setRenaming] = useState(false);
   const [confirm, setConfirm] = useState(false);
   const [dropping, setDropping] = useState(false);
-  const isSelected = selectedId === track.id;
+  const isSelected = selectedId === track.id || selectedIds.includes(track.id);
 
   const clips = track.clips ?? [];
   const activeClip = clips.find((c) => c.id === track.activeClipId) ?? clips[clips.length - 1];
@@ -324,23 +329,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
 
   const splitClip = () => {
     if (!activeClip) return;
-    const cut = Math.max(1, Math.round(activeClip.peaks.length * playFrac));
-    const a = {
-      ...activeClip,
-      id: `${activeClip.id}-a${Date.now()}`,
-      name: `${activeClip.name} A`,
-      peaks: activeClip.peaks.slice(0, cut),
-      duration: activeClip.duration * playFrac,
-    };
-    const b = {
-      ...activeClip,
-      id: `${activeClip.id}-b${Date.now()}`,
-      name: `${activeClip.name} B`,
-      peaks: activeClip.peaks.slice(cut),
-      duration: activeClip.duration * (1 - playFrac),
-    };
-    writeClips(clips.flatMap((c) => (c.id === activeClip.id ? [a, b] : [c])), a.id);
-    toast.success("Clip split at playhead");
+    splitClipAt(track.id, playFrac);
   };
 
   const trimClip = (side: "left" | "right") => {
@@ -451,7 +440,10 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
   return (
     <div
       className={`flex items-stretch border-b border-border/80 transition-colors ${isSelected ? "bg-surface-2/40" : "hover:bg-surface/50"} ${track.hidden ? "opacity-40" : ""} ${dropping ? "ring-1 ring-primary ring-inset" : ""}`}
-      onClick={() => select(track.id)}
+      onClick={(e) => {
+        if (e.metaKey || e.ctrlKey) toggleSelectId(track.id);
+        else select(track.id);
+      }}
       onDragOver={(e) => {
         e.preventDefault();
         setDropping(true);
@@ -649,7 +641,53 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
         </div>
       </div>
 
-      <div className="lane-grid relative min-h-[92px] flex-1 bg-background/70">
+      <div
+        className={`lane-grid relative min-h-[92px] flex-1 bg-background/70 ${
+          editTool === "draw" ? "cursor-crosshair" : editTool === "split" ? "cursor-col-resize" : ""
+        }`}
+        title={
+          editTool === "draw"
+            ? "Draw tool — click to write a note or drum hit"
+            : editTool === "split"
+              ? "Split tool — click a clip to cut it there"
+              : undefined
+        }
+        onClick={(e) => {
+          if (editTool === "select") return;
+          const r = e.currentTarget.getBoundingClientRect();
+          const frac = Math.min(0.99, Math.max(0, (e.clientX - r.left) / r.width));
+          const step = Math.floor(frac * 16);
+          if (editTool === "draw") {
+            if (track.kind === "instrument" || track.kind === "midi" || track.kind === "sampler") {
+              const notes = track.notes ?? [];
+              const existing = notes.find((n) => n.step % 16 === step);
+              if (existing) {
+                setNotes(track.id, notes.filter((n) => n.id !== existing.id));
+              } else {
+                const note: MidiNote = { id: uid(), step, length: 1, pitch: 60, velocity: 0.9 };
+                setNotes(track.id, [...notes, note]);
+              }
+            } else if (track.kind === "drum") {
+              const pad = track.pads?.[0];
+              if (pad) toggleStep(track.id, pad.id, step);
+              else toast("No pads on this drum channel", { description: "Open the drum machine and add a pad first." });
+            } else {
+              toast("Draw works on note and drum channels", { description: "Audio channels are recorded, not drawn." });
+            }
+            return;
+          }
+          // split tool
+          if (track.kind === "audio" || track.kind === "ai-vocal") {
+            if ((track.clips?.length ?? 0) === 0) {
+              toast("Nothing to split", { description: "Record audio on this channel first." });
+              return;
+            }
+            splitClipAt(track.id, frac);
+          } else {
+            toast("Split audio clips with a click", { description: "For note channels, park the playhead and press S." });
+          }
+        }}
+      >
         <Lane track={track} />
       </div>
 
@@ -668,6 +706,102 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
+  );
+}
+
+function EditToolbar() {
+  const {
+    editTool,
+    setEditTool,
+    selectAll,
+    splitAtPlayhead,
+    selected,
+    selectedIds,
+    tracks,
+    cutTrack,
+    copyTrack,
+    pasteTrack,
+    removeTrack,
+    clipboardName,
+  } = useStudio();
+
+  const ToolBtn = ({ tool, icon, label, keys }: { tool: EditTool; icon: React.ReactNode; label: string; keys: string }) => (
+    <Button
+      size="sm"
+      variant={editTool === tool ? "default" : "ghost"}
+      className="h-6 gap-1 px-2 text-[10px]"
+      title={`${label} (${keys})`}
+      onClick={() => setEditTool(tool)}
+    >
+      {icon} {label}
+    </Button>
+  );
+
+  const targets = selectedIds.length > 1 ? selectedIds : selected ? [selected.id] : [];
+
+  return (
+    <div className="flex items-center gap-1 border-b border-border bg-surface-2/60 px-2 py-1">
+      <ToolBtn tool="select" icon={<MousePointer2 className="size-3" />} label="Select" keys="V" />
+      <ToolBtn tool="draw" icon={<Pencil className="size-3" />} label="Draw" keys="B" />
+      <ToolBtn tool="split" icon={<Scissors className="size-3" />} label="Split" keys="C" />
+      <div className="mx-1 h-4 w-px bg-border" />
+      <Button size="sm" variant="ghost" className="h-6 gap-1 px-2 text-[10px]" title="Select all channels (⌘A / Ctrl+A)" onClick={selectAll}>
+        <ListChecks className="size-3" /> All
+      </Button>
+      <Button
+        size="sm"
+        variant="ghost"
+        className="h-6 gap-1 px-2 text-[10px]"
+        title="Split the selected channel's clip or notes at the playhead (S)"
+        onClick={splitAtPlayhead}
+      >
+        <Scissors className="size-3" /> Split at Playhead
+      </Button>
+      <div className="mx-1 h-4 w-px bg-border" />
+      <Button
+        size="sm"
+        variant="ghost"
+        className="h-6 gap-1 px-2 text-[10px]"
+        disabled={targets.length === 0}
+        title="Cut selection (⌘X / Ctrl+X)"
+        onClick={() => targets.forEach((id) => cutTrack(id))}
+      >
+        <Scissors className="size-3" /> Cut
+      </Button>
+      <Button
+        size="sm"
+        variant="ghost"
+        className="h-6 gap-1 px-2 text-[10px]"
+        disabled={targets.length === 0}
+        title="Copy selection (⌘C / Ctrl+C)"
+        onClick={() => targets[0] && copyTrack(targets[0])}
+      >
+        <Copy className="size-3" /> Copy
+      </Button>
+      <Button
+        size="sm"
+        variant="ghost"
+        className="h-6 gap-1 px-2 text-[10px]"
+        disabled={!clipboardName}
+        title="Paste (⌘V / Ctrl+V)"
+        onClick={pasteTrack}
+      >
+        <ClipboardPaste className="size-3" /> Paste
+      </Button>
+      <Button
+        size="sm"
+        variant="ghost"
+        className="h-6 gap-1 px-2 text-[10px] text-destructive"
+        disabled={targets.length === 0}
+        title="Delete selection (Del)"
+        onClick={() => targets.forEach((id) => removeTrack(id))}
+      >
+        <Trash2 className="size-3" /> Delete{targets.length > 1 ? ` ${targets.length}` : ""}
+      </Button>
+      <span className="label-xs ml-auto hidden sm:inline">
+        {selectedIds.length > 1 ? `${selectedIds.length} selected` : `${tracks.length} channels`}
+      </span>
     </div>
   );
 }
@@ -767,6 +901,7 @@ export function Timeline() {
   const [over, setOver] = useState(false);
   return (
     <section className="relative flex min-h-0 flex-1 flex-col overflow-hidden border-x border-b border-border bg-background/60">
+      <EditToolbar />
       <Ruler />
       <div className="relative min-h-0 flex-1 overflow-y-auto">
         {tracks.map((t, i) => (
