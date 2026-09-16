@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { AudioLines, Drum, Guitar, Mic, Mic2, Music2, Piano, Power, Radio, Settings2, Trash2 } from "lucide-react";
+import { AudioLines, Drum, Guitar, Mic, Mic2, Music2, Piano, Power, Radio, Settings2, Trash2, Waves } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
