@@ -162,6 +162,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
       {panel === "keys" && <Keyboard />}
       {panel === "browser" && <Browser />}
       {panel === "plugins" && <PluginRack />}
+      {panel === "appearance" && <Appearance />}
 
       </div>
 
