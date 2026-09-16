@@ -8,6 +8,7 @@ import {
   Mic,
   Mic2,
   Minimize2,
+  MoreVertical,
   Music2,
   Palette,
   Piano,
@@ -25,6 +26,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useStudio } from "@/lib/synclab/store";
 import { TRACK_COLORS } from "@/lib/synclab/presets";
+import { BUILT_IN_PLUGINS } from "@/lib/synclab/plugins";
 import type { BusId, BusState, PluginInstance, Track, Transport } from "@/lib/synclab/types";
 import { cn } from "@/lib/utils";
 
@@ -312,6 +314,7 @@ function SendsMenu({ t }: { t: Track }) {
 /* ---- Console section geometry: every column shares these row heights ---- */
 const ROW = {
   head: "h-7",
+  eq: "h-[74px]",
   devices: "h-[92px]",
   sends: "h-7",
   sendBars: "h-[26px]",
@@ -390,6 +393,7 @@ function LabelRail() {
   return (
     <div className="sticky left-0 z-10 flex w-[76px] shrink-0 flex-col border-r border-border bg-surface-2/85 backdrop-blur">
       <SectionLabel className={cn(ROW.head, "bg-surface-2")}>Ch</SectionLabel>
+      <SectionLabel className={ROW.eq}>EQ</SectionLabel>
       <SectionLabel className={ROW.devices}>Devices</SectionLabel>
       <SectionLabel className={ROW.sends}>Sends</SectionLabel>
       <SectionLabel className={ROW.sendBars}>R / D / C</SectionLabel>
@@ -478,6 +482,129 @@ function ColorDot({ t }: { t: Track }) {
   );
 }
 
+/** Always-visible 3-band channel EQ. Creates a real Channel EQ insert on first use. */
+function ChannelEq({ t }: { t: Track }) {
+  const { addPlugin, setPluginParam, installedPlugins } = useStudio();
+  const eq = (t.plugins ?? []).find((p) => p.kind === "eq");
+  const bands: [string, string][] = [
+    ["high", "HI"],
+    ["mid", "MID"],
+    ["low", "LO"],
+  ];
+  const addEq = () => {
+    const def = installedPlugins.find((d) => d.kind === "eq") ?? BUILT_IN_PLUGINS.find((d) => d.kind === "eq");
+    if (def) addPlugin(t.id, def);
+  };
+  return (
+    <div
+      className={cn(ROW.eq, "flex items-center gap-1 border-b border-border/60 px-1.5 py-1")}
+      style={{ "--primary": t.color } as CSSProperties}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {!eq ? (
+        <button
+          onClick={addEq}
+          className="h-full w-full rounded-sm border border-dashed border-border font-mono text-[8px] uppercase tracking-wider text-muted-foreground hover:text-foreground"
+        >
+          + EQ
+        </button>
+      ) : (
+        bands.map(([id, label]) => {
+          const param = eq.params.find((p) => p.id === id);
+          const value = param?.value ?? 0;
+          return (
+            <div key={id} className="flex h-full flex-1 flex-col items-center justify-between">
+              <Slider
+                orientation="vertical"
+                className="h-[42px] w-4"
+                value={[value]}
+                min={-18}
+                max={18}
+                step={0.5}
+                onDoubleClick={() => setPluginParam(t.id, eq.id, id, 0)}
+                onValueChange={([v = 0]) => setPluginParam(t.id, eq.id, id, v)}
+              />
+              <span className="font-mono text-[7px] uppercase text-muted-foreground">{label}</span>
+              <span className="font-mono text-[7px] text-foreground/70">{value > 0 ? `+${value.toFixed(0)}` : value.toFixed(0)}</span>
+            </div>
+          );
+        })
+      )}
+    </div>
+  );
+}
+
+/** Channel menu: rename, quick inserts, reset, duplicate, delete. */
+function ChannelMenu({ t }: { t: Track }) {
+  const { updateTrack, duplicateTrack, removeTrack, addPlugin, installedPlugins } = useStudio();
+  const quick: [string, string][] = [
+    ["eq", "EQ"],
+    ["compressor", "Comp"],
+    ["reverb", "Reverb"],
+    ["delay", "Delay"],
+    ["filter", "Filter"],
+    ["drive", "Drive"],
+  ];
+  const add = (kind: string) => {
+    const def =
+      installedPlugins.find((d) => d.kind === kind) ?? BUILT_IN_PLUGINS.find((d) => d.kind === kind);
+    if (def) addPlugin(t.id, def);
+  };
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          onClick={(e) => e.stopPropagation()}
+          title="Channel menu"
+          className="shrink-0 text-muted-foreground hover:text-foreground"
+        >
+          <MoreVertical className="size-3" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-56 space-y-2 p-3" onClick={(e) => e.stopPropagation()}>
+        <div className="label-xs">Channel</div>
+        <input
+          value={t.name}
+          onChange={(e) => updateTrack(t.id, { name: e.target.value })}
+          className="h-7 w-full rounded-sm border border-border bg-surface-2 px-2 font-mono text-[10px] uppercase"
+        />
+        <div className="label-xs pt-1">Add effect</div>
+        <div className="grid grid-cols-3 gap-1">
+          {quick.map(([kind, label]) => (
+            <button
+              key={kind}
+              onClick={() => add(kind)}
+              className="h-6 rounded-sm border border-border bg-surface px-1 font-mono text-[8px] uppercase text-muted-foreground hover:text-foreground"
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <div className="grid grid-cols-2 gap-1 pt-1">
+          <button
+            onClick={() => updateTrack(t.id, { volume: 0.8, pan: 0, muted: false, solo: false })}
+            className="h-6 rounded-sm border border-border bg-surface font-mono text-[8px] uppercase text-muted-foreground hover:text-foreground"
+          >
+            Reset
+          </button>
+          <button
+            onClick={() => duplicateTrack(t.id)}
+            className="h-6 rounded-sm border border-border bg-surface font-mono text-[8px] uppercase text-muted-foreground hover:text-foreground"
+          >
+            Duplicate
+          </button>
+        </div>
+        <button
+          onClick={() => removeTrack(t.id)}
+          className="h-6 w-full rounded-sm border border-destructive/50 font-mono text-[8px] uppercase text-destructive hover:bg-destructive/10"
+        >
+          Delete channel
+        </button>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 function Strip({
   t,
   level,
@@ -522,6 +649,7 @@ function Strip({
         <Screw />
         <span className="font-mono text-[9px] font-bold text-muted-foreground">{index + 1}</span>
         <ColorDot t={t} />
+        <ChannelMenu t={t} />
         <button
           onClick={(e) => { e.stopPropagation(); setClip(false); }}
           title="Clip indicator — click to reset"
@@ -534,6 +662,8 @@ function Strip({
         </button>
         <Screw />
       </div>
+
+      <ChannelEq t={t} />
 
       <DeviceSlots t={t} narrow={narrow} />
 
@@ -711,6 +841,9 @@ function BusStrip({
         Bus
         <Screw />
       </div>
+      <div className={cn(ROW.eq, "flex items-center justify-center border-b border-border/60 font-mono text-[7px] uppercase tracking-widest text-muted-foreground")}>
+        Bus FX below
+      </div>
       <div className={cn(ROW.devices, "border-b border-border/60 p-1")}>
         <FxMenu target={`bus:${id}`} label="Devices" />
       </div>
@@ -812,6 +945,9 @@ function MasterStrip({ level: peak }: { level: number }) {
         <Screw />
         Main
         <Screw />
+      </div>
+      <div className={cn(ROW.eq, "flex items-center justify-center border-b border-border/60 font-mono text-[7px] uppercase tracking-widest text-muted-foreground")}>
+        Main bus
       </div>
       <div className={cn(ROW.devices, "flex items-center gap-1 border-b border-black/50 px-1.5 py-1")}>
         <VuMeter level={peak} label="L" />
