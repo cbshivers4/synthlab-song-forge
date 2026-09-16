@@ -106,6 +106,7 @@ function Waveform({ track }: { track: Track }) {
               }}
               onDoubleClick={() => removeClip(track.id, c.id)}
               title="Click to choose take, double-click to delete"
+              aria-label={`Select take ${c.name}`}
               className="size-[6px] rounded-full border"
               style={{
                 borderColor: "var(--clip-audio)",
