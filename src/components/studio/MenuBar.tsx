@@ -14,8 +14,22 @@ import { toast } from "sonner";
 const notYet = (what: string, why: string) => () => toast(what, { description: why });
 
 export function MenuBar() {
-  const { setPanel, addTrack, selected, duplicateTrack, removeTrack, togglePlay, toggleRecord, stop, transport, setTransport } =
-    useStudio();
+  const {
+    setPanel,
+    addTrack,
+    selected,
+    duplicateTrack,
+    removeTrack,
+    togglePlay,
+    toggleRecord,
+    stop,
+    transport,
+    setTransport,
+    copyTrack,
+    cutTrack,
+    pasteTrack,
+    clipboardName,
+  } = useStudio();
   const { setStage, mode, toggleMode, project } = useApp();
 
   const needTrack = (fn: (id: string) => void) => () => {
@@ -68,6 +82,16 @@ export function MenuBar() {
             </MenubarItem>
             <MenubarItem onClick={notYet("Redo history is coming", "Project-wide undo lands with project saving.")}>
               Redo <MenubarShortcut>⇧⌘Z</MenubarShortcut>
+            </MenubarItem>
+            <MenubarSeparator />
+            <MenubarItem onClick={needTrack((id) => cutTrack(id))}>
+              Cut Track <MenubarShortcut>⌘X</MenubarShortcut>
+            </MenubarItem>
+            <MenubarItem onClick={needTrack((id) => copyTrack(id))}>
+              Copy Track <MenubarShortcut>⌘C</MenubarShortcut>
+            </MenubarItem>
+            <MenubarItem onClick={pasteTrack}>
+              Paste{clipboardName ? ` “${clipboardName}”` : ""} <MenubarShortcut>⌘V</MenubarShortcut>
             </MenubarItem>
             <MenubarSeparator />
             <MenubarItem onClick={needTrack((id) => duplicateTrack(id))}>

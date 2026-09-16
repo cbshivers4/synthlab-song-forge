@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { ChevronDown, ChevronUp, Cpu, Plus, Power, Trash2 } from "lucide-react";
+import { useRef, useState } from "react";
+import { ChevronDown, ChevronUp, Cpu, FolderSearch, Plus, Power, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
@@ -16,6 +16,39 @@ import type { PluginDef, PluginInstance, PluginKind } from "@/lib/synclab/types"
 import { toast } from "sonner";
 
 const FORMATS: PluginDef["format"][] = ["VST3", "AU", "CLAP", "AAX"];
+
+const PLUGIN_EXT: Record<string, PluginDef["format"]> = {
+  vst3: "VST3",
+  vst: "VST3",
+  dll: "VST3",
+  component: "AU",
+  clap: "CLAP",
+  aaxplugin: "AAX",
+};
+
+/** Guess a DSP category from the plugin's file name so the scanned entry gets sensible controls. */
+function guessKind(fileName: string): PluginKind {
+  const n = fileName.toLowerCase();
+  const map: [RegExp, PluginKind][] = [
+    [/\b(eq|equal|pro-?q|channel ?strip)\b/, "eq"],
+    [/\b(comp|1176|la-?2a|glue|bus ?comp)\b/, "compressor"],
+    [/\b(limit|maxim|l1|l2)\b/, "limiter"],
+    [/\b(gate|expander)\b/, "gate"],
+    [/\b(delay|echo)\b/, "delay"],
+    [/\b(verb|reverb|hall|plate|room)\b/, "reverb"],
+    [/\b(chorus)\b/, "chorus"],
+    [/\b(flang)\b/, "flanger"],
+    [/\b(phas)\b/, "phaser"],
+    [/\b(trem)\b/, "tremolo"],
+    [/\b(pan)\b/, "autopan"],
+    [/\b(filter|ladder|moog)\b/, "filter"],
+    [/\b(sat|drive|tube|tape|dist|crunch)\b/, "drive"],
+    [/\b(width|stereo|imager)\b/, "width"],
+    [/\b(crush|lofi|bit)\b/, "bitcrusher"],
+  ];
+  for (const [re, k] of map) if (re.test(n)) return k;
+  return "eq";
+}
 
 function ParamRow({
   trackId,
@@ -74,6 +107,7 @@ export function PluginRack() {
   const [vendor, setVendor] = useState("");
   const [format, setFormat] = useState<PluginDef["format"]>("VST3");
   const [kind, setKind] = useState<PluginKind>("eq");
+  const folderRef = useRef<HTMLInputElement>(null);
 
   const track = selected ?? tracks[0];
   if (!track) return <p className="text-sm text-muted-foreground">Add a track to open its plugin rack.</p>;
@@ -89,6 +123,38 @@ export function PluginRack() {
     setName("");
     setVendor("");
     toast.success(`${def.name} installed`, { description: `${def.vendor} · ${def.format}` });
+  };
+
+  const scanFolder = (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const seen = new Set(installedPlugins.map((d) => d.name.toLowerCase()));
+    let added = 0;
+    for (const f of Array.from(files)) {
+      const rel = (f as File & { webkitRelativePath?: string }).webkitRelativePath || f.name;
+      const parts = rel.split("/");
+      // A .vst3 / .component bundle is a folder — take the first path segment that carries a known extension.
+      const bundle = parts.find((seg) => {
+        const ext = seg.split(".").pop()?.toLowerCase();
+        return !!ext && ext in PLUGIN_EXT;
+      });
+      if (!bundle) continue;
+      const ext = bundle.split(".").pop()?.toLowerCase() ?? "";
+      const pluginName = bundle.replace(/\.[^.]+$/, "");
+      if (!pluginName || seen.has(pluginName.toLowerCase())) continue;
+      seen.add(pluginName.toLowerCase());
+      const vendorGuess = parts.length > 1 && parts[0] !== bundle ? (parts[0] as string) : "3RD PARTY";
+      installPlugin(makeDef(pluginName, vendorGuess.toUpperCase(), PLUGIN_EXT[ext] ?? "VST3", guessKind(pluginName)));
+      added++;
+    }
+    if (added === 0) {
+      toast("No plugins found in that folder", {
+        description: "Pick your VST3 / Components folder, e.g. /Library/Audio/Plug-Ins/VST3 or C:\\Program Files\\Common Files\\VST3.",
+      });
+    } else {
+      toast.success(`${added} plugin${added === 1 ? "" : "s"} found`, {
+        description: "Names and formats were read from your folder. They run through SYNCLAB's matching DSP, not the original binaries.",
+      });
+    }
   };
 
   return (
@@ -195,9 +261,40 @@ export function PluginRack() {
         </div>
       </div>
 
+      {/* scan a plugin folder from the computer */}
+      <div className="panel space-y-2 p-2">
+        <p className="label-xs">SCAN PLUGIN FOLDER ON THIS COMPUTER</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            ref={folderRef}
+            type="file"
+            multiple
+            className="hidden"
+            // @ts-expect-error non-standard directory picker attributes
+            webkitdirectory=""
+            directory=""
+            onChange={(e) => {
+              scanFolder(e.target.files);
+              e.target.value = "";
+            }}
+          />
+          <Button size="sm" variant="secondary" className="h-8 gap-1.5 font-mono text-[10px] tracking-widest" onClick={() => folderRef.current?.click()}>
+            <FolderSearch className="size-3.5" />
+            CHOOSE FOLDER
+          </Button>
+          <span className="font-mono text-[9px] tracking-wider text-muted-foreground uppercase">
+            macOS: /Library/Audio/Plug-Ins/VST3 · Windows: C:\Program Files\Common Files\VST3
+          </span>
+        </div>
+        <p className="text-[10px] text-muted-foreground">
+          The browser can read your plugin folder&apos;s names and formats, but it cannot load a native VST/AU binary. Scanned
+          plugins appear in the rack and run through SYNCLAB&apos;s matching built-in processor with editable parameters.
+        </p>
+      </div>
+
       {/* third-party install */}
       <div className="panel space-y-2 p-2">
-        <p className="label-xs">ADD 3RD-PARTY PLUGIN</p>
+        <p className="label-xs">ADD 3RD-PARTY PLUGIN MANUALLY</p>
         <div className="flex flex-wrap items-center gap-2">
           <Input className="h-8 w-44 text-[11px]" placeholder="Plugin name" value={name} onChange={(e) => setName(e.target.value)} />
           <Input className="h-8 w-40 text-[11px]" placeholder="Vendor" value={vendor} onChange={(e) => setVendor(e.target.value)} />
