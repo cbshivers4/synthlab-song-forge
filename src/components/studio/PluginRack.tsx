@@ -107,6 +107,7 @@ export function PluginRack() {
   const [vendor, setVendor] = useState("");
   const [format, setFormat] = useState<PluginDef["format"]>("VST3");
   const [kind, setKind] = useState<PluginKind>("eq");
+  const folderRef = useRef<HTMLInputElement>(null);
 
   const track = selected ?? tracks[0];
   if (!track) return <p className="text-sm text-muted-foreground">Add a track to open its plugin rack.</p>;
