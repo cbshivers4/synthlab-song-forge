@@ -312,6 +312,7 @@ function SendsMenu({ t }: { t: Track }) {
 /* ---- Console section geometry: every column shares these row heights ---- */
 const ROW = {
   head: "h-7",
+  eq: "h-[74px]",
   devices: "h-[92px]",
   sends: "h-7",
   sendBars: "h-[26px]",
