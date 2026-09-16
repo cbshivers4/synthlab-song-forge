@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { AudioLines, Drum, Guitar, Mic, Mic2, Music2, Piano, Power, Radio, Settings2, Trash2, Waves } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { getEngine } from "@/lib/synclab/audio-engine";
@@ -90,7 +90,7 @@ function Meter({ level, tall }: { level: number; tall?: boolean }) {
   const segs = 24;
   const lit = Math.round(level * segs);
   return (
-    <div className={cn("flex w-2 flex-col-reverse gap-px", tall ? "h-64" : "h-44")}>
+    <div className={cn("flex w-3 flex-col-reverse gap-px", tall ? "h-full min-h-40" : "h-44")}>
       {Array.from({ length: segs }, (_, i) => (
         <div
           key={i}
@@ -270,7 +270,7 @@ const ROW = {
   name: "h-7",
 } as const;
 
-function SectionLabel({ children, className }: { children: React.ReactNode; className?: string }) {
+function SectionLabel({ children, className }: { children?: ReactNode; className?: string }) {
   return (
     <div
       className={cn(
