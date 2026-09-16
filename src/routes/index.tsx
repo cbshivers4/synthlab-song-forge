@@ -22,6 +22,7 @@ import { ToolsRail } from "@/components/studio/ToolsRail";
 import { Appearance } from "@/components/studio/Appearance";
 import { WelcomeScreen } from "@/components/studio/WelcomeScreen";
 import { StartScreen } from "@/components/studio/StartScreen";
+import { DeviceSetup } from "@/components/studio/DeviceSetup";
 import { AppProvider, useApp, useMaybeApp } from "@/lib/synclab/app-state";
 import { toast } from "sonner";
 import synthFace from "@/assets/hw-synth.jpg";
@@ -352,6 +353,7 @@ function StudioWorkspace() {
       </div>
       <StatusBar />
       <FloatingDevices float={float} setFloat={setFloat} />
+      <DeviceSetup />
     </div>
   );
 }
