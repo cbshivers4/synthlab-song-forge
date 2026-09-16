@@ -53,7 +53,7 @@ export function ToolsRail() {
       className={`flex shrink-0 flex-col border-r border-border bg-sidebar transition-[width] ${open ? "w-48" : "w-11"}`}
     >
       <div className="flex items-center gap-1 border-b border-border px-2 py-1.5">
-        {open && <span className="label-xs">SYNCLAB TOOLS</span>}
+        {open && <span className="label-xs">SYNCLAB TOOLS — DRAG TO TIMELINE</span>}
         <button
           aria-label={open ? "Collapse tools" : "Expand tools"}
           onClick={() => setOpen((o) => !o)}
