@@ -197,7 +197,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     overdub: false,
     punchIn: null,
     punchOut: null,
-    monitor: true,
+    monitor: false,
   });
 
   const tracksRef = useRef(tracks);
