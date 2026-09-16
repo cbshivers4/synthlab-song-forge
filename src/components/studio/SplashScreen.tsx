@@ -48,7 +48,7 @@ export function SplashScreen() {
         <img
           src={synclabLogoAsset.url}
           alt="SYNCLAB"
-          className="spin-logo w-[min(72vw,560px)] rounded-2xl shadow-[0_0_80px_color-mix(in_oklab,var(--primary)_35%,transparent)]"
+          className="spin-logo w-[min(48vw,360px)] rounded-2xl shadow-[0_0_60px_color-mix(in_oklab,var(--primary)_35%,transparent)]"
         />
       </div>
       <p className="mt-8 font-mono text-xs tracking-[0.5em] text-muted-foreground uppercase">Sound Design Studio</p>
