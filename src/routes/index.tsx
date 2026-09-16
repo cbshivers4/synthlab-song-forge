@@ -17,6 +17,12 @@ import { Browser } from "@/components/studio/Browser";
 import { SplashScreen } from "@/components/studio/SplashScreen";
 import { PluginRack } from "@/components/studio/PluginRack";
 import { FloatingDevice } from "@/components/studio/FloatingDevice";
+import { MenuBar } from "@/components/studio/MenuBar";
+import { ToolsRail } from "@/components/studio/ToolsRail";
+import { Appearance } from "@/components/studio/Appearance";
+import { WelcomeScreen } from "@/components/studio/WelcomeScreen";
+import { StartScreen } from "@/components/studio/StartScreen";
+import { useApp } from "@/lib/synclab/app-state";
 import synthFace from "@/assets/hw-synth.jpg";
 import drumFace from "@/assets/hw-drum.jpg";
 
