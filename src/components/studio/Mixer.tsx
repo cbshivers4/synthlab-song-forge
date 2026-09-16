@@ -406,7 +406,7 @@ function Strip({ t, level, selected, onSelect }: { t: Track; level: number; sele
       {/* fader + scale + meter */}
       <div
         className={cn(ROW.fader, "flex items-stretch justify-center gap-1 border-b border-border/60 py-1")}
-        style={{ "--primary": t.color } as React.CSSProperties}
+        style={{ "--primary": t.color } as CSSProperties}
       >
         <div className="flex flex-col justify-between py-1">
           {DB_TICKS.map((db) => (
