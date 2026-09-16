@@ -1026,13 +1026,15 @@ export function Mixer() {
     const peak = Math.max(0, ...members.map((t) => levels.tracks[t.id] ?? 0));
     return buses[id].muted ? 0 : peak * Math.min(1, buses[id].volume);
   };
+  // Only show bus strips that actually have channels routed to them.
+  const activeBuses = BUS_STRIPS.filter((id) => tracks.some((t) => t.bus === id));
   return (
     <div className="flex flex-col border border-border bg-surface">
       {/* console toolbar */}
       <div className="flex items-center gap-2 border-b border-border bg-surface-2/70 px-2 py-1.5">
         <span className="font-display text-[11px] font-bold uppercase tracking-widest text-primary">Mix Console</span>
         <span className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
-          {tracks.length} ch · {BUS_STRIPS.length} buses
+          {tracks.length} ch · {activeBuses.length} buses
         </span>
         <div className="ml-auto flex items-center gap-1">
           <button
