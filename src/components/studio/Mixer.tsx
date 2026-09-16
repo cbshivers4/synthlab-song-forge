@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+// Console fader thumb sizing is provided by FADER_CAP below.
 import {
   AudioLines,
   Drum,
@@ -116,7 +117,7 @@ function useMeters(tracks: Track[], transport: Transport) {
 
 /** Segmented LED meter with peak-hold marker. Body takes the channel colour, top end stays amber/red. */
 function Meter({ level, tall, color }: { level: number; tall?: boolean; color?: string }) {
-  const segs = 28;
+  const segs = 32;
   const lit = Math.round(level * segs);
   const hold = useRef(0);
   const [held, setHeld] = useState(0);
@@ -130,7 +131,7 @@ function Meter({ level, tall, color }: { level: number; tall?: boolean; color?: 
   }, []);
   const holdSeg = Math.round(Math.max(held, hold.current) * segs) - 1;
   return (
-    <div className={cn("flex w-3.5 flex-col-reverse gap-px rounded-sm bg-black/40 p-px", tall ? "h-full min-h-40" : "h-44")}>
+    <div className={cn("flex w-4 flex-col-reverse gap-px rounded-[3px] border border-black/60 bg-black/60 p-[3px] shadow-inner", tall ? "h-full min-h-40" : "h-44")}>
       {Array.from({ length: segs }, (_, i) => {
         const on = i < lit;
         const isHold = i === holdSeg;
@@ -310,16 +311,65 @@ function SendsMenu({ t }: { t: Track }) {
 /* ---- Console section geometry: every column shares these row heights ---- */
 const ROW = {
   head: "h-7",
-  devices: "h-[86px]",
+  devices: "h-[92px]",
   sends: "h-7",
   sendBars: "h-[26px]",
   io: "h-[52px]",
   pan: "h-[38px]",
-  fader: "h-[260px]",
+  fader: "h-[300px]",
   readout: "h-5",
   buttons: "h-6",
-  name: "h-7",
+  name: "h-8",
 } as const;
+
+/** SSL-style metal panel background used by every strip. */
+const PANEL =
+  "linear-gradient(180deg, color-mix(in oklab, var(--surface-2, #222) 100%, white 5%), var(--surface-2, #222) 45%, color-mix(in oklab, var(--surface-2, #222) 88%, black))";
+
+/** Console screw head. */
+function Screw({ className }: { className?: string }) {
+  return (
+    <span
+      aria-hidden
+      className={cn(
+        "pointer-events-none inline-block size-[7px] shrink-0 rounded-full border border-black/70",
+        "bg-[radial-gradient(circle_at_35%_30%,rgba(255,255,255,0.55),rgba(0,0,0,0.65))]",
+        className
+      )}
+    />
+  );
+}
+
+/** Analog VU meter gauge (0..1 level). */
+function VuMeter({ level, label }: { level: number; label: string }) {
+  // Map dB-ish fraction to needle angle: -46deg .. +42deg
+  const angle = -46 + Math.min(1, Math.max(0, level)) * 88;
+  return (
+    <div className="flex flex-1 flex-col items-center">
+      <svg viewBox="0 0 60 38" className="w-full max-w-[64px]">
+        <path d="M 6 34 A 26 26 0 0 1 54 34" fill="none" stroke="oklch(0.9 0.02 95)" strokeWidth="1" opacity="0.5" />
+        <path d="M 44.6 15.4 A 26 26 0 0 1 54 34" fill="none" stroke="oklch(0.65 0.22 25)" strokeWidth="2.2" />
+        {[-40, -20, -7, -3, 0].map((db, i) => {
+          const a = ((-46 + i * 22) * Math.PI) / 180;
+          const x1 = 30 + Math.sin(a) * 20;
+          const y1 = 34 - Math.cos(a) * 20;
+          const x2 = 30 + Math.sin(a) * 24;
+          const y2 = 34 - Math.cos(a) * 24;
+          return <line key={db} x1={x1} y1={y1} x2={x2} y2={y2} stroke="oklch(0.85 0.02 95)" strokeWidth="1" opacity="0.7" />;
+        })}
+        <g transform={`rotate(${angle} 30 34)`}>
+          <line x1="30" y1="34" x2="30" y2="10" stroke="oklch(0.75 0.19 30)" strokeWidth="1.6" strokeLinecap="round" />
+        </g>
+        <circle cx="30" cy="34" r="2.6" fill="oklch(0.3 0.01 260)" stroke="oklch(0.7 0.02 95)" strokeWidth="0.8" />
+      </svg>
+      <span className="font-mono text-[6px] uppercase tracking-widest text-muted-foreground">{label}</span>
+    </div>
+  );
+}
+
+/** Chunky console fader thumb overrides for the shadcn slider. */
+const FADER_CAP =
+  "[&_[role=slider]]:h-6 [&_[role=slider]]:w-9 [&_[role=slider]]:rounded-[3px] [&_[role=slider]]:border-black/70 [&_[role=slider]]:shadow-[0_2px_4px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.35)]";
 
 function SectionLabel({ children, className }: { children?: ReactNode; className?: string }) {
   return (
@@ -453,21 +503,22 @@ function Strip({
     <div
       onClick={onSelect}
       className={cn(
-        "flex shrink-0 cursor-pointer flex-col border-r border-border transition-colors",
-        narrow ? "w-[84px]" : "w-[120px]"
+        "flex shrink-0 cursor-pointer flex-col border-r border-black/50 transition-colors",
+        narrow ? "w-[92px]" : "w-[132px]"
       )}
       style={{
         background: selected
-          ? `linear-gradient(${tint(22)}, ${tint(8)}), var(--surface-2, transparent)`
-          : `linear-gradient(${tint(12)}, ${tint(4)}), var(--surface, transparent)`,
-        boxShadow: `inset 3px 0 0 0 ${t.color}${selected ? `, inset 0 0 0 1px ${tint(45)}` : ""}`,
+          ? `linear-gradient(${tint(20)}, ${tint(6)}), ${PANEL}`
+          : `linear-gradient(${tint(10)}, ${tint(2)}), ${PANEL}`,
+        boxShadow: `inset 4px 0 0 0 ${t.color}, inset 0 1px 0 0 rgba(255,255,255,0.08)${selected ? `, inset 0 0 0 1px ${tint(45)}` : ""}`,
       }}
     >
       {/* channel header: number, colour, clip LED */}
       <div
-        className={cn(ROW.head, "flex items-center gap-1 border-b border-border/60 px-1.5")}
+        className={cn(ROW.head, "flex items-center gap-1 border-b border-black/50 px-1.5")}
         style={{ background: tint(18) }}
       >
+        <Screw />
         <span className="font-mono text-[9px] font-bold text-muted-foreground">{index + 1}</span>
         <ColorDot t={t} />
         <button
@@ -480,6 +531,7 @@ function Strip({
         >
           CLIP
         </button>
+        <Screw />
       </div>
 
       <DeviceSlots t={t} narrow={narrow} />
@@ -568,7 +620,7 @@ function Strip({
         )}
         <Slider
           orientation="vertical"
-          className="h-full w-7"
+          className={cn("h-full w-8", FADER_CAP)}
           value={[t.volume]}
           min={0}
           max={1}
@@ -650,11 +702,13 @@ function BusStrip({
   const tint = (pct: number) => `color-mix(in oklab, ${color} ${pct}%, transparent)`;
   return (
     <div
-      className="flex w-[104px] shrink-0 flex-col border-r border-border"
-      style={{ background: `linear-gradient(${tint(10)}, ${tint(3)}), var(--surface-2, transparent)`, boxShadow: `inset 3px 0 0 0 ${color}` }}
+      className="flex w-[116px] shrink-0 flex-col border-r border-black/50"
+      style={{ background: `linear-gradient(${tint(10)}, ${tint(3)}), ${PANEL}`, boxShadow: `inset 4px 0 0 0 ${color}, inset 0 1px 0 0 rgba(255,255,255,0.08)` }}
     >
-      <div className={cn(ROW.head, "flex items-center justify-center border-b border-border/60 font-mono text-[8px] uppercase tracking-widest text-muted-foreground")} style={{ background: tint(16) }}>
+      <div className={cn(ROW.head, "flex items-center justify-between border-b border-black/50 px-1.5 font-mono text-[8px] uppercase tracking-widest text-muted-foreground")} style={{ background: tint(16) }}>
+        <Screw />
         Bus
+        <Screw />
       </div>
       <div className={cn(ROW.devices, "border-b border-border/60 p-1")}>
         <FxMenu target={`bus:${id}`} label="Devices" />
@@ -671,7 +725,7 @@ function BusStrip({
       >
         <Slider
           orientation="vertical"
-          className="h-full w-7"
+          className={cn("h-full w-8", FADER_CAP)}
           value={[state.volume]}
           min={0}
           max={1.2}
@@ -735,6 +789,8 @@ function FxMenu({ target, label }: { target: string; label: string }) {
 }
 
 function MasterStrip({ level: peak }: { level: number }) {
+  const { buses, setBus } = useStudio();
+  const master = buses["master"] as BusState;
   const [clip, setClip] = useState(false);
   const color = BUS_COLOR["master"] as string;
   useEffect(() => {
@@ -742,28 +798,36 @@ function MasterStrip({ level: peak }: { level: number }) {
   }, [peak]);
   return (
     <div
-      className="flex w-[140px] shrink-0 flex-col"
+      className="flex w-[210px] shrink-0 flex-col border-l-2 border-black/60"
       style={{
-        background: `linear-gradient(color-mix(in oklab, ${color} 14%, transparent), transparent), var(--surface-2, transparent)`,
-        boxShadow: `inset 3px 0 0 0 ${color}`,
+        background: `linear-gradient(color-mix(in oklab, ${color} 12%, transparent), transparent), ${PANEL}`,
+        boxShadow: `inset 4px 0 0 0 ${color}, inset 0 1px 0 0 rgba(255,255,255,0.08)`,
       }}
     >
       <div
-        className={cn(ROW.head, "flex items-center justify-center border-b border-border/60 font-mono text-[8px] uppercase tracking-widest")}
+        className={cn(ROW.head, "flex items-center justify-between border-b border-black/50 px-1.5 font-mono text-[8px] uppercase tracking-widest")}
         style={{ background: `color-mix(in oklab, ${color} 22%, transparent)` }}
       >
+        <Screw />
         Main
+        <Screw />
       </div>
-      <div className={cn(ROW.devices, "border-b border-border/60 p-1")}>
+      <div className={cn(ROW.devices, "flex items-center gap-1 border-b border-black/50 px-1.5 py-1")}>
+        <VuMeter level={peak} label="L" />
+        <VuMeter level={peak} label="R" />
+      </div>
+      <div className={cn(ROW.sends, "border-b border-border/60 px-1 py-[2px]")}>
         <FxMenu target="bus:master" label="Master FX" />
       </div>
-      <div className={cn(ROW.sends, "border-b border-border/60")} />
       <div className={cn(ROW.sendBars, "border-b border-border/60")} />
       <div className={cn(ROW.io, "flex items-center justify-center border-b border-border/60 font-mono text-[8px] uppercase tracking-widest text-muted-foreground")}>
         Main out
       </div>
       <div className={cn(ROW.pan, "border-b border-border/60")} />
-      <div className={cn(ROW.fader, "flex items-stretch justify-center gap-1 border-b border-border/60 py-1")}>
+      <div
+        className={cn(ROW.fader, "flex items-stretch justify-center gap-1.5 border-b border-border/60 py-1")}
+        style={{ "--primary": color } as CSSProperties}
+      >
         <div className="flex flex-col justify-between py-1">
           {DB_TICKS.map((db) => (
             <div key={db} className="flex items-center gap-0.5">
@@ -774,6 +838,16 @@ function MasterStrip({ level: peak }: { level: number }) {
             </div>
           ))}
         </div>
+        <Slider
+          orientation="vertical"
+          className={cn("h-full w-8", FADER_CAP)}
+          value={[master.volume]}
+          min={0}
+          max={1.2}
+          step={0.01}
+          onDoubleClick={() => setBus("master", { volume: 1 })}
+          onValueChange={([v = 0]) => setBus("master", { volume: v })}
+        />
         <Meter level={peak} tall color={color} />
         <Meter level={peak} tall color={color} />
       </div>
@@ -819,7 +893,7 @@ export function Mixer() {
     <div className="flex flex-col border border-border bg-surface">
       {/* console toolbar */}
       <div className="flex items-center gap-2 border-b border-border bg-surface-2/70 px-2 py-1.5">
-        <span className="font-display text-[11px] font-bold uppercase tracking-widest text-primary">Mixer</span>
+        <span className="font-display text-[11px] font-bold uppercase tracking-widest text-primary">Mix Console</span>
         <span className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
           {tracks.length} ch · {BUS_STRIPS.length} buses
         </span>
