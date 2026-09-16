@@ -353,6 +353,7 @@ function StudioWorkspace() {
       </div>
       <StatusBar />
       <FloatingDevices float={float} setFloat={setFloat} />
+      <DeviceSetup />
     </div>
   );
 }
