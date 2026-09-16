@@ -241,7 +241,7 @@ export function Settings() {
             onChange={(v) => set("inputDevice", v)}
           />
         </Row>
-        <Row label="Output device" hint={outputs.length ? "Monitors, headphones or interface outputs" : undefined}>
+        <Row label="Output device" hint={outputs.length ? "Monitors, headphones or interface outputs" : ""}>
           <Pick
             value={p.outputDevice}
             options={["System default", ...outputs.map((d) => d.label)]}
