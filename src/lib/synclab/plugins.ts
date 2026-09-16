@@ -129,4 +129,21 @@ export const instantiate = (d: PluginDef): PluginInstance => ({
   params: d.params.map((x) => ({ ...x })),
 });
 
-export const PLUGIN_KINDS: PluginKind[] = ["eq", "filter", "drive", "compressor", "delay", "width", "gain"];
+export const PLUGIN_KINDS: PluginKind[] = [
+  "eq",
+  "filter",
+  "drive",
+  "compressor",
+  "limiter",
+  "gate",
+  "delay",
+  "reverb",
+  "chorus",
+  "flanger",
+  "phaser",
+  "tremolo",
+  "autopan",
+  "width",
+  "bitcrusher",
+  "gain",
+];
