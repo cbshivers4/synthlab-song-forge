@@ -2,7 +2,11 @@ import { useRef, useState } from "react";
 import {
   ArrowLeftToLine,
   ArrowRightToLine,
+  ClipboardPaste,
   Grid3x3,
+  ListChecks,
+  MousePointer2,
+  Pencil,
   Scissors,
   Waves,
   ChevronDown,
@@ -50,8 +54,9 @@ import { toast } from "sonner";
 import { useStudio } from "@/lib/synclab/store";
 import { AddTrackMenu } from "@/components/studio/AddTrackMenu";
 
-import { INSTRUMENTS, KIND_LABEL } from "@/lib/synclab/presets";
-import type { Track } from "@/lib/synclab/types";
+import { INSTRUMENTS, KIND_LABEL, uid } from "@/lib/synclab/presets";
+import type { EditTool } from "@/lib/synclab/store";
+import type { MidiNote, Track } from "@/lib/synclab/types";
 
 const KindIcon = ({ kind }: { kind: Track["kind"] }) =>
   kind === "drum" ? (
