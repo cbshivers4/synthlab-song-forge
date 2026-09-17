@@ -906,6 +906,14 @@ export function Timeline() {
       <EditToolbar />
       <Ruler />
       <div className="relative min-h-0 flex-1 overflow-y-auto">
+        {/* SYNCLAB watermark centered over the rhythm grid */}
+        <div className="pointer-events-none sticky top-1/2 z-0 h-0" aria-hidden="true">
+          <img
+            src={synclabLogo}
+            alt=""
+            className="absolute left-1/2 top-0 w-[min(420px,45%)] -translate-x-[calc(50%-122px)] -translate-y-1/2 select-none opacity-[0.08]"
+          />
+        </div>
         {tracks.map((t, i) => (
           <TrackRow key={t.id} track={t} index={i} />
         ))}
