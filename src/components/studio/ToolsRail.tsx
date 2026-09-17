@@ -47,8 +47,23 @@ const TOOLS: Tool[] = [
 ];
 
 export function ToolsRail() {
-  const { panel, setPanel } = useStudio();
+  const { panel, setPanel, installedPlugins, installPlugin } = useStudio();
   const [open, setOpen] = useState(true);
+  const [pluginDrop, setPluginDrop] = useState(false);
+
+  /** Plugin files dropped straight onto the Plugins entry in this rail. */
+  const dropPlugins = (files: File[]) => {
+    const defs = defsFromFiles(files, installedPlugins.map((d) => d.name));
+    setPanel("plugins");
+    if (defs.length === 0) {
+      toast("No plugins in that drop", { description: "Drop .vst3, .component, .clap or .aaxplugin files or folders." });
+      return;
+    }
+    defs.forEach(installPlugin);
+    toast.success(`${defs.length} plugin${defs.length === 1 ? "" : "s"} added`, {
+      description: "They are in the rack, running through SYNCLAB's matching processor.",
+    });
+  };
 
   return (
     <aside
@@ -70,7 +85,32 @@ export function ToolsRail() {
           return (
             <button
               key={t.id}
-              title={t.drag ? `${t.label} — drag onto the timeline to add a channel` : t.label}
+              title={
+                t.id === "plugins"
+                  ? "Plugins — drop your VST3 / AU / CLAP files here"
+                  : t.drag
+                    ? `${t.label} — drag onto the timeline to add a channel`
+                    : t.label
+              }
+              onDragOver={
+                t.id === "plugins"
+                  ? (e) => {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = "copy";
+                      setPluginDrop(true);
+                    }
+                  : undefined
+              }
+              onDragLeave={t.id === "plugins" ? () => setPluginDrop(false) : undefined}
+              onDrop={
+                t.id === "plugins"
+                  ? (e) => {
+                      e.preventDefault();
+                      setPluginDrop(false);
+                      dropPlugins(Array.from(e.dataTransfer.files));
+                    }
+                  : undefined
+              }
               draggable={!!t.drag}
               onDragStart={(e) => {
                 if (!t.drag) return;
