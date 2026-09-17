@@ -496,12 +496,15 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           1,
         );
       }
-      setTransportState((t) => ({ ...t, step: step % 16 }));
+      const total = Math.max(1, tp.bars ?? 4) * 4;
+      setTransportState((t) => ({ ...t, step: step % total }));
       step += 1;
       if (tp.loop) {
         const lo = tp.loopStart ?? 0;
-        const hi = Math.max(lo + 1, tp.loopEnd ?? 16);
+        const hi = Math.min(total, Math.max(lo + 1, tp.loopEnd ?? total));
         if (step >= hi) step = lo;
+      } else if (step >= total) {
+        step = 0;
       }
     };
 
