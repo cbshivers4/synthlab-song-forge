@@ -36,10 +36,10 @@ interface Tool {
 
 const TOOLS: Tool[] = [
   { id: "vocal", label: "Vocal Forge", icon: <Sparkles className="size-4" />, panel: "vocal", drag: { kind: "ai-vocal", name: "Vocal Forge" } },
-  { id: "stems", label: "Stem Separator", icon: <Split className="size-4" />, soon: "Stem separation needs its AI backend — it arrives in the AI stage." },
-  { id: "voice", label: "Voice Remover", icon: <Volume2 className="size-4" />, soon: "Voice removal needs its AI backend — it arrives in the AI stage." },
+  { id: "stems", label: "Stem Separator", icon: <Split className="size-4" />, soon: "Splitting a mix into stems needs a separation model running on a server — SYNCLAB has no fake button for it." },
+  { id: "voice", label: "Voice Remover", icon: <Volume2 className="size-4" />, soon: "Voice removal needs the same server-side separation model — it is not faked here." },
   { id: "coproducer", label: "AI Co-Producer", icon: <Bot className="size-4" />, panel: "coproducer" },
-  { id: "hum", label: "Hum to Beat", icon: <Waves className="size-4" />, soon: "Hum-to-Beat needs rhythm analysis — it arrives in the AI stage." },
+  { id: "hum", label: "Hum to Beat", icon: <Waves className="size-4" />, soon: "Hum-to-Beat needs rhythm detection on a server — meanwhile tap your rhythm into the Pad Sampler." },
   { id: "synth", label: "Synthesizers", icon: <Music2 className="size-4" />, panel: "synth", drag: { kind: "instrument", name: "Synth" } },
   { id: "bass", label: "Bass Generator", icon: <AudioWaveform className="size-4" />, panel: "bass" },
   { id: "drums", label: "Drum Machine", icon: <Disc3 className="size-4" />, panel: "drums", drag: { kind: "drum", name: "Drums" } },
@@ -48,7 +48,7 @@ const TOOLS: Tool[] = [
   { id: "sampler", label: "Sampler", icon: <AudioLines className="size-4" />, panel: "sampler", drag: { kind: "sampler", name: "Sampler" } },
   { id: "plugins", label: "Plugins (VST)", icon: <Cpu className="size-4" />, panel: "plugins" },
   { id: "mixer", label: "Mixer", icon: <SlidersHorizontal className="size-4" />, panel: "mixer" },
-  { id: "master", label: "Mastering", icon: <Gauge className="size-4" />, soon: "Mastering and scopes are built in the mix stage." },
+  { id: "master", label: "Mastering", icon: <Gauge className="size-4" />, panel: "mixer" },
 ];
 
 const tool = (id: string): Tool => TOOLS.find((t) => t.id === id)!;
