@@ -15,6 +15,7 @@ import {
   Copy,
   Disc3,
   Eye,
+  Flag,
   EyeOff,
   Headphones,
   Mic,
@@ -816,6 +817,9 @@ function Ruler() {
   const total = bars * 4;
   const lo = transport.loopStart ?? 0;
   const hi = Math.max(lo + 1, transport.loopEnd ?? total);
+  const exportOn = transport.exportStart != null && transport.exportEnd != null;
+  const exLo = exportOn ? Math.min(transport.exportStart!, transport.exportEnd! - 1) : 0;
+  const exHi = exportOn ? Math.max(transport.exportEnd!, exLo + 1) : total;
 
   const setBars = (next: number) => {
     const b = Math.min(512, Math.max(1, next));
@@ -843,6 +847,22 @@ function Ruler() {
     const move = (ev: PointerEvent) => {
       end = stepFromX(ev.clientX);
       setTransport({ loopStart: Math.min(s, end), loopEnd: Math.max(Math.min(s, end) + 1, Math.max(s, end)) });
+    };
+    const up = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+  };
+
+  const dragFlag = (which: "start" | "end") => (e: React.PointerEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const move = (ev: PointerEvent) => {
+      const s = stepFromX(ev.clientX);
+      if (which === "start") setTransport({ exportStart: Math.min(s, exHi - 1) });
+      else setTransport({ exportEnd: Math.max(s, exLo + 1) });
     };
     const up = () => {
       window.removeEventListener("pointermove", move);
@@ -881,6 +901,22 @@ function Ruler() {
             +
           </button>
         </div>
+        {/* export range flags toggle */}
+        <button
+          type="button"
+          aria-pressed={exportOn}
+          title="Show export start/end flags — drag them on the ruler to choose what gets exported"
+          onClick={() =>
+            setTransport(exportOn ? { exportStart: null, exportEnd: null } : { exportStart: 0, exportEnd: total })
+          }
+          className={`flex items-center gap-1 rounded-[3px] border px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider ${
+            exportOn
+              ? "border-amber-400/70 bg-amber-400/15 text-amber-300"
+              : "border-border bg-background/70 text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Flag className="size-3" /> Export
+        </button>
       </div>
       <div
         ref={gridRef}
@@ -920,6 +956,37 @@ function Ruler() {
                 />
               </div>
             ))}
+          </>
+        )}
+
+        {/* export range: amber band + draggable flags */}
+        {exportOn && (
+          <>
+            <div
+              className="pointer-events-none absolute inset-y-0 border-x border-amber-400/70 bg-amber-400/10"
+              style={{ left: `${(exLo / total) * 100}%`, width: `${((exHi - exLo) / total) * 100}%` }}
+            />
+            {(["start", "end"] as const).map((which) => {
+              const p = which === "start" ? exLo : exHi;
+              return (
+                <div
+                  key={which}
+                  role="slider"
+                  aria-label={which === "start" ? "Export start flag" : "Export end flag"}
+                  aria-valuenow={p}
+                  onPointerDown={dragFlag(which)}
+                  title={`Export ${which} — drag to move (bar ${Math.floor(p / 4) + 1})`}
+                  className="absolute top-0 z-20 flex h-full w-3 cursor-ew-resize touch-none flex-col items-center"
+                  style={{ left: `calc(${(p / total) * 100}% - 6px)` }}
+                >
+                  <div
+                    className="h-0 w-0 border-x-[6px] border-x-transparent"
+                    style={{ borderTop: "9px solid rgb(251 191 36)" }}
+                  />
+                  <div className="w-[2px] flex-1 bg-amber-400/80" />
+                </div>
+              );
+            })}
           </>
         )}
 
@@ -1002,6 +1069,15 @@ export function Timeline() {
             style={{
               left: `calc(244px + (100% - 244px) * ${(transport.loopStart ?? 0) / totalSteps})`,
               width: `calc((100% - 244px) * ${(Math.max((transport.loopStart ?? 0) + 1, transport.loopEnd ?? totalSteps) - (transport.loopStart ?? 0)) / totalSteps})`,
+            }}
+          />
+        )}
+        {transport.exportStart != null && transport.exportEnd != null && (
+          <div
+            className="pointer-events-none absolute inset-y-0 border-x border-amber-400/30 bg-amber-400/[0.05]"
+            style={{
+              left: `calc(244px + (100% - 244px) * ${Math.min(transport.exportStart, transport.exportEnd - 1) / totalSteps})`,
+              width: `calc((100% - 244px) * ${(Math.max(transport.exportEnd, transport.exportStart + 1) - Math.min(transport.exportStart, transport.exportEnd - 1)) / totalSteps})`,
             }}
           />
         )}
