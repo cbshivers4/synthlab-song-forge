@@ -260,7 +260,9 @@ export function Keyboard() {
                     : "bg-[oklch(0.96_0.005_90)] hover:bg-[oklch(0.9_0.005_90)]"
               }`}
               style={{
-                backgroundImage: "linear-gradient(180deg, oklch(0.9 0.005 90) 0%, oklch(0.98 0.003 90) 12%, oklch(0.96 0.005 90) 100%)",
+                backgroundImage: inScale(midi)
+                  ? "linear-gradient(180deg, color-mix(in oklab, var(--primary) 32%, oklch(0.9 0.005 90)) 0%, color-mix(in oklab, var(--primary) 12%, oklch(0.98 0.003 90)) 16%, oklch(0.95 0.02 195) 100%)"
+                  : "linear-gradient(180deg, oklch(0.9 0.005 90) 0%, oklch(0.98 0.003 90) 12%, oklch(0.96 0.005 90) 100%)",
               }}
               aria-label={label(midi)}
             >
@@ -287,7 +289,9 @@ export function Keyboard() {
             style={{
               left: `calc(${(pos / whiteCount) * 100}% + ${100 / whiteCount * 0.72}%)`,
               width: `${(100 / whiteCount) * 0.62}%`,
-              backgroundImage: "linear-gradient(180deg, oklch(0.25 0.005 255) 0%, oklch(0.08 0.005 255) 80%)",
+               backgroundImage: inScale(midi)
+                 ? "linear-gradient(180deg, color-mix(in oklab, var(--primary) 45%, oklch(0.25 0.005 255)) 0%, oklch(0.12 0.03 195) 80%)"
+                 : "linear-gradient(180deg, oklch(0.25 0.005 255) 0%, oklch(0.08 0.005 255) 80%)",
               boxShadow: "0 3px 6px oklch(0 0 0 / 0.6)",
             }}
             aria-label={label(midi)}
