@@ -38,6 +38,10 @@ export function MenuBar() {
     splitAtPlayhead,
     snapshot,
     loadSample,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
   } = useStudio();
   const importRef = useRef<HTMLInputElement>(null);
 
