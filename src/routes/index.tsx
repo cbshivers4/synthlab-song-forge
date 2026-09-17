@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { ArrowDownToLine, ArrowUpFromLine, AudioLines, AudioWaveform, Cpu, Disc3, FolderOpen, Grid2x2, KeyboardMusic, Music2, Palette, Piano, SlidersHorizontal, Settings2, Waves, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStudio, type PanelId } from "@/lib/synclab/store";
+import { getEngine } from "@/lib/synclab/audio-engine";
 import { TopBar } from "@/components/studio/TopBar";
 import { Timeline } from "@/components/studio/Timeline";
 import { Mixer } from "@/components/studio/Mixer";
