@@ -13,6 +13,8 @@ import { getEngine } from "./audio-engine";
 import { TRACK_COLORS, applyPreset, defaultPads, defaultPatch, uid } from "./presets";
 import { BUILT_IN_PLUGINS, instantiate } from "./plugins";
 import { getMidiAccess, listInputs, midiSupported, subscribe, type MidiPortInfo } from "./midi";
+import { getPadBank, setPadBank } from "./pad-session";
+import type { CloudSession } from "./cloud";
 import type {
   AudioClip,
   BusId,
@@ -127,6 +129,8 @@ interface StudioState {
 }
 
 interface StudioApi extends StudioState {
+  snapshot: () => CloudSession;
+  restore: (session: CloudSession) => void;
   selected: Track | null;
   setBus: (id: BusId, patch: Partial<BusState>) => void;
   setPanel: (p: PanelId) => void;
@@ -586,6 +590,30 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       panel,
       userPresets,
       buses,
+      snapshot: () => ({
+        version: 1,
+        tracks: structuredClone(tracksRef.current),
+        transport: { ...transportRef.current, playing: false, recording: false, paused: false, step: 0 },
+        buses: structuredClone(buses),
+        fxChains: structuredClone(fxChains),
+        installedPlugins: structuredClone(installedPlugins),
+        userPresets: structuredClone(userPresets),
+        padBank: getPadBank(),
+      }),
+      restore: (session) => {
+        getEngine().stopSamples();
+        for (const track of tracksRef.current) getEngine().removeChannel(track.id);
+        setTracks(structuredClone(session.tracks));
+        setTransportState({ ...session.transport, playing: false, recording: false, paused: false, step: 0 });
+        setBuses(structuredClone(session.buses));
+        setFxChains(structuredClone(session.fxChains));
+        setInstalledPlugins(structuredClone(session.installedPlugins));
+        setUserPresets(structuredClone(session.userPresets));
+        setPadBank(session.padBank ?? {});
+        setSelectedId(session.tracks[0]?.id ?? null);
+        setSelectedIds(session.tracks[0] ? [session.tracks[0].id] : []);
+        setPanel(null);
+      },
       selected,
       setBus: (id, patch) => setBuses((b) => ({ ...b, [id]: { ...b[id], ...patch } })),
       setPanel,

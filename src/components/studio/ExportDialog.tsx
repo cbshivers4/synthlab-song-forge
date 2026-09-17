@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Download, Share2, Square, Disc3 } from "lucide-react";
+import { CloudUpload, Download, Share2, Square, Disc3 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -10,6 +10,7 @@ import { getEngine } from "@/lib/synclab/audio-engine";
 import { canShareFile, downloadBlob, encodeMp3, encodeWav, normalize, peakOf, shareFile, type Capture } from "@/lib/synclab/bounce";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { uploadCloudExport } from "@/lib/synclab/cloud";
 
 export const EXPORT_EVENT = "synclab:export";
 export const openExport = () => window.dispatchEvent(new CustomEvent(EXPORT_EVENT));
@@ -26,6 +27,7 @@ export function ExportDialog() {
   const [status, setStatus] = useState<Status>("idle");
   const [elapsed, setElapsed] = useState(0);
   const [result, setResult] = useState<{ blob: Blob; name: string; peak: number } | null>(null);
+  const [uploading, setUploading] = useState(false);
   const timer = useRef<number | null>(null);
 
   const projectName = project?.name ?? "SYNCLAB Session";
@@ -181,6 +183,20 @@ export function ExportDialog() {
               onClick={() => result && downloadBlob(result.blob, result.name)}
             >
               <Download className="size-4" /> Save
+            </Button>
+            <Button
+              variant="outline"
+              disabled={!result || uploading}
+              onClick={() => {
+                if (!result) return;
+                setUploading(true);
+                void uploadCloudExport(result.blob, result.name)
+                  .then(() => toast.success("Export saved to your cloud"))
+                  .catch((error: unknown) => toast.error(error instanceof Error ? error.message : "Cloud upload failed"))
+                  .finally(() => setUploading(false));
+              }}
+            >
+              <CloudUpload className="size-4" /> {uploading ? "Uploading…" : "Cloud"}
             </Button>
             {file && canShareFile(file) && (
               <Button

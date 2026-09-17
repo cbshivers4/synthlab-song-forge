@@ -17,6 +17,7 @@ import { useStudio } from "@/lib/synclab/store";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { toast } from "sonner";
 import { WaveformView } from "@/components/studio/WaveformView";
+import { getPadBank, setPadBank, subscribePadBank, type SavedPad } from "@/lib/synclab/pad-session";
 
 const BANKS = ["A", "B", "C", "D"] as const;
 /** Koala-style bank colors — each bank tints its loaded pads. */
@@ -26,7 +27,7 @@ const STEPS = 16;
 const KEYMAP = "1234qwerasdfzxcv".split("");
 const AUDIO_RE = /\.(mp3|wav|wave|aif|aiff|m4a|aac|ogg|flac|webm)$/i;
 
-interface Pad {
+interface Pad extends SavedPad {
   name: string;
   url: string;
   duration: number;
@@ -141,7 +142,14 @@ function PadWave({ pad, color, onChange }: { pad: Pad; color: string; onChange: 
 
 export function PadSampler() {
   const { tracks, transport, addTrack, select } = useStudio();
-  const [pads, setPads] = useState<Record<number, Pad>>({});
+  const [pads, setPadsState] = useState<Record<number, Pad>>(() => getPadBank());
+  const setPads: typeof setPadsState = useCallback((next) => {
+    setPadsState((current) => {
+      const value = typeof next === "function" ? next(current) : next;
+      setPadBank(value);
+      return value;
+    });
+  }, []);
   const [bank, setBank] = useState(0);
   const [sel, setSel] = useState(0);
   const [hit, setHit] = useState<number | null>(null);
@@ -156,6 +164,7 @@ export function PadSampler() {
   const recRef = useRef<{ rec: MediaRecorder; stream: MediaStream; chunks: Blob[]; pad: number } | null>(null);
   const padsRef = useRef(pads);
   padsRef.current = pads;
+  useEffect(() => subscribePadBank((next) => setPadsState(next)), []);
   const stepRef = useRef(0);
   const liveRef = useRef(liveRec);
   liveRef.current = liveRec;
@@ -684,8 +693,7 @@ export function PadSampler() {
 
       <p className="text-xs text-muted-foreground">
         Pads play through their own mixer channel, so you can fade them, send them to reverb and add effects like any
-        other channel. Sounds you load or record stay in this session only — save them with your project export if you
-        want to keep them.
+        other channel. Cloud Save keeps loaded and recorded pad sounds with your project.
       </p>
     </div>
   );

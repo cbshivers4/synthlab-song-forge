@@ -11,6 +11,7 @@ import { useStudio } from "@/lib/synclab/store";
 import { useApp } from "@/lib/synclab/app-state";
 import { toast } from "sonner";
 import { openExport } from "@/components/studio/ExportDialog";
+import { saveCloudProject } from "@/lib/synclab/cloud";
 
 const notYet = (what: string, why: string) => () => toast(what, { description: why });
 
@@ -34,8 +35,24 @@ export function MenuBar() {
     setEditTool,
     selectAll,
     splitAtPlayhead,
+    snapshot,
   } = useStudio();
-  const { setStage, mode, toggleMode, project } = useApp();
+  const { setStage, mode, toggleMode, project, setProject } = useApp();
+
+  const save = async () => {
+    if (!project) {
+      toast("Create a project first");
+      return;
+    }
+    const saving = toast.loading("Saving project and audio…");
+    try {
+      const saved = await saveCloudProject({ ...project, id: project.id ?? "" }, snapshot());
+      setProject({ ...project, id: saved.id, openedAt: Date.now() });
+      toast.success("Project saved to your cloud", { id: saving });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Cloud save failed", { id: saving });
+    }
+  };
 
   const needTrack = (fn: (id: string) => void) => () => {
     if (!selected) {
@@ -54,10 +71,10 @@ export function MenuBar() {
             <MenubarItem onClick={() => setStage("start")}>New Project</MenubarItem>
             <MenubarItem onClick={() => setStage("start")}>Open Project</MenubarItem>
             <MenubarSeparator />
-            <MenubarItem onClick={notYet("Saving needs an account", "Cloud projects arrive with the accounts stage.")}>
+            <MenubarItem onClick={() => void save()}>
               Save <MenubarShortcut>⌘S</MenubarShortcut>
             </MenubarItem>
-            <MenubarItem onClick={notYet("Save As needs an account", "Cloud projects arrive with the accounts stage.")}>
+            <MenubarItem onClick={() => project && (setProject({ ...project, id: undefined, name: `${project.name} Copy`, openedAt: Date.now() }), toast("Copy ready", { description: "Choose Save to store it as a separate cloud project." }))}>
               Save As
             </MenubarItem>
             <MenubarItem onClick={notYet("Save Template needs an account", "Custom templates are stored with your account.")}>
