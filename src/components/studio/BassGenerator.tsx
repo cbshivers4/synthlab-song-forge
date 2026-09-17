@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Bass, Dice5, Play, SlidersHorizontal } from "lucide-react";
+import { AudioWaveform, Dice5, Play, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
@@ -36,7 +36,7 @@ export function BassGenerator() {
   const [seed, setSeed] = useState(1);
   const bassTracks = tracks.filter((t) => t.kind === "instrument" || t.kind === "midi");
   const [targetId, setTargetId] = useState(selected && bassTracks.some((t) => t.id === selected.id) ? selected.id : "new");
-  const scale = SCALES[scaleName] ?? SCALES.Minor;
+  const scale = SCALES[scaleName] ?? (SCALES["Minor"] as number[]);
   const preview = useMemo(() => generate(root, scale, style, bars, density, movement, octave, seed), [root, scale, style, bars, density, movement, octave, seed]);
 
   const apply = () => {
@@ -52,7 +52,7 @@ export function BassGenerator() {
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(260px,360px)_1fr]">
       <div className="space-y-3 rounded-sm border border-border bg-surface/60 p-3">
-        <div className="flex items-center gap-2"><Bass className="size-4 text-primary" /><span className="label-xs">BASS GENERATOR</span></div>
+        <div className="flex items-center gap-2"><AudioWaveform className="size-4 text-primary" /><span className="label-xs">BASS GENERATOR</span></div>
         <div className="grid grid-cols-2 gap-2">
           <Pick label="Style" value={style} values={Object.keys(STYLES)} onChange={(v) => setStyle(v as StyleName)} />
           <Pick label="Scale" value={scaleName} values={Object.keys(SCALES)} onChange={setScaleName} />
@@ -65,7 +65,7 @@ export function BassGenerator() {
         <Control label="Movement" value={movement} onChange={setMovement} />
         <div className="flex gap-2">
           <Button variant="secondary" className="flex-1" onClick={() => setSeed((s) => s + 1)}><Dice5 className="size-4" /> New variation</Button>
-          <Button className="flex-1" onClick={apply}><Bass className="size-4" /> Add bassline</Button>
+          <Button className="flex-1" onClick={apply}><AudioWaveform className="size-4" /> Add bassline</Button>
         </div>
       </div>
       <div className="space-y-3 rounded-sm border border-border bg-background p-3">
