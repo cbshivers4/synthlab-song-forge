@@ -778,6 +778,8 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
             onValueChange={([v = 0]) => updateTrack(track.id, { volume: v })}
           />
         </div>
+
+        <LevelBar id={track.id} color={track.color} />
       </div>
 
       <div
