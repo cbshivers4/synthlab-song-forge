@@ -168,6 +168,28 @@ function Meter({ level, tall, color }: { level: number; tall?: boolean; color?: 
   );
 }
 
+/** Clip LED — lights red when the channel has peaked; click to reset. */
+function ClipLed({ id, compact }: { id: string; compact?: boolean }) {
+  const clipped = useClipped(id);
+  return (
+    <button
+      type="button"
+      title={clipped ? "Clipping — click to reset" : "No clipping"}
+      onClick={(e) => {
+        e.stopPropagation();
+        clearClip(id);
+      }}
+      className={cn(
+        "rounded-[2px] font-mono text-[8px] font-bold uppercase tracking-wider transition-colors",
+        compact ? "px-1 leading-[13px]" : "px-1.5 py-[1px]",
+        clipped ? "animate-pulse bg-red-500 text-black" : "bg-black/40 text-muted-foreground"
+      )}
+    >
+      CLIP
+    </button>
+  );
+}
+
 function InsertRack({
   title,
   list,
