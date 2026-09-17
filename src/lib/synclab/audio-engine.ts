@@ -449,6 +449,15 @@ export class SyncLabEngine {
       if (head && tail) {
         cursor.connect(head);
         cursor = tail;
+        const ctx = this.ctx;
+        if (ctx) {
+          const scope = ctx.createAnalyser();
+          scope.fftSize = 1024;
+          scope.smoothingTimeConstant = 0.7;
+          tail.connect(scope);
+          this.pluginScopes.set(pl.id, scope);
+          cursor = scope;
+        }
       }
       idx += size;
     }
