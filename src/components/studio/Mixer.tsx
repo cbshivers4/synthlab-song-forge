@@ -35,6 +35,7 @@ import { cn } from "@/lib/utils";
 import { clearClip, reportLevel, useClipped } from "@/lib/synclab/clip-monitor";
 import { Scope } from "./Scope";
 import { XYPad } from "./XYPad";
+import { EffectDisplay } from "./EffectDisplay";
 
 const BUSES: BusId[] = ["drums", "vocals", "instruments", "synths", "fx", "master"];
 const DB_TICKS = [6, 0, -6, -12, -24, -48];
