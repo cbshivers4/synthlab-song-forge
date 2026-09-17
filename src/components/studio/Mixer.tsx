@@ -2,6 +2,8 @@ import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 
 // Console fader thumb sizing is provided by FADER_CAP below.
 import {
   AudioLines,
+  ChevronLeft,
+  ChevronRight,
   Drum,
   Guitar,
   Maximize2,
@@ -717,7 +719,7 @@ function Strip({
   index: number;
   onSelect: () => void;
 }) {
-  const { updateTrack } = useStudio();
+  const { updateTrack, moveTrack, tracks } = useStudio();
   const [clip, setClip] = useState(false);
   useEffect(() => {
     if (level > 0.985) setClip(true);
