@@ -293,6 +293,21 @@ export interface SamplerState {
   release: number;
 }
 
+export type AutomationParam = "volume" | "pan" | "sendReverb" | "sendDelay";
+
+export interface AutomationPoint {
+  step: number;
+  /** 0..1 for volume and sends, -1..1 for pan */
+  value: number;
+}
+
+export interface AutomationLane {
+  param: AutomationParam;
+  /** read plays the curve back, off keeps the drawing but ignores it */
+  mode: "read" | "off";
+  points: AutomationPoint[];
+}
+
 export interface Track {
   id: string;
   name: string;
@@ -321,6 +336,7 @@ export interface Track {
   sampler?: SamplerState | undefined;
   activeClipId?: string | undefined;
   recording?: boolean;
+  automation?: AutomationLane[] | undefined;
 }
 
 export interface Transport {
