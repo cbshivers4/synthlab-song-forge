@@ -965,28 +965,111 @@ export class SyncLabEngine {
   }
 
 
+  /* ---------------- wavetable cache ---------------- */
+  private tableCache = new Map<string, PeriodicWave>();
+  /** Morphing wavetable: position 0 = soft sine stack, 0.5 = saw-like, 1 = hollow/formant spectrum. */
+  wavetableWave(ctx: AudioContext, morph: number) {
+    const pos = clamp(morph, 0, 1);
+    const key = pos.toFixed(2);
+    const cached = this.tableCache.get(key);
+    if (cached) return cached;
+    const n = 48;
+    const real = new Float32Array(n);
+    const imag = new Float32Array(n);
+    for (let i = 1; i < n; i++) {
+      const soft = Math.exp(-i * 0.9);
+      const saw = 1 / i;
+      const hollow = (i % 2 === 1 ? 1 / i : 0) * (1 + Math.cos(i * 0.6));
+      const a = pos < 0.5 ? soft + (saw - soft) * (pos * 2) : saw + (hollow - saw) * ((pos - 0.5) * 2);
+      imag[i] = a;
+    }
+    const wave = ctx.createPeriodicWave(real, imag, { disableNormalization: false });
+    this.tableCache.set(key, wave);
+    return wave;
+  }
+
+  private lastMidi = new Map<string, number>();
+  private monoVoice = new Map<string, { out: GainNode; stop: (t: number) => void }>();
+
   /* ---------------- synth voice ---------------- */
   playNote(trackId: string, patch: SynthPatch, midi: number, duration: number, velocity = 1, when?: number) {
     const ctx = this.init();
     const t0 = when ?? ctx.currentTime;
     const ch = this.channel(trackId);
+    const life = duration + patch.amp.release + 0.25;
 
+    /* ---- modulation matrix ---- */
+    const routes = (patch.modMatrix ?? []).filter((r) => r.on);
+    const macros = patch.macros ?? [0, 0, 0, 0];
+    const randomVal = Math.random() * 2 - 1;
+    const staticSources: Record<string, number> = {
+      velocity: clamp(velocity, 0, 1),
+      keytrack: clamp((midi - 60) / 36, -1, 1),
+      random: randomVal,
+      macro1: macros[0] ?? 0,
+      macro2: macros[1] ?? 0,
+      macro3: macros[2] ?? 0,
+      macro4: macros[3] ?? 0,
+    };
+    /** Sum of the fixed (non-moving) modulation reaching a destination, in -1..1 units. */
+    const fixedMod = (dest: string) =>
+      routes.reduce(
+        (sum, r) => (r.dest === dest && r.source in staticSources ? sum + r.amount * (staticSources[r.source] ?? 0) : sum),
+        0,
+      );
+    const audioRoutes = (dest: string) => routes.filter((r) => r.dest === dest && !(r.source in staticSources));
+
+    const analog = patch.analog ?? 0;
+    const drift = (Math.random() * 2 - 1) * analog;
+
+    /* ---- voice output + per-voice pan ---- */
     const voiceOut = ctx.createGain();
     voiceOut.gain.value = 0;
+    const voicePan = ctx.createStereoPanner();
+    voicePan.pan.value = clamp(fixedMod("pan"), -1, 1);
+    voiceOut.connect(voicePan);
+    voicePan.connect(ch.input);
 
-    // key tracking: cutoff follows the played pitch
+    // mono / legato: retire the previous voice on this track
+    const mode = patch.voiceMode ?? "poly";
+    if (mode !== "poly") {
+      const prev = this.monoVoice.get(trackId);
+      if (prev) prev.stop(t0);
+    }
+
+    /* ---- filters ---- */
     const kt = patch.keyTracking ?? 0;
-    const cutoffBase = clamp(patch.cutoff * Math.pow(2, (kt * (midi - 60)) / 12), 40, 18000);
+    const cutoffMod = Math.pow(2, fixedMod("cutoff") * 4 + drift * 0.15);
+    const cutoffBase = clamp(patch.cutoff * Math.pow(2, (kt * (midi - 60)) / 12) * cutoffMod, 40, 18000);
 
+    const filterIn = ctx.createGain();
     const filter = ctx.createBiquadFilter();
     filter.type = patch.filterType;
-    filter.Q.value = patch.resonance;
+    filter.Q.value = clamp(patch.resonance * (1 + fixedMod("resonance")), 0, 30);
     filter.frequency.value = cutoffBase;
+    filterIn.connect(filter);
 
     const shaper = ctx.createWaveShaper();
     shaper.curve = makeDistortionCurve(0.05 + patch.fx.distortion + (patch.fx.saturation ?? 0) * 0.6);
 
-    filter.connect(shaper);
+    const f2 = patch.filter2;
+    let filter2: BiquadFilterNode | null = null;
+    if (f2?.on) {
+      filter2 = ctx.createBiquadFilter();
+      filter2.type = f2.type;
+      filter2.Q.value = clamp(f2.resonance, 0, 30);
+      filter2.frequency.value = clamp(f2.cutoff * Math.pow(2, fixedMod("cutoff2") * 4), 40, 18000);
+      if (f2.routing === "series") {
+        filter.connect(filter2);
+        filter2.connect(shaper);
+      } else {
+        filterIn.connect(filter2);
+        filter2.connect(shaper);
+        filter.connect(shaper);
+      }
+    } else {
+      filter.connect(shaper);
+    }
 
     // flanger / phaser colouring before the voice output
     let tail: AudioNode = shaper;
@@ -1001,7 +1084,7 @@ export class SyncLabEngine {
       lfo.connect(lg);
       lg.connect(d.delayTime);
       lfo.start(t0);
-      lfo.stop(t0 + duration + patch.amp.release + 0.2);
+      lfo.stop(t0 + life);
       const wet = ctx.createGain();
       wet.gain.value = flanger * 0.7;
       tail.connect(d);
@@ -1024,7 +1107,6 @@ export class SyncLabEngine {
       wet.connect(voiceOut);
     }
     tail.connect(voiceOut);
-    voiceOut.connect(ch.input);
 
     if (patch.fx.delay > 0) {
       const delay = ctx.createDelay(1.5);
@@ -1033,7 +1115,7 @@ export class SyncLabEngine {
       fb.gain.value = clamp(patch.fx.delayFeedback, 0, 0.8);
       const wet = ctx.createGain();
       wet.gain.value = patch.fx.delay * 0.6;
-      voiceOut.connect(wet);
+      voicePan.connect(wet);
       wet.connect(delay);
       delay.connect(fb);
       fb.connect(delay);
@@ -1042,26 +1124,34 @@ export class SyncLabEngine {
     if (patch.fx.reverb > 0 && this.reverbSend) {
       const wet = ctx.createGain();
       wet.gain.value = patch.fx.reverb * 0.5;
-      voiceOut.connect(wet);
+      voicePan.connect(wet);
       wet.connect(this.reverbSend);
     }
 
-    const voices = clamp(patch.unison.voices, 1, 7);
+    /* ---- oscillators ---- */
+    const voices = clamp(Math.round(patch.unison.voices), 1, 7);
+    const unisonDetune = clamp(patch.unison.detune * (1 + fixedMod("unisonDetune")), 0, 100);
+    const levelMod = clamp(1 + fixedMod("level"), 0, 2);
     const nodes: (OscillatorNode | AudioBufferSourceNode)[] = [];
+    const oscNodes: (OscillatorNode | null)[][] = patch.oscillators.map(() => []);
+    const rootFreq = midiToFreq(midi);
+    const prevMidi = this.lastMidi.get(trackId);
+    const glide = patch.glide ?? 0;
+    const doGlide = glide > 0 && prevMidi !== undefined && (patch.glideMode !== "legato" || mode !== "poly");
 
-    patch.oscillators.forEach((osc) => {
+    patch.oscillators.forEach((osc, oi) => {
       if (!osc.on || osc.level <= 0) return;
       for (let u = 0; u < voices; u++) {
         const spread = voices === 1 ? 0 : (u / (voices - 1) - 0.5) * 2;
         const g = ctx.createGain();
-        g.gain.value = (osc.level / voices) * velocity;
+        g.gain.value = ((osc.level * levelMod) / voices) * velocity;
         const p = ctx.createStereoPanner();
         p.pan.value = clamp(osc.pan + spread * patch.unison.width, -1, 1);
         g.connect(p);
-        p.connect(filter);
+        p.connect(filterIn);
 
         if (osc.wave === "noise") {
-          const len = Math.ceil(ctx.sampleRate * (duration + patch.amp.release + 0.15));
+          const len = Math.ceil(ctx.sampleRate * life);
           const buf = ctx.createBuffer(1, len, ctx.sampleRate);
           const d = buf.getChannelData(0);
           for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
@@ -1070,32 +1160,73 @@ export class SyncLabEngine {
           src.connect(g);
           src.start(t0);
           nodes.push(src);
+          oscNodes[oi]!.push(null);
           continue;
         }
 
         const o = ctx.createOscillator();
         if (osc.wave === "pulse") {
-          o.setPeriodicWave(this.pulseWave(ctx, osc.pulseWidth ?? 0.3));
+          const pw = clamp((osc.pulseWidth ?? 0.3) + fixedMod("pulseWidth") * 0.4, 0.02, 0.98);
+          o.setPeriodicWave(this.pulseWave(ctx, pw));
+        } else if (osc.wave === "wavetable") {
+          const morph = clamp((osc.morph ?? 0.5) + fixedMod("morph"), 0, 1);
+          o.setPeriodicWave(this.wavetableWave(ctx, morph));
         } else {
           o.type = osc.wave;
         }
         const freq = midiToFreq(midi + osc.octave * 12 + osc.semitone);
-        o.frequency.setValueAtTime(freq, t0);
+        if (doGlide) {
+          const from = midiToFreq(prevMidi! + osc.octave * 12 + osc.semitone);
+          o.frequency.setValueAtTime(from, t0);
+          o.frequency.exponentialRampToValueAtTime(Math.max(20, freq), t0 + glide);
+        } else {
+          o.frequency.setValueAtTime(freq, t0);
+        }
         o.detune.setValueAtTime(
-          osc.detune + (osc.fine ?? 0) + spread * patch.unison.detune,
+          osc.detune + (osc.fine ?? 0) + spread * unisonDetune + fixedMod("pitch") * 1200 + drift * 12,
           t0,
         );
         // hard-sync flavour: snap the partial back toward the root pitch
-        if (osc.sync) o.frequency.setValueAtTime(midiToFreq(midi) * Math.round(freq / midiToFreq(midi) || 1), t0);
-        o.connect(g);
+        if (osc.sync) o.frequency.setValueAtTime(rootFreq * Math.round(freq / rootFreq || 1), t0);
+
+        // ring modulation against oscillator 1
+        const carrier = oi > 0 && osc.ring ? oscNodes[0]?.[u] ?? null : null;
+        if (carrier) {
+          const ring = ctx.createGain();
+          ring.gain.value = 0;
+          carrier.connect(ring.gain);
+          o.connect(ring);
+          ring.connect(g);
+        } else {
+          o.connect(g);
+        }
+
         o.start(t0);
-        o.stop(t0 + duration + patch.amp.release + 0.1);
+        o.stop(t0 + life);
         nodes.push(o);
+        oscNodes[oi]!.push(o);
       }
     });
 
+    // FM: each oscillator can frequency-modulate the next one
+    const fmMod = fixedMod("fmAmount");
+    patch.oscillators.forEach((osc, oi) => {
+      const amount = clamp((osc.fm ?? 0) + fmMod, 0, 1);
+      if (amount <= 0) return;
+      const targets = oscNodes[oi + 1];
+      if (!targets) return;
+      (oscNodes[oi] ?? []).forEach((mod, u) => {
+        const target = targets[u];
+        if (!mod || !target) return;
+        const depth = ctx.createGain();
+        depth.gain.value = amount * rootFreq * 6;
+        mod.connect(depth);
+        depth.connect(target.frequency);
+      });
+    });
+
     if (patch.noise > 0) {
-      const len = Math.ceil(ctx.sampleRate * (duration + patch.amp.release + 0.1));
+      const len = Math.ceil(ctx.sampleRate * life);
       const buf = ctx.createBuffer(1, len, ctx.sampleRate);
       const d = buf.getChannelData(0);
       for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
@@ -1104,12 +1235,13 @@ export class SyncLabEngine {
       const g = ctx.createGain();
       g.gain.value = patch.noise * 0.4 * velocity;
       src.connect(g);
-      g.connect(filter);
+      g.connect(filterIn);
       src.start(t0);
       nodes.push(src);
     }
 
-    // LFOs
+    /* ---- legacy LFO destinations ---- */
+    const runningMods: { stop: (t: number) => void }[] = [];
     patch.lfos.forEach((lfo) => {
       if (!lfo.on) return;
       const o = ctx.createOscillator();
@@ -1124,7 +1256,7 @@ export class SyncLabEngine {
         g.connect(voiceOut.gain);
       } else if (lfo.destination === "pan") {
         g.gain.value = lfo.amount;
-        g.connect(ch.pan.pan);
+        g.connect(voicePan.pan);
       } else {
         g.gain.value = lfo.amount * 50;
         nodes.forEach((n) => {
@@ -1133,12 +1265,73 @@ export class SyncLabEngine {
       }
       o.connect(g);
       o.start(t0);
-      o.stop(t0 + duration + patch.amp.release + 0.1);
+      o.stop(t0 + life);
+      runningMods.push({ stop: (t) => { try { o.stop(t); } catch { /* done */ } } });
     });
 
-    // amp envelope
+    /* ---- mod matrix: moving sources ---- */
+    const modOutputs = new Map<string, AudioNode>();
+    const modSource = (src: string): AudioNode | null => {
+      const cached = modOutputs.get(src);
+      if (cached) return cached;
+      if (src === "modEnv") {
+        const env = patch.modEnv ?? { attack: 0.01, decay: 0.3, sustain: 0.5, release: 0.3 };
+        const cs = ctx.createConstantSource();
+        cs.offset.setValueAtTime(0, t0);
+        cs.offset.linearRampToValueAtTime(1, t0 + Math.max(0.001, env.attack));
+        cs.offset.linearRampToValueAtTime(env.sustain, t0 + env.attack + env.decay);
+        const rel = t0 + Math.max(duration, env.attack + env.decay);
+        cs.offset.setValueAtTime(env.sustain, rel);
+        cs.offset.linearRampToValueAtTime(0, rel + Math.max(0.01, env.release));
+        cs.start(t0);
+        cs.stop(t0 + life);
+        modOutputs.set(src, cs);
+        runningMods.push({ stop: (t) => { try { cs.stop(t); } catch { /* done */ } } });
+        return cs;
+      }
+      const idx = src === "lfo1" ? 0 : src === "lfo2" ? 1 : src === "lfo3" ? 2 : -1;
+      if (idx < 0) return null;
+      const cfg = patch.lfos[idx] ?? { rate: 1, wave: "sine" as const, amount: 1, on: true, destination: "filter" as const };
+      const o = ctx.createOscillator();
+      o.type = cfg.wave;
+      o.frequency.value = clamp(cfg.rate, 0.01, 40);
+      o.start(t0);
+      o.stop(t0 + life);
+      modOutputs.set(src, o);
+      runningMods.push({ stop: (t) => { try { o.stop(t); } catch { /* done */ } } });
+      return o;
+    };
+
+    const AUDIO_TARGETS: Record<string, { param: AudioParam | null; scale: number }> = {
+      pitch: { param: null, scale: 1200 },
+      cutoff: { param: filter.frequency, scale: 4000 },
+      cutoff2: { param: filter2 ? filter2.frequency : null, scale: 4000 },
+      resonance: { param: filter.Q, scale: 15 },
+      level: { param: voiceOut.gain, scale: 0.3 },
+      pan: { param: voicePan.pan, scale: 1 },
+    };
+    for (const dest of Object.keys(AUDIO_TARGETS)) {
+      for (const r of audioRoutes(dest)) {
+        const src = modSource(r.source);
+        if (!src) continue;
+        const depth = ctx.createGain();
+        const target = AUDIO_TARGETS[dest]!;
+        depth.gain.value = r.amount * target.scale;
+        src.connect(depth);
+        if (dest === "pitch") {
+          nodes.forEach((n) => {
+            if ("detune" in n && n.detune) depth.connect((n as OscillatorNode).detune);
+          });
+        } else if (target.param) {
+          depth.connect(target.param);
+        }
+      }
+    }
+
+    /* ---- amp envelope ---- */
     const a = patch.amp;
-    const peak = 0.35 * velocity;
+    const sens = patch.velocitySens ?? 1;
+    const peak = 0.35 * (1 - sens + sens * clamp(velocity, 0, 1));
     voiceOut.gain.cancelScheduledValues(t0);
     voiceOut.gain.setValueAtTime(0.0001, t0);
     voiceOut.gain.linearRampToValueAtTime(peak, t0 + Math.max(0.001, a.attack));
@@ -1147,7 +1340,7 @@ export class SyncLabEngine {
     voiceOut.gain.setValueAtTime(Math.max(0.0001, peak * a.sustain), relStart);
     voiceOut.gain.exponentialRampToValueAtTime(0.0001, relStart + Math.max(0.02, a.release));
 
-    // filter envelope
+    /* ---- filter envelope ---- */
     const fe = patch.filterEnv;
     const base = cutoffBase;
     filter.frequency.cancelScheduledValues(t0);
@@ -1158,6 +1351,29 @@ export class SyncLabEngine {
       t0 + fe.attack + fe.decay,
     );
     filter.frequency.setTargetAtTime(base, relStart, Math.max(0.02, fe.release));
+
+    this.lastMidi.set(trackId, midi);
+    if (mode !== "poly") {
+      this.monoVoice.set(trackId, {
+        out: voiceOut,
+        stop: (t) => {
+          try {
+            voiceOut.gain.cancelScheduledValues(t);
+            voiceOut.gain.setTargetAtTime(0.0001, t, 0.008);
+          } catch {
+            /* already gone */
+          }
+          for (const n of nodes) {
+            try {
+              n.stop(t + 0.05);
+            } catch {
+              /* already stopped */
+            }
+          }
+          for (const m of runningMods) m.stop(t + 0.05);
+        },
+      });
+    }
   }
 
   /* ---------------- drum voices ---------------- */

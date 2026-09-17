@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Save } from "lucide-react";
+import { Plus, Save, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -9,10 +9,41 @@ import { Slider } from "@/components/ui/slider";
 import { Knob } from "./Knob";
 import { useStudio } from "@/lib/synclab/store";
 import { SYNTH_PRESETS } from "@/lib/synclab/presets";
-import type { EnvelopeParams, LfoWave, OscWave, SynthPatch, Track } from "@/lib/synclab/types";
+import type { EnvelopeParams, LfoWave, ModDest, ModSource, OscWave, SynthPatch, Track } from "@/lib/synclab/types";
+import { uid } from "@/lib/synclab/presets";
 import { toast } from "sonner";
 
-const WAVES: OscWave[] = ["sine", "triangle", "sawtooth", "square", "pulse", "noise"];
+const WAVES: OscWave[] = ["sine", "triangle", "sawtooth", "square", "pulse", "noise", "wavetable"];
+
+const MOD_SOURCES: ModSource[] = [
+  "lfo1",
+  "lfo2",
+  "lfo3",
+  "modEnv",
+  "velocity",
+  "keytrack",
+  "random",
+  "macro1",
+  "macro2",
+  "macro3",
+  "macro4",
+];
+
+const MOD_DESTS: ModDest[] = [
+  "pitch",
+  "cutoff",
+  "cutoff2",
+  "resonance",
+  "level",
+  "pan",
+  "pulseWidth",
+  "morph",
+  "fmAmount",
+  "unisonDetune",
+];
+
+/** Destinations WebAudio can only set once per note, so only fixed sources move them. */
+const FIXED_ONLY: ModDest[] = ["pulseWidth", "morph", "fmAmount", "unisonDetune"];
 
 function EnvelopeGraph({ env }: { env: EnvelopeParams }) {
   const total = env.attack + env.decay + 0.6 + env.release || 1;
@@ -40,6 +71,10 @@ export function SynthEditor({ track }: { track: Track }) {
   const patch = track.patch as SynthPatch;
   if (!patch) return null;
   const set = (p: Partial<SynthPatch>) => updatePatch(track.id, p);
+  const f2 = patch.filter2 ?? { on: false, type: "highpass" as BiquadFilterType, cutoff: 200, resonance: 1, routing: "series" as const };
+  const modEnv = patch.modEnv ?? { attack: 0.01, decay: 0.3, sustain: 0.4, release: 0.3 };
+  const macros = patch.macros ?? [0, 0, 0, 0];
+  const matrix = patch.modMatrix ?? [];
 
   return (
     <div className="space-y-4">
@@ -85,6 +120,8 @@ export function SynthEditor({ track }: { track: Track }) {
           <TabsTrigger value="filter">Filter</TabsTrigger>
           <TabsTrigger value="env">Envelopes</TabsTrigger>
           <TabsTrigger value="mod">LFO / Unison</TabsTrigger>
+          <TabsTrigger value="matrix">Mod Matrix</TabsTrigger>
+          <TabsTrigger value="voice">Voice</TabsTrigger>
           <TabsTrigger value="fx">Effects</TabsTrigger>
           <TabsTrigger value="arp">Arpeggiator</TabsTrigger>
         </TabsList>
@@ -216,6 +253,41 @@ export function SynthEditor({ track }: { track: Track }) {
               </SelectContent>
             </Select>
           </div>
+          <div className="panel mt-3 flex flex-wrap items-center gap-4 p-3">
+            <div className="flex items-center gap-2">
+              <Switch
+                checked={Boolean(patch.filter2?.on)}
+                onCheckedChange={(v) => set({ filter2: { ...f2, on: v } })}
+              />
+              <span className="font-display text-xs font-semibold">FILTER 2</span>
+            </div>
+            <Select value={f2.type} onValueChange={(v) => set({ filter2: { ...f2, type: v as BiquadFilterType } })}>
+              <SelectTrigger className="w-36">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {["lowpass", "highpass", "bandpass", "notch", "peaking"].map((t) => (
+                  <SelectItem key={t} value={t}>
+                    {t}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Knob label="CUTOFF" min={40} max={16000} step={10} value={f2.cutoff} onChange={(v) => set({ filter2: { ...f2, cutoff: v } })} />
+            <Knob label="RES" min={0} max={28} step={0.5} value={f2.resonance} onChange={(v) => set({ filter2: { ...f2, resonance: v } })} />
+            <Select
+              value={f2.routing}
+              onValueChange={(v) => set({ filter2: { ...f2, routing: v as "series" | "parallel" } })}
+            >
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="series">series</SelectItem>
+                <SelectItem value="parallel">parallel</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </TabsContent>
 
         <TabsContent value="env" className="grid gap-3 pt-3 md:grid-cols-2">
@@ -257,6 +329,22 @@ export function SynthEditor({ track }: { track: Track }) {
                 value={patch.filterEnv.amount}
                 onChange={(v) => set({ filterEnv: { ...patch.filterEnv, amount: v } })}
               />
+            </div>
+          </div>
+          <div className="panel space-y-2 p-3">
+            <span className="label-xs">Mod envelope — route it in the Mod Matrix</span>
+            <EnvelopeGraph env={modEnv} />
+            <div className="flex gap-2">
+              {(["attack", "decay", "sustain", "release"] as const).map((k) => (
+                <Knob
+                  key={k}
+                  label={k.slice(0, 3).toUpperCase()}
+                  min={0}
+                  max={k === "sustain" ? 1 : 3}
+                  value={modEnv[k]}
+                  onChange={(v) => set({ modEnv: { ...modEnv, [k]: v } })}
+                />
+              ))}
             </div>
           </div>
         </TabsContent>
@@ -350,6 +438,150 @@ export function SynthEditor({ track }: { track: Track }) {
               value={patch.unison.width}
               onChange={(v) => set({ unison: { ...patch.unison, width: v } })}
             />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="matrix" className="space-y-3 pt-3">
+          <div className="panel flex flex-wrap items-center gap-4 p-3">
+            <span className="label-xs w-full">Macros — assign them below, then perform with them</span>
+            {[0, 1, 2, 3].map((i) => (
+              <Knob
+                key={i}
+                label={`MACRO ${i + 1}`}
+                value={macros[i] ?? 0}
+                onChange={(v) => set({ macros: macros.map((m, j) => (j === i ? v : m)) })}
+              />
+            ))}
+          </div>
+          <div className="panel space-y-2 p-3">
+            <div className="flex items-center justify-between">
+              <span className="label-xs">Modulation matrix</span>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() =>
+                  set({
+                    modMatrix: [...matrix, { id: uid(), on: true, source: "lfo1", dest: "cutoff", amount: 0.3 }],
+                  })
+                }
+              >
+                <Plus className="size-3.5" /> ADD ROUTE
+              </Button>
+            </div>
+            {matrix.length === 0 && (
+              <p className="text-xs text-muted-foreground">
+                No routes yet. Add one to make an LFO, the mod envelope, velocity, key position or a macro move part of
+                the sound.
+              </p>
+            )}
+            {matrix.map((r) => (
+              <div key={r.id} className="flex flex-wrap items-center gap-2 rounded-md border border-border p-2">
+                <Switch
+                  checked={r.on}
+                  onCheckedChange={(v) =>
+                    set({ modMatrix: matrix.map((x) => (x.id === r.id ? { ...x, on: v } : x)) })
+                  }
+                />
+                <Select
+                  value={r.source}
+                  onValueChange={(v) =>
+                    set({ modMatrix: matrix.map((x) => (x.id === r.id ? { ...x, source: v as ModSource } : x)) })
+                  }
+                >
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MOD_SOURCES.map((sc) => (
+                      <SelectItem key={sc} value={sc}>
+                        {sc}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <span className="font-mono text-[10px] text-muted-foreground">→</span>
+                <Select
+                  value={r.dest}
+                  onValueChange={(v) =>
+                    set({ modMatrix: matrix.map((x) => (x.id === r.id ? { ...x, dest: v as ModDest } : x)) })
+                  }
+                >
+                  <SelectTrigger className="w-36">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MOD_DESTS.map((d) => (
+                      <SelectItem key={d} value={d}>
+                        {d}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="w-40">
+                  <Slider
+                    min={-1}
+                    max={1}
+                    step={0.01}
+                    value={[r.amount]}
+                    onValueChange={([v = 0]) =>
+                      set({ modMatrix: matrix.map((x) => (x.id === r.id ? { ...x, amount: v } : x)) })
+                    }
+                  />
+                </div>
+                <span className="w-12 font-mono text-[10px] text-primary">{r.amount.toFixed(2)}</span>
+                {FIXED_ONLY.includes(r.dest) && !["velocity", "keytrack", "random", "macro1", "macro2", "macro3", "macro4"].includes(r.source) && (
+                  <span className="font-mono text-[9px] text-muted-foreground">set per note, not moving</span>
+                )}
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="ml-auto size-7"
+                  onClick={() => set({ modMatrix: matrix.filter((x) => x.id !== r.id) })}
+                  aria-label="Remove route"
+                >
+                  <Trash2 className="size-3.5" />
+                </Button>
+              </div>
+            ))}
+            <p className="text-[10px] text-muted-foreground">
+              Pitch, cutoff, filter 2, resonance, level and pan follow their source continuously. Pulse width, wavetable
+              morph, FM and unison detune are set once at the start of each note, so use velocity, key position, random
+              or a macro for those.
+            </p>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="voice" className="pt-3">
+          <div className="panel flex flex-wrap items-center gap-4 p-3">
+            <Select value={patch.voiceMode ?? "poly"} onValueChange={(v) => set({ voiceMode: v as "poly" | "mono" | "legato" })}>
+              <SelectTrigger className="w-36">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="poly">polyphonic</SelectItem>
+                <SelectItem value="mono">mono</SelectItem>
+                <SelectItem value="legato">legato</SelectItem>
+              </SelectContent>
+            </Select>
+            <Knob label="GLIDE" min={0} max={0.5} value={patch.glide} onChange={(v) => set({ glide: v })} />
+            <Knob
+              label="VEL SENS"
+              value={patch.velocitySens ?? 1}
+              onChange={(v) => set({ velocitySens: v })}
+            />
+            <Knob label="ANALOG" value={patch.analog ?? 0} onChange={(v) => set({ analog: v })} />
+            <Knob
+              label="VOICES"
+              min={1}
+              max={7}
+              step={1}
+              value={patch.unison.voices}
+              onChange={(v) => set({ unison: { ...patch.unison, voices: Math.round(v) } })}
+            />
+            <p className="w-full text-[10px] text-muted-foreground">
+              Mono and legato keep one note sounding at a time so glide slides between them. Analog adds a small random
+              tuning and filter shift to every note, like an old hardware synth.
+            </p>
           </div>
         </TabsContent>
 
