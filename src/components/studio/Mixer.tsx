@@ -503,6 +503,13 @@ function DeviceSlots({ t, narrow }: { t: Track; narrow: boolean }) {
             <Power className="size-2.5" style={{ color: p.bypass ? "var(--muted-foreground)" : t.color }} />
           </button>
           <span className="flex-1 truncate font-mono text-[8px] uppercase">{p.name}</span>
+          <button
+            onClick={(e) => { e.stopPropagation(); removePlugin(t.id, p.id); }}
+            title={`Remove ${p.name}`}
+            className="text-muted-foreground hover:text-destructive"
+          >
+            <Trash2 className="size-2.5" />
+          </button>
         </div>
       ))}
       {list.length > max && (
