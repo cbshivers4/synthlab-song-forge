@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import synclabLogoAsset from "@/assets/synclab-logo.jpg.asset.json";
+import synclabLogoAsset from "@/assets/synclab-logo-neon.jpg.asset.json";
 
 const MAX_MS = 60_000; // hard ceiling — never longer than this
 const MIN_MS = 4200; // let the spin read for a few full turns

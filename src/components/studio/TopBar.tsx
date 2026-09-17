@@ -40,7 +40,7 @@ import { getEngine } from "@/lib/synclab/audio-engine";
 import { INSTRUMENTS } from "@/lib/synclab/presets";
 import { toast } from "sonner";
 import { openExport } from "@/components/studio/ExportDialog";
-import synclabLogoAsset from "@/assets/synclab-logo.jpg.asset.json";
+import synclabLogoAsset from "@/assets/synclab-logo-neon.jpg.asset.json";
 const synclabLogo = synclabLogoAsset.url;
 
 export function TopBar() {
