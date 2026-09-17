@@ -575,7 +575,7 @@ export const SYNTH_PRESETS: PresetDef[] = [
       O(p,0).wave = "sawtooth";
       p.oscillators[1] = { ...O(p,1), on: true, wave: "sawtooth", detune: 20, level: 0.6 };
       p.cutoff = 3000;
-      p.lfos[0] = { on: true, rate: 8, wave: "square", amount: 0.8, destination: "amp" };
+      p.lfos[0] = { on: true, rate: 8, wave: "square", amount: 0.8, destination: "volume" };
       p.amp = { attack: 0.02, decay: 0.3, sustain: 0.8, release: 0.5 };
       p.fx.reverb = 0.45;
     },
