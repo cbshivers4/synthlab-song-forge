@@ -1184,11 +1184,11 @@ function MasterChain({ color }: { color: string }) {
 function MasterStrip({ level: peak }: { level: number }) {
   const { buses, setBus } = useStudio();
   const master = buses["master"] as BusState;
-  const [clip, setClip] = useState(false);
+  const clip = useClipped("master");
+  const setClip = (on: boolean) => {
+    if (!on) clearClip("master");
+  };
   const color = BUS_COLOR["master"] as string;
-  useEffect(() => {
-    if (peak > 0.985) setClip(true);
-  }, [peak]);
   return (
     <div
       className="flex w-[210px] shrink-0 flex-col border-l-2 border-black/60"
