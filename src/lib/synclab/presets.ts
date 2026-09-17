@@ -19,9 +19,17 @@ export const defaultPatch = (name = "Init Saw"): SynthPatch => ({
   lfos: [
     { on: false, rate: 4, wave: "sine", amount: 0.3, destination: "filter" },
     { on: false, rate: 0.5, wave: "triangle", amount: 0.2, destination: "pan" },
+    { on: false, rate: 2, wave: "triangle", amount: 0.25, destination: "pitch" },
   ],
   unison: { voices: 2, detune: 12, width: 0.5 },
   glide: 0,
+  filter2: { on: false, type: "highpass", cutoff: 200, resonance: 1, routing: "series" },
+  modEnv: { attack: 0.01, decay: 0.3, sustain: 0.4, release: 0.3 },
+  macros: [0, 0, 0, 0],
+  modMatrix: [],
+  voiceMode: "poly",
+  velocitySens: 1,
+  analog: 0.15,
   fx: { distortion: 0.1, chorus: 0.2, delay: 0.18, delayFeedback: 0.3, reverb: 0.2, bitcrush: 0 },
   arp: { on: false, rate: 1, direction: "up", octaves: 1, gate: 0.6 },
 });
