@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useStudio } from "@/lib/synclab/store";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { toast } from "sonner";
+import { openMic, openInOwnTab, micUnavailableReason } from "@/lib/synclab/mic";
 
 type Prefs = {
   sampleRate: string;
@@ -166,11 +167,29 @@ export function Settings() {
 
   const scanDevices = async (askPermission: boolean) => {
     if (typeof navigator === "undefined" || !navigator.mediaDevices?.enumerateDevices) return;
+    const blocked = micUnavailableReason();
+    if (askPermission && blocked) {
+      toast.error("Microphone not available", {
+        description: blocked,
+        duration: 9000,
+        action: { label: "Open in tab", onClick: openInOwnTab },
+      });
+      return;
+    }
     setScanning(true);
     try {
       if (askPermission) {
-        const s = await navigator.mediaDevices.getUserMedia({ audio: true });
-        s.getTracks().forEach((t) => t.stop());
+        const res = await openMic();
+        if ("error" in res) {
+          toast.error("Could not open your microphone", {
+            description: res.error,
+            duration: 9000,
+            ...(res.canOpenTab ? { action: { label: "Open in tab", onClick: openInOwnTab } } : {}),
+          });
+          setScanning(false);
+          return;
+        }
+        res.stream.getTracks().forEach((t) => t.stop());
       }
       const list = await navigator.mediaDevices.enumerateDevices();
       setInputs(

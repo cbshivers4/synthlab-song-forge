@@ -11,6 +11,7 @@ import {
   Upload,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { openMic, openInOwnTab } from "@/lib/synclab/mic";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { useStudio } from "@/lib/synclab/store";
@@ -317,19 +318,22 @@ export function PadSampler() {
 
   /* record straight into a pad from the microphone */
   const startMic = async (i: number) => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const rec = new MediaRecorder(stream);
-      const chunks: Blob[] = [];
-      rec.ondataavailable = (e) => e.data.size > 0 && chunks.push(e.data);
-      rec.start(200);
-      recRef.current = { rec, stream, chunks, pad: i };
-      setMicOn(true);
-    } catch {
+    const res = await openMic();
+    if ("error" in res) {
       toast.error("Microphone not available", {
-        description: "Allow microphone access in your browser to sample straight into a pad.",
+        description: res.error,
+        duration: 9000,
+        ...(res.canOpenTab ? { action: { label: "Open in tab", onClick: openInOwnTab } } : {}),
       });
+      return;
     }
+    const stream = res.stream;
+    const rec = new MediaRecorder(stream);
+    const chunks: Blob[] = [];
+    rec.ondataavailable = (e) => e.data.size > 0 && chunks.push(e.data);
+    rec.start(200);
+    recRef.current = { rec, stream, chunks, pad: i };
+    setMicOn(true);
   };
 
   const stopMic = async () => {

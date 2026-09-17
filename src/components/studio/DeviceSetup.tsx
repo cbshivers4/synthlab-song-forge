@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button";
 import { useStudio } from "@/lib/synclab/store";
 import { midiSupported } from "@/lib/synclab/midi";
+import { openMic, openInOwnTab } from "@/lib/synclab/mic";
 
 const KEY = "synclab.devicesetup.done";
 
@@ -13,6 +14,7 @@ export function DeviceSetup() {
   const [asked, setAsked] = useState(false);
   const [inputs, setInputs] = useState<string[]>([]);
   const [outputs, setOutputs] = useState<string[]>([]);
+  const [micError, setMicError] = useState<string | null>(null);
 
   const listDevices = useCallback(async () => {
     if (!navigator.mediaDevices?.enumerateDevices) return { ins: [] as string[], outs: [] as string[] };
@@ -75,16 +77,12 @@ export function DeviceSetup() {
 
   const connect = async () => {
     setBusy(true);
+    setMicError(null);
     try {
-      if (navigator.mediaDevices?.getUserMedia) {
-        try {
-          const s = await navigator.mediaDevices.getUserMedia({ audio: true });
-          s.getTracks().forEach((t) => t.stop());
-        } catch {
-          /* permission denied — handled by empty list below */
-        }
-        await listDevices();
-      }
+      const res = await openMic();
+      if ("error" in res) setMicError(res.error);
+      else res.stream.getTracks().forEach((t) => t.stop());
+      await listDevices();
       enableMidi();
     } finally {
       setAsked(true);
@@ -103,6 +101,15 @@ export function DeviceSetup() {
             connected you will not be asked again; you can check your gear any time in Settings.
           </DialogDescription>
         </DialogHeader>
+
+        {micError && (
+          <div className="space-y-2 rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-xs text-destructive">
+            <div>{micError}</div>
+            <Button size="sm" variant="secondary" onClick={openInOwnTab}>
+              Open SYNCLAB in its own tab
+            </Button>
+          </div>
+        )}
 
         {asked && (
           <div className="space-y-3 rounded-lg border border-border bg-surface p-3 font-mono text-xs">
