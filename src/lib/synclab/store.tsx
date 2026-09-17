@@ -30,6 +30,15 @@ import type {
   Transport,
 } from "./types";
 
+/** A mixer control a hardware knob/fader can drive. id is a track id, or "master". */
+export interface MidiTarget {
+  id: string;
+  param: "volume" | "pan" | "mute" | "solo";
+}
+
+export const midiTargetKey = (t: MidiTarget) => `${t.id}:${t.param}`;
+const MIDI_MAP_KEY = "synclab.midimap";
+
 const busFor = (kind: TrackKind): BusId =>
   kind === "drum"
     ? "drums"
