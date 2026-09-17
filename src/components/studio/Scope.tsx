@@ -4,11 +4,23 @@ import { getEngine } from "@/lib/synclab/audio-engine";
 type Mode = "wave" | "spectrum";
 
 /** Live output scope for one effect insert — reads the analyser the engine taps after that plugin. */
-export function Scope({ scopeId, height = 74 }: { scopeId: string; height?: number }) {
+export function Scope({
+  scopeId,
+  height = 74,
+  compact = false,
+  color,
+}: {
+  scopeId: string;
+  height?: number;
+  compact?: boolean;
+  color?: string;
+}) {
   const ref = useRef<HTMLCanvasElement | null>(null);
   const [mode, setMode] = useState<Mode>("wave");
   const modeRef = useRef<Mode>(mode);
   modeRef.current = mode;
+  const colorRef = useRef<string | undefined>(color);
+  colorRef.current = color;
 
   useEffect(() => {
     let raf = 0;
@@ -40,7 +52,7 @@ export function Scope({ scopeId, height = 74 }: { scopeId: string; height?: numb
       }
 
       const engine = getEngine();
-      const accent = "hsl(187 85% 55%)";
+      const accent = colorRef.current ?? "hsl(187 85% 55%)";
       if (modeRef.current === "wave") {
         const data = engine.getScopeWave(scopeId);
         ctx.strokeStyle = accent;
@@ -85,6 +97,26 @@ export function Scope({ scopeId, height = 74 }: { scopeId: string; height?: numb
     raf = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(raf);
   }, [scopeId]);
+
+  if (compact) {
+    return (
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          setMode(mode === "wave" ? "spectrum" : "wave");
+        }}
+        title={mode === "wave" ? "Scope — click for spectrum" : "Spectrum — click for waveform"}
+        className="panel relative block w-full overflow-hidden bg-black/40"
+        style={{ height }}
+      >
+        <canvas ref={ref} className="h-full w-full" />
+        <span className="absolute left-1 top-0.5 font-mono text-[7px] uppercase tracking-widest text-muted-foreground">
+          {mode === "wave" ? "SCOPE" : "SPEC"}
+        </span>
+      </button>
+    );
+  }
 
   return (
     <div className="panel relative overflow-hidden bg-surface-2/50" style={{ height }}>

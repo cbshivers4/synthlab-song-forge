@@ -201,6 +201,8 @@ function InsertRack({
   onRemove,
   onBypass,
   onParam,
+  openId,
+  onOpenChange,
 }: {
   title: string;
   list: PluginInstance[];
@@ -208,9 +210,16 @@ function InsertRack({
   onRemove: (id: string) => void;
   onBypass: (id: string) => void;
   onParam: (id: string, paramId: string, value: number) => void;
+  openId?: string | null;
+  onOpenChange?: (id: string | null) => void;
 }) {
   const { installedPlugins } = useStudio();
-  const [open, setOpen] = useState<string | null>(null);
+  const [ownOpen, setOwnOpen] = useState<string | null>(null);
+  const open = openId !== undefined ? openId : ownOpen;
+  const setOpen = (id: string | null) => {
+    if (onOpenChange) onOpenChange(id);
+    else setOwnOpen(id);
+  };
   return (
     <div>
       <div className="label-xs mb-1">{title}</div>
@@ -352,6 +361,7 @@ function SendsMenu({ t }: { t: Track }) {
 /* ---- Console section geometry: every column shares these row heights ---- */
 const ROW = {
   head: "h-7",
+  scope: "h-[48px]",
   eq: "h-[74px]",
   devices: "h-[92px]",
   sends: "h-7",
@@ -510,6 +520,7 @@ function LabelRail() {
   return (
     <div className="sticky left-0 z-10 flex w-[76px] shrink-0 flex-col border-r border-border bg-surface-2/85 backdrop-blur">
       <SectionLabel className={cn(ROW.head, "bg-surface-2")}>Ch</SectionLabel>
+      <SectionLabel className={ROW.scope}>Scope</SectionLabel>
       <SectionLabel className={ROW.eq}>EQ</SectionLabel>
       <SectionLabel className={ROW.devices}>Devices</SectionLabel>
       <SectionLabel className={ROW.sends}>Sends</SectionLabel>
@@ -529,6 +540,12 @@ function DeviceSlots({ t, narrow }: { t: Track; narrow: boolean }) {
   const { addPlugin, removePlugin, togglePluginBypass, setPluginParam } = useStudio();
   const list = t.plugins ?? [];
   const max = narrow ? 2 : 3;
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [openId, setOpenId] = useState<string | null>(null);
+  const openEditor = (id: string | null) => {
+    setOpenId(id);
+    setEditorOpen(true);
+  };
   return (
     <div className={cn(ROW.devices, "w-full space-y-0.5 overflow-hidden border-b border-border/60 px-1 py-1")}>
       {list.slice(0, max).map((p) => (
@@ -540,7 +557,13 @@ function DeviceSlots({ t, narrow }: { t: Track; narrow: boolean }) {
           <button onClick={(e) => { e.stopPropagation(); togglePluginBypass(t.id, p.id); }} title="Bypass">
             <Power className="size-2.5" style={{ color: p.bypass ? "var(--muted-foreground)" : t.color }} />
           </button>
-          <span className="flex-1 truncate font-mono text-[8px] uppercase">{p.name}</span>
+          <button
+            className="flex-1 truncate text-left font-mono text-[8px] uppercase hover:text-primary"
+            title={`Open ${p.name} editor`}
+            onClick={(e) => { e.stopPropagation(); openEditor(p.id); }}
+          >
+            {p.name}
+          </button>
           <button
             onClick={(e) => { e.stopPropagation(); removePlugin(t.id, p.id); }}
             title={`Remove ${p.name}`}
@@ -551,21 +574,28 @@ function DeviceSlots({ t, narrow }: { t: Track; narrow: boolean }) {
         </div>
       ))}
       {list.length > max && (
-        <div className="px-1 font-mono text-[8px] text-muted-foreground">+{list.length - max} more</div>
+        <button
+          onClick={(e) => { e.stopPropagation(); openEditor(list[max]?.id ?? null); }}
+          className="w-full px-1 text-left font-mono text-[8px] text-muted-foreground hover:text-foreground"
+        >
+          +{list.length - max} more
+        </button>
       )}
-      <Popover>
+      <Popover open={editorOpen} onOpenChange={setEditorOpen}>
         <PopoverTrigger asChild>
           <button
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => { e.stopPropagation(); setOpenId(list[0]?.id ?? null); }}
             className="flex h-5 w-full items-center justify-center gap-1 rounded-sm border border-dashed border-border font-mono text-[8px] uppercase tracking-wider text-muted-foreground hover:text-foreground"
           >
             <Settings2 className="size-2.5" /> {list.length ? `Edit ${list.length}` : "Add"}
           </button>
         </PopoverTrigger>
-        <PopoverContent align="start" className="w-64 p-3" onClick={(e) => e.stopPropagation()}>
+        <PopoverContent align="start" className="max-h-[70vh] w-[360px] overflow-y-auto p-3" onClick={(e) => e.stopPropagation()}>
           <InsertRack
-            title="Inserts"
+            title={`${t.name} — inserts`}
             list={list}
+            openId={openId}
+            onOpenChange={setOpenId}
             onAdd={(def) => addPlugin(t.id, def)}
             onRemove={(id) => removePlugin(t.id, id)}
             onBypass={(id) => togglePluginBypass(t.id, id)}
@@ -874,6 +904,10 @@ function Strip({
         <Screw />
       </div>
 
+      <div className={cn(ROW.scope, "border-b border-border/60 p-[3px]")}>
+        <Scope scopeId={`ch:${t.id}`} height={40} compact color={t.color} />
+      </div>
+
       <ChannelEq t={t} />
 
       <DeviceSlots t={t} narrow={narrow} />
@@ -1053,6 +1087,9 @@ function BusStrip({
         Bus
         <Screw />
       </div>
+      <div className={cn(ROW.scope, "border-b border-border/60 p-[3px]")}>
+        <Scope scopeId={`bus:${id}`} height={40} compact color={color} />
+      </div>
       <div className={cn(ROW.eq, "flex items-center justify-center border-b border-border/60 font-mono text-[7px] uppercase tracking-widest text-muted-foreground")}>
         Bus FX below
       </div>
@@ -1224,6 +1261,9 @@ function MasterStrip({ level: peak }: { level: number }) {
           </PopoverContent>
         </Popover>
         <Screw />
+      </div>
+      <div className={cn(ROW.scope, "border-b border-black/50 p-[3px]")}>
+        <Scope scopeId="master" height={40} compact color={color} />
       </div>
       <MasterChain color={color} />
       <div className={cn(ROW.devices, "flex items-center gap-1 border-b border-black/50 px-1.5 py-1")}>

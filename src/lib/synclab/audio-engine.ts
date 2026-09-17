@@ -144,11 +144,13 @@ export class SyncLabEngine {
     const master = ctx.createGain();
     master.gain.value = 0.85;
     const analyser = ctx.createAnalyser();
-    analyser.fftSize = 512;
+    analyser.fftSize = 1024;
     master.connect(analyser);
     analyser.connect(ctx.destination);
     this.analyser = analyser;
     this.master = master;
+    // the master output doubles as a scope source
+    this.pluginScopes.set("master", analyser);
 
     // simple algorithmic reverb
     const conv = ctx.createConvolver();
@@ -203,7 +205,12 @@ export class SyncLabEngine {
     for (const id of ["drums", "vocals", "instruments", "synths", "fx", "master"]) {
       const g = ctx.createGain();
       g.gain.value = 1;
-      g.connect(master);
+      const busScope = ctx.createAnalyser();
+      busScope.fftSize = 1024;
+      busScope.smoothingTimeConstant = 0.6;
+      g.connect(busScope);
+      busScope.connect(master);
+      this.pluginScopes.set(`bus:${id}`, busScope);
       this.buses.set(id, g);
     }
     return ctx;
@@ -342,8 +349,10 @@ export class SyncLabEngine {
       const gain = ctx.createGain();
       const pan = ctx.createStereoPanner();
       const meter = ctx.createAnalyser();
-      meter.fftSize = 512;
+      meter.fftSize = 1024;
       meter.smoothingTimeConstant = 0.55;
+      // channel meter doubles as the strip scope source
+      this.pluginScopes.set(`ch:${id}`, meter);
       input.connect(gain);
       gain.connect(meter);
       meter.connect(pan);
