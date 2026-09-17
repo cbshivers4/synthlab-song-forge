@@ -184,5 +184,67 @@ export const PLUGIN_KINDS: PluginKind[] = [
   "autopan",
   "width",
   "bitcrusher",
+  "vocoder",
   "gain",
 ];
+
+/** Plugin bundle extensions we recognise when a folder or file is dropped in. */
+export const PLUGIN_EXT: Record<string, PluginDef["format"]> = {
+  vst3: "VST3",
+  vst: "VST3",
+  dll: "VST3",
+  component: "AU",
+  clap: "CLAP",
+  aaxplugin: "AAX",
+};
+
+/** Guess a DSP category from the plugin's file name so the scanned entry gets sensible controls. */
+export function guessPluginKind(fileName: string): PluginKind {
+  const n = fileName.toLowerCase();
+  const map: [RegExp, PluginKind][] = [
+    [/(pro-?q|parametric|eq8|linear ?phase)/, "paraeq"],
+    [/(vocoder|talkbox)/, "vocoder"],
+    [/(eq|equal|channel ?strip)/, "eq"],
+    [/(comp|1176|la-?2a|glue|bus ?comp)/, "compressor"],
+    [/(limit|maxim|l1|l2)/, "limiter"],
+    [/(gate|expander)/, "gate"],
+    [/(delay|echo)/, "delay"],
+    [/(verb|reverb|hall|plate|room)/, "reverb"],
+    [/(chorus)/, "chorus"],
+    [/(flang)/, "flanger"],
+    [/(phas)/, "phaser"],
+    [/(trem)/, "tremolo"],
+    [/(pan)/, "autopan"],
+    [/(filter|ladder|moog)/, "filter"],
+    [/(sat|drive|tube|tape|dist|crunch)/, "drive"],
+    [/(width|stereo|imager)/, "width"],
+    [/(crush|lofi|bit)/, "bitcrusher"],
+  ];
+  for (const [re, k] of map) if (re.test(n)) return k;
+  return "eq";
+}
+
+/**
+ * Turn dropped/selected files into plugin definitions. Browsers cannot execute a
+ * VST/AU binary, so we read the bundle name and format and drive SYNCLAB's own DSP.
+ */
+export function defsFromFiles(files: File[], existingNames: string[] = []): PluginDef[] {
+  const seen = new Set(existingNames.map((n) => n.toLowerCase()));
+  const out: PluginDef[] = [];
+  for (const f of files) {
+    const rel = (f as File & { webkitRelativePath?: string }).webkitRelativePath || f.name;
+    const parts = rel.split("/").filter(Boolean);
+    const bundle = parts.find((seg) => {
+      const ext = seg.split(".").pop()?.toLowerCase();
+      return !!ext && ext in PLUGIN_EXT;
+    });
+    if (!bundle) continue;
+    const ext = bundle.split(".").pop()?.toLowerCase() ?? "";
+    const pluginName = bundle.replace(/\.[^.]+$/, "");
+    if (!pluginName || seen.has(pluginName.toLowerCase())) continue;
+    seen.add(pluginName.toLowerCase());
+    const vendorGuess = parts.length > 1 && parts[0] !== bundle ? (parts[0] as string) : "3RD PARTY";
+    out.push(def(pluginName, vendorGuess.toUpperCase(), PLUGIN_EXT[ext] ?? "VST3", guessPluginKind(pluginName)));
+  }
+  return out;
+}
