@@ -10,7 +10,7 @@ import { toast } from "sonner";
 const VOICES = ["Detroit Baritone", "Electro Vocoder", "Soul Alto", "Ghetto Tech Chant", "Robotic Whisper"];
 
 export function VocalForge() {
-  const { addTrack } = useStudio();
+  const { addTrack, transport, setTransport, select, setPanel } = useStudio();
   const [voice, setVoice] = useState<string>(VOICES[0] as string);
   const [lyrics, setLyrics] = useState("");
   const [tone, setTone] = useState(0.5);
@@ -45,11 +45,17 @@ export function VocalForge() {
           <Button
             className="glow"
             onClick={() => {
-              addTrack("ai-vocal", "AI VOCAL", "Vocoder Bot");
-              toast.success("AI vocal channel created", { description: `${voice} ready on its own track.` });
+              const id = addTrack("ai-vocal", lyrics.trim().slice(0, 14).toUpperCase() || "AI VOCAL", "Vocoder Bot");
+              select(id);
+              setPanel("piano");
+              toast.success("Vocal channel ready", {
+                description:
+                  "Your lyrics are staged and the channel is armed for the vocoder. SYNCLAB does not sing them for you yet — sing or speak the line into this channel, or write the melody in the piano roll.",
+                duration: 9000,
+              });
             }}
           >
-            <Sparkles className="size-4" /> GENERATE
+            <Sparkles className="size-4" /> BUILD VOCAL CHANNEL
           </Button>
         </div>
       </div>
@@ -63,10 +69,26 @@ export function VocalForge() {
           <Button variant="secondary" onClick={() => addTrack("audio", "VOCAL")}>
             <Mic className="size-4" /> New vocal track
           </Button>
-          <Button variant="ghost" onClick={() => toast("Punch recording armed", { description: "Punch in / out markers follow the loop region." })}>
+          <Button
+            variant="ghost"
+            onClick={() => {
+              const lo = transport.loopStart ?? 0;
+              const hi = transport.loopEnd ?? (transport.bars ?? 4) * 4;
+              setTransport({ punchIn: lo, punchOut: hi });
+              toast.success("Punch markers set", {
+                description: `Recording starts at step ${lo + 1} and stops at step ${hi} while the transport runs.`,
+              });
+            }}
+          >
             Punch in / out
           </Button>
-          <Button variant="ghost" onClick={() => toast("Loop recording on", { description: "Each pass is stored as a new take." })}>
+          <Button
+            variant="ghost"
+            onClick={() => {
+              setTransport({ loop: true, overdub: true });
+              toast.success("Loop takes on", { description: "Each pass around the loop is kept as its own take." });
+            }}
+          >
             Loop takes
           </Button>
         </div>

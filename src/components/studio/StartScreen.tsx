@@ -10,12 +10,14 @@ import { KEYS, TEMPLATES, TIME_SIGS, templateById } from "@/lib/synclab/template
 import { useStudio } from "@/lib/synclab/store";
 import { toast } from "sonner";
 import synclabLogoAsset from "@/assets/synclab-logo-neon.jpg.asset.json";
+import { listUserTemplates, removeUserTemplate, type UserTemplate } from "@/lib/synclab/user-templates";
 import { deleteCloudProject, listCloudProjects, loadCloudProject, type CloudProject } from "@/lib/synclab/cloud";
 
 export function StartScreen() {
   const { setStage, setProject, removeRecent, recents } = useApp();
-  const { tracks, addTrack, removeTrack, setTransport, restore } = useStudio();
+  const { tracks, addTrack, removeTrack, setTransport, restore, setPanel } = useStudio();
   const [cloud, setCloud] = useState<CloudProject[]>([]);
+  const [templates, setTemplates] = useState<UserTemplate[]>([]);
   const [cloudBusy, setCloudBusy] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("Untitled Project");
@@ -26,7 +28,22 @@ export function StartScreen() {
 
   useEffect(() => {
     void listCloudProjects().then(setCloud).catch(() => setCloud([]));
+    setTemplates(listUserTemplates());
   }, []);
+
+  const openTemplate = (tpl: UserTemplate) => {
+    restore(tpl.session);
+    setProject({
+      name: `${tpl.name} copy`,
+      bpm: tpl.bpm,
+      key: "A Minor",
+      timeSig: "4/4",
+      template: tpl.id,
+      openedAt: Date.now(),
+    });
+    setStage("studio");
+    toast.success(`Started from “${tpl.name}”`);
+  };
 
   const openCloud = async (item: CloudProject) => {
     setCloudBusy(item.id);
@@ -95,11 +112,11 @@ export function StartScreen() {
             icon={<Sparkles className="size-4" />}
             title="Start with AI"
             body="Describe the track you want."
-            onClick={() =>
-              toast("AI project start is coming in the AI stage", {
-                description: "The AI Co-Producer needs its backend before it can build a project for you.",
-              })
-            }
+            onClick={() => {
+              setStage("studio");
+              setPanel("coproducer");
+              toast("Co-Producer open", { description: "Describe the track you want and it will plan it with you." });
+            }}
           />
           <Action
             icon={<FolderOpen className="size-4" />}
@@ -153,6 +170,39 @@ export function StartScreen() {
             </div>
           )}
         </section>
+
+        {templates.length > 0 && (
+          <section className="mt-10">
+            <div className="flex items-center gap-2">
+              <LayoutTemplate className="size-4 text-primary" />
+              <h2 className="label-xs">Your templates</h2>
+            </div>
+            <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {templates.map((tpl) => (
+                <div key={tpl.id} className="group panel relative p-3">
+                  <button className="block w-full text-left" onClick={() => openTemplate(tpl)}>
+                    <div className="font-display text-sm font-semibold">{tpl.name}</div>
+                    <div className="font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
+                      {tpl.bpm} BPM · {tpl.trackCount} tracks
+                    </div>
+                  </button>
+                  <button
+                    aria-label={`Delete template ${tpl.name}`}
+                    title="Delete template"
+                    onClick={() => {
+                      removeUserTemplate(tpl.id);
+                      setTemplates(listUserTemplates());
+                      toast.success("Template deleted");
+                    }}
+                    className="absolute right-2 top-2 rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100"
+                  >
+                    <Trash2 className="size-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {recents.length > 0 && (
           <section className="mt-10">
