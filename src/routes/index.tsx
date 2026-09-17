@@ -15,6 +15,7 @@ import { Settings } from "@/components/studio/Settings";
 import { Keyboard } from "@/components/studio/Keyboard";
 import { Browser } from "@/components/studio/Browser";
 import { Sampler } from "@/components/studio/Sampler";
+import { PadSampler } from "@/components/studio/PadSampler";
 import { SplashScreen } from "@/components/studio/SplashScreen";
 import { PluginRack } from "@/components/studio/PluginRack";
 import { FloatingDevice } from "@/components/studio/FloatingDevice";
