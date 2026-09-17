@@ -227,6 +227,12 @@ function InsertRack({
                 <Trash2 className="size-3 text-muted-foreground hover:text-destructive" />
               </button>
             </div>
+            {open === p.id && (
+              <div className="space-y-1 pt-1">
+                <Scope scopeId={p.id} height={52} />
+                <XYPad plugin={p} onParam={(paramId, v) => onParam(p.id, paramId, v)} />
+              </div>
+            )}
             {open === p.id &&
               p.params.map((x) => (
                 <div key={x.id} className="flex items-center gap-1 pt-1">
