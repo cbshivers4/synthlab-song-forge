@@ -14,7 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      cloud_projects: {
+        Row: {
+          bpm: number
+          created_at: string
+          id: string
+          musical_key: string
+          name: string
+          opened_at: string
+          session: Json
+          template: string
+          time_signature: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bpm?: number
+          created_at?: string
+          id?: string
+          musical_key?: string
+          name: string
+          opened_at?: string
+          session?: Json
+          template?: string
+          time_signature?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          bpm?: number
+          created_at?: string
+          id?: string
+          musical_key?: string
+          name?: string
+          opened_at?: string
+          session?: Json
+          template?: string
+          time_signature?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
