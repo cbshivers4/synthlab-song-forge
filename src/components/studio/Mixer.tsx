@@ -1299,7 +1299,9 @@ export function Mixer() {
   const busLevel = (id: BusId) => {
     const members = tracks.filter((t) => t.bus === id && !t.muted);
     const peak = Math.max(0, ...members.map((t) => levels.tracks[t.id] ?? 0));
-    return buses[id].muted ? 0 : peak * Math.min(1, buses[id].volume);
+    const out = buses[id].muted ? 0 : peak * Math.min(1, buses[id].volume);
+    reportLevel(`bus:${id}`, out);
+    return out;
   };
   // Only show bus strips that actually have channels routed to them.
   const activeBuses = BUS_STRIPS.filter((id) => tracks.some((t) => t.bus === id));
