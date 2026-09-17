@@ -1,18 +1,42 @@
 import { useState } from "react";
-import { Lock, Minus, Plus, Unlock } from "lucide-react";
+import { Lock, Minus, Music2, Plus, Unlock } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { useStudio } from "@/lib/synclab/store";
 
 const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 const BLACK = new Set([1, 3, 6, 8, 10]);
+const SCALES: Record<string, number[]> = {
+  Major: [0, 2, 4, 5, 7, 9, 11],
+  Minor: [0, 2, 3, 5, 7, 8, 10],
+  Dorian: [0, 2, 3, 5, 7, 9, 10],
+  Phrygian: [0, 1, 3, 5, 7, 8, 10],
+  Mixolydian: [0, 2, 4, 5, 7, 9, 10],
+  "Minor Pent": [0, 3, 5, 7, 10],
+  Blues: [0, 3, 5, 6, 7, 10],
+  Chromatic: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+};
+const CHORDS = [
+  { name: "MAJ", intervals: [0, 4, 7] },
+  { name: "MIN", intervals: [0, 3, 7] },
+  { name: "7", intervals: [0, 4, 7, 10] },
+  { name: "MAJ7", intervals: [0, 4, 7, 11] },
+  { name: "MIN7", intervals: [0, 3, 7, 10] },
+  { name: "SUS2", intervals: [0, 2, 7] },
+  { name: "SUS4", intervals: [0, 5, 7] },
+  { name: "DIM", intervals: [0, 3, 6] },
+] as const;
 
 export function Keyboard() {
   const { selected, previewNote } = useStudio();
   const [octave, setOctave] = useState(4); // C4 base
   const [velocity, setVelocity] = useState(0.9);
-  const [held, setHeld] = useState<number | null>(null);
+  const [held, setHeld] = useState<number[]>([]);
   const [locked, setLocked] = useState(false);
+  const [root, setRoot] = useState(0);
+  const [scaleName, setScaleName] = useState("Minor");
+  const [scaleLock, setScaleLock] = useState(false);
 
   const slideTo = (o: number) => {
     if (locked) return;
@@ -43,12 +67,27 @@ export function Keyboard() {
     }
   }
 
-  const play = (midi: number) => {
-    if (!selected) return;
-    setHeld(midi);
-    previewNote(selected.id, midi);
-    window.setTimeout(() => setHeld((h) => (h === midi ? null : h)), 180);
+  const scale = SCALES[scaleName] ?? SCALES.Minor ?? [];
+  const inScale = (midi: number) => scale.includes((((midi - root) % 12) + 12) % 12);
+  const fitToScale = (midi: number) => {
+    if (!scaleLock || inScale(midi)) return midi;
+    for (let distance = 1; distance < 12; distance++) {
+      if (inScale(midi - distance)) return midi - distance;
+      if (inScale(midi + distance)) return midi + distance;
+    }
+    return midi;
   };
+
+  const playNotes = (notes: number[]) => {
+    if (!selected) return;
+    const fitted = [...new Set(notes.map(fitToScale))];
+    setHeld(fitted);
+    fitted.forEach((midi) => previewNote(selected.id, midi));
+    window.setTimeout(() => setHeld([]), 240);
+  };
+
+  const play = (midi: number) => playNotes([midi]);
+  const playChord = (intervals: readonly number[]) => playNotes(intervals.map((interval) => base + root + interval));
 
   const label = (midi: number) => `${NOTE_NAMES[midi % 12]}${Math.floor(midi / 12) - 1}`;
 
@@ -116,13 +155,15 @@ export function Keyboard() {
 
       {/* fast range slide: bass ←→ treble */}
       <div className="flex items-center gap-2">
-        <button
+        <Button
+          size="sm"
+          variant="outline"
           onClick={() => slideTo(1)}
           disabled={locked}
-          className="rounded-[3px] border border-border px-2 py-0.5 font-mono text-[10px] tracking-wider text-muted-foreground transition-colors hover:text-primary disabled:opacity-40"
+          className="h-6 px-2 font-mono text-[10px] tracking-wider"
         >
           BASS
-        </button>
+        </Button>
         <Slider
           className="flex-1"
           value={[octave]}
@@ -133,22 +174,72 @@ export function Keyboard() {
           aria-label="Slide keyboard range"
           onValueChange={([v = 4]) => slideTo(v)}
         />
-        <button
+        <Button
+          size="sm"
+          variant="outline"
           onClick={() => slideTo(4)}
           disabled={locked}
-          className="rounded-[3px] border border-border px-2 py-0.5 font-mono text-[10px] tracking-wider text-muted-foreground transition-colors hover:text-primary disabled:opacity-40"
+          className="h-6 px-2 font-mono text-[10px] tracking-wider"
         >
           MID
-        </button>
-        <button
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
           onClick={() => slideTo(7)}
           disabled={locked}
-          className="rounded-[3px] border border-border px-2 py-0.5 font-mono text-[10px] tracking-wider text-muted-foreground transition-colors hover:text-primary disabled:opacity-40"
+          className="h-6 px-2 font-mono text-[10px] tracking-wider"
         >
           TREBLE
-        </button>
+        </Button>
       </div>
 
+      <div className="flex flex-wrap items-center gap-1.5 rounded-[3px] border border-border bg-surface/60 p-1.5">
+        <Music2 className="size-3.5 text-primary" />
+        <span className="label-xs px-1">SCALE</span>
+        <Select value={String(root)} onValueChange={(value) => setRoot(Number(value))}>
+          <SelectTrigger className="h-7 w-16 text-[10px]" aria-label="Scale root">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {NOTE_NAMES.map((note, index) => (
+              <SelectItem key={note} value={String(index)}>{note}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={scaleName} onValueChange={setScaleName}>
+          <SelectTrigger className="h-7 w-28 text-[10px]" aria-label="Scale type">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {Object.keys(SCALES).map((name) => (
+              <SelectItem key={name} value={name}>{name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button
+          size="sm"
+          variant={scaleLock ? "default" : "outline"}
+          className="h-7 px-2 font-mono text-[10px] tracking-wider"
+          aria-pressed={scaleLock}
+          onClick={() => setScaleLock((value) => !value)}
+        >
+          SCALE LOCK
+        </Button>
+        <span className="mx-1 hidden h-5 w-px bg-border sm:block" />
+        <span className="label-xs px-1">CHORDS</span>
+        {CHORDS.map((chord) => (
+          <Button
+            key={chord.name}
+            size="sm"
+            variant="ghost"
+            className="h-7 px-2 font-mono text-[10px] tracking-wider"
+            onClick={() => playChord(chord.intervals)}
+          >
+            {NOTE_NAMES[root]} {chord.name}
+          </Button>
+        ))}
+      </div>
 
       <div
         onWheel={(e) => slideTo(octave + (e.deltaY > 0 ? -1 : 1))}
@@ -162,9 +253,11 @@ export function Keyboard() {
               key={midi}
               onPointerDown={() => play(midi)}
               className={`relative flex-1 rounded-b-[3px] transition-colors ${
-                held === midi
+                held.includes(midi)
                   ? "bg-[oklch(0.75_0.12_250)]"
-                  : "bg-[oklch(0.96_0.005_90)] hover:bg-[oklch(0.9_0.005_90)]"
+                  : inScale(midi)
+                    ? "bg-[oklch(0.94_0.035_195)] hover:bg-[oklch(0.88_0.06_195)]"
+                    : "bg-[oklch(0.96_0.005_90)] hover:bg-[oklch(0.9_0.005_90)]"
               }`}
               style={{
                 backgroundImage: "linear-gradient(180deg, oklch(0.9 0.005 90) 0%, oklch(0.98 0.003 90) 12%, oklch(0.96 0.005 90) 100%)",
@@ -185,7 +278,11 @@ export function Keyboard() {
             key={midi}
             onPointerDown={() => play(midi)}
             className={`absolute top-0 z-10 h-[58%] rounded-b-[3px] transition-colors ${
-              held === midi ? "bg-[oklch(0.5_0.12_250)]" : "bg-[oklch(0.12_0.005_255)] hover:bg-[oklch(0.2_0.005_255)]"
+               held.includes(midi)
+                 ? "bg-[oklch(0.5_0.12_250)]"
+                 : inScale(midi)
+                   ? "bg-[oklch(0.24_0.055_195)] hover:bg-[oklch(0.3_0.07_195)]"
+                   : "bg-[oklch(0.12_0.005_255)] hover:bg-[oklch(0.2_0.005_255)]"
             }`}
             style={{
               left: `calc(${(pos / whiteCount) * 100}% + ${100 / whiteCount * 0.72}%)`,
@@ -197,7 +294,7 @@ export function Keyboard() {
           />
         ))}
       </div>
-      <p className="label-xs">Click or tap the keys to audition the selected instrument</p>
+      <p className="label-xs">Highlighted keys are in {NOTE_NAMES[root]} {scaleName} · click a chord to play it</p>
     </div>
   );
 }
