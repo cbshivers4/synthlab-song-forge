@@ -812,21 +812,34 @@ function EditToolbar() {
 function Ruler() {
   const { transport, setTransport } = useStudio();
   const gridRef = useRef<HTMLDivElement>(null);
+  const bars = Math.max(1, transport.bars ?? 4);
+  const total = bars * 4;
   const lo = transport.loopStart ?? 0;
-  const hi = Math.max(lo + 1, transport.loopEnd ?? 16);
+  const hi = Math.max(lo + 1, transport.loopEnd ?? total);
+
+  const setBars = (next: number) => {
+    const b = Math.min(64, Math.max(1, next));
+    const steps = b * 4;
+    setTransport({
+      bars: b,
+      loopStart: Math.min(lo, steps - 1),
+      loopEnd: Math.min(hi, steps),
+      step: transport.step % steps,
+    });
+  };
 
   const stepFromX = (clientX: number) => {
     const el = gridRef.current;
     if (!el) return 0;
     const r = el.getBoundingClientRect();
-    return Math.min(16, Math.max(0, Math.round(((clientX - r.left) / r.width) * 16)));
+    return Math.min(total, Math.max(0, Math.round(((clientX - r.left) / r.width) * total)));
   };
 
   const startDrag = (e: React.PointerEvent) => {
     e.preventDefault();
     const s = stepFromX(e.clientX);
     let end = s;
-    setTransport({ loopStart: s, loopEnd: Math.min(16, s + 4), loop: true });
+    setTransport({ loopStart: s, loopEnd: Math.min(total, s + 4), loop: true });
     const move = (ev: PointerEvent) => {
       end = stepFromX(ev.clientX);
       setTransport({ loopStart: Math.min(s, end), loopEnd: Math.max(Math.min(s, end) + 1, Math.max(s, end)) });
@@ -846,6 +859,28 @@ function Ruler() {
         <span className="label-xs ml-auto">
           {String(Math.floor(transport.step / 4) + 1).padStart(2, "0")}.{(transport.step % 4) + 1}
         </span>
+        {/* bar count control */}
+        <div className="flex items-center gap-0.5 rounded-[3px] border border-border bg-background/70 px-0.5" title="Timeline length in bars">
+          <button
+            type="button"
+            aria-label="Fewer bars"
+            className="px-1 font-mono text-[11px] text-muted-foreground hover:text-foreground disabled:opacity-30"
+            disabled={bars <= 1}
+            onClick={() => setBars(bars - 1)}
+          >
+            −
+          </button>
+          <span className="min-w-11 text-center font-mono text-[10px] text-primary">{bars} {bars === 1 ? "BAR" : "BARS"}</span>
+          <button
+            type="button"
+            aria-label="More bars"
+            className="px-1 font-mono text-[11px] text-muted-foreground hover:text-foreground disabled:opacity-30"
+            disabled={bars >= 64}
+            onClick={() => setBars(bars + 1)}
+          >
+            +
+          </button>
+        </div>
       </div>
       <div
         ref={gridRef}
@@ -853,8 +888,8 @@ function Ruler() {
         title="Drag on the ruler to set the loop region"
         className="relative flex flex-1 cursor-ew-resize select-none"
       >
-        <div className="grid w-full grid-cols-[repeat(16,minmax(0,1fr))]">
-          {Array.from({ length: 16 }).map((_, i) => (
+        <div className="grid w-full" style={{ gridTemplateColumns: `repeat(${total},minmax(0,1fr))` }}>
+          {Array.from({ length: total }).map((_, i) => (
             <div
               key={i}
               className={`border-l py-1 pl-1 font-mono text-[9px] ${
@@ -869,16 +904,16 @@ function Ruler() {
         {/* dim outside the loop */}
         {transport.loop && (
           <>
-            <div className="pointer-events-none absolute inset-y-0 left-0 bg-background/60" style={{ width: `${(lo / 16) * 100}%` }} />
-            <div className="pointer-events-none absolute inset-y-0 right-0 bg-background/60" style={{ width: `${((16 - hi) / 16) * 100}%` }} />
+            <div className="pointer-events-none absolute inset-y-0 left-0 bg-background/60" style={{ width: `${(lo / total) * 100}%` }} />
+            <div className="pointer-events-none absolute inset-y-0 right-0 bg-background/60" style={{ width: `${((total - hi) / total) * 100}%` }} />
             {/* loop band */}
             <div
               className="pointer-events-none absolute inset-y-0 border-x border-primary/70 bg-primary/15"
-              style={{ left: `${(lo / 16) * 100}%`, width: `${((hi - lo) / 16) * 100}%` }}
+              style={{ left: `${(lo / total) * 100}%`, width: `${((hi - lo) / total) * 100}%` }}
             />
             {/* markers */}
             {[lo, hi].map((p, idx) => (
-              <div key={idx} className="pointer-events-none absolute top-0" style={{ left: `calc(${(p / 16) * 100}% - 4px)` }}>
+              <div key={idx} className="pointer-events-none absolute top-0" style={{ left: `calc(${(p / total) * 100}% - 4px)` }}>
                 <div
                   className="h-0 w-0 border-x-4 border-x-transparent"
                   style={{ borderTop: "7px solid var(--primary)" }}
@@ -891,7 +926,7 @@ function Ruler() {
         {transport.playing && (
           <div
             className="pointer-events-none absolute top-0 h-full w-[2px] bg-primary"
-            style={{ left: `${(transport.step / 16) * 100}%` }}
+            style={{ left: `${(transport.step / total) * 100}%` }}
           />
         )}
       </div>
