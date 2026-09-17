@@ -27,6 +27,8 @@ import { StartScreen } from "@/components/studio/StartScreen";
 import { DeviceSetup } from "@/components/studio/DeviceSetup";
 import { ExportDialog } from "@/components/studio/ExportDialog";
 import { BassGenerator } from "@/components/studio/BassGenerator";
+import { CoProducer } from "@/components/studio/CoProducer";
+import { Bot } from "lucide-react";
 import { AppProvider, useApp, useMaybeApp } from "@/lib/synclab/app-state";
 import { toast } from "sonner";
 import synthFace from "@/assets/hw-synth.jpg";
