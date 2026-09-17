@@ -230,6 +230,20 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const [midiInputs, setMidiInputs] = useState<MidiPortInfo[]>([]);
   const [midiInputId, setMidiInputId] = useState<string | null>(null);
   const [midiLearning, setMidiLearning] = useState(false);
+  // Hardware mixer control: CC number -> mixer target, remembered between sessions.
+  const [midiMap, setMidiMap] = useState<Record<string, MidiTarget>>(() => {
+    if (typeof window === "undefined") return {};
+    try {
+      return JSON.parse(window.localStorage.getItem(MIDI_MAP_KEY) || "{}") as Record<string, MidiTarget>;
+    } catch {
+      return {};
+    }
+  });
+  const [midiLearn, setMidiLearn] = useState<MidiTarget | null>(null);
+  const midiMapRef = useRef(midiMap);
+  midiMapRef.current = midiMap;
+  const midiLearnRef = useRef(midiLearn);
+  midiLearnRef.current = midiLearn;
   const [clipboardName, setClipboardName] = useState<string | null>(null);
   const clipboardRef = useRef<Track | null>(null);
   const selectedIdRef = useRef(selectedId);
