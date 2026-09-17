@@ -250,6 +250,18 @@ export function PadSampler() {
     return () => window.removeEventListener("keydown", down);
   });
 
+  /** Stop just one pad's voice (and its choke group) without touching the others. */
+  const stopPad = useCallback(
+    (i: number) => {
+      const pad = padsRef.current[i];
+      const id = trackId;
+      if (!pad || !id) return;
+      getEngine().stopVoiceKey(id, `pad${i}`);
+      if (pad.choke) getEngine().stopVoiceKey(id, `choke${pad.choke}`);
+    },
+    [trackId],
+  );
+
   const loadInto = async (i: number, file: File | undefined) => {
     if (!file) return;
     if (!file.type.startsWith("audio") && !AUDIO_RE.test(file.name)) {
