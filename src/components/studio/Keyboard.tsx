@@ -72,8 +72,8 @@ export function Keyboard() {
             variant="ghost"
             className="size-6"
             aria-label="Octave down"
-            disabled={octave <= 1}
-            onClick={() => setOctave((o) => Math.max(1, o - 1))}
+            disabled={octave <= 1 || locked}
+            onClick={() => slideTo(octave - 1)}
           >
             <Minus className="size-3" />
           </Button>
@@ -83,10 +83,23 @@ export function Keyboard() {
             variant="ghost"
             className="size-6"
             aria-label="Octave up"
-            disabled={octave >= 7}
-            onClick={() => setOctave((o) => Math.min(7, o + 1))}
+            disabled={octave >= 7 || locked}
+            onClick={() => slideTo(octave + 1)}
           >
             <Plus className="size-3" />
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            aria-pressed={locked}
+            aria-label={locked ? "Unlock keyboard range" : "Lock keyboard range"}
+            onClick={() => setLocked((l) => !l)}
+            className={`h-6 gap-1 px-2 font-mono text-[10px] tracking-wider ${
+              locked ? "bg-primary/15 text-primary shadow-[inset_0_0_0_1px_var(--primary)]" : "text-muted-foreground"
+            }`}
+          >
+            {locked ? <Lock className="size-3" /> : <Unlock className="size-3" />}
+            {locked ? "LOCKED" : "LOCK"}
           </Button>
         </div>
         <div className="flex w-32 items-center gap-2">
@@ -100,6 +113,42 @@ export function Keyboard() {
           />
         </div>
       </div>
+
+      {/* fast range slide: bass ←→ treble */}
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => slideTo(1)}
+          disabled={locked}
+          className="rounded-[3px] border border-border px-2 py-0.5 font-mono text-[10px] tracking-wider text-muted-foreground transition-colors hover:text-primary disabled:opacity-40"
+        >
+          BASS
+        </button>
+        <Slider
+          className="flex-1"
+          value={[octave]}
+          min={1}
+          max={7}
+          step={1}
+          disabled={locked}
+          aria-label="Slide keyboard range"
+          onValueChange={([v = 4]) => slideTo(v)}
+        />
+        <button
+          onClick={() => slideTo(4)}
+          disabled={locked}
+          className="rounded-[3px] border border-border px-2 py-0.5 font-mono text-[10px] tracking-wider text-muted-foreground transition-colors hover:text-primary disabled:opacity-40"
+        >
+          MID
+        </button>
+        <button
+          onClick={() => slideTo(7)}
+          disabled={locked}
+          className="rounded-[3px] border border-border px-2 py-0.5 font-mono text-[10px] tracking-wider text-muted-foreground transition-colors hover:text-primary disabled:opacity-40"
+        >
+          TREBLE
+        </button>
+      </div>
+
 
       <div
         className="relative h-36 select-none overflow-hidden rounded-[3px] border border-border bg-black"
