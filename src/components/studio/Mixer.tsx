@@ -441,7 +441,7 @@ function VuMeter({ level, label }: { level: number; label: string }) {
           return <line key={db} x1={x1} y1={y1} x2={x2} y2={y2} stroke="oklch(0.85 0.02 95)" strokeWidth="1" opacity="0.7" />;
         })}
         <g transform={`rotate(${angle} 30 34)`}>
-          <line x1="30" y1="34" x2="30" y2="10" stroke="oklch(0.75 0.19 30)" strokeWidth="1.6" strokeLinecap="round" />
+          <line x1="30" y1="34" x2="30" y2="10" stroke="var(--mx-accent, oklch(0.75 0.19 30))" strokeWidth="1.6" strokeLinecap="round" />
         </g>
         <circle cx="30" cy="34" r="2.6" fill="oklch(0.3 0.01 260)" stroke="oklch(0.7 0.02 95)" strokeWidth="0.8" />
       </svg>
@@ -452,7 +452,7 @@ function VuMeter({ level, label }: { level: number; label: string }) {
 
 /** Chunky console fader thumb overrides for the shadcn slider. */
 const FADER_CAP =
-  "[&_[role=slider]]:h-6 [&_[role=slider]]:w-9 [&_[role=slider]]:rounded-[3px] [&_[role=slider]]:border-black/70 [&_[role=slider]]:shadow-[0_2px_4px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.35)]";
+  "mx-fader [&_[role=slider]]:h-6 [&_[role=slider]]:w-9 [&_[role=slider]]:rounded-[3px] [&_[role=slider]]:border-black/70 [&_[role=slider]]:shadow-[0_2px_4px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.35)]";
 
 function SectionLabel({ children, className }: { children?: ReactNode; className?: string }) {
   return (
