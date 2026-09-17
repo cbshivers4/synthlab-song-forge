@@ -120,6 +120,7 @@ const def = (name: string, vendor: string, format: PluginDef["format"], kind: Pl
 
 export const BUILT_IN_PLUGINS: PluginDef[] = [
   def("Channel EQ", "SYNCLAB", "Built-in", "eq"),
+  def("Pro-EQ 8", "SYNCLAB", "Built-in", "paraeq"),
   def("Analog Filter", "SYNCLAB", "Built-in", "filter"),
   def("Tube Drive", "SYNCLAB", "Built-in", "drive"),
   def("Bus Compressor", "SYNCLAB", "Built-in", "compressor"),
@@ -153,6 +154,7 @@ export const instantiate = (d: PluginDef): PluginInstance => ({
 
 export const PLUGIN_KINDS: PluginKind[] = [
   "eq",
+  "paraeq",
   "filter",
   "drive",
   "compressor",
