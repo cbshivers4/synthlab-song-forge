@@ -193,6 +193,71 @@ export class SyncLabEngine {
     return ctx;
   }
 
+  /* ---------------- master capture (bounce / export) ---------------- */
+  private capture: {
+    proc: ScriptProcessorNode;
+    sink: GainNode;
+    left: Float32Array[];
+    right: Float32Array[];
+    frames: number;
+  } | null = null;
+
+  /** Start recording the main output in real time. */
+  startCapture() {
+    const ctx = this.init();
+    if (this.capture || !this.master) return;
+    const proc = ctx.createScriptProcessor(4096, 2, 2);
+    const left: Float32Array[] = [];
+    const right: Float32Array[] = [];
+    const cap = { proc, sink: ctx.createGain(), left, right, frames: 0 };
+    proc.onaudioprocess = (e) => {
+      const l = e.inputBuffer.getChannelData(0);
+      const r = e.inputBuffer.numberOfChannels > 1 ? e.inputBuffer.getChannelData(1) : l;
+      left.push(new Float32Array(l));
+      right.push(new Float32Array(r));
+      cap.frames += l.length;
+    };
+    cap.sink.gain.value = 0;
+    this.master.connect(proc);
+    proc.connect(cap.sink);
+    cap.sink.connect(ctx.destination);
+    this.capture = cap;
+  }
+
+  get capturedSeconds() {
+    if (!this.capture || !this.ctx) return 0;
+    return this.capture.frames / this.ctx.sampleRate;
+  }
+
+  get capturing() {
+    return this.capture !== null;
+  }
+
+  /** Stop capture and return the interleaved-free stereo buffers. */
+  stopCapture(): { left: Float32Array; right: Float32Array; sampleRate: number } | null {
+    const cap = this.capture;
+    if (!cap || !this.ctx || !this.master) return null;
+    this.capture = null;
+    cap.proc.onaudioprocess = null;
+    try {
+      this.master.disconnect(cap.proc);
+    } catch {
+      /* already detached */
+    }
+    cap.proc.disconnect();
+    cap.sink.disconnect();
+    const join = (chunks: Float32Array[]) => {
+      const out = new Float32Array(cap.frames);
+      let o = 0;
+      for (const c of chunks) {
+        out.set(c, o);
+        o += c.length;
+      }
+      return out;
+    };
+    return { left: join(cap.left), right: join(cap.right), sampleRate: this.ctx.sampleRate };
+  }
+
   busNode(id: string) {
     this.init();
     return this.buses.get(id) ?? this.buses.get("master")!;

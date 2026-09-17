@@ -39,6 +39,7 @@ import { useStudio } from "@/lib/synclab/store";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { INSTRUMENTS } from "@/lib/synclab/presets";
 import { toast } from "sonner";
+import { openExport } from "@/components/studio/ExportDialog";
 import synclabLogoAsset from "@/assets/synclab-logo.jpg.asset.json";
 const synclabLogo = synclabLogoAsset.url;
 
@@ -231,7 +232,7 @@ export function TopBar() {
           <Button variant="ghost" size="sm" onClick={() => toast("Import instrumental", { description: "Drop a file on the timeline to analyse BPM, key and structure." })}>
             <Import className="size-4" /> IMPORT
           </Button>
-          <Button variant="ghost" size="sm" onClick={() => toast.success("Bounce queued", { description: "Your session will render to stereo WAV." })}>
+          <Button variant="ghost" size="sm" onClick={openExport}>
             <Download className="size-4" /> EXPORT
           </Button>
           <Button

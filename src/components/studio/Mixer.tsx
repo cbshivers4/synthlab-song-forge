@@ -503,6 +503,13 @@ function DeviceSlots({ t, narrow }: { t: Track; narrow: boolean }) {
             <Power className="size-2.5" style={{ color: p.bypass ? "var(--muted-foreground)" : t.color }} />
           </button>
           <span className="flex-1 truncate font-mono text-[8px] uppercase">{p.name}</span>
+          <button
+            onClick={(e) => { e.stopPropagation(); removePlugin(t.id, p.id); }}
+            title={`Remove ${p.name}`}
+            className="text-muted-foreground hover:text-destructive"
+          >
+            <Trash2 className="size-2.5" />
+          </button>
         </div>
       ))}
       {list.length > max && (
@@ -1012,6 +1019,62 @@ function FxMenu({ target, label }: { target: string; label: string }) {
   );
 }
 
+/** Master insert chain with one-tap mastering effects (limiter first). */
+function MasterChain({ color }: { color: string }) {
+  const { fxChains, addFxPlugin, removeFxPlugin, toggleFxBypass, installedPlugins } = useStudio();
+  const list = fxChains["bus:master"] ?? [];
+  const quick: [string, string][] = [
+    ["limiter", "Limiter"],
+    ["compressor", "Glue"],
+    ["paraeq", "Pro-EQ"],
+    ["width", "Width"],
+  ];
+  const add = (kind: string) => {
+    const def = installedPlugins.find((d) => d.kind === kind) ?? BUILT_IN_PLUGINS.find((d) => d.kind === kind);
+    if (def) addFxPlugin("bus:master", def);
+  };
+  return (
+    <div className={cn(ROW.eq, "space-y-0.5 overflow-y-auto border-b border-border/60 px-1 py-1")}>
+      {list.length === 0 && (
+        <div className="text-center font-mono text-[7px] uppercase tracking-widest text-muted-foreground">
+          Main bus — no mastering yet
+        </div>
+      )}
+      {list.map((p) => (
+        <div
+          key={p.id}
+          className="flex items-center gap-1 rounded-sm px-1 py-[2px]"
+          style={{ background: `color-mix(in oklab, ${color} 18%, var(--surface-2, transparent))` }}
+        >
+          <button onClick={() => toggleFxBypass("bus:master", p.id)} title="Bypass">
+            <Power className="size-2.5" style={{ color: p.bypass ? "var(--muted-foreground)" : color }} />
+          </button>
+          <span className="flex-1 truncate font-mono text-[8px] uppercase">{p.name}</span>
+          <button
+            onClick={() => removeFxPlugin("bus:master", p.id)}
+            title={`Remove ${p.name}`}
+            className="text-muted-foreground hover:text-destructive"
+          >
+            <Trash2 className="size-2.5" />
+          </button>
+        </div>
+      ))}
+      <div className="grid grid-cols-4 gap-1 pt-[2px]">
+        {quick.map(([kind, label]) => (
+          <button
+            key={kind}
+            onClick={() => add(kind)}
+            title={`Add ${label} to the main output`}
+            className="h-4 rounded-sm border border-border bg-surface font-mono text-[7px] uppercase text-muted-foreground hover:text-foreground"
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function MasterStrip({ level: peak }: { level: number }) {
   const { buses, setBus } = useStudio();
   const master = buses["master"] as BusState;
@@ -1036,9 +1099,7 @@ function MasterStrip({ level: peak }: { level: number }) {
         Main
         <Screw />
       </div>
-      <div className={cn(ROW.eq, "flex items-center justify-center border-b border-border/60 font-mono text-[7px] uppercase tracking-widest text-muted-foreground")}>
-        Main bus
-      </div>
+      <MasterChain color={color} />
       <div className={cn(ROW.devices, "flex items-center gap-1 border-b border-black/50 px-1.5 py-1")}>
         <VuMeter level={peak} label="L" />
         <VuMeter level={peak} label="R" />

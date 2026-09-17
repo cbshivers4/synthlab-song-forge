@@ -1,0 +1,207 @@
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Download, Share2, Square, Disc3 } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Slider } from "@/components/ui/slider";
+import { useStudio } from "@/lib/synclab/store";
+import { useApp } from "@/lib/synclab/app-state";
+import { getEngine } from "@/lib/synclab/audio-engine";
+import { canShareFile, downloadBlob, encodeMp3, encodeWav, normalize, peakOf, shareFile, type Capture } from "@/lib/synclab/bounce";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+
+export const EXPORT_EVENT = "synclab:export";
+export const openExport = () => window.dispatchEvent(new CustomEvent(EXPORT_EVENT));
+
+type Status = "idle" | "recording" | "encoding" | "done";
+
+export function ExportDialog() {
+  const { transport, stop, setTransport } = useStudio();
+  const { project } = useApp();
+  const [open, setOpen] = useState(false);
+  const [format, setFormat] = useState<"wav" | "mp3">("wav");
+  const [bars, setBars] = useState(8);
+  const [norm, setNorm] = useState(true);
+  const [status, setStatus] = useState<Status>("idle");
+  const [elapsed, setElapsed] = useState(0);
+  const [result, setResult] = useState<{ blob: Blob; name: string; peak: number } | null>(null);
+  const timer = useRef<number | null>(null);
+
+  const projectName = project?.name ?? "SYNCLAB Session";
+  const safeName = projectName.replace(/[^\w\-. ]+/g, "").trim() || "synclab-mix";
+  const barSeconds = (60 / transport.bpm) * 4;
+  const total = bars * barSeconds + 1;
+
+  useEffect(() => {
+    const on = () => setOpen(true);
+    window.addEventListener(EXPORT_EVENT, on);
+    return () => window.removeEventListener(EXPORT_EVENT, on);
+  }, []);
+
+  const finish = useCallback(
+    async (cap: Capture | null) => {
+      if (timer.current) window.clearInterval(timer.current);
+      timer.current = null;
+      stop();
+      if (!cap || cap.left.length < 2048) {
+        setStatus("idle");
+        toast("Nothing was captured", { description: "Make sure your session actually plays, then try again." });
+        return;
+      }
+      setStatus("encoding");
+      await new Promise((r) => setTimeout(r, 30));
+      const src = norm ? normalize(cap) : cap;
+      const blob = format === "wav" ? encodeWav(src) : encodeMp3(src, 320);
+      setResult({ blob, name: `${safeName}.${format}`, peak: peakOf(cap) });
+      setStatus("done");
+    },
+    [format, norm, safeName, stop]
+  );
+
+  const start = () => {
+    setResult(null);
+    setElapsed(0);
+    const engine = getEngine();
+    stop();
+    engine.startCapture();
+    setStatus("recording");
+    setTransport({ playing: true, paused: false, step: 0 });
+    const started = performance.now();
+    timer.current = window.setInterval(() => {
+      const t = (performance.now() - started) / 1000;
+      setElapsed(t);
+      if (t >= total) void finish(engine.stopCapture());
+    }, 100);
+  };
+
+  const stopNow = () => void finish(getEngine().stopCapture());
+
+  const file = result ? new File([result.blob], result.name, { type: result.blob.type }) : null;
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v && status === "recording") stopNow();
+        setOpen(v);
+      }}
+    >
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="font-display uppercase tracking-widest">Export &amp; share</DialogTitle>
+          <DialogDescription>
+            Your track is played through the mixer and captured live to a finished stereo file.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <div>
+            <div className="label-xs mb-1">File type</div>
+            <div className="grid grid-cols-2 gap-2">
+              {(["wav", "mp3"] as const).map((f) => (
+                <button
+                  key={f}
+                  disabled={status === "recording" || status === "encoding"}
+                  onClick={() => setFormat(f)}
+                  className={cn(
+                    "rounded-sm border px-2 py-2 text-left font-mono text-[10px] uppercase",
+                    format === f ? "border-primary bg-primary/15 text-foreground" : "border-border bg-surface-2 text-muted-foreground"
+                  )}
+                >
+                  {f === "wav" ? "WAV · studio quality" : "MP3 · 320 kbps, small"}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div className="label-xs mb-1 flex items-center justify-between">
+              <span>Length</span>
+              <span className="font-mono text-[10px] text-muted-foreground">
+                {bars} bars · {total.toFixed(1)}s at {transport.bpm} BPM
+              </span>
+            </div>
+            <Slider
+              value={[bars]}
+              min={1}
+              max={64}
+              step={1}
+              disabled={status === "recording"}
+              onValueChange={([v = 8]) => setBars(v)}
+            />
+          </div>
+
+          <div className="flex items-center justify-between rounded-sm border border-border bg-surface-2/50 px-2 py-2">
+            <div>
+              <div className="font-mono text-[10px] uppercase">Lift to full level</div>
+              <div className="font-mono text-[9px] text-muted-foreground">Raises the whole mix just under clipping.</div>
+            </div>
+            <Switch checked={norm} onCheckedChange={setNorm} />
+          </div>
+
+          {status === "recording" && (
+            <div className="rounded-sm border border-red-500/50 bg-red-500/10 px-2 py-2">
+              <div className="flex items-center justify-between font-mono text-[10px] uppercase text-red-300">
+                <span className="flex items-center gap-1">
+                  <Disc3 className="size-3 animate-spin" /> Capturing
+                </span>
+                <span>
+                  {elapsed.toFixed(1)}s / {total.toFixed(1)}s
+                </span>
+              </div>
+              <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-black/40">
+                <div className="h-full bg-red-500" style={{ width: `${Math.min(100, (elapsed / total) * 100)}%` }} />
+              </div>
+            </div>
+          )}
+
+          {status === "done" && result && (
+            <div className="rounded-sm border border-primary/40 bg-primary/10 px-2 py-2 font-mono text-[10px]">
+              <div className="uppercase">{result.name}</div>
+              <div className="text-muted-foreground">
+                {(result.blob.size / 1_000_000).toFixed(2)} MB · loudest peak {(20 * Math.log10(Math.max(result.peak, 1e-6))).toFixed(1)} dB
+              </div>
+            </div>
+          )}
+
+          <div className="flex gap-2">
+            {status === "recording" ? (
+              <Button variant="destructive" className="flex-1" onClick={stopNow}>
+                <Square className="size-4" /> Stop &amp; keep
+              </Button>
+            ) : (
+              <Button className="flex-1" disabled={status === "encoding"} onClick={start}>
+                <Disc3 className="size-4" /> {status === "encoding" ? "Finishing…" : "Record mix"}
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              disabled={!result}
+              onClick={() => result && downloadBlob(result.blob, result.name)}
+            >
+              <Download className="size-4" /> Save
+            </Button>
+            {file && canShareFile(file) && (
+              <Button
+                variant="outline"
+                onClick={() =>
+                  shareFile(file, projectName).catch(() =>
+                    toast("Sharing was cancelled", { description: "You can still save the file and send it yourself." })
+                  )
+                }
+              >
+                <Share2 className="size-4" /> Share
+              </Button>
+            )}
+          </div>
+
+          <p className="font-mono text-[9px] leading-tight text-muted-foreground">
+            Recording happens in real time, so a 16-bar loop takes 16 bars to capture. Keep this tab in front while it
+            runs — browsers slow down audio in background tabs.
+          </p>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
