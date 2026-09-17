@@ -268,7 +268,15 @@ function TBtn({
       onClick={onClick}
       aria-label={label}
       aria-pressed={Boolean(active)}
-      className={`h-10 flex-col gap-0.5 px-2.5 ${active ? (danger ? "text-destructive" : "text-primary") : ""}`}
+      className={`h-10 flex-col gap-0.5 px-2.5 ${
+        danger
+          ? active
+            ? "bg-destructive text-destructive-foreground shadow-[0_0_12px_color-mix(in_oklab,var(--destructive)_70%,transparent)] hover:bg-destructive/90"
+            : "bg-destructive/15 text-destructive shadow-[inset_0_0_0_1px_var(--destructive)] hover:bg-destructive/25"
+          : active
+            ? "text-primary"
+            : ""
+      }`}
     >
       {children}
       <span className="font-mono text-[9px] tracking-wider">{label}</span>
