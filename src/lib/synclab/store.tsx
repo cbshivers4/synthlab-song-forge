@@ -649,9 +649,11 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             setTransportState((t) => ({ ...t, recording: true }));
             toast("Punched in", { description: `Recording ${target.name}.` });
           })
-          .catch(() =>
+          .catch((err: unknown) =>
             toast.error("Microphone unavailable", {
-              description: "Allow microphone access in your browser to punch in.",
+              description: err instanceof Error ? err.message : "The microphone could not be opened.",
+              duration: 9000,
+              action: { label: "Open in tab", onClick: openInOwnTab },
             }),
           );
       },
@@ -1068,9 +1070,11 @@ export function StudioProvider({ children }: { children: ReactNode }) {
               void engine
                 .startInputRecording(target.id, transportRef.current.monitor ?? false)
                 .then(() => updateTrack(target.id, { recording: true }))
-                .catch(() =>
+                .catch((err: unknown) =>
                   toast.error("Microphone unavailable", {
-                    description: "Allow microphone access in your browser to record this channel.",
+                    description: err instanceof Error ? err.message : "The microphone could not be opened.",
+                    duration: 9000,
+                    action: { label: "Open in tab", onClick: openInOwnTab },
                   }),
                 );
             } else if (armedNote) {
