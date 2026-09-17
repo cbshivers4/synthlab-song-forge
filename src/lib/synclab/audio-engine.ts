@@ -349,8 +349,10 @@ export class SyncLabEngine {
       const gain = ctx.createGain();
       const pan = ctx.createStereoPanner();
       const meter = ctx.createAnalyser();
-      meter.fftSize = 512;
+      meter.fftSize = 1024;
       meter.smoothingTimeConstant = 0.55;
+      // channel meter doubles as the strip scope source
+      this.pluginScopes.set(`ch:${id}`, meter);
       input.connect(gain);
       gain.connect(meter);
       meter.connect(pan);
