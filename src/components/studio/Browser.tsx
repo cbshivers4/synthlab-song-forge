@@ -147,6 +147,27 @@ export function Browser() {
 
   return (
     <div className="space-y-3">
+      {/* search across samples, plugins and presets */}
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Search samples, plugins, presets…"
+          aria-label="Search the browser"
+          className="h-8 w-full rounded-[3px] border border-border bg-background/70 pl-7 pr-7 font-mono text-[11px] outline-none placeholder:text-muted-foreground/60 focus:border-primary/60"
+        />
+        {q && (
+          <button
+            type="button"
+            aria-label="Clear search"
+            onClick={() => setQ("")}
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+          >
+            <X className="size-3.5" />
+          </button>
+        )}
+      </div>
       <div className="flex gap-1">
         {tabs.map((t) => (
           <Button
