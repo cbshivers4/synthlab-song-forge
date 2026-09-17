@@ -16,6 +16,7 @@ import { Switch } from "@/components/ui/switch";
 import { useStudio } from "@/lib/synclab/store";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { toast } from "sonner";
+import { WaveformView } from "@/components/studio/WaveformView";
 
 const BANKS = ["A", "B", "C", "D"] as const;
 const PADS_PER_BANK = 16;
@@ -100,20 +101,8 @@ function PadWave({ pad, onChange }: { pad: Pad; onChange: (p: Partial<Pad>) => v
       onPointerUp={() => setDrag(null)}
       onPointerLeave={() => setDrag(null)}
     >
-      <div className="absolute inset-0 flex items-center gap-px px-px">
-        {pad.peaks.map((p, i) => (
-          <span
-            key={i}
-            className="flex-1 rounded-sm"
-            style={{
-              height: `${Math.max(2, p * 100)}%`,
-              background:
-                i / pad.peaks.length >= pad.start && i / pad.peaks.length <= pad.end
-                  ? "var(--color-primary)"
-                  : "color-mix(in oklab, var(--color-muted-foreground) 45%, transparent)",
-            }}
-          />
-        ))}
+      <div className="absolute inset-0">
+        <WaveformView peaks={pad.peaks} color="var(--color-primary)" label="Pad waveform" />
       </div>
       <div className="absolute inset-y-0 left-0 bg-background/70" style={{ width: `${pad.start * 100}%` }} />
       <div className="absolute inset-y-0 right-0 bg-background/70" style={{ width: `${(1 - pad.end) * 100}%` }} />

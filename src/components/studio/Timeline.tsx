@@ -57,6 +57,7 @@ import { AddTrackMenu } from "@/components/studio/AddTrackMenu";
 import { INSTRUMENTS, KIND_LABEL, uid } from "@/lib/synclab/presets";
 import type { EditTool } from "@/lib/synclab/store";
 import type { MidiNote, Track } from "@/lib/synclab/types";
+import { WaveformView } from "@/components/studio/WaveformView";
 
 const KindIcon = ({ kind }: { kind: Track["kind"] }) =>
   kind === "drum" ? (
