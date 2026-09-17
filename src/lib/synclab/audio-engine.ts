@@ -212,6 +212,10 @@ export class SyncLabEngine {
     return peak;
   }
 
+  get sampleRate() {
+    return this.ctx?.sampleRate ?? 48000;
+  }
+
   /** Post-EQ magnitude spectrum in dB for a Pro-EQ instance, or null when it is not running. */
   getEqSpectrum(pluginId: string): Float32Array | null {
     const an = this.eqAnalysers.get(pluginId);
