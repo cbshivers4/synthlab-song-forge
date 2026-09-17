@@ -8,6 +8,7 @@ import {
   Gauge,
   Grid2x2,
   Music2,
+  Puzzle,
   Scissors,
   SlidersHorizontal,
   Sparkles,
