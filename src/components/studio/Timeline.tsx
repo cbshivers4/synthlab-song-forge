@@ -70,6 +70,7 @@ const LANE_LABEL: Record<AutomationParam, string> = {
   sendDelay: "DELAY SEND",
 };
 import { WaveformView } from "@/components/studio/WaveformView";
+import { LevelBar } from "@/components/studio/LevelBar";
 
 const KindIcon = ({ kind }: { kind: Track["kind"] }) =>
   kind === "drum" ? (
