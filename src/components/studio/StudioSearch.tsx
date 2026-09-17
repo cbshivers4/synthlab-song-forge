@@ -33,12 +33,7 @@ const PANELS: { id: Exclude<PanelId, null>; label: string }[] = [
 
 export function StudioSearch() {
   const [open, setOpen] = useState(false);
-  const { tracks, select, setPanel, applySynthPreset, setKit, selected } = useStudio() as ReturnType<
-    typeof useStudio
-  > & {
-    applySynthPreset?: (name: string) => void;
-    setKit?: (id: string) => void;
-  };
+  const { tracks, select, setPanel, changeInstrument, selected } = useStudio();
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
