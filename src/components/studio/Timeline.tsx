@@ -818,7 +818,7 @@ function Ruler() {
   const hi = Math.max(lo + 1, transport.loopEnd ?? total);
 
   const setBars = (next: number) => {
-    const b = Math.min(64, Math.max(1, next));
+    const b = Math.min(512, Math.max(1, next));
     const steps = b * 4;
     setTransport({
       bars: b,
@@ -875,7 +875,7 @@ function Ruler() {
             type="button"
             aria-label="More bars"
             className="px-1 font-mono text-[11px] text-muted-foreground hover:text-foreground disabled:opacity-30"
-            disabled={bars >= 64}
+            disabled={bars >= 512}
             onClick={() => setBars(bars + 1)}
           >
             +
