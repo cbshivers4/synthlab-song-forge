@@ -1087,6 +1087,9 @@ function BusStrip({
         Bus
         <Screw />
       </div>
+      <div className={cn(ROW.scope, "border-b border-border/60 p-[3px]")}>
+        <Scope scopeId={`bus:${id}`} height={40} compact color={color} />
+      </div>
       <div className={cn(ROW.eq, "flex items-center justify-center border-b border-border/60 font-mono text-[7px] uppercase tracking-widest text-muted-foreground")}>
         Bus FX below
       </div>
