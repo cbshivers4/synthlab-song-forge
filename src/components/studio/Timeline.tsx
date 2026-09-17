@@ -747,6 +747,8 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
       </div>
 
       <div
+        data-lane
+        data-lane-track={track.id}
         className={`lane-grid relative min-h-[92px] flex-1 bg-background/70 ${
           editTool === "draw" ? "cursor-crosshair" : editTool === "split" ? "cursor-col-resize" : ""
         }`}
