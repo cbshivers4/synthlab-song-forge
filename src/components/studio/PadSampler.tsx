@@ -574,7 +574,7 @@ export function PadSampler() {
             </div>
           </div>
 
-          <PadWave pad={selPad} onChange={(n) => patch(sel, n)} />
+          <PadWave pad={selPad} color={BANK_COLORS[bank] as string} onChange={(n) => patch(sel, n)} />
 
           <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface-2/40 p-3">
             <Scissors className="size-4 text-primary" />
