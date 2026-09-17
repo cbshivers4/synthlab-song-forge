@@ -15,6 +15,8 @@ import { PLUGIN_KINDS, makeDef, defsFromFiles } from "@/lib/synclab/plugins";
 import type { PluginDef, PluginInstance, PluginKind } from "@/lib/synclab/types";
 import { ProEq } from "./ProEq";
 import { VocoderPanel } from "./VocoderPanel";
+import { Scope } from "./Scope";
+import { XYPad } from "./XYPad";
 import { toast } from "sonner";
 
 const FORMATS: PluginDef["format"][] = ["VST3", "AU", "CLAP", "AAX"];
