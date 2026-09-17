@@ -837,7 +837,9 @@ export class SyncLabEngine {
     duration?: number,
     velocity = 1,
     when?: number,
+    voiceKey?: string,
   ) {
+    if (voiceKey) this.stopVoiceKey(trackId, voiceKey);
     const ctx = this.init();
     const base = s.reverse ? this.reversed(s.url) : this.sampleBuffers.get(s.url);
     if (!base) return;
