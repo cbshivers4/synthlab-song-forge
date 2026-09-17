@@ -149,7 +149,22 @@ export type DrumKitId =
   | "acoustic"
   | "detroit"
   | "lofi"
-  | "trap";
+  | "trap"
+  | "cr78"
+  | "simmons"
+  | "dmx"
+  | "mpc60"
+  | "jazz"
+  | "rock"
+  | "latin"
+  | "afrobeat"
+  | "drill"
+  | "ghettotech"
+  | "jungle"
+  | "boombap"
+  | "house"
+  | "techno"
+  | "industrial";
 
 export interface DrumPad {
   id: string;

@@ -25,6 +25,21 @@ export const DRUM_KIT_VOICES: Record<DrumKitId, KitVoice> = {
   detroit: { kick: [140, 40, 0.34, "sine"], snare: [210, 2200, 0.9], clap: 1700, hatF: 8800, hatD: 0.6, tom: [200, 90], perc: 660, crash: 5800, ride: 9400, click: 1.3, body: 1 },
   lofi: { kick: [85, 38, 0.45, "triangle"], snare: [160, 1000, 1], clap: 900, hatF: 5600, hatD: 0.7, tom: [130, 65], perc: 440, crash: 4000, ride: 7200, click: 0.5, body: 1.2 },
   trap: { kick: [70, 28, 1.4, "sine"], snare: [220, 2400, 0.75], clap: 1400, hatF: 11000, hatD: 0.35, tom: [170, 70], perc: 600, crash: 5200, ride: 8800, click: 0.6, body: 0.85 },
+  cr78: { kick: [100, 60, 0.26, "sine"], snare: [250, 2800, 0.6], clap: 1900, hatF: 9000, hatD: 0.45, tom: [200, 105], perc: 820, crash: 6000, ride: 9400, click: 1.1, body: 0.8 },
+  simmons: { kick: [130, 35, 0.5, "sine"], snare: [300, 900, 1.1], clap: 1200, hatF: 7400, hatD: 0.6, tom: [220, 60], perc: 700, crash: 5200, ride: 8600, click: 1.5, body: 1.4 },
+  dmx: { kick: [98, 46, 0.4, "sine"], snare: [195, 1700, 1.05], clap: 1450, hatF: 7600, hatD: 0.75, tom: [170, 85], perc: 580, crash: 5200, ride: 8800, click: 1, body: 1.1 },
+  mpc60: { kick: [92, 44, 0.44, "sine"], snare: [185, 1450, 1.15], clap: 1250, hatF: 6800, hatD: 0.7, tom: [155, 78], perc: 520, crash: 4800, ride: 8200, click: 0.8, body: 1.2 },
+  jazz: { kick: [75, 52, 0.42, "sine"], snare: [165, 1100, 1.25], clap: 1150, hatF: 6000, hatD: 0.9, tom: [145, 72], perc: 460, crash: 4400, ride: 7800, click: 0.6, body: 1.25 },
+  rock: { kick: [82, 50, 0.52, "sine"], snare: [175, 1350, 1.45], clap: 1300, hatF: 6600, hatD: 0.95, tom: [150, 70], perc: 500, crash: 4200, ride: 7600, click: 0.9, body: 1.45 },
+  latin: { kick: [88, 58, 0.36, "sine"], snare: [230, 1600, 0.95], clap: 1500, hatF: 7200, hatD: 0.7, tom: [210, 120], perc: 900, crash: 5000, ride: 8400, click: 1, body: 1.1 },
+  afrobeat: { kick: [86, 54, 0.4, "sine"], snare: [205, 1400, 1.1], clap: 1350, hatF: 6900, hatD: 0.8, tom: [190, 100], perc: 840, crash: 4700, ride: 8000, click: 0.8, body: 1.2 },
+  drill: { kick: [68, 26, 1.5, "sine"], snare: [215, 2600, 0.8], clap: 1600, hatF: 11500, hatD: 0.3, tom: [165, 68], perc: 620, crash: 5400, ride: 9000, click: 0.6, body: 0.8 },
+  ghettotech: { kick: [135, 42, 0.3, "sine"], snare: [225, 2400, 0.85], clap: 1800, hatF: 9800, hatD: 0.5, tom: [205, 95], perc: 720, crash: 6000, ride: 9600, click: 1.35, body: 0.95 },
+  jungle: { kick: [78, 40, 0.6, "sine"], snare: [190, 1900, 1.3], clap: 1400, hatF: 8000, hatD: 0.65, tom: [160, 80], perc: 640, crash: 5000, ride: 8600, click: 0.9, body: 1.15 },
+  boombap: { kick: [84, 42, 0.48, "triangle"], snare: [178, 1300, 1.35], clap: 1150, hatF: 6200, hatD: 0.7, tom: [150, 74], perc: 500, crash: 4400, ride: 7600, click: 0.7, body: 1.3 },
+  house: { kick: [105, 48, 0.36, "sine"], snare: [215, 1800, 0.85], clap: 1550, hatF: 8400, hatD: 0.65, tom: [185, 90], perc: 680, crash: 5400, ride: 9000, click: 1.05, body: 1.05 },
+  techno: { kick: [128, 38, 0.32, "sine"], snare: [205, 2300, 0.8], clap: 1700, hatF: 9200, hatD: 0.55, tom: [195, 88], perc: 700, crash: 5900, ride: 9400, click: 1.4, body: 0.95 },
+  industrial: { kick: [150, 34, 0.42, "square"], snare: [240, 3000, 1.2], clap: 2000, hatF: 12000, hatD: 0.5, tom: [230, 90], perc: 980, crash: 6600, ride: 10200, click: 1.8, body: 1.35 },
 };
 
 const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
