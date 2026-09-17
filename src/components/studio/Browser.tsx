@@ -235,7 +235,7 @@ export function Browser() {
           <div>
             <p className="label-xs mb-1.5">INSTRUMENTS — drag onto the timeline or click to add a channel</p>
             <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-4">
-              {SYNTH_PRESETS.map((p) => (
+              {SYNTH_PRESETS.filter((p) => match(p.name, p.category)).map((p) => (
                 <button
                   key={p.name}
                   draggable
@@ -262,7 +262,7 @@ export function Browser() {
 
       {tab === "presets" && (
         <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-4">
-          {SYNTH_PRESETS.map((p) => (
+          {SYNTH_PRESETS.filter((p) => match(p.name, p.category)).map((p) => (
             <button
               key={p.name}
               onClick={() => loadPresetOnto(p.name)}
