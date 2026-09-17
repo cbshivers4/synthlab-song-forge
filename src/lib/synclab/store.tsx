@@ -30,6 +30,15 @@ import type {
   Transport,
 } from "./types";
 
+/** A mixer control a hardware knob/fader can drive. id is a track id, or "master". */
+export interface MidiTarget {
+  id: string;
+  param: "volume" | "pan" | "mute" | "solo";
+}
+
+export const midiTargetKey = (t: MidiTarget) => `${t.id}:${t.param}`;
+const MIDI_MAP_KEY = "synclab.midimap";
+
 const busFor = (kind: TrackKind): BusId =>
   kind === "drum"
     ? "drums"
@@ -170,6 +179,11 @@ interface StudioApi extends StudioState {
   midiInputs: MidiPortInfo[];
   midiInputId: string | null;
   midiLearning: boolean;
+  midiMap: Record<string, MidiTarget>;
+  midiLearn: MidiTarget | null;
+  startMidiLearn: (t: MidiTarget) => void;
+  cancelMidiLearn: () => void;
+  clearMidiMapping: (t: MidiTarget) => void;
   enableMidi: () => void;
   setMidiInput: (id: string | null) => void;
   fxChains: Record<string, PluginInstance[]>;
@@ -230,6 +244,20 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const [midiInputs, setMidiInputs] = useState<MidiPortInfo[]>([]);
   const [midiInputId, setMidiInputId] = useState<string | null>(null);
   const [midiLearning, setMidiLearning] = useState(false);
+  // Hardware mixer control: CC number -> mixer target, remembered between sessions.
+  const [midiMap, setMidiMap] = useState<Record<string, MidiTarget>>(() => {
+    if (typeof window === "undefined") return {};
+    try {
+      return JSON.parse(window.localStorage.getItem(MIDI_MAP_KEY) || "{}") as Record<string, MidiTarget>;
+    } catch {
+      return {};
+    }
+  });
+  const [midiLearn, setMidiLearn] = useState<MidiTarget | null>(null);
+  const midiMapRef = useRef(midiMap);
+  midiMapRef.current = midiMap;
+  const midiLearnRef = useRef(midiLearn);
+  midiLearnRef.current = midiLearn;
   const [clipboardName, setClipboardName] = useState<string | null>(null);
   const clipboardRef = useRef<Track | null>(null);
   const selectedIdRef = useRef(selectedId);
@@ -269,7 +297,57 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     void getMidiAccess().then((a) => {
       if (cancelled) return;
-      off = subscribe(a, midiInputId, ({ type, pitch, velocity }) => {
+      off = subscribe(a, midiInputId, (msg) => {
+        // Hardware mixer: knobs and faders send control-change messages.
+        if (msg.type === "cc") {
+          const key = `${msg.channel}:${msg.cc}`;
+          const learning = midiLearnRef.current;
+          if (learning) {
+            setMidiMap((m) => {
+              // one control per CC, and one CC per control
+              const next: Record<string, MidiTarget> = {};
+              for (const [k, v] of Object.entries(m)) {
+                if (k === key) continue;
+                if (v.id === learning.id && v.param === learning.param) continue;
+                next[k] = v;
+              }
+              next[key] = learning;
+              try {
+                window.localStorage.setItem(MIDI_MAP_KEY, JSON.stringify(next));
+              } catch {
+                /* storage unavailable */
+              }
+              return next;
+            });
+            setMidiLearn(null);
+            toast.success(`CC ${msg.cc} mapped`, { description: `Controls ${learning.param} on this channel.` });
+            return;
+          }
+          const target = midiMapRef.current[key];
+          if (!target) return;
+          const v = msg.value;
+          if (target.id === "master") {
+            if (target.param === "volume") setBuses((b) => ({ ...b, master: { ...b.master, volume: v * 1.2 } }));
+            else if (target.param === "mute") setBuses((b) => ({ ...b, master: { ...b.master, muted: v >= 0.5 } }));
+            return;
+          }
+          setTracks((ts) =>
+            ts.map((t) =>
+              t.id === target.id
+                ? target.param === "volume"
+                  ? { ...t, volume: v * 1.2 }
+                  : target.param === "pan"
+                    ? { ...t, pan: v * 2 - 1 }
+                    : target.param === "mute"
+                      ? { ...t, muted: v >= 0.5 }
+                      : { ...t, solo: v >= 0.5 }
+                : t,
+            ),
+          );
+          return;
+        }
+        if (msg.type === "pitchbend") return;
+        const { type, pitch, velocity } = msg;
         const notable = (t: Track) => t.kind === "instrument" || t.kind === "midi" || t.kind === "sampler";
         const target =
           tracksRef.current.find((t) => t.armed && notable(t)) ??
@@ -946,6 +1024,24 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       midiInputs,
       midiInputId,
       midiLearning,
+      midiMap,
+      midiLearn,
+      startMidiLearn: (t) => {
+        setMidiLearn(t);
+        toast("Move a knob or fader", { description: "The next control you touch takes over this one." });
+      },
+      cancelMidiLearn: () => setMidiLearn(null),
+      clearMidiMapping: (t) =>
+        setMidiMap((m) => {
+          const next: Record<string, MidiTarget> = {};
+          for (const [k, v] of Object.entries(m)) if (!(v.id === t.id && v.param === t.param)) next[k] = v;
+          try {
+            window.localStorage.setItem(MIDI_MAP_KEY, JSON.stringify(next));
+          } catch {
+            /* storage unavailable */
+          }
+          return next;
+        }),
       enableMidi,
       setMidiInput: setMidiInputId,
       fxChains,
@@ -973,7 +1069,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           ),
         })),
     };
-  }, [tracks, transport, selectedId, selectedIds, editTool, panel, userPresets, buses, installedPlugins, fxChains, midiInputs, midiInputId, midiLearning, clipboardName, enableMidi, updateTrack, finishRecording, splitClipAtImpl]);
+  }, [tracks, transport, selectedId, selectedIds, editTool, panel, userPresets, buses, installedPlugins, fxChains, midiInputs, midiInputId, midiLearning, midiMap, midiLearn, clipboardName, enableMidi, updateTrack, finishRecording, splitClipAtImpl]);
 
 
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>;
