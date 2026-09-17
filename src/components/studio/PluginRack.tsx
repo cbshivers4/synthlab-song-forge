@@ -107,6 +107,7 @@ export function PluginRack() {
     removePlugin,
     togglePluginBypass,
     movePlugin,
+    setPluginParam,
   } = useStudio();
   const [open, setOpen] = useState<string | null>(null);
   const [name, setName] = useState("");
