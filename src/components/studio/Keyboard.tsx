@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Minus, Plus } from "lucide-react";
+import { Lock, Minus, Plus, Unlock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { useStudio } from "@/lib/synclab/store";
@@ -12,6 +12,12 @@ export function Keyboard() {
   const [octave, setOctave] = useState(4); // C4 base
   const [velocity, setVelocity] = useState(0.9);
   const [held, setHeld] = useState<number | null>(null);
+  const [locked, setLocked] = useState(false);
+
+  const slideTo = (o: number) => {
+    if (locked) return;
+    setOctave(Math.min(7, Math.max(1, o)));
+  };
 
   const base = (octave + 1) * 12; // C of the chosen octave in MIDI
   const whiteCount = 14; // two octaves of white keys
