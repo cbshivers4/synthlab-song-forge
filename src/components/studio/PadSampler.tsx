@@ -377,6 +377,31 @@ export function PadSampler() {
         </div>
       </div>
 
+      {/* visible feature strip */}
+      <div className="flex flex-wrap gap-1.5">
+        {[
+          [Upload, "Drag & drop audio"],
+          [Mic, "Sample the mic"],
+          [Scissors, "Slice to pads"],
+          [Grid2x2, "4 banks · 64 pads"],
+          [Play, "16-step patterns"],
+          [Circle, "Record taps live"],
+          [Square, "Choke groups"],
+          [Copy, "Trim · tune · choke"],
+        ].map(([Icon, label]) => {
+          const I = Icon as typeof Upload;
+          return (
+            <span
+              key={label as string}
+              className="inline-flex items-center gap-1 rounded-full border border-border bg-surface-2/50 px-2 py-0.5 font-mono text-[9px] tracking-wider text-muted-foreground"
+            >
+              <I className="size-3" style={{ color: BANK_COLORS[bank] as string }} />
+              {label as string}
+            </span>
+          );
+        })}
+      </div>
+
       <div className="grid grid-cols-4 gap-2">
         {Array.from({ length: PADS_PER_BANK }, (_, i) => {
           const id = index(i);
