@@ -15,6 +15,7 @@ import {
   Copy,
   Disc3,
   Eye,
+  Flag,
   EyeOff,
   Headphones,
   Mic,
@@ -1068,6 +1069,15 @@ export function Timeline() {
             style={{
               left: `calc(244px + (100% - 244px) * ${(transport.loopStart ?? 0) / totalSteps})`,
               width: `calc((100% - 244px) * ${(Math.max((transport.loopStart ?? 0) + 1, transport.loopEnd ?? totalSteps) - (transport.loopStart ?? 0)) / totalSteps})`,
+            }}
+          />
+        )}
+        {transport.exportStart != null && transport.exportEnd != null && (
+          <div
+            className="pointer-events-none absolute inset-y-0 border-x border-amber-400/30 bg-amber-400/[0.05]"
+            style={{
+              left: `calc(244px + (100% - 244px) * ${Math.min(transport.exportStart, transport.exportEnd - 1) / totalSteps})`,
+              width: `calc((100% - 244px) * ${(Math.max(transport.exportEnd, transport.exportStart + 1) - Math.min(transport.exportStart, transport.exportEnd - 1)) / totalSteps})`,
             }}
           />
         )}
