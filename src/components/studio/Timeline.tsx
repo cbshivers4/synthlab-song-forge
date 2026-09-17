@@ -855,6 +855,22 @@ function Ruler() {
     window.addEventListener("pointerup", up);
   };
 
+  const dragFlag = (which: "start" | "end") => (e: React.PointerEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const move = (ev: PointerEvent) => {
+      const s = stepFromX(ev.clientX);
+      if (which === "start") setTransport({ exportStart: Math.min(s, exHi - 1) });
+      else setTransport({ exportEnd: Math.max(s, exLo + 1) });
+    };
+    const up = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+  };
+
   return (
     <div className="sticky top-0 z-10 flex border-b border-border bg-surface-2/70 backdrop-blur">
       <div className="flex w-[244px] shrink-0 items-center gap-2 border-r border-border px-3 py-1">
