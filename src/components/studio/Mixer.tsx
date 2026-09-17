@@ -2,6 +2,8 @@ import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 
 // Console fader thumb sizing is provided by FADER_CAP below.
 import {
   AudioLines,
+  ChevronLeft,
+  ChevronRight,
   Drum,
   Guitar,
   Maximize2,
@@ -717,7 +719,7 @@ function Strip({
   index: number;
   onSelect: () => void;
 }) {
-  const { updateTrack } = useStudio();
+  const { updateTrack, moveTrack, tracks } = useStudio();
   const [clip, setClip] = useState(false);
   useEffect(() => {
     if (level > 0.985) setClip(true);
@@ -747,6 +749,24 @@ function Strip({
         <span className="font-mono text-[9px] font-bold text-muted-foreground">{index + 1}</span>
         <ColorDot t={t} />
         <ChannelMenu t={t} />
+        <button
+          onClick={(e) => { e.stopPropagation(); moveTrack(t.id, -1); }}
+          disabled={index === 0}
+          title="Move channel left"
+          aria-label="Move channel left"
+          className="h-3.5 w-3 rounded-[2px] text-muted-foreground hover:text-primary disabled:opacity-30"
+        >
+          <ChevronLeft className="size-3" />
+        </button>
+        <button
+          onClick={(e) => { e.stopPropagation(); moveTrack(t.id, 1); }}
+          disabled={index >= tracks.length - 1}
+          title="Move channel right"
+          aria-label="Move channel right"
+          className="h-3.5 w-3 rounded-[2px] text-muted-foreground hover:text-primary disabled:opacity-30"
+        >
+          <ChevronRight className="size-3" />
+        </button>
         <button
           onClick={(e) => { e.stopPropagation(); setClip(false); }}
           title="Clip indicator — click to reset"
