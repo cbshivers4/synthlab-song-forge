@@ -79,18 +79,6 @@ function Waveform({ track }: { track: Track }) {
 
   const peaks = active.peaks.length > 0 ? active.peaks : [0];
 
-  const upperPath = peaks
-    .map((p, i) => {
-      const x = (i / Math.max(1, peaks.length - 1)) * 100;
-      return `${x.toFixed(2)},${(50 - Math.max(2, p * 43)).toFixed(2)}`;
-    })
-    .join(" ");
-  const lowerPath = peaks
-    .map((p, i) => {
-      const x = (i / Math.max(1, peaks.length - 1)) * 100;
-      return `${x.toFixed(2)},${(50 + Math.max(2, p * 43)).toFixed(2)}`;
-    })
-    .join(" ");
 
   return (
     <div
