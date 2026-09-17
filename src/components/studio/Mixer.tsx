@@ -1109,6 +1109,15 @@ export function Mixer() {
   const levels = useMeters(tracks, transport);
   const [narrow, setNarrow] = useState(false);
   const [showBuses, setShowBuses] = useState(true);
+  const [styleId, setStyleId] = useState<ConsoleStyleId>(() => {
+    if (typeof window === "undefined") return "ssl";
+    const saved = window.localStorage.getItem("synclab.mixer.style") as ConsoleStyleId | null;
+    return CONSOLE_STYLES.some((s) => s.id === saved) ? (saved as ConsoleStyleId) : "ssl";
+  });
+  const desk = CONSOLE_STYLES.find((s) => s.id === styleId) ?? (CONSOLE_STYLES[0] as ConsoleStyle);
+  useEffect(() => {
+    window.localStorage.setItem("synclab.mixer.style", styleId);
+  }, [styleId]);
   const soloed = tracks.some((t) => t.solo);
   const muted = tracks.some((t) => t.muted);
   const busLevel = (id: BusId) => {
@@ -1119,10 +1128,22 @@ export function Mixer() {
   // Only show bus strips that actually have channels routed to them.
   const activeBuses = BUS_STRIPS.filter((id) => tracks.some((t) => t.bus === id));
   return (
-    <div className="flex flex-col border border-border bg-surface">
+    <div
+      className="mx-console flex flex-col border border-border bg-surface"
+      data-console={desk.id}
+      style={
+        {
+          "--mx-a": desk.a,
+          "--mx-b": desk.b,
+          "--mx-c": desk.c,
+          "--mx-accent": desk.accent,
+        } as CSSProperties
+      }
+    >
       {/* console toolbar */}
       <div className="flex items-center gap-2 border-b border-border bg-surface-2/70 px-2 py-1.5">
         <span className="font-display text-[11px] font-bold uppercase tracking-widest text-primary">Mix Console</span>
+
         <span className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
           {tracks.length} ch · {activeBuses.length} buses
         </span>
