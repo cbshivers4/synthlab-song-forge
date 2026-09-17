@@ -70,6 +70,7 @@ const LANE_LABEL: Record<AutomationParam, string> = {
   sendDelay: "DELAY SEND",
 };
 import { WaveformView } from "@/components/studio/WaveformView";
+import { LevelBar } from "@/components/studio/LevelBar";
 
 const KindIcon = ({ kind }: { kind: Track["kind"] }) =>
   kind === "drum" ? (
@@ -778,6 +779,8 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
             onValueChange={([v = 0]) => updateTrack(track.id, { volume: v })}
           />
         </div>
+
+        <LevelBar id={track.id} color={track.color} />
       </div>
 
       <div

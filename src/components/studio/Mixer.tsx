@@ -32,6 +32,7 @@ import { TRACK_COLORS } from "@/lib/synclab/presets";
 import { BUILT_IN_PLUGINS } from "@/lib/synclab/plugins";
 import type { BusId, BusState, PluginInstance, Track, Transport } from "@/lib/synclab/types";
 import { cn } from "@/lib/utils";
+import { clearClip, reportLevel, useClipped } from "@/lib/synclab/clip-monitor";
 
 const BUSES: BusId[] = ["drums", "vocals", "instruments", "synths", "fx", "master"];
 const DB_TICKS = [6, 0, -6, -12, -24, -48];
@@ -102,6 +103,7 @@ function useMeters(tracks: Track[], transport: Transport) {
         const id = track.id;
         const timeline = transportRef.current.playing ? sequencedLevel(track, transportRef.current.step) : 0;
         const raw = Math.max(engine.getTrackLevel(id), timeline * track.volume);
+        reportLevel(id, raw);
         const prev = smooth.current[id] ?? 0;
         const v = raw > prev ? raw : prev * 0.86;
         smooth.current[id] = v;
@@ -109,6 +111,7 @@ function useMeters(tracks: Track[], transport: Transport) {
         if (v > loudest) loudest = v;
       }
       const mRaw = Math.max(engine.getLevel(), loudest * 0.95);
+      reportLevel("master", mRaw);
       const mPrev = smooth.current["__master"] ?? 0;
       const m = mRaw > mPrev ? mRaw : mPrev * 0.86;
       smooth.current["__master"] = m;
@@ -163,6 +166,28 @@ function Meter({ level, tall, color }: { level: number; tall?: boolean; color?: 
         );
       })}
     </div>
+  );
+}
+
+/** Clip LED — lights red when the channel has peaked; click to reset. */
+function ClipLed({ id, compact }: { id: string; compact?: boolean }) {
+  const clipped = useClipped(id);
+  return (
+    <button
+      type="button"
+      title={clipped ? "Clipping — click to reset" : "No clipping"}
+      onClick={(e) => {
+        e.stopPropagation();
+        clearClip(id);
+      }}
+      className={cn(
+        "rounded-[2px] font-mono text-[8px] font-bold uppercase tracking-wider transition-colors",
+        compact ? "px-1 leading-[13px]" : "px-1.5 py-[1px]",
+        clipped ? "animate-pulse bg-red-500 text-black" : "bg-black/40 text-muted-foreground"
+      )}
+    >
+      CLIP
+    </button>
   );
 }
 
@@ -944,6 +969,7 @@ function Strip({
         <span className={cn("font-mono text-[9px]", level > 0.98 ? "text-red-400" : "text-foreground/70")}>
           {fracToDb(level).toFixed(0)}
         </span>
+        <ClipLed id={t.id} compact />
       </div>
 
       {/* M / S / arm */}
@@ -1044,8 +1070,9 @@ function BusStrip({
         />
         <Meter level={level} tall color={color} />
       </div>
-      <div className={cn(ROW.readout, "flex items-center justify-center border-b border-border/60")}>
+      <div className={cn(ROW.readout, "flex items-center justify-center gap-1 border-b border-border/60")}>
         <span className="font-mono text-[9px] text-muted-foreground">{toDb(state.volume).toFixed(1)} dB</span>
+        <ClipLed id={`bus:${id}`} compact />
       </div>
       <div className={cn(ROW.buttons, "flex items-center border-b border-border/60 px-1")}>
         <button
@@ -1157,11 +1184,11 @@ function MasterChain({ color }: { color: string }) {
 function MasterStrip({ level: peak }: { level: number }) {
   const { buses, setBus } = useStudio();
   const master = buses["master"] as BusState;
-  const [clip, setClip] = useState(false);
+  const clip = useClipped("master");
+  const setClip = (on: boolean) => {
+    if (!on) clearClip("master");
+  };
   const color = BUS_COLOR["master"] as string;
-  useEffect(() => {
-    if (peak > 0.985) setClip(true);
-  }, [peak]);
   return (
     <div
       className="flex w-[210px] shrink-0 flex-col border-l-2 border-black/60"
@@ -1273,7 +1300,9 @@ export function Mixer() {
   const busLevel = (id: BusId) => {
     const members = tracks.filter((t) => t.bus === id && !t.muted);
     const peak = Math.max(0, ...members.map((t) => levels.tracks[t.id] ?? 0));
-    return buses[id].muted ? 0 : peak * Math.min(1, buses[id].volume);
+    const out = buses[id].muted ? 0 : peak * Math.min(1, buses[id].volume);
+    reportLevel(`bus:${id}`, out);
+    return out;
   };
   // Only show bus strips that actually have channels routed to them.
   const activeBuses = BUS_STRIPS.filter((id) => tracks.some((t) => t.bus === id));
