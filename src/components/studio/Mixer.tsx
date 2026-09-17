@@ -231,6 +231,7 @@ function InsertRack({
             </div>
             {open === p.id && (
               <div className="space-y-1 pt-1">
+                <EffectDisplay plugin={p} height={72} onParam={(paramId, v) => onParam(p.id, paramId, v)} />
                 <Scope scopeId={p.id} height={52} />
                 <XYPad plugin={p} onParam={(paramId, v) => onParam(p.id, paramId, v)} />
               </div>
