@@ -131,8 +131,8 @@ function PadWave({ pad, color, onChange }: { pad: Pad; color: string; onChange: 
           className="absolute inset-y-0 z-10 w-3 -translate-x-1/2 cursor-col-resize"
           style={{ left: `${(h === "start" ? pad.start : pad.end) * 100}%` }}
         >
-          <span className="absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 bg-primary" />
-          <span className="absolute top-1 left-1/2 size-2.5 -translate-x-1/2 rounded-sm bg-primary" />
+          <span className="absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2" style={{ backgroundColor: color }} />
+          <span className="absolute top-1 left-1/2 size-2.5 -translate-x-1/2 rounded-sm" style={{ backgroundColor: color }} />
         </div>
       ))}
     </div>
