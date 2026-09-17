@@ -9,10 +9,41 @@ import { Slider } from "@/components/ui/slider";
 import { Knob } from "./Knob";
 import { useStudio } from "@/lib/synclab/store";
 import { SYNTH_PRESETS } from "@/lib/synclab/presets";
-import type { EnvelopeParams, LfoWave, OscWave, SynthPatch, Track } from "@/lib/synclab/types";
+import type { EnvelopeParams, LfoWave, ModDest, ModSource, OscWave, SynthPatch, Track } from "@/lib/synclab/types";
+import { uid } from "@/lib/synclab/presets";
 import { toast } from "sonner";
 
-const WAVES: OscWave[] = ["sine", "triangle", "sawtooth", "square", "pulse", "noise"];
+const WAVES: OscWave[] = ["sine", "triangle", "sawtooth", "square", "pulse", "noise", "wavetable"];
+
+const MOD_SOURCES: ModSource[] = [
+  "lfo1",
+  "lfo2",
+  "lfo3",
+  "modEnv",
+  "velocity",
+  "keytrack",
+  "random",
+  "macro1",
+  "macro2",
+  "macro3",
+  "macro4",
+];
+
+const MOD_DESTS: ModDest[] = [
+  "pitch",
+  "cutoff",
+  "cutoff2",
+  "resonance",
+  "level",
+  "pan",
+  "pulseWidth",
+  "morph",
+  "fmAmount",
+  "unisonDetune",
+];
+
+/** Destinations WebAudio can only set once per note, so only fixed sources move them. */
+const FIXED_ONLY: ModDest[] = ["pulseWidth", "morph", "fmAmount", "unisonDetune"];
 
 function EnvelopeGraph({ env }: { env: EnvelopeParams }) {
   const total = env.attack + env.decay + 0.6 + env.release || 1;
@@ -85,6 +116,8 @@ export function SynthEditor({ track }: { track: Track }) {
           <TabsTrigger value="filter">Filter</TabsTrigger>
           <TabsTrigger value="env">Envelopes</TabsTrigger>
           <TabsTrigger value="mod">LFO / Unison</TabsTrigger>
+          <TabsTrigger value="matrix">Mod Matrix</TabsTrigger>
+          <TabsTrigger value="voice">Voice</TabsTrigger>
           <TabsTrigger value="fx">Effects</TabsTrigger>
           <TabsTrigger value="arp">Arpeggiator</TabsTrigger>
         </TabsList>

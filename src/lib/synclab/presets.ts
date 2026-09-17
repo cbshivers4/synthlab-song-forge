@@ -8,6 +8,7 @@ export const defaultPatch = (name = "Init Saw"): SynthPatch => ({
     { on: true, wave: "sawtooth", octave: 0, semitone: 0, detune: 0, level: 0.8, pan: 0 },
     { on: true, wave: "square", octave: -1, semitone: 0, detune: 8, level: 0.45, pan: -0.2 },
     { on: false, wave: "triangle", octave: 1, semitone: 7, detune: -6, level: 0.3, pan: 0.2 },
+    { on: false, wave: "wavetable", octave: 0, semitone: 0, detune: 0, level: 0.3, pan: 0, morph: 0.5 },
   ],
   noise: 0,
   filterType: "lowpass",
