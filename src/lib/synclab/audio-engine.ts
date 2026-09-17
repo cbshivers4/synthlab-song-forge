@@ -110,6 +110,7 @@ export class SyncLabEngine {
   private fxInserts = new Map<string, { key: string; nodes: AudioNode[] }>();
   /** Post-EQ analysers for the Pro-EQ display, keyed by plugin instance id. */
   private eqAnalysers = new Map<string, AnalyserNode>();
+  private pluginScopes = new Map<string, AnalyserNode>();
   private channels = new Map<string, ChannelStrip>();
   private analyser: AnalyserNode | null = null;
 
