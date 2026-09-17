@@ -125,17 +125,24 @@ export function ExportDialog() {
             <div className="label-xs mb-1 flex items-center justify-between">
               <span>Length</span>
               <span className="font-mono text-[10px] text-muted-foreground">
-                {bars} bars · {total.toFixed(1)}s at {transport.bpm} BPM
+                {flagsOn ? `${flagBars} bars (flags)` : `${bars} bars`} · {total.toFixed(1)}s at {transport.bpm} BPM
               </span>
             </div>
-            <Slider
-              value={[bars]}
-              min={1}
-              max={64}
-              step={1}
-              disabled={status === "recording"}
-              onValueChange={([v = 8]) => setBars(v)}
-            />
+            {flagsOn ? (
+              <div className="rounded-sm border border-amber-400/50 bg-amber-400/10 px-2 py-2 font-mono text-[10px] text-amber-200">
+                Using the export flags on the timeline: bar {Math.floor(flagStart / 4) + 1} → bar {Math.ceil(flagEnd / 4)}.
+                Drag the amber flags to change the range, or press EXPORT on the ruler to turn them off.
+              </div>
+            ) : (
+              <Slider
+                value={[bars]}
+                min={1}
+                max={64}
+                step={1}
+                disabled={status === "recording"}
+                onValueChange={([v = 8]) => setBars(v)}
+              />
+            )}
           </div>
 
           <div className="flex items-center justify-between rounded-sm border border-border bg-surface-2/50 px-2 py-2">
