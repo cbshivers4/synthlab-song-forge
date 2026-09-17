@@ -29,5 +29,7 @@ export function setPadBank(pads: Record<number, SavedPad>) {
 
 export function subscribePadBank(listener: (pads: Record<number, SavedPad>) => void) {
   listeners.add(listener);
-  return () => listeners.delete(listener);
+  return () => {
+    listeners.delete(listener);
+  };
 }
