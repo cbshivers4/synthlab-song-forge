@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Knob } from "./Knob";
 import { useStudio } from "@/lib/synclab/store";
@@ -75,22 +75,43 @@ export function SynthEditor({ track }: { track: Track }) {
   const modEnv = patch.modEnv ?? { attack: 0.01, decay: 0.3, sustain: 0.4, release: 0.3 };
   const macros = patch.macros ?? [0, 0, 0, 0];
   const matrix = patch.modMatrix ?? [];
+  const presetGroups = (() => {
+    const all = [
+      ...SYNTH_PRESETS.map((x) => ({ name: x.name, category: x.category })),
+      ...userPresets.map((x) => ({ name: x.name, category: "My Presets" })),
+    ];
+    const order: string[] = [];
+    const map = new Map<string, string[]>();
+    all.forEach((x) => {
+      if (!map.has(x.category)) {
+        map.set(x.category, []);
+        order.push(x.category);
+      }
+      map.get(x.category)!.push(x.name);
+    });
+    return order.map((category) => ({ category, items: map.get(category)! }));
+  })();
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
         <Select value={patch.name} onValueChange={(v) => loadPreset(track.id, v)}>
-          <SelectTrigger className="w-60">
+          <SelectTrigger className="w-64">
             <SelectValue placeholder="Browse presets" />
           </SelectTrigger>
-          <SelectContent>
-            {[...SYNTH_PRESETS.map((p) => ({ name: p.name, category: p.category })), ...userPresets.map((p) => ({ name: p.name, category: "My Presets" }))].map(
-              (p) => (
-                <SelectItem key={p.name} value={p.name}>
-                  <span className="font-mono text-[10px] text-primary">{p.category}</span> {p.name}
-                </SelectItem>
-              ),
-            )}
+          <SelectContent className="max-h-[420px]">
+            {presetGroups.map((g) => (
+              <SelectGroup key={g.category}>
+                <SelectLabel className="font-mono text-[10px] uppercase tracking-widest text-primary">
+                  {g.category}
+                </SelectLabel>
+                {g.items.map((name) => (
+                  <SelectItem key={name} value={name}>
+                    {name}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            ))}
           </SelectContent>
         </Select>
         <Input

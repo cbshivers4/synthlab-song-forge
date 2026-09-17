@@ -383,6 +383,487 @@ export const SYNTH_PRESETS: PresetDef[] = [
       p.fx.delay = 0.4;
     },
   },
+  {
+    name: "Juno Poly",
+    category: "Keys",
+    mutate: (p) => {
+      O(p,0).wave = "sawtooth";
+      p.oscillators[1] = { ...O(p,1), on: true, wave: "square", detune: 7, octave: 0, level: 0.45 };
+      p.cutoff = 3200;
+      p.amp = { attack: 0.05, decay: 0.5, sustain: 0.7, release: 0.8 };
+      p.fx.chorus = 0.6;
+    },
+  },
+  {
+    name: "Prophet Strings",
+    category: "Pads",
+    mutate: (p) => {
+      O(p,0).wave = "sawtooth";
+      p.oscillators[1] = { ...O(p,1), on: true, wave: "sawtooth", detune: 18, level: 0.6 };
+      p.cutoff = 1800;
+      p.amp = { attack: 0.5, decay: 0.8, sustain: 0.85, release: 1.8 };
+      p.fx.reverb = 0.55;
+      p.fx.chorus = 0.5;
+    },
+  },
+  {
+    name: "Analog Brass",
+    category: "Brass",
+    mutate: (p) => {
+      O(p,0).wave = "sawtooth";
+      p.oscillators[1] = { ...O(p,1), on: true, wave: "sawtooth", detune: -9, level: 0.55 };
+      p.cutoff = 1200;
+      p.filterEnv = { attack: 0.12, decay: 0.4, sustain: 0.5, release: 0.4, amount: 4200 };
+      p.amp = { attack: 0.08, decay: 0.3, sustain: 0.8, release: 0.4 };
+    },
+  },
+  {
+    name: "Soft Flute",
+    category: "Keys",
+    mutate: (p) => {
+      O(p,0).wave = "sine";
+      p.noise = 0.12;
+      p.cutoff = 2600;
+      p.amp = { attack: 0.12, decay: 0.2, sustain: 0.8, release: 0.4 };
+      p.fx.reverb = 0.4;
+    },
+  },
+  {
+    name: "Organ Drawbar",
+    category: "Keys",
+    mutate: (p) => {
+      O(p,0).wave = "sine";
+      p.oscillators[1] = { ...O(p,1), on: true, wave: "sine", octave: 1, level: 0.4 };
+      p.oscillators[2] = { ...O(p,2), on: true, wave: "sine", octave: 2, semitone: 7, level: 0.25 };
+      p.amp = { attack: 0.005, decay: 0.05, sustain: 1, release: 0.12 };
+      p.fx.chorus = 0.35;
+    },
+  },
+  {
+    name: "Clav Funk",
+    category: "Keys",
+    mutate: (p) => {
+      O(p,0).wave = "square";
+      p.cutoff = 2800;
+      p.resonance = 8;
+      p.amp = { attack: 0.002, decay: 0.16, sustain: 0.1, release: 0.15 };
+      p.fx.distortion = 0.25;
+    },
+  },
+  {
+    name: "Wurli Warm",
+    category: "Keys",
+    mutate: (p) => {
+      O(p,0).wave = "sine";
+      p.oscillators[1] = { ...O(p,1), on: true, wave: "triangle", octave: 1, level: 0.3 };
+      p.cutoff = 2200;
+      p.amp = { attack: 0.005, decay: 0.9, sustain: 0.25, release: 0.6 };
+      p.fx.chorus = 0.3;
+      p.fx.reverb = 0.25;
+    },
+  },
+  {
+    name: "Bell Toy",
+    category: "Bells",
+    mutate: (p) => {
+      O(p,0).wave = "sine";
+      p.oscillators[1] = { ...O(p,1), on: true, wave: "sine", semitone: 19, level: 0.3 };
+      p.amp = { attack: 0.001, decay: 1.1, sustain: 0, release: 1.1 };
+      p.fx.reverb = 0.5;
+    },
+  },
+  {
+    name: "Kalimba",
+    category: "Bells",
+    mutate: (p) => {
+      O(p,0).wave = "triangle";
+      p.cutoff = 3400;
+      p.amp = { attack: 0.001, decay: 0.55, sustain: 0, release: 0.5 };
+      p.fx.reverb = 0.35;
+    },
+  },
+  {
+    name: "Music Box",
+    category: "Bells",
+    mutate: (p) => {
+      O(p,0).wave = "sine";
+      p.oscillators[1] = { ...O(p,1), on: true, wave: "sine", octave: 2, level: 0.2 };
+      p.amp = { attack: 0.001, decay: 0.9, sustain: 0, release: 0.9 };
+      p.fx.reverb = 0.55;
+      p.fx.delay = 0.2;
+    },
+  },
+  {
+    name: "Pluck Nylon",
+    category: "Plucks",
+    mutate: (p) => {
+      O(p,0).wave = "triangle";
+      p.cutoff = 2600;
+      p.filterEnv = { attack: 0.001, decay: 0.16, sustain: 0, release: 0.2, amount: 2400 };
+      p.amp = { attack: 0.002, decay: 0.3, sustain: 0, release: 0.3 };
+    },
+  },
+  {
+    name: "Saw Pluck",
+    category: "Plucks",
+    mutate: (p) => {
+      O(p,0).wave = "sawtooth";
+      p.oscillators[1] = { ...O(p,1), on: true, wave: "sawtooth", detune: 12, level: 0.5 };
+      p.cutoff = 1800;
+      p.filterEnv = { attack: 0.001, decay: 0.2, sustain: 0, release: 0.2, amount: 3600 };
+      p.amp = { attack: 0.001, decay: 0.32, sustain: 0, release: 0.3 };
+      p.fx.delay = 0.25;
+    },
+  },
+  {
+    name: "Chime Pluck",
+    category: "Plucks",
+    mutate: (p) => {
+      O(p,0).wave = "square";
+      p.oscillators[1] = { ...O(p,1), on: true, wave: "sine", octave: 1, level: 0.3 };
+      p.cutoff = 4200;
+      p.amp = { attack: 0.001, decay: 0.4, sustain: 0, release: 0.4 };
+      p.fx.delay = 0.35;
+      p.fx.reverb = 0.4;
+    },
+  },
+  {
+    name: "Acid Screech",
+    category: "Acid",
+    mutate: (p) => {
+      O(p,0).wave = "square";
+      O(p,0).octave = -1;
+      p.cutoff = 400;
+      p.resonance = 22;
+      p.filterEnv = { attack: 0.001, decay: 0.22, sustain: 0.1, release: 0.2, amount: 5200 };
+      p.amp = { attack: 0.001, decay: 0.3, sustain: 0.3, release: 0.2 };
+      p.glide = 0.06;
+      p.fx.distortion = 0.5;
+    },
+  },
+  {
+    name: "Acid Rubber",
+    category: "Acid",
+    mutate: (p) => {
+      O(p,0).wave = "sawtooth";
+      O(p,0).octave = -1;
+      p.cutoff = 600;
+      p.resonance = 17;
+      p.filterEnv = { attack: 0.001, decay: 0.35, sustain: 0.05, release: 0.25, amount: 3800 };
+      p.voiceMode = "mono";
+      p.glide = 0.1;
+      p.fx.delay = 0.3;
+    },
+  },
+  {
+    name: "Rave Stab",
+    category: "Rave",
+    mutate: (p) => {
+      O(p,0).wave = "sawtooth";
+      p.oscillators[1] = { ...O(p,1), on: true, wave: "square", detune: -12, level: 0.55 };
+      p.cutoff = 2600;
+      p.resonance = 9;
+      p.amp = { attack: 0.001, decay: 0.2, sustain: 0, release: 0.2 };
+      p.fx.reverb = 0.35;
+      p.fx.distortion = 0.3;
+    },
+  },
+  {
+    name: "Trance Gate",
+    category: "Rave",
+    mutate: (p) => {
+      O(p,0).wave = "sawtooth";
+      p.oscillators[1] = { ...O(p,1), on: true, wave: "sawtooth", detune: 20, level: 0.6 };
+      p.cutoff = 3000;
+      p.lfos[0] = { on: true, rate: 8, wave: "square", amount: 0.8, destination: "volume" };
+      p.amp = { attack: 0.02, decay: 0.3, sustain: 0.8, release: 0.5 };
+      p.fx.reverb = 0.45;
+    },
+  },
+  {
+    name: "Donk Lead",
+    category: "Rave",
+    mutate: (p) => {
+      O(p,0).wave = "square";
+      p.cutoff = 3200;
+      p.resonance = 14;
+      p.amp = { attack: 0.001, decay: 0.18, sustain: 0, release: 0.15 };
+      p.fx.distortion = 0.4;
+    },
+  },
+  {
+    name: "Wobble Bass",
+    category: "Bass",
+    mutate: (p) => {
+      O(p,0).wave = "sawtooth";
+      O(p,0).octave = -1;
+      p.cutoff = 500;
+      p.resonance = 15;
+      p.lfos[0] = { on: true, rate: 3, wave: "sine", amount: 0.8, destination: "filter" };
+      p.fx.distortion = 0.4;
+    },
+  },
+  {
+    name: "Slap Bass",
+    category: "Bass",
+    mutate: (p) => {
+      O(p,0).wave = "square";
+      O(p,0).octave = -1;
+      p.cutoff = 1400;
+      p.filterEnv = { attack: 0.001, decay: 0.12, sustain: 0.1, release: 0.2, amount: 3200 };
+      p.amp = { attack: 0.001, decay: 0.28, sustain: 0.2, release: 0.2 };
+    },
+  },
+  {
+    name: "Upright Bass",
+    category: "Bass",
+    mutate: (p) => {
+      O(p,0).wave = "triangle";
+      O(p,0).octave = -1;
+      p.cutoff = 900;
+      p.amp = { attack: 0.01, decay: 0.5, sustain: 0.2, release: 0.35 };
+      p.voiceMode = "mono";
+      p.glide = 0.04;
+    },
+  },
+  {
+    name: "Drill Slide",
+    category: "Bass",
+    mutate: (p) => {
+      O(p,0).wave = "sine";
+      O(p,0).octave = -2;
+      p.cutoff = 380;
+      p.amp = { attack: 0.005, decay: 1.4, sustain: 0.4, release: 0.9 };
+      p.voiceMode = "mono";
+      p.glide = 0.22;
+      p.fx.distortion = 0.25;
+    },
+  },
+  {
+    name: "Future Bass Chord",
+    category: "Pads",
+    mutate: (p) => {
+      O(p,0).wave = "sawtooth";
+      p.oscillators[1] = { ...O(p,1), on: true, wave: "sawtooth", detune: 25, level: 0.6 };
+      p.cutoff = 2400;
+      p.lfos[0] = { on: true, rate: 2, wave: "triangle", amount: 0.35, destination: "pitch" };
+      p.amp = { attack: 0.03, decay: 0.5, sustain: 0.7, release: 0.7 };
+      p.fx.reverb = 0.5;
+      p.fx.chorus = 0.4;
+    },
+  },
+  {
+    name: "Vapor Pad",
+    category: "Pads",
+    mutate: (p) => {
+      O(p,0).wave = "triangle";
+      p.oscillators[1] = { ...O(p,1), on: true, wave: "sine", octave: 1, detune: 6, level: 0.35 };
+      p.cutoff = 1400;
+      p.amp = { attack: 1.2, decay: 1.4, sustain: 0.85, release: 2.4 };
+      p.fx.reverb = 0.75;
+      p.fx.chorus = 0.5;
+      p.fx.delay = 0.35;
+    },
+  },
+  {
+    name: "Dark Drone",
+    category: "Pads",
+    mutate: (p) => {
+      O(p,0).wave = "sawtooth";
+      O(p,0).octave = -1;
+      p.oscillators[1] = { ...O(p,1), on: true, wave: "sawtooth", octave: -2, detune: 9, level: 0.5 };
+      p.cutoff = 700;
+      p.amp = { attack: 1.8, decay: 2, sustain: 0.9, release: 3 };
+      p.fx.reverb = 0.8;
+    },
+  },
+  {
+    name: "Crystal Pad",
+    category: "Pads",
+    mutate: (p) => {
+      O(p,0).wave = "sine";
+      p.oscillators[1] = { ...O(p,1), on: true, wave: "triangle", octave: 2, level: 0.3 };
+      p.cutoff = 5200;
+      p.amp = { attack: 0.6, decay: 1, sustain: 0.8, release: 1.6 };
+      p.fx.reverb = 0.7;
+      p.fx.delay = 0.3;
+    },
+  },
+  {
+    name: "Gritty Lead",
+    category: "Leads",
+    mutate: (p) => {
+      O(p,0).wave = "sawtooth";
+      p.cutoff = 2000;
+      p.resonance = 10;
+      p.fx.distortion = 0.55;
+      p.fx.bitcrush = 0.15;
+      p.voiceMode = "mono";
+    },
+  },
+  {
+    name: "Square Lead",
+    category: "Leads",
+    mutate: (p) => {
+      O(p,0).wave = "square";
+      p.cutoff = 3000;
+      p.amp = { attack: 0.01, decay: 0.2, sustain: 0.8, release: 0.2 };
+      p.voiceMode = "mono";
+      p.glide = 0.03;
+      p.fx.delay = 0.28;
+    },
+  },
+  {
+    name: "Whistle Lead",
+    category: "Leads",
+    mutate: (p) => {
+      O(p,0).wave = "sine";
+      p.lfos[2] = { on: true, rate: 5.5, wave: "sine", amount: 0.1, destination: "pitch" };
+      p.amp = { attack: 0.06, decay: 0.2, sustain: 0.8, release: 0.3 };
+      p.fx.reverb = 0.45;
+      p.fx.delay = 0.3;
+    },
+  },
+  {
+    name: "Anthem Lead",
+    category: "Leads",
+    mutate: (p) => {
+      O(p,0).wave = "sawtooth";
+      p.oscillators[1] = { ...O(p,1), on: true, wave: "sawtooth", octave: 1, detune: 16, level: 0.55 };
+      p.unison = { voices: 5, detune: 22, width: 0.8 };
+      p.cutoff = 4200;
+      p.fx.reverb = 0.5;
+      p.fx.delay = 0.3;
+    },
+  },
+  {
+    name: "Chiptune Blip",
+    category: "Retro",
+    mutate: (p) => {
+      O(p,0).wave = "square";
+      p.cutoff = 6000;
+      p.amp = { attack: 0.001, decay: 0.12, sustain: 0.3, release: 0.08 };
+      p.fx.bitcrush = 0.5;
+    },
+  },
+  {
+    name: "8-Bit Bass",
+    category: "Retro",
+    mutate: (p) => {
+      O(p,0).wave = "square";
+      O(p,0).octave = -1;
+      p.cutoff = 1200;
+      p.amp = { attack: 0.001, decay: 0.2, sustain: 0.6, release: 0.1 };
+      p.fx.bitcrush = 0.45;
+    },
+  },
+  {
+    name: "Tape Keys",
+    category: "Retro",
+    mutate: (p) => {
+      O(p,0).wave = "triangle";
+      p.cutoff = 1900;
+      p.analog = 0.45;
+      p.amp = { attack: 0.02, decay: 0.6, sustain: 0.4, release: 0.6 };
+      p.fx.chorus = 0.45;
+      p.fx.reverb = 0.3;
+    },
+  },
+  {
+    name: "Riser FX",
+    category: "FX",
+    mutate: (p) => {
+      O(p,0).wave = "sawtooth";
+      p.noise = 0.35;
+      p.cutoff = 300;
+      p.filterEnv = { attack: 3, decay: 1, sustain: 0.9, release: 1, amount: 9000 };
+      p.amp = { attack: 2.5, decay: 1, sustain: 0.9, release: 1 };
+      p.fx.reverb = 0.6;
+    },
+  },
+  {
+    name: "Downlifter",
+    category: "FX",
+    mutate: (p) => {
+      O(p,0).wave = "sawtooth";
+      p.noise = 0.3;
+      p.cutoff = 6000;
+      p.filterEnv = { attack: 0.01, decay: 2.4, sustain: 0, release: 1.2, amount: -5000 };
+      p.amp = { attack: 0.01, decay: 2.4, sustain: 0.2, release: 1.4 };
+      p.fx.reverb = 0.55;
+    },
+  },
+  {
+    name: "Noise Wash",
+    category: "FX",
+    mutate: (p) => {
+      O(p,0).level = 0.1;
+      p.noise = 0.8;
+      p.cutoff = 1800;
+      p.amp = { attack: 1.4, decay: 1.4, sustain: 0.7, release: 2 };
+      p.fx.reverb = 0.8;
+    },
+  },
+  {
+    name: "Siren Alarm",
+    category: "FX",
+    mutate: (p) => {
+      O(p,0).wave = "square";
+      p.lfos[2] = { on: true, rate: 1.2, wave: "triangle", amount: 0.9, destination: "pitch" };
+      p.cutoff = 3400;
+      p.fx.distortion = 0.35;
+      p.fx.reverb = 0.4;
+    },
+  },
+  {
+    name: "Techno Drone Bass",
+    category: "Detroit Techno",
+    mutate: (p) => {
+      O(p,0).wave = "sawtooth";
+      O(p,0).octave = -1;
+      p.oscillators[1] = { ...O(p,1), on: true, wave: "square", octave: -2, level: 0.5 };
+      p.cutoff = 520;
+      p.resonance = 8;
+      p.voiceMode = "mono";
+      p.fx.distortion = 0.3;
+    },
+  },
+  {
+    name: "Submerge Pad",
+    category: "Detroit Techno",
+    mutate: (p) => {
+      O(p,0).wave = "sawtooth";
+      p.oscillators[1] = { ...O(p,1), on: true, wave: "triangle", detune: 10, level: 0.45 };
+      p.cutoff = 1100;
+      p.amp = { attack: 0.9, decay: 1.2, sustain: 0.85, release: 2.2 };
+      p.fx.reverb = 0.7;
+      p.fx.delay = 0.4;
+    },
+  },
+  {
+    name: "Electro Bleep",
+    category: "Detroit Electro",
+    mutate: (p) => {
+      O(p,0).wave = "square";
+      p.cutoff = 4200;
+      p.resonance = 12;
+      p.amp = { attack: 0.001, decay: 0.14, sustain: 0, release: 0.12 };
+      p.fx.delay = 0.4;
+      p.fx.delayFeedback = 0.45;
+    },
+  },
+  {
+    name: "Talkbox Vox",
+    category: "Detroit Electro",
+    mutate: (p) => {
+      O(p,0).wave = "sawtooth";
+      p.filterType = "bandpass";
+      p.cutoff = 1200;
+      p.resonance = 14;
+      p.lfos[0] = { on: true, rate: 3.5, wave: "sine", amount: 0.5, destination: "filter" };
+      p.fx.chorus = 0.4;
+    },
+  },
 ];
 
 export const applyPreset = (name: string): SynthPatch => {
@@ -406,16 +887,31 @@ const padDef = (kind: DrumPad["kind"], name: string, steps: number, kit: DrumKit
   steps: Array.from({ length: steps }, (_, i) => (seed.includes(i) ? 1 : 0)),
 });
 
-export const DRUM_KITS: { id: DrumKitId; name: string; desc: string; decay: number }[] = [
-  { id: "909", name: "TR-909", desc: "Punchy techno classic", decay: 0.5 },
-  { id: "808", name: "TR-808", desc: "Long booming sub kick", decay: 0.9 },
-  { id: "707", name: "TR-707", desc: "Dry digital house kit", decay: 0.4 },
-  { id: "606", name: "TR-606", desc: "Thin snappy drumatix", decay: 0.35 },
-  { id: "linn", name: "LinnDrum", desc: "80s electro-funk", decay: 0.55 },
-  { id: "acoustic", name: "Acoustic", desc: "Natural round kit", decay: 0.65 },
-  { id: "detroit", name: "Detroit", desc: "Hard warehouse kit", decay: 0.45 },
-  { id: "lofi", name: "Lo-Fi", desc: "Dusty tape drums", decay: 0.6 },
-  { id: "trap", name: "Trap", desc: "808 sub + fast hats", decay: 1 },
+export const DRUM_KITS: { id: DrumKitId; name: string; desc: string; decay: number; category: string }[] = [
+  { id: "909", name: "TR-909", desc: "Punchy techno classic", decay: 0.5, category: "Classic Machines" },
+  { id: "808", name: "TR-808", desc: "Long booming sub kick", decay: 0.9, category: "Classic Machines" },
+  { id: "707", name: "TR-707", desc: "Dry digital house kit", decay: 0.4, category: "Classic Machines" },
+  { id: "606", name: "TR-606", desc: "Thin snappy drumatix", decay: 0.35, category: "Classic Machines" },
+  { id: "cr78", name: "CR-78", desc: "Vintage preset rhythm box", decay: 0.3, category: "Classic Machines" },
+  { id: "linn", name: "LinnDrum", desc: "80s electro-funk", decay: 0.55, category: "Classic Machines" },
+  { id: "dmx", name: "DMX", desc: "Punchy 80s street kit", decay: 0.45, category: "Classic Machines" },
+  { id: "simmons", name: "Simmons SDS", desc: "Electronic tom sweep", decay: 0.6, category: "Classic Machines" },
+  { id: "mpc60", name: "MPC 60", desc: "Gritty 12-bit sampler", decay: 0.5, category: "Classic Machines" },
+  { id: "acoustic", name: "Acoustic", desc: "Natural round kit", decay: 0.65, category: "Live Kits" },
+  { id: "jazz", name: "Jazz Brush", desc: "Soft small-room kit", decay: 0.7, category: "Live Kits" },
+  { id: "rock", name: "Rock Stadium", desc: "Big ambient shells", decay: 0.75, category: "Live Kits" },
+  { id: "latin", name: "Latin Perc", desc: "Congas, timbales, clave", decay: 0.5, category: "Live Kits" },
+  { id: "afrobeat", name: "Afrobeat", desc: "Warm groove percussion", decay: 0.55, category: "Live Kits" },
+  { id: "detroit", name: "Detroit", desc: "Hard warehouse kit", decay: 0.45, category: "Genre Kits" },
+  { id: "techno", name: "Techno Hard", desc: "Driving distorted kick", decay: 0.4, category: "Genre Kits" },
+  { id: "house", name: "House Deep", desc: "Round kick, tight clap", decay: 0.45, category: "Genre Kits" },
+  { id: "ghettotech", name: "Ghetto Tech", desc: "Fast Detroit booty kit", decay: 0.35, category: "Genre Kits" },
+  { id: "lofi", name: "Lo-Fi", desc: "Dusty tape drums", decay: 0.6, category: "Genre Kits" },
+  { id: "boombap", name: "Boom Bap", desc: "Dusty 90s hip-hop", decay: 0.55, category: "Genre Kits" },
+  { id: "trap", name: "Trap", desc: "808 sub + fast hats", decay: 1, category: "Genre Kits" },
+  { id: "drill", name: "Drill", desc: "Sliding 808 and rolls", decay: 1.1, category: "Genre Kits" },
+  { id: "jungle", name: "Jungle", desc: "Chopped breakbeat kit", decay: 0.6, category: "Genre Kits" },
+  { id: "industrial", name: "Industrial", desc: "Metallic hard noise", decay: 0.5, category: "Genre Kits" },
 ];
 
 export const defaultPads = (steps = 16, kit: DrumKitId = "909"): DrumPad[] => [

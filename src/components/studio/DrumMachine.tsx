@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Plus, Sparkles, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Knob } from "./Knob";
 import { useStudio } from "@/lib/synclab/store";
 import { DRUM_KITS, GENRES } from "@/lib/synclab/presets";
@@ -47,18 +47,38 @@ export function DrumMachine({ track }: { track: Track }) {
     toast.success(`${def?.name ?? id} kit loaded`, { description: "Patterns are kept — only the sounds change." });
   };
 
+  const kitGroups = (() => {
+    const order: string[] = [];
+    const map = new Map<string, typeof DRUM_KITS>();
+    DRUM_KITS.forEach((k) => {
+      if (!map.has(k.category)) {
+        map.set(k.category, []);
+        order.push(k.category);
+      }
+      map.get(k.category)!.push(k);
+    });
+    return order.map((category) => ({ category, items: map.get(category)! }));
+  })();
+
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
         <Select value={kit} onValueChange={(v) => loadKit(v as DrumKitId)}>
-          <SelectTrigger className="w-44">
+          <SelectTrigger className="w-56">
             <SelectValue placeholder="Kit" />
           </SelectTrigger>
-          <SelectContent>
-            {DRUM_KITS.map((k) => (
-              <SelectItem key={k.id} value={k.id}>
-                {k.name} — {k.desc}
-              </SelectItem>
+          <SelectContent className="max-h-[420px]">
+            {kitGroups.map((g) => (
+              <SelectGroup key={g.category}>
+                <SelectLabel className="font-mono text-[10px] uppercase tracking-widest text-primary">
+                  {g.category}
+                </SelectLabel>
+                {g.items.map((k) => (
+                  <SelectItem key={k.id} value={k.id}>
+                    {k.name} — {k.desc}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
             ))}
           </SelectContent>
         </Select>
