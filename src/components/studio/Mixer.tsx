@@ -326,9 +326,87 @@ const ROW = {
   name: "h-8",
 } as const;
 
-/** SSL-style metal panel background used by every strip. */
+/** Console desk finishes the user can pick between. */
+export type ConsoleStyleId = "ssl" | "neve" | "api" | "live" | "vintage" | "neon";
+type ConsoleStyle = {
+  id: ConsoleStyleId;
+  name: string;
+  desc: string;
+  /** panel gradient stops */
+  a: string;
+  b: string;
+  c: string;
+  /** needle / trim accent */
+  accent: string;
+  screws: boolean;
+};
+
+const CONSOLE_STYLES: ConsoleStyle[] = [
+  {
+    id: "ssl",
+    name: "SL 9000 Grey",
+    desc: "Classic large-format grey metal desk",
+    a: "oklch(0.36 0.008 260)",
+    b: "oklch(0.30 0.008 260)",
+    c: "oklch(0.22 0.008 260)",
+    accent: "oklch(0.75 0.19 30)",
+    screws: true,
+  },
+  {
+    id: "neve",
+    name: "Neve 88 Navy",
+    desc: "Deep blue British desk, red trim",
+    a: "oklch(0.34 0.05 255)",
+    b: "oklch(0.27 0.05 255)",
+    c: "oklch(0.18 0.045 255)",
+    accent: "oklch(0.68 0.21 25)",
+    screws: true,
+  },
+  {
+    id: "api",
+    name: "API Black",
+    desc: "Blacked-out US desk, amber lamps",
+    a: "oklch(0.26 0.006 60)",
+    b: "oklch(0.20 0.006 60)",
+    c: "oklch(0.13 0.006 60)",
+    accent: "oklch(0.82 0.17 75)",
+    screws: true,
+  },
+  {
+    id: "live",
+    name: "Live Flat",
+    desc: "Modern flat software mixer, no hardware trim",
+    a: "oklch(0.28 0.004 260)",
+    b: "oklch(0.25 0.004 260)",
+    c: "oklch(0.23 0.004 260)",
+    accent: "oklch(0.80 0.16 195)",
+    screws: false,
+  },
+  {
+    id: "vintage",
+    name: "Vintage Tape",
+    desc: "Warm cream and walnut studio desk",
+    a: "oklch(0.42 0.045 75)",
+    b: "oklch(0.34 0.045 70)",
+    c: "oklch(0.24 0.04 60)",
+    accent: "oklch(0.84 0.14 85)",
+    screws: true,
+  },
+  {
+    id: "neon",
+    name: "Detroit Neon",
+    desc: "Blacked glass with cyan edge light",
+    a: "oklch(0.22 0.02 200)",
+    b: "oklch(0.17 0.02 200)",
+    c: "oklch(0.12 0.02 200)",
+    accent: "oklch(0.82 0.17 185)",
+    screws: false,
+  },
+];
+
+/** Panel background, driven by the picked desk (vars set on the console root). */
 const PANEL =
-  "linear-gradient(180deg, color-mix(in oklab, var(--surface-2, #222) 100%, white 5%), var(--surface-2, #222) 45%, color-mix(in oklab, var(--surface-2, #222) 88%, black))";
+  "linear-gradient(180deg, var(--mx-a, oklch(0.36 0.008 260)), var(--mx-b, oklch(0.30 0.008 260)) 45%, var(--mx-c, oklch(0.22 0.008 260)))";
 
 /** Console screw head. */
 function Screw({ className }: { className?: string }) {
@@ -336,13 +414,14 @@ function Screw({ className }: { className?: string }) {
     <span
       aria-hidden
       className={cn(
-        "pointer-events-none inline-block size-[7px] shrink-0 rounded-full border border-black/70",
+        "mx-screw pointer-events-none inline-block size-[7px] shrink-0 rounded-full border border-black/70",
         "bg-[radial-gradient(circle_at_35%_30%,rgba(255,255,255,0.55),rgba(0,0,0,0.65))]",
         className
       )}
     />
   );
 }
+
 
 /** Analog VU meter gauge (0..1 level). */
 function VuMeter({ level, label }: { level: number; label: string }) {
@@ -362,7 +441,7 @@ function VuMeter({ level, label }: { level: number; label: string }) {
           return <line key={db} x1={x1} y1={y1} x2={x2} y2={y2} stroke="oklch(0.85 0.02 95)" strokeWidth="1" opacity="0.7" />;
         })}
         <g transform={`rotate(${angle} 30 34)`}>
-          <line x1="30" y1="34" x2="30" y2="10" stroke="oklch(0.75 0.19 30)" strokeWidth="1.6" strokeLinecap="round" />
+          <line x1="30" y1="34" x2="30" y2="10" stroke="var(--mx-accent, oklch(0.75 0.19 30))" strokeWidth="1.6" strokeLinecap="round" />
         </g>
         <circle cx="30" cy="34" r="2.6" fill="oklch(0.3 0.01 260)" stroke="oklch(0.7 0.02 95)" strokeWidth="0.8" />
       </svg>
@@ -373,7 +452,7 @@ function VuMeter({ level, label }: { level: number; label: string }) {
 
 /** Chunky console fader thumb overrides for the shadcn slider. */
 const FADER_CAP =
-  "[&_[role=slider]]:h-6 [&_[role=slider]]:w-9 [&_[role=slider]]:rounded-[3px] [&_[role=slider]]:border-black/70 [&_[role=slider]]:shadow-[0_2px_4px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.35)]";
+  "mx-fader [&_[role=slider]]:h-6 [&_[role=slider]]:w-9 [&_[role=slider]]:rounded-[3px] [&_[role=slider]]:border-black/70 [&_[role=slider]]:shadow-[0_2px_4px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.35)]";
 
 function SectionLabel({ children, className }: { children?: ReactNode; className?: string }) {
   return (
@@ -1030,6 +1109,15 @@ export function Mixer() {
   const levels = useMeters(tracks, transport);
   const [narrow, setNarrow] = useState(false);
   const [showBuses, setShowBuses] = useState(true);
+  const [styleId, setStyleId] = useState<ConsoleStyleId>(() => {
+    if (typeof window === "undefined") return "ssl";
+    const saved = window.localStorage.getItem("synclab.mixer.style") as ConsoleStyleId | null;
+    return CONSOLE_STYLES.some((s) => s.id === saved) ? (saved as ConsoleStyleId) : "ssl";
+  });
+  const desk = CONSOLE_STYLES.find((s) => s.id === styleId) ?? (CONSOLE_STYLES[0] as ConsoleStyle);
+  useEffect(() => {
+    window.localStorage.setItem("synclab.mixer.style", styleId);
+  }, [styleId]);
   const soloed = tracks.some((t) => t.solo);
   const muted = tracks.some((t) => t.muted);
   const busLevel = (id: BusId) => {
@@ -1040,14 +1128,65 @@ export function Mixer() {
   // Only show bus strips that actually have channels routed to them.
   const activeBuses = BUS_STRIPS.filter((id) => tracks.some((t) => t.bus === id));
   return (
-    <div className="flex flex-col border border-border bg-surface">
+    <div
+      className="mx-console flex flex-col border border-border bg-surface"
+      data-console={desk.id}
+      style={
+        {
+          "--mx-a": desk.a,
+          "--mx-b": desk.b,
+          "--mx-c": desk.c,
+          "--mx-accent": desk.accent,
+        } as CSSProperties
+      }
+    >
       {/* console toolbar */}
       <div className="flex items-center gap-2 border-b border-border bg-surface-2/70 px-2 py-1.5">
         <span className="font-display text-[11px] font-bold uppercase tracking-widest text-primary">Mix Console</span>
+
         <span className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
           {tracks.length} ch · {activeBuses.length} buses
         </span>
         <div className="ml-auto flex items-center gap-1">
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                title="Choose console"
+                className="flex h-6 items-center gap-1 rounded-sm bg-surface px-2 font-mono text-[9px] uppercase tracking-wider text-muted-foreground hover:text-foreground"
+              >
+                <span className="size-2.5 rounded-[2px] border border-black/60" style={{ background: desk.accent }} />
+                {desk.name}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-64 p-1">
+              <div className="px-2 py-1 font-mono text-[8px] uppercase tracking-widest text-muted-foreground">
+                Console desk
+              </div>
+              {CONSOLE_STYLES.map((s) => (
+                <button
+                  key={s.id}
+                  onClick={() => setStyleId(s.id)}
+                  className={cn(
+                    "flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left transition-colors hover:bg-surface-2",
+                    s.id === styleId && "bg-surface-2"
+                  )}
+                >
+                  <span
+                    className="h-7 w-5 shrink-0 rounded-[2px] border border-black/60"
+                    style={{
+                      background: `linear-gradient(180deg, ${s.a}, ${s.b} 45%, ${s.c})`,
+                      boxShadow: `inset 0 2px 0 0 ${s.accent}`,
+                    }}
+                  />
+                  <span className="min-w-0">
+                    <span className="block font-mono text-[10px] uppercase tracking-wider text-foreground">{s.name}</span>
+                    <span className="block truncate text-[10px] text-muted-foreground">{s.desc}</span>
+                  </span>
+                </button>
+              ))}
+            </PopoverContent>
+          </Popover>
+
           <button
             onClick={() => tracks.forEach((t) => t.solo && updateTrack(t.id, { solo: false }))}
             disabled={!soloed}
