@@ -382,6 +382,7 @@ export function PadSampler() {
           const id = index(i);
           const pad = pads[id];
           const active = hit === id;
+          const c = BANK_COLORS[bank] as string;
           return (
             <button
               key={id}
@@ -398,23 +399,36 @@ export function PadSampler() {
                 setOver(null);
                 void loadInto(id, e.dataTransfer.files[0]);
               }}
-              className={`relative flex h-20 flex-col items-start justify-between rounded-md border p-2 text-left transition-colors ${
-                active
-                  ? "border-primary bg-primary/40"
-                  : sel === id
-                    ? "border-primary bg-primary/15"
-                    : over === id
-                      ? "border-primary bg-primary/10"
-                      : pad
-                        ? "border-border bg-surface-1 hover:border-primary/60 hover:bg-primary/10"
-                        : "border-dashed border-border bg-surface-2/40 hover:border-primary/50"
+              style={
+                pad
+                  ? {
+                      borderColor: c,
+                      background: active
+                        ? `linear-gradient(145deg, ${c}, color-mix(in hsl, ${c} 55%, transparent))`
+                        : sel === id
+                          ? `linear-gradient(145deg, color-mix(in hsl, ${c} 55%, transparent), color-mix(in hsl, ${c} 22%, transparent))`
+                          : `linear-gradient(145deg, color-mix(in hsl, ${c} 30%, transparent), color-mix(in hsl, ${c} 10%, transparent))`,
+                      boxShadow: active ? `0 0 18px ${c}` : sel === id ? `0 0 0 1px ${c}` : undefined,
+                      opacity: over === id ? 0.85 : 1,
+                    }
+                  : over === id
+                    ? { borderColor: c, backgroundColor: `color-mix(in hsl, ${c} 15%, transparent)` }
+                    : undefined
+              }
+              className={`relative flex h-20 flex-col items-start justify-between rounded-md border p-2 text-left transition-all ${
+                pad ? "" : "border-dashed border-border bg-surface-2/40 hover:border-muted-foreground/60"
               }`}
             >
-              <span className="font-mono text-[9px] text-muted-foreground">
-                {BANKS[bank]}
-                {i + 1} · {KEYMAP[i]?.toUpperCase()}
+              <span className="font-mono text-[9px]" style={{ color: pad ? "hsl(0 0% 100% / 0.75)" : undefined }}>
+                <span className={pad ? "" : "text-muted-foreground"}>
+                  {BANKS[bank]}
+                  {i + 1} · {KEYMAP[i]?.toUpperCase()}
+                </span>
               </span>
-              <span className="line-clamp-2 font-mono text-[10px] text-foreground">
+              <span
+                className={`line-clamp-2 font-mono text-[10px] ${pad ? "" : "text-foreground"}`}
+                style={pad ? { color: "hsl(0 0% 100%)", textShadow: "0 1px 2px hsl(0 0% 0% / 0.5)" } : undefined}
+              >
                 {pad ? pad.name : "drop / tap to load"}
               </span>
               {pad && pad.choke > 0 && (
