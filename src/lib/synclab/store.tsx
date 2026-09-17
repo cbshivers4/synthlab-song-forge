@@ -171,6 +171,9 @@ interface StudioApi extends StudioState {
   pause: () => void;
   changeInstrument: (trackId: string, preset: string) => void;
   setActiveClip: (trackId: string, clipId: string) => void;
+  toggleAutomationLane: (trackId: string, param: AutomationParam) => void;
+  setAutomationPoints: (trackId: string, param: AutomationParam, points: AutomationPoint[]) => void;
+  setAutomationMode: (trackId: string, param: AutomationParam, mode: "read" | "off") => void;
   removeClip: (trackId: string, clipId: string) => void;
   addClip: (trackId: string, clip: AudioClip) => void;
   savePreset: (name: string) => void;
@@ -465,6 +468,16 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         if (t.muted || t.frozen || (anySolo && !t.solo)) continue;
         const len = t.steps;
         const s = step % len;
+        // automation curves ride the channel while the transport runs
+        if (t.automation?.length) {
+          const at = step % totalSteps;
+          const ride: Record<string, number> = {};
+          for (const lane of t.automation) {
+            if (lane.mode !== "read" || lane.points.length === 0) continue;
+            ride[lane.param] = valueAt(lane.points, at);
+          }
+          if (Object.keys(ride).length > 0) engine.automate(t.id, ride);
+        }
         // arrangement clips fire at their own position on the timeline
         if (t.clips?.length) {
           const at = step % totalSteps;
@@ -1079,6 +1092,30 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           ),
         ),
       setActiveClip: (trackId, clipId) => updateTrack(trackId, { activeClipId: clipId }),
+      toggleAutomationLane: (trackId, param) => {
+        const t = tracksRef.current.find((x) => x.id === trackId);
+        const lanes = t?.automation ?? [];
+        const exists = lanes.some((l) => l.param === param);
+        updateTrack(trackId, {
+          automation: exists
+            ? lanes.filter((l) => l.param !== param)
+            : [...lanes, { param, mode: "read" as const, points: [] }],
+        });
+      },
+      setAutomationPoints: (trackId, param, points) => {
+        const t = tracksRef.current.find((x) => x.id === trackId);
+        const lanes = t?.automation ?? [];
+        updateTrack(trackId, {
+          automation: lanes.map((l) =>
+            l.param === param ? { ...l, points: [...points].sort((a, b) => a.step - b.step) } : l,
+          ),
+        });
+      },
+      setAutomationMode: (trackId, param, mode) => {
+        const t = tracksRef.current.find((x) => x.id === trackId);
+        const lanes = t?.automation ?? [];
+        updateTrack(trackId, { automation: lanes.map((l) => (l.param === param ? { ...l, mode } : l)) });
+      },
       removeClip: (trackId, clipId) =>
         setTracks((ts) =>
           ts.map((t) =>
