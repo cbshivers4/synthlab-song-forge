@@ -422,6 +422,7 @@ export class SyncLabEngine {
         autopan: 1,
         limiter: 1,
         bitcrusher: 5,
+        vocoder: 2,
         gate: 1,
       }[pl.kind];
       const head = nodes[idx];
@@ -709,6 +710,8 @@ export class SyncLabEngine {
           // modulator (voice); an internal oscillator bank is the carrier.
           const inNode = ctx.createGain();
           const out = ctx.createGain();
+          // internal nodes are kept off the chain array (fixed size of 2: in, out)
+          const keep: AudioNode[] = [];
           const bandCount = Math.round(clamp(val(pl, "bands", 16), 8, 24));
           const wave = Math.round(clamp(val(pl, "carrier", 0), 0, 2));
           const pitch = clamp(val(pl, "pitch", 110), 40, 440);
@@ -743,7 +746,7 @@ export class SyncLabEngine {
               osc.connect(g);
               g.connect(carrier);
               osc.start();
-              nodes.push(g);
+              keep.push(osc, g);
             }
           }
 
@@ -788,7 +791,7 @@ export class SyncLabEngine {
             carrier.connect(carBp);
             carBp.connect(vca);
             vca.connect(wet);
-            nodes.push(modBp, rect, smooth, amount, carBp, vca);
+            keep.push(modBp, rect, smooth, amount, carBp, vca);
           }
 
           // sibilance path keeps consonants intelligible
@@ -801,7 +804,7 @@ export class SyncLabEngine {
             inNode.connect(hp);
             hp.connect(hpg);
             hpg.connect(wet);
-            nodes.push(hp, hpg);
+            keep.push(hp, hpg);
           }
 
           const dry = ctx.createGain();
@@ -812,7 +815,9 @@ export class SyncLabEngine {
           outTrim.gain.value = dbToGain(val(pl, "output", 0)) * 1.4;
           wet.connect(outTrim);
           outTrim.connect(out);
-          nodes.push(inNode, carrier, wet, dry, outTrim, out);
+          keep.push(carrier, wet, dry, outTrim);
+          (out as unknown as { _vocoder?: AudioNode[] })._vocoder = keep;
+          nodes.push(inNode, out);
           break;
         }
         case "gate": {
