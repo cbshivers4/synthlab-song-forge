@@ -999,15 +999,15 @@ export function Timeline() {
           <div
             className="pointer-events-none absolute inset-y-0 border-x border-primary/25 bg-primary/[0.04]"
             style={{
-              left: `calc(244px + (100% - 244px) * ${(transport.loopStart ?? 0) / 16})`,
-              width: `calc((100% - 244px) * ${(Math.max((transport.loopStart ?? 0) + 1, transport.loopEnd ?? 16) - (transport.loopStart ?? 0)) / 16})`,
+              left: `calc(244px + (100% - 244px) * ${(transport.loopStart ?? 0) / totalSteps})`,
+              width: `calc((100% - 244px) * ${(Math.max((transport.loopStart ?? 0) + 1, transport.loopEnd ?? totalSteps) - (transport.loopStart ?? 0)) / totalSteps})`,
             }}
           />
         )}
         {transport.playing && (
           <div
             className="pointer-events-none absolute top-0 bottom-0 w-[1.5px] bg-primary/80"
-            style={{ left: `calc(244px + (100% - 244px) * ${transport.step / 16})` }}
+            style={{ left: `calc(244px + (100% - 244px) * ${transport.step / totalSteps})` }}
           />
         )}
       </div>
