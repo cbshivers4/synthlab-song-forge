@@ -322,9 +322,14 @@ export interface Transport {
   step: number;
   metronome: boolean;
   countIn: boolean;
+  /** bars of count-in before recording starts (1, 2 or 4) */
+  countInBars?: number;
+  /** clicks remaining while the count-in runs; null when not counting */
+  countInLeft?: number | null;
   loop: boolean;
   loopStart?: number;
   loopEnd?: number;
+  /** timeline length in bars (1 bar = 4 steps) */
   bars: number;
 }
 
