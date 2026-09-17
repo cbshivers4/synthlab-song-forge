@@ -1262,6 +1262,9 @@ function MasterStrip({ level: peak }: { level: number }) {
         </Popover>
         <Screw />
       </div>
+      <div className={cn(ROW.scope, "border-b border-black/50 p-[3px]")}>
+        <Scope scopeId="master" height={40} compact color={color} />
+      </div>
       <MasterChain color={color} />
       <div className={cn(ROW.devices, "flex items-center gap-1 border-b border-black/50 px-1.5 py-1")}>
         <VuMeter level={peak} label="L" />
