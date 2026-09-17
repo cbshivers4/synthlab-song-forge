@@ -422,6 +422,7 @@ export class SyncLabEngine {
         autopan: 1,
         limiter: 1,
         bitcrusher: 5,
+        vocoder: 2,
         gate: 1,
       }[pl.kind];
       const head = nodes[idx];
@@ -702,6 +703,121 @@ export class SyncLabEngine {
           ws.connect(wet);
           wet.connect(out);
           nodes.push(inNode, ws, wet, dry, out);
+          break;
+        }
+        case "vocoder": {
+          // Analogue-style channel vocoder. The incoming channel signal is the
+          // modulator (voice); an internal oscillator bank is the carrier.
+          const inNode = ctx.createGain();
+          const out = ctx.createGain();
+          // internal nodes are kept off the chain array (fixed size of 2: in, out)
+          const keep: AudioNode[] = [];
+          const bandCount = Math.round(clamp(val(pl, "bands", 16), 8, 24));
+          const wave = Math.round(clamp(val(pl, "carrier", 0), 0, 2));
+          const pitch = clamp(val(pl, "pitch", 110), 40, 440);
+          const detune = clamp(val(pl, "detune", 14), 0, 50);
+          const formant = Math.pow(2, clamp(val(pl, "formant", 0), -12, 12) / 12);
+          const response = clamp(val(pl, "response", 18), 2, 200) / 1000;
+          const sense = clamp(val(pl, "sense", 1.4), 0.2, 4);
+          const sib = clamp(val(pl, "sibilance", 0.35), 0, 1);
+          const mix = clamp(val(pl, "mix", 1), 0, 1);
+
+          // carrier source
+          const carrier = ctx.createGain();
+          carrier.gain.value = 1;
+          if (wave === 2) {
+            const len = Math.floor(ctx.sampleRate * 2);
+            const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+            const d = buf.getChannelData(0);
+            for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+            const src = ctx.createBufferSource();
+            src.buffer = buf;
+            src.loop = true;
+            src.connect(carrier);
+            src.start();
+          } else {
+            for (let i = 0; i < 3; i++) {
+              const osc = ctx.createOscillator();
+              osc.type = wave === 1 ? "square" : "sawtooth";
+              osc.frequency.value = pitch;
+              osc.detune.value = (i - 1) * detune;
+              const g = ctx.createGain();
+              g.gain.value = 0.34;
+              osc.connect(g);
+              g.connect(carrier);
+              osc.start();
+              keep.push(osc, g);
+            }
+          }
+
+          // filter bank
+          const lo = 120;
+          const hi = 7000;
+          const wet = ctx.createGain();
+          wet.gain.value = mix;
+          for (let b = 0; b < bandCount; b++) {
+            const f = lo * Math.pow(hi / lo, b / (bandCount - 1));
+            const q = 4 + (b / bandCount) * 6;
+
+            const modBp = ctx.createBiquadFilter();
+            modBp.type = "bandpass";
+            modBp.frequency.value = f;
+            modBp.Q.value = q;
+
+            // envelope follower: rectify then smooth
+            const rect = ctx.createWaveShaper();
+            const curve = new Float32Array(1024);
+            for (let i = 0; i < 1024; i++) curve[i] = Math.abs((i / 1023) * 2 - 1);
+            rect.curve = curve;
+            const smooth = ctx.createBiquadFilter();
+            smooth.type = "lowpass";
+            smooth.frequency.value = clamp(1 / (2 * Math.PI * response), 1, 80);
+            const amount = ctx.createGain();
+            amount.gain.value = sense * 3;
+
+            const carBp = ctx.createBiquadFilter();
+            carBp.type = "bandpass";
+            carBp.frequency.value = clamp(f * formant, 40, 18000);
+            carBp.Q.value = q;
+            const vca = ctx.createGain();
+            vca.gain.value = 0;
+
+            inNode.connect(modBp);
+            modBp.connect(rect);
+            rect.connect(smooth);
+            smooth.connect(amount);
+            amount.connect(vca.gain);
+
+            carrier.connect(carBp);
+            carBp.connect(vca);
+            vca.connect(wet);
+            keep.push(modBp, rect, smooth, amount, carBp, vca);
+          }
+
+          // sibilance path keeps consonants intelligible
+          if (sib > 0) {
+            const hp = ctx.createBiquadFilter();
+            hp.type = "highpass";
+            hp.frequency.value = 6500;
+            const hpg = ctx.createGain();
+            hpg.gain.value = sib * 0.6;
+            inNode.connect(hp);
+            hp.connect(hpg);
+            hpg.connect(wet);
+            keep.push(hp, hpg);
+          }
+
+          const dry = ctx.createGain();
+          dry.gain.value = 1 - mix;
+          inNode.connect(dry);
+          dry.connect(out);
+          const outTrim = ctx.createGain();
+          outTrim.gain.value = dbToGain(val(pl, "output", 0)) * 1.4;
+          wet.connect(outTrim);
+          outTrim.connect(out);
+          keep.push(carrier, wet, dry, outTrim);
+          (out as unknown as { _vocoder?: AudioNode[] })._vocoder = keep;
+          nodes.push(inNode, out);
           break;
         }
         case "gate": {

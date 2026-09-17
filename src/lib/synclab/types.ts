@@ -208,6 +208,7 @@ export type PluginKind =
   | "autopan"
   | "limiter"
   | "bitcrusher"
+  | "vocoder"
   | "gate";
 
 export interface PluginParam {

@@ -642,6 +642,7 @@ function ChannelMenu({ t }: { t: Track }) {
     ["autopan", "Autopan"],
     ["width", "Width"],
     ["bitcrusher", "Crusher"],
+    ["vocoder", "Vocoder"],
     ["gain", "Gain"],
   ];
   const add = (kind: string) => {

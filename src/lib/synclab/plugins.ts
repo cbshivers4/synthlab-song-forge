@@ -102,6 +102,20 @@ export const PARAMS_BY_KIND: Record<PluginKind, () => PluginParam[]> = {
     p("bits", "Bits", 8, 2, 16, "bit"),
     p("mix", "Mix", 1, 0, 1, ""),
   ],
+  // Classic analogue-style vocoder: the channel signal is the modulator (voice)
+  // and an internal oscillator bank is the carrier.
+  vocoder: () => [
+    p("bands", "Bands", 16, 8, 24, ""),
+    p("carrier", "Carrier", 0, 0, 2, ""), // 0 saw, 1 pulse, 2 noise
+    p("pitch", "Pitch", 110, 40, 440, "Hz"),
+    p("detune", "Detune", 14, 0, 50, "ct"),
+    p("formant", "Formant", 0, -12, 12, "st"),
+    p("response", "Response", 18, 2, 200, "ms"),
+    p("sense", "Sensitivity", 1.4, 0.2, 4, ""),
+    p("sibilance", "Sibilance", 0.35, 0, 1, ""),
+    p("mix", "Mix", 1, 0, 1, ""),
+    p("output", "Output", 0, -24, 12, "dB"),
+  ],
   gate: () => [
     p("threshold", "Threshold", -45, -80, 0, "dB"),
     p("attack", "Attack", 2, 0.1, 50, "ms"),
@@ -135,6 +149,7 @@ export const BUILT_IN_PLUGINS: PluginDef[] = [
   def("Auto Panner", "SYNCLAB", "Built-in", "autopan"),
   def("Brickwall Limiter", "SYNCLAB", "Built-in", "limiter"),
   def("Bit Crusher", "SYNCLAB", "Built-in", "bitcrusher"),
+  def("VX-16 Vintage Vocoder", "SYNCLAB", "Built-in", "vocoder"),
   def("Noise Gate", "SYNCLAB", "Built-in", "gate"),
 ];
 
