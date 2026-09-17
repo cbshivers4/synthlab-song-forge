@@ -102,6 +102,15 @@ export function DeviceSetup() {
           </DialogDescription>
         </DialogHeader>
 
+        {micError && (
+          <div className="space-y-2 rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-xs text-destructive">
+            <div>{micError}</div>
+            <Button size="sm" variant="secondary" onClick={openInOwnTab}>
+              Open SYNCLAB in its own tab
+            </Button>
+          </div>
+        )}
+
         {asked && (
           <div className="space-y-3 rounded-lg border border-border bg-surface p-3 font-mono text-xs">
             <div>
