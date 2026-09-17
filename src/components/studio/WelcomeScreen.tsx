@@ -159,10 +159,10 @@ export function WelcomeScreen() {
                   aria-hidden
                   className="mt-[7px] size-1.5 shrink-0 rotate-45 bg-primary transition-colors group-hover:bg-foreground"
                 />
-                <span className="text-sm leading-snug">
-                  <span className="font-semibold text-foreground">{f.title}</span>
-                  <span className="text-muted-foreground"> — {f.body}</span>
-                </span>
+                <div className="min-w-0 text-sm leading-snug">
+                  <div className="font-semibold text-foreground">{f.title}</div>
+                  <div className="text-muted-foreground">{f.body}</div>
+                </div>
               </li>
             ))}
           </ul>
