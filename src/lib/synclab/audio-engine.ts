@@ -774,6 +774,8 @@ export class SyncLabEngine {
   private sampleBuffers = new Map<string, AudioBuffer>();
   private reversedBuffers = new Map<string, AudioBuffer>();
   private liveSamples = new Map<string, AudioBufferSourceNode[]>();
+  /** voices grouped by an arbitrary key so pads can choke each other */
+  private keyedSamples = new Map<string, AudioBufferSourceNode[]>();
 
   /** Decodes a dropped audio file, keeps the buffer and returns its display data. */
   async loadSampleFile(file: File | Blob, name: string) {
@@ -835,7 +837,9 @@ export class SyncLabEngine {
     duration?: number,
     velocity = 1,
     when?: number,
+    voiceKey?: string,
   ) {
+    if (voiceKey) this.stopVoiceKey(trackId, voiceKey);
     const ctx = this.init();
     const base = s.reverse ? this.reversed(s.url) : this.sampleBuffers.get(s.url);
     if (!base) return;
@@ -877,6 +881,8 @@ export class SyncLabEngine {
     const live = this.liveSamples.get(trackId) ?? [];
     live.push(src);
     this.liveSamples.set(trackId, live);
+    const kk = voiceKey ? `${trackId}|${voiceKey}` : null;
+    if (kk) this.keyedSamples.set(kk, [...(this.keyedSamples.get(kk) ?? []), src]);
     src.onended = () => {
       try {
         src.disconnect();
@@ -885,7 +891,21 @@ export class SyncLabEngine {
         /* already gone */
       }
       this.liveSamples.set(trackId, (this.liveSamples.get(trackId) ?? []).filter((x) => x !== src));
+      if (kk) this.keyedSamples.set(kk, (this.keyedSamples.get(kk) ?? []).filter((x) => x !== src));
     };
+  }
+
+  /** Stops only the voices started with this voice key (pad choke groups). */
+  stopVoiceKey(trackId: string, voiceKey: string) {
+    const kk = `${trackId}|${voiceKey}`;
+    for (const src of this.keyedSamples.get(kk) ?? []) {
+      try {
+        src.stop();
+      } catch {
+        /* already stopped */
+      }
+    }
+    this.keyedSamples.set(kk, []);
   }
 
   stopSamples(trackId?: string) {
@@ -899,8 +919,10 @@ export class SyncLabEngine {
         }
       }
       this.liveSamples.set(id, []);
+      for (const key of [...this.keyedSamples.keys()]) if (key.startsWith(`${id}|`)) this.keyedSamples.set(key, []);
     }
   }
+
 
   /* ---------------- synth voice ---------------- */
   playNote(trackId: string, patch: SynthPatch, midi: number, duration: number, velocity = 1, when?: number) {

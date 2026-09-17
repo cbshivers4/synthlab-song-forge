@@ -101,6 +101,7 @@ export type PanelId =
   | "plugins"
   | "appearance"
   | "sampler"
+  | "pads"
   | null;
 
 export type EditTool = "select" | "draw" | "split";
