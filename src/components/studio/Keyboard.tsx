@@ -151,6 +151,7 @@ export function Keyboard() {
 
 
       <div
+        onWheel={(e) => slideTo(octave + (e.deltaY > 0 ? -1 : 1))}
         className="relative h-36 select-none overflow-hidden rounded-[3px] border border-border bg-black"
         style={{ touchAction: "none" }}
       >
