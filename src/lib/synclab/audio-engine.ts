@@ -110,6 +110,7 @@ export class SyncLabEngine {
   private fxInserts = new Map<string, { key: string; nodes: AudioNode[] }>();
   /** Post-EQ analysers for the Pro-EQ display, keyed by plugin instance id. */
   private eqAnalysers = new Map<string, AnalyserNode>();
+  private pluginScopes = new Map<string, AnalyserNode>();
   private channels = new Map<string, ChannelStrip>();
   private analyser: AnalyserNode | null = null;
 
@@ -290,6 +291,24 @@ export class SyncLabEngine {
     return data;
   }
 
+  /** Output waveform of one effect insert, or null when that effect is not running. */
+  getScopeWave(scopeId: string): Float32Array | null {
+    const an = this.pluginScopes.get(scopeId);
+    if (!an) return null;
+    const data = new Float32Array(an.fftSize);
+    an.getFloatTimeDomainData(data);
+    return data;
+  }
+
+  /** Output magnitude spectrum (dB) of one effect insert. */
+  getScopeSpectrum(scopeId: string): Float32Array | null {
+    const an = this.pluginScopes.get(scopeId);
+    if (!an) return null;
+    const data = new Float32Array(an.frequencyBinCount);
+    an.getFloatFrequencyData(data);
+    return data;
+  }
+
   getTrackLevel(id: string) {
     const ch = this.channels.get(id);
     if (!ch) return 0;
@@ -430,6 +449,15 @@ export class SyncLabEngine {
       if (head && tail) {
         cursor.connect(head);
         cursor = tail;
+        const ctx = this.ctx;
+        if (ctx) {
+          const scope = ctx.createAnalyser();
+          scope.fftSize = 1024;
+          scope.smoothingTimeConstant = 0.7;
+          tail.connect(scope);
+          this.pluginScopes.set(pl.id, scope);
+          cursor = scope;
+        }
       }
       idx += size;
     }

@@ -15,6 +15,8 @@ import { PLUGIN_KINDS, makeDef, defsFromFiles } from "@/lib/synclab/plugins";
 import type { PluginDef, PluginInstance, PluginKind } from "@/lib/synclab/types";
 import { ProEq } from "./ProEq";
 import { VocoderPanel } from "./VocoderPanel";
+import { Scope } from "./Scope";
+import { XYPad } from "./XYPad";
 import { toast } from "sonner";
 
 const FORMATS: PluginDef["format"][] = ["VST3", "AU", "CLAP", "AAX"];
@@ -227,6 +229,8 @@ export function PluginRack() {
             </div>
             {open === p.id && (
               <div className="space-y-2 p-2">
+                <Scope scopeId={p.id} />
+                <XYPad trackId={track.id} plugin={p} />
                 {p.kind === "paraeq" && <ProEq trackId={track.id} plugin={p} />}
                 {p.kind === "vocoder" && <VocoderPanel trackId={track.id} plugin={p} />}
                 {p.kind !== "paraeq" && p.kind !== "vocoder" && p.params.map((prm) => (
