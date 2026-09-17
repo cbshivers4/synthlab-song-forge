@@ -1,7 +1,7 @@
 # Cloud storage
-- [ ] Save and reopen full projects in the signed-in account
-- [ ] Upload recordings, samples, pad sounds, and exports privately
-- [ ] Add cloud project browsing and deletion
+- [x] Save and reopen full projects in the signed-in account
+- [x] Upload recordings, samples, pad sounds, and exports privately
+- [x] Add cloud project browsing and deletion
 
 # Roadmap
 

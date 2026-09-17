@@ -10,6 +10,7 @@ import {
 import { useStudio } from "@/lib/synclab/store";
 import { useApp } from "@/lib/synclab/app-state";
 import { toast } from "sonner";
+import { useEffect } from "react";
 import { openExport } from "@/components/studio/ExportDialog";
 import { saveCloudProject } from "@/lib/synclab/cloud";
 
@@ -54,6 +55,12 @@ export function MenuBar() {
     }
   };
 
+  useEffect(() => {
+    const onSave = () => void save();
+    document.addEventListener("synclab:cloud-save", onSave);
+    return () => document.removeEventListener("synclab:cloud-save", onSave);
+  });
+
   const needTrack = (fn: (id: string) => void) => () => {
     if (!selected) {
       toast("Select a track first", { description: "Click a track name in the timeline, then try again." });
@@ -74,7 +81,12 @@ export function MenuBar() {
             <MenubarItem onClick={() => void save()}>
               Save <MenubarShortcut>⌘S</MenubarShortcut>
             </MenubarItem>
-            <MenubarItem onClick={() => project && (setProject({ ...project, id: undefined, name: `${project.name} Copy`, openedAt: Date.now() }), toast("Copy ready", { description: "Choose Save to store it as a separate cloud project." }))}>
+            <MenubarItem onClick={() => {
+              if (!project) return;
+              const { id: _id, ...copy } = project;
+              setProject({ ...copy, name: `${project.name} Copy`, openedAt: Date.now() });
+              toast("Copy ready", { description: "Choose Save to store it as a separate cloud project." });
+            }}>
               Save As
             </MenubarItem>
             <MenubarItem onClick={notYet("Save Template needs an account", "Custom templates are stored with your account.")}>
