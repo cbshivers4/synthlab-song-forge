@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { AudioLines, FolderOpen, Music2, Plus, Sparkles, Waves } from "lucide-react";
+import { AudioLines, FolderOpen, Music2, Plus, Search, Sparkles, Waves, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStudio } from "@/lib/synclab/store";
 import { SYNTH_PRESETS, uid } from "@/lib/synclab/presets";
@@ -79,7 +79,10 @@ const peaksFromName = (name: string) => {
 
 export function Browser() {
   const [tab, setTab] = useState<Tab>("samples");
+  const [q, setQ] = useState("");
   const { tracks, selected, select, addTrack, addClip, loadPreset, updatePatch, setPanel } = useStudio();
+  const query = q.trim().toLowerCase();
+  const match = (...fields: (string | undefined)[]) => !query || fields.some((f) => f?.toLowerCase().includes(query));
 
   const addSampleToTimeline = (sample: string, pack: string) => {
     const target =
