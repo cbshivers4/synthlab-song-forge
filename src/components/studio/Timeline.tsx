@@ -936,6 +936,7 @@ function Ruler() {
 
 export function Timeline() {
   const { tracks, transport, addTrack, setPanel, loadSample } = useStudio();
+  const totalSteps = Math.max(1, transport.bars ?? 4) * 4;
   const [over, setOver] = useState(false);
   return (
     <section className="relative flex min-h-0 flex-1 flex-col overflow-hidden border-x border-b border-border bg-background/60">
