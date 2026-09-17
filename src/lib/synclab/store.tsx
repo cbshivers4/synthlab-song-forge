@@ -114,6 +114,7 @@ export type PanelId =
   | "sampler"
   | "pads"
   | "bass"
+  | "coproducer"
   | null;
 
 export type EditTool = "select" | "draw" | "split";

@@ -27,6 +27,8 @@ import { StartScreen } from "@/components/studio/StartScreen";
 import { DeviceSetup } from "@/components/studio/DeviceSetup";
 import { ExportDialog } from "@/components/studio/ExportDialog";
 import { BassGenerator } from "@/components/studio/BassGenerator";
+import { CoProducer } from "@/components/studio/CoProducer";
+import { Bot } from "lucide-react";
 import { AppProvider, useApp, useMaybeApp } from "@/lib/synclab/app-state";
 import { toast } from "sonner";
 import synthFace from "@/assets/hw-synth.jpg";
@@ -104,6 +106,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
     sampler: { title: "SAMPLER", icon: <AudioLines className="size-4" /> },
     pads: { title: "PAD SAMPLER", icon: <Grid2x2 className="size-4" /> },
     bass: { title: "BASS GENERATOR", icon: <AudioWaveform className="size-4" /> },
+    coproducer: { title: "AI CO-PRODUCER", icon: <Bot className="size-4" /> },
   };
   const current = config[panel];
 
@@ -202,6 +205,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
       {panel === "sampler" && <Sampler />}
       {panel === "pads" && <PadSampler />}
       {panel === "bass" && <BassGenerator />}
+      {panel === "coproducer" && <CoProducer />}
 
       </div>
 

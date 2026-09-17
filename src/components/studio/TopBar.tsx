@@ -40,6 +40,7 @@ import { getEngine } from "@/lib/synclab/audio-engine";
 import { INSTRUMENTS } from "@/lib/synclab/presets";
 import { toast } from "sonner";
 import { openExport } from "@/components/studio/ExportDialog";
+import { StudioSearch } from "@/components/studio/StudioSearch";
 import synclabLogoAsset from "@/assets/synclab-logo-neon.jpg.asset.json";
 const synclabLogo = synclabLogoAsset.url;
 
@@ -58,6 +59,8 @@ export function TopBar() {
             className="h-9 w-auto max-w-36 rounded-[3px] object-cover"
           />
         </div>
+
+        <StudioSearch />
 
         <div className="flex items-center gap-0.5 rounded-[3px] border border-border bg-background/70 p-0.5 shadow-[inset_0_1px_0_oklch(1_0_0/0.04)]">
           <TBtn label="PLAY" active={transport.playing} onClick={togglePlay}>
