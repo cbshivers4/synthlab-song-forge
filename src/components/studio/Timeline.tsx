@@ -958,6 +958,37 @@ function Ruler() {
           </>
         )}
 
+        {/* export range: amber band + draggable flags */}
+        {exportOn && (
+          <>
+            <div
+              className="pointer-events-none absolute inset-y-0 border-x border-amber-400/70 bg-amber-400/10"
+              style={{ left: `${(exLo / total) * 100}%`, width: `${((exHi - exLo) / total) * 100}%` }}
+            />
+            {(["start", "end"] as const).map((which) => {
+              const p = which === "start" ? exLo : exHi;
+              return (
+                <div
+                  key={which}
+                  role="slider"
+                  aria-label={which === "start" ? "Export start flag" : "Export end flag"}
+                  aria-valuenow={p}
+                  onPointerDown={dragFlag(which)}
+                  title={`Export ${which} — drag to move (bar ${Math.floor(p / 4) + 1})`}
+                  className="absolute top-0 z-20 flex h-full w-3 cursor-ew-resize touch-none flex-col items-center"
+                  style={{ left: `calc(${(p / total) * 100}% - 6px)` }}
+                >
+                  <div
+                    className="h-0 w-0 border-x-[6px] border-x-transparent"
+                    style={{ borderTop: "9px solid rgb(251 191 36)" }}
+                  />
+                  <div className="w-[2px] flex-1 bg-amber-400/80" />
+                </div>
+              );
+            })}
+          </>
+        )}
+
         {transport.playing && (
           <div
             className="pointer-events-none absolute top-0 h-full w-[2px] bg-primary"
