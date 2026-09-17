@@ -40,6 +40,7 @@ export interface MidiTarget {
 
 export const midiTargetKey = (t: MidiTarget) => `${t.id}:${t.param}`;
 const MIDI_MAP_KEY = "synclab.midimap";
+const AUTOSAVE_KEY = "synclab.autosave.v1";
 
 const busFor = (kind: TrackKind): BusId =>
   kind === "drum"
