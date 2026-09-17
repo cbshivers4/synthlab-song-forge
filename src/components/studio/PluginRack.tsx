@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { ChevronDown, ChevronUp, Cpu, FolderSearch, Plus, Power, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Cpu, FolderSearch, Plus, Power, Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useStudio } from "@/lib/synclab/store";
-import { PLUGIN_KINDS, makeDef } from "@/lib/synclab/plugins";
+import { PLUGIN_KINDS, makeDef, defsFromFiles } from "@/lib/synclab/plugins";
 import type { PluginDef, PluginInstance, PluginKind } from "@/lib/synclab/types";
 import { ProEq } from "./ProEq";
 import { VocoderPanel } from "./VocoderPanel";
@@ -111,6 +111,21 @@ export function PluginRack() {
   const [format, setFormat] = useState<PluginDef["format"]>("VST3");
   const [kind, setKind] = useState<PluginKind>("eq");
   const folderRef = useRef<HTMLInputElement>(null);
+  const [dropping, setDropping] = useState(false);
+
+  const dropFiles = (files: File[]) => {
+    const defs = defsFromFiles(files, installedPlugins.map((d) => d.name));
+    if (defs.length === 0) {
+      toast("No plugins in that drop", {
+        description: "Drop .vst3, .component, .clap or .aaxplugin files or folders.",
+      });
+      return;
+    }
+    defs.forEach(installPlugin);
+    toast.success(`${defs.length} plugin${defs.length === 1 ? "" : "s"} added`, {
+      description: "They appear in the rack and run through SYNCLAB's matching processor.",
+    });
+  };
 
   const track = selected ?? tracks[0];
   if (!track) return <p className="text-sm text-muted-foreground">Add a track to open its plugin rack.</p>;
@@ -264,6 +279,31 @@ export function PluginRack() {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* drag and drop plugin files straight from the computer */}
+      <div
+        onDragOver={(e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = "copy";
+          setDropping(true);
+        }}
+        onDragLeave={() => setDropping(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDropping(false);
+          dropFiles(Array.from(e.dataTransfer.files));
+        }}
+        className={`panel grid place-items-center gap-1 border-dashed p-6 text-center transition-colors ${
+          dropping ? "border-primary bg-primary/10" : ""
+        }`}
+      >
+        <Upload className="size-5 text-primary" />
+        <p className="text-[11px] font-medium">Drag your VST3 / AU / CLAP plugins here</p>
+        <p className="max-w-md text-[10px] text-muted-foreground">
+          Drop plugin files or whole folders from Finder or Explorer. Their name and format are read in and each one drives
+          SYNCLAB&apos;s matching processor — a browser cannot run a native plugin binary.
+        </p>
       </div>
 
       {/* scan a plugin folder from the computer */}

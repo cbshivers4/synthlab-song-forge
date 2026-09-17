@@ -3,6 +3,7 @@ import {
   Bot,
   ChevronLeft,
   ChevronRight,
+  Cpu,
   Disc3,
   Gauge,
   Grid2x2,
@@ -17,6 +18,7 @@ import {
 import { useState } from "react";
 import { useStudio, type PanelId } from "@/lib/synclab/store";
 import type { TrackKind } from "@/lib/synclab/types";
+import { defsFromFiles } from "@/lib/synclab/plugins";
 import { toast } from "sonner";
 
 interface Tool {
@@ -40,13 +42,29 @@ const TOOLS: Tool[] = [
   { id: "beat", label: "Pad Sampler", icon: <Grid2x2 className="size-4" />, panel: "pads", drag: { kind: "sampler", name: "Pad Sampler" } },
   { id: "chop", label: "Sample Chopper", icon: <Scissors className="size-4" />, panel: "pads" },
   { id: "sampler", label: "Sampler", icon: <AudioLines className="size-4" />, panel: "sampler", drag: { kind: "sampler", name: "Sampler" } },
+  { id: "plugins", label: "Plugins (VST)", icon: <Cpu className="size-4" />, panel: "plugins" },
   { id: "mixer", label: "Mixer", icon: <SlidersHorizontal className="size-4" />, panel: "mixer" },
   { id: "master", label: "Mastering", icon: <Gauge className="size-4" />, soon: "Mastering and scopes are built in the mix stage." },
 ];
 
 export function ToolsRail() {
-  const { panel, setPanel } = useStudio();
+  const { panel, setPanel, installedPlugins, installPlugin } = useStudio();
   const [open, setOpen] = useState(true);
+  const [pluginDrop, setPluginDrop] = useState(false);
+
+  /** Plugin files dropped straight onto the Plugins entry in this rail. */
+  const dropPlugins = (files: File[]) => {
+    const defs = defsFromFiles(files, installedPlugins.map((d) => d.name));
+    setPanel("plugins");
+    if (defs.length === 0) {
+      toast("No plugins in that drop", { description: "Drop .vst3, .component, .clap or .aaxplugin files or folders." });
+      return;
+    }
+    defs.forEach(installPlugin);
+    toast.success(`${defs.length} plugin${defs.length === 1 ? "" : "s"} added`, {
+      description: "They are in the rack, running through SYNCLAB's matching processor.",
+    });
+  };
 
   return (
     <aside
@@ -68,7 +86,32 @@ export function ToolsRail() {
           return (
             <button
               key={t.id}
-              title={t.drag ? `${t.label} — drag onto the timeline to add a channel` : t.label}
+              title={
+                t.id === "plugins"
+                  ? "Plugins — drop your VST3 / AU / CLAP files here"
+                  : t.drag
+                    ? `${t.label} — drag onto the timeline to add a channel`
+                    : t.label
+              }
+              onDragOver={
+                t.id === "plugins"
+                  ? (e) => {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = "copy";
+                      setPluginDrop(true);
+                    }
+                  : undefined
+              }
+              onDragLeave={t.id === "plugins" ? () => setPluginDrop(false) : undefined}
+              onDrop={
+                t.id === "plugins"
+                  ? (e) => {
+                      e.preventDefault();
+                      setPluginDrop(false);
+                      dropPlugins(Array.from(e.dataTransfer.files));
+                    }
+                  : undefined
+              }
               draggable={!!t.drag}
               onDragStart={(e) => {
                 if (!t.drag) return;
@@ -80,7 +123,7 @@ export function ToolsRail() {
               onClick={() => (t.panel ? setPanel(t.panel) : toast(t.label, { description: t.soon }))}
               className={`flex w-full items-center gap-2 rounded-[3px] px-2 py-1.5 text-left text-xs transition-colors ${
                 t.drag ? "cursor-grab active:cursor-grabbing" : ""
-              } ${
+              } ${t.id === "plugins" && pluginDrop ? "bg-primary/15 ring-1 ring-primary" : ""} ${
                 active ? "bg-surface-2 text-primary" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"
               }`}
             >
