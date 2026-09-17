@@ -250,6 +250,18 @@ export function PadSampler() {
     return () => window.removeEventListener("keydown", down);
   });
 
+  /** Stop just one pad's voice (and its choke group) without touching the others. */
+  const stopPad = useCallback(
+    (i: number) => {
+      const pad = padsRef.current[i];
+      const id = trackId;
+      if (!pad || !id) return;
+      getEngine().stopVoiceKey(id, `pad${i}`);
+      if (pad.choke) getEngine().stopVoiceKey(id, `choke${pad.choke}`);
+    },
+    [trackId],
+  );
+
   const loadInto = async (i: number, file: File | undefined) => {
     if (!file) return;
     if (!file.type.startsWith("audio") && !AUDIO_RE.test(file.name)) {
@@ -265,11 +277,14 @@ export function PadSampler() {
   const patch = (i: number, next: Partial<Pad>) =>
     setPads((p) => (p[i] ? { ...p, [i]: { ...(p[i] as Pad), ...next } } : p));
 
-  const clearPad = (i: number) => setPads((p) => {
-    const n = { ...p };
-    delete n[i];
-    return n;
-  });
+  const clearPad = (i: number) => {
+    stopPad(i);
+    setPads((p) => {
+      const n = { ...p };
+      delete n[i];
+      return n;
+    });
+  };
 
   /** Spreads the selected pad's sample across the bank as equal chops. */
   const chopToPads = (n: number) => {
@@ -461,6 +476,28 @@ export function PadSampler() {
                   C{pad.choke}
                 </span>
               )}
+              {pad && (
+                <span
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Delete ${pad.name}`}
+                  title="Delete this sample"
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    clearPad(id);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.stopPropagation();
+                      clearPad(id);
+                    }
+                  }}
+                  className="absolute bottom-1 right-1 flex size-5 items-center justify-center rounded-sm bg-black/45 text-white/80 opacity-70 transition-opacity hover:bg-destructive hover:text-white hover:opacity-100"
+                >
+                  <Trash2 className="size-3" />
+                </span>
+              )}
             </button>
           );
         })}
@@ -532,6 +569,9 @@ export function PadSampler() {
             <div className="ml-auto flex flex-wrap gap-1">
               <Button size="sm" variant="secondary" className="h-7 gap-1.5" onClick={() => trigger(sel)}>
                 <Play className="size-3.5" /> Play
+              </Button>
+              <Button size="sm" variant="ghost" className="h-7 gap-1.5" onClick={() => stopPad(sel)}>
+                <Square className="size-3.5" /> Stop
               </Button>
               <Button
                 size="sm"
