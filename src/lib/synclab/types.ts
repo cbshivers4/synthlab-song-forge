@@ -8,7 +8,7 @@ export type TrackKind =
 
 export type BusId = "drums" | "vocals" | "instruments" | "synths" | "fx" | "master";
 
-export type OscWave = "sine" | "triangle" | "sawtooth" | "square" | "pulse" | "noise";
+export type OscWave = "sine" | "triangle" | "sawtooth" | "square" | "pulse" | "noise" | "wavetable";
 
 export type LfoWave = "sine" | "triangle" | "sawtooth" | "square";
 
@@ -24,6 +24,12 @@ export interface OscillatorParams {
   phase?: number;
   sync?: boolean;
   pulseWidth?: number;
+  /** wavetable position 0..1 when wave === "wavetable" */
+  morph?: number;
+  /** this oscillator frequency-modulates the next one by this amount (0..1) */
+  fm?: number;
+  /** ring-modulate this oscillator with oscillator 1 */
+  ring?: boolean;
 }
 
 export interface EnvelopeParams {
@@ -42,6 +48,49 @@ export interface LfoParams {
   destination: "pitch" | "filter" | "volume" | "pan" | "wavetable";
 }
 
+export type ModSource =
+  | "lfo1"
+  | "lfo2"
+  | "lfo3"
+  | "modEnv"
+  | "velocity"
+  | "keytrack"
+  | "random"
+  | "macro1"
+  | "macro2"
+  | "macro3"
+  | "macro4";
+
+export type ModDest =
+  | "pitch"
+  | "cutoff"
+  | "cutoff2"
+  | "resonance"
+  | "level"
+  | "pan"
+  | "pulseWidth"
+  | "morph"
+  | "fmAmount"
+  | "unisonDetune";
+
+export interface ModRoute {
+  id: string;
+  on: boolean;
+  source: ModSource;
+  dest: ModDest;
+  /** -1..1, scaled per destination */
+  amount: number;
+}
+
+export interface FilterStage {
+  on: boolean;
+  type: BiquadFilterType;
+  cutoff: number;
+  resonance: number;
+  /** series runs after filter 1, parallel sums alongside it */
+  routing: "series" | "parallel";
+}
+
 export interface SynthPatch {
   name: string;
   oscillators: OscillatorParams[];
@@ -57,6 +106,18 @@ export interface SynthPatch {
   unison: { voices: number; detune: number; width: number };
   glide: number;
   glideMode?: "always" | "legato";
+  /** second filter stage */
+  filter2?: FilterStage | undefined;
+  /** free modulation envelope, only heard through the mod matrix */
+  modEnv?: EnvelopeParams | undefined;
+  /** four performance macros, 0..1, usable as mod sources */
+  macros?: number[] | undefined;
+  modMatrix?: ModRoute[] | undefined;
+  voiceMode?: "poly" | "mono" | "legato";
+  /** how much note velocity opens the amp, 0..1 */
+  velocitySens?: number;
+  /** analogue drift: random per-voice tuning and cutoff wobble, 0..1 */
+  analog?: number;
   fx: {
     distortion: number;
     saturation?: number;
