@@ -413,7 +413,7 @@ export const readDrag = (e: React.DragEvent): DragPayload | null => {
 };
 
 function TrackRow({ track, index }: { track: Track; index: number }) {
-  const { selectedId, selectedIds, select, toggleSelectId, updateTrack, removeTrack, duplicateTrack, moveTrack, setPanel, changeInstrument, installedPlugins, addPlugin, editTool, splitClipAt, toggleStep } =
+  const { selectedId, selectedIds, select, toggleSelectId, updateTrack, removeTrack, duplicateTrack, moveTrack, setPanel, changeInstrument, installedPlugins, addPlugin, editTool, splitClipAt, toggleStep, toggleAutomationLane } =
     useStudio();
   const { transport, setNotes, loadSample } = useStudio();
   const [renaming, setRenaming] = useState(false);
@@ -626,6 +626,13 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
               <DropdownMenuItem onClick={openEditor}>
                 <Settings2 className="size-4" /> Track settings
               </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel className="label-xs">Automation</DropdownMenuLabel>
+              {(["volume", "pan", "sendReverb", "sendDelay"] as AutomationParam[]).map((param) => (
+                <DropdownMenuItem key={param} onClick={() => toggleAutomationLane(track.id, param)}>
+                  {(track.automation ?? []).some((l) => l.param === param) ? "Hide" : "Show"} {LANE_LABEL[param].toLowerCase()} lane
+                </DropdownMenuItem>
+              ))}
               <DropdownMenuSeparator />
               <DropdownMenuLabel className="label-xs">Edit</DropdownMenuLabel>
               {activeClip && (
