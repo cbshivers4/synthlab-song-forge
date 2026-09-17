@@ -969,6 +969,7 @@ function Strip({
         <span className={cn("font-mono text-[9px]", level > 0.98 ? "text-red-400" : "text-foreground/70")}>
           {fracToDb(level).toFixed(0)}
         </span>
+        <ClipLed id={t.id} compact />
       </div>
 
       {/* M / S / arm */}
