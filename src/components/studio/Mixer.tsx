@@ -35,6 +35,7 @@ import { cn } from "@/lib/utils";
 import { clearClip, reportLevel, useClipped } from "@/lib/synclab/clip-monitor";
 import { Scope } from "./Scope";
 import { XYPad } from "./XYPad";
+import { EffectDisplay } from "./EffectDisplay";
 
 const BUSES: BusId[] = ["drums", "vocals", "instruments", "synths", "fx", "master"];
 const DB_TICKS = [6, 0, -6, -12, -24, -48];
@@ -231,6 +232,7 @@ function InsertRack({
             </div>
             {open === p.id && (
               <div className="space-y-1 pt-1">
+                <EffectDisplay plugin={p} height={72} onParam={(paramId, v) => onParam(p.id, paramId, v)} />
                 <Scope scopeId={p.id} height={52} />
                 <XYPad plugin={p} onParam={(paramId, v) => onParam(p.id, paramId, v)} />
               </div>
