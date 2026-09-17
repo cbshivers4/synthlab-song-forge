@@ -618,7 +618,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
           >
             ● REC
           </Button>
-          <span className="label-xs ml-auto">{KIND_LABEL[track.kind]}</span>
+          <span className="label-xs ml-auto whitespace-nowrap">{KIND_LABEL[track.kind]}</span>
         </div>
 
         <div className="flex items-center gap-2">
@@ -874,11 +874,14 @@ function Ruler() {
 
   return (
     <div className="sticky top-0 z-10 flex border-b border-border bg-surface-2/70 backdrop-blur">
-      <div className="flex w-[244px] shrink-0 items-center gap-2 border-r border-border px-3 py-1">
-        <span className="font-display text-[11px] font-semibold tracking-[0.2em]">TIMELINE</span>
-        <span className="label-xs ml-auto">
-          {String(Math.floor(transport.step / 4) + 1).padStart(2, "0")}.{(transport.step % 4) + 1}
-        </span>
+      <div className="flex w-[244px] shrink-0 flex-col justify-center gap-1 border-r border-border px-3 py-1">
+        <div className="flex items-center gap-2">
+          <span className="font-display text-[11px] font-semibold tracking-[0.2em]">TIMELINE</span>
+          <span className="label-xs ml-auto">
+            {String(Math.floor(transport.step / 4) + 1).padStart(2, "0")}.{(transport.step % 4) + 1}
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5">
         {/* bar count control */}
         <div className="flex items-center gap-0.5 rounded-[3px] border border-border bg-background/70 px-0.5" title="Timeline length in bars">
           <button
@@ -917,6 +920,7 @@ function Ruler() {
         >
           <Flag className="size-3" /> Export
         </button>
+        </div>
       </div>
       <div
         ref={gridRef}

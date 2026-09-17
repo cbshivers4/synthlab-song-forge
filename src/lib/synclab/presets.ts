@@ -941,7 +941,7 @@ export const KIND_LABEL: Record<TrackKind, string> = {
   audio: "AUDIO",
   instrument: "INSTRUMENT",
   midi: "MIDI",
-  drum: "DRUM MACHINE",
+  drum: "DRUMS",
   sampler: "SAMPLER",
   "ai-vocal": "AI VOCAL",
 };
