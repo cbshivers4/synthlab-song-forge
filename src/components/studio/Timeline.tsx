@@ -920,6 +920,7 @@ function Ruler() {
         >
           <Flag className="size-3" /> Export
         </button>
+        </div>
       </div>
       <div
         ref={gridRef}
