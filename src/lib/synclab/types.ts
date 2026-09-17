@@ -188,6 +188,7 @@ export interface AudioClip {
   peaks: number[];
   duration: number;
   url?: string | undefined;
+  cloudPath?: string | undefined;
   takeOf?: string | undefined;
 }
 
@@ -244,6 +245,7 @@ export interface PluginInstance {
 export interface SamplerState {
   name: string;
   url: string;
+  cloudPath?: string | undefined;
   duration: number;
   peaks: number[];
   /** trim points as 0..1 fractions of the file */

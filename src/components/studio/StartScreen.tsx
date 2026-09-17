@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Clock, FolderOpen, Import, LayoutTemplate, Plus, Sparkles, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Cloud, Clock, FolderOpen, Import, LayoutTemplate, Loader2, Plus, Sparkles, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,16 +10,39 @@ import { KEYS, TEMPLATES, TIME_SIGS, templateById } from "@/lib/synclab/template
 import { useStudio } from "@/lib/synclab/store";
 import { toast } from "sonner";
 import synclabLogoAsset from "@/assets/synclab-logo.jpg.asset.json";
+import { deleteCloudProject, listCloudProjects, loadCloudProject, type CloudProject } from "@/lib/synclab/cloud";
 
 export function StartScreen() {
   const { setStage, setProject, removeRecent, recents } = useApp();
-  const { tracks, addTrack, removeTrack, setTransport } = useStudio();
+  const { tracks, addTrack, removeTrack, setTransport, restore } = useStudio();
+  const [cloud, setCloud] = useState<CloudProject[]>([]);
+  const [cloudBusy, setCloudBusy] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("Untitled Project");
   const [templateId, setTemplateId] = useState("empty");
   const [bpm, setBpm] = useState(128);
   const [key, setKey] = useState(KEYS[1] as string);
   const [sig, setSig] = useState(TIME_SIGS[0] as string);
+
+  useEffect(() => {
+    void listCloudProjects().then(setCloud).catch(() => setCloud([]));
+  }, []);
+
+  const openCloud = async (item: CloudProject) => {
+    setCloudBusy(item.id);
+    try {
+      const loaded = await loadCloudProject(item.id);
+      if (!loaded.session) throw new Error("This project has no saved session.");
+      restore(loaded.session);
+      setProject({ id: loaded.id, name: loaded.name, bpm: loaded.bpm, key: loaded.key, timeSig: loaded.timeSig, template: loaded.template, openedAt: Date.now() });
+      setStage("studio");
+      toast.success(`${loaded.name} opened from your cloud`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not open cloud project");
+    } finally {
+      setCloudBusy(null);
+    }
+  };
 
   const openDialog = (tpl: string) => {
     const t = templateById(tpl);
@@ -81,10 +104,8 @@ export function StartScreen() {
           <Action
             icon={<FolderOpen className="size-4" />}
             title="Open project"
-            body="Saved projects need an account."
-            onClick={() =>
-              toast("Saved projects arrive with accounts", { description: "Cloud project storage is the next stage." })
-            }
+            body={cloud.length ? `${cloud.length} saved in your cloud.` : "Open a saved cloud project."}
+            onClick={() => document.getElementById("cloud-projects")?.scrollIntoView({ behavior: "smooth" })}
           />
           <Action
             icon={<Clock className="size-4" />}
@@ -93,6 +114,45 @@ export function StartScreen() {
             onClick={() => setStage("studio")}
           />
         </div>
+
+        <section id="cloud-projects" className="mt-10">
+          <div className="flex items-center gap-2">
+            <Cloud className="size-4 text-primary" />
+            <h2 className="label-xs">Your cloud projects</h2>
+          </div>
+          {cloud.length === 0 ? (
+            <p className="mt-2 text-sm text-muted-foreground">No cloud projects yet. Open a session and choose File → Save.</p>
+          ) : (
+            <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {cloud.map((item) => (
+                <div key={item.id} className="group panel relative p-3">
+                  <button className="block w-full text-left" onClick={() => void openCloud(item)} disabled={cloudBusy !== null}>
+                    <div className="flex items-center gap-2 font-display text-sm font-semibold">
+                      {cloudBusy === item.id && <Loader2 className="size-3.5 animate-spin" />}{item.name}
+                    </div>
+                    <div className="font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
+                      {item.bpm} BPM · {item.key} · {item.timeSig}
+                    </div>
+                  </button>
+                  <button
+                    aria-label={`Delete cloud project ${item.name}`}
+                    title="Delete cloud project"
+                    className="absolute right-2 top-2 rounded p-1 text-muted-foreground opacity-0 hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100"
+                    onClick={() => {
+                      setCloudBusy(item.id);
+                      void deleteCloudProject(item)
+                        .then(() => { setCloud((items) => items.filter((p) => p.id !== item.id)); toast.success("Cloud project deleted"); })
+                        .catch((error: unknown) => toast.error(error instanceof Error ? error.message : "Could not delete project"))
+                        .finally(() => setCloudBusy(null));
+                    }}
+                  >
+                    <Trash2 className="size-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
 
         {recents.length > 0 && (
           <section className="mt-10">

@@ -5,6 +5,7 @@ export type Stage = "welcome" | "start" | "studio";
 export type UiMode = "simple" | "advanced";
 
 export interface ProjectMeta {
+  id?: string;
   name: string;
   bpm: number;
   key: string;

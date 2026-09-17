@@ -292,6 +292,9 @@ function useShortcuts() {
         } else if (k === "a") {
           e.preventDefault();
           selectAll();
+        } else if (k === "s") {
+          e.preventDefault();
+          document.dispatchEvent(new CustomEvent("synclab:cloud-save"));
         }
         return;
       }
