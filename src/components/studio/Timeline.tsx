@@ -559,8 +559,9 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
   };
 
   return (
+    <div className="border-b border-border/80">
     <div
-      className={`relative flex items-stretch border-b border-border/80 transition-colors ${isSelected ? "bg-surface-2/40" : "hover:bg-surface/50"} ${track.hidden ? "opacity-40" : ""} ${dropping ? "ring-1 ring-primary ring-inset" : ""}`}
+      className={`relative flex items-stretch transition-colors ${isSelected ? "bg-surface-2/40" : "hover:bg-surface/50"} ${track.hidden ? "opacity-40" : ""} ${dropping ? "ring-1 ring-primary ring-inset" : ""}`}
       style={{ height: track.height ?? undefined }}
       onClick={(e) => {
         if (e.metaKey || e.ctrlKey) toggleSelectId(track.id);
@@ -836,6 +837,124 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      </div>
+
+      {(track.automation ?? []).map((lane) => (
+        <AutomationRow key={lane.param} track={track} lane={lane} />
+      ))}
+    </div>
+  );
+}
+
+/** One automation lane under a track: click to add a point, drag points, double-click to remove. */
+function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) {
+  const { transport, setAutomationPoints, setAutomationMode, toggleAutomationLane } = useStudio();
+  const total = Math.max(1, transport.bars ?? 4) * 4;
+  const bipolar = lane.param === "pan";
+  const toValue = (yFrac: number) => {
+    const v = 1 - Math.min(1, Math.max(0, yFrac));
+    return bipolar ? v * 2 - 1 : v;
+  };
+  const toY = (v: number) => (bipolar ? 1 - (v + 1) / 2 : 1 - v);
+
+  const addPoint = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const step = Math.round(((e.clientX - rect.left) / rect.width) * total);
+    const value = toValue((e.clientY - rect.top) / rect.height);
+    setAutomationPoints(track.id, lane.param, [
+      ...lane.points.filter((p) => p.step !== step),
+      { step: Math.max(0, Math.min(total, step)), value },
+    ]);
+  };
+
+  const dragPoint = (e: React.PointerEvent, index: number) => {
+    e.stopPropagation();
+    const row = (e.currentTarget as HTMLElement).closest("[data-auto-row]") as HTMLElement | null;
+    if (!row) return;
+    const rect = row.getBoundingClientRect();
+    const onMove = (ev: PointerEvent) => {
+      const step = Math.max(0, Math.min(total, Math.round(((ev.clientX - rect.left) / rect.width) * total)));
+      const value = toValue((ev.clientY - rect.top) / rect.height);
+      setAutomationPoints(
+        track.id,
+        lane.param,
+        lane.points.map((p, i) => (i === index ? { step, value } : p)),
+      );
+    };
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  };
+
+  const label = LANE_LABEL[lane.param];
+  const pts = lane.points;
+
+  return (
+    <div className="flex items-stretch border-t border-border/50 bg-background/40">
+      <div className="w-1 shrink-0" style={{ background: track.color, opacity: 0.4 }} />
+      <div className="flex w-[240px] shrink-0 items-center gap-1 border-r border-border bg-surface/60 px-2 py-1">
+        <span className="font-mono text-[9px] tracking-[0.15em] text-muted-foreground">AUTO · {label}</span>
+        <button
+          onClick={() => setAutomationMode(track.id, lane.param, lane.mode === "read" ? "off" : "read")}
+          title={lane.mode === "read" ? "Playing this curve — click to bypass" : "Bypassed — click to play it"}
+          className={`ml-auto rounded-[3px] px-1.5 py-0.5 font-mono text-[8px] tracking-widest ${
+            lane.mode === "read" ? "bg-primary/20 text-primary" : "bg-surface-2 text-muted-foreground"
+          }`}
+        >
+          {lane.mode === "read" ? "READ" : "OFF"}
+        </button>
+        <button
+          onClick={() => setAutomationPoints(track.id, lane.param, [])}
+          title="Clear this curve"
+          aria-label={`Clear ${label} automation`}
+          className="text-muted-foreground hover:text-foreground"
+        >
+          <Eraser className="size-3" />
+        </button>
+        <button
+          onClick={() => toggleAutomationLane(track.id, lane.param)}
+          title="Hide this lane"
+          aria-label={`Hide ${label} automation`}
+          className="text-muted-foreground hover:text-destructive"
+        >
+          <X className="size-3" />
+        </button>
+      </div>
+      <div
+        data-auto-row
+        onClick={addPoint}
+        title="Click to add a point, drag a point to shape it, double-click a point to delete"
+        className="lane-grid relative h-[54px] flex-1 cursor-crosshair bg-background/70"
+      >
+        <svg className="pointer-events-none absolute inset-0 size-full" preserveAspectRatio="none" viewBox="0 0 100 100">
+          {pts.length > 1 && (
+            <polyline
+              points={pts.map((p) => `${(p.step / total) * 100},${toY(p.value) * 100}`).join(" ")}
+              fill="none"
+              stroke="var(--primary)"
+              strokeWidth={1}
+              vectorEffect="non-scaling-stroke"
+            />
+          )}
+        </svg>
+        {pts.map((p, i) => (
+          <button
+            key={`${p.step}-${i}`}
+            onPointerDown={(e) => dragPoint(e, i)}
+            onClick={(e) => e.stopPropagation()}
+            onDoubleClick={(e) => {
+              e.stopPropagation();
+              setAutomationPoints(track.id, lane.param, pts.filter((_, j) => j !== i));
+            }}
+            aria-label={`${label} point at step ${p.step}`}
+            className="absolute size-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary ring-2 ring-background"
+            style={{ left: `${(p.step / total) * 100}%`, top: `${toY(p.value) * 100}%` }}
+          />
+        ))}
+      </div>
     </div>
   );
 }
