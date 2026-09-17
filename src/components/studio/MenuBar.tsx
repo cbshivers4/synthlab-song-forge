@@ -80,6 +80,19 @@ export function MenuBar() {
 
   return (
     <div className="flex items-center gap-2 border-b border-border bg-surface/70 px-2">
+      <input
+        ref={importRef}
+        type="file"
+        accept="audio/*,.mp3,.wav,.wave,.aif,.aiff,.m4a,.aac,.ogg,.flac,.webm"
+        multiple
+        className="hidden"
+        aria-label="Import audio files"
+        onChange={(e) => {
+          const files = Array.from(e.target.files ?? []);
+          files.forEach(importAudio);
+          e.target.value = "";
+        }}
+      />
       <Menubar className="h-8 border-0 bg-transparent p-0">
         <MenubarMenu>
           <MenubarTrigger className="text-xs">File</MenubarTrigger>
@@ -102,7 +115,7 @@ export function MenuBar() {
               Save Template
             </MenubarItem>
             <MenubarSeparator />
-            <MenubarItem onClick={() => setPanel("browser")}>Import Audio</MenubarItem>
+            <MenubarItem onClick={() => importRef.current?.click()}>Import Audio…</MenubarItem>
             <MenubarItem onClick={notYet("MIDI file import is not built yet", "Record or draw MIDI in the piano roll meanwhile.")}>
               Import MIDI
             </MenubarItem>
