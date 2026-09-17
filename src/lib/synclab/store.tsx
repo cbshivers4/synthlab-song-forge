@@ -269,6 +269,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const countInTimerRef = useRef<number | null>(null);
   /** timeline step where the current take started, so the clip lands there */
   const recStartStepRef = useRef(0);
+  /** punch recording hooks, filled in once the record helpers exist */
+  const punchRef = useRef<{ start: () => void; stop: () => void } | null>(null);
 
   const [buses, setBuses] = useState<Record<BusId, BusState>>({
     drums: { volume: 1, muted: false },
@@ -483,6 +485,10 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       const list = tracksRef.current;
       const anySolo = list.some((t) => t.solo);
       const totalSteps = Math.max(1, tp.bars ?? 4) * 4;
+      // punch in / out: the take starts and stops itself at the markers
+      const atStep = step % totalSteps;
+      if (tp.punchIn != null && atStep === tp.punchIn) punchRef.current?.start();
+      if (tp.punchOut != null && atStep === tp.punchOut) punchRef.current?.stop();
       for (const t of list) {
         if (t.muted || t.frozen || (anySolo && !t.solo)) continue;
         const len = t.steps;
@@ -625,6 +631,37 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       description: `${result.duration.toFixed(1)}s captured — pick your best take on the track.`,
     });
   }, [updateTrack]);
+
+  // keep the punch hooks pointing at the current record helpers
+  useEffect(() => {
+    punchRef.current = {
+      start: () => {
+        const engine = getEngine();
+        if (engine.isRecording) return;
+        const target = tracksRef.current.find((t) => t.armed && (t.kind === "audio" || t.kind === "ai-vocal"));
+        if (!target) return;
+        recStartStepRef.current = transportRef.current.step ?? 0;
+        void engine
+          .startInputRecording(target.id, transportRef.current.monitor ?? false)
+          .then(() => {
+            updateTrack(target.id, { recording: true });
+            setTransportState((t) => ({ ...t, recording: true }));
+            toast("Punched in", { description: `Recording ${target.name}.` });
+          })
+          .catch(() =>
+            toast.error("Microphone unavailable", {
+              description: "Allow microphone access in your browser to punch in.",
+            }),
+          );
+      },
+      stop: () => {
+        if (!getEngine().isRecording) return;
+        void finishRecording();
+        setTransportState((t) => ({ ...t, recording: false }));
+        toast("Punched out", { description: "The take stops at your punch-out marker." });
+      },
+    };
+  }, [finishRecording, updateTrack]);
 
   const splitClipAtImpl = useCallback(
     (trackId: string, frac: number) => {
