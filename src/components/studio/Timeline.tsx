@@ -110,11 +110,10 @@ function Waveform({ track }: { track: Track }) {
         </div>
       </div>
 
-      <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="min-h-0 w-full flex-1 px-1 pb-1" aria-label={`${active.name} waveform`}>
-        <line x1="0" y1="50" x2="100" y2="50" stroke="var(--clip-audio)" strokeOpacity="0.16" strokeWidth="0.25" />
-        <polyline points={upperPath} fill="none" stroke="var(--clip-audio)" strokeOpacity="0.78" strokeWidth="0.55" vectorEffect="non-scaling-stroke" />
-        <polyline points={lowerPath} fill="none" stroke="var(--clip-audio)" strokeOpacity="0.38" strokeWidth="0.45" vectorEffect="non-scaling-stroke" />
-      </svg>
+      <div className="min-h-0 w-full flex-1 px-1 pb-1">
+        <WaveformView peaks={peaks} color="var(--clip-audio)" label={`${active.name} waveform`} />
+      </div>
+
     </div>
   );
 }
