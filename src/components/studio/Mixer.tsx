@@ -102,6 +102,7 @@ function useMeters(tracks: Track[], transport: Transport) {
         const id = track.id;
         const timeline = transportRef.current.playing ? sequencedLevel(track, transportRef.current.step) : 0;
         const raw = Math.max(engine.getTrackLevel(id), timeline * track.volume);
+        reportLevel(id, raw);
         const prev = smooth.current[id] ?? 0;
         const v = raw > prev ? raw : prev * 0.86;
         smooth.current[id] = v;
