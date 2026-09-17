@@ -13,8 +13,20 @@ import {
  * Performance X-Y pad: drag to ride two of the effect's parameters at once.
  * X moves the left parameter, Y moves the right one (up = higher).
  */
-export function XYPad({ trackId, plugin }: { trackId: string; plugin: PluginInstance }) {
+export function XYPad({
+  trackId,
+  plugin,
+  onParam,
+}: {
+  trackId?: string;
+  plugin: PluginInstance;
+  onParam?: (paramId: string, value: number) => void;
+}) {
   const { setPluginParam } = useStudio();
+  const write = (paramId: string, value: number) => {
+    if (onParam) onParam(paramId, value);
+    else if (trackId) setPluginParam(trackId, plugin.id, paramId, value);
+  };
   const params = plugin.params;
   const [xId, setXId] = useState(() => params[0]?.id ?? "");
   const [yId, setYId] = useState(() => params[1]?.id ?? params[0]?.id ?? "");
