@@ -144,11 +144,13 @@ export class SyncLabEngine {
     const master = ctx.createGain();
     master.gain.value = 0.85;
     const analyser = ctx.createAnalyser();
-    analyser.fftSize = 512;
+    analyser.fftSize = 1024;
     master.connect(analyser);
     analyser.connect(ctx.destination);
     this.analyser = analyser;
     this.master = master;
+    // the master output doubles as a scope source
+    this.pluginScopes.set("master", analyser);
 
     // simple algorithmic reverb
     const conv = ctx.createConvolver();
