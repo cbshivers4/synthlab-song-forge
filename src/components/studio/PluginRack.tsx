@@ -227,6 +227,8 @@ export function PluginRack() {
             </div>
             {open === p.id && (
               <div className="space-y-2 p-2">
+                <Scope scopeId={p.id} />
+                <XYPad trackId={track.id} plugin={p} />
                 {p.kind === "paraeq" && <ProEq trackId={track.id} plugin={p} />}
                 {p.kind === "vocoder" && <VocoderPanel trackId={track.id} plugin={p} />}
                 {p.kind !== "paraeq" && p.kind !== "vocoder" && p.params.map((prm) => (
