@@ -33,7 +33,11 @@ export function ExportDialog() {
   const projectName = project?.name ?? "SYNCLAB Session";
   const safeName = projectName.replace(/[^\w\-. ]+/g, "").trim() || "synclab-mix";
   const barSeconds = (60 / transport.bpm) * 4;
-  const total = bars * barSeconds + 1;
+  const flagsOn = transport.exportStart != null && transport.exportEnd != null;
+  const flagStart = flagsOn ? Math.min(transport.exportStart!, transport.exportEnd! - 1) : 0;
+  const flagEnd = flagsOn ? Math.max(transport.exportEnd!, flagStart + 1) : 0;
+  const flagBars = (flagEnd - flagStart) / 4;
+  const total = (flagsOn ? flagBars : bars) * barSeconds + 1;
 
   useEffect(() => {
     const on = () => setOpen(true);
@@ -68,7 +72,7 @@ export function ExportDialog() {
     stop();
     engine.startCapture();
     setStatus("recording");
-    setTransport({ playing: true, paused: false, step: 0 });
+    setTransport({ playing: true, paused: false, step: flagsOn ? flagStart : 0 });
     const started = performance.now();
     timer.current = window.setInterval(() => {
       const t = (performance.now() - started) / 1000;
