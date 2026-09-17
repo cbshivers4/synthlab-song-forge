@@ -904,6 +904,10 @@ function Strip({
         <Screw />
       </div>
 
+      <div className={cn(ROW.scope, "border-b border-border/60 p-[3px]")}>
+        <Scope scopeId={`ch:${t.id}`} height={40} compact color={t.color} />
+      </div>
+
       <ChannelEq t={t} />
 
       <DeviceSlots t={t} narrow={narrow} />
