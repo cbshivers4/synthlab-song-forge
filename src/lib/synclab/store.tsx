@@ -131,6 +131,23 @@ interface StudioState {
   buses: Record<BusId, BusState>;
 }
 
+/** Linear value of an automation curve at a step, held flat outside the drawn range. */
+function valueAt(points: { step: number; value: number }[], step: number): number {
+  const first = points[0]!;
+  if (step <= first.step) return first.value;
+  const last = points[points.length - 1]!;
+  if (step >= last.step) return last.value;
+  for (let i = 1; i < points.length; i++) {
+    const a = points[i - 1]!;
+    const b = points[i]!;
+    if (step <= b.step) {
+      const span = b.step - a.step || 1;
+      return a.value + ((step - a.step) / span) * (b.value - a.value);
+    }
+  }
+  return last.value;
+}
+
 interface StudioApi extends StudioState {
   snapshot: () => CloudSession;
   restore: (session: CloudSession) => void;
