@@ -19,6 +19,8 @@ import { toast } from "sonner";
 import { WaveformView } from "@/components/studio/WaveformView";
 
 const BANKS = ["A", "B", "C", "D"] as const;
+/** Koala-style bank colors — each bank tints its loaded pads. */
+const BANK_COLORS = ["hsl(187 85% 50%)", "hsl(38 95% 55%)", "hsl(330 80% 62%)", "hsl(95 70% 52%)"] as const;
 const PADS_PER_BANK = 16;
 const STEPS = 16;
 const KEYMAP = "1234qwerasdfzxcv".split("");
@@ -80,7 +82,7 @@ function Row({ label, value, children }: { label: string; value: string; childre
 }
 
 /** Waveform of one pad with draggable trim handles. */
-function PadWave({ pad, onChange }: { pad: Pad; onChange: (p: Partial<Pad>) => void }) {
+function PadWave({ pad, color, onChange }: { pad: Pad; color: string; onChange: (p: Partial<Pad>) => void }) {
   const ref = useRef<HTMLDivElement | null>(null);
   const [drag, setDrag] = useState<"start" | "end" | null>(null);
 
@@ -102,7 +104,7 @@ function PadWave({ pad, onChange }: { pad: Pad; onChange: (p: Partial<Pad>) => v
       onPointerLeave={() => setDrag(null)}
     >
       <div className="absolute inset-0">
-        <WaveformView peaks={pad.peaks} color="var(--color-primary)" label="Pad waveform" />
+        <WaveformView peaks={pad.peaks} color={color} label="Pad waveform" />
       </div>
       <div className="absolute inset-y-0 left-0 bg-background/70" style={{ width: `${pad.start * 100}%` }} />
       <div className="absolute inset-y-0 right-0 bg-background/70" style={{ width: `${(1 - pad.end) * 100}%` }} />
@@ -129,8 +131,8 @@ function PadWave({ pad, onChange }: { pad: Pad; onChange: (p: Partial<Pad>) => v
           className="absolute inset-y-0 z-10 w-3 -translate-x-1/2 cursor-col-resize"
           style={{ left: `${(h === "start" ? pad.start : pad.end) * 100}%` }}
         >
-          <span className="absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 bg-primary" />
-          <span className="absolute top-1 left-1/2 size-2.5 -translate-x-1/2 rounded-sm bg-primary" />
+          <span className="absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2" style={{ backgroundColor: color }} />
+          <span className="absolute top-1 left-1/2 size-2.5 -translate-x-1/2 rounded-sm" style={{ backgroundColor: color }} />
         </div>
       ))}
     </div>
@@ -337,6 +339,11 @@ export function PadSampler() {
               size="sm"
               variant={i === bank ? "secondary" : "ghost"}
               className="h-7 w-7 font-mono text-[10px]"
+              style={
+                i === bank
+                  ? { backgroundColor: BANK_COLORS[i] as string, color: "hsl(0 0% 8%)" }
+                  : { color: BANK_COLORS[i] as string }
+              }
               onClick={() => setBank(i)}
             >
               {b}
@@ -370,11 +377,37 @@ export function PadSampler() {
         </div>
       </div>
 
+      {/* visible feature strip */}
+      <div className="flex flex-wrap gap-1.5">
+        {[
+          [Upload, "Drag & drop audio"],
+          [Mic, "Sample the mic"],
+          [Scissors, "Slice to pads"],
+          [Grid2x2, "4 banks · 64 pads"],
+          [Play, "16-step patterns"],
+          [Circle, "Record taps live"],
+          [Square, "Choke groups"],
+          [Copy, "Trim · tune · choke"],
+        ].map(([Icon, label]) => {
+          const I = Icon as typeof Upload;
+          return (
+            <span
+              key={label as string}
+              className="inline-flex items-center gap-1 rounded-full border border-border bg-surface-2/50 px-2 py-0.5 font-mono text-[9px] tracking-wider text-muted-foreground"
+            >
+              <I className="size-3" style={{ color: BANK_COLORS[bank] as string }} />
+              {label as string}
+            </span>
+          );
+        })}
+      </div>
+
       <div className="grid grid-cols-4 gap-2">
         {Array.from({ length: PADS_PER_BANK }, (_, i) => {
           const id = index(i);
           const pad = pads[id];
           const active = hit === id;
+          const c = BANK_COLORS[bank] as string;
           return (
             <button
               key={id}
@@ -391,23 +424,36 @@ export function PadSampler() {
                 setOver(null);
                 void loadInto(id, e.dataTransfer.files[0]);
               }}
-              className={`relative flex h-20 flex-col items-start justify-between rounded-md border p-2 text-left transition-colors ${
-                active
-                  ? "border-primary bg-primary/40"
-                  : sel === id
-                    ? "border-primary bg-primary/15"
-                    : over === id
-                      ? "border-primary bg-primary/10"
-                      : pad
-                        ? "border-border bg-surface-1 hover:border-primary/60 hover:bg-primary/10"
-                        : "border-dashed border-border bg-surface-2/40 hover:border-primary/50"
+              style={
+                pad
+                  ? {
+                      borderColor: c,
+                      background: active
+                        ? `linear-gradient(145deg, ${c}, color-mix(in hsl, ${c} 55%, transparent))`
+                        : sel === id
+                          ? `linear-gradient(145deg, color-mix(in hsl, ${c} 55%, transparent), color-mix(in hsl, ${c} 22%, transparent))`
+                          : `linear-gradient(145deg, color-mix(in hsl, ${c} 30%, transparent), color-mix(in hsl, ${c} 10%, transparent))`,
+                      boxShadow: active ? `0 0 18px ${c}` : sel === id ? `0 0 0 1px ${c}` : undefined,
+                      opacity: over === id ? 0.85 : 1,
+                    }
+                  : over === id
+                    ? { borderColor: c, backgroundColor: `color-mix(in hsl, ${c} 15%, transparent)` }
+                    : undefined
+              }
+              className={`relative flex h-20 flex-col items-start justify-between rounded-md border p-2 text-left transition-all ${
+                pad ? "" : "border-dashed border-border bg-surface-2/40 hover:border-muted-foreground/60"
               }`}
             >
-              <span className="font-mono text-[9px] text-muted-foreground">
-                {BANKS[bank]}
-                {i + 1} · {KEYMAP[i]?.toUpperCase()}
+              <span className="font-mono text-[9px]" style={{ color: pad ? "hsl(0 0% 100% / 0.75)" : undefined }}>
+                <span className={pad ? "" : "text-muted-foreground"}>
+                  {BANKS[bank]}
+                  {i + 1} · {KEYMAP[i]?.toUpperCase()}
+                </span>
               </span>
-              <span className="line-clamp-2 font-mono text-[10px] text-foreground">
+              <span
+                className={`line-clamp-2 font-mono text-[10px] ${pad ? "" : "text-foreground"}`}
+                style={pad ? { color: "hsl(0 0% 100%)", textShadow: "0 1px 2px hsl(0 0% 0% / 0.5)" } : undefined}
+              >
                 {pad ? pad.name : "drop / tap to load"}
               </span>
               {pad && pad.choke > 0 && (
@@ -528,7 +574,7 @@ export function PadSampler() {
             </div>
           </div>
 
-          <PadWave pad={selPad} onChange={(n) => patch(sel, n)} />
+          <PadWave pad={selPad} color={BANK_COLORS[bank] as string} onChange={(n) => patch(sel, n)} />
 
           <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface-2/40 p-3">
             <Scissors className="size-4 text-primary" />
