@@ -106,6 +106,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
     sampler: { title: "SAMPLER", icon: <AudioLines className="size-4" /> },
     pads: { title: "PAD SAMPLER", icon: <Grid2x2 className="size-4" /> },
     bass: { title: "BASS GENERATOR", icon: <AudioWaveform className="size-4" /> },
+    coproducer: { title: "AI CO-PRODUCER", icon: <Bot className="size-4" /> },
   };
   const current = config[panel];
 
