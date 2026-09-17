@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { ArrowDownToLine, ArrowUpFromLine, AudioLines, Cpu, Disc3, FolderOpen, KeyboardMusic, Music2, Palette, Piano, SlidersHorizontal, Settings2, Waves, X } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, AudioLines, Cpu, Disc3, FolderOpen, Grid2x2, KeyboardMusic, Music2, Palette, Piano, SlidersHorizontal, Settings2, Waves, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStudio, type PanelId } from "@/lib/synclab/store";
 import { TopBar } from "@/components/studio/TopBar";
@@ -100,6 +100,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
     plugins: { title: "PLUGINS", icon: <Cpu className="size-4" /> },
     appearance: { title: "APPEARANCE & THEMES", icon: <Palette className="size-4" /> },
     sampler: { title: "SAMPLER", icon: <AudioLines className="size-4" /> },
+    pads: { title: "PAD SAMPLER", icon: <Grid2x2 className="size-4" /> },
   };
   const current = config[panel];
 
@@ -196,6 +197,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
       {panel === "plugins" && <PluginRack />}
       {panel === "appearance" && <Appearance />}
       {panel === "sampler" && <Sampler />}
+      {panel === "pads" && <PadSampler />}
 
       </div>
 
