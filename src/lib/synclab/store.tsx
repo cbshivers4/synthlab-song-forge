@@ -133,6 +133,12 @@ interface StudioState {
 interface StudioApi extends StudioState {
   snapshot: () => CloudSession;
   restore: (session: CloudSession) => void;
+  undo: () => void;
+  redo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
+  /** timestamp of the last automatic local save, null before the first one */
+  savedAt: number | null;
   selected: Track | null;
   setBus: (id: BusId, patch: Partial<BusState>) => void;
   setPanel: (p: PanelId) => void;
