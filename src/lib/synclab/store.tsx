@@ -831,36 +831,84 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         engine.init();
         const isNote = (t: Track) => t.kind === "instrument" || t.kind === "midi" || t.kind === "drum";
         const isAudio = (t: Track) => t.kind === "audio" || t.kind === "ai-vocal" || t.kind === "sampler";
+        // Pressing REC during a count-in cancels it.
+        if (countInTimerRef.current != null) {
+          window.clearInterval(countInTimerRef.current);
+          countInTimerRef.current = null;
+          setTransportState((s) => ({ ...s, countInLeft: null }));
+          return;
+        }
         if (!transportRef.current.recording) {
-          const selectedTrack = tracksRef.current.find((t) => t.id === selectedIdRef.current);
-          // Auto-arm the selected channel so pressing record always has a target.
-          let armedAudio = tracksRef.current.find((t) => t.armed && isAudio(t));
-          let armedNote = tracksRef.current.find((t) => t.armed && isNote(t));
-          if (!armedAudio && !armedNote && selectedTrack) {
-            if (isAudio(selectedTrack)) armedAudio = selectedTrack;
-            else if (isNote(selectedTrack)) armedNote = selectedTrack;
-            if (armedAudio || armedNote) updateTrack(selectedTrack.id, { armed: true });
-          }
-          if (armedAudio) {
-            const target = armedAudio;
-            void engine
-              .startInputRecording(target.id, transportRef.current.monitor ?? false)
-              .then(() => updateTrack(target.id, { recording: true }))
-              .catch(() =>
-                toast.error("Microphone unavailable", {
-                  description: "Allow microphone access in your browser to record this channel.",
-                }),
+          const begin = () => {
+            const selectedTrack = tracksRef.current.find((t) => t.id === selectedIdRef.current);
+            // Auto-arm the selected channel so pressing record always has a target.
+            let armedAudio = tracksRef.current.find((t) => t.armed && isAudio(t));
+            let armedNote = tracksRef.current.find((t) => t.armed && isNote(t));
+            if (!armedAudio && !armedNote && selectedTrack) {
+              if (isAudio(selectedTrack)) armedAudio = selectedTrack;
+              else if (isNote(selectedTrack)) armedNote = selectedTrack;
+              if (armedAudio || armedNote) updateTrack(selectedTrack.id, { armed: true });
+            }
+            if (armedAudio) {
+              const target = armedAudio;
+              void engine
+                .startInputRecording(target.id, transportRef.current.monitor ?? false)
+                .then(() => updateTrack(target.id, { recording: true }))
+                .catch(() =>
+                  toast.error("Microphone unavailable", {
+                    description: "Allow microphone access in your browser to record this channel.",
+                  }),
+                );
+            } else if (armedNote) {
+              toast("Recording notes", {
+                description: `Play your controller or the on-screen keyboard — notes land on ${armedNote.name}.`,
+              });
+            } else {
+              toast("Select or arm a channel first", {
+                description: "Click a track, or press ● REC on it, then record.",
+              });
+            }
+            setTransportState((s) => ({ ...s, recording: true, playing: true, paused: false }));
+          };
+          const tp0 = transportRef.current;
+          const ciBars = tp0.countIn ? Math.max(1, tp0.countInBars ?? 1) : 0;
+          if (ciBars > 0 && !tp0.playing) {
+            const stepMs = (60 / tp0.bpm / 4) * 1000;
+            let left = ciBars * 4;
+            setTransportState((s) => ({ ...s, countInLeft: left }));
+            const click = (accent: boolean) =>
+              engine.playDrum(
+                "metronome",
+                {
+                  id: "m",
+                  name: "click",
+                  kind: accent ? "rim" : "hat",
+                  volume: 0.4,
+                  pan: 0,
+                  pitch: accent ? 5 : 0,
+                  decay: 0,
+                  muted: false,
+                  solo: false,
+                  steps: [],
+                },
+                1,
               );
-          } else if (armedNote) {
-            toast("Recording notes", {
-              description: `Play your controller or the on-screen keyboard — notes land on ${armedNote.name}.`,
-            });
-          } else {
-            toast("Select or arm a channel first", {
-              description: "Click a track, or press ● REC on it, then record.",
-            });
+            click(true);
+            countInTimerRef.current = window.setInterval(() => {
+              left -= 1;
+              if (left <= 0) {
+                window.clearInterval(countInTimerRef.current!);
+                countInTimerRef.current = null;
+                setTransportState((s) => ({ ...s, countInLeft: null }));
+                begin();
+              } else {
+                click(left % 4 === 0);
+                setTransportState((s) => ({ ...s, countInLeft: left }));
+              }
+            }, stepMs);
+            return;
           }
-          setTransportState((s) => ({ ...s, recording: true, playing: true, paused: false }));
+          begin();
         } else {
           void finishRecording();
           setTransportState((s) => ({ ...s, recording: false }));
