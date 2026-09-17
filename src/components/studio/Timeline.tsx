@@ -816,6 +816,12 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
       </div>
 
 
+      <div
+        onPointerDown={resizeHeight}
+        title="Drag to change this track's height"
+        className="absolute inset-x-0 bottom-0 z-10 h-1.5 cursor-ns-resize hover:bg-primary/40"
+      />
+
       <AlertDialog open={confirm} onOpenChange={setConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
