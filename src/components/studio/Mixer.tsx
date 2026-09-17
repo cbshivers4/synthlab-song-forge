@@ -1043,9 +1043,7 @@ function MasterStrip({ level: peak }: { level: number }) {
         Main
         <Screw />
       </div>
-      <div className={cn(ROW.eq, "flex items-center justify-center border-b border-border/60 font-mono text-[7px] uppercase tracking-widest text-muted-foreground")}>
-        Main bus
-      </div>
+      <MasterChain color={color} />
       <div className={cn(ROW.devices, "flex items-center gap-1 border-b border-black/50 px-1.5 py-1")}>
         <VuMeter level={peak} label="L" />
         <VuMeter level={peak} label="R" />
