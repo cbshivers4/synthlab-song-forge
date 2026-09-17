@@ -82,7 +82,7 @@ function Row({ label, value, children }: { label: string; value: string; childre
 }
 
 /** Waveform of one pad with draggable trim handles. */
-function PadWave({ pad, onChange }: { pad: Pad; onChange: (p: Partial<Pad>) => void }) {
+function PadWave({ pad, color, onChange }: { pad: Pad; color: string; onChange: (p: Partial<Pad>) => void }) {
   const ref = useRef<HTMLDivElement | null>(null);
   const [drag, setDrag] = useState<"start" | "end" | null>(null);
 
@@ -104,7 +104,7 @@ function PadWave({ pad, onChange }: { pad: Pad; onChange: (p: Partial<Pad>) => v
       onPointerLeave={() => setDrag(null)}
     >
       <div className="absolute inset-0">
-        <WaveformView peaks={pad.peaks} color="var(--color-primary)" label="Pad waveform" />
+        <WaveformView peaks={pad.peaks} color={color} label="Pad waveform" />
       </div>
       <div className="absolute inset-y-0 left-0 bg-background/70" style={{ width: `${pad.start * 100}%` }} />
       <div className="absolute inset-y-0 right-0 bg-background/70" style={{ width: `${(1 - pad.end) * 100}%` }} />
