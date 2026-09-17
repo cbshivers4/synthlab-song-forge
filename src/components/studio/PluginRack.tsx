@@ -132,6 +132,8 @@ export function PluginRack() {
   const track = selected ?? tracks[0];
   if (!track) return <p className="text-sm text-muted-foreground">Add a track to open its plugin rack.</p>;
   const chain = track.plugins ?? [];
+  /** First effect opens by default so the scope + X-Y pad are always visible. */
+  const openId = open ?? chain[0]?.id ?? null;
 
   const scan = () => {
     if (!name.trim()) {
