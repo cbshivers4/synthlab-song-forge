@@ -291,6 +291,24 @@ export class SyncLabEngine {
     return data;
   }
 
+  /** Output waveform of one effect insert, or null when that effect is not running. */
+  getScopeWave(scopeId: string): Float32Array | null {
+    const an = this.pluginScopes.get(scopeId);
+    if (!an) return null;
+    const data = new Float32Array(an.fftSize);
+    an.getFloatTimeDomainData(data);
+    return data;
+  }
+
+  /** Output magnitude spectrum (dB) of one effect insert. */
+  getScopeSpectrum(scopeId: string): Float32Array | null {
+    const an = this.pluginScopes.get(scopeId);
+    if (!an) return null;
+    const data = new Float32Array(an.frequencyBinCount);
+    an.getFloatFrequencyData(data);
+    return data;
+  }
+
   getTrackLevel(id: string) {
     const ch = this.channels.get(id);
     if (!ch) return 0;
