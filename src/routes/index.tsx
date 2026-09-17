@@ -275,7 +275,7 @@ function FloatingDevices({ float, setFloat }: { float: FloatState; setFloat: (f:
 
 /** Global DAW keyboard shortcuts. */
 function useShortcuts() {
-  const { togglePlay, toggleRecord, stop, selected, duplicateTrack, removeTrack, setPanel, copyTrack, cutTrack, pasteTrack, selectAll, splitAtPlayhead, setEditTool } =
+  const { togglePlay, toggleRecord, stop, selected, duplicateTrack, removeTrack, setPanel, copyTrack, cutTrack, pasteTrack, selectAll, splitAtPlayhead, setEditTool, undo, redo } =
     useStudio();
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
