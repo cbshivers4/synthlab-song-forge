@@ -236,6 +236,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   tracksRef.current = tracks;
   const transportRef = useRef(transport);
   transportRef.current = transport;
+  const countInTimerRef = useRef<number | null>(null);
 
   const [buses, setBuses] = useState<Record<BusId, BusState>>({
     drums: { volume: 1, muted: false },
@@ -915,8 +916,12 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         }
       },
       stop: () => {
+        if (countInTimerRef.current != null) {
+          window.clearInterval(countInTimerRef.current);
+          countInTimerRef.current = null;
+        }
         if (transportRef.current.recording) void finishRecording();
-        setTransportState((s) => ({ ...s, playing: false, recording: false, paused: false, step: 0 }));
+        setTransportState((s) => ({ ...s, playing: false, recording: false, paused: false, step: 0, countInLeft: null }));
       },
       changeInstrument: (trackId, preset) =>
         setTracks((ts) =>
