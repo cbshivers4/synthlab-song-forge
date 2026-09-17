@@ -107,7 +107,8 @@ export function StudioSearch() {
                       setPanel("synth");
                       return;
                     }
-                    applySynthPreset?.(p.name);
+                    changeInstrument(selected.id, p.name);
+                    toast.success(`${p.name} loaded`, { description: selected.name });
                     setPanel("synth");
                   })
                 }
