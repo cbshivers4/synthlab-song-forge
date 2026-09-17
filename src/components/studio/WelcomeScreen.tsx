@@ -23,7 +23,7 @@ import { Input } from "@/components/ui/input";
 import { useApp } from "@/lib/synclab/app-state";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
-import synclabLogoAsset from "@/assets/synclab-logo.jpg.asset.json";
+import synclabLogoAsset from "@/assets/synclab-logo-neon.jpg.asset.json";
 import { toast } from "sonner";
 
 const FEATURES: { icon: React.ReactNode; title: string; body: string }[] = [

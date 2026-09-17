@@ -9,7 +9,7 @@ import { useApp } from "@/lib/synclab/app-state";
 import { KEYS, TEMPLATES, TIME_SIGS, templateById } from "@/lib/synclab/templates";
 import { useStudio } from "@/lib/synclab/store";
 import { toast } from "sonner";
-import synclabLogoAsset from "@/assets/synclab-logo.jpg.asset.json";
+import synclabLogoAsset from "@/assets/synclab-logo-neon.jpg.asset.json";
 import { deleteCloudProject, listCloudProjects, loadCloudProject, type CloudProject } from "@/lib/synclab/cloud";
 
 export function StartScreen() {

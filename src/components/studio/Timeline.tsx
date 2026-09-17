@@ -28,7 +28,8 @@ import {
   Volume2,
   VolumeX,
 } from "lucide-react";
-import synclabLogo from "@/assets/synclab-logo-dark.png";
+import synclabLogoAsset from "@/assets/synclab-logo-neon.jpg.asset.json";
+const synclabLogo = synclabLogoAsset.url;
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
