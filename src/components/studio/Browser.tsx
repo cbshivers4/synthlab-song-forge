@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { AudioLines, FolderOpen, Music2, Plus, Sparkles, Waves } from "lucide-react";
+import { AudioLines, FolderOpen, Music2, Plus, Search, Sparkles, Waves, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStudio } from "@/lib/synclab/store";
 import { SYNTH_PRESETS, uid } from "@/lib/synclab/presets";
@@ -79,7 +79,10 @@ const peaksFromName = (name: string) => {
 
 export function Browser() {
   const [tab, setTab] = useState<Tab>("samples");
+  const [q, setQ] = useState("");
   const { tracks, selected, select, addTrack, addClip, loadPreset, updatePatch, setPanel } = useStudio();
+  const query = q.trim().toLowerCase();
+  const match = (...fields: (string | undefined)[]) => !query || fields.some((f) => f?.toLowerCase().includes(query));
 
   const addSampleToTimeline = (sample: string, pack: string) => {
     const target =
@@ -144,6 +147,27 @@ export function Browser() {
 
   return (
     <div className="space-y-3">
+      {/* search across samples, plugins and presets */}
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Search samples, plugins, presets…"
+          aria-label="Search the browser"
+          className="h-8 w-full rounded-[3px] border border-border bg-background/70 pl-7 pr-7 font-mono text-[11px] outline-none placeholder:text-muted-foreground/60 focus:border-primary/60"
+        />
+        {q && (
+          <button
+            type="button"
+            aria-label="Clear search"
+            onClick={() => setQ("")}
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+          >
+            <X className="size-3.5" />
+          </button>
+        )}
+      </div>
       <div className="flex gap-1">
         {tabs.map((t) => (
           <Button
@@ -164,7 +188,9 @@ export function Browser() {
 
       {tab === "samples" && (
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {SAMPLE_PACKS.map((p) => (
+          {SAMPLE_PACKS.map((p) => ({ ...p, samples: p.samples.filter((s) => match(s.name, s.kind, p.pack)) }))
+            .filter((p) => p.samples.length > 0)
+            .map((p) => (
             <div key={p.pack} className="panel overflow-hidden">
               <div className="flex items-center gap-1.5 border-b border-border bg-surface-2/60 px-2 py-1">
                 <FolderOpen className="size-3.5 text-primary" />
@@ -191,7 +217,7 @@ export function Browser() {
           <div>
             <p className="label-xs mb-1.5">EFFECTS — insert on selected instrument</p>
             <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-4">
-              {EFFECT_PLUGINS.map((e) => (
+              {EFFECT_PLUGINS.filter((e) => match(e.name, e.desc, e.fx)).map((e) => (
                 <button
                   key={e.name}
                   onClick={() => insertEffect(e.name, e.fx)}
@@ -209,7 +235,7 @@ export function Browser() {
           <div>
             <p className="label-xs mb-1.5">INSTRUMENTS — drag onto the timeline or click to add a channel</p>
             <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-4">
-              {SYNTH_PRESETS.map((p) => (
+              {SYNTH_PRESETS.filter((p) => match(p.name, p.category)).map((p) => (
                 <button
                   key={p.name}
                   draggable
@@ -236,7 +262,7 @@ export function Browser() {
 
       {tab === "presets" && (
         <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-4">
-          {SYNTH_PRESETS.map((p) => (
+          {SYNTH_PRESETS.filter((p) => match(p.name, p.category)).map((p) => (
             <button
               key={p.name}
               onClick={() => loadPresetOnto(p.name)}
