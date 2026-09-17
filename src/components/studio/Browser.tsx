@@ -188,7 +188,9 @@ export function Browser() {
 
       {tab === "samples" && (
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {SAMPLE_PACKS.map((p) => (
+          {SAMPLE_PACKS.map((p) => ({ ...p, samples: p.samples.filter((s) => match(s.name, s.kind, p.pack)) }))
+            .filter((p) => p.samples.length > 0)
+            .map((p) => (
             <div key={p.pack} className="panel overflow-hidden">
               <div className="flex items-center gap-1.5 border-b border-border bg-surface-2/60 px-2 py-1">
                 <FolderOpen className="size-3.5 text-primary" />
@@ -215,7 +217,7 @@ export function Browser() {
           <div>
             <p className="label-xs mb-1.5">EFFECTS — insert on selected instrument</p>
             <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-4">
-              {EFFECT_PLUGINS.map((e) => (
+              {EFFECT_PLUGINS.filter((e) => match(e.name, e.desc, e.fx)).map((e) => (
                 <button
                   key={e.name}
                   onClick={() => insertEffect(e.name, e.fx)}
