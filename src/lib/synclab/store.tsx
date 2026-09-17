@@ -17,6 +17,8 @@ import { getPadBank, setPadBank } from "./pad-session";
 import type { CloudSession } from "./cloud";
 import type {
   AudioClip,
+  AutomationParam,
+  AutomationPoint,
   BusId,
   BusState,
   DrumPad,
