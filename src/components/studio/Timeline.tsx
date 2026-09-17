@@ -14,6 +14,7 @@ import {
   ChevronUp,
   Copy,
   Disc3,
+  Eraser,
   Eye,
   Flag,
   EyeOff,
@@ -28,6 +29,7 @@ import {
   Trash2,
   Volume2,
   VolumeX,
+  X,
 } from "lucide-react";
 import synclabLogoAsset from "@/assets/synclab-logo-neon.jpg.asset.json";
 const synclabLogo = synclabLogoAsset.url;
@@ -59,7 +61,14 @@ import { AddTrackMenu } from "@/components/studio/AddTrackMenu";
 
 import { INSTRUMENTS, KIND_LABEL, uid } from "@/lib/synclab/presets";
 import type { EditTool } from "@/lib/synclab/store";
-import type { MidiNote, Track } from "@/lib/synclab/types";
+import type { AutomationLane, AutomationParam, MidiNote, Track } from "@/lib/synclab/types";
+
+const LANE_LABEL: Record<AutomationParam, string> = {
+  volume: "VOLUME",
+  pan: "PAN",
+  sendReverb: "REVERB SEND",
+  sendDelay: "DELAY SEND",
+};
 import { WaveformView } from "@/components/studio/WaveformView";
 
 const KindIcon = ({ kind }: { kind: Track["kind"] }) =>
