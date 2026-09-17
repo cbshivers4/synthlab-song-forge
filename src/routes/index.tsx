@@ -205,6 +205,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
       {panel === "sampler" && <Sampler />}
       {panel === "pads" && <PadSampler />}
       {panel === "bass" && <BassGenerator />}
+      {panel === "coproducer" && <CoProducer />}
 
       </div>
 
