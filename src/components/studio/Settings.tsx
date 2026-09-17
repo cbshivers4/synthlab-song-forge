@@ -167,6 +167,15 @@ export function Settings() {
 
   const scanDevices = async (askPermission: boolean) => {
     if (typeof navigator === "undefined" || !navigator.mediaDevices?.enumerateDevices) return;
+    const blocked = micUnavailableReason();
+    if (askPermission && blocked) {
+      toast.error("Microphone not available", {
+        description: blocked,
+        duration: 9000,
+        action: { label: "Open in tab", onClick: openInOwnTab },
+      });
+      return;
+    }
     setScanning(true);
     try {
       if (askPermission) {

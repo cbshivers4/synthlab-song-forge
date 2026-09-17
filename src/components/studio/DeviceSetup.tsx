@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button";
 import { useStudio } from "@/lib/synclab/store";
 import { midiSupported } from "@/lib/synclab/midi";
+import { openMic, openInOwnTab } from "@/lib/synclab/mic";
 
 const KEY = "synclab.devicesetup.done";
 
