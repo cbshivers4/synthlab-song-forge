@@ -357,7 +357,7 @@ function useShortcuts() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [togglePlay, toggleRecord, stop, selected, duplicateTrack, removeTrack, setPanel, copyTrack, cutTrack, pasteTrack, selectAll, splitAtPlayhead, setEditTool]);
+  }, [togglePlay, toggleRecord, stop, selected, duplicateTrack, removeTrack, setPanel, copyTrack, cutTrack, pasteTrack, selectAll, splitAtPlayhead, setEditTool, undo, redo]);
 }
 
 function StudioWorkspace() {
