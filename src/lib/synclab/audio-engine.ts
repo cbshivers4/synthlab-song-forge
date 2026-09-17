@@ -205,7 +205,12 @@ export class SyncLabEngine {
     for (const id of ["drums", "vocals", "instruments", "synths", "fx", "master"]) {
       const g = ctx.createGain();
       g.gain.value = 1;
-      g.connect(master);
+      const busScope = ctx.createAnalyser();
+      busScope.fftSize = 1024;
+      busScope.smoothingTimeConstant = 0.6;
+      g.connect(busScope);
+      busScope.connect(master);
+      this.pluginScopes.set(`bus:${id}`, busScope);
       this.buses.set(id, g);
     }
     return ctx;
