@@ -10,6 +10,7 @@ import {
 import { useStudio } from "@/lib/synclab/store";
 import { useApp } from "@/lib/synclab/app-state";
 import { toast } from "sonner";
+import { openExport } from "@/components/studio/ExportDialog";
 
 const notYet = (what: string, why: string) => () => toast(what, { description: why });
 
@@ -67,9 +68,7 @@ export function MenuBar() {
             <MenubarItem onClick={notYet("MIDI file import is not built yet", "Record or draw MIDI in the piano roll meanwhile.")}>
               Import MIDI
             </MenubarItem>
-            <MenubarItem onClick={notYet("Export is coming in the recording stage", "Bouncing the mix to WAV/MP3 is next up.")}>
-              Export
-            </MenubarItem>
+            <MenubarItem onClick={openExport}>Export / Share (WAV, MP3)</MenubarItem>
             <MenubarSeparator />
             <MenubarItem onClick={() => setPanel(null)}>Close Editor</MenubarItem>
             <MenubarItem onClick={() => setStage("start")}>

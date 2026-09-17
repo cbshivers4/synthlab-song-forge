@@ -25,6 +25,7 @@ import { Appearance } from "@/components/studio/Appearance";
 import { WelcomeScreen } from "@/components/studio/WelcomeScreen";
 import { StartScreen } from "@/components/studio/StartScreen";
 import { DeviceSetup } from "@/components/studio/DeviceSetup";
+import { ExportDialog } from "@/components/studio/ExportDialog";
 import { AppProvider, useApp, useMaybeApp } from "@/lib/synclab/app-state";
 import { toast } from "sonner";
 import synthFace from "@/assets/hw-synth.jpg";
@@ -360,6 +361,7 @@ function StudioWorkspace() {
       <StatusBar />
       <FloatingDevices float={float} setFloat={setFloat} />
       <DeviceSetup />
+      <ExportDialog />
     </div>
   );
 }
