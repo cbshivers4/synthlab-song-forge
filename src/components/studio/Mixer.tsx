@@ -201,6 +201,8 @@ function InsertRack({
   onRemove,
   onBypass,
   onParam,
+  openId,
+  onOpenChange,
 }: {
   title: string;
   list: PluginInstance[];
@@ -208,9 +210,16 @@ function InsertRack({
   onRemove: (id: string) => void;
   onBypass: (id: string) => void;
   onParam: (id: string, paramId: string, value: number) => void;
+  openId?: string | null;
+  onOpenChange?: (id: string | null) => void;
 }) {
   const { installedPlugins } = useStudio();
-  const [open, setOpen] = useState<string | null>(null);
+  const [ownOpen, setOwnOpen] = useState<string | null>(null);
+  const open = openId !== undefined ? openId : ownOpen;
+  const setOpen = (id: string | null) => {
+    if (onOpenChange) onOpenChange(id);
+    else setOwnOpen(id);
+  };
   return (
     <div>
       <div className="label-xs mb-1">{title}</div>
