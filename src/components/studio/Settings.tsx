@@ -169,8 +169,17 @@ export function Settings() {
     setScanning(true);
     try {
       if (askPermission) {
-        const s = await navigator.mediaDevices.getUserMedia({ audio: true });
-        s.getTracks().forEach((t) => t.stop());
+        const res = await openMic();
+        if ("error" in res) {
+          toast.error("Could not open your microphone", {
+            description: res.error,
+            duration: 9000,
+            ...(res.canOpenTab ? { action: { label: "Open in tab", onClick: openInOwnTab } } : {}),
+          });
+          setScanning(false);
+          return;
+        }
+        res.stream.getTracks().forEach((t) => t.stop());
       }
       const list = await navigator.mediaDevices.enumerateDevices();
       setInputs(

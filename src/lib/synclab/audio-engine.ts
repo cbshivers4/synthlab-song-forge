@@ -963,8 +963,10 @@ export class SyncLabEngine {
 
   async startInputRecording(trackId: string, monitor: boolean) {
     const ctx = this.init();
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+    const stream = await openMicOrThrow({
+      echoCancellation: false,
+      noiseSuppression: false,
+      autoGainControl: false,
     });
     this.recStream = stream;
     this.recChunks = [];
