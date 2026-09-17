@@ -459,12 +459,25 @@ export function PadSampler() {
                 pad ? "" : "border-dashed border-border bg-surface-2/40 hover:border-muted-foreground/60"
               }`}
             >
-              <span className="font-mono text-[9px]" style={{ color: pad ? "hsl(0 0% 100% / 0.75)" : undefined }}>
+              <span className="relative z-10 font-mono text-[9px]" style={{ color: pad ? "hsl(0 0% 100% / 0.75)" : undefined }}>
                 <span className={pad ? "" : "text-muted-foreground"}>
                   {BANKS[bank]}
                   {i + 1} · {KEYMAP[i]?.toUpperCase()}
                 </span>
               </span>
+              {pad && (
+                <span className="pointer-events-none absolute inset-x-1.5 top-4 bottom-6">
+                  <WaveformView peaks={pad.peaks} color="hsl(0 0% 100%)" grid={false} label={`${pad.name} waveform`} />
+                  <span
+                    className="absolute inset-y-0 left-0 bg-black/55"
+                    style={{ width: `${pad.start * 100}%` }}
+                  />
+                  <span
+                    className="absolute inset-y-0 right-0 bg-black/55"
+                    style={{ width: `${(1 - pad.end) * 100}%` }}
+                  />
+                </span>
+              )}
               <span
                 className={`line-clamp-2 font-mono text-[10px] ${pad ? "" : "text-foreground"}`}
                 style={pad ? { color: "hsl(0 0% 100%)", textShadow: "0 1px 2px hsl(0 0% 0% / 0.5)" } : undefined}
