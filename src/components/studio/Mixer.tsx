@@ -21,12 +21,13 @@ import {
   Trash2,
   VolumeX,
   Waves,
+  X,
 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useStudio } from "@/lib/synclab/store";
+import { useStudio, type MidiTarget } from "@/lib/synclab/store";
 import { TRACK_COLORS } from "@/lib/synclab/presets";
 import { BUILT_IN_PLUGINS } from "@/lib/synclab/plugins";
 import type { BusId, BusState, PluginInstance, Track, Transport } from "@/lib/synclab/types";
@@ -736,6 +737,7 @@ function ChannelMenu({ t }: { t: Track }) {
             </button>
           ))}
         </div>
+        <MidiLearnBlock id={t.id} />
         <div className="grid grid-cols-2 gap-1 pt-1">
           <button
             onClick={() => updateTrack(t.id, { volume: 0.8, pan: 0, muted: false, solo: false })}
@@ -1174,6 +1176,16 @@ function MasterStrip({ level: peak }: { level: number }) {
       >
         <Screw />
         Main
+        <Popover>
+          <PopoverTrigger asChild>
+            <button title="Master hardware control" className="text-muted-foreground hover:text-foreground">
+              <Sliders className="size-3" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-56 p-3">
+            <MidiLearnBlock id="master" params={["volume", "mute"]} />
+          </PopoverContent>
+        </Popover>
         <Screw />
       </div>
       <MasterChain color={color} />
