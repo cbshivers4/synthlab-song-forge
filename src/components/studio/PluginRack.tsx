@@ -17,6 +17,7 @@ import { ProEq } from "./ProEq";
 import { VocoderPanel } from "./VocoderPanel";
 import { Scope } from "./Scope";
 import { XYPad } from "./XYPad";
+import { EffectDisplay } from "./EffectDisplay";
 import { toast } from "sonner";
 
 const FORMATS: PluginDef["format"][] = ["VST3", "AU", "CLAP", "AAX"];
@@ -231,6 +232,7 @@ export function PluginRack() {
             </div>
             {openId === p.id && (
               <div className="space-y-2 p-2">
+                <EffectDisplay plugin={p} onParam={(paramId, v) => setPluginParam(track.id, p.id, paramId, v)} />
                 <Scope scopeId={p.id} />
                 <XYPad trackId={track.id} plugin={p} />
                 {p.kind === "paraeq" && <ProEq trackId={track.id} plugin={p} />}
