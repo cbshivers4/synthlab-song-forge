@@ -73,12 +73,21 @@ export function TopBar() {
 
         {/* LCD position display */}
         <div className="flex items-stretch gap-3 rounded-[3px] border border-border bg-background px-3 py-1 font-mono shadow-[inset_0_1px_3px_oklch(0_0_0/0.6)]">
-          <div>
-            <span className="label-xs">BAR.BEAT</span>
-            <div className="text-base leading-none text-primary">
-              {Math.floor(transport.step / 4) + 1}.{(transport.step % 4) + 1}
+          {transport.countInLeft != null ? (
+            <div>
+              <span className="label-xs">COUNT-IN</span>
+              <div className="animate-pulse text-base leading-none text-destructive">
+                {Math.ceil(transport.countInLeft / 4)}.{((transport.countInLeft - 1) % 4) + 1}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div>
+              <span className="label-xs">BAR.BEAT</span>
+              <div className="text-base leading-none text-primary">
+                {Math.floor(transport.step / 4) + 1}.{(transport.step % 4) + 1}
+              </div>
+            </div>
+          )}
           <span className="w-px bg-border" />
           <div>
             <span className="label-xs">TIME</span>
@@ -90,6 +99,11 @@ export function TopBar() {
                 return `${m}:${String(s).padStart(2, "0")}`;
               })()}
             </div>
+          </div>
+          <span className="w-px bg-border" />
+          <div>
+            <span className="label-xs">BARS</span>
+            <div className="text-base leading-none text-primary">{transport.bars ?? 4}</div>
           </div>
           <span className="w-px bg-border" />
           <div>

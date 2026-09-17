@@ -313,7 +313,15 @@ export function Settings() {
           <Switch checked={Boolean(transport.countIn)} onCheckedChange={(v) => setTransport({ countIn: v })} />
         </Row>
         <Row label="Count-in length">
-          <Pick value={p.countInBars} options={["1", "2", "4"]} onChange={(v) => set("countInBars", v)} width="w-24" />
+          <Pick
+            value={p.countInBars}
+            options={["1", "2", "4"]}
+            onChange={(v) => {
+              set("countInBars", v);
+              setTransport({ countInBars: Number(v) });
+            }}
+            width="w-24"
+          />
         </Row>
         <Row label="Click sound">
           <Pick value={p.clickSound} options={["Detroit Rim", "Click", "Cowbell", "Sidestick", "Beep"]} onChange={(v) => set("clickSound", v)} />
