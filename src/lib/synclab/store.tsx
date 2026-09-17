@@ -279,6 +279,14 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   selectedIdRef.current = selectedId;
   const heldRef = useRef(new Map<number, { id: string; trackId: string; t0: number }>());
 
+  // ---- Undo / redo history + local autosave -------------------------------
+  const pastRef = useRef<CloudSession[]>([]);
+  const futureRef = useRef<CloudSession[]>([]);
+  const lastSnapRef = useRef<CloudSession | null>(null);
+  const applyingRef = useRef(false);
+  const [historyTick, setHistoryTick] = useState(0);
+  const [savedAt, setSavedAt] = useState<number | null>(null);
+
   const enableMidi = useCallback(() => {
     if (!midiSupported()) {
       toast.error("MIDI not available", {
