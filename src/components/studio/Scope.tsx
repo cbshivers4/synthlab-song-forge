@@ -19,6 +19,8 @@ export function Scope({
   const [mode, setMode] = useState<Mode>("wave");
   const modeRef = useRef<Mode>(mode);
   modeRef.current = mode;
+  const colorRef = useRef<string | undefined>(color);
+  colorRef.current = color;
 
   useEffect(() => {
     let raf = 0;
