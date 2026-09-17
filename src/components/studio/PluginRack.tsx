@@ -266,6 +266,31 @@ export function PluginRack() {
         </div>
       </div>
 
+      {/* drag and drop plugin files straight from the computer */}
+      <div
+        onDragOver={(e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = "copy";
+          setDropping(true);
+        }}
+        onDragLeave={() => setDropping(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDropping(false);
+          dropFiles(Array.from(e.dataTransfer.files));
+        }}
+        className={`panel grid place-items-center gap-1 border-dashed p-6 text-center transition-colors ${
+          dropping ? "border-primary bg-primary/10" : ""
+        }`}
+      >
+        <Upload className="size-5 text-primary" />
+        <p className="text-[11px] font-medium">Drag your VST3 / AU / CLAP plugins here</p>
+        <p className="max-w-md text-[10px] text-muted-foreground">
+          Drop plugin files or whole folders from Finder or Explorer. Their name and format are read in and each one drives
+          SYNCLAB&apos;s matching processor — a browser cannot run a native plugin binary.
+        </p>
+      </div>
+
       {/* scan a plugin folder from the computer */}
       <div className="panel space-y-2 p-2">
         <p className="label-xs">SCAN PLUGIN FOLDER ON THIS COMPUTER</p>
