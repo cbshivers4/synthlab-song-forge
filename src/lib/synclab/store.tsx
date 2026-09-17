@@ -113,6 +113,7 @@ export type PanelId =
   | "appearance"
   | "sampler"
   | "pads"
+  | "bass"
   | null;
 
 export type EditTool = "select" | "draw" | "split";

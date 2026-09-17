@@ -4,7 +4,7 @@
 - [x] Add cloud project browsing and deletion
 
 # Bass generator
-- [ ] Add a playable bass generator that creates editable MIDI patterns
+- [x] Add a playable bass generator that creates editable MIDI patterns
 
 # Roadmap
 
