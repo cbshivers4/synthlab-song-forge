@@ -1070,8 +1070,9 @@ function BusStrip({
         />
         <Meter level={level} tall color={color} />
       </div>
-      <div className={cn(ROW.readout, "flex items-center justify-center border-b border-border/60")}>
+      <div className={cn(ROW.readout, "flex items-center justify-center gap-1 border-b border-border/60")}>
         <span className="font-mono text-[9px] text-muted-foreground">{toDb(state.volume).toFixed(1)} dB</span>
+        <ClipLed id={`bus:${id}`} compact />
       </div>
       <div className={cn(ROW.buttons, "flex items-center border-b border-border/60 px-1")}>
         <button
