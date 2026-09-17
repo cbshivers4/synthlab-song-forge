@@ -1148,6 +1148,45 @@ export function Mixer() {
           {tracks.length} ch · {activeBuses.length} buses
         </span>
         <div className="ml-auto flex items-center gap-1">
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                title="Choose console"
+                className="flex h-6 items-center gap-1 rounded-sm bg-surface px-2 font-mono text-[9px] uppercase tracking-wider text-muted-foreground hover:text-foreground"
+              >
+                <span className="size-2.5 rounded-[2px] border border-black/60" style={{ background: desk.accent }} />
+                {desk.name}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-64 p-1">
+              <div className="px-2 py-1 font-mono text-[8px] uppercase tracking-widest text-muted-foreground">
+                Console desk
+              </div>
+              {CONSOLE_STYLES.map((s) => (
+                <button
+                  key={s.id}
+                  onClick={() => setStyleId(s.id)}
+                  className={cn(
+                    "flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left transition-colors hover:bg-surface-2",
+                    s.id === styleId && "bg-surface-2"
+                  )}
+                >
+                  <span
+                    className="h-7 w-5 shrink-0 rounded-[2px] border border-black/60"
+                    style={{
+                      background: `linear-gradient(180deg, ${s.a}, ${s.b} 45%, ${s.c})`,
+                      boxShadow: `inset 0 2px 0 0 ${s.accent}`,
+                    }}
+                  />
+                  <span className="min-w-0">
+                    <span className="block font-mono text-[10px] uppercase tracking-wider text-foreground">{s.name}</span>
+                    <span className="block truncate text-[10px] text-muted-foreground">{s.desc}</span>
+                  </span>
+                </button>
+              ))}
+            </PopoverContent>
+          </Popover>
+
           <button
             onClick={() => tracks.forEach((t) => t.solo && updateTrack(t.id, { solo: false }))}
             disabled={!soloed}
