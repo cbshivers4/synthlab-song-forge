@@ -110,6 +110,7 @@ function useMeters(tracks: Track[], transport: Transport) {
         if (v > loudest) loudest = v;
       }
       const mRaw = Math.max(engine.getLevel(), loudest * 0.95);
+      reportLevel("master", mRaw);
       const mPrev = smooth.current["__master"] ?? 0;
       const m = mRaw > mPrev ? mRaw : mPrev * 0.86;
       smooth.current["__master"] = m;
