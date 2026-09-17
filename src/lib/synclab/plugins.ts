@@ -18,6 +18,28 @@ export const PARAMS_BY_KIND: Record<PluginKind, () => PluginParam[]> = {
     p("high", "High", 0, -18, 18, "dB"),
     p("mix", "Output", 0, -12, 12, "dB"),
   ],
+  // 8-band fully parametric EQ (FabFilter Pro-Q style). Band type index maps to EQ_BAND_TYPES.
+  paraeq: () =>
+    [
+      [1, 1, 30, 0, 0.7], // low cut, off
+      [0, 0, 90, 0, 0.7], // low shelf
+      [0, 2, 220, 0, 1],
+      [0, 2, 700, 0, 1],
+      [0, 2, 2000, 0, 1],
+      [0, 2, 5000, 0, 1],
+      [0, 4, 9000, 0, 0.7], // high shelf
+      [1, 5, 19000, 0, 0.7], // high cut, off
+    ].flatMap((b, i) => {
+      const n = i + 1;
+      const [on, type, freq, gain, q] = b as [number, number, number, number, number];
+      return [
+        p(`b${n}on`, `Band ${n} On`, on, 0, 1),
+        p(`b${n}type`, `Band ${n} Type`, type, 0, 5),
+        p(`b${n}freq`, `Band ${n} Freq`, freq, 20, 20000, "Hz"),
+        p(`b${n}gain`, `Band ${n} Gain`, gain, -30, 30, "dB"),
+        p(`b${n}q`, `Band ${n} Q`, q, 0.1, 18, "Q"),
+      ];
+    }).concat([p("output", "Output", 0, -24, 24, "dB")]),
   filter: () => [
     p("cutoff", "Cutoff", 8000, 60, 18000, "Hz"),
     p("resonance", "Resonance", 1, 0.1, 20, "Q"),
@@ -98,6 +120,7 @@ const def = (name: string, vendor: string, format: PluginDef["format"], kind: Pl
 
 export const BUILT_IN_PLUGINS: PluginDef[] = [
   def("Channel EQ", "SYNCLAB", "Built-in", "eq"),
+  def("Pro-EQ 8", "SYNCLAB", "Built-in", "paraeq"),
   def("Analog Filter", "SYNCLAB", "Built-in", "filter"),
   def("Tube Drive", "SYNCLAB", "Built-in", "drive"),
   def("Bus Compressor", "SYNCLAB", "Built-in", "compressor"),
@@ -131,6 +154,7 @@ export const instantiate = (d: PluginDef): PluginInstance => ({
 
 export const PLUGIN_KINDS: PluginKind[] = [
   "eq",
+  "paraeq",
   "filter",
   "drive",
   "compressor",

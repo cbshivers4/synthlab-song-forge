@@ -539,6 +539,7 @@ function ChannelMenu({ t }: { t: Track }) {
   const { updateTrack, duplicateTrack, removeTrack, addPlugin, installedPlugins } = useStudio();
   const quick: [string, string][] = [
     ["eq", "EQ"],
+    ["paraeq", "Pro-EQ"],
     ["filter", "Filter"],
     ["drive", "Drive"],
     ["compressor", "Comp"],

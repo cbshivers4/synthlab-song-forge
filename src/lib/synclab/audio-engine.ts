@@ -108,6 +108,8 @@ export class SyncLabEngine {
   private sendOut = new Map<string, AudioNode>();
   private sendFeedback = new Map<string, AudioNode>();
   private fxInserts = new Map<string, { key: string; nodes: AudioNode[] }>();
+  /** Post-EQ analysers for the Pro-EQ display, keyed by plugin instance id. */
+  private eqAnalysers = new Map<string, AnalyserNode>();
   private channels = new Map<string, ChannelStrip>();
   private analyser: AnalyserNode | null = null;
 
@@ -208,6 +210,19 @@ export class SyncLabEngine {
     let peak = 0;
     for (let i = 0; i < data.length; i++) peak = Math.max(peak, Math.abs((data[i] ?? 128) - 128) / 128);
     return peak;
+  }
+
+  get sampleRate() {
+    return this.ctx?.sampleRate ?? 48000;
+  }
+
+  /** Post-EQ magnitude spectrum in dB for a Pro-EQ instance, or null when it is not running. */
+  getEqSpectrum(pluginId: string): Float32Array | null {
+    const an = this.eqAnalysers.get(pluginId);
+    if (!an) return null;
+    const data = new Float32Array(an.frequencyBinCount);
+    an.getFloatFrequencyData(data);
+    return data;
   }
 
   getTrackLevel(id: string) {
@@ -327,6 +342,7 @@ export class SyncLabEngine {
     for (const pl of active) {
       const size = {
         eq: 4,
+        paraeq: 10,
         filter: 1,
         drive: 3,
         compressor: 2,
@@ -383,6 +399,31 @@ export class SyncLabEngine {
           mid.connect(high);
           high.connect(out);
           nodes.push(low, mid, high, out);
+          break;
+        }
+        case "paraeq": {
+          const types: BiquadFilterType[] = ["lowshelf", "highpass", "peaking", "notch", "highshelf", "lowpass"];
+          const bands: BiquadFilterNode[] = [];
+          for (let i = 1; i <= 8; i++) {
+            const f = ctx.createBiquadFilter();
+            const on = val(pl, `b${i}on`, 0) >= 0.5;
+            const t = types[clamp(Math.round(val(pl, `b${i}type`, 2)), 0, 5)] ?? "peaking";
+            f.type = on ? t : "peaking";
+            f.frequency.value = clamp(val(pl, `b${i}freq`, 1000), 20, 20000);
+            f.Q.value = clamp(val(pl, `b${i}q`, 1), 0.1, 18);
+            f.gain.value = on ? clamp(val(pl, `b${i}gain`, 0), -30, 30) : 0;
+            bands.push(f);
+          }
+          const out = ctx.createGain();
+          out.gain.value = dbToGain(val(pl, "output", 0));
+          const spectrum = ctx.createAnalyser();
+          spectrum.fftSize = 2048;
+          spectrum.smoothingTimeConstant = 0.72;
+          for (let i = 0; i < bands.length - 1; i++) bands[i]!.connect(bands[i + 1]!);
+          bands[bands.length - 1]!.connect(out);
+          out.connect(spectrum);
+          this.eqAnalysers.set(pl.id, spectrum);
+          nodes.push(...bands, out, spectrum);
           break;
         }
         case "filter": {

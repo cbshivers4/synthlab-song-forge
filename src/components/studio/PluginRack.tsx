@@ -13,6 +13,7 @@ import {
 import { useStudio } from "@/lib/synclab/store";
 import { PLUGIN_KINDS, makeDef } from "@/lib/synclab/plugins";
 import type { PluginDef, PluginInstance, PluginKind } from "@/lib/synclab/types";
+import { ProEq } from "./ProEq";
 import { toast } from "sonner";
 
 const FORMATS: PluginDef["format"][] = ["VST3", "AU", "CLAP", "AAX"];
@@ -30,7 +31,8 @@ const PLUGIN_EXT: Record<string, PluginDef["format"]> = {
 function guessKind(fileName: string): PluginKind {
   const n = fileName.toLowerCase();
   const map: [RegExp, PluginKind][] = [
-    [/\b(eq|equal|pro-?q|channel ?strip)\b/, "eq"],
+    [/\b(pro-?q|parametric|eq8|linear ?phase)\b/, "paraeq"],
+    [/\b(eq|equal|channel ?strip)\b/, "eq"],
     [/\b(comp|1176|la-?2a|glue|bus ?comp)\b/, "compressor"],
     [/\b(limit|maxim|l1|l2)\b/, "limiter"],
     [/\b(gate|expander)\b/, "gate"],
@@ -209,7 +211,8 @@ export function PluginRack() {
             </div>
             {open === p.id && (
               <div className="space-y-2 p-2">
-                {p.params.map((prm) => (
+                {p.kind === "paraeq" && <ProEq trackId={track.id} plugin={p} />}
+                {p.kind !== "paraeq" && p.params.map((prm) => (
                   <ParamRow
                     key={prm.id}
                     trackId={track.id}
