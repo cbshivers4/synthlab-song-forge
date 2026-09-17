@@ -204,7 +204,7 @@ export function PluginRack() {
               >
                 <Power className="size-3" />
               </button>
-              <button className="min-w-0 flex-1 text-left" onClick={() => setOpen(open === p.id ? null : p.id)}>
+              <button className="min-w-0 flex-1 text-left" onClick={() => setOpen(openId === p.id ? "" : p.id)}>
                 <span className={`block truncate text-[11px] font-medium ${p.bypass ? "text-muted-foreground line-through" : ""}`}>
                   {p.name}
                 </span>
@@ -229,7 +229,7 @@ export function PluginRack() {
                 <Trash2 className="size-3.5" />
               </Button>
             </div>
-            {open === p.id && (
+            {openId === p.id && (
               <div className="space-y-2 p-2">
                 <Scope scopeId={p.id} />
                 <XYPad trackId={track.id} plugin={p} />
