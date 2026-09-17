@@ -10,7 +10,7 @@ import {
 import { useStudio } from "@/lib/synclab/store";
 import { useApp } from "@/lib/synclab/app-state";
 import { toast } from "sonner";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { openExport } from "@/components/studio/ExportDialog";
 import { saveCloudProject } from "@/lib/synclab/cloud";
 
@@ -37,7 +37,16 @@ export function MenuBar() {
     selectAll,
     splitAtPlayhead,
     snapshot,
+    loadSample,
   } = useStudio();
+  const importRef = useRef<HTMLInputElement>(null);
+
+  const importAudio = (file: File) => {
+    const id = addTrack("sampler", file.name.replace(/\.[^.]+$/, "").toUpperCase().slice(0, 16));
+    setPanel("sampler");
+    void loadSample(id, file);
+    toast.success(`Imported ${file.name}`, { description: "Loaded into a new sampler channel." });
+  };
   const { setStage, mode, toggleMode, project, setProject } = useApp();
 
   const save = async () => {
