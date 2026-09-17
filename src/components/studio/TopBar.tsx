@@ -11,6 +11,7 @@ import {
   KeyboardMusic,
   Layers,
   Mic,
+  Minus,
   Music2,
   Pause,
   Piano,
@@ -104,9 +105,29 @@ export function TopBar() {
             </div>
           </div>
           <span className="w-px bg-border" />
-          <div>
+          <div title="Timeline length — click + to add bars (Shift = +16), up to 512">
             <span className="label-xs">BARS</span>
-            <div className="text-base leading-none text-primary">{transport.bars ?? 4}</div>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                aria-label="Fewer bars"
+                className="rounded-[2px] px-0.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-30"
+                disabled={(transport.bars ?? 4) <= 1}
+                onClick={(e) => setTransport({ bars: Math.max(1, (transport.bars ?? 4) - (e.shiftKey ? 16 : 1)) })}
+              >
+                <Minus className="size-3" />
+              </button>
+              <span className="min-w-7 text-center text-base leading-none text-primary">{transport.bars ?? 4}</span>
+              <button
+                type="button"
+                aria-label="More bars"
+                className="rounded-[2px] px-0.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-30"
+                disabled={(transport.bars ?? 4) >= 512}
+                onClick={(e) => setTransport({ bars: Math.min(512, (transport.bars ?? 4) + (e.shiftKey ? 16 : 1)) })}
+              >
+                <Plus className="size-3" />
+              </button>
+            </div>
           </div>
           <span className="w-px bg-border" />
           <div>
