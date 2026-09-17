@@ -774,6 +774,8 @@ export class SyncLabEngine {
   private sampleBuffers = new Map<string, AudioBuffer>();
   private reversedBuffers = new Map<string, AudioBuffer>();
   private liveSamples = new Map<string, AudioBufferSourceNode[]>();
+  /** voices grouped by an arbitrary key so pads can choke each other */
+  private keyedSamples = new Map<string, AudioBufferSourceNode[]>();
 
   /** Decodes a dropped audio file, keeps the buffer and returns its display data. */
   async loadSampleFile(file: File | Blob, name: string) {
