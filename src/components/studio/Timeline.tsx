@@ -542,9 +542,26 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
     setPanel(track.kind === "drum" ? "drums" : track.kind === "audio" ? "mixer" : "synth");
   };
 
+  /** Drag the strip under a lane to make that track taller or shorter. */
+  const resizeHeight = (e: React.PointerEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const y0 = e.clientY;
+    const h0 = track.height ?? 104;
+    const onMove = (ev: PointerEvent) =>
+      updateTrack(track.id, { height: Math.max(64, Math.min(420, h0 + (ev.clientY - y0))) });
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  };
+
   return (
     <div
-      className={`flex items-stretch border-b border-border/80 transition-colors ${isSelected ? "bg-surface-2/40" : "hover:bg-surface/50"} ${track.hidden ? "opacity-40" : ""} ${dropping ? "ring-1 ring-primary ring-inset" : ""}`}
+      className={`relative flex items-stretch border-b border-border/80 transition-colors ${isSelected ? "bg-surface-2/40" : "hover:bg-surface/50"} ${track.hidden ? "opacity-40" : ""} ${dropping ? "ring-1 ring-primary ring-inset" : ""}`}
+      style={{ height: track.height ?? undefined }}
       onClick={(e) => {
         if (e.metaKey || e.ctrlKey) toggleSelectId(track.id);
         else select(track.id);
