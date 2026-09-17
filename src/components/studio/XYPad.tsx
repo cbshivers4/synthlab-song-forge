@@ -51,8 +51,8 @@ export function XYPad({
     const r = el.getBoundingClientRect();
     const nx = Math.min(1, Math.max(0, (clientX - r.left) / r.width));
     const ny = 1 - Math.min(1, Math.max(0, (clientY - r.top) / r.height));
-    if (xP) setPluginParam(trackId, plugin.id, xP.id, xP.min + nx * (xP.max - xP.min));
-    if (yP) setPluginParam(trackId, plugin.id, yP.id, yP.min + ny * (yP.max - yP.min));
+    if (xP) write(xP.id, xP.min + nx * (xP.max - xP.min));
+    if (yP) write(yP.id, yP.min + ny * (yP.max - yP.min));
   };
 
   if (params.length === 0) return null;
