@@ -33,6 +33,8 @@ import { BUILT_IN_PLUGINS } from "@/lib/synclab/plugins";
 import type { BusId, BusState, PluginInstance, Track, Transport } from "@/lib/synclab/types";
 import { cn } from "@/lib/utils";
 import { clearClip, reportLevel, useClipped } from "@/lib/synclab/clip-monitor";
+import { Scope } from "./Scope";
+import { XYPad } from "./XYPad";
 
 const BUSES: BusId[] = ["drums", "vocals", "instruments", "synths", "fx", "master"];
 const DB_TICKS = [6, 0, -6, -12, -24, -48];
@@ -227,6 +229,12 @@ function InsertRack({
                 <Trash2 className="size-3 text-muted-foreground hover:text-destructive" />
               </button>
             </div>
+            {open === p.id && (
+              <div className="space-y-1 pt-1">
+                <Scope scopeId={p.id} height={52} />
+                <XYPad plugin={p} onParam={(paramId, v) => onParam(p.id, paramId, v)} />
+              </div>
+            )}
             {open === p.id &&
               p.params.map((x) => (
                 <div key={x.id} className="flex items-center gap-1 pt-1">

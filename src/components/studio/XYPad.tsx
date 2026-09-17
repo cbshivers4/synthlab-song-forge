@@ -13,8 +13,20 @@ import {
  * Performance X-Y pad: drag to ride two of the effect's parameters at once.
  * X moves the left parameter, Y moves the right one (up = higher).
  */
-export function XYPad({ trackId, plugin }: { trackId: string; plugin: PluginInstance }) {
+export function XYPad({
+  trackId,
+  plugin,
+  onParam,
+}: {
+  trackId?: string;
+  plugin: PluginInstance;
+  onParam?: (paramId: string, value: number) => void;
+}) {
   const { setPluginParam } = useStudio();
+  const write = (paramId: string, value: number) => {
+    if (onParam) onParam(paramId, value);
+    else if (trackId) setPluginParam(trackId, plugin.id, paramId, value);
+  };
   const params = plugin.params;
   const [xId, setXId] = useState(() => params[0]?.id ?? "");
   const [yId, setYId] = useState(() => params[1]?.id ?? params[0]?.id ?? "");
@@ -39,8 +51,8 @@ export function XYPad({ trackId, plugin }: { trackId: string; plugin: PluginInst
     const r = el.getBoundingClientRect();
     const nx = Math.min(1, Math.max(0, (clientX - r.left) / r.width));
     const ny = 1 - Math.min(1, Math.max(0, (clientY - r.top) / r.height));
-    if (xP) setPluginParam(trackId, plugin.id, xP.id, xP.min + nx * (xP.max - xP.min));
-    if (yP) setPluginParam(trackId, plugin.id, yP.id, yP.min + ny * (yP.max - yP.min));
+    if (xP) write(xP.id, xP.min + nx * (xP.max - xP.min));
+    if (yP) write(yP.id, yP.min + ny * (yP.max - yP.min));
   };
 
   if (params.length === 0) return null;
