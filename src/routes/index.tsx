@@ -228,16 +228,47 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
 }
 
 function StatusBar() {
-  const { tracks, transport, panel } = useStudio();
+  const { tracks, transport, panel, savedAt } = useStudio();
+  const [engine, setEngine] = useState<{ state: string; rate: number; latency: number }>({
+    state: "idle",
+    rate: 48000,
+    latency: 0,
+  });
+
+  useEffect(() => {
+    const read = () => {
+      const ctx = (getEngine() as unknown as { ctx?: AudioContext }).ctx;
+      setEngine({
+        state: ctx?.state ?? "idle",
+        rate: ctx?.sampleRate ?? 48000,
+        latency: Math.round(((ctx?.baseLatency ?? 0) + (ctx?.outputLatency ?? 0)) * 1000),
+      });
+    };
+    read();
+    const id = window.setInterval(read, 2000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  const live = engine.state === "running";
+  const saved = savedAt ? new Date(savedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : null;
+
   return (
-    <footer className="flex shrink-0 items-center gap-4 border-t border-border bg-surface-2/60 px-3 py-1 font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
+    <footer className="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-0.5 border-t border-border bg-surface-2/60 px-3 py-1 font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
       <span className={transport.recording ? "text-destructive" : transport.playing ? "text-primary" : ""}>
         {transport.recording ? "● REC" : transport.playing ? "▶ PLAY" : "■ STOP"}
       </span>
+      <span title="Audio engine status" className={live ? "text-primary" : ""}>
+        ENGINE {live ? "LIVE" : engine.state === "suspended" ? "ASLEEP" : "IDLE"}
+      </span>
+      <span title="Sample rate">{(engine.rate / 1000).toFixed(1)} kHz</span>
+      <span title="Round-trip latency reported by the browser">{engine.latency} ms</span>
       <span>{transport.bpm} BPM</span>
       <span>4/4</span>
       <span>{tracks.length} CH</span>
-      <span>BAR {Math.floor(transport.step / 4) + 1}.{(transport.step % 4) + 1}</span>
+      <span>
+        BAR {Math.floor(transport.step / 4) + 1}.{(transport.step % 4) + 1} / {transport.bars ?? 4}
+      </span>
+      <span className="hidden sm:inline">{saved ? `SAVED ${saved}` : "NOT SAVED YET"}</span>
       <span className="ml-auto hidden sm:inline">{panel ? `${panel} editor open` : "synclab studio"}</span>
     </footer>
   );
