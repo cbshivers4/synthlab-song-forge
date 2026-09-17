@@ -511,6 +511,7 @@ function LabelRail() {
   return (
     <div className="sticky left-0 z-10 flex w-[76px] shrink-0 flex-col border-r border-border bg-surface-2/85 backdrop-blur">
       <SectionLabel className={cn(ROW.head, "bg-surface-2")}>Ch</SectionLabel>
+      <SectionLabel className={ROW.scope}>Scope</SectionLabel>
       <SectionLabel className={ROW.eq}>EQ</SectionLabel>
       <SectionLabel className={ROW.devices}>Devices</SectionLabel>
       <SectionLabel className={ROW.sends}>Sends</SectionLabel>
