@@ -446,6 +446,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     const engine = getEngine();
     engine.init();
     engine.syncMix(tracksRef.current);
+    // make sure every arrangement clip is decoded before the playhead reaches it
+    for (const t of tracksRef.current)
+      for (const c of t.clips ?? []) if (c.url) void engine.ensureBuffer(c.url);
     let step = 0;
     let cancelled = false;
 
@@ -455,10 +458,28 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       const stepDur = 60 / tp.bpm / 4;
       const list = tracksRef.current;
       const anySolo = list.some((t) => t.solo);
+      const totalSteps = Math.max(1, tp.bars ?? 4) * 4;
       for (const t of list) {
         if (t.muted || t.frozen || (anySolo && !t.solo)) continue;
         const len = t.steps;
         const s = step % len;
+        // arrangement clips fire at their own position on the timeline
+        if (t.clips?.length) {
+          const at = step % totalSteps;
+          for (const c of t.clips) {
+            if (!c.url) continue;
+            if ((c.start ?? 0) === at) {
+              engine.playClip(t.id, {
+                url: c.url,
+                offset: c.offset ?? 0,
+                length: c.length ?? c.duration,
+                gain: c.gain ?? 1,
+                fadeIn: c.fadeIn ?? 0.004,
+                fadeOut: c.fadeOut ?? 0.01,
+              });
+            }
+          }
+        }
         if (t.kind === "drum" && t.pads) {
           const padSolo = t.pads.some((p) => p.solo);
           for (const pad of t.pads) {
