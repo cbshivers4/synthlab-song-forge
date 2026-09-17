@@ -601,8 +601,120 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     [updateTrack],
   );
 
+  const buildSnapshot = useCallback(
+    (): CloudSession => ({
+      version: 1,
+      tracks: structuredClone(tracksRef.current),
+      transport: { ...transportRef.current, playing: false, recording: false, paused: false, step: 0 },
+      buses: structuredClone(buses),
+      fxChains: structuredClone(fxChains),
+      installedPlugins: structuredClone(installedPlugins),
+      userPresets: structuredClone(userPresets),
+      padBank: getPadBank(),
+    }),
+    [buses, fxChains, installedPlugins, userPresets],
+  );
+
+  const applySession = useCallback((session: CloudSession) => {
+    getEngine().stopSamples();
+    for (const track of tracksRef.current) getEngine().removeChannel(track.id);
+    setTracks(structuredClone(session.tracks));
+    setTransportState({ ...session.transport, playing: false, recording: false, paused: false, step: 0 });
+    setBuses(structuredClone(session.buses));
+    setFxChains(structuredClone(session.fxChains));
+    setInstalledPlugins(structuredClone(session.installedPlugins));
+    setUserPresets(structuredClone(session.userPresets));
+    setPadBank(session.padBank ?? {});
+    setSelectedId(session.tracks[0]?.id ?? null);
+    setSelectedIds(session.tracks[0] ? [session.tracks[0].id] : []);
+    setPanel(null);
+  }, []);
+
+  // Record a history step and keep a local copy of the session, debounced so a
+  // drag or a knob sweep counts as one edit.
+  useEffect(() => {
+    if (applyingRef.current) {
+      applyingRef.current = false;
+      lastSnapRef.current = buildSnapshot();
+      return;
+    }
+    if (lastSnapRef.current === null) {
+      lastSnapRef.current = buildSnapshot();
+      return;
+    }
+    const id = window.setTimeout(() => {
+      const prev = lastSnapRef.current;
+      if (prev) {
+        pastRef.current = [...pastRef.current, prev].slice(-60);
+        futureRef.current = [];
+      }
+      const next = buildSnapshot();
+      lastSnapRef.current = next;
+      setHistoryTick((t) => t + 1);
+      try {
+        window.localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(next));
+        setSavedAt(Date.now());
+      } catch {
+        /* storage full or unavailable — cloud save still works */
+      }
+    }, 600);
+    return () => window.clearTimeout(id);
+  }, [tracks, buses, fxChains, installedPlugins, userPresets, buildSnapshot]);
+
+  // Bring the last session back after a refresh or a crash.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const raw = window.localStorage.getItem(AUTOSAVE_KEY);
+    if (!raw) return;
+    try {
+      const s = JSON.parse(raw) as CloudSession;
+      if (!s?.tracks?.length) return;
+      let lostAudio = false;
+      for (const t of s.tracks) {
+        if (t.clips) {
+          t.clips = t.clips.map((c) => {
+            if (c.url?.startsWith("blob:")) {
+              lostAudio = true;
+              return { ...c, url: undefined };
+            }
+            return c;
+          });
+        }
+        if (t.sampler?.url?.startsWith("blob:")) {
+          lostAudio = true;
+          t.sampler = { ...t.sampler, url: "" };
+        }
+      }
+      applyingRef.current = true;
+      applySession(s);
+      lastSnapRef.current = s;
+      toast("Session restored", {
+        description: lostAudio
+          ? "Your last session is back. Imported audio files need loading again."
+          : "Your last session is back where you left it.",
+      });
+    } catch {
+      /* unreadable autosave — start fresh */
+    }
+  }, [applySession]);
+
   const api: StudioApi = useMemo(() => {
     const selected = tracks.find((t) => t.id === selectedId) ?? null;
+    const stepBack = (from: "past" | "future") => {
+      const stack = from === "past" ? pastRef : futureRef;
+      const other = from === "past" ? futureRef : pastRef;
+      const entry = stack.current.pop();
+      if (!entry) {
+        toast(from === "past" ? "Nothing to undo" : "Nothing to redo");
+        return;
+      }
+      if (lastSnapRef.current) other.current = [...other.current, lastSnapRef.current].slice(-60);
+      applyingRef.current = true;
+      applySession(entry);
+      lastSnapRef.current = entry;
+      setHistoryTick((t) => t + 1);
+      toast(from === "past" ? "Undone" : "Redone");
+    };
     return {
       tracks,
       transport,
@@ -612,30 +724,17 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       panel,
       userPresets,
       buses,
-      snapshot: () => ({
-        version: 1,
-        tracks: structuredClone(tracksRef.current),
-        transport: { ...transportRef.current, playing: false, recording: false, paused: false, step: 0 },
-        buses: structuredClone(buses),
-        fxChains: structuredClone(fxChains),
-        installedPlugins: structuredClone(installedPlugins),
-        userPresets: structuredClone(userPresets),
-        padBank: getPadBank(),
-      }),
+      snapshot: buildSnapshot,
       restore: (session) => {
-        getEngine().stopSamples();
-        for (const track of tracksRef.current) getEngine().removeChannel(track.id);
-        setTracks(structuredClone(session.tracks));
-        setTransportState({ ...session.transport, playing: false, recording: false, paused: false, step: 0 });
-        setBuses(structuredClone(session.buses));
-        setFxChains(structuredClone(session.fxChains));
-        setInstalledPlugins(structuredClone(session.installedPlugins));
-        setUserPresets(structuredClone(session.userPresets));
-        setPadBank(session.padBank ?? {});
-        setSelectedId(session.tracks[0]?.id ?? null);
-        setSelectedIds(session.tracks[0] ? [session.tracks[0].id] : []);
-        setPanel(null);
+        applyingRef.current = true;
+        applySession(session);
+        lastSnapRef.current = session;
       },
+      undo: () => stepBack("past"),
+      redo: () => stepBack("future"),
+      canUndo: pastRef.current.length > 0,
+      canRedo: futureRef.current.length > 0,
+      savedAt,
       selected,
       setBus: (id, patch) => setBuses((b) => ({ ...b, [id]: { ...b[id], ...patch } })),
       setPanel,
