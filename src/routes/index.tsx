@@ -89,28 +89,6 @@ export const Route = createFileRoute("/")({
 function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: FloatState) => FloatState) => void }) {
   const { selected, tracks, panel, setPanel, select } = useStudio();
   const [mixerDetached, setMixerDetached] = useState(false);
-  const drumTrack = selected?.kind === "drum" ? selected : tracks.find((t) => t.kind === "drum");
-  const synthTrack = selected?.patch ? selected : tracks.find((t) => t.patch);
-  if (!panel) return null;
-
-  const config: Record<Exclude<PanelId, null>, { title: string; icon: React.ReactNode }> = {
-    mixer: { title: "MIXER", icon: <SlidersHorizontal className="size-4" /> },
-    synth: { title: "INSTRUMENT EDITOR", icon: <Music2 className="size-4" /> },
-    drums: { title: "DRUM MACHINE", icon: <Disc3 className="size-4" /> },
-    piano: { title: "PIANO ROLL", icon: <Piano className="size-4" /> },
-    vocal: { title: "VOCAL FORGE", icon: <Waves className="size-4" /> },
-    settings: { title: "SETTINGS", icon: <Settings2 className="size-4" /> },
-    keys: { title: "KEYBOARD", icon: <KeyboardMusic className="size-4" /> },
-    browser: { title: "BROWSER", icon: <FolderOpen className="size-4" /> },
-    plugins: { title: "PLUGINS", icon: <Cpu className="size-4" /> },
-    appearance: { title: "APPEARANCE & THEMES", icon: <Palette className="size-4" /> },
-    sampler: { title: "SAMPLER", icon: <AudioLines className="size-4" /> },
-    pads: { title: "PAD SAMPLER", icon: <Grid2x2 className="size-4" /> },
-    bass: { title: "BASS GENERATOR", icon: <AudioWaveform className="size-4" /> },
-    coproducer: { title: "AI CO-PRODUCER", icon: <Bot className="size-4" /> },
-  };
-  const current = config[panel];
-
   // Resizable editor height, remembered between sessions.
   const [rackH, setRackH] = useState(() => {
     if (typeof window === "undefined") return 380;
@@ -137,6 +115,28 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
   };
   const rackHRef = useRef(rackH);
   rackHRef.current = rackH;
+  const drumTrack = selected?.kind === "drum" ? selected : tracks.find((t) => t.kind === "drum");
+  const synthTrack = selected?.patch ? selected : tracks.find((t) => t.patch);
+  if (!panel) return null;
+
+  const config: Record<Exclude<PanelId, null>, { title: string; icon: React.ReactNode }> = {
+    mixer: { title: "MIXER", icon: <SlidersHorizontal className="size-4" /> },
+    synth: { title: "INSTRUMENT EDITOR", icon: <Music2 className="size-4" /> },
+    drums: { title: "DRUM MACHINE", icon: <Disc3 className="size-4" /> },
+    piano: { title: "PIANO ROLL", icon: <Piano className="size-4" /> },
+    vocal: { title: "VOCAL FORGE", icon: <Waves className="size-4" /> },
+    settings: { title: "SETTINGS", icon: <Settings2 className="size-4" /> },
+    keys: { title: "KEYBOARD", icon: <KeyboardMusic className="size-4" /> },
+    browser: { title: "BROWSER", icon: <FolderOpen className="size-4" /> },
+    plugins: { title: "PLUGINS", icon: <Cpu className="size-4" /> },
+    appearance: { title: "APPEARANCE & THEMES", icon: <Palette className="size-4" /> },
+    sampler: { title: "SAMPLER", icon: <AudioLines className="size-4" /> },
+    pads: { title: "PAD SAMPLER", icon: <Grid2x2 className="size-4" /> },
+    bass: { title: "BASS GENERATOR", icon: <AudioWaveform className="size-4" /> },
+    coproducer: { title: "AI CO-PRODUCER", icon: <Bot className="size-4" /> },
+  };
+  const current = config[panel];
+
 
   return (
     <section
