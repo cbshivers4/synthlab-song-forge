@@ -900,6 +900,22 @@ function Ruler() {
             +
           </button>
         </div>
+        {/* export range flags toggle */}
+        <button
+          type="button"
+          aria-pressed={exportOn}
+          title="Show export start/end flags — drag them on the ruler to choose what gets exported"
+          onClick={() =>
+            setTransport(exportOn ? { exportStart: null, exportEnd: null } : { exportStart: 0, exportEnd: total })
+          }
+          className={`flex items-center gap-1 rounded-[3px] border px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider ${
+            exportOn
+              ? "border-amber-400/70 bg-amber-400/15 text-amber-300"
+              : "border-border bg-background/70 text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Flag className="size-3" /> Export
+        </button>
       </div>
       <div
         ref={gridRef}
