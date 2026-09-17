@@ -132,6 +132,7 @@ export interface AudioClip {
 
 export type PluginKind =
   | "eq"
+  | "paraeq"
   | "filter"
   | "drive"
   | "compressor"
