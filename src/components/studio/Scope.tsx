@@ -4,7 +4,17 @@ import { getEngine } from "@/lib/synclab/audio-engine";
 type Mode = "wave" | "spectrum";
 
 /** Live output scope for one effect insert — reads the analyser the engine taps after that plugin. */
-export function Scope({ scopeId, height = 74 }: { scopeId: string; height?: number }) {
+export function Scope({
+  scopeId,
+  height = 74,
+  compact = false,
+  color,
+}: {
+  scopeId: string;
+  height?: number;
+  compact?: boolean;
+  color?: string;
+}) {
   const ref = useRef<HTMLCanvasElement | null>(null);
   const [mode, setMode] = useState<Mode>("wave");
   const modeRef = useRef<Mode>(mode);
