@@ -816,6 +816,9 @@ function Ruler() {
   const total = bars * 4;
   const lo = transport.loopStart ?? 0;
   const hi = Math.max(lo + 1, transport.loopEnd ?? total);
+  const exportOn = transport.exportStart != null && transport.exportEnd != null;
+  const exLo = exportOn ? Math.min(transport.exportStart!, transport.exportEnd! - 1) : 0;
+  const exHi = exportOn ? Math.max(transport.exportEnd!, exLo + 1) : total;
 
   const setBars = (next: number) => {
     const b = Math.min(512, Math.max(1, next));

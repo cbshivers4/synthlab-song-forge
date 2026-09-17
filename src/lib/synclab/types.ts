@@ -329,6 +329,9 @@ export interface Transport {
   loop: boolean;
   loopStart?: number;
   loopEnd?: number;
+  /** export range in steps; both null/undefined when the flags are off */
+  exportStart?: number | null;
+  exportEnd?: number | null;
   /** timeline length in bars (1 bar = 4 steps) */
   bars: number;
 }
