@@ -19,6 +19,8 @@ import { toast } from "sonner";
 import { WaveformView } from "@/components/studio/WaveformView";
 
 const BANKS = ["A", "B", "C", "D"] as const;
+/** Koala-style bank colors — each bank tints its loaded pads. */
+const BANK_COLORS = ["hsl(187 85% 50%)", "hsl(38 95% 55%)", "hsl(330 80% 62%)", "hsl(95 70% 52%)"] as const;
 const PADS_PER_BANK = 16;
 const STEPS = 16;
 const KEYMAP = "1234qwerasdfzxcv".split("");
@@ -337,6 +339,11 @@ export function PadSampler() {
               size="sm"
               variant={i === bank ? "secondary" : "ghost"}
               className="h-7 w-7 font-mono text-[10px]"
+              style={
+                i === bank
+                  ? { backgroundColor: BANK_COLORS[i] as string, color: "hsl(0 0% 8%)" }
+                  : { color: BANK_COLORS[i] as string }
+              }
               onClick={() => setBank(i)}
             >
               {b}
