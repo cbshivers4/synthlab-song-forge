@@ -326,9 +326,87 @@ const ROW = {
   name: "h-8",
 } as const;
 
-/** SSL-style metal panel background used by every strip. */
+/** Console desk finishes the user can pick between. */
+export type ConsoleStyleId = "ssl" | "neve" | "api" | "live" | "vintage" | "neon";
+type ConsoleStyle = {
+  id: ConsoleStyleId;
+  name: string;
+  desc: string;
+  /** panel gradient stops */
+  a: string;
+  b: string;
+  c: string;
+  /** needle / trim accent */
+  accent: string;
+  screws: boolean;
+};
+
+const CONSOLE_STYLES: ConsoleStyle[] = [
+  {
+    id: "ssl",
+    name: "SL 9000 Grey",
+    desc: "Classic large-format grey metal desk",
+    a: "oklch(0.36 0.008 260)",
+    b: "oklch(0.30 0.008 260)",
+    c: "oklch(0.22 0.008 260)",
+    accent: "oklch(0.75 0.19 30)",
+    screws: true,
+  },
+  {
+    id: "neve",
+    name: "Neve 88 Navy",
+    desc: "Deep blue British desk, red trim",
+    a: "oklch(0.34 0.05 255)",
+    b: "oklch(0.27 0.05 255)",
+    c: "oklch(0.18 0.045 255)",
+    accent: "oklch(0.68 0.21 25)",
+    screws: true,
+  },
+  {
+    id: "api",
+    name: "API Black",
+    desc: "Blacked-out US desk, amber lamps",
+    a: "oklch(0.26 0.006 60)",
+    b: "oklch(0.20 0.006 60)",
+    c: "oklch(0.13 0.006 60)",
+    accent: "oklch(0.82 0.17 75)",
+    screws: true,
+  },
+  {
+    id: "live",
+    name: "Live Flat",
+    desc: "Modern flat software mixer, no hardware trim",
+    a: "oklch(0.28 0.004 260)",
+    b: "oklch(0.25 0.004 260)",
+    c: "oklch(0.23 0.004 260)",
+    accent: "oklch(0.80 0.16 195)",
+    screws: false,
+  },
+  {
+    id: "vintage",
+    name: "Vintage Tape",
+    desc: "Warm cream and walnut studio desk",
+    a: "oklch(0.42 0.045 75)",
+    b: "oklch(0.34 0.045 70)",
+    c: "oklch(0.24 0.04 60)",
+    accent: "oklch(0.84 0.14 85)",
+    screws: true,
+  },
+  {
+    id: "neon",
+    name: "Detroit Neon",
+    desc: "Blacked glass with cyan edge light",
+    a: "oklch(0.22 0.02 200)",
+    b: "oklch(0.17 0.02 200)",
+    c: "oklch(0.12 0.02 200)",
+    accent: "oklch(0.82 0.17 185)",
+    screws: false,
+  },
+];
+
+/** Panel background, driven by the picked desk (vars set on the console root). */
 const PANEL =
-  "linear-gradient(180deg, color-mix(in oklab, var(--surface-2, #222) 100%, white 5%), var(--surface-2, #222) 45%, color-mix(in oklab, var(--surface-2, #222) 88%, black))";
+  "linear-gradient(180deg, var(--mx-a, oklch(0.36 0.008 260)), var(--mx-b, oklch(0.30 0.008 260)) 45%, var(--mx-c, oklch(0.22 0.008 260)))";
 
 /** Console screw head. */
 function Screw({ className }: { className?: string }) {
@@ -336,13 +414,14 @@ function Screw({ className }: { className?: string }) {
     <span
       aria-hidden
       className={cn(
-        "pointer-events-none inline-block size-[7px] shrink-0 rounded-full border border-black/70",
+        "mx-screw pointer-events-none inline-block size-[7px] shrink-0 rounded-full border border-black/70",
         "bg-[radial-gradient(circle_at_35%_30%,rgba(255,255,255,0.55),rgba(0,0,0,0.65))]",
         className
       )}
     />
   );
 }
+
 
 /** Analog VU meter gauge (0..1 level). */
 function VuMeter({ level, label }: { level: number; label: string }) {
