@@ -57,6 +57,7 @@ import { AddTrackMenu } from "@/components/studio/AddTrackMenu";
 import { INSTRUMENTS, KIND_LABEL, uid } from "@/lib/synclab/presets";
 import type { EditTool } from "@/lib/synclab/store";
 import type { MidiNote, Track } from "@/lib/synclab/types";
+import { WaveformView } from "@/components/studio/WaveformView";
 
 const KindIcon = ({ kind }: { kind: Track["kind"] }) =>
   kind === "drum" ? (
@@ -79,18 +80,6 @@ function Waveform({ track }: { track: Track }) {
 
   const peaks = active.peaks.length > 0 ? active.peaks : [0];
 
-  const upperPath = peaks
-    .map((p, i) => {
-      const x = (i / Math.max(1, peaks.length - 1)) * 100;
-      return `${x.toFixed(2)},${(50 - Math.max(2, p * 43)).toFixed(2)}`;
-    })
-    .join(" ");
-  const lowerPath = peaks
-    .map((p, i) => {
-      const x = (i / Math.max(1, peaks.length - 1)) * 100;
-      return `${x.toFixed(2)},${(50 + Math.max(2, p * 43)).toFixed(2)}`;
-    })
-    .join(" ");
 
   return (
     <div
@@ -122,11 +111,10 @@ function Waveform({ track }: { track: Track }) {
         </div>
       </div>
 
-      <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="min-h-0 w-full flex-1 px-1 pb-1" aria-label={`${active.name} waveform`}>
-        <line x1="0" y1="50" x2="100" y2="50" stroke="var(--clip-audio)" strokeOpacity="0.16" strokeWidth="0.25" />
-        <polyline points={upperPath} fill="none" stroke="var(--clip-audio)" strokeOpacity="0.78" strokeWidth="0.55" vectorEffect="non-scaling-stroke" />
-        <polyline points={lowerPath} fill="none" stroke="var(--clip-audio)" strokeOpacity="0.38" strokeWidth="0.45" vectorEffect="non-scaling-stroke" />
-      </svg>
+      <div className="min-h-0 w-full flex-1 px-1 pb-1">
+        <WaveformView peaks={peaks} color="var(--clip-audio)" label={`${active.name} waveform`} />
+      </div>
+
     </div>
   );
 }

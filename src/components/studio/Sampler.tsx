@@ -6,6 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { useStudio } from "@/lib/synclab/store";
 import type { Track } from "@/lib/synclab/types";
 import { toast } from "sonner";
+import { WaveformView } from "@/components/studio/WaveformView";
 
 const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 const noteName = (m: number) => `${NOTE_NAMES[((m % 12) + 12) % 12]}${Math.floor(m / 12) - 1}`;
@@ -57,20 +58,8 @@ function Waveform({ track, onSlice }: { track: Track; onSlice: (i: number) => vo
       onPointerUp={() => setDrag(null)}
       onPointerLeave={() => setDrag(null)}
     >
-      <div className="absolute inset-0 flex items-center gap-px px-px">
-        {s.peaks.map((p, i) => (
-          <span
-            key={i}
-            className="flex-1 rounded-sm"
-            style={{
-              height: `${Math.max(2, p * 100)}%`,
-              background:
-                i / s.peaks.length >= s.start && i / s.peaks.length <= s.end
-                  ? "var(--color-primary)"
-                  : "color-mix(in oklab, var(--color-muted-foreground) 45%, transparent)",
-            }}
-          />
-        ))}
+      <div className="absolute inset-0">
+        <WaveformView peaks={s.peaks} color="var(--color-primary)" label={`${s.name} waveform`} />
       </div>
 
       <div className="absolute inset-y-0 left-0 bg-background/70" style={{ width: `${s.start * 100}%` }} />
