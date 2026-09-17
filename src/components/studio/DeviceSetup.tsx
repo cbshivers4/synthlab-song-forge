@@ -14,6 +14,7 @@ export function DeviceSetup() {
   const [asked, setAsked] = useState(false);
   const [inputs, setInputs] = useState<string[]>([]);
   const [outputs, setOutputs] = useState<string[]>([]);
+  const [micError, setMicError] = useState<string | null>(null);
 
   const listDevices = useCallback(async () => {
     if (!navigator.mediaDevices?.enumerateDevices) return { ins: [] as string[], outs: [] as string[] };
@@ -76,16 +77,12 @@ export function DeviceSetup() {
 
   const connect = async () => {
     setBusy(true);
+    setMicError(null);
     try {
-      if (navigator.mediaDevices?.getUserMedia) {
-        try {
-          const s = await navigator.mediaDevices.getUserMedia({ audio: true });
-          s.getTracks().forEach((t) => t.stop());
-        } catch {
-          /* permission denied — handled by empty list below */
-        }
-        await listDevices();
-      }
+      const res = await openMic();
+      if ("error" in res) setMicError(res.error);
+      else res.stream.getTracks().forEach((t) => t.stop());
+      await listDevices();
       enableMidi();
     } finally {
       setAsked(true);
