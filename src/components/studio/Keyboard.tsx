@@ -67,7 +67,7 @@ export function Keyboard() {
     }
   }
 
-  const scale = SCALES[scaleName] ?? SCALES.Minor ?? [];
+  const scale = SCALES[scaleName] ?? SCALES["Minor"] ?? [];
   const inScale = (midi: number) => scale.includes((((midi - root) % 12) + 12) % 12);
   const fitToScale = (midi: number) => {
     if (!scaleLock || inScale(midi)) return midi;
