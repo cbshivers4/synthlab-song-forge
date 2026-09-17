@@ -50,7 +50,7 @@ export function Scope({
       }
 
       const engine = getEngine();
-      const accent = "hsl(187 85% 55%)";
+      const accent = colorRef.current ?? "hsl(187 85% 55%)";
       if (modeRef.current === "wave") {
         const data = engine.getScopeWave(scopeId);
         ctx.strokeStyle = accent;
