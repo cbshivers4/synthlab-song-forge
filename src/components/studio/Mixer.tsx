@@ -750,6 +750,24 @@ function Strip({
         <ColorDot t={t} />
         <ChannelMenu t={t} />
         <button
+          onClick={(e) => { e.stopPropagation(); moveTrack(t.id, -1); }}
+          disabled={index === 0}
+          title="Move channel left"
+          aria-label="Move channel left"
+          className="h-3.5 w-3 rounded-[2px] text-muted-foreground hover:text-primary disabled:opacity-30"
+        >
+          <ChevronLeft className="size-3" />
+        </button>
+        <button
+          onClick={(e) => { e.stopPropagation(); moveTrack(t.id, 1); }}
+          disabled={index >= tracks.length - 1}
+          title="Move channel right"
+          aria-label="Move channel right"
+          className="h-3.5 w-3 rounded-[2px] text-muted-foreground hover:text-primary disabled:opacity-30"
+        >
+          <ChevronRight className="size-3" />
+        </button>
+        <button
           onClick={(e) => { e.stopPropagation(); setClip(false); }}
           title="Clip indicator — click to reset"
           className={cn(
