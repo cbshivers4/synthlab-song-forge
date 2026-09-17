@@ -284,7 +284,14 @@ function useShortcuts() {
       const meta = e.metaKey || e.ctrlKey;
       if (meta) {
         const k = e.key.toLowerCase();
-        if (k === "d" && selected) {
+        if (k === "z") {
+          e.preventDefault();
+          if (e.shiftKey) redo();
+          else undo();
+        } else if (k === "y") {
+          e.preventDefault();
+          redo();
+        } else if (k === "d" && selected) {
           e.preventDefault();
           duplicateTrack(selected.id);
         } else if (k === "c" && selected) {
