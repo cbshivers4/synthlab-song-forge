@@ -14,6 +14,7 @@ import {
   ChevronUp,
   Copy,
   Disc3,
+  Eraser,
   Eye,
   Flag,
   EyeOff,
@@ -28,6 +29,7 @@ import {
   Trash2,
   Volume2,
   VolumeX,
+  X,
 } from "lucide-react";
 import synclabLogoAsset from "@/assets/synclab-logo-neon.jpg.asset.json";
 const synclabLogo = synclabLogoAsset.url;
@@ -59,7 +61,14 @@ import { AddTrackMenu } from "@/components/studio/AddTrackMenu";
 
 import { INSTRUMENTS, KIND_LABEL, uid } from "@/lib/synclab/presets";
 import type { EditTool } from "@/lib/synclab/store";
-import type { MidiNote, Track } from "@/lib/synclab/types";
+import type { AutomationLane, AutomationParam, MidiNote, Track } from "@/lib/synclab/types";
+
+const LANE_LABEL: Record<AutomationParam, string> = {
+  volume: "VOLUME",
+  pan: "PAN",
+  sendReverb: "REVERB SEND",
+  sendDelay: "DELAY SEND",
+};
 import { WaveformView } from "@/components/studio/WaveformView";
 
 const KindIcon = ({ kind }: { kind: Track["kind"] }) =>
@@ -75,50 +84,151 @@ const KindIcon = ({ kind }: { kind: Track["kind"] }) =>
 
 const INPUTS = ["Microphone", "Guitar / Line 1", "Keyboard / Line 2", "External Instrument", "MIDI Keyboard", "Internal", "Stereo File"];
 
+/** Audio lane: every clip sits at its own bar position and can be moved, trimmed and dragged between tracks. */
 function Waveform({ track }: { track: Track }) {
-  const { setActiveClip, removeClip } = useStudio();
+  const { setActiveClip, removeClip, updateTrack, transport, tracks } = useStudio();
   const clips = track.clips ?? [];
-  const active = clips.find((c) => c.id === track.activeClipId) ?? clips[clips.length - 1];
-  if (!active) return null;
+  const total = Math.max(1, transport.bars ?? 4) * 4;
+  const stepDur = 60 / Math.max(20, transport.bpm) / 4;
 
-  const peaks = active.peaks.length > 0 ? active.peaks : [0];
+  const writeClip = (clipId: string, patch: Partial<(typeof clips)[number]>) =>
+    updateTrack(track.id, { clips: clips.map((c) => (c.id === clipId ? { ...c, ...patch } : c)) });
 
+  const beginDrag = (
+    e: React.PointerEvent,
+    clip: (typeof clips)[number],
+    mode: "move" | "trim-left" | "trim-right",
+  ) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const lane = (e.currentTarget as HTMLElement).closest("[data-lane]") as HTMLElement | null;
+    if (!lane) return;
+    const rect = lane.getBoundingClientRect();
+    const perStep = rect.width / total;
+    const x0 = e.clientX;
+    const orig = {
+      start: clip.start ?? 0,
+      offset: clip.offset ?? 0,
+      length: clip.length ?? clip.duration,
+    };
+    const el = e.currentTarget as HTMLElement;
+    el.setPointerCapture(e.pointerId);
+
+    const onMove = (ev: PointerEvent) => {
+      const dSteps = Math.round((ev.clientX - x0) / Math.max(1, perStep));
+      if (mode === "move") {
+        writeClip(clip.id, { start: Math.max(0, Math.min(total - 1, orig.start + dSteps)) });
+      } else if (mode === "trim-right") {
+        const len = Math.max(0.05, Math.min(clip.duration - orig.offset, orig.length + dSteps * stepDur));
+        writeClip(clip.id, { length: len });
+      } else {
+        const delta = Math.max(-orig.offset, Math.min(orig.length - 0.05, dSteps * stepDur));
+        writeClip(clip.id, {
+          offset: orig.offset + delta,
+          length: orig.length - delta,
+          start: Math.max(0, orig.start + Math.round(delta / stepDur)),
+        });
+      }
+    };
+
+    const onUp = (ev: PointerEvent) => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      if (mode !== "move") return;
+      const under = document.elementFromPoint(ev.clientX, ev.clientY) as HTMLElement | null;
+      const targetLane = under?.closest("[data-lane-track]") as HTMLElement | null;
+      const targetId = targetLane?.dataset["laneTrack"];
+      if (!targetId || targetId === track.id) return;
+      const dest = tracks.find((t) => t.id === targetId);
+      if (!dest || dest.kind === "drum" || dest.kind === "instrument" || dest.kind === "midi") {
+        toast("Clips move between audio channels", { description: "Drop it on an audio or vocal channel." });
+        return;
+      }
+      const moved = clips.find((c) => c.id === clip.id);
+      if (!moved) return;
+      updateTrack(track.id, { clips: clips.filter((c) => c.id !== clip.id) });
+      updateTrack(dest.id, { clips: [...(dest.clips ?? []), moved], activeClipId: moved.id });
+      toast.success(`${moved.name} moved to ${dest.name}`);
+    };
+
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  };
+
+  if (clips.length === 0) return null;
 
   return (
-    <div
-      className="group absolute inset-y-2 left-1 right-1 flex flex-col overflow-hidden rounded-[3px] border border-clip-audio/30 bg-clip-audio/10 shadow-sm transition-colors hover:bg-clip-audio/15"
-    >
-      <div className="flex h-[17px] shrink-0 items-center gap-1 bg-clip-audio/10 px-1.5">
-        <span className="truncate font-mono text-[9px] font-semibold text-clip-audio/80">
-          {active.name}
-        </span>
-        <span className="ml-auto shrink-0 font-mono text-[8px] text-clip-audio/55">{active.duration.toFixed(1)}s</span>
-        <div className="flex shrink-0 items-center gap-1">
-          {clips.map((c) => (
-            <button
-              key={c.id}
-              onClick={(e) => {
-                e.stopPropagation();
-                setActiveClip(track.id, c.id);
-              }}
-              onDoubleClick={() => removeClip(track.id, c.id)}
-              title="Click to choose take, double-click to delete"
-              aria-label={`Select take ${c.name}`}
-              className="size-[6px] rounded-full border"
-              style={{
-                borderColor: "var(--clip-audio)",
-                background: c.id === active.id ? "var(--clip-audio)" : "transparent",
-              }}
+    <>
+      {clips.map((clip) => {
+        const start = clip.start ?? 0;
+        const length = clip.length ?? clip.duration;
+        const steps = Math.max(1, length / stepDur);
+        const left = (start / total) * 100;
+        const width = Math.min(100 - left, (steps / total) * 100);
+        const active = clip.id === track.activeClipId;
+        const peaks = clip.peaks.length > 0 ? clip.peaks : [0];
+        return (
+          <div
+            key={clip.id}
+            className={`group absolute inset-y-2 flex flex-col overflow-hidden rounded-[3px] border bg-clip-audio/10 shadow-sm transition-colors hover:bg-clip-audio/15 ${
+              active ? "border-clip-audio ring-1 ring-clip-audio/50" : "border-clip-audio/30"
+            }`}
+            style={{ left: `${left}%`, width: `${Math.max(2, width)}%` }}
+            onPointerDown={(e) => {
+              setActiveClip(track.id, clip.id);
+              beginDrag(e, clip, "move");
+            }}
+            title={`${clip.name} — drag to move, pull the edges to trim`}
+          >
+            <div className="flex h-[17px] shrink-0 cursor-grab items-center gap-1 bg-clip-audio/10 px-1.5 active:cursor-grabbing">
+              <span className="truncate font-mono text-[9px] font-semibold text-clip-audio/80">{clip.name}</span>
+              <span className="ml-auto shrink-0 font-mono text-[8px] text-clip-audio/55">{length.toFixed(1)}s</span>
+              <button
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  updateTrack(track.id, {
+                    clips: [...clips, { ...clip, id: uid(), name: `${clip.name} COPY`, start: start + Math.round(steps) }],
+                  });
+                }}
+                title="Duplicate clip"
+                aria-label={`Duplicate ${clip.name}`}
+                className="hidden shrink-0 text-clip-audio/70 hover:text-foreground group-hover:block"
+              >
+                <Copy className="size-3" />
+              </button>
+              <button
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeClip(track.id, clip.id);
+                }}
+                title="Delete clip"
+                aria-label={`Delete ${clip.name}`}
+                className="hidden shrink-0 text-clip-audio/70 hover:text-destructive group-hover:block"
+              >
+                <Trash2 className="size-3" />
+              </button>
+            </div>
+
+            <div className="min-h-0 w-full flex-1 px-1 pb-1">
+              <WaveformView peaks={peaks} color="var(--clip-audio)" label={`${clip.name} waveform`} />
+            </div>
+
+            <div
+              onPointerDown={(e) => beginDrag(e, clip, "trim-left")}
+              title="Trim the start"
+              className="absolute inset-y-0 left-0 w-1.5 cursor-ew-resize bg-clip-audio/0 hover:bg-clip-audio/60"
             />
-          ))}
-        </div>
-      </div>
-
-      <div className="min-h-0 w-full flex-1 px-1 pb-1">
-        <WaveformView peaks={peaks} color="var(--clip-audio)" label={`${active.name} waveform`} />
-      </div>
-
-    </div>
+            <div
+              onPointerDown={(e) => beginDrag(e, clip, "trim-right")}
+              title="Trim the end"
+              className="absolute inset-y-0 right-0 w-1.5 cursor-ew-resize bg-clip-audio/0 hover:bg-clip-audio/60"
+            />
+          </div>
+        );
+      })}
+    </>
   );
 }
 
@@ -303,7 +413,7 @@ export const readDrag = (e: React.DragEvent): DragPayload | null => {
 };
 
 function TrackRow({ track, index }: { track: Track; index: number }) {
-  const { selectedId, selectedIds, select, toggleSelectId, updateTrack, removeTrack, duplicateTrack, moveTrack, setPanel, changeInstrument, installedPlugins, addPlugin, editTool, splitClipAt, toggleStep } =
+  const { selectedId, selectedIds, select, toggleSelectId, updateTrack, removeTrack, duplicateTrack, moveTrack, setPanel, changeInstrument, installedPlugins, addPlugin, editTool, splitClipAt, toggleStep, toggleAutomationLane } =
     useStudio();
   const { transport, setNotes, loadSample } = useStudio();
   const [renaming, setRenaming] = useState(false);
@@ -441,9 +551,27 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
     setPanel(track.kind === "drum" ? "drums" : track.kind === "audio" ? "mixer" : "synth");
   };
 
+  /** Drag the strip under a lane to make that track taller or shorter. */
+  const resizeHeight = (e: React.PointerEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const y0 = e.clientY;
+    const h0 = track.height ?? 104;
+    const onMove = (ev: PointerEvent) =>
+      updateTrack(track.id, { height: Math.max(64, Math.min(420, h0 + (ev.clientY - y0))) });
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  };
+
   return (
+    <div className="border-b border-border/80">
     <div
-      className={`flex items-stretch border-b border-border/80 transition-colors ${isSelected ? "bg-surface-2/40" : "hover:bg-surface/50"} ${track.hidden ? "opacity-40" : ""} ${dropping ? "ring-1 ring-primary ring-inset" : ""}`}
+      className={`relative flex items-stretch transition-colors ${isSelected ? "bg-surface-2/40" : "hover:bg-surface/50"} ${track.hidden ? "opacity-40" : ""} ${dropping ? "ring-1 ring-primary ring-inset" : ""}`}
+      style={{ height: track.height ?? undefined }}
       onClick={(e) => {
         if (e.metaKey || e.ctrlKey) toggleSelectId(track.id);
         else select(track.id);
@@ -498,6 +626,13 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
               <DropdownMenuItem onClick={openEditor}>
                 <Settings2 className="size-4" /> Track settings
               </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel className="label-xs">Automation</DropdownMenuLabel>
+              {(["volume", "pan", "sendReverb", "sendDelay"] as AutomationParam[]).map((param) => (
+                <DropdownMenuItem key={param} onClick={() => toggleAutomationLane(track.id, param)}>
+                  {(track.automation ?? []).some((l) => l.param === param) ? "Hide" : "Show"} {LANE_LABEL[param].toLowerCase()} lane
+                </DropdownMenuItem>
+              ))}
               <DropdownMenuSeparator />
               <DropdownMenuLabel className="label-xs">Edit</DropdownMenuLabel>
               {activeClip && (
@@ -646,6 +781,8 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
       </div>
 
       <div
+        data-lane
+        data-lane-track={track.id}
         className={`lane-grid relative min-h-[92px] flex-1 bg-background/70 ${
           editTool === "draw" ? "cursor-crosshair" : editTool === "split" ? "cursor-col-resize" : ""
         }`}
@@ -696,6 +833,12 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
       </div>
 
 
+      <div
+        onPointerDown={resizeHeight}
+        title="Drag to change this track's height"
+        className="absolute inset-x-0 bottom-0 z-10 h-1.5 cursor-ns-resize hover:bg-primary/40"
+      />
+
       <AlertDialog open={confirm} onOpenChange={setConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -710,6 +853,124 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      </div>
+
+      {(track.automation ?? []).map((lane) => (
+        <AutomationRow key={lane.param} track={track} lane={lane} />
+      ))}
+    </div>
+  );
+}
+
+/** One automation lane under a track: click to add a point, drag points, double-click to remove. */
+function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) {
+  const { transport, setAutomationPoints, setAutomationMode, toggleAutomationLane } = useStudio();
+  const total = Math.max(1, transport.bars ?? 4) * 4;
+  const bipolar = lane.param === "pan";
+  const toValue = (yFrac: number) => {
+    const v = 1 - Math.min(1, Math.max(0, yFrac));
+    return bipolar ? v * 2 - 1 : v;
+  };
+  const toY = (v: number) => (bipolar ? 1 - (v + 1) / 2 : 1 - v);
+
+  const addPoint = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const step = Math.round(((e.clientX - rect.left) / rect.width) * total);
+    const value = toValue((e.clientY - rect.top) / rect.height);
+    setAutomationPoints(track.id, lane.param, [
+      ...lane.points.filter((p) => p.step !== step),
+      { step: Math.max(0, Math.min(total, step)), value },
+    ]);
+  };
+
+  const dragPoint = (e: React.PointerEvent, index: number) => {
+    e.stopPropagation();
+    const row = (e.currentTarget as HTMLElement).closest("[data-auto-row]") as HTMLElement | null;
+    if (!row) return;
+    const rect = row.getBoundingClientRect();
+    const onMove = (ev: PointerEvent) => {
+      const step = Math.max(0, Math.min(total, Math.round(((ev.clientX - rect.left) / rect.width) * total)));
+      const value = toValue((ev.clientY - rect.top) / rect.height);
+      setAutomationPoints(
+        track.id,
+        lane.param,
+        lane.points.map((p, i) => (i === index ? { step, value } : p)),
+      );
+    };
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  };
+
+  const label = LANE_LABEL[lane.param];
+  const pts = lane.points;
+
+  return (
+    <div className="flex items-stretch border-t border-border/50 bg-background/40">
+      <div className="w-1 shrink-0" style={{ background: track.color, opacity: 0.4 }} />
+      <div className="flex w-[240px] shrink-0 items-center gap-1 border-r border-border bg-surface/60 px-2 py-1">
+        <span className="font-mono text-[9px] tracking-[0.15em] text-muted-foreground">AUTO · {label}</span>
+        <button
+          onClick={() => setAutomationMode(track.id, lane.param, lane.mode === "read" ? "off" : "read")}
+          title={lane.mode === "read" ? "Playing this curve — click to bypass" : "Bypassed — click to play it"}
+          className={`ml-auto rounded-[3px] px-1.5 py-0.5 font-mono text-[8px] tracking-widest ${
+            lane.mode === "read" ? "bg-primary/20 text-primary" : "bg-surface-2 text-muted-foreground"
+          }`}
+        >
+          {lane.mode === "read" ? "READ" : "OFF"}
+        </button>
+        <button
+          onClick={() => setAutomationPoints(track.id, lane.param, [])}
+          title="Clear this curve"
+          aria-label={`Clear ${label} automation`}
+          className="text-muted-foreground hover:text-foreground"
+        >
+          <Eraser className="size-3" />
+        </button>
+        <button
+          onClick={() => toggleAutomationLane(track.id, lane.param)}
+          title="Hide this lane"
+          aria-label={`Hide ${label} automation`}
+          className="text-muted-foreground hover:text-destructive"
+        >
+          <X className="size-3" />
+        </button>
+      </div>
+      <div
+        data-auto-row
+        onClick={addPoint}
+        title="Click to add a point, drag a point to shape it, double-click a point to delete"
+        className="lane-grid relative h-[54px] flex-1 cursor-crosshair bg-background/70"
+      >
+        <svg className="pointer-events-none absolute inset-0 size-full" preserveAspectRatio="none" viewBox="0 0 100 100">
+          {pts.length > 1 && (
+            <polyline
+              points={pts.map((p) => `${(p.step / total) * 100},${toY(p.value) * 100}`).join(" ")}
+              fill="none"
+              stroke="var(--primary)"
+              strokeWidth={1}
+              vectorEffect="non-scaling-stroke"
+            />
+          )}
+        </svg>
+        {pts.map((p, i) => (
+          <button
+            key={`${p.step}-${i}`}
+            onPointerDown={(e) => dragPoint(e, i)}
+            onClick={(e) => e.stopPropagation()}
+            onDoubleClick={(e) => {
+              e.stopPropagation();
+              setAutomationPoints(track.id, lane.param, pts.filter((_, j) => j !== i));
+            }}
+            aria-label={`${label} point at step ${p.step}`}
+            className="absolute size-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary ring-2 ring-background"
+            style={{ left: `${(p.step / total) * 100}%`, top: `${toY(p.value) * 100}%` }}
+          />
+        ))}
+      </div>
     </div>
   );
 }

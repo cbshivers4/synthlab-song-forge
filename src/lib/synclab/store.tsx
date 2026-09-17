@@ -17,6 +17,8 @@ import { getPadBank, setPadBank } from "./pad-session";
 import type { CloudSession } from "./cloud";
 import type {
   AudioClip,
+  AutomationParam,
+  AutomationPoint,
   BusId,
   BusState,
   DrumPad,
@@ -40,6 +42,7 @@ export interface MidiTarget {
 
 export const midiTargetKey = (t: MidiTarget) => `${t.id}:${t.param}`;
 const MIDI_MAP_KEY = "synclab.midimap";
+const AUTOSAVE_KEY = "synclab.autosave.v1";
 
 const busFor = (kind: TrackKind): BusId =>
   kind === "drum"
@@ -130,9 +133,32 @@ interface StudioState {
   buses: Record<BusId, BusState>;
 }
 
+/** Linear value of an automation curve at a step, held flat outside the drawn range. */
+function valueAt(points: { step: number; value: number }[], step: number): number {
+  const first = points[0]!;
+  if (step <= first.step) return first.value;
+  const last = points[points.length - 1]!;
+  if (step >= last.step) return last.value;
+  for (let i = 1; i < points.length; i++) {
+    const a = points[i - 1]!;
+    const b = points[i]!;
+    if (step <= b.step) {
+      const span = b.step - a.step || 1;
+      return a.value + ((step - a.step) / span) * (b.value - a.value);
+    }
+  }
+  return last.value;
+}
+
 interface StudioApi extends StudioState {
   snapshot: () => CloudSession;
   restore: (session: CloudSession) => void;
+  undo: () => void;
+  redo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
+  /** timestamp of the last automatic local save, null before the first one */
+  savedAt: number | null;
   selected: Track | null;
   setBus: (id: BusId, patch: Partial<BusState>) => void;
   setPanel: (p: PanelId) => void;
@@ -164,6 +190,9 @@ interface StudioApi extends StudioState {
   pause: () => void;
   changeInstrument: (trackId: string, preset: string) => void;
   setActiveClip: (trackId: string, clipId: string) => void;
+  toggleAutomationLane: (trackId: string, param: AutomationParam) => void;
+  setAutomationPoints: (trackId: string, param: AutomationParam, points: AutomationPoint[]) => void;
+  setAutomationMode: (trackId: string, param: AutomationParam, mode: "read" | "off") => void;
   removeClip: (trackId: string, clipId: string) => void;
   addClip: (trackId: string, clip: AudioClip) => void;
   savePreset: (name: string) => void;
@@ -238,6 +267,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const transportRef = useRef(transport);
   transportRef.current = transport;
   const countInTimerRef = useRef<number | null>(null);
+  /** timeline step where the current take started, so the clip lands there */
+  const recStartStepRef = useRef(0);
 
   const [buses, setBuses] = useState<Record<BusId, BusState>>({
     drums: { volume: 1, muted: false },
@@ -272,6 +303,14 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const selectedIdRef = useRef(selectedId);
   selectedIdRef.current = selectedId;
   const heldRef = useRef(new Map<number, { id: string; trackId: string; t0: number }>());
+
+  // ---- Undo / redo history + local autosave -------------------------------
+  const pastRef = useRef<CloudSession[]>([]);
+  const futureRef = useRef<CloudSession[]>([]);
+  const lastSnapRef = useRef<CloudSession | null>(null);
+  const applyingRef = useRef(false);
+  const [historyTick, setHistoryTick] = useState(0);
+  const [savedAt, setSavedAt] = useState<number | null>(null);
 
   const enableMidi = useCallback(() => {
     if (!midiSupported()) {
@@ -431,6 +470,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     const engine = getEngine();
     engine.init();
     engine.syncMix(tracksRef.current);
+    // make sure every arrangement clip is decoded before the playhead reaches it
+    for (const t of tracksRef.current)
+      for (const c of t.clips ?? []) if (c.url) void engine.ensureBuffer(c.url);
     let step = 0;
     let cancelled = false;
 
@@ -440,10 +482,38 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       const stepDur = 60 / tp.bpm / 4;
       const list = tracksRef.current;
       const anySolo = list.some((t) => t.solo);
+      const totalSteps = Math.max(1, tp.bars ?? 4) * 4;
       for (const t of list) {
         if (t.muted || t.frozen || (anySolo && !t.solo)) continue;
         const len = t.steps;
         const s = step % len;
+        // automation curves ride the channel while the transport runs
+        if (t.automation?.length) {
+          const at = step % totalSteps;
+          const ride: Record<string, number> = {};
+          for (const lane of t.automation) {
+            if (lane.mode !== "read" || lane.points.length === 0) continue;
+            ride[lane.param] = valueAt(lane.points, at);
+          }
+          if (Object.keys(ride).length > 0) engine.automate(t.id, ride);
+        }
+        // arrangement clips fire at their own position on the timeline
+        if (t.clips?.length) {
+          const at = step % totalSteps;
+          for (const c of t.clips) {
+            if (!c.url) continue;
+            if ((c.start ?? 0) === at) {
+              engine.playClip(t.id, {
+                url: c.url,
+                offset: c.offset ?? 0,
+                length: c.length ?? c.duration,
+                gain: c.gain ?? 1,
+                fadeIn: c.fadeIn ?? 0.004,
+                fadeOut: c.fadeOut ?? 0.01,
+              });
+            }
+          }
+        }
         if (t.kind === "drum" && t.pads) {
           const padSolo = t.pads.some((p) => p.solo);
           for (const pad of t.pads) {
@@ -539,6 +609,10 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       peaks: result.peaks,
       duration: result.duration,
       url: result.url,
+      start: recStartStepRef.current,
+      offset: 0,
+      length: result.duration,
+      gain: 1,
     };
     setTracks((ts) =>
       ts.map((t) =>
@@ -587,8 +661,120 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     [updateTrack],
   );
 
+  const buildSnapshot = useCallback(
+    (): CloudSession => ({
+      version: 1,
+      tracks: structuredClone(tracksRef.current),
+      transport: { ...transportRef.current, playing: false, recording: false, paused: false, step: 0 },
+      buses: structuredClone(buses),
+      fxChains: structuredClone(fxChains),
+      installedPlugins: structuredClone(installedPlugins),
+      userPresets: structuredClone(userPresets),
+      padBank: getPadBank(),
+    }),
+    [buses, fxChains, installedPlugins, userPresets],
+  );
+
+  const applySession = useCallback((session: CloudSession) => {
+    getEngine().stopSamples();
+    for (const track of tracksRef.current) getEngine().removeChannel(track.id);
+    setTracks(structuredClone(session.tracks));
+    setTransportState({ ...session.transport, playing: false, recording: false, paused: false, step: 0 });
+    setBuses(structuredClone(session.buses));
+    setFxChains(structuredClone(session.fxChains));
+    setInstalledPlugins(structuredClone(session.installedPlugins));
+    setUserPresets(structuredClone(session.userPresets));
+    setPadBank(session.padBank ?? {});
+    setSelectedId(session.tracks[0]?.id ?? null);
+    setSelectedIds(session.tracks[0] ? [session.tracks[0].id] : []);
+    setPanel(null);
+  }, []);
+
+  // Record a history step and keep a local copy of the session, debounced so a
+  // drag or a knob sweep counts as one edit.
+  useEffect(() => {
+    if (applyingRef.current) {
+      applyingRef.current = false;
+      lastSnapRef.current = buildSnapshot();
+      return;
+    }
+    if (lastSnapRef.current === null) {
+      lastSnapRef.current = buildSnapshot();
+      return;
+    }
+    const id = window.setTimeout(() => {
+      const prev = lastSnapRef.current;
+      if (prev) {
+        pastRef.current = [...pastRef.current, prev].slice(-60);
+        futureRef.current = [];
+      }
+      const next = buildSnapshot();
+      lastSnapRef.current = next;
+      setHistoryTick((t) => t + 1);
+      try {
+        window.localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(next));
+        setSavedAt(Date.now());
+      } catch {
+        /* storage full or unavailable — cloud save still works */
+      }
+    }, 600);
+    return () => window.clearTimeout(id);
+  }, [tracks, buses, fxChains, installedPlugins, userPresets, buildSnapshot]);
+
+  // Bring the last session back after a refresh or a crash.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const raw = window.localStorage.getItem(AUTOSAVE_KEY);
+    if (!raw) return;
+    try {
+      const s = JSON.parse(raw) as CloudSession;
+      if (!s?.tracks?.length) return;
+      let lostAudio = false;
+      for (const t of s.tracks) {
+        if (t.clips) {
+          t.clips = t.clips.map((c) => {
+            if (c.url?.startsWith("blob:")) {
+              lostAudio = true;
+              return { ...c, url: undefined };
+            }
+            return c;
+          });
+        }
+        if (t.sampler?.url?.startsWith("blob:")) {
+          lostAudio = true;
+          t.sampler = { ...t.sampler, url: "" };
+        }
+      }
+      applyingRef.current = true;
+      applySession(s);
+      lastSnapRef.current = s;
+      toast("Session restored", {
+        description: lostAudio
+          ? "Your last session is back. Imported audio files need loading again."
+          : "Your last session is back where you left it.",
+      });
+    } catch {
+      /* unreadable autosave — start fresh */
+    }
+  }, [applySession]);
+
   const api: StudioApi = useMemo(() => {
     const selected = tracks.find((t) => t.id === selectedId) ?? null;
+    const stepBack = (from: "past" | "future") => {
+      const stack = from === "past" ? pastRef : futureRef;
+      const other = from === "past" ? futureRef : pastRef;
+      const entry = stack.current.pop();
+      if (!entry) {
+        toast(from === "past" ? "Nothing to undo" : "Nothing to redo");
+        return;
+      }
+      if (lastSnapRef.current) other.current = [...other.current, lastSnapRef.current].slice(-60);
+      applyingRef.current = true;
+      applySession(entry);
+      lastSnapRef.current = entry;
+      setHistoryTick((t) => t + 1);
+      toast(from === "past" ? "Undone" : "Redone");
+    };
     return {
       tracks,
       transport,
@@ -598,30 +784,17 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       panel,
       userPresets,
       buses,
-      snapshot: () => ({
-        version: 1,
-        tracks: structuredClone(tracksRef.current),
-        transport: { ...transportRef.current, playing: false, recording: false, paused: false, step: 0 },
-        buses: structuredClone(buses),
-        fxChains: structuredClone(fxChains),
-        installedPlugins: structuredClone(installedPlugins),
-        userPresets: structuredClone(userPresets),
-        padBank: getPadBank(),
-      }),
+      snapshot: buildSnapshot,
       restore: (session) => {
-        getEngine().stopSamples();
-        for (const track of tracksRef.current) getEngine().removeChannel(track.id);
-        setTracks(structuredClone(session.tracks));
-        setTransportState({ ...session.transport, playing: false, recording: false, paused: false, step: 0 });
-        setBuses(structuredClone(session.buses));
-        setFxChains(structuredClone(session.fxChains));
-        setInstalledPlugins(structuredClone(session.installedPlugins));
-        setUserPresets(structuredClone(session.userPresets));
-        setPadBank(session.padBank ?? {});
-        setSelectedId(session.tracks[0]?.id ?? null);
-        setSelectedIds(session.tracks[0] ? [session.tracks[0].id] : []);
-        setPanel(null);
+        applyingRef.current = true;
+        applySession(session);
+        lastSnapRef.current = session;
       },
+      undo: () => stepBack("past"),
+      redo: () => stepBack("future"),
+      canUndo: pastRef.current.length > 0,
+      canRedo: futureRef.current.length > 0,
+      savedAt,
       selected,
       setBus: (id, patch) => setBuses((b) => ({ ...b, [id]: { ...b[id], ...patch } })),
       setPanel,
@@ -853,6 +1026,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             }
             if (armedAudio) {
               const target = armedAudio;
+              recStartStepRef.current = transportRef.current.step ?? 0;
               void engine
                 .startInputRecording(target.id, transportRef.current.monitor ?? false)
                 .then(() => updateTrack(target.id, { recording: true }))
@@ -937,6 +1111,30 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           ),
         ),
       setActiveClip: (trackId, clipId) => updateTrack(trackId, { activeClipId: clipId }),
+      toggleAutomationLane: (trackId, param) => {
+        const t = tracksRef.current.find((x) => x.id === trackId);
+        const lanes = t?.automation ?? [];
+        const exists = lanes.some((l) => l.param === param);
+        updateTrack(trackId, {
+          automation: exists
+            ? lanes.filter((l) => l.param !== param)
+            : [...lanes, { param, mode: "read" as const, points: [] }],
+        });
+      },
+      setAutomationPoints: (trackId, param, points) => {
+        const t = tracksRef.current.find((x) => x.id === trackId);
+        const lanes = t?.automation ?? [];
+        updateTrack(trackId, {
+          automation: lanes.map((l) =>
+            l.param === param ? { ...l, points: [...points].sort((a, b) => a.step - b.step) } : l,
+          ),
+        });
+      },
+      setAutomationMode: (trackId, param, mode) => {
+        const t = tracksRef.current.find((x) => x.id === trackId);
+        const lanes = t?.automation ?? [];
+        updateTrack(trackId, { automation: lanes.map((l) => (l.param === param ? { ...l, mode } : l)) });
+      },
       removeClip: (trackId, clipId) =>
         setTracks((ts) =>
           ts.map((t) =>
@@ -1157,7 +1355,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           ),
         })),
     };
-  }, [tracks, transport, selectedId, selectedIds, editTool, panel, userPresets, buses, installedPlugins, fxChains, midiInputs, midiInputId, midiLearning, midiMap, midiLearn, clipboardName, enableMidi, updateTrack, finishRecording, splitClipAtImpl]);
+  }, [tracks, transport, selectedId, selectedIds, editTool, panel, userPresets, buses, installedPlugins, fxChains, midiInputs, midiInputId, midiLearning, midiMap, midiLearn, clipboardName, enableMidi, updateTrack, finishRecording, splitClipAtImpl, buildSnapshot, applySession, historyTick, savedAt]);
 
 
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>;

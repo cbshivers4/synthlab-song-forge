@@ -38,6 +38,10 @@ export function MenuBar() {
     splitAtPlayhead,
     snapshot,
     loadSample,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
   } = useStudio();
   const importRef = useRef<HTMLInputElement>(null);
 
@@ -131,10 +135,10 @@ export function MenuBar() {
         <MenubarMenu>
           <MenubarTrigger className="text-xs">Edit</MenubarTrigger>
           <MenubarContent>
-            <MenubarItem onClick={notYet("Undo history is coming", "Project-wide undo lands with project saving.")}>
+            <MenubarItem disabled={!canUndo} onClick={undo}>
               Undo <MenubarShortcut>⌘Z</MenubarShortcut>
             </MenubarItem>
-            <MenubarItem onClick={notYet("Redo history is coming", "Project-wide undo lands with project saving.")}>
+            <MenubarItem disabled={!canRedo} onClick={redo}>
               Redo <MenubarShortcut>⇧⌘Z</MenubarShortcut>
             </MenubarItem>
             <MenubarSeparator />

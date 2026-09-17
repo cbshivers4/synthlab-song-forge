@@ -12,3 +12,12 @@
 - [ ] Restyle the welcome/login screen after the user chooses a visual direction
 - [x] Color the main record button
 - [x] Add playable chords, scales, note highlighting, and scale lock to the keyboard
+
+## Stage 2 — arrangement (done)
+- [x] Clips are positioned objects: move, trim both edges, duplicate, delete, drag to another audio channel
+- [x] Recorded and imported clips actually play back at their bar position
+- [x] Drag-to-resize track heights and the bottom editor (height remembered)
+
+## Stage 3 — automation (done)
+- [x] Volume, pan, reverb and delay send lanes per track
+- [x] Draw, drag and delete points; READ/OFF per lane; curves ride the channel during playback

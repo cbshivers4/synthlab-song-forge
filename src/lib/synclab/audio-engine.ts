@@ -879,6 +879,17 @@ export class SyncLabEngine {
   }
 
 
+  /** Rides a channel from an automation curve without touching stored track values. */
+  automate(trackId: string, v: { volume?: number; pan?: number; sendReverb?: number; sendDelay?: number }) {
+    if (!this.ctx) return;
+    const ch = this.channel(trackId);
+    const t = this.ctx.currentTime;
+    if (v.volume !== undefined) ch.gain.gain.setTargetAtTime(clamp(v.volume, 0, 1.5), t, 0.02);
+    if (v.pan !== undefined) ch.pan.pan.setTargetAtTime(clamp(v.pan, -1, 1), t, 0.02);
+    if (v.sendReverb !== undefined) ch.sendReverb.gain.setTargetAtTime(clamp(v.sendReverb, 0, 1), t, 0.02);
+    if (v.sendDelay !== undefined) ch.sendDelay.gain.setTargetAtTime(clamp(v.sendDelay, 0, 1), t, 0.02);
+  }
+
   syncMix(tracks: Track[]) {
     if (!this.ctx) return;
     const anySolo = tracks.some((t) => t.solo);
@@ -1016,7 +1027,13 @@ export class SyncLabEngine {
     } catch {
       peaks = Array.from({ length: 160 }, () => Math.random() * 0.6);
     }
-    return { peaks, duration, url: URL.createObjectURL(blob) };
+    const url = URL.createObjectURL(blob);
+    try {
+      this.sampleBuffers.set(url, await ctx.decodeAudioData(arr.slice(0)));
+    } catch {
+      /* undecodable container — the clip still shows, it just can't play back */
+    }
+    return { peaks, duration, url };
   }
 
   async peaksFromFile(file: File | Blob) {
@@ -1158,6 +1175,65 @@ export class SyncLabEngine {
       this.liveSamples.set(trackId, (this.liveSamples.get(trackId) ?? []).filter((x) => x !== src));
       if (kk) this.keyedSamples.set(kk, (this.keyedSamples.get(kk) ?? []).filter((x) => x !== src));
     };
+  }
+
+  /** Decodes and caches an audio url so a timeline clip can play from it. */
+  async ensureBuffer(url: string): Promise<AudioBuffer | null> {
+    if (!url) return null;
+    const cached = this.sampleBuffers.get(url);
+    if (cached) return cached;
+    try {
+      const res = await fetch(url);
+      const buf = await this.init().decodeAudioData(await res.arrayBuffer());
+      this.sampleBuffers.set(url, buf);
+      return buf;
+    } catch {
+      return null;
+    }
+  }
+
+  /** Plays an arrangement clip through its track channel, with trim and fades. */
+  playClip(
+    trackId: string,
+    c: { url: string; offset?: number; length?: number; gain?: number; fadeIn?: number; fadeOut?: number },
+    when?: number,
+  ) {
+    const ctx = this.init();
+    const buf = this.sampleBuffers.get(c.url);
+    if (!buf) return false;
+    const t0 = when ?? ctx.currentTime;
+    const ch = this.channel(trackId);
+    const offset = clamp(c.offset ?? 0, 0, Math.max(0, buf.duration - 0.01));
+    const len = clamp(c.length ?? buf.duration - offset, 0.01, buf.duration - offset);
+    const peak = clamp(c.gain ?? 1, 0, 2);
+    const fin = clamp(c.fadeIn ?? 0.004, 0.001, Math.max(0.001, len / 2));
+    const fout = clamp(c.fadeOut ?? 0.01, 0.001, Math.max(0.001, len / 2));
+
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    const amp = ctx.createGain();
+    amp.gain.setValueAtTime(0, t0);
+    amp.gain.linearRampToValueAtTime(peak, t0 + fin);
+    amp.gain.setValueAtTime(peak, t0 + Math.max(fin, len - fout));
+    amp.gain.linearRampToValueAtTime(0.0001, t0 + len);
+    src.connect(amp);
+    amp.connect(ch.input);
+    src.start(t0, offset, len);
+    src.stop(t0 + len + 0.02);
+
+    const live = this.liveSamples.get(trackId) ?? [];
+    live.push(src);
+    this.liveSamples.set(trackId, live);
+    src.onended = () => {
+      try {
+        src.disconnect();
+        amp.disconnect();
+      } catch {
+        /* already gone */
+      }
+      this.liveSamples.set(trackId, (this.liveSamples.get(trackId) ?? []).filter((x) => x !== src));
+    };
+    return true;
   }
 
   /** Stops only the voices started with this voice key (pad choke groups). */

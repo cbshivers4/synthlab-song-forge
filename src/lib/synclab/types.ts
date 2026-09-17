@@ -202,6 +202,18 @@ export interface AudioClip {
   name: string;
   peaks: number[];
   duration: number;
+  /** timeline position in steps (1 step = 1/16 note) */
+  start?: number;
+  /** seconds into the file where playback begins */
+  offset?: number;
+  /** played length in seconds; defaults to the whole file */
+  length?: number;
+  /** clip gain 0..2 */
+  gain?: number;
+  /** fade times in seconds */
+  fadeIn?: number;
+  fadeOut?: number;
+  loopClip?: boolean;
   url?: string | undefined;
   cloudPath?: string | undefined;
   takeOf?: string | undefined;
@@ -281,6 +293,21 @@ export interface SamplerState {
   release: number;
 }
 
+export type AutomationParam = "volume" | "pan" | "sendReverb" | "sendDelay";
+
+export interface AutomationPoint {
+  step: number;
+  /** 0..1 for volume and sends, -1..1 for pan */
+  value: number;
+}
+
+export interface AutomationLane {
+  param: AutomationParam;
+  /** read plays the curve back, off keeps the drawing but ignores it */
+  mode: "read" | "off";
+  points: AutomationPoint[];
+}
+
 export interface Track {
   id: string;
   name: string;
@@ -293,6 +320,8 @@ export interface Track {
   armed: boolean;
   frozen: boolean;
   hidden: boolean;
+  /** lane height in px on the arrangement */
+  height?: number;
   monitor?: boolean;
   input: string;
   bus: BusId;
@@ -307,6 +336,7 @@ export interface Track {
   sampler?: SamplerState | undefined;
   activeClipId?: string | undefined;
   recording?: boolean;
+  automation?: AutomationLane[] | undefined;
 }
 
 export interface Transport {

@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { ArrowDownToLine, ArrowUpFromLine, AudioLines, AudioWaveform, Cpu, Disc3, FolderOpen, Grid2x2, KeyboardMusic, Music2, Palette, Piano, SlidersHorizontal, Settings2, Waves, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStudio, type PanelId } from "@/lib/synclab/store";
+import { getEngine } from "@/lib/synclab/audio-engine";
 import { TopBar } from "@/components/studio/TopBar";
 import { Timeline } from "@/components/studio/Timeline";
 import { Mixer } from "@/components/studio/Mixer";
@@ -88,6 +89,32 @@ export const Route = createFileRoute("/")({
 function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: FloatState) => FloatState) => void }) {
   const { selected, tracks, panel, setPanel, select } = useStudio();
   const [mixerDetached, setMixerDetached] = useState(false);
+  // Resizable editor height, remembered between sessions.
+  const [rackH, setRackH] = useState(() => {
+    if (typeof window === "undefined") return 380;
+    const v = Number(window.localStorage.getItem("synclab.rack.height"));
+    return Number.isFinite(v) && v >= 180 ? v : 380;
+  });
+  const startResize = (e: React.PointerEvent) => {
+    e.preventDefault();
+    const y0 = e.clientY;
+    const h0 = rackH;
+    const onMove = (ev: PointerEvent) =>
+      setRackH(Math.max(180, Math.min(window.innerHeight - 220, h0 - (ev.clientY - y0))));
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      try {
+        window.localStorage.setItem("synclab.rack.height", String(rackHRef.current));
+      } catch {
+        /* storage unavailable */
+      }
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  };
+  const rackHRef = useRef(rackH);
+  rackHRef.current = rackH;
   const drumTrack = selected?.kind === "drum" ? selected : tracks.find((t) => t.kind === "drum");
   const synthTrack = selected?.patch ? selected : tracks.find((t) => t.patch);
   if (!panel) return null;
@@ -110,8 +137,17 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
   };
   const current = config[panel];
 
+
   return (
-    <section className="rack flex max-h-[52vh] min-h-[220px] shrink-0 flex-col border-t-2 border-border">
+    <section
+      className="rack relative flex shrink-0 flex-col border-t-2 border-border"
+      style={{ height: rackH }}
+    >
+      <div
+        onPointerDown={startResize}
+        title="Drag to resize this editor"
+        className="absolute inset-x-0 -top-1 z-20 h-2 cursor-ns-resize hover:bg-primary/40"
+      />
       <div className="flex items-center gap-2 border-b border-border bg-surface-2/60 px-3 py-1.5">
         <span className="text-primary">{current.icon}</span>
         <h2 className="font-display text-[11px] font-semibold tracking-[0.2em]">{current.title}</h2>
@@ -228,16 +264,47 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
 }
 
 function StatusBar() {
-  const { tracks, transport, panel } = useStudio();
+  const { tracks, transport, panel, savedAt } = useStudio();
+  const [engine, setEngine] = useState<{ state: string; rate: number; latency: number }>({
+    state: "idle",
+    rate: 48000,
+    latency: 0,
+  });
+
+  useEffect(() => {
+    const read = () => {
+      const ctx = (getEngine() as unknown as { ctx?: AudioContext }).ctx;
+      setEngine({
+        state: ctx?.state ?? "idle",
+        rate: ctx?.sampleRate ?? 48000,
+        latency: Math.round(((ctx?.baseLatency ?? 0) + (ctx?.outputLatency ?? 0)) * 1000),
+      });
+    };
+    read();
+    const id = window.setInterval(read, 2000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  const live = engine.state === "running";
+  const saved = savedAt ? new Date(savedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : null;
+
   return (
-    <footer className="flex shrink-0 items-center gap-4 border-t border-border bg-surface-2/60 px-3 py-1 font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
+    <footer className="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-0.5 border-t border-border bg-surface-2/60 px-3 py-1 font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
       <span className={transport.recording ? "text-destructive" : transport.playing ? "text-primary" : ""}>
         {transport.recording ? "● REC" : transport.playing ? "▶ PLAY" : "■ STOP"}
       </span>
+      <span title="Audio engine status" className={live ? "text-primary" : ""}>
+        ENGINE {live ? "LIVE" : engine.state === "suspended" ? "ASLEEP" : "IDLE"}
+      </span>
+      <span title="Sample rate">{(engine.rate / 1000).toFixed(1)} kHz</span>
+      <span title="Round-trip latency reported by the browser">{engine.latency} ms</span>
       <span>{transport.bpm} BPM</span>
       <span>4/4</span>
       <span>{tracks.length} CH</span>
-      <span>BAR {Math.floor(transport.step / 4) + 1}.{(transport.step % 4) + 1}</span>
+      <span>
+        BAR {Math.floor(transport.step / 4) + 1}.{(transport.step % 4) + 1} / {transport.bars ?? 4}
+      </span>
+      <span className="hidden sm:inline">{saved ? `SAVED ${saved}` : "NOT SAVED YET"}</span>
       <span className="ml-auto hidden sm:inline">{panel ? `${panel} editor open` : "synclab studio"}</span>
     </footer>
   );
@@ -275,7 +342,7 @@ function FloatingDevices({ float, setFloat }: { float: FloatState; setFloat: (f:
 
 /** Global DAW keyboard shortcuts. */
 function useShortcuts() {
-  const { togglePlay, toggleRecord, stop, selected, duplicateTrack, removeTrack, setPanel, copyTrack, cutTrack, pasteTrack, selectAll, splitAtPlayhead, setEditTool } =
+  const { togglePlay, toggleRecord, stop, selected, duplicateTrack, removeTrack, setPanel, copyTrack, cutTrack, pasteTrack, selectAll, splitAtPlayhead, setEditTool, undo, redo } =
     useStudio();
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -284,7 +351,14 @@ function useShortcuts() {
       const meta = e.metaKey || e.ctrlKey;
       if (meta) {
         const k = e.key.toLowerCase();
-        if (k === "d" && selected) {
+        if (k === "z") {
+          e.preventDefault();
+          if (e.shiftKey) redo();
+          else undo();
+        } else if (k === "y") {
+          e.preventDefault();
+          redo();
+        } else if (k === "d" && selected) {
           e.preventDefault();
           duplicateTrack(selected.id);
         } else if (k === "c" && selected) {
@@ -350,7 +424,7 @@ function useShortcuts() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [togglePlay, toggleRecord, stop, selected, duplicateTrack, removeTrack, setPanel, copyTrack, cutTrack, pasteTrack, selectAll, splitAtPlayhead, setEditTool]);
+  }, [togglePlay, toggleRecord, stop, selected, duplicateTrack, removeTrack, setPanel, copyTrack, cutTrack, pasteTrack, selectAll, splitAtPlayhead, setEditTool, undo, redo]);
 }
 
 function StudioWorkspace() {
