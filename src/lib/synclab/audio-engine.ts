@@ -1,4 +1,5 @@
 import type { DrumKitId, DrumPad, PluginInstance, SynthPatch, Track } from "./types";
+import { openMicOrThrow } from "./mic";
 
 type KitVoice = {
   kick: [number, number, number, OscillatorType];

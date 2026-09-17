@@ -10,6 +10,7 @@ import {
 } from "react";
 import { toast } from "sonner";
 import { getEngine } from "./audio-engine";
+import { openInOwnTab } from "./mic";
 import { TRACK_COLORS, applyPreset, defaultPads, defaultPatch, uid } from "./presets";
 import { BUILT_IN_PLUGINS, instantiate } from "./plugins";
 import { getMidiAccess, listInputs, midiSupported, subscribe, type MidiPortInfo } from "./midi";

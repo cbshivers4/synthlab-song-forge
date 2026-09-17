@@ -11,6 +11,7 @@ import {
   Upload,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { openMic, openInOwnTab } from "@/lib/synclab/mic";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { useStudio } from "@/lib/synclab/store";
