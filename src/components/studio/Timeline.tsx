@@ -618,7 +618,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
           >
             ● REC
           </Button>
-          <span className="label-xs ml-auto">{KIND_LABEL[track.kind]}</span>
+          <span className="label-xs ml-auto whitespace-nowrap">{KIND_LABEL[track.kind]}</span>
         </div>
 
         <div className="flex items-center gap-2">
