@@ -245,6 +245,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const transportRef = useRef(transport);
   transportRef.current = transport;
   const countInTimerRef = useRef<number | null>(null);
+  /** timeline step where the current take started, so the clip lands there */
+  const recStartStepRef = useRef(0);
 
   const [buses, setBuses] = useState<Record<BusId, BusState>>({
     drums: { volume: 1, muted: false },
@@ -575,6 +577,10 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       peaks: result.peaks,
       duration: result.duration,
       url: result.url,
+      start: recStartStepRef.current,
+      offset: 0,
+      length: result.duration,
+      gain: 1,
     };
     setTracks((ts) =>
       ts.map((t) =>
@@ -988,6 +994,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             }
             if (armedAudio) {
               const target = armedAudio;
+              recStartStepRef.current = transportRef.current.step ?? 0;
               void engine
                 .startInputRecording(target.id, transportRef.current.monitor ?? false)
                 .then(() => updateTrack(target.id, { recording: true }))
