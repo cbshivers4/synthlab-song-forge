@@ -196,23 +196,23 @@ export function WelcomeScreen() {
                   <span className="w-full border-t border-border" />
                 </div>
                 <div className="relative flex justify-center text-[10px] font-bold uppercase tracking-widest">
-                  <span className="bg-card px-4 text-muted-foreground">or secure login</span>
+                  <span className="rounded-full border border-border bg-background px-4 py-1 text-muted-foreground">or secure login</span>
                 </div>
               </div>
 
               <div className="space-y-3">
                 <button
-                  className="flex w-full cursor-pointer items-center justify-center gap-3 rounded-xl bg-white py-4 font-bold text-black transition-all hover:bg-zinc-100"
+                  className="relative flex w-full cursor-pointer items-center justify-center rounded-xl bg-white py-4 font-bold text-black transition-all hover:bg-zinc-100"
                   onClick={() => void oauth("google")}
                 >
-                  {GOOGLE_ICON}
+                  <span className="absolute left-5 flex items-center">{GOOGLE_ICON}</span>
                   CONTINUE WITH GOOGLE
                 </button>
                 <button
-                  className="flex w-full cursor-pointer items-center justify-center gap-3 rounded-xl bg-zinc-800 py-4 font-bold text-white transition-all hover:bg-zinc-700"
+                  className="relative flex w-full cursor-pointer items-center justify-center rounded-xl bg-zinc-800 py-4 font-bold text-white transition-all hover:bg-zinc-700"
                   onClick={() => void oauth("apple")}
                 >
-                  {APPLE_ICON}
+                  <span className="absolute left-5 flex items-center">{APPLE_ICON}</span>
                   CONTINUE WITH APPLE
                 </button>
               </div>
