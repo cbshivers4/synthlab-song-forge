@@ -1,5 +1,6 @@
 import {
   AudioLines,
+  AudioWaveform,
   Bot,
   ChevronLeft,
   ChevronRight,
@@ -39,6 +40,7 @@ const TOOLS: Tool[] = [
   { id: "coproducer", label: "AI Co-Producer", icon: <Bot className="size-4" />, soon: "The Co-Producer needs its AI backend — it arrives in the AI stage." },
   { id: "hum", label: "Hum to Beat", icon: <Waves className="size-4" />, soon: "Hum-to-Beat needs rhythm analysis — it arrives in the AI stage." },
   { id: "synth", label: "Synthesizers", icon: <Music2 className="size-4" />, panel: "synth", drag: { kind: "instrument", name: "Synth" } },
+  { id: "bass", label: "Bass Generator", icon: <AudioWaveform className="size-4" />, panel: "bass" },
   { id: "drums", label: "Drum Machine", icon: <Disc3 className="size-4" />, panel: "drums", drag: { kind: "drum", name: "Drums" } },
   { id: "beat", label: "Pad Sampler", icon: <Grid2x2 className="size-4" />, panel: "pads", drag: { kind: "sampler", name: "Pad Sampler" } },
   { id: "chop", label: "Sample Chopper", icon: <Scissors className="size-4" />, panel: "pads" },

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { ArrowDownToLine, ArrowUpFromLine, AudioLines, Cpu, Disc3, FolderOpen, Grid2x2, KeyboardMusic, Music2, Palette, Piano, SlidersHorizontal, Settings2, Waves, X } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, AudioLines, AudioWaveform, Cpu, Disc3, FolderOpen, Grid2x2, KeyboardMusic, Music2, Palette, Piano, SlidersHorizontal, Settings2, Waves, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStudio, type PanelId } from "@/lib/synclab/store";
 import { TopBar } from "@/components/studio/TopBar";
@@ -26,6 +26,7 @@ import { WelcomeScreen } from "@/components/studio/WelcomeScreen";
 import { StartScreen } from "@/components/studio/StartScreen";
 import { DeviceSetup } from "@/components/studio/DeviceSetup";
 import { ExportDialog } from "@/components/studio/ExportDialog";
+import { BassGenerator } from "@/components/studio/BassGenerator";
 import { AppProvider, useApp, useMaybeApp } from "@/lib/synclab/app-state";
 import { toast } from "sonner";
 import synthFace from "@/assets/hw-synth.jpg";
@@ -102,6 +103,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
     appearance: { title: "APPEARANCE & THEMES", icon: <Palette className="size-4" /> },
     sampler: { title: "SAMPLER", icon: <AudioLines className="size-4" /> },
     pads: { title: "PAD SAMPLER", icon: <Grid2x2 className="size-4" /> },
+    bass: { title: "BASS GENERATOR", icon: <AudioWaveform className="size-4" /> },
   };
   const current = config[panel];
 
@@ -199,6 +201,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
       {panel === "appearance" && <Appearance />}
       {panel === "sampler" && <Sampler />}
       {panel === "pads" && <PadSampler />}
+      {panel === "bass" && <BassGenerator />}
 
       </div>
 
