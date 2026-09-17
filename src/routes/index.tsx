@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { ArrowDownToLine, ArrowUpFromLine, AudioLines, AudioWaveform, Cpu, Disc3, FolderOpen, Grid2x2, KeyboardMusic, Music2, Palette, Piano, SlidersHorizontal, Settings2, Waves, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -111,8 +111,43 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
   };
   const current = config[panel];
 
+  // Resizable editor height, remembered between sessions.
+  const [rackH, setRackH] = useState(() => {
+    if (typeof window === "undefined") return 380;
+    const v = Number(window.localStorage.getItem("synclab.rack.height"));
+    return Number.isFinite(v) && v >= 180 ? v : 380;
+  });
+  const startResize = (e: React.PointerEvent) => {
+    e.preventDefault();
+    const y0 = e.clientY;
+    const h0 = rackH;
+    const onMove = (ev: PointerEvent) =>
+      setRackH(Math.max(180, Math.min(window.innerHeight - 220, h0 - (ev.clientY - y0))));
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      try {
+        window.localStorage.setItem("synclab.rack.height", String(rackHRef.current));
+      } catch {
+        /* storage unavailable */
+      }
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  };
+  const rackHRef = useRef(rackH);
+  rackHRef.current = rackH;
+
   return (
-    <section className="rack flex max-h-[52vh] min-h-[220px] shrink-0 flex-col border-t-2 border-border">
+    <section
+      className="rack relative flex shrink-0 flex-col border-t-2 border-border"
+      style={{ height: rackH }}
+    >
+      <div
+        onPointerDown={startResize}
+        title="Drag to resize this editor"
+        className="absolute inset-x-0 -top-1 z-20 h-2 cursor-ns-resize hover:bg-primary/40"
+      />
       <div className="flex items-center gap-2 border-b border-border bg-surface-2/60 px-3 py-1.5">
         <span className="text-primary">{current.icon}</span>
         <h2 className="font-display text-[11px] font-semibold tracking-[0.2em]">{current.title}</h2>
