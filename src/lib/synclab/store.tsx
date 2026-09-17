@@ -179,6 +179,11 @@ interface StudioApi extends StudioState {
   midiInputs: MidiPortInfo[];
   midiInputId: string | null;
   midiLearning: boolean;
+  midiMap: Record<string, MidiTarget>;
+  midiLearn: MidiTarget | null;
+  startMidiLearn: (t: MidiTarget) => void;
+  cancelMidiLearn: () => void;
+  clearMidiMapping: (t: MidiTarget) => void;
   enableMidi: () => void;
   setMidiInput: (id: string | null) => void;
   fxChains: Record<string, PluginInstance[]>;
@@ -1019,6 +1024,24 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       midiInputs,
       midiInputId,
       midiLearning,
+      midiMap,
+      midiLearn,
+      startMidiLearn: (t) => {
+        setMidiLearn(t);
+        toast("Move a knob or fader", { description: "The next control you touch takes over this one." });
+      },
+      cancelMidiLearn: () => setMidiLearn(null),
+      clearMidiMapping: (t) =>
+        setMidiMap((m) => {
+          const next: Record<string, MidiTarget> = {};
+          for (const [k, v] of Object.entries(m)) if (!(v.id === t.id && v.param === t.param)) next[k] = v;
+          try {
+            window.localStorage.setItem(MIDI_MAP_KEY, JSON.stringify(next));
+          } catch {
+            /* storage unavailable */
+          }
+          return next;
+        }),
       enableMidi,
       setMidiInput: setMidiInputId,
       fxChains,
@@ -1046,7 +1069,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           ),
         })),
     };
-  }, [tracks, transport, selectedId, selectedIds, editTool, panel, userPresets, buses, installedPlugins, fxChains, midiInputs, midiInputId, midiLearning, clipboardName, enableMidi, updateTrack, finishRecording, splitClipAtImpl]);
+  }, [tracks, transport, selectedId, selectedIds, editTool, panel, userPresets, buses, installedPlugins, fxChains, midiInputs, midiInputId, midiLearning, midiMap, midiLearn, clipboardName, enableMidi, updateTrack, finishRecording, splitClipAtImpl]);
 
 
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>;
