@@ -13,6 +13,11 @@ import { toast } from "sonner";
 import { useEffect, useRef } from "react";
 import { openExport } from "@/components/studio/ExportDialog";
 import { saveCloudProject } from "@/lib/synclab/cloud";
+import { saveUserTemplate } from "@/lib/synclab/user-templates";
+import { parseMidiFile } from "@/lib/synclab/midi-file";
+
+const STEM_NOTE =
+  "Splitting a mix into stems needs a separation model running on a server. SYNCLAB does not have one yet, so it is not offered as a button that does nothing.";
 
 const notYet = (what: string, why: string) => () => toast(what, { description: why });
 
@@ -38,12 +43,33 @@ export function MenuBar() {
     splitAtPlayhead,
     snapshot,
     loadSample,
+    setNotes,
     undo,
     redo,
     canUndo,
     canRedo,
   } = useStudio();
   const importRef = useRef<HTMLInputElement>(null);
+  const midiRef = useRef<HTMLInputElement>(null);
+
+  /** Loads a .mid file and puts each of its tracks on its own MIDI channel. */
+  const importMidi = async (file: File) => {
+    try {
+      const parsed = parseMidiFile(await file.arrayBuffer());
+      parsed.forEach((t) => {
+        const id = addTrack("midi", t.name || "MIDI", "Deep Keys");
+        setNotes(id, t.notes);
+      });
+      setPanel("piano");
+      toast.success(`Imported ${file.name}`, {
+        description: `${parsed.length} part${parsed.length === 1 ? "" : "s"} loaded — open the piano roll to edit.`,
+      });
+    } catch (error) {
+      toast.error("Could not read that MIDI file", {
+        description: error instanceof Error ? error.message : "Try exporting it again as a standard MIDI file.",
+      });
+    }
+  };
 
   const importAudio = (file: File) => {
     const id = addTrack("sampler", file.name.replace(/\.[^.]+$/, "").toUpperCase().slice(0, 16));
@@ -97,6 +123,19 @@ export function MenuBar() {
           e.target.value = "";
         }}
       />
+      <input
+        ref={midiRef}
+        type="file"
+        accept=".mid,.midi,audio/midi"
+        multiple
+        className="hidden"
+        aria-label="Import MIDI files"
+        onChange={(e) => {
+          const files = Array.from(e.target.files ?? []);
+          files.forEach((f) => void importMidi(f));
+          e.target.value = "";
+        }}
+      />
       <Menubar className="h-8 border-0 bg-transparent p-0">
         <MenubarMenu>
           <MenubarTrigger className="text-xs">File</MenubarTrigger>
@@ -115,14 +154,24 @@ export function MenuBar() {
             }}>
               Save As
             </MenubarItem>
-            <MenubarItem onClick={notYet("Save Template needs an account", "Custom templates are stored with your account.")}>
+            <MenubarItem
+              onClick={() => {
+                try {
+                  const name = project?.name ?? "My template";
+                  saveUserTemplate(name, snapshot());
+                  toast.success(`Saved “${name}” as a template`, {
+                    description: "It shows up under Your templates on the start screen.",
+                  });
+                } catch (error) {
+                  toast.error(error instanceof Error ? error.message : "Could not save that template");
+                }
+              }}
+            >
               Save Template
             </MenubarItem>
             <MenubarSeparator />
             <MenubarItem onClick={() => importRef.current?.click()}>Import Audio…</MenubarItem>
-            <MenubarItem onClick={notYet("MIDI file import is not built yet", "Record or draw MIDI in the piano roll meanwhile.")}>
-              Import MIDI
-            </MenubarItem>
+            <MenubarItem onClick={() => midiRef.current?.click()}>Import MIDI…</MenubarItem>
             <MenubarItem onClick={openExport}>Export / Share (WAV, MP3)</MenubarItem>
             <MenubarSeparator />
             <MenubarItem onClick={() => setPanel(null)}>Close Editor</MenubarItem>
@@ -248,14 +297,17 @@ export function MenuBar() {
           <MenubarTrigger className="text-xs">AI</MenubarTrigger>
           <MenubarContent>
             <MenubarItem onClick={() => setPanel("vocal")}>Vocal Forge</MenubarItem>
-            <MenubarItem onClick={notYet("Stem separation needs its backend", "It arrives in the AI stage of the build.")}>
+            <MenubarItem onClick={() => setPanel("coproducer")}>AI Co-Producer</MenubarItem>
+            <MenubarItem onClick={() => setPanel("bass")}>Bass Generator</MenubarItem>
+            <MenubarItem
+              onClick={notYet("Stem separation runs on a server", STEM_NOTE)}
+            >
               Stem Separator
             </MenubarItem>
-            <MenubarItem onClick={notYet("Voice remover needs its backend", "It arrives in the AI stage of the build.")}>
+            <MenubarItem
+              onClick={notYet("Voice removal runs on a server", STEM_NOTE)}
+            >
               Voice Remover
-            </MenubarItem>
-            <MenubarItem onClick={notYet("AI Co-Producer needs its backend", "It arrives in the AI stage of the build.")}>
-              AI Co-Producer
             </MenubarItem>
           </MenubarContent>
         </MenubarMenu>
@@ -289,8 +341,16 @@ export function MenuBar() {
             >
               Keyboard Shortcuts
             </MenubarItem>
-            <MenubarItem onClick={notYet("Tutorials are coming", "Interactive tutorials land in the final stage.")}>
-              Tutorials
+            <MenubarItem
+              onClick={() =>
+                toast("Quick start", {
+                  description:
+                    "1 · Add a track  2 · Open Drum Machine or Synthesizer to make a part  3 · Arm ● REC to record  4 · Shape it in the Mixer  5 · Set the export flags and share a WAV or MP3.",
+                  duration: 12000,
+                })
+              }
+            >
+              Quick start guide
             </MenubarItem>
           </MenubarContent>
         </MenubarMenu>
