@@ -18,6 +18,7 @@ import {
 import { useState } from "react";
 import { useStudio, type PanelId } from "@/lib/synclab/store";
 import type { TrackKind } from "@/lib/synclab/types";
+import { defsFromFiles } from "@/lib/synclab/plugins";
 import { toast } from "sonner";
 
 interface Tool {
@@ -122,7 +123,7 @@ export function ToolsRail() {
               onClick={() => (t.panel ? setPanel(t.panel) : toast(t.label, { description: t.soon }))}
               className={`flex w-full items-center gap-2 rounded-[3px] px-2 py-1.5 text-left text-xs transition-colors ${
                 t.drag ? "cursor-grab active:cursor-grabbing" : ""
-              } ${
+              } ${t.id === "plugins" && pluginDrop ? "bg-primary/15 ring-1 ring-primary" : ""} ${
                 active ? "bg-surface-2 text-primary" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"
               }`}
             >
