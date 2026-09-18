@@ -897,7 +897,17 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
 
 /** One automation lane under a track: click to add a point, drag points, double-click to remove. */
 function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) {
-  const { transport, setAutomationPoints, setAutomationMode, setAutomationLaneLock, toggleAutomationLane, previewAutomation } = useStudio();
+  const {
+    transport,
+    setAutomationPoints,
+    setAutomationMode,
+    setAutomationLaneLock,
+    toggleAutomationLane,
+    previewAutomation,
+    undoAutomationEdit,
+    redoAutomationEdit,
+    automationHistory,
+  } = useStudio();
   const locked = lane.locked ?? false;
   const [selectedPoint, setSelectedPoint] = useState<number | null>(null);
   /** live readout that follows the pointer while a point, curve or region is being edited */
