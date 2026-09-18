@@ -250,14 +250,19 @@ export function Settings() {
           label="Input device"
           hint={
             inputs.length
-              ? "Microphone, interface or line input detected on this machine"
-              : "Press Detect devices to list your audio interface"
+              ? "Recording, sampling and Hum to Beat all use this input"
+              : "Press Detect devices to list your audio interface (Volt 1, etc.)"
           }
         >
           <Pick
             value={p.inputDevice}
             options={["System default", ...inputs.map((d) => d.label)]}
-            onChange={(v) => set("inputDevice", v)}
+            onChange={(v) => {
+              set("inputDevice", v);
+              const match = inputs.find((d) => d.label === v);
+              setPreferredInput(v === "System default" || !match ? null : match.id);
+              toast.success(v === "System default" ? "Using the system input" : `Input set to ${v}`);
+            }}
           />
         </Row>
         <Row label="Output device" hint={outputs.length ? "Monitors, headphones or interface outputs" : ""}>
