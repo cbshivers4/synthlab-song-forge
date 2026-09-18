@@ -100,11 +100,11 @@ export function Keyboard() {
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center gap-3">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 sm:flex sm:gap-3">
         <span className="label-xs">
           Playing {selected.name} · {selected.instrument ?? "SYNTH"}
         </span>
-        <div className="ml-auto flex items-center gap-1">
+        <div className="flex shrink-0 items-center gap-1 sm:ml-auto">
           <span className="label-xs mr-1">OCTAVE</span>
           <Button
             size="icon"
@@ -141,7 +141,7 @@ export function Keyboard() {
             {locked ? "LOCKED" : "LOCK"}
           </Button>
         </div>
-        <div className="flex w-32 items-center gap-2">
+        <div className="col-span-2 flex w-full items-center gap-2 sm:col-auto sm:w-32">
           <span className="label-xs">VEL</span>
           <Slider
             value={[velocity]}
@@ -194,7 +194,8 @@ export function Keyboard() {
         </Button>
       </div>
 
-      <div className="flex flex-wrap items-center gap-1.5 rounded-[3px] border border-border bg-surface/60 p-1.5">
+      <div className="overflow-x-auto rounded-[3px] border border-border bg-surface/60 p-1.5">
+        <div className="flex min-w-max items-center gap-1.5">
         <Music2 className="size-3.5 text-primary" />
         <span className="label-xs px-1">SCALE</span>
         <Select value={String(root)} onValueChange={(value) => setRoot(Number(value))}>
@@ -239,11 +240,12 @@ export function Keyboard() {
             {NOTE_NAMES[root]} {chord.name}
           </Button>
         ))}
+        </div>
       </div>
 
       <div
         onWheel={(e) => slideTo(octave + (e.deltaY > 0 ? -1 : 1))}
-        className="relative h-36 select-none overflow-hidden rounded-[3px] border border-border bg-black"
+        className="relative h-36 min-w-[620px] select-none overflow-hidden rounded-[3px] border border-border bg-black"
         style={{ touchAction: "none" }}
       >
         {/* white keys */}

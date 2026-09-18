@@ -43,10 +43,10 @@
 - [x] Add original step-filter, resonator, scale/chord, and transient devices
 
 ## Mobile studio and access
-- [ ] Redesign the sign-in screen in the Clean Pro Console direction
-- [ ] Add sign-out to the session-selection screen
-- [ ] Make studio menus, transport, timeline actions, and tools touch-accessible on phones
-- [ ] Make pad microphone recording work on empty pads and mobile recording formats
-- [ ] Surface chord and scale controls clearly on phones
-- [ ] Implement real Hum to Beat recording and local rhythm extraction
-- [ ] Verify sign-in, menus, pads, keyboard, and Hum to Beat at phone and desktop sizes
+- [x] Redesign the sign-in screen in the Clean Pro Console direction
+- [x] Add sign-out to the session-selection screen
+- [x] Make studio menus, transport, timeline actions, and tools touch-accessible on phones
+- [x] Make pad microphone recording work on empty pads and mobile recording formats
+- [x] Surface chord and scale controls clearly on phones
+- [x] Implement real Hum to Beat recording and local rhythm extraction
+- [x] Verify sign-in, menus, pads, keyboard, and Hum to Beat at phone and desktop sizes

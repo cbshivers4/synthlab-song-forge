@@ -67,6 +67,14 @@ export async function openMic(constraints?: MediaTrackConstraints): Promise<MicR
   }
 }
 
+/** Prefer the recording container supported by the current browser (Safari uses MP4). */
+export function preferredRecordingMime(): string | undefined {
+  if (typeof MediaRecorder === "undefined" || typeof MediaRecorder.isTypeSupported !== "function") return undefined;
+  return ["audio/mp4", "audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus"].find((type) =>
+    MediaRecorder.isTypeSupported(type),
+  );
+}
+
 /** Throwing flavour for code paths that already handle failures. */
 export async function openMicOrThrow(constraints?: MediaTrackConstraints): Promise<MediaStream> {
   const r = await openMic(constraints);

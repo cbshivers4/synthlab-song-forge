@@ -128,31 +128,25 @@ export function WelcomeScreen() {
   };
 
   return (
-    <div className="min-h-screen overflow-y-auto bg-background text-foreground">
-      <div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-16 px-6 py-12 lg:grid-cols-12">
+    <div className="min-h-[100dvh] overflow-y-auto bg-background text-foreground">
+      <div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-start gap-8 px-4 py-6 sm:px-6 sm:py-10 lg:grid-cols-12 lg:items-center lg:gap-16">
         {/* Brand & features side */}
         <div className="flex flex-col items-center text-center lg:col-span-7 lg:items-start lg:text-left">
-          <img
-            src={synclabLogoAsset.url}
-            alt="SYNCLAB"
-            className="mb-10 h-24 w-24 rounded-2xl border border-white/20 object-cover shadow-[0_0_50px_-10px_hsl(var(--primary)/0.6)]"
-          />
+          <img src={synclabLogoAsset.url} alt="SYNCLAB" className="mb-5 h-16 w-16 rounded-md border border-border object-cover shadow-lg sm:mb-8 sm:h-24 sm:w-24" />
 
-          <div className="mb-12 space-y-6">
-            <h1 className="font-display text-5xl font-black leading-[0.9] tracking-tighter md:text-7xl">
+          <div className="mb-7 space-y-3 sm:mb-10 sm:space-y-5">
+            <h1 className="font-display text-4xl font-extrabold leading-[1.02] sm:text-5xl md:text-7xl">
               CREATE. RECORD.
               <br />
               PRODUCE.{" "}
-              <span className="bg-gradient-to-r from-teal-400 to-purple-400 bg-clip-text text-transparent">
-                FINISH.
-              </span>
+              <span className="text-primary">FINISH.</span>
             </h1>
             <p className="max-w-md text-lg font-medium tracking-tight text-muted-foreground">
               The all-in-one workstation for the next generation of electronic sound design.
             </p>
           </div>
 
-          <ul className="grid w-full grid-cols-1 gap-x-10 gap-y-3 sm:grid-cols-2">
+          <ul className="hidden w-full grid-cols-1 gap-x-10 gap-y-3 sm:grid sm:grid-cols-2">
             {FEATURES.map((f) => (
               <li key={f.title} className="group flex items-start gap-3">
                 <span
@@ -167,25 +161,19 @@ export function WelcomeScreen() {
             ))}
           </ul>
 
-          <footer className="mt-12 w-full border-t border-border pt-6 font-mono text-[10px] uppercase tracking-[0.3em] text-muted-foreground/50">
+          <footer className="mt-8 hidden w-full border-t border-border pt-6 font-mono text-[10px] uppercase text-muted-foreground/50 sm:block">
             SYNCLAB · Detroit Electronic Sound Design
           </footer>
         </div>
 
         {/* Auth side */}
         <div className="lg:col-span-5">
-          <div className="relative overflow-hidden rounded-[2.5rem] border border-border bg-card/40 p-8 shadow-2xl backdrop-blur-2xl sm:p-10">
-            <div className="absolute right-0 top-0 h-32 w-32 rounded-full bg-purple-500/10 blur-3xl" />
-            <div className="absolute bottom-0 left-0 h-32 w-32 rounded-full bg-teal-500/10 blur-3xl" />
-
-            <div className="relative space-y-8">
+          <div className="overflow-hidden rounded-md border border-border bg-card p-5 shadow-xl sm:p-8">
+            <div className="space-y-6">
               <div className="space-y-4">
-                <button
-                  className="w-full cursor-pointer rounded-2xl bg-teal-400 py-5 text-lg font-black tracking-wide text-black shadow-[0_0_30px_-5px_rgba(45,212,191,0.5)] transition-all hover:bg-teal-300 active:scale-[0.98]"
-                  onClick={() => setMode("signup")}
-                >
+                <Button className="min-h-14 w-full text-base font-bold" onClick={() => setMode("signup")}>
                   START FREE TRIAL
-                </button>
+                </Button>
                 <p className="text-center text-xs font-medium text-muted-foreground">
                   7-day free trial · no card needed yet
                 </p>
@@ -201,20 +189,14 @@ export function WelcomeScreen() {
               </div>
 
               <div className="space-y-3">
-                <button
-                  className="relative flex w-full cursor-pointer items-center justify-center rounded-xl bg-white py-4 font-bold text-black transition-all hover:bg-zinc-100"
-                  onClick={() => void oauth("google")}
-                >
+                <Button variant="outline" className="relative min-h-12 w-full font-bold" onClick={() => void oauth("google")}>
                   <span className="absolute left-5 flex items-center">{GOOGLE_ICON}</span>
                   CONTINUE WITH GOOGLE
-                </button>
-                <button
-                  className="relative flex w-full cursor-pointer items-center justify-center rounded-xl bg-zinc-800 py-4 font-bold text-white transition-all hover:bg-zinc-700"
-                  onClick={() => void oauth("apple")}
-                >
+                </Button>
+                <Button variant="secondary" className="relative min-h-12 w-full font-bold" onClick={() => void oauth("apple")}>
                   <span className="absolute left-5 flex items-center">{APPLE_ICON}</span>
                   CONTINUE WITH APPLE
-                </button>
+                </Button>
               </div>
 
               {mode ? (
@@ -242,28 +224,31 @@ export function WelcomeScreen() {
                   <Button type="submit" className="w-full" disabled={busy}>
                     {busy ? "WORKING…" : mode === "signup" ? "CREATE ACCOUNT" : "SIGN IN"}
                   </Button>
-                  <button
+                    <Button
+                      variant="link"
                     type="button"
-                    className="w-full cursor-pointer text-center text-xs text-muted-foreground underline-offset-2 hover:underline"
+                      className="min-h-11 w-full text-center text-xs text-muted-foreground"
                     onClick={() => setMode(mode === "signup" ? "signin" : "signup")}
                   >
                     {mode === "signup" ? "Already have an account? Sign in" : "New here? Create an account"}
-                  </button>
+                    </Button>
                 </form>
               ) : (
                 <div className="flex flex-col gap-4 pt-4">
-                  <button
-                    className="w-full cursor-pointer rounded-xl border-2 border-border py-4 font-bold transition-colors hover:border-muted-foreground"
+                  <Button
+                    variant="outline"
+                    className="min-h-12 w-full font-bold"
                     onClick={() => setMode("signin")}
                   >
                     SIGN IN
-                  </button>
-                  <button
-                    className="w-full cursor-pointer py-2 text-sm font-semibold text-muted-foreground underline decoration-border underline-offset-4 transition-colors hover:text-foreground"
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="min-h-11 w-full text-sm font-semibold text-muted-foreground"
                     onClick={() => setMode("signup")}
                   >
                     CREATE ACCOUNT
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>

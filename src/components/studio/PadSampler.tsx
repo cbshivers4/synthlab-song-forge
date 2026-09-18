@@ -11,7 +11,7 @@ import {
   Upload,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { openMic, openInOwnTab } from "@/lib/synclab/mic";
+import { openMic, openInOwnTab, preferredRecordingMime } from "@/lib/synclab/mic";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { useStudio } from "@/lib/synclab/store";
@@ -328,7 +328,8 @@ export function PadSampler() {
       return;
     }
     const stream = res.stream;
-    const rec = new MediaRecorder(stream);
+    const mimeType = preferredRecordingMime();
+    const rec = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
     const chunks: Blob[] = [];
     rec.ondataavailable = (e) => e.data.size > 0 && chunks.push(e.data);
     rec.start(200);
@@ -440,8 +441,10 @@ export function PadSampler() {
             <button
               key={id}
               type="button"
-              onPointerDown={() => (pad ? trigger(id) : (targetRef.current = id, fileRef.current?.click()))}
-              onClick={() => setSel(id)}
+              onPointerDown={() => {
+                setSel(id);
+                if (pad) trigger(id);
+              }}
               onDragOver={(e) => {
                 e.preventDefault();
                 setOver(id);
@@ -495,7 +498,7 @@ export function PadSampler() {
                 className={`line-clamp-2 font-mono text-[10px] ${pad ? "" : "text-foreground"}`}
                 style={pad ? { color: "hsl(0 0% 100%)", textShadow: "0 1px 2px hsl(0 0% 0% / 0.5)" } : undefined}
               >
-                {pad ? pad.name : "drop / tap to load"}
+                {pad ? pad.name : "empty · select"}
               </span>
               {pad && pad.choke > 0 && (
                 <span className="absolute right-1 top-1 rounded-sm bg-accent px-1 font-mono text-[8px] text-accent-foreground">
@@ -581,10 +584,18 @@ export function PadSampler() {
       </div>
 
       {!selPad ? (
-        <p className="text-sm text-muted-foreground">
-          Drop an audio file on any pad, or tap an empty pad to pick one. You can also sample straight from your
-          microphone, then slice that sound across the whole bank.
-        </p>
+        <div className="grid grid-cols-2 gap-2 rounded-md border border-border bg-surface-2/40 p-3 sm:flex sm:items-center">
+          <div className="col-span-2 min-w-0 sm:mr-auto">
+            <div className="font-display text-sm font-semibold">Pad {BANKS[bank]}{sel % PADS_PER_BANK + 1} is empty</div>
+            <p className="text-xs text-muted-foreground">Record straight into it or choose an audio file.</p>
+          </div>
+          <Button variant={micOn ? "destructive" : "default"} className="min-h-11 gap-2" onClick={() => (micOn ? void stopMic() : void startMic(sel))}>
+            <Mic className="size-4" /> {micOn ? "Stop recording" : "Record to pad"}
+          </Button>
+          <Button variant="outline" className="min-h-11 gap-2" onClick={() => { targetRef.current = sel; fileRef.current?.click(); }}>
+            <Upload className="size-4" /> Choose audio
+          </Button>
+        </div>
       ) : (
         <>
           <div className="flex flex-wrap items-center gap-2">

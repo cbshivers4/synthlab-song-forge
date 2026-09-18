@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Cloud, Clock, FolderOpen, Import, LayoutTemplate, Loader2, Plus, Sparkles, Trash2 } from "lucide-react";
+import { Cloud, Clock, FolderOpen, Import, LayoutTemplate, Loader2, LogOut, Plus, Sparkles, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,9 +12,10 @@ import { toast } from "sonner";
 import synclabLogoAsset from "@/assets/synclab-logo-neon.jpg.asset.json";
 import { listUserTemplates, removeUserTemplate, type UserTemplate } from "@/lib/synclab/user-templates";
 import { deleteCloudProject, listCloudProjects, loadCloudProject, type CloudProject } from "@/lib/synclab/cloud";
+import { supabase } from "@/integrations/supabase/client";
 
 export function StartScreen() {
-  const { setStage, setProject, removeRecent, recents } = useApp();
+  const { setStage, setProject, setSignedIn, removeRecent, recents } = useApp();
   const { tracks, addTrack, removeTrack, setTransport, restore, setPanel } = useStudio();
   const [cloud, setCloud] = useState<CloudProject[]>([]);
   const [templates, setTemplates] = useState<UserTemplate[]>([]);
@@ -88,12 +89,19 @@ export function StartScreen() {
   return (
     <div className="min-h-screen overflow-y-auto bg-background">
       <div className="mx-auto w-full max-w-5xl px-5 py-12">
-        <div className="flex items-center gap-3">
+        <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
           <img src={synclabLogoAsset.url} alt="SYNCLAB" className="h-10 w-auto rounded object-cover" />
-          <div>
+          <div className="min-w-0">
             <h1 className="font-display text-xl font-semibold tracking-tight">Start a session</h1>
             <p className="text-xs text-muted-foreground">Pick where you want to begin. Everything happens on one screen after this.</p>
           </div>
+          <Button
+            variant="outline"
+            className="min-h-11 gap-2"
+            onClick={() => void supabase.auth.signOut().then(() => { setSignedIn(false); setStage("welcome"); })}
+          >
+            <LogOut className="size-4" /> <span className="hidden sm:inline">Sign out</span>
+          </Button>
         </div>
 
         <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

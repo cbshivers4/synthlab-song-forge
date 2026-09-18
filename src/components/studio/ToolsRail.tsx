@@ -39,7 +39,7 @@ const TOOLS: Tool[] = [
   { id: "stems", label: "Stem Separator", icon: <Split className="size-4" />, soon: "Splitting a mix into stems needs a separation model running on a server — SYNCLAB has no fake button for it." },
   { id: "voice", label: "Voice Remover", icon: <Volume2 className="size-4" />, soon: "Voice removal needs the same server-side separation model — it is not faked here." },
   { id: "coproducer", label: "AI Co-Producer", icon: <Bot className="size-4" />, panel: "coproducer" },
-  { id: "hum", label: "Hum to Beat", icon: <Waves className="size-4" />, soon: "Hum-to-Beat needs rhythm detection on a server — meanwhile tap your rhythm into the Pad Sampler." },
+  { id: "hum", label: "Hum to Beat", icon: <Waves className="size-4" />, panel: "hum" },
   { id: "synth", label: "Synthesizers", icon: <Music2 className="size-4" />, panel: "synth", drag: { kind: "instrument", name: "Synth" } },
   { id: "bass", label: "Bass Generator", icon: <AudioWaveform className="size-4" />, panel: "bass" },
   { id: "drums", label: "Drum Machine", icon: <Disc3 className="size-4" />, panel: "drums", drag: { kind: "drum", name: "Drums" } },
@@ -155,7 +155,7 @@ export function ToolsRail() {
 
   return (
     <aside
-      className={`flex shrink-0 flex-col border-r border-border bg-sidebar transition-[width] ${open ? "w-52" : "w-11"}`}
+      className={`hidden shrink-0 flex-col border-r border-border bg-sidebar transition-[width] sm:flex ${open ? "w-52" : "w-11"}`}
     >
       <div className="flex items-center gap-1 border-b border-border px-2 py-1.5">
         {open && <span className="label-xs">SYNCLAB TOOLS</span>}

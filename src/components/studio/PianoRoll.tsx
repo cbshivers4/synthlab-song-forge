@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useStudio } from "@/lib/synclab/store";
@@ -213,7 +214,7 @@ export function PianoRoll({ track }: { track: Track }) {
         <Tool onClick={() => apply((n) => ({ ...n, step: n.step * 2, length: n.length * 2 }))}>2× LONGER</Tool>
         <Tool onClick={() => apply((n) => ({ ...n, step: n.step / 2, length: Math.max(0.5, n.length / 2) }))}>2× FASTER</Tool>
         <Tool active={scaleLock} onClick={() => setScaleLock(!scaleLock)}>
-          SCALE LOCK
+          LOCK
         </Tool>
         <Select value={String(root)} onValueChange={(v) => setRoot(Number(v))}>
           <SelectTrigger className="h-7 w-16 text-[10px]">
@@ -240,7 +241,7 @@ export function PianoRoll({ track }: { track: Track }) {
           </SelectContent>
         </Select>
         {scaleLock && (
-          <Tool onClick={() => apply((n) => (inScale(n.pitch) ? n : { ...n, pitch: n.pitch - 1 }))}>FIT TO SCALE</Tool>
+          <Tool onClick={() => apply((n) => (inScale(n.pitch) ? n : { ...n, pitch: n.pitch - 1 }))}>FIT</Tool>
         )}
         <Tool onClick={() => setSel(notes.map((n) => n.id))}>SELECT ALL</Tool>
         <Tool onClick={() => setSel([])}>DESELECT</Tool>

@@ -121,6 +121,7 @@ export type PanelId =
   | "pads"
   | "bass"
   | "coproducer"
+  | "hum"
   | null;
 
 export type EditTool = "select" | "draw" | "split";

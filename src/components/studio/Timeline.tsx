@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   ArrowLeftToLine,
   ArrowRightToLine,
@@ -608,7 +609,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
       onDrop={onDrop}
     >
       <div className="w-1 shrink-0" style={{ background: track.color, opacity: isSelected ? 1 : 0.65 }} />
-      <div className="w-[240px] shrink-0 space-y-1 border-r border-border bg-surface px-2 py-1.5">
+      <div className="w-[168px] shrink-0 space-y-1 border-r border-border bg-surface px-2 py-1.5 sm:w-[240px]">
         <div className="flex items-center gap-1.5">
           <span className="text-primary">
             <KindIcon kind={track.kind} />
@@ -625,13 +626,13 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
               onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
             />
           ) : (
-            <button className="font-display text-sm font-semibold" onDoubleClick={() => setRenaming(true)}>
+            <button className="font-display text-sm font-semibold truncate" onDoubleClick={() => setRenaming(true)}>
               {index + 1}. {track.name}
             </button>
           )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button size="icon" variant="ghost" className="ml-auto size-6" aria-label="Track menu">
+              <Button size="icon" variant="ghost" className="ml-auto size-10 touch-manipulation sm:size-6" aria-label="Track menu">
                 <MoreVertical className="size-3.5" />
               </Button>
             </DropdownMenuTrigger>
@@ -1182,7 +1183,7 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
       aria-label={`${label} automation lane. Command or Control Z undoes and Shift Z redoes lane edits, C copies the loop region, V pastes at the playhead, D duplicates, and Delete removes it.`}
     >
       <div className="w-1 shrink-0" style={{ background: track.color, opacity: 0.4 }} />
-      <div className="flex w-[240px] shrink-0 flex-wrap items-center gap-1 border-r border-border bg-surface/60 px-2 py-1">
+      <div className="flex w-[168px] shrink-0 flex-wrap items-center gap-1 border-r border-border bg-surface/60 px-2 py-1 sm:w-[240px]">
         <span className="min-w-0 flex-1 truncate font-mono text-[9px] tracking-[0.15em] text-muted-foreground">AUTO · {label}</span>
         <button
           onClick={() => setAutomationLaneLock(track.id, lane.param, !locked)}
@@ -1422,7 +1423,7 @@ function EditToolbar() {
   const targets = selectedIds.length > 1 ? selectedIds : selected ? [selected.id] : [];
 
   return (
-    <div className="flex items-center gap-1 border-b border-border bg-surface-2/60 px-2 py-1">
+    <div className="flex min-h-11 items-center gap-1 overflow-x-auto border-b border-border bg-surface-2/60 px-2 py-1 [scrollbar-width:none]">
       <ToolBtn tool="select" icon={<MousePointer2 className="size-3" />} label="Select" keys="V" />
       <ToolBtn tool="draw" icon={<Pencil className="size-3" />} label="Draw" keys="B" />
       <ToolBtn tool="split" icon={<Scissors className="size-3" />} label="Split" keys="C" />
@@ -1551,7 +1552,7 @@ function Ruler() {
 
   return (
     <div className="sticky top-0 z-10 flex border-b border-border bg-surface-2/70 backdrop-blur">
-      <div className="flex w-[244px] shrink-0 flex-col justify-center gap-1 border-r border-border px-3 py-1">
+      <div className="flex w-[172px] shrink-0 flex-col justify-center gap-1 border-r border-border px-2 py-1 sm:w-[244px] sm:px-3">
         <div className="flex items-center gap-2">
           <span className="font-display text-[11px] font-semibold tracking-[0.2em]">TIMELINE</span>
           <span className="label-xs ml-auto">
@@ -1690,7 +1691,8 @@ export function Timeline() {
     <section className="relative flex min-h-0 flex-1 flex-col overflow-hidden border-x border-b border-border bg-background/60">
       <EditToolbar />
       <Ruler />
-      <div className="relative min-h-0 flex-1 overflow-y-auto">
+      <div className="relative min-h-0 flex-1 overflow-auto">
+        <div className="min-w-[720px] sm:min-w-0">
         {/* SYNCLAB watermark centered over the rhythm grid */}
         <div className="pointer-events-none sticky top-1/2 z-0 h-0" aria-hidden="true">
           <img
@@ -1768,6 +1770,7 @@ export function Timeline() {
             style={{ left: `calc(244px + (100% - 244px) * ${transport.step / totalSteps})` }}
           />
         )}
+        </div>
       </div>
     </section>
   );
