@@ -1130,7 +1130,14 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
     if (target.matches("input, textarea, select") || target.isContentEditable) return;
     const command = event.metaKey || event.ctrlKey;
     const key = event.key.toLowerCase();
-    if (command && key === "c") {
+    if (command && key === "z") {
+      event.preventDefault();
+      if (event.shiftKey) redoAutomationEdit(track.id, lane.param);
+      else undoAutomationEdit(track.id, lane.param);
+    } else if (command && key === "y") {
+      event.preventDefault();
+      redoAutomationEdit(track.id, lane.param);
+    } else if (command && key === "c") {
       event.preventDefault();
       copyRegion();
     } else if (command && key === "v") {
@@ -1168,7 +1175,7 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
       className="flex items-stretch border-t border-border/50 bg-background/40 focus-within:ring-1 focus-within:ring-inset focus-within:ring-primary/70"
       tabIndex={0}
       onKeyDown={handleRegionShortcut}
-      aria-label={`${label} automation lane. Command or Control C copies the loop region, V pastes at the playhead, D duplicates, and Delete removes it.`}
+      aria-label={`${label} automation lane. Command or Control Z undoes and Shift Z redoes lane edits, C copies the loop region, V pastes at the playhead, D duplicates, and Delete removes it.`}
     >
       <div className="w-1 shrink-0" style={{ background: track.color, opacity: 0.4 }} />
       <div className="flex w-[240px] shrink-0 flex-wrap items-center gap-1 border-r border-border bg-surface/60 px-2 py-1">
