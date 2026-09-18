@@ -53,8 +53,8 @@ export function TopBar() {
 
   return (
     <header className="rack sticky top-0 z-30 shrink-0">
-      <div className="flex flex-wrap items-center gap-2 px-3 py-2">
-        <div className="flex items-center pr-1">
+      <div className="grid grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-2 px-2 py-2 sm:flex sm:flex-wrap sm:px-3">
+        <div className="hidden items-center pr-1 sm:flex">
           <img
             src={synclabLogo}
             alt="SYNCLAB"
@@ -64,9 +64,9 @@ export function TopBar() {
           />
         </div>
 
-        <StudioSearch />
+        <div className="hidden sm:block"><StudioSearch /></div>
 
-        <div className="flex items-center gap-0.5 rounded-[3px] border border-border bg-background/70 p-0.5 shadow-[inset_0_1px_0_oklch(1_0_0/0.04)]">
+        <div className="flex shrink-0 items-center gap-0.5 rounded-[3px] border border-border bg-background/70 p-0.5 shadow-[inset_0_1px_0_oklch(1_0_0/0.04)]">
           <TBtn label="PLAY" active={transport.playing} onClick={togglePlay}>
             {transport.playing ? <Pause className="size-4" /> : <Play className="size-4" />}
           </TBtn>
@@ -79,7 +79,7 @@ export function TopBar() {
         </div>
 
         {/* LCD position display */}
-        <div className="flex items-stretch gap-3 rounded-[3px] border border-border bg-background px-3 py-1 font-mono shadow-[inset_0_1px_3px_oklch(0_0_0/0.6)]">
+        <div className="flex min-w-0 items-stretch gap-2 rounded-[3px] border border-border bg-background px-2 py-1 font-mono shadow-[inset_0_1px_3px_oklch(0_0_0/0.6)] sm:gap-3 sm:px-3">
           {transport.countInLeft != null ? (
             <div>
               <span className="label-xs">COUNT-IN</span>
@@ -111,8 +111,8 @@ export function TopBar() {
               </div>
             </>
           )}
-          <span className="w-px bg-border" />
-          <div title="Timeline length — click + to add bars (Shift = +16), up to 512">
+          <span className="hidden w-px bg-border sm:block" />
+          <div className="hidden sm:block" title="Timeline length — click + to add bars (Shift = +16), up to 512">
             <span className="label-xs">BARS</span>
             <div className="flex items-center gap-1">
               <button
@@ -147,7 +147,7 @@ export function TopBar() {
           )}
         </div>
 
-        <div className="flex items-center gap-3 rounded-[3px] border border-border bg-background/70 px-3 py-1">
+        <div className="hidden items-center gap-3 rounded-[3px] border border-border bg-background/70 px-3 py-1 sm:flex">
           <div>
             <span className="label-xs">BPM</span>
             <div className="font-mono text-base leading-none text-primary">{transport.bpm}</div>
@@ -224,12 +224,12 @@ export function TopBar() {
 
         {!isMobile && <MidiControl />}
 
-        <div className="ml-auto flex flex-wrap items-center gap-1">
+        <div className="ml-auto flex shrink-0 items-center gap-1">
           {isMobile ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Menu className="size-4" /> PANELS
+                <Button variant="outline" size="icon" className="size-11" aria-label="Open studio panels">
+                  <Menu className="size-5" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
@@ -255,6 +255,12 @@ export function TopBar() {
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setPanel("vocal")}>
                   <Mic className="mr-2 size-4" /> Vocal Forge
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setPanel("pads")}>
+                  <Grid2x2 className="mr-2 size-4" /> Sample Pads
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setPanel("hum")}>
+                  <Waves className="mr-2 size-4" /> Hum to Beat
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => setPanel("settings")}>

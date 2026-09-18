@@ -29,6 +29,7 @@ import { DeviceSetup } from "@/components/studio/DeviceSetup";
 import { ExportDialog } from "@/components/studio/ExportDialog";
 import { BassGenerator } from "@/components/studio/BassGenerator";
 import { CoProducer } from "@/components/studio/CoProducer";
+import { HumToBeat } from "@/components/studio/HumToBeat";
 import { Bot } from "lucide-react";
 import { AppProvider, useApp, useMaybeApp } from "@/lib/synclab/app-state";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -88,6 +89,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: FloatState) => FloatState) => void }) {
+  const isMobile = useIsMobile();
   const { selected, tracks, panel, setPanel, select } = useStudio();
   const [mixerDetached, setMixerDetached] = useState(false);
   // Resizable editor height, remembered between sessions.
@@ -135,24 +137,25 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
     pads: { title: "PAD SAMPLER", icon: <Grid2x2 className="size-4" /> },
     bass: { title: "BASS GENERATOR", icon: <AudioWaveform className="size-4" /> },
     coproducer: { title: "AI CO-PRODUCER", icon: <Bot className="size-4" /> },
+    hum: { title: "HUM TO BEAT", icon: <Waves className="size-4" /> },
   };
   const current = config[panel];
 
 
   return (
     <section
-      className="rack relative flex shrink-0 flex-col border-t-2 border-border"
-      style={{ height: rackH }}
+      className="rack fixed inset-0 z-40 flex flex-col border-t-2 border-border sm:relative sm:inset-auto sm:z-auto sm:shrink-0"
+      style={{ height: isMobile ? "100dvh" : rackH }}
     >
       <div
         onPointerDown={startResize}
         title="Drag to resize this editor"
         className="absolute inset-x-0 -top-1 z-20 h-2 cursor-ns-resize hover:bg-primary/40"
       />
-      <div className="flex items-center gap-2 border-b border-border bg-surface-2/60 px-3 py-1.5">
+      <div className="grid min-h-12 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-border bg-surface-2/60 px-3 py-1.5">
         <span className="text-primary">{current.icon}</span>
         <h2 className="font-display text-[11px] font-semibold tracking-[0.2em]">{current.title}</h2>
-        {selected && <span className="label-xs">· {selected.name}</span>}
+        {selected && <span className="hidden label-xs sm:inline">· {selected.name}</span>}
         <div className="ml-auto flex items-center gap-1">
           {(panel === "synth" || panel === "drums") && (
             <Button
@@ -243,6 +246,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
       {panel === "pads" && <PadSampler />}
       {panel === "bass" && <BassGenerator />}
       {panel === "coproducer" && <CoProducer />}
+      {panel === "hum" && <HumToBeat />}
 
       </div>
 
@@ -433,7 +437,7 @@ function StudioWorkspace() {
   const [float, setFloat] = useState<FloatState>({ synth: false, drums: false });
   useShortcuts();
   return (
-    <div className="flex h-screen flex-col overflow-hidden">
+    <div className="flex h-[100dvh] flex-col overflow-hidden">
       <MenuBar />
       <TopBar />
       <div className="flex min-h-0 flex-1">

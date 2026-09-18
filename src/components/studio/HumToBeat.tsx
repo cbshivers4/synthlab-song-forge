@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Circle, Mic, Play, RotateCcw, Square, WandSparkles } from "lucide-react";
+import { Mic, Play, RotateCcw, Square, WandSparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { openInOwnTab, openMic, preferredRecordingMime } from "@/lib/synclab/mic";
 import { useStudio } from "@/lib/synclab/store";
@@ -76,10 +76,7 @@ export function HumToBeat() {
     const engine = getEngine();
     engine.init();
     const id = addTrack("drum", "HUM PREVIEW");
-    const trackPattern = pattern;
-    trackPattern.forEach((velocity, step) => {
-      if (velocity > 0) updatePad(id, "kick", { steps: Array.from({ length: 16 }, (_, i) => i === step ? velocity : 0) });
-    });
+    updatePad(id, "kick", { steps: pattern });
     select(id);
     setPanel("drums");
     toast.success("Beat added", { description: "The detected rhythm is open in the Drum Machine for editing." });
