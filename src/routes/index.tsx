@@ -30,6 +30,7 @@ import { ExportDialog } from "@/components/studio/ExportDialog";
 import { BassGenerator } from "@/components/studio/BassGenerator";
 import { CoProducer } from "@/components/studio/CoProducer";
 import { HumToBeat } from "@/components/studio/HumToBeat";
+import { MobileBeat } from "@/components/studio/MobileBeat";
 import { Bot } from "lucide-react";
 import { AppProvider, useApp, useMaybeApp } from "@/lib/synclab/app-state";
 import { useIsMobile } from "@/hooks/use-mobile";
