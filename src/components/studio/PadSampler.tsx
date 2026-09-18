@@ -161,11 +161,15 @@ export function PadSampler() {
   const [step, setStep] = useState(0);
   const [liveRec, setLiveRec] = useState(false);
   const [micOn, setMicOn] = useState(false);
+  /** hold-to-record mode: press a pad to record, release to keep the take */
+  const [armRec, setArmRec] = useState(false);
+  const [recPad, setRecPad] = useState<number | null>(null);
   const [over, setOver] = useState<number | null>(null);
   const [trackId, setTrackId] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const targetRef = useRef<number>(0);
   const recRef = useRef<{ rec: MediaRecorder; stream: MediaStream; chunks: Blob[]; pad: number } | null>(null);
+  const holdRef = useRef<{ pad: number; active: boolean } | null>(null);
   const padsRef = useRef(pads);
   padsRef.current = pads;
   useEffect(() => subscribePadBank((next) => setPadsState(next)), []);
@@ -357,6 +361,33 @@ export function PadSampler() {
     setSel(r.pad);
   };
 
+  /** press and hold a pad to record into it, release to stop */
+  const beginHold = async (i: number) => {
+    if (recRef.current || holdRef.current) return;
+    holdRef.current = { pad: i, active: true };
+    setRecPad(i);
+    setSel(i);
+    await startMic(i);
+    if (!recRef.current) {
+      // microphone refused — clear the hold so the next press can try again
+      holdRef.current = null;
+      setRecPad(null);
+      return;
+    }
+    if (!holdRef.current?.active) {
+      setRecPad(null);
+      await stopMic();
+    }
+  };
+
+  const endHold = () => {
+    if (!holdRef.current) return;
+    holdRef.current.active = false;
+    holdRef.current = null;
+    setRecPad(null);
+    if (recRef.current) void stopMic();
+  };
+
   const filled = useMemo(() => Object.keys(pads).length, [pads]);
 
   return (
@@ -403,7 +434,19 @@ export function PadSampler() {
           >
             <Circle className="size-3.5" /> Record taps
           </Button>
-          <Button size="sm" variant="ghost" className="h-7 gap-1.5" onClick={() => getEngine().stopSamples()}>
+          <Button
+            size="sm"
+            variant={armRec ? "destructive" : "ghost"}
+            className="h-9 gap-1.5 sm:h-7"
+            aria-pressed={armRec}
+            onClick={() => {
+              endHold();
+              setArmRec((v) => !v);
+            }}
+          >
+            <Mic className="size-3.5" /> {armRec ? "Exit hold-to-record" : "Hold to record"}
+          </Button>
+          <Button size="sm" variant="ghost" className="h-9 gap-1.5 sm:h-7" onClick={() => getEngine().stopSamples()}>
             <Square className="size-3.5" /> Panic
           </Button>
         </div>
