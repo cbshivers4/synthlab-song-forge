@@ -1394,21 +1394,37 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             return { ...t, plugins: list };
           }),
         ),
-      setPluginParam: (trackId, instanceId, paramId, value) =>
+      setPluginParam: (trackId, instanceId, paramId, value) => {
+        const automationParam = `plugin:${instanceId}:${paramId}` as AutomationParam;
+        const gestureKey = `${trackId}:${automationParam}`;
         setTracks((ts) =>
-          ts.map((t) =>
-            t.id === trackId
-              ? {
-                  ...t,
-                  plugins: (t.plugins ?? []).map((p) =>
-                    p.id === instanceId
-                      ? { ...p, params: p.params.map((x: PluginParam) => (x.id === paramId ? { ...x, value } : x)) }
-                      : p,
-                  ),
-                }
-              : t,
-          ),
-        ),
+          ts.map((t) => {
+            if (t.id !== trackId) return t;
+            const plugins = (t.plugins ?? []).map((p) =>
+              p.id === instanceId
+                ? { ...p, params: p.params.map((x: PluginParam) => (x.id === paramId ? { ...x, value } : x)) }
+                : p,
+            );
+            const lane = (t.automation ?? []).find((item) => item.param === automationParam);
+            if (!transportRef.current.playing || !lane || !["write", "touch", "latch"].includes(lane.mode)) return { ...t, plugins };
+            automationGestureRef.current.set(gestureKey, {
+              touchedUntil: performance.now() + 180,
+              latched: lane.mode === "latch",
+            });
+            const source = plugins.find((plugin) => plugin.id === instanceId)?.params.find((param) => param.id === paramId);
+            if (!source) return { ...t, plugins };
+            const normalized = source.max > source.min ? (value - source.min) / (source.max - source.min) : 0;
+            const step = transportRef.current.step;
+            const points = [...lane.points.filter((point) => point.step !== step), { step, value: Math.min(1, Math.max(0, normalized)) }]
+              .sort((a, b) => a.step - b.step);
+            return {
+              ...t,
+              plugins,
+              automation: (t.automation ?? []).map((item) => item.param === automationParam ? { ...item, points } : item),
+            };
+          }),
+        );
+      },
       midiInputs,
       midiInputId,
       midiLearning,
