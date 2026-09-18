@@ -196,6 +196,8 @@ interface StudioApi extends StudioState {
   setAutomationMode: (trackId: string, param: AutomationParam, mode: "read" | "off") => void;
   removeClip: (trackId: string, clipId: string) => void;
   addClip: (trackId: string, clip: AudioClip) => void;
+  updateClip: (trackId: string, clipId: string, patch: Partial<AudioClip>) => void;
+  previewClip: (trackId: string, clipId: string) => void;
   savePreset: (name: string) => void;
   loadPreset: (trackId: string, name: string) => void;
   generateBeat: (trackId: string, genre: string, energy: number) => void;
@@ -517,6 +519,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
                 gain: c.gain ?? 1,
                 fadeIn: c.fadeIn ?? 0.004,
                 fadeOut: c.fadeOut ?? 0.01,
+                rate: clipRate(c),
+                reverse: c.reverse ?? false,
               });
             }
           }
