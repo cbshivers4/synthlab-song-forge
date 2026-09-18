@@ -1120,10 +1120,23 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
       <div className="flex w-[240px] shrink-0 flex-wrap items-center gap-1 border-r border-border bg-surface/60 px-2 py-1">
         <span className="min-w-0 flex-1 truncate font-mono text-[9px] tracking-[0.15em] text-muted-foreground">AUTO · {label}</span>
         <button
+          onClick={() => setAutomationLaneLock(track.id, lane.param, !locked)}
+          title={locked ? "Unlock this lane for editing" : "Lock this lane against accidental edits"}
+          aria-label={locked ? `Unlock ${label} automation` : `Lock ${label} automation`}
+          aria-pressed={locked}
+          className={`rounded-[3px] px-1.5 py-0.5 font-mono text-[8px] tracking-widest ${
+            locked ? "bg-amber-500/25 text-amber-400" : "bg-surface-2 text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          {locked ? <Lock className="size-2.5" /> : <LockOpen className="size-2.5" />}
+        </button>
+        <button
           onClick={nextMode}
-          title="Cycle automation mode: Off, Read, Write, Touch, Latch"
+          disabled={locked}
+          title={locked ? "Unlock this lane to change the mode" : "Cycle automation mode: Off, Read, Write, Touch, Latch"}
           aria-label={`${label} automation mode ${lane.mode}. Click for next mode.`}
           className={`ml-auto rounded-[3px] px-1.5 py-0.5 font-mono text-[8px] tracking-widest ${
+            locked ? "bg-surface-2 text-muted-foreground/50" :
             recordingMode
               ? "animate-pulse bg-destructive text-destructive-foreground"
               : lane.mode === "read"
@@ -1137,9 +1150,10 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
         </button>
         <button
           onClick={() => setAutomationPoints(track.id, lane.param, [])}
-          title="Clear this curve"
+          disabled={locked}
+          title={locked ? "Unlock this lane to clear the curve" : "Clear this curve"}
           aria-label={`Clear ${label} automation`}
-          className="text-muted-foreground hover:text-foreground"
+          className="text-muted-foreground hover:text-foreground disabled:opacity-40 disabled:hover:text-muted-foreground"
         >
           <Eraser className="size-3" />
         </button>
