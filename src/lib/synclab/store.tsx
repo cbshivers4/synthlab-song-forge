@@ -199,7 +199,13 @@ interface StudioApi extends StudioState {
   changeInstrument: (trackId: string, preset: string) => void;
   setActiveClip: (trackId: string, clipId: string) => void;
   toggleAutomationLane: (trackId: string, param: AutomationParam) => void;
-  setAutomationPoints: (trackId: string, param: AutomationParam, points: AutomationPoint[]) => void;
+  setAutomationPoints: (trackId: string, param: AutomationParam, points: AutomationPoint[], label?: string) => void;
+  undoAutomationEdit: (trackId: string, param: AutomationParam) => void;
+  redoAutomationEdit: (trackId: string, param: AutomationParam) => void;
+  automationHistory: (
+    trackId: string,
+    param: AutomationParam,
+  ) => { canUndo: boolean; canRedo: boolean; undoLabel: string | null; redoLabel: string | null };
   setAutomationMode: (trackId: string, param: AutomationParam, mode: AutomationLane["mode"]) => void;
   setAutomationLaneLock: (trackId: string, param: AutomationParam, locked: boolean) => void;
   previewAutomation: (trackId: string, param: AutomationParam, value: number) => void;
@@ -319,6 +325,13 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const heldRef = useRef(new Map<number, { ids: string[]; trackId: string; t0: number }>());
   /** TOUCH releases shortly after a gesture; LATCH holds until playback stops. */
   const automationGestureRef = useRef(new Map<string, { touchedUntil: number; latched: boolean }>());
+  // Per-lane edit history so a device automation lane can be stepped back on its
+  // own without rewinding the rest of the project.
+  const automationHistoryRef = useRef(
+    new Map<string, { past: { points: AutomationPoint[]; label: string }[]; future: { points: AutomationPoint[]; label: string }[] }>(),
+  );
+  const automationLastPushRef = useRef(new Map<string, { label: string; at: number }>());
+  const [automationHistoryTick, setAutomationHistoryTick] = useState(0);
 
   // ---- Undo / redo history + local autosave -------------------------------
   const pastRef = useRef<CloudSession[]>([]);
@@ -1230,15 +1243,87 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             : [...lanes, { param, mode: "read" as const, points: [] }],
         });
       },
-      setAutomationPoints: (trackId, param, points) => {
+      setAutomationPoints: (trackId, param, points, label) => {
         const t = tracksRef.current.find((x) => x.id === trackId);
         const lanes = t?.automation ?? [];
-        if (lanes.some((l) => l.param === param && l.locked)) return;
+        const lane = lanes.find((l) => l.param === param);
+        if (lane?.locked) return;
+        if (lane) {
+          // Keep one history entry per gesture: repeated moves of the same kind
+          // inside a short window collapse together.
+          const key = `${trackId}:${param}`;
+          const entry = automationHistoryRef.current.get(key) ?? { past: [], future: [] };
+          const now = Date.now();
+          const last = automationLastPushRef.current.get(key);
+          const coalesce = !!label && last?.label === label && now - last.at < 700;
+          if (!coalesce) {
+            entry.past = [...entry.past, { points: structuredClone(lane.points), label: label ?? "Automation edit" }].slice(-80);
+            entry.future = [];
+            automationHistoryRef.current.set(key, entry);
+            setAutomationHistoryTick((v) => v + 1);
+          }
+          automationLastPushRef.current.set(key, { label: label ?? "Automation edit", at: now });
+        }
         updateTrack(trackId, {
           automation: lanes.map((l) =>
             l.param === param ? { ...l, points: [...points].sort((a, b) => a.step - b.step) } : l,
           ),
         });
+      },
+      undoAutomationEdit: (trackId, param) => {
+        const key = `${trackId}:${param}`;
+        const entry = automationHistoryRef.current.get(key);
+        const t = tracksRef.current.find((x) => x.id === trackId);
+        const lanes = t?.automation ?? [];
+        const lane = lanes.find((l) => l.param === param);
+        if (!lane) return;
+        if (lane.locked) {
+          toast("Lane is locked — click the lock to edit");
+          return;
+        }
+        const step = entry?.past.pop();
+        if (!step) {
+          toast("Nothing to undo on this lane");
+          return;
+        }
+        entry!.future = [...entry!.future, { points: structuredClone(lane.points), label: step.label }].slice(-80);
+        automationLastPushRef.current.delete(key);
+        updateTrack(trackId, { automation: lanes.map((l) => (l.param === param ? { ...l, points: step.points } : l)) });
+        setAutomationHistoryTick((v) => v + 1);
+        toast(`Undid ${step.label.toLowerCase()}`);
+      },
+      redoAutomationEdit: (trackId, param) => {
+        const key = `${trackId}:${param}`;
+        const entry = automationHistoryRef.current.get(key);
+        const t = tracksRef.current.find((x) => x.id === trackId);
+        const lanes = t?.automation ?? [];
+        const lane = lanes.find((l) => l.param === param);
+        if (!lane) return;
+        if (lane.locked) {
+          toast("Lane is locked — click the lock to edit");
+          return;
+        }
+        const step = entry?.future.pop();
+        if (!step) {
+          toast("Nothing to redo on this lane");
+          return;
+        }
+        entry!.past = [...entry!.past, { points: structuredClone(lane.points), label: step.label }].slice(-80);
+        automationLastPushRef.current.delete(key);
+        updateTrack(trackId, { automation: lanes.map((l) => (l.param === param ? { ...l, points: step.points } : l)) });
+        setAutomationHistoryTick((v) => v + 1);
+        toast(`Redid ${step.label.toLowerCase()}`);
+      },
+      automationHistory: (trackId, param) => {
+        const entry = automationHistoryRef.current.get(`${trackId}:${param}`);
+        const undo = entry?.past[entry.past.length - 1] ?? null;
+        const redo = entry?.future[entry.future.length - 1] ?? null;
+        return {
+          canUndo: !!undo,
+          canRedo: !!redo,
+          undoLabel: undo?.label ?? null,
+          redoLabel: redo?.label ?? null,
+        };
       },
       setAutomationMode: (trackId, param, mode) => {
         const t = tracksRef.current.find((x) => x.id === trackId);
@@ -1491,7 +1576,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           ),
         })),
     };
-  }, [tracks, transport, selectedId, selectedIds, editTool, panel, userPresets, buses, installedPlugins, fxChains, midiInputs, midiInputId, midiLearning, midiMap, midiLearn, clipboardName, enableMidi, updateTrack, finishRecording, splitClipAtImpl, buildSnapshot, applySession, historyTick, savedAt]);
+  }, [tracks, transport, selectedId, selectedIds, editTool, panel, userPresets, buses, installedPlugins, fxChains, midiInputs, midiInputId, midiLearning, midiMap, midiLearn, clipboardName, enableMidi, updateTrack, finishRecording, splitClipAtImpl, buildSnapshot, applySession, historyTick, automationHistoryTick, savedAt]);
 
 
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>;
