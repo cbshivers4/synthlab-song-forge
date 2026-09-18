@@ -1035,6 +1035,10 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
   };
 
   const duplicateRegion = () => {
+    if (locked) {
+      toast("Lane is locked — click the lock to edit");
+      return;
+    }
     const source = lane.points.filter((point) => point.step >= regionStart && point.step <= regionEnd);
     if (source.length === 0) {
       toast("No automation in the loop region");
@@ -1054,6 +1058,10 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
   };
 
   const deleteRegion = () => {
+    if (locked) {
+      toast("Lane is locked — click the lock to edit");
+      return;
+    }
     const remaining = lane.points.filter((point) => point.step < regionStart || point.step > regionEnd);
     if (remaining.length === lane.points.length) {
       toast("No automation in the loop region");
