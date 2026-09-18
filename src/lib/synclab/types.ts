@@ -214,9 +214,27 @@ export interface AudioClip {
   fadeIn?: number;
   fadeOut?: number;
   loopClip?: boolean;
+  /** transpose in semitones (browser playback also changes length) */
+  pitch?: number;
+  /** playback speed multiplier, 1 = original */
+  speed?: number;
+  /** play the clip backwards */
+  reverse?: boolean;
   url?: string | undefined;
   cloudPath?: string | undefined;
   takeOf?: string | undefined;
+}
+
+/** Combined playback rate for a clip — pitch and speed share one rate in the browser. */
+export function clipRate(c: Pick<AudioClip, "pitch" | "speed">): number {
+  const speed = c.speed ?? 1;
+  const semis = c.pitch ?? 0;
+  return Math.max(0.25, Math.min(4, speed * Math.pow(2, semis / 12)));
+}
+
+/** How long the clip occupies the timeline, in seconds. */
+export function clipSeconds(c: AudioClip): number {
+  return (c.length ?? c.duration) / clipRate(c);
 }
 
 export type PluginKind =
