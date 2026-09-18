@@ -396,6 +396,7 @@ export function EffectDisplay({
   const param = (id?: string) => (id ? plugin.params.find((p) => p.id === id) : undefined);
   const xP = param(shape.xParam);
   const yP = param(shape.yParam);
+  const isStepFilter = plugin.kind === "stepfilter";
 
   const setEqBandGain = (bandId: (typeof DISPLAY_BANDS)[number]["id"], normalizedY: number) => {
     const p = param(bandId);
@@ -409,6 +410,11 @@ export function EffectDisplay({
     const r = el.getBoundingClientRect();
     const nx = clamp01((clientX - r.left) / r.width);
     const ny = 1 - clamp01((clientY - r.top) / r.height);
+    if (isStepFilter) {
+      const count = Math.round(param("steps")?.value ?? 16);
+      onParam(`s${Math.min(count, Math.floor(nx * count) + 1)}`, ny);
+      return;
+    }
     if (isChannelEq) {
       const band = DISPLAY_BANDS.find((b) => nx >= b.from && nx <= b.to) ?? DISPLAY_BANDS[1];
       if (band) setEqBandGain(band.id, ny);
@@ -426,7 +432,7 @@ export function EffectDisplay({
       <div className="flex items-center gap-2">
         <span className="label-xs">{shape.title}</span>
         <span className="ml-auto font-mono text-[9px] tracking-wider text-muted-foreground uppercase">
-          {isChannelEq ? "drag color bands · bass / mids / highs" : xP ? `drag ↔ ${xP.name}` : ""}
+          {isStepFilter ? "drag steps to draw the filter pattern" : isChannelEq ? "drag color bands · bass / mids / highs" : xP ? `drag ↔ ${xP.name}` : ""}
           {!isChannelEq && yP ? ` · ↕ ${yP.name}` : ""}
         </span>
       </div>
@@ -439,7 +445,7 @@ export function EffectDisplay({
         className="panel relative touch-none overflow-hidden bg-surface-2/50"
         style={{ height, cursor: xP ? "crosshair" : "default" }}
         onPointerDown={(e) => {
-          if (!xP && !yP) return;
+          if (!xP && !yP && !isStepFilter) return;
           e.currentTarget.setPointerCapture(e.pointerId);
           setDragging(true);
           apply(e.clientX, e.clientY);

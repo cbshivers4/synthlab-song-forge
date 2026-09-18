@@ -308,7 +308,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const clipboardRef = useRef<Track | null>(null);
   const selectedIdRef = useRef(selectedId);
   selectedIdRef.current = selectedId;
-  const heldRef = useRef(new Map<number, { id: string; trackId: string; t0: number }>());
+  const heldRef = useRef(new Map<number, { ids: string[]; trackId: string; t0: number }>());
 
   // ---- Undo / redo history + local autosave -------------------------------
   const pastRef = useRef<CloudSession[]>([]);
@@ -417,17 +417,17 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           engine.syncMix(tracksRef.current);
           triggerNote(engine, target, pitch, 0.6, Math.max(0.15, velocity));
           if (tp.recording) {
-            const id = uid();
-            heldRef.current.set(pitch, { id, trackId: target.id, t0: performance.now() });
-            const note: MidiNote = {
-              id,
+            const pitches = processMidiThroughPlugins(pitch, target.plugins);
+            const notes: MidiNote[] = pitches.map((recordedPitch) => ({
+              id: uid(),
               step: tp.step,
               length: 1,
-              pitch,
+              pitch: recordedPitch,
               velocity: Math.max(0.15, velocity),
-            };
+            }));
+            heldRef.current.set(pitch, { ids: notes.map((note) => note.id), trackId: target.id, t0: performance.now() });
             setTracks((ts) =>
-              ts.map((t) => (t.id === target.id ? { ...t, notes: [...(t.notes ?? []), note] } : t)),
+              ts.map((t) => (t.id === target.id ? { ...t, notes: [...(t.notes ?? []), ...notes] } : t)),
             );
           }
         } else {
@@ -439,7 +439,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           setTracks((ts) =>
             ts.map((t) =>
               t.id === held.trackId
-                ? { ...t, notes: (t.notes ?? []).map((n) => (n.id === held.id ? { ...n, length: steps } : n)) }
+                ? { ...t, notes: (t.notes ?? []).map((n) => (held.ids.includes(n.id) ? { ...n, length: steps } : n)) }
                 : t,
             ),
           );
