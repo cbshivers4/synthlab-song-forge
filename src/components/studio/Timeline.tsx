@@ -1170,13 +1170,13 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
           <Button type="button" variant="ghost" size="icon" className="size-5" onClick={copyRegion} title="Copy automation in loop region (⌘/Ctrl+C)" aria-label={`Copy ${label} region`}>
             <Copy className="size-3" />
           </Button>
-          <Button type="button" variant="ghost" size="icon" className="size-5" onClick={pasteRegion} title="Paste automation at playhead (⌘/Ctrl+V)" aria-label={`Paste ${label} at playhead`}>
+          <Button type="button" variant="ghost" size="icon" className="size-5 disabled:opacity-40" disabled={locked} onClick={pasteRegion} title={locked ? "Unlock this lane to paste" : "Paste automation at playhead (⌘/Ctrl+V)"} aria-label={`Paste ${label} at playhead`}>
             <ClipboardPaste className="size-3" />
           </Button>
-          <Button type="button" variant="ghost" size="icon" className="size-5" onClick={duplicateRegion} title="Duplicate automation after loop region (⌘/Ctrl+D)" aria-label={`Duplicate ${label} region`}>
+          <Button type="button" variant="ghost" size="icon" className="size-5 disabled:opacity-40" disabled={locked} onClick={duplicateRegion} title={locked ? "Unlock this lane to duplicate" : "Duplicate automation after loop region (⌘/Ctrl+D)"} aria-label={`Duplicate ${label} region`}>
             <Repeat className="size-3" />
           </Button>
-          <Button type="button" variant="ghost" size="icon" className="size-5 text-destructive" onClick={deleteRegion} title="Delete automation in loop region (Delete/Backspace)" aria-label={`Delete ${label} region`}>
+          <Button type="button" variant="ghost" size="icon" className="size-5 text-destructive disabled:opacity-40 disabled:hover:text-destructive" disabled={locked} onClick={deleteRegion} title={locked ? "Unlock this lane to delete" : "Delete automation in loop region (Delete/Backspace)"} aria-label={`Delete ${label} region`}>
             <Trash2 className="size-3" />
           </Button>
         </div>
@@ -1214,6 +1214,7 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
               type="number"
               min={0}
               max={total}
+              disabled={locked}
               value={selected.step}
               onChange={(event) => setAutomationPoints(track.id, lane.param, pts.map((point, index) => index === selectedPoint ? { ...point, step: snapStep(Number(event.target.value)) } : point))}
             />
