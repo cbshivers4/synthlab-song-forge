@@ -20,6 +20,8 @@ import {
   EyeOff,
   Headphones,
   Mic,
+  Lock,
+  LockOpen,
   MoreVertical,
   Repeat,
   Music2,
@@ -895,7 +897,8 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
 
 /** One automation lane under a track: click to add a point, drag points, double-click to remove. */
 function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) {
-  const { transport, setAutomationPoints, setAutomationMode, toggleAutomationLane } = useStudio();
+  const { transport, setAutomationPoints, setAutomationMode, setAutomationLaneLock, toggleAutomationLane } = useStudio();
+  const locked = lane.locked ?? false;
   const [selectedPoint, setSelectedPoint] = useState<number | null>(null);
   const [gridSnap, setGridSnap] = useState<0 | 0.25 | 0.5 | 1>(1);
   const [valueSnap, setValueSnap] = useState<0 | 0.02 | 0.05 | 0.1>(0);
