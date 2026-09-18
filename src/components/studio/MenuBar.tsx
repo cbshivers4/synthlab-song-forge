@@ -109,7 +109,7 @@ export function MenuBar() {
   };
 
   return (
-    <div className="flex items-center gap-2 border-b border-border bg-surface/70 px-2">
+    <div className="flex min-h-11 items-center gap-2 overflow-x-auto border-b border-border bg-surface/70 px-2 [scrollbar-width:none]">
       <input
         ref={importRef}
         type="file"
@@ -136,9 +136,9 @@ export function MenuBar() {
           e.target.value = "";
         }}
       />
-      <Menubar className="h-8 border-0 bg-transparent p-0">
+      <Menubar className="h-10 min-w-max border-0 bg-transparent p-0 [&_[role=menuitem]]:min-h-11 [&_[role=menuitem]]:touch-manipulation">
         <MenubarMenu>
-          <MenubarTrigger className="text-xs">File</MenubarTrigger>
+          <MenubarTrigger className="min-h-10 touch-manipulation px-3 text-xs">File</MenubarTrigger>
           <MenubarContent>
             <MenubarItem onClick={() => setStage("start")}>New Project</MenubarItem>
             <MenubarItem onClick={() => setStage("start")}>Open Project</MenubarItem>
@@ -356,7 +356,7 @@ export function MenuBar() {
         </MenubarMenu>
       </Menubar>
 
-      <span className="ml-auto font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
+      <span className="ml-auto hidden shrink-0 font-mono text-[10px] tracking-widest text-muted-foreground uppercase lg:inline">
         {project ? `${project.name} · ${project.key} · ${project.timeSig}` : "untitled session"} · {mode} mode
       </span>
     </div>
