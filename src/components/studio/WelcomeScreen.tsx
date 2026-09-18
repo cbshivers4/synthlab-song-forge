@@ -129,9 +129,9 @@ export function WelcomeScreen() {
 
   return (
     <div className="min-h-[100dvh] overflow-y-auto bg-background text-foreground">
-      <div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-start gap-8 px-4 py-6 sm:px-6 sm:py-10 lg:grid-cols-12 lg:items-center lg:gap-16">
+      <div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-start gap-8 px-4 py-6 sm:px-6 sm:py-10 md:grid-cols-2 md:items-center lg:grid-cols-12 lg:gap-16">
         {/* Brand & features side */}
-        <div className="flex flex-col items-center text-center lg:col-span-7 lg:items-start lg:text-left">
+        <div className="flex flex-col items-center text-center sm:col-span-2 sm:items-start sm:text-left md:col-span-1 lg:col-span-7">
           <img src={synclabLogoAsset.url} alt="SYNCLAB" className="mb-5 h-16 w-16 rounded-md border border-border object-cover shadow-lg sm:mb-8 sm:h-24 sm:w-24" />
 
           <div className="mb-7 space-y-3 sm:mb-10 sm:space-y-5">
@@ -146,7 +146,7 @@ export function WelcomeScreen() {
             </p>
           </div>
 
-          <ul className="hidden w-full grid-cols-1 gap-x-10 gap-y-3 sm:grid sm:grid-cols-2">
+          <ul className="hidden w-full grid-cols-1 gap-y-3 sm:grid lg:grid-cols-2 lg:gap-x-10">
             {FEATURES.map((f) => (
               <li key={f.title} className="group flex items-start gap-3">
                 <span
@@ -167,7 +167,7 @@ export function WelcomeScreen() {
         </div>
 
         {/* Auth side */}
-        <div className="lg:col-span-5">
+        <div className="md:col-span-1 lg:col-span-5">
           <div className="overflow-hidden rounded-md border border-border bg-card p-5 shadow-xl sm:p-8">
             <div className="space-y-6">
               <div className="space-y-4">
