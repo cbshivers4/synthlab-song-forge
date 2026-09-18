@@ -1204,34 +1204,67 @@ export class SyncLabEngine {
     }
   }
 
-  /** Plays an arrangement clip through its track channel, with trim and fades. */
+
+  /** Returns (and caches) a reversed copy of a decoded buffer. Original is untouched. */
+  private reversedBuffer(url: string, buf: AudioBuffer): AudioBuffer {
+    const cached = this.reversedBuffers.get(url);
+    if (cached) return cached;
+    const ctx = this.init();
+    const out = ctx.createBuffer(buf.numberOfChannels, buf.length, buf.sampleRate);
+    for (let c = 0; c < buf.numberOfChannels; c++) {
+      const src = buf.getChannelData(c);
+      const dst = out.getChannelData(c);
+      for (let i = 0, n = src.length; i < n; i++) dst[i] = src[n - 1 - i] as number;
+    }
+    this.reversedBuffers.set(url, out);
+    return out;
+  }
+
+  /** Plays an arrangement clip through its track channel, with trim, fades, pitch, speed and reverse. */
   playClip(
     trackId: string,
-    c: { url: string; offset?: number; length?: number; gain?: number; fadeIn?: number; fadeOut?: number },
+    c: {
+      url: string;
+      offset?: number;
+      length?: number;
+      gain?: number;
+      fadeIn?: number;
+      fadeOut?: number;
+      rate?: number;
+      reverse?: boolean;
+      loopClip?: boolean;
+    },
     when?: number,
   ) {
     const ctx = this.init();
-    const buf = this.sampleBuffers.get(c.url);
-    if (!buf) return false;
+    const decoded = this.sampleBuffers.get(c.url);
+    if (!decoded) return false;
     const t0 = when ?? ctx.currentTime;
     const ch = this.channel(trackId);
-    const offset = clamp(c.offset ?? 0, 0, Math.max(0, buf.duration - 0.01));
-    const len = clamp(c.length ?? buf.duration - offset, 0.01, buf.duration - offset);
+    const offset = clamp(c.offset ?? 0, 0, Math.max(0, decoded.duration - 0.01));
+    const len = clamp(c.length ?? decoded.duration - offset, 0.01, decoded.duration - offset);
     const peak = clamp(c.gain ?? 1, 0, 2);
-    const fin = clamp(c.fadeIn ?? 0.004, 0.001, Math.max(0.001, len / 2));
-    const fout = clamp(c.fadeOut ?? 0.01, 0.001, Math.max(0.001, len / 2));
+    const rate = clamp(c.rate ?? 1, 0.25, 4);
+    const heard = len / rate;
+    const fin = clamp(c.fadeIn ?? 0.004, 0.001, Math.max(0.001, heard / 2));
+    const fout = clamp(c.fadeOut ?? 0.01, 0.001, Math.max(0.001, heard / 2));
+
+    const buf = c.reverse ? this.reversedBuffer(c.url, decoded) : decoded;
+    // when reversed, the same trim window lives mirrored in the reversed buffer
+    const startAt = c.reverse ? Math.max(0, decoded.duration - offset - len) : offset;
 
     const src = ctx.createBufferSource();
     src.buffer = buf;
+    src.playbackRate.value = rate;
     const amp = ctx.createGain();
     amp.gain.setValueAtTime(0, t0);
     amp.gain.linearRampToValueAtTime(peak, t0 + fin);
-    amp.gain.setValueAtTime(peak, t0 + Math.max(fin, len - fout));
-    amp.gain.linearRampToValueAtTime(0.0001, t0 + len);
+    amp.gain.setValueAtTime(peak, t0 + Math.max(fin, heard - fout));
+    amp.gain.linearRampToValueAtTime(0.0001, t0 + heard);
     src.connect(amp);
     amp.connect(ch.input);
-    src.start(t0, offset, len);
-    src.stop(t0 + len + 0.02);
+    src.start(t0, startAt, len);
+    src.stop(t0 + heard + 0.02);
 
     const live = this.liveSamples.get(trackId) ?? [];
     live.push(src);

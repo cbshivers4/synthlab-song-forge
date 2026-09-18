@@ -71,6 +71,8 @@ const LANE_LABEL: Record<AutomationParam, string> = {
 };
 import { WaveformView } from "@/components/studio/WaveformView";
 import { LevelBar } from "@/components/studio/LevelBar";
+import { ClipEditor } from "@/components/studio/ClipEditor";
+import { clipSeconds } from "@/lib/synclab/types";
 
 const KindIcon = ({ kind }: { kind: Track["kind"] }) =>
   kind === "drum" ? (
@@ -88,9 +90,11 @@ const INPUTS = ["Microphone", "Guitar / Line 1", "Keyboard / Line 2", "External 
 /** Audio lane: every clip sits at its own bar position and can be moved, trimmed and dragged between tracks. */
 function Waveform({ track }: { track: Track }) {
   const { setActiveClip, removeClip, updateTrack, transport, tracks } = useStudio();
+  const [editingId, setEditingId] = useState<string | null>(null);
   const clips = track.clips ?? [];
   const total = Math.max(1, transport.bars ?? 4) * 4;
   const stepDur = 60 / Math.max(20, transport.bpm) / 4;
+  const editing = clips.find((c) => c.id === editingId) ?? null;
 
   const writeClip = (clipId: string, patch: Partial<(typeof clips)[number]>) =>
     updateTrack(track.id, { clips: clips.map((c) => (c.id === clipId ? { ...c, ...patch } : c)) });
@@ -162,7 +166,7 @@ function Waveform({ track }: { track: Track }) {
     <>
       {clips.map((clip) => {
         const start = clip.start ?? 0;
-        const length = clip.length ?? clip.duration;
+        const length = clipSeconds(clip);
         const steps = Math.max(1, length / stepDur);
         const left = (start / total) * 100;
         const width = Math.min(100 - left, (steps / total) * 100);
@@ -179,7 +183,11 @@ function Waveform({ track }: { track: Track }) {
               setActiveClip(track.id, clip.id);
               beginDrag(e, clip, "move");
             }}
-            title={`${clip.name} — drag to move, pull the edges to trim`}
+            onDoubleClick={(e) => {
+              e.stopPropagation();
+              setEditingId(clip.id);
+            }}
+            title={`${clip.name} — drag to move, pull the edges to trim, double-click to edit`}
           >
             <div className="flex h-[17px] shrink-0 cursor-grab items-center gap-1 bg-clip-audio/10 px-1.5 active:cursor-grabbing">
               <span className="truncate font-mono text-[9px] font-semibold text-clip-audio/80">{clip.name}</span>
@@ -229,6 +237,7 @@ function Waveform({ track }: { track: Track }) {
           </div>
         );
       })}
+      {editing && <ClipEditor track={track} clip={editing} onClose={() => setEditingId(null)} />}
     </>
   );
 }

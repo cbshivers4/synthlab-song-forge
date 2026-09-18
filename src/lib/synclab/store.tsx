@@ -34,6 +34,7 @@ import type {
   TrackKind,
   Transport,
 } from "./types";
+import { clipRate } from "./types";
 
 /** A mixer control a hardware knob/fader can drive. id is a track id, or "master". */
 export interface MidiTarget {
@@ -196,6 +197,8 @@ interface StudioApi extends StudioState {
   setAutomationMode: (trackId: string, param: AutomationParam, mode: "read" | "off") => void;
   removeClip: (trackId: string, clipId: string) => void;
   addClip: (trackId: string, clip: AudioClip) => void;
+  updateClip: (trackId: string, clipId: string, patch: Partial<AudioClip>) => void;
+  previewClip: (trackId: string, clipId: string) => void;
   savePreset: (name: string) => void;
   loadPreset: (trackId: string, name: string) => void;
   generateBeat: (trackId: string, genre: string, energy: number) => void;
@@ -517,6 +520,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
                 gain: c.gain ?? 1,
                 fadeIn: c.fadeIn ?? 0.004,
                 fadeOut: c.fadeOut ?? 0.01,
+                rate: clipRate(c),
+                reverse: c.reverse ?? false,
               });
             }
           }
@@ -1152,6 +1157,39 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             t.id === trackId ? { ...t, clips: [...(t.clips ?? []), clip], activeClipId: clip.id } : t,
           ),
         ),
+      updateClip: (trackId, clipId, patch) => {
+        const t = tracksRef.current.find((x) => x.id === trackId);
+        if (!t) return;
+        updateTrack(trackId, {
+          clips: (t.clips ?? []).map((c) => (c.id === clipId ? { ...c, ...patch } : c)),
+        });
+      },
+      previewClip: (trackId, clipId) => {
+        const t = tracksRef.current.find((x) => x.id === trackId);
+        const c = (t?.clips ?? []).find((x) => x.id === clipId);
+        if (!c?.url) {
+          toast("Nothing to play", { description: "This clip has no audio file attached." });
+          return;
+        }
+        const engine = getEngine();
+        void engine.ensureBuffer(c.url).then((buf) => {
+          if (!buf) {
+            toast.error("Could not read that audio", { description: "The clip's audio file is no longer available." });
+            return;
+          }
+          engine.stopSamples(trackId);
+          engine.playClip(trackId, {
+            url: c.url as string,
+            offset: c.offset ?? 0,
+            length: c.length ?? c.duration,
+            gain: c.gain ?? 1,
+            fadeIn: c.fadeIn ?? 0.004,
+            fadeOut: c.fadeOut ?? 0.01,
+            rate: clipRate(c),
+            reverse: c.reverse ?? false,
+          });
+        });
+      },
       setActiveClip: (trackId, clipId) => updateTrack(trackId, { activeClipId: clipId }),
       toggleAutomationLane: (trackId, param) => {
         const t = tracksRef.current.find((x) => x.id === trackId);
