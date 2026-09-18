@@ -968,6 +968,8 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
       ...lane.points.filter((p) => p.step !== step),
       { step: Math.max(0, Math.min(total, step)), value },
     ]);
+    previewAutomation(track.id, lane.param, value);
+    flashReadout(`${formatValue(value)} @ ${step}`, ((e.clientX - rect.left) / rect.width) * 100, ((e.clientY - rect.top) / rect.height) * 100);
   };
 
   const dragPoint = (e: React.PointerEvent, index: number) => {
