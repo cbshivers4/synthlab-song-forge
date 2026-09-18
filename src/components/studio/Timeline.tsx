@@ -61,7 +61,7 @@ import { AddTrackMenu } from "@/components/studio/AddTrackMenu";
 
 import { INSTRUMENTS, KIND_LABEL, uid } from "@/lib/synclab/presets";
 import type { EditTool } from "@/lib/synclab/store";
-import type { AutomationLane, AutomationParam, MidiNote, Track } from "@/lib/synclab/types";
+import type { AutomationLane, AutomationParam, AutomationPoint, MidiNote, Track } from "@/lib/synclab/types";
 
 const CORE_LANE_LABEL: Record<Exclude<AutomationParam, `plugin:${string}:${string}`>, string> = {
   volume: "VOLUME",
@@ -76,6 +76,8 @@ const laneLabel = (track: Track, param: AutomationParam) => {
   const control = plugin?.params.find((item) => item.id === paramId);
   return `${plugin?.name ?? "DEVICE"} · ${control?.name ?? paramId ?? "CONTROL"}`.toUpperCase();
 };
+
+let automationClipboard: { duration: number; points: AutomationPoint[] } | null = null;
 import { WaveformView } from "@/components/studio/WaveformView";
 import { LevelBar } from "@/components/studio/LevelBar";
 import { ClipEditor } from "@/components/studio/ClipEditor";
@@ -896,6 +898,9 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
   const { transport, setAutomationPoints, setAutomationMode, toggleAutomationLane } = useStudio();
   const [selectedPoint, setSelectedPoint] = useState<number | null>(null);
   const total = Math.max(1, transport.bars ?? 4) * 4;
+  const regionStart = Math.max(0, Math.min(total, transport.loopStart ?? 0));
+  const regionEnd = Math.max(regionStart + 1, Math.min(total, transport.loopEnd ?? total));
+  const regionDuration = regionEnd - regionStart;
   const bipolar = lane.param === "pan";
   const [, pluginId, paramId] = lane.param.startsWith("plugin:") ? lane.param.split(":") : [];
   const control = (track.plugins ?? []).find((item) => item.id === pluginId)?.params.find((item) => item.id === paramId);
@@ -978,6 +983,62 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
     window.addEventListener("pointerup", onUp);
   };
 
+  const copyRegion = () => {
+    const points = lane.points
+      .filter((point) => point.step >= regionStart && point.step <= regionEnd)
+      .map((point) => ({ ...point, step: point.step - regionStart }));
+    if (points.length === 0) {
+      toast("No automation in the loop region");
+      return;
+    }
+    automationClipboard = { duration: regionDuration, points };
+    toast(`Copied ${points.length} automation point${points.length === 1 ? "" : "s"}`);
+  };
+
+  const pasteRegion = () => {
+    if (!automationClipboard) {
+      toast("Automation clipboard is empty");
+      return;
+    }
+    const origin = Math.max(0, Math.min(total, transport.step));
+    const pasted = automationClipboard.points
+      .map((point) => ({ ...point, step: Math.min(total, origin + point.step) }))
+      .filter((point, index, all) => all.findIndex((candidate) => candidate.step === point.step) === index);
+    const occupied = new Set(pasted.map((point) => point.step));
+    setAutomationPoints(track.id, lane.param, [...lane.points.filter((point) => !occupied.has(point.step)), ...pasted]);
+    setSelectedPoint(null);
+    toast(`Pasted automation at step ${origin}`);
+  };
+
+  const duplicateRegion = () => {
+    const source = lane.points.filter((point) => point.step >= regionStart && point.step <= regionEnd);
+    if (source.length === 0) {
+      toast("No automation in the loop region");
+      return;
+    }
+    const duplicated = source
+      .map((point) => ({ ...point, step: point.step + regionDuration }))
+      .filter((point) => point.step <= total);
+    if (duplicated.length === 0) {
+      toast("No room after this region", { description: "Extend the timeline or move the loop region left." });
+      return;
+    }
+    const occupied = new Set(duplicated.map((point) => point.step));
+    setAutomationPoints(track.id, lane.param, [...lane.points.filter((point) => !occupied.has(point.step)), ...duplicated]);
+    setSelectedPoint(null);
+    toast(`Duplicated automation to steps ${regionEnd}–${Math.min(total, regionEnd + regionDuration)}`);
+  };
+
+  const deleteRegion = () => {
+    const remaining = lane.points.filter((point) => point.step < regionStart || point.step > regionEnd);
+    if (remaining.length === lane.points.length) {
+      toast("No automation in the loop region");
+      return;
+    }
+    setAutomationPoints(track.id, lane.param, remaining);
+    setSelectedPoint(null);
+  };
+
   const label = laneLabel(track, lane.param);
   const pts = lane.points;
   const selected = selectedPoint === null ? undefined : pts[selectedPoint];
@@ -1033,6 +1094,21 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
         >
           <X className="size-3" />
         </button>
+        <div className="flex w-full items-center gap-0.5 border-t border-border/50 pt-1">
+          <span className="mr-auto font-mono text-[7px] text-muted-foreground">REGION {regionStart}–{regionEnd}</span>
+          <Button type="button" variant="ghost" size="icon" className="size-5" onClick={copyRegion} title="Copy automation in loop region" aria-label={`Copy ${label} region`}>
+            <Copy className="size-3" />
+          </Button>
+          <Button type="button" variant="ghost" size="icon" className="size-5" onClick={pasteRegion} title="Paste automation at playhead" aria-label={`Paste ${label} at playhead`}>
+            <ClipboardPaste className="size-3" />
+          </Button>
+          <Button type="button" variant="ghost" size="icon" className="size-5" onClick={duplicateRegion} title="Duplicate automation after loop region" aria-label={`Duplicate ${label} region`}>
+            <Repeat className="size-3" />
+          </Button>
+          <Button type="button" variant="ghost" size="icon" className="size-5 text-destructive" onClick={deleteRegion} title="Delete automation in loop region" aria-label={`Delete ${label} region`}>
+            <Trash2 className="size-3" />
+          </Button>
+        </div>
         {selected && (
           <div className="flex w-full items-center gap-1 font-mono text-[8px]" onClick={(event) => event.stopPropagation()}>
             <label className="text-muted-foreground">STEP</label>

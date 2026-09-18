@@ -23,6 +23,7 @@
 - [x] Draw, drag and delete points; READ/OFF per lane; curves ride the channel during playback
 - [x] Record live device movements with Write, Touch, and Latch modes during playback
 - [x] Edit device automation points with curve shaping and parameter-aware value scaling
+- [x] Copy, paste, duplicate, and delete device automation across loop-selected timeline regions
 
 ## Stage 4 — clip editor (done)
 - [x] Double-click an audio clip to open a non-destructive editor
