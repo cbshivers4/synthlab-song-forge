@@ -1016,6 +1016,10 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
   };
 
   const pasteRegion = () => {
+    if (locked) {
+      toast("Lane is locked — click the lock to edit");
+      return;
+    }
     if (!automationClipboard) {
       toast("Automation clipboard is empty");
       return;
