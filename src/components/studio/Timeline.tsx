@@ -1104,6 +1104,7 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
     }
     setAutomationPoints(track.id, lane.param, remaining);
     setSelectedPoint(null);
+    previewRegionEdit(remaining, `DELETED ${lane.points.length - remaining.length}`);
   };
 
   const handleRegionShortcut = (event: React.KeyboardEvent<HTMLDivElement>) => {
