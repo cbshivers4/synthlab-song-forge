@@ -428,6 +428,7 @@ function useShortcuts() {
 }
 
 function StudioWorkspace() {
+  const isMobile = useIsMobile();
   const [float, setFloat] = useState<FloatState>({ synth: false, drums: false });
   useShortcuts();
   return (
@@ -435,7 +436,7 @@ function StudioWorkspace() {
       <MenuBar />
       <TopBar />
       <div className="flex min-h-0 flex-1">
-        <ToolsRail />
+        {!isMobile && <ToolsRail />}
         <main className="flex min-h-0 flex-1 flex-col">
           <h1 className="sr-only">SYNCLAB Studio — browser digital audio workstation</h1>
           <Timeline />

@@ -41,3 +41,12 @@
 - [x] Adjustable equal-power crossfade at audition loop boundaries
 - [x] Expand timeline automation for filter and device parameters
 - [x] Add original step-filter, resonator, scale/chord, and transient devices
+
+## Mobile studio and access
+- [ ] Redesign the sign-in screen in the Clean Pro Console direction
+- [ ] Add sign-out to the session-selection screen
+- [ ] Make studio menus, transport, timeline actions, and tools touch-accessible on phones
+- [ ] Make pad microphone recording work on empty pads and mobile recording formats
+- [ ] Surface chord and scale controls clearly on phones
+- [ ] Implement real Hum to Beat recording and local rhythm extraction
+- [ ] Verify sign-in, menus, pads, keyboard, and Hum to Beat at phone and desktop sizes

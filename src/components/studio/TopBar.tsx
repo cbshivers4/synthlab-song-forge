@@ -46,6 +46,7 @@ import synclabLogoAsset from "@/assets/synclab-logo-neon.jpg.asset.json";
 const synclabLogo = synclabLogoAsset.url;
 
 export function TopBar() {
+  const isMobile = useIsMobile();
   const { transport, setTransport, togglePlay, toggleRecord, stop, addTrack, setPanel, panel } = useStudio();
 
   return (

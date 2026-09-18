@@ -436,6 +436,7 @@ export const readDrag = (e: React.DragEvent): DragPayload | null => {
 };
 
 function TrackRow({ track, index }: { track: Track; index: number }) {
+  const isMobile = useIsMobile();
   const { selectedId, selectedIds, select, toggleSelectId, updateTrack, removeTrack, duplicateTrack, moveTrack, setPanel, changeInstrument, installedPlugins, addPlugin, editTool, splitClipAt, toggleStep, toggleAutomationLane } =
     useStudio();
   const { transport, setNotes, loadSample } = useStudio();
@@ -790,7 +791,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
         </div>
 
         <div className="flex items-center gap-2">
-          <Select value={track.input} onValueChange={(v) => updateTrack(track.id, { input: v })}>
+          {!isMobile && <Select value={track.input} onValueChange={(v) => updateTrack(track.id, { input: v })}>
             <SelectTrigger className="h-7 flex-1 text-[11px]">
               <SelectValue />
             </SelectTrigger>
@@ -801,7 +802,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
                 </SelectItem>
               ))}
             </SelectContent>
-          </Select>
+          </Select>}
           <Slider
             className="w-16"
             value={[track.volume]}
