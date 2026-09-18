@@ -1,5 +1,5 @@
 import type { DrumKitId, DrumPad, PluginInstance, SynthPatch, Track } from "./types";
-import { openMicOrThrow } from "./mic";
+import { openMicOrThrow, preferredRecordingMime } from "./mic";
 
 type KitVoice = {
   kick: [number, number, number, OscillatorType];
@@ -1115,7 +1115,8 @@ export class SyncLabEngine {
     this.monitorNode = src;
     this.monitorGain = mg;
 
-    const rec = new MediaRecorder(stream);
+    const mime = preferredRecordingMime();
+    const rec = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
     rec.ondataavailable = (e) => e.data.size > 0 && this.recChunks.push(e.data);
     rec.start(200);
     this.recorder = rec;
