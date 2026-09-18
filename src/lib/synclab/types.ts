@@ -182,6 +182,16 @@ export interface DrumPad {
   end?: number;
   reverse?: boolean;
   choke?: number;
+  /** 0..1 tone filter — below 0.5 darkens (lowpass), above 0.5 thins out (highpass) */
+  tone?: number;
+  /** 0..1 saturation drive */
+  drive?: number;
+  /** 0..1 extra transient click on the attack */
+  snap?: number;
+  /** 0..1 extra noise layer blended with the voice */
+  noise?: number;
+  /** 0..1 stereo width of the noise layer */
+  width?: number;
   sample?: string | undefined;
   muted: boolean;
   solo: boolean;
