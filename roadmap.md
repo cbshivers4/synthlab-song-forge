@@ -21,3 +21,8 @@
 ## Stage 3 — automation (done)
 - [x] Volume, pan, reverb and delay send lanes per track
 - [x] Draw, drag and delete points; READ/OFF per lane; curves ride the channel during playback
+
+## Stage 4 — clip editor (done)
+- [x] Double-click an audio clip to open a non-destructive editor
+- [x] Trim start/end, fades, gain, normalize, loop, reverse, rename, revert
+- [x] Pitch and speed (browser couples them into one playback rate — stated honestly)
