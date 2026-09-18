@@ -213,6 +213,15 @@ export function DrumMachine({ track }: { track: Track }) {
                 <Knob label="START" value={pad.start ?? 0} onChange={(v) => updatePad(track.id, pad.id, { start: v })} />
                 <Knob label="END" value={pad.end ?? 1} onChange={(v) => updatePad(track.id, pad.id, { end: v })} />
                 <Knob
+                  label="TONE"
+                  value={pad.tone ?? 0.5}
+                  onChange={(v) => updatePad(track.id, pad.id, { tone: v })}
+                />
+                <Knob label="DRIVE" value={pad.drive ?? 0} onChange={(v) => updatePad(track.id, pad.id, { drive: v })} />
+                <Knob label="SNAP" value={pad.snap ?? 0} onChange={(v) => updatePad(track.id, pad.id, { snap: v })} />
+                <Knob label="NOISE" value={pad.noise ?? 0} onChange={(v) => updatePad(track.id, pad.id, { noise: v })} />
+                <Knob label="WIDTH" value={pad.width ?? 0} onChange={(v) => updatePad(track.id, pad.id, { width: v })} />
+                <Knob
                   label="CHOKE"
                   min={0}
                   max={4}
