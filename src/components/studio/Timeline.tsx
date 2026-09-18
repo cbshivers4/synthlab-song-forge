@@ -1036,6 +1036,13 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
     window.addEventListener("pointerup", onUp);
   };
 
+  /** after a region edit, audition the first affected value and show what changed */
+  const previewRegionEdit = (points: AutomationPoint[], text: string) => {
+    const first = points[0];
+    if (first) previewAutomation(track.id, lane.param, first.value);
+    flashReadout(first ? `${text} · ${formatValue(first.value)}` : text);
+  };
+
   const copyRegion = () => {
     const points = lane.points
       .filter((point) => point.step >= regionStart && point.step <= regionEnd)
