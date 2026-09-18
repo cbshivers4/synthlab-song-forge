@@ -448,9 +448,19 @@ export function Settings() {
               set("midiInput", v);
             }}
           />
-          <Button size="sm" variant="secondary" onClick={enableMidi}>
+          <Button size="sm" variant="secondary" onClick={scanMidi}>
             Scan
           </Button>
+        </Row>
+        <Row
+          label="Controllers found"
+          hint={midiSupported() ? "Keyboards, pad controllers and control surfaces" : "MIDI needs Chrome or Edge"}
+        >
+          <div className="max-w-[18rem] text-right font-mono text-xs text-primary">
+            {midiInputs.length ? midiInputs.map((m) => <div key={m.id}>{m.name}</div>) : (
+              <span className="text-muted-foreground">None connected</span>
+            )}
+          </div>
         </Row>
         <Row label="MIDI thru" hint="Pass notes to the armed instrument">
           <Switch checked={p.midiThru} onCheckedChange={(v) => set("midiThru", v)} />
