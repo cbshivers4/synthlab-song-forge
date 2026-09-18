@@ -25,6 +25,7 @@
 - [x] Edit device automation points with curve shaping and parameter-aware value scaling
 - [x] Copy, paste, duplicate, and delete device automation across loop-selected timeline regions
 - [x] Keyboard shortcuts for device automation region copy, paste, duplicate, and delete
+- [x] Time-grid and parameter-aware value snapping for device automation points and regions
 
 ## Stage 4 — clip editor (done)
 - [x] Double-click an audio clip to open a non-destructive editor
