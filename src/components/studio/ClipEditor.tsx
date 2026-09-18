@@ -1,6 +1,6 @@
-import { useMemo, useRef, useState } from "react";
-import type { KeyboardEvent, PointerEvent as ReactPointerEvent } from "react";
-import { Play, RotateCcw, Square, Undo2 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { KeyboardEvent, PointerEvent as ReactPointerEvent, WheelEvent as ReactWheelEvent } from "react";
+import { Play, RotateCcw, Square, Undo2, ZoomIn, ZoomOut } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +28,7 @@ import { toast } from "sonner";
 export function ClipEditor({ track, clip, onClose }: { track: Track; clip: AudioClip; onClose: () => void }) {
   const { updateClip, previewClip } = useStudio();
   const [zoomTrim, setZoomTrim] = useState(true);
+  const [waveZoom, setWaveZoom] = useState(1);
 
   const dur = Math.max(0.01, clip.duration);
   const offset = clip.offset ?? 0;
@@ -86,6 +87,8 @@ export function ClipEditor({ track, clip, onClose }: { track: Track; clip: Audio
           fadeIn={fadeIn}
           fadeOut={fadeOut}
           zoomTrim={zoomTrim}
+          zoom={waveZoom}
+          onZoomChange={setWaveZoom}
           onChange={set}
         />
 
@@ -195,6 +198,8 @@ function InteractiveWaveform({
   fadeIn,
   fadeOut,
   zoomTrim,
+  zoom,
+  onZoomChange,
   onChange,
 }: {
   clip: AudioClip;
@@ -204,9 +209,13 @@ function InteractiveWaveform({
   fadeIn: number;
   fadeOut: number;
   zoomTrim: boolean;
+  zoom: number;
+  onZoomChange: (zoom: number) => void;
   onChange: (patch: Partial<AudioClip>) => void;
 }) {
+  const viewportRef = useRef<HTMLDivElement>(null);
   const surfaceRef = useRef<HTMLDivElement>(null);
+  const [scrollPct, setScrollPct] = useState(0);
   const dragRef = useRef<{
     kind: WaveHandle;
     pointerId: number;
@@ -229,6 +238,37 @@ function InteractiveWaveform({
     const slice = peaks.slice(Math.max(0, a), Math.max(a + 2, b));
     return clip.reverse ? [...slice].reverse() : slice;
   }, [clip.reverse, dur, length, offset, peaks, zoomTrim]);
+
+  const syncScroll = () => {
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+    const max = Math.max(0, viewport.scrollWidth - viewport.clientWidth);
+    setScrollPct(max > 0 ? (viewport.scrollLeft / max) * 100 : 0);
+  };
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(syncScroll);
+    return () => cancelAnimationFrame(frame);
+  }, [zoom]);
+
+  const changeZoom = (next: number) => {
+    const viewport = viewportRef.current;
+    const previousMax = viewport ? Math.max(0, viewport.scrollWidth - viewport.clientWidth) : 0;
+    const previousPct = previousMax > 0 && viewport ? viewport.scrollLeft / previousMax : 0;
+    onZoomChange(Math.max(1, Math.min(16, next)));
+    requestAnimationFrame(() => {
+      const nextViewport = viewportRef.current;
+      if (!nextViewport) return;
+      nextViewport.scrollLeft = previousPct * Math.max(0, nextViewport.scrollWidth - nextViewport.clientWidth);
+      syncScroll();
+    });
+  };
+
+  const onWheel = (e: ReactWheelEvent<HTMLDivElement>) => {
+    if (!e.ctrlKey && !e.metaKey) return;
+    e.preventDefault();
+    changeZoom(zoom + (e.deltaY < 0 ? 0.5 : -0.5));
+  };
 
   const applyAt = (kind: WaveHandle, seconds: number, start = { offset, length, fadeIn, fadeOut }) => {
     const minimum = Math.min(0.05, dur);
@@ -315,100 +355,103 @@ function InteractiveWaveform({
   return (
     <div className="space-y-1.5">
       <div
-        ref={surfaceRef}
-        className="relative h-36 touch-none select-none overflow-hidden rounded-[3px] border border-border bg-background"
+        ref={viewportRef}
+        className="overflow-x-auto rounded-[3px] border border-border bg-background"
+        onScroll={syncScroll}
+        onWheel={onWheel}
       >
-        <WaveformView
-          peaks={visiblePeaks}
-          color="var(--clip-audio)"
-          label={`${clip.name} interactive waveform`}
-          gain={clip.gain ?? 1}
-        />
-
-        <div className="pointer-events-none absolute inset-y-0 left-0 bg-background/75" style={{ width: `${leftPct}%` }} />
         <div
-          className="pointer-events-none absolute inset-y-0 bg-background/75"
-          style={{ left: `${leftPct + widthPct}%`, right: 0 }}
-        />
-        <div
-          className="pointer-events-none absolute inset-y-0 border-y border-clip-audio/40 bg-clip-audio/[0.04]"
-          style={{ left: `${leftPct}%`, width: `${widthPct}%` }}
-        />
-
-        <svg className="pointer-events-none absolute inset-0 size-full" preserveAspectRatio="none" viewBox="0 0 100 100" aria-hidden="true">
-          <path
-            d={`M ${leftPct} 0 L ${leftPct + fadeInPct} 100 L ${leftPct} 100 Z`}
-            fill="var(--clip-audio)"
-            fillOpacity="0.14"
-          />
-          <line
-            x1={leftPct}
-            y1="0"
-            x2={leftPct + fadeInPct}
-            y2="100"
-            stroke="var(--clip-audio)"
-            strokeOpacity="0.9"
-            vectorEffect="non-scaling-stroke"
-          />
-          <path
-            d={`M ${leftPct + widthPct - fadeOutPct} 100 L ${leftPct + widthPct} 0 L ${leftPct + widthPct} 100 Z`}
-            fill="var(--primary)"
-            fillOpacity="0.14"
-          />
-          <line
-            x1={leftPct + widthPct - fadeOutPct}
-            y1="100"
-            x2={leftPct + widthPct}
-            y2="0"
-            stroke="var(--primary)"
-            strokeOpacity="0.9"
-            vectorEffect="non-scaling-stroke"
-          />
-        </svg>
-
-        <div
-          {...handleProps("trim-start", offset, dur)}
-          className="absolute inset-y-0 z-20 w-3 -translate-x-1/2 cursor-ew-resize border-x border-clip-audio bg-clip-audio/25 outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          style={{ left: `${leftPct}%` }}
-          title={`Trim start ${offset.toFixed(2)}s`}
+          ref={surfaceRef}
+          className="relative h-36 touch-none select-none overflow-hidden"
+          style={{ width: `${zoom * 100}%`, minWidth: "100%" }}
         >
-          <span className="absolute bottom-1 left-1/2 -translate-x-1/2 rounded-[2px] bg-background/90 px-1 font-mono text-[8px] text-clip-audio">
-            {offset.toFixed(2)}s
-          </span>
-        </div>
-        <div
-          {...handleProps("trim-end", offset + length, dur)}
-          className="absolute inset-y-0 z-20 w-3 -translate-x-1/2 cursor-ew-resize border-x border-clip-audio bg-clip-audio/25 outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          style={{ left: `${leftPct + widthPct}%` }}
-          title={`Trim end ${(offset + length).toFixed(2)}s`}
-        >
-          <span className="absolute right-1 bottom-1 rounded-[2px] bg-background/90 px-1 font-mono text-[8px] text-clip-audio">
-            {(offset + length).toFixed(2)}s
-          </span>
-        </div>
+          <WaveformView
+            peaks={visiblePeaks}
+            color="var(--clip-audio)"
+            label={`${clip.name} interactive waveform`}
+            gain={clip.gain ?? 1}
+          />
 
-        <div
-          {...handleProps("fade-in", fadeIn, length / 2)}
-          className="absolute top-2 z-30 size-4 -translate-x-1/2 cursor-ew-resize rounded-full border-2 border-background bg-clip-audio shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          style={{ left: `${leftPct + fadeInPct}%` }}
-          title={`Fade in ${fadeIn.toFixed(3)}s`}
-        />
-        <div
-          {...handleProps("fade-out", fadeOut, length / 2)}
-          className="absolute top-2 z-30 size-4 -translate-x-1/2 cursor-ew-resize rounded-full border-2 border-background bg-primary shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          style={{ left: `${leftPct + widthPct - fadeOutPct}%` }}
-          title={`Fade out ${fadeOut.toFixed(3)}s`}
-        />
+          <div className="pointer-events-none absolute inset-y-0 left-0 bg-background/75" style={{ width: `${leftPct}%` }} />
+          <div
+            className="pointer-events-none absolute inset-y-0 bg-background/75"
+            style={{ left: `${leftPct + widthPct}%`, right: 0 }}
+          />
+          <div
+            className="pointer-events-none absolute inset-y-0 border-y border-clip-audio/40 bg-clip-audio/[0.04]"
+            style={{ left: `${leftPct}%`, width: `${widthPct}%` }}
+          />
 
-        <div className="pointer-events-none absolute top-1 left-2 font-mono text-[8px] tracking-wider text-clip-audio">
-          TRIM / FADE IN
-        </div>
-        <div className="pointer-events-none absolute top-1 right-2 font-mono text-[8px] tracking-wider text-primary">
-          FADE OUT / TRIM
+          <svg className="pointer-events-none absolute inset-0 size-full" preserveAspectRatio="none" viewBox="0 0 100 100" aria-hidden="true">
+            <path
+              d={`M ${leftPct} 0 L ${leftPct + fadeInPct} 100 L ${leftPct} 100 Z`}
+              fill="var(--clip-audio)"
+              fillOpacity="0.14"
+            />
+            <line x1={leftPct} y1="0" x2={leftPct + fadeInPct} y2="100" stroke="var(--clip-audio)" strokeOpacity="0.9" vectorEffect="non-scaling-stroke" />
+            <path
+              d={`M ${leftPct + widthPct - fadeOutPct} 100 L ${leftPct + widthPct} 0 L ${leftPct + widthPct} 100 Z`}
+              fill="var(--primary)"
+              fillOpacity="0.14"
+            />
+            <line x1={leftPct + widthPct - fadeOutPct} y1="100" x2={leftPct + widthPct} y2="0" stroke="var(--primary)" strokeOpacity="0.9" vectorEffect="non-scaling-stroke" />
+          </svg>
+
+          <div
+            {...handleProps("trim-start", offset, dur)}
+            className="absolute inset-y-0 z-20 w-3 -translate-x-1/2 cursor-ew-resize border-x border-clip-audio bg-clip-audio/25 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            style={{ left: `${leftPct}%` }}
+            title={`Trim start ${offset.toFixed(2)}s`}
+          >
+            <span className="absolute bottom-1 left-1/2 -translate-x-1/2 rounded-[2px] bg-background/90 px-1 font-mono text-[8px] text-clip-audio">{offset.toFixed(2)}s</span>
+          </div>
+          <div
+            {...handleProps("trim-end", offset + length, dur)}
+            className="absolute inset-y-0 z-20 w-3 -translate-x-1/2 cursor-ew-resize border-x border-clip-audio bg-clip-audio/25 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            style={{ left: `${leftPct + widthPct}%` }}
+            title={`Trim end ${(offset + length).toFixed(2)}s`}
+          >
+            <span className="absolute right-1 bottom-1 rounded-[2px] bg-background/90 px-1 font-mono text-[8px] text-clip-audio">{(offset + length).toFixed(2)}s</span>
+          </div>
+
+          <div {...handleProps("fade-in", fadeIn, length / 2)} className="absolute top-2 z-30 size-4 -translate-x-1/2 cursor-ew-resize rounded-full border-2 border-background bg-clip-audio shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring" style={{ left: `${leftPct + fadeInPct}%` }} title={`Fade in ${fadeIn.toFixed(3)}s`} />
+          <div {...handleProps("fade-out", fadeOut, length / 2)} className="absolute top-2 z-30 size-4 -translate-x-1/2 cursor-ew-resize rounded-full border-2 border-background bg-primary shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring" style={{ left: `${leftPct + widthPct - fadeOutPct}%` }} title={`Fade out ${fadeOut.toFixed(3)}s`} />
+
+          <div className="pointer-events-none absolute top-1 left-2 font-mono text-[8px] tracking-wider text-clip-audio">TRIM / FADE IN</div>
+          <div className="pointer-events-none absolute top-1 right-2 font-mono text-[8px] tracking-wider text-primary">FADE OUT / TRIM</div>
         </div>
       </div>
+      <div className="flex items-center gap-2 rounded-[3px] border border-border bg-surface-2 px-2 py-1.5">
+        <Button size="icon" variant="ghost" className="size-7" aria-label="Zoom waveform out" title="Zoom out" onClick={() => changeZoom(zoom - 0.5)} disabled={zoom <= 1}>
+          <ZoomOut className="size-3.5" />
+        </Button>
+        <Slider aria-label="Waveform zoom" value={[zoom]} min={1} max={16} step={0.25} onValueChange={([value]) => changeZoom(value ?? 1)} className="w-32" />
+        <Button size="icon" variant="ghost" className="size-7" aria-label="Zoom waveform in" title="Zoom in" onClick={() => changeZoom(zoom + 0.5)} disabled={zoom >= 16}>
+          <ZoomIn className="size-3.5" />
+        </Button>
+        <span className="w-10 font-mono text-[9px] text-foreground">{zoom.toFixed(2)}×</span>
+        <Button size="sm" variant="ghost" className="h-7 px-2 font-mono text-[9px]" onClick={() => { onZoomChange(1); const viewport = viewportRef.current; if (viewport) viewport.scrollLeft = 0; setScrollPct(0); }}>
+          FIT
+        </Button>
+        <span className="ml-1 font-mono text-[8px] text-muted-foreground">SCROLL</span>
+        <Slider
+          aria-label="Waveform horizontal scroll"
+          value={[scrollPct]}
+          min={0}
+          max={100}
+          step={0.1}
+          disabled={zoom <= 1}
+          onValueChange={([value]) => {
+            const viewport = viewportRef.current;
+            if (!viewport) return;
+            viewport.scrollLeft = ((value ?? 0) / 100) * Math.max(0, viewport.scrollWidth - viewport.clientWidth);
+            setScrollPct(value ?? 0);
+          }}
+          className="min-w-24 flex-1"
+        />
+      </div>
       <p className="font-mono text-[9px] text-muted-foreground">
-        Drag the tall edge handles to trim. Drag the round handles to shape the fades. Hold Shift with arrow keys for fine adjustment.
+        Zoom up to 16×, scroll horizontally, then drag the handles. Ctrl/⌘ + wheel zooms; Shift + arrow keys makes 1 ms adjustments.
       </p>
     </div>
   );
