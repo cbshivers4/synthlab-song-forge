@@ -1204,7 +1204,6 @@ export class SyncLabEngine {
     }
   }
 
-  private reversedBuffers = new Map<string, AudioBuffer>();
 
   /** Returns (and caches) a reversed copy of a decoded buffer. Original is untouched. */
   private reversedBuffer(url: string, buf: AudioBuffer): AudioBuffer {
