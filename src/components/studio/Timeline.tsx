@@ -949,6 +949,10 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
   const toY = (v: number) => (bipolar ? 1 - (v + 1) / 2 : 1 - v);
 
   const addPoint = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (locked) {
+      toast("Lane is locked — click the lock to edit");
+      return;
+    }
     const rect = e.currentTarget.getBoundingClientRect();
     const step = snapStep(((e.clientX - rect.left) / rect.width) * total);
     const value = snapValue(toValue((e.clientY - rect.top) / rect.height));
@@ -961,6 +965,7 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
   const dragPoint = (e: React.PointerEvent, index: number) => {
     e.stopPropagation();
     setSelectedPoint(index);
+    if (locked) return;
     const row = (e.currentTarget as HTMLElement).closest("[data-auto-row]") as HTMLElement | null;
     if (!row) return;
     const rect = row.getBoundingClientRect();
@@ -983,6 +988,7 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
 
   const dragCurve = (e: React.PointerEvent, index: number) => {
     e.stopPropagation();
+    if (locked) return;
     const startY = e.clientY;
     const original = lane.points[index]?.curve ?? 0;
     const onMove = (ev: PointerEvent) => {
