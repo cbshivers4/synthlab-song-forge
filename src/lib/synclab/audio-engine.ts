@@ -1256,15 +1256,27 @@ export class SyncLabEngine {
     const src = ctx.createBufferSource();
     src.buffer = buf;
     src.playbackRate.value = rate;
+    src.loop = c.loopClip ?? false;
+    if (src.loop) {
+      src.loopStart = startAt;
+      src.loopEnd = startAt + len;
+    }
     const amp = ctx.createGain();
-    amp.gain.setValueAtTime(0, t0);
-    amp.gain.linearRampToValueAtTime(peak, t0 + fin);
-    amp.gain.setValueAtTime(peak, t0 + Math.max(fin, heard - fout));
-    amp.gain.linearRampToValueAtTime(0.0001, t0 + heard);
+    if (src.loop) {
+      amp.gain.setValueAtTime(peak, t0);
+    } else {
+      amp.gain.setValueAtTime(0, t0);
+      amp.gain.linearRampToValueAtTime(peak, t0 + fin);
+      amp.gain.setValueAtTime(peak, t0 + Math.max(fin, heard - fout));
+      amp.gain.linearRampToValueAtTime(0.0001, t0 + heard);
+    }
     src.connect(amp);
     amp.connect(ch.input);
-    src.start(t0, startAt, len);
-    src.stop(t0 + heard + 0.02);
+    if (src.loop) src.start(t0, startAt);
+    else {
+      src.start(t0, startAt, len);
+      src.stop(t0 + heard + 0.02);
+    }
 
     const live = this.liveSamples.get(trackId) ?? [];
     live.push(src);
