@@ -187,7 +187,7 @@ export function DrumMachine({ track }: { track: Track }) {
               </div>
             </div>
             {openPad === pad.id && (
-              <div className="panel ml-24 flex flex-wrap gap-3 p-3">
+              <div className="panel flex flex-wrap gap-3 p-3 sm:ml-24">
                 <Knob label="VOL" value={pad.volume} onChange={(v) => updatePad(track.id, pad.id, { volume: v })} />
                 <Knob label="PAN" min={-1} max={1} value={pad.pan} onChange={(v) => updatePad(track.id, pad.id, { pan: v })} />
                 <Knob
