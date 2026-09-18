@@ -31,6 +31,7 @@ import { BassGenerator } from "@/components/studio/BassGenerator";
 import { CoProducer } from "@/components/studio/CoProducer";
 import { Bot } from "lucide-react";
 import { AppProvider, useApp, useMaybeApp } from "@/lib/synclab/app-state";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
 import synthFace from "@/assets/hw-synth.jpg";
 import drumFace from "@/assets/hw-drum.jpg";
