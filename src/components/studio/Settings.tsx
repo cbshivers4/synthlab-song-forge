@@ -191,18 +191,23 @@ export function Settings() {
         }
         res.stream.getTracks().forEach((t) => t.stop());
       }
-      const list = await navigator.mediaDevices.enumerateDevices();
-      setInputs(
-        list
-          .filter((d) => d.kind === "audioinput")
-          .map((d, i) => ({ id: d.deviceId, label: d.label || `Input ${i + 1}` })),
-      );
-      setOutputs(
-        list
-          .filter((d) => d.kind === "audiooutput")
-          .map((d, i) => ({ id: d.deviceId, label: d.label || `Output ${i + 1}` })),
-      );
-      if (askPermission) toast.success("Audio devices detected");
+      const list = await listAudioDevices();
+      const ins = list.filter((d) => d.kind === "audioinput").map((d) => ({ id: d.id, label: d.label }));
+      const outs = list.filter((d) => d.kind === "audiooutput").map((d) => ({ id: d.id, label: d.label }));
+      setInputs(ins);
+      setOutputs(outs);
+      const chosen = getPreferredInput();
+      const match = chosen ? ins.find((d) => d.id === chosen) : undefined;
+      if (match) set("inputDevice", match.label);
+      else if (chosen && ins.length) {
+        // The saved interface is gone — fall back so recording keeps working.
+        setPreferredInput(null);
+        set("inputDevice", "System default");
+      }
+      if (askPermission)
+        toast.success(`${ins.length} audio input${ins.length === 1 ? "" : "s"} found`, {
+          description: ins.map((d) => d.label).join(" · ") || "No inputs reported by the browser.",
+        });
     } catch {
       toast.error("Could not read your audio devices", {
         description: "Allow microphone access in the browser so interfaces can be listed by name.",
@@ -210,6 +215,23 @@ export function Settings() {
     } finally {
       setScanning(false);
     }
+  };
+
+  const scanMidi = () => {
+    if (!midiSupported()) {
+      toast.error("This browser cannot see MIDI hardware", {
+        description: "Use Chrome or Edge on a computer to connect MIDI controllers.",
+      });
+      return;
+    }
+    enableMidi();
+    window.setTimeout(() => {
+      const found = useStudioMidiCount();
+      if (found === 0)
+        toast.error("No MIDI controllers found", {
+          description: "Connect the controller by USB, then press Scan again.",
+        });
+    }, 800);
   };
 
   useEffect(() => {
@@ -220,6 +242,8 @@ export function Settings() {
       /* ignore */
     }
     void scanDevices(false);
+    const off = onDeviceChange(() => void scanDevices(false));
+    return off;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
