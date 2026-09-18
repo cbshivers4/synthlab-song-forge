@@ -1343,6 +1343,21 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
             {formatValue(selected.value)} · CURVE {Math.round((selected.curve ?? 0) * 100)}%
           </div>
         )}
+        {liveEdit && (
+          <>
+            <div
+              className="pointer-events-none absolute top-0 h-full w-px bg-primary/60"
+              style={{ left: `${Math.max(0, Math.min(100, liveEdit.x))}%` }}
+            />
+            <div
+              aria-live="polite"
+              className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-[150%] whitespace-nowrap rounded bg-primary px-1.5 py-0.5 font-mono text-[9px] text-primary-foreground shadow"
+              style={{ left: `${Math.max(6, Math.min(94, liveEdit.x))}%`, top: `${Math.max(12, Math.min(96, liveEdit.y))}%` }}
+            >
+              {liveEdit.text}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
