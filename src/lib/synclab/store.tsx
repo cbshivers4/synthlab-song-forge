@@ -18,6 +18,7 @@ import { getPadBank, setPadBank } from "./pad-session";
 import type { CloudSession } from "./cloud";
 import type {
   AudioClip,
+  AutomationLane,
   AutomationParam,
   AutomationPoint,
   BusId,
@@ -194,7 +195,7 @@ interface StudioApi extends StudioState {
   setActiveClip: (trackId: string, clipId: string) => void;
   toggleAutomationLane: (trackId: string, param: AutomationParam) => void;
   setAutomationPoints: (trackId: string, param: AutomationParam, points: AutomationPoint[]) => void;
-  setAutomationMode: (trackId: string, param: AutomationParam, mode: "read" | "off") => void;
+  setAutomationMode: (trackId: string, param: AutomationParam, mode: AutomationLane["mode"]) => void;
   removeClip: (trackId: string, clipId: string) => void;
   addClip: (trackId: string, clip: AudioClip) => void;
   updateClip: (trackId: string, clipId: string, patch: Partial<AudioClip>) => void;
@@ -309,6 +310,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const selectedIdRef = useRef(selectedId);
   selectedIdRef.current = selectedId;
   const heldRef = useRef(new Map<number, { ids: string[]; trackId: string; t0: number }>());
+  /** TOUCH releases shortly after a gesture; LATCH holds until playback stops. */
+  const automationGestureRef = useRef(new Map<string, { touchedUntil: number; latched: boolean }>());
 
   // ---- Undo / redo history + local autosave -------------------------------
   const pastRef = useRef<CloudSession[]>([]);
@@ -472,7 +475,10 @@ export function StudioProvider({ children }: { children: ReactNode }) {
 
   // step clock
   useEffect(() => {
-    if (!transport.playing) return;
+    if (!transport.playing) {
+      automationGestureRef.current.clear();
+      return;
+    }
     const engine = getEngine();
     engine.init();
     engine.syncMix(tracksRef.current);
@@ -502,8 +508,24 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           const at = step % totalSteps;
             const ride: Record<string, number> = {};
           for (const lane of t.automation) {
-            if (lane.mode !== "read" || lane.points.length === 0) continue;
-            ride[lane.param] = valueAt(lane.points, at);
+            const gesture = automationGestureRef.current.get(`${t.id}:${lane.param}`);
+            const touching = (gesture?.touchedUntil ?? 0) > performance.now();
+            const writing = lane.mode === "write" || (lane.mode === "latch" && gesture?.latched) || (lane.mode === "touch" && touching);
+            if (writing && lane.param.startsWith("plugin:")) {
+              const [, pluginId = "", paramId = ""] = lane.param.split(":");
+              const plugin = (t.plugins ?? []).find((item) => item.id === pluginId);
+              const control = plugin?.params.find((item) => item.id === paramId);
+              if (control) {
+                const normalized = control.max > control.min ? (control.value - control.min) / (control.max - control.min) : 0;
+                const points = [...lane.points.filter((point) => point.step !== at), { step: at, value: normalized }]
+                  .sort((a, b) => a.step - b.step);
+                setTracks((current) => current.map((track) => track.id === t.id
+                  ? { ...track, automation: (track.automation ?? []).map((item) => item.param === lane.param ? { ...item, points } : item) }
+                  : track));
+              }
+              continue;
+            }
+            if ((lane.mode === "read" || lane.mode === "touch") && !touching && lane.points.length > 0) ride[lane.param] = valueAt(lane.points, at);
           }
           if (Object.keys(ride).length > 0) engine.automate(t.id, ride);
         }
@@ -1372,21 +1394,37 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             return { ...t, plugins: list };
           }),
         ),
-      setPluginParam: (trackId, instanceId, paramId, value) =>
+      setPluginParam: (trackId, instanceId, paramId, value) => {
+        const automationParam = `plugin:${instanceId}:${paramId}` as AutomationParam;
+        const gestureKey = `${trackId}:${automationParam}`;
         setTracks((ts) =>
-          ts.map((t) =>
-            t.id === trackId
-              ? {
-                  ...t,
-                  plugins: (t.plugins ?? []).map((p) =>
-                    p.id === instanceId
-                      ? { ...p, params: p.params.map((x: PluginParam) => (x.id === paramId ? { ...x, value } : x)) }
-                      : p,
-                  ),
-                }
-              : t,
-          ),
-        ),
+          ts.map((t) => {
+            if (t.id !== trackId) return t;
+            const plugins = (t.plugins ?? []).map((p) =>
+              p.id === instanceId
+                ? { ...p, params: p.params.map((x: PluginParam) => (x.id === paramId ? { ...x, value } : x)) }
+                : p,
+            );
+            const lane = (t.automation ?? []).find((item) => item.param === automationParam);
+            if (!transportRef.current.playing || !lane || !["write", "touch", "latch"].includes(lane.mode)) return { ...t, plugins };
+            automationGestureRef.current.set(gestureKey, {
+              touchedUntil: performance.now() + 180,
+              latched: lane.mode === "latch",
+            });
+            const source = plugins.find((plugin) => plugin.id === instanceId)?.params.find((param) => param.id === paramId);
+            if (!source) return { ...t, plugins };
+            const normalized = source.max > source.min ? (value - source.min) / (source.max - source.min) : 0;
+            const step = transportRef.current.step;
+            const points = [...lane.points.filter((point) => point.step !== step), { step, value: Math.min(1, Math.max(0, normalized)) }]
+              .sort((a, b) => a.step - b.step);
+            return {
+              ...t,
+              plugins,
+              automation: (t.automation ?? []).map((item) => item.param === automationParam ? { ...item, points } : item),
+            };
+          }),
+        );
+      },
       midiInputs,
       midiInputId,
       midiLearning,
