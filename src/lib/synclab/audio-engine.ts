@@ -1966,10 +1966,17 @@ export class SyncLabEngine {
       f.frequency.value = freq * tune;
       f.Q.value = q;
       const g = ctx.createGain();
-      g.gain.value = vol;
+      g.gain.value = vol * level;
       src.connect(f);
       f.connect(g);
-      g.connect(out);
+      if (spread > 0.001) {
+        const sp = ctx.createStereoPanner();
+        sp.pan.value = clamp((Math.random() * 2 - 1) * spread, -1, 1);
+        g.connect(sp);
+        sp.connect(out);
+      } else {
+        g.connect(out);
+      }
       src.start(t);
     };
 
