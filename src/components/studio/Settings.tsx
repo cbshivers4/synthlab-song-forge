@@ -173,6 +173,8 @@ export function Settings() {
   const [inputs, setInputs] = useState<{ id: string; label: string }[]>([]);
   const [outputs, setOutputs] = useState<{ id: string; label: string }[]>([]);
   const [scanning, setScanning] = useState(false);
+  const midiRef = useRef(midiInputs);
+  midiRef.current = midiInputs;
 
   const scanDevices = async (askPermission: boolean) => {
     if (typeof navigator === "undefined" || !navigator.mediaDevices?.enumerateDevices) return;
@@ -235,12 +237,16 @@ export function Settings() {
     }
     enableMidi();
     window.setTimeout(() => {
-      const found = useStudioMidiCount();
-      if (found === 0)
+      const found = midiRef.current;
+      if (found.length)
+        toast.success(`${found.length} MIDI controller${found.length === 1 ? "" : "s"} found`, {
+          description: found.map((m) => m.name).join(" · "),
+        });
+      else
         toast.error("No MIDI controllers found", {
           description: "Connect the controller by USB, then press Scan again.",
         });
-    }, 800);
+    }, 900);
   };
 
   useEffect(() => {
