@@ -1253,7 +1253,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       },
       // hear the value under the finger while an automation point or region is being dragged
       previewAutomation: (trackId, param, value) => {
-        engine.automate(trackId, { [param]: value });
+        getEngine().automate(trackId, { [param]: value });
       },
       removeClip: (trackId, clipId) =>
         setTracks((ts) =>
