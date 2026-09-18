@@ -1168,6 +1168,7 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
   });
   const modes: AutomationLane["mode"][] = ["off", "read", "write", "touch", "latch"];
   const nextMode = () => setAutomationMode(track.id, lane.param, modes[(modes.indexOf(lane.mode) + 1) % modes.length] ?? "off");
+  const history = automationHistory(track.id, lane.param);
   const recordingMode = transport.playing && (lane.mode === "write" || lane.mode === "touch" || lane.mode === "latch");
 
   return (
@@ -1228,6 +1229,12 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
         </button>
         <div className="flex w-full items-center gap-0.5 border-t border-border/50 pt-1">
           <span className="mr-auto font-mono text-[7px] text-muted-foreground">REGION {regionStart}–{regionEnd}</span>
+          <Button type="button" variant="ghost" size="icon" className="size-5 disabled:opacity-40" disabled={locked || !history.canUndo} onClick={() => undoAutomationEdit(track.id, lane.param)} title={history.canUndo ? `Undo ${history.undoLabel} on this lane (⌘/Ctrl+Z)` : "Nothing to undo on this lane"} aria-label={`Undo ${label} automation edit`}>
+            <Undo2 className="size-3" />
+          </Button>
+          <Button type="button" variant="ghost" size="icon" className="size-5 disabled:opacity-40" disabled={locked || !history.canRedo} onClick={() => redoAutomationEdit(track.id, lane.param)} title={history.canRedo ? `Redo ${history.redoLabel} on this lane (⌘/Ctrl+Shift+Z)` : "Nothing to redo on this lane"} aria-label={`Redo ${label} automation edit`}>
+            <Redo2 className="size-3" />
+          </Button>
           <Button type="button" variant="ghost" size="icon" className="size-5" onClick={copyRegion} title="Copy automation in loop region (⌘/Ctrl+C)" aria-label={`Copy ${label} region`}>
             <Copy className="size-3" />
           </Button>
