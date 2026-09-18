@@ -325,6 +325,12 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const heldRef = useRef(new Map<number, { ids: string[]; trackId: string; t0: number }>());
   /** TOUCH releases shortly after a gesture; LATCH holds until playback stops. */
   const automationGestureRef = useRef(new Map<string, { touchedUntil: number; latched: boolean }>());
+  // Per-lane edit history so a device automation lane can be stepped back on its
+  // own without rewinding the rest of the project.
+  const automationHistoryRef = useRef(
+    new Map<string, { past: { points: AutomationPoint[]; label: string }[]; future: { points: AutomationPoint[]; label: string }[] }>(),
+  );
+  const [automationHistoryTick, setAutomationHistoryTick] = useState(0);
 
   // ---- Undo / redo history + local autosave -------------------------------
   const pastRef = useRef<CloudSession[]>([]);
