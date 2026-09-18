@@ -136,8 +136,8 @@ interface StudioState {
   buses: Record<BusId, BusState>;
 }
 
-/** Linear value of an automation curve at a step, held flat outside the drawn range. */
-function valueAt(points: { step: number; value: number }[], step: number): number {
+/** Shaped value of an automation curve at a step, held flat outside the drawn range. */
+function valueAt(points: AutomationPoint[], step: number): number {
   const first = points[0]!;
   if (step <= first.step) return first.value;
   const last = points[points.length - 1]!;
@@ -147,7 +147,12 @@ function valueAt(points: { step: number; value: number }[], step: number): numbe
     const b = points[i]!;
     if (step <= b.step) {
       const span = b.step - a.step || 1;
-      return a.value + ((step - a.step) / span) * (b.value - a.value);
+      const linear = (step - a.step) / span;
+      const curve = Math.max(-1, Math.min(1, a.curve ?? 0));
+      const shaped = curve >= 0
+        ? Math.pow(linear, 1 + curve * 3)
+        : 1 - Math.pow(1 - linear, 1 - curve * 3);
+      return a.value + shaped * (b.value - a.value);
     }
   }
   return last.value;
