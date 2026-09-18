@@ -164,7 +164,7 @@ function Waveform({ track }: { track: Track }) {
     <>
       {clips.map((clip) => {
         const start = clip.start ?? 0;
-        const length = clip.length ?? clip.duration;
+        const length = clipSeconds(clip);
         const steps = Math.max(1, length / stepDur);
         const left = (start / total) * 100;
         const width = Math.min(100 - left, (steps / total) * 100);
@@ -181,7 +181,11 @@ function Waveform({ track }: { track: Track }) {
               setActiveClip(track.id, clip.id);
               beginDrag(e, clip, "move");
             }}
-            title={`${clip.name} — drag to move, pull the edges to trim`}
+            onDoubleClick={(e) => {
+              e.stopPropagation();
+              setEditingId(clip.id);
+            }}
+            title={`${clip.name} — drag to move, pull the edges to trim, double-click to edit`}
           >
             <div className="flex h-[17px] shrink-0 cursor-grab items-center gap-1 bg-clip-audio/10 px-1.5 active:cursor-grabbing">
               <span className="truncate font-mono text-[9px] font-semibold text-clip-audio/80">{clip.name}</span>
