@@ -27,3 +27,4 @@
 - [x] Trim start/end, fades, gain, normalize, loop, reverse, rename, revert
 - [x] Pitch and speed (browser couples them into one playback rate — stated honestly)
 - [x] Interactive waveform zoom to 16× with horizontal scrolling and precise trim/fade handles
+- [x] Undo and redo controls in the clip editor for comparing trim and fade changes

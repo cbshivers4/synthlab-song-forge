@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { KeyboardEvent, PointerEvent as ReactPointerEvent, WheelEvent as ReactWheelEvent } from "react";
-import { Play, RotateCcw, Square, Undo2, ZoomIn, ZoomOut } from "lucide-react";
+import { Play, Redo2, RotateCcw, Square, Undo2, ZoomIn, ZoomOut } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,7 +26,7 @@ import { toast } from "sonner";
  * and REVERT puts everything back.
  */
 export function ClipEditor({ track, clip, onClose }: { track: Track; clip: AudioClip; onClose: () => void }) {
-  const { updateClip, previewClip } = useStudio();
+  const { updateClip, previewClip, undo, redo, canUndo, canRedo } = useStudio();
   const [zoomTrim, setZoomTrim] = useState(true);
   const [waveZoom, setWaveZoom] = useState(1);
 
@@ -70,6 +70,12 @@ export function ClipEditor({ track, clip, onClose }: { track: Track; clip: Audio
             {length.toFixed(2)}s source · {(length / rate).toFixed(2)}s on the timeline
           </span>
           <div className="ml-auto flex items-center gap-1">
+            <Button size="icon" variant="ghost" aria-label="Undo clip edit" title="Undo clip edit" disabled={!canUndo} onClick={undo}>
+              <Undo2 className="size-3.5" />
+            </Button>
+            <Button size="icon" variant="ghost" aria-label="Redo clip edit" title="Redo clip edit" disabled={!canRedo} onClick={redo}>
+              <Redo2 className="size-3.5" />
+            </Button>
             <Button size="sm" variant="secondary" onClick={() => previewClip(track.id, clip.id)}>
               <Play className="size-3.5" /> PLAY
             </Button>
