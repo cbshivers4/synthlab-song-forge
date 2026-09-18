@@ -897,9 +897,17 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
 
 /** One automation lane under a track: click to add a point, drag points, double-click to remove. */
 function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) {
-  const { transport, setAutomationPoints, setAutomationMode, setAutomationLaneLock, toggleAutomationLane } = useStudio();
+  const { transport, setAutomationPoints, setAutomationMode, setAutomationLaneLock, toggleAutomationLane, previewAutomation } = useStudio();
   const locked = lane.locked ?? false;
   const [selectedPoint, setSelectedPoint] = useState<number | null>(null);
+  /** live readout that follows the pointer while a point, curve or region is being edited */
+  const [liveEdit, setLiveEdit] = useState<{ x: number; y: number; text: string } | null>(null);
+  const liveTimer = useRef<number | null>(null);
+  const flashReadout = (text: string, x = 50, y = 12) => {
+    setLiveEdit({ x, y, text });
+    if (liveTimer.current) window.clearTimeout(liveTimer.current);
+    liveTimer.current = window.setTimeout(() => setLiveEdit(null), 900);
+  };
   const [gridSnap, setGridSnap] = useState<0 | 0.25 | 0.5 | 1>(1);
   const [valueSnap, setValueSnap] = useState<0 | 0.02 | 0.05 | 0.1>(0);
   const total = Math.max(1, transport.bars ?? 4) * 4;
