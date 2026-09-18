@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Plus, Sparkles, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -8,7 +8,7 @@ import { useStudio } from "@/lib/synclab/store";
 import { DRUM_KITS, GENRES } from "@/lib/synclab/presets";
 import type { DrumKitId } from "@/lib/synclab/types";
 import { getEngine } from "@/lib/synclab/audio-engine";
-import type { Track } from "@/lib/synclab/types";
+import type { DrumPad, Track } from "@/lib/synclab/types";
 import { toast } from "sonner";
 
 export function DrumMachine({ track }: { track: Track }) {
