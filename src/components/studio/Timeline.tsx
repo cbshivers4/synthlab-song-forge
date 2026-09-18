@@ -1088,6 +1088,7 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
     const occupied = new Set(duplicated.map((point) => point.step));
     setAutomationPoints(track.id, lane.param, [...lane.points.filter((point) => !occupied.has(point.step)), ...duplicated]);
     setSelectedPoint(null);
+    previewRegionEdit(duplicated, `DUPLICATED ${duplicated.length}`);
     toast(`Duplicated automation to steps ${regionEnd}–${Math.min(total, regionEnd + regionDuration)}`);
   };
 
