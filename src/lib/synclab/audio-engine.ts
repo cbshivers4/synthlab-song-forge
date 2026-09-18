@@ -1954,7 +1954,7 @@ export class SyncLabEngine {
     env.connect(p);
     p.connect(ch.input);
 
-    const noiseBurst = (dur: number, freq: number, type: BiquadFilterType, q = 1) => {
+    const noiseBurst = (dur: number, freq: number, type: BiquadFilterType, q = 1, level = 1, spread = 0) => {
       const len = Math.ceil(ctx.sampleRate * dur);
       const buf = ctx.createBuffer(1, len, ctx.sampleRate);
       const d = buf.getChannelData(0);
