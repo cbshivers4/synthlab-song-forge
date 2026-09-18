@@ -1039,6 +1039,26 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
     setSelectedPoint(null);
   };
 
+  const handleRegionShortcut = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    const target = event.target as HTMLElement;
+    if (target.matches("input, textarea, select") || target.isContentEditable) return;
+    const command = event.metaKey || event.ctrlKey;
+    const key = event.key.toLowerCase();
+    if (command && key === "c") {
+      event.preventDefault();
+      copyRegion();
+    } else if (command && key === "v") {
+      event.preventDefault();
+      pasteRegion();
+    } else if (command && key === "d") {
+      event.preventDefault();
+      duplicateRegion();
+    } else if (event.key === "Delete" || event.key === "Backspace") {
+      event.preventDefault();
+      deleteRegion();
+    }
+  };
+
   const label = laneLabel(track, lane.param);
   const pts = lane.points;
   const selected = selectedPoint === null ? undefined : pts[selectedPoint];
@@ -1058,7 +1078,12 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
   const recordingMode = transport.playing && (lane.mode === "write" || lane.mode === "touch" || lane.mode === "latch");
 
   return (
-    <div className="flex items-stretch border-t border-border/50 bg-background/40">
+    <div
+      className="flex items-stretch border-t border-border/50 bg-background/40 focus-within:ring-1 focus-within:ring-inset focus-within:ring-primary/70"
+      tabIndex={0}
+      onKeyDown={handleRegionShortcut}
+      aria-label={`${label} automation lane. Command or Control C copies the loop region, V pastes at the playhead, D duplicates, and Delete removes it.`}
+    >
       <div className="w-1 shrink-0" style={{ background: track.color, opacity: 0.4 }} />
       <div className="flex w-[240px] shrink-0 flex-wrap items-center gap-1 border-r border-border bg-surface/60 px-2 py-1">
         <span className="min-w-0 flex-1 truncate font-mono text-[9px] tracking-[0.15em] text-muted-foreground">AUTO · {label}</span>
@@ -1096,16 +1121,16 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
         </button>
         <div className="flex w-full items-center gap-0.5 border-t border-border/50 pt-1">
           <span className="mr-auto font-mono text-[7px] text-muted-foreground">REGION {regionStart}–{regionEnd}</span>
-          <Button type="button" variant="ghost" size="icon" className="size-5" onClick={copyRegion} title="Copy automation in loop region" aria-label={`Copy ${label} region`}>
+          <Button type="button" variant="ghost" size="icon" className="size-5" onClick={copyRegion} title="Copy automation in loop region (⌘/Ctrl+C)" aria-label={`Copy ${label} region`}>
             <Copy className="size-3" />
           </Button>
-          <Button type="button" variant="ghost" size="icon" className="size-5" onClick={pasteRegion} title="Paste automation at playhead" aria-label={`Paste ${label} at playhead`}>
+          <Button type="button" variant="ghost" size="icon" className="size-5" onClick={pasteRegion} title="Paste automation at playhead (⌘/Ctrl+V)" aria-label={`Paste ${label} at playhead`}>
             <ClipboardPaste className="size-3" />
           </Button>
-          <Button type="button" variant="ghost" size="icon" className="size-5" onClick={duplicateRegion} title="Duplicate automation after loop region" aria-label={`Duplicate ${label} region`}>
+          <Button type="button" variant="ghost" size="icon" className="size-5" onClick={duplicateRegion} title="Duplicate automation after loop region (⌘/Ctrl+D)" aria-label={`Duplicate ${label} region`}>
             <Repeat className="size-3" />
           </Button>
-          <Button type="button" variant="ghost" size="icon" className="size-5 text-destructive" onClick={deleteRegion} title="Delete automation in loop region" aria-label={`Delete ${label} region`}>
+          <Button type="button" variant="ghost" size="icon" className="size-5 text-destructive" onClick={deleteRegion} title="Delete automation in loop region (Delete/Backspace)" aria-label={`Delete ${label} region`}>
             <Trash2 className="size-3" />
           </Button>
         </div>
