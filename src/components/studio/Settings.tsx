@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -13,7 +13,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useStudio } from "@/lib/synclab/store";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { toast } from "sonner";
-import { openMic, openInOwnTab, micUnavailableReason } from "@/lib/synclab/mic";
+import {
+  openMic,
+  openInOwnTab,
+  micUnavailableReason,
+  listAudioDevices,
+  getPreferredInput,
+  setPreferredInput,
+  onDeviceChange,
+} from "@/lib/synclab/mic";
+import { midiSupported } from "@/lib/synclab/midi";
 
 type Prefs = {
   sampleRate: string;
