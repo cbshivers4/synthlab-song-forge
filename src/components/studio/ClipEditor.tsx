@@ -26,7 +26,7 @@ import { toast } from "sonner";
  * and REVERT puts everything back.
  */
 export function ClipEditor({ track, clip, onClose }: { track: Track; clip: AudioClip; onClose: () => void }) {
-  const { updateClip, previewClip, undo, redo, canUndo, canRedo } = useStudio();
+  const { updateClip, undo, redo, canUndo, canRedo } = useStudio();
   const originalRef = useRef<AudioClip>({ ...clip, peaks: [...clip.peaks] });
   const [compareSide, setCompareSide] = useState<"original" | "edited">("edited");
   const [loopAudition, setLoopAudition] = useState(false);
@@ -53,13 +53,17 @@ export function ClipEditor({ track, clip, onClose }: { track: Track; clip: Audio
     return Math.max(0.0001, ...peaks.slice(Math.max(0, a), Math.max(a + 1, b)));
   }, [peaks, offset, length, dur]);
 
+  useEffect(() => {
+    setLoopRange(([start, end]) => {
+      const nextStart = Math.min(start, Math.max(0, length - 0.01));
+      const nextEnd = Math.max(nextStart + 0.01, Math.min(end, length));
+      return [nextStart, nextEnd];
+    });
+  }, [length]);
+
   const audition = (version: "original" | "edited") => {
     const candidate = version === "original" ? originalRef.current : clip;
     setCompareSide(version);
-    if (version === "edited") {
-      previewClip(track.id, clip.id);
-      return;
-    }
     if (!candidate.url) {
       toast("Nothing to play", { description: "This clip has no audio file attached." });
       return;
@@ -171,6 +175,7 @@ export function ClipEditor({ track, clip, onClose }: { track: Track; clip: Audio
             gain={original.gain ?? 1}
             detail={`${(original.length ?? original.duration).toFixed(2)}s · ${clipRate(original).toFixed(2)}×`}
             loopRange={loopRange}
+            duration={original.length ?? original.duration}
             onSelect={() => audition("original")}
           />
           <ComparisonWaveform
@@ -180,6 +185,7 @@ export function ClipEditor({ track, clip, onClose }: { track: Track; clip: Audio
             gain={gain}
             detail={`${length.toFixed(2)}s · ${rate.toFixed(2)}×`}
             loopRange={loopRange}
+            duration={length}
             onSelect={() => audition("edited")}
           />
         </div>
@@ -287,6 +293,7 @@ function ComparisonWaveform({
   gain,
   detail,
   loopRange,
+  duration,
   onSelect,
 }: {
   label: string;
@@ -295,6 +302,7 @@ function ComparisonWaveform({
   gain: number;
   detail: string;
   loopRange: [number, number];
+  duration: number;
   onSelect: () => void;
 }) {
   return (
@@ -315,8 +323,8 @@ function ComparisonWaveform({
         <span
           className="pointer-events-none absolute inset-y-0 border-x border-primary bg-primary/15"
           style={{
-            left: `${Math.max(0, Math.min(100, (loopRange[0] / Math.max(0.01, loopRange[1])) * 100))}%`,
-            right: 0,
+            left: `${Math.max(0, Math.min(100, (loopRange[0] / Math.max(0.01, duration)) * 100))}%`,
+            width: `${Math.max(0, Math.min(100, ((loopRange[1] - loopRange[0]) / Math.max(0.01, duration)) * 100))}%`,
           }}
         />
       </span>

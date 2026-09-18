@@ -1262,10 +1262,14 @@ export class SyncLabEngine {
       src.loopEnd = startAt + len;
     }
     const amp = ctx.createGain();
-    amp.gain.setValueAtTime(0, t0);
-    amp.gain.linearRampToValueAtTime(peak, t0 + fin);
-    amp.gain.setValueAtTime(peak, t0 + Math.max(fin, heard - fout));
-    amp.gain.linearRampToValueAtTime(0.0001, t0 + heard);
+    if (src.loop) {
+      amp.gain.setValueAtTime(peak, t0);
+    } else {
+      amp.gain.setValueAtTime(0, t0);
+      amp.gain.linearRampToValueAtTime(peak, t0 + fin);
+      amp.gain.setValueAtTime(peak, t0 + Math.max(fin, heard - fout));
+      amp.gain.linearRampToValueAtTime(0.0001, t0 + heard);
+    }
     src.connect(amp);
     amp.connect(ch.input);
     if (src.loop) src.start(t0, startAt);
