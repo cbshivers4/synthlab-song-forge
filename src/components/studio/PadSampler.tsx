@@ -23,6 +23,9 @@ import { getPadBank, setPadBank, subscribePadBank, type SavedPad } from "@/lib/s
 const BANKS = ["A", "B", "C", "D"] as const;
 /** Koala-style bank colors — each bank tints its loaded pads. */
 const BANK_COLORS = ["hsl(187 85% 50%)", "hsl(38 95% 55%)", "hsl(330 80% 62%)", "hsl(95 70% 52%)"] as const;
+const BANK_HUES = [187, 38, 330, 95] as const;
+/** Every pad gets its own colour so a full bank reads at a glance. */
+const padColor = (bank: number, i: number) => `hsl(${((BANK_HUES[bank] ?? 187) + i * 13) % 360} 85% 56%)`;
 const PADS_PER_BANK = 16;
 const STEPS = 16;
 const KEYMAP = "1234qwerasdfzxcv".split("");
