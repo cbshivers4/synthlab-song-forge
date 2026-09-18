@@ -1250,6 +1250,10 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         const lanes = t?.automation ?? [];
         updateTrack(trackId, { automation: lanes.map((l) => (l.param === param ? { ...l, locked } : l)) });
       },
+      // hear the value under the finger while an automation point or region is being dragged
+      previewAutomation: (trackId, param, value) => {
+        engine.automate(trackId, { [param]: value });
+      },
       removeClip: (trackId, clipId) =>
         setTracks((ts) =>
           ts.map((t) =>
