@@ -335,6 +335,8 @@ export interface AutomationLane {
   /** read plays the curve; write/touch/latch capture live control movements */
   mode: "read" | "write" | "touch" | "latch" | "off";
   points: AutomationPoint[];
+  /** locked lanes ignore every edit until unlocked again */
+  locked?: boolean | undefined;
 }
 
 export interface Track {

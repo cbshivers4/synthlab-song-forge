@@ -201,6 +201,7 @@ interface StudioApi extends StudioState {
   toggleAutomationLane: (trackId: string, param: AutomationParam) => void;
   setAutomationPoints: (trackId: string, param: AutomationParam, points: AutomationPoint[]) => void;
   setAutomationMode: (trackId: string, param: AutomationParam, mode: AutomationLane["mode"]) => void;
+  setAutomationLaneLock: (trackId: string, param: AutomationParam, locked: boolean) => void;
   removeClip: (trackId: string, clipId: string) => void;
   addClip: (trackId: string, clip: AudioClip) => void;
   updateClip: (trackId: string, clipId: string, patch: Partial<AudioClip>) => void;
@@ -515,7 +516,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           for (const lane of t.automation) {
             const gesture = automationGestureRef.current.get(`${t.id}:${lane.param}`);
             const touching = (gesture?.touchedUntil ?? 0) > performance.now();
-            const writing = lane.mode === "write" || (lane.mode === "latch" && gesture?.latched) || (lane.mode === "touch" && touching);
+            const writing = !lane.locked && (lane.mode === "write" || (lane.mode === "latch" && gesture?.latched) || (lane.mode === "touch" && touching));
             if (writing && lane.param.startsWith("plugin:")) {
               const [, pluginId = "", paramId = ""] = lane.param.split(":");
               const plugin = (t.plugins ?? []).find((item) => item.id === pluginId);
@@ -1231,6 +1232,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       setAutomationPoints: (trackId, param, points) => {
         const t = tracksRef.current.find((x) => x.id === trackId);
         const lanes = t?.automation ?? [];
+        if (lanes.some((l) => l.param === param && l.locked)) return;
         updateTrack(trackId, {
           automation: lanes.map((l) =>
             l.param === param ? { ...l, points: [...points].sort((a, b) => a.step - b.step) } : l,
@@ -1240,7 +1242,13 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       setAutomationMode: (trackId, param, mode) => {
         const t = tracksRef.current.find((x) => x.id === trackId);
         const lanes = t?.automation ?? [];
+        if (lanes.some((l) => l.param === param && l.locked)) return;
         updateTrack(trackId, { automation: lanes.map((l) => (l.param === param ? { ...l, mode } : l)) });
+      },
+      setAutomationLaneLock: (trackId, param, locked) => {
+        const t = tracksRef.current.find((x) => x.id === trackId);
+        const lanes = t?.automation ?? [];
+        updateTrack(trackId, { automation: lanes.map((l) => (l.param === param ? { ...l, locked } : l)) });
       },
       removeClip: (trackId, clipId) =>
         setTracks((ts) =>
@@ -1411,7 +1419,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
                 : p,
             );
             const lane = (t.automation ?? []).find((item) => item.param === automationParam);
-            if (!transportRef.current.playing || !lane || !["write", "touch", "latch"].includes(lane.mode)) return { ...t, plugins };
+            if (!transportRef.current.playing || !lane || lane.locked || !["write", "touch", "latch"].includes(lane.mode)) return { ...t, plugins };
             automationGestureRef.current.set(gestureKey, {
               touchedUntil: performance.now() + 180,
               latched: lane.mode === "latch",
