@@ -56,13 +56,80 @@ function describe(err: unknown): string {
   }
 }
 
+/* ---------------- chosen input device (audio interface support) ---------------- */
+
+const INPUT_KEY = "synclab.input.device";
+
+export type AudioDeviceInfo = { id: string; label: string; kind: "audioinput" | "audiooutput" };
+
+/** deviceId of the input the user picked (e.g. a Volt 1), or null for the system default. */
+export function getPreferredInput(): string | null {
+  try {
+    return localStorage.getItem(INPUT_KEY) || null;
+  } catch {
+    return null;
+  }
+}
+
+export function setPreferredInput(deviceId: string | null) {
+  try {
+    if (deviceId) localStorage.setItem(INPUT_KEY, deviceId);
+    else localStorage.removeItem(INPUT_KEY);
+  } catch {
+    /* storage blocked */
+  }
+}
+
+/** List audio inputs and outputs. Names only appear once microphone access is allowed. */
+export async function listAudioDevices(): Promise<AudioDeviceInfo[]> {
+  if (typeof navigator === "undefined" || !navigator.mediaDevices?.enumerateDevices) return [];
+  try {
+    const list = await navigator.mediaDevices.enumerateDevices();
+    return list
+      .filter((d) => d.kind === "audioinput" || d.kind === "audiooutput")
+      .map((d, i) => ({
+        id: d.deviceId,
+        label: d.label || (d.kind === "audioinput" ? `Input ${i + 1}` : `Output ${i + 1}`),
+        kind: d.kind as "audioinput" | "audiooutput",
+      }))
+      .filter((d) => d.id !== "");
+  } catch {
+    return [];
+  }
+}
+
+/** Re-run when hardware is plugged in or removed. */
+export function onDeviceChange(cb: () => void): () => void {
+  const md = typeof navigator !== "undefined" ? navigator.mediaDevices : undefined;
+  if (!md?.addEventListener) return () => {};
+  md.addEventListener("devicechange", cb);
+  return () => md.removeEventListener("devicechange", cb);
+}
+
 export async function openMic(constraints?: MediaTrackConstraints): Promise<MicResult> {
   const blocked = micUnavailableReason();
   if (blocked) return { error: blocked, canOpenTab: inFrame() };
+  const base: MediaTrackConstraints = constraints ?? {};
+  const wanted = getPreferredInput();
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: constraints ?? true });
+    const audio: MediaTrackConstraints = wanted ? { ...base, deviceId: { exact: wanted } } : base;
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: Object.keys(audio).length ? audio : true,
+    });
     return { stream };
   } catch (err) {
+    const name = (err as { name?: string })?.name;
+    // The chosen interface went away — fall back to the default input instead of failing.
+    if (wanted && (name === "OverconstrainedError" || name === "NotFoundError")) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: Object.keys(base).length ? base : true,
+        });
+        return { stream };
+      } catch (err2) {
+        return { error: describe(err2), canOpenTab: inFrame() };
+      }
+    }
     return { error: describe(err), canOpenTab: inFrame() };
   }
 }

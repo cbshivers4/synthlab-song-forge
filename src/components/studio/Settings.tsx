@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -13,7 +13,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useStudio } from "@/lib/synclab/store";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { toast } from "sonner";
-import { openMic, openInOwnTab, micUnavailableReason } from "@/lib/synclab/mic";
+import {
+  openMic,
+  openInOwnTab,
+  micUnavailableReason,
+  listAudioDevices,
+  getPreferredInput,
+  setPreferredInput,
+  onDeviceChange,
+} from "@/lib/synclab/mic";
+import { midiSupported } from "@/lib/synclab/midi";
 
 type Prefs = {
   sampleRate: string;
@@ -164,6 +173,8 @@ export function Settings() {
   const [inputs, setInputs] = useState<{ id: string; label: string }[]>([]);
   const [outputs, setOutputs] = useState<{ id: string; label: string }[]>([]);
   const [scanning, setScanning] = useState(false);
+  const midiRef = useRef(midiInputs);
+  midiRef.current = midiInputs;
 
   const scanDevices = async (askPermission: boolean) => {
     if (typeof navigator === "undefined" || !navigator.mediaDevices?.enumerateDevices) return;
@@ -191,18 +202,23 @@ export function Settings() {
         }
         res.stream.getTracks().forEach((t) => t.stop());
       }
-      const list = await navigator.mediaDevices.enumerateDevices();
-      setInputs(
-        list
-          .filter((d) => d.kind === "audioinput")
-          .map((d, i) => ({ id: d.deviceId, label: d.label || `Input ${i + 1}` })),
-      );
-      setOutputs(
-        list
-          .filter((d) => d.kind === "audiooutput")
-          .map((d, i) => ({ id: d.deviceId, label: d.label || `Output ${i + 1}` })),
-      );
-      if (askPermission) toast.success("Audio devices detected");
+      const list = await listAudioDevices();
+      const ins = list.filter((d) => d.kind === "audioinput").map((d) => ({ id: d.id, label: d.label }));
+      const outs = list.filter((d) => d.kind === "audiooutput").map((d) => ({ id: d.id, label: d.label }));
+      setInputs(ins);
+      setOutputs(outs);
+      const chosen = getPreferredInput();
+      const match = chosen ? ins.find((d) => d.id === chosen) : undefined;
+      if (match) set("inputDevice", match.label);
+      else if (chosen && ins.length) {
+        // The saved interface is gone — fall back so recording keeps working.
+        setPreferredInput(null);
+        set("inputDevice", "System default");
+      }
+      if (askPermission)
+        toast.success(`${ins.length} audio input${ins.length === 1 ? "" : "s"} found`, {
+          description: ins.map((d) => d.label).join(" · ") || "No inputs reported by the browser.",
+        });
     } catch {
       toast.error("Could not read your audio devices", {
         description: "Allow microphone access in the browser so interfaces can be listed by name.",
@@ -210,6 +226,27 @@ export function Settings() {
     } finally {
       setScanning(false);
     }
+  };
+
+  const scanMidi = () => {
+    if (!midiSupported()) {
+      toast.error("This browser cannot see MIDI hardware", {
+        description: "Use Chrome or Edge on a computer to connect MIDI controllers.",
+      });
+      return;
+    }
+    enableMidi();
+    window.setTimeout(() => {
+      const found = midiRef.current;
+      if (found.length)
+        toast.success(`${found.length} MIDI controller${found.length === 1 ? "" : "s"} found`, {
+          description: found.map((m) => m.name).join(" · "),
+        });
+      else
+        toast.error("No MIDI controllers found", {
+          description: "Connect the controller by USB, then press Scan again.",
+        });
+    }, 900);
   };
 
   useEffect(() => {
@@ -220,6 +257,8 @@ export function Settings() {
       /* ignore */
     }
     void scanDevices(false);
+    const off = onDeviceChange(() => void scanDevices(false));
+    return off;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -250,14 +289,19 @@ export function Settings() {
           label="Input device"
           hint={
             inputs.length
-              ? "Microphone, interface or line input detected on this machine"
-              : "Press Detect devices to list your audio interface"
+              ? "Recording, sampling and Hum to Beat all use this input"
+              : "Press Detect devices to list your audio interface (Volt 1, etc.)"
           }
         >
           <Pick
             value={p.inputDevice}
             options={["System default", ...inputs.map((d) => d.label)]}
-            onChange={(v) => set("inputDevice", v)}
+            onChange={(v) => {
+              set("inputDevice", v);
+              const match = inputs.find((d) => d.label === v);
+              setPreferredInput(v === "System default" || !match ? null : match.id);
+              toast.success(v === "System default" ? "Using the system input" : `Input set to ${v}`);
+            }}
           />
         </Row>
         <Row label="Output device" hint={outputs.length ? "Monitors, headphones or interface outputs" : ""}>
@@ -404,9 +448,19 @@ export function Settings() {
               set("midiInput", v);
             }}
           />
-          <Button size="sm" variant="secondary" onClick={enableMidi}>
+          <Button size="sm" variant="secondary" onClick={scanMidi}>
             Scan
           </Button>
+        </Row>
+        <Row
+          label="Controllers found"
+          hint={midiSupported() ? "Keyboards, pad controllers and control surfaces" : "MIDI needs Chrome or Edge"}
+        >
+          <div className="max-w-[18rem] text-right font-mono text-xs text-primary">
+            {midiInputs.length ? midiInputs.map((m) => <div key={m.id}>{m.name}</div>) : (
+              <span className="text-muted-foreground">None connected</span>
+            )}
+          </div>
         </Row>
         <Row label="MIDI thru" hint="Pass notes to the armed instrument">
           <Switch checked={p.midiThru} onCheckedChange={(v) => set("midiThru", v)} />
