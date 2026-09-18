@@ -24,6 +24,7 @@ import {
   Square,
   Timer,
   Waves,
+  Menu,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -42,6 +43,7 @@ import { INSTRUMENTS } from "@/lib/synclab/presets";
 import { toast } from "sonner";
 import { openExport } from "@/components/studio/ExportDialog";
 import { StudioSearch } from "@/components/studio/StudioSearch";
+import { useIsMobile } from "@/hooks/use-mobile";
 import synclabLogoAsset from "@/assets/synclab-logo-neon.jpg.asset.json";
 const synclabLogo = synclabLogoAsset.url;
 
@@ -93,18 +95,22 @@ export function TopBar() {
               </div>
             </div>
           )}
-          <span className="w-px bg-border" />
-          <div>
-            <span className="label-xs">TIME</span>
-            <div className="text-base leading-none text-primary">
-              {(() => {
-                const secs = (transport.step / 4) * (60 / transport.bpm);
-                const m = Math.floor(secs / 60);
-                const s = Math.floor(secs % 60);
-                return `${m}:${String(s).padStart(2, "0")}`;
-              })()}
-            </div>
-          </div>
+          {!isMobile && (
+            <>
+              <span className="w-px bg-border" />
+              <div>
+                <span className="label-xs">TIME</span>
+                <div className="text-base leading-none text-primary">
+                  {(() => {
+                    const secs = (transport.step / 4) * (60 / transport.bpm);
+                    const m = Math.floor(secs / 60);
+                    const s = Math.floor(secs % 60);
+                    return `${m}:${String(s).padStart(2, "0")}`;
+                  })()}
+                </div>
+              </div>
+            </>
+          )}
           <span className="w-px bg-border" />
           <div title="Timeline length — click + to add bars (Shift = +16), up to 512">
             <span className="label-xs">BARS</span>
@@ -130,11 +136,15 @@ export function TopBar() {
               </button>
             </div>
           </div>
-          <span className="w-px bg-border" />
-          <div>
-            <span className="label-xs">SIG</span>
-            <div className="text-base leading-none text-muted-foreground">4/4</div>
-          </div>
+          {!isMobile && (
+            <>
+              <span className="w-px bg-border" />
+              <div>
+                <span className="label-xs">SIG</span>
+                <div className="text-base leading-none text-muted-foreground">4/4</div>
+              </div>
+            </>
+          )}
         </div>
 
         <div className="flex items-center gap-3 rounded-[3px] border border-border bg-background/70 px-3 py-1">
@@ -143,7 +153,7 @@ export function TopBar() {
             <div className="font-mono text-base leading-none text-primary">{transport.bpm}</div>
           </div>
           <Slider
-            className="w-24"
+            className="w-16 sm:w-24"
             value={[transport.bpm]}
             min={60}
             max={190}
@@ -163,124 +173,164 @@ export function TopBar() {
           </div>
         </div>
 
-        {/* Recording features — labelled like a DAW */}
-        <div className="flex flex-wrap items-center gap-1 rounded-[3px] border border-border bg-background/70 p-1">
-          <FeatBtn
-            label="METRONOME"
-            icon={<Timer className="size-3.5" />}
-            active={transport.metronome}
-            onClick={() => setTransport({ metronome: !transport.metronome })}
-          />
-          <FeatBtn
-            label="COUNT-IN"
-            icon={<Hash className="size-3.5" />}
-            active={transport.countIn}
-            onClick={() => setTransport({ countIn: !transport.countIn })}
-          />
-          <FeatBtn
-            label="LOOP"
-            icon={<Repeat className="size-3.5" />}
-            active={transport.loop}
-            onClick={() => setTransport({ loop: !transport.loop })}
-          />
-          <FeatBtn
-            label="OVERDUB"
-            icon={<Layers className="size-3.5" />}
-            active={transport.overdub}
-            onClick={() => setTransport({ overdub: !transport.overdub })}
-          />
-          <FeatBtn
-            label="INPUT MON"
-            icon={<Headphones className="size-3.5" />}
-            active={transport.monitor}
-            onClick={() => {
-              const next = !transport.monitor;
-              setTransport({ monitor: next });
-              getEngine().setMonitoring(next);
-            }}
-          />
-          <FeatBtn
-            label={transport.punchIn == null ? "PUNCH IN" : `PUNCH OUT @${transport.punchIn + 1}`}
-            icon={<Scissors className="size-3.5" />}
-            active={transport.punchIn != null}
-            onClick={() =>
-              setTransport(
-                transport.punchIn == null ? { punchIn: transport.step } : { punchOut: transport.step },
-              )
-            }
-          />
-        </div>
+        {!isMobile && (
+          <div className="flex flex-wrap items-center gap-1 rounded-[3px] border border-border bg-background/70 p-1">
+            <FeatBtn
+              label="METRONOME"
+              icon={<Timer className="size-3.5" />}
+              active={transport.metronome}
+              onClick={() => setTransport({ metronome: !transport.metronome })}
+            />
+            <FeatBtn
+              label="COUNT-IN"
+              icon={<Hash className="size-3.5" />}
+              active={transport.countIn}
+              onClick={() => setTransport({ countIn: !transport.countIn })}
+            />
+            <FeatBtn
+              label="LOOP"
+              icon={<Repeat className="size-3.5" />}
+              active={transport.loop}
+              onClick={() => setTransport({ loop: !transport.loop })}
+            />
+            <FeatBtn
+              label="OVERDUB"
+              icon={<Layers className="size-3.5" />}
+              active={transport.overdub}
+              onClick={() => setTransport({ overdub: !transport.overdub })}
+            />
+            <FeatBtn
+              label="INPUT MON"
+              icon={<Headphones className="size-3.5" />}
+              active={transport.monitor}
+              onClick={() => {
+                const next = !transport.monitor;
+                setTransport({ monitor: next });
+                getEngine().setMonitoring(next);
+              }}
+            />
+            <FeatBtn
+              label={transport.punchIn == null ? "PUNCH IN" : `PUNCH OUT @${transport.punchIn + 1}`}
+              icon={<Scissors className="size-3.5" />}
+              active={transport.punchIn != null}
+              onClick={() =>
+                setTransport(
+                  transport.punchIn == null ? { punchIn: transport.step } : { punchOut: transport.step },
+                )
+              }
+            />
+          </div>
+        )}
 
-        <MidiControl />
-
-
-
-
-
+        {!isMobile && <MidiControl />}
 
         <div className="ml-auto flex flex-wrap items-center gap-1">
-          <Button
-            variant={panel === "browser" ? "secondary" : "ghost"}
-            size="sm"
-            onClick={() => setPanel(panel === "browser" ? null : "browser")}
-          >
-            <FolderOpen className="size-4" /> BROWSER
-          </Button>
-          <Button
-            variant={panel === "plugins" ? "secondary" : "ghost"}
-            size="sm"
-            onClick={() => setPanel(panel === "plugins" ? null : "plugins")}
-          >
-            <Cpu className="size-4" /> PLUGINS
-          </Button>
-          <Button
-            variant={panel === "drums" ? "secondary" : "ghost"}
-            size="sm"
-            onClick={() => setPanel(panel === "drums" ? null : "drums")}
-          >
-            <Disc3 className="size-4" /> DRUMS
-          </Button>
-          <Button
-            variant={panel === "synth" ? "secondary" : "ghost"}
-            size="sm"
-            onClick={() => setPanel(panel === "synth" ? null : "synth")}
-          >
-            <Music2 className="size-4" /> INSTRUMENTS
-          </Button>
-          <Button
-            variant={panel === "keys" ? "secondary" : "ghost"}
-            size="sm"
-            onClick={() => setPanel(panel === "keys" ? null : "keys")}
-          >
-            <KeyboardMusic className="size-4" /> KEYS
-          </Button>
-          <Button
-            variant={panel === "mixer" ? "secondary" : "ghost"}
-            size="sm"
-            onClick={() => setPanel(panel === "mixer" ? null : "mixer")}
-          >
-            <SlidersHorizontal className="size-4" /> MIX
-          </Button>
-          <Button
-            variant={panel === "vocal" ? "secondary" : "ghost"}
-            size="sm"
-            onClick={() => setPanel(panel === "vocal" ? null : "vocal")}
-          >
-            <Mic className="size-4" /> VOCAL FORGE
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => toast("Import instrumental", { description: "Drop a file on the timeline to analyse BPM, key and structure." })}>
-            <Import className="size-4" /> IMPORT
-          </Button>
-          <Button variant="ghost" size="sm" onClick={openExport}>
-            <Download className="size-4" /> EXPORT
-          </Button>
-          <Button
-            variant={panel === "settings" ? "secondary" : "ghost"}
-            size="sm"
-            onClick={() => setPanel(panel === "settings" ? null : "settings")}
-          >
-            <Settings2 className="size-4" /> SETTINGS
-          </Button>
+          {isMobile ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <Menu className="size-4" /> PANELS
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Studio Panels</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setPanel("browser")}>
+                  <FolderOpen className="mr-2 size-4" /> Browser
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setPanel("plugins")}>
+                  <Cpu className="mr-2 size-4" /> Plugins
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setPanel("drums")}>
+                  <Disc3 className="mr-2 size-4" /> Drums
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setPanel("synth")}>
+                  <Music2 className="mr-2 size-4" /> Instruments
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setPanel("keys")}>
+                  <KeyboardMusic className="mr-2 size-4" /> Keys
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setPanel("mixer")}>
+                  <SlidersHorizontal className="mr-2 size-4" /> Mixer
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setPanel("vocal")}>
+                  <Mic className="mr-2 size-4" /> Vocal Forge
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setPanel("settings")}>
+                  <Settings2 className="mr-2 size-4" /> Settings
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={openExport}>
+                  <Download className="mr-2 size-4" /> Export
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <>
+              <Button
+                variant={panel === "browser" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setPanel(panel === "browser" ? null : "browser")}
+              >
+                <FolderOpen className="size-4" /> BROWSER
+              </Button>
+              <Button
+                variant={panel === "plugins" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setPanel(panel === "plugins" ? null : "plugins")}
+              >
+                <Cpu className="size-4" /> PLUGINS
+              </Button>
+              <Button
+                variant={panel === "drums" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setPanel(panel === "drums" ? null : "drums")}
+              >
+                <Disc3 className="size-4" /> DRUMS
+              </Button>
+              <Button
+                variant={panel === "synth" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setPanel(panel === "synth" ? null : "synth")}
+              >
+                <Music2 className="size-4" /> INSTRUMENTS
+              </Button>
+              <Button
+                variant={panel === "keys" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setPanel(panel === "keys" ? null : "keys")}
+              >
+                <KeyboardMusic className="size-4" /> KEYS
+              </Button>
+              <Button
+                variant={panel === "mixer" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setPanel(panel === "mixer" ? null : "mixer")}
+              >
+                <SlidersHorizontal className="size-4" /> MIX
+              </Button>
+              <Button
+                variant={panel === "vocal" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setPanel(panel === "vocal" ? null : "vocal")}
+              >
+                <Mic className="size-4" /> VOCAL FORGE
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => toast("Import instrumental", { description: "Drop a file on the timeline to analyse BPM, key and structure." })}>
+                <Import className="size-4" /> IMPORT
+              </Button>
+              <Button variant="ghost" size="sm" onClick={openExport}>
+                <Download className="size-4" /> EXPORT
+              </Button>
+              <Button
+                variant={panel === "settings" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setPanel(panel === "settings" ? null : "settings")}
+              >
+                <Settings2 className="size-4" /> SETTINGS
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </header>
