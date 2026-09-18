@@ -897,6 +897,8 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
 function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) {
   const { transport, setAutomationPoints, setAutomationMode, toggleAutomationLane } = useStudio();
   const [selectedPoint, setSelectedPoint] = useState<number | null>(null);
+  const [gridSnap, setGridSnap] = useState<0 | 0.25 | 0.5 | 1>(1);
+  const [valueSnap, setValueSnap] = useState<0 | 0.02 | 0.05 | 0.1>(0);
   const total = Math.max(1, transport.bars ?? 4) * 4;
   const regionStart = Math.max(0, Math.min(total, transport.loopStart ?? 0));
   const regionEnd = Math.max(regionStart + 1, Math.min(total, transport.loopEnd ?? total));
@@ -906,6 +908,15 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
   const control = (track.plugins ?? []).find((item) => item.id === pluginId)?.params.find((item) => item.id === paramId);
   const logarithmic = control?.unit === "Hz" && (control.min ?? 0) > 0;
   const discrete = control ? ["root", "scale", "chord", "inversion", "range", "mode", "steps"].includes(control.id) : false;
+  const snapStep = (step: number) => {
+    const clamped = Math.max(0, Math.min(total, step));
+    return gridSnap === 0 ? clamped : Math.round(clamped / gridSnap) * gridSnap;
+  };
+  const snapValue = (value: number) => {
+    const clamped = Math.max(bipolar ? -1 : 0, Math.min(1, value));
+    if (discrete && control) return normalizeValue(Math.round(scaleValue(clamped)));
+    return valueSnap === 0 ? clamped : Math.round(clamped / valueSnap) * valueSnap;
+  };
   const scaleValue = (normalized: number) => {
     if (!control) return normalized;
     const scaled = logarithmic
@@ -936,8 +947,8 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
 
   const addPoint = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    const step = Math.round(((e.clientX - rect.left) / rect.width) * total);
-    const value = toValue((e.clientY - rect.top) / rect.height);
+    const step = snapStep(((e.clientX - rect.left) / rect.width) * total);
+    const value = snapValue(toValue((e.clientY - rect.top) / rect.height));
     setAutomationPoints(track.id, lane.param, [
       ...lane.points.filter((p) => p.step !== step),
       { step: Math.max(0, Math.min(total, step)), value },
@@ -951,8 +962,8 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
     if (!row) return;
     const rect = row.getBoundingClientRect();
     const onMove = (ev: PointerEvent) => {
-      const step = Math.max(0, Math.min(total, Math.round(((ev.clientX - rect.left) / rect.width) * total)));
-      const value = toValue((ev.clientY - rect.top) / rect.height);
+      const step = snapStep(((ev.clientX - rect.left) / rect.width) * total);
+      const value = snapValue(toValue((ev.clientY - rect.top) / rect.height));
       setAutomationPoints(
         track.id,
         lane.param,
@@ -1000,9 +1011,9 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
       toast("Automation clipboard is empty");
       return;
     }
-    const origin = Math.max(0, Math.min(total, transport.step));
+    const origin = snapStep(transport.step);
     const pasted = automationClipboard.points
-      .map((point) => ({ ...point, step: Math.min(total, origin + point.step) }))
+      .map((point) => ({ ...point, step: snapStep(origin + point.step), value: snapValue(point.value) }))
       .filter((point, index, all) => all.findIndex((candidate) => candidate.step === point.step) === index);
     const occupied = new Set(pasted.map((point) => point.step));
     setAutomationPoints(track.id, lane.param, [...lane.points.filter((point) => !occupied.has(point.step)), ...pasted]);
@@ -1017,7 +1028,7 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
       return;
     }
     const duplicated = source
-      .map((point) => ({ ...point, step: point.step + regionDuration }))
+      .map((point) => ({ ...point, step: snapStep(point.step + regionDuration), value: snapValue(point.value) }))
       .filter((point) => point.step <= total);
     if (duplicated.length === 0) {
       toast("No room after this region", { description: "Extend the timeline or move the loop region left." });
@@ -1134,6 +1145,31 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
             <Trash2 className="size-3" />
           </Button>
         </div>
+        <div className="flex w-full items-center gap-1 border-t border-border/50 pt-1 font-mono text-[7px]">
+          <span className="text-muted-foreground">SNAP</span>
+          <Button
+            type="button"
+            variant={gridSnap === 0 ? "ghost" : "secondary"}
+            size="sm"
+            className="h-5 px-1.5 text-[7px]"
+            onClick={() => setGridSnap(gridSnap === 0 ? 0.25 : gridSnap === 0.25 ? 0.5 : gridSnap === 0.5 ? 1 : 0)}
+            title="Cycle time snapping: Off, 1/4 beat, 1/2 beat, 1 beat"
+            aria-label={`Time grid snap ${gridSnap === 0 ? "off" : `${gridSnap} beat`}`}
+          >
+            GRID {gridSnap === 0 ? "OFF" : gridSnap === 0.25 ? "¼" : gridSnap === 0.5 ? "½" : "1"}
+          </Button>
+          <Button
+            type="button"
+            variant={valueSnap === 0 && !discrete ? "ghost" : "secondary"}
+            size="sm"
+            className="h-5 px-1.5 text-[7px]"
+            onClick={() => !discrete && setValueSnap(valueSnap === 0 ? 0.02 : valueSnap === 0.02 ? 0.05 : valueSnap === 0.05 ? 0.1 : 0)}
+            title={discrete ? "Values snap to valid parameter choices" : "Cycle value snapping: Off, Fine, Medium, Coarse"}
+            aria-label={`Value snap ${discrete ? "parameter steps" : valueSnap === 0 ? "off" : valueSnap === 0.02 ? "fine" : valueSnap === 0.05 ? "medium" : "coarse"}`}
+          >
+            VALUE {discrete ? "PARAM" : valueSnap === 0 ? "OFF" : valueSnap === 0.02 ? "FINE" : valueSnap === 0.05 ? "MED" : "COARSE"}
+          </Button>
+        </div>
         {selected && (
           <div className="flex w-full items-center gap-1 font-mono text-[8px]" onClick={(event) => event.stopPropagation()}>
             <label className="text-muted-foreground">STEP</label>
@@ -1144,7 +1180,7 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
               min={0}
               max={total}
               value={selected.step}
-              onChange={(event) => setAutomationPoints(track.id, lane.param, pts.map((point, index) => index === selectedPoint ? { ...point, step: Math.max(0, Math.min(total, Number(event.target.value))) } : point))}
+              onChange={(event) => setAutomationPoints(track.id, lane.param, pts.map((point, index) => index === selectedPoint ? { ...point, step: snapStep(Number(event.target.value)) } : point))}
             />
             <label className="text-muted-foreground">VALUE</label>
             <Input
@@ -1155,7 +1191,7 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
               min={control?.min}
               max={control?.max}
               value={scaleValue(selected.value)}
-              onChange={(event) => setAutomationPoints(track.id, lane.param, pts.map((point, index) => index === selectedPoint ? { ...point, value: normalizeValue(Number(event.target.value)) } : point))}
+              onChange={(event) => setAutomationPoints(track.id, lane.param, pts.map((point, index) => index === selectedPoint ? { ...point, value: snapValue(normalizeValue(Number(event.target.value))) } : point))}
             />
           </div>
         )}
