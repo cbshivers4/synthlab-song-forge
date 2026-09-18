@@ -326,6 +326,8 @@ export interface AutomationPoint {
   step: number;
   /** 0..1 for volume and sends, -1..1 for pan */
   value: number;
+  /** Outgoing segment curvature: -1 ease-out, 0 linear, 1 ease-in. */
+  curve?: number;
 }
 
 export interface AutomationLane {

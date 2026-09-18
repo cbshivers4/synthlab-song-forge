@@ -894,8 +894,35 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
 /** One automation lane under a track: click to add a point, drag points, double-click to remove. */
 function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) {
   const { transport, setAutomationPoints, setAutomationMode, toggleAutomationLane } = useStudio();
+  const [selectedPoint, setSelectedPoint] = useState<number | null>(null);
   const total = Math.max(1, transport.bars ?? 4) * 4;
   const bipolar = lane.param === "pan";
+  const [, pluginId, paramId] = lane.param.startsWith("plugin:") ? lane.param.split(":") : [];
+  const control = (track.plugins ?? []).find((item) => item.id === pluginId)?.params.find((item) => item.id === paramId);
+  const logarithmic = control?.unit === "Hz" && (control.min ?? 0) > 0;
+  const discrete = control ? ["root", "scale", "chord", "inversion", "range", "mode", "steps"].includes(control.id) : false;
+  const scaleValue = (normalized: number) => {
+    if (!control) return normalized;
+    const scaled = logarithmic
+      ? control.min * Math.pow(control.max / control.min, normalized)
+      : control.min + (control.max - control.min) * normalized;
+    return discrete ? Math.round(scaled) : scaled;
+  };
+  const normalizeValue = (scaled: number) => {
+    if (!control) return Math.max(bipolar ? -1 : 0, Math.min(1, scaled));
+    const clamped = Math.max(control.min, Math.min(control.max, scaled));
+    return logarithmic
+      ? Math.log(clamped / control.min) / Math.log(control.max / control.min)
+      : (clamped - control.min) / (control.max - control.min || 1);
+  };
+  const formatValue = (normalized: number) => {
+    const value = scaleValue(normalized);
+    const digits = discrete ? 0 : Math.abs(value) >= 100 ? 0 : Math.abs(value) >= 10 ? 1 : 2;
+    return `${value.toFixed(digits)}${control?.unit ? ` ${control.unit}` : ""}`;
+  };
+  const shapeT = (t: number, curve = 0) => curve >= 0
+    ? Math.pow(t, 1 + curve * 3)
+    : 1 - Math.pow(1 - t, 1 - curve * 3);
   const toValue = (yFrac: number) => {
     const v = 1 - Math.min(1, Math.max(0, yFrac));
     return bipolar ? v * 2 - 1 : v;
@@ -914,6 +941,7 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
 
   const dragPoint = (e: React.PointerEvent, index: number) => {
     e.stopPropagation();
+    setSelectedPoint(index);
     const row = (e.currentTarget as HTMLElement).closest("[data-auto-row]") as HTMLElement | null;
     if (!row) return;
     const rect = row.getBoundingClientRect();
@@ -934,8 +962,36 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
     window.addEventListener("pointerup", onUp);
   };
 
+  const dragCurve = (e: React.PointerEvent, index: number) => {
+    e.stopPropagation();
+    const startY = e.clientY;
+    const original = lane.points[index]?.curve ?? 0;
+    const onMove = (ev: PointerEvent) => {
+      const curve = Math.max(-1, Math.min(1, original + (startY - ev.clientY) / 36));
+      setAutomationPoints(track.id, lane.param, lane.points.map((point, i) => i === index ? { ...point, curve } : point));
+    };
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  };
+
   const label = laneLabel(track, lane.param);
   const pts = lane.points;
+  const selected = selectedPoint === null ? undefined : pts[selectedPoint];
+  const curvePoints = pts.flatMap((point, index) => {
+    const next = pts[index + 1];
+    if (!next) return [`${(point.step / total) * 100},${toY(point.value) * 100}`];
+    return Array.from({ length: 13 }, (_, sample) => {
+      const t = sample / 12;
+      const shaped = shapeT(t, point.curve ?? 0);
+      const step = point.step + (next.step - point.step) * t;
+      const value = point.value + (next.value - point.value) * shaped;
+      return `${(step / total) * 100},${toY(value) * 100}`;
+    });
+  });
   const modes: AutomationLane["mode"][] = ["off", "read", "write", "touch", "latch"];
   const nextMode = () => setAutomationMode(track.id, lane.param, modes[(modes.indexOf(lane.mode) + 1) % modes.length] ?? "off");
   const recordingMode = transport.playing && (lane.mode === "write" || lane.mode === "touch" || lane.mode === "latch");
@@ -943,8 +999,8 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
   return (
     <div className="flex items-stretch border-t border-border/50 bg-background/40">
       <div className="w-1 shrink-0" style={{ background: track.color, opacity: 0.4 }} />
-      <div className="flex w-[240px] shrink-0 items-center gap-1 border-r border-border bg-surface/60 px-2 py-1">
-        <span className="font-mono text-[9px] tracking-[0.15em] text-muted-foreground">AUTO · {label}</span>
+      <div className="flex w-[240px] shrink-0 flex-wrap items-center gap-1 border-r border-border bg-surface/60 px-2 py-1">
+        <span className="min-w-0 flex-1 truncate font-mono text-[9px] tracking-[0.15em] text-muted-foreground">AUTO · {label}</span>
         <button
           onClick={nextMode}
           title="Cycle automation mode: Off, Read, Write, Touch, Latch"
@@ -977,17 +1033,42 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
         >
           <X className="size-3" />
         </button>
+        {selected && (
+          <div className="flex w-full items-center gap-1 font-mono text-[8px]" onClick={(event) => event.stopPropagation()}>
+            <label className="text-muted-foreground">STEP</label>
+            <Input
+              aria-label="Automation point step"
+              className="h-5 w-12 px-1 text-[9px]"
+              type="number"
+              min={0}
+              max={total}
+              value={selected.step}
+              onChange={(event) => setAutomationPoints(track.id, lane.param, pts.map((point, index) => index === selectedPoint ? { ...point, step: Math.max(0, Math.min(total, Number(event.target.value))) } : point))}
+            />
+            <label className="text-muted-foreground">VALUE</label>
+            <Input
+              aria-label="Automation point value"
+              className="h-5 min-w-0 flex-1 px-1 text-[9px]"
+              type="number"
+              step={discrete ? 1 : "any"}
+              min={control?.min}
+              max={control?.max}
+              value={scaleValue(selected.value)}
+              onChange={(event) => setAutomationPoints(track.id, lane.param, pts.map((point, index) => index === selectedPoint ? { ...point, value: normalizeValue(Number(event.target.value)) } : point))}
+            />
+          </div>
+        )}
       </div>
       <div
         data-auto-row
         onClick={addPoint}
         title="Click to add a point, drag a point to shape it, double-click a point to delete"
-        className="lane-grid relative h-[54px] flex-1 cursor-crosshair bg-background/70"
+        className="lane-grid relative h-[72px] flex-1 cursor-crosshair bg-background/70"
       >
         <svg className="pointer-events-none absolute inset-0 size-full" preserveAspectRatio="none" viewBox="0 0 100 100">
           {pts.length > 1 && (
             <polyline
-              points={pts.map((p) => `${(p.step / total) * 100},${toY(p.value) * 100}`).join(" ")}
+              points={curvePoints.join(" ")}
               fill="none"
               stroke="var(--primary)"
               strokeWidth={1}
@@ -1004,11 +1085,39 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
               e.stopPropagation();
               setAutomationPoints(track.id, lane.param, pts.filter((_, j) => j !== i));
             }}
-            aria-label={`${label} point at step ${p.step}`}
-            className="absolute size-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary ring-2 ring-background"
+            aria-label={`${label} point at step ${p.step}, ${formatValue(p.value)}`}
+            title={`${formatValue(p.value)} · curve ${Math.round((p.curve ?? 0) * 100)}%`}
+            className={`absolute size-2 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-background ${selectedPoint === i ? "bg-foreground" : "bg-primary"}`}
             style={{ left: `${(p.step / total) * 100}%`, top: `${toY(p.value) * 100}%` }}
           />
         ))}
+        {pts.slice(0, -1).map((point, index) => {
+          const next = pts[index + 1];
+          if (!next) return null;
+          const shaped = shapeT(0.5, point.curve ?? 0);
+          const value = point.value + (next.value - point.value) * shaped;
+          return (
+            <button
+              key={`curve-${point.step}-${index}`}
+              type="button"
+              onPointerDown={(event) => dragCurve(event, index)}
+              onDoubleClick={(event) => {
+                event.stopPropagation();
+                setAutomationPoints(track.id, lane.param, pts.map((item, i) => i === index ? { ...item, curve: 0 } : item));
+              }}
+              onClick={(event) => event.stopPropagation()}
+              aria-label={`Shape curve after step ${point.step}`}
+              title="Drag vertically to bend curve · double-click for linear"
+              className="absolute size-2 -translate-x-1/2 -translate-y-1/2 rotate-45 border border-primary bg-background"
+              style={{ left: `${(((point.step + next.step) / 2) / total) * 100}%`, top: `${toY(value) * 100}%` }}
+            />
+          );
+        })}
+        {selected && (
+          <div className="pointer-events-none absolute bottom-1 right-2 font-mono text-[8px] text-muted-foreground">
+            {formatValue(selected.value)} · CURVE {Math.round((selected.curve ?? 0) * 100)}%
+          </div>
+        )}
       </div>
     </div>
   );
