@@ -29,3 +29,4 @@
 - [x] Interactive waveform zoom to 16× with horizontal scrolling and precise trim/fade handles
 - [x] Undo and redo controls in the clip editor for comparing trim and fade changes
 - [x] A/B waveform comparison with separate original and edited audition modes
+- [x] Shared loop region for repeated Original and Edited waveform audition

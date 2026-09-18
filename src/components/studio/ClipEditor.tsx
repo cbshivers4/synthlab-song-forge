@@ -29,6 +29,8 @@ export function ClipEditor({ track, clip, onClose }: { track: Track; clip: Audio
   const { updateClip, previewClip, undo, redo, canUndo, canRedo } = useStudio();
   const originalRef = useRef<AudioClip>({ ...clip, peaks: [...clip.peaks] });
   const [compareSide, setCompareSide] = useState<"original" | "edited">("edited");
+  const [loopAudition, setLoopAudition] = useState(false);
+  const [loopRange, setLoopRange] = useState<[number, number]>([0, Math.max(0.05, clip.length ?? clip.duration)]);
   const [zoomTrim, setZoomTrim] = useState(true);
   const [waveZoom, setWaveZoom] = useState(1);
 
@@ -69,15 +71,20 @@ export function ClipEditor({ track, clip, onClose }: { track: Track; clip: Audio
         return;
       }
       engine.stopSamples(track.id);
+      const baseOffset = candidate.offset ?? 0;
+      const baseLength = candidate.length ?? candidate.duration;
+      const loopStart = Math.min(loopRange[0], Math.max(0, baseLength - 0.01));
+      const loopLength = Math.max(0.01, Math.min(loopRange[1] - loopRange[0], baseLength - loopStart));
       engine.playClip(track.id, {
         url: candidate.url as string,
-        offset: candidate.offset ?? 0,
-        length: candidate.length ?? candidate.duration,
+        offset: baseOffset + loopStart,
+        length: loopLength,
         gain: candidate.gain ?? 1,
         fadeIn: candidate.fadeIn ?? 0.004,
         fadeOut: candidate.fadeOut ?? 0.01,
         rate: clipRate(candidate),
         reverse: candidate.reverse ?? false,
+        loopClip: loopAudition,
       });
     });
   };
@@ -136,6 +143,26 @@ export function ClipEditor({ track, clip, onClose }: { track: Track; clip: Audio
           onChange={set}
         />
 
+        <div className="flex flex-wrap items-center gap-2 rounded-[3px] border border-border bg-surface-2 px-2 py-2">
+          <Toggle on={loopAudition} onClick={() => setLoopAudition((value) => !value)} label="LOOP AUDITION" />
+          <span className="font-mono text-[9px] text-muted-foreground">REGION</span>
+          <Slider
+            aria-label="Loop audition region"
+            value={loopRange}
+            min={0}
+            max={Math.max(0.05, length)}
+            step={0.01}
+            minStepsBetweenThumbs={1}
+            onValueChange={(value) => {
+              const start = value[0] ?? 0;
+              const end = value[1] ?? length;
+              setLoopRange([start, Math.max(start + 0.01, end)]);
+            }}
+            className="min-w-40 flex-1"
+          />
+          <span className="w-32 text-right font-mono text-[9px] text-foreground">{loopRange[0].toFixed(2)}s — {loopRange[1].toFixed(2)}s</span>
+        </div>
+
         <div className="grid grid-cols-2 gap-2" aria-label="A/B waveform comparison">
           <ComparisonWaveform
             label="A · ORIGINAL"
@@ -143,6 +170,7 @@ export function ClipEditor({ track, clip, onClose }: { track: Track; clip: Audio
             peaks={original.reverse ? [...original.peaks].reverse() : original.peaks}
             gain={original.gain ?? 1}
             detail={`${(original.length ?? original.duration).toFixed(2)}s · ${clipRate(original).toFixed(2)}×`}
+            loopRange={loopRange}
             onSelect={() => audition("original")}
           />
           <ComparisonWaveform
@@ -151,6 +179,7 @@ export function ClipEditor({ track, clip, onClose }: { track: Track; clip: Audio
             peaks={clip.reverse ? [...editedPeaks].reverse() : editedPeaks}
             gain={gain}
             detail={`${length.toFixed(2)}s · ${rate.toFixed(2)}×`}
+            loopRange={loopRange}
             onSelect={() => audition("edited")}
           />
         </div>
@@ -257,6 +286,7 @@ function ComparisonWaveform({
   peaks,
   gain,
   detail,
+  loopRange,
   onSelect,
 }: {
   label: string;
@@ -264,6 +294,7 @@ function ComparisonWaveform({
   peaks: number[];
   gain: number;
   detail: string;
+  loopRange: [number, number];
   onSelect: () => void;
 }) {
   return (
@@ -279,8 +310,15 @@ function ComparisonWaveform({
         <span className={active ? "text-primary" : "text-muted-foreground"}>{label}</span>
         <span className="flex items-center gap-1 text-muted-foreground"><Play className="size-3" /> {detail}</span>
       </span>
-      <span className="block h-14">
+      <span className="relative block h-14">
         <WaveformView peaks={peaks.length > 1 ? peaks : [0, 0]} gain={gain} color={active ? "var(--primary)" : "var(--muted-foreground)"} label={`${label} waveform`} />
+        <span
+          className="pointer-events-none absolute inset-y-0 border-x border-primary bg-primary/15"
+          style={{
+            left: `${Math.max(0, Math.min(100, (loopRange[0] / Math.max(0.01, loopRange[1])) * 100))}%`,
+            right: 0,
+          }}
+        />
       </span>
     </button>
   );
