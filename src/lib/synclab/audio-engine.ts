@@ -1233,6 +1233,8 @@ export class SyncLabEngine {
       rate?: number;
       reverse?: boolean;
       loopClip?: boolean;
+       /** Equal-power overlap at an audition loop seam, in source seconds. */
+       loopCrossfade?: number;
     },
     when?: number,
   ) {
@@ -1254,12 +1256,40 @@ export class SyncLabEngine {
     const startAt = c.reverse ? Math.max(0, decoded.duration - offset - len) : offset;
 
     const src = ctx.createBufferSource();
-    src.buffer = buf;
+    const crossfadeFrames = c.loopClip
+      ? Math.min(Math.floor(clamp(c.loopCrossfade ?? 0, 0, len / 2) * buf.sampleRate), Math.floor((len * buf.sampleRate) / 2))
+      : 0;
+    let playbackBuffer = buf;
+    let playbackStart = startAt;
+    let playbackLength = len;
+    if (crossfadeFrames > 0) {
+      const startFrame = Math.floor(startAt * buf.sampleRate);
+      const lengthFrames = Math.min(Math.floor(len * buf.sampleRate), buf.length - startFrame);
+      const outputFrames = Math.max(1, lengthFrames - crossfadeFrames);
+      playbackBuffer = ctx.createBuffer(buf.numberOfChannels, outputFrames, buf.sampleRate);
+      for (let channel = 0; channel < buf.numberOfChannels; channel++) {
+        const input = buf.getChannelData(channel);
+        const output = playbackBuffer.getChannelData(channel);
+        for (let i = 0; i < outputFrames; i++) {
+          if (i < crossfadeFrames) {
+            const phase = i / Math.max(1, crossfadeFrames - 1);
+            const tail = input[startFrame + outputFrames + i] ?? 0;
+            const head = input[startFrame + i] ?? 0;
+            output[i] = tail * Math.cos(phase * Math.PI * 0.5) + head * Math.sin(phase * Math.PI * 0.5);
+          } else {
+            output[i] = input[startFrame + i] ?? 0;
+          }
+        }
+      }
+      playbackStart = 0;
+      playbackLength = playbackBuffer.duration;
+    }
+    src.buffer = playbackBuffer;
     src.playbackRate.value = rate;
     src.loop = c.loopClip ?? false;
     if (src.loop) {
-      src.loopStart = startAt;
-      src.loopEnd = startAt + len;
+      src.loopStart = playbackStart;
+      src.loopEnd = playbackStart + playbackLength;
     }
     const amp = ctx.createGain();
     if (src.loop) {
@@ -1272,7 +1302,7 @@ export class SyncLabEngine {
     }
     src.connect(amp);
     amp.connect(ch.input);
-    if (src.loop) src.start(t0, startAt);
+    if (src.loop) src.start(t0, playbackStart);
     else {
       src.start(t0, startAt, len);
       src.stop(t0 + heard + 0.02);
