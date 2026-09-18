@@ -1064,6 +1064,7 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
     const occupied = new Set(pasted.map((point) => point.step));
     setAutomationPoints(track.id, lane.param, [...lane.points.filter((point) => !occupied.has(point.step)), ...pasted]);
     setSelectedPoint(null);
+    previewRegionEdit(pasted, `PASTED ${pasted.length} @ ${origin}`);
     toast(`Pasted automation at step ${origin}`);
   };
 
