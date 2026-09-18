@@ -23,6 +23,9 @@ import { getPadBank, setPadBank, subscribePadBank, type SavedPad } from "@/lib/s
 const BANKS = ["A", "B", "C", "D"] as const;
 /** Koala-style bank colors — each bank tints its loaded pads. */
 const BANK_COLORS = ["hsl(187 85% 50%)", "hsl(38 95% 55%)", "hsl(330 80% 62%)", "hsl(95 70% 52%)"] as const;
+const BANK_HUES = [187, 38, 330, 95] as const;
+/** Every pad gets its own colour so a full bank reads at a glance. */
+const padColor = (bank: number, i: number) => `hsl(${((BANK_HUES[bank] ?? 187) + i * 13) % 360} 85% 56%)`;
 const PADS_PER_BANK = 16;
 const STEPS = 16;
 const KEYMAP = "1234qwerasdfzxcv".split("");
@@ -158,11 +161,15 @@ export function PadSampler() {
   const [step, setStep] = useState(0);
   const [liveRec, setLiveRec] = useState(false);
   const [micOn, setMicOn] = useState(false);
+  /** hold-to-record mode: press a pad to record, release to keep the take */
+  const [armRec, setArmRec] = useState(false);
+  const [recPad, setRecPad] = useState<number | null>(null);
   const [over, setOver] = useState<number | null>(null);
   const [trackId, setTrackId] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const targetRef = useRef<number>(0);
   const recRef = useRef<{ rec: MediaRecorder; stream: MediaStream; chunks: Blob[]; pad: number } | null>(null);
+  const holdRef = useRef<{ pad: number; active: boolean } | null>(null);
   const padsRef = useRef(pads);
   padsRef.current = pads;
   useEffect(() => subscribePadBank((next) => setPadsState(next)), []);
@@ -354,6 +361,33 @@ export function PadSampler() {
     setSel(r.pad);
   };
 
+  /** press and hold a pad to record into it, release to stop */
+  const beginHold = async (i: number) => {
+    if (recRef.current || holdRef.current) return;
+    holdRef.current = { pad: i, active: true };
+    setRecPad(i);
+    setSel(i);
+    await startMic(i);
+    if (!recRef.current) {
+      // microphone refused — clear the hold so the next press can try again
+      holdRef.current = null;
+      setRecPad(null);
+      return;
+    }
+    if (!holdRef.current?.active) {
+      setRecPad(null);
+      await stopMic();
+    }
+  };
+
+  const endHold = () => {
+    if (!holdRef.current) return;
+    holdRef.current.active = false;
+    holdRef.current = null;
+    setRecPad(null);
+    if (recRef.current) void stopMic();
+  };
+
   const filled = useMemo(() => Object.keys(pads).length, [pads]);
 
   return (
@@ -400,7 +434,19 @@ export function PadSampler() {
           >
             <Circle className="size-3.5" /> Record taps
           </Button>
-          <Button size="sm" variant="ghost" className="h-7 gap-1.5" onClick={() => getEngine().stopSamples()}>
+          <Button
+            size="sm"
+            variant={armRec ? "destructive" : "ghost"}
+            className="h-9 gap-1.5 sm:h-7"
+            aria-pressed={armRec}
+            onClick={() => {
+              endHold();
+              setArmRec((v) => !v);
+            }}
+          >
+            <Mic className="size-3.5" /> {armRec ? "Exit hold-to-record" : "Hold to record"}
+          </Button>
+          <Button size="sm" variant="ghost" className="h-9 gap-1.5 sm:h-7" onClick={() => getEngine().stopSamples()}>
             <Square className="size-3.5" /> Panic
           </Button>
         </div>
@@ -436,15 +482,25 @@ export function PadSampler() {
           const id = index(i);
           const pad = pads[id];
           const active = hit === id;
-          const c = BANK_COLORS[bank] as string;
+          const c = padColor(bank, i);
+          const recording = recPad === id;
           return (
             <button
               key={id}
               type="button"
-              onPointerDown={() => {
+              onPointerDown={(e) => {
                 setSel(id);
+                if (armRec) {
+                  e.preventDefault();
+                  e.currentTarget.setPointerCapture(e.pointerId);
+                  void beginHold(id);
+                  return;
+                }
                 if (pad) trigger(id);
               }}
+              onPointerUp={() => armRec && endHold()}
+              onPointerCancel={() => armRec && endHold()}
+              onContextMenu={(e) => armRec && e.preventDefault()}
               onDragOver={(e) => {
                 e.preventDefault();
                 setOver(id);
@@ -456,24 +512,32 @@ export function PadSampler() {
                 void loadInto(id, e.dataTransfer.files[0]);
               }}
               style={
-                pad
+                recording
                   ? {
-                      borderColor: c,
-                      background: active
-                        ? `linear-gradient(145deg, ${c}, color-mix(in hsl, ${c} 55%, transparent))`
-                        : sel === id
-                          ? `linear-gradient(145deg, color-mix(in hsl, ${c} 55%, transparent), color-mix(in hsl, ${c} 22%, transparent))`
-                          : `linear-gradient(145deg, color-mix(in hsl, ${c} 30%, transparent), color-mix(in hsl, ${c} 10%, transparent))`,
-                      boxShadow: active ? `0 0 18px ${c}` : sel === id ? `0 0 0 1px ${c}` : undefined,
-                      opacity: over === id ? 0.85 : 1,
+                      borderColor: "hsl(0 85% 58%)",
+                      background: "linear-gradient(145deg, hsl(0 85% 45%), hsl(0 75% 28%))",
+                      boxShadow: "0 0 22px hsl(0 85% 55% / 0.8)",
                     }
-                  : over === id
-                    ? { borderColor: c, backgroundColor: `color-mix(in hsl, ${c} 15%, transparent)` }
-                    : undefined
+                  : pad
+                    ? {
+                        borderColor: c,
+                        background: active
+                          ? `linear-gradient(145deg, ${c}, color-mix(in hsl, ${c} 55%, transparent))`
+                          : sel === id
+                            ? `linear-gradient(145deg, color-mix(in hsl, ${c} 55%, transparent), color-mix(in hsl, ${c} 22%, transparent))`
+                            : `linear-gradient(145deg, color-mix(in hsl, ${c} 30%, transparent), color-mix(in hsl, ${c} 10%, transparent))`,
+                        boxShadow: active ? `0 0 18px ${c}` : sel === id ? `0 0 0 1px ${c}` : undefined,
+                        opacity: over === id ? 0.85 : 1,
+                      }
+                    : over === id
+                      ? { borderColor: c, backgroundColor: `color-mix(in hsl, ${c} 15%, transparent)` }
+                      : armRec
+                        ? { borderColor: `color-mix(in hsl, ${c} 60%, transparent)` }
+                        : undefined
               }
-              className={`relative flex h-20 flex-col items-start justify-between rounded-md border p-2 text-left transition-all ${
-                pad ? "" : "border-dashed border-border bg-surface-2/40 hover:border-muted-foreground/60"
-              }`}
+              className={`relative flex h-24 touch-none flex-col items-start justify-between rounded-md border p-2 text-left transition-all select-none sm:h-20 ${
+                pad || recording ? "" : "border-dashed border-border bg-surface-2/40 hover:border-muted-foreground/60"
+              } ${recording ? "animate-pulse" : ""}`}
             >
               <span className="relative z-10 font-mono text-[9px]" style={{ color: pad ? "hsl(0 0% 100% / 0.75)" : undefined }}>
                 <span className={pad ? "" : "text-muted-foreground"}>
@@ -481,9 +545,9 @@ export function PadSampler() {
                   {i + 1} · {KEYMAP[i]?.toUpperCase()}
                 </span>
               </span>
-              {pad && (
+              {pad && !recording && (
                 <span className="pointer-events-none absolute inset-x-1.5 top-4 bottom-6">
-                  <WaveformView peaks={pad.peaks} color="hsl(0 0% 100%)" grid={false} label={`${pad.name} waveform`} />
+                  <WaveformView peaks={pad.peaks} color={c} grid={false} label={`${pad.name} waveform`} />
                   <span
                     className="absolute inset-y-0 left-0 bg-black/55"
                     style={{ width: `${pad.start * 100}%` }}
@@ -495,10 +559,10 @@ export function PadSampler() {
                 </span>
               )}
               <span
-                className={`line-clamp-2 font-mono text-[10px] ${pad ? "" : "text-foreground"}`}
-                style={pad ? { color: "hsl(0 0% 100%)", textShadow: "0 1px 2px hsl(0 0% 0% / 0.5)" } : undefined}
+                className={`line-clamp-2 font-mono text-[10px] ${pad || recording ? "" : "text-foreground"}`}
+                style={pad || recording ? { color: "hsl(0 0% 100%)", textShadow: "0 1px 2px hsl(0 0% 0% / 0.5)" } : undefined}
               >
-                {pad ? pad.name : "empty · select"}
+                {recording ? "RECORDING…" : pad ? pad.name : armRec ? "hold to record" : "empty · select"}
               </span>
               {pad && pad.choke > 0 && (
                 <span className="absolute right-1 top-1 rounded-sm bg-accent px-1 font-mono text-[8px] text-accent-foreground">

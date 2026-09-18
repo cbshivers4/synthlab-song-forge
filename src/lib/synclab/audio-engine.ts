@@ -1903,13 +1903,58 @@ export class SyncLabEngine {
     const out = ctx.createGain();
     const p = ctx.createStereoPanner();
     p.pan.value = clamp(pad.pan, -1, 1);
-    out.connect(p);
-    p.connect(ch.input);
     const vol = pad.volume * velocity;
     const tune = Math.pow(2, pad.pitch / 12);
     const dec = 0.1 + pad.decay;
 
-    const noiseBurst = (dur: number, freq: number, type: BiquadFilterType, q = 1) => {
+    // ---- shaping chain: out -> drive -> tone -> envelope -> pan -> channel
+    const drive = clamp(pad.drive ?? 0, 0, 1);
+    let node: AudioNode = out;
+    if (drive > 0.001) {
+      const shaper = ctx.createWaveShaper();
+      const k = 1 + drive * 60;
+      const curve = new Float32Array(1024);
+      for (let i = 0; i < 1024; i++) {
+        const x = (i / 1023) * 2 - 1;
+        curve[i] = ((1 + k) * x) / (1 + k * Math.abs(x));
+      }
+      shaper.curve = curve;
+      shaper.oversample = "2x";
+      const trim = ctx.createGain();
+      trim.gain.value = 1 / (1 + drive * 1.6);
+      node.connect(shaper);
+      shaper.connect(trim);
+      node = trim;
+    }
+
+    const toneAmt = clamp(pad.tone ?? 0.5, 0, 1);
+    if (Math.abs(toneAmt - 0.5) > 0.01) {
+      const f = ctx.createBiquadFilter();
+      if (toneAmt < 0.5) {
+        f.type = "lowpass";
+        f.frequency.value = 300 * Math.pow(60, toneAmt * 2); // 300Hz .. 18kHz
+      } else {
+        f.type = "highpass";
+        f.frequency.value = 30 * Math.pow(120, (toneAmt - 0.5) * 2); // 30Hz .. 3.6kHz
+      }
+      f.Q.value = 0.8;
+      node.connect(f);
+      node = f;
+    }
+
+    const env = ctx.createGain();
+    const atk = Math.max(0.0005, (pad.attack ?? 0) * 0.25);
+    const rel = 0.02 + (pad.release ?? 0.2) * 1.5;
+    const hold = Math.max(0.02, dec * 1.2);
+    env.gain.setValueAtTime(0.0001, t);
+    env.gain.linearRampToValueAtTime(1, t + atk);
+    env.gain.setValueAtTime(1, t + atk + hold);
+    env.gain.exponentialRampToValueAtTime(0.0001, t + atk + hold + rel);
+    node.connect(env);
+    env.connect(p);
+    p.connect(ch.input);
+
+    const noiseBurst = (dur: number, freq: number, type: BiquadFilterType, q = 1, level = 1, spread = 0) => {
       const len = Math.ceil(ctx.sampleRate * dur);
       const buf = ctx.createBuffer(1, len, ctx.sampleRate);
       const d = buf.getChannelData(0);
@@ -1921,10 +1966,17 @@ export class SyncLabEngine {
       f.frequency.value = freq * tune;
       f.Q.value = q;
       const g = ctx.createGain();
-      g.gain.value = vol;
+      g.gain.value = vol * level;
       src.connect(f);
       f.connect(g);
-      g.connect(out);
+      if (spread > 0.001) {
+        const sp = ctx.createStereoPanner();
+        sp.pan.value = clamp((Math.random() * 2 - 1) * spread, -1, 1);
+        g.connect(sp);
+        sp.connect(out);
+      } else {
+        g.connect(out);
+      }
       src.start(t);
     };
 
@@ -1982,6 +2034,15 @@ export class SyncLabEngine {
       default:
         noiseBurst(0.4 * dec, 900, "bandpass", 3);
     }
+
+    // extra transient click
+    const snap = clamp(pad.snap ?? 0, 0, 1);
+    if (snap > 0.001) noiseBurst(0.004 + snap * 0.016, 2600 + snap * 5000, "highpass", 0.9, snap);
+
+    // extra noise layer, spread in stereo by WIDTH
+    const noise = clamp(pad.noise ?? 0, 0, 1);
+    if (noise > 0.001)
+      noiseBurst(0.03 + noise * dec * 1.6, 400 + noise * 4000, "bandpass", 0.7, noise * 0.8, clamp(pad.width ?? 0, 0, 1));
   }
 }
 

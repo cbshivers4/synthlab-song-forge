@@ -187,7 +187,7 @@ export function DrumMachine({ track }: { track: Track }) {
               </div>
             </div>
             {openPad === pad.id && (
-              <div className="panel ml-24 flex flex-wrap gap-3 p-3">
+              <div className="panel flex flex-wrap gap-3 p-3 sm:ml-24">
                 <Knob label="VOL" value={pad.volume} onChange={(v) => updatePad(track.id, pad.id, { volume: v })} />
                 <Knob label="PAN" min={-1} max={1} value={pad.pan} onChange={(v) => updatePad(track.id, pad.id, { pan: v })} />
                 <Knob
@@ -212,6 +212,15 @@ export function DrumMachine({ track }: { track: Track }) {
                 />
                 <Knob label="START" value={pad.start ?? 0} onChange={(v) => updatePad(track.id, pad.id, { start: v })} />
                 <Knob label="END" value={pad.end ?? 1} onChange={(v) => updatePad(track.id, pad.id, { end: v })} />
+                <Knob
+                  label="TONE"
+                  value={pad.tone ?? 0.5}
+                  onChange={(v) => updatePad(track.id, pad.id, { tone: v })}
+                />
+                <Knob label="DRIVE" value={pad.drive ?? 0} onChange={(v) => updatePad(track.id, pad.id, { drive: v })} />
+                <Knob label="SNAP" value={pad.snap ?? 0} onChange={(v) => updatePad(track.id, pad.id, { snap: v })} />
+                <Knob label="NOISE" value={pad.noise ?? 0} onChange={(v) => updatePad(track.id, pad.id, { noise: v })} />
+                <Knob label="WIDTH" value={pad.width ?? 0} onChange={(v) => updatePad(track.id, pad.id, { width: v })} />
                 <Knob
                   label="CHOKE"
                   min={0}
