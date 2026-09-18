@@ -199,7 +199,13 @@ interface StudioApi extends StudioState {
   changeInstrument: (trackId: string, preset: string) => void;
   setActiveClip: (trackId: string, clipId: string) => void;
   toggleAutomationLane: (trackId: string, param: AutomationParam) => void;
-  setAutomationPoints: (trackId: string, param: AutomationParam, points: AutomationPoint[]) => void;
+  setAutomationPoints: (trackId: string, param: AutomationParam, points: AutomationPoint[], label?: string) => void;
+  undoAutomationEdit: (trackId: string, param: AutomationParam) => void;
+  redoAutomationEdit: (trackId: string, param: AutomationParam) => void;
+  automationHistory: (
+    trackId: string,
+    param: AutomationParam,
+  ) => { canUndo: boolean; canRedo: boolean; undoLabel: string | null; redoLabel: string | null };
   setAutomationMode: (trackId: string, param: AutomationParam, mode: AutomationLane["mode"]) => void;
   setAutomationLaneLock: (trackId: string, param: AutomationParam, locked: boolean) => void;
   previewAutomation: (trackId: string, param: AutomationParam, value: number) => void;
