@@ -20,17 +20,21 @@ import { clipRate } from "@/lib/synclab/types";
 import type { AudioClip, Track } from "@/lib/synclab/types";
 import { toast } from "sonner";
 
+type LoopSnapMode = "off" | "beat" | "bar" | "zero";
+
 /**
  * Inline audio editor for one arrangement clip. Every control is non-destructive:
  * the recorded file is never rewritten, only the clip's playback settings change,
  * and REVERT puts everything back.
  */
 export function ClipEditor({ track, clip, onClose }: { track: Track; clip: AudioClip; onClose: () => void }) {
-  const { updateClip, undo, redo, canUndo, canRedo } = useStudio();
+  const { updateClip, undo, redo, canUndo, canRedo, transport } = useStudio();
   const originalRef = useRef<AudioClip>({ ...clip, peaks: [...clip.peaks] });
   const [compareSide, setCompareSide] = useState<"original" | "edited">("edited");
   const [loopAudition, setLoopAudition] = useState(false);
   const [loopRange, setLoopRange] = useState<[number, number]>([0, Math.max(0.05, clip.length ?? clip.duration)]);
+  const [loopSnap, setLoopSnap] = useState<LoopSnapMode>("off");
+  const zeroCrossData = useRef<{ samples: Float32Array; sampleRate: number } | null>(null);
   const [zoomTrim, setZoomTrim] = useState(true);
   const [waveZoom, setWaveZoom] = useState(1);
 
@@ -43,6 +47,20 @@ export function ClipEditor({ track, clip, onClose }: { track: Track; clip: Audio
   const fadeIn = clip.fadeIn ?? 0.004;
   const fadeOut = clip.fadeOut ?? 0.01;
   const rate = clipRate(clip);
+
+  useEffect(() => {
+    let cancelled = false;
+    zeroCrossData.current = null;
+    if (!clip.url) return;
+    void getEngine().ensureBuffer(clip.url).then((buffer) => {
+      if (!cancelled && buffer && buffer.numberOfChannels > 0) {
+        zeroCrossData.current = { samples: buffer.getChannelData(0), sampleRate: buffer.sampleRate };
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [clip.url]);
 
   const set = (patch: Partial<AudioClip>) => updateClip(track.id, clip.id, patch);
 
@@ -60,6 +78,50 @@ export function ClipEditor({ track, clip, onClose }: { track: Track; clip: Audio
       return [nextStart, nextEnd];
     });
   }, [length]);
+
+  const snapLoopTime = (value: number, mode = loopSnap) => {
+    const bounded = Math.max(0, Math.min(length, value));
+    if (mode === "off") return bounded;
+    if (mode === "beat" || mode === "bar") {
+      const unit = (60 / transport.bpm) * rate * (mode === "bar" ? 4 : 1);
+      return Math.max(0, Math.min(length, Math.round(bounded / unit) * unit));
+    }
+    const audio = zeroCrossData.current;
+    if (!audio) return bounded;
+    const center = Math.round((offset + bounded) * audio.sampleRate);
+    const radius = Math.round(audio.sampleRate * 0.05);
+    const lo = Math.max(1, center - radius);
+    const hi = Math.min(audio.samples.length - 1, center + radius);
+    let best = center;
+    let bestDistance = Number.POSITIVE_INFINITY;
+    let bestLevel = Number.POSITIVE_INFINITY;
+    for (let i = lo; i <= hi; i++) {
+      const before = audio.samples[i - 1] ?? 0;
+      const after = audio.samples[i] ?? 0;
+      if ((before <= 0 && after >= 0) || (before >= 0 && after <= 0)) {
+        const distance = Math.abs(i - center);
+        const level = Math.abs(before) + Math.abs(after);
+        if (distance < bestDistance || (distance === bestDistance && level < bestLevel)) {
+          best = i;
+          bestDistance = distance;
+          bestLevel = level;
+        }
+      }
+    }
+    return bestDistance === Number.POSITIVE_INFINITY
+      ? bounded
+      : Math.max(0, Math.min(length, best / audio.sampleRate - offset));
+  };
+
+  const changeLoopSnap = (mode: LoopSnapMode) => {
+    setLoopSnap(mode);
+    if (mode === "off") return;
+    setLoopRange(([start, end]) => {
+      const nextStart = snapLoopTime(start, mode);
+      const nextEnd = snapLoopTime(end, mode);
+      return [Math.min(nextStart, length - 0.01), Math.max(Math.min(length, nextEnd), nextStart + 0.01)];
+    });
+  };
 
   const audition = (version: "original" | "edited") => {
     const candidate = version === "original" ? originalRef.current : clip;
@@ -149,6 +211,19 @@ export function ClipEditor({ track, clip, onClose }: { track: Track; clip: Audio
 
         <div className="flex flex-wrap items-center gap-2 rounded-[3px] border border-border bg-surface-2 px-2 py-2">
           <Toggle on={loopAudition} onClick={() => setLoopAudition((value) => !value)} label="LOOP AUDITION" />
+          <span className="font-mono text-[9px] text-muted-foreground">SNAP</span>
+          {(["off", "beat", "bar", "zero"] as const).map((mode) => (
+            <Button
+              key={mode}
+              size="sm"
+              variant="ghost"
+              aria-pressed={loopSnap === mode}
+              onClick={() => changeLoopSnap(mode)}
+              className={`h-7 px-2 font-mono text-[9px] uppercase ${loopSnap === mode ? "bg-primary/15 text-primary" : "text-muted-foreground"}`}
+            >
+              {mode === "zero" ? "0 CROSS" : mode}
+            </Button>
+          ))}
           <span className="font-mono text-[9px] text-muted-foreground">REGION</span>
           <Slider
             aria-label="Loop audition region"
@@ -158,9 +233,9 @@ export function ClipEditor({ track, clip, onClose }: { track: Track; clip: Audio
             step={0.01}
             minStepsBetweenThumbs={1}
             onValueChange={(value) => {
-              const start = value[0] ?? 0;
-              const end = value[1] ?? length;
-              setLoopRange([start, Math.max(start + 0.01, end)]);
+              const start = snapLoopTime(value[0] ?? 0);
+              const end = snapLoopTime(value[1] ?? length);
+              setLoopRange([Math.min(start, length - 0.01), Math.max(start + 0.01, Math.min(length, end))]);
             }}
             className="min-w-40 flex-1"
           />
