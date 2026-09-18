@@ -113,6 +113,8 @@ interface ChannelStrip {
   insertKey: string;
 }
 
+type AutomatableAudioParam = { param: AudioParam; min: number; max: number; logarithmic?: boolean };
+
 export class SyncLabEngine {
   ctx: AudioContext | null = null;
   master: GainNode | null = null;
@@ -121,6 +123,7 @@ export class SyncLabEngine {
   delaySend: GainNode | null = null;
   chorusSend: GainNode | null = null;
   private buses = new Map<string, GainNode>();
+  private automatedPluginParams = new Map<string, AutomatableAudioParam>();
   private sendOut = new Map<string, AudioNode>();
   private sendFeedback = new Map<string, AudioNode>();
   private fxInserts = new Map<string, { key: string; nodes: AudioNode[] }>();
@@ -398,7 +401,8 @@ export class SyncLabEngine {
       }
     }
 
-    const nodes = this.buildInsertNodes(ctx, active);
+    for (const key of [...this.automatedPluginParams.keys()]) if (key.startsWith(`${trackId}:`)) this.automatedPluginParams.delete(key);
+    const nodes = this.buildInsertNodes(ctx, active, trackId);
     ch.insertNodes = nodes;
     this.linkInsertChain(ch.gain, nodes, active, ch.meter);
   }
@@ -440,7 +444,7 @@ export class SyncLabEngine {
       const fb = this.sendFeedback.get("delay");
       if (fb) source.connect(fb);
     }
-    const nodes = this.buildInsertNodes(ctx, active);
+    const nodes = this.buildInsertNodes(ctx, active, targetId);
     this.fxInserts.set(targetId, { key, nodes });
     this.linkInsertChain(source, nodes, active, master);
   }
@@ -468,6 +472,10 @@ export class SyncLabEngine {
         bitcrusher: 5,
         vocoder: 2,
         gate: 1,
+        stepfilter: 5,
+        resonator: 12,
+        scalechord: 1,
+        transient: 5,
       }[pl.kind];
       const head = nodes[idx];
       const tail = nodes[idx + size - 1];
@@ -489,11 +497,13 @@ export class SyncLabEngine {
     cursor.connect(to);
   }
 
-  private buildInsertNodes(ctx: AudioContext, active: PluginInstance[]) {
+  private buildInsertNodes(ctx: AudioContext, active: PluginInstance[], targetId: string) {
     const nodes: AudioNode[] = [];
     const val = (pl: PluginInstance, id: string, fallback: number) =>
       pl.params.find((x) => x.id === id)?.value ?? fallback;
     const dbToGain = (db: number) => Math.pow(10, db / 20);
+    const bind = (pl: PluginInstance, id: string, param: AudioParam, min: number, max: number, logarithmic = false) =>
+      this.automatedPluginParams.set(`${targetId}:${pl.id}:${id}`, { param, min, max, logarithmic });
 
 
     for (const pl of active) {
@@ -551,6 +561,8 @@ export class SyncLabEngine {
           f.type = mode === 1 ? "highpass" : mode === 2 ? "bandpass" : "lowpass";
           f.frequency.value = val(pl, "cutoff", 8000);
           f.Q.value = val(pl, "resonance", 1);
+          bind(pl, "cutoff", f.frequency, 60, 18000, true);
+          bind(pl, "resonance", f.Q, 0.1, 20);
           nodes.push(f);
           break;
         }
@@ -883,6 +895,115 @@ export class SyncLabEngine {
           nodes.push(ws);
           break;
         }
+        case "stepfilter": {
+          const input = ctx.createGain();
+          const filter = ctx.createBiquadFilter();
+          const mode = Math.round(val(pl, "mode", 0));
+          filter.type = mode === 1 ? "highpass" : mode === 2 ? "bandpass" : "lowpass";
+          const cutoff = clamp(val(pl, "cutoff", 12000), 80, 18000);
+          filter.frequency.value = cutoff;
+          filter.Q.value = clamp(val(pl, "resonance", 4), 0.1, 20);
+          const wet = ctx.createGain();
+          const dry = ctx.createGain();
+          const out = ctx.createGain();
+          const mix = clamp(val(pl, "mix", 1), 0, 1);
+          wet.gain.value = mix;
+          dry.gain.value = 1 - mix;
+          input.connect(filter);
+          filter.connect(wet);
+          wet.connect(out);
+          input.connect(dry);
+          dry.connect(out);
+          const count = Math.round(val(pl, "steps", 16));
+          const stepValues = Array.from({ length: count }, (_, i) => val(pl, `s${i + 1}`, 0.5));
+          const harmonics = 32;
+          const real = new Float32Array(harmonics + 1);
+          const imag = new Float32Array(harmonics + 1);
+          for (let h = 1; h <= harmonics; h++) {
+            for (let i = 0; i < count; i++) {
+              const phase = (2 * Math.PI * h * (i + 0.5)) / count;
+              real[h] = (real[h] ?? 0) + ((stepValues[i] ?? 0.5) * Math.cos(phase) * 2) / count;
+              imag[h] = (imag[h] ?? 0) - ((stepValues[i] ?? 0.5) * Math.sin(phase) * 2) / count;
+            }
+          }
+          const sequencer = ctx.createOscillator();
+          sequencer.setPeriodicWave(ctx.createPeriodicWave(real, imag));
+          sequencer.frequency.value = clamp(val(pl, "rate", 8), 0.5, 32) / count;
+          const depth = ctx.createGain();
+          depth.gain.value = cutoff * clamp(val(pl, "depth", 0.85), 0, 1);
+          sequencer.connect(depth);
+          depth.connect(filter.frequency);
+          sequencer.start();
+          (out as unknown as { _keep?: AudioNode[] })._keep = [sequencer, depth];
+          bind(pl, "cutoff", filter.frequency, 80, 18000, true);
+          bind(pl, "resonance", filter.Q, 0.1, 20);
+          bind(pl, "mix", wet.gain, 0, 1);
+          nodes.push(input, filter, wet, dry, out);
+          break;
+        }
+        case "resonator": {
+          const input = ctx.createGain();
+          const dry = ctx.createGain();
+          const wet = ctx.createGain();
+          const out = ctx.createGain();
+          const mix = clamp(val(pl, "mix", 0.35), 0, 1);
+          dry.gain.value = 1 - mix;
+          wet.gain.value = mix * 0.65;
+          input.connect(dry);
+          dry.connect(out);
+          const root = 440 * Math.pow(2, (val(pl, "root", 48) - 69) / 12);
+          const spread = val(pl, "spread", 0.35);
+          const ratios = [1, Math.pow(2, 7 / 12), 2, Math.pow(2, 16 / 12)];
+          const filters: BiquadFilterNode[] = [];
+          const gains: GainNode[] = [];
+          for (let i = 0; i < ratios.length; i++) {
+            const filter = ctx.createBiquadFilter();
+            filter.type = "bandpass";
+            filter.frequency.value = clamp(root * (ratios[i] ?? 1) * (1 + (i - 1.5) * spread * 0.025), 30, 16000);
+            filter.Q.value = 8 + val(pl, "decay", 1.8) * 5;
+            const gain = ctx.createGain();
+            gain.gain.value = (1 - val(pl, "damping", 0.45) * (i / ratios.length)) / ratios.length;
+            input.connect(filter);
+            filter.connect(gain);
+            gain.connect(wet);
+            filters.push(filter);
+            gains.push(gain);
+          }
+          wet.connect(out);
+          bind(pl, "mix", wet.gain, 0, 0.65);
+          nodes.push(input, dry, wet, ...filters, ...gains, out);
+          break;
+        }
+        case "scalechord": {
+          nodes.push(ctx.createGain());
+          break;
+        }
+        case "transient": {
+          const input = ctx.createGain();
+          const dry = ctx.createGain();
+          const compressor = ctx.createDynamicsCompressor();
+          const wet = ctx.createGain();
+          const out = ctx.createGain();
+          const attack = val(pl, "attack", 0.35);
+          const sustain = val(pl, "sustain", 0);
+          const mix = clamp(val(pl, "mix", 1), 0, 1);
+          dry.gain.value = 1 - mix;
+          compressor.threshold.value = -10 - val(pl, "sensitivity", 0.55) * 36;
+          compressor.ratio.value = attack >= 0 ? 1 + attack * 10 : 1 + Math.abs(attack) * 18;
+          compressor.attack.value = attack >= 0 ? 0.03 : 0.001;
+          compressor.release.value = clamp(0.08 + (sustain + 1) * 0.3, 0.05, 0.7);
+          wet.gain.value = dbToGain(val(pl, "output", 0) + Math.max(0, attack) * 5 + sustain * 3) * mix;
+          input.connect(dry);
+          dry.connect(out);
+          input.connect(compressor);
+          compressor.connect(wet);
+          wet.connect(out);
+          bind(pl, "attack", compressor.ratio, 1, 20);
+          bind(pl, "sustain", compressor.release, 0.05, 0.7);
+          bind(pl, "mix", wet.gain, 0, 1.5);
+          nodes.push(input, dry, compressor, wet, out);
+          break;
+        }
       }
     }
     return nodes;
@@ -890,14 +1011,25 @@ export class SyncLabEngine {
 
 
   /** Rides a channel from an automation curve without touching stored track values. */
-  automate(trackId: string, v: { volume?: number; pan?: number; sendReverb?: number; sendDelay?: number }) {
+  automate(trackId: string, v: Record<string, number>) {
     if (!this.ctx) return;
     const ch = this.channel(trackId);
     const t = this.ctx.currentTime;
-    if (v.volume !== undefined) ch.gain.gain.setTargetAtTime(clamp(v.volume, 0, 1.5), t, 0.02);
-    if (v.pan !== undefined) ch.pan.pan.setTargetAtTime(clamp(v.pan, -1, 1), t, 0.02);
-    if (v.sendReverb !== undefined) ch.sendReverb.gain.setTargetAtTime(clamp(v.sendReverb, 0, 1), t, 0.02);
-    if (v.sendDelay !== undefined) ch.sendDelay.gain.setTargetAtTime(clamp(v.sendDelay, 0, 1), t, 0.02);
+    if (v["volume"] !== undefined) ch.gain.gain.setTargetAtTime(clamp(v["volume"], 0, 1.5), t, 0.02);
+    if (v["pan"] !== undefined) ch.pan.pan.setTargetAtTime(clamp(v["pan"], -1, 1), t, 0.02);
+    if (v["sendReverb"] !== undefined) ch.sendReverb.gain.setTargetAtTime(clamp(v["sendReverb"], 0, 1), t, 0.02);
+    if (v["sendDelay"] !== undefined) ch.sendDelay.gain.setTargetAtTime(clamp(v["sendDelay"], 0, 1), t, 0.02);
+    for (const [key, normalized] of Object.entries(v)) {
+      if (!key.startsWith("plugin:")) continue;
+      const [, instanceId = "", paramId = ""] = key.split(":");
+      const target = this.automatedPluginParams.get(`${trackId}:${instanceId}:${paramId}`);
+      if (!target) continue;
+      const n = clamp(normalized, 0, 1);
+      const value = target.logarithmic
+        ? target.min * Math.pow(target.max / target.min, n)
+        : target.min + (target.max - target.min) * n;
+      target.param.setTargetAtTime(value, t, 0.02);
+    }
   }
 
   syncMix(tracks: Track[]) {

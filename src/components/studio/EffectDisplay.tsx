@@ -223,6 +223,53 @@ const SHAPES: Partial<Record<PluginKind, Shape>> = {
     marks: (g) => [(g("gain") + 24) / 36],
     readout: (g) => `${g("gain") >= 0 ? "+" : ""}${g("gain").toFixed(1)} dB`,
   },
+  stepfilter: {
+    title: "PULSE GRID",
+    xLabel: "16 / 32 steps",
+    yLabel: "cutoff",
+    xParam: "rate",
+    yParam: "depth",
+    curve: (g) => sweep((t) => g(`s${Math.min(Math.round(g("steps")), Math.floor(t * Math.round(g("steps"))) + 1)}`)),
+    readout: (g) => `${Math.round(g("steps"))} STEPS · ${g("rate").toFixed(1)} Hz · DEPTH ${(g("depth") * 100).toFixed(0)}% · SMOOTH ${Math.round(g("smooth") * 1000)} ms`,
+  },
+  resonator: {
+    title: "HARMONIC RESONANCE",
+    xLabel: "20 Hz → 20 kHz",
+    yLabel: "resonance",
+    xParam: "root",
+    yParam: "decay",
+    curve: (g) => {
+      const root = 440 * Math.pow(2, (g("root") - 69) / 12);
+      const spread = g("spread");
+      const ratios = [1, Math.pow(2, 7 / 12), 2, Math.pow(2, 16 / 12)];
+      return freqAxis((f) => ratios.reduce((sum, ratio, index) => sum + peak(f, root * ratio * (1 + (index - 1.5) * spread * 0.025), 10 - index, 5 + g("decay") * 2), 0), 18);
+    },
+    marks: (g) => {
+      const root = 440 * Math.pow(2, (g("root") - 69) / 12);
+      return [root, root * Math.pow(2, 7 / 12), root * 2, root * Math.pow(2, 16 / 12)].map(logX);
+    },
+    readout: (g) => `ROOT MIDI ${Math.round(g("root"))} · DECAY ${g("decay").toFixed(2)} s · DAMP ${(g("damping") * 100).toFixed(0)}%`,
+  },
+  scalechord: {
+    title: "CHORD COMPASS",
+    xLabel: "root / scale",
+    yLabel: "voicing",
+    xParam: "root",
+    yParam: "chord",
+    curve: (g) => sweep((t) => 0.18 + (((Math.floor(t * 12) + Math.round(g("root"))) % 12) / 12) * 0.65),
+    marks: (g) => [g("root") / 11],
+    readout: (g) => `ROOT ${Math.round(g("root"))} · SCALE ${Math.round(g("scale")) + 1} · CHORD ${Math.round(g("chord")) + 1} · INV ${Math.round(g("inversion"))}`,
+  },
+  transient: {
+    title: "TRANSIENT ENVELOPE",
+    xLabel: "attack → body",
+    yLabel: "gain",
+    xParam: "attack",
+    yParam: "sustain",
+    curve: (g) => sweep((t) => clamp01(0.35 + g("attack") * Math.exp(-t * 18) * 0.55 + g("sustain") * (1 - Math.exp(-t * 5)) * 0.4)),
+    marks: () => [0.12],
+    readout: (g) => `ATTACK ${(g("attack") * 100).toFixed(0)} · SUSTAIN ${(g("sustain") * 100).toFixed(0)} · SENS ${(g("sensitivity") * 100).toFixed(0)}%`,
+  },
 };
 
 function lfoShape(title: string, third?: string): Shape {
@@ -349,6 +396,7 @@ export function EffectDisplay({
   const param = (id?: string) => (id ? plugin.params.find((p) => p.id === id) : undefined);
   const xP = param(shape.xParam);
   const yP = param(shape.yParam);
+  const isStepFilter = plugin.kind === "stepfilter";
 
   const setEqBandGain = (bandId: (typeof DISPLAY_BANDS)[number]["id"], normalizedY: number) => {
     const p = param(bandId);
@@ -362,6 +410,11 @@ export function EffectDisplay({
     const r = el.getBoundingClientRect();
     const nx = clamp01((clientX - r.left) / r.width);
     const ny = 1 - clamp01((clientY - r.top) / r.height);
+    if (isStepFilter) {
+      const count = Math.round(param("steps")?.value ?? 16);
+      onParam(`s${Math.min(count, Math.floor(nx * count) + 1)}`, ny);
+      return;
+    }
     if (isChannelEq) {
       const band = DISPLAY_BANDS.find((b) => nx >= b.from && nx <= b.to) ?? DISPLAY_BANDS[1];
       if (band) setEqBandGain(band.id, ny);
@@ -379,7 +432,7 @@ export function EffectDisplay({
       <div className="flex items-center gap-2">
         <span className="label-xs">{shape.title}</span>
         <span className="ml-auto font-mono text-[9px] tracking-wider text-muted-foreground uppercase">
-          {isChannelEq ? "drag color bands · bass / mids / highs" : xP ? `drag ↔ ${xP.name}` : ""}
+          {isStepFilter ? "drag steps to draw the filter pattern" : isChannelEq ? "drag color bands · bass / mids / highs" : xP ? `drag ↔ ${xP.name}` : ""}
           {!isChannelEq && yP ? ` · ↕ ${yP.name}` : ""}
         </span>
       </div>
@@ -392,7 +445,7 @@ export function EffectDisplay({
         className="panel relative touch-none overflow-hidden bg-surface-2/50"
         style={{ height, cursor: xP ? "crosshair" : "default" }}
         onPointerDown={(e) => {
-          if (!xP && !yP) return;
+          if (!xP && !yP && !isStepFilter) return;
           e.currentTarget.setPointerCapture(e.pointerId);
           setDragging(true);
           apply(e.clientX, e.clientY);

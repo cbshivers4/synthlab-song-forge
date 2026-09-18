@@ -63,11 +63,18 @@ import { INSTRUMENTS, KIND_LABEL, uid } from "@/lib/synclab/presets";
 import type { EditTool } from "@/lib/synclab/store";
 import type { AutomationLane, AutomationParam, MidiNote, Track } from "@/lib/synclab/types";
 
-const LANE_LABEL: Record<AutomationParam, string> = {
+const CORE_LANE_LABEL: Record<Exclude<AutomationParam, `plugin:${string}:${string}`>, string> = {
   volume: "VOLUME",
   pan: "PAN",
   sendReverb: "REVERB SEND",
   sendDelay: "DELAY SEND",
+};
+const laneLabel = (track: Track, param: AutomationParam) => {
+  if (!param.startsWith("plugin:")) return CORE_LANE_LABEL[param as keyof typeof CORE_LANE_LABEL];
+  const [, pluginId, paramId] = param.split(":");
+  const plugin = (track.plugins ?? []).find((item) => item.id === pluginId);
+  const control = plugin?.params.find((item) => item.id === paramId);
+  return `${plugin?.name ?? "DEVICE"} · ${control?.name ?? paramId ?? "CONTROL"}`.toUpperCase();
 };
 import { WaveformView } from "@/components/studio/WaveformView";
 import { LevelBar } from "@/components/studio/LevelBar";
@@ -640,9 +647,19 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
               <DropdownMenuLabel className="label-xs">Automation</DropdownMenuLabel>
               {(["volume", "pan", "sendReverb", "sendDelay"] as AutomationParam[]).map((param) => (
                 <DropdownMenuItem key={param} onClick={() => toggleAutomationLane(track.id, param)}>
-                  {(track.automation ?? []).some((l) => l.param === param) ? "Hide" : "Show"} {LANE_LABEL[param].toLowerCase()} lane
+                  {(track.automation ?? []).some((l) => l.param === param) ? "Hide" : "Show"} {laneLabel(track, param).toLowerCase()} lane
                 </DropdownMenuItem>
               ))}
+              {(track.plugins ?? []).filter((plugin) => !plugin.bypass).flatMap((plugin) =>
+                plugin.params.filter((param) => !param.id.startsWith("s") || plugin.kind !== "stepfilter").map((param) => {
+                  const automationParam = `plugin:${plugin.id}:${param.id}` as AutomationParam;
+                  return (
+                    <DropdownMenuItem key={automationParam} onClick={() => toggleAutomationLane(track.id, automationParam)}>
+                      {(track.automation ?? []).some((lane) => lane.param === automationParam) ? "Hide" : "Show"} {plugin.name} · {param.name}
+                    </DropdownMenuItem>
+                  );
+                }),
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuLabel className="label-xs">Edit</DropdownMenuLabel>
               {activeClip && (
@@ -917,7 +934,7 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
     window.addEventListener("pointerup", onUp);
   };
 
-  const label = LANE_LABEL[lane.param];
+  const label = laneLabel(track, lane.param);
   const pts = lane.points;
 
   return (

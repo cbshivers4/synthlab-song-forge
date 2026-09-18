@@ -121,6 +121,41 @@ export const PARAMS_BY_KIND: Record<PluginKind, () => PluginParam[]> = {
     p("attack", "Attack", 2, 0.1, 50, "ms"),
     p("release", "Release", 80, 5, 1000, "ms"),
   ],
+  stepfilter: () => [
+    p("cutoff", "Cutoff", 12000, 80, 18000, "Hz"),
+    p("resonance", "Resonance", 4, 0.1, 20, "Q"),
+    p("rate", "Step Rate", 8, 0.5, 32, "Hz"),
+    p("smooth", "Smoothing", 0.03, 0, 0.24, "s"),
+    p("swing", "Swing", 0, 0, 0.6, ""),
+    p("depth", "Depth", 0.85, 0, 1, ""),
+    p("mix", "Mix", 1, 0, 1, ""),
+    p("mode", "Mode", 0, 0, 2, ""),
+    p("steps", "Steps", 16, 16, 32, ""),
+    ...Array.from({ length: 32 }, (_, i) => p(`s${i + 1}`, `Step ${i + 1}`, i % 4 === 0 ? 0.9 : i % 2 === 0 ? 0.58 : 0.28, 0, 1, "")),
+  ],
+  resonator: () => [
+    p("root", "Root", 48, 24, 84, "MIDI"),
+    p("spread", "Spread", 0.35, 0, 1, ""),
+    p("decay", "Decay", 1.8, 0.1, 8, "s"),
+    p("damping", "Damping", 0.45, 0, 1, ""),
+    p("mix", "Mix", 0.35, 0, 1, ""),
+  ],
+  scalechord: () => [
+    p("root", "Root", 0, 0, 11, ""),
+    p("scale", "Scale", 0, 0, 5, ""),
+    p("chord", "Chord", 0, 0, 5, ""),
+    p("inversion", "Inversion", 0, 0, 3, ""),
+    p("range", "Range", 1, 1, 3, "oct"),
+    p("filter", "Scale Filter", 1, 0, 1, ""),
+  ],
+  transient: () => [
+    p("attack", "Attack", 0.35, -1, 1, ""),
+    p("sustain", "Sustain", 0, -1, 1, ""),
+    p("sensitivity", "Sensitivity", 0.55, 0, 1, ""),
+    p("protect", "Clip Protect", 1, 0, 1, ""),
+    p("output", "Output", 0, -12, 12, "dB"),
+    p("mix", "Mix", 1, 0, 1, ""),
+  ],
 };
 
 const def = (name: string, vendor: string, format: PluginDef["format"], kind: PluginKind): PluginDef => ({
@@ -151,6 +186,10 @@ export const BUILT_IN_PLUGINS: PluginDef[] = [
   def("Bit Crusher", "SYNCLAB", "Built-in", "bitcrusher"),
   def("VX-16 Vintage Vocoder", "SYNCLAB", "Built-in", "vocoder"),
   def("Noise Gate", "SYNCLAB", "Built-in", "gate"),
+  def("Pulse Grid Filter", "SYNCLAB", "Built-in", "stepfilter"),
+  def("Harmonic Body", "SYNCLAB", "Built-in", "resonator"),
+  def("Chord Compass", "SYNCLAB", "Built-in", "scalechord"),
+  def("Transient Architect", "SYNCLAB", "Built-in", "transient"),
 ];
 
 export const makeDef = (name: string, vendor: string, format: PluginDef["format"], kind: PluginKind) =>
@@ -166,6 +205,44 @@ export const instantiate = (d: PluginDef): PluginInstance => ({
   bypass: false,
   params: d.params.map((x) => ({ ...x })),
 });
+
+const SCALE_INTERVALS = [
+  [0, 2, 4, 5, 7, 9, 11],
+  [0, 2, 3, 5, 7, 8, 10],
+  [0, 2, 3, 5, 7, 9, 10],
+  [0, 2, 4, 7, 9],
+  [0, 3, 5, 7, 10],
+  [0, 1, 3, 5, 7, 8, 10],
+] as const;
+
+const CHORD_INTERVALS = [[0], [0, 4, 7], [0, 3, 7], [0, 4, 7, 11], [0, 3, 7, 10], [0, 7, 12]] as const;
+
+/** Applies the active Chord Compass insert to a note before playback or recording. */
+export function processMidiThroughPlugins(note: number, plugins: PluginInstance[] = []): number[] {
+  const device = plugins.find((plugin) => plugin.kind === "scalechord" && !plugin.bypass);
+  if (!device) return [note];
+  const value = (id: string, fallback: number) => device.params.find((param) => param.id === id)?.value ?? fallback;
+  const root = Math.round(value("root", 0)) % 12;
+  const scale = SCALE_INTERVALS[Math.round(value("scale", 0))] ?? SCALE_INTERVALS[0];
+  const pitchClass = ((note - root) % 12 + 12) % 12;
+  let base = note;
+  if (value("filter", 1) >= 0.5 && !scale.includes(pitchClass as never)) {
+    let best: number = scale[0] ?? 0;
+    let distance = 12;
+    for (const degree of scale) {
+      const d = Math.abs(degree - pitchClass);
+      if (d < distance) {
+        best = degree;
+        distance = d;
+      }
+    }
+    base = note + best - pitchClass;
+  }
+  const chord = CHORD_INTERVALS[Math.round(value("chord", 0))] ?? CHORD_INTERVALS[0];
+  const inversion = Math.min(Math.round(value("inversion", 0)), chord.length - 1);
+  const range = Math.round(value("range", 1));
+  return chord.map((interval, index) => base + interval + (index < inversion ? 12 : 0) + (range > 1 && index === chord.length - 1 ? (range - 1) * 12 : 0));
+}
 
 export const PLUGIN_KINDS: PluginKind[] = [
   "eq",
@@ -186,6 +263,10 @@ export const PLUGIN_KINDS: PluginKind[] = [
   "bitcrusher",
   "vocoder",
   "gain",
+  "stepfilter",
+  "resonator",
+  "scalechord",
+  "transient",
 ];
 
 /** Plugin bundle extensions we recognise when a folder or file is dropped in. */
@@ -219,6 +300,10 @@ export function guessPluginKind(fileName: string): PluginKind {
     [/(sat|drive|tube|tape|dist|crunch)/, "drive"],
     [/(width|stereo|imager)/, "width"],
     [/(crush|lofi|bit)/, "bitcrusher"],
+    [/(step.?filter|filterstep)/, "stepfilter"],
+    [/(resonat)/, "resonator"],
+    [/(scaler|chord|scale)/, "scalechord"],
+    [/(transient|attack|sustain)/, "transient"],
   ];
   for (const [re, k] of map) if (re.test(n)) return k;
   return "eq";

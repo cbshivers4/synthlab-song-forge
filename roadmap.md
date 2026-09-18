@@ -31,5 +31,5 @@
 - [x] A/B waveform comparison with separate original and edited audition modes
 - [x] Shared loop region for repeated Original and Edited waveform audition
 - [x] Adjustable equal-power crossfade at audition loop boundaries
-- [ ] Expand timeline automation for filter and device parameters
-- [ ] Add original step-filter, resonator, scale/chord, and transient devices
+- [x] Expand timeline automation for filter and device parameters
+- [x] Add original step-filter, resonator, scale/chord, and transient devices
