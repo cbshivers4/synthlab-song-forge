@@ -88,9 +88,11 @@ const INPUTS = ["Microphone", "Guitar / Line 1", "Keyboard / Line 2", "External 
 /** Audio lane: every clip sits at its own bar position and can be moved, trimmed and dragged between tracks. */
 function Waveform({ track }: { track: Track }) {
   const { setActiveClip, removeClip, updateTrack, transport, tracks } = useStudio();
+  const [editingId, setEditingId] = useState<string | null>(null);
   const clips = track.clips ?? [];
   const total = Math.max(1, transport.bars ?? 4) * 4;
   const stepDur = 60 / Math.max(20, transport.bpm) / 4;
+  const editing = clips.find((c) => c.id === editingId) ?? null;
 
   const writeClip = (clipId: string, patch: Partial<(typeof clips)[number]>) =>
     updateTrack(track.id, { clips: clips.map((c) => (c.id === clipId ? { ...c, ...patch } : c)) });
