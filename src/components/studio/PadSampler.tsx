@@ -482,15 +482,25 @@ export function PadSampler() {
           const id = index(i);
           const pad = pads[id];
           const active = hit === id;
-          const c = BANK_COLORS[bank] as string;
+          const c = padColor(bank, i);
+          const recording = recPad === id;
           return (
             <button
               key={id}
               type="button"
-              onPointerDown={() => {
+              onPointerDown={(e) => {
                 setSel(id);
+                if (armRec) {
+                  e.preventDefault();
+                  e.currentTarget.setPointerCapture(e.pointerId);
+                  void beginHold(id);
+                  return;
+                }
                 if (pad) trigger(id);
               }}
+              onPointerUp={() => armRec && endHold()}
+              onPointerCancel={() => armRec && endHold()}
+              onContextMenu={(e) => armRec && e.preventDefault()}
               onDragOver={(e) => {
                 e.preventDefault();
                 setOver(id);
@@ -502,24 +512,32 @@ export function PadSampler() {
                 void loadInto(id, e.dataTransfer.files[0]);
               }}
               style={
-                pad
+                recording
                   ? {
-                      borderColor: c,
-                      background: active
-                        ? `linear-gradient(145deg, ${c}, color-mix(in hsl, ${c} 55%, transparent))`
-                        : sel === id
-                          ? `linear-gradient(145deg, color-mix(in hsl, ${c} 55%, transparent), color-mix(in hsl, ${c} 22%, transparent))`
-                          : `linear-gradient(145deg, color-mix(in hsl, ${c} 30%, transparent), color-mix(in hsl, ${c} 10%, transparent))`,
-                      boxShadow: active ? `0 0 18px ${c}` : sel === id ? `0 0 0 1px ${c}` : undefined,
-                      opacity: over === id ? 0.85 : 1,
+                      borderColor: "hsl(0 85% 58%)",
+                      background: "linear-gradient(145deg, hsl(0 85% 45%), hsl(0 75% 28%))",
+                      boxShadow: "0 0 22px hsl(0 85% 55% / 0.8)",
                     }
-                  : over === id
-                    ? { borderColor: c, backgroundColor: `color-mix(in hsl, ${c} 15%, transparent)` }
-                    : undefined
+                  : pad
+                    ? {
+                        borderColor: c,
+                        background: active
+                          ? `linear-gradient(145deg, ${c}, color-mix(in hsl, ${c} 55%, transparent))`
+                          : sel === id
+                            ? `linear-gradient(145deg, color-mix(in hsl, ${c} 55%, transparent), color-mix(in hsl, ${c} 22%, transparent))`
+                            : `linear-gradient(145deg, color-mix(in hsl, ${c} 30%, transparent), color-mix(in hsl, ${c} 10%, transparent))`,
+                        boxShadow: active ? `0 0 18px ${c}` : sel === id ? `0 0 0 1px ${c}` : undefined,
+                        opacity: over === id ? 0.85 : 1,
+                      }
+                    : over === id
+                      ? { borderColor: c, backgroundColor: `color-mix(in hsl, ${c} 15%, transparent)` }
+                      : armRec
+                        ? { borderColor: `color-mix(in hsl, ${c} 60%, transparent)` }
+                        : undefined
               }
-              className={`relative flex h-20 flex-col items-start justify-between rounded-md border p-2 text-left transition-all ${
-                pad ? "" : "border-dashed border-border bg-surface-2/40 hover:border-muted-foreground/60"
-              }`}
+              className={`relative flex h-24 touch-none flex-col items-start justify-between rounded-md border p-2 text-left transition-all select-none sm:h-20 ${
+                pad || recording ? "" : "border-dashed border-border bg-surface-2/40 hover:border-muted-foreground/60"
+              } ${recording ? "animate-pulse" : ""}`}
             >
               <span className="relative z-10 font-mono text-[9px]" style={{ color: pad ? "hsl(0 0% 100% / 0.75)" : undefined }}>
                 <span className={pad ? "" : "text-muted-foreground"}>
@@ -527,9 +545,9 @@ export function PadSampler() {
                   {i + 1} · {KEYMAP[i]?.toUpperCase()}
                 </span>
               </span>
-              {pad && (
+              {pad && !recording && (
                 <span className="pointer-events-none absolute inset-x-1.5 top-4 bottom-6">
-                  <WaveformView peaks={pad.peaks} color="hsl(0 0% 100%)" grid={false} label={`${pad.name} waveform`} />
+                  <WaveformView peaks={pad.peaks} color={c} grid={false} label={`${pad.name} waveform`} />
                   <span
                     className="absolute inset-y-0 left-0 bg-black/55"
                     style={{ width: `${pad.start * 100}%` }}
@@ -541,10 +559,10 @@ export function PadSampler() {
                 </span>
               )}
               <span
-                className={`line-clamp-2 font-mono text-[10px] ${pad ? "" : "text-foreground"}`}
-                style={pad ? { color: "hsl(0 0% 100%)", textShadow: "0 1px 2px hsl(0 0% 0% / 0.5)" } : undefined}
+                className={`line-clamp-2 font-mono text-[10px] ${pad || recording ? "" : "text-foreground"}`}
+                style={pad || recording ? { color: "hsl(0 0% 100%)", textShadow: "0 1px 2px hsl(0 0% 0% / 0.5)" } : undefined}
               >
-                {pad ? pad.name : "empty · select"}
+                {recording ? "RECORDING…" : pad ? pad.name : armRec ? "hold to record" : "empty · select"}
               </span>
               {pad && pad.choke > 0 && (
                 <span className="absolute right-1 top-1 rounded-sm bg-accent px-1 font-mono text-[8px] text-accent-foreground">
