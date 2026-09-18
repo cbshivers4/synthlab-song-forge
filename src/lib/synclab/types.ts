@@ -255,7 +255,11 @@ export type PluginKind =
   | "limiter"
   | "bitcrusher"
   | "vocoder"
-  | "gate";
+  | "gate"
+  | "stepfilter"
+  | "resonator"
+  | "scalechord"
+  | "transient";
 
 export interface PluginParam {
   id: string;
@@ -311,7 +315,12 @@ export interface SamplerState {
   release: number;
 }
 
-export type AutomationParam = "volume" | "pan" | "sendReverb" | "sendDelay";
+export type AutomationParam =
+  | "volume"
+  | "pan"
+  | "sendReverb"
+  | "sendDelay"
+  | `plugin:${string}:${string}`;
 
 export interface AutomationPoint {
   step: number;
