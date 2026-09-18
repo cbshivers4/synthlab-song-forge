@@ -27,6 +27,7 @@
 - [x] Keyboard shortcuts for device automation region copy, paste, duplicate, and delete
 - [x] Time-grid and parameter-aware value snapping for device automation points and regions
 - [x] Per-lane lock/unlock controls for device automation lanes
+- [x] Real-time audio and visual preview while dragging automation points, curves and regions
 
 ## Stage 4 — clip editor (done)
 - [x] Double-click an audio clip to open a non-destructive editor
