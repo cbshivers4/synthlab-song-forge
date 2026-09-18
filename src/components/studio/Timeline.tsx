@@ -1226,6 +1226,7 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
               step={discrete ? 1 : "any"}
               min={control?.min}
               max={control?.max}
+              disabled={locked}
               value={scaleValue(selected.value)}
               onChange={(event) => setAutomationPoints(track.id, lane.param, pts.map((point, index) => index === selectedPoint ? { ...point, value: snapValue(normalizeValue(Number(event.target.value))) } : point))}
             />
@@ -1235,8 +1236,8 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
       <div
         data-auto-row
         onClick={addPoint}
-        title="Click to add a point, drag a point to shape it, double-click a point to delete"
-        className="lane-grid relative h-[72px] flex-1 cursor-crosshair bg-background/70"
+        title={locked ? "This lane is locked — click the lock in the lane header to edit" : "Click to add a point, drag a point to shape it, double-click a point to delete"}
+        className={`lane-grid relative h-[72px] flex-1 bg-background/70 ${locked ? "cursor-default" : "cursor-crosshair"}`}
       >
         <svg className="pointer-events-none absolute inset-0 size-full" preserveAspectRatio="none" viewBox="0 0 100 100">
           {pts.length > 1 && (
@@ -1256,6 +1257,10 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
             onClick={(e) => e.stopPropagation()}
             onDoubleClick={(e) => {
               e.stopPropagation();
+              if (locked) {
+                toast("Lane is locked — click the lock to edit");
+                return;
+              }
               setAutomationPoints(track.id, lane.param, pts.filter((_, j) => j !== i));
             }}
             aria-label={`${label} point at step ${p.step}, ${formatValue(p.value)}`}
@@ -1276,6 +1281,10 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
               onPointerDown={(event) => dragCurve(event, index)}
               onDoubleClick={(event) => {
                 event.stopPropagation();
+                if (locked) {
+                  toast("Lane is locked — click the lock to edit");
+                  return;
+                }
                 setAutomationPoints(track.id, lane.param, pts.map((item, i) => i === index ? { ...item, curve: 0 } : item));
               }}
               onClick={(event) => event.stopPropagation()}
