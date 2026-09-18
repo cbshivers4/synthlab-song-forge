@@ -25,6 +25,7 @@ type Drag =
   | null;
 
 export function PianoRoll({ track }: { track: Track }) {
+  const isMobile = useIsMobile();
   const { setNotes, previewNote, transport } = useStudio();
   const [low, setLow] = useState(48);
   const [grid, setGrid] = useState(1); // steps per snap
@@ -112,7 +113,7 @@ export function PianoRoll({ track }: { track: Track }) {
   return (
     <div className="space-y-1.5" onPointerUp={endDrag} onPointerLeave={endDrag}>
       {/* toolbar */}
-      <div className="flex flex-wrap items-center gap-1.5 rounded-sm border border-border bg-surface/60 p-1.5">
+      <div className="flex items-center overflow-x-auto whitespace-nowrap scrollbar-hide gap-1.5 rounded-sm border border-border bg-surface/60 p-1.5">
         <span className="label-xs px-1">GRID</span>
         {([["1/4", 4], ["1/8", 2], ["1/16", 1], ["1/32", 0.5]] as const).map(([l, v]) => (
           <Tool key={l} active={grid === v} onClick={() => setGrid(v)}>
@@ -151,7 +152,7 @@ export function PianoRoll({ track }: { track: Track }) {
         </Select>
       </div>
 
-      <div className="flex flex-wrap items-center gap-1.5 rounded-sm border border-border bg-surface/60 p-1.5">
+      <div className="flex items-center overflow-x-auto whitespace-nowrap scrollbar-hide gap-1.5 rounded-sm border border-border bg-surface/60 p-1.5">
         <Tool onClick={() => apply((n) => ({ ...n, step: Math.round(n.step / grid) * grid }))}>QUANTIZE</Tool>
         <Tool onClick={() => apply((n) => ({ ...n, step: n.step + (Math.round(n.step / grid) * grid - n.step) * 0.5 }))}>
           QUANT 50%
