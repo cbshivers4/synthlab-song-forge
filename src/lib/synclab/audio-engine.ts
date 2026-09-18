@@ -1015,10 +1015,10 @@ export class SyncLabEngine {
     if (!this.ctx) return;
     const ch = this.channel(trackId);
     const t = this.ctx.currentTime;
-    if (v.volume !== undefined) ch.gain.gain.setTargetAtTime(clamp(v.volume, 0, 1.5), t, 0.02);
-    if (v.pan !== undefined) ch.pan.pan.setTargetAtTime(clamp(v.pan, -1, 1), t, 0.02);
-    if (v.sendReverb !== undefined) ch.sendReverb.gain.setTargetAtTime(clamp(v.sendReverb, 0, 1), t, 0.02);
-    if (v.sendDelay !== undefined) ch.sendDelay.gain.setTargetAtTime(clamp(v.sendDelay, 0, 1), t, 0.02);
+    if (v["volume"] !== undefined) ch.gain.gain.setTargetAtTime(clamp(v["volume"], 0, 1.5), t, 0.02);
+    if (v["pan"] !== undefined) ch.pan.pan.setTargetAtTime(clamp(v["pan"], -1, 1), t, 0.02);
+    if (v["sendReverb"] !== undefined) ch.sendReverb.gain.setTargetAtTime(clamp(v["sendReverb"], 0, 1), t, 0.02);
+    if (v["sendDelay"] !== undefined) ch.sendDelay.gain.setTargetAtTime(clamp(v["sendDelay"], 0, 1), t, 0.02);
     for (const [key, normalized] of Object.entries(v)) {
       if (!key.startsWith("plugin:")) continue;
       const [, instanceId = "", paramId = ""] = key.split(":");

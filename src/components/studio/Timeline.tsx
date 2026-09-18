@@ -70,7 +70,7 @@ const CORE_LANE_LABEL: Record<Exclude<AutomationParam, `plugin:${string}:${strin
   sendDelay: "DELAY SEND",
 };
 const laneLabel = (track: Track, param: AutomationParam) => {
-  if (!param.startsWith("plugin:")) return CORE_LANE_LABEL[param];
+  if (!param.startsWith("plugin:")) return CORE_LANE_LABEL[param as keyof typeof CORE_LANE_LABEL];
   const [, pluginId, paramId] = param.split(":");
   const plugin = (track.plugins ?? []).find((item) => item.id === pluginId);
   const control = plugin?.params.find((item) => item.id === paramId);

@@ -227,7 +227,7 @@ export function processMidiThroughPlugins(note: number, plugins: PluginInstance[
   const pitchClass = ((note - root) % 12 + 12) % 12;
   let base = note;
   if (value("filter", 1) >= 0.5 && !scale.includes(pitchClass as never)) {
-    let best = scale[0] ?? 0;
+    let best: number = scale[0] ?? 0;
     let distance = 12;
     for (const degree of scale) {
       const d = Math.abs(degree - pitchClass);
