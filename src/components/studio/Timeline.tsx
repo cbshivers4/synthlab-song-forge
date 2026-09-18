@@ -71,6 +71,8 @@ const LANE_LABEL: Record<AutomationParam, string> = {
 };
 import { WaveformView } from "@/components/studio/WaveformView";
 import { LevelBar } from "@/components/studio/LevelBar";
+import { ClipEditor } from "@/components/studio/ClipEditor";
+import { clipSeconds } from "@/lib/synclab/types";
 
 const KindIcon = ({ kind }: { kind: Track["kind"] }) =>
   kind === "drum" ? (
@@ -235,6 +237,7 @@ function Waveform({ track }: { track: Track }) {
           </div>
         );
       })}
+      {editing && <ClipEditor track={track} clip={editing} onClose={() => setEditingId(null)} />}
     </>
   );
 }
