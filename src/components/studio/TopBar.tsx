@@ -5,6 +5,7 @@ import {
   Disc3,
   Download,
   FolderOpen,
+  Grid2x2,
   Hash,
   Headphones,
   Import,
