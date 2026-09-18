@@ -28,3 +28,4 @@
 - [x] Pitch and speed (browser couples them into one playback rate — stated honestly)
 - [x] Interactive waveform zoom to 16× with horizontal scrolling and precise trim/fade handles
 - [x] Undo and redo controls in the clip editor for comparing trim and fade changes
+- [x] A/B waveform comparison with separate original and edited audition modes

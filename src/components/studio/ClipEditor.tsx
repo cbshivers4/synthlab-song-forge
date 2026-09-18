@@ -27,6 +27,8 @@ import { toast } from "sonner";
  */
 export function ClipEditor({ track, clip, onClose }: { track: Track; clip: AudioClip; onClose: () => void }) {
   const { updateClip, previewClip, undo, redo, canUndo, canRedo } = useStudio();
+  const originalRef = useRef<AudioClip>({ ...clip, peaks: [...clip.peaks] });
+  const [compareSide, setCompareSide] = useState<"original" | "edited">("edited");
   const [zoomTrim, setZoomTrim] = useState(true);
   const [waveZoom, setWaveZoom] = useState(1);
 
@@ -48,6 +50,42 @@ export function ClipEditor({ track, clip, onClose }: { track: Track; clip: Audio
     const b = Math.ceil(((offset + length) / dur) * peaks.length);
     return Math.max(0.0001, ...peaks.slice(Math.max(0, a), Math.max(a + 1, b)));
   }, [peaks, offset, length, dur]);
+
+  const audition = (version: "original" | "edited") => {
+    const candidate = version === "original" ? originalRef.current : clip;
+    setCompareSide(version);
+    if (version === "edited") {
+      previewClip(track.id, clip.id);
+      return;
+    }
+    if (!candidate.url) {
+      toast("Nothing to play", { description: "This clip has no audio file attached." });
+      return;
+    }
+    const engine = getEngine();
+    void engine.ensureBuffer(candidate.url).then((buffer) => {
+      if (!buffer) {
+        toast.error("Could not read that audio", { description: "The original audio file is no longer available." });
+        return;
+      }
+      engine.stopSamples(track.id);
+      engine.playClip(track.id, {
+        url: candidate.url as string,
+        offset: candidate.offset ?? 0,
+        length: candidate.length ?? candidate.duration,
+        gain: candidate.gain ?? 1,
+        fadeIn: candidate.fadeIn ?? 0.004,
+        fadeOut: candidate.fadeOut ?? 0.01,
+        rate: clipRate(candidate),
+        reverse: candidate.reverse ?? false,
+      });
+    });
+  };
+
+  const original = originalRef.current;
+  const editedStart = Math.floor((offset / dur) * peaks.length);
+  const editedEnd = Math.ceil(((offset + length) / dur) * peaks.length);
+  const editedPeaks = peaks.slice(Math.max(0, editedStart), Math.max(editedStart + 2, editedEnd));
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
@@ -76,8 +114,8 @@ export function ClipEditor({ track, clip, onClose }: { track: Track; clip: Audio
             <Button size="icon" variant="ghost" aria-label="Redo clip edit" title="Redo clip edit" disabled={!canRedo} onClick={redo}>
               <Redo2 className="size-3.5" />
             </Button>
-            <Button size="sm" variant="secondary" onClick={() => previewClip(track.id, clip.id)}>
-              <Play className="size-3.5" /> PLAY
+            <Button size="sm" variant="secondary" onClick={() => audition(compareSide)}>
+              <Play className="size-3.5" /> PLAY {compareSide === "original" ? "A" : "B"}
             </Button>
             <Button size="sm" variant="ghost" onClick={() => getEngine().stopSamples(track.id)}>
               <Square className="size-3.5" /> STOP
@@ -97,6 +135,25 @@ export function ClipEditor({ track, clip, onClose }: { track: Track; clip: Audio
           onZoomChange={setWaveZoom}
           onChange={set}
         />
+
+        <div className="grid grid-cols-2 gap-2" aria-label="A/B waveform comparison">
+          <ComparisonWaveform
+            label="A · ORIGINAL"
+            active={compareSide === "original"}
+            peaks={original.reverse ? [...original.peaks].reverse() : original.peaks}
+            gain={original.gain ?? 1}
+            detail={`${(original.length ?? original.duration).toFixed(2)}s · ${clipRate(original).toFixed(2)}×`}
+            onSelect={() => audition("original")}
+          />
+          <ComparisonWaveform
+            label="B · EDITED"
+            active={compareSide === "edited"}
+            peaks={clip.reverse ? [...editedPeaks].reverse() : editedPeaks}
+            gain={gain}
+            detail={`${length.toFixed(2)}s · ${rate.toFixed(2)}×`}
+            onSelect={() => audition("edited")}
+          />
+        </div>
 
         <div className="flex flex-wrap items-center gap-1">
           <Toggle on={zoomTrim} onClick={() => setZoomTrim((z) => !z)} label={zoomTrim ? "ZOOM: TRIM" : "ZOOM: FULL"} />
@@ -191,6 +248,41 @@ export function ClipEditor({ track, clip, onClose }: { track: Track; clip: Audio
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function ComparisonWaveform({
+  label,
+  active,
+  peaks,
+  gain,
+  detail,
+  onSelect,
+}: {
+  label: string;
+  active: boolean;
+  peaks: number[];
+  gain: number;
+  detail: string;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={onSelect}
+      className={`group overflow-hidden rounded-[3px] border text-left transition-colors ${
+        active ? "border-primary bg-primary/10" : "border-border bg-surface-2 hover:border-muted-foreground"
+      }`}
+    >
+      <span className="flex items-center justify-between border-b border-border px-2 py-1 font-mono text-[9px]">
+        <span className={active ? "text-primary" : "text-muted-foreground"}>{label}</span>
+        <span className="flex items-center gap-1 text-muted-foreground"><Play className="size-3" /> {detail}</span>
+      </span>
+      <span className="block h-14">
+        <WaveformView peaks={peaks.length > 1 ? peaks : [0, 0]} gain={gain} color={active ? "var(--primary)" : "var(--muted-foreground)"} label={`${label} waveform`} />
+      </span>
+    </button>
   );
 }
 
