@@ -987,10 +987,18 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
         lane.param,
         lane.points.map((p, i) => (i === index ? { step, value } : p)),
       );
+      // hear the parameter move under the finger and show the exact value
+      previewAutomation(track.id, lane.param, value);
+      setLiveEdit({
+        x: ((ev.clientX - rect.left) / rect.width) * 100,
+        y: ((ev.clientY - rect.top) / rect.height) * 100,
+        text: `${formatValue(value)} @ ${step}`,
+      });
     };
     const onUp = () => {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
+      flashReadout(`${formatValue(lane.points[index]?.value ?? 0)}`);
     };
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
@@ -999,15 +1007,30 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
   const dragCurve = (e: React.PointerEvent, index: number) => {
     e.stopPropagation();
     if (locked) return;
+    const row = (e.currentTarget as HTMLElement).closest("[data-auto-row]") as HTMLElement | null;
+    const rect = row?.getBoundingClientRect();
     const startY = e.clientY;
     const original = lane.points[index]?.curve ?? 0;
     const onMove = (ev: PointerEvent) => {
       const curve = Math.max(-1, Math.min(1, original + (startY - ev.clientY) / 36));
       setAutomationPoints(track.id, lane.param, lane.points.map((point, i) => i === index ? { ...point, curve } : point));
+      const from = lane.points[index];
+      const to = lane.points[index + 1];
+      if (from && to) {
+        // preview the midpoint of the shaped segment so the bend is audible
+        const mid = from.value + (to.value - from.value) * shapeT(0.5, curve);
+        previewAutomation(track.id, lane.param, mid);
+        setLiveEdit({
+          x: rect ? ((ev.clientX - rect.left) / rect.width) * 100 : 50,
+          y: rect ? ((ev.clientY - rect.top) / rect.height) * 100 : 12,
+          text: `CURVE ${Math.round(curve * 100)}% · ${formatValue(mid)}`,
+        });
+      }
     };
     const onUp = () => {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
+      flashReadout(`CURVE ${Math.round((lane.points[index]?.curve ?? 0) * 100)}%`);
     };
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
