@@ -977,7 +977,7 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
     setAutomationPoints(track.id, lane.param, [
       ...lane.points.filter((p) => p.step !== step),
       { step: Math.max(0, Math.min(total, step)), value },
-    ]);
+    ], "Add point");
     previewAutomation(track.id, lane.param, value);
     flashReadout(`${formatValue(value)} @ ${step}`, ((e.clientX - rect.left) / rect.width) * 100, ((e.clientY - rect.top) / rect.height) * 100);
   };
@@ -996,6 +996,7 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
         track.id,
         lane.param,
         lane.points.map((p, i) => (i === index ? { step, value } : p)),
+        "Move point",
       );
       // hear the parameter move under the finger and show the exact value
       previewAutomation(track.id, lane.param, value);
@@ -1023,7 +1024,7 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
     const original = lane.points[index]?.curve ?? 0;
     const onMove = (ev: PointerEvent) => {
       const curve = Math.max(-1, Math.min(1, original + (startY - ev.clientY) / 36));
-      setAutomationPoints(track.id, lane.param, lane.points.map((point, i) => i === index ? { ...point, curve } : point));
+      setAutomationPoints(track.id, lane.param, lane.points.map((point, i) => i === index ? { ...point, curve } : point), "Shape curve");
       const from = lane.points[index];
       const to = lane.points[index + 1];
       if (from && to) {
@@ -1079,7 +1080,7 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
       .map((point) => ({ ...point, step: snapStep(origin + point.step), value: snapValue(point.value) }))
       .filter((point, index, all) => all.findIndex((candidate) => candidate.step === point.step) === index);
     const occupied = new Set(pasted.map((point) => point.step));
-    setAutomationPoints(track.id, lane.param, [...lane.points.filter((point) => !occupied.has(point.step)), ...pasted]);
+    setAutomationPoints(track.id, lane.param, [...lane.points.filter((point) => !occupied.has(point.step)), ...pasted], "Paste region");
     setSelectedPoint(null);
     previewRegionEdit(pasted, `PASTED ${pasted.length} @ ${origin}`);
     toast(`Pasted automation at step ${origin}`);
@@ -1103,7 +1104,7 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
       return;
     }
     const occupied = new Set(duplicated.map((point) => point.step));
-    setAutomationPoints(track.id, lane.param, [...lane.points.filter((point) => !occupied.has(point.step)), ...duplicated]);
+    setAutomationPoints(track.id, lane.param, [...lane.points.filter((point) => !occupied.has(point.step)), ...duplicated], "Duplicate region");
     setSelectedPoint(null);
     previewRegionEdit(duplicated, `DUPLICATED ${duplicated.length}`);
     toast(`Duplicated automation to steps ${regionEnd}–${Math.min(total, regionEnd + regionDuration)}`);
@@ -1119,7 +1120,7 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
       toast("No automation in the loop region");
       return;
     }
-    setAutomationPoints(track.id, lane.param, remaining);
+    setAutomationPoints(track.id, lane.param, remaining, "Delete region");
     setSelectedPoint(null);
     previewRegionEdit(remaining, `DELETED ${lane.points.length - remaining.length}`);
   };
@@ -1202,7 +1203,7 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
           {lane.mode.toUpperCase()}
         </button>
         <button
-          onClick={() => setAutomationPoints(track.id, lane.param, [])}
+          onClick={() => setAutomationPoints(track.id, lane.param, [], "Clear lane")}
           disabled={locked}
           title={locked ? "Unlock this lane to clear the curve" : "Clear this curve"}
           aria-label={`Clear ${label} automation`}
@@ -1269,7 +1270,7 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
               max={total}
               disabled={locked}
               value={selected.step}
-              onChange={(event) => setAutomationPoints(track.id, lane.param, pts.map((point, index) => index === selectedPoint ? { ...point, step: snapStep(Number(event.target.value)) } : point))}
+              onChange={(event) => setAutomationPoints(track.id, lane.param, pts.map((point, index) => index === selectedPoint ? { ...point, step: snapStep(Number(event.target.value)) } : point), "Edit step")}
             />
             <label className="text-muted-foreground">VALUE</label>
             <Input
@@ -1281,7 +1282,7 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
               max={control?.max}
               disabled={locked}
               value={scaleValue(selected.value)}
-              onChange={(event) => setAutomationPoints(track.id, lane.param, pts.map((point, index) => index === selectedPoint ? { ...point, value: snapValue(normalizeValue(Number(event.target.value))) } : point))}
+              onChange={(event) => setAutomationPoints(track.id, lane.param, pts.map((point, index) => index === selectedPoint ? { ...point, value: snapValue(normalizeValue(Number(event.target.value))) } : point), "Edit value")}
             />
           </div>
         )}
@@ -1314,7 +1315,7 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
                 toast("Lane is locked — click the lock to edit");
                 return;
               }
-              setAutomationPoints(track.id, lane.param, pts.filter((_, j) => j !== i));
+              setAutomationPoints(track.id, lane.param, pts.filter((_, j) => j !== i), "Delete point");
             }}
             aria-label={`${label} point at step ${p.step}, ${formatValue(p.value)}`}
             title={`${formatValue(p.value)} · curve ${Math.round((p.curve ?? 0) * 100)}%`}
@@ -1338,7 +1339,7 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
                   toast("Lane is locked — click the lock to edit");
                   return;
                 }
-                setAutomationPoints(track.id, lane.param, pts.map((item, i) => i === index ? { ...item, curve: 0 } : item));
+                setAutomationPoints(track.id, lane.param, pts.map((item, i) => i === index ? { ...item, curve: 0 } : item), "Reset curve");
               }}
               onClick={(event) => event.stopPropagation()}
               aria-label={`Shape curve after step ${point.step}`}
