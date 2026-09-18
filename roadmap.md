@@ -49,4 +49,4 @@
 - [x] Make pad microphone recording work on empty pads and mobile recording formats
 - [x] Surface chord and scale controls clearly on phones
 - [x] Implement real Hum to Beat recording and local rhythm extraction
-- [ ] Verify sign-in, menus, pads, keyboard, and Hum to Beat at phone and desktop sizes
+- [x] Verify sign-in, menus, pads, keyboard, and Hum to Beat at phone and desktop sizes

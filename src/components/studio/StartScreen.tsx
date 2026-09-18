@@ -89,7 +89,7 @@ export function StartScreen() {
   return (
     <div className="min-h-screen overflow-y-auto bg-background">
       <div className="mx-auto w-full max-w-5xl px-5 py-12">
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+        <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
           <img src={synclabLogoAsset.url} alt="SYNCLAB" className="h-10 w-auto rounded object-cover" />
           <div className="min-w-0">
             <h1 className="font-display text-xl font-semibold tracking-tight">Start a session</h1>
