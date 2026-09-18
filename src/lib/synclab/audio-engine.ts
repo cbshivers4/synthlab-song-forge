@@ -473,7 +473,7 @@ export class SyncLabEngine {
         vocoder: 2,
         gate: 1,
         stepfilter: 5,
-        resonator: 11,
+        resonator: 12,
         scalechord: 1,
         transient: 5,
       }[pl.kind];

@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { getEngine } from "./audio-engine";
 import { openInOwnTab } from "./mic";
 import { TRACK_COLORS, applyPreset, defaultPads, defaultPatch, uid } from "./presets";
-import { BUILT_IN_PLUGINS, instantiate } from "./plugins";
+import { BUILT_IN_PLUGINS, instantiate, processMidiThroughPlugins } from "./plugins";
 import { getMidiAccess, listInputs, midiSupported, subscribe, type MidiPortInfo } from "./midi";
 import { getPadBank, setPadBank } from "./pad-session";
 import type { CloudSession } from "./cloud";
@@ -102,7 +102,7 @@ function triggerNote(
     engine.playSample(t.id, s, midi, dur, vel, when);
     return;
   }
-  if (t.patch) engine.playNote(t.id, t.patch, midi, dur, vel, when);
+  if (t.patch) for (const pitch of processMidiThroughPlugins(midi, t.plugins)) engine.playNote(t.id, t.patch, pitch, dur, vel, when);
 }
 
 export type PanelId =
@@ -500,7 +500,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         // automation curves ride the channel while the transport runs
         if (t.automation?.length) {
           const at = step % totalSteps;
-          const ride: Record<string, number> = {};
+            const ride: Record<string, number> = {};
           for (const lane of t.automation) {
             if (lane.mode !== "read" || lane.points.length === 0) continue;
             ride[lane.param] = valueAt(lane.points, at);

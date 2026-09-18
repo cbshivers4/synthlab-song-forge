@@ -206,6 +206,44 @@ export const instantiate = (d: PluginDef): PluginInstance => ({
   params: d.params.map((x) => ({ ...x })),
 });
 
+const SCALE_INTERVALS = [
+  [0, 2, 4, 5, 7, 9, 11],
+  [0, 2, 3, 5, 7, 8, 10],
+  [0, 2, 3, 5, 7, 9, 10],
+  [0, 2, 4, 7, 9],
+  [0, 3, 5, 7, 10],
+  [0, 1, 3, 5, 7, 8, 10],
+] as const;
+
+const CHORD_INTERVALS = [[0], [0, 4, 7], [0, 3, 7], [0, 4, 7, 11], [0, 3, 7, 10], [0, 7, 12]] as const;
+
+/** Applies the active Chord Compass insert to a note before playback or recording. */
+export function processMidiThroughPlugins(note: number, plugins: PluginInstance[] = []): number[] {
+  const device = plugins.find((plugin) => plugin.kind === "scalechord" && !plugin.bypass);
+  if (!device) return [note];
+  const value = (id: string, fallback: number) => device.params.find((param) => param.id === id)?.value ?? fallback;
+  const root = Math.round(value("root", 0)) % 12;
+  const scale = SCALE_INTERVALS[Math.round(value("scale", 0))] ?? SCALE_INTERVALS[0];
+  const pitchClass = ((note - root) % 12 + 12) % 12;
+  let base = note;
+  if (value("filter", 1) >= 0.5 && !scale.includes(pitchClass as never)) {
+    let best = scale[0] ?? 0;
+    let distance = 12;
+    for (const degree of scale) {
+      const d = Math.abs(degree - pitchClass);
+      if (d < distance) {
+        best = degree;
+        distance = d;
+      }
+    }
+    base = note + best - pitchClass;
+  }
+  const chord = CHORD_INTERVALS[Math.round(value("chord", 0))] ?? CHORD_INTERVALS[0];
+  const inversion = Math.min(Math.round(value("inversion", 0)), chord.length - 1);
+  const range = Math.round(value("range", 1));
+  return chord.map((interval, index) => base + interval + (index < inversion ? 12 : 0) + (range > 1 && index === chord.length - 1 ? (range - 1) * 12 : 0));
+}
+
 export const PLUGIN_KINDS: PluginKind[] = [
   "eq",
   "paraeq",
