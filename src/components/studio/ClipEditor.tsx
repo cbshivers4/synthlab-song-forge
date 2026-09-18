@@ -42,22 +42,11 @@ export function ClipEditor({ track, clip, onClose }: { track: Track; clip: Audio
   const set = (patch: Partial<AudioClip>) => updateClip(track.id, clip.id, patch);
 
   const peaks = clip.peaks.length > 1 ? clip.peaks : [0, 0];
-  const view = useMemo(() => {
-    if (!zoomTrim) return peaks;
-    const a = Math.floor((offset / dur) * peaks.length);
-    const b = Math.ceil(((offset + length) / dur) * peaks.length);
-    const slice = peaks.slice(Math.max(0, a), Math.max(a + 2, b));
-    return clip.reverse ? [...slice].reverse() : slice;
-  }, [peaks, zoomTrim, offset, length, dur, clip.reverse]);
-
   const trimPeak = useMemo(() => {
     const a = Math.floor((offset / dur) * peaks.length);
     const b = Math.ceil(((offset + length) / dur) * peaks.length);
     return Math.max(0.0001, ...peaks.slice(Math.max(0, a), Math.max(a + 1, b)));
   }, [peaks, offset, length, dur]);
-
-  const leftPct = (offset / dur) * 100;
-  const widthPct = Math.max(1, (length / dur) * 100);
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
@@ -96,6 +85,7 @@ export function ClipEditor({ track, clip, onClose }: { track: Track; clip: Audio
           length={length}
           fadeIn={fadeIn}
           fadeOut={fadeOut}
+          zoomTrim={zoomTrim}
           onChange={set}
         />
 
@@ -204,6 +194,7 @@ function InteractiveWaveform({
   length,
   fadeIn,
   fadeOut,
+  zoomTrim,
   onChange,
 }: {
   clip: AudioClip;
@@ -212,6 +203,7 @@ function InteractiveWaveform({
   length: number;
   fadeIn: number;
   fadeOut: number;
+  zoomTrim: boolean;
   onChange: (patch: Partial<AudioClip>) => void;
 }) {
   const surfaceRef = useRef<HTMLDivElement>(null);
@@ -224,10 +216,19 @@ function InteractiveWaveform({
     fadeOut: number;
   } | null>(null);
   const dur = Math.max(0.01, clip.duration);
-  const leftPct = (offset / dur) * 100;
-  const widthPct = Math.max(0.5, (length / dur) * 100);
-  const fadeInPct = (Math.min(fadeIn, length / 2) / dur) * 100;
-  const fadeOutPct = (Math.min(fadeOut, length / 2) / dur) * 100;
+  const leftPct = zoomTrim ? 0 : (offset / dur) * 100;
+  const widthPct = zoomTrim ? 100 : Math.max(0.5, (length / dur) * 100);
+  const visibleDuration = zoomTrim ? length : dur;
+  const visibleStart = zoomTrim ? offset : 0;
+  const fadeInPct = (Math.min(fadeIn, length / 2) / visibleDuration) * 100;
+  const fadeOutPct = (Math.min(fadeOut, length / 2) / visibleDuration) * 100;
+  const visiblePeaks = useMemo(() => {
+    if (!zoomTrim) return clip.reverse ? [...peaks].reverse() : peaks;
+    const a = Math.floor((offset / dur) * peaks.length);
+    const b = Math.ceil(((offset + length) / dur) * peaks.length);
+    const slice = peaks.slice(Math.max(0, a), Math.max(a + 2, b));
+    return clip.reverse ? [...slice].reverse() : slice;
+  }, [clip.reverse, dur, length, offset, peaks, zoomTrim]);
 
   const applyAt = (kind: WaveHandle, seconds: number, start = { offset, length, fadeIn, fadeOut }) => {
     const minimum = Math.min(0.05, dur);
@@ -269,7 +270,10 @@ function InteractiveWaveform({
     const active = dragRef.current;
     const rect = surfaceRef.current?.getBoundingClientRect();
     if (!active || active.pointerId !== e.pointerId || !rect) return;
-    const seconds = Math.max(0, Math.min(dur, ((e.clientX - rect.left) / rect.width) * dur));
+    const seconds = Math.max(
+      0,
+      Math.min(dur, visibleStart + ((e.clientX - rect.left) / rect.width) * visibleDuration),
+    );
     applyAt(active.kind, seconds, active);
   };
 
@@ -315,7 +319,7 @@ function InteractiveWaveform({
         className="relative h-36 touch-none select-none overflow-hidden rounded-[3px] border border-border bg-background"
       >
         <WaveformView
-          peaks={clip.reverse ? [...peaks].reverse() : peaks}
+          peaks={visiblePeaks}
           color="var(--clip-audio)"
           label={`${clip.name} interactive waveform`}
           gain={clip.gain ?? 1}
