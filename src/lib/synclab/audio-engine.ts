@@ -2034,6 +2034,15 @@ export class SyncLabEngine {
       default:
         noiseBurst(0.4 * dec, 900, "bandpass", 3);
     }
+
+    // extra transient click
+    const snap = clamp(pad.snap ?? 0, 0, 1);
+    if (snap > 0.001) noiseBurst(0.004 + snap * 0.016, 2600 + snap * 5000, "highpass", 0.9, snap);
+
+    // extra noise layer, spread in stereo by WIDTH
+    const noise = clamp(pad.noise ?? 0, 0, 1);
+    if (noise > 0.001)
+      noiseBurst(0.03 + noise * dec * 1.6, 400 + noise * 4000, "bandpass", 0.7, noise * 0.8, clamp(pad.width ?? 0, 0, 1));
   }
 }
 
