@@ -936,6 +936,9 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
 
   const label = laneLabel(track, lane.param);
   const pts = lane.points;
+  const modes: AutomationLane["mode"][] = ["off", "read", "write", "touch", "latch"];
+  const nextMode = () => setAutomationMode(track.id, lane.param, modes[(modes.indexOf(lane.mode) + 1) % modes.length] ?? "off");
+  const recordingMode = transport.playing && (lane.mode === "write" || lane.mode === "touch" || lane.mode === "latch");
 
   return (
     <div className="flex items-stretch border-t border-border/50 bg-background/40">
@@ -943,13 +946,20 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
       <div className="flex w-[240px] shrink-0 items-center gap-1 border-r border-border bg-surface/60 px-2 py-1">
         <span className="font-mono text-[9px] tracking-[0.15em] text-muted-foreground">AUTO · {label}</span>
         <button
-          onClick={() => setAutomationMode(track.id, lane.param, lane.mode === "read" ? "off" : "read")}
-          title={lane.mode === "read" ? "Playing this curve — click to bypass" : "Bypassed — click to play it"}
+          onClick={nextMode}
+          title="Cycle automation mode: Off, Read, Write, Touch, Latch"
+          aria-label={`${label} automation mode ${lane.mode}. Click for next mode.`}
           className={`ml-auto rounded-[3px] px-1.5 py-0.5 font-mono text-[8px] tracking-widest ${
-            lane.mode === "read" ? "bg-primary/20 text-primary" : "bg-surface-2 text-muted-foreground"
+            recordingMode
+              ? "animate-pulse bg-destructive text-destructive-foreground"
+              : lane.mode === "read"
+                ? "bg-primary/20 text-primary"
+                : lane.mode === "write" || lane.mode === "touch" || lane.mode === "latch"
+                  ? "bg-destructive/20 text-destructive"
+                  : "bg-surface-2 text-muted-foreground"
           }`}
         >
-          {lane.mode === "read" ? "READ" : "OFF"}
+          {lane.mode.toUpperCase()}
         </button>
         <button
           onClick={() => setAutomationPoints(track.id, lane.param, [])}

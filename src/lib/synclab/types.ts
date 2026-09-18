@@ -330,8 +330,8 @@ export interface AutomationPoint {
 
 export interface AutomationLane {
   param: AutomationParam;
-  /** read plays the curve back, off keeps the drawing but ignores it */
-  mode: "read" | "off";
+  /** read plays the curve; write/touch/latch capture live control movements */
+  mode: "read" | "write" | "touch" | "latch" | "off";
   points: AutomationPoint[];
 }
 

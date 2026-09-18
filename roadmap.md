@@ -21,6 +21,7 @@
 ## Stage 3 — automation (done)
 - [x] Volume, pan, reverb and delay send lanes per track
 - [x] Draw, drag and delete points; READ/OFF per lane; curves ride the channel during playback
+- [ ] Record live device movements with Write, Touch, and Latch modes during playback
 
 ## Stage 4 — clip editor (done)
 - [x] Double-click an audio clip to open a non-destructive editor
