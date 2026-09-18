@@ -20,6 +20,8 @@ import {
   EyeOff,
   Headphones,
   Mic,
+  Lock,
+  LockOpen,
   MoreVertical,
   Repeat,
   Music2,
@@ -895,7 +897,8 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
 
 /** One automation lane under a track: click to add a point, drag points, double-click to remove. */
 function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) {
-  const { transport, setAutomationPoints, setAutomationMode, toggleAutomationLane } = useStudio();
+  const { transport, setAutomationPoints, setAutomationMode, setAutomationLaneLock, toggleAutomationLane } = useStudio();
+  const locked = lane.locked ?? false;
   const [selectedPoint, setSelectedPoint] = useState<number | null>(null);
   const [gridSnap, setGridSnap] = useState<0 | 0.25 | 0.5 | 1>(1);
   const [valueSnap, setValueSnap] = useState<0 | 0.02 | 0.05 | 0.1>(0);
@@ -946,6 +949,10 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
   const toY = (v: number) => (bipolar ? 1 - (v + 1) / 2 : 1 - v);
 
   const addPoint = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (locked) {
+      toast("Lane is locked — click the lock to edit");
+      return;
+    }
     const rect = e.currentTarget.getBoundingClientRect();
     const step = snapStep(((e.clientX - rect.left) / rect.width) * total);
     const value = snapValue(toValue((e.clientY - rect.top) / rect.height));
@@ -958,6 +965,7 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
   const dragPoint = (e: React.PointerEvent, index: number) => {
     e.stopPropagation();
     setSelectedPoint(index);
+    if (locked) return;
     const row = (e.currentTarget as HTMLElement).closest("[data-auto-row]") as HTMLElement | null;
     if (!row) return;
     const rect = row.getBoundingClientRect();
@@ -980,6 +988,7 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
 
   const dragCurve = (e: React.PointerEvent, index: number) => {
     e.stopPropagation();
+    if (locked) return;
     const startY = e.clientY;
     const original = lane.points[index]?.curve ?? 0;
     const onMove = (ev: PointerEvent) => {
@@ -1007,6 +1016,10 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
   };
 
   const pasteRegion = () => {
+    if (locked) {
+      toast("Lane is locked — click the lock to edit");
+      return;
+    }
     if (!automationClipboard) {
       toast("Automation clipboard is empty");
       return;
@@ -1022,6 +1035,10 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
   };
 
   const duplicateRegion = () => {
+    if (locked) {
+      toast("Lane is locked — click the lock to edit");
+      return;
+    }
     const source = lane.points.filter((point) => point.step >= regionStart && point.step <= regionEnd);
     if (source.length === 0) {
       toast("No automation in the loop region");
@@ -1041,6 +1058,10 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
   };
 
   const deleteRegion = () => {
+    if (locked) {
+      toast("Lane is locked — click the lock to edit");
+      return;
+    }
     const remaining = lane.points.filter((point) => point.step < regionStart || point.step > regionEnd);
     if (remaining.length === lane.points.length) {
       toast("No automation in the loop region");
@@ -1099,10 +1120,23 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
       <div className="flex w-[240px] shrink-0 flex-wrap items-center gap-1 border-r border-border bg-surface/60 px-2 py-1">
         <span className="min-w-0 flex-1 truncate font-mono text-[9px] tracking-[0.15em] text-muted-foreground">AUTO · {label}</span>
         <button
+          onClick={() => setAutomationLaneLock(track.id, lane.param, !locked)}
+          title={locked ? "Unlock this lane for editing" : "Lock this lane against accidental edits"}
+          aria-label={locked ? `Unlock ${label} automation` : `Lock ${label} automation`}
+          aria-pressed={locked}
+          className={`rounded-[3px] px-1.5 py-0.5 font-mono text-[8px] tracking-widest ${
+            locked ? "bg-amber-500/25 text-amber-400" : "bg-surface-2 text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          {locked ? <Lock className="size-2.5" /> : <LockOpen className="size-2.5" />}
+        </button>
+        <button
           onClick={nextMode}
-          title="Cycle automation mode: Off, Read, Write, Touch, Latch"
+          disabled={locked}
+          title={locked ? "Unlock this lane to change the mode" : "Cycle automation mode: Off, Read, Write, Touch, Latch"}
           aria-label={`${label} automation mode ${lane.mode}. Click for next mode.`}
           className={`ml-auto rounded-[3px] px-1.5 py-0.5 font-mono text-[8px] tracking-widest ${
+            locked ? "bg-surface-2 text-muted-foreground/50" :
             recordingMode
               ? "animate-pulse bg-destructive text-destructive-foreground"
               : lane.mode === "read"
@@ -1116,9 +1150,10 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
         </button>
         <button
           onClick={() => setAutomationPoints(track.id, lane.param, [])}
-          title="Clear this curve"
+          disabled={locked}
+          title={locked ? "Unlock this lane to clear the curve" : "Clear this curve"}
           aria-label={`Clear ${label} automation`}
-          className="text-muted-foreground hover:text-foreground"
+          className="text-muted-foreground hover:text-foreground disabled:opacity-40 disabled:hover:text-muted-foreground"
         >
           <Eraser className="size-3" />
         </button>
@@ -1135,13 +1170,13 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
           <Button type="button" variant="ghost" size="icon" className="size-5" onClick={copyRegion} title="Copy automation in loop region (⌘/Ctrl+C)" aria-label={`Copy ${label} region`}>
             <Copy className="size-3" />
           </Button>
-          <Button type="button" variant="ghost" size="icon" className="size-5" onClick={pasteRegion} title="Paste automation at playhead (⌘/Ctrl+V)" aria-label={`Paste ${label} at playhead`}>
+          <Button type="button" variant="ghost" size="icon" className="size-5 disabled:opacity-40" disabled={locked} onClick={pasteRegion} title={locked ? "Unlock this lane to paste" : "Paste automation at playhead (⌘/Ctrl+V)"} aria-label={`Paste ${label} at playhead`}>
             <ClipboardPaste className="size-3" />
           </Button>
-          <Button type="button" variant="ghost" size="icon" className="size-5" onClick={duplicateRegion} title="Duplicate automation after loop region (⌘/Ctrl+D)" aria-label={`Duplicate ${label} region`}>
+          <Button type="button" variant="ghost" size="icon" className="size-5 disabled:opacity-40" disabled={locked} onClick={duplicateRegion} title={locked ? "Unlock this lane to duplicate" : "Duplicate automation after loop region (⌘/Ctrl+D)"} aria-label={`Duplicate ${label} region`}>
             <Repeat className="size-3" />
           </Button>
-          <Button type="button" variant="ghost" size="icon" className="size-5 text-destructive" onClick={deleteRegion} title="Delete automation in loop region (Delete/Backspace)" aria-label={`Delete ${label} region`}>
+          <Button type="button" variant="ghost" size="icon" className="size-5 text-destructive disabled:opacity-40 disabled:hover:text-destructive" disabled={locked} onClick={deleteRegion} title={locked ? "Unlock this lane to delete" : "Delete automation in loop region (Delete/Backspace)"} aria-label={`Delete ${label} region`}>
             <Trash2 className="size-3" />
           </Button>
         </div>
@@ -1179,6 +1214,7 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
               type="number"
               min={0}
               max={total}
+              disabled={locked}
               value={selected.step}
               onChange={(event) => setAutomationPoints(track.id, lane.param, pts.map((point, index) => index === selectedPoint ? { ...point, step: snapStep(Number(event.target.value)) } : point))}
             />
@@ -1190,6 +1226,7 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
               step={discrete ? 1 : "any"}
               min={control?.min}
               max={control?.max}
+              disabled={locked}
               value={scaleValue(selected.value)}
               onChange={(event) => setAutomationPoints(track.id, lane.param, pts.map((point, index) => index === selectedPoint ? { ...point, value: snapValue(normalizeValue(Number(event.target.value))) } : point))}
             />
@@ -1199,8 +1236,8 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
       <div
         data-auto-row
         onClick={addPoint}
-        title="Click to add a point, drag a point to shape it, double-click a point to delete"
-        className="lane-grid relative h-[72px] flex-1 cursor-crosshair bg-background/70"
+        title={locked ? "This lane is locked — click the lock in the lane header to edit" : "Click to add a point, drag a point to shape it, double-click a point to delete"}
+        className={`lane-grid relative h-[72px] flex-1 bg-background/70 ${locked ? "cursor-default" : "cursor-crosshair"}`}
       >
         <svg className="pointer-events-none absolute inset-0 size-full" preserveAspectRatio="none" viewBox="0 0 100 100">
           {pts.length > 1 && (
@@ -1220,6 +1257,10 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
             onClick={(e) => e.stopPropagation()}
             onDoubleClick={(e) => {
               e.stopPropagation();
+              if (locked) {
+                toast("Lane is locked — click the lock to edit");
+                return;
+              }
               setAutomationPoints(track.id, lane.param, pts.filter((_, j) => j !== i));
             }}
             aria-label={`${label} point at step ${p.step}, ${formatValue(p.value)}`}
@@ -1240,6 +1281,10 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
               onPointerDown={(event) => dragCurve(event, index)}
               onDoubleClick={(event) => {
                 event.stopPropagation();
+                if (locked) {
+                  toast("Lane is locked — click the lock to edit");
+                  return;
+                }
                 setAutomationPoints(track.id, lane.param, pts.map((item, i) => i === index ? { ...item, curve: 0 } : item));
               }}
               onClick={(event) => event.stopPropagation()}
