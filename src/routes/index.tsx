@@ -30,6 +30,7 @@ import { ExportDialog } from "@/components/studio/ExportDialog";
 import { BassGenerator } from "@/components/studio/BassGenerator";
 import { CoProducer } from "@/components/studio/CoProducer";
 import { HumToBeat } from "@/components/studio/HumToBeat";
+import { MobileBeat } from "@/components/studio/MobileBeat";
 import { Bot } from "lucide-react";
 import { AppProvider, useApp, useMaybeApp } from "@/lib/synclab/app-state";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -435,7 +436,19 @@ function useShortcuts() {
 function StudioWorkspace() {
   const isMobile = useIsMobile();
   const [float, setFloat] = useState<FloatState>({ synth: false, drums: false });
+  const [beatMode, setBeatMode] = useState(false);
   useShortcuts();
+  // Phones open straight into the big-button beat maker the first time.
+  useEffect(() => {
+    if (!isMobile) return;
+    try {
+      if (window.localStorage.getItem("synclab.beatmode.seen")) return;
+      window.localStorage.setItem("synclab.beatmode.seen", "1");
+      setBeatMode(true);
+    } catch {
+      /* storage unavailable */
+    }
+  }, [isMobile]);
   return (
     <div className="flex h-[100dvh] flex-col overflow-hidden">
       <MenuBar />
@@ -452,6 +465,15 @@ function StudioWorkspace() {
       <FloatingDevices float={float} setFloat={setFloat} />
       <DeviceSetup />
       <ExportDialog />
+      {isMobile && !beatMode && (
+        <Button
+          className="glow fixed right-4 bottom-16 z-40 h-14 gap-2 rounded-2xl px-5 font-display text-xs tracking-[0.2em]"
+          onClick={() => setBeatMode(true)}
+        >
+          <Grid2x2 className="size-5" /> BEAT MODE
+        </Button>
+      )}
+      {isMobile && beatMode && <MobileBeat onClose={() => setBeatMode(false)} />}
     </div>
   );
 }
