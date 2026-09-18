@@ -202,6 +202,7 @@ interface StudioApi extends StudioState {
   setAutomationPoints: (trackId: string, param: AutomationParam, points: AutomationPoint[]) => void;
   setAutomationMode: (trackId: string, param: AutomationParam, mode: AutomationLane["mode"]) => void;
   setAutomationLaneLock: (trackId: string, param: AutomationParam, locked: boolean) => void;
+  previewAutomation: (trackId: string, param: AutomationParam, value: number) => void;
   removeClip: (trackId: string, clipId: string) => void;
   addClip: (trackId: string, clip: AudioClip) => void;
   updateClip: (trackId: string, clipId: string, patch: Partial<AudioClip>) => void;
@@ -1249,6 +1250,10 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         const t = tracksRef.current.find((x) => x.id === trackId);
         const lanes = t?.automation ?? [];
         updateTrack(trackId, { automation: lanes.map((l) => (l.param === param ? { ...l, locked } : l)) });
+      },
+      // hear the value under the finger while an automation point or region is being dragged
+      previewAutomation: (trackId, param, value) => {
+        getEngine().automate(trackId, { [param]: value });
       },
       removeClip: (trackId, clipId) =>
         setTracks((ts) =>

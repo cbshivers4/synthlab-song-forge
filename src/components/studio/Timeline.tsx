@@ -897,9 +897,17 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
 
 /** One automation lane under a track: click to add a point, drag points, double-click to remove. */
 function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) {
-  const { transport, setAutomationPoints, setAutomationMode, setAutomationLaneLock, toggleAutomationLane } = useStudio();
+  const { transport, setAutomationPoints, setAutomationMode, setAutomationLaneLock, toggleAutomationLane, previewAutomation } = useStudio();
   const locked = lane.locked ?? false;
   const [selectedPoint, setSelectedPoint] = useState<number | null>(null);
+  /** live readout that follows the pointer while a point, curve or region is being edited */
+  const [liveEdit, setLiveEdit] = useState<{ x: number; y: number; text: string } | null>(null);
+  const liveTimer = useRef<number | null>(null);
+  const flashReadout = (text: string, x = 50, y = 12) => {
+    setLiveEdit({ x, y, text });
+    if (liveTimer.current) window.clearTimeout(liveTimer.current);
+    liveTimer.current = window.setTimeout(() => setLiveEdit(null), 900);
+  };
   const [gridSnap, setGridSnap] = useState<0 | 0.25 | 0.5 | 1>(1);
   const [valueSnap, setValueSnap] = useState<0 | 0.02 | 0.05 | 0.1>(0);
   const total = Math.max(1, transport.bars ?? 4) * 4;
@@ -960,6 +968,8 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
       ...lane.points.filter((p) => p.step !== step),
       { step: Math.max(0, Math.min(total, step)), value },
     ]);
+    previewAutomation(track.id, lane.param, value);
+    flashReadout(`${formatValue(value)} @ ${step}`, ((e.clientX - rect.left) / rect.width) * 100, ((e.clientY - rect.top) / rect.height) * 100);
   };
 
   const dragPoint = (e: React.PointerEvent, index: number) => {
@@ -977,10 +987,18 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
         lane.param,
         lane.points.map((p, i) => (i === index ? { step, value } : p)),
       );
+      // hear the parameter move under the finger and show the exact value
+      previewAutomation(track.id, lane.param, value);
+      setLiveEdit({
+        x: ((ev.clientX - rect.left) / rect.width) * 100,
+        y: ((ev.clientY - rect.top) / rect.height) * 100,
+        text: `${formatValue(value)} @ ${step}`,
+      });
     };
     const onUp = () => {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
+      flashReadout(`${formatValue(lane.points[index]?.value ?? 0)}`);
     };
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
@@ -989,18 +1007,40 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
   const dragCurve = (e: React.PointerEvent, index: number) => {
     e.stopPropagation();
     if (locked) return;
+    const row = (e.currentTarget as HTMLElement).closest("[data-auto-row]") as HTMLElement | null;
+    const rect = row?.getBoundingClientRect();
     const startY = e.clientY;
     const original = lane.points[index]?.curve ?? 0;
     const onMove = (ev: PointerEvent) => {
       const curve = Math.max(-1, Math.min(1, original + (startY - ev.clientY) / 36));
       setAutomationPoints(track.id, lane.param, lane.points.map((point, i) => i === index ? { ...point, curve } : point));
+      const from = lane.points[index];
+      const to = lane.points[index + 1];
+      if (from && to) {
+        // preview the midpoint of the shaped segment so the bend is audible
+        const mid = from.value + (to.value - from.value) * shapeT(0.5, curve);
+        previewAutomation(track.id, lane.param, mid);
+        setLiveEdit({
+          x: rect ? ((ev.clientX - rect.left) / rect.width) * 100 : 50,
+          y: rect ? ((ev.clientY - rect.top) / rect.height) * 100 : 12,
+          text: `CURVE ${Math.round(curve * 100)}% · ${formatValue(mid)}`,
+        });
+      }
     };
     const onUp = () => {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
+      flashReadout(`CURVE ${Math.round((lane.points[index]?.curve ?? 0) * 100)}%`);
     };
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
+  };
+
+  /** after a region edit, audition the first affected value and show what changed */
+  const previewRegionEdit = (points: AutomationPoint[], text: string) => {
+    const first = points[0];
+    if (first) previewAutomation(track.id, lane.param, first.value);
+    flashReadout(first ? `${text} · ${formatValue(first.value)}` : text);
   };
 
   const copyRegion = () => {
@@ -1031,6 +1071,7 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
     const occupied = new Set(pasted.map((point) => point.step));
     setAutomationPoints(track.id, lane.param, [...lane.points.filter((point) => !occupied.has(point.step)), ...pasted]);
     setSelectedPoint(null);
+    previewRegionEdit(pasted, `PASTED ${pasted.length} @ ${origin}`);
     toast(`Pasted automation at step ${origin}`);
   };
 
@@ -1054,6 +1095,7 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
     const occupied = new Set(duplicated.map((point) => point.step));
     setAutomationPoints(track.id, lane.param, [...lane.points.filter((point) => !occupied.has(point.step)), ...duplicated]);
     setSelectedPoint(null);
+    previewRegionEdit(duplicated, `DUPLICATED ${duplicated.length}`);
     toast(`Duplicated automation to steps ${regionEnd}–${Math.min(total, regionEnd + regionDuration)}`);
   };
 
@@ -1069,6 +1111,7 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
     }
     setAutomationPoints(track.id, lane.param, remaining);
     setSelectedPoint(null);
+    previewRegionEdit(remaining, `DELETED ${lane.points.length - remaining.length}`);
   };
 
   const handleRegionShortcut = (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -1299,6 +1342,21 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
           <div className="pointer-events-none absolute bottom-1 right-2 font-mono text-[8px] text-muted-foreground">
             {formatValue(selected.value)} · CURVE {Math.round((selected.curve ?? 0) * 100)}%
           </div>
+        )}
+        {liveEdit && (
+          <>
+            <div
+              className="pointer-events-none absolute top-0 h-full w-px bg-primary/60"
+              style={{ left: `${Math.max(0, Math.min(100, liveEdit.x))}%` }}
+            />
+            <div
+              aria-live="polite"
+              className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-[150%] whitespace-nowrap rounded bg-primary px-1.5 py-0.5 font-mono text-[9px] text-primary-foreground shadow"
+              style={{ left: `${Math.max(6, Math.min(94, liveEdit.x))}%`, top: `${Math.max(12, Math.min(96, liveEdit.y))}%` }}
+            >
+              {liveEdit.text}
+            </div>
+          </>
         )}
       </div>
     </div>
