@@ -30,3 +30,4 @@
 - [x] Undo and redo controls in the clip editor for comparing trim and fade changes
 - [x] A/B waveform comparison with separate original and edited audition modes
 - [x] Shared loop region for repeated Original and Edited waveform audition
+- [x] Adjustable equal-power crossfade at audition loop boundaries

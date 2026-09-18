@@ -34,6 +34,7 @@ export function ClipEditor({ track, clip, onClose }: { track: Track; clip: Audio
   const [loopAudition, setLoopAudition] = useState(false);
   const [loopRange, setLoopRange] = useState<[number, number]>([0, Math.max(0.05, clip.length ?? clip.duration)]);
   const [loopSnap, setLoopSnap] = useState<LoopSnapMode>("off");
+  const [loopCrossfade, setLoopCrossfade] = useState(0.012);
   const zeroCrossData = useRef<{ samples: Float32Array; sampleRate: number } | null>(null);
   const [zoomTrim, setZoomTrim] = useState(true);
   const [waveZoom, setWaveZoom] = useState(1);
@@ -151,6 +152,7 @@ export function ClipEditor({ track, clip, onClose }: { track: Track; clip: Audio
         rate: clipRate(candidate),
         reverse: candidate.reverse ?? false,
         loopClip: loopAudition,
+        loopCrossfade: loopAudition ? loopCrossfade : 0,
       });
     });
   };
@@ -240,6 +242,17 @@ export function ClipEditor({ track, clip, onClose }: { track: Track; clip: Audio
             className="min-w-40 flex-1"
           />
           <span className="w-32 text-right font-mono text-[9px] text-foreground">{loopRange[0].toFixed(2)}s — {loopRange[1].toFixed(2)}s</span>
+          <span className="font-mono text-[9px] text-muted-foreground">CROSSFADE</span>
+          <Slider
+            aria-label="Loop boundary crossfade"
+            value={[loopCrossfade]}
+            min={0}
+            max={Math.min(0.25, Math.max(0.001, (loopRange[1] - loopRange[0]) / 2))}
+            step={0.001}
+            onValueChange={(value) => setLoopCrossfade(value[0] ?? 0)}
+            className="min-w-28 flex-1"
+          />
+          <span className="w-14 text-right font-mono text-[9px] text-primary">{Math.round(loopCrossfade * 1000)} ms</span>
         </div>
 
         <div className="grid grid-cols-2 gap-2" aria-label="A/B waveform comparison">
