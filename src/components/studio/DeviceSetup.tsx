@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button";
 import { useStudio } from "@/lib/synclab/store";
 import { midiSupported } from "@/lib/synclab/midi";
-import { openMic, openInOwnTab } from "@/lib/synclab/mic";
+import { openMic, openInOwnTab, listAudioDevices, getPreferredInput, setPreferredInput, onDeviceChange } from "@/lib/synclab/mic";
 
 const KEY = "synclab.devicesetup.done";
 
@@ -12,19 +12,22 @@ export function DeviceSetup() {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [asked, setAsked] = useState(false);
-  const [inputs, setInputs] = useState<string[]>([]);
-  const [outputs, setOutputs] = useState<string[]>([]);
+  const [inputs, setInputs] = useState<{ id: string; label: string }[]>([]);
+  const [outputs, setOutputs] = useState<{ id: string; label: string }[]>([]);
+  const [chosen, setChosen] = useState<string | null>(null);
   const [micError, setMicError] = useState<string | null>(null);
 
   const listDevices = useCallback(async () => {
-    if (!navigator.mediaDevices?.enumerateDevices) return { ins: [] as string[], outs: [] as string[] };
-    const list = await navigator.mediaDevices.enumerateDevices();
-    const ins = list.filter((d) => d.kind === "audioinput" && d.label).map((d) => d.label);
-    const outs = list.filter((d) => d.kind === "audiooutput" && d.label).map((d) => d.label);
+    const all = await listAudioDevices();
+    const ins = all.filter((d) => d.kind === "audioinput").map((d) => ({ id: d.id, label: d.label }));
+    const outs = all.filter((d) => d.kind === "audiooutput").map((d) => ({ id: d.id, label: d.label }));
     setInputs(ins);
     setOutputs(outs);
+    setChosen(getPreferredInput());
     return { ins, outs };
   }, []);
+
+  useEffect(() => onDeviceChange(() => void listDevices()), [listDevices]);
 
   // Ask only when the gear is not already connected and allowed.
   useEffect(() => {
@@ -48,7 +51,7 @@ export function DeviceSetup() {
       const { ins } = await listDevices();
       if (cancelled) return;
 
-      if (granted && ins.length) {
+      if (granted && ins.length && ins.some((d) => d.label)) {
         // Devices are already allowed and visible — connect quietly, never ask.
         enableMidi();
         try {
@@ -114,9 +117,33 @@ export function DeviceSetup() {
         {asked && (
           <div className="space-y-3 rounded-lg border border-border bg-surface p-3 font-mono text-xs">
             <div>
-              <div className="label-xs mb-1">Audio inputs</div>
+              <div className="label-xs mb-1">Audio inputs — tap the one to record from</div>
               {inputs.length ? (
-                inputs.map((n) => <div key={n} className="text-primary">{n}</div>)
+                <div className="space-y-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPreferredInput(null);
+                      setChosen(null);
+                    }}
+                    className={`w-full rounded border px-2 py-2 text-left ${chosen === null ? "border-primary text-primary" : "border-border text-muted-foreground"}`}
+                  >
+                    System default input
+                  </button>
+                  {inputs.map((d) => (
+                    <button
+                      key={d.id}
+                      type="button"
+                      onClick={() => {
+                        setPreferredInput(d.id);
+                        setChosen(d.id);
+                      }}
+                      className={`w-full rounded border px-2 py-2 text-left ${chosen === d.id ? "border-primary text-primary" : "border-border text-muted-foreground"}`}
+                    >
+                      {d.label}
+                    </button>
+                  ))}
+                </div>
               ) : (
                 <div className="text-muted-foreground">
                   None found. Allow microphone access, plug in the interface, then press Connect again.
@@ -126,7 +153,7 @@ export function DeviceSetup() {
             <div>
               <div className="label-xs mb-1">Audio outputs</div>
               {outputs.length ? (
-                outputs.map((n) => <div key={n} className="text-primary">{n}</div>)
+                outputs.map((d) => <div key={d.id} className="text-primary">{d.label}</div>)
               ) : (
                 <div className="text-muted-foreground">None found.</div>
               )}
