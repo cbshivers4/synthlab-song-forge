@@ -34,6 +34,7 @@ import type {
   TrackKind,
   Transport,
 } from "./types";
+import { clipRate } from "./types";
 
 /** A mixer control a hardware knob/fader can drive. id is a track id, or "master". */
 export interface MidiTarget {
