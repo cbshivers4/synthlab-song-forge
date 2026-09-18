@@ -330,6 +330,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const automationHistoryRef = useRef(
     new Map<string, { past: { points: AutomationPoint[]; label: string }[]; future: { points: AutomationPoint[]; label: string }[] }>(),
   );
+  const automationLastPushRef = useRef(new Map<string, { label: string; at: number }>());
   const [automationHistoryTick, setAutomationHistoryTick] = useState(0);
 
   // ---- Undo / redo history + local autosave -------------------------------
