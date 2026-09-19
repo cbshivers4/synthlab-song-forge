@@ -484,13 +484,43 @@ export function PadSampler() {
         })}
       </div>
 
+      {/* live monitor: shows the microphone while recording, or the pad you are playing */}
+      <div className="relative h-24 overflow-hidden rounded-lg border border-border bg-surface-2/50 sm:h-20">
+        {recStream ? (
+          <LiveWave stream={recStream} color="hsl(0 85% 62%)" label="Live microphone waveform" />
+        ) : monitorPad ? (
+          <>
+            <WaveformView peaks={monitorPad.pad.peaks} color={monitorPad.color} label={`${monitorPad.pad.name} waveform`} />
+            <span className="absolute inset-y-0 left-0 bg-background/70" style={{ width: `${monitorPad.pad.start * 100}%` }} />
+            <span className="absolute inset-y-0 right-0 bg-background/70" style={{ width: `${(1 - monitorPad.pad.end) * 100}%` }} />
+          </>
+        ) : (
+          <span className="absolute inset-0 flex items-center justify-center font-mono text-[10px] tracking-widest text-muted-foreground">
+            HOLD A PAD TO PLAY · HOLD TO RECORD TO SAMPLE
+          </span>
+        )}
+        <span className="absolute left-2 top-1.5 font-mono text-[9px] tracking-widest text-white/70">
+          {recStream ? "RECORDING" : monitorPad ? monitorPad.pad.name : "MONITOR"}
+        </span>
+      </div>
+
       <div className="grid grid-cols-4 gap-2">
         {Array.from({ length: PADS_PER_BANK }, (_, i) => {
           const id = index(i);
           const pad = pads[id];
-          const active = hit === id;
+          const active = hit === id || playing === id;
           const c = padColor(bank, i);
           const recording = recPad === id;
+          const release = () => {
+            if (armRec) {
+              endHold();
+              return;
+            }
+            if (playing === id) {
+              stopPad(id);
+              setPlaying(null);
+            }
+          };
           return (
             <button
               key={id}
@@ -503,10 +533,14 @@ export function PadSampler() {
                   void beginHold(id);
                   return;
                 }
-                if (pad) trigger(id);
+                if (pad) {
+                  e.currentTarget.setPointerCapture(e.pointerId);
+                  trigger(id);
+                  setPlaying(id);
+                }
               }}
-              onPointerUp={() => armRec && endHold()}
-              onPointerCancel={() => armRec && endHold()}
+              onPointerUp={release}
+              onPointerCancel={release}
               onContextMenu={(e) => armRec && e.preventDefault()}
               onDragOver={(e) => {
                 e.preventDefault();
