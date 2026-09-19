@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   ArrowLeftToLine,
@@ -1946,11 +1946,23 @@ export function Timeline() {
   const { tracks, transport, addTrack, setPanel, loadSample } = useStudio();
   const totalSteps = Math.max(1, transport.bars ?? 4) * 4;
   const [over, setOver] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // keeps the playhead in view while the song plays, when FOLLOW is on
+  useEffect(() => {
+    if (!transport.follow || !transport.playing) return;
+    const el = scrollRef.current;
+    if (!el || el.scrollWidth <= el.clientWidth) return;
+    const x = (transport.step / totalSteps) * el.scrollWidth;
+    if (x < el.scrollLeft + 80 || x > el.scrollLeft + el.clientWidth - 80) {
+      el.scrollTo({ left: Math.max(0, x - el.clientWidth / 2), behavior: "smooth" });
+    }
+  }, [transport.follow, transport.playing, transport.step, totalSteps]);
   return (
     <section className="relative flex min-h-0 flex-1 flex-col overflow-hidden border-x border-b border-border bg-background/60">
       <EditToolbar />
       <Ruler />
-      <div className="relative min-h-0 flex-1 overflow-auto">
+      <div ref={scrollRef} className="relative min-h-0 flex-1 overflow-auto">
         <div className="min-w-[720px] sm:min-w-0">
         {/* SYNCLAB watermark centered over the rhythm grid */}
         <div className="pointer-events-none sticky top-1/2 z-0 h-0" aria-hidden="true">
