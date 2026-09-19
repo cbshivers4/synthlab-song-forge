@@ -558,6 +558,15 @@ export const readDrag = (e: React.DragEvent): DragPayload | null => {
   }
 };
 
+const TRACK_BUSES: { id: BusId; label: string }[] = [
+  { id: "drums", label: "Drums bus" },
+  { id: "vocals", label: "Vocals bus" },
+  { id: "instruments", label: "Instruments bus" },
+  { id: "synths", label: "Synths bus" },
+  { id: "fx", label: "FX bus" },
+  { id: "master", label: "Master (direct)" },
+];
+
 function TrackRow({ track, index }: { track: Track; index: number }) {
   const isMobile = useIsMobile();
   const { selectedId, selectedIds, select, toggleSelectId, updateTrack, removeTrack, duplicateTrack, moveTrack, setPanel, changeInstrument, installedPlugins, addPlugin, editTool, splitClipAt, toggleStep, toggleAutomationLane, copyTrack, cutTrack, pasteTrack, clipboardName } =
