@@ -801,7 +801,52 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
           >
             ● REC
           </Button>
-          <span className="label-xs ml-auto whitespace-nowrap">{KIND_LABEL[track.kind]}</span>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                size="sm"
+                variant={(track.automation?.length ?? 0) > 0 ? "secondary" : "ghost"}
+                className="h-7 gap-1 px-2 text-[9px] font-semibold sm:h-6"
+                aria-label={`Automation lanes for ${track.name}`}
+                title="Show or hide automation lanes"
+              >
+                <Waves className="size-3" /> AUTO
+                {(track.automation?.length ?? 0) > 0 && (
+                  <span className="min-w-3 rounded-sm bg-primary px-0.5 text-[8px] text-primary-foreground">
+                    {track.automation?.length}
+                  </span>
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="min-w-56">
+              <DropdownMenuLabel className="label-xs">Show automation lane</DropdownMenuLabel>
+              {(["volume", "pan", "sendReverb", "sendDelay"] as AutomationParam[]).map((param) => {
+                const visible = (track.automation ?? []).some((lane) => lane.param === param);
+                return (
+                  <DropdownMenuItem key={param} onClick={() => toggleAutomationLane(track.id, param)}>
+                    <span className={`size-2 rounded-full ${visible ? "bg-primary" : "border border-muted-foreground"}`} />
+                    {laneLabel(track, param)}
+                    <span className="ml-auto text-[9px] text-muted-foreground">{visible ? "HIDE" : "SHOW"}</span>
+                  </DropdownMenuItem>
+                );
+              })}
+              {(track.plugins ?? []).some((plugin) => !plugin.bypass) && <DropdownMenuSeparator />}
+              {(track.plugins ?? []).filter((plugin) => !plugin.bypass).flatMap((plugin) =>
+                plugin.params.filter((param) => !param.id.startsWith("s") || plugin.kind !== "stepfilter").map((param) => {
+                  const automationParam = `plugin:${plugin.id}:${param.id}` as AutomationParam;
+                  const visible = (track.automation ?? []).some((lane) => lane.param === automationParam);
+                  return (
+                    <DropdownMenuItem key={automationParam} onClick={() => toggleAutomationLane(track.id, automationParam)}>
+                      <span className={`size-2 rounded-full ${visible ? "bg-primary" : "border border-muted-foreground"}`} />
+                      <span className="truncate">{plugin.name} · {param.name}</span>
+                      <span className="ml-auto text-[9px] text-muted-foreground">{visible ? "HIDE" : "SHOW"}</span>
+                    </DropdownMenuItem>
+                  );
+                }),
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          {!isMobile && <span className="label-xs ml-auto whitespace-nowrap">{KIND_LABEL[track.kind]}</span>}
         </div>
 
         <div className="flex items-center gap-2">
