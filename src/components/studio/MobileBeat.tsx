@@ -31,10 +31,92 @@ function buzz(ms = 12) {
  * same project state as the desktop studio — no separate engine, no demo mode.
  */
 export function MobileBeat({ onClose }: { onClose: () => void }) {
-  const { tracks, addTrack, updatePad, generateBeat, transport, setTransport, togglePlay, stop } = useStudio();
+  const { tracks, addTrack, updatePad, generateBeat, transport, setTransport, togglePlay, stop, updateTrack, addClip, previewClip } =
+    useStudio();
   const [tab, setTab] = useState<Tab>("pads");
   const [padIdx, setPadIdx] = useState(0);
   const [page, setPage] = useState(0);
+
+  // ---- mic recording (hold to record) ----
+  const [recTrackId, setRecTrackId] = useState<string | null>(null);
+  const [recording, setRecording] = useState(false);
+  const [recElapsed, setRecElapsed] = useState(0);
+  const [recLevel, setRecLevel] = useState(0);
+  const recStartRef = useRef(0);
+  const recTimerRef = useRef<number | null>(null);
+
+  const micTrack: Track | undefined = useMemo(
+    () => tracks.find((t) => t.id === recTrackId) ?? tracks.find((t) => t.kind === "audio"),
+    [tracks, recTrackId],
+  );
+
+  useEffect(
+    () => () => {
+      if (recTimerRef.current) window.clearInterval(recTimerRef.current);
+    },
+    [],
+  );
+
+  const startRec = async () => {
+    if (recording) return;
+    buzz(20);
+    let id = micTrack?.id;
+    if (!id) id = addTrack("audio", "PHONE MIC");
+    setRecTrackId(id);
+    const engine = getEngine();
+    try {
+      await engine.startInputRecording(id, false);
+    } catch (err) {
+      toast.error("Microphone unavailable", {
+        description: err instanceof Error ? err.message : "The microphone could not be opened.",
+        duration: 9000,
+        action: { label: "Open in tab", onClick: openInOwnTab },
+      });
+      return;
+    }
+    recStartRef.current = transport.step ?? 0;
+    updateTrack(id, { armed: true, recording: true });
+    setRecording(true);
+    setRecElapsed(0);
+    const t0 = performance.now();
+    recTimerRef.current = window.setInterval(() => {
+      setRecElapsed((performance.now() - t0) / 1000);
+      setRecLevel(engine.inputLevel());
+    }, 80);
+  };
+
+  const stopRec = async () => {
+    if (!recording) return;
+    if (recTimerRef.current) window.clearInterval(recTimerRef.current);
+    recTimerRef.current = null;
+    setRecording(false);
+    setRecLevel(0);
+    const id = recTrackId;
+    if (!id) return;
+    const result = await getEngine().stopInputRecording();
+    if (!result) {
+      updateTrack(id, { recording: false });
+      toast("Nothing captured", { description: "Hold the mic button a little longer." });
+      return;
+    }
+    const takeNo = (tracks.find((t) => t.id === id)?.clips?.length ?? 0) + 1;
+    updateTrack(id, { recording: false });
+    addClip(id, {
+      id: uid(),
+      name: `MIC ${takeNo}`,
+      peaks: result.peaks,
+      duration: result.duration,
+      url: result.url,
+      start: recStartRef.current,
+      offset: 0,
+      length: result.duration,
+      gain: 1,
+    });
+    buzz(30);
+    toast.success(`MIC ${takeNo} added to the timeline`, {
+      description: `${result.duration.toFixed(1)}s — open the full studio to edit it.`,
+    });
+  };
 
   const drumTrack: Track | undefined = useMemo(() => tracks.find((t) => t.kind === "drum"), [tracks]);
 
