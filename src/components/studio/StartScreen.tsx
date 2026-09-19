@@ -162,7 +162,7 @@ export function StartScreen() {
                   <button
                     aria-label={`Delete cloud project ${item.name}`}
                     title="Delete cloud project"
-                    className="absolute right-2 top-2 rounded p-1 text-muted-foreground opacity-0 hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100"
+                    className="absolute right-2 top-2 rounded p-1.5 text-muted-foreground hover:bg-destructive/15 hover:text-destructive"
                     onClick={() => {
                       setCloudBusy(item.id);
                       void deleteCloudProject(item)
@@ -202,7 +202,7 @@ export function StartScreen() {
                       setTemplates(listUserTemplates());
                       toast.success("Template deleted");
                     }}
-                    className="absolute right-2 top-2 rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100"
+                    className="absolute right-2 top-2 rounded p-1.5 text-muted-foreground hover:bg-destructive/15 hover:text-destructive"
                   >
                     <Trash2 className="size-3.5" />
                   </button>
@@ -237,7 +237,7 @@ export function StartScreen() {
                     aria-label={`Delete recent project ${r.name}`}
                     title="Remove from recent"
                     onClick={() => removeRecent(r)}
-                    className="absolute top-2 right-2 rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100"
+                    className="absolute top-2 right-2 rounded p-1.5 text-muted-foreground hover:bg-destructive/15 hover:text-destructive"
                   >
                     <Trash2 className="size-3.5" />
                   </button>
