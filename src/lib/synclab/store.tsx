@@ -126,6 +126,8 @@ export type PanelId =
   | "hum"
   | "stems"
   | "voice"
+  | "stemgen"
+  | "notes"
   | null;
 
 export type EditTool = "select" | "draw" | "split";
