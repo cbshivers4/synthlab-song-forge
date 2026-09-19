@@ -712,6 +712,31 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     setTracks((ts) => ts.map((t) => (t.id === id ? { ...t, ...patch } : t)));
   }, []);
 
+  // Arming an audio channel opens the microphone so its meter moves and, when
+  // monitoring is on, you hear yourself. Recording is a separate step.
+  const armedInputId =
+    tracks.find((t) => t.armed && (t.kind === "audio" || t.kind === "ai-vocal" || t.kind === "sampler"))?.id ?? null;
+  const monitorOn = transport.monitor ?? false;
+  useEffect(() => {
+    const engine = getEngine();
+    if (!armedInputId) {
+      engine.stopInputMonitoring();
+      return;
+    }
+    let cancelled = false;
+    void engine.startInputMonitoring(armedInputId, monitorOn).catch((err: unknown) => {
+      if (cancelled) return;
+      toast.error("Microphone unavailable", {
+        description: err instanceof Error ? err.message : "The microphone could not be opened.",
+        duration: 9000,
+        action: { label: "Open in tab", onClick: openInOwnTab },
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [armedInputId, monitorOn]);
+
   const finishRecording = useCallback(async () => {
     const engine = getEngine();
     if (!engine.isRecording) return;
