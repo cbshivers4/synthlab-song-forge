@@ -1403,8 +1403,8 @@ export function Mixer() {
     return CONSOLE_STYLES.some((s) => s.id === saved) ? (saved as ConsoleStyleId) : "ssl";
   });
   const [solid, setSolid] = useState<string>(() => {
-    if (typeof window === "undefined") return SOLID_PRESETS[0].hex;
-    return window.localStorage.getItem("synclab.mixer.solid") ?? SOLID_PRESETS[0].hex;
+    if (typeof window === "undefined") return "#1a1b1e";
+    return window.localStorage.getItem("synclab.mixer.solid") ?? "#1a1b1e";
   });
   useEffect(() => {
     window.localStorage.setItem("synclab.mixer.solid", solid);
