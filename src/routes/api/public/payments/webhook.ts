@@ -2,13 +2,14 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createHmac, timingSafeEqual } from "crypto";
 
 /**
- * Paddle webhook receiver. Registered for both environments; the ?env= query
- * param selects the signing secret and the subscription rows to write.
+ * Paddle webhook receiver (canonical path: /api/public/payments/webhook).
+ * The ?env= query param selects the signing secret and which subscription
+ * rows to write (test and live share one database).
  *
  * Business rules implemented here:
  * - Purchase / renewal  -> subscription row active -> Pro unlocks immediately.
- * - Cancel              -> row marked canceled with cancel_at_period_end; access
- *                          continues until current_period_end (client check).
+ * - Cancel              -> status 'canceled'; access continues until
+ *                          current_period_end (enforced by the client check).
  * - Plan switch         -> subscription.updated rewrites price_id (prorated).
  */
 
@@ -33,7 +34,7 @@ function verifySignature(rawBody: string, header: string | null, secret: string)
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
-export const Route = createFileRoute("/api/public/paddle-webhook")({
+export const Route = createFileRoute("/api/public/payments/webhook")({
   server: {
     handlers: {
       POST: async ({ request }) => {
@@ -60,13 +61,23 @@ export const Route = createFileRoute("/api/public/paddle-webhook")({
             // Cannot attribute this subscription to an account; acknowledge and skip.
             return new Response("ok (no user)", { status: 200 });
           }
+          const item = Array.isArray(d.items) ? d.items[0] : undefined;
+          const priceId =
+            item?.price?.import_meta?.externalId ??
+            item?.price?.importMeta?.externalId ??
+            (d.custom_data?.priceId as string | undefined) ??
+            "synclab_monthly";
+          const productId =
+            item?.product?.import_meta?.externalId ??
+            item?.product?.importMeta?.externalId ??
+            "synclab_pro";
           const period = d.current_billing_period ?? {};
           const row = {
             user_id: userId,
             paddle_subscription_id: String(d.id),
             paddle_customer_id: String(d.customer_id ?? ""),
-            product_id: "synclab_pro",
-            price_id: (d.custom_data?.priceId as string) ?? "synclab_monthly",
+            product_id: productId,
+            price_id: priceId,
             status: String(d.status ?? "active"),
             current_period_start: period.starts_at ?? null,
             current_period_end: period.ends_at ?? null,
