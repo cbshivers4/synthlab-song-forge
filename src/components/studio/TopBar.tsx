@@ -294,6 +294,22 @@ export function TopBar() {
                   <Waves className="mr-2 size-4" /> Hum to Beat
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
+                <DropdownMenuLabel className="font-mono text-[10px] tracking-wider">COUNT-IN</DropdownMenuLabel>
+                {[1, 2, 4].map((b) => (
+                  <DropdownMenuItem
+                    key={b}
+                    onClick={() => setTransport({ countIn: true, countInBars: b })}
+                  >
+                    <Hash className="mr-2 size-4" />
+                    {transport.countIn && (transport.countInBars ?? 1) === b ? "● " : ""}
+                    {b} {b === 1 ? "bar" : "bars"}
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuItem onClick={() => setTransport({ countIn: false })}>
+                  <Hash className="mr-2 size-4" />
+                  {transport.countIn ? "" : "● "}Count-in off
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => setPanel("settings")}>
                   <Settings2 className="mr-2 size-4" /> Settings
                 </DropdownMenuItem>
