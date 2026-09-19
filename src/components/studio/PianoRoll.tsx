@@ -53,6 +53,15 @@ export function PianoRoll({ track }: { track: Track }) {
     );
   const targets = () => (sel.length ? notes.filter((n) => sel.includes(n.id)) : notes);
 
+  /** Move every note on this track up or down an octave and follow it with the view. */
+  const shiftTrackOctave = (dir: number) => {
+    const next = trackOct + dir;
+    if (next < -3 || next > 3) return;
+    setTrackOct(next);
+    setNotes(track.id, notes.map((n) => ({ ...n, pitch: Math.min(120, Math.max(12, n.pitch + dir * 12)) })));
+    setLow((l) => Math.min(96, Math.max(12, l + dir * 12)));
+  };
+
   const posFromEvent = (e: React.PointerEvent | React.MouseEvent) => {
     const el = gridRef.current;
     if (!el) return null;
