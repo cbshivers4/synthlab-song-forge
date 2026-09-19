@@ -875,8 +875,13 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
         <LevelBar
           id={track.id}
           color={track.color}
-          source={track.recording && (track.kind === "audio" || track.kind === "ai-vocal" || track.kind === "sampler") ? "input" : "output"}
-          {...(track.recording ? { label: "IN" } : {})}
+          source={
+            (track.armed || track.recording) &&
+            (track.kind === "audio" || track.kind === "ai-vocal" || track.kind === "sampler")
+              ? "input"
+              : "output"
+          }
+          {...(track.armed || track.recording ? { label: "IN" } : {})}
         />
       </div>
 
