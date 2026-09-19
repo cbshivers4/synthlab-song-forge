@@ -165,6 +165,10 @@ export function PadSampler() {
   /** hold-to-record mode: press a pad to record, release to keep the take */
   const [armRec, setArmRec] = useState(false);
   const [recPad, setRecPad] = useState<number | null>(null);
+  /** live microphone stream shown as a moving wave while a pad records */
+  const [recStream, setRecStream] = useState<MediaStream | null>(null);
+  /** pad currently held down and sounding */
+  const [playing, setPlaying] = useState<number | null>(null);
   const [over, setOver] = useState<number | null>(null);
   const [trackId, setTrackId] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
