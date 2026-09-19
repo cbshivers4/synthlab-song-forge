@@ -86,12 +86,14 @@ export function MenuBar() {
     toast.success(`Imported ${file.name}`, { description: "Loaded into a new sampler channel." });
   };
   const { setStage, mode, toggleMode, project, setProject } = useApp();
+  const { requirePro } = usePlan();
 
   const save = async () => {
     if (!project) {
       toast("Create a project first");
       return;
     }
+    if (!requirePro("Cloud saving")) return;
     const saving = toast.loading("Saving project and audio…");
     try {
       const saved = await saveCloudProject({ ...project, id: project.id ?? "" }, snapshot());
