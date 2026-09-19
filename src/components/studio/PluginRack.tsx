@@ -190,6 +190,10 @@ export function PluginRack() {
         <span className="label-xs ml-auto">{chain.length} plugin{chain.length === 1 ? "" : "s"}</span>
       </div>
 
+      {/* Real VST/AU plugins from this computer, hosted by the desktop bridge. */}
+      <PluginBridge />
+
+
       {/* chain */}
       <div className="space-y-1.5">
         {chain.length === 0 && (
