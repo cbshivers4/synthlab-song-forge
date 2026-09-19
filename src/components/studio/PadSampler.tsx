@@ -18,6 +18,7 @@ import { useStudio } from "@/lib/synclab/store";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { toast } from "sonner";
 import { WaveformView } from "@/components/studio/WaveformView";
+import { LiveWave } from "@/components/studio/LiveWave";
 import { getPadBank, setPadBank, subscribePadBank, type SavedPad } from "@/lib/synclab/pad-session";
 
 const BANKS = ["A", "B", "C", "D"] as const;
