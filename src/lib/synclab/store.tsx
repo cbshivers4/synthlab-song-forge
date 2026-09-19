@@ -297,6 +297,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   tracksRef.current = tracks;
   const transportRef = useRef(transport);
   transportRef.current = transport;
+  const sectionsRef = useRef(sections);
+  sectionsRef.current = sections;
   const countInTimerRef = useRef<number | null>(null);
   /** timeline step where the current take started, so the clip lands there */
   const recStartStepRef = useRef(0);
@@ -1032,7 +1034,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           );
         });
         const neededBars = Math.ceil((to + len) / 4);
-        if (neededBars > (transportRef.current.bars ?? 4)) setTransport({ bars: Math.min(512, neededBars) });
+        if (neededBars > (transportRef.current.bars ?? 4)) setTransportState((t) => ({ ...t, bars: Math.min(512, neededBars) }));
         toast.success(`${sec.name} duplicated`, {
           description: copied > 0 ? `${copied} clips and notes copied along with it.` : "The marker was copied — that part of the song was empty.",
         });
@@ -1040,10 +1042,10 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       gotoSection: (id) => {
         const sec = sectionsRef.current.find((s2) => s2.id === id);
         if (!sec) return;
-        setTransport(
-          transportRef.current.loop
-            ? { step: sec.start, loopStart: sec.start, loopEnd: sec.start + sec.length }
-            : { step: sec.start },
+        setTransportState((t) =>
+          t.loop
+            ? { ...t, step: sec.start, loopStart: sec.start, loopEnd: sec.start + sec.length }
+            : { ...t, step: sec.start },
         );
       },
       autoSections: () => {
