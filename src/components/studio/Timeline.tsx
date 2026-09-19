@@ -560,7 +560,7 @@ export const readDrag = (e: React.DragEvent): DragPayload | null => {
 
 function TrackRow({ track, index }: { track: Track; index: number }) {
   const isMobile = useIsMobile();
-  const { selectedId, selectedIds, select, toggleSelectId, updateTrack, removeTrack, duplicateTrack, moveTrack, setPanel, changeInstrument, installedPlugins, addPlugin, editTool, splitClipAt, toggleStep, toggleAutomationLane } =
+  const { selectedId, selectedIds, select, toggleSelectId, updateTrack, removeTrack, duplicateTrack, moveTrack, setPanel, changeInstrument, installedPlugins, addPlugin, editTool, splitClipAt, toggleStep, toggleAutomationLane, copyTrack, cutTrack, pasteTrack, clipboardName } =
     useStudio();
   const { transport, setNotes, loadSample } = useStudio();
   const [renaming, setRenaming] = useState(false);
@@ -721,8 +721,15 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
       className={`relative flex items-stretch transition-colors ${isSelected ? "bg-surface-2/40 ring-1 ring-inset ring-foreground/80" : "hover:bg-surface/50"} ${track.hidden ? "opacity-40" : ""} ${dropping ? "ring-1 ring-primary ring-inset" : ""}`}
       style={{ height: track.height ?? undefined }}
       onClick={(e) => {
-        if (e.metaKey || e.ctrlKey) toggleSelectId(track.id);
-        else select(track.id);
+        if (e.metaKey || e.ctrlKey) {
+          toggleSelectId(track.id);
+          return;
+        }
+        select(track.id);
+        // Selecting a track opens its edit menu (cut, copy, clip tools…).
+        const el = e.target as HTMLElement;
+        if (el.closest("button,input,textarea,select,[role='slider'],[role='combobox'],[contenteditable]")) return;
+        setMenuOpen(true);
       }}
       onDragOver={(e) => {
         e.preventDefault();
@@ -786,6 +793,15 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
               <DropdownMenuItem onClick={() => setRenaming(true)}>Rename</DropdownMenuItem>
               <DropdownMenuItem onClick={() => duplicateTrack(track.id)}>
                 <Copy className="size-4" /> Duplicate track
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => cutTrack(track.id)}>
+                <Scissors className="size-4" /> Cut track
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => copyTrack(track.id)}>
+                <Copy className="size-4" /> Copy track
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={pasteTrack}>
+                <ClipboardPaste className="size-4" /> Paste track{clipboardName ? ` (${clipboardName})` : ""}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => updateTrack(track.id, { frozen: !track.frozen })}>
                 <Snowflake className="size-4" /> {track.frozen ? "Unfreeze" : "Freeze"}
