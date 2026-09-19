@@ -25,6 +25,8 @@ const PANELS: { id: Exclude<PanelId, null>; label: string }[] = [
   { id: "bass", label: "Bass Generator" },
   { id: "vocal", label: "Vocal Forge" },
   { id: "coproducer", label: "AI Co-Producer" },
+  { id: "stems", label: "Stem Separator" },
+  { id: "voice", label: "Voice Remover" },
   { id: "plugins", label: "Plugins (VST)" },
   { id: "browser", label: "Browser" },
   { id: "appearance", label: "Appearance & Themes" },

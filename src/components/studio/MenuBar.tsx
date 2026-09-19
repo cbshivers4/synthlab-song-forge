@@ -16,8 +16,6 @@ import { saveCloudProject } from "@/lib/synclab/cloud";
 import { saveUserTemplate } from "@/lib/synclab/user-templates";
 import { parseMidiFile } from "@/lib/synclab/midi-file";
 
-const STEM_NOTE =
-  "Splitting a mix into stems needs a separation model running on a server. SYNCLAB does not have one yet, so it is not offered as a button that does nothing.";
 
 const notYet = (what: string, why: string) => () => toast(what, { description: why });
 
@@ -299,16 +297,8 @@ export function MenuBar() {
             <MenubarItem onClick={() => setPanel("vocal")}>Vocal Forge</MenubarItem>
             <MenubarItem onClick={() => setPanel("coproducer")}>AI Co-Producer</MenubarItem>
             <MenubarItem onClick={() => setPanel("bass")}>Bass Generator</MenubarItem>
-            <MenubarItem
-              onClick={notYet("Stem separation runs on a server", STEM_NOTE)}
-            >
-              Stem Separator
-            </MenubarItem>
-            <MenubarItem
-              onClick={notYet("Voice removal runs on a server", STEM_NOTE)}
-            >
-              Voice Remover
-            </MenubarItem>
+            <MenubarItem onClick={() => setPanel("stems")}>Stem Separator</MenubarItem>
+            <MenubarItem onClick={() => setPanel("voice")}>Voice Remover</MenubarItem>
           </MenubarContent>
         </MenubarMenu>
 
