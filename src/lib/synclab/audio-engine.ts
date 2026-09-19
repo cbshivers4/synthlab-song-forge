@@ -1176,13 +1176,9 @@ export class SyncLabEngine {
       rec.stop();
     });
     this.recorder = null;
-    this.recStream?.getTracks().forEach((t) => t.stop());
-    this.recStream = null;
-    this.monitorNode?.disconnect();
-    this.monitorGain?.disconnect();
-    this.monitorNode = null;
-    this.monitorGain = null;
-    this.recAnalyser = null;
+    // The channel stays armed, so the microphone stays open for metering and
+    // monitoring; it is only released when the channel is disarmed.
+    if (!this.monitorTrackId) this.stopInputMonitoring();
     if (!blob.size) return null;
 
     const ctx = this.init();
