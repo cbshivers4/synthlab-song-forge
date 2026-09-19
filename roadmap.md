@@ -50,3 +50,4 @@
 - [x] Surface chord and scale controls clearly on phones
 - [x] Implement real Hum to Beat recording and local rhythm extraction
 - [x] Verify sign-in, menus, pads, keyboard, and Hum to Beat at phone and desktop sizes
+- [x] Enlarge sampler and chopper pads, harden touch release, and return manual pads to the drum machine

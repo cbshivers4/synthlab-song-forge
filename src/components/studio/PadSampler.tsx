@@ -175,6 +175,7 @@ export function PadSampler() {
   const targetRef = useRef<number>(0);
   const recRef = useRef<{ rec: MediaRecorder; stream: MediaStream; chunks: Blob[]; pad: number } | null>(null);
   const holdRef = useRef<{ pad: number; active: boolean } | null>(null);
+  const voiceTrackRef = useRef<string | null>(null);
   const padsRef = useRef(pads);
   padsRef.current = pads;
   useEffect(() => subscribePadBank((next) => setPadsState(next)), []);
@@ -188,10 +189,12 @@ export function PadSampler() {
     const existing = tracks.find((t) => t.kind === "sampler" && t.name === "PAD SAMPLER");
     if (existing) {
       setTrackId(existing.id);
+      voiceTrackRef.current = existing.id;
       return existing.id;
     }
     const id = addTrack("sampler", "PAD SAMPLER");
     setTrackId(id);
+    voiceTrackRef.current = id;
     select(id);
     return id;
   }, [addTrack, select, trackId, tracks]);
@@ -276,7 +279,7 @@ export function PadSampler() {
   const stopPad = useCallback(
     (i: number) => {
       const pad = padsRef.current[i];
-      const id = trackId;
+      const id = voiceTrackRef.current ?? trackId;
       if (!pad || !id) return;
       getEngine().stopVoiceKey(id, `pad${i}`);
       if (pad.choke) getEngine().stopVoiceKey(id, `choke${pad.choke}`);
@@ -511,7 +514,7 @@ export function PadSampler() {
         </span>
       </div>
 
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-2">
         {Array.from({ length: PADS_PER_BANK }, (_, i) => {
           const id = index(i);
           const pad = pads[id];
@@ -536,18 +539,28 @@ export function PadSampler() {
                 setSel(id);
                 if (armRec) {
                   e.preventDefault();
-                  e.currentTarget.setPointerCapture(e.pointerId);
+                  try {
+                    e.currentTarget.setPointerCapture(e.pointerId);
+                  } catch {
+                    /* pointer capture is unavailable in a few mobile webviews */
+                  }
                   void beginHold(id);
                   return;
                 }
                 if (pad) {
-                  e.currentTarget.setPointerCapture(e.pointerId);
+                  e.preventDefault();
+                  try {
+                    e.currentTarget.setPointerCapture(e.pointerId);
+                  } catch {
+                    /* pointer capture is unavailable in a few mobile webviews */
+                  }
                   trigger(id);
                   setPlaying(id);
                 }
               }}
               onPointerUp={release}
               onPointerCancel={release}
+              onLostPointerCapture={release}
               onContextMenu={(e) => armRec && e.preventDefault()}
               onDragOver={(e) => {
                 e.preventDefault();
@@ -583,7 +596,7 @@ export function PadSampler() {
                         ? { borderColor: `color-mix(in hsl, ${c} 60%, transparent)` }
                         : undefined
               }
-              className={`relative flex h-24 touch-none flex-col items-start justify-between rounded-md border p-2 text-left transition-all select-none sm:h-20 ${
+              className={`relative flex h-32 touch-none flex-col items-start justify-between rounded-md border p-3 text-left transition-all select-none sm:h-28 ${
                 pad || recording ? "" : "border-dashed border-border bg-surface-2/40 hover:border-muted-foreground/60"
               } ${recording ? "animate-pulse" : ""}`}
             >

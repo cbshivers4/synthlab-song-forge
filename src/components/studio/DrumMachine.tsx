@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Knob } from "./Knob";
+import { DrumPads } from "./DrumPads";
 import { useStudio } from "@/lib/synclab/store";
 import { DRUM_KITS, GENRES } from "@/lib/synclab/presets";
 import type { DrumKitId } from "@/lib/synclab/types";
@@ -132,8 +133,6 @@ export function DrumMachine({ track }: { track: Track }) {
           <Upload className="size-4" /> Import samples
         </Button>
       </div>
-
-      {/* Tap pads now live under the piano roll — see the PIANO ROLL panel. */}
 
       <div className="space-y-1 overflow-x-auto">
         {pads.map((pad) => (
@@ -277,6 +276,8 @@ export function DrumMachine({ track }: { track: Track }) {
           </div>
         ))}
       </div>
+
+      <DrumPads track={track} />
     </div>
   );
 }

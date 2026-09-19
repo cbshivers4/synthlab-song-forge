@@ -234,11 +234,17 @@ export function Sampler() {
                 variant="secondary"
                 className="h-9 touch-none gap-1.5 sm:h-7"
                 onPointerDown={(e) => {
-                  e.currentTarget.setPointerCapture(e.pointerId);
+                  e.preventDefault();
+                  try {
+                    e.currentTarget.setPointerCapture(e.pointerId);
+                  } catch {
+                    /* pointer capture is unavailable in a few mobile webviews */
+                  }
                   previewNote(track.id, s.rootNote);
                 }}
                 onPointerUp={() => stopSamples(track.id)}
                 onPointerCancel={() => stopSamples(track.id)}
+                onLostPointerCapture={() => stopSamples(track.id)}
               >
                 <Play className="size-3.5" /> Hold to play
               </Button>
@@ -300,7 +306,7 @@ export function Sampler() {
 
             {chops.length > 1 ? (
               <>
-                <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8 lg:gap-2">
                   {chops.map((c, i) => {
                     const color = chopColor(i);
                     const next = chops[i + 1] ?? s.end;
@@ -314,7 +320,12 @@ export function Sampler() {
                         key={`pad-${i}`}
                         type="button"
                         onPointerDown={(e) => {
-                          e.currentTarget.setPointerCapture(e.pointerId);
+                          e.preventDefault();
+                          try {
+                            e.currentTarget.setPointerCapture(e.pointerId);
+                          } catch {
+                            /* pointer capture is unavailable in a few mobile webviews */
+                          }
                           setHeld(i);
                           previewNote(track.id, s.rootNote + i);
                         }}
@@ -326,6 +337,10 @@ export function Sampler() {
                           setHeld(null);
                           stopSamples(track.id);
                         }}
+                        onLostPointerCapture={() => {
+                          setHeld(null);
+                          stopSamples(track.id);
+                        }}
                         style={{
                           borderColor: color,
                           background: live
@@ -333,7 +348,7 @@ export function Sampler() {
                             : `linear-gradient(145deg, color-mix(in hsl, ${color} 28%, transparent), color-mix(in hsl, ${color} 8%, transparent))`,
                           boxShadow: live ? `0 0 18px ${color}` : undefined,
                         }}
-                        className="relative flex h-20 touch-none flex-col items-center justify-between rounded-md border p-1.5 font-mono text-[10px] transition-all select-none sm:h-16"
+                        className="relative flex h-32 touch-none flex-col items-center justify-between rounded-md border p-2 font-mono text-xs transition-all select-none sm:h-28 lg:h-24"
                       >
                         <span className="relative z-10 text-sm text-foreground">{i + 1}</span>
                         <span className="pointer-events-none absolute inset-x-1 top-5 bottom-4">
