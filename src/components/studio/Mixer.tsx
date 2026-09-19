@@ -1210,7 +1210,9 @@ function BusStrip({
           onClick={() => onChange({ muted: !state.muted })}
           className={cn(
             "h-5 w-full rounded-sm font-mono text-[9px] font-bold transition-colors",
-            state.muted ? "bg-amber-500 text-black" : "bg-black/30 text-muted-foreground hover:text-foreground"
+            state.muted
+              ? "bg-orange-500 text-black shadow-[0_0_10px_rgba(249,115,22,0.8)]"
+              : "bg-black/30 text-muted-foreground hover:text-foreground"
           )}
         >
           M
