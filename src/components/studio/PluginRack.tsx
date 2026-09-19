@@ -18,6 +18,7 @@ import { VocoderPanel } from "./VocoderPanel";
 import { Scope } from "./Scope";
 import { XYPad } from "./XYPad";
 import { EffectDisplay } from "./EffectDisplay";
+import { PluginBridge } from "./PluginBridge";
 import { toast } from "sonner";
 
 const FORMATS: PluginDef["format"][] = ["VST3", "AU", "CLAP", "AAX"];
