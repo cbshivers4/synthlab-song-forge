@@ -607,32 +607,18 @@ function DeviceSlots({ t, narrow }: { t: Track; narrow: boolean }) {
   );
 }
 
-/** Small colour picker so every channel can be recoloured from the console. */
+/** Colour + icon picker so every channel can be restyled from the console. */
 function ColorDot({ t }: { t: Track }) {
-  const { updateTrack } = useStudio();
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <button
-          onClick={(e) => e.stopPropagation()}
-          title="Channel colour"
-          className="size-3.5 shrink-0 rounded-full border border-black/40"
-          style={{ background: t.color }}
-        />
-      </PopoverTrigger>
-      <PopoverContent align="start" className="w-auto p-2" onClick={(e) => e.stopPropagation()}>
-        <div className="flex gap-1.5">
-          {TRACK_COLORS.map((c) => (
-            <button
-              key={c}
-              onClick={() => updateTrack(t.id, { color: c })}
-              className={cn("size-5 rounded-full border", c === t.color ? "border-foreground" : "border-black/40")}
-              style={{ background: c }}
-            />
-          ))}
-        </div>
-      </PopoverContent>
-    </Popover>
+    <TrackStylePicker track={t}>
+      <button
+        onClick={(e) => e.stopPropagation()}
+        title="Channel colour and icon"
+        aria-label="Channel colour and icon"
+        className="size-3.5 shrink-0 rounded-full border border-black/40"
+        style={{ background: t.color }}
+      />
+    </TrackStylePicker>
   );
 }
 
