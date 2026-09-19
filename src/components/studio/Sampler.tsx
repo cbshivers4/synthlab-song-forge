@@ -11,6 +11,8 @@ import { WaveformView } from "@/components/studio/WaveformView";
 const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 const noteName = (m: number) => `${NOTE_NAMES[((m % 12) + 12) % 12]}${Math.floor(m / 12) - 1}`;
 const AUDIO_RE = /\.(mp3|wav|wave|aif|aiff|m4a|aac|ogg|flac|webm)$/i;
+/** every chop gets its own colour so a sliced sample reads at a glance */
+const chopColor = (i: number) => `hsl(${(187 + i * 27) % 360} 85% 56%)`;
 
 function Row({ label, value, children }: { label: string; value: string; children: React.ReactNode }) {
   return (
