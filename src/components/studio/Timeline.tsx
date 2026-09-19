@@ -730,7 +730,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
             </button>
           )}
           <TrackNotes track={track} className="ml-auto" />
-          <DropdownMenu>
+          <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
             <DropdownMenuTrigger asChild>
               <Button size="icon" variant="ghost" className="size-10 touch-manipulation sm:size-6" aria-label="Track menu">
                 <MoreVertical className="size-3.5" />
