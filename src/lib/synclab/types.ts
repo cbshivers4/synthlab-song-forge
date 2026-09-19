@@ -407,6 +407,10 @@ export interface Transport {
   exportEnd?: number | null;
   /** timeline length in bars (1 bar = 4 steps) */
   bars: number;
+  /** snap grid for clip edits, in steps (1 step = a 1/4 note). 0 = free move */
+  snap?: number;
+  /** keep the timeline scrolled to the playhead while it plays */
+  follow?: boolean;
 }
 
 export interface BusState {
