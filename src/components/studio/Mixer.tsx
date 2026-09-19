@@ -28,7 +28,7 @@ import { getEngine } from "@/lib/synclab/audio-engine";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useStudio, type MidiTarget } from "@/lib/synclab/store";
-import { TRACK_COLORS } from "@/lib/synclab/presets";
+import { TrackIcon, TrackStylePicker } from "@/components/studio/TrackStyle";
 import { BUILT_IN_PLUGINS } from "@/lib/synclab/plugins";
 import type { BusId, BusState, PluginInstance, Track, Transport } from "@/lib/synclab/types";
 import { cn } from "@/lib/utils";
