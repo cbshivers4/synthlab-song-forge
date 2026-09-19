@@ -129,8 +129,8 @@ function makeOffline(length: number, sampleRate: number, channels = 2) {
 
 function bufferFrom(cap: Capture, ctx: BaseAudioContext) {
   const buf = ctx.createBuffer(2, cap.left.length, cap.sampleRate);
-  buf.copyToChannel(cap.left, 0);
-  buf.copyToChannel(cap.right.length === cap.left.length ? cap.right : cap.left, 1);
+  buf.getChannelData(0).set(cap.left);
+  buf.getChannelData(1).set(cap.right.length === cap.left.length ? cap.right : cap.left);
   return buf;
 }
 
@@ -277,7 +277,10 @@ export function brickwall(cap: Capture, ceiling: number, lookaheadMs = 2, releas
   for (let i = 0; i < n; i++) {
     let target = 1;
     const end = Math.min(n, i + look);
-    for (let j = i; j < end; j++) if (need[j] < target) target = need[j] ?? 1;
+    for (let j = i; j < end; j++) {
+      const n2 = need[j] ?? 1;
+      if (n2 < target) target = n2;
+    }
     gain = target < gain ? target : target + (gain - target) * relCoef;
     const idx = i - look < 0 ? 0 : i - look;
     outL[i] = (cap.left[idx] ?? 0) * gain;

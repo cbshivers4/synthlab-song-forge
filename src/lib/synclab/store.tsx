@@ -297,8 +297,6 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   tracksRef.current = tracks;
   const transportRef = useRef(transport);
   transportRef.current = transport;
-  const sectionsRef = useRef(sections);
-  sectionsRef.current = sections;
   const countInTimerRef = useRef<number | null>(null);
   /** timeline step where the current take started, so the clip lands there */
   const recStartStepRef = useRef(0);
@@ -306,6 +304,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const punchRef = useRef<{ start: () => void; stop: () => void } | null>(null);
 
   const [sections, setSections] = useState<SongSection[]>([]);
+  const sectionsRef = useRef<SongSection[]>([]);
+  sectionsRef.current = sections;
   const [buses, setBuses] = useState<Record<BusId, BusState>>({
     drums: { volume: 1, muted: false },
     vocals: { volume: 1, muted: false },
