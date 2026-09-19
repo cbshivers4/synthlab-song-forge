@@ -183,11 +183,41 @@ export function TopBar() {
               onClick={() => setTransport({ metronome: !transport.metronome })}
             />
             <FeatBtn
-              label="COUNT-IN"
+              label={transport.countIn ? `COUNT-IN ${transport.countInBars ?? 1}BAR` : "COUNT-IN"}
               icon={<Hash className="size-3.5" />}
               active={transport.countIn}
               onClick={() => setTransport({ countIn: !transport.countIn })}
             />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  aria-label="Count-in length"
+                  title="Count-in length"
+                  className="h-7 px-1 font-mono text-[10px] tracking-wider text-muted-foreground"
+                >
+                  {transport.countInBars ?? 1}▾
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-44">
+                <DropdownMenuLabel className="font-mono text-[10px] tracking-wider">COUNT-IN LENGTH</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {[1, 2, 4].map((b) => (
+                  <DropdownMenuItem
+                    key={b}
+                    onClick={() => setTransport({ countIn: true, countInBars: b })}
+                  >
+                    {transport.countIn && (transport.countInBars ?? 1) === b ? "● " : "○ "}
+                    {b} {b === 1 ? "bar" : "bars"}
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setTransport({ countIn: false })}>
+                  {transport.countIn ? "○ " : "● "}Off
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <FeatBtn
               label="LOOP"
               icon={<Repeat className="size-3.5" />}
@@ -262,6 +292,22 @@ export function TopBar() {
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setPanel("hum")}>
                   <Waves className="mr-2 size-4" /> Hum to Beat
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel className="font-mono text-[10px] tracking-wider">COUNT-IN</DropdownMenuLabel>
+                {[1, 2, 4].map((b) => (
+                  <DropdownMenuItem
+                    key={b}
+                    onClick={() => setTransport({ countIn: true, countInBars: b })}
+                  >
+                    <Hash className="mr-2 size-4" />
+                    {transport.countIn && (transport.countInBars ?? 1) === b ? "● " : ""}
+                    {b} {b === 1 ? "bar" : "bars"}
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuItem onClick={() => setTransport({ countIn: false })}>
+                  <Hash className="mr-2 size-4" />
+                  {transport.countIn ? "" : "● "}Count-in off
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => setPanel("settings")}>
