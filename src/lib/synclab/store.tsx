@@ -944,6 +944,15 @@ export function StudioProvider({ children }: { children: ReactNode }) {
 
   const api: StudioApi = useMemo(() => {
     const selected = tracks.find((t) => t.id === selectedId) ?? null;
+    /** Writes a note into the armed recording track without sounding it. */
+    const capture = (trackId: string, midi: number, velocity: number) => {
+      const tp = transportRef.current;
+      const t = tracksRef.current.find((x) => x.id === trackId);
+      if (!t || !tp.recording) return;
+      if (t.kind !== "instrument" && t.kind !== "midi" && t.kind !== "sampler") return;
+      const note: MidiNote = { id: uid(), step: tp.step, length: 1, pitch: midi, velocity };
+      setTracks((ts) => ts.map((x) => (x.id === t.id ? { ...x, notes: [...(x.notes ?? []), note] } : x)));
+    };
     const stepBack = (from: "past" | "future") => {
       const stack = from === "past" ? pastRef : futureRef;
       const other = from === "past" ? futureRef : pastRef;
