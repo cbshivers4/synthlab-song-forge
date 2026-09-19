@@ -144,6 +144,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
     hum: { title: "HUM TO BEAT", icon: <Waves className="size-4" /> },
     stems: { title: "STEM SEPARATOR", icon: <Split className="size-4" /> },
     voice: { title: "VOICE REMOVER", icon: <Split className="size-4" /> },
+    mastering: { title: "MASTERING", icon: <Gauge className="size-4" /> },
   };
   const current = config[panel];
 
