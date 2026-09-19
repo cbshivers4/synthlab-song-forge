@@ -380,6 +380,8 @@ export interface Track {
   activeClipId?: string | undefined;
   recording?: boolean;
   automation?: AutomationLane[] | undefined;
+  /** free-text note the producer keeps on this channel; saved with the project */
+  memo?: string | undefined;
 }
 
 export interface Transport {
