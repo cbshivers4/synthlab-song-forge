@@ -11,6 +11,8 @@ import { MixerWindow } from "@/components/studio/MixerWindow";
 import { SynthEditor } from "@/components/studio/SynthEditor";
 import { DrumMachine } from "@/components/studio/DrumMachine";
 import { PianoRoll } from "@/components/studio/PianoRoll";
+import { DrumPads } from "@/components/studio/DrumPads";
+import { MidiLearnStrip } from "@/components/studio/MidiLearn";
 import { VocalForge } from "@/components/studio/VocalForge";
 import { Settings } from "@/components/studio/Settings";
 import { Keyboard } from "@/components/studio/Keyboard";
