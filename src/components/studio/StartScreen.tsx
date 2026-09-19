@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Cloud, Clock, FolderOpen, Import, LayoutTemplate, Loader2, LogOut, Plus, Sparkles, Trash2 } from "lucide-react";
+import { Cloud, Clock, FolderOpen, Import, LayoutTemplate, Loader2, LogOut, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,11 +11,11 @@ import { useStudio } from "@/lib/synclab/store";
 import { toast } from "sonner";
 import synclabLogoAsset from "@/assets/synclab-logo-neon.jpg.asset.json";
 import { listUserTemplates, removeUserTemplate, type UserTemplate } from "@/lib/synclab/user-templates";
-import { deleteCloudProject, listCloudProjects, loadCloudProject, type CloudProject } from "@/lib/synclab/cloud";
+import { deleteCloudProject, listCloudProjects, loadCloudProject, renameCloudProject, type CloudProject } from "@/lib/synclab/cloud";
 import { supabase } from "@/integrations/supabase/client";
 
 export function StartScreen() {
-  const { setStage, setProject, setSignedIn, removeRecent, recents } = useApp();
+  const { setStage, setProject, setSignedIn, removeRecent, renameRecent, recents } = useApp();
   const { tracks, addTrack, removeTrack, setTransport, restore, setPanel } = useStudio();
   const [cloud, setCloud] = useState<CloudProject[]>([]);
   const [templates, setTemplates] = useState<UserTemplate[]>([]);
@@ -26,6 +26,39 @@ export function StartScreen() {
   const [bpm, setBpm] = useState(128);
   const [key, setKey] = useState(KEYS[1] as string);
   const [sig, setSig] = useState(TIME_SIGS[0] as string);
+  const [rename, setRename] = useState<{ kind: "cloud"; item: CloudProject } | { kind: "recent"; item: (typeof recents)[number] } | null>(null);
+  const [renameName, setRenameName] = useState("");
+  const [renameBusy, setRenameBusy] = useState(false);
+
+  const openRename = (target: NonNullable<typeof rename>) => {
+    setRename(target);
+    setRenameName(target.item.name);
+  };
+
+  const confirmRename = async () => {
+    if (!rename) return;
+    const name = renameName.trim();
+    if (!name) {
+      toast.error("Give it a name first");
+      return;
+    }
+    setRenameBusy(true);
+    try {
+      if (rename.kind === "cloud") {
+        await renameCloudProject(rename.item.id, name);
+        setCloud((items) => items.map((p) => (p.id === rename.item.id ? { ...p, name } : p)));
+        toast.success(`Renamed to “${name}”`);
+      } else {
+        renameRecent(rename.item, name);
+        toast.success(`Renamed to “${name}”`);
+      }
+      setRename(null);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not rename project");
+    } finally {
+      setRenameBusy(false);
+    }
+  };
 
   useEffect(() => {
     void listCloudProjects().then(setCloud).catch(() => setCloud([]));
