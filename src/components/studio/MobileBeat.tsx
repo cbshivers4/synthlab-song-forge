@@ -343,7 +343,11 @@ export function MobileBeat({ onClose }: { onClose: () => void }) {
               aria-label={recording ? "Stop recording" : "Hold to record"}
               onPointerDown={(e) => {
                 e.preventDefault();
-                e.currentTarget.setPointerCapture(e.pointerId);
+                try {
+                  e.currentTarget.setPointerCapture(e.pointerId);
+                } catch {
+                  /* some browsers reject capture for synthetic pointers — recording still works */
+                }
                 void startRec();
               }}
               onPointerUp={() => void stopRec()}
