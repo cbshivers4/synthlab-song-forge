@@ -706,6 +706,7 @@ const SCALES: Record<string, number[]> = {
   Blues: [0, 3, 5, 6, 7, 10],
 };
 const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII"];
+/** Stacked-thirds chord tones (semitones above the scale root) for a scale degree. */
 const QUALITY = (steps: number[], index: number, size: 3 | 4 | 5) => {
   const pick = (n: number) => {
     const deg = index + n;
@@ -714,8 +715,7 @@ const QUALITY = (steps: number[], index: number, size: 3 | 4 | 5) => {
   const tones = [pick(0), pick(2), pick(4)];
   if (size >= 4) tones.push(pick(6));
   if (size >= 5) tones.push(pick(8));
-  const rootTone = tones[0] ?? 0;
-  return tones.map((t) => t - rootTone + rootTone);
+  return tones;
 };
 
 function chordLabel(intervals: number[]) {
