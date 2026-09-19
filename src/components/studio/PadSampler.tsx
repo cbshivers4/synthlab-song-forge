@@ -360,6 +360,7 @@ export function PadSampler() {
     r.stream.getTracks().forEach((t) => t.stop());
     recRef.current = null;
     setMicOn(false);
+    setRecStream(null);
     if (!blob.size) return;
     ensureTrack();
     const loaded = await getEngine().loadSampleFile(blob, `REC ${r.pad + 1}`);
