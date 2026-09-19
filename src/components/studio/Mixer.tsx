@@ -1229,6 +1229,13 @@ function MasterStrip({ level: peak }: { level: number }) {
         </Popover>
         <Screw />
       </div>
+      <div
+        className={cn(ROW.badge, "flex items-center justify-center border-b border-black/50")}
+        style={{ background: `color-mix(in oklab, ${color} 14%, transparent)` }}
+        title="Master out"
+      >
+        <Speaker className="size-7" style={{ color }} />
+      </div>
       <div className={cn(ROW.scope, "border-b border-black/50 p-[3px]")}>
         <Scope scopeId="master" height={40} compact color={color} />
       </div>
