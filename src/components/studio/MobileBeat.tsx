@@ -1,14 +1,16 @@
-import { useEffect, useMemo, useState } from "react";
-import { Disc3, Grid2x2, Minus, Play, Plus, Shuffle, SlidersHorizontal, Square, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Disc3, Grid2x2, Mic, Minus, Play, Plus, Shuffle, SlidersHorizontal, Square, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Knob } from "./Knob";
 import { useStudio } from "@/lib/synclab/store";
 import { getEngine } from "@/lib/synclab/audio-engine";
+import { openInOwnTab } from "@/lib/synclab/mic";
+import { uid } from "@/lib/synclab/presets";
 import type { DrumPad, Track } from "@/lib/synclab/types";
 import { toast } from "sonner";
 
-type Tab = "pads" | "steps" | "sound";
+type Tab = "pads" | "steps" | "sound" | "rec";
 
 const PAD_HUES = [187, 320, 45, 100, 265, 10, 160, 210];
 
@@ -29,10 +31,92 @@ function buzz(ms = 12) {
  * same project state as the desktop studio — no separate engine, no demo mode.
  */
 export function MobileBeat({ onClose }: { onClose: () => void }) {
-  const { tracks, addTrack, updatePad, generateBeat, transport, setTransport, togglePlay, stop } = useStudio();
+  const { tracks, addTrack, updatePad, generateBeat, transport, setTransport, togglePlay, stop, updateTrack, addClip, previewClip } =
+    useStudio();
   const [tab, setTab] = useState<Tab>("pads");
   const [padIdx, setPadIdx] = useState(0);
   const [page, setPage] = useState(0);
+
+  // ---- mic recording (hold to record) ----
+  const [recTrackId, setRecTrackId] = useState<string | null>(null);
+  const [recording, setRecording] = useState(false);
+  const [recElapsed, setRecElapsed] = useState(0);
+  const [recLevel, setRecLevel] = useState(0);
+  const recStartRef = useRef(0);
+  const recTimerRef = useRef<number | null>(null);
+
+  const micTrack: Track | undefined = useMemo(
+    () => tracks.find((t) => t.id === recTrackId) ?? tracks.find((t) => t.kind === "audio"),
+    [tracks, recTrackId],
+  );
+
+  useEffect(
+    () => () => {
+      if (recTimerRef.current) window.clearInterval(recTimerRef.current);
+    },
+    [],
+  );
+
+  const startRec = async () => {
+    if (recording) return;
+    buzz(20);
+    let id = micTrack?.id;
+    if (!id) id = addTrack("audio", "PHONE MIC");
+    setRecTrackId(id);
+    const engine = getEngine();
+    try {
+      await engine.startInputRecording(id, false);
+    } catch (err) {
+      toast.error("Microphone unavailable", {
+        description: err instanceof Error ? err.message : "The microphone could not be opened.",
+        duration: 9000,
+        action: { label: "Open in tab", onClick: openInOwnTab },
+      });
+      return;
+    }
+    recStartRef.current = transport.step ?? 0;
+    updateTrack(id, { armed: true, recording: true });
+    setRecording(true);
+    setRecElapsed(0);
+    const t0 = performance.now();
+    recTimerRef.current = window.setInterval(() => {
+      setRecElapsed((performance.now() - t0) / 1000);
+      setRecLevel(engine.inputLevel());
+    }, 80);
+  };
+
+  const stopRec = async () => {
+    if (!recording) return;
+    if (recTimerRef.current) window.clearInterval(recTimerRef.current);
+    recTimerRef.current = null;
+    setRecording(false);
+    setRecLevel(0);
+    const id = recTrackId;
+    if (!id) return;
+    const result = await getEngine().stopInputRecording();
+    if (!result) {
+      updateTrack(id, { recording: false });
+      toast("Nothing captured", { description: "Hold the mic button a little longer." });
+      return;
+    }
+    const takeNo = (tracks.find((t) => t.id === id)?.clips?.length ?? 0) + 1;
+    updateTrack(id, { recording: false });
+    addClip(id, {
+      id: uid(),
+      name: `MIC ${takeNo}`,
+      peaks: result.peaks,
+      duration: result.duration,
+      url: result.url,
+      start: recStartRef.current,
+      offset: 0,
+      length: result.duration,
+      gain: 1,
+    });
+    buzz(30);
+    toast.success(`MIC ${takeNo} added to the timeline`, {
+      description: `${result.duration.toFixed(1)}s — open the full studio to edit it.`,
+    });
+  };
 
   const drumTrack: Track | undefined = useMemo(() => tracks.find((t) => t.kind === "drum"), [tracks]);
 
@@ -238,6 +322,75 @@ export function MobileBeat({ onClose }: { onClose: () => void }) {
           </div>
         )}
 
+        {tab === "rec" && (
+          <div className="flex flex-col items-center gap-5 pt-2">
+            <div className="text-center">
+              <div className="font-mono text-4xl font-bold tabular-nums">
+                {`${Math.floor(recElapsed / 60)}:${String(Math.floor(recElapsed % 60)).padStart(2, "0")}`}
+              </div>
+              <div className="label-xs mt-1">{recording ? "Recording — lift to stop" : "Hold the mic to record"}</div>
+            </div>
+            <div className="h-2.5 w-56 overflow-hidden rounded-full border border-border bg-surface-2">
+              <div
+                className="h-full rounded-full transition-[width] duration-75"
+                style={{
+                  width: `${Math.min(100, recLevel * 130)}%`,
+                  background: recLevel > 0.92 ? "var(--neon-pink)" : "var(--neon)",
+                }}
+              />
+            </div>
+            <button
+              aria-label={recording ? "Stop recording" : "Hold to record"}
+              onPointerDown={(e) => {
+                e.preventDefault();
+                try {
+                  e.currentTarget.setPointerCapture(e.pointerId);
+                } catch {
+                  /* some browsers reject capture for synthetic pointers — recording still works */
+                }
+                void startRec();
+              }}
+              onPointerUp={() => void stopRec()}
+              onPointerCancel={() => void stopRec()}
+              className={`grid size-40 touch-none place-items-center rounded-full border-4 font-mono text-xs tracking-widest uppercase select-none active:scale-95 ${
+                recording ? "animate-pulse border-destructive text-destructive" : "border-primary text-primary"
+              }`}
+              style={{
+                background: recording
+                  ? "color-mix(in oklab, var(--destructive) 22%, transparent)"
+                  : "color-mix(in oklab, var(--primary) 14%, transparent)",
+                boxShadow: recording ? "0 0 34px color-mix(in oklab, var(--destructive) 60%, transparent)" : undefined,
+              }}
+            >
+              <Mic className="size-12" />
+              {recording ? "REC" : "HOLD"}
+            </button>
+            <p className="label-xs px-6 text-center">
+              Tip: press Play first to sing or rap over your beat. Each take lands on the timeline.
+            </p>
+            {(micTrack?.clips?.length ?? 0) > 0 && (
+              <div className="w-full space-y-2">
+                <div className="label-xs">Takes on {micTrack?.name}</div>
+                <div className="grid grid-cols-2 gap-2">
+                  {micTrack?.clips?.map((c) => (
+                    <button
+                      key={c.id}
+                      onClick={() => {
+                        buzz(8);
+                        if (micTrack) previewClip(micTrack.id, c.id);
+                      }}
+                      className="flex h-12 items-center justify-between rounded-xl border border-border bg-surface-2/60 px-3 font-mono text-[11px] tracking-widest uppercase"
+                    >
+                      <span>{c.name}</span>
+                      <span className="opacity-60">{c.duration.toFixed(1)}s</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {tab === "sound" && pad && (
           <div className="space-y-4">
             <div className="flex flex-wrap justify-center gap-4">
@@ -271,12 +424,13 @@ export function MobileBeat({ onClose }: { onClose: () => void }) {
       </div>
 
       {/* Bottom tabs — thumb reach */}
-      <nav className="grid shrink-0 grid-cols-3 gap-2 border-t-2 border-border bg-surface-2/70 p-2">
+      <nav className="grid shrink-0 grid-cols-4 gap-2 border-t-2 border-border bg-surface-2/70 p-2">
         {(
           [
             ["pads", "PADS", <Grid2x2 key="a" className="size-5" />],
             ["steps", "STEPS", <Disc3 key="b" className="size-5" />],
             ["sound", "SOUND", <SlidersHorizontal key="c" className="size-5" />],
+            ["rec", "MIC", <Mic key="d" className="size-5" />],
           ] as [Tab, string, React.ReactNode][]
         ).map(([id, label, icon]) => (
           <button
