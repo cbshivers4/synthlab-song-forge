@@ -182,16 +182,23 @@ export function TopBar() {
               active={transport.metronome}
               onClick={() => setTransport({ metronome: !transport.metronome })}
             />
+            <FeatBtn
+              label={transport.countIn ? `COUNT-IN ${transport.countInBars ?? 1}BAR` : "COUNT-IN"}
+              icon={<Hash className="size-3.5" />}
+              active={transport.countIn}
+              onClick={() => setTransport({ countIn: !transport.countIn })}
+            />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <span>
-                  <FeatBtn
-                    label={transport.countIn ? `COUNT-IN ${transport.countInBars ?? 1}BAR` : "COUNT-IN"}
-                    icon={<Hash className="size-3.5" />}
-                    active={transport.countIn}
-                    onClick={() => setTransport({ countIn: !transport.countIn })}
-                  />
-                </span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  aria-label="Count-in length"
+                  title="Count-in length"
+                  className="h-7 px-1 font-mono text-[10px] tracking-wider text-muted-foreground"
+                >
+                  {transport.countInBars ?? 1}▾
+                </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-44">
                 <DropdownMenuLabel className="font-mono text-[10px] tracking-wider">COUNT-IN LENGTH</DropdownMenuLabel>
