@@ -233,6 +233,8 @@ interface StudioApi extends StudioState {
   loadPreset: (trackId: string, name: string) => void;
   generateBeat: (trackId: string, genre: string, energy: number) => void;
   previewNote: (trackId: string, midi: number) => void;
+  /** Writes a note into the live timeline recording without playing it (the caller already sounded it). */
+  captureNote: (trackId: string, midi: number, velocity?: number) => void;
   loadSample: (trackId: string, file: File) => Promise<void>;
   updateSampler: (trackId: string, patch: Partial<SamplerState>) => void;
   clearSample: (trackId: string) => void;
@@ -942,6 +944,15 @@ export function StudioProvider({ children }: { children: ReactNode }) {
 
   const api: StudioApi = useMemo(() => {
     const selected = tracks.find((t) => t.id === selectedId) ?? null;
+    /** Writes a note into the armed recording track without sounding it. */
+    const capture = (trackId: string, midi: number, velocity: number) => {
+      const tp = transportRef.current;
+      const t = tracksRef.current.find((x) => x.id === trackId);
+      if (!t || !tp.recording) return;
+      if (t.kind !== "instrument" && t.kind !== "midi" && t.kind !== "sampler") return;
+      const note: MidiNote = { id: uid(), step: tp.step, length: 1, pitch: midi, velocity };
+      setTracks((ts) => ts.map((x) => (x.id === t.id ? { ...x, notes: [...(x.notes ?? []), note] } : x)));
+    };
     const stepBack = (from: "past" | "future") => {
       const stack = from === "past" ? pastRef : futureRef;
       const other = from === "past" ? futureRef : pastRef;
@@ -1635,11 +1646,10 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         engine.syncMix(tracksRef.current);
         if (t) triggerNote(engine, t, midi, 0.35, 0.9);
         // Notes played on screen are captured while the transport records.
-        const tp = transportRef.current;
-        if (t && tp.recording && (t.kind === "instrument" || t.kind === "midi" || t.kind === "sampler")) {
-          const note: MidiNote = { id: uid(), step: tp.step, length: 1, pitch: midi, velocity: 0.9 };
-          setTracks((ts) => ts.map((x) => (x.id === t.id ? { ...x, notes: [...(x.notes ?? []), note] } : x)));
-        }
+        if (t) capture(t.id, midi, 0.9);
+      },
+      captureNote: (trackId, midi, velocity = 0.9) => {
+        capture(trackId, midi, velocity);
       },
       loadSample: async (trackId, file) => {
         const engine = getEngine();
