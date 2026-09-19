@@ -415,7 +415,7 @@ function RecordingClip({ track }: { track: Track }) {
     };
     draw();
     return () => cancelAnimationFrame(raf);
-  }, []);
+  }, [isNote]);
 
   const start = startRef.current;
   const now = transport.step ?? start;
