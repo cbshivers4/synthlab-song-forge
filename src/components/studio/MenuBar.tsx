@@ -385,6 +385,32 @@ export function MenuBar() {
       <span className="ml-auto hidden shrink-0 font-mono text-[10px] tracking-widest text-muted-foreground uppercase lg:inline">
         {project ? `${project.name} · ${project.key} · ${project.timeSig}` : "untitled session"} · {mode} mode
       </span>
+
+      <Dialog open={saveAsOpen} onOpenChange={setSaveAsOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Save As</DialogTitle>
+            <DialogDescription>
+              Name this copy of the project. It saves as a new project and keeps the original untouched.
+            </DialogDescription>
+          </DialogHeader>
+          <Input
+            value={saveAsName}
+            placeholder="Project name"
+            aria-label="Project name"
+            autoFocus
+            maxLength={80}
+            onChange={(e) => setSaveAsName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") void confirmSaveAs();
+            }}
+          />
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setSaveAsOpen(false)}>Cancel</Button>
+            <Button onClick={() => void confirmSaveAs()}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
