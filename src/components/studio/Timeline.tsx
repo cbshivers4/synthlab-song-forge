@@ -823,6 +823,28 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
                 <Settings2 className="size-4" /> Track settings
               </DropdownMenuItem>
               <DropdownMenuSeparator />
+              <DropdownMenuLabel className="label-xs">Send track to bus</DropdownMenuLabel>
+              {TRACK_BUSES.map((b) => {
+                const fx = fxChains[`bus:${b.id}`] ?? [];
+                return (
+                  <DropdownMenuItem key={b.id} onClick={() => updateTrack(track.id, { bus: b.id })}>
+                    <span className="w-4">{track.bus === b.id ? "✓" : ""}</span>
+                    <span className="truncate">
+                      {b.label}
+                      {fx.length > 0 ? ` · ${fx.map((p) => p.name).join(", ")}` : " · no effects"}
+                    </span>
+                  </DropdownMenuItem>
+                );
+              })}
+              <DropdownMenuItem
+                onClick={() => {
+                  select(track.id);
+                  setPanel("mixer");
+                }}
+              >
+                <Settings2 className="size-4" /> Edit bus effects in mixer
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuLabel className="label-xs">Automation</DropdownMenuLabel>
               {(["volume", "pan", "sendReverb", "sendDelay"] as AutomationParam[]).map((param) => (
                 <DropdownMenuItem key={param} onClick={() => toggleAutomationLane(track.id, param)}>
