@@ -496,78 +496,60 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   }, [fxChains]);
 
 
-  // step clock
+  // step clock — a look-ahead scheduler. Steps are queued against the audio
+  // clock a little before they sound, so playback stays tight even when the
+  // browser stalls the timer or a render blocks the main thread.
   useEffect(() => {
     if (!transport.playing) {
       automationGestureRef.current.clear();
       return;
     }
     const engine = getEngine();
-    engine.init();
+    const ctx = engine.init();
     engine.syncMix(tracksRef.current);
     // make sure every arrangement clip is decoded before the playhead reaches it
     for (const t of tracksRef.current)
       for (const c of t.clips ?? []) if (c.url) void engine.ensureBuffer(c.url);
-    let step = 0;
-    let cancelled = false;
 
-    const tick = () => {
-      if (cancelled) return;
+    const LOOKAHEAD = 0.14; // seconds of audio scheduled in advance
+    const TICK = 20; // ms between scheduler passes
+    let step = 0;
+    let nextTime = ctx.currentTime + 0.06;
+    let cancelled = false;
+    /** steps already handed to the audio clock, drained by the visual loop */
+    const queue: { step: number; time: number }[] = [];
+
+    /** Queue everything that makes sound for one step at an exact audio time. */
+    const scheduleStep = (n: number, when: number) => {
       const tp = transportRef.current;
       const stepDur = 60 / tp.bpm / 4;
       const list = tracksRef.current;
       const anySolo = list.some((t) => t.solo);
       const totalSteps = Math.max(1, tp.bars ?? 4) * 4;
-      // punch in / out: the take starts and stops itself at the markers
-      const atStep = step % totalSteps;
-      if (tp.punchIn != null && atStep === tp.punchIn) punchRef.current?.start();
-      if (tp.punchOut != null && atStep === tp.punchOut) punchRef.current?.stop();
       for (const t of list) {
         if (t.muted || t.frozen || (anySolo && !t.solo)) continue;
-        const len = t.steps;
-        const s = step % len;
-        // automation curves ride the channel while the transport runs
-        if (t.automation?.length) {
-          const at = step % totalSteps;
-            const ride: Record<string, number> = {};
-          for (const lane of t.automation) {
-            const gesture = automationGestureRef.current.get(`${t.id}:${lane.param}`);
-            const touching = (gesture?.touchedUntil ?? 0) > performance.now();
-            const writing = !lane.locked && (lane.mode === "write" || (lane.mode === "latch" && gesture?.latched) || (lane.mode === "touch" && touching));
-            if (writing && lane.param.startsWith("plugin:")) {
-              const [, pluginId = "", paramId = ""] = lane.param.split(":");
-              const plugin = (t.plugins ?? []).find((item) => item.id === pluginId);
-              const control = plugin?.params.find((item) => item.id === paramId);
-              if (control) {
-                const normalized = control.max > control.min ? (control.value - control.min) / (control.max - control.min) : 0;
-                const points = [...lane.points.filter((point) => point.step !== at), { step: at, value: normalized }]
-                  .sort((a, b) => a.step - b.step);
-                setTracks((current) => current.map((track) => track.id === t.id
-                  ? { ...track, automation: (track.automation ?? []).map((item) => item.param === lane.param ? { ...item, points } : item) }
-                  : track));
-              }
-              continue;
-            }
-            if ((lane.mode === "read" || lane.mode === "touch") && !touching && lane.points.length > 0) ride[lane.param] = valueAt(lane.points, at);
-          }
-          if (Object.keys(ride).length > 0) engine.automate(t.id, ride);
-        }
+        const len = Math.max(1, t.steps);
+        const s = n % len;
         // arrangement clips fire at their own position on the timeline
         if (t.clips?.length) {
-          const at = step % totalSteps;
+          const at = n % totalSteps;
           for (const c of t.clips) {
             if (!c.url) continue;
             if ((c.start ?? 0) === at) {
-              engine.playClip(t.id, {
-                url: c.url,
-                offset: c.offset ?? 0,
-                length: c.length ?? c.duration,
-                gain: c.gain ?? 1,
-                fadeIn: c.fadeIn ?? 0.004,
-                fadeOut: c.fadeOut ?? 0.01,
-                rate: clipRate(c),
-                reverse: c.reverse ?? false,
-              });
+              engine.playClip(
+                t.id,
+                {
+                  url: c.url,
+                  offset: c.offset ?? 0,
+                  length: c.length ?? c.duration,
+                  gain: c.gain ?? 1,
+                  fadeIn: c.fadeIn ?? 0.004,
+                  fadeOut: c.fadeOut ?? 0.01,
+                  rate: clipRate(c),
+                  reverse: c.reverse ?? false,
+                },
+                when,
+              );
             }
           }
         }
@@ -576,33 +558,25 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           for (const pad of t.pads) {
             if (pad.muted || (padSolo && !pad.solo)) continue;
             const v = pad.steps[s] ?? 0;
-            if (v > 0) engine.playDrum(t.id, pad, v);
+            if (v > 0) engine.playDrum(t.id, pad, v, when);
           }
         } else if (t.kind === "sampler" && t.sampler && t.notes) {
-          for (const n of t.notes) {
-            if (n.step % len === s) triggerNote(engine, t, n.pitch, n.length * stepDur, n.velocity);
+          for (const note of t.notes) {
+            if (note.step % len === s) triggerNote(engine, t, note.pitch, note.length * stepDur, note.velocity, when);
           }
         } else if (t.patch && t.notes) {
-          for (const n of t.notes) {
-            if (n.step % len === s) {
-              const dur = (n.length * stepDur) / (t.patch.arp.on ? 2 : 1);
-              if (t.patch.arp.on) {
-                const oct = t.patch.arp.octaves;
-                for (let i = 0; i < n.length; i++) {
-                  const shift = (i % Math.max(1, oct)) * 12;
-                  const dir = t.patch.arp.direction === "down" ? -shift : shift;
-                  engine.playNote(
-                    t.id,
-                    t.patch,
-                    n.pitch + dir,
-                    stepDur * t.patch.arp.gate,
-                    n.velocity,
-                    engine.ctx!.currentTime + i * stepDur,
-                  );
-                }
-              } else {
-                engine.playNote(t.id, t.patch, n.pitch, dur, n.velocity);
+          for (const note of t.notes) {
+            if (note.step % len !== s) continue;
+            const dur = (note.length * stepDur) / (t.patch.arp.on ? 2 : 1);
+            if (t.patch.arp.on) {
+              const oct = t.patch.arp.octaves;
+              for (let i = 0; i < note.length; i++) {
+                const shift = (i % Math.max(1, oct)) * 12;
+                const dir = t.patch.arp.direction === "down" ? -shift : shift;
+                engine.playNote(t.id, t.patch, note.pitch + dir, stepDur * t.patch.arp.gate, note.velocity, when + i * stepDur);
               }
+            } else {
+              engine.playNote(t.id, t.patch, note.pitch, dur, note.velocity, when);
             }
           }
         }
@@ -613,37 +587,110 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           {
             id: "m",
             name: "click",
-            kind: step % 4 === 0 ? "rim" : "hat",
+            kind: n % 4 === 0 ? "rim" : "hat",
             volume: 0.35,
             pan: 0,
-            pitch: step % 4 === 0 ? 5 : 0,
+            pitch: n % 4 === 0 ? 5 : 0,
             decay: 0,
             muted: false,
             solo: false,
             steps: [],
           },
           1,
+          when,
         );
-      }
-      const total = Math.max(1, tp.bars ?? 4) * 4;
-      setTransportState((t) => ({ ...t, step: step % total }));
-      step += 1;
-      if (tp.loop) {
-        const lo = tp.loopStart ?? 0;
-        const hi = Math.min(total, Math.max(lo + 1, tp.loopEnd ?? total));
-        if (step >= hi) step = lo;
-      } else if (step >= total) {
-        step = 0;
       }
     };
 
-    tick();
-    const interval = window.setInterval(tick, (60 / transport.bpm / 4) * 1000);
+    /** Everything that should happen the moment a step is actually heard. */
+    const reachStep = (n: number) => {
+      const tp = transportRef.current;
+      const list = tracksRef.current;
+      const anySolo = list.some((t) => t.solo);
+      const totalSteps = Math.max(1, tp.bars ?? 4) * 4;
+      const at = n % totalSteps;
+      // punch in / out: the take starts and stops itself at the markers
+      if (tp.punchIn != null && at === tp.punchIn) punchRef.current?.start();
+      if (tp.punchOut != null && at === tp.punchOut) punchRef.current?.stop();
+      for (const t of list) {
+        if (t.muted || t.frozen || (anySolo && !t.solo)) continue;
+        if (!t.automation?.length) continue;
+        const ride: Record<string, number> = {};
+        for (const lane of t.automation) {
+          const gesture = automationGestureRef.current.get(`${t.id}:${lane.param}`);
+          const touching = (gesture?.touchedUntil ?? 0) > performance.now();
+          const writing =
+            !lane.locked && (lane.mode === "write" || (lane.mode === "latch" && gesture?.latched) || (lane.mode === "touch" && touching));
+          if (writing && lane.param.startsWith("plugin:")) {
+            const [, pluginId = "", paramId = ""] = lane.param.split(":");
+            const plugin = (t.plugins ?? []).find((item) => item.id === pluginId);
+            const control = plugin?.params.find((item) => item.id === paramId);
+            if (control) {
+              const normalized = control.max > control.min ? (control.value - control.min) / (control.max - control.min) : 0;
+              const points = [...lane.points.filter((point) => point.step !== at), { step: at, value: normalized }].sort(
+                (a, b) => a.step - b.step,
+              );
+              setTracks((current) =>
+                current.map((track) =>
+                  track.id === t.id
+                    ? { ...track, automation: (track.automation ?? []).map((item) => (item.param === lane.param ? { ...item, points } : item)) }
+                    : track,
+                ),
+              );
+            }
+            continue;
+          }
+          if ((lane.mode === "read" || lane.mode === "touch") && !touching && lane.points.length > 0) ride[lane.param] = valueAt(lane.points, at);
+        }
+        if (Object.keys(ride).length > 0) engine.automate(t.id, ride);
+      }
+      setTransportState((t) => (t.step === at ? t : { ...t, step: at }));
+    };
+
+    const pump = () => {
+      if (cancelled) return;
+      const now = ctx.currentTime;
+      // a suspended or stalled context can leave us far behind; resync instead of
+      // firing a burst of late notes
+      if (nextTime < now - 0.25) nextTime = now + 0.02;
+      while (nextTime < now + LOOKAHEAD) {
+        const tp = transportRef.current;
+        const total = Math.max(1, tp.bars ?? 4) * 4;
+        const stepDur = 60 / Math.max(20, tp.bpm) / 4;
+        scheduleStep(step, nextTime);
+        queue.push({ step: step % total, time: nextTime });
+        nextTime += stepDur;
+        step += 1;
+        if (tp.loop) {
+          const lo = Math.max(0, Math.min(total - 1, tp.loopStart ?? 0));
+          const hi = Math.min(total, Math.max(lo + 1, tp.loopEnd ?? total));
+          if (step >= hi) step = lo;
+        } else if (step >= total) {
+          step = 0;
+        }
+      }
+    };
+
+    const frame = () => {
+      if (cancelled) return;
+      const now = ctx.currentTime;
+      let reached = -1;
+      while (queue.length > 0 && queue[0]!.time <= now) reached = queue.shift()!.step;
+      if (reached >= 0) reachStep(reached);
+      raf = requestAnimationFrame(frame);
+    };
+
+    void ctx.resume?.();
+    pump();
+    let raf = requestAnimationFrame(frame);
+    const interval = window.setInterval(pump, TICK);
     return () => {
       cancelled = true;
+      cancelAnimationFrame(raf);
       window.clearInterval(interval);
     };
-  }, [transport.playing, transport.bpm]);
+  }, [transport.playing]);
+
 
   const updateTrack = useCallback((id: string, patch: Partial<Track>) => {
     setTracks((ts) => ts.map((t) => (t.id === id ? { ...t, ...patch } : t)));
