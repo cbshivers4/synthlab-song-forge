@@ -39,11 +39,16 @@ export function ExportDialog() {
   const flagBars = (flagEnd - flagStart) / 4;
   const total = (flagsOn ? flagBars : bars) * barSeconds + 1;
 
+  const { requirePro } = usePlan();
+
   useEffect(() => {
-    const on = () => setOpen(true);
+    const on = () => {
+      if (!requirePro("Exporting WAV / MP3 files")) return;
+      setOpen(true);
+    };
     window.addEventListener(EXPORT_EVENT, on);
     return () => window.removeEventListener(EXPORT_EVENT, on);
-  }, []);
+  }, [requirePro]);
 
   const finish = useCallback(
     async (cap: Capture | null) => {

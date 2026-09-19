@@ -38,6 +38,7 @@ import { HumToBeat } from "@/components/studio/HumToBeat";
 import { MobileBeat } from "@/components/studio/MobileBeat";
 import { Bot } from "lucide-react";
 import { AppProvider, useApp, useMaybeApp } from "@/lib/synclab/app-state";
+import { PlanProvider } from "@/lib/synclab/plan";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
 import synthFace from "@/assets/hw-synth.jpg";

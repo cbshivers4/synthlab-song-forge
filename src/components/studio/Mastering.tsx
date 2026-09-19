@@ -149,8 +149,11 @@ export function Mastering() {
     setPlaying(true);
   };
 
+  const { requirePro } = usePlan();
+
   const save = (format: "wav" | "mp3") => {
     if (!result) return;
+    if (!requirePro("Saving mastered files")) return;
     const blob = format === "wav" ? encodeWav(result.audio) : encodeMp3(result.audio, 320);
     downloadBlob(blob, `${safeName}-master.${format}`);
   };

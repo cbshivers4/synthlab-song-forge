@@ -112,6 +112,7 @@ export function MenuBar() {
   const [saveAsName, setSaveAsName] = useState("");
 
   const openSaveAs = () => {
+    if (!requirePro("Cloud saving")) return;
     setSaveAsName(project ? `${project.name} Copy` : "Untitled project");
     setSaveAsOpen(true);
   };
