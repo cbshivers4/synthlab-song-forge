@@ -6,6 +6,8 @@ import { useStudio, type PanelId } from "@/lib/synclab/store";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { TopBar } from "@/components/studio/TopBar";
 import { Mastering } from "@/components/studio/Mastering";
+import { StemGenerator } from "@/components/studio/StemGenerator";
+import { NotesPanel } from "@/components/studio/TrackNotes";
 import { Timeline } from "@/components/studio/Timeline";
 import { Mixer } from "@/components/studio/Mixer";
 import { MixerWindow } from "@/components/studio/MixerWindow";
