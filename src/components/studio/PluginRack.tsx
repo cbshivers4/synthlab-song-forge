@@ -133,7 +133,13 @@ export function PluginRack() {
   };
 
   const track = selected ?? tracks[0];
-  if (!track) return <p className="text-sm text-muted-foreground">Add a track to open its plugin rack.</p>;
+  if (!track)
+    return (
+      <div className="space-y-3">
+        <PluginBridge />
+        <p className="text-sm text-muted-foreground">Add a track to open its plugin rack.</p>
+      </div>
+    );
   const chain = track.plugins ?? [];
   /** First effect opens by default so the scope + X-Y pad are always visible. */
   const openId = open ?? chain[0]?.id ?? null;
