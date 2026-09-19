@@ -286,26 +286,7 @@ function InsertRack({
 }
 
 function KindIcon({ t, className }: { t: Track; className?: string }) {
-  const name = `${t.instrument ?? ""} ${t.name}`.toLowerCase();
-  const Icon =
-    t.kind === "drum"
-      ? Drum
-      : t.kind === "audio"
-        ? Mic
-        : t.kind === "ai-vocal"
-          ? Mic2
-          : t.kind === "sampler"
-            ? AudioLines
-            : /bass/.test(name)
-              ? Guitar
-              : /piano|keys|organ/.test(name)
-                ? Piano
-                : /string|brass|pad/.test(name)
-                  ? Radio
-                  : /guitar|pluck/.test(name)
-                    ? Guitar
-                    : Music2;
-  return <Icon className={className} />;
+  return <TrackIcon track={t} className={className} tinted={false} />;
 }
 
 /** Per-channel send menu: reverb / delay / chorus amounts plus each return's FX chain. */
