@@ -193,6 +193,14 @@ export function StartScreen() {
                     </div>
                   </button>
                   <button
+                    aria-label={`Rename cloud project ${item.name}`}
+                    title="Rename project"
+                    className="absolute right-9 top-2 rounded p-1.5 text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+                    onClick={() => openRename({ kind: "cloud", item })}
+                  >
+                    <Pencil className="size-3.5" />
+                  </button>
+                  <button
                     aria-label={`Delete cloud project ${item.name}`}
                     title="Delete cloud project"
                     className="absolute right-2 top-2 rounded p-1.5 text-muted-foreground hover:bg-destructive/15 hover:text-destructive"
@@ -265,6 +273,14 @@ export function StartScreen() {
                     <div className="font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
                       {r.bpm} BPM · {r.key} · {r.timeSig}
                     </div>
+                  </button>
+                  <button
+                    aria-label={`Rename recent project ${r.name}`}
+                    title="Rename project"
+                    onClick={() => openRename({ kind: "recent", item: r })}
+                    className="absolute top-2 right-9 rounded p-1.5 text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+                  >
+                    <Pencil className="size-3.5" />
                   </button>
                   <button
                     aria-label={`Delete recent project ${r.name}`}
