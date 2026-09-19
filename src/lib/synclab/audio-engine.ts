@@ -1090,11 +1090,24 @@ export class SyncLabEngine {
   private monitorGain: GainNode | null = null;
   private recAnalyser: AnalyserNode | null = null;
 
+  private monitorTrackId: string | null = null;
+
   get isRecording() {
     return this.recorder?.state === "recording";
   }
 
-  async startInputRecording(trackId: string, monitor: boolean) {
+  get monitoredTrack() {
+    return this.monitorTrackId;
+  }
+
+  /** Open the microphone for metering/monitoring when a channel is armed. */
+  async startInputMonitoring(trackId: string, monitor: boolean) {
+    if (this.monitorTrackId === trackId && this.recStream) {
+      this.setMonitoring(monitor);
+      return;
+    }
+    if (this.isRecording) return;
+    this.stopInputMonitoring();
     const ctx = this.init();
     const stream = await openMicOrThrow({
       echoCancellation: false,
@@ -1102,7 +1115,6 @@ export class SyncLabEngine {
       autoGainControl: false,
     });
     this.recStream = stream;
-    this.recChunks = [];
     const src = ctx.createMediaStreamSource(stream);
     const analyser = ctx.createAnalyser();
     analyser.fftSize = 1024;
@@ -1114,7 +1126,27 @@ export class SyncLabEngine {
     mg.connect(this.channel(trackId).input);
     this.monitorNode = src;
     this.monitorGain = mg;
+    this.monitorTrackId = trackId;
+  }
 
+  /** Close the microphone when the channel is disarmed (never while recording). */
+  stopInputMonitoring() {
+    if (this.isRecording) return;
+    this.recStream?.getTracks().forEach((t) => t.stop());
+    this.recStream = null;
+    this.monitorNode?.disconnect();
+    this.monitorGain?.disconnect();
+    this.monitorNode = null;
+    this.monitorGain = null;
+    this.recAnalyser = null;
+    this.monitorTrackId = null;
+  }
+
+  async startInputRecording(trackId: string, monitor: boolean) {
+    await this.startInputMonitoring(trackId, monitor);
+    const stream = this.recStream;
+    if (!stream) throw new Error("The microphone input is not open.");
+    this.recChunks = [];
     const mime = preferredRecordingMime();
     const rec = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
     rec.ondataavailable = (e) => e.data.size > 0 && this.recChunks.push(e.data);
