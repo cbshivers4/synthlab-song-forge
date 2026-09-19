@@ -740,7 +740,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const finishRecording = useCallback(async () => {
     const engine = getEngine();
     if (!engine.isRecording) return;
-    const target = tracksRef.current.find((t) => t.recording);
+    const target = tracksRef.current.find(
+      (t) => t.recording && (t.kind === "audio" || t.kind === "ai-vocal" || t.kind === "sampler"),
+    );
     const result = await engine.stopInputRecording();
     if (!target) return;
     if (!result) {
