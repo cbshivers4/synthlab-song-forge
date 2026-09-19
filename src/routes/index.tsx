@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { ArrowDownToLine, ArrowUpFromLine, AudioLines, AudioWaveform, Cpu, Gauge, Disc3, FolderOpen, Grid2x2, KeyboardMusic, Music2, Palette, Piano, SlidersHorizontal, Split, Settings2, Waves, X } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, AudioLines, AudioWaveform, Cpu, Gauge, Disc3, FolderOpen, Grid2x2, KeyboardMusic, Music2, NotebookPen, Palette, Piano, SlidersHorizontal, Split, Settings2, Sparkles, Waves, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStudio, type PanelId } from "@/lib/synclab/store";
 import { getEngine } from "@/lib/synclab/audio-engine";
@@ -148,6 +148,8 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
     stems: { title: "STEM SEPARATOR", icon: <Split className="size-4" /> },
     voice: { title: "VOICE REMOVER", icon: <Split className="size-4" /> },
     mastering: { title: "MASTERING", icon: <Gauge className="size-4" /> },
+    stemgen: { title: "AI STEM GENERATOR", icon: <Sparkles className="size-4" /> },
+    notes: { title: "TRACK NOTES", icon: <NotebookPen className="size-4" /> },
   };
   const current = config[panel];
 
@@ -268,6 +270,8 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
       {panel === "stems" && <StemSeparator mode="stems" />}
       {panel === "mastering" && <Mastering />}
       {panel === "voice" && <StemSeparator mode="voice" />}
+      {panel === "stemgen" && <StemGenerator />}
+      {panel === "notes" && <NotesPanel />}
 
       </div>
 
