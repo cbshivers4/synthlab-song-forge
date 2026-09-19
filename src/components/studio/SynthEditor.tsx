@@ -145,6 +145,7 @@ export function SynthEditor({ track }: { track: Track }) {
           <TabsTrigger value="voice">Voice</TabsTrigger>
           <TabsTrigger value="fx">Effects</TabsTrigger>
           <TabsTrigger value="arp">Arpeggiator</TabsTrigger>
+          <TabsTrigger value="chords">Chords / Scale</TabsTrigger>
         </TabsList>
 
         <TabsContent value="osc" className="space-y-3 pt-3">
@@ -683,7 +684,183 @@ export function SynthEditor({ track }: { track: Track }) {
             </label>
           </div>
         </TabsContent>
+
+        <TabsContent value="chords" className="pt-3">
+          <ChordScale trackId={track.id} onPlay={(midi) => previewNote(track.id, midi)} />
+        </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+const SCALES: Record<string, number[]> = {
+  Major: [0, 2, 4, 5, 7, 9, 11],
+  Minor: [0, 2, 3, 5, 7, 8, 10],
+  "Harmonic Minor": [0, 2, 3, 5, 7, 8, 11],
+  Dorian: [0, 2, 3, 5, 7, 9, 10],
+  Phrygian: [0, 1, 3, 5, 7, 8, 10],
+  Lydian: [0, 2, 4, 6, 7, 9, 11],
+  Mixolydian: [0, 2, 4, 5, 7, 9, 10],
+  "Minor Pent": [0, 3, 5, 7, 10],
+  Blues: [0, 3, 5, 6, 7, 10],
+};
+const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII"];
+/** Stacked-thirds chord tones (semitones above the scale root) for a scale degree. */
+const QUALITY = (steps: number[], index: number, size: 3 | 4 | 5) => {
+  const pick = (n: number) => {
+    const deg = index + n;
+    return (steps[deg % steps.length] ?? 0) + 12 * Math.floor(deg / steps.length);
+  };
+  const tones = [pick(0), pick(2), pick(4)];
+  if (size >= 4) tones.push(pick(6));
+  if (size >= 5) tones.push(pick(8));
+  return tones;
+};
+
+function chordLabel(intervals: number[]) {
+  const rel = intervals.map((t) => t - (intervals[0] ?? 0));
+  const third = rel[1];
+  const fifth = rel[2];
+  const seventh = rel[3];
+  let name = third === 3 ? "m" : third === 4 ? "" : "sus";
+  if (fifth === 6) name = third === 3 ? "dim" : "b5";
+  if (fifth === 8 && third === 4) name = "aug";
+  if (seventh !== undefined) name += seventh === 11 ? "maj7" : seventh === 10 ? "7" : seventh === 9 ? "6" : "7";
+  return name || "maj";
+}
+
+function ChordScale({ trackId, onPlay }: { trackId: string; onPlay: (midi: number) => void }) {
+  const [root, setRoot] = useState(0);
+  const [scaleName, setScaleName] = useState("Minor");
+  const [octave, setOctave] = useState(4);
+  const [size, setSize] = useState<3 | 4 | 5>(3);
+  const [inversion, setInversion] = useState(0);
+  const [spread, setSpread] = useState(false);
+  const [strum, setStrum] = useState(0);
+  const [held, setHeld] = useState<number[]>([]);
+  const steps = SCALES[scaleName] ?? SCALES["Minor"]!;
+  const base = (octave + 1) * 12 + root;
+
+  const voice = (degree: number) => {
+    let tones = QUALITY(steps, degree, size);
+    for (let i = 0; i < inversion; i++) {
+      const [low, ...rest] = tones;
+      tones = [...rest, (low ?? 0) + 12];
+    }
+    if (spread) tones = tones.map((t, i) => (i % 2 === 1 ? t + 12 : t));
+    return tones.map((t) => base + t);
+  };
+
+  const playNotes = (notes: number[]) => {
+    setHeld(notes);
+    notes.forEach((midi, i) => {
+      if (strum > 0) window.setTimeout(() => onPlay(midi), i * strum);
+      else onPlay(midi);
+    });
+    window.setTimeout(() => setHeld([]), 300 + strum * notes.length);
+  };
+
+  const noteName = (midi: number) => `${NOTE_NAMES[((midi % 12) + 12) % 12]}${Math.floor(midi / 12) - 1}`;
+  const scaleNotes = steps.map((s) => base + s).concat(base + 12);
+
+  return (
+    <div className="space-y-3">
+      <div className="panel flex flex-wrap items-end gap-3 p-3">
+        <label className="space-y-1">
+          <span className="label-xs">ROOT</span>
+          <Select value={String(root)} onValueChange={(v) => setRoot(Number(v))}>
+            <SelectTrigger className="h-9 w-20"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {NOTE_NAMES.map((n, i) => <SelectItem key={n} value={String(i)}>{n}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </label>
+        <label className="space-y-1">
+          <span className="label-xs">SCALE</span>
+          <Select value={scaleName} onValueChange={setScaleName}>
+            <SelectTrigger className="h-9 w-40"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {Object.keys(SCALES).map((n) => <SelectItem key={n} value={n}>{n}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </label>
+        <label className="space-y-1">
+          <span className="label-xs">CHORD SIZE</span>
+          <Select value={String(size)} onValueChange={(v) => setSize(Number(v) as 3 | 4 | 5)}>
+            <SelectTrigger className="h-9 w-32"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="3">Triad</SelectItem>
+              <SelectItem value="4">7th</SelectItem>
+              <SelectItem value="5">9th</SelectItem>
+            </SelectContent>
+          </Select>
+        </label>
+        <label className="space-y-1">
+          <span className="label-xs">INVERSION</span>
+          <Select value={String(inversion)} onValueChange={(v) => setInversion(Number(v))}>
+            <SelectTrigger className="h-9 w-28"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {[0, 1, 2, 3].map((i) => <SelectItem key={i} value={String(i)}>{i === 0 ? "Root" : `${i}${i === 1 ? "st" : i === 2 ? "nd" : "rd"}`}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </label>
+        <div className="flex items-center gap-2">
+          <span className="label-xs">OCTAVE</span>
+          <Slider className="w-28" value={[octave]} min={1} max={7} step={1} onValueChange={([v = 4]) => setOctave(v)} />
+          <span className="font-mono text-xs text-primary">C{octave}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="label-xs">STRUM</span>
+          <Slider className="w-28" value={[strum]} min={0} max={120} step={5} onValueChange={([v = 0]) => setStrum(v)} />
+          <span className="font-mono text-xs text-primary">{strum}ms</span>
+        </div>
+        <label className="flex items-center gap-2">
+          <span className="label-xs">SPREAD</span>
+          <Switch checked={spread} onCheckedChange={setSpread} />
+        </label>
+      </div>
+
+      <div className="panel space-y-2 p-3">
+        <span className="label-xs">CHORDS IN {NOTE_NAMES[root]} {scaleName.toUpperCase()}</span>
+        <div className="flex flex-wrap gap-2">
+          {steps.map((_, degree) => {
+            const notes = voice(degree);
+            const rel = QUALITY(steps, degree, size);
+            const rootName = NOTE_NAMES[((base + (steps[degree] ?? 0)) % 12 + 12) % 12];
+            const active = held.length > 0 && held[0] === notes[0];
+            return (
+              <Button
+                key={degree}
+                variant={active ? "default" : "secondary"}
+                className="h-14 min-w-20 flex-col gap-0.5 px-3"
+                onPointerDown={() => playNotes(notes)}
+              >
+                <span className="font-display text-sm font-semibold">{rootName}{chordLabel(rel)}</span>
+                <span className="font-mono text-[10px] opacity-70">{ROMAN[degree] ?? degree + 1}</span>
+              </Button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="panel space-y-2 p-3">
+        <span className="label-xs">SCALE NOTES</span>
+        <div className="flex flex-wrap gap-1.5">
+          {scaleNotes.map((midi) => (
+            <Button
+              key={midi}
+              size="sm"
+              variant={held.includes(midi) ? "default" : "outline"}
+              className="h-10 min-w-12 font-mono text-[11px]"
+              onPointerDown={() => playNotes([midi])}
+            >
+              {noteName(midi)}
+            </Button>
+          ))}
+        </div>
+        <p className="label-xs">Plays through this synth patch on track {trackId.slice(0, 4)} · chord size, inversion, spread and strum shape the voicing.</p>
+      </div>
     </div>
   );
 }
