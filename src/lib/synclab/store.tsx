@@ -402,7 +402,24 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         toast.success(`${list.length} MIDI input${list.length > 1 ? "s" : ""} connected`, {
           description: list.map((i) => i.name).join(", "),
         });
-      if (a) a.onstatechange = () => setMidiInputs(listInputs(a));
+      if (a)
+        a.onstatechange = () => {
+          // A controller was plugged in or removed — refresh and re-attach the
+          // remembered one as soon as it appears again.
+          const now = listInputs(a);
+          setMidiInputs(now);
+          setMidiInputId((cur) => {
+            if (cur && now.some((i) => i.id === cur)) return cur;
+            let saved: string | null = null;
+            try {
+              saved = window.localStorage.getItem(MIDI_INPUT_KEY);
+            } catch {
+              /* storage unavailable */
+            }
+            if (saved && now.some((i) => i.id === saved)) return saved;
+            return now[0]?.id ?? cur;
+          });
+        };
     });
   }, []);
 
@@ -1835,7 +1852,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           return next;
         }),
       enableMidi,
-      setMidiInput: setMidiInputId,
+      setMidiInput: setMidiInputPersist,
       fxChains,
       addFxPlugin: (target, d) => {
         const inst = instantiate(d);
