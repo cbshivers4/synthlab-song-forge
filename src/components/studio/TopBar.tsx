@@ -45,6 +45,7 @@ import { toast } from "sonner";
 import { openExport } from "@/components/studio/ExportDialog";
 import { StudioSearch } from "@/components/studio/StudioSearch";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { PlanBadge } from "@/lib/synclab/plan";
 import synclabLogoAsset from "@/assets/synclab-logo-neon.jpg.asset.json";
 const synclabLogo = synclabLogoAsset.url;
 
@@ -256,6 +257,7 @@ export function TopBar() {
         {!isMobile && <MidiControl />}
 
         <div className="ml-auto flex shrink-0 items-center gap-1">
+          <PlanBadge />
           {isMobile ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
