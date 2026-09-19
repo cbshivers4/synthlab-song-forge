@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   ArrowLeftToLine,
@@ -87,6 +87,8 @@ import { WaveformView } from "@/components/studio/WaveformView";
 import { LevelBar } from "@/components/studio/LevelBar";
 import { ClipEditor } from "@/components/studio/ClipEditor";
 import { clipSeconds } from "@/lib/synclab/types";
+import { getEngine } from "@/lib/synclab/audio-engine";
+import { parseMidiFile } from "@/lib/synclab/midi-file";
 
 import { TrackIcon, TrackStylePicker } from "@/components/studio/TrackStyle";
 
@@ -124,10 +126,15 @@ function Waveform({ track }: { track: Track }) {
     const el = e.currentTarget as HTMLElement;
     el.setPointerCapture(e.pointerId);
 
+    const grid = transport.snap ?? 1;
     const onMove = (ev: PointerEvent) => {
-      const dSteps = Math.round((ev.clientX - x0) / Math.max(1, perStep));
+      const raw = (ev.clientX - x0) / Math.max(1, perStep);
+      const dSteps = grid > 0 ? Math.round(raw / grid) * grid : Math.round(raw * 100) / 100;
       if (mode === "move") {
-        writeClip(clip.id, { start: Math.max(0, Math.min(total - 1, orig.start + dSteps)) });
+        const next = orig.start + dSteps;
+        writeClip(clip.id, {
+          start: Math.max(0, Math.min(total - 1, grid > 0 ? Math.round(next / grid) * grid : next)),
+        });
       } else if (mode === "trim-right") {
         const len = Math.max(0.05, Math.min(clip.duration - orig.offset, orig.length + dSteps * stepDur));
         writeClip(clip.id, { length: len });
@@ -1395,6 +1402,13 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
   );
 }
 
+const SNAP_OPTIONS: { label: string; value: number }[] = [
+  { label: "OFF", value: 0 },
+  { label: "1/4", value: 1 },
+  { label: "1/2 BAR", value: 2 },
+  { label: "BAR", value: 4 },
+];
+
 function EditToolbar() {
   const {
     editTool,
@@ -1409,7 +1423,107 @@ function EditToolbar() {
     pasteTrack,
     removeTrack,
     clipboardName,
+    undo,
+    redo,
+    transport,
+    setTransport,
+    addTrack,
+    addClip,
+    setNotes,
+    updateTrack,
+    select,
   } = useStudio();
+  const audioInput = useRef<HTMLInputElement>(null);
+  const midiInput = useRef<HTMLInputElement>(null);
+  const snap = transport.snap ?? 1;
+
+  const activeClip = selected?.clips?.find((c) => c.id === selected.activeClipId) ?? selected?.clips?.[0] ?? null;
+
+  const writeActive = (patch: Partial<NonNullable<typeof activeClip>>) => {
+    if (!selected || !activeClip) return;
+    updateTrack(selected.id, {
+      clips: (selected.clips ?? []).map((c) => (c.id === activeClip.id ? { ...c, ...patch } : c)),
+    });
+  };
+
+  const nudge = (dir: -1 | 1) => {
+    if (!activeClip) {
+      toast("Pick a clip first", { description: "Click a clip on the timeline, then nudge it." });
+      return;
+    }
+    const step = snap > 0 ? snap : 1;
+    writeActive({ start: Math.max(0, (activeClip.start ?? 0) + dir * step) });
+  };
+
+  const duplicateClip = () => {
+    if (!selected || !activeClip) {
+      toast("Pick a clip first", { description: "Click a clip on the timeline to duplicate it." });
+      return;
+    }
+    const stepDur = 60 / Math.max(20, transport.bpm) / 4;
+    const steps = Math.max(1, Math.round(clipSeconds(activeClip) / stepDur));
+    addClip(selected.id, { ...activeClip, id: uid(), name: `${activeClip.name} COPY`, start: (activeClip.start ?? 0) + steps });
+  };
+
+  const fade = (which: "in" | "out") => {
+    if (!activeClip) {
+      toast("Pick a clip first", { description: "Fades apply to the selected clip." });
+      return;
+    }
+    const len = Math.min(1, clipSeconds(activeClip) / 4);
+    writeActive(which === "in" ? { fadeIn: len } : { fadeOut: len });
+    toast.success(`Fade ${which} set to ${len.toFixed(2)}s on ${activeClip.name}`);
+  };
+
+  /** Loads a WAV/MP3/AIFF file as a real waveform clip at the playhead on its own audio channel. */
+  const importAudioClip = async (file: File) => {
+    try {
+      const engine = getEngine();
+      await engine.init();
+      const name = file.name.replace(/\.[^.]+$/, "").toUpperCase().slice(0, 18);
+      const loaded = await engine.loadSampleFile(file, name);
+      const id = addTrack("audio", name);
+      addClip(id, {
+        id: uid(),
+        name,
+        peaks: loaded.peaks,
+        duration: loaded.duration,
+        url: loaded.url,
+        start: transport.step,
+        offset: 0,
+        length: loaded.duration,
+        gain: 1,
+      });
+      select(id);
+      toast.success(`${file.name} on the timeline`, { description: "Drag it to move, pull the edges to trim." });
+    } catch (error) {
+      toast.error("Could not read that audio file", {
+        description: error instanceof Error ? error.message : "Try a WAV, MP3 or AIFF file.",
+      });
+    }
+  };
+
+  /** Loads a .mid file; each part becomes a MIDI region you can see and edit on the timeline. */
+  const importMidiClip = async (file: File) => {
+    try {
+      const parsed = parseMidiFile(await file.arrayBuffer());
+      if (parsed.length === 0) throw new Error("That MIDI file has no notes.");
+      let first = "";
+      parsed.forEach((part) => {
+        const id = addTrack("midi", (part.name || "MIDI").toUpperCase().slice(0, 18), "Deep Keys");
+        setNotes(id, part.notes);
+        if (!first) first = id;
+      });
+      if (first) select(first);
+      toast.success(`${file.name} on the timeline`, {
+        description: `${parsed.length} part${parsed.length === 1 ? "" : "s"} — double-click a region for the piano roll.`,
+      });
+    } catch (error) {
+      toast.error("Could not read that MIDI file", {
+        description: error instanceof Error ? error.message : "Export it again as a standard MIDI file.",
+      });
+    }
+  };
 
   const ToolBtn = ({ tool, icon, label, keys }: { tool: EditTool; icon: React.ReactNode; label: string; keys: string }) => (
     <Button
@@ -1484,7 +1598,94 @@ function EditToolbar() {
       >
         <Trash2 className="size-3" /> Delete{targets.length > 1 ? ` ${targets.length}` : ""}
       </Button>
-      <span className="label-xs ml-auto hidden sm:inline">
+      <div className="mx-1 h-4 w-px bg-border" />
+      <Button size="sm" variant="ghost" className="h-6 gap-1 px-2 text-[10px]" title="Undo (⌘Z / Ctrl+Z)" onClick={undo}>
+        <Undo2 className="size-3" /> Undo
+      </Button>
+      <Button size="sm" variant="ghost" className="h-6 gap-1 px-2 text-[10px]" title="Redo (⌘⇧Z / Ctrl+Y)" onClick={redo}>
+        <Redo2 className="size-3" /> Redo
+      </Button>
+      <div className="mx-1 h-4 w-px bg-border" />
+      <Button size="sm" variant="ghost" className="h-6 gap-1 px-2 text-[10px]" title="Nudge the selected clip left" onClick={() => nudge(-1)}>
+        <ArrowLeftToLine className="size-3" />
+      </Button>
+      <Button size="sm" variant="ghost" className="h-6 gap-1 px-2 text-[10px]" title="Nudge the selected clip right" onClick={() => nudge(1)}>
+        <ArrowRightToLine className="size-3" />
+      </Button>
+      <Button size="sm" variant="ghost" className="h-6 gap-1 px-2 text-[10px]" title="Duplicate the selected clip" onClick={duplicateClip}>
+        <Copy className="size-3" /> Dup Clip
+      </Button>
+      <Button size="sm" variant="ghost" className="h-6 gap-1 px-2 text-[10px]" title="Fade in the selected clip" onClick={() => fade("in")}>
+        Fade In
+      </Button>
+      <Button size="sm" variant="ghost" className="h-6 gap-1 px-2 text-[10px]" title="Fade out the selected clip" onClick={() => fade("out")}>
+        Fade Out
+      </Button>
+      <div className="mx-1 h-4 w-px bg-border" />
+      <span className="label-xs shrink-0">SNAP</span>
+      <Select value={String(snap)} onValueChange={(v) => setTransport({ snap: Number(v) })}>
+        <SelectTrigger className="h-6 w-[88px] shrink-0 font-mono text-[10px]" title="Snap grid for moving and trimming clips">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {SNAP_OPTIONS.map((o) => (
+            <SelectItem key={o.value} value={String(o.value)} className="font-mono text-[11px]">
+              {o.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Button
+        size="sm"
+        variant={transport.follow ? "default" : "ghost"}
+        className="h-6 gap-1 px-2 text-[10px]"
+        title="Follow the playhead while the song plays"
+        onClick={() => setTransport({ follow: !transport.follow })}
+      >
+        <Eye className="size-3" /> Follow
+      </Button>
+      <div className="mx-1 h-4 w-px bg-border" />
+      <Button
+        size="sm"
+        variant="ghost"
+        className="h-6 gap-1 px-2 text-[10px]"
+        title="Import a WAV, MP3 or AIFF file onto the timeline at the playhead"
+        onClick={() => audioInput.current?.click()}
+      >
+        <Waves className="size-3" /> Import Wave
+      </Button>
+      <Button
+        size="sm"
+        variant="ghost"
+        className="h-6 gap-1 px-2 text-[10px]"
+        title="Import a MIDI file as editable regions"
+        onClick={() => midiInput.current?.click()}
+      >
+        <Music2 className="size-3" /> Import MIDI
+      </Button>
+      <input
+        ref={audioInput}
+        type="file"
+        accept="audio/*,.wav,.mp3,.aif,.aiff,.m4a,.ogg,.flac"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          e.target.value = "";
+          if (file) void importAudioClip(file);
+        }}
+      />
+      <input
+        ref={midiInput}
+        type="file"
+        accept=".mid,.midi,audio/midi"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          e.target.value = "";
+          if (file) void importMidiClip(file);
+        }}
+      />
+      <span className="label-xs ml-auto hidden shrink-0 sm:inline">
         {selectedIds.length > 1 ? `${selectedIds.length} selected` : `${tracks.length} channels`}
       </span>
     </div>
@@ -1745,11 +1946,23 @@ export function Timeline() {
   const { tracks, transport, addTrack, setPanel, loadSample } = useStudio();
   const totalSteps = Math.max(1, transport.bars ?? 4) * 4;
   const [over, setOver] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // keeps the playhead in view while the song plays, when FOLLOW is on
+  useEffect(() => {
+    if (!transport.follow || !transport.playing) return;
+    const el = scrollRef.current;
+    if (!el || el.scrollWidth <= el.clientWidth) return;
+    const x = (transport.step / totalSteps) * el.scrollWidth;
+    if (x < el.scrollLeft + 80 || x > el.scrollLeft + el.clientWidth - 80) {
+      el.scrollTo({ left: Math.max(0, x - el.clientWidth / 2), behavior: "smooth" });
+    }
+  }, [transport.follow, transport.playing, transport.step, totalSteps]);
   return (
     <section className="relative flex min-h-0 flex-1 flex-col overflow-hidden border-x border-b border-border bg-background/60">
       <EditToolbar />
       <Ruler />
-      <div className="relative min-h-0 flex-1 overflow-auto">
+      <div ref={scrollRef} className="relative min-h-0 flex-1 overflow-auto">
         <div className="min-w-[720px] sm:min-w-0">
         {/* SYNCLAB watermark centered over the rhythm grid */}
         <div className="pointer-events-none sticky top-1/2 z-0 h-0" aria-hidden="true">
