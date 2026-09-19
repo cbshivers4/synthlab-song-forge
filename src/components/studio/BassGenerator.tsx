@@ -36,7 +36,7 @@ const STYLES = {
 type StyleName = keyof typeof STYLES;
 
 export function BassGenerator() {
-  const { tracks, selected, addTrack, setNotes, changeInstrument, select, setPanel, previewNote } = useStudio();
+  const { tracks, selected, transport, addTrack, setNotes, changeInstrument, select, setPanel } = useStudio();
   const [root, setRoot] = useState(0);
   const [scaleName, setScaleName] = useState("Minor");
   const [style, setStyle] = useState<StyleName>("Detroit Techno");
