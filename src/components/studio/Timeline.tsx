@@ -872,7 +872,12 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
           />
         </div>
 
-        <LevelBar id={track.id} color={track.color} />
+        <LevelBar
+          id={track.id}
+          color={track.color}
+          source={track.recording && (track.kind === "audio" || track.kind === "ai-vocal" || track.kind === "sampler") ? "input" : "output"}
+          label={track.recording ? "IN" : undefined}
+        />
       </div>
 
       <div

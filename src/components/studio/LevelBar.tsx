@@ -19,11 +19,13 @@ export function LevelBar({
   className,
   color,
   label,
+  source = "output",
 }: {
   id: string;
   className?: string;
   color?: string;
   label?: string;
+  source?: "output" | "input";
 }) {
   const fill = useRef<HTMLDivElement>(null);
   const clipped = useClipped(id);
@@ -32,7 +34,8 @@ export function LevelBar({
     let raf = 0;
     let smooth = 0;
     const loop = () => {
-      const raw = id === "master" ? getEngine().getLevel() : getEngine().getTrackLevel(id);
+      const engine = getEngine();
+      const raw = source === "input" ? engine.inputLevel() : id === "master" ? engine.getLevel() : engine.getTrackLevel(id);
       smooth = raw > smooth ? raw : smooth * 0.86;
       reportLevel(id, raw);
       const node = fill.current;
@@ -41,7 +44,7 @@ export function LevelBar({
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [id]);
+  }, [id, source]);
 
   return (
     <div className={cn("flex items-center gap-1", className)}>
