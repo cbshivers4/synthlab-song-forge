@@ -46,6 +46,7 @@ export interface MidiTarget {
 
 export const midiTargetKey = (t: MidiTarget) => `${t.id}:${t.param}`;
 const MIDI_MAP_KEY = "synclab.midimap";
+const MIDI_INPUT_KEY = "synclab.midi.input";
 const AUTOSAVE_KEY = "synclab.autosave.v1";
 
 const busFor = (kind: TrackKind): BusId =>
@@ -323,7 +324,15 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const [installedPlugins, setInstalledPlugins] = useState<PluginDef[]>(BUILT_IN_PLUGINS);
   const [fxChains, setFxChains] = useState<Record<string, PluginInstance[]>>({});
   const [midiInputs, setMidiInputs] = useState<MidiPortInfo[]>([]);
-  const [midiInputId, setMidiInputId] = useState<string | null>(null);
+  // Chosen controller is remembered so it reconnects on its own next visit.
+  const [midiInputId, setMidiInputId] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      return window.localStorage.getItem(MIDI_INPUT_KEY);
+    } catch {
+      return null;
+    }
+  });
   const [midiLearning, setMidiLearning] = useState(false);
   // Hardware mixer control: CC number -> mixer target, remembered between sessions.
   const [midiMap, setMidiMap] = useState<Record<string, MidiTarget>>(() => {
