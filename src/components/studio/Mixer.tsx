@@ -1054,6 +1054,13 @@ function BusStrip({
         Bus
         <Screw />
       </div>
+      <div
+        className={cn(ROW.badge, "flex items-center justify-center border-b border-border/60")}
+        style={{ background: `color-mix(in oklab, ${color} 14%, transparent)` }}
+        title="Bus"
+      >
+        <Waves className="size-7" style={{ color }} />
+      </div>
       <div className={cn(ROW.scope, "border-b border-border/60 p-[3px]")}>
         <Scope scopeId={`bus:${id}`} height={40} compact color={color} />
       </div>
