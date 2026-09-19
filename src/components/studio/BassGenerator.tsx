@@ -120,6 +120,12 @@ export function BassGenerator() {
         <div className="relative h-36 overflow-hidden border border-border bg-surface-2/30">
           {Array.from({ length: bars * 16 }, (_, i) => <span key={i} className="absolute inset-y-0 border-l border-border/40" style={{ left: `${(i / (bars * 16)) * 100}%` }} />)}
           {preview.map((n) => <span key={n.id} className="absolute h-3 rounded-[2px] bg-primary shadow-[0_0_8px_hsl(var(--primary)/0.35)]" style={{ left: `${(n.step / (bars * 16)) * 100}%`, width: `${Math.max(1, (n.length / (bars * 16)) * 100)}%`, bottom: `${8 + (n.pitch - (octave + 1) * 12) * 4}px`, opacity: n.velocity }} />)}
+          {playing && (
+            <span
+              className="pointer-events-none absolute inset-y-0 w-px bg-accent shadow-[0_0_10px_hsl(var(--accent))] transition-[left] duration-100"
+              style={{ left: `${(playStep / (bars * 16)) * 100}%` }}
+            />
+          )}
         </div>
         <div className="flex items-center justify-between text-xs text-muted-foreground">
           <span>{STYLES[style].preset} sound · scale-safe notes · varied velocity and note length</span>
