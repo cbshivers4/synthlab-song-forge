@@ -520,6 +520,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
   const [renaming, setRenaming] = useState(false);
   const [confirm, setConfirm] = useState(false);
   const [dropping, setDropping] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const isSelected = selectedId === track.id || selectedIds.includes(track.id);
 
   const clips = track.clips ?? [];
