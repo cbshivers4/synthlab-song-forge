@@ -499,12 +499,12 @@ function StudioWorkspace() {
 function Stages() {
   const { stage } = useApp();
   return (
-    <>
+    <PlanProvider>
       <SplashScreen />
       {stage === "welcome" && <WelcomeScreen />}
       {stage === "start" && <StartScreen />}
       {stage === "studio" && <StudioWorkspace />}
-    </>
+    </PlanProvider>
   );
 }
 
