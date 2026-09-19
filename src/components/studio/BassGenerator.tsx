@@ -113,8 +113,8 @@ export function BassGenerator() {
       <div className="space-y-3 rounded-sm border border-border bg-background p-3">
         <div className="flex items-center gap-2">
           <SlidersHorizontal className="size-4 text-primary" /><span className="label-xs">PATTERN PREVIEW · {preview.length} NOTES</span>
-          <Button size="sm" variant="ghost" className="ml-auto h-7" onClick={() => preview.slice(0, 4).forEach((n, i) => window.setTimeout(() => previewNote(targetId === "new" ? (selected?.id ?? "") : targetId, n.pitch), i * 180))} disabled={targetId === "new" && !selected}>
-            <Play className="size-3.5" /> Audition
+          <Button size="sm" variant={playing ? "secondary" : "ghost"} className="ml-auto h-9 gap-1.5 sm:h-7" onClick={playing ? stopPreview : playPreview}>
+            {playing ? <Square className="size-3.5" /> : <Play className="size-3.5" />} {playing ? "Stop" : "Play"}
           </Button>
         </div>
         <div className="relative h-36 overflow-hidden border border-border bg-surface-2/30">
