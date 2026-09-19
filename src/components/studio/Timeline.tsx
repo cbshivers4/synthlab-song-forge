@@ -436,7 +436,7 @@ function RecordingClip({ track }: { track: Track }) {
         <div className="relative min-h-0 w-full flex-1" aria-label="Drum hits being recorded" role="img">
           {(track.pads ?? []).flatMap((pad, row, arr) => {
             const padLen = pad.steps.length || track.steps || 16;
-            const hits: JSX.Element[] = [];
+            const hits: React.ReactNode[] = [];
             for (let s = start; s <= now; s++) {
               if ((pad.steps[s % padLen] ?? 0) <= 0) continue;
               const l = ((s - start) / Math.max(1, length)) * 100;
