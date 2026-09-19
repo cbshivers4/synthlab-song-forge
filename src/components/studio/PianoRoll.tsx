@@ -36,6 +36,7 @@ export function PianoRoll({ track }: { track: Track }) {
   const [root, setRoot] = useState(0);
   const [scaleName, setScaleName] = useState("Minor");
   const [sel, setSel] = useState<string[]>([]);
+  const [trackOct, setTrackOct] = useState(0);
   const gridRef = useRef<HTMLDivElement | null>(null);
   const drag = useRef<Drag>(null);
 
