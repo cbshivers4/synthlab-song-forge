@@ -36,6 +36,7 @@ export function PianoRoll({ track }: { track: Track }) {
   const [root, setRoot] = useState(0);
   const [scaleName, setScaleName] = useState("Minor");
   const [sel, setSel] = useState<string[]>([]);
+  const [trackOct, setTrackOct] = useState(0);
   const gridRef = useRef<HTMLDivElement | null>(null);
   const drag = useRef<Drag>(null);
 
@@ -51,6 +52,15 @@ export function PianoRoll({ track }: { track: Track }) {
       notes.map((n) => (sel.length === 0 || sel.includes(n.id) ? fn(n) : n)),
     );
   const targets = () => (sel.length ? notes.filter((n) => sel.includes(n.id)) : notes);
+
+  /** Move every note on this track up or down an octave and follow it with the view. */
+  const shiftTrackOctave = (dir: number) => {
+    const next = trackOct + dir;
+    if (next < -3 || next > 3) return;
+    setTrackOct(next);
+    setNotes(track.id, notes.map((n) => ({ ...n, pitch: Math.min(120, Math.max(12, n.pitch + dir * 12)) })));
+    setLow((l) => Math.min(96, Math.max(12, l + dir * 12)));
+  };
 
   const posFromEvent = (e: React.PointerEvent | React.MouseEvent) => {
     const el = gridRef.current;
@@ -151,7 +161,14 @@ export function PianoRoll({ track }: { track: Track }) {
             ))}
           </SelectContent>
         </Select>
+        <span className="label-xs px-1">TRACK OCT</span>
+        <Tool onClick={() => shiftTrackOctave(-1)}>−</Tool>
+        <span className="w-10 text-center font-mono text-[10px] text-primary">
+          {trackOct > 0 ? `+${trackOct}` : trackOct}
+        </span>
+        <Tool onClick={() => shiftTrackOctave(1)}>+</Tool>
       </div>
+
 
       <div className="flex items-center overflow-x-auto whitespace-nowrap scrollbar-hide gap-1.5 rounded-sm border border-border bg-surface/60 p-1.5">
         <Tool onClick={() => apply((n) => ({ ...n, step: Math.round(n.step / grid) * grid }))}>QUANTIZE</Tool>
@@ -248,6 +265,113 @@ export function PianoRoll({ track }: { track: Track }) {
         <Tool onClick={() => setNotes(track.id, sel.length ? notes.filter((n) => !sel.includes(n.id)) : [])}>
           {sel.length ? "DELETE SEL" : "CLEAR"}
         </Tool>
+      </div>
+
+      {/* extra writing tools */}
+      <div className="flex items-center overflow-x-auto whitespace-nowrap scrollbar-hide gap-1.5 rounded-sm border border-border bg-surface/60 p-1.5">
+        <span className="label-xs px-1">TOOLS</span>
+        <Tool
+          onClick={() => {
+            const t = targets();
+            if (!t.length) return;
+            const up = (p: number, deg: number) => {
+              let x = p;
+              let left = deg;
+              while (left > 0) {
+                x += 1;
+                if (!scaleLock || inScale(x)) left -= 1;
+                if (x - p > 24) break;
+              }
+              return x;
+            };
+            setNotes(track.id, [
+              ...notes,
+              ...t.flatMap((n) => [
+                { ...n, id: uid(), pitch: up(n.pitch, 3) },
+                { ...n, id: uid(), pitch: up(n.pitch, 7) },
+              ]),
+            ]);
+          }}
+        >
+          CHORD
+        </Tool>
+        <Tool
+          onClick={() => {
+            const t = [...targets()].sort((a, b) => a.pitch - b.pitch);
+            if (t.length < 2) return;
+            const start = Math.min(...t.map((n) => n.step));
+            const ids = new Map(t.map((n, i) => [n.id, start + i * grid]));
+            setNotes(
+              track.id,
+              notes.map((n) => (ids.has(n.id) ? { ...n, step: ids.get(n.id)!, length: grid } : n)),
+            );
+          }}
+        >
+          ARPEGGIATE
+        </Tool>
+        <Tool
+          onClick={() => {
+            const t = targets();
+            if (!t.length) return;
+            const lowest = Math.min(...t.map((n) => n.pitch));
+            const highest = Math.max(...t.map((n) => n.pitch));
+            apply((n) => ({ ...n, pitch: lowest + (highest - n.pitch) }));
+          }}
+        >
+          INVERT
+        </Tool>
+        <Tool onClick={() => apply((n) => ({ ...n, step: Math.max(0, n.step - grid) }))}>NUDGE ←</Tool>
+        <Tool onClick={() => apply((n) => ({ ...n, step: n.step + grid }))}>NUDGE →</Tool>
+        <Tool
+          onClick={() => {
+            const t = [...targets()].sort((a, b) => a.pitch - b.pitch);
+            if (!t.length) return;
+            const off = new Map(t.map((n, i) => [n.id, i * 0.12]));
+            setNotes(track.id, notes.map((n) => (off.has(n.id) ? { ...n, step: n.step + off.get(n.id)! } : n)));
+          }}
+        >
+          STRUM
+        </Tool>
+        <Tool
+          onClick={() => {
+            const t = targets();
+            if (!t.length) return;
+            const min = Math.min(...t.map((n) => n.step));
+            const max = Math.max(...t.map((n) => n.step)) || 1;
+            apply((n) => ({
+              ...n,
+              velocity: Math.min(1, Math.max(0.1, 0.35 + ((n.step - min) / Math.max(1, max - min)) * 0.6)),
+            }));
+          }}
+        >
+          VEL RAMP
+        </Tool>
+        <Tool onClick={() => apply((n) => ({ ...n, velocity: 0.85 }))}>FIXED VEL</Tool>
+        <Tool
+          onClick={() => {
+            const t = targets();
+            if (!t.length) return;
+            setNotes(track.id, [
+              ...notes,
+              ...t.map((n) => ({ ...n, id: uid(), step: n.step + grid, velocity: Math.max(0.1, n.velocity * 0.55) })),
+            ]);
+          }}
+        >
+          ECHO
+        </Tool>
+        <Tool
+          onClick={() => {
+            const t = targets();
+            if (!t.length) return;
+            setNotes(track.id, [
+              ...notes,
+              ...t.map((n) => ({ ...n, id: uid(), step: Math.max(0, n.step - 0.25), velocity: Math.max(0.1, n.velocity * 0.5), length: Math.max(0.25, n.length / 2) })),
+            ]);
+          }}
+        >
+          FLAM
+        </Tool>
+        <Tool onClick={() => apply((n) => ({ ...n, length: Math.max(0.25, n.length * 0.5) }))}>STACCATO</Tool>
       </div>
 
       {/* editor */}

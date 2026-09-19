@@ -11,6 +11,8 @@ import { MixerWindow } from "@/components/studio/MixerWindow";
 import { SynthEditor } from "@/components/studio/SynthEditor";
 import { DrumMachine } from "@/components/studio/DrumMachine";
 import { PianoRoll } from "@/components/studio/PianoRoll";
+import { DrumPads } from "@/components/studio/DrumPads";
+import { MidiLearnStrip } from "@/components/studio/MidiLearn";
 import { VocalForge } from "@/components/studio/VocalForge";
 import { Settings } from "@/components/studio/Settings";
 import { Keyboard } from "@/components/studio/Keyboard";
@@ -236,7 +238,15 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
         ))}
       {panel === "piano" &&
         (synthTrack ? (
-          <PianoRoll track={synthTrack} />
+          <div className="space-y-2">
+            <PianoRoll track={synthTrack} />
+            <MidiLearnStrip id={synthTrack.id} label={synthTrack.name} />
+            {drumTrack ? (
+              <DrumPads track={drumTrack} />
+            ) : (
+              <p className="text-xs text-muted-foreground">Add a drum machine track to get tap pads here.</p>
+            )}
+          </div>
         ) : (
           <p className="text-sm text-muted-foreground">Select an instrument or MIDI track to edit its notes.</p>
         ))}
