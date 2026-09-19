@@ -1,22 +1,15 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 // Console fader thumb sizing is provided by FADER_CAP below.
 import {
-  AudioLines,
   ChevronLeft,
   ChevronRight,
-  Drum,
-  Guitar,
   Maximize2,
-  Mic,
-  Mic2,
   Minimize2,
   MoreVertical,
-  Music2,
   Palette,
-  Piano,
   Power,
-  Radio,
   Settings2,
+  Speaker,
   Sliders,
   Trash2,
   VolumeX,
@@ -28,7 +21,7 @@ import { getEngine } from "@/lib/synclab/audio-engine";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useStudio, type MidiTarget } from "@/lib/synclab/store";
-import { TRACK_COLORS } from "@/lib/synclab/presets";
+import { TrackIcon, TrackStylePicker } from "@/components/studio/TrackStyle";
 import { BUILT_IN_PLUGINS } from "@/lib/synclab/plugins";
 import type { BusId, BusState, PluginInstance, Track, Transport } from "@/lib/synclab/types";
 import { cn } from "@/lib/utils";
@@ -286,26 +279,7 @@ function InsertRack({
 }
 
 function KindIcon({ t, className }: { t: Track; className?: string }) {
-  const name = `${t.instrument ?? ""} ${t.name}`.toLowerCase();
-  const Icon =
-    t.kind === "drum"
-      ? Drum
-      : t.kind === "audio"
-        ? Mic
-        : t.kind === "ai-vocal"
-          ? Mic2
-          : t.kind === "sampler"
-            ? AudioLines
-            : /bass/.test(name)
-              ? Guitar
-              : /piano|keys|organ/.test(name)
-                ? Piano
-                : /string|brass|pad/.test(name)
-                  ? Radio
-                  : /guitar|pluck/.test(name)
-                    ? Guitar
-                    : Music2;
-  return <Icon className={className} />;
+  return <TrackIcon track={t} className={className} tinted={false} />;
 }
 
 /** Per-channel send menu: reverb / delay / chorus amounts plus each return's FX chain. */
@@ -361,6 +335,7 @@ function SendsMenu({ t }: { t: Track }) {
 /* ---- Console section geometry: every column shares these row heights ---- */
 const ROW = {
   head: "h-7",
+  badge: "h-[46px]",
   scope: "h-[48px]",
   eq: "h-[74px]",
   devices: "h-[92px]",
@@ -520,6 +495,7 @@ function LabelRail() {
   return (
     <div className="sticky left-0 z-10 flex w-[76px] shrink-0 flex-col border-r border-border bg-surface-2/85 backdrop-blur">
       <SectionLabel className={cn(ROW.head, "bg-surface-2")}>Ch</SectionLabel>
+      <SectionLabel className={ROW.badge}>Icon</SectionLabel>
       <SectionLabel className={ROW.scope}>Scope</SectionLabel>
       <SectionLabel className={ROW.eq}>EQ</SectionLabel>
       <SectionLabel className={ROW.devices}>Devices</SectionLabel>
@@ -607,32 +583,18 @@ function DeviceSlots({ t, narrow }: { t: Track; narrow: boolean }) {
   );
 }
 
-/** Small colour picker so every channel can be recoloured from the console. */
+/** Colour + icon picker so every channel can be restyled from the console. */
 function ColorDot({ t }: { t: Track }) {
-  const { updateTrack } = useStudio();
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <button
-          onClick={(e) => e.stopPropagation()}
-          title="Channel colour"
-          className="size-3.5 shrink-0 rounded-full border border-black/40"
-          style={{ background: t.color }}
-        />
-      </PopoverTrigger>
-      <PopoverContent align="start" className="w-auto p-2" onClick={(e) => e.stopPropagation()}>
-        <div className="flex gap-1.5">
-          {TRACK_COLORS.map((c) => (
-            <button
-              key={c}
-              onClick={() => updateTrack(t.id, { color: c })}
-              className={cn("size-5 rounded-full border", c === t.color ? "border-foreground" : "border-black/40")}
-              style={{ background: c }}
-            />
-          ))}
-        </div>
-      </PopoverContent>
-    </Popover>
+    <TrackStylePicker track={t}>
+      <button
+        onClick={(e) => e.stopPropagation()}
+        title="Channel colour and icon"
+        aria-label="Channel colour and icon"
+        className="size-3.5 shrink-0 rounded-full border border-black/40"
+        style={{ background: t.color }}
+      />
+    </TrackStylePicker>
   );
 }
 
@@ -904,6 +866,18 @@ function Strip({
         <Screw />
       </div>
 
+      {/* big identity badge: shows what the channel is, click to restyle */}
+      <TrackStylePicker track={t}>
+        <button
+          onClick={(e) => e.stopPropagation()}
+          title={`${t.name} — pick colour and icon`}
+          aria-label={`${t.name} colour and icon`}
+          className={cn(ROW.badge, "flex w-full items-center justify-center border-b border-border/60 transition-colors hover:bg-white/5")}
+          style={{ background: `color-mix(in oklab, ${t.color} 14%, transparent)` }}
+        >
+          <TrackIcon track={t} className="size-7" />
+        </button>
+      </TrackStylePicker>
       <div className={cn(ROW.scope, "border-b border-border/60 p-[3px]")}>
         <Scope scopeId={`ch:${t.id}`} height={40} compact color={t.color} />
       </div>
@@ -1087,6 +1061,13 @@ function BusStrip({
         Bus
         <Screw />
       </div>
+      <div
+        className={cn(ROW.badge, "flex items-center justify-center border-b border-border/60")}
+        style={{ background: `color-mix(in oklab, ${color} 14%, transparent)` }}
+        title="Bus"
+      >
+        <Waves className="size-7" style={{ color }} />
+      </div>
       <div className={cn(ROW.scope, "border-b border-border/60 p-[3px]")}>
         <Scope scopeId={`bus:${id}`} height={40} compact color={color} />
       </div>
@@ -1261,6 +1242,13 @@ function MasterStrip({ level: peak }: { level: number }) {
           </PopoverContent>
         </Popover>
         <Screw />
+      </div>
+      <div
+        className={cn(ROW.badge, "flex items-center justify-center border-b border-black/50")}
+        style={{ background: `color-mix(in oklab, ${color} 14%, transparent)` }}
+        title="Master out"
+      >
+        <Speaker className="size-7" style={{ color }} />
       </div>
       <div className={cn(ROW.scope, "border-b border-black/50 p-[3px]")}>
         <Scope scopeId="master" height={40} compact color={color} />
