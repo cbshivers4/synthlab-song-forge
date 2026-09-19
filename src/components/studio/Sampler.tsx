@@ -309,7 +309,7 @@ export function Sampler() {
 
             {chops.length > 1 ? (
               <>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8 lg:gap-2">
+                <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 xl:grid-cols-8 xl:gap-3">
                   {chops.map((c, i) => {
                     const color = chopColor(i);
                     const next = chops[i + 1] ?? s.end;
@@ -344,11 +344,9 @@ export function Sampler() {
                           setHeld(null);
                           stopSamples(track.id);
                         }}
-                        onPointerLeave={(e) => {
-                          if (e.buttons > 0) {
-                            setHeld(null);
-                            stopSamples(track.id);
-                          }
+                        onPointerLeave={() => {
+                          setHeld(null);
+                          stopSamples(track.id);
                         }}
                         style={{
                           borderColor: color,
@@ -357,7 +355,7 @@ export function Sampler() {
                             : `linear-gradient(145deg, color-mix(in hsl, ${color} 28%, transparent), color-mix(in hsl, ${color} 8%, transparent))`,
                           boxShadow: live ? `0 0 18px ${color}` : undefined,
                         }}
-                        className="relative flex h-32 touch-none flex-col items-center justify-between rounded-md border p-2 font-mono text-xs transition-all select-none sm:h-28 lg:h-24"
+                        className="relative flex min-h-44 touch-none flex-col items-center justify-between rounded-md border p-4 font-mono text-xs transition-all select-none sm:min-h-48 lg:min-h-40 xl:min-h-32"
                       >
                         <span className="relative z-10 text-sm text-foreground">{i + 1}</span>
                         <span className="pointer-events-none absolute inset-x-1 top-5 bottom-4">

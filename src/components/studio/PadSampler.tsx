@@ -517,7 +517,7 @@ export function PadSampler() {
         </span>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-2">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-3">
         {Array.from({ length: PADS_PER_BANK }, (_, i) => {
           const id = index(i);
           const pad = pads[id];
@@ -525,13 +525,13 @@ export function PadSampler() {
           const c = padColor(bank, i);
           const recording = recPad === id;
           const release = () => {
-            if (armRec) {
+            if (holdRef.current?.pad === id || recRef.current?.pad === id) {
               endHold();
               return;
             }
-            if (playing === id) {
+            if (pad) {
               stopPad(id);
-              setPlaying(null);
+              setPlaying((current) => (current === id ? null : current));
             }
           };
           return (
@@ -540,7 +540,7 @@ export function PadSampler() {
               type="button"
               onPointerDown={(e) => {
                 setSel(id);
-                if (armRec) {
+                if (armRec || !pad) {
                   e.preventDefault();
                   try {
                     e.currentTarget.setPointerCapture(e.pointerId);
@@ -564,9 +564,7 @@ export function PadSampler() {
               onPointerUp={release}
               onPointerCancel={release}
               onLostPointerCapture={release}
-              onPointerLeave={(e) => {
-                if (e.buttons > 0) release();
-              }}
+              onPointerLeave={release}
               onContextMenu={(e) => armRec && e.preventDefault()}
               onDragOver={(e) => {
                 e.preventDefault();
@@ -602,7 +600,7 @@ export function PadSampler() {
                         ? { borderColor: `color-mix(in hsl, ${c} 60%, transparent)` }
                         : undefined
               }
-              className={`relative flex h-32 touch-none flex-col items-start justify-between rounded-md border p-3 text-left transition-all select-none sm:h-28 ${
+              className={`relative flex min-h-44 touch-none flex-col items-start justify-between rounded-md border p-4 text-left transition-all select-none sm:min-h-48 lg:min-h-40 ${
                 pad || recording ? "" : "border-dashed border-border bg-surface-2/40 hover:border-muted-foreground/60"
               } ${recording ? "animate-pulse" : ""}`}
             >
@@ -634,7 +632,7 @@ export function PadSampler() {
                 className={`line-clamp-2 font-mono text-[10px] ${pad || recording ? "" : "text-foreground"}`}
                 style={pad || recording ? { color: "hsl(0 0% 100%)", textShadow: "0 1px 2px hsl(0 0% 0% / 0.5)" } : undefined}
               >
-                {recording ? "RECORDING…" : pad ? pad.name : armRec ? "hold to record" : "empty · select"}
+                {recording ? "RECORDING…" : pad ? pad.name : "HOLD TO RECORD"}
               </span>
               {pad && pad.choke > 0 && (
                 <span className="absolute right-1 top-1 rounded-sm bg-accent px-1 font-mono text-[8px] text-accent-foreground">
