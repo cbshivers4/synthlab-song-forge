@@ -1,12 +1,23 @@
-import { useMemo, useState } from "react";
-import { AudioWaveform, Dice5, Play, SlidersHorizontal } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { AudioWaveform, Dice5, Play, SlidersHorizontal, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { useStudio } from "@/lib/synclab/store";
-import { uid } from "@/lib/synclab/presets";
+import { getEngine } from "@/lib/synclab/audio-engine";
+import { defaultPatch, SYNTH_PRESETS, uid } from "@/lib/synclab/presets";
 import type { MidiNote } from "@/lib/synclab/types";
 import { toast } from "sonner";
+
+const PREVIEW_CHANNEL = "bass-generator-preview";
+
+/** Builds the patch a style would use, so the preview sounds like the real thing. */
+function previewPatch(name: string) {
+  const patch = defaultPatch(name);
+  SYNTH_PRESETS.find((p) => p.name === name)?.mutate(patch);
+  patch.name = name;
+  return patch;
+}
 
 const ROOTS = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 const SCALES: Record<string, number[]> = {
@@ -25,7 +36,7 @@ const STYLES = {
 type StyleName = keyof typeof STYLES;
 
 export function BassGenerator() {
-  const { tracks, selected, addTrack, setNotes, changeInstrument, select, setPanel, previewNote } = useStudio();
+  const { tracks, selected, transport, addTrack, setNotes, changeInstrument, select, setPanel } = useStudio();
   const [root, setRoot] = useState(0);
   const [scaleName, setScaleName] = useState("Minor");
   const [style, setStyle] = useState<StyleName>("Detroit Techno");
@@ -38,6 +49,37 @@ export function BassGenerator() {
   const [targetId, setTargetId] = useState(selected && bassTracks.some((t) => t.id === selected.id) ? selected.id : "new");
   const scale = SCALES[scaleName] ?? (SCALES["Minor"] as number[]);
   const preview = useMemo(() => generate(root, scale, style, bars, density, movement, octave, seed), [root, scale, style, bars, density, movement, octave, seed]);
+
+  const [playing, setPlaying] = useState(false);
+  const [playStep, setPlayStep] = useState(0);
+  const timers = useRef<number[]>([]);
+
+  const stopPreview = () => {
+    timers.current.forEach((t) => window.clearTimeout(t));
+    timers.current = [];
+    setPlaying(false);
+    setPlayStep(0);
+  };
+  useEffect(() => stopPreview, []);
+
+  /** Auditions the generated pattern on its own preview channel, without touching the song. */
+  const playPreview = () => {
+    stopPreview();
+    const patch = previewPatch(STYLES[style].preset);
+    const stepSec = 60 / Math.max(40, transport.bpm) / 4;
+    const engine = getEngine();
+    engine.init();
+    setPlaying(true);
+    preview.forEach((n) => {
+      timers.current.push(
+        window.setTimeout(() => {
+          engine.playNote(PREVIEW_CHANNEL, patch, n.pitch, n.length * stepSec, n.velocity);
+          setPlayStep(n.step);
+        }, n.step * stepSec * 1000),
+      );
+    });
+    timers.current.push(window.setTimeout(stopPreview, bars * 16 * stepSec * 1000 + 400));
+  };
 
   const apply = () => {
     const def = STYLES[style];
@@ -71,13 +113,19 @@ export function BassGenerator() {
       <div className="space-y-3 rounded-sm border border-border bg-background p-3">
         <div className="flex items-center gap-2">
           <SlidersHorizontal className="size-4 text-primary" /><span className="label-xs">PATTERN PREVIEW · {preview.length} NOTES</span>
-          <Button size="sm" variant="ghost" className="ml-auto h-7" onClick={() => preview.slice(0, 4).forEach((n, i) => window.setTimeout(() => previewNote(targetId === "new" ? (selected?.id ?? "") : targetId, n.pitch), i * 180))} disabled={targetId === "new" && !selected}>
-            <Play className="size-3.5" /> Audition
+          <Button size="sm" variant={playing ? "secondary" : "ghost"} className="ml-auto h-9 gap-1.5 sm:h-7" onClick={playing ? stopPreview : playPreview}>
+            {playing ? <Square className="size-3.5" /> : <Play className="size-3.5" />} {playing ? "Stop" : "Play"}
           </Button>
         </div>
         <div className="relative h-36 overflow-hidden border border-border bg-surface-2/30">
           {Array.from({ length: bars * 16 }, (_, i) => <span key={i} className="absolute inset-y-0 border-l border-border/40" style={{ left: `${(i / (bars * 16)) * 100}%` }} />)}
           {preview.map((n) => <span key={n.id} className="absolute h-3 rounded-[2px] bg-primary shadow-[0_0_8px_hsl(var(--primary)/0.35)]" style={{ left: `${(n.step / (bars * 16)) * 100}%`, width: `${Math.max(1, (n.length / (bars * 16)) * 100)}%`, bottom: `${8 + (n.pitch - (octave + 1) * 12) * 4}px`, opacity: n.velocity }} />)}
+          {playing && (
+            <span
+              className="pointer-events-none absolute inset-y-0 w-px bg-accent shadow-[0_0_10px_hsl(var(--accent))] transition-[left] duration-100"
+              style={{ left: `${(playStep / (bars * 16)) * 100}%` }}
+            />
+          )}
         </div>
         <div className="flex items-center justify-between text-xs text-muted-foreground">
           <span>{STYLES[style].preset} sound · scale-safe notes · varied velocity and note length</span>

@@ -18,6 +18,7 @@ import { useStudio } from "@/lib/synclab/store";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { toast } from "sonner";
 import { WaveformView } from "@/components/studio/WaveformView";
+import { LiveWave } from "@/components/studio/LiveWave";
 import { getPadBank, setPadBank, subscribePadBank, type SavedPad } from "@/lib/synclab/pad-session";
 
 const BANKS = ["A", "B", "C", "D"] as const;
@@ -164,6 +165,10 @@ export function PadSampler() {
   /** hold-to-record mode: press a pad to record, release to keep the take */
   const [armRec, setArmRec] = useState(false);
   const [recPad, setRecPad] = useState<number | null>(null);
+  /** live microphone stream shown as a moving wave while a pad records */
+  const [recStream, setRecStream] = useState<MediaStream | null>(null);
+  /** pad currently held down and sounding */
+  const [playing, setPlaying] = useState<number | null>(null);
   const [over, setOver] = useState<number | null>(null);
   const [trackId, setTrackId] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
@@ -342,6 +347,7 @@ export function PadSampler() {
     rec.start(200);
     recRef.current = { rec, stream, chunks, pad: i };
     setMicOn(true);
+    setRecStream(stream);
   };
 
   const stopMic = async () => {
@@ -354,6 +360,7 @@ export function PadSampler() {
     r.stream.getTracks().forEach((t) => t.stop());
     recRef.current = null;
     setMicOn(false);
+    setRecStream(null);
     if (!blob.size) return;
     ensureTrack();
     const loaded = await getEngine().loadSampleFile(blob, `REC ${r.pad + 1}`);
@@ -389,6 +396,13 @@ export function PadSampler() {
   };
 
   const filled = useMemo(() => Object.keys(pads).length, [pads]);
+
+  /** which pad the big waveform monitor is showing */
+  const monitorId = playing ?? recPad ?? sel;
+  const monitorSample = pads[monitorId];
+  const monitorPad = monitorSample
+    ? { pad: monitorSample, color: padColor(Math.floor(monitorId / PADS_PER_BANK), monitorId % PADS_PER_BANK) }
+    : null;
 
   return (
     <div className="space-y-3">
@@ -477,13 +491,43 @@ export function PadSampler() {
         })}
       </div>
 
+      {/* live monitor: shows the microphone while recording, or the pad you are playing */}
+      <div className="relative h-24 overflow-hidden rounded-lg border border-border bg-surface-2/50 sm:h-20">
+        {recStream ? (
+          <LiveWave stream={recStream} color="hsl(0 85% 62%)" label="Live microphone waveform" />
+        ) : monitorPad ? (
+          <>
+            <WaveformView peaks={monitorPad.pad.peaks} color={monitorPad.color} label={`${monitorPad.pad.name} waveform`} />
+            <span className="absolute inset-y-0 left-0 bg-background/70" style={{ width: `${monitorPad.pad.start * 100}%` }} />
+            <span className="absolute inset-y-0 right-0 bg-background/70" style={{ width: `${(1 - monitorPad.pad.end) * 100}%` }} />
+          </>
+        ) : (
+          <span className="absolute inset-0 flex items-center justify-center font-mono text-[10px] tracking-widest text-muted-foreground">
+            HOLD A PAD TO PLAY · HOLD TO RECORD TO SAMPLE
+          </span>
+        )}
+        <span className="absolute left-2 top-1.5 font-mono text-[9px] tracking-widest text-white/70">
+          {recStream ? "RECORDING" : monitorPad ? monitorPad.pad.name : "MONITOR"}
+        </span>
+      </div>
+
       <div className="grid grid-cols-4 gap-2">
         {Array.from({ length: PADS_PER_BANK }, (_, i) => {
           const id = index(i);
           const pad = pads[id];
-          const active = hit === id;
+          const active = hit === id || playing === id;
           const c = padColor(bank, i);
           const recording = recPad === id;
+          const release = () => {
+            if (armRec) {
+              endHold();
+              return;
+            }
+            if (playing === id) {
+              stopPad(id);
+              setPlaying(null);
+            }
+          };
           return (
             <button
               key={id}
@@ -496,10 +540,14 @@ export function PadSampler() {
                   void beginHold(id);
                   return;
                 }
-                if (pad) trigger(id);
+                if (pad) {
+                  e.currentTarget.setPointerCapture(e.pointerId);
+                  trigger(id);
+                  setPlaying(id);
+                }
               }}
-              onPointerUp={() => armRec && endHold()}
-              onPointerCancel={() => armRec && endHold()}
+              onPointerUp={release}
+              onPointerCancel={release}
               onContextMenu={(e) => armRec && e.preventDefault()}
               onDragOver={(e) => {
                 e.preventDefault();
@@ -545,6 +593,11 @@ export function PadSampler() {
                   {i + 1} · {KEYMAP[i]?.toUpperCase()}
                 </span>
               </span>
+              {recording && recStream && (
+                <span className="pointer-events-none absolute inset-x-1.5 top-4 bottom-6">
+                  <LiveWave stream={recStream} color="hsl(0 0% 100%)" label="Recording waveform" />
+                </span>
+              )}
               {pad && !recording && (
                 <span className="pointer-events-none absolute inset-x-1.5 top-4 bottom-6">
                   <WaveformView peaks={pad.peaks} color={c} grid={false} label={`${pad.name} waveform`} />
