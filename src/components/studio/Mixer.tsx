@@ -625,27 +625,122 @@ function ChannelEq({ t }: { t: Track }) {
           + EQ
         </button>
       ) : (
-        bands.map(([id, label]) => {
-          const param = eq.params.find((p) => p.id === id);
-          const value = param?.value ?? 0;
-          return (
-            <div key={id} className="flex h-full flex-1 flex-col items-center justify-between">
-              <Slider
-                orientation="vertical"
-                className="h-[42px] w-4"
-                value={[value]}
-                min={-18}
-                max={18}
-                step={0.5}
-                onDoubleClick={() => setPluginParam(t.id, eq.id, id, 0)}
-                onValueChange={([v = 0]) => setPluginParam(t.id, eq.id, id, v)}
-              />
-              <span className="font-mono text-[7px] uppercase text-muted-foreground">{label}</span>
-              <span className="font-mono text-[7px] text-foreground/70">{value > 0 ? `+${value.toFixed(0)}` : value.toFixed(0)}</span>
-            </div>
-          );
-        })
+        <EqCurve
+          bands={bands.map(([id]) => eq.params.find((p) => p.id === id)?.value ?? 0) as [number, number, number]}
+          color={t.color}
+          bypass={!!eq.bypass}
+          onBand={(i, v) => setPluginParam(t.id, eq.id, bands[i]![0], v)}
+        />
       )}
+    </div>
+  );
+}
+
+/**
+ * Interactive EQ curve display: shows the combined low/mid/high response,
+ * drag a band handle up/down to set its gain, double-click a handle to reset.
+ */
+function EqCurve({
+  bands,
+  color,
+  bypass,
+  onBand,
+}: {
+  bands: [number, number, number]; // [high, mid, low] gains in dB
+  color: string;
+  bypass: boolean;
+  onBand: (index: number, gain: number) => void;
+}) {
+  const W = 100;
+  const H = 46;
+  const PAD = 3;
+  const [hi, mid, lo] = bands;
+  // Band handles sit at fixed x positions: LO 18%, MID 50%, HI 82%.
+  const bandX = [18, 50, 82];
+  const bandLabel = ["LO", "MID", "HI"];
+  const bandGain = [lo, mid, hi];
+  // Log-frequency response model (smooth shelves + bell), x in 0..100.
+  const resp = (x: number) => {
+    const t01 = x / 100; // 0 = 20 Hz, 1 = 20 kHz (log)
+    const lowW = 1 / (1 + Math.exp((t01 - 0.28) * 10));
+    const highW = 1 / (1 + Math.exp(-(t01 - 0.72) * 10));
+    const midW = Math.exp(-Math.pow((t01 - 0.5) * 4.2, 2));
+    return lo * lowW + mid * midW + hi * highW;
+  };
+  const yOf = (db: number) => PAD + (1 - (db + 18) / 36) * (H - PAD * 2);
+  const xOf = (db: number) => yOf(db); // same vertical mapping for handles
+  let path = "";
+  for (let x = 0; x <= W; x += 2) {
+    path += `${x === 0 ? "M" : "L"}${x.toFixed(1)},${yOf(resp(x)).toFixed(2)} `;
+  }
+  const areaPath = `${path}L${W},${yOf(0)} L0,${yOf(0)} Z`;
+  const dragRef = useRef<{ band: number; startY: number; startGain: number } | null>(null);
+  const [activeBand, setActiveBand] = useState<number | null>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
+  const onPointerDown = (band: number) => (e: React.PointerEvent) => {
+    e.stopPropagation();
+    try {
+      (e.target as Element).setPointerCapture(e.pointerId);
+    } catch {
+      /* synthetic pointers */
+    }
+    dragRef.current = { band, startY: e.clientY, startGain: bandGain[band]! };
+    setActiveBand(band);
+  };
+  const onPointerMove = (e: React.PointerEvent) => {
+    const d = dragRef.current;
+    if (!d || !svgRef.current) return;
+    const pxPerDb = (svgRef.current.getBoundingClientRect().height - PAD * 2 * 2) / 36;
+    const fine = e.shiftKey ? 0.2 : 1;
+    const next = Math.max(-18, Math.min(18, d.startGain - ((e.clientY - d.startY) / Math.max(2, pxPerDb)) * fine));
+    onBand(d.band, Math.round(next * 2) / 2);
+  };
+  const endDrag = () => {
+    dragRef.current = null;
+    setActiveBand(null);
+  };
+  return (
+    <div className="flex h-full flex-col gap-0.5">
+      <svg
+        ref={svgRef}
+        viewBox={`0 0 ${W} ${H}`}
+        preserveAspectRatio="none"
+        className={cn("w-full flex-1 rounded-sm border border-border/60 bg-black/40", bypass && "opacity-40")}
+        onPointerMove={onPointerMove}
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}
+      >
+        {/* grid: 0 dB line + ±12 dB hints */}
+        <line x1="0" y1={yOf(0)} x2={W} y2={yOf(0)} stroke="rgba(255,255,255,0.25)" strokeWidth="0.4" />
+        <line x1="0" y1={yOf(12)} x2={W} y2={yOf(12)} stroke="rgba(255,255,255,0.08)" strokeWidth="0.3" />
+        <line x1="0" y1={yOf(-12)} x2={W} y2={yOf(-12)} stroke="rgba(255,255,255,0.08)" strokeWidth="0.3" />
+        {[25, 50, 75].map((x) => (
+          <line key={x} x1={x} y1={PAD} x2={x} y2={H - PAD} stroke="rgba(255,255,255,0.06)" strokeWidth="0.3" />
+        ))}
+        <path d={areaPath} fill={color} opacity={0.16} />
+        <path d={path} fill="none" stroke={color} strokeWidth={1.1} strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+        {bandX.map((bx, i) => (
+          <circle
+            key={i}
+            cx={bx}
+            cy={xOf(bandGain[i]!)}
+            r={activeBand === i ? 3.4 : 2.6}
+            fill={color}
+            stroke="black"
+            strokeWidth="0.6"
+            style={{ cursor: "ns-resize", touchAction: "none" }}
+            onPointerDown={onPointerDown(i)}
+            onDoubleClick={() => onBand(i, 0)}
+          />
+        ))}
+      </svg>
+      <div className="flex items-center justify-between font-mono text-[7px]">
+        {bandGain.map((g, i) => (
+          <span key={i} className={cn(activeBand === i ? "text-foreground" : "text-muted-foreground")}>
+            {bandLabel[i]} <span style={{ color: g !== 0 ? color : undefined }}>{g > 0 ? `+${g.toFixed(0)}` : g.toFixed(0)}</span>
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
