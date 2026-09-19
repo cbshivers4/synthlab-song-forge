@@ -11,6 +11,7 @@ import { canShareFile, downloadBlob, encodeMp3, encodeWav, normalize, peakOf, sh
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { uploadCloudExport } from "@/lib/synclab/cloud";
+import { usePlan } from "@/lib/synclab/plan";
 
 export const EXPORT_EVENT = "synclab:export";
 export const openExport = () => window.dispatchEvent(new CustomEvent(EXPORT_EVENT));

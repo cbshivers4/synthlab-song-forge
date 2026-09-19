@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { openExport } from "@/components/studio/ExportDialog";
 import { saveCloudProject } from "@/lib/synclab/cloud";
+import { usePlan } from "@/lib/synclab/plan";
 import { saveUserTemplate } from "@/lib/synclab/user-templates";
 import { parseMidiFile } from "@/lib/synclab/midi-file";
 

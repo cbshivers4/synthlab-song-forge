@@ -9,6 +9,7 @@ import { useStudio } from "@/lib/synclab/store";
 import { useApp } from "@/lib/synclab/app-state";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { downloadBlob, encodeMp3, encodeWav, type Capture } from "@/lib/synclab/bounce";
+import { usePlan } from "@/lib/synclab/plan";
 import {
   MASTER_DEFAULTS,
   MASTER_PRESETS,
