@@ -61,6 +61,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { SectionLane } from "./SectionLane";
 import { useStudio } from "@/lib/synclab/store";
 import { AddTrackMenu } from "@/components/studio/AddTrackMenu";
 
@@ -1962,6 +1963,7 @@ export function Timeline() {
     <section className="relative flex min-h-0 flex-1 flex-col overflow-hidden border-x border-b border-border bg-background/60">
       <EditToolbar />
       <Ruler />
+      <SectionLane />
       <div ref={scrollRef} className="relative min-h-0 flex-1 overflow-auto">
         <div className="min-w-[720px] sm:min-w-0">
         {/* SYNCLAB watermark centered over the rhythm grid */}

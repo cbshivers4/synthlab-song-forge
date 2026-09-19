@@ -17,7 +17,8 @@ import {
  * double-click to rename, and duplicate to copy the part with its audio.
  */
 export function SectionLane() {
-  const { sections, transport, addSection, updateSection, removeSection, duplicateSection, gotoSection } = useStudio();
+  const { sections, transport, addSection, updateSection, removeSection, duplicateSection, gotoSection, autoSections } =
+    useStudio();
   const gridRef = useRef<HTMLDivElement>(null);
   const [renaming, setRenaming] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
@@ -88,7 +89,7 @@ export function SectionLane() {
               </DropdownMenuItem>
             ))}
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="font-mono text-[11px]" onSelect={() => useStudioAuto()}>
+            <DropdownMenuItem className="font-mono text-[11px]" onSelect={() => autoSections()}>
               Lay out a full song
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -197,9 +198,4 @@ export function SectionLane() {
       </div>
     </div>
   );
-}
-
-/** Small indirection so the dropdown item can call the store hook action. */
-function useStudioAuto() {
-  /* replaced at render time by SectionLane's handler */
 }
