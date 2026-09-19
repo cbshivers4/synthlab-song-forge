@@ -108,6 +108,37 @@ export function MenuBar() {
     return () => document.removeEventListener("synclab:cloud-save", onSave);
   });
 
+  const [saveAsOpen, setSaveAsOpen] = useState(false);
+  const [saveAsName, setSaveAsName] = useState("");
+
+  const openSaveAs = () => {
+    setSaveAsName(project ? `${project.name} Copy` : "Untitled project");
+    setSaveAsOpen(true);
+  };
+
+  const confirmSaveAs = async () => {
+    const name = saveAsName.trim() || "Untitled project";
+    if (!project) {
+      toast("Create a project first");
+      return;
+    }
+    setSaveAsOpen(false);
+    const { id: _id, ...copy } = project;
+    const newProject = { ...copy, name, openedAt: Date.now() };
+    setProject(newProject);
+    const saving = toast.loading(`Saving “${name}” and its audio…`);
+    try {
+      const saved = await saveCloudProject({ ...newProject, id: "" }, snapshot());
+      setProject({ ...newProject, id: saved.id });
+      toast.success(`Saved “${name}” to your cloud`, {
+        id: saving,
+        description: "It keeps the original untouched as its own project.",
+      });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Cloud save failed", { id: saving });
+    }
+  };
+
   const needTrack = (fn: (id: string) => void) => () => {
     if (!selected) {
       toast("Select a track first", { description: "Click a track name in the timeline, then try again." });
