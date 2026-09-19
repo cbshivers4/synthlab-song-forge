@@ -1400,6 +1400,13 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
   );
 }
 
+const SNAP_OPTIONS: { label: string; value: number }[] = [
+  { label: "OFF", value: 0 },
+  { label: "1/4", value: 1 },
+  { label: "1/2 BAR", value: 2 },
+  { label: "BAR", value: 4 },
+];
+
 function EditToolbar() {
   const {
     editTool,
@@ -1414,7 +1421,108 @@ function EditToolbar() {
     pasteTrack,
     removeTrack,
     clipboardName,
+    undo,
+    redo,
+    transport,
+    setTransport,
+    addTrack,
+    addClip,
+    setNotes,
+    updateTrack,
+    select,
+    setPanel,
   } = useStudio();
+  const audioInput = useRef<HTMLInputElement>(null);
+  const midiInput = useRef<HTMLInputElement>(null);
+  const snap = transport.snap ?? 1;
+
+  const activeClip = selected?.clips?.find((c) => c.id === selected.activeClipId) ?? selected?.clips?.[0] ?? null;
+
+  const writeActive = (patch: Partial<NonNullable<typeof activeClip>>) => {
+    if (!selected || !activeClip) return;
+    updateTrack(selected.id, {
+      clips: (selected.clips ?? []).map((c) => (c.id === activeClip.id ? { ...c, ...patch } : c)),
+    });
+  };
+
+  const nudge = (dir: -1 | 1) => {
+    if (!activeClip) {
+      toast("Pick a clip first", { description: "Click a clip on the timeline, then nudge it." });
+      return;
+    }
+    const step = snap > 0 ? snap : 1;
+    writeActive({ start: Math.max(0, (activeClip.start ?? 0) + dir * step) });
+  };
+
+  const duplicateClip = () => {
+    if (!selected || !activeClip) {
+      toast("Pick a clip first", { description: "Click a clip on the timeline to duplicate it." });
+      return;
+    }
+    const stepDur = 60 / Math.max(20, transport.bpm) / 4;
+    const steps = Math.max(1, Math.round(clipSeconds(activeClip) / stepDur));
+    addClip(selected.id, { ...activeClip, id: uid(), name: `${activeClip.name} COPY`, start: (activeClip.start ?? 0) + steps });
+  };
+
+  const fade = (which: "in" | "out") => {
+    if (!activeClip) {
+      toast("Pick a clip first", { description: "Fades apply to the selected clip." });
+      return;
+    }
+    const len = Math.min(1, clipSeconds(activeClip) / 4);
+    writeActive(which === "in" ? { fadeIn: len } : { fadeOut: len });
+    toast.success(`Fade ${which} set to ${len.toFixed(2)}s on ${activeClip.name}`);
+  };
+
+  /** Loads a WAV/MP3/AIFF file as a real waveform clip at the playhead on its own audio channel. */
+  const importAudioClip = async (file: File) => {
+    try {
+      const engine = getEngine();
+      await engine.init();
+      const name = file.name.replace(/\.[^.]+$/, "").toUpperCase().slice(0, 18);
+      const loaded = await engine.loadSampleFile(file, name);
+      const id = addTrack("audio", name);
+      addClip(id, {
+        id: uid(),
+        name,
+        peaks: loaded.peaks,
+        duration: loaded.duration,
+        url: loaded.url,
+        start: transport.step,
+        offset: 0,
+        length: loaded.duration,
+        gain: 1,
+      });
+      select(id);
+      toast.success(`${file.name} on the timeline`, { description: "Drag it to move, pull the edges to trim." });
+    } catch (error) {
+      toast.error("Could not read that audio file", {
+        description: error instanceof Error ? error.message : "Try a WAV, MP3 or AIFF file.",
+      });
+    }
+  };
+
+  /** Loads a .mid file; each part becomes a MIDI region you can see and edit on the timeline. */
+  const importMidiClip = async (file: File) => {
+    try {
+      const parsed = parseMidiFile(await file.arrayBuffer());
+      if (parsed.length === 0) throw new Error("That MIDI file has no notes.");
+      let first = "";
+      parsed.forEach((part) => {
+        const id = addTrack("midi", (part.name || "MIDI").toUpperCase().slice(0, 18), "Deep Keys");
+        setNotes(id, part.notes);
+        if (!first) first = id;
+      });
+      if (first) select(first);
+      toast.success(`${file.name} on the timeline`, {
+        description: `${parsed.length} part${parsed.length === 1 ? "" : "s"} — double-click a region for the piano roll.`,
+      });
+    } catch (error) {
+      toast.error("Could not read that MIDI file", {
+        description: error instanceof Error ? error.message : "Export it again as a standard MIDI file.",
+      });
+    }
+  };
 
   const ToolBtn = ({ tool, icon, label, keys }: { tool: EditTool; icon: React.ReactNode; label: string; keys: string }) => (
     <Button
