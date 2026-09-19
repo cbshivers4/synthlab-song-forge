@@ -474,7 +474,20 @@ export async function master(
   if (settings.dither) ditherInPlace(limited);
 
   onProgress?.("Checking the result", 0.92);
-  const after = await measure(limited);
+  let final = limited;
+  let after = await measure(final);
+  // limiting eats a little loudness — one correction pass lands on the target
+  if (Number.isFinite(after.lufs) && Math.abs(after.lufs - settings.targetLufs) > 0.4) {
+    const trim = Math.max(-6, Math.min(6, settings.targetLufs - after.lufs));
+    const retried = brickwall(applyGain(levelled, Math.pow(10, (matchDb + trim) / 20)), ceiling);
+    if (settings.dither) ditherInPlace(retried);
+    const check = await measure(retried);
+    if (Math.abs(check.lufs - settings.targetLufs) < Math.abs(after.lufs - settings.targetLufs)) {
+      final = retried;
+      after = check;
+      matchDb += trim;
+    }
+  }
   onProgress?.("Done", 1);
-  return { audio: limited, before, after, matchDb };
+  return { audio: final, before, after, matchDb };
 }
