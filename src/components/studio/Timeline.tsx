@@ -67,7 +67,7 @@ import { AddTrackMenu } from "@/components/studio/AddTrackMenu";
 
 import { INSTRUMENTS, KIND_LABEL, uid } from "@/lib/synclab/presets";
 import type { EditTool } from "@/lib/synclab/store";
-import type { AutomationLane, AutomationParam, AutomationPoint, MidiNote, Track } from "@/lib/synclab/types";
+import type { AutomationLane, AutomationParam, AutomationPoint, BusId, MidiNote, Track } from "@/lib/synclab/types";
 
 const CORE_LANE_LABEL: Record<Exclude<AutomationParam, `plugin:${string}:${string}`>, string> = {
   volume: "VOLUME",
@@ -558,11 +558,20 @@ export const readDrag = (e: React.DragEvent): DragPayload | null => {
   }
 };
 
+const TRACK_BUSES: { id: BusId; label: string }[] = [
+  { id: "drums", label: "Drums bus" },
+  { id: "vocals", label: "Vocals bus" },
+  { id: "instruments", label: "Instruments bus" },
+  { id: "synths", label: "Synths bus" },
+  { id: "fx", label: "FX bus" },
+  { id: "master", label: "Master (direct)" },
+];
+
 function TrackRow({ track, index }: { track: Track; index: number }) {
   const isMobile = useIsMobile();
   const { selectedId, selectedIds, select, toggleSelectId, updateTrack, removeTrack, duplicateTrack, moveTrack, setPanel, changeInstrument, installedPlugins, addPlugin, editTool, splitClipAt, toggleStep, toggleAutomationLane, copyTrack, cutTrack, pasteTrack, clipboardName } =
     useStudio();
-  const { transport, setNotes, loadSample } = useStudio();
+  const { transport, setNotes, loadSample, fxChains } = useStudio();
   const [renaming, setRenaming] = useState(false);
   const [confirm, setConfirm] = useState(false);
   const [dropping, setDropping] = useState(false);
@@ -812,6 +821,28 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
               </DropdownMenuItem>
               <DropdownMenuItem onClick={openEditor}>
                 <Settings2 className="size-4" /> Track settings
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel className="label-xs">Send track to bus</DropdownMenuLabel>
+              {TRACK_BUSES.map((b) => {
+                const fx = fxChains[`bus:${b.id}`] ?? [];
+                return (
+                  <DropdownMenuItem key={b.id} onClick={() => updateTrack(track.id, { bus: b.id })}>
+                    <span className="w-4">{track.bus === b.id ? "✓" : ""}</span>
+                    <span className="truncate">
+                      {b.label}
+                      {fx.length > 0 ? ` · ${fx.map((p) => p.name).join(", ")}` : " · no effects"}
+                    </span>
+                  </DropdownMenuItem>
+                );
+              })}
+              <DropdownMenuItem
+                onClick={() => {
+                  select(track.id);
+                  setPanel("mixer");
+                }}
+              >
+                <Settings2 className="size-4" /> Edit bus effects in mixer
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuLabel className="label-xs">Automation</DropdownMenuLabel>
