@@ -1340,6 +1340,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
                   }),
                 );
             } else if (armedNote) {
+              recStartStepRef.current = transportRef.current.step ?? 0;
+              updateTrack(armedNote.id, { recording: true });
               toast("Recording notes", {
                 description: `Play your controller or the on-screen keyboard — notes land on ${armedNote.name}.`,
               });
