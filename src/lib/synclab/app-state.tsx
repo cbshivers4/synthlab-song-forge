@@ -30,6 +30,7 @@ interface AppApi {
   project: ProjectMeta | null;
   setProject: (p: ProjectMeta) => void;
   removeRecent: (p: ProjectMeta) => void;
+  renameRecent: (p: ProjectMeta, name: string) => void;
   recents: ProjectMeta[];
   signedIn: boolean;
   setSignedIn: (v: boolean) => void;
