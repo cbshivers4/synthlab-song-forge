@@ -88,16 +88,7 @@ import { LevelBar } from "@/components/studio/LevelBar";
 import { ClipEditor } from "@/components/studio/ClipEditor";
 import { clipSeconds } from "@/lib/synclab/types";
 
-const KindIcon = ({ kind }: { kind: Track["kind"] }) =>
-  kind === "drum" ? (
-    <Disc3 className="size-3.5" />
-  ) : kind === "audio" ? (
-    <Mic className="size-3.5" />
-  ) : kind === "midi" ? (
-    <Piano className="size-3.5" />
-  ) : (
-    <Music2 className="size-3.5" />
-  );
+import { TrackIcon, TrackStylePicker } from "@/components/studio/TrackStyle";
 
 const INPUTS = ["Microphone", "Guitar / Line 1", "Keyboard / Line 2", "External Instrument", "MIDI Keyboard", "Internal", "Stereo File"];
 
