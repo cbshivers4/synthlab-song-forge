@@ -387,8 +387,10 @@ function RecordingClip({ track }: { track: Track }) {
   const startRef = useRef(transport.step ?? 0);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const peaksRef = useRef<number[]>([]);
+  const isNote = track.kind === "instrument" || track.kind === "midi" || track.kind === "drum";
 
   useEffect(() => {
+    if (isNote) return;
     const engine = getEngine();
     let raf = 0;
     const draw = () => {
