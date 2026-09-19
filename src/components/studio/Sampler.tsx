@@ -124,6 +124,8 @@ export function Sampler() {
   const { tracks, selected, select, addTrack, loadSample, updateSampler, clearSample, stopSamples, previewNote } =
     useStudio();
   const [over, setOver] = useState(false);
+  /** chop pad currently held down */
+  const [held, setHeld] = useState<number | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
   const samplerTracks = tracks.filter((t) => t.kind === "sampler");
