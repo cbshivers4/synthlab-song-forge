@@ -1474,7 +1474,7 @@ export function Mixer() {
                   <span
                     className="h-7 w-5 shrink-0 rounded-[2px] border border-black/60"
                     style={{
-                      background: `linear-gradient(180deg, ${s.a}, ${s.b} 45%, ${s.c})`,
+                      background: s.id === "solid" ? solid : `linear-gradient(180deg, ${s.a}, ${s.b} 45%, ${s.c})`,
                       boxShadow: `inset 0 2px 0 0 ${s.accent}`,
                     }}
                   />
@@ -1484,6 +1484,39 @@ export function Mixer() {
                   </span>
                 </button>
               ))}
+              {styleId === "solid" && (
+                <div className="mt-1 border-t border-border px-2 pb-2 pt-2">
+                  <div className="font-mono text-[8px] uppercase tracking-widest text-muted-foreground">
+                    Solid colour
+                  </div>
+                  <div className="mt-1.5 grid grid-cols-8 gap-1">
+                    {SOLID_PRESETS.map((p) => (
+                      <button
+                        key={p.hex}
+                        title={p.name}
+                        aria-label={`${p.name} solid colour`}
+                        onClick={() => setSolid(p.hex)}
+                        className={cn(
+                          "h-6 w-full rounded-[3px] border transition-transform hover:scale-105",
+                          solid.toLowerCase() === p.hex ? "border-primary ring-1 ring-primary" : "border-black/60"
+                        )}
+                        style={{ background: p.hex }}
+                      />
+                    ))}
+                  </div>
+                  <label className="mt-2 flex items-center gap-2">
+                    <span className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">Custom</span>
+                    <input
+                      type="color"
+                      value={/^#[0-9a-fA-F]{6}$/.test(solid) ? solid : "#1a1b1e"}
+                      onChange={(e) => setSolid(e.target.value)}
+                      title="Pick any solid colour"
+                      aria-label="Custom mixer colour"
+                      className="h-7 w-full cursor-pointer rounded-[3px] border border-border bg-surface p-0.5"
+                    />
+                  </label>
+                </div>
+              )}
             </PopoverContent>
           </Popover>
 

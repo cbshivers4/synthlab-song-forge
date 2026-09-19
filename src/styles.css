@@ -195,7 +195,8 @@
 
 /* ---- Mix console desk finishes ---- */
 .mx-console[data-console="live"] .mx-screw,
-.mx-console[data-console="neon"] .mx-screw {
+.mx-console[data-console="neon"] .mx-screw,
+.mx-console[data-console="solid"] .mx-screw {
   display: none;
 }
 .mx-console[data-console="live"] .mx-fader [role="slider"] {
