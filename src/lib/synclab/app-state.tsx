@@ -30,6 +30,7 @@ interface AppApi {
   project: ProjectMeta | null;
   setProject: (p: ProjectMeta) => void;
   removeRecent: (p: ProjectMeta) => void;
+  renameRecent: (p: ProjectMeta, name: string) => void;
   recents: ProjectMeta[];
   signedIn: boolean;
   setSignedIn: (v: boolean) => void;
@@ -101,6 +102,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setRecents((r) => r.filter((x) => !(x.name === p.name && x.openedAt === p.openedAt)));
   }, []);
 
+  const renameRecent = useCallback((p: ProjectMeta, name: string) => {
+    setRecents((r) => r.map((x) => (x.name === p.name && x.openedAt === p.openedAt ? { ...x, name } : x)));
+    setProjectState((cur) => (cur && cur.name === p.name && cur.openedAt === p.openedAt ? { ...cur, name } : cur));
+  }, []);
+
   const api: AppApi = useMemo(
     () => ({
       stage,
@@ -118,11 +124,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       project,
       setProject,
       removeRecent,
+      renameRecent,
       recents,
       signedIn,
       setSignedIn,
     }),
-    [stage, mode, themeId, customThemes, allThemes, activeTheme, project, setProject, removeRecent, recents, signedIn],
+    [stage, mode, themeId, customThemes, allThemes, activeTheme, project, setProject, removeRecent, renameRecent, recents, signedIn],
   );
 
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>;

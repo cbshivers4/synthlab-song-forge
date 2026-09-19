@@ -138,6 +138,11 @@ export async function loadCloudProject(id: string): Promise<CloudProject> {
   };
 }
 
+export async function renameCloudProject(id: string, name: string) {
+  const { error } = await supabase.from("cloud_projects").update({ name }).eq("id", id);
+  if (error) throw error;
+}
+
 export async function deleteCloudProject(project: CloudProject) {
   const full = await loadCloudProject(project.id);
   const paths = new Set<string>();
