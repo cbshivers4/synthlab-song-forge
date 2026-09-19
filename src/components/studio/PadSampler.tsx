@@ -600,7 +600,7 @@ export function PadSampler() {
                         ? { borderColor: `color-mix(in hsl, ${c} 60%, transparent)` }
                         : undefined
               }
-              className={`relative flex min-h-44 touch-none flex-col items-start justify-between rounded-md border p-4 text-left transition-all select-none sm:min-h-48 lg:min-h-40 ${
+              className={`relative flex aspect-square min-w-0 touch-none flex-col items-start justify-between rounded-lg border-2 p-4 text-left transition-all select-none active:scale-[0.97] ${
                 pad || recording ? "" : "border-dashed border-border bg-surface-2/40 hover:border-muted-foreground/60"
               } ${recording ? "animate-pulse" : ""}`}
             >
