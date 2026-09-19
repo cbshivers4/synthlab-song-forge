@@ -122,10 +122,11 @@ function useMeters(tracks: Track[], transport: Transport) {
   return levels;
 }
 
-/** Segmented LED meter with peak-hold marker. Body takes the channel colour, top end stays amber/red. */
-function Meter({ level, tall, color }: { level: number; tall?: boolean; color?: string }) {
+/** Segmented LED meter: green at normal levels, red after the channel clips. */
+function Meter({ id, level, tall }: { id: string; level: number; tall?: boolean }) {
   const segs = 32;
   const lit = Math.round(level * segs);
+  const clipped = useClipped(id);
   const hold = useRef(0);
   const [held, setHeld] = useState(0);
   if (level > hold.current) hold.current = level;
@@ -142,24 +143,15 @@ function Meter({ level, tall, color }: { level: number; tall?: boolean; color?: 
       {Array.from({ length: segs }, (_, i) => {
         const on = i < lit;
         const isHold = i === holdSeg;
-        const red = i >= segs - 2;
-        const amber = i >= segs - 6;
         return (
           <div
             key={i}
             className={cn(
               "flex-1 rounded-[1px] transition-colors duration-75",
               !on && !isHold && "bg-surface-2/70",
-              on && red && "bg-red-500",
-              on && !red && amber && "bg-amber-400"
+              on && (clipped ? "bg-red-500" : "bg-emerald-500"),
+              isHold && !on && (clipped ? "bg-red-400" : "bg-emerald-300")
             )}
-            style={
-              on && !red && !amber
-                ? { background: color ?? "oklch(0.78 0.18 145)" }
-                : isHold && !on
-                  ? { background: `color-mix(in oklab, ${color ?? "white"} 70%, white)` }
-                  : undefined
-            }
           />
         );
       })}
@@ -627,9 +619,9 @@ function ChannelEq({ t }: { t: Track }) {
   const { addPlugin, setPluginParam, installedPlugins } = useStudio();
   const eq = (t.plugins ?? []).find((p) => p.kind === "eq");
   const bands: [string, string][] = [
-    ["high", "HI"],
-    ["mid", "MID"],
     ["low", "LO"],
+    ["mid", "MID"],
+    ["high", "HI"],
   ];
   const addEq = () => {
     const def = installedPlugins.find((d) => d.kind === "eq") ?? BUILT_IN_PLUGINS.find((d) => d.kind === "eq");
@@ -678,7 +670,7 @@ function EqCurve({
   const W = 100;
   const H = 46;
   const PAD = 3;
-  const [hi, mid, lo] = bands;
+  const [lo, mid, hi] = bands;
   // Band handles sit at fixed x positions: LO 18%, MID 50%, HI 82%.
   const bandX = [18, 50, 82];
   const bandLabel = ["LO", "MID", "HI"];
@@ -1043,7 +1035,7 @@ function Strip({
           onDoubleClick={() => updateTrack(t.id, { volume: 0.8 })}
           onValueChange={([v = 0]) => updateTrack(t.id, { volume: v })}
         />
-        <Meter level={level} tall color={t.color} />
+        <Meter id={t.id} level={level} tall />
       </div>
 
       {/* fader dB + live peak dB */}
@@ -1169,7 +1161,7 @@ function BusStrip({
           step={0.01}
           onValueChange={([v = 0]) => onChange({ volume: v })}
         />
-        <Meter level={level} tall color={color} />
+        <Meter id={`bus:${id}`} level={level} tall />
       </div>
       <div className={cn(ROW.readout, "flex items-center justify-center gap-1 border-b border-border/60")}>
         <span className="font-mono text-[9px] text-muted-foreground">{toDb(state.volume).toFixed(1)} dB</span>
@@ -1365,8 +1357,8 @@ function MasterStrip({ level: peak }: { level: number }) {
           onDoubleClick={() => setBus("master", { volume: 1 })}
           onValueChange={([v = 0]) => setBus("master", { volume: v })}
         />
-        <Meter level={peak} tall color={color} />
-        <Meter level={peak} tall color={color} />
+        <Meter id="master" level={peak} tall />
+        <Meter id="master" level={peak} tall />
       </div>
       <div className={cn(ROW.readout, "flex items-center justify-center border-b border-border/60")}>
         <span className={cn("font-mono text-[9px]", peak > 0.98 ? "text-red-400" : "text-muted-foreground")}>
