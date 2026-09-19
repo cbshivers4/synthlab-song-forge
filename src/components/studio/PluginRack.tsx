@@ -18,6 +18,7 @@ import { VocoderPanel } from "./VocoderPanel";
 import { Scope } from "./Scope";
 import { XYPad } from "./XYPad";
 import { EffectDisplay } from "./EffectDisplay";
+import { PluginBridge } from "./PluginBridge";
 import { toast } from "sonner";
 
 const FORMATS: PluginDef["format"][] = ["VST3", "AU", "CLAP", "AAX"];
@@ -132,7 +133,13 @@ export function PluginRack() {
   };
 
   const track = selected ?? tracks[0];
-  if (!track) return <p className="text-sm text-muted-foreground">Add a track to open its plugin rack.</p>;
+  if (!track)
+    return (
+      <div className="space-y-3">
+        <PluginBridge />
+        <p className="text-sm text-muted-foreground">Add a track to open its plugin rack.</p>
+      </div>
+    );
   const chain = track.plugins ?? [];
   /** First effect opens by default so the scope + X-Y pad are always visible. */
   const openId = open ?? chain[0]?.id ?? null;
@@ -188,6 +195,10 @@ export function PluginRack() {
         <span className="font-display text-[11px] tracking-[0.2em]">INSERTS · {track.name}</span>
         <span className="label-xs ml-auto">{chain.length} plugin{chain.length === 1 ? "" : "s"}</span>
       </div>
+
+      {/* Real VST/AU plugins from this computer, hosted by the desktop bridge. */}
+      <PluginBridge />
+
 
       {/* chain */}
       <div className="space-y-1.5">
