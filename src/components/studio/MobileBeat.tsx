@@ -1,14 +1,16 @@
-import { useEffect, useMemo, useState } from "react";
-import { Disc3, Grid2x2, Minus, Play, Plus, Shuffle, SlidersHorizontal, Square, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Disc3, Grid2x2, Mic, Minus, Play, Plus, Shuffle, SlidersHorizontal, Square, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Knob } from "./Knob";
 import { useStudio } from "@/lib/synclab/store";
 import { getEngine } from "@/lib/synclab/audio-engine";
+import { openInOwnTab } from "@/lib/synclab/mic";
+import { uid } from "@/lib/synclab/presets";
 import type { DrumPad, Track } from "@/lib/synclab/types";
 import { toast } from "sonner";
 
-type Tab = "pads" | "steps" | "sound";
+type Tab = "pads" | "steps" | "sound" | "rec";
 
 const PAD_HUES = [187, 320, 45, 100, 265, 10, 160, 210];
 
