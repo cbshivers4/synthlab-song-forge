@@ -46,6 +46,7 @@ export interface MidiTarget {
 
 export const midiTargetKey = (t: MidiTarget) => `${t.id}:${t.param}`;
 const MIDI_MAP_KEY = "synclab.midimap";
+const MIDI_INPUT_KEY = "synclab.midi.input";
 const AUTOSAVE_KEY = "synclab.autosave.v1";
 
 const busFor = (kind: TrackKind): BusId =>
@@ -323,7 +324,15 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const [installedPlugins, setInstalledPlugins] = useState<PluginDef[]>(BUILT_IN_PLUGINS);
   const [fxChains, setFxChains] = useState<Record<string, PluginInstance[]>>({});
   const [midiInputs, setMidiInputs] = useState<MidiPortInfo[]>([]);
-  const [midiInputId, setMidiInputId] = useState<string | null>(null);
+  // Chosen controller is remembered so it reconnects on its own next visit.
+  const [midiInputId, setMidiInputId] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      return window.localStorage.getItem(MIDI_INPUT_KEY);
+    } catch {
+      return null;
+    }
+  });
   const [midiLearning, setMidiLearning] = useState(false);
   // Hardware mixer control: CC number -> mixer target, remembered between sessions.
   const [midiMap, setMidiMap] = useState<Record<string, MidiTarget>>(() => {
@@ -362,26 +371,90 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const [historyTick, setHistoryTick] = useState(0);
   const [savedAt, setSavedAt] = useState<number | null>(null);
 
-  const enableMidi = useCallback(() => {
+  const enableMidi = useCallback((opts?: { quiet?: boolean }) => {
+    const quiet = !!opts?.quiet;
     if (!midiSupported()) {
-      toast.error("MIDI not available", {
-        description: "This browser can't see MIDI controllers. Chrome or Edge support them.",
-      });
+      if (!quiet)
+        toast.error("MIDI not available", {
+          description: "This browser can't see MIDI controllers. Chrome or Edge support them.",
+        });
       return;
     }
     void getMidiAccess().then((a) => {
       const list = listInputs(a);
       setMidiInputs(list);
       if (!list.length) {
-        toast("No MIDI controller found", { description: "Plug one in, then press MIDI again." });
+        if (!quiet) toast("No MIDI controller found", { description: "Plug one in, then press MIDI again." });
         return;
       }
-      setMidiInputId((cur) => cur ?? list[0]?.id ?? null);
-      toast.success(`${list.length} MIDI input${list.length > 1 ? "s" : ""} connected`, {
-        description: list.map((i) => i.name).join(", "),
+      setMidiInputId((cur) => {
+        // Keep the remembered controller; fall back to the first one only if it is gone.
+        if (cur && list.some((i) => i.id === cur)) return cur;
+        const next = list[0]?.id ?? null;
+        try {
+          if (next) window.localStorage.setItem(MIDI_INPUT_KEY, next);
+        } catch {
+          /* storage unavailable */
+        }
+        return next;
       });
-      if (a) a.onstatechange = () => setMidiInputs(listInputs(a));
+      if (!quiet)
+        toast.success(`${list.length} MIDI input${list.length > 1 ? "s" : ""} connected`, {
+          description: list.map((i) => i.name).join(", "),
+        });
+      if (a)
+        a.onstatechange = () => {
+          // A controller was plugged in or removed — refresh and re-attach the
+          // remembered one as soon as it appears again.
+          const now = listInputs(a);
+          setMidiInputs(now);
+          setMidiInputId((cur) => {
+            if (cur && now.some((i) => i.id === cur)) return cur;
+            let saved: string | null = null;
+            try {
+              saved = window.localStorage.getItem(MIDI_INPUT_KEY);
+            } catch {
+              /* storage unavailable */
+            }
+            if (saved && now.some((i) => i.id === saved)) return saved;
+            return now[0]?.id ?? cur;
+          });
+        };
     });
+  }, []);
+
+  // Controllers stay connected: once MIDI was allowed before, reconnect quietly
+  // on every visit so there is nothing to press again.
+  const midiAutoTriedRef = useRef(false);
+  useEffect(() => {
+    if (midiAutoTriedRef.current || !midiSupported()) return;
+    midiAutoTriedRef.current = true;
+    const tryConnect = () => enableMidi({ quiet: true });
+    const perms = (navigator as unknown as { permissions?: { query(q: { name: string }): Promise<{ state: string }> } }).permissions;
+    if (perms?.query) {
+      void perms
+        .query({ name: "midi" })
+        .then((p) => {
+          if (p.state === "granted") tryConnect();
+        })
+        .catch(() => {
+          /* older browsers: connecting quietly is still safe */
+          tryConnect();
+        });
+    } else {
+      tryConnect();
+    }
+  }, [enableMidi]);
+
+  // Remember which controller the user picked in Settings.
+  const setMidiInputPersist = useCallback((id: string | null) => {
+    setMidiInputId(id);
+    try {
+      if (id) window.localStorage.setItem(MIDI_INPUT_KEY, id);
+      else window.localStorage.removeItem(MIDI_INPUT_KEY);
+    } catch {
+      /* storage unavailable */
+    }
   }, []);
 
   // Live MIDI controller input: plays the armed/selected instrument and
@@ -1779,7 +1852,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           return next;
         }),
       enableMidi,
-      setMidiInput: setMidiInputId,
+      setMidiInput: setMidiInputPersist,
       fxChains,
       addFxPlugin: (target, d) => {
         const inst = instantiate(d);
@@ -1805,7 +1878,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           ),
         })),
     };
-  }, [tracks, transport, selectedId, selectedIds, editTool, panel, userPresets, buses, sections, installedPlugins, fxChains, midiInputs, midiInputId, midiLearning, midiMap, midiLearn, clipboardName, enableMidi, updateTrack, finishRecording, splitClipAtImpl, buildSnapshot, applySession, historyTick, automationHistoryTick, savedAt]);
+  }, [tracks, transport, selectedId, selectedIds, editTool, panel, userPresets, buses, sections, installedPlugins, fxChains, midiInputs, midiInputId, midiLearning, midiMap, midiLearn, clipboardName, enableMidi, setMidiInputPersist, updateTrack, finishRecording, splitClipAtImpl, buildSnapshot, applySession, historyTick, automationHistoryTick, savedAt]);
 
 
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>;
