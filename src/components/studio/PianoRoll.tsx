@@ -267,6 +267,113 @@ export function PianoRoll({ track }: { track: Track }) {
         </Tool>
       </div>
 
+      {/* extra writing tools */}
+      <div className="flex items-center overflow-x-auto whitespace-nowrap scrollbar-hide gap-1.5 rounded-sm border border-border bg-surface/60 p-1.5">
+        <span className="label-xs px-1">TOOLS</span>
+        <Tool
+          onClick={() => {
+            const t = targets();
+            if (!t.length) return;
+            const up = (p: number, deg: number) => {
+              let x = p;
+              let left = deg;
+              while (left > 0) {
+                x += 1;
+                if (!scaleLock || inScale(x)) left -= 1;
+                if (x - p > 24) break;
+              }
+              return x;
+            };
+            setNotes(track.id, [
+              ...notes,
+              ...t.flatMap((n) => [
+                { ...n, id: uid(), pitch: up(n.pitch, 3) },
+                { ...n, id: uid(), pitch: up(n.pitch, 7) },
+              ]),
+            ]);
+          }}
+        >
+          CHORD
+        </Tool>
+        <Tool
+          onClick={() => {
+            const t = [...targets()].sort((a, b) => a.pitch - b.pitch);
+            if (t.length < 2) return;
+            const start = Math.min(...t.map((n) => n.step));
+            const ids = new Map(t.map((n, i) => [n.id, start + i * grid]));
+            setNotes(
+              track.id,
+              notes.map((n) => (ids.has(n.id) ? { ...n, step: ids.get(n.id)!, length: grid } : n)),
+            );
+          }}
+        >
+          ARPEGGIATE
+        </Tool>
+        <Tool
+          onClick={() => {
+            const t = targets();
+            if (!t.length) return;
+            const lowest = Math.min(...t.map((n) => n.pitch));
+            const highest = Math.max(...t.map((n) => n.pitch));
+            apply((n) => ({ ...n, pitch: lowest + (highest - n.pitch) }));
+          }}
+        >
+          INVERT
+        </Tool>
+        <Tool onClick={() => apply((n) => ({ ...n, step: Math.max(0, n.step - grid) }))}>NUDGE ←</Tool>
+        <Tool onClick={() => apply((n) => ({ ...n, step: n.step + grid }))}>NUDGE →</Tool>
+        <Tool
+          onClick={() => {
+            const t = [...targets()].sort((a, b) => a.pitch - b.pitch);
+            if (!t.length) return;
+            const off = new Map(t.map((n, i) => [n.id, i * 0.12]));
+            setNotes(track.id, notes.map((n) => (off.has(n.id) ? { ...n, step: n.step + off.get(n.id)! } : n)));
+          }}
+        >
+          STRUM
+        </Tool>
+        <Tool
+          onClick={() => {
+            const t = targets();
+            if (!t.length) return;
+            const min = Math.min(...t.map((n) => n.step));
+            const max = Math.max(...t.map((n) => n.step)) || 1;
+            apply((n) => ({
+              ...n,
+              velocity: Math.min(1, Math.max(0.1, 0.35 + ((n.step - min) / Math.max(1, max - min)) * 0.6)),
+            }));
+          }}
+        >
+          VEL RAMP
+        </Tool>
+        <Tool onClick={() => apply((n) => ({ ...n, velocity: 0.85 }))}>FIXED VEL</Tool>
+        <Tool
+          onClick={() => {
+            const t = targets();
+            if (!t.length) return;
+            setNotes(track.id, [
+              ...notes,
+              ...t.map((n) => ({ ...n, id: uid(), step: n.step + grid, velocity: Math.max(0.1, n.velocity * 0.55) })),
+            ]);
+          }}
+        >
+          ECHO
+        </Tool>
+        <Tool
+          onClick={() => {
+            const t = targets();
+            if (!t.length) return;
+            setNotes(track.id, [
+              ...notes,
+              ...t.map((n) => ({ ...n, id: uid(), step: Math.max(0, n.step - 0.25), velocity: Math.max(0.1, n.velocity * 0.5), length: Math.max(0.25, n.length / 2) })),
+            ]);
+          }}
+        >
+          FLAM
+        </Tool>
+        <Tool onClick={() => apply((n) => ({ ...n, length: Math.max(0.25, n.length * 0.5) }))}>STACCATO</Tool>
+      </div>
+
       {/* editor */}
       <div className="flex overflow-hidden rounded-[2px] border border-border bg-background">
         <div className="w-16 shrink-0 border-r border-border bg-surface-2">
