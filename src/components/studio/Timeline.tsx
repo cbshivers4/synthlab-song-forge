@@ -1659,20 +1659,43 @@ function Ruler() {
           <>
             <div className="pointer-events-none absolute inset-y-0 left-0 bg-background/60" style={{ width: `${(lo / total) * 100}%` }} />
             <div className="pointer-events-none absolute inset-y-0 right-0 bg-background/60" style={{ width: `${((total - hi) / total) * 100}%` }} />
-            {/* loop band */}
+            {/* loop band — drag it to move the whole region */}
             <div
-              className="pointer-events-none absolute inset-y-0 border-x border-primary/70 bg-primary/15"
+              onPointerDown={dragLoop("band")}
+              title={`Loop bar ${Math.floor(lo / 4) + 1} to ${Math.floor(hi / 4) + 1} — drag to move`}
+              className="absolute inset-y-0 z-10 cursor-grab touch-none border-x border-primary/70 bg-primary/15 active:cursor-grabbing"
               style={{ left: `${(lo / total) * 100}%`, width: `${((hi - lo) / total) * 100}%` }}
             />
-            {/* markers */}
-            {[lo, hi].map((p, idx) => (
-              <div key={idx} className="pointer-events-none absolute top-0" style={{ left: `calc(${(p / total) * 100}% - 4px)` }}>
+            {/* draggable loop markers */}
+            {(["start", "end"] as const).map((which) => {
+              const p = which === "start" ? lo : hi;
+              return (
                 <div
-                  className="h-0 w-0 border-x-4 border-x-transparent"
-                  style={{ borderTop: "7px solid var(--primary)" }}
-                />
-              </div>
-            ))}
+                  key={which}
+                  role="slider"
+                  aria-label={which === "start" ? "Loop start" : "Loop end"}
+                  aria-valuenow={p}
+                  aria-valuemin={0}
+                  aria-valuemax={total}
+                  tabIndex={0}
+                  onPointerDown={dragLoop(which)}
+                  onKeyDown={(ev) => {
+                    const d = ev.key === "ArrowLeft" ? -1 : ev.key === "ArrowRight" ? 1 : 0;
+                    if (!d) return;
+                    ev.preventDefault();
+                    if (which === "start") setTransport({ loopStart: Math.max(0, Math.min(lo + d, hi - 1)), loop: true });
+                    else setTransport({ loopEnd: Math.min(total, Math.max(hi + d, lo + 1)), loop: true });
+                  }}
+                  title={`Loop ${which} — drag or use arrow keys (bar ${Math.floor(p / 4) + 1})`}
+                  className="absolute top-0 z-20 flex h-full w-4 cursor-ew-resize touch-none flex-col items-center outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                  style={{ left: `calc(${(p / total) * 100}% - 8px)` }}
+                >
+                  <div className="h-0 w-0 border-x-[6px] border-x-transparent" style={{ borderTop: "9px solid var(--primary)" }} />
+                  <div className="w-[2px] flex-1 bg-primary/80" />
+                </div>
+              );
+            })}
+
           </>
         )}
 
