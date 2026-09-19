@@ -47,7 +47,7 @@ async function filterMono(
 ): Promise<Float32Array> {
   const ctx = new OfflineAudioContext(1, data.length, sampleRate);
   const buf = ctx.createBuffer(1, data.length, sampleRate);
-  buf.copyToChannel(data, 0);
+  buf.getChannelData(0).set(data);
   const src = ctx.createBufferSource();
   src.buffer = buf;
   const { input, output } = build(ctx);

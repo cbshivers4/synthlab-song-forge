@@ -140,6 +140,8 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
     bass: { title: "BASS GENERATOR", icon: <AudioWaveform className="size-4" /> },
     coproducer: { title: "AI CO-PRODUCER", icon: <Bot className="size-4" /> },
     hum: { title: "HUM TO BEAT", icon: <Waves className="size-4" /> },
+    stems: { title: "STEM SEPARATOR", icon: <Split className="size-4" /> },
+    voice: { title: "VOICE REMOVER", icon: <Split className="size-4" /> },
   };
   const current = config[panel];
 
