@@ -206,7 +206,7 @@ export function Sampler() {
               key={t.id}
               size="sm"
               variant={t.id === track?.id ? "secondary" : "ghost"}
-              className="h-7 font-mono text-[10px] tracking-widest"
+              className="h-9 font-mono text-[10px] tracking-widest sm:h-7"
               onClick={() => select(t.id)}
             >
               {t.name}
@@ -270,7 +270,7 @@ export function Sampler() {
                   key={n}
                   size="sm"
                   variant="secondary"
-                  className="h-7 font-mono text-[10px] tracking-widest"
+                  className="h-9 font-mono text-[10px] tracking-widest sm:h-7"
                   onClick={() => chopInto(n)}
                 >
                   {n}
@@ -279,7 +279,7 @@ export function Sampler() {
               <Button
                 size="sm"
                 variant="ghost"
-                className="h-7 font-mono text-[10px] tracking-widest"
+                className="h-9 font-mono text-[10px] tracking-widest sm:h-7"
                 onClick={() =>
                   updateSampler(track.id, { slices: [...chops, (s.start + s.end) / 2].sort((a, b) => a - b) })
                 }
@@ -290,7 +290,7 @@ export function Sampler() {
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="h-7 font-mono text-[10px] tracking-widest text-destructive"
+                  className="h-9 font-mono text-[10px] tracking-widest sm:h-7 text-destructive"
                   onClick={() => updateSampler(track.id, { slices: [] })}
                 >
                   Clear chops
