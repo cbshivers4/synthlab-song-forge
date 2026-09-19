@@ -571,7 +571,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
   const isMobile = useIsMobile();
   const { selectedId, selectedIds, select, toggleSelectId, updateTrack, removeTrack, duplicateTrack, moveTrack, setPanel, changeInstrument, installedPlugins, addPlugin, editTool, splitClipAt, toggleStep, toggleAutomationLane, copyTrack, cutTrack, pasteTrack, clipboardName } =
     useStudio();
-  const { transport, setNotes, loadSample } = useStudio();
+  const { transport, setNotes, loadSample, fxChains } = useStudio();
   const [renaming, setRenaming] = useState(false);
   const [confirm, setConfirm] = useState(false);
   const [dropping, setDropping] = useState(false);
