@@ -1,12 +1,23 @@
-import { useMemo, useState } from "react";
-import { AudioWaveform, Dice5, Play, SlidersHorizontal } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { AudioWaveform, Dice5, Play, SlidersHorizontal, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { useStudio } from "@/lib/synclab/store";
-import { uid } from "@/lib/synclab/presets";
+import { getEngine } from "@/lib/synclab/audio-engine";
+import { defaultPatch, SYNTH_PRESETS, uid } from "@/lib/synclab/presets";
 import type { MidiNote } from "@/lib/synclab/types";
 import { toast } from "sonner";
+
+const PREVIEW_CHANNEL = "bass-generator-preview";
+
+/** Builds the patch a style would use, so the preview sounds like the real thing. */
+function previewPatch(name: string) {
+  const patch = defaultPatch(name);
+  SYNTH_PRESETS.find((p) => p.name === name)?.mutate(patch);
+  patch.name = name;
+  return patch;
+}
 
 const ROOTS = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 const SCALES: Record<string, number[]> = {
