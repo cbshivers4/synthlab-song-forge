@@ -445,12 +445,6 @@ export function Settings() {
         <Row label="Loop playback">
           <Switch checked={transport.loop} onCheckedChange={(v) => setTransport({ loop: v })} />
         </Row>
-        <Row label="Waveform detail" hint="How finely clip waveforms are drawn">
-          <Pick value={p.waveformDetail} options={["Low", "Medium", "High"]} onChange={(v) => set("waveformDetail", v)} width="w-28" />
-        </Row>
-        <Row label="Show tooltips">
-          <Switch checked={p.showTooltips} onCheckedChange={(v) => set("showTooltips", v)} />
-        </Row>
       </TabsContent>
 
       <TabsContent value="midi" className="mt-4">
