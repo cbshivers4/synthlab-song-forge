@@ -124,10 +124,15 @@ function Waveform({ track }: { track: Track }) {
     const el = e.currentTarget as HTMLElement;
     el.setPointerCapture(e.pointerId);
 
+    const grid = transport.snap ?? 1;
     const onMove = (ev: PointerEvent) => {
-      const dSteps = Math.round((ev.clientX - x0) / Math.max(1, perStep));
+      const raw = (ev.clientX - x0) / Math.max(1, perStep);
+      const dSteps = grid > 0 ? Math.round(raw / grid) * grid : Math.round(raw * 100) / 100;
       if (mode === "move") {
-        writeClip(clip.id, { start: Math.max(0, Math.min(total - 1, orig.start + dSteps)) });
+        const next = orig.start + dSteps;
+        writeClip(clip.id, {
+          start: Math.max(0, Math.min(total - 1, grid > 0 ? Math.round(next / grid) * grid : next)),
+        });
       } else if (mode === "trim-right") {
         const len = Math.max(0.05, Math.min(clip.duration - orig.offset, orig.length + dSteps * stepDur));
         writeClip(clip.id, { length: len });
