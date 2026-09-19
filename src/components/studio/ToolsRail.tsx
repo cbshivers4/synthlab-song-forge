@@ -36,8 +36,8 @@ interface Tool {
 
 const TOOLS: Tool[] = [
   { id: "vocal", label: "Vocal Forge", icon: <Sparkles className="size-4" />, panel: "vocal", drag: { kind: "ai-vocal", name: "Vocal Forge" } },
-  { id: "stems", label: "Stem Separator", icon: <Split className="size-4" />, soon: "Splitting a mix into stems needs a separation model running on a server — SYNCLAB has no fake button for it." },
-  { id: "voice", label: "Voice Remover", icon: <Volume2 className="size-4" />, soon: "Voice removal needs the same server-side separation model — it is not faked here." },
+  { id: "stems", label: "Stem Separator", icon: <Split className="size-4" />, panel: "stems" },
+  { id: "voice", label: "Voice Remover", icon: <Volume2 className="size-4" />, panel: "voice" },
   { id: "coproducer", label: "AI Co-Producer", icon: <Bot className="size-4" />, panel: "coproducer" },
   { id: "hum", label: "Hum to Beat", icon: <Waves className="size-4" />, panel: "hum" },
   { id: "synth", label: "Synthesizers", icon: <Music2 className="size-4" />, panel: "synth", drag: { kind: "instrument", name: "Synth" } },

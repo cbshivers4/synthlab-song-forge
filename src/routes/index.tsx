@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { ArrowDownToLine, ArrowUpFromLine, AudioLines, AudioWaveform, Cpu, Disc3, FolderOpen, Grid2x2, KeyboardMusic, Music2, Palette, Piano, SlidersHorizontal, Settings2, Waves, X } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, AudioLines, AudioWaveform, Cpu, Disc3, FolderOpen, Grid2x2, KeyboardMusic, Music2, Palette, Piano, SlidersHorizontal, Split, Settings2, Waves, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStudio, type PanelId } from "@/lib/synclab/store";
 import { getEngine } from "@/lib/synclab/audio-engine";
@@ -29,6 +29,7 @@ import { DeviceSetup } from "@/components/studio/DeviceSetup";
 import { ExportDialog } from "@/components/studio/ExportDialog";
 import { BassGenerator } from "@/components/studio/BassGenerator";
 import { CoProducer } from "@/components/studio/CoProducer";
+import { StemSeparator } from "@/components/studio/StemSeparator";
 import { HumToBeat } from "@/components/studio/HumToBeat";
 import { MobileBeat } from "@/components/studio/MobileBeat";
 import { Bot } from "lucide-react";
@@ -139,6 +140,8 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
     bass: { title: "BASS GENERATOR", icon: <AudioWaveform className="size-4" /> },
     coproducer: { title: "AI CO-PRODUCER", icon: <Bot className="size-4" /> },
     hum: { title: "HUM TO BEAT", icon: <Waves className="size-4" /> },
+    stems: { title: "STEM SEPARATOR", icon: <Split className="size-4" /> },
+    voice: { title: "VOICE REMOVER", icon: <Split className="size-4" /> },
   };
   const current = config[panel];
 
@@ -248,6 +251,8 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
       {panel === "bass" && <BassGenerator />}
       {panel === "coproducer" && <CoProducer />}
       {panel === "hum" && <HumToBeat />}
+      {panel === "stems" && <StemSeparator mode="stems" />}
+      {panel === "voice" && <StemSeparator mode="voice" />}
 
       </div>
 
