@@ -379,22 +379,96 @@ function DrumClip({ track }: { track: Track }) {
   );
 }
 
+/** The take you are capturing right now: a red region that grows from the punch-in
+ *  point and draws the incoming microphone level live. */
+function RecordingClip({ track }: { track: Track }) {
+  const { transport } = useStudio();
+  const total = Math.max(1, transport.bars ?? 4) * 4;
+  const startRef = useRef(transport.step ?? 0);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const peaksRef = useRef<number[]>([]);
+
+  useEffect(() => {
+    const engine = getEngine();
+    let raf = 0;
+    const draw = () => {
+      raf = requestAnimationFrame(draw);
+      peaksRef.current.push(engine.inputLevel());
+      if (peaksRef.current.length > 2000) peaksRef.current.shift();
+      const canvas = canvasRef.current;
+      const g = canvas?.getContext("2d");
+      if (!canvas || !g) return;
+      const w = (canvas.width = Math.max(2, canvas.clientWidth * 2));
+      const h = (canvas.height = Math.max(2, canvas.clientHeight * 2));
+      g.clearRect(0, 0, w, h);
+      const peaks = peaksRef.current;
+      const style = getComputedStyle(canvas);
+      g.fillStyle = style.color;
+      const step = Math.max(1, Math.ceil(peaks.length / Math.max(1, w / 2)));
+      for (let i = 0, x = 0; i < peaks.length; i += step, x += 2) {
+        const v = Math.min(1, peaks[i] ?? 0);
+        const bh = Math.max(2, v * h * 0.92);
+        g.fillRect(x, (h - bh) / 2, 1.6, bh);
+      }
+    };
+    draw();
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  const start = startRef.current;
+  const now = transport.step ?? start;
+  const length = Math.max(1, (now >= start ? now - start : total - start) + 1);
+  const left = (start / total) * 100;
+  const width = Math.min(100 - left, (length / total) * 100);
+
+  return (
+    <div
+      className="pointer-events-none absolute inset-y-1 z-10 flex flex-col overflow-hidden rounded-[3px] border-2 border-destructive bg-destructive/15"
+      style={{ left: `${left}%`, width: `${Math.max(1.5, width)}%` }}
+    >
+      <div className="flex shrink-0 items-center gap-1 bg-destructive/25 px-1.5 py-[1px]">
+        <span className="size-1.5 animate-pulse rounded-full bg-destructive" />
+        <span className="font-mono text-[9px] font-semibold text-destructive">RECORDING</span>
+      </div>
+      <canvas ref={canvasRef} className="min-h-0 w-full flex-1 text-destructive" aria-label="Incoming recording waveform" role="img" />
+    </div>
+  );
+}
+
 function Lane({ track }: { track: Track }) {
   const isMidi = track.kind === "instrument" || track.kind === "midi" || track.kind === "sampler";
-  if (track.kind === "drum") return <DrumClip track={track} />;
-  if (!isMidi && (track.clips?.length ?? 0) > 0) return <Waveform track={track} />;
-  if (track.recording)
+  const live = track.recording ? <RecordingClip track={track} /> : null;
+  if (track.kind === "drum")
     return (
-      <div className="absolute inset-y-1 left-0 right-1 flex items-center justify-center rounded-[3px] border border-destructive/60 bg-destructive/10">
-        <span className="animate-pulse font-mono text-[11px] text-destructive">● RECORDING INPUT…</span>
-      </div>
+      <>
+        <DrumClip track={track} />
+        {live}
+      </>
     );
-  if (isMidi) return <MidiClip track={track} />;
+  if (!isMidi && (track.clips?.length ?? 0) > 0)
+    return (
+      <>
+        <Waveform track={track} />
+        {live}
+      </>
+    );
+  if (isMidi)
+    return (
+      <>
+        <MidiClip track={track} />
+        {live}
+      </>
+    );
   if (track.kind === "audio" || track.kind === "ai-vocal")
     return (
-      <div className="absolute inset-y-1 left-0 right-1 flex items-center justify-center rounded-[3px] border border-dashed border-border">
-        <span className="label-xs">NO AUDIO — ARM ● REC TO CAPTURE A WAVEFORM</span>
-      </div>
+      <>
+        {!live && (
+          <div className="absolute inset-y-1 left-0 right-1 flex items-center justify-center rounded-[3px] border border-dashed border-border">
+            <span className="label-xs">NO AUDIO — ARM ● REC TO CAPTURE A WAVEFORM</span>
+          </div>
+        )}
+        {live}
+      </>
     );
   const cells = Array.from({ length: 16 });
   const active = (i: number) => {
