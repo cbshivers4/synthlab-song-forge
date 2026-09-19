@@ -1439,7 +1439,10 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           const tp0 = transportRef.current;
           const ciBars = tp0.countIn ? Math.max(1, tp0.countInBars ?? 1) : 0;
           if (ciBars > 0) {
-            const stepMs = (60 / tp0.bpm / 4) * 1000;
+            // countInLeft is measured in quarter-note beats (four per 4/4 bar),
+            // so each countdown tick must last one full beat—not one sequencer
+            // sixteenth step.
+            const beatMs = (60 / tp0.bpm) * 1000;
             let left = ciBars * 4;
             // Hold the transport during the count-in, even if it was already rolling.
             setTransportState((s) => ({ ...s, playing: false, paused: true, countInLeft: left }));
@@ -1472,7 +1475,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
                 click(left % 4 === 0);
                 setTransportState((s) => ({ ...s, countInLeft: left }));
               }
-            }, stepMs);
+            }, beatMs);
             return;
           }
           begin();
