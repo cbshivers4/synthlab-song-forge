@@ -1091,15 +1091,23 @@ function Strip({
           onClick={(e) => { e.stopPropagation(); updateTrack(t.id, { muted: !t.muted }); }}
           className={cn(
             "h-5 flex-1 rounded-sm font-mono text-[9px] font-bold transition-colors",
-            t.muted ? "bg-amber-500 text-black" : "bg-black/30 text-muted-foreground hover:text-foreground"
+            t.muted
+              ? "bg-orange-500 text-black shadow-[0_0_10px_rgba(249,115,22,0.8)]"
+              : "bg-black/30 text-muted-foreground hover:text-foreground"
           )}
+          title={t.muted ? "Muted — click to unmute" : "Mute"}
         >
           M
         </button>
         <button
           onClick={(e) => { e.stopPropagation(); updateTrack(t.id, { solo: !t.solo }); }}
-          className={cn("h-5 flex-1 rounded-sm font-mono text-[9px] font-bold transition-colors", !t.solo && "bg-black/30 text-muted-foreground hover:text-foreground")}
-          style={t.solo ? { background: t.color, color: "black" } : undefined}
+          className={cn(
+            "h-5 flex-1 rounded-sm font-mono text-[9px] font-bold transition-colors",
+            t.solo
+              ? "bg-emerald-400 text-black shadow-[0_0_10px_rgba(52,211,153,0.8)]"
+              : "bg-black/30 text-muted-foreground hover:text-foreground"
+          )}
+          title={t.solo ? "Soloed — click to unsolo" : "Solo"}
         >
           S
         </button>
