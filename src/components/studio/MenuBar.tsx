@@ -185,13 +185,8 @@ export function MenuBar() {
             <MenubarItem onClick={() => void save()}>
               Save <MenubarShortcut>⌘S</MenubarShortcut>
             </MenubarItem>
-            <MenubarItem onClick={() => {
-              if (!project) return;
-              const { id: _id, ...copy } = project;
-              setProject({ ...copy, name: `${project.name} Copy`, openedAt: Date.now() });
-              toast("Copy ready", { description: "Choose Save to store it as a separate cloud project." });
-            }}>
-              Save As
+            <MenubarItem onClick={openSaveAs}>
+              Save As…
             </MenubarItem>
             <MenubarItem
               onClick={() => {
