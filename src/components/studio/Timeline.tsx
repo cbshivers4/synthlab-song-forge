@@ -87,6 +87,8 @@ import { WaveformView } from "@/components/studio/WaveformView";
 import { LevelBar } from "@/components/studio/LevelBar";
 import { ClipEditor } from "@/components/studio/ClipEditor";
 import { clipSeconds } from "@/lib/synclab/types";
+import { getEngine } from "@/lib/synclab/audio-engine";
+import { parseMidiFile } from "@/lib/synclab/midi-file";
 
 import { TrackIcon, TrackStylePicker } from "@/components/studio/TrackStyle";
 
@@ -1430,7 +1432,6 @@ function EditToolbar() {
     setNotes,
     updateTrack,
     select,
-    setPanel,
   } = useStudio();
   const audioInput = useRef<HTMLInputElement>(null);
   const midiInput = useRef<HTMLInputElement>(null);
