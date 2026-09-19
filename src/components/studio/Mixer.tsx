@@ -351,7 +351,7 @@ const ROW = {
 } as const;
 
 /** Console desk finishes the user can pick between. */
-export type ConsoleStyleId = "ssl" | "neve" | "api" | "live" | "vintage" | "neon";
+export type ConsoleStyleId = "ssl" | "neve" | "api" | "live" | "vintage" | "neon" | "solid";
 type ConsoleStyle = {
   id: ConsoleStyleId;
   name: string;
@@ -426,6 +426,28 @@ const CONSOLE_STYLES: ConsoleStyle[] = [
     accent: "oklch(0.82 0.17 185)",
     screws: false,
   },
+  {
+    id: "solid",
+    name: "Solid Colour",
+    desc: "One flat colour you pick — no gradient",
+    a: "#232428",
+    b: "#232428",
+    c: "#232428",
+    accent: "oklch(0.82 0.17 185)",
+    screws: false,
+  },
+];
+
+/** Preset swatches for the Solid Colour desk. */
+const SOLID_PRESETS: { name: string; hex: string }[] = [
+  { name: "Charcoal", hex: "#1a1b1e" },
+  { name: "Graphite", hex: "#2b2d31" },
+  { name: "Studio Grey", hex: "#4a4d52" },
+  { name: "Midnight Navy", hex: "#1b2432" },
+  { name: "Deep Teal", hex: "#15282a" },
+  { name: "Detroit Magenta", hex: "#2c1626" },
+  { name: "Electric Violet", hex: "#221b33" },
+  { name: "Warm Walnut", hex: "#2a211a" },
 ];
 
 /** Panel background, driven by the picked desk (vars set on the console root). */
@@ -1380,10 +1402,20 @@ export function Mixer() {
     const saved = window.localStorage.getItem("synclab.mixer.style") as ConsoleStyleId | null;
     return CONSOLE_STYLES.some((s) => s.id === saved) ? (saved as ConsoleStyleId) : "ssl";
   });
+  const [solid, setSolid] = useState<string>(() => {
+    if (typeof window === "undefined") return "#1a1b1e";
+    return window.localStorage.getItem("synclab.mixer.solid") ?? "#1a1b1e";
+  });
+  useEffect(() => {
+    window.localStorage.setItem("synclab.mixer.solid", solid);
+  }, [solid]);
   const desk = CONSOLE_STYLES.find((s) => s.id === styleId) ?? (CONSOLE_STYLES[0] as ConsoleStyle);
   useEffect(() => {
     window.localStorage.setItem("synclab.mixer.style", styleId);
   }, [styleId]);
+  // The Solid Colour desk paints its single picked colour across the whole panel.
+  const deskColors =
+    desk.id === "solid" ? { a: solid, b: solid, c: solid } : { a: desk.a, b: desk.b, c: desk.c };
   const soloed = tracks.some((t) => t.solo);
   const muted = tracks.some((t) => t.muted);
   const busLevel = (id: BusId) => {
@@ -1401,9 +1433,9 @@ export function Mixer() {
       data-console={desk.id}
       style={
         {
-          "--mx-a": desk.a,
-          "--mx-b": desk.b,
-          "--mx-c": desk.c,
+          "--mx-a": deskColors.a,
+          "--mx-b": deskColors.b,
+          "--mx-c": deskColors.c,
           "--mx-accent": desk.accent,
         } as CSSProperties
       }
@@ -1442,7 +1474,7 @@ export function Mixer() {
                   <span
                     className="h-7 w-5 shrink-0 rounded-[2px] border border-black/60"
                     style={{
-                      background: `linear-gradient(180deg, ${s.a}, ${s.b} 45%, ${s.c})`,
+                      background: s.id === "solid" ? solid : `linear-gradient(180deg, ${s.a}, ${s.b} 45%, ${s.c})`,
                       boxShadow: `inset 0 2px 0 0 ${s.accent}`,
                     }}
                   />
@@ -1452,6 +1484,39 @@ export function Mixer() {
                   </span>
                 </button>
               ))}
+              {styleId === "solid" && (
+                <div className="mt-1 border-t border-border px-2 pb-2 pt-2">
+                  <div className="font-mono text-[8px] uppercase tracking-widest text-muted-foreground">
+                    Solid colour
+                  </div>
+                  <div className="mt-1.5 grid grid-cols-8 gap-1">
+                    {SOLID_PRESETS.map((p) => (
+                      <button
+                        key={p.hex}
+                        title={p.name}
+                        aria-label={`${p.name} solid colour`}
+                        onClick={() => setSolid(p.hex)}
+                        className={cn(
+                          "h-6 w-full rounded-[3px] border transition-transform hover:scale-105",
+                          solid.toLowerCase() === p.hex ? "border-primary ring-1 ring-primary" : "border-black/60"
+                        )}
+                        style={{ background: p.hex }}
+                      />
+                    ))}
+                  </div>
+                  <label className="mt-2 flex items-center gap-2">
+                    <span className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">Custom</span>
+                    <input
+                      type="color"
+                      value={/^#[0-9a-fA-F]{6}$/.test(solid) ? solid : "#1a1b1e"}
+                      onChange={(e) => setSolid(e.target.value)}
+                      title="Pick any solid colour"
+                      aria-label="Custom mixer colour"
+                      className="h-7 w-full cursor-pointer rounded-[3px] border border-border bg-surface p-0.5"
+                    />
+                  </label>
+                </div>
+              )}
             </PopoverContent>
           </Popover>
 
