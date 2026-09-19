@@ -354,6 +354,8 @@ export interface Track {
   name: string;
   kind: TrackKind;
   color: string;
+  /** id from TRACK_ICONS; when unset the icon is picked automatically from the kind */
+  icon?: string | undefined;
   volume: number;
   pan: number;
   muted: boolean;
