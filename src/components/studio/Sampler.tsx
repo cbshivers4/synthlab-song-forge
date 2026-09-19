@@ -245,6 +245,9 @@ export function Sampler() {
                 onPointerUp={() => stopSamples(track.id)}
                 onPointerCancel={() => stopSamples(track.id)}
                 onLostPointerCapture={() => stopSamples(track.id)}
+                onPointerLeave={(e) => {
+                  if (e.buttons > 0) stopSamples(track.id);
+                }}
               >
                 <Play className="size-3.5" /> Hold to play
               </Button>
@@ -340,6 +343,12 @@ export function Sampler() {
                         onLostPointerCapture={() => {
                           setHeld(null);
                           stopSamples(track.id);
+                        }}
+                        onPointerLeave={(e) => {
+                          if (e.buttons > 0) {
+                            setHeld(null);
+                            stopSamples(track.id);
+                          }
                         }}
                         style={{
                           borderColor: color,

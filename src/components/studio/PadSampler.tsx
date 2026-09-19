@@ -185,7 +185,10 @@ export function PadSampler() {
 
   /** The mixer channel every pad plays through. */
   const ensureTrack = useCallback(() => {
-    if (trackId && tracks.some((t) => t.id === trackId)) return trackId;
+    if (trackId && tracks.some((t) => t.id === trackId)) {
+      voiceTrackRef.current = trackId;
+      return trackId;
+    }
     const existing = tracks.find((t) => t.kind === "sampler" && t.name === "PAD SAMPLER");
     if (existing) {
       setTrackId(existing.id);
@@ -561,6 +564,9 @@ export function PadSampler() {
               onPointerUp={release}
               onPointerCancel={release}
               onLostPointerCapture={release}
+              onPointerLeave={(e) => {
+                if (e.buttons > 0) release();
+              }}
               onContextMenu={(e) => armRec && e.preventDefault()}
               onDragOver={(e) => {
                 e.preventDefault();
