@@ -10,6 +10,7 @@ import {
   Gauge,
   Grid2x2,
   Music2,
+  NotebookPen,
   Puzzle,
   Scissors,
   SlidersHorizontal,
@@ -48,6 +49,8 @@ const TOOLS: Tool[] = [
   { id: "sampler", label: "Sampler", icon: <AudioLines className="size-4" />, panel: "sampler", drag: { kind: "sampler", name: "Sampler" } },
   { id: "plugins", label: "Plugins (VST)", icon: <Cpu className="size-4" />, panel: "plugins" },
   { id: "mixer", label: "Mixer", icon: <SlidersHorizontal className="size-4" />, panel: "mixer" },
+  { id: "stemgen", label: "AI Stem Generator", icon: <Sparkles className="size-4" />, panel: "stemgen" },
+  { id: "notes", label: "Track Notes", icon: <NotebookPen className="size-4" />, panel: "notes" },
   { id: "master", label: "Mastering", icon: <Gauge className="size-4" />, panel: "mastering" },
 ];
 
@@ -60,9 +63,9 @@ interface Section {
 }
 
 const SECTIONS: Section[] = [
-  { id: "ai", label: "AI Studio", tools: ["vocal", "stems", "voice", "coproducer", "hum"].map(tool) },
+  { id: "ai", label: "AI Studio", tools: ["vocal", "stems", "voice", "coproducer", "hum", "stemgen"].map(tool) },
   { id: "instruments", label: "Instruments", tools: ["synth", "bass", "drums", "beat", "chop", "sampler"].map(tool) },
-  { id: "mix", label: "Mix & Master", tools: ["mixer", "master"].map(tool) },
+  { id: "mix", label: "Mix & Master", tools: ["mixer", "master", "notes"].map(tool) },
   { id: "plugins", label: "Plugins", tools: ["plugins"].map(tool) },
 ];
 

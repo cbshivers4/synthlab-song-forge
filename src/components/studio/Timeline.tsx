@@ -92,6 +92,7 @@ import { getEngine } from "@/lib/synclab/audio-engine";
 import { parseMidiFile } from "@/lib/synclab/midi-file";
 
 import { TrackIcon, TrackStylePicker } from "@/components/studio/TrackStyle";
+import { TrackNotes } from "@/components/studio/TrackNotes";
 
 const INPUTS = ["Microphone", "Guitar / Line 1", "Keyboard / Line 2", "External Instrument", "MIDI Keyboard", "Internal", "Stereo File"];
 
@@ -641,9 +642,10 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
               {index + 1}. {track.name}
             </button>
           )}
+          <TrackNotes track={track} className="ml-auto" />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button size="icon" variant="ghost" className="ml-auto size-10 touch-manipulation sm:size-6" aria-label="Track menu">
+              <Button size="icon" variant="ghost" className="size-10 touch-manipulation sm:size-6" aria-label="Track menu">
                 <MoreVertical className="size-3.5" />
               </Button>
             </DropdownMenuTrigger>
