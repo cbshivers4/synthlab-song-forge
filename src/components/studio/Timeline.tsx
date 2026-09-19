@@ -432,7 +432,31 @@ function RecordingClip({ track }: { track: Track }) {
         <span className="size-1.5 animate-pulse rounded-full bg-destructive" />
         <span className="font-mono text-[9px] font-semibold text-destructive">RECORDING</span>
       </div>
-      {isNote ? (
+      {track.kind === "drum" ? (
+        <div className="relative min-h-0 w-full flex-1" aria-label="Drum hits being recorded" role="img">
+          {(track.pads ?? []).flatMap((pad, row, arr) => {
+            const padLen = pad.steps.length || track.steps || 16;
+            const hits: React.ReactNode[] = [];
+            for (let s = start; s <= now; s++) {
+              if ((pad.steps[s % padLen] ?? 0) <= 0) continue;
+              const l = ((s - start) / Math.max(1, length)) * 100;
+              hits.push(
+                <div
+                  key={`${pad.id}-${s}`}
+                  className="absolute rounded-[2px] bg-destructive"
+                  style={{
+                    left: `${l}%`,
+                    width: `${Math.max(2, (1 / Math.max(1, length)) * 100)}%`,
+                    top: `${(row / Math.max(1, arr.length)) * 100}%`,
+                    height: `${Math.max(8, 100 / Math.max(1, arr.length) - 2)}%`,
+                  }}
+                />,
+              );
+            }
+            return hits;
+          })}
+        </div>
+      ) : isNote ? (
         <div className="relative min-h-0 w-full flex-1" aria-label="Notes being recorded" role="img">
           {(track.notes ?? [])
             .filter((n) => n.step >= start && n.step <= now)
