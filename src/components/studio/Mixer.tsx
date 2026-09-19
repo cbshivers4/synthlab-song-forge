@@ -351,7 +351,7 @@ const ROW = {
 } as const;
 
 /** Console desk finishes the user can pick between. */
-export type ConsoleStyleId = "ssl" | "neve" | "api" | "live" | "vintage" | "neon";
+export type ConsoleStyleId = "ssl" | "neve" | "api" | "live" | "vintage" | "neon" | "solid";
 type ConsoleStyle = {
   id: ConsoleStyleId;
   name: string;
@@ -426,6 +426,28 @@ const CONSOLE_STYLES: ConsoleStyle[] = [
     accent: "oklch(0.82 0.17 185)",
     screws: false,
   },
+  {
+    id: "solid",
+    name: "Solid Colour",
+    desc: "One flat colour you pick — no gradient",
+    a: "#232428",
+    b: "#232428",
+    c: "#232428",
+    accent: "oklch(0.82 0.17 185)",
+    screws: false,
+  },
+];
+
+/** Preset swatches for the Solid Colour desk. */
+const SOLID_PRESETS: { name: string; hex: string }[] = [
+  { name: "Charcoal", hex: "#1a1b1e" },
+  { name: "Graphite", hex: "#2b2d31" },
+  { name: "Studio Grey", hex: "#4a4d52" },
+  { name: "Midnight Navy", hex: "#1b2432" },
+  { name: "Deep Teal", hex: "#15282a" },
+  { name: "Detroit Magenta", hex: "#2c1626" },
+  { name: "Electric Violet", hex: "#221b33" },
+  { name: "Warm Walnut", hex: "#2a211a" },
 ];
 
 /** Panel background, driven by the picked desk (vars set on the console root). */
@@ -1380,10 +1402,20 @@ export function Mixer() {
     const saved = window.localStorage.getItem("synclab.mixer.style") as ConsoleStyleId | null;
     return CONSOLE_STYLES.some((s) => s.id === saved) ? (saved as ConsoleStyleId) : "ssl";
   });
+  const [solid, setSolid] = useState<string>(() => {
+    if (typeof window === "undefined") return SOLID_PRESETS[0].hex;
+    return window.localStorage.getItem("synclab.mixer.solid") ?? SOLID_PRESETS[0].hex;
+  });
+  useEffect(() => {
+    window.localStorage.setItem("synclab.mixer.solid", solid);
+  }, [solid]);
   const desk = CONSOLE_STYLES.find((s) => s.id === styleId) ?? (CONSOLE_STYLES[0] as ConsoleStyle);
   useEffect(() => {
     window.localStorage.setItem("synclab.mixer.style", styleId);
   }, [styleId]);
+  // The Solid Colour desk paints its single picked colour across the whole panel.
+  const deskColors =
+    desk.id === "solid" ? { a: solid, b: solid, c: solid } : { a: desk.a, b: desk.b, c: desk.c };
   const soloed = tracks.some((t) => t.solo);
   const muted = tracks.some((t) => t.muted);
   const busLevel = (id: BusId) => {
