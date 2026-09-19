@@ -1433,9 +1433,9 @@ export function Mixer() {
       data-console={desk.id}
       style={
         {
-          "--mx-a": desk.a,
-          "--mx-b": desk.b,
-          "--mx-c": desk.c,
+          "--mx-a": deskColors.a,
+          "--mx-b": deskColors.b,
+          "--mx-c": deskColors.c,
           "--mx-accent": desk.accent,
         } as CSSProperties
       }
