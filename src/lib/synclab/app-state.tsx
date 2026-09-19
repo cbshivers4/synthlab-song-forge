@@ -102,6 +102,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setRecents((r) => r.filter((x) => !(x.name === p.name && x.openedAt === p.openedAt)));
   }, []);
 
+  const renameRecent = useCallback((p: ProjectMeta, name: string) => {
+    setRecents((r) => r.map((x) => (x.name === p.name && x.openedAt === p.openedAt ? { ...x, name } : x)));
+    setProjectState((cur) => (cur && cur.name === p.name && cur.openedAt === p.openedAt ? { ...cur, name } : cur));
+  }, []);
+
   const api: AppApi = useMemo(
     () => ({
       stage,
