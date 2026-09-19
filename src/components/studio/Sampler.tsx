@@ -355,7 +355,7 @@ export function Sampler() {
                             : `linear-gradient(145deg, color-mix(in hsl, ${color} 28%, transparent), color-mix(in hsl, ${color} 8%, transparent))`,
                           boxShadow: live ? `0 0 18px ${color}` : undefined,
                         }}
-                        className="relative flex min-h-44 touch-none flex-col items-center justify-between rounded-md border p-4 font-mono text-xs transition-all select-none sm:min-h-48 lg:min-h-40 xl:min-h-32"
+                        className="relative flex aspect-square min-w-0 touch-none flex-col items-center justify-between rounded-lg border-2 p-4 font-mono text-xs transition-all select-none active:scale-[0.97]"
                       >
                         <span className="relative z-10 text-sm text-foreground">{i + 1}</span>
                         <span className="pointer-events-none absolute inset-x-1 top-5 bottom-4">
