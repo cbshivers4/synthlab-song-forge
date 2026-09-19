@@ -611,9 +611,21 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
       <div className="w-1 shrink-0" style={{ background: track.color, opacity: isSelected ? 1 : 0.65 }} />
       <div className="w-[168px] shrink-0 space-y-1 border-r border-border bg-surface px-2 py-1.5 sm:w-[240px]">
         <div className="flex items-center gap-1.5">
-          <span className="text-primary">
-            <KindIcon kind={track.kind} />
-          </span>
+          <TrackStylePicker track={track}>
+            <button
+              type="button"
+              onClick={(e) => e.stopPropagation()}
+              title={`${track.name} — pick colour and icon`}
+              aria-label={`${track.name} colour and icon`}
+              className="flex size-9 shrink-0 items-center justify-center rounded-md border transition-colors hover:bg-white/5"
+              style={{
+                borderColor: `color-mix(in oklab, ${track.color} 60%, transparent)`,
+                background: `color-mix(in oklab, ${track.color} 16%, transparent)`,
+              }}
+            >
+              <TrackIcon track={track} className="size-5" />
+            </button>
+          </TrackStylePicker>
           {renaming ? (
             <Input
               autoFocus
