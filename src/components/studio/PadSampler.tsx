@@ -397,6 +397,13 @@ export function PadSampler() {
 
   const filled = useMemo(() => Object.keys(pads).length, [pads]);
 
+  /** which pad the big waveform monitor is showing */
+  const monitorId = playing ?? recPad ?? sel;
+  const monitorSample = pads[monitorId];
+  const monitorPad = monitorSample
+    ? { pad: monitorSample, color: padColor(Math.floor(monitorId / PADS_PER_BANK), monitorId % PADS_PER_BANK) }
+    : null;
+
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
