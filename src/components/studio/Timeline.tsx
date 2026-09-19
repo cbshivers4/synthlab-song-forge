@@ -190,7 +190,9 @@ function Waveform({ track }: { track: Track }) {
           <div
             key={clip.id}
             className={`group absolute inset-y-2 flex flex-col overflow-hidden rounded-[3px] border bg-clip-audio/10 shadow-sm transition-colors hover:bg-clip-audio/15 ${
-              active ? "border-clip-audio ring-1 ring-clip-audio/50" : "border-clip-audio/30"
+              active
+                ? "border-foreground ring-2 ring-inset ring-foreground"
+                : "border-clip-audio/30 hover:border-foreground/40"
             }`}
             style={{ left: `${left}%`, width: `${Math.max(2, width)}%` }}
             onPointerDown={(e) => {
