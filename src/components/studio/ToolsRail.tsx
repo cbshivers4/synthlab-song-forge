@@ -48,7 +48,7 @@ const TOOLS: Tool[] = [
   { id: "sampler", label: "Sampler", icon: <AudioLines className="size-4" />, panel: "sampler", drag: { kind: "sampler", name: "Sampler" } },
   { id: "plugins", label: "Plugins (VST)", icon: <Cpu className="size-4" />, panel: "plugins" },
   { id: "mixer", label: "Mixer", icon: <SlidersHorizontal className="size-4" />, panel: "mixer" },
-  { id: "master", label: "Mastering", icon: <Gauge className="size-4" />, panel: "mixer" },
+  { id: "master", label: "Mastering", icon: <Gauge className="size-4" />, panel: "mastering" },
 ];
 
 const tool = (id: string): Tool => TOOLS.find((t) => t.id === id)!;

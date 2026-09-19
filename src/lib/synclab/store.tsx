@@ -109,6 +109,7 @@ function triggerNote(
 
 export type PanelId =
   | "mixer"
+  | "mastering"
   | "synth"
   | "drums"
   | "piano"
