@@ -22,6 +22,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useStudio } from "@/lib/synclab/store";
 import { MidiLearnBlock } from "./MidiLearn";
+import { TrackNotes } from "@/components/studio/TrackNotes";
 import { TrackIcon, TrackStylePicker } from "@/components/studio/TrackStyle";
 import { BUILT_IN_PLUGINS } from "@/lib/synclab/plugins";
 import type { BusId, BusState, PluginInstance, Track, Transport } from "@/lib/synclab/types";
@@ -897,6 +898,7 @@ function Strip({
         <Screw />
         <span className="font-mono text-[9px] font-bold text-muted-foreground">{index + 1}</span>
         <ColorDot t={t} />
+        <TrackNotes track={t} />
         <ChannelMenu t={t} />
         <button
           onClick={(e) => { e.stopPropagation(); moveTrack(t.id, -1); }}
