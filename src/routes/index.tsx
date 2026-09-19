@@ -236,7 +236,15 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
         ))}
       {panel === "piano" &&
         (synthTrack ? (
-          <PianoRoll track={synthTrack} />
+          <div className="space-y-2">
+            <PianoRoll track={synthTrack} />
+            <MidiLearnStrip id={synthTrack.id} label={synthTrack.name} />
+            {drumTrack ? (
+              <DrumPads track={drumTrack} />
+            ) : (
+              <p className="text-xs text-muted-foreground">Add a drum machine track to get tap pads here.</p>
+            )}
+          </div>
         ) : (
           <p className="text-sm text-muted-foreground">Select an instrument or MIDI track to edit its notes.</p>
         ))}
