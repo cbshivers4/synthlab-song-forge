@@ -686,7 +686,17 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
       onDrop={onDrop}
     >
       <div className="w-1 shrink-0" style={{ background: track.color, opacity: isSelected ? 1 : 0.65 }} />
-      <div className="w-[168px] shrink-0 space-y-1 border-r border-border bg-surface px-2 py-1.5 sm:w-[240px]">
+      <div
+        className="w-[168px] shrink-0 space-y-1 border-r border-border bg-surface px-2 py-1.5 sm:w-[240px]"
+        onClick={(e) => {
+          // Selecting a channel from its header opens its edit menu.
+          if (e.metaKey || e.ctrlKey) return;
+          const el = e.target as HTMLElement;
+          if (el.closest("button,input,[role='slider'],[role='combobox']")) return;
+          select(track.id);
+          setMenuOpen(true);
+        }}
+      >
         <div className="flex items-center gap-1.5">
           <TrackStylePicker track={track}>
             <button
