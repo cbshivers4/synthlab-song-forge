@@ -871,6 +871,18 @@ function Strip({
         <Screw />
       </div>
 
+      {/* big identity badge: shows what the channel is, click to restyle */}
+      <TrackStylePicker track={t}>
+        <button
+          onClick={(e) => e.stopPropagation()}
+          title={`${t.name} — pick colour and icon`}
+          aria-label={`${t.name} colour and icon`}
+          className={cn(ROW.badge, "flex w-full items-center justify-center border-b border-border/60 transition-colors hover:bg-white/5")}
+          style={{ background: `color-mix(in oklab, ${t.color} 14%, transparent)` }}
+        >
+          <TrackIcon track={t} className="size-7" />
+        </button>
+      </TrackStylePicker>
       <div className={cn(ROW.scope, "border-b border-border/60 p-[3px]")}>
         <Scope scopeId={`ch:${t.id}`} height={40} compact color={t.color} />
       </div>
