@@ -1393,6 +1393,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           begin();
         } else {
           void finishRecording();
+          setTracks((ts) => ts.map((t) => (t.recording ? { ...t, recording: false } : t)));
           setTransportState((s) => ({ ...s, recording: false }));
         }
       },
@@ -1402,6 +1403,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           countInTimerRef.current = null;
         }
         if (transportRef.current.recording) void finishRecording();
+        setTracks((ts) => ts.map((t) => (t.recording ? { ...t, recording: false } : t)));
         setTransportState((s) => ({ ...s, playing: false, recording: false, paused: false, step: 0, countInLeft: null }));
       },
       changeInstrument: (trackId, preset) =>
