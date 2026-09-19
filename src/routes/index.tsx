@@ -29,6 +29,7 @@ import { DeviceSetup } from "@/components/studio/DeviceSetup";
 import { ExportDialog } from "@/components/studio/ExportDialog";
 import { BassGenerator } from "@/components/studio/BassGenerator";
 import { CoProducer } from "@/components/studio/CoProducer";
+import { StemSeparator } from "@/components/studio/StemSeparator";
 import { HumToBeat } from "@/components/studio/HumToBeat";
 import { MobileBeat } from "@/components/studio/MobileBeat";
 import { Bot } from "lucide-react";
@@ -248,6 +249,8 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
       {panel === "bass" && <BassGenerator />}
       {panel === "coproducer" && <CoProducer />}
       {panel === "hum" && <HumToBeat />}
+      {panel === "stems" && <StemSeparator mode="stems" />}
+      {panel === "voice" && <StemSeparator mode="voice" />}
 
       </div>
 

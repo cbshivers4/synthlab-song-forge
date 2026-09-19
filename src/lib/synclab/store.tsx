@@ -122,6 +122,8 @@ export type PanelId =
   | "bass"
   | "coproducer"
   | "hum"
+  | "stems"
+  | "voice"
   | null;
 
 export type EditTool = "select" | "draw" | "split";
