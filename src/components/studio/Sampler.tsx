@@ -287,22 +287,52 @@ export function Sampler() {
             {chops.length > 1 ? (
               <>
                 <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">
-                  {chops.map((c, i) => (
-                    <button
-                      key={`pad-${i}`}
-                      type="button"
-                      onPointerDown={() => previewNote(track.id, s.rootNote + i)}
-                      className="flex h-14 flex-col items-center justify-center rounded-md border border-border bg-surface-1 font-mono text-[10px] text-muted-foreground transition-colors hover:border-primary hover:bg-primary/15 hover:text-foreground active:bg-primary/30"
-                    >
-                      <span className="text-sm text-foreground">{i + 1}</span>
-                      <span>{(c * s.duration).toFixed(2)}s</span>
-                    </button>
-                  ))}
+                  {chops.map((c, i) => {
+                    const color = chopColor(i);
+                    const next = chops[i + 1] ?? s.end;
+                    const slice = s.peaks.slice(
+                      Math.floor(c * s.peaks.length),
+                      Math.max(Math.floor(c * s.peaks.length) + 2, Math.floor(next * s.peaks.length)),
+                    );
+                    const live = held === i;
+                    return (
+                      <button
+                        key={`pad-${i}`}
+                        type="button"
+                        onPointerDown={(e) => {
+                          e.currentTarget.setPointerCapture(e.pointerId);
+                          setHeld(i);
+                          previewNote(track.id, s.rootNote + i);
+                        }}
+                        onPointerUp={() => {
+                          setHeld(null);
+                          stopSamples(track.id);
+                        }}
+                        onPointerCancel={() => {
+                          setHeld(null);
+                          stopSamples(track.id);
+                        }}
+                        style={{
+                          borderColor: color,
+                          background: live
+                            ? `linear-gradient(145deg, ${color}, color-mix(in hsl, ${color} 50%, transparent))`
+                            : `linear-gradient(145deg, color-mix(in hsl, ${color} 28%, transparent), color-mix(in hsl, ${color} 8%, transparent))`,
+                          boxShadow: live ? `0 0 18px ${color}` : undefined,
+                        }}
+                        className="relative flex h-20 touch-none flex-col items-center justify-between rounded-md border p-1.5 font-mono text-[10px] transition-all select-none sm:h-16"
+                      >
+                        <span className="relative z-10 text-sm text-foreground">{i + 1}</span>
+                        <span className="pointer-events-none absolute inset-x-1 top-5 bottom-4">
+                          <WaveformView peaks={slice} color={color} grid={false} label={`Chop ${i + 1} waveform`} />
+                        </span>
+                        <span className="relative z-10 text-[9px] text-foreground/80">{(c * s.duration).toFixed(2)}s</span>
+                      </button>
+                    );
+                  })}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Chop {1} sits on {noteName(s.rootNote)} and each chop after it takes the next key up — play them from
-                  the pads, the keyboard, the piano roll or your MIDI controller. Drag a marker to move a chop, double
-                  click it to delete.
+                  Hold a pad to play its chop and lift your finger to stop it. Chop {1} sits on {noteName(s.rootNote)}{" "}
+                  and each chop after it takes the next key up. Drag a marker to move a chop, double click it to delete.
                 </p>
               </>
             ) : (
