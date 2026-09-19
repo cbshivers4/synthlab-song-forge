@@ -50,6 +50,37 @@ export function BassGenerator() {
   const scale = SCALES[scaleName] ?? (SCALES["Minor"] as number[]);
   const preview = useMemo(() => generate(root, scale, style, bars, density, movement, octave, seed), [root, scale, style, bars, density, movement, octave, seed]);
 
+  const [playing, setPlaying] = useState(false);
+  const [playStep, setPlayStep] = useState(0);
+  const timers = useRef<number[]>([]);
+
+  const stopPreview = () => {
+    timers.current.forEach((t) => window.clearTimeout(t));
+    timers.current = [];
+    setPlaying(false);
+    setPlayStep(0);
+  };
+  useEffect(() => stopPreview, []);
+
+  /** Auditions the generated pattern on its own preview channel, without touching the song. */
+  const playPreview = () => {
+    stopPreview();
+    const patch = previewPatch(STYLES[style].preset);
+    const stepSec = 60 / Math.max(40, transport.bpm) / 4;
+    const engine = getEngine();
+    engine.init();
+    setPlaying(true);
+    preview.forEach((n) => {
+      timers.current.push(
+        window.setTimeout(() => {
+          engine.playNote(PREVIEW_CHANNEL, patch, n.pitch, n.length * stepSec, n.velocity);
+          setPlayStep(n.step);
+        }, n.step * stepSec * 1000),
+      );
+    });
+    timers.current.push(window.setTimeout(stopPreview, bars * 16 * stepSec * 1000 + 400));
+  };
+
   const apply = () => {
     const def = STYLES[style];
     const id = targetId === "new" ? addTrack("instrument", `${style.toUpperCase()} BASS`, def.preset) : targetId;
