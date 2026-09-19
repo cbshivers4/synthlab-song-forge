@@ -749,7 +749,7 @@ function ChordScale({ trackId, onPlay }: { trackId: string; onPlay: (midi: numbe
       tones = [...rest, (low ?? 0) + 12];
     }
     if (spread) tones = tones.map((t, i) => (i % 2 === 1 ? t + 12 : t));
-    return tones.map((t) => base + (steps[degree % steps.length] ?? 0) + (t - (QUALITY(steps, degree, size)[0] ?? 0)));
+    return tones.map((t) => base + t);
   };
 
   const playNotes = (notes: number[]) => {
