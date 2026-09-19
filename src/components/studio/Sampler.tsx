@@ -228,22 +228,32 @@ export function Sampler() {
             <span className="label-xs">
               {s.duration.toFixed(2)}s · trimmed {(s.duration * (s.end - s.start)).toFixed(2)}s
             </span>
-            <div className="ml-auto flex gap-1">
-              <Button size="sm" variant="secondary" className="h-7 gap-1.5" onClick={() => previewNote(track.id, s.rootNote)}>
-                <Play className="size-3.5" /> Play
+            <div className="ml-auto flex flex-wrap gap-1">
+              <Button
+                size="sm"
+                variant="secondary"
+                className="h-9 touch-none gap-1.5 sm:h-7"
+                onPointerDown={(e) => {
+                  e.currentTarget.setPointerCapture(e.pointerId);
+                  previewNote(track.id, s.rootNote);
+                }}
+                onPointerUp={() => stopSamples(track.id)}
+                onPointerCancel={() => stopSamples(track.id)}
+              >
+                <Play className="size-3.5" /> Hold to play
               </Button>
-              <Button size="sm" variant="ghost" className="h-7 gap-1.5" onClick={() => stopSamples(track.id)}>
+              <Button size="sm" variant="ghost" className="h-9 gap-1.5 sm:h-7" onClick={() => stopSamples(track.id)}>
                 <Square className="size-3.5" /> Stop
               </Button>
               <Button
                 size="sm"
                 variant="ghost"
-                className="h-7 gap-1.5"
+                className="h-9 gap-1.5 sm:h-7"
                 onClick={() => updateSampler(track.id, { start: 0, end: 1 })}
               >
                 <RotateCcw className="size-3.5" /> Full length
               </Button>
-              <Button size="sm" variant="ghost" className="h-7 gap-1.5 text-destructive" onClick={() => clearSample(track.id)}>
+              <Button size="sm" variant="ghost" className="h-9 gap-1.5 text-destructive sm:h-7" onClick={() => clearSample(track.id)}>
                 <Trash2 className="size-3.5" /> Remove
               </Button>
             </div>
