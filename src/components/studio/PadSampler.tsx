@@ -146,7 +146,7 @@ function PadWave({ pad, color, onChange }: { pad: Pad; color: string; onChange: 
 }
 
 export function PadSampler() {
-  const { tracks, transport, addTrack, select } = useStudio();
+  const { tracks, transport, addTrack, select, captureNote } = useStudio();
   const [pads, setPadsState] = useState<Record<number, Pad>>(() => getPadBank());
   const setPads: typeof setPadsState = useCallback((next) => {
     setPadsState((current) => {
@@ -231,6 +231,8 @@ export function PadSampler() {
         undefined,
         pad.choke ? `choke${pad.choke}` : `pad${i}`,
       );
+      // While the transport records, drop the hit into the sampler track's take on the timeline.
+      captureNote(id, 60, velocity);
       setHit(i);
       window.setTimeout(() => setHit((h) => (h === i ? null : h)), 120);
       if (liveRef.current) {
