@@ -10,7 +10,17 @@ import {
 import { useStudio } from "@/lib/synclab/store";
 import { useApp } from "@/lib/synclab/app-state";
 import { toast } from "sonner";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { openExport } from "@/components/studio/ExportDialog";
 import { saveCloudProject } from "@/lib/synclab/cloud";
 import { saveUserTemplate } from "@/lib/synclab/user-templates";
