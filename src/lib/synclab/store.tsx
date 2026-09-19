@@ -1343,7 +1343,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
               });
             } else {
               toast("Select or arm a channel first", {
-                description: "Click a track, or press ● REC on it, then record.",
+                description: "Click a track, or press ● ARM on it, then record.",
               });
             }
             setTransportState((s) => ({ ...s, recording: true, playing: true, paused: false }));
