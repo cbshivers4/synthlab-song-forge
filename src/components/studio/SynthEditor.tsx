@@ -145,6 +145,7 @@ export function SynthEditor({ track }: { track: Track }) {
           <TabsTrigger value="voice">Voice</TabsTrigger>
           <TabsTrigger value="fx">Effects</TabsTrigger>
           <TabsTrigger value="arp">Arpeggiator</TabsTrigger>
+          <TabsTrigger value="chords">Chords / Scale</TabsTrigger>
         </TabsList>
 
         <TabsContent value="osc" className="space-y-3 pt-3">
