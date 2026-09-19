@@ -642,6 +642,7 @@ function ChannelEq({ t }: { t: Track }) {
         </button>
       ) : (
         <EqCurve
+          scopeId={`ch:${t.id}`}
           bands={bands.map(([id]) => eq.params.find((p) => p.id === id)?.value ?? 0) as [number, number, number]}
           color={t.color}
           bypass={!!eq.bypass}
@@ -657,12 +658,14 @@ function ChannelEq({ t }: { t: Track }) {
  * drag a band handle up/down to set its gain, double-click a handle to reset.
  */
 function EqCurve({
+  scopeId,
   bands,
   color,
   bypass,
   onBand,
 }: {
-  bands: [number, number, number]; // [high, mid, low] gains in dB
+  scopeId: string;
+  bands: [number, number, number]; // [low, mid, high] gains in dB
   color: string;
   bypass: boolean;
   onBand: (index: number, gain: number) => void;
@@ -693,6 +696,32 @@ function EqCurve({
   const dragRef = useRef<{ band: number; startY: number; startGain: number } | null>(null);
   const [activeBand, setActiveBand] = useState<number | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
+  const waveRef = useRef<SVGPathElement>(null);
+  useEffect(() => {
+    let raf = 0;
+    const draw = () => {
+      const node = waveRef.current;
+      if (node) {
+        const wave = getEngine().getScopeWave(scopeId);
+        if (!wave?.length) {
+          node.setAttribute("d", `M0,${H / 2} L${W},${H / 2}`);
+        } else {
+          const stride = Math.max(1, Math.floor(wave.length / W));
+          let wavePath = "";
+          for (let i = 0; i < wave.length; i += stride) {
+            const x = (i / Math.max(1, wave.length - 1)) * W;
+            const sample = Math.max(-1, Math.min(1, wave[i] ?? 0));
+            const y = H / 2 - sample * (H / 2 - PAD);
+            wavePath += `${wavePath ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)} `;
+          }
+          node.setAttribute("d", wavePath);
+        }
+      }
+      raf = requestAnimationFrame(draw);
+    };
+    raf = requestAnimationFrame(draw);
+    return () => cancelAnimationFrame(raf);
+  }, [scopeId]);
   const onPointerDown = (band: number) => (e: React.PointerEvent) => {
     e.stopPropagation();
     try {
@@ -733,6 +762,16 @@ function EqCurve({
         {[25, 50, 75].map((x) => (
           <line key={x} x1={x} y1={PAD} x2={x} y2={H - PAD} stroke="rgba(255,255,255,0.06)" strokeWidth="0.3" />
         ))}
+        <path
+          ref={waveRef}
+          d={`M0,${H / 2} L${W},${H / 2}`}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="0.75"
+          opacity="0.7"
+          vectorEffect="non-scaling-stroke"
+          style={{ color }}
+        />
         <path d={areaPath} fill={color} opacity={0.16} />
         <path d={path} fill="none" stroke={color} strokeWidth={1.1} strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
         {bandX.map((bx, i) => (
