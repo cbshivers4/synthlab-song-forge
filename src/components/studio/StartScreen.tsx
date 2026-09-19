@@ -366,6 +366,31 @@ export function StartScreen() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={rename !== null} onOpenChange={(v) => { if (!v) setRename(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="font-display tracking-wide">Rename project</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-1.5">
+            <Label className="label-xs">Project name</Label>
+            <Input
+              aria-label="Project name"
+              autoFocus
+              maxLength={80}
+              value={renameName}
+              onChange={(e) => setRenameName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") void confirmRename(); }}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setRename(null)}>Cancel</Button>
+            <Button className="glow" disabled={renameBusy} onClick={() => void confirmRename()}>
+              {renameBusy && <Loader2 className="size-4 animate-spin" />} Rename
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
