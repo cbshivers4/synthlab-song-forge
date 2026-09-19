@@ -876,7 +876,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
           id={track.id}
           color={track.color}
           source={track.recording && (track.kind === "audio" || track.kind === "ai-vocal" || track.kind === "sampler") ? "input" : "output"}
-          label={track.recording ? "IN" : undefined}
+          {...(track.recording ? { label: "IN" } : {})}
         />
       </div>
 
