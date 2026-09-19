@@ -16,40 +16,7 @@ export function DrumMachine({ track }: { track: Track }) {
   const [genre, setGenre] = useState("Detroit Techno");
   const [energy, setEnergy] = useState(6);
   const [openPad, setOpenPad] = useState<string | null>(null);
-  const [tapRec, setTapRec] = useState(false);
-  const [hitPad, setHitPad] = useState<string | null>(null);
   const pads = track.pads ?? [];
-
-  /** Play a pad by hand; while TAP REC runs and the beat plays, write it into the pattern. */
-  const tap = useCallback(
-    (pad: DrumPad, velocity: number) => {
-      getEngine().playDrum(track.id, pad, velocity);
-      setHitPad(pad.id);
-      window.setTimeout(() => setHitPad((cur) => (cur === pad.id ? null : cur)), 120);
-      if (navigator.vibrate) navigator.vibrate(8);
-      if (!tapRec || !transport.playing) return;
-      const total = pad.steps.length || track.steps || 16;
-      const at = transport.step % total;
-      updatePad(track.id, pad.id, { steps: pad.steps.map((v, i) => (i === at ? velocity : v)) });
-    },
-    [tapRec, transport.playing, transport.step, track.id, track.steps, updatePad],
-  );
-
-  // Number keys 1-8 hit the first eight pads.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      const el = e.target as HTMLElement | null;
-      if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable)) return;
-      if (e.metaKey || e.ctrlKey || e.altKey || e.repeat) return;
-      const idx = "12345678".indexOf(e.key);
-      const pad = idx >= 0 ? pads[idx] : undefined;
-      if (!pad) return;
-      e.preventDefault();
-      tap(pad, e.shiftKey ? 0.4 : 1);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [pads, tap]);
 
   // click cycles: off -> ghost -> normal -> accent
   const cycleStep = (padId: string, steps: number[], i: number) => {
