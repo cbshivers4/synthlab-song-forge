@@ -740,7 +740,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const finishRecording = useCallback(async () => {
     const engine = getEngine();
     if (!engine.isRecording) return;
-    const target = tracksRef.current.find((t) => t.recording);
+    const target = tracksRef.current.find(
+      (t) => t.recording && (t.kind === "audio" || t.kind === "ai-vocal" || t.kind === "sampler"),
+    );
     const result = await engine.stopInputRecording();
     if (!target) return;
     if (!result) {
@@ -1338,6 +1340,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
                   }),
                 );
             } else if (armedNote) {
+              recStartStepRef.current = transportRef.current.step ?? 0;
+              updateTrack(armedNote.id, { recording: true });
               toast("Recording notes", {
                 description: `Play your controller or the on-screen keyboard — notes land on ${armedNote.name}.`,
               });
@@ -1389,6 +1393,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           begin();
         } else {
           void finishRecording();
+          setTracks((ts) => ts.map((t) => (t.recording ? { ...t, recording: false } : t)));
           setTransportState((s) => ({ ...s, recording: false }));
         }
       },
@@ -1398,6 +1403,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           countInTimerRef.current = null;
         }
         if (transportRef.current.recording) void finishRecording();
+        setTracks((ts) => ts.map((t) => (t.recording ? { ...t, recording: false } : t)));
         setTransportState((s) => ({ ...s, playing: false, recording: false, paused: false, step: 0, countInLeft: null }));
       },
       changeInstrument: (trackId, preset) =>

@@ -387,8 +387,10 @@ function RecordingClip({ track }: { track: Track }) {
   const startRef = useRef(transport.step ?? 0);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const peaksRef = useRef<number[]>([]);
+  const isNote = track.kind === "instrument" || track.kind === "midi" || track.kind === "drum";
 
   useEffect(() => {
+    if (isNote) return;
     const engine = getEngine();
     let raf = 0;
     const draw = () => {
@@ -413,7 +415,7 @@ function RecordingClip({ track }: { track: Track }) {
     };
     draw();
     return () => cancelAnimationFrame(raf);
-  }, []);
+  }, [isNote]);
 
   const start = startRef.current;
   const now = transport.step ?? start;
@@ -430,7 +432,27 @@ function RecordingClip({ track }: { track: Track }) {
         <span className="size-1.5 animate-pulse rounded-full bg-destructive" />
         <span className="font-mono text-[9px] font-semibold text-destructive">RECORDING</span>
       </div>
-      <canvas ref={canvasRef} className="min-h-0 w-full flex-1 text-destructive" aria-label="Incoming recording waveform" role="img" />
+      {isNote ? (
+        <div className="relative min-h-0 w-full flex-1" aria-label="Notes being recorded" role="img">
+          {(track.notes ?? [])
+            .filter((n) => n.step >= start && n.step <= now)
+            .map((n) => {
+              const span = Math.max(1, length);
+              const l = ((n.step - start) / span) * 100;
+              const w = Math.max(3, ((n.length || 1) / span) * 100);
+              const top = Math.min(92, Math.max(0, 100 - ((n.pitch - 36) / 48) * 100));
+              return (
+                <div
+                  key={n.id}
+                  className="absolute h-[8%] min-h-[3px] rounded-[2px] bg-destructive"
+                  style={{ left: `${l}%`, width: `${Math.min(100 - l, w)}%`, top: `${top}%` }}
+                />
+              );
+            })}
+        </div>
+      ) : (
+        <canvas ref={canvasRef} className="min-h-0 w-full flex-1 text-destructive" aria-label="Incoming recording waveform" role="img" />
+      )}
     </div>
   );
 }
