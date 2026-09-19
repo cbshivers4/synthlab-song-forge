@@ -151,7 +151,14 @@ export function PianoRoll({ track }: { track: Track }) {
             ))}
           </SelectContent>
         </Select>
+        <span className="label-xs px-1">TRACK OCT</span>
+        <Tool onClick={() => shiftTrackOctave(-1)}>−</Tool>
+        <span className="w-10 text-center font-mono text-[10px] text-primary">
+          {trackOct > 0 ? `+${trackOct}` : trackOct}
+        </span>
+        <Tool onClick={() => shiftTrackOctave(1)}>+</Tool>
       </div>
+
 
       <div className="flex items-center overflow-x-auto whitespace-nowrap scrollbar-hide gap-1.5 rounded-sm border border-border bg-surface/60 p-1.5">
         <Tool onClick={() => apply((n) => ({ ...n, step: Math.round(n.step / grid) * grid }))}>QUANTIZE</Tool>
