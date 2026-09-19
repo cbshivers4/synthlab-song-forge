@@ -1597,7 +1597,94 @@ function EditToolbar() {
       >
         <Trash2 className="size-3" /> Delete{targets.length > 1 ? ` ${targets.length}` : ""}
       </Button>
-      <span className="label-xs ml-auto hidden sm:inline">
+      <div className="mx-1 h-4 w-px bg-border" />
+      <Button size="sm" variant="ghost" className="h-6 gap-1 px-2 text-[10px]" title="Undo (⌘Z / Ctrl+Z)" onClick={undo}>
+        <Undo2 className="size-3" /> Undo
+      </Button>
+      <Button size="sm" variant="ghost" className="h-6 gap-1 px-2 text-[10px]" title="Redo (⌘⇧Z / Ctrl+Y)" onClick={redo}>
+        <Redo2 className="size-3" /> Redo
+      </Button>
+      <div className="mx-1 h-4 w-px bg-border" />
+      <Button size="sm" variant="ghost" className="h-6 gap-1 px-2 text-[10px]" title="Nudge the selected clip left" onClick={() => nudge(-1)}>
+        <ArrowLeftToLine className="size-3" />
+      </Button>
+      <Button size="sm" variant="ghost" className="h-6 gap-1 px-2 text-[10px]" title="Nudge the selected clip right" onClick={() => nudge(1)}>
+        <ArrowRightToLine className="size-3" />
+      </Button>
+      <Button size="sm" variant="ghost" className="h-6 gap-1 px-2 text-[10px]" title="Duplicate the selected clip" onClick={duplicateClip}>
+        <Copy className="size-3" /> Dup Clip
+      </Button>
+      <Button size="sm" variant="ghost" className="h-6 gap-1 px-2 text-[10px]" title="Fade in the selected clip" onClick={() => fade("in")}>
+        Fade In
+      </Button>
+      <Button size="sm" variant="ghost" className="h-6 gap-1 px-2 text-[10px]" title="Fade out the selected clip" onClick={() => fade("out")}>
+        Fade Out
+      </Button>
+      <div className="mx-1 h-4 w-px bg-border" />
+      <span className="label-xs shrink-0">SNAP</span>
+      <Select value={String(snap)} onValueChange={(v) => setTransport({ snap: Number(v) })}>
+        <SelectTrigger className="h-6 w-[88px] shrink-0 font-mono text-[10px]" title="Snap grid for moving and trimming clips">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {SNAP_OPTIONS.map((o) => (
+            <SelectItem key={o.value} value={String(o.value)} className="font-mono text-[11px]">
+              {o.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Button
+        size="sm"
+        variant={transport.follow ? "default" : "ghost"}
+        className="h-6 gap-1 px-2 text-[10px]"
+        title="Follow the playhead while the song plays"
+        onClick={() => setTransport({ follow: !transport.follow })}
+      >
+        <Eye className="size-3" /> Follow
+      </Button>
+      <div className="mx-1 h-4 w-px bg-border" />
+      <Button
+        size="sm"
+        variant="ghost"
+        className="h-6 gap-1 px-2 text-[10px]"
+        title="Import a WAV, MP3 or AIFF file onto the timeline at the playhead"
+        onClick={() => audioInput.current?.click()}
+      >
+        <Waves className="size-3" /> Import Wave
+      </Button>
+      <Button
+        size="sm"
+        variant="ghost"
+        className="h-6 gap-1 px-2 text-[10px]"
+        title="Import a MIDI file as editable regions"
+        onClick={() => midiInput.current?.click()}
+      >
+        <Music2 className="size-3" /> Import MIDI
+      </Button>
+      <input
+        ref={audioInput}
+        type="file"
+        accept="audio/*,.wav,.mp3,.aif,.aiff,.m4a,.ogg,.flac"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          e.target.value = "";
+          if (file) void importAudioClip(file);
+        }}
+      />
+      <input
+        ref={midiInput}
+        type="file"
+        accept=".mid,.midi,audio/midi"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          e.target.value = "";
+          if (file) void importMidiClip(file);
+        }}
+      />
+      <span className="label-xs ml-auto hidden shrink-0 sm:inline">
         {selectedIds.length > 1 ? `${selectedIds.length} selected` : `${tracks.length} channels`}
       </span>
     </div>
