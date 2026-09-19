@@ -190,7 +190,9 @@ function Waveform({ track }: { track: Track }) {
           <div
             key={clip.id}
             className={`group absolute inset-y-2 flex flex-col overflow-hidden rounded-[3px] border bg-clip-audio/10 shadow-sm transition-colors hover:bg-clip-audio/15 ${
-              active ? "border-clip-audio ring-1 ring-clip-audio/50" : "border-clip-audio/30"
+              active
+                ? "border-foreground ring-2 ring-inset ring-foreground"
+                : "border-clip-audio/30 hover:border-foreground/40"
             }`}
             style={{ left: `${left}%`, width: `${Math.max(2, width)}%` }}
             onPointerDown={(e) => {
@@ -595,7 +597,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
   return (
     <div className="border-b border-border/80">
     <div
-      className={`relative flex items-stretch transition-colors ${isSelected ? "bg-surface-2/40" : "hover:bg-surface/50"} ${track.hidden ? "opacity-40" : ""} ${dropping ? "ring-1 ring-primary ring-inset" : ""}`}
+      className={`relative flex items-stretch transition-colors ${isSelected ? "bg-surface-2/40 ring-1 ring-inset ring-foreground/80" : "hover:bg-surface/50"} ${track.hidden ? "opacity-40" : ""} ${dropping ? "ring-1 ring-primary ring-inset" : ""}`}
       style={{ height: track.height ?? undefined }}
       onClick={(e) => {
         if (e.metaKey || e.ctrlKey) toggleSelectId(track.id);
@@ -797,9 +799,14 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
             size="sm"
             variant={track.armed ? "destructive" : "ghost"}
             className="h-6 px-2 text-[10px]"
+            title={
+              track.armed
+                ? "Armed — the microphone meter is live. Press record on the transport to capture it."
+                : "Arm this channel to monitor the microphone"
+            }
             onClick={() => updateTrack(track.id, { armed: !track.armed })}
           >
-            ● REC
+            ● ARM
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -875,8 +882,13 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
         <LevelBar
           id={track.id}
           color={track.color}
-          source={track.recording && (track.kind === "audio" || track.kind === "ai-vocal" || track.kind === "sampler") ? "input" : "output"}
-          {...(track.recording ? { label: "IN" } : {})}
+          source={
+            (track.armed || track.recording) &&
+            (track.kind === "audio" || track.kind === "ai-vocal" || track.kind === "sampler")
+              ? "input"
+              : "output"
+          }
+          {...(track.armed || track.recording ? { label: "IN" } : {})}
         />
       </div>
 
