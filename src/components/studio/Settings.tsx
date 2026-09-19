@@ -277,7 +277,7 @@ export function Settings() {
   return (
     <Tabs defaultValue="audio" className="w-full">
       <TabsList className="flex h-auto flex-wrap justify-start gap-1 bg-surface">
-        {["audio", "recording", "metronome", "timing", "midi", "mixing", "export", "general"].map((t) => (
+        {["audio", "recording", "metronome", "timing", "timeline", "midi", "mixing", "export", "general"].map((t) => (
           <TabsTrigger key={t} value={t} className="font-mono text-[11px] uppercase tracking-widest">
             {t}
           </TabsTrigger>
@@ -422,6 +422,34 @@ export function Settings() {
         </Row>
         <Row label="Scale lock in piano roll">
           <Switch checked={p.scaleLock} onCheckedChange={(v) => set("scaleLock", v)} />
+        </Row>
+      </TabsContent>
+
+      <TabsContent value="timeline" className="mt-4">
+        <Row label="Snap grid" hint="Used when you move or trim clips on the timeline">
+          <Pick
+            value={
+              (transport.snap ?? 1) === 0 ? "Off" : (transport.snap ?? 1) === 1 ? "1/4 note" : (transport.snap ?? 1) === 2 ? "Half bar" : "Bar"
+            }
+            options={["Off", "1/4 note", "Half bar", "Bar"]}
+            onChange={(v) => setTransport({ snap: v === "Off" ? 0 : v === "1/4 note" ? 1 : v === "Half bar" ? 2 : 4 })}
+            width="w-28"
+          />
+        </Row>
+        <Row label="Follow playhead" hint="Scrolls the timeline to keep the playhead in view">
+          <Switch checked={!!transport.follow} onCheckedChange={(v) => setTransport({ follow: v })} />
+        </Row>
+        <Row label="Timeline length">
+          <Num value={transport.bars ?? 4} min={1} max={512} unit="bars" onChange={(v) => setTransport({ bars: v })} />
+        </Row>
+        <Row label="Loop playback">
+          <Switch checked={transport.loop} onCheckedChange={(v) => setTransport({ loop: v })} />
+        </Row>
+        <Row label="Waveform detail" hint="How finely clip waveforms are drawn">
+          <Pick value={p.waveformDetail} options={["Low", "Medium", "High"]} onChange={(v) => set("waveformDetail", v)} width="w-28" />
+        </Row>
+        <Row label="Show tooltips">
+          <Switch checked={p.showTooltips} onCheckedChange={(v) => set("showTooltips", v)} />
         </Row>
       </TabsContent>
 
