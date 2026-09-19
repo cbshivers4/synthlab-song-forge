@@ -246,7 +246,7 @@ export function PadSampler() {
         });
       }
     },
-    [ensureTrack],
+    [captureNote, ensureTrack],
   );
 
   /* pad step sequencer */
