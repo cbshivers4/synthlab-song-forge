@@ -10,7 +10,17 @@ import {
 import { useStudio } from "@/lib/synclab/store";
 import { useApp } from "@/lib/synclab/app-state";
 import { toast } from "sonner";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { openExport } from "@/components/studio/ExportDialog";
 import { saveCloudProject } from "@/lib/synclab/cloud";
 import { saveUserTemplate } from "@/lib/synclab/user-templates";
@@ -98,6 +108,37 @@ export function MenuBar() {
     return () => document.removeEventListener("synclab:cloud-save", onSave);
   });
 
+  const [saveAsOpen, setSaveAsOpen] = useState(false);
+  const [saveAsName, setSaveAsName] = useState("");
+
+  const openSaveAs = () => {
+    setSaveAsName(project ? `${project.name} Copy` : "Untitled project");
+    setSaveAsOpen(true);
+  };
+
+  const confirmSaveAs = async () => {
+    const name = saveAsName.trim() || "Untitled project";
+    if (!project) {
+      toast("Create a project first");
+      return;
+    }
+    setSaveAsOpen(false);
+    const { id: _id, ...copy } = project;
+    const newProject = { ...copy, name, openedAt: Date.now() };
+    setProject(newProject);
+    const saving = toast.loading(`Saving “${name}” and its audio…`);
+    try {
+      const saved = await saveCloudProject({ ...newProject, id: "" }, snapshot());
+      setProject({ ...newProject, id: saved.id });
+      toast.success(`Saved “${name}” to your cloud`, {
+        id: saving,
+        description: "It keeps the original untouched as its own project.",
+      });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Cloud save failed", { id: saving });
+    }
+  };
+
   const needTrack = (fn: (id: string) => void) => () => {
     if (!selected) {
       toast("Select a track first", { description: "Click a track name in the timeline, then try again." });
@@ -144,13 +185,8 @@ export function MenuBar() {
             <MenubarItem onClick={() => void save()}>
               Save <MenubarShortcut>⌘S</MenubarShortcut>
             </MenubarItem>
-            <MenubarItem onClick={() => {
-              if (!project) return;
-              const { id: _id, ...copy } = project;
-              setProject({ ...copy, name: `${project.name} Copy`, openedAt: Date.now() });
-              toast("Copy ready", { description: "Choose Save to store it as a separate cloud project." });
-            }}>
-              Save As
+            <MenubarItem onClick={openSaveAs}>
+              Save As…
             </MenubarItem>
             <MenubarItem
               onClick={() => {
@@ -349,6 +385,32 @@ export function MenuBar() {
       <span className="ml-auto hidden shrink-0 font-mono text-[10px] tracking-widest text-muted-foreground uppercase lg:inline">
         {project ? `${project.name} · ${project.key} · ${project.timeSig}` : "untitled session"} · {mode} mode
       </span>
+
+      <Dialog open={saveAsOpen} onOpenChange={setSaveAsOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Save As</DialogTitle>
+            <DialogDescription>
+              Name this copy of the project. It saves as a new project and keeps the original untouched.
+            </DialogDescription>
+          </DialogHeader>
+          <Input
+            value={saveAsName}
+            placeholder="Project name"
+            aria-label="Project name"
+            autoFocus
+            maxLength={80}
+            onChange={(e) => setSaveAsName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") void confirmSaveAs();
+            }}
+          />
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setSaveAsOpen(false)}>Cancel</Button>
+            <Button onClick={() => void confirmSaveAs()}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
