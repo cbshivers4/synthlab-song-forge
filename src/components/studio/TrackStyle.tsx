@@ -53,7 +53,7 @@ export const TRACK_PALETTE: { id: string; name: string; value: string }[] = [
 ];
 
 /** Musical icons a track can be badged with. */
-export const TRACK_ICONS: { id: string; label: string; Icon: ComponentType<{ className?: string }> }[] = [
+export const TRACK_ICONS: { id: string; label: string; Icon: ComponentType<{ className?: string | undefined }> }[] = [
   { id: "note", label: "Note", Icon: Music2 },
   { id: "notes", label: "Notes", Icon: Music3 },
   { id: "score", label: "Score", Icon: Music4 },
@@ -104,7 +104,7 @@ export function TrackIcon({
   tinted = true,
 }: {
   track: Pick<Track, "kind" | "name" | "instrument" | "icon" | "color">;
-  className?: string;
+  className?: string | undefined;
   tinted?: boolean;
 }) {
   const Icon = (track.icon && ICON_BY_ID.get(track.icon)) || autoIcon(track);
