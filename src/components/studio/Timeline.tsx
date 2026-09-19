@@ -797,9 +797,14 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
             size="sm"
             variant={track.armed ? "destructive" : "ghost"}
             className="h-6 px-2 text-[10px]"
+            title={
+              track.armed
+                ? "Armed — the microphone meter is live. Press record on the transport to capture it."
+                : "Arm this channel to monitor the microphone"
+            }
             onClick={() => updateTrack(track.id, { armed: !track.armed })}
           >
-            ● REC
+            ● ARM
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
