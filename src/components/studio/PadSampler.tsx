@@ -347,6 +347,7 @@ export function PadSampler() {
     rec.start(200);
     recRef.current = { rec, stream, chunks, pad: i };
     setMicOn(true);
+    setRecStream(stream);
   };
 
   const stopMic = async () => {
