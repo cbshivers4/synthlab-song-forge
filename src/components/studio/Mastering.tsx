@@ -34,7 +34,7 @@ const KNOBS: { key: keyof MasterSettings; label: string; min: number; max: numbe
 
 const fmt = (v: number, unit: string) => `${v > 0 && (unit === "dB" ) ? "+" : ""}${v.toFixed(unit === "Hz" ? 0 : 2)}${unit ? ` ${unit}` : ""}`;
 
-function Meter({ label, value, unit, good }: { label: string; value: number; unit: string; good?: boolean }) {
+function Meter({ label, value, unit, good }: { label: string; value: number; unit: string; good?: boolean | undefined }) {
   return (
     <div className="rounded-sm border border-border bg-surface-2 px-2 py-1.5">
       <div className="label-xs">{label}</div>
@@ -85,7 +85,7 @@ export function Mastering() {
     setPhase("working");
     setProgress(0);
     try {
-      const out = await master(cap, s, setProgress);
+      const out = await master(cap, s, (_stage, pct) => setProgress(pct));
       setResult(out);
       setBefore(out.before);
       setPhase("ready");
