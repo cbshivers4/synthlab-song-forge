@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
-import type { BusId, BusState, PluginDef, PluginInstance, SynthPatch, Track, Transport } from "./types";
+import type { BusId, BusState, PluginDef, PluginInstance, SongSection, SynthPatch, Track, Transport } from "./types";
 import type { SavedPad } from "./pad-session";
 
 const BUCKET = "synclab-cloud";
@@ -14,6 +14,7 @@ export interface CloudSession {
   installedPlugins: PluginDef[];
   userPresets: SynthPatch[];
   padBank: Record<number, SavedPad>;
+  sections?: SongSection[];
 }
 
 export interface CloudProject {

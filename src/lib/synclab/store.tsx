@@ -30,12 +30,13 @@ import type {
 
   PluginParam,
   SamplerState,
+  SongSection,
   SynthPatch,
   Track,
   TrackKind,
   Transport,
 } from "./types";
-import { clipRate } from "./types";
+import { clipRate, SECTION_COLORS } from "./types";
 
 /** A mixer control a hardware knob/fader can drive. id is a track id, or "master". */
 export interface MidiTarget {
@@ -108,6 +109,7 @@ function triggerNote(
 
 export type PanelId =
   | "mixer"
+  | "mastering"
   | "synth"
   | "drums"
   | "piano"
@@ -137,6 +139,7 @@ interface StudioState {
   panel: PanelId;
   userPresets: SynthPatch[];
   buses: Record<BusId, BusState>;
+  sections: SongSection[];
 }
 
 /** Shaped value of an automation curve at a step, held flat outside the drawn range. */
@@ -172,6 +175,14 @@ interface StudioApi extends StudioState {
   savedAt: number | null;
   selected: Track | null;
   setBus: (id: BusId, patch: Partial<BusState>) => void;
+  addSection: (name?: string, start?: number, length?: number) => void;
+  updateSection: (id: string, patch: Partial<SongSection>) => void;
+  removeSection: (id: string) => void;
+  /** copy a section and everything inside it, pushing later material along */
+  duplicateSection: (id: string) => void;
+  /** move the playhead (and loop, when it is on) to a section */
+  gotoSection: (id: string) => void;
+  autoSections: () => void;
   setPanel: (p: PanelId) => void;
   select: (id: string) => void;
   setEditTool: (t: EditTool) => void;
@@ -293,6 +304,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   /** punch recording hooks, filled in once the record helpers exist */
   const punchRef = useRef<{ start: () => void; stop: () => void } | null>(null);
 
+  const [sections, setSections] = useState<SongSection[]>([]);
+  const sectionsRef = useRef<SongSection[]>([]);
+  sectionsRef.current = sections;
   const [buses, setBuses] = useState<Record<BusId, BusState>>({
     drums: { volume: 1, muted: false },
     vocals: { volume: 1, muted: false },
@@ -808,6 +822,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       installedPlugins: structuredClone(installedPlugins),
       userPresets: structuredClone(userPresets),
       padBank: getPadBank(),
+      sections: structuredClone(sectionsRef.current),
     }),
     [buses, fxChains, installedPlugins, userPresets],
   );
@@ -822,6 +837,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     setInstalledPlugins(structuredClone(session.installedPlugins));
     setUserPresets(structuredClone(session.userPresets));
     setPadBank(session.padBank ?? {});
+    setSections(structuredClone(session.sections ?? []));
     setSelectedId(session.tracks[0]?.id ?? null);
     setSelectedIds(session.tracks[0] ? [session.tracks[0].id] : []);
     setPanel(null);
@@ -856,7 +872,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       }
     }, 600);
     return () => window.clearTimeout(id);
-  }, [tracks, buses, fxChains, installedPlugins, userPresets, buildSnapshot]);
+  }, [tracks, buses, fxChains, installedPlugins, userPresets, sections, buildSnapshot]);
 
   // Bring the last session back after a refresh or a crash.
   useEffect(() => {
@@ -921,6 +937,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       panel,
       userPresets,
       buses,
+      sections,
       snapshot: buildSnapshot,
       restore: (session) => {
         applyingRef.current = true;
@@ -934,6 +951,125 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       savedAt,
       selected,
       setBus: (id, patch) => setBuses((b) => ({ ...b, [id]: { ...b[id], ...patch } })),
+      addSection: (name, start, length) => {
+        setSections((list) => {
+          const sorted = [...list].sort((a, b) => a.start - b.start);
+          const last = sorted[sorted.length - 1];
+          const at = start ?? (last ? last.start + last.length : transportRef.current.step ?? 0);
+          const len = Math.max(4, length ?? 32);
+          const next: SongSection = {
+            id: uid(),
+            name: (name ?? `PART ${sorted.length + 1}`).toUpperCase(),
+            start: Math.max(0, Math.round(at)),
+            length: Math.round(len),
+            color: SECTION_COLORS[sorted.length % SECTION_COLORS.length] as string,
+          };
+          toast.success(`${next.name} added`, {
+            description: `Bar ${Math.floor(next.start / 4) + 1} to ${Math.floor((next.start + next.length) / 4) + 1}`,
+          });
+          return [...sorted, next].sort((a, b) => a.start - b.start);
+        });
+      },
+      updateSection: (id, patch) =>
+        setSections((list) =>
+          [...list]
+            .map((sec) => (sec.id === id ? { ...sec, ...patch } : sec))
+            .sort((a, b) => a.start - b.start),
+        ),
+      removeSection: (id) =>
+        setSections((list) => {
+          const gone = list.find((s2) => s2.id === id);
+          if (gone) toast(`${gone.name} marker removed`, { description: "The audio on the timeline was left alone." });
+          return list.filter((s2) => s2.id !== id);
+        }),
+      duplicateSection: (id) => {
+        const list = sectionsRef.current;
+        const sec = list.find((s2) => s2.id === id);
+        if (!sec) return;
+        const from = sec.start;
+        const to = sec.start + sec.length;
+        const len = sec.length;
+        let copied = 0;
+        setTracks((ts) =>
+          ts.map((t) => {
+            const next: Partial<Track> = {};
+            if (t.clips?.length) {
+              const clips: AudioClip[] = [];
+              for (const c of t.clips) {
+                const cs = c.start ?? 0;
+                clips.push(cs >= to ? { ...c, start: cs + len } : c);
+                if (cs >= from && cs < to) {
+                  clips.push({ ...c, id: uid(), start: cs + len });
+                  copied++;
+                }
+              }
+              next.clips = clips;
+            }
+            if (t.notes?.length) {
+              const notes: MidiNote[] = [];
+              for (const n of t.notes) {
+                notes.push(n.step >= to ? { ...n, step: n.step + len } : n);
+                if (n.step >= from && n.step < to) {
+                  notes.push({ ...n, id: uid(), step: n.step + len });
+                  copied++;
+                }
+              }
+              next.notes = notes;
+            }
+            if (t.automation?.length) {
+              next.automation = t.automation.map((lane) => ({
+                ...lane,
+                points: [
+                  ...lane.points.map((pt) => (pt.step >= to ? { ...pt, step: pt.step + len } : pt)),
+                  ...lane.points.filter((pt) => pt.step >= from && pt.step < to).map((pt) => ({ ...pt, step: pt.step + len })),
+                ].sort((a, b) => a.step - b.step),
+              }));
+            }
+            return Object.keys(next).length ? { ...t, ...next } : t;
+          }),
+        );
+        setSections((cur) => {
+          const copy: SongSection = { ...sec, id: uid(), start: to };
+          return [...cur.map((s2) => (s2.start >= to ? { ...s2, start: s2.start + len } : s2)), copy].sort(
+            (a, b) => a.start - b.start,
+          );
+        });
+        const neededBars = Math.ceil((to + len) / 4);
+        if (neededBars > (transportRef.current.bars ?? 4)) setTransportState((t) => ({ ...t, bars: Math.min(512, neededBars) }));
+        toast.success(`${sec.name} duplicated`, {
+          description: copied > 0 ? `${copied} clips and notes copied along with it.` : "The marker was copied — that part of the song was empty.",
+        });
+      },
+      gotoSection: (id) => {
+        const sec = sectionsRef.current.find((s2) => s2.id === id);
+        if (!sec) return;
+        setTransportState((t) =>
+          t.loop
+            ? { ...t, step: sec.start, loopStart: sec.start, loopEnd: sec.start + sec.length }
+            : { ...t, step: sec.start },
+        );
+      },
+      autoSections: () => {
+        const bars = Math.max(4, transportRef.current.bars ?? 8);
+        const names = ["INTRO", "VERSE", "CHORUS", "VERSE 2", "BRIDGE", "CHORUS 2", "OUTRO"];
+        const part = Math.max(4, Math.round((bars / names.length) * 4 / 4) * 4);
+        const built: SongSection[] = [];
+        let at = 0;
+        for (let i = 0; i < names.length && at < bars * 4; i++) {
+          const len = Math.min(part * 4, bars * 4 - at);
+          if (len < 4) break;
+          built.push({
+            id: uid(),
+            name: names[i] as string,
+            start: at,
+            length: len,
+            color: SECTION_COLORS[i % SECTION_COLORS.length] as string,
+          });
+          at += len;
+        }
+        setSections(built);
+        toast.success("Song structure laid out", { description: `${built.length} parts across ${bars} bars — rename or drag any of them.` });
+      },
       setPanel,
       select: (id) => {
         setSelectedId(id);
@@ -1626,7 +1762,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           ),
         })),
     };
-  }, [tracks, transport, selectedId, selectedIds, editTool, panel, userPresets, buses, installedPlugins, fxChains, midiInputs, midiInputId, midiLearning, midiMap, midiLearn, clipboardName, enableMidi, updateTrack, finishRecording, splitClipAtImpl, buildSnapshot, applySession, historyTick, automationHistoryTick, savedAt]);
+  }, [tracks, transport, selectedId, selectedIds, editTool, panel, userPresets, buses, sections, installedPlugins, fxChains, midiInputs, midiInputId, midiLearning, midiMap, midiLearn, clipboardName, enableMidi, updateTrack, finishRecording, splitClipAtImpl, buildSnapshot, applySession, historyTick, automationHistoryTick, savedAt]);
 
 
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>;

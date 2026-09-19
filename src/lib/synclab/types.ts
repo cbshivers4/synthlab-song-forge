@@ -417,3 +417,39 @@ export interface BusState {
   volume: number;
   muted: boolean;
 }
+
+/** A named part of the arrangement — intro, verse, drop and so on. */
+export interface SongSection {
+  id: string;
+  name: string;
+  /** start position in steps (1 step = a 1/4 note, 4 steps = 1 bar) */
+  start: number;
+  /** length in steps */
+  length: number;
+  color: string;
+}
+
+export const SECTION_NAMES = [
+  "INTRO",
+  "VERSE",
+  "PRE",
+  "CHORUS",
+  "HOOK",
+  "DROP",
+  "BREAK",
+  "BRIDGE",
+  "BUILD",
+  "SOLO",
+  "OUTRO",
+] as const;
+
+export const SECTION_COLORS = [
+  "oklch(0.78 0.16 195)",
+  "oklch(0.74 0.19 320)",
+  "oklch(0.8 0.17 95)",
+  "oklch(0.72 0.18 30)",
+  "oklch(0.76 0.16 145)",
+  "oklch(0.7 0.18 265)",
+  "oklch(0.8 0.13 55)",
+  "oklch(0.74 0.15 355)",
+];
