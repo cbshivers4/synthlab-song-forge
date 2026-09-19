@@ -9,6 +9,7 @@ import { useStudio } from "@/lib/synclab/store";
 import { useApp } from "@/lib/synclab/app-state";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { downloadBlob, encodeMp3, encodeWav, type Capture } from "@/lib/synclab/bounce";
+import { usePlan } from "@/lib/synclab/plan";
 import {
   MASTER_DEFAULTS,
   MASTER_PRESETS,
@@ -149,8 +150,11 @@ export function Mastering() {
     setPlaying(true);
   };
 
+  const { requirePro } = usePlan();
+
   const save = (format: "wav" | "mp3") => {
     if (!result) return;
+    if (!requirePro("Saving mastered files")) return;
     const blob = format === "wav" ? encodeWav(result.audio) : encodeMp3(result.audio, 320);
     downloadBlob(blob, `${safeName}-master.${format}`);
   };

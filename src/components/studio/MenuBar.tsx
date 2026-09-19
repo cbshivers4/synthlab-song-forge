@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { openExport } from "@/components/studio/ExportDialog";
 import { saveCloudProject } from "@/lib/synclab/cloud";
+import { usePlan } from "@/lib/synclab/plan";
 import { saveUserTemplate } from "@/lib/synclab/user-templates";
 import { parseMidiFile } from "@/lib/synclab/midi-file";
 
@@ -86,12 +87,14 @@ export function MenuBar() {
     toast.success(`Imported ${file.name}`, { description: "Loaded into a new sampler channel." });
   };
   const { setStage, mode, toggleMode, project, setProject } = useApp();
+  const { requirePro } = usePlan();
 
   const save = async () => {
     if (!project) {
       toast("Create a project first");
       return;
     }
+    if (!requirePro("Cloud saving")) return;
     const saving = toast.loading("Saving project and audio…");
     try {
       const saved = await saveCloudProject({ ...project, id: project.id ?? "" }, snapshot());
@@ -112,6 +115,7 @@ export function MenuBar() {
   const [saveAsName, setSaveAsName] = useState("");
 
   const openSaveAs = () => {
+    if (!requirePro("Cloud saving")) return;
     setSaveAsName(project ? `${project.name} Copy` : "Untitled project");
     setSaveAsOpen(true);
   };

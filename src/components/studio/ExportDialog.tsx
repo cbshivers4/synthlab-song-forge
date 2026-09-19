@@ -11,6 +11,7 @@ import { canShareFile, downloadBlob, encodeMp3, encodeWav, normalize, peakOf, sh
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { uploadCloudExport } from "@/lib/synclab/cloud";
+import { usePlan } from "@/lib/synclab/plan";
 
 export const EXPORT_EVENT = "synclab:export";
 export const openExport = () => window.dispatchEvent(new CustomEvent(EXPORT_EVENT));
@@ -39,11 +40,16 @@ export function ExportDialog() {
   const flagBars = (flagEnd - flagStart) / 4;
   const total = (flagsOn ? flagBars : bars) * barSeconds + 1;
 
+  const { requirePro } = usePlan();
+
   useEffect(() => {
-    const on = () => setOpen(true);
+    const on = () => {
+      if (!requirePro("Exporting WAV / MP3 files")) return;
+      setOpen(true);
+    };
     window.addEventListener(EXPORT_EVENT, on);
     return () => window.removeEventListener(EXPORT_EVENT, on);
-  }, []);
+  }, [requirePro]);
 
   const finish = useCallback(
     async (cap: Capture | null) => {
