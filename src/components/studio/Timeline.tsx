@@ -1003,7 +1003,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
           >
             ● ARM
           </Button>
-          <DropdownMenu>
+          {advanced && <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 size="sm"
