@@ -84,7 +84,7 @@ export async function submitTicket(userId: string, t: TicketInput): Promise<stri
     expected: t.expected ?? "",
     steps: t.steps ?? "",
     project_name: t.project_name ?? "",
-    diagnostics: t.diagnostics ?? {},
+    diagnostics: (t.diagnostics ?? {}) as never,
   });
   return error ? error.message : null;
 }
