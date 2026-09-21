@@ -31,6 +31,7 @@ import { WelcomeScreen } from "@/components/studio/WelcomeScreen";
 import { StartScreen } from "@/components/studio/StartScreen";
 import { DeviceSetup } from "@/components/studio/DeviceSetup";
 import { ExportDialog } from "@/components/studio/ExportDialog";
+import { HelpCenter } from "@/components/studio/HelpCenter";
 import { BassGenerator } from "@/components/studio/BassGenerator";
 import { CoProducer } from "@/components/studio/CoProducer";
 import { StemSeparator } from "@/components/studio/StemSeparator";
@@ -502,6 +503,7 @@ function Stages() {
   return (
     <PlanProvider>
       <SplashScreen />
+      <HelpCenter />
       {stage === "welcome" && <WelcomeScreen />}
       {stage === "start" && <StartScreen />}
       {stage === "studio" && <StudioWorkspace />}

@@ -26,6 +26,7 @@ import { lovable } from "@/integrations/lovable/index";
 import synclabLogoAsset from "@/assets/synclab-logo-neon.jpg.asset.json";
 import { toast } from "sonner";
 import { LegalFooter } from "@/components/legal/LegalPage";
+import { openHelp } from "@/components/studio/HelpCenter";
 
 
 const FEATURES: { icon: React.ReactNode; title: string; body: string }[] = [
@@ -258,6 +259,13 @@ export function WelcomeScreen() {
               Free for 7 days, then $19.95/month or $149/year.
             </p>
             <LegalFooter className="mt-3" />
+            <button
+              type="button"
+              onClick={() => openHelp("help")}
+              className="mt-2 text-[11px] text-muted-foreground underline underline-offset-2 hover:text-foreground"
+            >
+              SYNCLAB Help Center
+            </button>
           </div>
         </div>
       </div>

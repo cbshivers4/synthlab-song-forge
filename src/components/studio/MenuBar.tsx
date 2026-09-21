@@ -22,6 +22,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { openExport } from "@/components/studio/ExportDialog";
+import { openHelp } from "@/components/studio/HelpCenter";
 import { saveCloudProject } from "@/lib/synclab/cloud";
 import { usePlan } from "@/lib/synclab/plan";
 import { saveUserTemplate } from "@/lib/synclab/user-templates";
@@ -361,6 +362,11 @@ export function MenuBar() {
         <MenubarMenu>
           <MenubarTrigger className="text-xs">Help</MenubarTrigger>
           <MenubarContent>
+            <MenubarItem onClick={() => openHelp("help")}>SYNCLAB Help Center</MenubarItem>
+            <MenubarItem onClick={() => openHelp("support")}>Contact SYNCLAB Support</MenubarItem>
+            <MenubarItem onClick={() => openHelp("problem")}>Report a Problem</MenubarItem>
+            <MenubarItem onClick={() => openHelp("about")}>About SYNCLAB Vocal Forge</MenubarItem>
+            <MenubarSeparator />
             <MenubarItem onClick={() => setPanel("settings")}>Preferences</MenubarItem>
             <MenubarItem
               onClick={() =>

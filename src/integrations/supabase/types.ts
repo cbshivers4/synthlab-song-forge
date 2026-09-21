@@ -104,6 +104,120 @@ export type Database = {
         }
         Relationships: []
       }
+      support_settings: {
+        Row: {
+          community_url: string
+          help_center_url: string
+          id: boolean
+          knowledge_base_url: string
+          privacy_url: string
+          status_url: string
+          support_email: string
+          support_website: string
+          terms_url: string
+          tutorials_url: string
+          updated_at: string
+        }
+        Insert: {
+          community_url?: string
+          help_center_url?: string
+          id?: boolean
+          knowledge_base_url?: string
+          privacy_url?: string
+          status_url?: string
+          support_email?: string
+          support_website?: string
+          terms_url?: string
+          tutorials_url?: string
+          updated_at?: string
+        }
+        Update: {
+          community_url?: string
+          help_center_url?: string
+          id?: boolean
+          knowledge_base_url?: string
+          privacy_url?: string
+          status_url?: string
+          support_email?: string
+          support_website?: string
+          terms_url?: string
+          tutorials_url?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      support_tickets: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          diagnostics: Json
+          email: string
+          expected: string
+          id: string
+          kind: string
+          name: string
+          project_name: string
+          status: string
+          steps: string
+          subject: string
+          user_id: string | null
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description?: string
+          diagnostics?: Json
+          email?: string
+          expected?: string
+          id?: string
+          kind?: string
+          name?: string
+          project_name?: string
+          status?: string
+          steps?: string
+          subject?: string
+          user_id?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          diagnostics?: Json
+          email?: string
+          expected?: string
+          id?: string
+          kind?: string
+          name?: string
+          project_name?: string
+          status?: string
+          steps?: string
+          subject?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -113,9 +227,16 @@ export type Database = {
         Args: { check_env?: string; user_uuid: string }
         Returns: boolean
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -242,6 +363,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+    },
   },
 } as const
