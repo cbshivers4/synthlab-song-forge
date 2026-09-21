@@ -905,6 +905,8 @@ function Strip({
   onSelect: () => void;
 }) {
   const { updateTrack, moveTrack, tracks } = useStudio();
+  const advanced = useApp().mode === "advanced";
+
   const [clip, setClip] = useState(false);
   useEffect(() => {
     if (level > 0.985) setClip(true);
