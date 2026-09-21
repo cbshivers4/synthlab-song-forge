@@ -26,6 +26,7 @@ import { lovable } from "@/integrations/lovable/index";
 import synclabLogoAsset from "@/assets/synclab-logo-neon.jpg.asset.json";
 import { toast } from "sonner";
 import { LegalFooter } from "@/components/legal/LegalPage";
+import { openHelp } from "@/components/studio/HelpCenter";
 
 
 const FEATURES: { icon: React.ReactNode; title: string; body: string }[] = [
