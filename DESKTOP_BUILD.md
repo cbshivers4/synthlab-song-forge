@@ -1,0 +1,99 @@
+# SYNCLAB Vocal Forge — desktop build guide
+
+This document describes how the desktop application is built, what it currently does, and what
+still requires a real macOS or Windows machine. Nothing here is aspirational: if a step cannot be
+performed in this environment, it says so.
+
+## Identity — one source of truth
+
+`electron/app-info.cjs` holds the product name, application id (`com.synclab.vocalforge`), version,
+publisher, copyright and URLs. The main process, the preload bridge and `scripts/build-desktop.mjs`
+all read it, so the name/version in the window title, the About box, the file names and the
+installer metadata cannot drift apart. Change the version there (and in `package.json` `version`
+and `SYNCLAB_VERSION` in `src/lib/synclab/support.ts`) and rebuild.
+
+## Layout
+
+```
+electron/app-info.cjs      identity + metadata
+electron/main.cjs          window, IPC, file dialogs, offline fallback page
+electron/menu.cjs          native application menu -> "synclab:menu" commands
+electron/window-state.cjs  remembers size, position, maximized, fullscreen, multi-display safe
+electron/preload.cjs       the ONLY surface the page can see (contextIsolation on)
+build-resources/           icon.icns (macOS), icon.ico (Windows), icon.png (Linux/window)
+scripts/build-desktop.mjs  packaging entry point
+src/lib/synclab/desktop.ts      runtime detection + saveBytes/openLocalFiles
+src/lib/synclab/desktop-menu.ts native menu commands -> studio actions
+src/lib/synclab/bridge.ts       client for the Desktop Audio Bridge (ws://127.0.0.1:8787)
+```
+
+Layering: UI -> Project Engine (`store.tsx`) -> Audio/MIDI Engine (`audio-engine.ts`, `midi.ts`) ->
+Plugin Bridge (`bridge.ts`) -> Local File System (`desktop.ts` + IPC) -> Desktop OS. AI and account
+features stay in the cloud service layer (server functions) and are reachable from both runtimes.
+
+## Development
+
+```bash
+npm install
+npm run dev                 # web studio on http://localhost:8080
+SYNCLAB_URL=http://localhost:8080 npm run desktop:dev
+```
+
+`SYNCLAB_URL` points the shell at any studio build; without it the shell loads the published studio.
+
+## Production packaging
+
+```bash
+npm run desktop:package -- --platform=darwin --arch=arm64
+npm run desktop:package -- --platform=darwin --arch=x64
+npm run desktop:package -- --platform=win32  --arch=x64
+```
+
+Output goes to `electron-release/`, zipped as
+`SYNCLAB-Vocal-Forge-<version>-<macOS|Windows>-<arch>.zip`.
+
+## What still needs a real Mac / Windows machine
+
+| Artifact | Requirement |
+| --- | --- |
+| `.dmg` | macOS only (`hdiutil` / `electron-builder` on macOS). Cross-compiling produces the `.app` and a `.zip`, never a `.dmg`. |
+| macOS code signing | Apple Developer ID certificate in the keychain: `codesign --deep --force --options runtime --sign "Developer ID Application: <name>" SYNCLAB\ Vocal\ Forge.app` |
+| macOS notarization | `xcrun notarytool submit <zip> --apple-id <id> --team-id <team> --password <app-specific> --wait`, then `xcrun stapler staple`. |
+| `.exe` installer | Windows: `electron-builder --win nsis` or Squirrel/Inno Setup on a Windows host. The portable `.zip` is produced here. |
+| Windows code signing | An EV or OV code-signing certificate and `signtool sign /fd sha256 /tr <timestamp> /td sha256 /f cert.pfx /p <pass>`. |
+
+Unsigned builds still run: Windows shows SmartScreen ("More info" -> "Run anyway"), macOS needs
+right-click -> Open the first time.
+
+## Auto-updates
+
+Not implemented yet. The intended path is `electron-updater` with a static update feed hosted on
+the same CDN as the installers. It must not interrupt an active recording or playback: check on
+launch and when idle, offer "Install on quit", and allow postponing. Until that exists, the Help
+menu's "Check for Updates" states plainly that this build loads the studio over the network.
+
+## Offline
+
+This shell loads the studio over the network, so it needs a connection to start; it shows an honest
+message when it cannot reach it. Fully offline operation requires bundling a static studio build
+into the app package, which means a client-only build target of the app — not yet done.
+
+## Distribution
+
+Installers are large and do not belong in the app repository. Publish them to external storage/CDN
+and point the SYNCLAB download page at those URLs:
+
+```
+source -> desktop build -> macOS .app/.dmg/.zip, Windows .exe/.zip -> CDN -> download page
+```
+
+## Icons
+
+`build-resources/icon.icns`, `icon.ico` and `icon.png` are generated from the official SYNCLAB logo
+(`src/assets/synclab-logo.png`). To change the artwork, replace the logo and regenerate:
+
+```bash
+magick src/assets/synclab-logo.png -resize 1024x1024 build-resources/icon.png
+magick build-resources/icon.png -define icon:auto-resize=256,128,64,48,32,16 build-resources/icon.ico
+png2icns build-resources/icon.icns icon_16.png icon_32.png icon_128.png icon_256.png icon_512.png icon_1024.png
+```
