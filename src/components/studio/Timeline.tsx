@@ -64,6 +64,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { SectionLane } from "./SectionLane";
 import { useStudio } from "@/lib/synclab/store";
+import { useApp } from "@/lib/synclab/app-state";
 import { AddTrackMenu } from "@/components/studio/AddTrackMenu";
 
 import { INSTRUMENTS, KIND_LABEL, uid } from "@/lib/synclab/presets";
@@ -587,6 +588,8 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
   const { selectedId, selectedIds, select, toggleSelectId, updateTrack, removeTrack, duplicateTrack, moveTrack, setPanel, changeInstrument, installedPlugins, addPlugin, editTool, splitClipAt, toggleStep, toggleAutomationLane, copyTrack, cutTrack, pasteTrack, clipboardName } =
     useStudio();
   const { transport, setNotes, loadSample, fxChains } = useStudio();
+  const advanced = useApp().mode === "advanced";
+
   const [renaming, setRenaming] = useState(false);
   const [confirm, setConfirm] = useState(false);
   const [dropping, setDropping] = useState(false);
@@ -1001,7 +1004,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
           >
             ● ARM
           </Button>
-          <DropdownMenu>
+          {advanced && <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 size="sm"
@@ -1045,7 +1048,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
                 }),
               )}
             </DropdownMenuContent>
-          </DropdownMenu>
+          </DropdownMenu>}
           {!isMobile && <span className="label-xs ml-auto whitespace-nowrap">{KIND_LABEL[track.kind]}</span>}
         </div>
 
@@ -1160,9 +1163,9 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
       </AlertDialog>
       </div>
 
-      {(track.automation ?? []).map((lane) => (
-        <AutomationRow key={lane.param} track={track} lane={lane} />
-      ))}
+      {advanced &&
+        (track.automation ?? []).map((lane) => <AutomationRow key={lane.param} track={track} lane={lane} />)}
+
     </div>
   );
 }

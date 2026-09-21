@@ -218,3 +218,13 @@
   border-radius: 4px;
   background-image: linear-gradient(180deg, rgba(255, 245, 220, 0.35), rgba(0, 0, 0, 0.35));
 }
+
+/* Theme-driven meter and selection colours (overridden per theme at runtime). */
+:root {
+  --meter: oklch(0.78 0.18 145);
+  --selection: var(--primary);
+}
+
+::selection {
+  background: color-mix(in oklab, var(--selection) 38%, transparent);
+}

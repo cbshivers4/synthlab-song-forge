@@ -14,6 +14,8 @@ export interface ThemeVars {
   clipAudio: string;
   clipMidi: string;
   clipDrum: string;
+  meter: string;
+  selection: string;
 }
 
 export interface Theme {
@@ -40,9 +42,12 @@ const t = (
     clipAudio: "oklch(0.73 0.17 155)",
     clipMidi: "oklch(0.7 0.15 275)",
     clipDrum: "oklch(0.79 0.15 78)",
+    meter: "oklch(0.78 0.18 145)",
+    selection: v.primary,
     ...v,
   },
 });
+
 
 export const THEMES: Theme[] = [
   t("SYNCLAB Dark", "synclab-dark", { background: "oklch(0.145 0.008 255)", primary: "oklch(0.8 0.15 195)" }),
@@ -204,4 +209,7 @@ export function applyThemeVars(v: ThemeVars) {
   set("--clip-audio", v.clipAudio);
   set("--clip-midi", v.clipMidi);
   set("--clip-drum", v.clipDrum);
+  set("--meter", v.meter ?? "oklch(0.78 0.18 145)");
+  set("--selection", v.selection ?? v.primary);
 }
+

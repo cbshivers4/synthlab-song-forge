@@ -21,6 +21,8 @@ import { getEngine } from "@/lib/synclab/audio-engine";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useStudio } from "@/lib/synclab/store";
+import { useApp } from "@/lib/synclab/app-state";
+
 import { MidiLearnBlock } from "./MidiLearn";
 import { TrackNotes } from "@/components/studio/TrackNotes";
 import { TrackIcon, TrackStylePicker } from "@/components/studio/TrackStyle";
@@ -508,15 +510,16 @@ function SectionLabel({ children, className }: { children?: ReactNode; className
 
 /** Left-hand label rail, mirrors the strip row heights. */
 function LabelRail() {
+  const advanced = useApp().mode === "advanced";
   return (
     <div className="sticky left-0 z-10 flex w-[76px] shrink-0 flex-col border-r border-border bg-surface-2/85 backdrop-blur">
       <SectionLabel className={cn(ROW.head, "bg-surface-2")}>Ch</SectionLabel>
       <SectionLabel className={ROW.badge}>Icon</SectionLabel>
-      <SectionLabel className={ROW.scope}>Scope</SectionLabel>
+      {advanced && <SectionLabel className={ROW.scope}>Scope</SectionLabel>}
       <SectionLabel className={ROW.eq}>EQ</SectionLabel>
       <SectionLabel className={ROW.devices}>Devices</SectionLabel>
-      <SectionLabel className={ROW.sends}>Sends</SectionLabel>
-      <SectionLabel className={ROW.sendBars}>R / D / C</SectionLabel>
+      {advanced && <SectionLabel className={ROW.sends}>Sends</SectionLabel>}
+      {advanced && <SectionLabel className={ROW.sendBars}>R / D / C</SectionLabel>}
       <SectionLabel className={ROW.io}>Audio to</SectionLabel>
       <SectionLabel className={ROW.pan}>Pan</SectionLabel>
       <SectionLabel className={cn(ROW.fader, "items-start pt-2")}>Vol</SectionLabel>
@@ -526,6 +529,7 @@ function LabelRail() {
     </div>
   );
 }
+
 
 /** Compact device chain shown directly on the strip. */
 function DeviceSlots({ t, narrow }: { t: Track; narrow: boolean }) {
@@ -901,6 +905,8 @@ function Strip({
   onSelect: () => void;
 }) {
   const { updateTrack, moveTrack, tracks } = useStudio();
+  const advanced = useApp().mode === "advanced";
+
   const [clip, setClip] = useState(false);
   useEffect(() => {
     if (level > 0.985) setClip(true);
@@ -974,33 +980,40 @@ function Strip({
           <TrackIcon track={t} className="size-7" />
         </button>
       </TrackStylePicker>
-      <div className={cn(ROW.scope, "border-b border-border/60 p-[3px]")}>
-        <Scope scopeId={`ch:${t.id}`} height={40} compact color={t.color} />
-      </div>
+      {advanced && (
+        <div className={cn(ROW.scope, "border-b border-border/60 p-[3px]")}>
+          <Scope scopeId={`ch:${t.id}`} height={40} compact color={t.color} />
+        </div>
+      )}
 
       <ChannelEq t={t} />
 
       <DeviceSlots t={t} narrow={narrow} />
 
       {/* sends */}
-      <div className={cn(ROW.sends, "border-b border-border/60 px-1 py-[2px]")}>
-        <SendsMenu t={t} />
-      </div>
+      {advanced && (
+        <div className={cn(ROW.sends, "border-b border-border/60 px-1 py-[2px]")}>
+          <SendsMenu t={t} />
+        </div>
+      )}
 
       {/* send amount bars */}
-      <div className={cn(ROW.sendBars, "flex items-center gap-1 border-b border-border/60 px-1.5")}>
-        {SEND_KEYS.map(([key, label]) => {
-          const v = t.sends?.[key] ?? 0;
-          return (
-            <div key={key} className="flex-1" title={`${label} ${Math.round(v * 100)}%`}>
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-black/40">
-                <div className="h-full rounded-full" style={{ width: `${v * 100}%`, background: t.color }} />
+      {advanced && (
+        <div className={cn(ROW.sendBars, "flex items-center gap-1 border-b border-border/60 px-1.5")}>
+          {SEND_KEYS.map(([key, label]) => {
+            const v = t.sends?.[key] ?? 0;
+            return (
+              <div key={key} className="flex-1" title={`${label} ${Math.round(v * 100)}%`}>
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-black/40">
+                  <div className="h-full rounded-full" style={{ width: `${v * 100}%`, background: t.color }} />
+                </div>
+                <div className="mt-[1px] text-center font-mono text-[7px] text-muted-foreground">{label}</div>
               </div>
-              <div className="mt-[1px] text-center font-mono text-[7px] text-muted-foreground">{label}</div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
+
 
       {/* audio-to routing */}
       <div className={cn(ROW.io, "flex flex-col justify-center gap-0.5 border-b border-border/60 px-1")}>
@@ -1154,6 +1167,8 @@ function BusStrip({
   onChange: (p: Partial<BusState>) => void;
 }) {
   const color = BUS_COLOR[id] ?? "oklch(0.78 0.16 195)";
+  const advanced = useApp().mode === "advanced";
+
   const tint = (pct: number) => `color-mix(in oklab, ${color} ${pct}%, transparent)`;
   return (
     <div
@@ -1172,17 +1187,20 @@ function BusStrip({
       >
         <Waves className="size-7" style={{ color }} />
       </div>
-      <div className={cn(ROW.scope, "border-b border-border/60 p-[3px]")}>
-        <Scope scopeId={`bus:${id}`} height={40} compact color={color} />
-      </div>
+      {advanced && (
+        <div className={cn(ROW.scope, "border-b border-border/60 p-[3px]")}>
+          <Scope scopeId={`bus:${id}`} height={40} compact color={color} />
+        </div>
+      )}
       <div className={cn(ROW.eq, "flex items-center justify-center border-b border-border/60 font-mono text-[7px] uppercase tracking-widest text-muted-foreground")}>
         Bus FX below
       </div>
       <div className={cn(ROW.devices, "border-b border-border/60 p-1")}>
         <FxMenu target={`bus:${id}`} label="Devices" />
       </div>
-      <div className={cn(ROW.sends, "border-b border-border/60")} />
-      <div className={cn(ROW.sendBars, "border-b border-border/60")} />
+      {advanced && <div className={cn(ROW.sends, "border-b border-border/60")} />}
+      {advanced && <div className={cn(ROW.sendBars, "border-b border-border/60")} />}
+
       <div className={cn(ROW.io, "flex items-center justify-center border-b border-border/60 font-mono text-[8px] uppercase tracking-widest text-muted-foreground")}>
         Master
       </div>
@@ -1317,6 +1335,8 @@ function MasterChain({ color }: { color: string }) {
 
 function MasterStrip({ level: peak }: { level: number }) {
   const { buses, setBus } = useStudio();
+  const advanced = useApp().mode === "advanced";
+
   const master = buses["master"] as BusState;
   const clip = useClipped("master");
   const setClip = (on: boolean) => {
@@ -1356,18 +1376,26 @@ function MasterStrip({ level: peak }: { level: number }) {
       >
         <Speaker className="size-7" style={{ color }} />
       </div>
-      <div className={cn(ROW.scope, "border-b border-black/50 p-[3px]")}>
-        <Scope scopeId="master" height={40} compact color={color} />
-      </div>
+      {advanced && (
+        <div className={cn(ROW.scope, "border-b border-black/50 p-[3px]")}>
+          <Scope scopeId="master" height={40} compact color={color} />
+        </div>
+      )}
       <MasterChain color={color} />
-      <div className={cn(ROW.devices, "flex items-center gap-1 border-b border-black/50 px-1.5 py-1")}>
-        <VuMeter level={peak} label="L" />
-        <VuMeter level={peak} label="R" />
+      <div className={cn(ROW.devices, "flex flex-col gap-1 border-b border-black/50 px-1.5 py-1")}>
+        <div className="flex flex-1 items-center gap-1">
+          <VuMeter level={peak} label="L" />
+          <VuMeter level={peak} label="R" />
+        </div>
+        {!advanced && <FxMenu target="bus:master" label="Master FX" />}
       </div>
-      <div className={cn(ROW.sends, "border-b border-border/60 px-1 py-[2px]")}>
-        <FxMenu target="bus:master" label="Master FX" />
-      </div>
-      <div className={cn(ROW.sendBars, "border-b border-border/60")} />
+      {advanced && (
+        <div className={cn(ROW.sends, "border-b border-border/60 px-1 py-[2px]")}>
+          <FxMenu target="bus:master" label="Master FX" />
+        </div>
+      )}
+      {advanced && <div className={cn(ROW.sendBars, "border-b border-border/60")} />}
+
       <div className={cn(ROW.io, "flex items-center justify-center border-b border-border/60 font-mono text-[8px] uppercase tracking-widest text-muted-foreground")}>
         Main out
       </div>

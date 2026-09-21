@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useStudio, type PanelId } from "@/lib/synclab/store";
+import { useApp } from "@/lib/synclab/app-state";
 import type { TrackKind } from "@/lib/synclab/types";
 import { defsFromFiles } from "@/lib/synclab/plugins";
 import { toast } from "sonner";
@@ -31,9 +32,12 @@ interface Tool {
   icon: React.ReactNode;
   panel?: PanelId;
   soon?: string;
+  /** Hidden in Simple mode — settings are kept, just out of the way. */
+  advanced?: boolean;
   /** Dragging this tool onto the timeline creates a channel of this kind. */
   drag?: { kind: TrackKind; name: string; preset?: string };
 }
+
 
 const TOOLS: Tool[] = [
   { id: "vocal", label: "Vocal Forge", icon: <Sparkles className="size-4" />, panel: "vocal", drag: { kind: "ai-vocal", name: "Vocal Forge" } },
@@ -45,13 +49,14 @@ const TOOLS: Tool[] = [
   { id: "bass", label: "Bass Generator", icon: <AudioWaveform className="size-4" />, panel: "bass" },
   { id: "drums", label: "Drum Machine", icon: <Disc3 className="size-4" />, panel: "drums", drag: { kind: "drum", name: "Drums" } },
   { id: "beat", label: "Pad Sampler", icon: <Grid2x2 className="size-4" />, panel: "pads", drag: { kind: "sampler", name: "Pad Sampler" } },
-  { id: "chop", label: "Sample Chopper", icon: <Scissors className="size-4" />, panel: "pads" },
+  { id: "chop", label: "Sample Chopper", icon: <Scissors className="size-4" />, panel: "pads", advanced: true },
   { id: "sampler", label: "Sampler", icon: <AudioLines className="size-4" />, panel: "sampler", drag: { kind: "sampler", name: "Sampler" } },
-  { id: "plugins", label: "Plugins (VST)", icon: <Cpu className="size-4" />, panel: "plugins" },
+  { id: "plugins", label: "Plugins (VST)", icon: <Cpu className="size-4" />, panel: "plugins", advanced: true },
   { id: "mixer", label: "Mixer", icon: <SlidersHorizontal className="size-4" />, panel: "mixer" },
-  { id: "stemgen", label: "AI Stem Generator", icon: <Sparkles className="size-4" />, panel: "stemgen" },
-  { id: "notes", label: "Track Notes", icon: <NotebookPen className="size-4" />, panel: "notes" },
+  { id: "stemgen", label: "AI Stem Generator", icon: <Sparkles className="size-4" />, panel: "stemgen", advanced: true },
+  { id: "notes", label: "Track Notes", icon: <NotebookPen className="size-4" />, panel: "notes", advanced: true },
   { id: "master", label: "Mastering", icon: <Gauge className="size-4" />, panel: "mastering" },
+
 ];
 
 const tool = (id: string): Tool => TOOLS.find((t) => t.id === id)!;
@@ -71,12 +76,18 @@ const SECTIONS: Section[] = [
 
 export function ToolsRail() {
   const { panel, setPanel, installedPlugins, installPlugin } = useStudio();
+  const { mode, setMode } = useApp();
+  const advanced = mode === "advanced";
   const [open, setOpen] = useState(true);
   const [pluginDrop, setPluginDrop] = useState(false);
   const [closedSections, setClosedSections] = useState<Record<string, boolean>>({});
 
+  const visible = (t: Tool) => advanced || !t.advanced;
+  const sections = SECTIONS.map((s) => ({ ...s, tools: s.tools.filter(visible) })).filter((s) => s.tools.length > 0);
+
   const toggleSection = (id: string) =>
     setClosedSections((s) => ({ ...s, [id]: !s[id] }));
+
 
   /** Plugin files dropped straight onto the Plugins entry in this rail. */
   const dropPlugins = (files: File[]) => {
@@ -174,14 +185,15 @@ export function ToolsRail() {
       {/* Collapsed rail — icons only */}
       {!open && (
         <nav className="min-h-0 flex-1 space-y-0.5 overflow-y-auto p-1">
-          {TOOLS.map((t) => renderToolButton(t, true))}
+          {TOOLS.filter(visible).map((t) => renderToolButton(t, true))}
         </nav>
       )}
 
       {/* Expanded rail — grouped, collapsible sections */}
       {open && (
         <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto p-1.5">
-          {SECTIONS.map((s) => {
+          {sections.map((s) => {
+
             const closed = !!closedSections[s.id];
             const sectionActive = s.tools.some((t) => t.panel && panel === t.panel);
             return (
@@ -248,6 +260,22 @@ export function ToolsRail() {
           })}
         </nav>
       )}
+
+      <div className="border-t border-border p-1.5">
+        <button
+          type="button"
+          onClick={() => setMode(advanced ? "simple" : "advanced")}
+          title={
+            advanced
+              ? "Advanced mode — every tool, send and scope is shown. Click for Simple."
+              : "Simple mode — deep routing, scopes and plugin tools are tucked away. Nothing is lost; your settings stay."
+          }
+          className="flex w-full items-center justify-center gap-1 rounded-[3px] bg-surface-2 px-2 py-1 font-mono text-[9px] font-bold uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground"
+        >
+          {open ? (advanced ? "ADVANCED MODE" : "SIMPLE MODE") : advanced ? "ADV" : "SIM"}
+        </button>
+      </div>
     </aside>
   );
+
 }
