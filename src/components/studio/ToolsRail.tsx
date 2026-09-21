@@ -75,12 +75,18 @@ const SECTIONS: Section[] = [
 
 export function ToolsRail() {
   const { panel, setPanel, installedPlugins, installPlugin } = useStudio();
+  const { mode, setMode } = useApp();
+  const advanced = mode === "advanced";
   const [open, setOpen] = useState(true);
   const [pluginDrop, setPluginDrop] = useState(false);
   const [closedSections, setClosedSections] = useState<Record<string, boolean>>({});
 
+  const visible = (t: Tool) => advanced || !t.advanced;
+  const sections = SECTIONS.map((s) => ({ ...s, tools: s.tools.filter(visible) })).filter((s) => s.tools.length > 0);
+
   const toggleSection = (id: string) =>
     setClosedSections((s) => ({ ...s, [id]: !s[id] }));
+
 
   /** Plugin files dropped straight onto the Plugins entry in this rail. */
   const dropPlugins = (files: File[]) => {
