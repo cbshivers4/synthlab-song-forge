@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { STEPS_PER_BAR, STEPS_PER_BEAT, songSteps, stepSeconds, positionLabel } from "@/lib/synclab/timebase";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   ArrowLeftToLine,
@@ -101,8 +102,8 @@ function Waveform({ track }: { track: Track }) {
   const { setActiveClip, removeClip, updateTrack, transport, tracks } = useStudio();
   const [editingId, setEditingId] = useState<string | null>(null);
   const clips = track.clips ?? [];
-  const total = Math.max(1, transport.bars ?? 4) * 4;
-  const stepDur = 60 / Math.max(20, transport.bpm) / 4;
+  const total = songSteps(transport.bars);
+  const stepDur = stepSeconds(transport.bpm);
   const editing = clips.find((c) => c.id === editingId) ?? null;
 
   const writeClip = (clipId: string, patch: Partial<(typeof clips)[number]>) =>
@@ -262,8 +263,12 @@ function Waveform({ track }: { track: Track }) {
 const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 
 function MidiClip({ track }: { track: Track }) {
-  const { setPanel, select } = useStudio();
+  const { setPanel, select, transport } = useStudio();
   const notes = track.notes ?? [];
+  // the pattern loops for the whole song, so draw every repeat where it is heard
+  const total = songSteps(transport.bars);
+  const patLen = Math.max(STEPS_PER_BAR, track.steps || STEPS_PER_BAR);
+  const reps = Math.max(1, Math.ceil(total / patLen));
   if (notes.length === 0)
     return (
       <div className="absolute inset-y-1 left-0 right-1 flex items-center justify-center rounded-[3px] border border-dashed border-border">
@@ -301,27 +306,34 @@ function MidiClip({ track }: { track: Track }) {
             style={{ top: `${(r / rows) * 100}%` }}
           />
         ))}
-        {notes.map((n) => (
+        {Array.from({ length: reps }).flatMap((_, rep) =>
+          notes.map((n) => {
+            const at = rep * patLen + (n.step % patLen);
+            if (at >= total) return null;
+            return (
           <div
-            key={n.id}
+            key={`${n.id}-${rep}`}
             className="absolute rounded-full bg-clip-midi/55"
             title={`${NOTE_NAMES[n.pitch % 12]}${Math.floor(n.pitch / 12) - 1}`}
             style={{
-              left: `${((n.step % 16) / 16) * 100}%`,
-              width: `${(Math.max(1, n.length) / 16) * 100 - 0.4}%`,
+              left: `${(at / total) * 100}%`,
+              width: `${Math.max(0.3, (Math.max(1, n.length) / total) * 100 - 0.1)}%`,
               top: `${(1 - (n.pitch - lo) / span) * 82 + 4}%`,
               height: "6%",
               opacity: 0.5 + (n.velocity ?? 0.8) * 0.35,
             }}
           />
-        ))}
+            );
+          }),
+        )}
       </div>
     </div>
   );
 }
 
 function DrumClip({ track }: { track: Track }) {
-  const { setPanel, select } = useStudio();
+  const { setPanel, select, transport } = useStudio();
+  const total = songSteps(transport.bars);
   const pads = (track.pads ?? []).filter((p) => p.steps.some((s) => s > 0));
   if (pads.length === 0)
     return (
@@ -356,22 +368,25 @@ function DrumClip({ track }: { track: Track }) {
             style={{ top: `${(r / shown.length) * 100}%` }}
           />
         ))}
-        {shown.flatMap((p, r) =>
-          p.steps.slice(0, steps).map((vel, i) =>
-            vel > 0 ? (
+        {Array.from({ length: Math.max(1, Math.ceil(total / Math.max(1, steps))) }).flatMap((_, rep) =>
+          shown.flatMap((p, r) =>
+          p.steps.slice(0, steps).map((vel, i) => {
+            const at = rep * steps + i;
+            return vel > 0 && at < total ? (
               <div
-                key={`${p.id}-${i}`}
+                key={`${p.id}-${rep}-${i}`}
                  className="absolute rounded-full bg-clip-drum/60"
                 title={`${p.name} · step ${i + 1}`}
                 style={{
-                  left: `${(i / steps) * 100}%`,
-                  width: `${100 / steps - 0.4}%`,
+                  left: `${(at / total) * 100}%`,
+                  width: `${Math.max(0.3, 100 / total - 0.1)}%`,
                   top: `${(r / shown.length) * 100 + 100 / shown.length * 0.18}%`,
                   height: `${Math.max(8, (100 / shown.length) * 0.42)}%`,
                   opacity: 0.4 + vel * 0.45,
                 }}
               />
-            ) : null,
+            ) : null;
+          }),
           ),
         )}
       </div>
@@ -383,7 +398,7 @@ function DrumClip({ track }: { track: Track }) {
  *  point and draws the incoming microphone level live. */
 function RecordingClip({ track }: { track: Track }) {
   const { transport } = useStudio();
-  const total = Math.max(1, transport.bars ?? 4) * 4;
+  const total = songSteps(transport.bars);
   const startRef = useRef(transport.step ?? 0);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const peaksRef = useRef<number[]>([]);
@@ -1177,7 +1192,7 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
   };
   const [gridSnap, setGridSnap] = useState<0 | 0.25 | 0.5 | 1>(1);
   const [valueSnap, setValueSnap] = useState<0 | 0.02 | 0.05 | 0.1>(0);
-  const total = Math.max(1, transport.bars ?? 4) * 4;
+  const total = songSteps(transport.bars);
   const regionStart = Math.max(0, Math.min(total, transport.loopStart ?? 0));
   const regionEnd = Math.max(regionStart + 1, Math.min(total, transport.loopEnd ?? total));
   const regionDuration = regionEnd - regionStart;
@@ -1703,7 +1718,7 @@ function EditToolbar() {
       toast("Pick a clip first", { description: "Click a clip on the timeline to duplicate it." });
       return;
     }
-    const stepDur = 60 / Math.max(20, transport.bpm) / 4;
+    const stepDur = stepSeconds(transport.bpm);
     const steps = Math.max(1, Math.round(clipSeconds(activeClip) / stepDur));
     addClip(selected.id, { ...activeClip, id: uid(), name: `${activeClip.name} COPY`, start: (activeClip.start ?? 0) + steps });
   };
@@ -1939,7 +1954,7 @@ function Ruler() {
   const { transport, setTransport } = useStudio();
   const gridRef = useRef<HTMLDivElement>(null);
   const bars = Math.max(1, transport.bars ?? 4);
-  const total = bars * 4;
+  const total = bars * STEPS_PER_BAR;
   const lo = transport.loopStart ?? 0;
   const hi = Math.max(lo + 1, transport.loopEnd ?? total);
   const exportOn = transport.exportStart != null && transport.exportEnd != null;
@@ -1948,7 +1963,7 @@ function Ruler() {
 
   const setBars = (next: number) => {
     const b = Math.min(512, Math.max(1, next));
-    const steps = b * 4;
+    const steps = b * STEPS_PER_BAR;
     setTransport({
       bars: b,
       loopStart: Math.min(lo, steps - 1),
@@ -2035,7 +2050,7 @@ function Ruler() {
         <div className="flex items-center gap-2">
           <span className="font-display text-[11px] font-semibold tracking-[0.2em]">TIMELINE</span>
           <span className="label-xs ml-auto">
-            {String(Math.floor(transport.step / 4) + 1).padStart(2, "0")}.{(transport.step % 4) + 1}
+            {positionLabel(transport.step)}
           </span>
         </div>
         <div className="flex items-center gap-1.5">
@@ -2085,8 +2100,9 @@ function Ruler() {
         title="Drag on the ruler to set the loop region"
         className="relative flex flex-1 cursor-ew-resize select-none"
       >
-        <div className="grid w-full" style={{ gridTemplateColumns: `repeat(${total},minmax(0,1fr))` }}>
-          {Array.from({ length: total }).map((_, i) => (
+        {/* one column per beat; every fourth column starts a new bar */}
+        <div className="grid w-full" style={{ gridTemplateColumns: `repeat(${bars * 4},minmax(0,1fr))` }}>
+          {Array.from({ length: bars * 4 }).map((_, i) => (
             <div
               key={i}
               className={`border-l py-1 pl-1 font-mono text-[9px] ${
@@ -2097,6 +2113,7 @@ function Ruler() {
             </div>
           ))}
         </div>
+
 
         {/* dim outside the loop */}
         {transport.loop && (
@@ -2187,7 +2204,7 @@ function Ruler() {
 
 export function Timeline() {
   const { tracks, transport, addTrack, setPanel, loadSample } = useStudio();
-  const totalSteps = Math.max(1, transport.bars ?? 4) * 4;
+  const totalSteps = songSteps(transport.bars);
   const [over, setOver] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 

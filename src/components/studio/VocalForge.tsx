@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { songSteps } from "@/lib/synclab/timebase";
 import { Mic, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -73,7 +74,7 @@ export function VocalForge() {
             variant="ghost"
             onClick={() => {
               const lo = transport.loopStart ?? 0;
-              const hi = transport.loopEnd ?? (transport.bars ?? 4) * 4;
+              const hi = transport.loopEnd ?? songSteps(transport.bars);
               setTransport({ punchIn: lo, punchOut: hi });
               toast.success("Punch markers set", {
                 description: `Recording starts at step ${lo + 1} and stops at step ${hi} while the transport runs.`,

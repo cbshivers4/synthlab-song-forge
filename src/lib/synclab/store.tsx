@@ -10,6 +10,7 @@ import {
 } from "react";
 import { toast } from "sonner";
 import { getEngine } from "./audio-engine";
+import { STEPS_PER_BAR, songSteps, stepSeconds, barsForSteps } from "./timebase";
 import { openInOwnTab } from "./mic";
 import { TRACK_COLORS, applyPreset, defaultPads, defaultPatch, uid } from "./presets";
 import { BUILT_IN_PLUGINS, instantiate, processMidiThroughPlugins } from "./plugins";
@@ -528,7 +529,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         const engine = getEngine();
         engine.init();
         const tp = transportRef.current;
-        const stepDur = 60 / tp.bpm / 4;
+        const stepDur = stepSeconds(tp.bpm);
         if (type === "on") {
           setMidiLearning(true);
           engine.syncMix(tracksRef.current);
@@ -613,10 +614,10 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     /** Queue everything that makes sound for one step at an exact audio time. */
     const scheduleStep = (n: number, when: number) => {
       const tp = transportRef.current;
-      const stepDur = 60 / tp.bpm / 4;
+      const stepDur = stepSeconds(tp.bpm);
       const list = tracksRef.current;
       const anySolo = list.some((t) => t.solo);
-      const totalSteps = Math.max(1, tp.bars ?? 4) * 4;
+      const totalSteps = songSteps(tp.bars);
       for (const t of list) {
         if (t.muted || t.frozen || (anySolo && !t.solo)) continue;
         const len = Math.max(1, t.steps);
@@ -698,7 +699,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       const tp = transportRef.current;
       const list = tracksRef.current;
       const anySolo = list.some((t) => t.solo);
-      const totalSteps = Math.max(1, tp.bars ?? 4) * 4;
+      const totalSteps = songSteps(tp.bars);
       const at = n % totalSteps;
       // punch in / out: the take starts and stops itself at the markers
       if (tp.punchIn != null && at === tp.punchIn) punchRef.current?.start();
@@ -746,8 +747,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       if (nextTime < now - 0.25) nextTime = now + 0.02;
       while (nextTime < now + LOOKAHEAD) {
         const tp = transportRef.current;
-        const total = Math.max(1, tp.bars ?? 4) * 4;
-        const stepDur = 60 / Math.max(20, tp.bpm) / 4;
+        const total = songSteps(tp.bars);
+        const stepDur = stepSeconds(tp.bpm);
         scheduleStep(step, nextTime);
         queue.push({ step: step % total, time: nextTime });
         nextTime += stepDur;
@@ -1147,7 +1148,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             (a, b) => a.start - b.start,
           );
         });
-        const neededBars = Math.ceil((to + len) / 4);
+        const neededBars = barsForSteps(to + len);
         if (neededBars > (transportRef.current.bars ?? 4)) setTransportState((t) => ({ ...t, bars: Math.min(512, neededBars) }));
         toast.success(`${sec.name} duplicated`, {
           description: copied > 0 ? `${copied} clips and notes copied along with it.` : "The marker was copied — that part of the song was empty.",
@@ -1165,12 +1166,12 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       autoSections: () => {
         const bars = Math.max(4, transportRef.current.bars ?? 8);
         const names = ["INTRO", "VERSE", "CHORUS", "VERSE 2", "BRIDGE", "CHORUS 2", "OUTRO"];
-        const part = Math.max(4, Math.round((bars / names.length) * 4 / 4) * 4);
+        const part = Math.max(1, Math.round(bars / names.length));
         const built: SongSection[] = [];
         let at = 0;
-        for (let i = 0; i < names.length && at < bars * 4; i++) {
-          const len = Math.min(part * 4, bars * 4 - at);
-          if (len < 4) break;
+        for (let i = 0; i < names.length && at < bars * STEPS_PER_BAR; i++) {
+          const len = Math.min(part * STEPS_PER_BAR, bars * STEPS_PER_BAR - at);
+          if (len < STEPS_PER_BAR) break;
           built.push({
             id: uid(),
             name: names[i] as string,

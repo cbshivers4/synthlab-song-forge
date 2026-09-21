@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { songSteps, STEPS_PER_BAR } from "@/lib/synclab/timebase";
 import { Copy, LayoutList, Plus, Trash2 } from "lucide-react";
 import { useStudio } from "@/lib/synclab/store";
 import { SECTION_COLORS, SECTION_NAMES } from "@/lib/synclab/types";
@@ -23,7 +24,7 @@ export function SectionLane() {
   const [renaming, setRenaming] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
 
-  const total = Math.max(1, transport.bars ?? 4) * 4;
+  const total = songSteps(transport.bars);
   const snap = 4; // sections snap to bars
 
   const stepFromX = (clientX: number) => {
