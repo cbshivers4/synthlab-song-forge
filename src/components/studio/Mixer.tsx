@@ -1167,6 +1167,8 @@ function BusStrip({
   onChange: (p: Partial<BusState>) => void;
 }) {
   const color = BUS_COLOR[id] ?? "oklch(0.78 0.16 195)";
+  const advanced = useApp().mode === "advanced";
+
   const tint = (pct: number) => `color-mix(in oklab, ${color} ${pct}%, transparent)`;
   return (
     <div
