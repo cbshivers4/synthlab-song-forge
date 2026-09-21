@@ -12,7 +12,7 @@
 import { packager } from "@electron/packager";
 import { createRequire } from "node:module";
 import { execFileSync } from "node:child_process";
-import { mkdirSync, existsSync } from "node:fs";
+import { mkdirSync } from "node:fs";
 import path from "node:path";
 
 const require = createRequire(import.meta.url);
@@ -29,7 +29,7 @@ const platform = args.platform || process.platform;
 const arch = args.arch || "x64";
 // Builds are hundreds of MB — keep them outside the repository by default.
 const out = path.resolve(args.out || process.env.SYNCLAB_OUT || "/tmp/synclab-release");
-const icon = path.resolve("build-resources", platform === "win32" ? "icon.ico" : "icon.icns");
+const icon = path.resolve("build-resources", "icon"); // packager appends .icns/.ico/.png
 
 mkdirSync(out, { recursive: true });
 
@@ -44,7 +44,7 @@ const appPaths = await packager({
   arch,
   out,
   overwrite: true,
-  icon: existsSync(icon) ? icon : undefined,
+  icon,
   win32metadata: {
     CompanyName: info.publisher,
     FileDescription: info.description,
