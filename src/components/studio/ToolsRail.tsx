@@ -31,9 +31,12 @@ interface Tool {
   icon: React.ReactNode;
   panel?: PanelId;
   soon?: string;
+  /** Hidden in Simple mode — settings are kept, just out of the way. */
+  advanced?: boolean;
   /** Dragging this tool onto the timeline creates a channel of this kind. */
   drag?: { kind: TrackKind; name: string; preset?: string };
 }
+
 
 const TOOLS: Tool[] = [
   { id: "vocal", label: "Vocal Forge", icon: <Sparkles className="size-4" />, panel: "vocal", drag: { kind: "ai-vocal", name: "Vocal Forge" } },

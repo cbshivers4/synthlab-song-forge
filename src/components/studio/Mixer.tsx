@@ -1335,6 +1335,8 @@ function MasterChain({ color }: { color: string }) {
 
 function MasterStrip({ level: peak }: { level: number }) {
   const { buses, setBus } = useStudio();
+  const advanced = useApp().mode === "advanced";
+
   const master = buses["master"] as BusState;
   const clip = useClipped("master");
   const setClip = (on: boolean) => {
