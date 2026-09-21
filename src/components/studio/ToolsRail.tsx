@@ -259,6 +259,22 @@ export function ToolsRail() {
           })}
         </nav>
       )}
+
+      <div className="border-t border-border p-1.5">
+        <button
+          type="button"
+          onClick={() => setMode(advanced ? "simple" : "advanced")}
+          title={
+            advanced
+              ? "Advanced mode — every tool, send and scope is shown. Click for Simple."
+              : "Simple mode — deep routing, scopes and plugin tools are tucked away. Nothing is lost; your settings stay."
+          }
+          className="flex w-full items-center justify-center gap-1 rounded-[3px] bg-surface-2 px-2 py-1 font-mono text-[9px] font-bold uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground"
+        >
+          {open ? (advanced ? "ADVANCED MODE" : "SIMPLE MODE") : advanced ? "ADV" : "SIM"}
+        </button>
+      </div>
     </aside>
   );
+
 }
