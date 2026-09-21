@@ -22,6 +22,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { openExport } from "@/components/studio/ExportDialog";
+import { openHelp } from "@/components/studio/HelpCenter";
 import { saveCloudProject } from "@/lib/synclab/cloud";
 import { usePlan } from "@/lib/synclab/plan";
 import { saveUserTemplate } from "@/lib/synclab/user-templates";
