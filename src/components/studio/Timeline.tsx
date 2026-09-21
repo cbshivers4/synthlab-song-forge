@@ -263,8 +263,12 @@ function Waveform({ track }: { track: Track }) {
 const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 
 function MidiClip({ track }: { track: Track }) {
-  const { setPanel, select } = useStudio();
+  const { setPanel, select, transport } = useStudio();
   const notes = track.notes ?? [];
+  // the pattern loops for the whole song, so draw every repeat where it is heard
+  const total = songSteps(transport.bars);
+  const patLen = Math.max(STEPS_PER_BAR, track.steps || STEPS_PER_BAR);
+  const reps = Math.max(1, Math.ceil(total / patLen));
   if (notes.length === 0)
     return (
       <div className="absolute inset-y-1 left-0 right-1 flex items-center justify-center rounded-[3px] border border-dashed border-border">
@@ -302,20 +306,26 @@ function MidiClip({ track }: { track: Track }) {
             style={{ top: `${(r / rows) * 100}%` }}
           />
         ))}
-        {notes.map((n) => (
+        {Array.from({ length: reps }).flatMap((_, rep) =>
+          notes.map((n) => {
+            const at = rep * patLen + (n.step % patLen);
+            if (at >= total) return null;
+            return (
           <div
-            key={n.id}
+            key={`${n.id}-${rep}`}
             className="absolute rounded-full bg-clip-midi/55"
             title={`${NOTE_NAMES[n.pitch % 12]}${Math.floor(n.pitch / 12) - 1}`}
             style={{
-              left: `${((n.step % 16) / 16) * 100}%`,
-              width: `${(Math.max(1, n.length) / 16) * 100 - 0.4}%`,
+              left: `${(at / total) * 100}%`,
+              width: `${Math.max(0.3, (Math.max(1, n.length) / total) * 100 - 0.1)}%`,
               top: `${(1 - (n.pitch - lo) / span) * 82 + 4}%`,
               height: "6%",
               opacity: 0.5 + (n.velocity ?? 0.8) * 0.35,
             }}
           />
-        ))}
+            );
+          }),
+        )}
       </div>
     </div>
   );
