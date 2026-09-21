@@ -1,5 +1,4 @@
 import {
-import { STEPS_PER_BAR, songSteps, stepSeconds, barsForSteps } from "@/lib/synclab/timebase";
   createContext,
   useCallback,
   useContext,
@@ -11,6 +10,7 @@ import { STEPS_PER_BAR, songSteps, stepSeconds, barsForSteps } from "@/lib/syncl
 } from "react";
 import { toast } from "sonner";
 import { getEngine } from "./audio-engine";
+import { STEPS_PER_BAR, songSteps, stepSeconds, barsForSteps } from "./timebase";
 import { openInOwnTab } from "./mic";
 import { TRACK_COLORS, applyPreset, defaultPads, defaultPatch, uid } from "./presets";
 import { BUILT_IN_PLUGINS, instantiate, processMidiThroughPlugins } from "./plugins";
