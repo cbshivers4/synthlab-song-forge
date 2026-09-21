@@ -27,7 +27,8 @@ const args = Object.fromEntries(
 
 const platform = args.platform || process.platform;
 const arch = args.arch || "x64";
-const out = path.resolve("electron-release");
+// Builds are hundreds of MB — keep them outside the repository by default.
+const out = path.resolve(args.out || process.env.SYNCLAB_OUT || "/tmp/synclab-release");
 const icon = path.resolve("build-resources", platform === "win32" ? "icon.ico" : "icon.icns");
 
 mkdirSync(out, { recursive: true });
