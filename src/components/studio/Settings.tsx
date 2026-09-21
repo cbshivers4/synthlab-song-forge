@@ -525,6 +525,10 @@ export function Settings() {
         </Row>
       </TabsContent>
 
+      <TabsContent value="desktop" className="mt-4">
+        <DesktopPanel />
+      </TabsContent>
+
       <TabsContent value="general" className="mt-4">
         <Row label="Auto-save session">
           <Switch checked={p.autosave} onCheckedChange={(v) => set("autosave", v)} />
