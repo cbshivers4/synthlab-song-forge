@@ -2036,7 +2036,7 @@ function Ruler() {
         <div className="flex items-center gap-2">
           <span className="font-display text-[11px] font-semibold tracking-[0.2em]">TIMELINE</span>
           <span className="label-xs ml-auto">
-            {String(Math.floor(transport.step / 4) + 1).padStart(2, "0")}.{(transport.step % 4) + 1}
+            {positionLabel(transport.step)}
           </span>
         </div>
         <div className="flex items-center gap-1.5">
