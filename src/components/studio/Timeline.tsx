@@ -332,7 +332,8 @@ function MidiClip({ track }: { track: Track }) {
 }
 
 function DrumClip({ track }: { track: Track }) {
-  const { setPanel, select } = useStudio();
+  const { setPanel, select, transport } = useStudio();
+  const total = songSteps(transport.bars);
   const pads = (track.pads ?? []).filter((p) => p.steps.some((s) => s > 0));
   if (pads.length === 0)
     return (
@@ -367,16 +368,18 @@ function DrumClip({ track }: { track: Track }) {
             style={{ top: `${(r / shown.length) * 100}%` }}
           />
         ))}
-        {shown.flatMap((p, r) =>
-          p.steps.slice(0, steps).map((vel, i) =>
-            vel > 0 ? (
+        {Array.from({ length: Math.max(1, Math.ceil(total / Math.max(1, steps))) }).flatMap((_, rep) =>
+          shown.flatMap((p, r) =>
+          p.steps.slice(0, steps).map((vel, i) => {
+            const at = rep * steps + i;
+            return vel > 0 && at < total ? (
               <div
-                key={`${p.id}-${i}`}
+                key={`${p.id}-${rep}-${i}`}
                  className="absolute rounded-full bg-clip-drum/60"
                 title={`${p.name} · step ${i + 1}`}
                 style={{
-                  left: `${(i / steps) * 100}%`,
-                  width: `${100 / steps - 0.4}%`,
+                  left: `${(at / total) * 100}%`,
+                  width: `${Math.max(0.3, 100 / total - 0.1)}%`,
                   top: `${(r / shown.length) * 100 + 100 / shown.length * 0.18}%`,
                   height: `${Math.max(8, (100 / shown.length) * 0.42)}%`,
                   opacity: 0.4 + vel * 0.45,
