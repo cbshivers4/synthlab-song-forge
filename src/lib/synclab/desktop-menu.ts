@@ -6,6 +6,7 @@
  * nothing, so the same code runs in both runtimes.
  */
 import { useEffect, useRef } from "react";
+import type { DesktopApi } from "@/lib/synclab/desktop"; // also loads the window.synclab global type
 
 export type MenuHandlers = Record<string, () => void>;
 
