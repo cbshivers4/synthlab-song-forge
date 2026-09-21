@@ -15,7 +15,7 @@ export function useDesktopMenu(handlers: MenuHandlers) {
   ref.current = handlers;
 
   useEffect(() => {
-    const api = typeof window !== "undefined" ? window.synclab : undefined;
+    const api: DesktopApi | undefined = typeof window !== "undefined" ? window.synclab : undefined;
     if (!api?.onMenu) return;
     return api.onMenu((command) => {
       ref.current[command]?.();
