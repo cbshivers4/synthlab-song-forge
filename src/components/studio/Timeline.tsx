@@ -64,6 +64,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { SectionLane } from "./SectionLane";
 import { useStudio } from "@/lib/synclab/store";
+import { useApp } from "@/lib/synclab/app-state";
 import { AddTrackMenu } from "@/components/studio/AddTrackMenu";
 
 import { INSTRUMENTS, KIND_LABEL, uid } from "@/lib/synclab/presets";
