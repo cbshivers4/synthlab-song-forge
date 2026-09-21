@@ -21,6 +21,8 @@ import { getEngine } from "@/lib/synclab/audio-engine";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useStudio } from "@/lib/synclab/store";
+import { useApp } from "@/lib/synclab/app-state";
+
 import { MidiLearnBlock } from "./MidiLearn";
 import { TrackNotes } from "@/components/studio/TrackNotes";
 import { TrackIcon, TrackStylePicker } from "@/components/studio/TrackStyle";
