@@ -1,4 +1,5 @@
 import {
+import { STEPS_PER_BAR, songSteps, stepSeconds, barsForSteps } from "@/lib/synclab/timebase";
   createContext,
   useCallback,
   useContext,

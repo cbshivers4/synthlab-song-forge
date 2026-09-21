@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { songSteps, STEPS_PER_BAR } from "@/lib/synclab/timebase";
 import { Copy, LayoutList, Plus, Trash2 } from "lucide-react";
 import { useStudio } from "@/lib/synclab/store";
 import { SECTION_COLORS, SECTION_NAMES } from "@/lib/synclab/types";

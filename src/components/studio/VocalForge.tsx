@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { songSteps } from "@/lib/synclab/timebase";
 import { Mic, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";

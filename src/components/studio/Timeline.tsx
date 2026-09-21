@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { STEPS_PER_BAR, STEPS_PER_BEAT, songSteps, stepSeconds, positionLabel } from "@/lib/synclab/timebase";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   ArrowLeftToLine,
