@@ -23,6 +23,7 @@ import {
   onDeviceChange,
 } from "@/lib/synclab/mic";
 import { midiSupported } from "@/lib/synclab/midi";
+import { DesktopPanel } from "@/components/studio/DesktopPanel";
 
 type Prefs = {
   sampleRate: string;
