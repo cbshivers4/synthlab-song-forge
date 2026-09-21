@@ -1187,17 +1187,20 @@ function BusStrip({
       >
         <Waves className="size-7" style={{ color }} />
       </div>
-      <div className={cn(ROW.scope, "border-b border-border/60 p-[3px]")}>
-        <Scope scopeId={`bus:${id}`} height={40} compact color={color} />
-      </div>
+      {advanced && (
+        <div className={cn(ROW.scope, "border-b border-border/60 p-[3px]")}>
+          <Scope scopeId={`bus:${id}`} height={40} compact color={color} />
+        </div>
+      )}
       <div className={cn(ROW.eq, "flex items-center justify-center border-b border-border/60 font-mono text-[7px] uppercase tracking-widest text-muted-foreground")}>
         Bus FX below
       </div>
       <div className={cn(ROW.devices, "border-b border-border/60 p-1")}>
         <FxMenu target={`bus:${id}`} label="Devices" />
       </div>
-      <div className={cn(ROW.sends, "border-b border-border/60")} />
-      <div className={cn(ROW.sendBars, "border-b border-border/60")} />
+      {advanced && <div className={cn(ROW.sends, "border-b border-border/60")} />}
+      {advanced && <div className={cn(ROW.sendBars, "border-b border-border/60")} />}
+
       <div className={cn(ROW.io, "flex items-center justify-center border-b border-border/60 font-mono text-[8px] uppercase tracking-widest text-muted-foreground")}>
         Master
       </div>
