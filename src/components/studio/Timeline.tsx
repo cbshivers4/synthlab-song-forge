@@ -385,7 +385,8 @@ function DrumClip({ track }: { track: Track }) {
                   opacity: 0.4 + vel * 0.45,
                 }}
               />
-            ) : null,
+            ) : null;
+          }),
           ),
         )}
       </div>
