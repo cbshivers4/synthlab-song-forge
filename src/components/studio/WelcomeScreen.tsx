@@ -25,6 +25,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import synclabLogoAsset from "@/assets/synclab-logo-neon.jpg.asset.json";
 import { toast } from "sonner";
+import { LegalFooter } from "@/components/legal/LegalPage";
+
 
 const FEATURES: { icon: React.ReactNode; title: string; body: string }[] = [
   { icon: <Sparkles className="size-4" />, title: "AI Vocal Forge", body: "Write lyrics, pick a voice, land it on the beat." },
@@ -252,9 +254,14 @@ export function WelcomeScreen() {
                 </div>
               )}
             </div>
+            <p className="mt-4 text-center text-xs text-muted-foreground">
+              Free for 7 days, then $19.95/month or $149/year.
+            </p>
+            <LegalFooter className="mt-3" />
           </div>
         </div>
       </div>
     </div>
+
   );
 }
