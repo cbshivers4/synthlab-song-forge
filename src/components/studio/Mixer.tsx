@@ -978,33 +978,40 @@ function Strip({
           <TrackIcon track={t} className="size-7" />
         </button>
       </TrackStylePicker>
-      <div className={cn(ROW.scope, "border-b border-border/60 p-[3px]")}>
-        <Scope scopeId={`ch:${t.id}`} height={40} compact color={t.color} />
-      </div>
+      {advanced && (
+        <div className={cn(ROW.scope, "border-b border-border/60 p-[3px]")}>
+          <Scope scopeId={`ch:${t.id}`} height={40} compact color={t.color} />
+        </div>
+      )}
 
       <ChannelEq t={t} />
 
       <DeviceSlots t={t} narrow={narrow} />
 
       {/* sends */}
-      <div className={cn(ROW.sends, "border-b border-border/60 px-1 py-[2px]")}>
-        <SendsMenu t={t} />
-      </div>
+      {advanced && (
+        <div className={cn(ROW.sends, "border-b border-border/60 px-1 py-[2px]")}>
+          <SendsMenu t={t} />
+        </div>
+      )}
 
       {/* send amount bars */}
-      <div className={cn(ROW.sendBars, "flex items-center gap-1 border-b border-border/60 px-1.5")}>
-        {SEND_KEYS.map(([key, label]) => {
-          const v = t.sends?.[key] ?? 0;
-          return (
-            <div key={key} className="flex-1" title={`${label} ${Math.round(v * 100)}%`}>
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-black/40">
-                <div className="h-full rounded-full" style={{ width: `${v * 100}%`, background: t.color }} />
+      {advanced && (
+        <div className={cn(ROW.sendBars, "flex items-center gap-1 border-b border-border/60 px-1.5")}>
+          {SEND_KEYS.map(([key, label]) => {
+            const v = t.sends?.[key] ?? 0;
+            return (
+              <div key={key} className="flex-1" title={`${label} ${Math.round(v * 100)}%`}>
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-black/40">
+                  <div className="h-full rounded-full" style={{ width: `${v * 100}%`, background: t.color }} />
+                </div>
+                <div className="mt-[1px] text-center font-mono text-[7px] text-muted-foreground">{label}</div>
               </div>
-              <div className="mt-[1px] text-center font-mono text-[7px] text-muted-foreground">{label}</div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
+
 
       {/* audio-to routing */}
       <div className={cn(ROW.io, "flex flex-col justify-center gap-0.5 border-b border-border/60 px-1")}>
