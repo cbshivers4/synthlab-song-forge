@@ -1162,9 +1162,9 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
       </AlertDialog>
       </div>
 
-      {(track.automation ?? []).map((lane) => (
-        <AutomationRow key={lane.param} track={track} lane={lane} />
-      ))}
+      {advanced &&
+        (track.automation ?? []).map((lane) => <AutomationRow key={lane.param} track={track} lane={lane} />)}
+
     </div>
   );
 }
