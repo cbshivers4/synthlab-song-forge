@@ -55,9 +55,10 @@ export function LevelBar({
           className="h-full origin-left transition-none"
           style={{
             width: "0%",
-            background: `linear-gradient(90deg, ${color ?? "oklch(0.78 0.18 145)"} 0%, ${color ?? "oklch(0.78 0.18 145)"} 72%, oklch(0.82 0.17 85) 88%, oklch(0.63 0.24 27) 100%)`,
+            background: `linear-gradient(90deg, ${color ?? "var(--meter, oklch(0.78 0.18 145))"} 0%, ${color ?? "var(--meter, oklch(0.78 0.18 145))"} 72%, oklch(0.82 0.17 85) 88%, oklch(0.63 0.24 27) 100%)`,
           }}
         />
+
         {/* -6 dB and 0 dB marks so the red zone is readable at a glance */}
         <span className="pointer-events-none absolute inset-y-0 left-[82%] w-px bg-white/25" />
         <span className="pointer-events-none absolute inset-y-0 right-0 w-[8%] bg-red-500/15" />

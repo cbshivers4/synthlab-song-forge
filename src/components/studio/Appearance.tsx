@@ -19,7 +19,10 @@ const FIELDS: { key: keyof ThemeVars; label: string }[] = [
   { key: "clipAudio", label: "Audio clips" },
   { key: "clipMidi", label: "MIDI clips" },
   { key: "clipDrum", label: "Drum clips" },
+  { key: "meter", label: "Meters" },
+  { key: "selection", label: "Selection" },
 ];
+
 
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "custom";
 
