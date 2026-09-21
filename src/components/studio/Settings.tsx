@@ -23,6 +23,7 @@ import {
   onDeviceChange,
 } from "@/lib/synclab/mic";
 import { midiSupported } from "@/lib/synclab/midi";
+import { DesktopPanel } from "@/components/studio/DesktopPanel";
 
 type Prefs = {
   sampleRate: string;
@@ -277,7 +278,7 @@ export function Settings() {
   return (
     <Tabs defaultValue="audio" className="w-full">
       <TabsList className="flex h-auto flex-wrap justify-start gap-1 bg-surface">
-        {["audio", "recording", "metronome", "timing", "timeline", "midi", "mixing", "export", "general"].map((t) => (
+        {["audio", "recording", "metronome", "timing", "timeline", "midi", "mixing", "export", "desktop", "general"].map((t) => (
           <TabsTrigger key={t} value={t} className="font-mono text-[11px] uppercase tracking-widest">
             {t}
           </TabsTrigger>
@@ -523,6 +524,10 @@ export function Settings() {
         <Row label="Normalize on export">
           <Switch checked={p.normalizeExport} onCheckedChange={(v) => set("normalizeExport", v)} />
         </Row>
+      </TabsContent>
+
+      <TabsContent value="desktop" className="mt-4">
+        <DesktopPanel />
       </TabsContent>
 
       <TabsContent value="general" className="mt-4">
