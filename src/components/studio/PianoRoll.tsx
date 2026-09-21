@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { STEPS_PER_BAR } from "@/lib/synclab/timebase";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -27,11 +28,11 @@ type Drag =
 
 export function PianoRoll({ track }: { track: Track }) {
   const isMobile = useIsMobile();
-  const { setNotes, previewNote, transport } = useStudio();
+  const { setNotes, previewNote, transport, setStepCount } = useStudio();
   const [low, setLow] = useState(48);
   const [grid, setGrid] = useState(1); // steps per snap
   const [len, setLen] = useState(1);
-  const [bars, setBars] = useState(2);
+  const [bars, setBars] = useState(() => Math.max(1, Math.round((track.steps || STEPS_PER_BAR) / STEPS_PER_BAR)));
   const [scaleLock, setScaleLock] = useState(false);
   const [root, setRoot] = useState(0);
   const [scaleName, setScaleName] = useState("Minor");
@@ -40,7 +41,20 @@ export function PianoRoll({ track }: { track: Track }) {
   const gridRef = useRef<HTMLDivElement | null>(null);
   const drag = useRef<Drag>(null);
 
-  const steps = bars * 16;
+  const steps = bars * STEPS_PER_BAR;
+
+  // the piano roll page length IS the track's loop length, so what you draw is
+  // exactly what the timeline plays back
+  useEffect(() => {
+    if (track.steps !== steps) setStepCount(track.id, steps);
+  }, [steps, track.id, track.steps, setStepCount]);
+
+  // drawing past the end grows the loop instead of silently dropping the notes
+  useEffect(() => {
+    const end = Math.max(0, ...(track.notes ?? []).map((n) => n.step + Math.max(1, n.length)));
+    const needed = Math.max(1, Math.ceil(end / STEPS_PER_BAR));
+    if (needed > bars) setBars(needed);
+  }, [track.notes, bars]);
   const notes = track.notes ?? [];
   const pitches = Array.from({ length: ROWS }, (_, i) => low + ROWS - 1 - i);
   const scale = SCALES[scaleName] ?? SCALES["Minor"]!;
