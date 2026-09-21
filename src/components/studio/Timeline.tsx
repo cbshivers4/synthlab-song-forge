@@ -2086,8 +2086,9 @@ function Ruler() {
         title="Drag on the ruler to set the loop region"
         className="relative flex flex-1 cursor-ew-resize select-none"
       >
-        <div className="grid w-full" style={{ gridTemplateColumns: `repeat(${total},minmax(0,1fr))` }}>
-          {Array.from({ length: total }).map((_, i) => (
+        {/* one column per beat; every fourth column starts a new bar */}
+        <div className="grid w-full" style={{ gridTemplateColumns: `repeat(${bars * 4},minmax(0,1fr))` }}>
+          {Array.from({ length: bars * 4 }).map((_, i) => (
             <div
               key={i}
               className={`border-l py-1 pl-1 font-mono text-[9px] ${
@@ -2098,6 +2099,7 @@ function Ruler() {
             </div>
           ))}
         </div>
+
 
         {/* dim outside the loop */}
         {transport.loop && (
