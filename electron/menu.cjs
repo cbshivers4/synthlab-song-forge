@@ -103,7 +103,9 @@ function buildMenu(win) {
         item("Add MIDI Track", "track:midi"),
         item("Add Drum Machine", "track:drum"),
         item("Add Sampler", "track:sampler"),
-        item("Add Bus", "track:bus"),
+        item("Add AI Vocal Track", "track:ai-vocal"),
+        { type: "separator" },
+        item("Buses & Sends (Mixer)", "panel:mixer"),
       ],
     },
     {

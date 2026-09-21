@@ -16,7 +16,13 @@
 export interface DesktopApi {
   desktop: true;
   platform: "darwin" | "win32" | "linux" | string;
+  appName?: string;
+  appId?: string;
+  appVersion?: string;
   versions: { electron: string; chrome: string };
+  chooseFolder?: () => Promise<{ ok: boolean; canceled?: boolean; path?: string }>;
+  /** Native menu commands; returns an unsubscribe function. */
+  onMenu?: (handler: (command: string) => void) => () => void;
   saveFile: (
     name: string,
     data: ArrayBuffer,
