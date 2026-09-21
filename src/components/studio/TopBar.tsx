@@ -258,6 +258,16 @@ export function TopBar() {
 
         <div className="ml-auto flex shrink-0 items-center gap-1">
           <PlanBadge />
+          <Button
+            variant="outline"
+            size="icon"
+            className={isMobile ? "size-11" : "size-8"}
+            aria-label="Open SYNCLAB Help Center"
+            title="SYNCLAB Help Center"
+            onClick={() => openHelp("help")}
+          >
+            <LifeBuoy className={isMobile ? "size-5" : "size-4"} />
+          </Button>
           {isMobile ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
