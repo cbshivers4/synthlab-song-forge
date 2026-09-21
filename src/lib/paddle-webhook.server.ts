@@ -34,7 +34,7 @@ function verifySignature(rawBody: string, header: string | null, secret: string)
 export async function handlePaddleWebhook(request: Request): Promise<Response> {
   const env: Env = new URL(request.url).searchParams.get("env") === "live" ? "live" : "sandbox";
   const secret =
-    env === "live" ? process.env.PAYMENTS_LIVE_WEBHOOK_SECRET : process.env.PAYMENTS_SANDBOX_WEBHOOK_SECRET;
+    env === "live" ? process.env['PAYMENTS_LIVE_WEBHOOK_SECRET'] : process.env['PAYMENTS_SANDBOX_WEBHOOK_SECRET'];
   if (!secret) return new Response("webhook not configured", { status: 500 });
 
   const rawBody = await request.text();
@@ -44,7 +44,7 @@ export async function handlePaddleWebhook(request: Request): Promise<Response> {
 
   const event = JSON.parse(rawBody) as {
     event_type?: string;
-    data?: Record<string, any>;
+    data?: any;
   };
   const type = event.event_type ?? "";
   const d = event.data ?? {};

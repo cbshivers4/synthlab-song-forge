@@ -8,7 +8,7 @@ const BASE_URL: Record<PaddleEnv, string> = {
 };
 
 function apiKey(env: PaddleEnv): string {
-  const key = env === "sandbox" ? process.env.PADDLE_SANDBOX_API_KEY : process.env.PADDLE_LIVE_API_KEY;
+  const key = env === "sandbox" ? process.env['PADDLE_SANDBOX_API_KEY'] : process.env['PADDLE_LIVE_API_KEY'];
   if (!key) throw new Error(`Paddle API key for ${env} is not configured`);
   return key;
 }
