@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useStudio, type PanelId } from "@/lib/synclab/store";
+import { useApp } from "@/lib/synclab/app-state";
 import type { TrackKind } from "@/lib/synclab/types";
 import { defsFromFiles } from "@/lib/synclab/plugins";
 import { toast } from "sonner";
