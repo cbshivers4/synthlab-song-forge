@@ -1047,7 +1047,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
                 }),
               )}
             </DropdownMenuContent>
-          </DropdownMenu>
+          </DropdownMenu>}
           {!isMobile && <span className="label-xs ml-auto whitespace-nowrap">{KIND_LABEL[track.kind]}</span>}
         </div>
 
