@@ -510,15 +510,16 @@ function SectionLabel({ children, className }: { children?: ReactNode; className
 
 /** Left-hand label rail, mirrors the strip row heights. */
 function LabelRail() {
+  const advanced = useApp().mode === "advanced";
   return (
     <div className="sticky left-0 z-10 flex w-[76px] shrink-0 flex-col border-r border-border bg-surface-2/85 backdrop-blur">
       <SectionLabel className={cn(ROW.head, "bg-surface-2")}>Ch</SectionLabel>
       <SectionLabel className={ROW.badge}>Icon</SectionLabel>
-      <SectionLabel className={ROW.scope}>Scope</SectionLabel>
+      {advanced && <SectionLabel className={ROW.scope}>Scope</SectionLabel>}
       <SectionLabel className={ROW.eq}>EQ</SectionLabel>
       <SectionLabel className={ROW.devices}>Devices</SectionLabel>
-      <SectionLabel className={ROW.sends}>Sends</SectionLabel>
-      <SectionLabel className={ROW.sendBars}>R / D / C</SectionLabel>
+      {advanced && <SectionLabel className={ROW.sends}>Sends</SectionLabel>}
+      {advanced && <SectionLabel className={ROW.sendBars}>R / D / C</SectionLabel>}
       <SectionLabel className={ROW.io}>Audio to</SectionLabel>
       <SectionLabel className={ROW.pan}>Pan</SectionLabel>
       <SectionLabel className={cn(ROW.fader, "items-start pt-2")}>Vol</SectionLabel>
@@ -528,6 +529,7 @@ function LabelRail() {
     </div>
   );
 }
+
 
 /** Compact device chain shown directly on the strip. */
 function DeviceSlots({ t, narrow }: { t: Track; narrow: boolean }) {
