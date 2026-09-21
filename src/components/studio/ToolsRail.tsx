@@ -184,14 +184,15 @@ export function ToolsRail() {
       {/* Collapsed rail — icons only */}
       {!open && (
         <nav className="min-h-0 flex-1 space-y-0.5 overflow-y-auto p-1">
-          {TOOLS.map((t) => renderToolButton(t, true))}
+          {TOOLS.filter(visible).map((t) => renderToolButton(t, true))}
         </nav>
       )}
 
       {/* Expanded rail — grouped, collapsible sections */}
       {open && (
         <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto p-1.5">
-          {SECTIONS.map((s) => {
+          {sections.map((s) => {
+
             const closed = !!closedSections[s.id];
             const sectionActive = s.tools.some((t) => t.panel && panel === t.panel);
             return (
