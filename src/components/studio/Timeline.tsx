@@ -101,8 +101,8 @@ function Waveform({ track }: { track: Track }) {
   const { setActiveClip, removeClip, updateTrack, transport, tracks } = useStudio();
   const [editingId, setEditingId] = useState<string | null>(null);
   const clips = track.clips ?? [];
-  const total = Math.max(1, transport.bars ?? 4) * 4;
-  const stepDur = 60 / Math.max(20, transport.bpm) / 4;
+  const total = songSteps(transport.bars);
+  const stepDur = stepSeconds(transport.bpm);
   const editing = clips.find((c) => c.id === editingId) ?? null;
 
   const writeClip = (clipId: string, patch: Partial<(typeof clips)[number]>) =>
@@ -383,7 +383,7 @@ function DrumClip({ track }: { track: Track }) {
  *  point and draws the incoming microphone level live. */
 function RecordingClip({ track }: { track: Track }) {
   const { transport } = useStudio();
-  const total = Math.max(1, transport.bars ?? 4) * 4;
+  const total = songSteps(transport.bars);
   const startRef = useRef(transport.step ?? 0);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const peaksRef = useRef<number[]>([]);
@@ -1177,7 +1177,7 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
   };
   const [gridSnap, setGridSnap] = useState<0 | 0.25 | 0.5 | 1>(1);
   const [valueSnap, setValueSnap] = useState<0 | 0.02 | 0.05 | 0.1>(0);
-  const total = Math.max(1, transport.bars ?? 4) * 4;
+  const total = songSteps(transport.bars);
   const regionStart = Math.max(0, Math.min(total, transport.loopStart ?? 0));
   const regionEnd = Math.max(regionStart + 1, Math.min(total, transport.loopEnd ?? total));
   const regionDuration = regionEnd - regionStart;
@@ -1703,7 +1703,7 @@ function EditToolbar() {
       toast("Pick a clip first", { description: "Click a clip on the timeline to duplicate it." });
       return;
     }
-    const stepDur = 60 / Math.max(20, transport.bpm) / 4;
+    const stepDur = stepSeconds(transport.bpm);
     const steps = Math.max(1, Math.round(clipSeconds(activeClip) / stepDur));
     addClip(selected.id, { ...activeClip, id: uid(), name: `${activeClip.name} COPY`, start: (activeClip.start ?? 0) + steps });
   };
@@ -1939,7 +1939,7 @@ function Ruler() {
   const { transport, setTransport } = useStudio();
   const gridRef = useRef<HTMLDivElement>(null);
   const bars = Math.max(1, transport.bars ?? 4);
-  const total = bars * 4;
+  const total = bars * STEPS_PER_BAR;
   const lo = transport.loopStart ?? 0;
   const hi = Math.max(lo + 1, transport.loopEnd ?? total);
   const exportOn = transport.exportStart != null && transport.exportEnd != null;
@@ -1948,7 +1948,7 @@ function Ruler() {
 
   const setBars = (next: number) => {
     const b = Math.min(512, Math.max(1, next));
-    const steps = b * 4;
+    const steps = b * STEPS_PER_BAR;
     setTransport({
       bars: b,
       loopStart: Math.min(lo, steps - 1),
@@ -2187,7 +2187,7 @@ function Ruler() {
 
 export function Timeline() {
   const { tracks, transport, addTrack, setPanel, loadSample } = useStudio();
-  const totalSteps = Math.max(1, transport.bars ?? 4) * 4;
+  const totalSteps = songSteps(transport.bars);
   const [over, setOver] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
