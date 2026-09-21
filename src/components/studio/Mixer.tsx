@@ -1374,18 +1374,26 @@ function MasterStrip({ level: peak }: { level: number }) {
       >
         <Speaker className="size-7" style={{ color }} />
       </div>
-      <div className={cn(ROW.scope, "border-b border-black/50 p-[3px]")}>
-        <Scope scopeId="master" height={40} compact color={color} />
-      </div>
+      {advanced && (
+        <div className={cn(ROW.scope, "border-b border-black/50 p-[3px]")}>
+          <Scope scopeId="master" height={40} compact color={color} />
+        </div>
+      )}
       <MasterChain color={color} />
-      <div className={cn(ROW.devices, "flex items-center gap-1 border-b border-black/50 px-1.5 py-1")}>
-        <VuMeter level={peak} label="L" />
-        <VuMeter level={peak} label="R" />
+      <div className={cn(ROW.devices, "flex flex-col gap-1 border-b border-black/50 px-1.5 py-1")}>
+        <div className="flex flex-1 items-center gap-1">
+          <VuMeter level={peak} label="L" />
+          <VuMeter level={peak} label="R" />
+        </div>
+        {!advanced && <FxMenu target="bus:master" label="Master FX" />}
       </div>
-      <div className={cn(ROW.sends, "border-b border-border/60 px-1 py-[2px]")}>
-        <FxMenu target="bus:master" label="Master FX" />
-      </div>
-      <div className={cn(ROW.sendBars, "border-b border-border/60")} />
+      {advanced && (
+        <div className={cn(ROW.sends, "border-b border-border/60 px-1 py-[2px]")}>
+          <FxMenu target="bus:master" label="Master FX" />
+        </div>
+      )}
+      {advanced && <div className={cn(ROW.sendBars, "border-b border-border/60")} />}
+
       <div className={cn(ROW.io, "flex items-center justify-center border-b border-border/60 font-mono text-[8px] uppercase tracking-widest text-muted-foreground")}>
         Main out
       </div>
