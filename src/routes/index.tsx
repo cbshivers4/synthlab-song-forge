@@ -502,6 +502,7 @@ function Stages() {
   return (
     <PlanProvider>
       <SplashScreen />
+      <HelpCenter />
       {stage === "welcome" && <WelcomeScreen />}
       {stage === "start" && <StartScreen />}
       {stage === "studio" && <StudioWorkspace />}
