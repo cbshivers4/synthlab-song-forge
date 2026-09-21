@@ -1,4 +1,5 @@
 import {
+  LifeBuoy,
   Cpu,
   AudioLines,
   Circle,
@@ -46,6 +47,7 @@ import { openExport } from "@/components/studio/ExportDialog";
 import { StudioSearch } from "@/components/studio/StudioSearch";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { PlanBadge } from "@/lib/synclab/plan";
+import { openHelp } from "@/components/studio/HelpCenter";
 import synclabLogoAsset from "@/assets/synclab-logo-neon.jpg.asset.json";
 const synclabLogo = synclabLogoAsset.url;
 
