@@ -277,7 +277,7 @@ export function Settings() {
   return (
     <Tabs defaultValue="audio" className="w-full">
       <TabsList className="flex h-auto flex-wrap justify-start gap-1 bg-surface">
-        {["audio", "recording", "metronome", "timing", "timeline", "midi", "mixing", "export", "general"].map((t) => (
+        {["audio", "recording", "metronome", "timing", "timeline", "midi", "mixing", "export", "desktop", "general"].map((t) => (
           <TabsTrigger key={t} value={t} className="font-mono text-[11px] uppercase tracking-widest">
             {t}
           </TabsTrigger>
