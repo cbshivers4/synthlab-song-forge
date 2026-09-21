@@ -258,6 +258,13 @@ export function WelcomeScreen() {
               Free for 7 days, then $19.95/month or $149/year.
             </p>
             <LegalFooter className="mt-3" />
+            <button
+              type="button"
+              onClick={() => openHelp("help")}
+              className="mt-2 text-[11px] text-muted-foreground underline underline-offset-2 hover:text-foreground"
+            >
+              SYNCLAB Help Center
+            </button>
           </div>
         </div>
       </div>
