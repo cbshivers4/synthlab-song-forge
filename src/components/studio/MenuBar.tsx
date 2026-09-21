@@ -361,6 +361,11 @@ export function MenuBar() {
         <MenubarMenu>
           <MenubarTrigger className="text-xs">Help</MenubarTrigger>
           <MenubarContent>
+            <MenubarItem onClick={() => openHelp("help")}>SYNCLAB Help Center</MenubarItem>
+            <MenubarItem onClick={() => openHelp("support")}>Contact SYNCLAB Support</MenubarItem>
+            <MenubarItem onClick={() => openHelp("problem")}>Report a Problem</MenubarItem>
+            <MenubarItem onClick={() => openHelp("about")}>About SYNCLAB Vocal Forge</MenubarItem>
+            <MenubarSeparator />
             <MenubarItem onClick={() => setPanel("settings")}>Preferences</MenubarItem>
             <MenubarItem
               onClick={() =>
