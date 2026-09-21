@@ -27,6 +27,8 @@ import { saveCloudProject } from "@/lib/synclab/cloud";
 import { usePlan } from "@/lib/synclab/plan";
 import { saveUserTemplate } from "@/lib/synclab/user-templates";
 import { parseMidiFile } from "@/lib/synclab/midi-file";
+import { useDesktopMenu } from "@/lib/synclab/desktop-menu";
+import { SYNCLAB_VERSION } from "@/lib/synclab/support";
 
 
 const notYet = (what: string, why: string) => () => toast(what, { description: why });
@@ -151,6 +153,60 @@ export function MenuBar() {
     }
     fn(selected.id);
   };
+
+  /** Native desktop menu — every command below runs the same action as the in-app menu. */
+  useDesktopMenu({
+    "file:new": () => setStage("start"),
+    "file:open": () => setStage("start"),
+    "file:save": () => void save(),
+    "file:saveas": openSaveAs,
+    "file:import-audio": () => importRef.current?.click(),
+    "file:import-midi": () => midiRef.current?.click(),
+    "file:export": openExport,
+    "edit:undo": undo,
+    "edit:redo": redo,
+    "edit:cut": needTrack((id) => cutTrack(id)),
+    "edit:copy": needTrack((id) => copyTrack(id)),
+    "edit:paste": pasteTrack,
+    "edit:duplicate": needTrack((id) => duplicateTrack(id)),
+    "edit:delete": needTrack((id) => removeTrack(id)),
+    "edit:selectall": selectAll,
+    "edit:split": splitAtPlayhead,
+    "transport:play": togglePlay,
+    "transport:stop": stop,
+    "transport:record": toggleRecord,
+    "panel:none": () => setPanel(null),
+    "panel:piano": () => setPanel("piano"),
+    "panel:mixer": () => setPanel("mixer"),
+    "panel:browser": () => setPanel("browser"),
+    "panel:keys": () => setPanel("keys"),
+    "panel:synth": () => setPanel("synth"),
+    "panel:drums": () => setPanel("drums"),
+    "panel:sampler": () => setPanel("sampler"),
+    "panel:stems": () => setPanel("stems"),
+    "panel:voice": () => setPanel("voice"),
+    "panel:vocal": () => setPanel("vocal"),
+    "panel:coproducer": () => setPanel("coproducer"),
+    "panel:bass": () => setPanel("bass"),
+    "panel:plugins": () => setPanel("plugins"),
+    "panel:appearance": () => setPanel("appearance"),
+    "panel:settings": () => setPanel("settings"),
+    "track:audio": () => addTrack("audio", "AUDIO"),
+    "track:synth": () => addTrack("instrument", "INSTRUMENT", "Cybotron Lead"),
+    "track:midi": () => addTrack("midi", "MIDI", "Deep Keys"),
+    "track:drum": () => addTrack("drum", "DRUM MACHINE"),
+    "track:sampler": () => addTrack("sampler", "SAMPLER", "Metro Pluck"),
+    "track:ai-vocal": () => addTrack("ai-vocal", "AI VOCAL", "Vocoder Bot"),
+    "help:center": () => openHelp("help"),
+    "help:shortcuts": () => setPanel("settings"),
+    "help:problem": () => openHelp("problem"),
+    "help:about": () => openHelp("about"),
+    "app:check-updates": () =>
+      toast("You are on SYNCLAB Vocal Forge " + SYNCLAB_VERSION, {
+        description: "This build loads the studio over the network, so it is always up to date. Automatic desktop updates arrive with the signed installers.",
+      }),
+  });
+
 
   return (
     <div className="flex min-h-11 items-center gap-2 overflow-x-auto border-b border-border bg-surface/70 px-2 [scrollbar-width:none]">

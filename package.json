@@ -10,7 +10,9 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "desktop:dev": "electron .",
+    "desktop:package": "node scripts/build-desktop.mjs"
   },
   "overrides": {
     "rolldown": "1.2.1"
@@ -94,5 +96,9 @@
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.56.1",
     "vite": "8.1.5"
-  }
+  },
+  "productName": "SYNCLAB Vocal Forge",
+  "version": "1.0.0",
+  "description": "SYNCLAB Vocal Forge — record, produce and finish music.",
+  "author": "Christopher Shivers"
 }
