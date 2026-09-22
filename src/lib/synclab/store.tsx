@@ -520,6 +520,47 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         }
         if (msg.type === "pitchbend") return;
         const { type, pitch, velocity } = msg;
+
+        // A drum controller speaks General MIDI notes. When an armed drum track
+        // owns the incoming note, that pad plays — and while recording, the note
+        // is written onto the step that is sounding, exactly like tapping a pad.
+        const drumTarget =
+          tracksRef.current.find((t) => t.armed && t.kind === "drum" && t.pads?.length) ??
+          (tracksRef.current.find((t) => t.id === selectedIdRef.current && t.kind === "drum" && t.pads?.length) as
+            | Track
+            | undefined);
+        if (drumTarget?.pads) {
+          const hit = drumTarget.pads.find((p) => padNote(p, drumTarget.pads!) === pitch);
+          if (hit) {
+            if (type === "on") {
+              const engine = getEngine();
+              engine.init();
+              engine.syncMix(tracksRef.current);
+              engine.playDrum(drumTarget.id, hit, Math.max(0.15, velocity));
+              const tp = transportRef.current;
+              if (tp.recording && tp.playing) {
+                const total = hit.steps.length || drumTarget.steps || 16;
+                const at = tp.step % total;
+                setTracks((ts) =>
+                  ts.map((t) =>
+                    t.id === drumTarget.id
+                      ? {
+                          ...t,
+                          pads: (t.pads ?? []).map((p) =>
+                            p.id === hit.id
+                              ? { ...p, steps: p.steps.map((v, i) => (i === at ? Math.max(0.15, velocity) : v)) }
+                              : p,
+                          ),
+                        }
+                      : t,
+                  ),
+                );
+              }
+            }
+            return;
+          }
+        }
+
         const notable = (t: Track) => t.kind === "instrument" || t.kind === "midi" || t.kind === "sampler";
         const target =
           tracksRef.current.find((t) => t.armed && notable(t)) ??
