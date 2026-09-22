@@ -2205,10 +2205,136 @@ function Ruler() {
   );
 }
 
+/**
+ * Overview strip under the arrangement: the whole song at a glance with a
+ * draggable viewport. Dragging it scrolls the timeline; the +/− buttons widen
+ * the arrangement so bars get more room without changing anything you hear.
+ */
+function TimelineOverview({
+  scrollRef,
+  zoom,
+  setZoom,
+}: {
+  scrollRef: React.RefObject<HTMLDivElement | null>;
+  zoom: number;
+  setZoom: (z: number) => void;
+}) {
+  const { transport } = useStudio();
+  const total = songSteps(transport.bars);
+  const [view, setView] = useState({ left: 0, width: 1 });
+  const barRef = useRef<HTMLDivElement>(null);
+
+  // mirror the arrangement's scroll position into the little viewport box
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const read = () => {
+      const w = el.scrollWidth || 1;
+      setView({ left: el.scrollLeft / w, width: Math.min(1, el.clientWidth / w) });
+    };
+    read();
+    el.addEventListener("scroll", read, { passive: true });
+    const ro = new ResizeObserver(read);
+    ro.observe(el);
+    return () => {
+      el.removeEventListener("scroll", read);
+      ro.disconnect();
+    };
+  }, [scrollRef, zoom]);
+
+  const scrollTo = (clientX: number) => {
+    const bar = barRef.current;
+    const el = scrollRef.current;
+    if (!bar || !el) return;
+    const r = bar.getBoundingClientRect();
+    const frac = Math.min(1, Math.max(0, (clientX - r.left) / r.width));
+    el.scrollLeft = Math.max(0, frac * el.scrollWidth - el.clientWidth / 2);
+  };
+
+  const drag = (e: React.PointerEvent) => {
+    e.preventDefault();
+    scrollTo(e.clientX);
+    const move = (ev: PointerEvent) => scrollTo(ev.clientX);
+    const up = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+  };
+
+  const loopFrom = (transport.loopStart ?? 0) / total;
+  const loopTo = Math.max((transport.loopStart ?? 0) + 1, transport.loopEnd ?? total) / total;
+
+  return (
+    <div className="flex shrink-0 items-center gap-2 border-t border-border bg-surface-2/60 px-2 py-1">
+      <span className="hidden font-mono text-[9px] uppercase tracking-widest text-muted-foreground sm:inline">
+        Overview
+      </span>
+      <div
+        ref={barRef}
+        onPointerDown={drag}
+        role="scrollbar"
+        aria-label="Timeline overview — drag to scroll the arrangement"
+        aria-controls="timeline-scroll"
+        aria-orientation="horizontal"
+        aria-valuenow={Math.round(view.left * 100)}
+        tabIndex={0}
+        className="relative h-6 flex-1 cursor-grab touch-none overflow-hidden rounded-[3px] border border-border bg-background active:cursor-grabbing"
+      >
+        {/* bar ticks */}
+        {Array.from({ length: Math.max(1, transport.bars) }).map((_, i) => (
+          <span
+            key={i}
+            className="absolute inset-y-0 w-px bg-border/60"
+            style={{ left: `${(i / Math.max(1, transport.bars)) * 100}%` }}
+          />
+        ))}
+        {transport.loop && (
+          <span
+            className="absolute inset-y-0 bg-primary/15"
+            style={{ left: `${loopFrom * 100}%`, width: `${Math.max(1, (loopTo - loopFrom) * 100)}%` }}
+          />
+        )}
+        {/* playhead */}
+        <span
+          className="absolute inset-y-0 w-px bg-primary"
+          style={{ left: `${((transport.step % total) / total) * 100}%` }}
+        />
+        {/* viewport */}
+        <span
+          className="absolute inset-y-0 rounded-[2px] border border-primary/70 bg-primary/10"
+          style={{ left: `${view.left * 100}%`, width: `${Math.max(4, view.width * 100)}%` }}
+        />
+      </div>
+      <div className="flex items-center gap-1">
+        <button
+          className="h-5 w-5 rounded-[3px] border border-border font-mono text-[11px] leading-none text-muted-foreground hover:text-foreground"
+          onClick={() => setZoom(Math.max(1, Math.round((zoom - 0.5) * 2) / 2))}
+          aria-label="Zoom out the arrangement"
+          title="Zoom out"
+        >
+          −
+        </button>
+        <span className="w-8 text-center font-mono text-[9px] text-muted-foreground">{zoom.toFixed(1)}×</span>
+        <button
+          className="h-5 w-5 rounded-[3px] border border-border font-mono text-[11px] leading-none text-muted-foreground hover:text-foreground"
+          onClick={() => setZoom(Math.min(8, Math.round((zoom + 0.5) * 2) / 2))}
+          aria-label="Zoom in on the arrangement"
+          title="Zoom in"
+        >
+          +
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function Timeline() {
   const { tracks, transport, addTrack, setPanel, loadSample } = useStudio();
   const totalSteps = songSteps(transport.bars);
   const [over, setOver] = useState(false);
+  const [zoom, setZoom] = useState(1);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // keeps the playhead in view while the song plays, when FOLLOW is on
@@ -2226,14 +2352,14 @@ export function Timeline() {
       <EditToolbar />
       <Ruler />
       <SectionLane />
-      <div ref={scrollRef} className="relative min-h-0 flex-1 overflow-auto">
-        <div className="min-w-[720px] sm:min-w-0">
-        {/* SYNCLAB watermark centered over the rhythm grid */}
-        <div className="pointer-events-none sticky top-1/2 z-0 h-0" aria-hidden="true">
+      <div id="timeline-scroll" ref={scrollRef} className="relative min-h-0 flex-1 overflow-auto">
+        <div className="min-w-[720px] sm:min-w-0" style={{ width: `${zoom * 100}%` }}>
+        {/* SYNCLAB watermark, low and centred in the empty workspace */}
+        <div className="pointer-events-none sticky top-[68%] z-0 h-0" aria-hidden="true">
           <img
             src={synclabLogo}
             alt=""
-            className="absolute left-1/2 top-0 w-[min(420px,45%)] -translate-x-[calc(50%-122px)] -translate-y-1/2 select-none opacity-[0.08]"
+            className="absolute left-1/2 top-0 w-[min(360px,38%)] -translate-x-[calc(50%-122px)] -translate-y-1/2 select-none opacity-[0.06]"
           />
         </div>
         {tracks.map((t, i) => (
