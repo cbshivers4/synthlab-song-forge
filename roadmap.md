@@ -51,3 +51,11 @@
 - [x] Implement real Hum to Beat recording and local rhythm extraction
 - [x] Verify sign-in, menus, pads, keyboard, and Hum to Beat at phone and desktop sizes
 - [x] Enlarge sampler and chopper pads, harden touch release, and return manual pads to the drum machine
+
+## Timeline / mixer / drums polish (in progress)
+- [ ] Stable MIDI note per drum lane; recorded pads land on the right note
+- [ ] Drum piano roll with drum names instead of melodic note labels
+- [ ] Professional audio clip waveforms (center line, visible when quiet)
+- [ ] Horizontal navigation/overview bar at the bottom of the timeline
+- [ ] Move the SYNCLAB timeline watermark down and center, subtle
+- [ ] Mixer: MUTE/SOLO/RECORD/MONITOR at the bottom, larger Mute and Solo
