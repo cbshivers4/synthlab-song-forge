@@ -341,7 +341,7 @@ const ROW = {
   pan: "h-[38px]",
   fader: "h-[300px]",
   readout: "h-5",
-  buttons: "h-6",
+  buttons: "h-[68px]",
   name: "h-8",
 } as const;
 
@@ -524,8 +524,8 @@ function LabelRail() {
       <SectionLabel className={ROW.pan}>Pan</SectionLabel>
       <SectionLabel className={cn(ROW.fader, "items-start pt-2")}>Vol</SectionLabel>
       <SectionLabel className={ROW.readout}>Peak</SectionLabel>
-      <SectionLabel className={ROW.buttons}>M / S / Rec</SectionLabel>
-      <SectionLabel className={cn(ROW.name, "border-b-0")}>Track</SectionLabel>
+      <SectionLabel className={ROW.name}>Track</SectionLabel>
+      <SectionLabel className={cn(ROW.buttons, "border-b-0 items-start pt-1")}>Mute / Solo</SectionLabel>
     </div>
   );
 }
@@ -904,7 +904,7 @@ function Strip({
   index: number;
   onSelect: () => void;
 }) {
-  const { updateTrack, moveTrack, tracks } = useStudio();
+  const { updateTrack, moveTrack, tracks, transport, setTransport } = useStudio();
   const advanced = useApp().mode === "advanced";
 
   const [clip, setClip] = useState(false);
