@@ -618,6 +618,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       const list = tracksRef.current;
       const anySolo = list.some((t) => t.solo);
       const totalSteps = songSteps(tp.bars);
+      // swing pushes every off-beat 16th later, up to half a step — the shuffle
+      // a drum machine gives you. Arrangement clips keep their exact position.
+      const swung = when + (n % 2 === 1 ? Math.min(0.9, Math.max(0, tp.swing ?? 0)) * 0.5 * stepDur : 0);
       for (const t of list) {
         if (t.muted || t.frozen || (anySolo && !t.solo)) continue;
         const len = Math.max(1, t.steps);
