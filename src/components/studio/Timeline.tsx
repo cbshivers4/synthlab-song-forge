@@ -2433,6 +2433,7 @@ export function Timeline() {
         )}
         </div>
       </div>
+      <TimelineOverview scrollRef={scrollRef} zoom={zoom} setZoom={setZoom} />
     </section>
   );
 }
