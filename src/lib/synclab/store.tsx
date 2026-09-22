@@ -653,11 +653,15 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           for (const pad of t.pads) {
             if (pad.muted || (padSolo && !pad.solo)) continue;
             const v = pad.steps[s] ?? 0;
-            if (v > 0) engine.playDrum(t.id, pad, v, when);
+            if (v <= 0) continue;
+            // a step with a chance below 100% only fires that often
+            const chance = pad.probability?.[s];
+            if (typeof chance === "number" && chance < 1 && Math.random() > chance) continue;
+            engine.playDrum(t.id, pad, v, swung);
           }
         } else if (t.kind === "sampler" && t.sampler && t.notes) {
           for (const note of t.notes) {
-            if (note.step % len === s) triggerNote(engine, t, note.pitch, note.length * stepDur, note.velocity, when);
+            if (note.step % len === s) triggerNote(engine, t, note.pitch, note.length * stepDur, note.velocity, swung);
           }
         } else if (t.patch && t.notes) {
           for (const note of t.notes) {
@@ -668,10 +672,10 @@ export function StudioProvider({ children }: { children: ReactNode }) {
               for (let i = 0; i < note.length; i++) {
                 const shift = (i % Math.max(1, oct)) * 12;
                 const dir = t.patch.arp.direction === "down" ? -shift : shift;
-                engine.playNote(t.id, t.patch, note.pitch + dir, stepDur * t.patch.arp.gate, note.velocity, when + i * stepDur);
+                engine.playNote(t.id, t.patch, note.pitch + dir, stepDur * t.patch.arp.gate, note.velocity, swung + i * stepDur);
               }
             } else {
-              engine.playNote(t.id, t.patch, note.pitch, dur, note.velocity, when);
+              engine.playNote(t.id, t.patch, note.pitch, dur, note.velocity, swung);
             }
           }
         }
