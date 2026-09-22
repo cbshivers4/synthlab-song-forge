@@ -52,10 +52,15 @@
 - [x] Verify sign-in, menus, pads, keyboard, and Hum to Beat at phone and desktop sizes
 - [x] Enlarge sampler and chopper pads, harden touch release, and return manual pads to the drum machine
 
-## Timeline / mixer / drums polish (in progress)
-- [ ] Stable MIDI note per drum lane; recorded pads land on the right note
-- [ ] Drum piano roll with drum names instead of melodic note labels
-- [ ] Professional audio clip waveforms (center line, visible when quiet)
-- [ ] Horizontal navigation/overview bar at the bottom of the timeline
-- [ ] Move the SYNCLAB timeline watermark down and center, subtle
-- [ ] Mixer: MUTE/SOLO/RECORD/MONITOR at the bottom, larger Mute and Solo
+## Timeline / mixer / drums polish (done)
+- [x] Stable MIDI note per drum lane; a drum controller plays and records those pads
+- [x] Drum roll with drum names and notes instead of melodic labels (accent, humanize, flam, roll, note repeat, probability, swing)
+- [x] Professional audio clip waveforms (center line, quiet takes still readable)
+- [x] Horizontal navigation/overview bar at the bottom of the timeline with zoom
+- [x] Moved the SYNCLAB timeline watermark down and center, subtle
+- [x] Mixer: MUTE/SOLO/REC/MON at the bottom, larger Mute and Solo
+
+## Next batches from the master spec
+- [ ] Preview-first AI audio (stem generator, vocal forge, voice remover: play/stop/regenerate before adding)
+- [ ] Sampler upgrade (time stretch, warp modes, pitch, chopping, ADSR, filters, recording to pads, resampling)
+- [ ] Native plugin scanning and plugin browser (needs the desktop audio bridge)
