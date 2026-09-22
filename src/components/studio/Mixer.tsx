@@ -1244,24 +1244,25 @@ function BusStrip({
         <span className="font-mono text-[9px] text-muted-foreground">{toDb(state.volume).toFixed(1)} dB</span>
         <ClipLed id={`bus:${id}`} compact />
       </div>
-      <div className={cn(ROW.buttons, "flex items-center border-b border-border/60 px-1")}>
+      <div
+        className={cn(ROW.name, "flex items-center justify-center border-b border-black/40")}
+        style={{ background: tint(45), boxShadow: `inset 0 2px 0 0 ${color}` }}
+      >
+        <span className="truncate font-mono text-[9px] font-bold uppercase tracking-wider text-foreground">{id}</span>
+      </div>
+      <div className={cn(ROW.buttons, "flex items-start px-1 pt-1")}>
         <button
           onClick={() => onChange({ muted: !state.muted })}
+          title={state.muted ? "Bus muted — click to unmute" : "Mute this bus"}
           className={cn(
-            "h-5 w-full rounded-sm font-mono text-[9px] font-bold transition-colors",
+            "h-8 w-full rounded-sm font-mono text-[10px] font-bold tracking-wider transition-colors",
             state.muted
               ? "bg-orange-500 text-black shadow-[0_0_10px_rgba(249,115,22,0.8)]"
               : "bg-black/30 text-muted-foreground hover:text-foreground"
           )}
         >
-          M
+          {state.muted ? "MUTED" : "MUTE"}
         </button>
-      </div>
-      <div
-        className={cn(ROW.name, "flex items-center justify-center")}
-        style={{ background: tint(45), boxShadow: `inset 0 2px 0 0 ${color}` }}
-      >
-        <span className="truncate font-mono text-[9px] font-bold uppercase tracking-wider text-foreground">{id}</span>
       </div>
     </div>
   );
