@@ -14,6 +14,7 @@ import { MixerWindow } from "@/components/studio/MixerWindow";
 import { SynthEditor } from "@/components/studio/SynthEditor";
 import { DrumMachine } from "@/components/studio/DrumMachine";
 import { PianoRoll } from "@/components/studio/PianoRoll";
+import { DrumRoll } from "@/components/studio/DrumRoll";
 import { MidiLearnStrip } from "@/components/studio/MidiLearn";
 import { VocalForge } from "@/components/studio/VocalForge";
 import { Settings } from "@/components/studio/Settings";
@@ -244,13 +245,22 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
           <p className="text-sm text-muted-foreground">Add a drum machine track to program a beat.</p>
         ))}
       {panel === "piano" &&
-        (synthTrack ? (
+        // a drum track has no melodic notes, so it opens the drum roll instead
+        (selected?.kind === "drum" || (!synthTrack && drumTrack) ? (
+          <div className="space-y-2">
+            <DrumRoll track={(selected?.kind === "drum" ? selected : drumTrack)!} />
+            <MidiLearnStrip
+              id={(selected?.kind === "drum" ? selected : drumTrack)!.id}
+              label={(selected?.kind === "drum" ? selected : drumTrack)!.name}
+            />
+          </div>
+        ) : synthTrack ? (
           <div className="space-y-2">
             <PianoRoll track={synthTrack} />
             <MidiLearnStrip id={synthTrack.id} label={synthTrack.name} />
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground">Select an instrument or MIDI track to edit its notes.</p>
+          <p className="text-sm text-muted-foreground">Select an instrument, MIDI or drum track to edit its notes.</p>
         ))}
       {panel === "vocal" && <VocalForge />}
       {panel === "settings" && <Settings />}
