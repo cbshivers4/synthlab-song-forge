@@ -1099,47 +1099,9 @@ function Strip({
         <ClipLed id={t.id} compact />
       </div>
 
-      {/* M / S / arm */}
-      <div className={cn(ROW.buttons, "flex items-center gap-1 border-b border-border/60 px-1")}>
-        <button
-          onClick={(e) => { e.stopPropagation(); updateTrack(t.id, { muted: !t.muted }); }}
-          className={cn(
-            "h-5 flex-1 rounded-sm font-mono text-[9px] font-bold transition-colors",
-            t.muted
-              ? "bg-orange-500 text-black shadow-[0_0_10px_rgba(249,115,22,0.8)]"
-              : "bg-black/30 text-muted-foreground hover:text-foreground"
-          )}
-          title={t.muted ? "Muted — click to unmute" : "Mute"}
-        >
-          M
-        </button>
-        <button
-          onClick={(e) => { e.stopPropagation(); updateTrack(t.id, { solo: !t.solo }); }}
-          className={cn(
-            "h-5 flex-1 rounded-sm font-mono text-[9px] font-bold transition-colors",
-            t.solo
-              ? "bg-emerald-400 text-black shadow-[0_0_10px_rgba(52,211,153,0.8)]"
-              : "bg-black/30 text-muted-foreground hover:text-foreground"
-          )}
-          title={t.solo ? "Soloed — click to unsolo" : "Solo"}
-        >
-          S
-        </button>
-        <button
-          onClick={(e) => { e.stopPropagation(); updateTrack(t.id, { armed: !t.armed }); }}
-          title="Arm for recording"
-          className={cn(
-            "h-5 flex-1 rounded-sm font-mono text-[9px] font-bold transition-colors",
-            t.armed ? "bg-red-500 text-black" : "bg-black/30 text-muted-foreground hover:text-foreground"
-          )}
-        >
-          ●
-        </button>
-      </div>
-
       {/* coloured name plate */}
       <div
-        className={cn(ROW.name, "flex items-center gap-1 px-1.5")}
+        className={cn(ROW.name, "flex items-center gap-1 border-b border-black/40 px-1.5")}
         style={{
           background: `linear-gradient(90deg, color-mix(in oklab, ${t.color} 70%, transparent), color-mix(in oklab, ${t.color} 40%, transparent))`,
           boxShadow: `inset 0 2px 0 0 ${t.color}`,
@@ -1150,6 +1112,64 @@ function Strip({
         <span className="truncate font-mono text-[9px] font-semibold uppercase tracking-wider text-foreground">
           {t.name}
         </span>
+      </div>
+
+      {/* MUTE / SOLO / REC / MONITOR — the controls you reach for live, at the bottom */}
+      <div className={cn(ROW.buttons, "grid grid-cols-2 gap-1 px-1 pt-1")}>
+        <button
+          onClick={(e) => { e.stopPropagation(); updateTrack(t.id, { muted: !t.muted }); }}
+          className={cn(
+            "h-8 rounded-sm font-mono text-[10px] font-bold tracking-wider transition-colors",
+            t.muted
+              ? "bg-orange-500 text-black shadow-[0_0_10px_rgba(249,115,22,0.8)]"
+              : "bg-black/30 text-muted-foreground hover:text-foreground"
+          )}
+          title={t.muted ? "Muted — click to unmute" : "Mute this channel"}
+        >
+          {t.muted ? "MUTED" : "MUTE"}
+        </button>
+        <button
+          onClick={(e) => { e.stopPropagation(); updateTrack(t.id, { solo: !t.solo }); }}
+          className={cn(
+            "h-8 rounded-sm font-mono text-[10px] font-bold tracking-wider transition-colors",
+            t.solo
+              ? "bg-emerald-400 text-black shadow-[0_0_10px_rgba(52,211,153,0.8)]"
+              : "bg-black/30 text-muted-foreground hover:text-foreground"
+          )}
+          title={t.solo ? "Soloed — click to unsolo" : "Solo this channel"}
+        >
+          {t.solo ? "SOLOED" : "SOLO"}
+        </button>
+        <button
+          onClick={(e) => { e.stopPropagation(); updateTrack(t.id, { armed: !t.armed }); }}
+          title={t.armed ? "Armed for recording" : "Arm this channel for recording"}
+          className={cn(
+            "h-6 rounded-sm font-mono text-[9px] font-bold tracking-wider transition-colors",
+            t.armed ? "bg-red-500 text-black" : "bg-black/30 text-muted-foreground hover:text-foreground"
+          )}
+        >
+          ● REC
+        </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setTransport({ monitor: !transport.monitor });
+          }}
+          disabled={!t.armed}
+          title={
+            t.armed
+              ? "Input monitoring — hear the live input on armed channels. This switch is studio-wide."
+              : "Arm this channel to monitor its input"
+          }
+          className={cn(
+            "h-6 rounded-sm font-mono text-[9px] font-bold tracking-wider transition-colors disabled:opacity-40",
+            t.armed && transport.monitor
+              ? "bg-sky-400 text-black"
+              : "bg-black/30 text-muted-foreground hover:text-foreground"
+          )}
+        >
+          MON
+        </button>
       </div>
     </div>
   );
