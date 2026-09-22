@@ -16,6 +16,7 @@ import { TRACK_COLORS, applyPreset, defaultPads, defaultPatch, uid } from "./pre
 import { BUILT_IN_PLUGINS, instantiate, processMidiThroughPlugins } from "./plugins";
 import { getMidiAccess, listInputs, midiSupported, subscribe, type MidiPortInfo } from "./midi";
 import { getPadBank, setPadBank } from "./pad-session";
+import { padNote } from "./drum-notes";
 import type { CloudSession } from "./cloud";
 import type {
   AudioClip,
@@ -520,6 +521,47 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         }
         if (msg.type === "pitchbend") return;
         const { type, pitch, velocity } = msg;
+
+        // A drum controller speaks General MIDI notes. When an armed drum track
+        // owns the incoming note, that pad plays — and while recording, the note
+        // is written onto the step that is sounding, exactly like tapping a pad.
+        const drumTarget =
+          tracksRef.current.find((t) => t.armed && t.kind === "drum" && t.pads?.length) ??
+          (tracksRef.current.find((t) => t.id === selectedIdRef.current && t.kind === "drum" && t.pads?.length) as
+            | Track
+            | undefined);
+        if (drumTarget?.pads) {
+          const hit = drumTarget.pads.find((p) => padNote(p, drumTarget.pads!) === pitch);
+          if (hit) {
+            if (type === "on") {
+              const engine = getEngine();
+              engine.init();
+              engine.syncMix(tracksRef.current);
+              engine.playDrum(drumTarget.id, hit, Math.max(0.15, velocity));
+              const tp = transportRef.current;
+              if (tp.recording && tp.playing) {
+                const total = hit.steps.length || drumTarget.steps || 16;
+                const at = tp.step % total;
+                setTracks((ts) =>
+                  ts.map((t) =>
+                    t.id === drumTarget.id
+                      ? {
+                          ...t,
+                          pads: (t.pads ?? []).map((p) =>
+                            p.id === hit.id
+                              ? { ...p, steps: p.steps.map((v, i) => (i === at ? Math.max(0.15, velocity) : v)) }
+                              : p,
+                          ),
+                        }
+                      : t,
+                  ),
+                );
+              }
+            }
+            return;
+          }
+        }
+
         const notable = (t: Track) => t.kind === "instrument" || t.kind === "midi" || t.kind === "sampler";
         const target =
           tracksRef.current.find((t) => t.armed && notable(t)) ??
@@ -618,6 +660,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       const list = tracksRef.current;
       const anySolo = list.some((t) => t.solo);
       const totalSteps = songSteps(tp.bars);
+      // swing pushes every off-beat 16th later, up to half a step — the shuffle
+      // a drum machine gives you. Arrangement clips keep their exact position.
+      const swung = when + (n % 2 === 1 ? Math.min(0.9, Math.max(0, tp.swing ?? 0)) * 0.5 * stepDur : 0);
       for (const t of list) {
         if (t.muted || t.frozen || (anySolo && !t.solo)) continue;
         const len = Math.max(1, t.steps);
@@ -650,11 +695,15 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           for (const pad of t.pads) {
             if (pad.muted || (padSolo && !pad.solo)) continue;
             const v = pad.steps[s] ?? 0;
-            if (v > 0) engine.playDrum(t.id, pad, v, when);
+            if (v <= 0) continue;
+            // a step with a chance below 100% only fires that often
+            const chance = pad.probability?.[s];
+            if (typeof chance === "number" && chance < 1 && Math.random() > chance) continue;
+            engine.playDrum(t.id, pad, v, swung);
           }
         } else if (t.kind === "sampler" && t.sampler && t.notes) {
           for (const note of t.notes) {
-            if (note.step % len === s) triggerNote(engine, t, note.pitch, note.length * stepDur, note.velocity, when);
+            if (note.step % len === s) triggerNote(engine, t, note.pitch, note.length * stepDur, note.velocity, swung);
           }
         } else if (t.patch && t.notes) {
           for (const note of t.notes) {
@@ -665,10 +714,10 @@ export function StudioProvider({ children }: { children: ReactNode }) {
               for (let i = 0; i < note.length; i++) {
                 const shift = (i % Math.max(1, oct)) * 12;
                 const dir = t.patch.arp.direction === "down" ? -shift : shift;
-                engine.playNote(t.id, t.patch, note.pitch + dir, stepDur * t.patch.arp.gate, note.velocity, when + i * stepDur);
+                engine.playNote(t.id, t.patch, note.pitch + dir, stepDur * t.patch.arp.gate, note.velocity, swung + i * stepDur);
               }
             } else {
-              engine.playNote(t.id, t.patch, note.pitch, dur, note.velocity, when);
+              engine.playNote(t.id, t.patch, note.pitch, dur, note.velocity, swung);
             }
           }
         }

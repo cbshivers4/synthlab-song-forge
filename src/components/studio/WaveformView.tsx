@@ -29,8 +29,13 @@ export function WaveformView({
 
   const { body, core, top, bottom } = useMemo(() => {
     const n = data.length;
+    // A quiet take still has to be readable: lift the drawing so its loudest
+    // point fills the lane. This is display only — nothing about the audio,
+    // the clip gain or the export changes.
+    const loudest = Math.max(0.0001, ...data);
+    const view = gain * (loudest < 0.85 ? Math.min(8, 0.85 / loudest) : 1);
     const x = (i: number) => ((i / (n - 1)) * 1000).toFixed(2);
-    const h = (p: number, k = 1) => Math.max(0.6, Math.min(1, p * gain) * 48 * k);
+    const h = (p: number, k = 1) => Math.max(0.9, Math.min(1, p * view) * 48 * k);
     const topPts = data.map((p, i) => `${x(i)},${(50 - h(p)).toFixed(2)}`);
     const botPts = data.map((p, i) => `${x(i)},${(50 + h(p)).toFixed(2)}`);
     const coreTop = data.map((p, i) => `${x(i)},${(50 - h(p, 0.55)).toFixed(2)}`);

@@ -196,7 +196,10 @@ export interface DrumPad {
   muted: boolean;
   solo: boolean;
   steps: number[]; // velocity 0..1 per step, 0 = off
+  /** chance 0..1 that a written step actually fires; 1 (or unset) always fires */
   probability?: number[] | undefined;
+  /** MIDI note this pad sends and listens on; unset means the General MIDI note for its kind */
+  note?: number | undefined;
 }
 
 export interface MidiNote {
