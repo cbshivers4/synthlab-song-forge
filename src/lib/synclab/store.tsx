@@ -16,6 +16,7 @@ import { TRACK_COLORS, applyPreset, defaultPads, defaultPatch, uid } from "./pre
 import { BUILT_IN_PLUGINS, instantiate, processMidiThroughPlugins } from "./plugins";
 import { getMidiAccess, listInputs, midiSupported, subscribe, type MidiPortInfo } from "./midi";
 import { getPadBank, setPadBank } from "./pad-session";
+import { padNote } from "./drum-notes";
 import type { CloudSession } from "./cloud";
 import type {
   AudioClip,
