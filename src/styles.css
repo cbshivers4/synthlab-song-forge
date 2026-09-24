@@ -253,6 +253,21 @@
     touch-action: manipulation;
   }
 
+  .phone-tool-panel .settings-row {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .phone-tool-panel .settings-row > :last-child {
+    min-width: 0;
+    justify-content: flex-start;
+  }
+
+  .phone-tool-panel .settings-row [role="combobox"] {
+    width: min(100%, 18rem);
+  }
+
   .phone-tool-panel [data-slot="slider-thumb"],
   .phone-tool-panel [role="slider"] {
     min-width: 1.5rem;

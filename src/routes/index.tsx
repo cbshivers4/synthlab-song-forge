@@ -472,6 +472,13 @@ function StudioWorkspace() {
   const [float, setFloat] = useState<FloatState>({ synth: false, drums: false });
   const [beatMode, setBeatMode] = useState(false);
   useShortcuts();
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.toggle("mobile-controls-xl", isMobile && mobileAccessibility.extraLargeControls);
+    root.classList.toggle("mobile-text-xl", isMobile && mobileAccessibility.increasedText);
+    root.classList.toggle("mobile-high-contrast", isMobile && mobileAccessibility.highContrast);
+    return () => root.classList.remove("mobile-controls-xl", "mobile-text-xl", "mobile-high-contrast");
+  }, [isMobile, mobileAccessibility]);
   // Phones open straight into the big-button beat maker the first time.
   useEffect(() => {
     if (!isMobile) return;
