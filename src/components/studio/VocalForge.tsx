@@ -43,22 +43,60 @@ export function VocalForge() {
             <span className="label-xs">Grit</span>
             <Slider className="w-28" value={[tone]} min={0} max={1} step={0.01} onValueChange={([v = 0]) => setTone(v)} />
           </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="secondary"
+            disabled={!lyrics.trim()}
+            onClick={() => {
+              if (typeof window === "undefined" || !window.speechSynthesis) {
+                toast.error("SYNCLAB couldn't complete this operation.", { description: "This browser has no voice preview." });
+                return;
+              }
+              window.speechSynthesis.cancel();
+              const u = new SpeechSynthesisUtterance(lyrics.trim());
+              u.pitch = 0.4 + (1 - tone) * 1.2;
+              u.rate = Math.min(1.6, Math.max(0.6, transport.bpm / 120));
+              u.onend = () => setPlaying(false);
+              u.onerror = () => setPlaying(false);
+              setPlaying(true);
+              window.speechSynthesis.speak(u);
+            }}
+          >
+            <Play className="size-4" /> {playing ? "REPLAY" : "PREVIEW"}
+          </Button>
+          <Button
+            variant="ghost"
+            disabled={!playing}
+            onClick={() => {
+              window.speechSynthesis?.cancel();
+              setPlaying(false);
+            }}
+          >
+            <Square className="size-4" /> STOP
+          </Button>
           <Button
             className="glow"
             onClick={() => {
+              window.speechSynthesis?.cancel();
+              setPlaying(false);
               const id = addTrack("ai-vocal", lyrics.trim().slice(0, 14).toUpperCase() || "AI VOCAL", "Vocoder Bot");
               select(id);
               setPanel("piano");
-              toast.success("Vocal channel ready", {
+              toast.success("Vocal channel added", {
                 description:
-                  "Your lyrics are staged and the channel is armed for the vocoder. SYNCLAB does not sing them for you yet — sing or speak the line into this channel, or write the melody in the piano roll.",
+                  "The channel is armed for the vocoder. SYNCLAB does not sing your lyrics yet — sing or speak the line into this channel, or write the melody in the piano roll. Undo removes it.",
                 duration: 9000,
               });
             }}
           >
-            <Sparkles className="size-4" /> BUILD VOCAL CHANNEL
+            <Sparkles className="size-4" /> ADD TO TIMELINE
           </Button>
         </div>
+        <p className="text-xs text-muted-foreground">
+          Preview only — PREVIEW reads your lines with your device's built-in voice as a timing guide (Grit lowers the
+          voice). Nothing is added to your song until you press ADD TO TIMELINE.
+        </p>
       </div>
       <div className="panel space-y-3 p-4">
         <span className="label-xs">Record a real vocal</span>
