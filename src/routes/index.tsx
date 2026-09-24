@@ -38,6 +38,7 @@ import { CoProducer } from "@/components/studio/CoProducer";
 import { StemSeparator } from "@/components/studio/StemSeparator";
 import { HumToBeat } from "@/components/studio/HumToBeat";
 import { MobileBeat } from "@/components/studio/MobileBeat";
+import { MobileNav } from "@/components/studio/MobileNav";
 import { Bot } from "lucide-react";
 import { AppProvider, useApp, useMaybeApp } from "@/lib/synclab/app-state";
 import { PlanProvider } from "@/lib/synclab/plan";
@@ -491,18 +492,10 @@ function StudioWorkspace() {
           <Panels float={float} setFloat={setFloat} />
         </main>
       </div>
-      <StatusBar />
+      {isMobile ? <MobileNav onBeatMode={() => setBeatMode(true)} /> : <StatusBar />}
       <FloatingDevices float={float} setFloat={setFloat} />
       <DeviceSetup />
       <ExportDialog />
-      {isMobile && !beatMode && (
-        <Button
-          className="glow fixed right-4 bottom-16 z-40 h-14 gap-2 rounded-2xl px-5 font-display text-xs tracking-[0.2em]"
-          onClick={() => setBeatMode(true)}
-        >
-          <Grid2x2 className="size-5" /> BEAT MODE
-        </Button>
-      )}
       {isMobile && beatMode && <MobileBeat onClose={() => setBeatMode(false)} />}
     </div>
   );
