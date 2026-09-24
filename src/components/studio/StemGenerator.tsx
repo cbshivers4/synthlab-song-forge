@@ -110,6 +110,9 @@ export function StemGenerator() {
   const stop = () => {
     if (timer.current) clearInterval(timer.current);
     timer.current = null;
+    // Kill already-scheduled preview voices too — removeChannel disconnects the
+    // "__preview" channel, and the engine recreates it on the next preview.
+    getEngine().removeChannel("__preview");
     setPlaying(null);
   };
   useEffect(() => stop, []);
