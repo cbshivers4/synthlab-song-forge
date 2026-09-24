@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { Loader2, Monitor, Plug, PlugZap, RefreshCw, X } from "lucide-react";
+import { Loader2, Monitor, Plug, PlugZap, RefreshCw, Star, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
-import { bridge, savedBridgeUrl, type BridgeEditor } from "@/lib/synclab/bridge";
+import { bridge, savedBridgeUrl, type BridgeEditor, type BridgePlugin } from "@/lib/synclab/bridge";
 
 /** Live subscription to the Desktop Audio Bridge client. */
 export function useBridge() {

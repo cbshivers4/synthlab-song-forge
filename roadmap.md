@@ -65,4 +65,5 @@
 - [x] Sampler: decay/sustain, LP/HP/BP/Notch filter with cutoff+resonance, fade in/out, sample BPM + sync to project tempo (repitch)
 - [x] Sampler Resample: renders the processed sound to a new audio track, original untouched
 - [ ] Pitch-preserving warp modes (Beats/Tones/Complex) — needs a time-stretch engine
-- [ ] Native plugin scanning and plugin browser (needs the desktop audio bridge)
+- [x] Plugin browser: categories, favorites, recently used, search, drag, found/available/failed counts, "Plugin Scan Failed" cards
+- [ ] Actual native scanning — needs the desktop audio bridge program running on the computer
