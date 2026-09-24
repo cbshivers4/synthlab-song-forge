@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-export type Skin = { color?: string; padColor?: string; image?: string };
+export type Skin = { color?: string | undefined; padColor?: string | undefined; image?: string | undefined };
 type SkinKey = "sampler" | "drums" | "synth";
 const KEY = "synclab.skins.v1";
 const EVT = "synclab:skins";
