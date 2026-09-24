@@ -39,10 +39,12 @@ import { StemSeparator } from "@/components/studio/StemSeparator";
 import { HumToBeat } from "@/components/studio/HumToBeat";
 import { MobileBeat } from "@/components/studio/MobileBeat";
 import { MobileNav } from "@/components/studio/MobileNav";
+import { MobileOnboarding } from "@/components/studio/MobileOnboarding";
 import { Bot } from "lucide-react";
 import { AppProvider, useApp, useMaybeApp } from "@/lib/synclab/app-state";
 import { PlanProvider } from "@/lib/synclab/plan";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useMobileAccessibility } from "@/lib/synclab/mobile-accessibility";
 import { toast } from "sonner";
 import synthFace from "@/assets/hw-synth.jpg";
 import drumFace from "@/assets/hw-drum.jpg";
@@ -466,6 +468,7 @@ function useShortcuts() {
 
 function StudioWorkspace() {
   const isMobile = useIsMobile();
+  const mobileAccessibility = useMobileAccessibility();
   const [float, setFloat] = useState<FloatState>({ synth: false, drums: false });
   const [beatMode, setBeatMode] = useState(false);
   useShortcuts();
@@ -481,7 +484,7 @@ function StudioWorkspace() {
     }
   }, [isMobile]);
   return (
-    <div className={`flex h-[100dvh] flex-col overflow-hidden ${isMobile ? "mobile-studio" : ""}`}>
+    <div className={`flex h-[100dvh] flex-col overflow-hidden ${isMobile ? "mobile-studio" : ""} ${isMobile && mobileAccessibility.extraLargeControls ? "mobile-controls-xl" : ""} ${isMobile && mobileAccessibility.increasedText ? "mobile-text-xl" : ""} ${isMobile && mobileAccessibility.highContrast ? "mobile-high-contrast" : ""}`}>
       {!isMobile && <MenuBar />}
       <TopBar />
       <div className="flex min-h-0 flex-1">
@@ -497,6 +500,7 @@ function StudioWorkspace() {
       <DeviceSetup />
       <ExportDialog />
       {isMobile && beatMode && <MobileBeat onClose={() => setBeatMode(false)} />}
+      <MobileOnboarding enabled={isMobile && !beatMode} />
     </div>
   );
 }
