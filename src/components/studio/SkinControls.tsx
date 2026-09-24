@@ -1,21 +1,132 @@
-import { useRef } from "react";
-import { ImagePlus, Palette, RotateCcw } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Crop, ImagePlus, Palette, RotateCcw, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { imageToDataUrl, setSkin, useSkin } from "@/lib/synclab/skins";
+import { Slider } from "@/components/ui/slider";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  applyPreset,
+  deletePreset,
+  imageToDataUrl,
+  savePreset,
+  setSkin,
+  startSkinSync,
+  usePresets,
+  useSkin,
+  type Skin,
+  type SkinKey,
+} from "@/lib/synclab/skins";
 
-type Props = { skinKey: "sampler" | "drums" | "synth"; image?: boolean; padColor?: boolean; colorLabel?: string };
+type Props = { skinKey: SkinKey; image?: boolean; padColor?: boolean; colorLabel?: string };
+
+const safe = (fn: () => void) => {
+  try {
+    fn();
+  } catch (e) {
+    toast.error((e as Error).message);
+  }
+};
+
+function ThemePresets() {
+  const presets = usePresets();
+  const [sel, setSel] = useState<string>("");
+  return (
+    <div className="flex items-center gap-1">
+      <Select
+        value={sel}
+        onValueChange={(v) => {
+          setSel(v);
+          safe(() => applyPreset(v));
+        }}
+      >
+        <SelectTrigger className="h-8 w-36" aria-label="Saved themes">
+          <SelectValue placeholder={presets.length ? "Themes" : "No themes yet"} />
+        </SelectTrigger>
+        <SelectContent>
+          {presets.map((p) => (
+            <SelectItem key={p.id} value={p.id}>
+              {p.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Button
+        size="sm"
+        variant="outline"
+        title="Save sampler, drum machine and synth colors as a theme"
+        onClick={() => {
+          const name = window.prompt("Name this theme");
+          if (name === null) return;
+          safe(() => savePreset(name));
+          toast.success("Theme saved");
+        }}
+      >
+        <Save className="size-4" /> Save theme
+      </Button>
+      {sel && (
+        <Button
+          size="sm"
+          variant="ghost"
+          title="Delete selected theme"
+          aria-label="Delete selected theme"
+          onClick={() => {
+            safe(() => deletePreset(sel));
+            setSel("");
+          }}
+        >
+          <Trash2 className="size-4" />
+        </Button>
+      )}
+    </div>
+  );
+}
+
+function ImageFraming({ skinKey, skin }: { skinKey: SkinKey; skin: Skin }) {
+  const row = (label: string, value: number, min: number, max: number, step: number, key: keyof Skin) => (
+    <div className="space-y-1.5">
+      <div className="flex justify-between font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+        <span>{label}</span>
+        <span>{key === "imageZoom" ? `${value.toFixed(2)}×` : `${Math.round(value)}%`}</span>
+      </div>
+      <Slider
+        aria-label={label}
+        min={min}
+        max={max}
+        step={step}
+        value={[value]}
+        onValueChange={([v]) => safe(() => setSkin(skinKey, { [key]: v }))}
+      />
+    </div>
+  );
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button size="sm" variant="outline">
+          <Crop className="size-4" /> Frame
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-72 space-y-4">
+        {row("Zoom / crop", skin.imageZoom ?? 1, 1, 4, 0.05, "imageZoom")}
+        {row("Left ↔ Right", skin.imageX ?? 50, 0, 100, 1, "imageX")}
+        {row("Up ↕ Down", skin.imageY ?? 50, 0, 100, 1, "imageY")}
+        <p className="text-xs text-muted-foreground">Tip: drag the picture around the pads to move it.</p>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => safe(() => setSkin(skinKey, { imageZoom: 1, imageX: 50, imageY: 50 }))}
+        >
+          <RotateCcw className="size-4" /> Reset framing
+        </Button>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 export function SkinControls({ skinKey, image, padColor, colorLabel = "Background" }: Props) {
   const skin = useSkin(skinKey);
   const fileRef = useRef<HTMLInputElement>(null);
-  const safe = (fn: () => void) => {
-    try {
-      fn();
-    } catch (e) {
-      toast.error((e as Error).message);
-    }
-  };
+  useEffect(() => startSkinSync(), []);
   return (
     <div className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-surface-2/40 px-2 py-1.5">
       <Palette className="size-4 text-primary" />
@@ -53,7 +164,7 @@ export function SkinControls({ skinKey, image, padColor, colorLabel = "Backgroun
               e.target.value = "";
               if (!f) return;
               try {
-                setSkin(skinKey, { image: await imageToDataUrl(f) });
+                setSkin(skinKey, { image: await imageToDataUrl(f), imageZoom: 1, imageX: 50, imageY: 50 });
               } catch (err) {
                 toast.error((err as Error).message);
               }
@@ -62,27 +173,69 @@ export function SkinControls({ skinKey, image, padColor, colorLabel = "Backgroun
           <Button size="sm" variant="outline" onClick={() => fileRef.current?.click()}>
             <ImagePlus className="size-4" /> Picture
           </Button>
+          {skin.image && <ImageFraming skinKey={skinKey} skin={skin} />}
         </>
       )}
       <Button
         size="sm"
         variant="ghost"
         title="Reset colors and picture"
-        onClick={() => safe(() => setSkin(skinKey, { color: undefined, padColor: undefined, image: undefined }))}
+        onClick={() =>
+          safe(() =>
+            setSkin(skinKey, {
+              color: undefined,
+              padColor: undefined,
+              image: undefined,
+              imageZoom: undefined,
+              imageX: undefined,
+              imageY: undefined,
+            }),
+          )
+        }
       >
         <RotateCcw className="size-4" /> Reset
       </Button>
+      <ThemePresets />
     </div>
   );
 }
 
-export function skinBackground(skin: { color?: string | undefined; image?: string | undefined }): React.CSSProperties | undefined {
+export function skinBackground(skin: Skin): React.CSSProperties | undefined {
   if (skin.image)
     return {
       backgroundImage: `linear-gradient(hsl(0 0% 0% / 0.35), hsl(0 0% 0% / 0.35)), url(${skin.image})`,
-      backgroundSize: "cover",
-      backgroundPosition: "center",
+      backgroundSize: `cover, ${(skin.imageZoom ?? 1) * 100}% auto`,
+      backgroundPosition: `center, ${skin.imageX ?? 50}% ${skin.imageY ?? 50}%`,
+      backgroundRepeat: "no-repeat",
+      backgroundColor: skin.color,
     };
   if (skin.color) return { backgroundColor: skin.color };
   return undefined;
+}
+
+/** Drag on empty space around the pads to reposition the picture. */
+export function useImageDrag(skinKey: SkinKey, skin: Skin) {
+  const drag = useRef<{ x: number; y: number; ix: number; iy: number } | null>(null);
+  return {
+    onPointerDown: (e: React.PointerEvent<HTMLElement>) => {
+      if (!skin.image || e.target !== e.currentTarget) return;
+      drag.current = { x: e.clientX, y: e.clientY, ix: skin.imageX ?? 50, iy: skin.imageY ?? 50 };
+      e.currentTarget.setPointerCapture(e.pointerId);
+    },
+    onPointerMove: (e: React.PointerEvent<HTMLElement>) => {
+      const d = drag.current;
+      if (!d) return;
+      const r = e.currentTarget.getBoundingClientRect();
+      const clamp = (v: number) => Math.max(0, Math.min(100, v));
+      safe(() =>
+        setSkin(skinKey, {
+          imageX: clamp(d.ix - ((e.clientX - d.x) / r.width) * 100),
+          imageY: clamp(d.iy - ((e.clientY - d.y) / r.height) * 100),
+        }),
+      );
+    },
+    onPointerUp: () => {
+      drag.current = null;
+    },
+  };
 }
