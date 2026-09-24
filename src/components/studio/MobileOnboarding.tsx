@@ -9,7 +9,7 @@ const steps = [
   { title: "Made for your hands", body: "Phone controls are larger and spaced apart. You can make them even bigger in Settings → Mobile.", icon: <Accessibility className="size-10" /> },
   { title: "Five controls, one studio", body: "HOME returns to your tracks. CREATE opens sounds and instruments. RECORD captures a take. MIX opens channels. MORE holds editors, Settings, and Help.", icon: <div className="flex items-center gap-3 text-primary"><Home /><Plus /><Mic /><SlidersHorizontal /><MoreHorizontal /></div> },
   { title: "Fast track gestures", body: "Tap a track to select it. Hold for actions. Swipe right to mute, left to solo, up to move it up, or down to move it down.", icon: <SlidersHorizontal className="size-10" /> },
-];
+] as const;
 
 export function MobileOnboarding({ enabled }: { enabled: boolean }) {
   const [open, setOpen] = useState(false);
@@ -31,7 +31,8 @@ export function MobileOnboarding({ enabled }: { enabled: boolean }) {
     try { window.localStorage.setItem(KEY, "1"); } catch { /* storage unavailable */ }
     setOpen(false);
   };
-  const current = steps[step] ?? steps[0];
+  const current = steps[step];
+  if (!current) return null;
   return (
     <Dialog open={open} onOpenChange={(next) => next ? setOpen(true) : close()}>
       <DialogContent className="w-[calc(100%-1.5rem)] max-w-md rounded-lg p-5">
