@@ -1,4 +1,4 @@
-import { useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { AudioLines, Play, RotateCcw, Scissors, Square, Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -171,6 +171,18 @@ export function Sampler() {
   const [wBusy, setWBusy] = useState(false);
   const [wPlaying, setWPlaying] = useState(false);
   const previewRef = useRef<{ audio: HTMLAudioElement; url: string; blob: Blob; key: string } | null>(null);
+
+  // Leaving the sampler (switching tools) must silence the looping preview.
+  useEffect(
+    () => () => {
+      const pv = previewRef.current;
+      if (!pv) return;
+      pv.audio.pause();
+      URL.revokeObjectURL(pv.url);
+      previewRef.current = null;
+    },
+    [],
+  );
 
   const stopPreview = () => {
     previewRef.current?.audio.pause();
