@@ -326,6 +326,20 @@ export interface SamplerState {
   slices?: number[] | undefined;
   attack: number;
   release: number;
+  /** envelope decay time in seconds (default 0) */
+  decay?: number | undefined;
+  /** envelope sustain level 0..1 (default 1) */
+  sustain?: number | undefined;
+  filterType?: "off" | "lowpass" | "highpass" | "bandpass" | "notch" | undefined;
+  /** filter cutoff in Hz */
+  cutoff?: number | undefined;
+  resonance?: number | undefined;
+  /** tempo the sample was recorded at, for beat sync */
+  sampleBpm?: number | undefined;
+  /** follow project tempo (repitch: speed and pitch change together) */
+  syncToBpm?: boolean | undefined;
+  fadeIn?: number | undefined;
+  fadeOut?: number | undefined;
 }
 
 export type AutomationParam =

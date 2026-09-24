@@ -1272,6 +1272,9 @@ export class SyncLabEngine {
     return out;
   }
 
+  /** project tempo, used by sampler beat sync */
+  tempo = 120;
+
   /** Plays the trimmed sample pitched to a midi note through the track channel. */
   playSample(
     trackId: string,
@@ -1287,6 +1290,15 @@ export class SyncLabEngine {
       oneShot: boolean;
       attack: number;
       release: number;
+      decay?: number | undefined;
+      sustain?: number | undefined;
+      filterType?: "off" | "lowpass" | "highpass" | "bandpass" | "notch" | undefined;
+      cutoff?: number | undefined;
+      resonance?: number | undefined;
+      sampleBpm?: number | undefined;
+      syncToBpm?: boolean | undefined;
+      fadeIn?: number | undefined;
+      fadeOut?: number | undefined;
     },
     midi: number,
     duration?: number,
@@ -1303,7 +1315,8 @@ export class SyncLabEngine {
 
     const src = ctx.createBufferSource();
     src.buffer = base;
-    const rate = Math.pow(2, (midi - s.rootNote + s.pitch) / 12);
+    const sync = s.syncToBpm && s.sampleBpm && s.sampleBpm > 0 ? this.tempo / s.sampleBpm : 1;
+    const rate = Math.pow(2, (midi - s.rootNote + s.pitch) / 12) * sync;
     src.playbackRate.value = clamp(rate, 0.0625, 16);
 
     const a = clamp(s.start, 0, 0.999);
@@ -1323,12 +1336,33 @@ export class SyncLabEngine {
     const peak = clamp(s.gain, 0, 2) * clamp(velocity, 0, 1);
     const atk = Math.max(0.001, s.attack);
     const rel = Math.max(0.005, s.release);
+    const dec = Math.max(0, s.decay ?? 0);
+    const sus = peak * clamp(s.sustain ?? 1, 0, 1);
+    const fi = Math.max(atk, s.fadeIn ?? 0);
     amp.gain.setValueAtTime(0, t0);
-    amp.gain.linearRampToValueAtTime(peak, t0 + atk);
-    amp.gain.setValueAtTime(peak, Math.max(t0 + atk, t0 + len));
+    amp.gain.linearRampToValueAtTime(peak, t0 + fi);
+    if (dec > 0) amp.gain.linearRampToValueAtTime(Math.max(0.0001, sus), t0 + fi + dec);
+    const hold = dec > 0 ? sus : peak;
+    const endT = Math.max(t0 + fi + dec, t0 + len);
+    const fo = Math.max(0, s.fadeOut ?? 0);
+    if (fo > 0 && !s.loop && endT - fo > t0 + fi + dec) {
+      amp.gain.setValueAtTime(hold, endT - fo);
+      amp.gain.linearRampToValueAtTime(0.0001, endT);
+    } else {
+      amp.gain.setValueAtTime(Math.max(0.0001, hold), endT);
+    }
     amp.gain.linearRampToValueAtTime(0.0001, t0 + len + rel);
 
-    src.connect(amp);
+    let head: AudioNode = src;
+    if (s.filterType && s.filterType !== "off") {
+      const f = ctx.createBiquadFilter();
+      f.type = s.filterType;
+      f.frequency.value = clamp(s.cutoff ?? 18000, 20, 20000);
+      f.Q.value = clamp(s.resonance ?? 0.7, 0.1, 24);
+      src.connect(f);
+      head = f;
+    }
+    head.connect(amp);
     amp.connect(ch.input);
     src.start(t0, offset, s.loop ? undefined : window);
     src.stop(t0 + len + rel + 0.02);
