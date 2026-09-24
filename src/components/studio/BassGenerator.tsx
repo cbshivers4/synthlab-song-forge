@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AudioWaveform, Dice5, Play, SlidersHorizontal, Square } from "lucide-react";
+import { AudioWaveform, Dice5, Play, Repeat, SlidersHorizontal, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
@@ -53,6 +53,9 @@ export function BassGenerator() {
   const [playing, setPlaying] = useState(false);
   const [playStep, setPlayStep] = useState(0);
   const timers = useRef<number[]>([]);
+  const [loop, setLoop] = useState(true);
+  const loopRef = useRef(loop);
+  loopRef.current = loop;
 
   const stopPreview = () => {
     timers.current.forEach((t) => window.clearTimeout(t));
@@ -70,15 +73,26 @@ export function BassGenerator() {
     const engine = getEngine();
     engine.init();
     setPlaying(true);
-    preview.forEach((n) => {
+    const passMs = bars * 16 * stepSec * 1000;
+    const schedule = (offset: number) => preview.forEach((n) => {
       timers.current.push(
         window.setTimeout(() => {
           engine.playNote(PREVIEW_CHANNEL, patch, n.pitch, n.length * stepSec, n.velocity);
           setPlayStep(n.step);
-        }, n.step * stepSec * 1000),
+        }, offset + n.step * stepSec * 1000),
       );
     });
-    timers.current.push(window.setTimeout(stopPreview, bars * 16 * stepSec * 1000 + 400));
+    const pass = (offset: number) => {
+      schedule(offset);
+      timers.current.push(
+        window.setTimeout(() => {
+          if (!loopRef.current) return stopPreview();
+          timers.current = [];
+          pass(0);
+        }, offset + passMs),
+      );
+    };
+    pass(0);
   };
 
   const apply = () => {
@@ -113,7 +127,10 @@ export function BassGenerator() {
       <div className="space-y-3 rounded-sm border border-border bg-background p-3">
         <div className="flex items-center gap-2">
           <SlidersHorizontal className="size-4 text-primary" /><span className="label-xs">PATTERN PREVIEW · {preview.length} NOTES</span>
-          <Button size="sm" variant={playing ? "secondary" : "ghost"} className="ml-auto h-9 gap-1.5 sm:h-7" onClick={playing ? stopPreview : playPreview}>
+          <Button size="sm" variant={loop ? "secondary" : "ghost"} aria-pressed={loop} title="Loop the preview" className="ml-auto h-9 gap-1.5 sm:h-7" onClick={() => setLoop((v) => !v)}>
+            <Repeat className="size-3.5" /> Loop {loop ? "On" : "Off"}
+          </Button>
+          <Button size="sm" variant={playing ? "secondary" : "ghost"} className="h-9 gap-1.5 sm:h-7" onClick={playing ? stopPreview : playPreview}>
             {playing ? <Square className="size-3.5" /> : <Play className="size-3.5" />} {playing ? "Stop" : "Play"}
           </Button>
         </div>
