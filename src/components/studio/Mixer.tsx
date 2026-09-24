@@ -1453,7 +1453,13 @@ function MasterStrip({ level: peak }: { level: number }) {
           {fracToDb(peak).toFixed(1)} dB
         </span>
       </div>
-      <div className={cn(ROW.buttons, "flex items-center justify-center border-b border-border/60")}>
+      <div
+        className={cn(ROW.name, "flex items-center justify-center border-b border-border/60")}
+        style={{ background: `color-mix(in oklab, ${color} 55%, transparent)`, boxShadow: `inset 0 2px 0 0 ${color}` }}
+      >
+        <span className="font-display text-[10px] font-bold uppercase tracking-widest text-foreground">Master</span>
+      </div>
+      <div className={cn(ROW.buttons, "flex items-start justify-center px-1 pt-1")}>
         <button
           onClick={() => setClip(false)}
           className={cn(
@@ -1463,12 +1469,6 @@ function MasterStrip({ level: peak }: { level: number }) {
         >
           {clip ? "CLIP — reset" : "OK"}
         </button>
-      </div>
-      <div
-        className={cn(ROW.name, "flex items-center justify-center")}
-        style={{ background: `color-mix(in oklab, ${color} 55%, transparent)`, boxShadow: `inset 0 2px 0 0 ${color}` }}
-      >
-        <span className="font-display text-[10px] font-bold uppercase tracking-widest text-foreground">Master</span>
       </div>
     </div>
   );
