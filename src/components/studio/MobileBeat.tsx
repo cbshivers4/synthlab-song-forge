@@ -224,7 +224,7 @@ export function MobileBeat({ onClose }: { onClose: () => void }) {
         ))}
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto p-3">
+      <div className="min-h-0 flex-1 overflow-y-auto p-3 pb-5">
         {tab === "pads" && (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {pads.map((p, i) => {
@@ -424,7 +424,7 @@ export function MobileBeat({ onClose }: { onClose: () => void }) {
       </div>
 
       {/* Bottom tabs — thumb reach */}
-      <nav className="grid shrink-0 grid-cols-4 gap-2 border-t-2 border-border bg-surface-2/70 p-2">
+      <nav className="grid shrink-0 grid-cols-4 gap-1.5 border-t-2 border-border bg-surface-2/70 px-2 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
         {(
           [
             ["pads", "PADS", <Grid2x2 key="a" className="size-5" />],
@@ -436,7 +436,7 @@ export function MobileBeat({ onClose }: { onClose: () => void }) {
           <button
             key={id}
             onClick={() => setTab(id)}
-            className={`flex h-14 flex-col items-center justify-center gap-1 rounded-xl border-2 font-mono text-[10px] tracking-widest ${
+            className={`flex h-16 flex-col items-center justify-center gap-1 rounded-md border-2 font-mono text-[11px] font-semibold tracking-widest ${
               tab === id ? "border-primary text-primary" : "border-transparent text-muted-foreground"
             }`}
           >

@@ -159,7 +159,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
 
   return (
     <section
-      className="rack fixed inset-0 z-40 flex flex-col border-t-2 border-border sm:relative sm:inset-auto sm:z-auto sm:shrink-0"
+      className="phone-tool-panel rack fixed inset-0 z-40 flex flex-col border-t-2 border-border sm:relative sm:inset-auto sm:z-auto sm:shrink-0"
       style={{ height: isMobile ? "100dvh" : rackH }}
     >
       <div
@@ -167,16 +167,16 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
         title="Drag to resize this editor"
         className="absolute inset-x-0 -top-1 z-20 h-2 cursor-ns-resize hover:bg-primary/40"
       />
-      <div className="grid min-h-12 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-border bg-surface-2/60 px-3 py-1.5">
-        <span className="text-primary">{current.icon}</span>
-        <h2 className="font-display text-[11px] font-semibold tracking-[0.2em]">{current.title}</h2>
+      <div className="grid min-h-14 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 border-b border-border bg-surface-2/60 px-3 py-1.5">
+        <span className="shrink-0 text-primary">{current.icon}</span>
+        <h2 className="truncate font-display text-sm font-semibold tracking-[0.12em] sm:text-[11px] sm:tracking-[0.2em]">{current.title}</h2>
         {selected && <span className="hidden label-xs sm:inline">· {selected.name}</span>}
         <div className="ml-auto flex items-center gap-1">
           {(panel === "synth" || panel === "drums") && (
             <Button
               size="sm"
               variant="ghost"
-              className="h-7 gap-1.5 font-mono text-[10px] tracking-widest uppercase"
+               className="h-11 gap-1.5 px-2 font-mono text-[10px] tracking-widest uppercase sm:h-7"
               onClick={() => {
                 const key = panel === "synth" ? "synth" : "drums";
                 setFloat((f) => ({ ...f, [key]: !f[key] }));
@@ -191,15 +191,15 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
             <Button
               size="sm"
               variant="ghost"
-              className="h-7 gap-1.5 font-mono text-[10px] tracking-widest uppercase"
+               className="h-11 gap-1.5 px-2 font-mono text-[10px] tracking-widest uppercase sm:h-7"
               onClick={() => setMixerDetached((d) => !d)}
             >
               {mixerDetached ? <ArrowDownToLine className="size-3.5" /> : <ArrowUpFromLine className="size-3.5" />}
               {mixerDetached ? "Dock" : "Pop out"}
             </Button>
           )}
-          <Button size="icon" variant="ghost" className="size-7" onClick={() => setPanel(null)} aria-label="Close editor">
-            <X className="size-4" />
+          <Button size="icon" variant="secondary" className="size-12 sm:size-7" onClick={() => setPanel(null)} aria-label="Close editor">
+            <X className="size-6 sm:size-4" />
           </Button>
         </div>
       </div>
@@ -481,8 +481,8 @@ function StudioWorkspace() {
     }
   }, [isMobile]);
   return (
-    <div className="flex h-[100dvh] flex-col overflow-hidden">
-      <MenuBar />
+    <div className={`flex h-[100dvh] flex-col overflow-hidden ${isMobile ? "mobile-studio" : ""}`}>
+      {!isMobile && <MenuBar />}
       <TopBar />
       <div className="flex min-h-0 flex-1">
         {!isMobile && <ToolsRail />}

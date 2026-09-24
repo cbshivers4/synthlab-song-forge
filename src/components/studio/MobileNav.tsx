@@ -20,6 +20,7 @@ import {
   FolderOpen,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
 import { useStudio, type PanelId } from "@/lib/synclab/store";
 import { openHelp } from "./HelpCenter";
 
@@ -34,6 +35,7 @@ export function MobileNav({ onBeatMode }: { onBeatMode: () => void }) {
   const [sheet, setSheet] = useState<null | "create" | "more">(null);
 
   const create: Item[] = [
+    { label: "Sounds", icon: <FolderOpen />, panel: "browser" },
     { label: "Beat Maker", icon: <Grid2x2 />, run: onBeatMode },
     { label: "Drum Machine", icon: <Disc3 />, panel: "drums" },
     { label: "Synth", icon: <Piano />, panel: "synth" },
@@ -69,7 +71,6 @@ export function MobileNav({ onBeatMode }: { onBeatMode: () => void }) {
       onClick: toggleRecord,
       rec: true,
     },
-    { label: "SOUNDS", icon: <FolderOpen />, active: panel === "browser", onClick: () => setPanel("browser") },
     { label: "MIX", icon: <SlidersHorizontal />, active: panel === "mixer", onClick: () => setPanel("mixer") },
     { label: "MORE", icon: <MoreHorizontal />, active: sheet === "more", onClick: () => setSheet("more") },
   ];
@@ -80,37 +81,42 @@ export function MobileNav({ onBeatMode }: { onBeatMode: () => void }) {
     <>
       <nav
         aria-label="Studio navigation"
-        className="grid shrink-0 grid-cols-6 border-t border-border bg-surface-1 pb-[env(safe-area-inset-bottom)]"
+        className="mobile-nav grid shrink-0 grid-cols-5 gap-1 border-t-2 border-border bg-surface-1 px-1.5 pt-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))]"
       >
         {tabs.map((t) => (
-          <button
+          <Button
             key={t.label}
+            type="button"
+            variant="ghost"
             onClick={t.onClick}
             aria-pressed={t.active}
-            className={`flex min-h-14 flex-col items-center justify-center gap-1 text-[10px] font-semibold tracking-wider [&_svg]:size-5 ${
-              t.active ? ("rec" in t ? "text-destructive" : "text-primary") : "text-muted-foreground"
+            className={`h-16 min-w-0 flex-col gap-1 rounded-md px-1 text-[11px] font-bold tracking-wider [&_svg]:size-6 ${
+              "rec" in t ? "relative -mt-3 h-[4.5rem] border-2 border-destructive/70 bg-surface-2 shadow-lg" : ""} ${
+              t.active ? ("rec" in t ? "text-destructive" : "bg-primary/15 text-primary") : "text-muted-foreground"
             }`}
           >
             {t.icon}
             {t.label}
-          </button>
+          </Button>
         ))}
       </nav>
       <Sheet open={sheet !== null} onOpenChange={(o) => !o && setSheet(null)}>
-        <SheetContent side="bottom" className="max-h-[80dvh] overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>{sheet === "create" ? "Create" : "More"}</SheetTitle>
+        <SheetContent side="bottom" className="h-[88dvh] overflow-y-auto rounded-t-lg border-t-2 p-0 pb-[env(safe-area-inset-bottom)]">
+          <SheetHeader className="sticky top-0 z-10 border-b border-border bg-background px-5 py-5 text-left">
+            <SheetTitle className="text-xl">{sheet === "create" ? "Create & Sounds" : "More Tools"}</SheetTitle>
           </SheetHeader>
           <div className="grid grid-cols-2 gap-3 p-4">
             {list.map((i) => (
-              <button
+              <Button
                 key={i.label}
+                type="button"
+                variant="outline"
                 onClick={() => pick(i)}
-                className="flex min-h-20 flex-col items-center justify-center gap-2 rounded-xl border border-border bg-surface-2/60 text-sm font-medium [&_svg]:size-6 [&_svg]:text-primary"
+                className="h-24 min-w-0 whitespace-normal rounded-md bg-surface-2/60 px-2 text-center text-sm font-semibold leading-tight [&_svg]:size-7 [&_svg]:text-primary"
               >
                 {i.icon}
                 {i.label}
-              </button>
+              </Button>
             ))}
           </div>
         </SheetContent>
