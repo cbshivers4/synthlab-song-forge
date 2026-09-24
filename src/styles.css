@@ -259,6 +259,10 @@
     gap: 0.75rem;
   }
 
+  .phone-tool-panel > * {
+    max-width: 100%;
+  }
+
   .phone-tool-panel .settings-row > :last-child {
     min-width: 0;
     justify-content: flex-start;

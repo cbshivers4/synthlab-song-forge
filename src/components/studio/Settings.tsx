@@ -278,8 +278,8 @@ export function Settings() {
   };
 
   return (
-    <Tabs defaultValue="audio" className="w-full">
-      <TabsList className="flex h-auto flex-wrap justify-start gap-1 bg-surface">
+    <Tabs defaultValue="audio" className="min-w-0 w-full overflow-x-hidden">
+      <TabsList className="flex h-auto max-w-full flex-nowrap justify-start gap-1 overflow-x-auto bg-surface sm:flex-wrap">
         {["audio", "recording", "metronome", "timing", "timeline", "midi", "mixing", "export", "desktop", "mobile", "general"].map((t) => (
           <TabsTrigger key={t} value={t} className="font-mono text-[11px] uppercase tracking-widest">
             {t}
