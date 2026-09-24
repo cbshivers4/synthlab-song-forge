@@ -203,7 +203,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
           </Button>
         </div>
       </div>
-      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3">
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3 pb-24 sm:pb-3">
       {panel === "mixer" &&
         (mixerDetached ? (
           <MixerWindow onClose={() => setMixerDetached(false)}>
