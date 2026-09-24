@@ -657,6 +657,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     const scheduleStep = (n: number, when: number) => {
       const tp = transportRef.current;
       const stepDur = stepSeconds(tp.bpm);
+      engine.tempo = tp.bpm;
       const list = tracksRef.current;
       const anySolo = list.some((t) => t.solo);
       const totalSteps = songSteps(tp.bars);
