@@ -54,17 +54,20 @@ function buildMenu(win) {
     {
       label: "Edit",
       submenu: [
-        item("Undo", "edit:undo", "CmdOrCtrl+Z"),
-        item("Redo", "edit:redo", "CmdOrCtrl+Shift+Z"),
+        // No accelerators here: the app registers its own keyboard shortcuts
+        // (which ignore text fields), so global menu accelerators would hijack
+        // typing — Cmd+C/Cmd+A etc. must keep working inside inputs.
+        item("Undo", "edit:undo"),
+        item("Redo", "edit:redo"),
         { type: "separator" },
-        item("Cut Track", "edit:cut", "CmdOrCtrl+X"),
-        item("Copy Track", "edit:copy", "CmdOrCtrl+C"),
-        item("Paste Track", "edit:paste", "CmdOrCtrl+V"),
-        item("Duplicate Track", "edit:duplicate", "CmdOrCtrl+D"),
+        item("Cut Track", "edit:cut"),
+        item("Copy Track", "edit:copy"),
+        item("Paste Track", "edit:paste"),
+        item("Duplicate Track", "edit:duplicate"),
         item("Delete Track", "edit:delete"),
         { type: "separator" },
-        item("Select All", "edit:selectall", "CmdOrCtrl+A"),
-        item("Split at Playhead", "edit:split", "CmdOrCtrl+T"),
+        item("Select All", "edit:selectall"),
+        item("Split at Playhead", "edit:split"),
       ],
     },
     {

@@ -863,21 +863,25 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
                 <Settings2 className="size-4" /> Edit bus effects in mixer
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuLabel className="label-xs">Automation</DropdownMenuLabel>
-              {(["volume", "pan", "sendReverb", "sendDelay"] as AutomationParam[]).map((param) => (
-                <DropdownMenuItem key={param} onClick={() => toggleAutomationLane(track.id, param)}>
-                  {(track.automation ?? []).some((l) => l.param === param) ? "Hide" : "Show"} {laneLabel(track, param).toLowerCase()} lane
-                </DropdownMenuItem>
-              ))}
-              {(track.plugins ?? []).filter((plugin) => !plugin.bypass).flatMap((plugin) =>
-                plugin.params.filter((param) => !param.id.startsWith("s") || plugin.kind !== "stepfilter").map((param) => {
-                  const automationParam = `plugin:${plugin.id}:${param.id}` as AutomationParam;
-                  return (
-                    <DropdownMenuItem key={automationParam} onClick={() => toggleAutomationLane(track.id, automationParam)}>
-                      {(track.automation ?? []).some((lane) => lane.param === automationParam) ? "Hide" : "Show"} {plugin.name} · {param.name}
+              {advanced && (
+                <>
+                  <DropdownMenuLabel className="label-xs">Automation</DropdownMenuLabel>
+                  {(["volume", "pan", "sendReverb", "sendDelay"] as AutomationParam[]).map((param) => (
+                    <DropdownMenuItem key={param} onClick={() => toggleAutomationLane(track.id, param)}>
+                      {(track.automation ?? []).some((l) => l.param === param) ? "Hide" : "Show"} {laneLabel(track, param).toLowerCase()} lane
                     </DropdownMenuItem>
-                  );
-                }),
+                  ))}
+                  {(track.plugins ?? []).filter((plugin) => !plugin.bypass).flatMap((plugin) =>
+                    plugin.params.filter((param) => !param.id.startsWith("s") || plugin.kind !== "stepfilter").map((param) => {
+                      const automationParam = `plugin:${plugin.id}:${param.id}` as AutomationParam;
+                      return (
+                        <DropdownMenuItem key={automationParam} onClick={() => toggleAutomationLane(track.id, automationParam)}>
+                          {(track.automation ?? []).some((lane) => lane.param === automationParam) ? "Hide" : "Show"} {plugin.name} · {param.name}
+                        </DropdownMenuItem>
+                      );
+                    }),
+                  )}
+                </>
               )}
               <DropdownMenuSeparator />
               <DropdownMenuLabel className="label-xs">Edit</DropdownMenuLabel>
