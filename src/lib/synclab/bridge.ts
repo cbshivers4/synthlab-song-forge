@@ -37,6 +37,12 @@ export interface BridgePlugin {
   format: BridgeFormat;
   path: string;
   isInstrument?: boolean;
+  version?: string;
+  /** e.g. "EQ", "Reverb", "Synth" — as reported by the plugin */
+  category?: string;
+  /** "failed" when the bridge could not load it during scanning */
+  status?: "ok" | "failed";
+  error?: string;
 }
 
 export interface BridgeParam {
