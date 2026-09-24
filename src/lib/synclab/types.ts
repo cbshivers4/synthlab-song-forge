@@ -192,6 +192,16 @@ export interface DrumPad {
   noise?: number;
   /** 0..1 stereo width of the noise layer */
   width?: number;
+  /** resonant filter on the pad voice */
+  filterType?: "off" | "lowpass" | "highpass" | "bandpass" | undefined;
+  /** 0..1 cutoff (40Hz..18kHz) */
+  cutoff?: number | undefined;
+  /** 0..1 resonance */
+  resonance?: number | undefined;
+  /** -1..1 filter envelope sweep amount */
+  filterEnv?: number | undefined;
+  /** 0..1 bit-crush */
+  crush?: number | undefined;
   sample?: string | undefined;
   muted: boolean;
   solo: boolean;
