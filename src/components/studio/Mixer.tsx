@@ -9,7 +9,6 @@ import {
   Palette,
   Power,
   Settings2,
-  Speaker,
   Sliders,
   Trash2,
   VolumeX,
@@ -331,7 +330,6 @@ function SendsMenu({ t }: { t: Track }) {
 /* ---- Console section geometry: every column shares these row heights ---- */
 const ROW = {
   head: "h-7",
-  badge: "h-[46px]",
   scope: "h-[48px]",
   eq: "h-[74px]",
   devices: "h-[92px]",
@@ -514,7 +512,6 @@ function LabelRail() {
   return (
     <div className="sticky left-0 z-10 flex w-[76px] shrink-0 flex-col border-r border-border bg-surface-2/85 backdrop-blur">
       <SectionLabel className={cn(ROW.head, "bg-surface-2")}>Ch</SectionLabel>
-      <SectionLabel className={ROW.badge}>Icon</SectionLabel>
       {advanced && <SectionLabel className={ROW.scope}>Scope</SectionLabel>}
       <SectionLabel className={ROW.eq}>EQ</SectionLabel>
       <SectionLabel className={ROW.devices}>Devices</SectionLabel>
@@ -968,18 +965,6 @@ function Strip({
         <Screw />
       </div>
 
-      {/* big identity badge: shows what the channel is, click to restyle */}
-      <TrackStylePicker track={t}>
-        <button
-          onClick={(e) => e.stopPropagation()}
-          title={`${t.name} — pick colour and icon`}
-          aria-label={`${t.name} colour and icon`}
-          className={cn(ROW.badge, "flex w-full items-center justify-center border-b border-border/60 transition-colors hover:bg-white/5")}
-          style={{ background: `color-mix(in oklab, ${t.color} 14%, transparent)` }}
-        >
-          <TrackIcon track={t} className="size-7" />
-        </button>
-      </TrackStylePicker>
       {advanced && (
         <div className={cn(ROW.scope, "border-b border-border/60 p-[3px]")}>
           <Scope scopeId={`ch:${t.id}`} height={40} compact color={t.color} />
@@ -1108,7 +1093,7 @@ function Strip({
         }}
         title={t.name}
       >
-        <KindIcon t={t} className="size-3 shrink-0" />
+        <KindIcon t={t} className="size-7 shrink-0" />
         <span className="truncate font-mono text-[9px] font-semibold uppercase tracking-wider text-foreground">
           {t.name}
         </span>
@@ -1199,13 +1184,6 @@ function BusStrip({
         <Screw />
         Bus
         <Screw />
-      </div>
-      <div
-        className={cn(ROW.badge, "flex items-center justify-center border-b border-border/60")}
-        style={{ background: `color-mix(in oklab, ${color} 14%, transparent)` }}
-        title="Bus"
-      >
-        <Waves className="size-7" style={{ color }} />
       </div>
       {advanced && (
         <div className={cn(ROW.scope, "border-b border-border/60 p-[3px]")}>
@@ -1389,13 +1367,6 @@ function MasterStrip({ level: peak }: { level: number }) {
           </PopoverContent>
         </Popover>
         <Screw />
-      </div>
-      <div
-        className={cn(ROW.badge, "flex items-center justify-center border-b border-black/50")}
-        style={{ background: `color-mix(in oklab, ${color} 14%, transparent)` }}
-        title="Master out"
-      >
-        <Speaker className="size-7" style={{ color }} />
       </div>
       {advanced && (
         <div className={cn(ROW.scope, "border-b border-black/50 p-[3px]")}>
