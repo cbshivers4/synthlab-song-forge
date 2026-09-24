@@ -228,3 +228,34 @@
 ::selection {
   background: color-mix(in oklab, var(--selection) 38%, transparent);
 }
+
+/* Phone ergonomics: large-finger controls without shrinking the DAW into unreadable chrome. */
+@media (max-width: 767px) {
+  .mobile-studio {
+    font-size: 16px;
+  }
+
+  .phone-tool-panel input:not([type="checkbox"]):not([type="radio"]),
+  .phone-tool-panel select,
+  .phone-tool-panel textarea {
+    min-height: 3rem;
+    font-size: 1rem;
+  }
+
+  .phone-tool-panel [role="tab"],
+  .phone-tool-panel [role="menuitem"],
+  .phone-tool-panel [role="option"] {
+    min-height: 3rem;
+    touch-action: manipulation;
+  }
+
+  .phone-tool-panel button {
+    touch-action: manipulation;
+  }
+
+  .phone-tool-panel [data-slot="slider-thumb"],
+  .phone-tool-panel [role="slider"] {
+    min-width: 1.5rem;
+    min-height: 1.5rem;
+  }
+}

@@ -57,7 +57,7 @@ export function TopBar() {
 
   return (
     <header className="rack sticky top-0 z-30 shrink-0">
-      <div className="grid grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-2 px-2 py-2 sm:flex sm:flex-wrap sm:px-3">
+      <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2 px-2 py-2 sm:flex sm:flex-wrap sm:px-3">
         <div className="hidden items-center pr-1 sm:flex">
           <img
             src={synclabLogo}
@@ -431,7 +431,7 @@ function TBtn({
       onClick={onClick}
       aria-label={label}
       aria-pressed={Boolean(active)}
-      className={`h-10 flex-col gap-0.5 px-2.5 ${
+      className={`h-12 min-w-12 flex-col gap-0.5 px-2 sm:h-10 sm:min-w-0 sm:px-2.5 ${
         danger
           ? active
             ? "bg-destructive text-destructive-foreground shadow-[0_0_12px_color-mix(in_oklab,var(--destructive)_70%,transparent)] hover:bg-destructive/90"
@@ -442,7 +442,7 @@ function TBtn({
       }`}
     >
       {children}
-      <span className="font-mono text-[9px] tracking-wider">{label}</span>
+      <span className="font-mono text-[10px] font-semibold tracking-wider sm:text-[9px]">{label}</span>
     </Button>
   );
 }
