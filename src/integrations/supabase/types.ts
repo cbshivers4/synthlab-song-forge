@@ -218,6 +218,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_visual_settings: {
+        Row: {
+          presets: Json
+          skins: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          presets?: Json
+          skins?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          presets?: Json
+          skins?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
