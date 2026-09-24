@@ -45,6 +45,11 @@ const appPaths = await packager({
   out,
   overwrite: true,
   icon,
+  extendInfo: {
+    NSMicrophoneUsageDescription:
+      "SYNCLAB Vocal Forge records from your microphone or audio interface into tracks and sampler pads.",
+    NSCameraUsageDescription: "SYNCLAB Vocal Forge does not use the camera.",
+  },
   win32metadata: {
     CompanyName: info.publisher,
     FileDescription: info.description,
