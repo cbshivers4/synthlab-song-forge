@@ -17,7 +17,7 @@ import { Switch } from "@/components/ui/switch";
 import { useStudio } from "@/lib/synclab/store";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { toast } from "sonner";
-import { SkinControls, skinBackground } from "@/components/studio/SkinControls";
+import { SkinControls, skinBackground, useImageDrag } from "@/components/studio/SkinControls";
 import { useSkin } from "@/lib/synclab/skins";
 import { WaveformView } from "@/components/studio/WaveformView";
 import { LiveWave } from "@/components/studio/LiveWave";
@@ -410,6 +410,7 @@ export function PadSampler() {
   /** which pad the big waveform monitor is showing */
   const monitorId = playing ?? recPad ?? sel;
   const skin = useSkin("sampler");
+  const imageDrag = useImageDrag("sampler", skin);
   const monitorSample = pads[monitorId];
   const monitorPad = monitorSample
     ? { pad: monitorSample, color: padColor(Math.floor(monitorId / PADS_PER_BANK), monitorId % PADS_PER_BANK) }
@@ -523,7 +524,7 @@ export function PadSampler() {
         </span>
       </div>
 
-      <div className={`grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-3 ${skinBackground(skin) ? "rounded-xl p-3" : ""}`} style={skinBackground(skin)}>
+      <div className={`grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-3 ${skinBackground(skin) ? "rounded-xl p-3" : ""}`} style={{ ...skinBackground(skin), cursor: skin.image ? "move" : undefined }} {...imageDrag}>
         {Array.from({ length: PADS_PER_BANK }, (_, i) => {
           const id = index(i);
           const pad = pads[id];
