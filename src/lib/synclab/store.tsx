@@ -650,6 +650,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     let step = 0;
     let nextTime = ctx.currentTime + 0.06;
     let cancelled = false;
+    let lastScheduled: number | null = null;
     /** steps already handed to the audio clock, drained by the visual loop */
     const queue: { step: number; time: number }[] = [];
 
@@ -809,6 +810,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         const total = songSteps(tp.bars);
         const stepDur = stepSeconds(tp.bpm);
         scheduleStep(step, nextTime);
+        lastScheduled = step % total;
         queue.push({ step: step % total, time: nextTime });
         nextTime += stepDur;
         step += 1;
