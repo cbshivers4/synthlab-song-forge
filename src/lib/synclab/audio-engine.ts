@@ -2047,6 +2047,38 @@ export class SyncLabEngine {
       node = f;
     }
 
+    // resonant sweepable filter (off unless filterType set)
+    if (pad.filterType && pad.filterType !== "off") {
+      const f = ctx.createBiquadFilter();
+      f.type = pad.filterType;
+      const base = 40 * Math.pow(450, clamp(pad.cutoff ?? 1, 0, 1)); // 40Hz..18kHz
+      const q = 0.5 + clamp(pad.resonance ?? 0, 0, 1) * 18;
+      f.Q.value = q;
+      const envAmt = clamp(pad.filterEnv ?? 0, -1, 1);
+      if (Math.abs(envAmt) > 0.01) {
+        const peak = clamp(base * Math.pow(8, envAmt), 30, 20000);
+        f.frequency.setValueAtTime(peak, t);
+        f.frequency.exponentialRampToValueAtTime(Math.max(30, base), t + 0.02 + dec * 0.6);
+      } else f.frequency.value = base;
+      node.connect(f);
+      node = f;
+    }
+
+    // bit / sample-rate crush
+    const crush = clamp(pad.crush ?? 0, 0, 1);
+    if (crush > 0.01) {
+      const shaper = ctx.createWaveShaper();
+      const levels = Math.max(2, Math.round(Math.pow(2, 12 - crush * 10)));
+      const curve = new Float32Array(2048);
+      for (let i = 0; i < 2048; i++) {
+        const x = (i / 2047) * 2 - 1;
+        curve[i] = Math.round(x * levels) / levels;
+      }
+      shaper.curve = curve;
+      node.connect(shaper);
+      node = shaper;
+    }
+
     const env = ctx.createGain();
     const atk = Math.max(0.0005, (pad.attack ?? 0) * 0.25);
     const rel = 0.02 + (pad.release ?? 0.2) * 1.5;
