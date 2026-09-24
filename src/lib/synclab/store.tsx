@@ -1053,13 +1053,29 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           t.sampler = { ...t.sampler, url: "" };
         }
       }
-      applyingRef.current = true;
-      applySession(s);
-      lastSnapRef.current = s;
-      toast("Session restored", {
-        description: lostAudio
-          ? "Your last session is back. Imported audio files need loading again."
-          : "Your last session is back where you left it.",
+      toast("Recover previous session?", {
+        description: `${s.tracks.length} track${s.tracks.length === 1 ? "" : "s"} from your last session were saved automatically.${
+          lostAudio ? " Imported audio files will need loading again." : ""
+        }`,
+        duration: Infinity,
+        action: {
+          label: "Recover",
+          onClick: () => {
+            applyingRef.current = true;
+            applySession(s);
+            lastSnapRef.current = s;
+          },
+        },
+        cancel: {
+          label: "Discard",
+          onClick: () => {
+            try {
+              window.localStorage.removeItem(AUTOSAVE_KEY);
+            } catch {
+              /* ignore */
+            }
+          },
+        },
       });
     } catch {
       /* unreadable autosave — start fresh */
