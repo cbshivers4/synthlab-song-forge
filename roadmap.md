@@ -62,5 +62,6 @@
 
 ## Next batches from the master spec
 - [x] Preview-first AI stem generator (play/stop/regenerate per part, nothing added until Add to timeline; separator/voice remover already preview-first)
-- [ ] Sampler upgrade (time stretch, warp modes, pitch, chopping, ADSR, filters, recording to pads, resampling)
+- [x] Sampler: decay/sustain, LP/HP/BP/Notch filter with cutoff+resonance, fade in/out, sample BPM + sync to project tempo (repitch)
+- [ ] Pitch-preserving warp modes (Beats/Tones/Complex), resampling — next
 - [ ] Native plugin scanning and plugin browser (needs the desktop audio bridge)
