@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Loader2, Play, Plus, RefreshCw, Sparkles, Square } from "lucide-react";
+import { Loader2, Play, Repeat, Plus, RefreshCw, Sparkles, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -106,6 +106,9 @@ export function StemGenerator() {
   const [playing, setPlaying] = useState<number | null>(null);
   const [regen, setRegen] = useState<number | null>(null);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [looping, setLooping] = useState(true);
+  const loopingRef = useRef(looping);
+  loopingRef.current = looping;
 
   const stop = () => {
     if (timer.current) clearInterval(timer.current);
@@ -147,6 +150,10 @@ export function StemGenerator() {
     scheduleLoop(next);
     next += loop;
     timer.current = setInterval(() => {
+      if (!loopingRef.current) {
+        if (ctx.currentTime >= next) stop();
+        return;
+      }
       if (next - ctx.currentTime < 0.4) {
         scheduleLoop(next);
         next += loop;
@@ -359,7 +366,10 @@ export function StemGenerator() {
                 V{i + 1} · {transport.bpm} BPM · {root} {mode} · {bars} bar{bars === 1 ? "" : "s"}
               </span>
               {!added[i] && <span className="rounded-full bg-primary/15 px-1.5 py-0.5 font-mono text-[9px] uppercase">Preview only</span>}
-              <Button size="sm" variant="secondary" className="ml-auto h-7 gap-1.5 font-mono text-[10px] uppercase" onClick={() => preview(part, i)}>
+              <Button size="sm" variant={looping ? "secondary" : "ghost"} aria-pressed={looping} title="Loop the preview" className="ml-auto h-7 gap-1.5 font-mono text-[10px] uppercase" onClick={() => setLooping((v) => !v)}>
+                <Repeat className="size-3.5" /> Loop {looping ? "On" : "Off"}
+              </Button>
+              <Button size="sm" variant="secondary" className="h-7 gap-1.5 font-mono text-[10px] uppercase" onClick={() => preview(part, i)}>
                 {playing === i ? <Square className="size-3.5" /> : <Play className="size-3.5" />} {playing === i ? "Stop" : "Play"}
               </Button>
               <Button size="sm" variant="ghost" className="h-7 gap-1.5 font-mono text-[10px] uppercase" disabled={regen !== null} onClick={() => void regenerate(i)}>
