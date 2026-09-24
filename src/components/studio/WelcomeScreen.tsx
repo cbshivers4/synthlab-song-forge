@@ -135,7 +135,7 @@ export function WelcomeScreen() {
       <div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-start gap-8 px-4 py-6 sm:px-6 sm:py-10 md:grid-cols-2 md:items-center lg:grid-cols-12 lg:gap-16">
         {/* Brand & features side */}
         <div className="flex flex-col items-center text-center sm:col-span-2 sm:items-start sm:text-left md:col-span-1 lg:col-span-7">
-          <img src={synclabLogoAsset.url} alt="SYNCLAB" className="mb-6 h-28 w-28 rounded-xl border border-border object-cover shadow-xl sm:mb-10 sm:h-44 sm:w-44" />
+          <img src={synclabLogoAsset.url} alt="SYNCLAB" className="mb-6 h-36 w-36 rounded-xl border border-border object-cover shadow-xl sm:mb-10 sm:h-56 sm:w-56" />
 
           <div className="mb-7 space-y-3 sm:mb-10 sm:space-y-5">
             <h1 className="font-display text-4xl font-extrabold leading-[1.02] sm:text-5xl md:text-7xl">
