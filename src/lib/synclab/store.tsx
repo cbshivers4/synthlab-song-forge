@@ -650,6 +650,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     let step = 0;
     let nextTime = ctx.currentTime + 0.06;
     let cancelled = false;
+    let lastScheduled: number | null = null;
     /** steps already handed to the audio clock, drained by the visual loop */
     const queue: { step: number; time: number }[] = [];
 
@@ -671,24 +672,33 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         // arrangement clips fire at their own position on the timeline
         if (t.clips?.length) {
           const at = n % totalSteps;
+          // after a start or jump (loop wrap), pick up clips already in progress
+          const jumped = lastScheduled === null || at !== (lastScheduled + 1) % totalSteps;
           for (const c of t.clips) {
             if (!c.url) continue;
-            if ((c.start ?? 0) === at) {
-              engine.playClip(
-                t.id,
-                {
-                  url: c.url,
-                  offset: c.offset ?? 0,
-                  length: c.length ?? c.duration,
-                  gain: c.gain ?? 1,
-                  fadeIn: c.fadeIn ?? 0.004,
-                  fadeOut: c.fadeOut ?? 0.01,
-                  rate: clipRate(c),
-                  reverse: c.reverse ?? false,
-                },
-                when,
-              );
+            const cs = c.start ?? 0;
+            const rate = clipRate(c);
+            const fullLen = c.length ?? c.duration ?? 0;
+            let skip = 0;
+            if (cs !== at) {
+              if (!jumped || at < cs) continue;
+              skip = (at - cs) * stepDur * rate;
+              if (skip >= fullLen - 0.02) continue;
             }
+            engine.playClip(
+              t.id,
+              {
+                url: c.url,
+                offset: (c.offset ?? 0) + skip,
+                length: fullLen - skip,
+                gain: c.gain ?? 1,
+                fadeIn: skip ? 0.01 : (c.fadeIn ?? 0.004),
+                fadeOut: c.fadeOut ?? 0.01,
+                rate,
+                reverse: c.reverse ?? false,
+              },
+              when,
+            );
           }
         }
         if (t.kind === "drum" && t.pads) {
@@ -800,6 +810,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         const total = songSteps(tp.bars);
         const stepDur = stepSeconds(tp.bpm);
         scheduleStep(step, nextTime);
+        lastScheduled = step % total;
         queue.push({ step: step % total, time: nextTime });
         nextTime += stepDur;
         step += 1;
@@ -869,7 +880,12 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     const target = tracksRef.current.find(
       (t) => t.recording && (t.kind === "audio" || t.kind === "ai-vocal" || t.kind === "sampler"),
     );
-    const result = await engine.stopInputRecording();
+    let result: Awaited<ReturnType<typeof engine.stopInputRecording>> = null;
+    try {
+      result = await engine.stopInputRecording();
+    } catch (err) {
+      toast.error("Take couldn't be kept", { description: err instanceof Error ? err.message : undefined });
+    }
     if (!target) return;
     if (!result) {
       updateTrack(target.id, { recording: false });

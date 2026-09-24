@@ -1185,27 +1185,23 @@ export class SyncLabEngine {
     const arr = await blob.arrayBuffer();
     let peaks: number[] = [];
     let duration = 0;
+    let buf: AudioBuffer;
     try {
-      const buf = await ctx.decodeAudioData(arr.slice(0));
-      duration = buf.duration;
-      const data = buf.getChannelData(0);
-      const buckets = 160;
-      const size = Math.max(1, Math.floor(data.length / buckets));
-      for (let b = 0; b < buckets; b++) {
-        let peak = 0;
-        for (let i = b * size; i < Math.min(data.length, (b + 1) * size); i++)
-          peak = Math.max(peak, Math.abs(data[i] ?? 0));
-        peaks.push(peak);
-      }
+      buf = await ctx.decodeAudioData(arr.slice(0));
     } catch {
-      peaks = Array.from({ length: 160 }, () => Math.random() * 0.6);
+      throw new Error("This browser recorded the take in a format it can't play back. Try Chrome or Safari.");
+    }
+    duration = buf.duration;
+    const data = buf.getChannelData(0);
+    const buckets = 160;
+    const size = Math.max(1, Math.floor(data.length / buckets));
+    for (let b = 0; b < buckets; b++) {
+      let peak = 0;
+      for (let i = b * size; i < Math.min(data.length, (b + 1) * size); i++) peak = Math.max(peak, Math.abs(data[i] ?? 0));
+      peaks.push(peak);
     }
     const url = URL.createObjectURL(blob);
-    try {
-      this.sampleBuffers.set(url, await ctx.decodeAudioData(arr.slice(0)));
-    } catch {
-      /* undecodable container — the clip still shows, it just can't play back */
-    }
+    this.sampleBuffers.set(url, buf);
     return { peaks, duration, url };
   }
 
