@@ -64,6 +64,6 @@
 - [x] Preview-first AI stem generator (play/stop/regenerate per part, nothing added until Add to timeline; separator/voice remover already preview-first)
 - [x] Sampler: decay/sustain, LP/HP/BP/Notch filter with cutoff+resonance, fade in/out, sample BPM + sync to project tempo (repitch)
 - [x] Sampler Resample: renders the processed sound to a new audio track, original untouched
-- [ ] Pitch-preserving warp modes (Beats/Tones/Complex) — needs a time-stretch engine
+- [x] Warp to project BPM: pitch-preserving stretch (WSOLA) writes a new sample, original file untouched
 - [x] Plugin browser: categories, favorites, recently used, search, drag, found/available/failed counts, "Plugin Scan Failed" cards
 - [ ] Actual native scanning — needs the desktop audio bridge program running on the computer
