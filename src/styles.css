@@ -275,7 +275,7 @@
   }
 
   .track-touch-header {
-    touch-action: pan-x pan-y;
+    touch-action: none;
   }
 
   .mobile-controls-xl .mobile-nav button {
