@@ -258,4 +258,167 @@
     min-width: 1.5rem;
     min-height: 1.5rem;
   }
+
+  .track-touch-header {
+    touch-action: pan-x pan-y;
+  }
+
+  .mobile-controls-xl .mobile-nav button {
+    height: 4.75rem;
+    font-size: 0.75rem;
+  }
+
+  .mobile-controls-xl .phone-tool-panel button,
+  .mobile-controls-xl .phone-tool-panel [role="tab"],
+  .mobile-controls-xl .phone-tool-panel [role="menuitem"],
+  .mobile-controls-xl .phone-tool-panel [role="option"] {
+    min-height: 3.5rem;
+  }
+
+  .mobile-controls-xl .track-touch-header {
+    width: 12rem;
+    padding-block: 0.75rem;
+  }
+
+  .mobile-text-xl .mobile-studio,
+  .mobile-text-xl [role="dialog"] {
+    font-size: 18px;
+  }
+
+  .mobile-text-xl .mobile-studio .label-xs,
+  .mobile-text-xl [role="dialog"] .label-xs {
+    font-size: 0.75rem;
+  }
+
+  .mobile-high-contrast .mobile-studio,
+  .mobile-high-contrast [role="dialog"] {
+    --background: oklch(0.08 0.005 255);
+    --surface: oklch(0.13 0.008 255);
+    --surface-2: oklch(0.19 0.01 255);
+    --foreground: oklch(0.99 0 0);
+    --muted-foreground: oklch(0.84 0.01 250);
+    --border: oklch(0.58 0.025 240);
+    --primary: oklch(0.88 0.18 190);
+    --destructive: oklch(0.7 0.23 25);
+  }
+
+  .mobile-high-contrast .mobile-studio :focus-visible,
+  .mobile-high-contrast [role="dialog"] :focus-visible {
+    outline: 3px solid var(--primary);
+    outline-offset: 2px;
+  }
+}
+
+/* Short, wide phone screens get a landscape editing desk rather than desktop chrome. */
+@media (max-height: 500px) and (orientation: landscape) {
+  .mobile-studio > header .label-xs {
+    display: none;
+  }
+
+  .mobile-studio > header > div {
+    padding-block: 0.25rem;
+  }
+
+  .mobile-studio .mobile-nav {
+    position: fixed;
+    inset-block: 0;
+    right: 0;
+    width: 5.25rem;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: repeat(5, minmax(0, 1fr));
+    border-top: 0;
+    border-left: 2px solid var(--border);
+    padding: max(0.25rem, env(safe-area-inset-top)) max(0.25rem, env(safe-area-inset-right)) max(0.25rem, env(safe-area-inset-bottom)) 0.25rem;
+  }
+
+  .mobile-studio .mobile-nav button,
+  .mobile-controls-xl .mobile-studio .mobile-nav button {
+    margin-top: 0;
+    width: 100%;
+    height: auto;
+    min-height: 3.25rem;
+  }
+
+  .mobile-studio > div:nth-of-type(1) {
+    margin-right: 5.25rem;
+  }
+
+  .phone-tool-panel {
+    right: 5.25rem;
+    height: 100dvh !important;
+  }
+
+  .phone-tool-panel > div:nth-child(3) {
+    padding-bottom: 1rem;
+  }
+
+  .mobile-timeline > :is(div, section):first-child {
+    min-height: 2.75rem;
+  }
+
+  .mobile-mixer-strips > * {
+    flex-shrink: 0;
+  }
+
+  .mobile-mixer-strips .mx-channel,
+  .mobile-mixer-strips > div {
+    min-width: 6.75rem;
+  }
+
+  .mobile-beat {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 5.25rem;
+    grid-template-rows: auto auto minmax(0, 1fr);
+  }
+
+  .mobile-beat-header,
+  .mobile-beat-voices,
+  .mobile-beat-body {
+    grid-column: 1;
+  }
+
+  .mobile-beat-header {
+    padding-block: 0.25rem;
+  }
+
+  .mobile-beat-header button {
+    width: 3rem;
+    height: 3rem;
+  }
+
+  .mobile-beat-voices {
+    padding-block: 0.25rem;
+  }
+
+  .mobile-beat-voices button {
+    height: 2.75rem;
+  }
+
+  .mobile-beat-body {
+    padding-block: 0.5rem;
+  }
+
+  .mobile-beat-pads {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.5rem;
+  }
+
+  .mobile-beat-pads button {
+    height: 5rem;
+  }
+
+  .mobile-beat-tabs {
+    grid-column: 2;
+    grid-row: 1 / span 3;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: repeat(4, minmax(0, 1fr));
+    border-top: 0;
+    border-left: 2px solid var(--border);
+    padding: 0.25rem max(0.25rem, env(safe-area-inset-right)) 0.25rem 0.25rem;
+  }
+
+  .mobile-beat-tabs button {
+    height: auto;
+    min-height: 3.5rem;
+  }
 }

@@ -43,6 +43,13 @@ export function useMobileAccessibility() {
     window.addEventListener(MOBILE_PREFS_EVENT, onChange);
     return () => window.removeEventListener(MOBILE_PREFS_EVENT, onChange);
   }, []);
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.toggle("mobile-controls-xl", prefs.extraLargeControls);
+    root.classList.toggle("mobile-text-xl", prefs.increasedText);
+    root.classList.toggle("mobile-high-contrast", prefs.highContrast);
+    return () => root.classList.remove("mobile-controls-xl", "mobile-text-xl", "mobile-high-contrast");
+  }, [prefs]);
   return prefs;
 }
 
