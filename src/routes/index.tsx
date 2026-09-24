@@ -40,6 +40,7 @@ import { HumToBeat } from "@/components/studio/HumToBeat";
 import { MobileBeat } from "@/components/studio/MobileBeat";
 import { MobileNav } from "@/components/studio/MobileNav";
 import { MobileOnboarding } from "@/components/studio/MobileOnboarding";
+import { DesktopUpdateBanner } from "@/components/studio/DesktopUpdateBanner";
 import { Bot } from "lucide-react";
 import { AppProvider, useApp, useMaybeApp } from "@/lib/synclab/app-state";
 import { PlanProvider } from "@/lib/synclab/plan";
@@ -508,6 +509,7 @@ function StudioWorkspace() {
       <ExportDialog />
       {isMobile && beatMode && <MobileBeat onClose={() => setBeatMode(false)} />}
       <MobileOnboarding enabled={isMobile && !beatMode} />
+      <DesktopUpdateBanner />
     </div>
   );
 }
