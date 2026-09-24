@@ -1272,6 +1272,48 @@ export class SyncLabEngine {
     return out;
   }
 
+  /** Renders the sampler's processed sound (trim, reverse, tune, sync, filter, fades) offline. Original stays untouched. */
+  async renderSample(s: Parameters<AudioEngine["playSample"]>[1]): Promise<{ left: Float32Array; right: Float32Array; sampleRate: number } | null> {
+    this.init();
+    const base = s.reverse ? this.reversed(s.url) : this.sampleBuffers.get(s.url);
+    if (!base) return null;
+    const sync = s.syncToBpm && s.sampleBpm && s.sampleBpm > 0 ? this.tempo / s.sampleBpm : 1;
+    const rate = clamp(Math.pow(2, s.pitch / 12) * sync, 0.0625, 16);
+    const a = clamp(s.start, 0, 0.999);
+    const b = clamp(s.end, a + 0.001, 1);
+    const win = base.duration * (b - a);
+    const len = win / rate;
+    const sr = base.sampleRate;
+    const off = new OfflineAudioContext(2, Math.max(1, Math.ceil(len * sr)), sr);
+    const src = off.createBufferSource();
+    src.buffer = base;
+    src.playbackRate.value = rate;
+    const g = off.createGain();
+    const peak = clamp(s.gain, 0, 2);
+    const fi = Math.max(0.001, s.fadeIn ?? 0);
+    const fo = Math.max(0, s.fadeOut ?? 0);
+    g.gain.setValueAtTime(0, 0);
+    g.gain.linearRampToValueAtTime(peak, Math.min(len, fi));
+    if (fo > 0 && len - fo > fi) {
+      g.gain.setValueAtTime(peak, len - fo);
+      g.gain.linearRampToValueAtTime(0.0001, len);
+    }
+    let head: AudioNode = src;
+    if (s.filterType && s.filterType !== "off") {
+      const f = off.createBiquadFilter();
+      f.type = s.filterType;
+      f.frequency.value = clamp(s.cutoff ?? 18000, 20, 20000);
+      f.Q.value = clamp(s.resonance ?? 0.7, 0.1, 24);
+      src.connect(f);
+      head = f;
+    }
+    head.connect(g);
+    g.connect(off.destination);
+    src.start(0, base.duration * a, win);
+    const out = await off.startRendering();
+    return { left: out.getChannelData(0).slice(), right: out.getChannelData(Math.min(1, out.numberOfChannels - 1)).slice(), sampleRate: sr };
+  }
+
   /** project tempo, used by sampler beat sync */
   tempo = 120;
 
