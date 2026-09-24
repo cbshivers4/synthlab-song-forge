@@ -406,6 +406,8 @@ export interface Transport {
   recording: boolean;
   paused?: boolean;
   overdub?: boolean;
+  /** audio takes remove the older takes they overlap */
+  replace?: boolean;
   punchIn?: number | null;
   punchOut?: number | null;
   monitor?: boolean;

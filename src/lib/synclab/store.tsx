@@ -887,15 +887,23 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       length: result.duration,
       gain: 1,
     };
+    const replace = !!transportRef.current.replace;
+    const stepDur = 60 / (transportRef.current.bpm || 120) / 4;
+    const endOf = (c: AudioClip) => c.start + c.length / stepDur;
+    const newEnd = endOf(clip);
+    const kept = (target.clips ?? []).filter(
+      (c) => !replace || endOf(c) <= clip.start || c.start >= newEnd,
+    );
+    const removed = (target.clips?.length ?? 0) - kept.length;
     setTracks((ts) =>
       ts.map((t) =>
-        t.id === target.id
-          ? { ...t, recording: false, clips: [...(t.clips ?? []), clip], activeClipId: clip.id }
-          : t,
+        t.id === target.id ? { ...t, recording: false, clips: [...kept, clip], activeClipId: clip.id } : t,
       ),
     );
     toast.success(`${clip.name} recorded on ${target.name}`, {
-      description: `${result.duration.toFixed(1)}s captured — pick your best take on the track.`,
+      description: replace
+        ? `${result.duration.toFixed(1)}s captured — replaced ${removed} overlapping take${removed === 1 ? "" : "s"}. Undo brings them back.`
+        : `${result.duration.toFixed(1)}s captured — pick your best take on the track.`,
     });
   }, [updateTrack]);
 

@@ -234,6 +234,13 @@ export function TopBar() {
               onClick={() => setTransport({ overdub: !transport.overdub })}
             />
             <FeatBtn
+              label="REPLACE"
+              icon={<Layers className="size-3.5" />}
+              active={!!transport.replace}
+              onClick={() => setTransport({ replace: !transport.replace })}
+            />
+
+            <FeatBtn
               label="INPUT MON"
               icon={<Headphones className="size-3.5" />}
               active={transport.monitor}
