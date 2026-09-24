@@ -61,6 +61,6 @@
 - [x] Mixer: MUTE/SOLO/REC/MON at the bottom, larger Mute and Solo
 
 ## Next batches from the master spec
-- [ ] Preview-first AI audio (stem generator, vocal forge, voice remover: play/stop/regenerate before adding)
+- [x] Preview-first AI stem generator (play/stop/regenerate per part, nothing added until Add to timeline; separator/voice remover already preview-first)
 - [ ] Sampler upgrade (time stretch, warp modes, pitch, chopping, ADSR, filters, recording to pads, resampling)
 - [ ] Native plugin scanning and plugin browser (needs the desktop audio bridge)

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Loader2, Plus, Sparkles } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Loader2, Play, Plus, RefreshCw, Sparkles, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -7,7 +7,9 @@ import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useStudio } from "@/lib/synclab/store";
-import { uid, DRUM_KITS, defaultPads } from "@/lib/synclab/presets";
+import { uid, DRUM_KITS, defaultPads, applyPreset } from "@/lib/synclab/presets";
+import { getEngine } from "@/lib/synclab/audio-engine";
+import { stepSeconds } from "@/lib/synclab/timebase";
 import type { DrumKitId, DrumPad, MidiNote, Track } from "@/lib/synclab/types";
 import { generateParts } from "@/lib/stems.functions";
 
@@ -101,6 +103,77 @@ export function StemGenerator() {
   const [added, setAdded] = useState<Record<number, boolean>>({});
 
   const steps = bars * 16;
+  const [playing, setPlaying] = useState<number | null>(null);
+  const [regen, setRegen] = useState<number | null>(null);
+  const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const stop = () => {
+    if (timer.current) clearInterval(timer.current);
+    timer.current = null;
+    setPlaying(null);
+  };
+  useEffect(() => stop, []);
+
+  /** Loops one part through the studio engine without touching the project. */
+  const preview = (part: Part, index: number) => {
+    if (playing === index) return stop();
+    stop();
+    const engine = getEngine();
+    const ctx = engine.init();
+    const sd = stepSeconds(transport.bpm);
+    const loop = steps * sd;
+    const pads = part.drums.length ? defaultPads(steps, (DRUM_KITS.find((k) => k.id === part.sound)?.id ?? "909") as DrumKitId) : [];
+    const patch = part.drums.length ? null : applyPreset(part.sound);
+    const scheduleLoop = (t0: number) => {
+      if (patch) {
+        for (const n of part.notes) {
+          if (n.step < 0 || n.step >= steps) continue;
+          engine.playNote("__preview", patch, Math.round(n.pitch), Math.max(1, n.length) * sd, Math.max(0.15, Math.min(1, n.velocity || 0.8)), t0 + n.step * sd);
+        }
+      } else {
+        for (const row of part.drums) {
+          const pad = pads.find((p) => p.kind === row.voice);
+          if (!pad) continue;
+          row.steps.slice(0, steps).forEach((v, i) => {
+            if (v > 0) engine.playDrum("__preview", pad, Math.min(1, v), t0 + i * sd);
+          });
+        }
+      }
+    };
+    let next = ctx.currentTime + 0.08;
+    scheduleLoop(next);
+    next += loop;
+    timer.current = setInterval(() => {
+      if (next - ctx.currentTime < 0.4) {
+        scheduleLoop(next);
+        next += loop;
+      }
+    }, 100);
+    setPlaying(index);
+  };
+
+  const regenerate = async (index: number) => {
+    const old = parts[index];
+    if (!old) return;
+    if (playing === index) stop();
+    setRegen(index);
+    try {
+      const out = await generateParts({
+        data: {
+          genre, bpm: transport.bpm, key: `${root} ${mode}`, bars, context, count: 1,
+          brief: `Write a fresh variation of a ${old.role} part called "${old.name}" (different rhythm and notes). ${brief}`.slice(0, 500),
+        },
+      });
+      const fresh = out.parts[0];
+      if (!fresh) throw new Error("No part came back.");
+      setParts((ps) => ps.map((p, i) => (i === index ? fresh : p)));
+      setAdded((a) => ({ ...a, [index]: false }));
+    } catch (error) {
+      toast.error("Could not regenerate", { description: (error as Error)?.message ?? "Try again in a moment." });
+    } finally {
+      setRegen(null);
+    }
+  };
 
   const context = tracks.length
     ? tracks
@@ -125,6 +198,7 @@ export function StemGenerator() {
     : "";
 
   const run = async () => {
+    stop();
     setBusy(true);
     setAdded({});
     try {
@@ -278,13 +352,23 @@ export function StemGenerator() {
                 {part.role}
               </span>
               <span className="font-mono text-[9px] uppercase text-muted-foreground">{part.sound}</span>
+              <span className="font-mono text-[9px] uppercase text-muted-foreground">
+                V{i + 1} · {transport.bpm} BPM · {root} {mode} · {bars} bar{bars === 1 ? "" : "s"}
+              </span>
+              {!added[i] && <span className="rounded-full bg-primary/15 px-1.5 py-0.5 font-mono text-[9px] uppercase">Preview only</span>}
+              <Button size="sm" variant="secondary" className="ml-auto h-7 gap-1.5 font-mono text-[10px] uppercase" onClick={() => preview(part, i)}>
+                {playing === i ? <Square className="size-3.5" /> : <Play className="size-3.5" />} {playing === i ? "Stop" : "Play"}
+              </Button>
+              <Button size="sm" variant="ghost" className="h-7 gap-1.5 font-mono text-[10px] uppercase" disabled={regen !== null} onClick={() => void regenerate(i)}>
+                {regen === i ? <Loader2 className="size-3.5 animate-spin" /> : <RefreshCw className="size-3.5" />} Regenerate
+              </Button>
               <Button
                 size="sm"
                 variant={added[i] ? "ghost" : "outline"}
-                className="ml-auto h-7 gap-1.5 font-mono text-[10px] uppercase"
+                className="h-7 gap-1.5 font-mono text-[10px] uppercase"
                 onClick={() => addPart(part, i)}
               >
-                <Plus className="size-3.5" /> {added[i] ? "Add again" : "Add to song"}
+                <Plus className="size-3.5" /> {added[i] ? "Add again" : "Add to timeline"}
               </Button>
             </div>
             <PartPreview part={part} steps={steps} />
