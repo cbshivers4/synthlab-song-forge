@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { SkinControls, skinBackground } from "@/components/studio/SkinControls";
+import { useSkin } from "@/lib/synclab/skins";
 import { Plus, Save, Sparkles, Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -105,8 +107,10 @@ export function DrumMachine({ track }: { track: Track }) {
     return order.map((category) => ({ category, items: map.get(category)! }));
   })();
 
+  const skin = useSkin("drums");
   return (
-    <div className="space-y-3">
+    <div className={`space-y-3 ${skinBackground(skin) ? "rounded-xl p-3" : ""}`} style={skinBackground(skin)}>
+      <SkinControls skinKey="drums" />
       <div className="flex flex-wrap items-center gap-2">
         <Select value={kit} onValueChange={(v) => loadKit(v as DrumKitId)}>
           <SelectTrigger className="w-56">

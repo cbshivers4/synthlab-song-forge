@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { SkinControls, skinBackground } from "@/components/studio/SkinControls";
+import { useSkin } from "@/lib/synclab/skins";
 import { Plus, Save, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -92,8 +94,10 @@ export function SynthEditor({ track }: { track: Track }) {
     return order.map((category) => ({ category, items: map.get(category)! }));
   })();
 
+  const skin = useSkin("synth");
   return (
-    <div className="space-y-4">
+    <div className={`space-y-4 ${skinBackground(skin) ? "rounded-xl p-3" : ""}`} style={skinBackground(skin)}>
+      <SkinControls skinKey="synth" />
       <div className="flex flex-wrap items-center gap-2">
         <Select value={patch.name} onValueChange={(v) => loadPreset(track.id, v)}>
           <SelectTrigger className="w-64">

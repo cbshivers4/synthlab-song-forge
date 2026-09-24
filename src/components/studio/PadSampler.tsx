@@ -17,6 +17,8 @@ import { Switch } from "@/components/ui/switch";
 import { useStudio } from "@/lib/synclab/store";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { toast } from "sonner";
+import { SkinControls, skinBackground } from "@/components/studio/SkinControls";
+import { useSkin } from "@/lib/synclab/skins";
 import { WaveformView } from "@/components/studio/WaveformView";
 import { LiveWave } from "@/components/studio/LiveWave";
 import { getPadBank, setPadBank, subscribePadBank, type SavedPad } from "@/lib/synclab/pad-session";
@@ -407,6 +409,7 @@ export function PadSampler() {
 
   /** which pad the big waveform monitor is showing */
   const monitorId = playing ?? recPad ?? sel;
+  const skin = useSkin("sampler");
   const monitorSample = pads[monitorId];
   const monitorPad = monitorSample
     ? { pad: monitorSample, color: padColor(Math.floor(monitorId / PADS_PER_BANK), monitorId % PADS_PER_BANK) }
@@ -414,6 +417,7 @@ export function PadSampler() {
 
   return (
     <div className="space-y-3">
+      <SkinControls skinKey="sampler" image padColor colorLabel="Around pads" />
       <div className="flex flex-wrap items-center gap-2">
         <Grid2x2 className="size-4 text-primary" />
         <span className="label-xs">PAD SAMPLER · {filled} pads loaded</span>
@@ -519,12 +523,12 @@ export function PadSampler() {
         </span>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-3">
+      <div className={`grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-3 ${skinBackground(skin) ? "rounded-xl p-3" : ""}`} style={skinBackground(skin)}>
         {Array.from({ length: PADS_PER_BANK }, (_, i) => {
           const id = index(i);
           const pad = pads[id];
           const active = hit === id || playing === id;
-          const c = padColor(bank, i);
+          const c = skin.padColor ?? padColor(bank, i);
           const recording = recPad === id;
           const release = () => {
             if (holdRef.current?.pad === id || recRef.current?.pad === id) {
