@@ -81,7 +81,7 @@ export function MobileNav({ onBeatMode }: { onBeatMode: () => void }) {
     <>
       <nav
         aria-label="Studio navigation"
-        className="mobile-nav grid shrink-0 grid-cols-5 gap-1 border-t-2 border-border bg-surface-1 px-1.5 pt-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))]"
+        className="mobile-nav relative z-30 grid shrink-0 grid-cols-5 gap-1 border-t-2 border-border bg-surface-1 px-1.5 pt-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))]"
       >
         {tabs.map((t) => (
           <Button
