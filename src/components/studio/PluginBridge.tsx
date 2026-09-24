@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { Loader2, Monitor, Plug, PlugZap, RefreshCw, X } from "lucide-react";
+import { Loader2, Monitor, Plug, PlugZap, RefreshCw, Star, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
-import { bridge, savedBridgeUrl, type BridgeEditor } from "@/lib/synclab/bridge";
+import { bridge, savedBridgeUrl, type BridgeEditor, type BridgePlugin } from "@/lib/synclab/bridge";
 
 /** Live subscription to the Desktop Audio Bridge client. */
 export function useBridge() {
@@ -106,13 +106,73 @@ function EditorView({ editor }: { editor: BridgeEditor }) {
   );
 }
 
+const TABS = ["All", "Instruments", "Effects", "Synthesizers", "Samplers", "Drums", "EQ", "Compression", "Reverb", "Delay", "Modulation", "Distortion", "Mastering", "Utility", "Favorites", "Recently Used"] as const;
+const FAV_KEY = "synclab.plugins.favorites";
+const RECENT_KEY = "synclab.plugins.recent";
+const readList = (k: string): string[] => {
+  if (typeof window === "undefined") return [];
+  try {
+    const v = JSON.parse(localStorage.getItem(k) ?? "[]");
+    return Array.isArray(v) ? v.filter((x) => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
+};
+const writeList = (k: string, v: string[]) => {
+  try {
+    localStorage.setItem(k, JSON.stringify(v));
+  } catch {
+    /* storage full or blocked */
+  }
+};
+const CAT_WORDS: Record<string, RegExp> = {
+  Synthesizers: /synth/i,
+  Samplers: /sampl/i,
+  Drums: /drum|percussion|beat/i,
+  EQ: /\beq\b|equali/i,
+  Compression: /compress|dynamics|limit/i,
+  Reverb: /reverb|room|hall/i,
+  Delay: /delay|echo/i,
+  Modulation: /chorus|flang|phas|modul|trem/i,
+  Distortion: /distort|satur|drive|crush/i,
+  Mastering: /master|loud/i,
+  Utility: /util|meter|analy|gain|tool/i,
+};
+function matchesTab(p: BridgePlugin, tab: (typeof TABS)[number], favs: string[], recent: string[]) {
+  if (tab === "All") return true;
+  if (tab === "Instruments") return !!p.isInstrument;
+  if (tab === "Effects") return !p.isInstrument;
+  if (tab === "Favorites") return favs.includes(p.uid);
+  if (tab === "Recently Used") return recent.includes(p.uid);
+  const re = CAT_WORDS[tab];
+  return !!re && re.test(`${p.category ?? ""} ${p.name}`);
+}
+
 export function PluginBridge() {
   const state = useBridge();
   const [url, setUrl] = useState(savedBridgeUrl());
   const [filter, setFilter] = useState("");
   const editors = Object.values(state.editors);
   const connected = state.status === "connected";
-  const list = state.plugins.filter((p) => (filter ? `${p.name} ${p.vendor}`.toLowerCase().includes(filter.toLowerCase()) : true));
+  const [tab, setTab] = useState<(typeof TABS)[number]>("All");
+  const [favs, setFavs] = useState<string[]>(() => readList(FAV_KEY));
+  const [recent, setRecent] = useState<string[]>(() => readList(RECENT_KEY));
+  const toggleFav = (uid: string) => {
+    const next = favs.includes(uid) ? favs.filter((x) => x !== uid) : [...favs, uid];
+    setFavs(next);
+    writeList(FAV_KEY, next);
+  };
+  const openPlugin = (uid: string) => {
+    bridge.open(uid);
+    const next = [uid, ...recent.filter((x) => x !== uid)].slice(0, 12);
+    setRecent(next);
+    writeList(RECENT_KEY, next);
+  };
+  const failed = state.plugins.filter((p) => p.status === "failed");
+  const list = state.plugins
+    .filter((p) => (filter ? `${p.name} ${p.vendor} ${p.category ?? ""}`.toLowerCase().includes(filter.toLowerCase()) : true))
+    .filter((p) => matchesTab(p, tab, favs, recent))
+    .sort((a, b) => (tab === "Recently Used" ? recent.indexOf(a.uid) - recent.indexOf(b.uid) : a.name.localeCompare(b.name)));
 
   return (
     <div className="space-y-3">
@@ -177,28 +237,69 @@ export function PluginBridge() {
               onChange={(e) => setFilter(e.target.value)}
             />
           </div>
+          <p className="font-mono text-[9px] tracking-wider text-muted-foreground uppercase">
+            {state.plugins.length} found · {state.plugins.length - failed.length} available · {failed.length} failed
+          </p>
+          <div className="flex flex-wrap gap-1">
+            {TABS.map((t) => (
+              <button
+                key={t}
+                type="button"
+                aria-pressed={tab === t}
+                onClick={() => setTab(t)}
+                className={`rounded border px-2 py-0.5 text-[10px] ${tab === t ? "border-primary bg-primary/20 text-primary" : "border-border text-muted-foreground"}`}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
           {!state.scanning && list.length === 0 && (
             <p className="text-[11px] text-muted-foreground">
               The bridge is connected but reported no plugins. Point it at your plugin folders and press RESCAN.
             </p>
           )}
           <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-3">
-            {list.map((p) => (
-              <button
-                key={p.uid}
-                onClick={() => bridge.open(p.uid)}
-                className="panel flex items-center gap-2 px-2 py-1.5 text-left hover:border-primary"
-              >
-                <Monitor className="size-3.5 shrink-0 text-primary" />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[11px] font-medium">{p.name}</span>
-                  <span className="block truncate font-mono text-[9px] tracking-wider text-muted-foreground uppercase">
-                    {p.vendor} · {p.format}
-                    {p.isInstrument ? " · INSTRUMENT" : ""}
-                  </span>
-                </span>
-              </button>
-            ))}
+            {list.map((p) =>
+              p.status === "failed" ? (
+                <div key={p.uid} className="panel space-y-1 border-destructive/60 px-2 py-1.5">
+                  <p className="text-[11px] font-medium text-destructive">Plugin Scan Failed — {p.name}</p>
+                  <p className="text-[10px] text-muted-foreground">{p.error ?? "The plugin did not load during scanning."} SYNCLAB kept running.</p>
+                  <Button size="sm" variant="ghost" className="h-6 px-2 font-mono text-[9px]" onClick={() => bridge.scan()}>
+                    RESCAN
+                  </Button>
+                </div>
+              ) : (
+                <div key={p.uid} className="panel flex items-center gap-2 px-2 py-1.5 hover:border-primary">
+                  <button
+                    type="button"
+                    draggable
+                    onDragStart={(e) => e.dataTransfer.setData("application/x-synclab-plugin", p.uid)}
+                    onClick={() => openPlugin(p.uid)}
+                    className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                    title="Open the plugin window"
+                  >
+                    <Monitor className="size-3.5 shrink-0 text-primary" />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[11px] font-medium">{p.name}</span>
+                      <span className="block truncate font-mono text-[9px] tracking-wider text-muted-foreground uppercase">
+                        {p.vendor} · {p.format}
+                        {p.version ? ` · v${p.version}` : ""}
+                        {p.category ? ` · ${p.category}` : p.isInstrument ? " · INSTRUMENT" : " · EFFECT"}
+                      </span>
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => toggleFav(p.uid)}
+                    aria-pressed={favs.includes(p.uid)}
+                    aria-label={favs.includes(p.uid) ? "Remove from favorites" : "Add to favorites"}
+                    className="text-muted-foreground hover:text-primary"
+                  >
+                    <Star className={`size-3.5 ${favs.includes(p.uid) ? "fill-primary text-primary" : ""}`} />
+                  </button>
+                </div>
+              ),
+            )}
           </div>
         </div>
       )}
