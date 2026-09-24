@@ -1273,7 +1273,7 @@ export class SyncLabEngine {
   }
 
   /** Renders the sampler's processed sound (trim, reverse, tune, sync, filter, fades) offline. Original stays untouched. */
-  async renderSample(s: Parameters<AudioEngine["playSample"]>[1]): Promise<{ left: Float32Array; right: Float32Array; sampleRate: number } | null> {
+  async renderSample(s: Parameters<SyncLabEngine["playSample"]>[1]): Promise<{ left: Float32Array; right: Float32Array; sampleRate: number } | null> {
     this.init();
     const base = s.reverse ? this.reversed(s.url) : this.sampleBuffers.get(s.url);
     if (!base) return null;
