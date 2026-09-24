@@ -367,6 +367,30 @@
     height: 100dvh !important;
   }
 
+  .mobile-tool-sheet {
+    inset: 0 5.25rem 0 0;
+    height: 100dvh;
+    overflow-y: auto;
+    border-right: 1px solid var(--border);
+    border-top-left-radius: 0;
+  }
+
+  .mobile-tool-sheet > header {
+    padding-block: 0.75rem;
+  }
+
+  .mobile-tool-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.5rem;
+    padding: 0.75rem;
+  }
+
+  .mobile-tool-grid .mobile-tool-item {
+    height: 4.5rem;
+    min-height: 4.5rem;
+    font-size: 0.75rem;
+  }
+
   .phone-tool-panel > div:nth-child(3) {
     padding-bottom: 1rem;
   }

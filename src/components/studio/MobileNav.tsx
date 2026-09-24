@@ -101,18 +101,18 @@ export function MobileNav({ onBeatMode }: { onBeatMode: () => void }) {
         ))}
       </nav>
       <Sheet open={sheet !== null} onOpenChange={(o) => !o && setSheet(null)}>
-        <SheetContent side="bottom" className="h-[88dvh] overflow-y-auto rounded-t-lg border-t-2 p-0 pb-[env(safe-area-inset-bottom)]">
+        <SheetContent side="bottom" className="mobile-tool-sheet h-[88dvh] overflow-y-auto rounded-t-lg border-t-2 p-0 pb-[env(safe-area-inset-bottom)]">
           <SheetHeader className="sticky top-0 z-10 border-b border-border bg-background px-5 py-5 text-left">
             <SheetTitle className="text-xl">{sheet === "create" ? "Create & Sounds" : "More Tools"}</SheetTitle>
           </SheetHeader>
-          <div className="grid grid-cols-2 gap-3 p-4">
+          <div className="mobile-tool-grid grid grid-cols-2 gap-3 p-4">
             {list.map((i) => (
               <Button
                 key={i.label}
                 type="button"
                 variant="outline"
                 onClick={() => pick(i)}
-                className="h-24 min-w-0 whitespace-normal rounded-md bg-surface-2/60 px-2 text-center text-sm font-semibold leading-tight [&_svg]:size-7 [&_svg]:text-primary"
+                className="mobile-tool-item h-24 min-w-0 whitespace-normal rounded-md bg-surface-2/60 px-2 text-center text-sm font-semibold leading-tight [&_svg]:size-7 [&_svg]:text-primary"
               >
                 {i.icon}
                 {i.label}
