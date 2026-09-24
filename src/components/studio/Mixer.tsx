@@ -9,7 +9,6 @@ import {
   Palette,
   Power,
   Settings2,
-  Speaker,
   Sliders,
   Trash2,
   VolumeX,
