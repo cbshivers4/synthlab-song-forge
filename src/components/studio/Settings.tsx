@@ -24,6 +24,7 @@ import {
 } from "@/lib/synclab/mic";
 import { midiSupported } from "@/lib/synclab/midi";
 import { DesktopPanel } from "@/components/studio/DesktopPanel";
+import { replayMobileTour, saveMobileAccessibility, useMobileAccessibility } from "@/lib/synclab/mobile-accessibility";
 
 type Prefs = {
   sampleRate: string;
@@ -105,7 +106,7 @@ const KEY = "synclab.prefs";
 
 function Row({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-4 border-b border-border/60 py-2.5 last:border-0">
+    <div className="settings-row grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 border-b border-border/60 py-2.5 last:border-0">
       <div className="min-w-0">
         <div className="text-sm">{label}</div>
         {hint && <div className="text-xs text-muted-foreground">{hint}</div>}
@@ -174,6 +175,7 @@ export function Settings() {
   const [inputs, setInputs] = useState<{ id: string; label: string }[]>([]);
   const [outputs, setOutputs] = useState<{ id: string; label: string }[]>([]);
   const [scanning, setScanning] = useState(false);
+  const mobilePrefs = useMobileAccessibility();
   const midiRef = useRef(midiInputs);
   midiRef.current = midiInputs;
 
@@ -276,9 +278,9 @@ export function Settings() {
   };
 
   return (
-    <Tabs defaultValue="audio" className="w-full">
-      <TabsList className="flex h-auto flex-wrap justify-start gap-1 bg-surface">
-        {["audio", "recording", "metronome", "timing", "timeline", "midi", "mixing", "export", "desktop", "general"].map((t) => (
+    <Tabs defaultValue="audio" className="min-w-0 w-full overflow-x-hidden">
+      <TabsList className="flex h-auto max-w-full flex-nowrap justify-start gap-1 overflow-x-auto bg-surface sm:flex-wrap">
+        {["audio", "recording", "metronome", "timing", "timeline", "midi", "mixing", "export", "desktop", "mobile", "general"].map((t) => (
           <TabsTrigger key={t} value={t} className="font-mono text-[11px] uppercase tracking-widest">
             {t}
           </TabsTrigger>
@@ -528,6 +530,21 @@ export function Settings() {
 
       <TabsContent value="desktop" className="mt-4">
         <DesktopPanel />
+      </TabsContent>
+
+      <TabsContent value="mobile" className="mt-4">
+        <Row label="Extra-large controls" hint="Adds more height and spacing for large fingers on phones">
+          <Switch className="h-7 w-12 [&>span]:size-6 data-[state=checked]:[&>span]:translate-x-5" checked={mobilePrefs.extraLargeControls} onCheckedChange={(value) => saveMobileAccessibility({ ...mobilePrefs, extraLargeControls: value })} />
+        </Row>
+        <Row label="Increased text size" hint="Makes phone labels, forms and tool text easier to read">
+          <Switch className="h-7 w-12 [&>span]:size-6 data-[state=checked]:[&>span]:translate-x-5" checked={mobilePrefs.increasedText} onCheckedChange={(value) => saveMobileAccessibility({ ...mobilePrefs, increasedText: value })} />
+        </Row>
+        <Row label="High-contrast mode" hint="Strengthens text, borders, focus rings and selected controls">
+          <Switch className="h-7 w-12 [&>span]:size-6 data-[state=checked]:[&>span]:translate-x-5" checked={mobilePrefs.highContrast} onCheckedChange={(value) => saveMobileAccessibility({ ...mobilePrefs, highContrast: value })} />
+        </Row>
+        <div className="pt-4">
+          <Button variant="secondary" className="h-12" onClick={replayMobileTour}>Replay mobile tour</Button>
+        </div>
       </TabsContent>
 
       <TabsContent value="general" className="mt-4">

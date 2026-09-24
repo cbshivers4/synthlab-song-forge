@@ -1676,7 +1676,7 @@ export function Mixer() {
           </div>
         </div>
       ) : (
-        <div className="flex overflow-x-auto">
+        <div className="mobile-mixer-strips flex overflow-x-auto">
           <LabelRail />
           {tracks.map((t, i) => (
             <Strip

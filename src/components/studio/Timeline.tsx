@@ -594,6 +594,8 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
   const [confirm, setConfirm] = useState(false);
   const [dropping, setDropping] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const gestureRef = useRef<{ x: number; y: number; timer: number | null; moved: boolean } | null>(null);
+  const suppressClickRef = useRef(false);
   const isSelected = selectedId === track.id || selectedIds.includes(track.id);
 
   const clips = track.clips ?? [];
@@ -726,6 +728,61 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
     setPanel(track.kind === "drum" ? "drums" : track.kind === "audio" ? "mixer" : "synth");
   };
 
+  const startPhoneGesture = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isMobile || e.pointerType === "mouse") return;
+    const target = e.target as HTMLElement;
+    if (target.closest("button,input,textarea,select,[role='slider'],[role='combobox'],[contenteditable]")) return;
+    const gesture = { x: e.clientX, y: e.clientY, timer: null as number | null, moved: false };
+    gesture.timer = window.setTimeout(() => {
+      suppressClickRef.current = true;
+      select(track.id);
+      setMenuOpen(true);
+      navigator.vibrate?.(18);
+    }, 550);
+    gestureRef.current = gesture;
+  };
+
+  const movePhoneGesture = (e: React.PointerEvent<HTMLDivElement>) => {
+    const gesture = gestureRef.current;
+    if (!gesture) return;
+    if (Math.hypot(e.clientX - gesture.x, e.clientY - gesture.y) > 12) {
+      gesture.moved = true;
+      if (gesture.timer) window.clearTimeout(gesture.timer);
+      gesture.timer = null;
+    }
+  };
+
+  const endPhoneGesture = (e: React.PointerEvent<HTMLDivElement>) => {
+    const gesture = gestureRef.current;
+    if (!gesture) return;
+    if (gesture.timer) window.clearTimeout(gesture.timer);
+    const dx = e.clientX - gesture.x;
+    const dy = e.clientY - gesture.y;
+    gestureRef.current = null;
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < 52) return;
+    suppressClickRef.current = true;
+    select(track.id);
+    if (Math.abs(dx) > Math.abs(dy)) {
+      if (dx > 0) {
+        updateTrack(track.id, { muted: !track.muted });
+        toast(track.muted ? `${track.name} unmuted` : `${track.name} muted`);
+      } else {
+        updateTrack(track.id, { solo: !track.solo });
+        toast(track.solo ? `${track.name} solo off` : `${track.name} soloed`);
+      }
+    } else {
+      const direction: -1 | 1 = dy < 0 ? -1 : 1;
+      moveTrack(track.id, direction);
+      toast(`${track.name} moved ${direction < 0 ? "up" : "down"}`);
+    }
+    navigator.vibrate?.(12);
+  };
+
+  useEffect(() => () => {
+    const timer = gestureRef.current?.timer;
+    if (timer) window.clearTimeout(timer);
+  }, []);
+
   /** Drag the strip under a lane to make that track taller or shorter. */
   const resizeHeight = (e: React.PointerEvent) => {
     e.preventDefault();
@@ -748,6 +805,10 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
       className={`relative flex items-stretch transition-colors ${isSelected ? "bg-surface-2/40 ring-1 ring-inset ring-foreground/80" : "hover:bg-surface/50"} ${track.hidden ? "opacity-40" : ""} ${dropping ? "ring-1 ring-primary ring-inset" : ""}`}
       style={{ height: track.height ?? undefined }}
       onClick={(e) => {
+        if (suppressClickRef.current) {
+          suppressClickRef.current = false;
+          return;
+        }
         if (e.metaKey || e.ctrlKey) {
           toggleSelectId(track.id);
           return;
@@ -767,14 +828,23 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
     >
       <div className="w-1 shrink-0" style={{ background: track.color, opacity: isSelected ? 1 : 0.65 }} />
       <div
-        className="w-[168px] shrink-0 space-y-1 border-r border-border bg-surface px-2 py-1.5 sm:w-[240px]"
+        className="track-touch-header w-[168px] shrink-0 space-y-1 border-r border-border bg-surface px-2 py-1.5 sm:w-[240px]"
+        onPointerDown={startPhoneGesture}
+        onPointerMove={movePhoneGesture}
+        onPointerUp={endPhoneGesture}
+        onPointerCancel={() => {
+          const timer = gestureRef.current?.timer;
+          if (timer) window.clearTimeout(timer);
+          gestureRef.current = null;
+        }}
+        onContextMenu={(e) => isMobile && e.preventDefault()}
         onClick={(e) => {
           // Selecting a channel from its header opens its edit menu.
           if (e.metaKey || e.ctrlKey) return;
           const el = e.target as HTMLElement;
           if (el.closest("button,input,[role='slider'],[role='combobox']")) return;
           select(track.id);
-          setMenuOpen(true);
+          if (!isMobile) setMenuOpen(true);
         }}
       >
         <div className="flex items-center gap-1.5">
@@ -2352,7 +2422,7 @@ export function Timeline() {
     }
   }, [transport.follow, transport.playing, transport.step, totalSteps]);
   return (
-    <section className="relative flex min-h-0 flex-1 flex-col overflow-hidden border-x border-b border-border bg-background/60">
+    <section className="mobile-timeline relative flex min-h-0 flex-1 flex-col overflow-hidden border-x border-b border-border bg-background/60">
       <EditToolbar />
       <Ruler />
       <SectionLane />
