@@ -889,10 +889,10 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     };
     const replace = !!transportRef.current.replace;
     const stepDur = 60 / (transportRef.current.bpm || 120) / 4;
-    const endOf = (c: AudioClip) => c.start + c.length / stepDur;
+    const endOf = (c: AudioClip) => (c.start ?? 0) + (c.length ?? c.duration ?? 0) / stepDur;
     const newEnd = endOf(clip);
     const kept = (target.clips ?? []).filter(
-      (c) => !replace || endOf(c) <= clip.start || c.start >= newEnd,
+      (c) => !replace || endOf(c) <= (clip.start ?? 0) || (c.start ?? 0) >= newEnd,
     );
     const removed = (target.clips?.length ?? 0) - kept.length;
     setTracks((ts) =>
