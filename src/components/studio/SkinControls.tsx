@@ -76,7 +76,7 @@ export function SkinControls({ skinKey, image, padColor, colorLabel = "Backgroun
   );
 }
 
-export function skinBackground(skin: { color?: string; image?: string }): React.CSSProperties | undefined {
+export function skinBackground(skin: { color?: string | undefined; image?: string | undefined }): React.CSSProperties | undefined {
   if (skin.image)
     return {
       backgroundImage: `linear-gradient(hsl(0 0% 0% / 0.35), hsl(0 0% 0% / 0.35)), url(${skin.image})`,
