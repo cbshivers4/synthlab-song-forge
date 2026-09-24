@@ -137,7 +137,9 @@ export async function openMic(constraints?: MediaTrackConstraints): Promise<MicR
 /** Prefer the recording container supported by the current browser (Safari uses MP4). */
 export function preferredRecordingMime(): string | undefined {
   if (typeof MediaRecorder === "undefined" || typeof MediaRecorder.isTypeSupported !== "function") return undefined;
-  return ["audio/mp4", "audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus"].find((type) =>
+  // WebM/Opus first: Chrome can record MP4 but often can't decode its own fragmented MP4 back.
+  // Safari only records MP4, so it falls through to that.
+  return ["audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus", "audio/mp4"].find((type) =>
     MediaRecorder.isTypeSupported(type),
   );
 }
