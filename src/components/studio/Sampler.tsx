@@ -164,30 +164,85 @@ export function Sampler() {
     }
   };
 
-  /** Makes a new sample stretched to the project tempo, keeping pitch. The previous file is not modified. */
-  const warp = async (t: Track) => {
+  /** Tempo / pitch / mode for the stretch tool; nothing changes until Apply. */
+  const [wTempo, setWTempo] = useState<number | null>(null);
+  const [wPitch, setWPitch] = useState(0);
+  const [wMode, setWMode] = useState<"keep" | "repitch">("keep");
+  const [wBusy, setWBusy] = useState(false);
+  const [wPlaying, setWPlaying] = useState(false);
+  const previewRef = useRef<{ audio: HTMLAudioElement; url: string; blob: Blob; key: string } | null>(null);
+
+  const stopPreview = () => {
+    previewRef.current?.audio.pause();
+    setWPlaying(false);
+  };
+
+  const renderWarp = async (t: Track): Promise<Blob | null> => {
     const sm = t.sampler;
-    if (!sm) return;
+    if (!sm) return null;
     const engine = getEngine();
-    const bpm = engine.tempo;
     const from = sm.sampleBpm ?? 120;
-    if (Math.abs(bpm - from) < 0.01) {
-      toast.info("Already at project tempo");
-      return;
+    const target = wTempo ?? engine.tempo;
+    const ratio = target / from;
+    const base = { ...sm, syncToBpm: false, filterType: "off" as const, fadeIn: 0, fadeOut: 0, gain: 1 };
+    if (wMode === "repitch") {
+      const cap = await engine.renderSample({ ...base, pitch: wPitch + 12 * Math.log2(ratio) });
+      return cap ? encodeWav(cap) : null;
     }
+    const r = Math.pow(2, wPitch / 12);
+    const cap = await engine.renderSample({ ...base, pitch: wPitch });
+    if (!cap) return null;
+    const speed = ratio / r;
+    if (Math.abs(speed - 1) < 0.001) return encodeWav(cap);
+    return encodeWav({ left: wsolaStretch(cap.left, speed), right: wsolaStretch(cap.right, speed), sampleRate: cap.sampleRate });
+  };
+
+  const warpKey = (t: Track) => JSON.stringify([t.sampler?.url, t.sampler?.start, t.sampler?.end, t.sampler?.reverse, t.sampler?.sampleBpm, wTempo ?? getEngine().tempo, wPitch, wMode]);
+
+  const getWarp = async (t: Track) => {
+    const key = warpKey(t);
+    if (previewRef.current?.key === key) return previewRef.current;
+    const blob = await renderWarp(t);
+    if (!blob) return null;
+    if (previewRef.current) URL.revokeObjectURL(previewRef.current.url);
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    audio.loop = true;
+    previewRef.current = { audio, url, blob, key };
+    return previewRef.current;
+  };
+
+  const previewWarp = async (t: Track) => {
+    if (wPlaying) return stopPreview();
+    setWBusy(true);
     try {
-      toast.info("Stretching…");
-      const cap = await engine.renderSample({ ...sm, pitch: 0, syncToBpm: false, filterType: "off", fadeIn: 0, fadeOut: 0, gain: 1 });
-      if (!cap) throw new Error("no sample");
-      const speed = bpm / from;
-      const left = wsolaStretch(cap.left, speed);
-      const right = wsolaStretch(cap.right, speed);
-      const file = new File([encodeWav({ left, right, sampleRate: cap.sampleRate })], `${t.name}-${Math.round(bpm)}bpm.wav`, { type: "audio/wav" });
-      await loadSample(t.id, file);
-      updateSampler(t.id, { sampleBpm: Math.round(bpm), syncToBpm: false, start: 0, end: 1, reverse: false, slices: undefined });
-      toast.success(`Stretched to ${Math.round(bpm)} BPM`, { description: "Pitch kept. Your original file is unchanged — reload it anytime." });
+      const pv = await getWarp(t);
+      if (!pv) throw new Error("none");
+      pv.audio.currentTime = 0;
+      await pv.audio.play();
+      setWPlaying(true);
     } catch {
       toast.error("SYNCLAB couldn't complete this operation.", { description: "Load a sample first, then try again." });
+    } finally {
+      setWBusy(false);
+    }
+  };
+
+  const applyWarp = async (t: Track) => {
+    setWBusy(true);
+    try {
+      const pv = await getWarp(t);
+      if (!pv) throw new Error("none");
+      stopPreview();
+      const target = Math.round(wTempo ?? getEngine().tempo);
+      await loadSample(t.id, new File([pv.blob], `${t.name}-${target}bpm.wav`, { type: "audio/wav" }));
+      updateSampler(t.id, { sampleBpm: target, syncToBpm: false, start: 0, end: 1, reverse: false, slices: undefined });
+      setWPitch(0);
+      toast.success(`Applied: ${target} BPM`, { description: "The sampler now plays the new version. Your original file is unchanged." });
+    } catch {
+      toast.error("SYNCLAB couldn't complete this operation.", { description: "Load a sample first, then try again." });
+    } finally {
+      setWBusy(false);
     }
   };
 
@@ -327,15 +382,6 @@ export function Sampler() {
                 onClick={() => void resample(track)}
               >
                 <AudioLines className="size-3.5" /> Resample
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-9 gap-1.5 sm:h-7"
-                title="Stretch the trimmed sample from Sample BPM to the project tempo without changing its pitch."
-                onClick={() => void warp(track)}
-              >
-                <RotateCcw className="size-3.5" /> Warp to project BPM
               </Button>
               <Button size="sm" variant="ghost" className="h-9 gap-1.5 text-destructive sm:h-7" onClick={() => clearSample(track.id)}>
                 <Trash2 className="size-3.5" /> Remove
@@ -528,6 +574,40 @@ export function Sampler() {
             <Row label="Resonance" value={(s.resonance ?? 0.7).toFixed(1)}>
               <Slider value={[s.resonance ?? 0.7]} min={0.1} max={20} step={0.1} disabled={(s.filterType ?? "off") === "off"} onValueChange={([v]) => updateSampler(track.id, { resonance: v ?? 0.7 })} />
             </Row>
+            <div className="space-y-2 rounded border border-border p-2">
+              <p className="label-xs">TEMPO & PITCH (preview before applying)</p>
+              <div className="flex gap-1">
+                {(["keep", "repitch"] as const).map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    aria-pressed={wMode === m}
+                    onClick={() => { stopPreview(); setWMode(m); }}
+                    className={`rounded border px-2 py-1 text-[10px] uppercase ${wMode === m ? "border-primary bg-primary/20 text-primary" : "border-border text-muted-foreground"}`}
+                  >
+                    {m === "keep" ? "Keep pitch" : "Repitch"}
+                  </button>
+                ))}
+              </div>
+              <Row label="Target tempo" value={`${Math.round(wTempo ?? getEngine().tempo)} BPM`}>
+                <Slider value={[wTempo ?? getEngine().tempo]} min={60} max={200} step={1} onValueChange={([v]) => { stopPreview(); setWTempo(v ?? 120); }} />
+              </Row>
+              <Row label="Pitch" value={`${wPitch > 0 ? "+" : ""}${wPitch} st`}>
+                <Slider value={[wPitch]} min={-12} max={12} step={1} onValueChange={([v]) => { stopPreview(); setWPitch(v ?? 0); }} />
+              </Row>
+              <div className="flex gap-1.5">
+                <Button size="sm" variant="secondary" className="h-8 flex-1 gap-1.5" disabled={wBusy} onClick={() => void previewWarp(track)}>
+                  {wPlaying ? <Square className="size-3.5" /> : <Play className="size-3.5" />} {wPlaying ? "Stop" : wBusy ? "Rendering…" : "Preview"}
+                </Button>
+                <Button size="sm" className="h-8 flex-1" disabled={wBusy} onClick={() => void applyWarp(track)}>
+                  Apply
+                </Button>
+              </div>
+              <p className="text-[10px] text-muted-foreground">
+                Stretches from Sample BPM to the target. Keep pitch changes speed only; Repitch changes speed and pitch together.
+                Preview loops the result; nothing changes until Apply.
+              </p>
+            </div>
             <Row label="Sample BPM" value={s.sampleBpm ? `${s.sampleBpm}` : "—"}>
               <Slider value={[s.sampleBpm ?? 120]} min={60} max={200} step={1} onValueChange={([v]) => updateSampler(track.id, { sampleBpm: v ?? 120 })} />
             </Row>
@@ -554,7 +634,7 @@ export function Sampler() {
           <p className="text-xs text-muted-foreground">
             Play the trimmed sample from the on-screen keyboard, the piano roll or your MIDI controller — the root note
             plays it at its original speed and every other key pitches it up or down. Tempo sync uses Repitch (speed and pitch
-            move together); use "Warp to project BPM" to stretch the sample while keeping its pitch.
+            move together); use the Tempo & Pitch panel to preview and apply a stretch that keeps pitch.
           </p>
         </>
       )}
