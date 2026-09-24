@@ -52,9 +52,9 @@
 - [x] Verify sign-in, menus, pads, keyboard, and Hum to Beat at phone and desktop sizes
 - [x] Enlarge sampler and chopper pads, harden touch release, and return manual pads to the drum machine
 - [x] Add mobile accessibility options for extra-large controls, increased text and high contrast
-- [ ] Add phone track gestures for select, long-press actions, mute, solo and reorder
-- [ ] Optimize phone landscape layouts for beat editing, arrangement and mixing
-- [ ] Add the five-button mobile onboarding tour
+- [x] Add phone track gestures for select, long-press actions, mute, solo and reorder
+- [x] Optimize phone landscape layouts for beat editing, arrangement and mixing
+- [x] Add the five-button mobile onboarding tour
 
 ## Timeline / mixer / drums polish (done)
 - [x] Stable MIDI note per drum lane; a drum controller plays and records those pads
