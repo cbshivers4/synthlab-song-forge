@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Plus, Sparkles, Upload } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Plus, Save, Sparkles, Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -11,6 +11,18 @@ import type { DrumKitId } from "@/lib/synclab/types";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import type { DrumPad, Track } from "@/lib/synclab/types";
 import { toast } from "sonner";
+
+const PRESET_KEY = "synclab.drumPresets.v1";
+type DrumPreset = { name: string; pads: Partial<DrumPad>[] };
+function readPresets(): DrumPreset[] {
+  try {
+    const v = JSON.parse(localStorage.getItem(PRESET_KEY) ?? "[]");
+    return Array.isArray(v) ? v : [];
+  } catch {
+    return [];
+  }
+}
+
 
 export function DrumMachine({ track }: { track: Track }) {
   const { updatePad, setStepCount, addPad, generateBeat, transport } = useStudio();
@@ -46,6 +58,38 @@ export function DrumMachine({ track }: { track: Track }) {
     const def = DRUM_KITS.find((k) => k.id === id);
     pads.forEach((p) => updatePad(track.id, p.id, { kit: id, decay: def?.decay ?? p.decay }));
     toast.success(`${def?.name ?? id} kit loaded`, { description: "Patterns are kept — only the sounds change." });
+  };
+
+  const [presets, setPresets] = useState<DrumPreset[]>([]);
+  useEffect(() => setPresets(readPresets()), []);
+  const persist = (list: DrumPreset[]) => {
+    setPresets(list);
+    localStorage.setItem(PRESET_KEY, JSON.stringify(list));
+  };
+  const savePreset = () => {
+    const name = window.prompt("Name this drum sound preset", `${track.name} kit`)?.trim();
+    if (!name) return;
+    const sounds = pads.map((p) => {
+      const { id: _i, steps: _s, probability: _p, muted: _m, solo: _so, ...rest } = p;
+      return rest;
+    });
+    persist([...presets.filter((p) => p.name !== name), { name, pads: sounds }]);
+    toast.success(`Preset "${name}" saved`, { description: "Saved on this device. Patterns aren't included." });
+  };
+  const loadPreset = (name: string) => {
+    const pr = presets.find((p) => p.name === name);
+    if (!pr) return;
+    pads.forEach((p, i) => {
+      const s = pr.pads.find((x) => x.name === p.name) ?? pr.pads[i];
+      if (s) updatePad(track.id, p.id, s);
+    });
+    toast.success(`Preset "${name}" loaded`, { description: "Your patterns are kept." });
+  };
+  const deletePreset = () => {
+    const name = window.prompt(`Delete which preset?\n${presets.map((p) => p.name).join("\n")}`)?.trim();
+    if (!name || !presets.some((p) => p.name === name)) return;
+    persist(presets.filter((p) => p.name !== name));
+    toast(`Preset "${name}" deleted`);
   };
 
   const kitGroups = (() => {
@@ -132,6 +176,30 @@ export function DrumMachine({ track }: { track: Track }) {
         >
           <Upload className="size-4" /> Import samples
         </Button>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="label-xs">SOUND PRESET</span>
+        <Select value="" onValueChange={loadPreset}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder={presets.length ? "Load preset…" : "No saved presets"} />
+          </SelectTrigger>
+          <SelectContent>
+            {presets.map((p) => (
+              <SelectItem key={p.name} value={p.name}>
+                {p.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button variant="secondary" size="sm" onClick={savePreset}>
+          <Save className="size-4" /> Save preset
+        </Button>
+        {presets.length > 0 && (
+          <Button variant="ghost" size="sm" onClick={deletePreset}>
+            <Trash2 className="size-4" /> Delete
+          </Button>
+        )}
       </div>
 
       <div className="space-y-1 overflow-x-auto">
@@ -222,6 +290,32 @@ export function DrumMachine({ track }: { track: Track }) {
                 <Knob label="SNAP" value={pad.snap ?? 0} onChange={(v) => updatePad(track.id, pad.id, { snap: v })} />
                 <Knob label="NOISE" value={pad.noise ?? 0} onChange={(v) => updatePad(track.id, pad.id, { noise: v })} />
                 <Knob label="WIDTH" value={pad.width ?? 0} onChange={(v) => updatePad(track.id, pad.id, { width: v })} />
+                <Knob label="CRUSH" value={pad.crush ?? 0} onChange={(v) => updatePad(track.id, pad.id, { crush: v })} />
+                <div className="flex flex-col gap-1">
+                  <span className="label-xs">FILTER</span>
+                  <div className="flex gap-1">
+                    {(["off", "lowpass", "highpass", "bandpass"] as const).map((ft) => (
+                      <Button
+                        key={ft}
+                        size="sm"
+                        variant={(pad.filterType ?? "off") === ft ? "default" : "ghost"}
+                        className="h-6 px-1.5 text-[10px]"
+                        onClick={() => updatePad(track.id, pad.id, { filterType: ft })}
+                      >
+                        {ft === "off" ? "OFF" : ft === "lowpass" ? "LP" : ft === "highpass" ? "HP" : "BP"}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+                <Knob label="CUTOFF" value={pad.cutoff ?? 1} onChange={(v) => updatePad(track.id, pad.id, { cutoff: v })} />
+                <Knob label="RESO" value={pad.resonance ?? 0} onChange={(v) => updatePad(track.id, pad.id, { resonance: v })} />
+                <Knob
+                  label="F.ENV"
+                  min={-1}
+                  max={1}
+                  value={pad.filterEnv ?? 0}
+                  onChange={(v) => updatePad(track.id, pad.id, { filterEnv: v })}
+                />
                 <Knob
                   label="CHOKE"
                   min={0}
