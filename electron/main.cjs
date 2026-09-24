@@ -13,7 +13,7 @@
  * Run:      npm run desktop:dev
  * Package:  npm run desktop:package -- --platform=darwin --arch=arm64
  */
-const { app, BrowserWindow, ipcMain, dialog, shell } = require("electron");
+const { app, BrowserWindow, ipcMain, dialog, shell, session, systemPreferences } = require("electron");
 const path = require("path");
 const fs = require("fs/promises");
 const info = require("./app-info.cjs");
@@ -85,7 +85,20 @@ function createWindow() {
   });
 }
 
-app.whenReady().then(createWindow);
+app.whenReady().then(async () => {
+  // Allow the studio to use the microphone / audio interface and MIDI gear.
+  const allowed = new Set(["media", "audioCapture", "midi", "midiSysex", "speaker-selection"]);
+  session.defaultSession.setPermissionRequestHandler((_wc, permission, cb) => cb(allowed.has(permission)));
+  session.defaultSession.setPermissionCheckHandler((_wc, permission) => allowed.has(permission));
+  if (process.platform === "darwin") {
+    try {
+      await systemPreferences.askForMediaAccess("microphone");
+    } catch {
+      /* user can grant later in System Settings → Privacy → Microphone */
+    }
+  }
+  createWindow();
+});
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();
 });
