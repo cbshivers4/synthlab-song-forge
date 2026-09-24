@@ -419,6 +419,47 @@ export function Sampler() {
             <Row label="Release" value={`${Math.round(s.release * 1000)} ms`}>
               <Slider value={[s.release]} min={0.005} max={4} step={0.005} onValueChange={([v]) => updateSampler(track.id, { release: v ?? 0.06 })} />
             </Row>
+            <Row label="Decay" value={`${Math.round((s.decay ?? 0) * 1000)} ms`}>
+              <Slider value={[s.decay ?? 0]} min={0} max={3} step={0.005} onValueChange={([v]) => updateSampler(track.id, { decay: v ?? 0 })} />
+            </Row>
+            <Row label="Sustain" value={`${Math.round((s.sustain ?? 1) * 100)}%`}>
+              <Slider value={[s.sustain ?? 1]} min={0} max={1} step={0.01} onValueChange={([v]) => updateSampler(track.id, { sustain: v ?? 1 })} />
+            </Row>
+            <Row label="Fade in" value={`${Math.round((s.fadeIn ?? 0) * 1000)} ms`}>
+              <Slider value={[s.fadeIn ?? 0]} min={0} max={2} step={0.005} onValueChange={([v]) => updateSampler(track.id, { fadeIn: v ?? 0 })} />
+            </Row>
+            <Row label="Fade out" value={`${Math.round((s.fadeOut ?? 0) * 1000)} ms`}>
+              <Slider value={[s.fadeOut ?? 0]} min={0} max={2} step={0.005} onValueChange={([v]) => updateSampler(track.id, { fadeOut: v ?? 0 })} />
+            </Row>
+            <div className="space-y-1.5">
+              <span className="label-xs">Filter</span>
+              <div className="flex flex-wrap gap-1">
+                {(["off", "lowpass", "highpass", "bandpass", "notch"] as const).map((f) => (
+                  <button
+                    key={f}
+                    type="button"
+                    aria-pressed={(s.filterType ?? "off") === f}
+                    onClick={() => updateSampler(track.id, { filterType: f })}
+                    className={`rounded border px-2 py-1 text-[10px] uppercase ${(s.filterType ?? "off") === f ? "border-primary bg-primary/20 text-primary" : "border-border text-muted-foreground"}`}
+                  >
+                    {f === "off" ? "Off" : f === "lowpass" ? "LP" : f === "highpass" ? "HP" : f === "bandpass" ? "BP" : "Notch"}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <Row label="Cutoff" value={`${Math.round(s.cutoff ?? 18000)} Hz`}>
+              <Slider value={[Math.log10(s.cutoff ?? 18000)]} min={Math.log10(20)} max={Math.log10(20000)} step={0.01} disabled={(s.filterType ?? "off") === "off"} onValueChange={([v]) => updateSampler(track.id, { cutoff: Math.round(Math.pow(10, v ?? 4.25)) })} />
+            </Row>
+            <Row label="Resonance" value={(s.resonance ?? 0.7).toFixed(1)}>
+              <Slider value={[s.resonance ?? 0.7]} min={0.1} max={20} step={0.1} disabled={(s.filterType ?? "off") === "off"} onValueChange={([v]) => updateSampler(track.id, { resonance: v ?? 0.7 })} />
+            </Row>
+            <Row label="Sample BPM" value={s.sampleBpm ? `${s.sampleBpm}` : "—"}>
+              <Slider value={[s.sampleBpm ?? 120]} min={60} max={200} step={1} onValueChange={([v]) => updateSampler(track.id, { sampleBpm: v ?? 120 })} />
+            </Row>
+            <div className="flex items-center justify-between">
+              <span className="label-xs" title="Repitch mode: speed and pitch change together. Pitch-preserving warp (Beats/Tones/Complex) needs the desktop engine.">Sync to project BPM (repitch)</span>
+              <Switch checked={!!s.syncToBpm} onCheckedChange={(v) => updateSampler(track.id, { syncToBpm: v, sampleBpm: s.sampleBpm ?? 120 })} />
+            </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="label-xs">Loop</span>
@@ -437,7 +478,8 @@ export function Sampler() {
 
           <p className="text-xs text-muted-foreground">
             Play the trimmed sample from the on-screen keyboard, the piano roll or your MIDI controller — the root note
-            plays it at its original speed and every other key pitches it up or down.
+            plays it at its original speed and every other key pitches it up or down. Tempo sync uses Repitch (speed and pitch
+            move together); pitch-preserving warp modes are not available in the browser yet.
           </p>
         </>
       )}
