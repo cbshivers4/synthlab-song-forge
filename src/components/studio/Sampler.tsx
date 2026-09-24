@@ -6,6 +6,9 @@ import { Switch } from "@/components/ui/switch";
 import { useStudio } from "@/lib/synclab/store";
 import type { Track } from "@/lib/synclab/types";
 import { toast } from "sonner";
+import { getEngine } from "@/lib/synclab/audio-engine";
+import { encodeWav } from "@/lib/synclab/bounce";
+import { uid } from "@/lib/synclab/presets";
 import { WaveformView } from "@/components/studio/WaveformView";
 
 const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
@@ -123,7 +126,7 @@ function Waveform({ track, onSlice }: { track: Track; onSlice: (i: number) => vo
 }
 
 export function Sampler() {
-  const { tracks, selected, select, addTrack, loadSample, updateSampler, clearSample, stopSamples, previewNote } =
+  const { tracks, selected, select, addTrack, addClip, loadSample, updateSampler, clearSample, stopSamples, previewNote } =
     useStudio();
   const [over, setOver] = useState(false);
   /** chop pad currently held down */
@@ -133,6 +136,32 @@ export function Sampler() {
   const samplerTracks = tracks.filter((t) => t.kind === "sampler");
   const track =
     selected?.kind === "sampler" ? selected : samplerTracks.find((t) => t.sampler) ?? samplerTracks[0] ?? null;
+
+  const resample = async (t: Track) => {
+    if (!t.sampler) return;
+    try {
+      const engine = getEngine();
+      const cap = await engine.renderSample(t.sampler);
+      if (!cap) throw new Error("no sample");
+      const name = `${t.name} RESAMPLE`.slice(0, 28);
+      const loaded = await engine.loadSampleFile(encodeWav(cap), name);
+      const trackId = addTrack("audio", name);
+      addClip(trackId, {
+        id: uid(),
+        name,
+        peaks: loaded.peaks,
+        duration: loaded.duration,
+        url: loaded.url,
+        start: 0,
+        offset: 0,
+        length: loaded.duration,
+        gain: 1,
+      });
+      toast.success("Resampled", { description: "A new audio track holds the processed sound. The original is unchanged." });
+    } catch {
+      toast.error("SYNCLAB couldn't complete this operation.", { description: "Load a sample first, then try again." });
+    }
+  };
 
   const take = async (file: File | undefined) => {
     if (!file) return;
@@ -261,6 +290,15 @@ export function Sampler() {
                 onClick={() => updateSampler(track.id, { start: 0, end: 1 })}
               >
                 <RotateCcw className="size-3.5" /> Full length
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-9 gap-1.5 sm:h-7"
+                title="Render the processed sound to a new audio track. The original sample is not changed."
+                onClick={() => void resample(track)}
+              >
+                <AudioLines className="size-3.5" /> Resample
               </Button>
               <Button size="sm" variant="ghost" className="h-9 gap-1.5 text-destructive sm:h-7" onClick={() => clearSample(track.id)}>
                 <Trash2 className="size-3.5" /> Remove
