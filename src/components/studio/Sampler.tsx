@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { encodeWav } from "@/lib/synclab/bounce";
 import { uid } from "@/lib/synclab/presets";
+import { wsolaStretch } from "@/lib/synclab/stretch";
 import { WaveformView } from "@/components/studio/WaveformView";
 
 const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
@@ -163,6 +164,33 @@ export function Sampler() {
     }
   };
 
+  /** Makes a new sample stretched to the project tempo, keeping pitch. The previous file is not modified. */
+  const warp = async (t: Track) => {
+    const sm = t.sampler;
+    if (!sm) return;
+    const engine = getEngine();
+    const bpm = engine.tempo;
+    const from = sm.sampleBpm ?? 120;
+    if (Math.abs(bpm - from) < 0.01) {
+      toast.info("Already at project tempo");
+      return;
+    }
+    try {
+      toast.info("Stretching…");
+      const cap = await engine.renderSample({ ...sm, pitch: 0, syncToBpm: false, filterType: "off", fadeIn: 0, fadeOut: 0, gain: 1 });
+      if (!cap) throw new Error("no sample");
+      const speed = bpm / from;
+      const left = wsolaStretch(cap.left, speed);
+      const right = wsolaStretch(cap.right, speed);
+      const file = new File([encodeWav({ left, right, sampleRate: cap.sampleRate })], `${t.name}-${Math.round(bpm)}bpm.wav`, { type: "audio/wav" });
+      await loadSample(t.id, file);
+      updateSampler(t.id, { sampleBpm: Math.round(bpm), syncToBpm: false, start: 0, end: 1, reverse: false, slices: undefined });
+      toast.success(`Stretched to ${Math.round(bpm)} BPM`, { description: "Pitch kept. Your original file is unchanged — reload it anytime." });
+    } catch {
+      toast.error("SYNCLAB couldn't complete this operation.", { description: "Load a sample first, then try again." });
+    }
+  };
+
   const take = async (file: File | undefined) => {
     if (!file) return;
     if (!file.type.startsWith("audio") && !AUDIO_RE.test(file.name)) {
@@ -299,6 +327,15 @@ export function Sampler() {
                 onClick={() => void resample(track)}
               >
                 <AudioLines className="size-3.5" /> Resample
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-9 gap-1.5 sm:h-7"
+                title="Stretch the trimmed sample from Sample BPM to the project tempo without changing its pitch."
+                onClick={() => void warp(track)}
+              >
+                <RotateCcw className="size-3.5" /> Warp to project BPM
               </Button>
               <Button size="sm" variant="ghost" className="h-9 gap-1.5 text-destructive sm:h-7" onClick={() => clearSample(track.id)}>
                 <Trash2 className="size-3.5" /> Remove
@@ -517,7 +554,7 @@ export function Sampler() {
           <p className="text-xs text-muted-foreground">
             Play the trimmed sample from the on-screen keyboard, the piano roll or your MIDI controller — the root note
             plays it at its original speed and every other key pitches it up or down. Tempo sync uses Repitch (speed and pitch
-            move together); pitch-preserving warp modes are not available in the browser yet.
+            move together); use "Warp to project BPM" to stretch the sample while keeping its pitch.
           </p>
         </>
       )}
