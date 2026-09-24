@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { songSteps } from "@/lib/synclab/timebase";
-import { Mic, Sparkles } from "lucide-react";
+import { Mic, Play, Sparkles, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
@@ -15,6 +15,7 @@ export function VocalForge() {
   const [voice, setVoice] = useState<string>(VOICES[0] as string);
   const [lyrics, setLyrics] = useState("");
   const [tone, setTone] = useState(0.5);
+  const [playing, setPlaying] = useState(false);
 
   return (
     <div className="grid gap-3 md:grid-cols-2">
