@@ -2008,7 +2008,7 @@ export class SyncLabEngine {
     const tune = Math.pow(2, pad.pitch / 12);
     const dec = 0.1 + pad.decay;
 
-    // ---- shaping chain: out -> drive -> tone -> envelope -> pan -> channel
+    // ---- shaping chain: out -> distortion -> compressor -> tone -> envelope -> pan -> channel
     const drive = clamp(pad.drive ?? 0, 0, 1);
     let node: AudioNode = out;
     if (drive > 0.001) {
@@ -2026,6 +2026,18 @@ export class SyncLabEngine {
       node.connect(shaper);
       shaper.connect(trim);
       node = trim;
+    }
+
+    const compression = clamp(pad.compressor ?? 0, 0, 1);
+    if (compression > 0.001) {
+      const compressor = ctx.createDynamicsCompressor();
+      compressor.threshold.value = -8 - compression * 34;
+      compressor.knee.value = 18 - compression * 14;
+      compressor.ratio.value = 1 + compression * 11;
+      compressor.attack.value = 0.002 + (1 - compression) * 0.018;
+      compressor.release.value = 0.08 + compression * 0.22;
+      node.connect(compressor);
+      node = compressor;
     }
 
     const toneAmt = clamp(pad.tone ?? 0.5, 0, 1);

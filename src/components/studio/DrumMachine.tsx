@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { SkinControls, skinBackground } from "@/components/studio/SkinControls";
 import { useSkin } from "@/lib/synclab/skins";
-import { Plus, Save, Sparkles, Trash2, Upload } from "lucide-react";
+import { Copy, Plus, RotateCcw, Save, Sparkles, Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -27,11 +27,68 @@ function readPresets(): DrumPreset[] {
 
 
 export function DrumMachine({ track }: { track: Track }) {
-  const { updatePad, setStepCount, addPad, generateBeat, transport } = useStudio();
+  const { updatePad, updateTrack, setStepCount, addPad, generateBeat, transport } = useStudio();
   const [genre, setGenre] = useState("Detroit Techno");
   const [energy, setEnergy] = useState(6);
   const [openPad, setOpenPad] = useState<string | null>(null);
+  const [selectedStep, setSelectedStep] = useState<{ padId: string; index: number } | null>(null);
   const pads = track.pads ?? [];
+  const activePattern = Math.max(0, Math.min(7, track.activeDrumPattern ?? 0));
+
+  const clonePads = (source: DrumPad[]) => structuredClone(source) as DrumPad[];
+  const switchPattern = (next: number) => {
+    if (next === activePattern) return;
+    const patterns = [...(track.drumPatterns ?? [])];
+    patterns[activePattern] = clonePads(pads);
+    const target = patterns[next]
+      ? clonePads(patterns[next] as DrumPad[]).map((pad) => ({
+          ...pad,
+          steps: Array.from({ length: track.steps }, (_, i) => pad.steps[i] ?? 0),
+        }))
+      : pads.map((pad) => ({
+          ...pad,
+          steps: pad.steps.map(() => 0),
+          probability: undefined,
+          stepPitch: undefined,
+          stepDecay: undefined,
+          flam: undefined,
+          retrig: undefined,
+          glitch: undefined,
+        }));
+    patterns[next] = clonePads(target);
+    updateTrack(track.id, { drumPatterns: patterns, activeDrumPattern: next, pads: target });
+    setSelectedStep(null);
+  };
+
+  const copyPattern = () => {
+    const destination = (activePattern + 1) % 8;
+    const patterns = [...(track.drumPatterns ?? [])];
+    patterns[activePattern] = clonePads(pads);
+    patterns[destination] = clonePads(pads);
+    updateTrack(track.id, { drumPatterns: patterns, activeDrumPattern: destination, pads: clonePads(pads) });
+    toast.success(`Pattern ${activePattern + 1} copied to ${destination + 1}`);
+  };
+
+  const clearPattern = () => {
+    const cleared = pads.map((pad) => ({ ...pad, steps: pad.steps.map(() => 0), probability: undefined, stepPitch: undefined, stepDecay: undefined, flam: undefined, retrig: undefined, glitch: undefined }));
+    const patterns = [...(track.drumPatterns ?? [])];
+    patterns[activePattern] = clonePads(cleared);
+    updateTrack(track.id, { drumPatterns: patterns, pads: cleared });
+  };
+
+  const updateStepValue = (pad: DrumPad, key: "steps" | "probability" | "stepPitch" | "stepDecay" | "flam" | "retrig" | "glitch", index: number, value: number) => {
+    const fallback = key === "probability" || key === "stepDecay" || key === "retrig" ? 1 : 0;
+    const values = Array.from({ length: track.steps }, (_, i) => pad[key]?.[i] ?? fallback);
+    values[index] = value;
+    updatePad(track.id, pad.id, { [key]: values });
+  };
+
+  const mutate = (pad: DrumPad) => {
+    const amount = pad.mutation ?? 0.2;
+    updatePad(track.id, pad.id, {
+      steps: pad.steps.map((value) => Math.random() < amount ? (value > 0 ? (Math.random() < 0.35 ? 0 : Math.max(0.25, Math.min(1, value + (Math.random() - 0.5) * 0.4))) : (Math.random() < 0.28 ? 0.55 : 0)) : value),
+    });
+  };
 
   // click cycles: off -> ghost -> normal -> accent
   const cycleStep = (padId: string, steps: number[], i: number) => {
@@ -111,6 +168,16 @@ export function DrumMachine({ track }: { track: Track }) {
   return (
     <div className={`space-y-3 ${skinBackground(skin) ? "rounded-xl p-3" : ""}`} style={skinBackground(skin)}>
       <SkinControls skinKey="drums" />
+      <div className="flex flex-wrap items-center gap-2 rounded-[3px] border border-border bg-surface/80 p-2">
+        <span className="label-xs mr-1">PATTERNS</span>
+        {Array.from({ length: 8 }, (_, index) => (
+          <Button key={index} size="icon" variant={activePattern === index ? "default" : "outline"} className="size-10" aria-label={`Pattern ${index + 1}`} onClick={() => switchPattern(index)}>
+            {index + 1}
+          </Button>
+        ))}
+        <Button size="sm" variant="secondary" onClick={copyPattern}><Copy className="size-4" /> Copy next</Button>
+        <Button size="sm" variant="ghost" onClick={clearPattern}><RotateCcw className="size-4" /> Clear</Button>
+      </div>
       <div className="flex flex-wrap items-center gap-2">
         <Select value={kit} onValueChange={(v) => loadKit(v as DrumKitId)}>
           <SelectTrigger className="w-56">
@@ -240,7 +307,10 @@ export function DrumMachine({ track }: { track: Track }) {
                   <button
                     key={i}
                     aria-label={`${pad.name} step ${i + 1}`}
-                    onClick={() => cycleStep(pad.id, pad.steps, i)}
+                     onClick={() => {
+                       cycleStep(pad.id, pad.steps, i);
+                       setSelectedStep({ padId: pad.id, index: i });
+                     }}
                     title={v > 0 ? `velocity ${Math.round(v * 100)}%` : "empty"}
                     className="h-6 flex-1 rounded-[3px] border transition-all"
                     style={{
@@ -290,11 +360,13 @@ export function DrumMachine({ track }: { track: Track }) {
                   value={pad.tone ?? 0.5}
                   onChange={(v) => updatePad(track.id, pad.id, { tone: v })}
                 />
-                <Knob label="DRIVE" value={pad.drive ?? 0} onChange={(v) => updatePad(track.id, pad.id, { drive: v })} />
+                 <Knob label="DISTORT" value={pad.drive ?? 0} onChange={(v) => updatePad(track.id, pad.id, { drive: v })} />
+                 <Knob label="COMP" value={pad.compressor ?? 0} onChange={(v) => updatePad(track.id, pad.id, { compressor: v })} />
                 <Knob label="SNAP" value={pad.snap ?? 0} onChange={(v) => updatePad(track.id, pad.id, { snap: v })} />
                 <Knob label="NOISE" value={pad.noise ?? 0} onChange={(v) => updatePad(track.id, pad.id, { noise: v })} />
                 <Knob label="WIDTH" value={pad.width ?? 0} onChange={(v) => updatePad(track.id, pad.id, { width: v })} />
                 <Knob label="CRUSH" value={pad.crush ?? 0} onChange={(v) => updatePad(track.id, pad.id, { crush: v })} />
+                 <Knob label="MUTATION" value={pad.mutation ?? 0.2} onChange={(v) => updatePad(track.id, pad.id, { mutation: v })} />
                 <div className="flex flex-col gap-1">
                   <span className="label-xs">FILTER</span>
                   <div className="flex gap-1">
@@ -342,6 +414,9 @@ export function DrumMachine({ track }: { track: Track }) {
                   <Button size="sm" variant="ghost" onClick={() => roll(pad.id, pad.steps)}>
                     Roll
                   </Button>
+                   <Button size="sm" variant="secondary" onClick={() => mutate(pad)}>
+                     Mutate
+                   </Button>
                   <label className="cursor-pointer rounded-md px-2 py-1 text-xs text-muted-foreground hover:text-foreground">
                     Load sample
                     <input
@@ -371,6 +446,19 @@ export function DrumMachine({ track }: { track: Track }) {
                 </div>
               </div>
             )}
+             {selectedStep?.padId === pad.id && (
+               <div className="panel flex flex-wrap items-end gap-3 p-3 sm:ml-24">
+                 <div className="min-w-20"><span className="label-xs">STEP</span><div className="font-mono text-sm text-primary">{selectedStep.index + 1}</div></div>
+                 <Knob label="VELOCITY" value={pad.steps[selectedStep.index] ?? 0} onChange={(v) => updateStepValue(pad, "steps", selectedStep.index, v)} />
+                 <Knob label="PITCH" min={-12} max={12} step={1} value={pad.stepPitch?.[selectedStep.index] ?? 0} onChange={(v) => updateStepValue(pad, "stepPitch", selectedStep.index, v)} />
+                 <Knob label="DECAY" min={0.1} max={2} value={pad.stepDecay?.[selectedStep.index] ?? 1} onChange={(v) => updateStepValue(pad, "stepDecay", selectedStep.index, v)} />
+                 <Knob label="CHANCE" value={pad.probability?.[selectedStep.index] ?? 1} onChange={(v) => updateStepValue(pad, "probability", selectedStep.index, v)} />
+                 <Knob label="FLAM" value={pad.flam?.[selectedStep.index] ?? 0} onChange={(v) => updateStepValue(pad, "flam", selectedStep.index, v)} />
+                 <Knob label="RETRIG" min={1} max={4} step={1} value={pad.retrig?.[selectedStep.index] ?? 1} onChange={(v) => updateStepValue(pad, "retrig", selectedStep.index, Math.round(v))} />
+                 <Knob label="GLITCH" value={pad.glitch?.[selectedStep.index] ?? 0} onChange={(v) => updateStepValue(pad, "glitch", selectedStep.index, v)} />
+                 <Button size="sm" variant="ghost" onClick={() => setSelectedStep(null)}>Close step</Button>
+               </div>
+             )}
           </div>
         ))}
       </div>

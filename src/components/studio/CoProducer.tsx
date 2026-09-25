@@ -7,6 +7,7 @@ import { useStudio } from "@/lib/synclab/store";
 import { askCoProducer } from "@/lib/coproducer.functions";
 import { KIND_LABEL } from "@/lib/synclab/presets";
 import { toast } from "sonner";
+import { CreativeToolThemePicker, useCreativeToolTheme } from "./CreativeToolTheme";
 
 interface Msg {
   role: "user" | "assistant";
@@ -27,6 +28,7 @@ export function CoProducer() {
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
+  const { theme, setTheme } = useCreativeToolTheme("coproducer");
 
   const session = useMemo(() => {
     const lines = [
@@ -61,11 +63,12 @@ export function CoProducer() {
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3 p-1">
+    <div className="creative-tool flex h-full min-h-0 flex-col gap-3 p-3" data-creative-theme={theme}>
       <div className="flex items-center gap-2">
         <span className="label-xs">AI CO-PRODUCER — knows your tempo, tracks and instruments</span>
+        <div className="ml-auto"><CreativeToolThemePicker tool="coproducer" theme={theme} onChange={setTheme} /></div>
         {messages.length > 0 && (
-          <Button size="sm" variant="ghost" className="ml-auto" onClick={() => setMessages([])}>
+          <Button size="sm" variant="ghost" onClick={() => setMessages([])}>
             <Trash2 className="size-4" /> Clear
           </Button>
         )}

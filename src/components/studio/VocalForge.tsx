@@ -7,6 +7,7 @@ import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useStudio } from "@/lib/synclab/store";
 import { toast } from "sonner";
+import { CreativeToolThemePicker, useCreativeToolTheme } from "./CreativeToolTheme";
 
 const VOICES = ["Detroit Baritone", "Electro Vocoder", "Soul Alto", "Ghetto Tech Chant", "Robotic Whisper"];
 
@@ -16,9 +17,11 @@ export function VocalForge() {
   const [lyrics, setLyrics] = useState("");
   const [tone, setTone] = useState(0.5);
   const [playing, setPlaying] = useState(false);
+  const { theme, setTheme } = useCreativeToolTheme("vocal");
 
   return (
-    <div className="grid gap-3 md:grid-cols-2">
+    <div className="creative-tool grid gap-3 p-3 md:grid-cols-2" data-creative-theme={theme}>
+      <div className="col-span-full flex justify-end"><CreativeToolThemePicker tool="vocal" theme={theme} onChange={setTheme} /></div>
       <div className="panel space-y-3 p-4">
         <span className="label-xs">AI vocal generator</span>
         <Textarea
