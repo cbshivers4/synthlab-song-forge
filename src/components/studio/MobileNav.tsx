@@ -11,6 +11,7 @@ import {
   Music,
   Piano,
   Plus,
+  Radio,
   Scissors,
   Settings as SettingsIcon,
   SlidersHorizontal,
@@ -45,6 +46,7 @@ export function MobileNav({ onBeatMode }: { onBeatMode: () => void }) {
     { label: "AI Vocal", icon: <Mic />, panel: "vocal" },
     { label: "AI Stem Generator", icon: <Sparkles />, panel: "stemgen" },
     { label: "Hum-to-Beat", icon: <AudioLines />, panel: "hum" },
+    { label: "Live View", icon: <Radio />, panel: "live" },
   ];
   const more: Item[] = [
     { label: "Piano Roll", icon: <Music />, panel: "piano" },
