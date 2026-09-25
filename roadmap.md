@@ -86,4 +86,5 @@
 - [x] Resume browser audio after sleep/backgrounding and fade scheduled channels on transport stop
 - [x] Start transport playback from the visible playhead
 - [x] Move Bass Generator preview timing onto the audio clock
+- [x] Move Pad Sampler sequence timing onto the audio clock
 - [ ] Validate latency and audio-interface behavior on real macOS, Windows, iPhone and Android hardware

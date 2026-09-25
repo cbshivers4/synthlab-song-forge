@@ -1533,11 +1533,14 @@ export function StudioProvider({ children }: { children: ReactNode }) {
                 .startInputRecording(target.id, transportRef.current.monitor ?? false)
                 .then(() => updateTrack(target.id, { recording: true }))
                 .catch((err: unknown) =>
-                  toast.error("Microphone unavailable", {
-                    description: err instanceof Error ? err.message : "The microphone could not be opened.",
-                    duration: 9000,
-                    action: { label: "Open in tab", onClick: openInOwnTab },
-                  }),
+                  {
+                    setTransportState((state) => ({ ...state, recording: false }));
+                    toast.error("Microphone unavailable", {
+                      description: err instanceof Error ? err.message : "The microphone could not be opened.",
+                      duration: 9000,
+                      action: { label: "Open in tab", onClick: openInOwnTab },
+                    });
+                  },
                 );
             } else if (armedNote) {
               recStartStepRef.current = transportRef.current.step ?? 0;
