@@ -1109,15 +1109,11 @@ export class SyncLabEngine {
   silenceChannels(ids: string[]) {
     for (const id of ids) {
       this.stopSamples(id);
-      const ch = this.channels.get(id);
       const now = this.ctx?.currentTime ?? 0;
-      if (ch) {
-        ch.gain.gain.cancelScheduledValues(now);
-        ch.gain.gain.setTargetAtTime(0, now, 0.006);
-      }
       this.monoVoice.get(id)?.stop(now);
       this.monoVoice.delete(id);
       this.lastMidi.delete(id);
+      this.removeChannel(id);
     }
   }
 
