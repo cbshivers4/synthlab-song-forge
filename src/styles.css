@@ -189,6 +189,11 @@
 .creative-tool[data-creative-theme="amber"] { --tool-accent: oklch(0.84 0.16 85); }
 .creative-tool[data-creative-theme="emerald"] { --tool-accent: oklch(0.78 0.18 145); }
 .creative-tool[data-creative-theme="mono"] { --tool-accent: oklch(0.82 0 0); }
+.creative-tool[data-creative-theme] {
+  --primary: var(--tool-accent);
+  --ring: var(--tool-accent);
+  --neon: var(--tool-accent);
+}
 .creative-tool .panel {
   border-color: color-mix(in oklab, var(--tool-accent) 38%, var(--border));
   background-image: linear-gradient(180deg, color-mix(in oklab, var(--tool-accent) 10%, var(--surface)), var(--surface));

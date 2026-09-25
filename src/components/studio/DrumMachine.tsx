@@ -41,7 +41,10 @@ export function DrumMachine({ track }: { track: Track }) {
     const patterns = [...(track.drumPatterns ?? [])];
     patterns[activePattern] = clonePads(pads);
     const target = patterns[next]
-      ? clonePads(patterns[next] as DrumPad[])
+      ? clonePads(patterns[next] as DrumPad[]).map((pad) => ({
+          ...pad,
+          steps: Array.from({ length: track.steps }, (_, i) => pad.steps[i] ?? 0),
+        }))
       : pads.map((pad) => ({
           ...pad,
           steps: pad.steps.map(() => 0),
@@ -357,7 +360,6 @@ export function DrumMachine({ track }: { track: Track }) {
                   value={pad.tone ?? 0.5}
                   onChange={(v) => updatePad(track.id, pad.id, { tone: v })}
                 />
-                <Knob label="DRIVE" value={pad.drive ?? 0} onChange={(v) => updatePad(track.id, pad.id, { drive: v })} />
                  <Knob label="DISTORT" value={pad.drive ?? 0} onChange={(v) => updatePad(track.id, pad.id, { drive: v })} />
                  <Knob label="COMP" value={pad.compressor ?? 0} onChange={(v) => updatePad(track.id, pad.id, { compressor: v })} />
                 <Knob label="SNAP" value={pad.snap ?? 0} onChange={(v) => updatePad(track.id, pad.id, { snap: v })} />
