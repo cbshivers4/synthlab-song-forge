@@ -245,6 +245,32 @@ export class SyncLabEngine {
     return curve;
   }
 
+  /* ---------------- live performance insert (post-master) ---------------- */
+  private masterInsert: { input: AudioNode; output: AudioNode } | null = null;
+
+  /** Routes the master through a performance chain before the meters/speakers. */
+  setMasterInsert(chain: { input: AudioNode; output: AudioNode } | null) {
+    this.init();
+    if (!this.master || !this.analyser) return;
+    try { this.master.disconnect(this.analyser); } catch { /* not connected */ }
+    if (this.masterInsert) {
+      try { this.master.disconnect(this.masterInsert.input); } catch { /* */ }
+      try { this.masterInsert.output.disconnect(this.analyser); } catch { /* */ }
+    }
+    this.masterInsert = chain;
+    if (chain) {
+      this.master.connect(chain.input);
+      chain.output.connect(this.analyser);
+    } else {
+      this.master.connect(this.analyser);
+    }
+  }
+
+  /** Final signal that reaches the speakers (after live FX). */
+  get outputNode(): AudioNode | null {
+    return this.masterInsert?.output ?? this.master;
+  }
+
   /* ---------------- master capture (bounce / export) ---------------- */
   private capture: {
     proc: ScriptProcessorNode;
