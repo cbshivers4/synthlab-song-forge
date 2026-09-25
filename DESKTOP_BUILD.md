@@ -20,6 +20,7 @@ electron/main.cjs          window, IPC, file dialogs, offline fallback page
 electron/menu.cjs          native application menu -> "synclab:menu" commands
 electron/window-state.cjs  remembers size, position, maximized, fullscreen, multi-display safe
 electron/preload.cjs       the ONLY surface the page can see (contextIsolation on)
+electron/plugin-bridge.cjs authenticated local scanner for installed VST3/AU bundles
 build-resources/           icon.icns (macOS), icon.ico (Windows), icon.png (Linux/window)
 scripts/build-desktop.mjs  packaging entry point
 src/lib/synclab/desktop.ts      runtime detection + saveBytes/openLocalFiles
@@ -30,6 +31,11 @@ src/lib/synclab/bridge.ts       client for the Desktop Audio Bridge (ws://127.0.
 Layering: UI -> Project Engine (`store.tsx`) -> Audio/MIDI Engine (`audio-engine.ts`, `midi.ts`) ->
 Plugin Bridge (`bridge.ts`) -> Local File System (`desktop.ts` + IPC) -> Desktop OS. AI and account
 features stay in the cloud service layer (server functions) and are reachable from both runtimes.
+
+The packaged desktop app starts the scanner on `127.0.0.1` with a private per-launch token. It scans
+standard VST3 locations on Windows and VST3/Audio Unit locations on macOS. This scanner reports real
+bundle names and paths, but it does not load plugin code or process audio. Native hosting remains a
+separate milestone that must be compiled and tested on each supported operating system.
 
 ## Development
 

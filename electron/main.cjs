@@ -16,6 +16,8 @@
 const { app, BrowserWindow, ipcMain, dialog, shell, session, systemPreferences } = require("electron");
 const path = require("path");
 const fs = require("fs/promises");
+const crypto = require("crypto");
+const { fork } = require("child_process");
 const info = require("./app-info.cjs");
 const { buildMenu } = require("./menu.cjs");
 const windowState = require("./window-state.cjs");
@@ -27,6 +29,29 @@ app.setName(info.productName);
 app.setAppUserModelId(info.appId);
 
 let win = null;
+let pluginBridge = null;
+let pluginBridgePort = null;
+const pluginBridgeToken = crypto.randomBytes(24).toString("hex");
+
+function startPluginBridge() {
+  if (pluginBridge) return;
+  pluginBridge = fork(path.join(__dirname, "plugin-bridge.cjs"), [], {
+    env: {
+      ...process.env,
+      SYNCLAB_BRIDGE_PORT: "0",
+      SYNCLAB_BRIDGE_TOKEN: pluginBridgeToken,
+      SYNCLAB_BRIDGE_VERSION: info.version,
+    },
+    stdio: ["ignore", "ignore", "ignore", "ipc"],
+  });
+  pluginBridge.on("message", (message) => {
+    if (message?.type === "ready" && Number.isInteger(message.port)) pluginBridgePort = message.port;
+  });
+  pluginBridge.once("exit", () => {
+    pluginBridge = null;
+    pluginBridgePort = null;
+  });
+}
 
 function iconPath() {
   const file = process.platform === "win32" ? "icon.ico" : "icon.png";
@@ -97,8 +122,10 @@ app.whenReady().then(async () => {
       /* user can grant later in System Settings → Privacy → Microphone */
     }
   }
+  startPluginBridge();
   createWindow();
 });
+app.on("before-quit", () => pluginBridge?.kill());
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();
 });
@@ -137,3 +164,9 @@ ipcMain.handle("synclab:reveal", async (_e, filePath) => {
   shell.showItemInFolder(filePath);
   return { ok: true };
 });
+
+ipcMain.handle("synclab:plugin-bridge-info", async () => ({
+  ok: Boolean(pluginBridge && pluginBridgePort),
+  url: pluginBridgePort ? `ws://127.0.0.1:${pluginBridgePort}/?token=${pluginBridgeToken}` : "",
+  capability: "scan",
+}));

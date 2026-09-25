@@ -19,6 +19,7 @@ contextBridge.exposeInMainWorld("synclab", {
   openFiles: (filters, multiple) => ipcRenderer.invoke("synclab:open-files", { filters, multiple }),
   chooseFolder: () => ipcRenderer.invoke("synclab:choose-folder"),
   revealFile: (filePath) => ipcRenderer.invoke("synclab:reveal", filePath),
+  pluginBridgeInfo: () => ipcRenderer.invoke("synclab:plugin-bridge-info"),
   /** Native menu commands. Returns an unsubscribe function. */
   onMenu: (handler) => {
     const listener = (_e, command) => handler(command);

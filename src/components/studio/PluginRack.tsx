@@ -270,7 +270,7 @@ export function PluginRack() {
 
       {/* installed rack */}
       <div>
-        <p className="label-xs mb-1.5">PLUGIN RACK — click to insert on {track.name}</p>
+        <p className="label-xs mb-1.5">SYNCLAB EFFECT RACK — click to insert on {track.name}</p>
         <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-4">
           {installedPlugins.map((d) => (
             <div
@@ -319,16 +319,16 @@ export function PluginRack() {
         }`}
       >
         <Upload className="size-5 text-primary" />
-        <p className="text-[11px] font-medium">Drag your VST3 / AU / CLAP plugins here</p>
+        <p className="text-[11px] font-medium">Create a SYNCLAB effect from a plugin name</p>
         <p className="max-w-md text-[10px] text-muted-foreground">
-          Drop plugin files or whole folders from Finder or Explorer. Their name and format are read in and each one drives
-          SYNCLAB&apos;s matching processor — a browser cannot run a native plugin binary.
+          This reads only the file name and format, then creates a separate SYNCLAB effect with similar controls. It does not
+          load, copy, or run the original plugin.
         </p>
       </div>
 
       {/* scan a plugin folder from the computer */}
       <div className="panel space-y-2 p-2">
-        <p className="label-xs">SCAN PLUGIN FOLDER ON THIS COMPUTER</p>
+        <p className="label-xs">READ NAMES FROM A PLUGIN FOLDER</p>
         <div className="flex flex-wrap items-center gap-2">
           <input
             ref={folderRef}
@@ -352,8 +352,8 @@ export function PluginRack() {
           </span>
         </div>
         <p className="text-[10px] text-muted-foreground">
-          The browser can read your plugin folder&apos;s names and formats, but it cannot load a native VST/AU binary. Scanned
-          plugins appear in the rack and run through SYNCLAB&apos;s matching built-in processor with editable parameters.
+          This browser tool reads names and formats only. The items it creates are clearly separate SYNCLAB effects; use the
+          Desktop Audio Bridge above to discover real installed plugin bundles.
         </p>
       </div>
 
