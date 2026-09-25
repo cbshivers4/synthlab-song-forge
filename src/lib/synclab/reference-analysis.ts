@@ -15,7 +15,7 @@ function monoSamples(buffer: AudioBuffer) {
   const mono = new Float32Array(buffer.length);
   for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
     const data = buffer.getChannelData(channel);
-    for (let index = 0; index < data.length; index++) mono[index] += (data[index] ?? 0) / buffer.numberOfChannels;
+    for (let index = 0; index < data.length; index++) mono[index] = (mono[index] ?? 0) + (data[index] ?? 0) / buffer.numberOfChannels;
   }
   return mono;
 }
@@ -78,7 +78,8 @@ function estimateKey(data: Float32Array, sampleRate: number) {
   const chroma = Array.from({ length: 12 }, () => 0);
   for (let midi = 36; midi <= 83; midi++) {
     const frequency = 440 * 2 ** ((midi - 69) / 12);
-    chroma[midi % 12] += goertzel(data, sampleRate, frequency);
+    const pitchClass = midi % 12;
+    chroma[pitchClass] = (chroma[pitchClass] ?? 0) + goertzel(data, sampleRate, frequency);
   }
   const major = [6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88];
   const minor = [6.33, 2.68, 3.52, 5.38, 2.6, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17];
