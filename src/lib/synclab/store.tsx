@@ -648,7 +648,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
 
     const LOOKAHEAD = 0.14; // seconds of audio scheduled in advance
     const TICK = 20; // ms between scheduler passes
-    let step = 0;
+    let step = transportRef.current.step ?? 0;
     let nextTime = ctx.currentTime + 0.06;
     let cancelled = false;
     let lastScheduled: number | null = null;
@@ -853,6 +853,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       cancelled = true;
       cancelAnimationFrame(raf);
       window.clearInterval(interval);
+      engine.silenceChannels(tracksRef.current.map((track) => track.id));
+      engine.removeChannel("metronome");
     };
   }, [transport.playing]);
 

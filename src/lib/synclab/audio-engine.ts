@@ -1,5 +1,5 @@
 import type { DrumKitId, DrumPad, PluginInstance, SynthPatch, Track } from "./types";
-import { openMicOrThrow, preferredRecordingMime } from "./mic";
+import { openMicOrThrow, preferredRecordingMime, releaseMic } from "./mic";
 
 type KitVoice = {
   kick: [number, number, number, OscillatorType];
@@ -132,6 +132,7 @@ export class SyncLabEngine {
   private pluginScopes = new Map<string, AnalyserNode>();
   private channels = new Map<string, ChannelStrip>();
   private analyser: AnalyserNode | null = null;
+  private resumeListenersInstalled = false;
 
 
 
@@ -145,6 +146,18 @@ export class SyncLabEngine {
       window.AudioContext;
     const ctx = new Ctor();
     this.ctx = ctx;
+    if (!this.resumeListenersInstalled) {
+      this.resumeListenersInstalled = true;
+      const resume = () => {
+        if (this.ctx?.state === "suspended") void this.ctx.resume().catch(() => undefined);
+      };
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") resume();
+      });
+      window.addEventListener("pageshow", resume);
+      window.addEventListener("pointerdown", resume, { passive: true });
+      window.addEventListener("keydown", resume);
+    }
     const master = ctx.createGain();
     master.gain.value = 0.85;
     const analyser = ctx.createAnalyser();
@@ -1062,8 +1075,31 @@ export class SyncLabEngine {
   removeChannel(id: string) {
     const ch = this.channels.get(id);
     if (ch) {
-      ch.pan.disconnect();
       this.channels.delete(id);
+      this.pluginScopes.delete(`ch:${id}`);
+      const now = this.ctx?.currentTime ?? 0;
+      try {
+        ch.gain.gain.cancelScheduledValues(now);
+        ch.gain.gain.setTargetAtTime(0, now, 0.006);
+        window.setTimeout(() => {
+          try { ch.pan.disconnect(); } catch { /* already disconnected */ }
+          for (const node of ch.insertNodes) {
+            try { node.disconnect(); } catch { /* already disconnected */ }
+          }
+        }, 35);
+      } catch {
+        try { ch.pan.disconnect(); } catch { /* already disconnected */ }
+      }
+    }
+  }
+
+  /** Fade queued transport/preview channels instead of leaving scheduled notes behind. */
+  silenceChannels(ids: string[]) {
+    for (const id of ids) {
+      this.stopSamples(id);
+      this.removeChannel(id);
+      this.monoVoice.delete(id);
+      this.lastMidi.delete(id);
     }
   }
 
@@ -1114,6 +1150,11 @@ export class SyncLabEngine {
       noiseSuppression: false,
       autoGainControl: false,
     });
+    // The target may have changed while the browser permission prompt was open.
+    if (this.monitorTrackId && this.monitorTrackId !== trackId) {
+      releaseMic(stream);
+      return;
+    }
     this.recStream = stream;
     const src = ctx.createMediaStreamSource(stream);
     const analyser = ctx.createAnalyser();
@@ -1132,7 +1173,7 @@ export class SyncLabEngine {
   /** Close the microphone when the channel is disarmed (never while recording). */
   stopInputMonitoring() {
     if (this.isRecording) return;
-    this.recStream?.getTracks().forEach((t) => t.stop());
+    releaseMic(this.recStream);
     this.recStream = null;
     this.monitorNode?.disconnect();
     this.monitorGain?.disconnect();

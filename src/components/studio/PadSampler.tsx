@@ -11,7 +11,7 @@ import {
   Upload,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { openMic, openInOwnTab, preferredRecordingMime } from "@/lib/synclab/mic";
+import { openMic, openInOwnTab, preferredRecordingMime, releaseMic } from "@/lib/synclab/mic";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { useStudio } from "@/lib/synclab/store";
@@ -184,6 +184,13 @@ export function PadSampler() {
   const stepRef = useRef(0);
   const liveRef = useRef(liveRec);
   liveRef.current = liveRec;
+  useEffect(() => () => {
+    const current = recRef.current;
+    if (!current) return;
+    if (current.rec.state !== "inactive") current.rec.stop();
+    releaseMic(current.stream);
+    recRef.current = null;
+  }, []);
 
   /** The mixer channel every pad plays through. */
   const ensureTrack = useCallback(() => {
@@ -367,7 +374,7 @@ export function PadSampler() {
       r.rec.onstop = () => resolve(new Blob(r.chunks, { type: r.rec.mimeType || "audio/webm" }));
       r.rec.stop();
     });
-    r.stream.getTracks().forEach((t) => t.stop());
+    releaseMic(r.stream);
     recRef.current = null;
     setMicOn(false);
     setRecStream(null);

@@ -1,7 +1,7 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Mic, Play, RotateCcw, Square, WandSparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { openInOwnTab, openMic, preferredRecordingMime } from "@/lib/synclab/mic";
+import { openInOwnTab, openMic, preferredRecordingMime, releaseMic } from "@/lib/synclab/mic";
 import { useStudio } from "@/lib/synclab/store";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { toast } from "sonner";
@@ -30,6 +30,13 @@ export function HumToBeat() {
   const [pattern, setPattern] = useState<number[]>(Array.from({ length: 16 }, () => 0));
   const recordingRef = useRef<{ recorder: MediaRecorder; stream: MediaStream; chunks: Blob[] } | null>(null);
   const { theme, setTheme } = useCreativeToolTheme("hum");
+  useEffect(() => () => {
+    const current = recordingRef.current;
+    if (!current) return;
+    if (current.recorder.state !== "inactive") current.recorder.stop();
+    releaseMic(current.stream);
+    recordingRef.current = null;
+  }, []);
 
   const start = async () => {
     const result = await openMic({ echoCancellation: false, noiseSuppression: false, autoGainControl: true });
@@ -58,7 +65,7 @@ export function HumToBeat() {
       current.recorder.onstop = () => resolve(new Blob(current.chunks, { type: current.recorder.mimeType }));
       current.recorder.stop();
     });
-    current.stream.getTracks().forEach((track) => track.stop());
+    releaseMic(current.stream);
     recordingRef.current = null;
     setRecording(false);
     try {

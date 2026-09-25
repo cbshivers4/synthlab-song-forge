@@ -80,3 +80,10 @@
 - [x] Add eight recallable drum patterns per drum track
 - [x] Add saved color themes to Vocal Forge, Stem Separator, Voice Remover, AI Co-Producer and Hum to Beat
 - [x] Verify compilation, project tests, preview startup and the phone viewport
+
+## Playback and recording stability
+- [x] Share microphone ownership and release input streams when recording tools close
+- [x] Resume browser audio after sleep/backgrounding and fade scheduled channels on transport stop
+- [x] Start transport playback from the visible playhead
+- [x] Move Bass Generator preview timing onto the audio clock
+- [ ] Validate latency and audio-interface behavior on real macOS, Windows, iPhone and Android hardware
