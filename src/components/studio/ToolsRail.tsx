@@ -7,6 +7,7 @@ import {
   ChevronRight,
   Cpu,
   Disc3,
+  FileSearch,
   Gauge,
   Grid2x2,
   Music2,
@@ -56,6 +57,7 @@ const TOOLS: Tool[] = [
   { id: "stemgen", label: "AI Stem Generator", icon: <Sparkles className="size-4" />, panel: "stemgen", advanced: true },
   { id: "notes", label: "Track Notes", icon: <NotebookPen className="size-4" />, panel: "notes", advanced: true },
   { id: "master", label: "Mastering", icon: <Gauge className="size-4" />, panel: "mastering" },
+  { id: "reference", label: "Reference Analyzer", icon: <FileSearch className="size-4" />, panel: "reference" },
 
 ];
 
@@ -70,7 +72,7 @@ interface Section {
 const SECTIONS: Section[] = [
   { id: "ai", label: "AI Studio", tools: ["vocal", "stems", "voice", "coproducer", "hum", "stemgen"].map(tool) },
   { id: "instruments", label: "Instruments", tools: ["synth", "bass", "drums", "beat", "chop", "sampler"].map(tool) },
-  { id: "mix", label: "Mix & Master", tools: ["mixer", "master", "notes"].map(tool) },
+  { id: "mix", label: "Mix & Master", tools: ["mixer", "master", "reference", "notes"].map(tool) },
   { id: "plugins", label: "Plugins", tools: ["plugins"].map(tool) },
 ];
 

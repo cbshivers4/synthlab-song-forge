@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { ArrowDownToLine, ArrowUpFromLine, AudioLines, AudioWaveform, Cpu, Gauge, Disc3, FolderOpen, Grid2x2, KeyboardMusic, Music2, NotebookPen, Palette, Piano, SlidersHorizontal, Split, Settings2, Sparkles, Waves, X } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, AudioLines, AudioWaveform, Cpu, Gauge, Disc3, FileSearch, FolderOpen, Grid2x2, KeyboardMusic, Music2, NotebookPen, Palette, Piano, SlidersHorizontal, Split, Settings2, Sparkles, Waves, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStudio, type PanelId } from "@/lib/synclab/store";
 import { getEngine } from "@/lib/synclab/audio-engine";
@@ -41,6 +41,7 @@ import { MobileBeat } from "@/components/studio/MobileBeat";
 import { MobileNav } from "@/components/studio/MobileNav";
 import { MobileOnboarding } from "@/components/studio/MobileOnboarding";
 import { DesktopUpdateBanner } from "@/components/studio/DesktopUpdateBanner";
+import { ReferenceAnalyzer } from "@/components/studio/ReferenceAnalyzer";
 import { Bot } from "lucide-react";
 import { AppProvider, useApp, useMaybeApp } from "@/lib/synclab/app-state";
 import { PlanProvider } from "@/lib/synclab/plan";
@@ -156,6 +157,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
     mastering: { title: "MASTERING", icon: <Gauge className="size-4" /> },
     stemgen: { title: "AI STEM GENERATOR", icon: <Sparkles className="size-4" /> },
     notes: { title: "TRACK NOTES", icon: <NotebookPen className="size-4" /> },
+    reference: { title: "REFERENCE ANALYZER", icon: <FileSearch className="size-4" /> },
   };
   const current = config[panel];
 
@@ -282,6 +284,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
       {panel === "voice" && <StemSeparator mode="voice" />}
       {panel === "stemgen" && <StemGenerator />}
       {panel === "notes" && <NotesPanel />}
+      {panel === "reference" && <ReferenceAnalyzer />}
 
       </div>
 

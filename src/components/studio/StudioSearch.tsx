@@ -31,6 +31,7 @@ const PANELS: { id: Exclude<PanelId, null>; label: string }[] = [
   { id: "browser", label: "Browser" },
   { id: "appearance", label: "Appearance & Themes" },
   { id: "settings", label: "Settings" },
+  { id: "reference", label: "Reference Analyzer" },
 ];
 
 export function StudioSearch() {

@@ -18,6 +18,7 @@ import {
   Waves,
   Wand2,
   FolderOpen,
+  FileSearch,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -51,6 +52,7 @@ export function MobileNav({ onBeatMode }: { onBeatMode: () => void }) {
     { label: "Co-Producer", icon: <Bot />, panel: "coproducer" },
     { label: "Stem Separator", icon: <Waves />, panel: "stems" },
     { label: "Voice Remover", icon: <Waves />, panel: "voice" },
+    { label: "Reference Analyzer", icon: <FileSearch />, panel: "reference" },
     { label: "Settings", icon: <SettingsIcon />, panel: "settings" },
     { label: "Help", icon: <LifeBuoy />, run: () => openHelp("help") },
   ];
