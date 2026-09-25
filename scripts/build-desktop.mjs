@@ -64,7 +64,7 @@ const appPaths = await packager({
     /^\/electron-release/,
     /^\/\.lovable/,
     /^\/\.git/,
-    /^\/node_modules/,
+    /^\/node_modules\/(?!ws(?:\/|$))/,
     /^\/dist/,
   ],
 });

@@ -71,6 +71,8 @@
 - [x] Warp to project BPM: pitch-preserving stretch (WSOLA) writes a new sample, original file untouched
 - [x] Plugin browser: categories, favorites, recently used, search, drag, found/available/failed counts, "Plugin Scan Failed" cards
 - [ ] Actual native scanning — needs the desktop audio bridge program running on the computer
+- [x] Package an authenticated local desktop companion that scans standard VST3/AU locations and reports real bundle metadata
+- [ ] Load and process native plugins — requires a signed native host and real macOS/Windows hardware testing
 - [x] Add local analysis for reference tracks the user owns (tempo, key, loudness; no protected streaming audio)
 
 ## Drum performance and creative-tool themes

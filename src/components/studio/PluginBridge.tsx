@@ -154,6 +154,7 @@ export function PluginBridge() {
   const [filter, setFilter] = useState("");
   const editors = Object.values(state.editors);
   const connected = state.status === "connected";
+  const canHost = state.capabilities.includes("host");
   const [tab, setTab] = useState<(typeof TABS)[number]>("All");
   const [favs, setFavs] = useState<string[]>(() => readList(FAV_KEY));
   const [recent, setRecent] = useState<string[]>(() => readList(RECENT_KEY));
@@ -275,8 +276,9 @@ export function PluginBridge() {
                     draggable
                     onDragStart={(e) => e.dataTransfer.setData("application/x-synclab-plugin", p.uid)}
                     onClick={() => openPlugin(p.uid)}
+                    disabled={!canHost}
                     className="flex min-w-0 flex-1 items-center gap-2 text-left"
-                    title="Open the plugin window"
+                    title={canHost ? "Open the plugin window" : "Discovered only — native hosting is not included yet"}
                   >
                     <Monitor className="size-3.5 shrink-0 text-primary" />
                     <span className="min-w-0 flex-1">
@@ -332,6 +334,12 @@ export function PluginBridge() {
         <p className="text-[10px] text-muted-foreground">
           This bridge reports picture-and-control only: you see and drive the plugin, but its sound is produced on your computer,
           not inside this tab. A bridge build that streams audio back will report it and the channel will use it automatically.
+        </p>
+      )}
+      {connected && !canHost && (
+        <p className="text-[10px] text-muted-foreground">
+          Discovery is active. These are real plugin bundles found on this computer, but this build does not load or process
+          them. Native hosting remains unavailable until the signed bridge host is installed and hardware-tested.
         </p>
       )}
     </div>

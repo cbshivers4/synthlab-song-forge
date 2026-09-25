@@ -68,6 +68,7 @@ export interface BridgeState {
   host?: string | undefined; // bridge app name + version
   formats: BridgeFormat[];
   audio: boolean; // true when the bridge streams processed audio back
+  capabilities: ("scan" | "host")[];
   plugins: BridgePlugin[];
   editors: Record<string, BridgeEditor>;
   scanning: boolean;
@@ -92,6 +93,7 @@ class BridgeClient {
     url: DEFAULT_BRIDGE_URL,
     formats: [],
     audio: false,
+    capabilities: [],
     plugins: [],
     editors: {},
     scanning: false,
@@ -114,8 +116,16 @@ class BridgeClient {
     this.listeners.forEach((l) => l(this.state));
   }
 
-  connect(url = savedBridgeUrl()) {
+  async connect(url = savedBridgeUrl()) {
     this.disconnect();
+    if (typeof window !== "undefined" && window.synclab?.pluginBridgeInfo && url === DEFAULT_BRIDGE_URL) {
+      try {
+        const info = await window.synclab.pluginBridgeInfo();
+        if (info.ok) url = info.url;
+      } catch {
+        // Fall through to the normal connection error state.
+      }
+    }
     if (typeof localStorage !== "undefined") localStorage.setItem(URL_KEY, url);
     this.set({ status: "connecting", url, message: undefined });
     let socket: WebSocket;
@@ -200,14 +210,21 @@ class BridgeClient {
     }
     switch (msg["t"]) {
       case "hello":
+        const formats = Array.isArray(msg["formats"])
+          ? msg["formats"].filter((value): value is BridgeFormat => ["VST3", "AU", "CLAP", "AAX"].includes(String(value)))
+          : [];
+        const capabilities = Array.isArray(msg["capabilities"])
+          ? msg["capabilities"].filter((value): value is "scan" | "host" => value === "scan" || value === "host")
+          : [];
         this.set({
           host: `${String(msg["name"] ?? "Audio Bridge")} ${String(msg["version"] ?? "")}`.trim(),
-          formats: (msg["formats"] as BridgeFormat[]) ?? [],
+          formats,
           audio: Boolean(msg["audio"]),
+          capabilities,
         });
         break;
       case "plugins":
-        this.set({ plugins: (msg["list"] as BridgePlugin[]) ?? [], scanning: false });
+        this.set({ plugins: validPlugins(msg["list"]), scanning: false });
         break;
       case "opened": {
         const id = String(msg["id"]);
@@ -273,6 +290,10 @@ class BridgeClient {
   }
 
   open(uid: string) {
+    if (!this.state.capabilities.includes("host")) {
+      this.set({ message: "This bridge can discover plugins, but native loading and audio are not included in this build yet." });
+      return false;
+    }
     return this.send({ t: "open", uid });
   }
 
@@ -309,3 +330,25 @@ class BridgeClient {
 }
 
 export const bridge = new BridgeClient();
+
+function validPlugins(input: unknown): BridgePlugin[] {
+  if (!Array.isArray(input)) return [];
+  return input.flatMap((value) => {
+    if (!value || typeof value !== "object") return [];
+    const item = value as Record<string, unknown>;
+    const format = String(item["format"] ?? "");
+    if (typeof item["uid"] !== "string" || typeof item["name"] !== "string" || !["VST3", "AU", "CLAP", "AAX"].includes(format)) return [];
+    return [{
+      uid: item["uid"],
+      name: item["name"],
+      vendor: typeof item["vendor"] === "string" ? item["vendor"] : "UNKNOWN VENDOR",
+      format: format as BridgeFormat,
+      path: typeof item["path"] === "string" ? item["path"] : "",
+      ...(typeof item["isInstrument"] === "boolean" ? { isInstrument: item["isInstrument"] } : {}),
+      ...(typeof item["version"] === "string" ? { version: item["version"] } : {}),
+      ...(typeof item["category"] === "string" ? { category: item["category"] } : {}),
+      ...(item["status"] === "ok" || item["status"] === "failed" ? { status: item["status"] } : {}),
+      ...(typeof item["error"] === "string" ? { error: item["error"] } : {}),
+    }];
+  });
+}

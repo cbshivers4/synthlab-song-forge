@@ -33,6 +33,7 @@ export interface DesktopApi {
     multiple?: boolean,
   ) => Promise<{ ok: boolean; canceled?: boolean; files?: { name: string; path: string; data: ArrayBuffer }[] }>;
   revealFile: (path: string) => Promise<{ ok: boolean }>;
+  pluginBridgeInfo?: () => Promise<{ ok: boolean; url: string; capability: "scan" | "host" }>;
 }
 
 declare global {
