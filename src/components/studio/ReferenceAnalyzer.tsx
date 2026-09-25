@@ -68,7 +68,7 @@ export function ReferenceAnalyzer() {
   return (
     <div className="mx-auto max-w-4xl space-y-4">
       <audio ref={audioRef} onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onEnded={() => setPlaying(false)} />
-      <input ref={inputRef} className="sr-only" type="file" accept="audio/*,.wav,.mp3,.aif,.aiff,.flac,.m4a,.ogg,.webm" onChange={(event) => void load(event.target.files?.[0])} />
+      <input ref={inputRef} aria-label="Reference audio file" className="sr-only" type="file" accept="audio/*,.wav,.mp3,.aif,.aiff,.flac,.m4a,.ogg,.webm" onChange={(event) => void load(event.target.files?.[0])} />
       <div
         onDragOver={(event) => { event.preventDefault(); setDragging(true); }}
         onDragLeave={() => setDragging(false)}
