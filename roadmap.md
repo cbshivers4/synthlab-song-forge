@@ -73,7 +73,7 @@
 - [ ] Actual native scanning — needs the desktop audio bridge program running on the computer
 
 ## Drum performance and creative-tool themes
-- [ ] Add drum distortion, compression, glitch, mutation, velocity, pitch, decay, chance, flam and retrigger controls
-- [ ] Add eight recallable drum patterns per drum track
-- [ ] Add saved color themes to Vocal Forge, Stem Separator, Voice Remover, AI Co-Producer and Hum to Beat
-- [ ] Verify the new drum workflow and themes on desktop and phone
+- [x] Add drum distortion, compression, glitch, mutation, velocity, pitch, decay, chance, flam and retrigger controls
+- [x] Add eight recallable drum patterns per drum track
+- [x] Add saved color themes to Vocal Forge, Stem Separator, Voice Remover, AI Co-Producer and Hum to Beat
+- [x] Verify compilation, project tests, preview startup and the phone viewport
