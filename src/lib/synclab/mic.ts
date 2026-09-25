@@ -6,13 +6,17 @@
 export type MicResult = { stream: MediaStream } | { error: string; canOpenTab: boolean };
 
 let activeStream: MediaStream | null = null;
+let activeOwner: string | null = null;
 let requestGeneration = 0;
 
 /** Release a stream only if it still owns the shared hardware input. */
 export function releaseMic(stream: MediaStream | null | undefined) {
   if (!stream) return;
   stream.getTracks().forEach((track) => track.stop());
-  if (activeStream === stream) activeStream = null;
+  if (activeStream === stream) {
+    activeStream = null;
+    activeOwner = null;
+  }
 }
 
 function inFrame() {
@@ -116,15 +120,16 @@ export function onDeviceChange(cb: () => void): () => void {
   return () => md.removeEventListener("devicechange", cb);
 }
 
-export async function openMic(constraints?: MediaTrackConstraints): Promise<MicResult> {
+export async function openMic(constraints?: MediaTrackConstraints, owner = "shared"): Promise<MicResult> {
   const blocked = micUnavailableReason();
   if (blocked) return { error: blocked, canOpenTab: inFrame() };
   const base: MediaTrackConstraints = constraints ?? {};
   const wanted = getPreferredInput();
+  if (activeStream?.active) {
+    if (activeOwner === owner) return { stream: activeStream };
+    return { error: "The audio input is already in use by another SYNCLAB recording tool. Stop it first, then try again.", canOpenTab: false };
+  }
   const generation = ++requestGeneration;
-  // Browsers and USB interfaces are much more reliable with one live capture
-  // stream. A new recorder deliberately takes ownership from the old tool.
-  releaseMic(activeStream);
   try {
     const audio: MediaTrackConstraints = wanted ? { ...base, deviceId: { exact: wanted } } : base;
     const stream = await navigator.mediaDevices.getUserMedia({
@@ -135,8 +140,12 @@ export async function openMic(constraints?: MediaTrackConstraints): Promise<MicR
       return { error: "Another recording tool took control of the audio input.", canOpenTab: false };
     }
     activeStream = stream;
+    activeOwner = owner;
     stream.getAudioTracks()[0]?.addEventListener("ended", () => {
-      if (activeStream === stream) activeStream = null;
+      if (activeStream === stream) {
+        activeStream = null;
+        activeOwner = null;
+      }
     }, { once: true });
     return { stream };
   } catch (err) {
@@ -152,6 +161,7 @@ export async function openMic(constraints?: MediaTrackConstraints): Promise<MicR
           return { error: "Another recording tool took control of the audio input.", canOpenTab: false };
         }
         activeStream = stream;
+        activeOwner = owner;
         return { stream };
       } catch (err2) {
         return { error: describe(err2), canOpenTab: inFrame() };
@@ -172,8 +182,8 @@ export function preferredRecordingMime(): string | undefined {
 }
 
 /** Throwing flavour for code paths that already handle failures. */
-export async function openMicOrThrow(constraints?: MediaTrackConstraints): Promise<MediaStream> {
-  const r = await openMic(constraints);
+export async function openMicOrThrow(constraints?: MediaTrackConstraints, owner?: string): Promise<MediaStream> {
+  const r = await openMic(constraints, owner);
   if ("stream" in r) return r.stream;
   throw new Error(r.error);
 }

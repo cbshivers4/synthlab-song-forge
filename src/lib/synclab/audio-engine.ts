@@ -1109,7 +1109,13 @@ export class SyncLabEngine {
   silenceChannels(ids: string[]) {
     for (const id of ids) {
       this.stopSamples(id);
-      this.removeChannel(id);
+      const ch = this.channels.get(id);
+      const now = this.ctx?.currentTime ?? 0;
+      if (ch) {
+        ch.gain.gain.cancelScheduledValues(now);
+        ch.gain.gain.setTargetAtTime(0, now, 0.006);
+      }
+      this.monoVoice.get(id)?.stop(now);
       this.monoVoice.delete(id);
       this.lastMidi.delete(id);
     }
@@ -1155,14 +1161,14 @@ export class SyncLabEngine {
       return;
     }
     if (this.isRecording) return;
-    const generation = ++this.monitorGeneration;
     this.stopInputMonitoring();
+    const generation = ++this.monitorGeneration;
     const ctx = this.init();
     const stream = await openMicOrThrow({
       echoCancellation: false,
       noiseSuppression: false,
       autoGainControl: false,
-    });
+    }, "timeline");
     // The target may have changed while the browser permission prompt was open.
     if (generation !== this.monitorGeneration) {
       releaseMic(stream);

@@ -39,7 +39,7 @@ export function HumToBeat() {
   }, []);
 
   const start = async () => {
-    const result = await openMic({ echoCancellation: false, noiseSuppression: false, autoGainControl: true });
+    const result = await openMic({ echoCancellation: false, noiseSuppression: false, autoGainControl: true }, "hum-to-beat");
     if ("error" in result) {
       toast.error("Microphone not available", {
         description: result.error,

@@ -347,7 +347,7 @@ export function PadSampler() {
 
   /* record straight into a pad from the microphone */
   const startMic = async (i: number) => {
-    const res = await openMic();
+    const res = await openMic(undefined, "pad-sampler");
     if ("error" in res) {
       toast.error("Microphone not available", {
         description: res.error,
