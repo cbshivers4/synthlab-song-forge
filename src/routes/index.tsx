@@ -41,6 +41,7 @@ import { MobileBeat } from "@/components/studio/MobileBeat";
 import { MobileNav } from "@/components/studio/MobileNav";
 import { MobileOnboarding } from "@/components/studio/MobileOnboarding";
 import { DesktopUpdateBanner } from "@/components/studio/DesktopUpdateBanner";
+import { DesktopWebsiteStatus } from "@/components/studio/DesktopWebsiteStatus";
 import { ReferenceAnalyzer } from "@/components/studio/ReferenceAnalyzer";
 import { LiveView } from "@/components/studio/LiveView";
 import { Bot } from "lucide-react";
@@ -516,6 +517,7 @@ function StudioWorkspace() {
       {isMobile && beatMode && <MobileBeat onClose={() => setBeatMode(false)} />}
       <MobileOnboarding enabled={isMobile && !beatMode} />
       <DesktopUpdateBanner />
+      <DesktopWebsiteStatus />
     </div>
   );
 }
