@@ -132,6 +132,7 @@ export type PanelId =
   | "stemgen"
   | "notes"
   | "reference"
+  | "live"
   | null;
 
 export type EditTool = "select" | "draw" | "split";

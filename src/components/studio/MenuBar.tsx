@@ -323,6 +323,7 @@ export function MenuBar() {
         <MenubarMenu>
           <MenubarTrigger className="text-xs">View</MenubarTrigger>
           <MenubarContent>
+            <MenubarItem onClick={() => setPanel("live")}>Live View</MenubarItem>
             <MenubarItem onClick={() => setPanel("mixer")}>Mixer</MenubarItem>
             <MenubarItem onClick={() => setPanel("reference")}>Reference Analyzer</MenubarItem>
             <MenubarItem onClick={() => setPanel("piano")}>Piano Roll</MenubarItem>
@@ -448,6 +449,13 @@ export function MenuBar() {
           </MenubarContent>
         </MenubarMenu>
       </Menubar>
+      <button
+        type="button"
+        onClick={() => setPanel("live")}
+        className="ml-2 h-8 shrink-0 rounded-[3px] border border-primary/60 px-3 font-mono text-[10px] font-semibold tracking-widest text-primary uppercase hover:bg-primary hover:text-primary-foreground"
+      >
+        ● Live
+      </button>
 
       <span className="ml-auto hidden shrink-0 font-mono text-[10px] tracking-widest text-muted-foreground uppercase lg:inline">
         {project ? `${project.name} · ${project.key} · ${project.timeSig}` : "untitled session"} · {mode} mode

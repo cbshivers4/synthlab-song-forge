@@ -1,0 +1,364 @@
+import { getEngine } from "./audio-engine";
+import { openMic, releaseMic } from "./mic";
+import { encodeWav } from "./bounce";
+
+/**
+ * Loopy-style clip looper. Loops play on one shared cycle so they stay in time:
+ * - "sync": the cycle is N bars at the project tempo.
+ * - "free": the first loop you record sets the cycle length.
+ * Later loops start on the next cycle and record exactly one cycle.
+ */
+export type LoopMode = "sync" | "free";
+export type LoopSource = "mic" | "output";
+export type SlotState = "empty" | "armed" | "recording" | "playing" | "stopped";
+
+export interface LoopSlot {
+  index: number;
+  state: SlotState;
+  buffer: AudioBuffer | null;
+  volume: number;
+  /** audio-clock time the loop's first sample aligns to */
+  start: number;
+  recStart: number;
+  recEnd: number | null;
+}
+
+type Chunk = { t: number; l: Float32Array; r: Float32Array };
+
+const SLOTS = 8;
+const BLOCK = 2048;
+
+export class LiveLooper {
+  private ctx: AudioContext;
+  private bus: GainNode;
+  private gains: GainNode[] = [];
+  private sources: (AudioBufferSourceNode | null)[] = [];
+  slots: LoopSlot[];
+  mode: LoopMode = "sync";
+  bars = 2;
+  bpm = 120;
+  source: LoopSource = "mic";
+  origin: number | null = null;
+  cycle: number | null = null;
+
+  private proc: ScriptProcessorNode | null = null;
+  private procSink: GainNode | null = null;
+  private inputNode: AudioNode | null = null;
+  private micStream: MediaStream | null = null;
+  private chunks: Chunk[] = [];
+  private timer: number | null = null;
+  private listeners = new Set<() => void>();
+
+  constructor() {
+    const engine = getEngine();
+    this.ctx = engine.init();
+    this.bus = this.ctx.createGain();
+    this.bus.connect(engine.master!);
+    this.slots = Array.from({ length: SLOTS }, (_, index) => ({
+      index,
+      state: "empty" as SlotState,
+      buffer: null,
+      volume: 0.9,
+      start: 0,
+      recStart: 0,
+      recEnd: null,
+    }));
+    for (let i = 0; i < SLOTS; i++) {
+      const g = this.ctx.createGain();
+      g.gain.value = 0.9;
+      g.connect(this.bus);
+      this.gains.push(g);
+      this.sources.push(null);
+    }
+  }
+
+  subscribe(cb: () => void) {
+    this.listeners.add(cb);
+    return () => {
+      this.listeners.delete(cb);
+    };
+  }
+  private emit() {
+    for (const cb of this.listeners) cb();
+  }
+
+  get now() {
+    return this.ctx.currentTime;
+  }
+  get isEmpty() {
+    return this.slots.every((s) => s.state === "empty");
+  }
+  /** 0..1 position in the shared cycle, for the UI */
+  get phase() {
+    if (this.origin === null || !this.cycle) return 0;
+    const p = (this.ctx.currentTime - this.origin) / this.cycle;
+    return p < 0 ? 0 : p % 1;
+  }
+
+  setMode(m: LoopMode) {
+    if (!this.isEmpty) return;
+    this.mode = m;
+    this.emit();
+  }
+  setBars(b: number) {
+    if (!this.isEmpty) return;
+    this.bars = b;
+    this.emit();
+  }
+  setSource(s: LoopSource) {
+    if (this.slots.some((x) => x.state === "armed" || x.state === "recording")) return;
+    this.source = s;
+    this.closeInput();
+    this.emit();
+  }
+
+  /* ---------- input capture ---------- */
+
+  private async openInput() {
+    if (this.proc) return;
+    let node: AudioNode | null = null;
+    if (this.source === "mic") {
+      const res = await openMic(undefined, "looper");
+      if ("error" in res) throw new Error(res.error);
+      this.micStream = res.stream;
+      node = this.ctx.createMediaStreamSource(res.stream);
+    } else {
+      node = getEngine().outputNode;
+    }
+    if (!node) throw new Error("Audio output is not ready yet.");
+    const proc = this.ctx.createScriptProcessor(BLOCK, 2, 2);
+    const sink = this.ctx.createGain();
+    sink.gain.value = 0;
+    proc.onaudioprocess = (e) => {
+      const l = e.inputBuffer.getChannelData(0);
+      const r = e.inputBuffer.numberOfChannels > 1 ? e.inputBuffer.getChannelData(1) : l;
+      // the input block was rendered one block before its playback time
+      this.chunks.push({ t: e.playbackTime - BLOCK / this.ctx.sampleRate, l: new Float32Array(l), r: new Float32Array(r) });
+      // keep ~30s of history only
+      const oldest = this.ctx.currentTime - 30;
+      while (this.chunks.length && this.chunks[0]!.t < oldest && !this.slots.some((s) => s.state === "recording" && s.recStart < oldest + 1)) this.chunks.shift();
+    };
+    node.connect(proc);
+    proc.connect(sink).connect(this.ctx.destination);
+    this.inputNode = node;
+    this.proc = proc;
+    this.procSink = sink;
+  }
+
+  private closeInput() {
+    if (!this.proc) return;
+    this.proc.onaudioprocess = null;
+    try { this.inputNode?.disconnect(this.proc); } catch { /* */ }
+    this.proc.disconnect();
+    this.procSink?.disconnect();
+    if (this.inputNode && this.source === "mic") try { this.inputNode.disconnect(); } catch { /* */ }
+    releaseMic(this.micStream);
+    this.micStream = null;
+    this.proc = null;
+    this.procSink = null;
+    this.inputNode = null;
+    this.chunks = [];
+  }
+
+  private slice(from: number, to: number): AudioBuffer | null {
+    const sr = this.ctx.sampleRate;
+    const frames = Math.round((to - from) * sr);
+    if (frames < 256) return null;
+    const buf = this.ctx.createBuffer(2, frames, sr);
+    const L = buf.getChannelData(0);
+    const R = buf.getChannelData(1);
+    for (const c of this.chunks) {
+      const off = Math.round((c.t - from) * sr);
+      if (off + c.l.length <= 0 || off >= frames) continue;
+      for (let i = Math.max(0, -off); i < c.l.length && off + i < frames; i++) {
+        L[off + i] = c.l[i]!;
+        R[off + i] = c.r[i]!;
+      }
+    }
+    const fade = Math.min(Math.round(sr * 0.004), Math.floor(frames / 4));
+    for (let i = 0; i < fade; i++) {
+      const g = i / fade;
+      L[i]! *= g; R[i]! *= g;
+      L[frames - 1 - i]! *= g; R[frames - 1 - i]! *= g;
+    }
+    return buf;
+  }
+
+  /* ---------- transport ---------- */
+
+  private ensureTimer() {
+    if (this.timer !== null) return;
+    this.timer = window.setInterval(() => this.pump(), 25);
+  }
+
+  private pump() {
+    const now = this.ctx.currentTime;
+    let changed = false;
+    for (const s of this.slots) {
+      if (s.state === "armed" && now >= s.recStart) {
+        s.state = "recording";
+        changed = true;
+      }
+      if (s.state === "recording" && s.recEnd !== null && now >= s.recEnd + (BLOCK * 2) / this.ctx.sampleRate) {
+        this.finish(s);
+        changed = true;
+      }
+    }
+    if (!this.slots.some((s) => s.state === "armed" || s.state === "recording")) {
+      // nothing capturing: free the microphone
+      if (this.proc) this.closeInput();
+      if (this.isEmpty && this.timer !== null) {
+        window.clearInterval(this.timer);
+        this.timer = null;
+      }
+    }
+    if (changed) this.emit();
+  }
+
+  private finish(s: LoopSlot) {
+    const end = s.recEnd!;
+    const buf = this.slice(s.recStart, end);
+    if (!buf) {
+      s.state = "empty";
+      return;
+    }
+    if (this.cycle === null) {
+      this.cycle = end - s.recStart;
+      this.origin = s.recStart;
+    }
+    s.buffer = buf;
+    s.start = s.recStart;
+    s.recEnd = null;
+    this.play(s.index);
+  }
+
+  private nextBoundary(after: number) {
+    if (this.origin === null || !this.cycle) return after;
+    const n = Math.ceil((after - this.origin) / this.cycle - 1e-6);
+    return this.origin + Math.max(0, n) * this.cycle;
+  }
+
+  /** Main slot button: record → (free first loop) stop → play/stop toggles. */
+  async tap(i: number) {
+    const s = this.slots[i]!;
+    const now = this.ctx.currentTime;
+    if (this.ctx.state === "suspended") await this.ctx.resume();
+    if (s.state === "recording" && s.recEnd === null) {
+      // free mode first loop: this tap closes it
+      s.recEnd = now;
+      this.emit();
+      return;
+    }
+    if (s.state === "armed") {
+      s.state = "empty";
+      this.emit();
+      return;
+    }
+    if (s.state === "recording") return;
+    if (s.state === "playing") return this.stop(i);
+    if (s.state === "stopped") return this.play(i);
+    await this.record(i);
+  }
+
+  async record(i: number) {
+    const s = this.slots[i]!;
+    await this.openInput();
+    const now = this.ctx.currentTime + 0.03;
+    if (this.cycle === null) {
+      if (this.mode === "sync") {
+        const len = (this.bars * 4 * 60) / (this.bpm || 120);
+        s.recStart = now;
+        s.recEnd = now + len;
+      } else {
+        s.recStart = now;
+        s.recEnd = null; // closed by the next tap
+      }
+    } else {
+      s.recStart = this.nextBoundary(now);
+      s.recEnd = s.recStart + this.cycle;
+    }
+    s.state = s.recStart <= now ? "recording" : "armed";
+    this.ensureTimer();
+    this.emit();
+  }
+
+  play(i: number) {
+    const s = this.slots[i]!;
+    if (!s.buffer) return;
+    this.sources[i]?.stop();
+    const src = this.ctx.createBufferSource();
+    src.buffer = s.buffer;
+    src.loop = true;
+    src.connect(this.gains[i]!);
+    const when = Math.max(this.ctx.currentTime + 0.02, s.start);
+    const len = s.buffer.duration;
+    const offset = (((when - s.start) % len) + len) % len;
+    const g = this.gains[i]!.gain;
+    g.cancelScheduledValues(when);
+    g.setValueAtTime(0, when);
+    g.linearRampToValueAtTime(s.volume, when + 0.01);
+    src.start(when, offset);
+    this.sources[i] = src;
+    s.state = "playing";
+    this.emit();
+  }
+
+  stop(i: number) {
+    const s = this.slots[i]!;
+    const src = this.sources[i];
+    if (src) {
+      const now = this.ctx.currentTime;
+      const g = this.gains[i]!.gain;
+      g.cancelScheduledValues(now);
+      g.setValueAtTime(g.value, now);
+      g.linearRampToValueAtTime(0, now + 0.015);
+      src.stop(now + 0.02);
+    }
+    this.sources[i] = null;
+    if (s.buffer) s.state = "stopped";
+    this.emit();
+  }
+
+  setVolume(i: number, v: number) {
+    const s = this.slots[i]!;
+    s.volume = v;
+    if (s.state === "playing") this.gains[i]!.gain.setTargetAtTime(v, this.ctx.currentTime, 0.02);
+    this.emit();
+  }
+
+  clear(i: number) {
+    this.stop(i);
+    const s = this.slots[i]!;
+    s.buffer = null;
+    s.state = "empty";
+    s.recEnd = null;
+    if (this.isEmpty) {
+      this.cycle = null;
+      this.origin = null;
+    }
+    this.emit();
+  }
+
+  stopAll() {
+    for (let i = 0; i < SLOTS; i++) if (this.slots[i]!.state === "playing") this.stop(i);
+  }
+  playAll() {
+    for (let i = 0; i < SLOTS; i++) if (this.slots[i]!.state === "stopped") this.play(i);
+  }
+  clearAll() {
+    for (let i = 0; i < SLOTS; i++) this.clear(i);
+  }
+
+  /** WAV of a loop, for sending to the timeline. */
+  wav(i: number): Blob | null {
+    const b = this.slots[i]!.buffer;
+    if (!b) return null;
+    return encodeWav({ left: b.getChannelData(0), right: b.getChannelData(1), sampleRate: b.sampleRate });
+  }
+}
+
+let looper: LiveLooper | null = null;
+export function getLooper() {
+  if (!looper) looper = new LiveLooper();
+  return looper;
+}
