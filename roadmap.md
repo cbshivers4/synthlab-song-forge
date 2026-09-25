@@ -71,6 +71,7 @@
 - [x] Warp to project BPM: pitch-preserving stretch (WSOLA) writes a new sample, original file untouched
 - [x] Plugin browser: categories, favorites, recently used, search, drag, found/available/failed counts, "Plugin Scan Failed" cards
 - [ ] Actual native scanning — needs the desktop audio bridge program running on the computer
+- [ ] Add local analysis for reference tracks the user owns (tempo, key, loudness; no protected streaming audio)
 
 ## Drum performance and creative-tool themes
 - [x] Add drum distortion, compression, glitch, mutation, velocity, pitch, decay, chance, flam and retrigger controls
