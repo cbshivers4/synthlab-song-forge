@@ -816,7 +816,12 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       const now = ctx.currentTime;
       // a suspended or stalled context can leave us far behind; resync instead of
       // firing a burst of late notes
-      if (nextTime < now - 0.25) nextTime = now + 0.02;
+      if (nextTime < now - 0.25) {
+        nextTime = now + 0.04;
+        step = transportRef.current.step ?? step;
+        lastScheduled = null;
+        queue.length = 0;
+      }
       while (nextTime < now + LOOKAHEAD) {
         const tp = transportRef.current;
         const total = songSteps(tp.bars);

@@ -133,6 +133,9 @@ export class SyncLabEngine {
   private channels = new Map<string, ChannelStrip>();
   private analyser: AnalyserNode | null = null;
   private resumeListenersInstalled = false;
+  private monitorGeneration = 0;
+  private recordingStart: Promise<void> | null = null;
+  private distortionCurves = new Map<string, Float32Array<ArrayBuffer>>();
 
 
 
@@ -144,7 +147,7 @@ export class SyncLabEngine {
     const Ctor: typeof AudioContext =
       (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext ??
       window.AudioContext;
-    const ctx = new Ctor();
+    const ctx = new Ctor({ latencyHint: "interactive" });
     this.ctx = ctx;
     if (!this.resumeListenersInstalled) {
       this.resumeListenersInstalled = true;
@@ -231,6 +234,15 @@ export class SyncLabEngine {
       this.buses.set(id, g);
     }
     return ctx;
+  }
+
+  private distortionCurve(amount: number) {
+    const key = clamp(amount, 0, 1).toFixed(2);
+    const cached = this.distortionCurves.get(key);
+    if (cached) return cached;
+    const curve = makeDistortionCurve(Number(key));
+    this.distortionCurves.set(key, curve);
+    return curve;
   }
 
   /* ---------------- master capture (bounce / export) ---------------- */
@@ -1143,6 +1155,7 @@ export class SyncLabEngine {
       return;
     }
     if (this.isRecording) return;
+    const generation = ++this.monitorGeneration;
     this.stopInputMonitoring();
     const ctx = this.init();
     const stream = await openMicOrThrow({
@@ -1151,7 +1164,7 @@ export class SyncLabEngine {
       autoGainControl: false,
     });
     // The target may have changed while the browser permission prompt was open.
-    if (this.monitorTrackId && this.monitorTrackId !== trackId) {
+    if (generation !== this.monitorGeneration) {
       releaseMic(stream);
       return;
     }
@@ -1173,6 +1186,7 @@ export class SyncLabEngine {
   /** Close the microphone when the channel is disarmed (never while recording). */
   stopInputMonitoring() {
     if (this.isRecording) return;
+    this.monitorGeneration += 1;
     releaseMic(this.recStream);
     this.recStream = null;
     this.monitorNode?.disconnect();
@@ -1184,15 +1198,24 @@ export class SyncLabEngine {
   }
 
   async startInputRecording(trackId: string, monitor: boolean) {
-    await this.startInputMonitoring(trackId, monitor);
-    const stream = this.recStream;
-    if (!stream) throw new Error("The microphone input is not open.");
-    this.recChunks = [];
-    const mime = preferredRecordingMime();
-    const rec = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
-    rec.ondataavailable = (e) => e.data.size > 0 && this.recChunks.push(e.data);
-    rec.start(200);
-    this.recorder = rec;
+    if (this.isRecording) return;
+    if (this.recordingStart) return this.recordingStart;
+    this.recordingStart = (async () => {
+      await this.startInputMonitoring(trackId, monitor);
+      const stream = this.recStream;
+      if (!stream) throw new Error("The microphone input is not open.");
+      this.recChunks = [];
+      const mime = preferredRecordingMime();
+      const rec = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+      rec.ondataavailable = (e) => e.data.size > 0 && this.recChunks.push(e.data);
+      rec.start(200);
+      this.recorder = rec;
+    })();
+    try {
+      await this.recordingStart;
+    } finally {
+      this.recordingStart = null;
+    }
   }
 
   setMonitoring(on: boolean) {
@@ -1389,7 +1412,7 @@ export class SyncLabEngine {
     const ctx = this.init();
     const base = s.reverse ? this.reversed(s.url) : this.sampleBuffers.get(s.url);
     if (!base) return;
-    const t0 = when ?? ctx.currentTime;
+    const t0 = Math.max(when ?? ctx.currentTime, ctx.currentTime + 0.002);
     const ch = this.channel(trackId);
 
     const src = ctx.createBufferSource();
@@ -1711,7 +1734,7 @@ export class SyncLabEngine {
     filterIn.connect(filter);
 
     const shaper = ctx.createWaveShaper();
-    shaper.curve = makeDistortionCurve(0.05 + patch.fx.distortion + (patch.fx.saturation ?? 0) * 0.6);
+    shaper.curve = this.distortionCurve(0.05 + patch.fx.distortion + (patch.fx.saturation ?? 0) * 0.6);
 
     const f2 = patch.filter2;
     let filter2: BiquadFilterNode | null = null;
@@ -2040,7 +2063,7 @@ export class SyncLabEngine {
   /* ---------------- drum voices ---------------- */
   playDrum(trackId: string, pad: DrumPad, velocity = 1, when?: number) {
     const ctx = this.init();
-    const t = when ?? ctx.currentTime;
+    const t = Math.max(when ?? ctx.currentTime, ctx.currentTime + 0.002);
     const ch = this.channel(trackId);
     const out = ctx.createGain();
     const p = ctx.createStereoPanner();
@@ -2055,12 +2078,7 @@ export class SyncLabEngine {
     if (drive > 0.001) {
       const shaper = ctx.createWaveShaper();
       const k = 1 + drive * 60;
-      const curve = new Float32Array(1024);
-      for (let i = 0; i < 1024; i++) {
-        const x = (i / 1023) * 2 - 1;
-        curve[i] = ((1 + k) * x) / (1 + k * Math.abs(x));
-      }
-      shaper.curve = curve;
+      shaper.curve = this.distortionCurve(drive);
       shaper.oversample = "2x";
       const trim = ctx.createGain();
       trim.gain.value = 1 / (1 + drive * 1.6);

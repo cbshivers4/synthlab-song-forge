@@ -52,7 +52,7 @@ export function BassGenerator() {
 
   const [playing, setPlaying] = useState(false);
   const [playStep, setPlayStep] = useState(0);
-  const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timer = useRef<number | null>(null);
   const [loop, setLoop] = useState(true);
   const loopRef = useRef(loop);
   loopRef.current = loop;
