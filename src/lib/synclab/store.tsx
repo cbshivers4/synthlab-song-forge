@@ -131,6 +131,7 @@ export type PanelId =
   | "voice"
   | "stemgen"
   | "notes"
+  | "reference"
   | null;
 
 export type EditTool = "select" | "draw" | "split";
