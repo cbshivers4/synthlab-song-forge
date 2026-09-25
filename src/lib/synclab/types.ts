@@ -186,6 +186,8 @@ export interface DrumPad {
   tone?: number;
   /** 0..1 saturation drive */
   drive?: number;
+  /** 0..1 dynamics compression */
+  compressor?: number;
   /** 0..1 extra transient click on the attack */
   snap?: number;
   /** 0..1 extra noise layer blended with the voice */
@@ -208,6 +210,18 @@ export interface DrumPad {
   steps: number[]; // velocity 0..1 per step, 0 = off
   /** chance 0..1 that a written step actually fires; 1 (or unset) always fires */
   probability?: number[] | undefined;
+  /** per-step pitch offsets in semitones */
+  stepPitch?: number[] | undefined;
+  /** per-step decay multipliers, 0.1..2 */
+  stepDecay?: number[] | undefined;
+  /** per-step flam amount, 0..1 */
+  flam?: number[] | undefined;
+  /** per-step trigger count, 1..4 */
+  retrig?: number[] | undefined;
+  /** per-step glitch amount, 0..1 */
+  glitch?: number[] | undefined;
+  /** mutation intensity used by the pattern mutate command */
+  mutation?: number | undefined;
   /** MIDI note this pad sends and listens on; unset means the General MIDI note for its kind */
   note?: number | undefined;
 }
@@ -401,6 +415,10 @@ export interface Track {
   patch?: SynthPatch | undefined;
   notes?: MidiNote[] | undefined;
   pads?: DrumPad[] | undefined;
+  /** eight recallable drum sequencer snapshots */
+  drumPatterns?: DrumPad[][] | undefined;
+  /** zero-based active drum pattern slot */
+  activeDrumPattern?: number | undefined;
   plugins?: PluginInstance[] | undefined;
   clips?: AudioClip[] | undefined;
   sampler?: SamplerState | undefined;

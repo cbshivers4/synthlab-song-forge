@@ -1441,6 +1441,12 @@ export function StudioProvider({ children }: { children: ReactNode }) {
                   pads: (t.pads ?? []).map((p) => ({
                     ...p,
                     steps: Array.from({ length: steps }, (_, i) => p.steps[i] ?? 0),
+                    probability: p.probability ? Array.from({ length: steps }, (_, i) => p.probability?.[i] ?? 1) : undefined,
+                    stepPitch: p.stepPitch ? Array.from({ length: steps }, (_, i) => p.stepPitch?.[i] ?? 0) : undefined,
+                    stepDecay: p.stepDecay ? Array.from({ length: steps }, (_, i) => p.stepDecay?.[i] ?? 1) : undefined,
+                    flam: p.flam ? Array.from({ length: steps }, (_, i) => p.flam?.[i] ?? 0) : undefined,
+                    retrig: p.retrig ? Array.from({ length: steps }, (_, i) => p.retrig?.[i] ?? 1) : undefined,
+                    glitch: p.glitch ? Array.from({ length: steps }, (_, i) => p.glitch?.[i] ?? 0) : undefined,
                   })),
                 }
               : t,
