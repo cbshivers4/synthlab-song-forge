@@ -5,6 +5,7 @@ import { openInOwnTab, openMic, preferredRecordingMime } from "@/lib/synclab/mic
 import { useStudio } from "@/lib/synclab/store";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { toast } from "sonner";
+import { CreativeToolThemePicker, useCreativeToolTheme } from "./CreativeToolTheme";
 
 function detectHits(buffer: AudioBuffer): number[] {
   const data = buffer.getChannelData(0);
@@ -28,6 +29,7 @@ export function HumToBeat() {
   const [busy, setBusy] = useState(false);
   const [pattern, setPattern] = useState<number[]>(Array.from({ length: 16 }, () => 0));
   const recordingRef = useRef<{ recorder: MediaRecorder; stream: MediaStream; chunks: Blob[] } | null>(null);
+  const { theme, setTheme } = useCreativeToolTheme("hum");
 
   const start = async () => {
     const result = await openMic({ echoCancellation: false, noiseSuppression: false, autoGainControl: true });
@@ -83,7 +85,8 @@ export function HumToBeat() {
   };
 
   return (
-    <div className="mx-auto max-w-2xl space-y-5 py-2">
+    <div className="creative-tool mx-auto max-w-2xl space-y-5 p-3" data-creative-theme={theme}>
+      <div className="flex justify-end"><CreativeToolThemePicker tool="hum" theme={theme} onChange={setTheme} /></div>
       <div>
         <h3 className="font-display text-lg font-semibold">Hum or beatbox a rhythm</h3>
         <p className="mt-1 text-sm text-muted-foreground">Record one bar. SYNCLAB detects the strongest hits locally on this device.</p>

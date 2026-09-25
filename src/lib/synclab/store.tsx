@@ -710,7 +710,18 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             // a step with a chance below 100% only fires that often
             const chance = pad.probability?.[s];
             if (typeof chance === "number" && chance < 1 && Math.random() > chance) continue;
-            engine.playDrum(t.id, pad, v, swung);
+            const retrig = Math.max(1, Math.min(4, Math.round(pad.retrig?.[s] ?? 1)));
+            const flam = Math.max(0, Math.min(1, pad.flam?.[s] ?? 0));
+            const glitch = Math.max(0, Math.min(1, pad.glitch?.[s] ?? 0));
+            const stepPad = {
+              ...pad,
+              pitch: pad.pitch + (pad.stepPitch?.[s] ?? 0) + (glitch > 0 && Math.random() < glitch ? (Math.random() < 0.5 ? -12 : 12) : 0),
+              decay: Math.max(0, pad.decay * (pad.stepDecay?.[s] ?? 1) * (glitch > 0 ? 1 - Math.random() * glitch * 0.7 : 1)),
+              crush: Math.max(pad.crush ?? 0, glitch > 0 && Math.random() < glitch ? glitch : 0),
+            };
+            const spacing = stepDur / retrig;
+            for (let hit = 0; hit < retrig; hit++) engine.playDrum(t.id, stepPad, v * Math.pow(0.88, hit), swung + hit * spacing);
+            if (flam > 0) engine.playDrum(t.id, stepPad, v * (0.35 + flam * 0.4), swung + 0.012 + flam * 0.035);
           }
         } else if (t.kind === "sampler" && t.sampler && t.notes) {
           for (const note of t.notes) {

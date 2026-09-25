@@ -8,6 +8,7 @@ import { separate, type Separation, type StemId } from "@/lib/synclab/separate";
 import { useStudio } from "@/lib/synclab/store";
 import type { AudioClip } from "@/lib/synclab/types";
 import { toast } from "sonner";
+import { CreativeToolThemePicker, useCreativeToolTheme } from "./CreativeToolTheme";
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 
@@ -37,6 +38,8 @@ export function StemSeparator({ mode = "stems" }: { mode?: "stems" | "voice" }) 
   const [playing, setPlaying] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const urlsRef = useRef<string[]>([]);
+  const tool = mode === "voice" ? "voice" : "stems";
+  const { theme, setTheme } = useCreativeToolTheme(tool);
 
   useEffect(() => () => {
     audioRef.current?.pause();
@@ -174,7 +177,8 @@ export function StemSeparator({ mode = "stems" }: { mode?: "stems" | "voice" }) 
   };
 
   return (
-    <div className="mx-auto max-w-3xl space-y-5 py-2">
+    <div className="creative-tool mx-auto max-w-3xl space-y-5 p-3" data-creative-theme={theme}>
+      <div className="flex justify-end"><CreativeToolThemePicker tool={tool} theme={theme} onChange={setTheme} /></div>
       <div>
         <h3 className="font-display text-lg font-semibold">
           {mode === "voice" ? "Voice Remover" : "Stem Separator"}
