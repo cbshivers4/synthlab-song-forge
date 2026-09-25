@@ -11,7 +11,7 @@ import {
   Upload,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { openMic, openInOwnTab, preferredRecordingMime } from "@/lib/synclab/mic";
+import { openMic, openInOwnTab, preferredRecordingMime, releaseMic } from "@/lib/synclab/mic";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { useStudio } from "@/lib/synclab/store";
@@ -184,6 +184,13 @@ export function PadSampler() {
   const stepRef = useRef(0);
   const liveRef = useRef(liveRec);
   liveRef.current = liveRec;
+  useEffect(() => () => {
+    const current = recRef.current;
+    if (!current) return;
+    if (current.rec.state !== "inactive") current.rec.stop();
+    releaseMic(current.stream);
+    recRef.current = null;
+  }, []);
 
   /** The mixer channel every pad plays through. */
   const ensureTrack = useCallback(() => {
@@ -208,11 +215,12 @@ export function PadSampler() {
   const selPad = pads[sel];
 
   const trigger = useCallback(
-    (i: number, velocity = 1) => {
+    (i: number, velocity = 1, when?: number) => {
       const pad = padsRef.current[i];
       if (!pad) return;
       const id = ensureTrack();
-      getEngine().playSample(
+      const engine = getEngine();
+      engine.playSample(
         id,
         {
           url: pad.url,
@@ -228,16 +236,19 @@ export function PadSampler() {
           release: pad.release,
         },
         60,
-        undefined,
+        when,
         velocity,
         undefined,
         pad.choke ? `choke${pad.choke}` : `pad${i}`,
       );
       // While the transport records, drop the hit into the sampler track's take on the timeline.
       captureNote(id, 60, velocity);
-      setHit(i);
-      window.setTimeout(() => setHit((h) => (h === i ? null : h)), 120);
-      if (liveRef.current) {
+      const delay = Math.max(0, ((when ?? engine.init().currentTime) - engine.init().currentTime) * 1000);
+      window.setTimeout(() => {
+        setHit(i);
+        window.setTimeout(() => setHit((h) => (h === i ? null : h)), 120);
+      }, delay);
+      if (liveRef.current && delay < 10) {
         const s = stepRef.current;
         setPads((p) => {
           const target = p[i];
@@ -254,17 +265,39 @@ export function PadSampler() {
   /* pad step sequencer */
   useEffect(() => {
     if (!seqOn) return;
-    const interval = (60 / Math.max(40, transport.bpm) / 4) * 1000;
-    const timer = window.setInterval(() => {
-      stepRef.current = (stepRef.current + 1) % STEPS;
-      const s = stepRef.current;
-      setStep(s);
-      for (const [key, pad] of Object.entries(padsRef.current)) {
-        const v = pad.steps[s] ?? 0;
-        if (v > 0) trigger(Number(key), v);
+    const engine = getEngine();
+    const ctx = engine.init();
+    const stepDuration = 60 / Math.max(40, transport.bpm) / 4;
+    let nextTime = ctx.currentTime + 0.05;
+    let nextStep = (stepRef.current + 1) % STEPS;
+    let cancelled = false;
+    const pump = () => {
+      if (cancelled) return;
+      const now = ctx.currentTime;
+      if (nextTime < now - 0.2) nextTime = now + 0.04;
+      while (nextTime < now + 0.12) {
+        const scheduledStep = nextStep;
+        for (const [key, pad] of Object.entries(padsRef.current)) {
+          const velocity = pad.steps[scheduledStep] ?? 0;
+          if (velocity > 0) trigger(Number(key), velocity, nextTime);
+        }
+        const delay = Math.max(0, (nextTime - now) * 1000);
+        window.setTimeout(() => {
+          if (!cancelled) {
+            stepRef.current = scheduledStep;
+            setStep(scheduledStep);
+          }
+        }, delay);
+        nextStep = (nextStep + 1) % STEPS;
+        nextTime += stepDuration;
       }
-    }, interval);
-    return () => window.clearInterval(timer);
+    };
+    pump();
+    const timer = window.setInterval(pump, 25);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
   }, [seqOn, transport.bpm, trigger]);
 
   /* computer keyboard pads */
@@ -340,7 +373,7 @@ export function PadSampler() {
 
   /* record straight into a pad from the microphone */
   const startMic = async (i: number) => {
-    const res = await openMic();
+    const res = await openMic(undefined, "pad-sampler");
     if ("error" in res) {
       toast.error("Microphone not available", {
         description: res.error,
@@ -367,7 +400,7 @@ export function PadSampler() {
       r.rec.onstop = () => resolve(new Blob(r.chunks, { type: r.rec.mimeType || "audio/webm" }));
       r.rec.stop();
     });
-    r.stream.getTracks().forEach((t) => t.stop());
+    releaseMic(r.stream);
     recRef.current = null;
     setMicOn(false);
     setRecStream(null);

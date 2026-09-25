@@ -52,14 +52,15 @@ export function BassGenerator() {
 
   const [playing, setPlaying] = useState(false);
   const [playStep, setPlayStep] = useState(0);
-  const timers = useRef<number[]>([]);
+  const timer = useRef<number | null>(null);
   const [loop, setLoop] = useState(true);
   const loopRef = useRef(loop);
   loopRef.current = loop;
 
   const stopPreview = () => {
-    timers.current.forEach((t) => window.clearTimeout(t));
-    timers.current = [];
+    if (timer.current) window.clearInterval(timer.current);
+    timer.current = null;
+    getEngine().removeChannel(PREVIEW_CHANNEL);
     setPlaying(false);
     setPlayStep(0);
   };
@@ -73,26 +74,22 @@ export function BassGenerator() {
     const engine = getEngine();
     engine.init();
     setPlaying(true);
-    const passMs = bars * 16 * stepSec * 1000;
-    const schedule = (offset: number) => preview.forEach((n) => {
-      timers.current.push(
-        window.setTimeout(() => {
-          engine.playNote(PREVIEW_CHANNEL, patch, n.pitch, n.length * stepSec, n.velocity);
-          setPlayStep(n.step);
-        }, offset + n.step * stepSec * 1000),
-      );
+    const passSeconds = bars * 16 * stepSec;
+    let next = engine.init().currentTime + 0.06;
+    const schedule = (at: number) => preview.forEach((n) => {
+      engine.playNote(PREVIEW_CHANNEL, patch, n.pitch, n.length * stepSec, n.velocity, at + n.step * stepSec);
     });
-    const pass = (offset: number) => {
-      schedule(offset);
-      timers.current.push(
-        window.setTimeout(() => {
-          if (!loopRef.current) return stopPreview();
-          timers.current = [];
-          pass(0);
-        }, offset + passMs),
-      );
-    };
-    pass(0);
+    schedule(next);
+    next += passSeconds;
+    timer.current = window.setInterval(() => {
+      const now = engine.init().currentTime;
+      setPlayStep(Math.floor(((now - (next - passSeconds)) / stepSec) % (bars * 16)));
+      if (!loopRef.current && now >= next) return stopPreview();
+      if (loopRef.current && next - now < 0.35) {
+        schedule(next);
+        next += passSeconds;
+      }
+    }, 40);
   };
 
   const apply = () => {

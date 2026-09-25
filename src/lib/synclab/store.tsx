@@ -642,13 +642,14 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     const engine = getEngine();
     const ctx = engine.init();
     engine.syncMix(tracksRef.current);
+    for (const track of tracksRef.current) engine.setInserts(track.id, track.plugins ?? []);
     // make sure every arrangement clip is decoded before the playhead reaches it
     for (const t of tracksRef.current)
       for (const c of t.clips ?? []) if (c.url) void engine.ensureBuffer(c.url);
 
     const LOOKAHEAD = 0.14; // seconds of audio scheduled in advance
     const TICK = 20; // ms between scheduler passes
-    let step = 0;
+    let step = transportRef.current.step ?? 0;
     let nextTime = ctx.currentTime + 0.06;
     let cancelled = false;
     let lastScheduled: number | null = null;
@@ -816,7 +817,12 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       const now = ctx.currentTime;
       // a suspended or stalled context can leave us far behind; resync instead of
       // firing a burst of late notes
-      if (nextTime < now - 0.25) nextTime = now + 0.02;
+      if (nextTime < now - 0.25) {
+        nextTime = now + 0.04;
+        step = transportRef.current.step ?? step;
+        lastScheduled = null;
+        queue.length = 0;
+      }
       while (nextTime < now + LOOKAHEAD) {
         const tp = transportRef.current;
         const total = songSteps(tp.bars);
@@ -853,6 +859,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       cancelled = true;
       cancelAnimationFrame(raf);
       window.clearInterval(interval);
+      engine.silenceChannels(tracksRef.current.map((track) => track.id));
+      engine.removeChannel("metronome");
     };
   }, [transport.playing]);
 
@@ -1526,11 +1534,14 @@ export function StudioProvider({ children }: { children: ReactNode }) {
                 .startInputRecording(target.id, transportRef.current.monitor ?? false)
                 .then(() => updateTrack(target.id, { recording: true }))
                 .catch((err: unknown) =>
-                  toast.error("Microphone unavailable", {
-                    description: err instanceof Error ? err.message : "The microphone could not be opened.",
-                    duration: 9000,
-                    action: { label: "Open in tab", onClick: openInOwnTab },
-                  }),
+                  {
+                    setTransportState((state) => ({ ...state, recording: false }));
+                    toast.error("Microphone unavailable", {
+                      description: err instanceof Error ? err.message : "The microphone could not be opened.",
+                      duration: 9000,
+                      action: { label: "Open in tab", onClick: openInOwnTab },
+                    });
+                  },
                 );
             } else if (armedNote) {
               recStartStepRef.current = transportRef.current.step ?? 0;
