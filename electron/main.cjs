@@ -30,6 +30,7 @@ app.setAppUserModelId(info.appId);
 
 let win = null;
 let pluginBridge = null;
+let pluginBridgePort = null;
 const pluginBridgeToken = crypto.randomBytes(24).toString("hex");
 
 function startPluginBridge() {
@@ -37,14 +38,18 @@ function startPluginBridge() {
   pluginBridge = fork(path.join(__dirname, "plugin-bridge.cjs"), [], {
     env: {
       ...process.env,
-      SYNCLAB_BRIDGE_PORT: "8787",
+      SYNCLAB_BRIDGE_PORT: "0",
       SYNCLAB_BRIDGE_TOKEN: pluginBridgeToken,
       SYNCLAB_BRIDGE_VERSION: info.version,
     },
-    stdio: "ignore",
+    stdio: ["ignore", "ignore", "ignore", "ipc"],
+  });
+  pluginBridge.on("message", (message) => {
+    if (message?.type === "ready" && Number.isInteger(message.port)) pluginBridgePort = message.port;
   });
   pluginBridge.once("exit", () => {
     pluginBridge = null;
+    pluginBridgePort = null;
   });
 }
 
@@ -161,7 +166,7 @@ ipcMain.handle("synclab:reveal", async (_e, filePath) => {
 });
 
 ipcMain.handle("synclab:plugin-bridge-info", async () => ({
-  ok: Boolean(pluginBridge),
-  url: `ws://127.0.0.1:8787/?token=${pluginBridgeToken}`,
+  ok: Boolean(pluginBridge && pluginBridgePort),
+  url: pluginBridgePort ? `ws://127.0.0.1:${pluginBridgePort}/?token=${pluginBridgeToken}` : "",
   capability: "scan",
 }));

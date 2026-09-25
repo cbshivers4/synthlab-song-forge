@@ -11,7 +11,7 @@ const path = require("path");
 const os = require("os");
 const { WebSocketServer } = require("ws");
 
-const PORT = Number(process.env.SYNCLAB_BRIDGE_PORT || 8787);
+const PORT = Number(process.env.SYNCLAB_BRIDGE_PORT || 0);
 const TOKEN = process.env.SYNCLAB_BRIDGE_TOKEN || "";
 const VERSION = process.env.SYNCLAB_BRIDGE_VERSION || "1.0.0";
 
@@ -128,7 +128,10 @@ websocket.on("connection", (socket) => {
   });
 });
 
-server.listen(PORT, "127.0.0.1");
+server.listen(PORT, "127.0.0.1", () => {
+  const address = server.address();
+  if (typeof address === "object" && address) process.send?.({ type: "ready", port: address.port });
+});
 const stop = () => websocket.close(() => server.close(() => process.exit(0)));
 process.on("SIGTERM", stop);
 process.on("SIGINT", stop);
