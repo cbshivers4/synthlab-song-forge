@@ -66,6 +66,7 @@ const synthRanges: Record<string, [number, number, number?]> = {
   "filter2.cutoff": [40, 16000, 10], "filter2.resonance": [0, 28, 0.5],
   "filterEnv.amount": [-6000, 6000, 50],
   "unison.voices": [1, 7, 1], "unison.detune": [0, 60, 1],
+  glide: [0, 0.5, 0.01],
   "arp.octaves": [1, 4, 1], "arp.rate": [0.5, 4, 0.5],
 };
 const drumRanges: Record<string, [number, number, number?]> = {
@@ -596,7 +597,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
                  const list = field === "osc" ? patch.oscillators : patch.lfos;
                  const item = list[index];
                   if (!property || !item || typeof (item as unknown as Record<string, unknown>)[property] !== "number") return t;
-                  const range = field === "osc" ? ({ octave: [-3, 3, 1], semitone: [-12, 12, 1], fine: [-50, 50, 1], detune: [-50, 50, 1], pulseWidth: [0.05, 0.95], pan: [-1, 1] } as Record<string, [number, number, number?]>)[property] : property === "rate" ? [0.05, 20, 0.05] as [number, number, number?] : undefined;
+                   const range = field === "osc" ? ({ octave: [-3, 3, 1], semitone: [-12, 12, 1], fine: [-50, 50, 1], detune: [-50, 50, 1], pulseWidth: [0.05, 0.95], pan: [-1, 1] } as Record<string, [number, number, number?]>)[property] : property === "rate" ? [0.05, 20, 0.05] as [number, number, number?] : undefined;
                   const updated = list.map((item, i) => i === index ? { ...item, [property]: range ? ccRange(v, ...range) : v } : item);
                  return { ...t, patch: { ...patch, [field === "osc" ? "oscillators" : "lfos"]: updated } };
                }

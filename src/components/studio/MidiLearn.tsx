@@ -14,7 +14,13 @@ export function MidiLearnButton({ id, param, label }: MidiTarget & { label: stri
       <Button type="button" size="sm" variant={learning || assigned ? "secondary" : "ghost"}
         className="h-6 min-w-8 px-1 font-mono text-[9px]" aria-label={`${learning ? "Cancel learning" : "MIDI Learn"} ${label}`}
         title={learning ? `Move a controller for ${label}` : assigned ? `${label}: CC ${assigned[0].split(":")[1]}` : `MIDI Learn ${label}`}
-        onClick={() => learning ? cancelMidiLearn() : midiInputId ? startMidiLearn(target) : enableMidi()}>
+        onClick={() => {
+          if (learning) cancelMidiLearn();
+          else {
+            startMidiLearn(target);
+            if (!midiInputId) enableMidi();
+          }
+        }}>
         {learning ? "MOVE" : assigned ? `CC ${assigned[0].split(":")[1]}` : "MIDI"}
       </Button>
       {assigned && <Button type="button" size="icon" variant="ghost" className="size-6" aria-label={`Clear ${label} MIDI mapping`} onClick={() => clearMidiMapping(target)}><X className="size-3" /></Button>}
