@@ -23,7 +23,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useStudio } from "@/lib/synclab/store";
 import { useApp } from "@/lib/synclab/app-state";
 
-import { MidiLearnBlock } from "./MidiLearn";
+import { MidiLearnBlock, MidiLearnButton } from "./MidiLearn";
 import { TrackNotes } from "@/components/studio/TrackNotes";
 import { TrackIcon, TrackStylePicker } from "@/components/studio/TrackStyle";
 import { BUILT_IN_PLUGINS } from "@/lib/synclab/plugins";
@@ -187,6 +187,8 @@ function ClipLed({ id, compact }: { id: string; compact?: boolean }) {
 
 function InsertRack({
   title,
+  midiId,
+  midiPrefix = "plugin",
   list,
   onAdd,
   onRemove,
@@ -196,6 +198,8 @@ function InsertRack({
   onOpenChange,
 }: {
   title: string;
+  midiId: string;
+  midiPrefix?: "plugin" | "fx";
   list: PluginInstance[];
   onAdd: (def: import("@/lib/synclab/types").PluginDef) => void;
   onRemove: (id: string) => void;
@@ -252,6 +256,7 @@ function InsertRack({
                   <span className="w-8 shrink-0 text-right font-mono text-[8px] text-muted-foreground">
                     {x.value.toFixed(1)}
                   </span>
+                   <MidiLearnButton id={midiId} param={`${midiPrefix}:${p.id}:${x.id}`} label={`${p.name} ${x.name}`} />
                 </div>
               ))}
           </div>
@@ -589,6 +594,7 @@ function DeviceSlots({ t, narrow }: { t: Track; narrow: boolean }) {
         <PopoverContent align="start" className="max-h-[70vh] w-[360px] overflow-y-auto p-3" onClick={(e) => e.stopPropagation()}>
           <InsertRack
             title={`${t.name} — inserts`}
+            midiId={t.id}
             list={list}
             openId={openId}
             onOpenChange={setOpenId}
@@ -1269,9 +1275,9 @@ function ControlStrip({ kind, name, state, onChange, memberCount }: {
   return (
     <div className="flex w-[116px] shrink-0 flex-col border-r border-border bg-surface-2/70">
       <div className={cn(ROW.head, "flex items-center justify-center border-b border-border font-mono text-[9px] font-bold tracking-wider", aux ? "text-primary" : "text-accent-foreground")}>{kind}</div>
-       <div className="flex justify-center border-b border-border/60"><MidiLearnButton id={`${aux ? "aux" : "vca"}:${name}`} param="volume" label={`${kind} ${name} level`} /><MidiLearnButton id={`${aux ? "aux" : "vca"}:${name}`} param="mute" label={`${kind} ${name} mute`} /></div>
+       <div className={cn(ROW.eq, "flex items-center justify-center gap-1 border-b border-border/60")}><MidiLearnButton id={`${aux ? "aux" : "vca"}:${name}`} param="volume" label={`${kind} ${name} level`} /><MidiLearnButton id={`${aux ? "aux" : "vca"}:${name}`} param="mute" label={`${kind} ${name} mute`} /></div>
       {advanced && <div className={cn(ROW.scope, "border-b border-border/60")} />}
-      <div className={cn(ROW.eq, "flex items-center justify-center border-b border-border/60 font-mono text-[9px] text-muted-foreground")}>{aux ? "FX RETURN" : `${memberCount ?? 0} CHANNELS`}</div>
+       <div className="sr-only">{aux ? "FX RETURN" : `${memberCount ?? 0} CHANNELS`}</div>
       <div className={cn(ROW.devices, "flex items-center border-b border-border/60 p-2")}>
         {aux ? <FxMenu target={`send:${name}`} label="Return FX" /> : <span className="w-full text-center font-mono text-[9px] text-muted-foreground">LEVEL CONTROL</span>}
       </div>
@@ -1310,6 +1316,8 @@ function FxMenu({ target, label }: { target: string; label: string }) {
       <PopoverContent align="start" className="w-64 p-3">
         <InsertRack
           title={`${target.split(":")[1]?.toUpperCase()} effects`}
+            midiId={target}
+            midiPrefix="fx"
           list={list}
           onAdd={(def) => addFxPlugin(target, def)}
           onRemove={(id) => removeFxPlugin(target, id)}
