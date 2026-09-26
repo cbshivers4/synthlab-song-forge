@@ -78,6 +78,37 @@ function ThemePresets() {
           <Trash2 className="size-4" />
         </Button>
       )}
+      {presets.length > 0 && (
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button size="sm" variant="outline" title="Manage saved themes">
+              <Trash2 className="size-4" /> Themes
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-64 space-y-1">
+            <p className="pb-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+              Saved themes
+            </p>
+            {presets.map((p) => (
+              <div key={p.id} className="flex items-center justify-between gap-2 rounded px-1 py-0.5">
+                <span className="truncate text-sm">{p.name}</span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  aria-label={`Delete theme ${p.name}`}
+                  onClick={() => {
+                    safe(() => deletePreset(p.id));
+                    if (sel === p.id) setSel("");
+                    toast.success("Theme deleted");
+                  }}
+                >
+                  <Trash2 className="size-4 text-destructive" />
+                </Button>
+              </div>
+            ))}
+          </PopoverContent>
+        </Popover>
+      )}
     </div>
   );
 }
