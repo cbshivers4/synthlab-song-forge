@@ -674,7 +674,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         const len = Math.max(1, t.steps);
         const s = n % len;
         // arrangement clips fire at their own position on the timeline
-        if (t.clips?.length) {
+        if (t.clips?.length && !t.recording) {
           const at = n % totalSteps;
           // after a start or jump (loop wrap), pick up clips already in progress
           const jumped = lastScheduled === null || at !== (lastScheduled + 1) % totalSteps;
@@ -964,7 +964,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       setTracks((ts) => ts.map((t) => t.id === result.trackId
         ? { ...t, clips: [...(t.clips ?? []), clip], activeClipId: clip.id, printedAudio: true }
         : t));
-      toast.success(`${clip.name} recorded`, { description: "Waveform ready to edit. Switch to Notes to edit the performance." });
+      toast.success(`${clip.name} recorded`, { description: "Double-click the waveform to edit it; switch to Notes to edit the pattern." });
     } catch (err) {
       toast.error("Take couldn't be kept", { description: err instanceof Error ? err.message : undefined });
     }
@@ -1579,8 +1579,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
                 return;
               }
               updateTrack(armedNote.id, { recording: true });
-              toast("Recording notes", {
-                description: `Play your controller or the on-screen keyboard — notes land on ${armedNote.name}.`,
+              toast("Recording notes and audio", {
+                description: `Playing ${armedNote.name} captures an editable pattern and waveform.`,
               });
             } else {
               toast("Select or arm a channel first", {
@@ -2037,7 +2037,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           ),
         })),
     };
-  }, [tracks, transport, selectedId, selectedIds, editTool, panel, userPresets, buses, sections, installedPlugins, fxChains, midiInputs, midiInputId, midiLearning, midiMap, midiLearn, clipboardName, enableMidi, setMidiInputPersist, updateTrack, finishRecording, splitClipAtImpl, buildSnapshot, applySession, historyTick, automationHistoryTick, savedAt]);
+  }, [tracks, transport, selectedId, selectedIds, editTool, panel, userPresets, buses, sections, installedPlugins, fxChains, midiInputs, midiInputId, midiLearning, midiMap, midiLearn, clipboardName, enableMidi, setMidiInputPersist, updateTrack, finishRecording, finishTrackRecording, splitClipAtImpl, buildSnapshot, applySession, historyTick, automationHistoryTick, savedAt]);
 
 
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>;

@@ -1165,7 +1165,7 @@ export class SyncLabEngine {
   private monitorNode: MediaStreamAudioSourceNode | null = null;
   private monitorGain: GainNode | null = null;
   private recAnalyser: AnalyserNode | null = null;
-  private trackRecorder: { recorder: MediaRecorder; destination: MediaStreamAudioDestinationNode; trackId: string; chunks: Blob[] } | null = null;
+  private trackRecorder: { recorder: MediaRecorder; destination: MediaStreamAudioDestinationNode; source: AudioNode; trackId: string; chunks: Blob[] } | null = null;
 
   private monitorTrackId: string | null = null;
 
@@ -1182,16 +1182,17 @@ export class SyncLabEngine {
     if (this.trackRecorder) return;
     const ctx = this.init();
     const destination = ctx.createMediaStreamDestination();
-    this.channel(trackId).input.connect(destination);
+    const source = this.channel(trackId).input;
+    source.connect(destination);
     const mime = preferredRecordingMime();
     try {
       const recorder = new MediaRecorder(destination.stream, mime ? { mimeType: mime } : undefined);
       const chunks: Blob[] = [];
       recorder.ondataavailable = (event) => { if (event.data.size) chunks.push(event.data); };
       recorder.start(200);
-      this.trackRecorder = { recorder, destination, trackId, chunks };
+      this.trackRecorder = { recorder, destination, source, trackId, chunks };
     } catch (error) {
-      this.channel(trackId).input.disconnect(destination);
+      source.disconnect(destination);
       destination.stream.getTracks().forEach((track) => track.stop());
       throw error;
     }
@@ -1201,7 +1202,7 @@ export class SyncLabEngine {
     const session = this.trackRecorder;
     if (!session) return null;
     this.trackRecorder = null;
-    const { recorder, destination, trackId, chunks } = session;
+    const { recorder, destination, source, trackId, chunks } = session;
     try {
       const blob = await new Promise<Blob>((resolve) => {
         recorder.onstop = () => resolve(new Blob(chunks, { type: recorder.mimeType || "audio/webm" }));
@@ -1226,7 +1227,7 @@ export class SyncLabEngine {
       this.sampleBuffers.set(url, buffer);
       return { peaks, duration: buffer.duration, url, trackId };
     } finally {
-      this.channel(trackId).input.disconnect(destination);
+      source.disconnect(destination);
       destination.stream.getTracks().forEach((track) => track.stop());
     }
   }
