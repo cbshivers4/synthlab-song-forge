@@ -44,6 +44,7 @@ import { DesktopUpdateBanner } from "@/components/studio/DesktopUpdateBanner";
 import { DesktopWebsiteStatus } from "@/components/studio/DesktopWebsiteStatus";
 import { ReferenceAnalyzer } from "@/components/studio/ReferenceAnalyzer";
 import { LiveView } from "@/components/studio/LiveView";
+import { LiveLooperView } from "@/components/studio/LiveLooperView";
 import { Bot } from "lucide-react";
 import { AppProvider, useApp, useMaybeApp } from "@/lib/synclab/app-state";
 import { PlanProvider } from "@/lib/synclab/plan";
@@ -161,6 +162,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
     notes: { title: "TRACK NOTES", icon: <NotebookPen className="size-4" /> },
     reference: { title: "REFERENCE ANALYZER", icon: <FileSearch className="size-4" /> },
     live: { title: "LIVE VIEW", icon: <Radio className="size-4" /> },
+    looper: { title: "LIVE LOOPER", icon: <Disc3 className="size-4" /> },
   };
   const current = config[panel];
 
@@ -168,7 +170,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
   return (
     <section
       className="phone-tool-panel rack fixed inset-0 z-40 flex min-w-0 flex-col overflow-x-hidden border-t-2 border-border sm:relative sm:inset-auto sm:z-auto sm:shrink-0"
-      style={{ height: isMobile ? "100dvh" : rackH }}
+       style={{ height: isMobile ? "100dvh" : panel === "looper" ? Math.max(600, rackH) : rackH }}
     >
       <div
         onPointerDown={startResize}
@@ -289,6 +291,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
       {panel === "notes" && <NotesPanel />}
       {panel === "reference" && <ReferenceAnalyzer />}
       {panel === "live" && <LiveView />}
+      {panel === "looper" && <LiveLooperView />}
 
       </div>
 
@@ -476,6 +479,7 @@ function useShortcuts() {
 
 function StudioWorkspace() {
   const isMobile = useIsMobile();
+  const { panel } = useStudio();
   const mobileAccessibility = useMobileAccessibility();
   const [float, setFloat] = useState<FloatState>({ synth: false, drums: false });
   const [beatMode, setBeatMode] = useState(false);
@@ -514,7 +518,7 @@ function StudioWorkspace() {
       <FloatingDevices float={float} setFloat={setFloat} />
       <DeviceSetup />
       <ExportDialog />
-      {isMobile && beatMode && <MobileBeat onClose={() => setBeatMode(false)} />}
+      {isMobile && beatMode && !panel && <MobileBeat onClose={() => setBeatMode(false)} />}
       <MobileOnboarding enabled={isMobile && !beatMode} />
       <DesktopUpdateBanner />
       <DesktopWebsiteStatus />

@@ -133,6 +133,7 @@ export type PanelId =
   | "notes"
   | "reference"
   | "live"
+  | "looper"
   | null;
 
 export type EditTool = "select" | "draw" | "split";

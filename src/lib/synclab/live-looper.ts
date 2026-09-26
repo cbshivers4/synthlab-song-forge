@@ -21,6 +21,9 @@ export interface LoopSlot {
   start: number;
   recStart: number;
   recEnd: number | null;
+  overdubbing: boolean;
+  muted: boolean;
+  reversed: boolean;
 }
 
 type Chunk = { t: number; l: Float32Array; r: Float32Array };
@@ -48,12 +51,15 @@ export class LiveLooper {
   private chunks: Chunk[] = [];
   private timer: number | null = null;
   private listeners = new Set<() => void>();
+  private opening: Promise<void> | null = null;
 
   constructor() {
     const engine = getEngine();
     this.ctx = engine.init();
     this.bus = this.ctx.createGain();
-    this.bus.connect(engine.master!);
+    // Keep loop playback out of the app-output capture tap: routing it into
+    // master would record the existing loops again on every new layer.
+    this.bus.connect(this.ctx.destination);
     this.slots = Array.from({ length: SLOTS }, (_, index) => ({
       index,
       state: "empty" as SlotState,
@@ -62,6 +68,9 @@ export class LiveLooper {
       start: 0,
       recStart: 0,
       recEnd: null,
+      overdubbing: false,
+      muted: false,
+      reversed: false,
     }));
     for (let i = 0; i < SLOTS; i++) {
       const g = this.ctx.createGain();
@@ -101,7 +110,7 @@ export class LiveLooper {
     this.emit();
   }
   setBars(b: number) {
-    if (!this.isEmpty) return;
+    if (!this.isEmpty || ![1, 2, 4, 8, 16, 32].includes(b)) return;
     this.bars = b;
     this.emit();
   }
@@ -116,6 +125,12 @@ export class LiveLooper {
 
   private async openInput() {
     if (this.proc) return;
+    if (this.opening) return this.opening;
+    this.opening = this.connectInput();
+    try { await this.opening; } finally { this.opening = null; }
+  }
+
+  private async connectInput() {
     let node: AudioNode | null = null;
     if (this.source === "mic") {
       const res = await openMic(undefined, "looper");
@@ -134,9 +149,10 @@ export class LiveLooper {
       const r = e.inputBuffer.numberOfChannels > 1 ? e.inputBuffer.getChannelData(1) : l;
       // the input block was rendered one block before its playback time
       this.chunks.push({ t: e.playbackTime - BLOCK / this.ctx.sampleRate, l: new Float32Array(l), r: new Float32Array(r) });
-      // keep ~30s of history only
-      const oldest = this.ctx.currentTime - 30;
-      while (this.chunks.length && this.chunks[0]!.t < oldest && !this.slots.some((s) => s.state === "recording" && s.recStart < oldest + 1)) this.chunks.shift();
+      // Retain the entire active take, including 32-bar takes at slow tempos.
+      const activeStarts = this.slots.filter((s) => s.state === "armed" || s.state === "recording").map((s) => s.recStart);
+      const oldest = activeStarts.length ? Math.min(...activeStarts) - 0.1 : this.ctx.currentTime - 1;
+      while (this.chunks.length && this.chunks[0]!.t + BLOCK / this.ctx.sampleRate < oldest) this.chunks.shift();
     };
     node.connect(proc);
     proc.connect(sink).connect(this.ctx.destination);
@@ -216,18 +232,33 @@ export class LiveLooper {
   }
 
   private finish(s: LoopSlot) {
-    const end = s.recEnd!;
+    const end = s.recEnd;
+    if (end === null) return;
     const buf = this.slice(s.recStart, end);
     if (!buf) {
-      s.state = "empty";
+      s.state = s.buffer ? "playing" : "empty";
+      s.overdubbing = false;
       return;
     }
     if (this.cycle === null) {
       this.cycle = end - s.recStart;
       this.origin = s.recStart;
     }
-    s.buffer = buf;
-    s.start = s.recStart;
+    if (s.overdubbing && s.buffer) {
+      const original = s.buffer;
+      const merged = this.ctx.createBuffer(2, original.length, original.sampleRate);
+      for (let channel = 0; channel < 2; channel++) {
+        const output = merged.getChannelData(channel);
+        const old = original.getChannelData(channel);
+        const added = buf.getChannelData(channel);
+        for (let j = 0; j < output.length; j++) output[j] = Math.max(-1, Math.min(1, old[j]! + (added[j] ?? 0) * 0.8));
+      }
+      s.buffer = merged;
+      s.overdubbing = false;
+    } else {
+      s.buffer = buf;
+      s.start = s.recStart;
+    }
     s.recEnd = null;
     this.play(s.index);
   }
@@ -261,8 +292,10 @@ export class LiveLooper {
   }
 
   async record(i: number) {
-    const s = this.slots[i]!;
+    const s = this.slots[i];
+    if (!s || s.state !== "empty" || this.slots.some((slot) => slot.state === "armed" || slot.state === "recording")) return;
     await this.openInput();
+    if (s.state !== "empty" || this.slots.some((slot) => slot.state === "armed" || slot.state === "recording")) { if (!this.slots.some((slot) => slot.state === "armed" || slot.state === "recording")) this.closeInput(); return; }
     const now = this.ctx.currentTime + 0.03;
     if (this.cycle === null) {
       if (this.mode === "sync") {
@@ -283,9 +316,10 @@ export class LiveLooper {
   }
 
   play(i: number) {
-    const s = this.slots[i]!;
+    const s = this.slots[i];
+    if (!s) return;
     if (!s.buffer) return;
-    this.sources[i]?.stop();
+    try { this.sources[i]?.stop(); } catch { /* already ended */ }
     const src = this.ctx.createBufferSource();
     src.buffer = s.buffer;
     src.loop = true;
@@ -296,7 +330,7 @@ export class LiveLooper {
     const g = this.gains[i]!.gain;
     g.cancelScheduledValues(when);
     g.setValueAtTime(0, when);
-    g.linearRampToValueAtTime(s.volume, when + 0.01);
+    g.linearRampToValueAtTime(s.muted ? 0 : s.volume, when + 0.01);
     src.start(when, offset);
     this.sources[i] = src;
     s.state = "playing";
@@ -322,8 +356,73 @@ export class LiveLooper {
   setVolume(i: number, v: number) {
     const s = this.slots[i]!;
     s.volume = v;
-    if (s.state === "playing") this.gains[i]!.gain.setTargetAtTime(v, this.ctx.currentTime, 0.02);
+    if (s.state === "playing" || s.overdubbing) this.gains[i]!.gain.setTargetAtTime(s.muted ? 0 : v, this.ctx.currentTime, 0.02);
     this.emit();
+  }
+
+  toggleMute(i: number) {
+    const s = this.slots[i];
+    if (!s?.buffer) return;
+    s.muted = !s.muted;
+    this.gains[i]?.gain.setTargetAtTime(s.muted ? 0 : s.volume, this.ctx.currentTime, 0.02);
+    this.emit();
+  }
+
+  toggleReverse(i: number) {
+    const s = this.slots[i];
+    if (!s?.buffer || s.overdubbing || s.state === "recording" || s.state === "armed") return;
+    const reversed = this.ctx.createBuffer(s.buffer.numberOfChannels, s.buffer.length, s.buffer.sampleRate);
+    for (let c = 0; c < s.buffer.numberOfChannels; c++) {
+      const input = s.buffer.getChannelData(c);
+      const output = reversed.getChannelData(c);
+      for (let j = 0; j < input.length; j++) output[j] = input[input.length - 1 - j]!;
+    }
+    s.buffer = reversed;
+    s.reversed = !s.reversed;
+    if (s.state === "playing") this.play(i);
+    this.emit();
+  }
+
+  async overdub(i: number) {
+    const s = this.slots[i];
+    if (!s?.buffer || s.state !== "playing" || !this.cycle || this.source !== "mic" || this.slots.some((slot) => slot.state === "armed" || slot.state === "recording")) return;
+    if (this.ctx.state === "suspended") await this.ctx.resume();
+    await this.openInput();
+    if (s.state !== "playing" || this.slots.some((slot) => slot.state === "armed" || slot.state === "recording")) return;
+    s.recStart = this.nextBoundary(this.ctx.currentTime + 0.05);
+    s.recEnd = s.recStart + this.cycle;
+    s.overdubbing = true;
+    s.state = "armed";
+    this.ensureTimer();
+    this.emit();
+  }
+
+  /** Downsampled amplitudes around the ring, including a live recording. */
+  levels(i: number, count = 64): number[] {
+    const s = this.slots[i];
+    if (!s) return [];
+    const values = new Array<number>(count).fill(0);
+    if (s.buffer) {
+      const data = s.buffer.getChannelData(0);
+      for (let n = 0; n < count; n++) {
+        let peak = 0;
+        const from = Math.floor(n * data.length / count);
+        const to = Math.floor((n + 1) * data.length / count);
+        for (let j = from; j < to; j += Math.max(1, Math.floor((to - from) / 32))) peak = Math.max(peak, Math.abs(data[j] ?? 0));
+        values[n] = peak;
+      }
+    }
+    if (s.state === "recording") {
+      const length = s.recEnd ? s.recEnd - s.recStart : Math.max(1, this.now - s.recStart);
+      for (const chunk of this.chunks) {
+        const n = Math.floor(((chunk.t - s.recStart) / length) * count);
+        if (n < 0 || n >= count) continue;
+        let peak = 0;
+        for (let j = 0; j < chunk.l.length; j += 64) peak = Math.max(peak, Math.abs(chunk.l[j] ?? 0));
+        values[n] = Math.max(values[n] ?? 0, peak);
+      }
+    }
+    return values;
   }
 
   clear(i: number) {
@@ -332,6 +431,10 @@ export class LiveLooper {
     s.buffer = null;
     s.state = "empty";
     s.recEnd = null;
+    s.overdubbing = false;
+    s.muted = false;
+    s.reversed = false;
+    if (!this.slots.some((slot) => slot.state === "armed" || slot.state === "recording")) this.closeInput();
     if (this.isEmpty) {
       this.cycle = null;
       this.origin = null;

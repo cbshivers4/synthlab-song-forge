@@ -33,6 +33,7 @@ const PANELS: { id: Exclude<PanelId, null>; label: string }[] = [
   { id: "settings", label: "Settings" },
   { id: "reference", label: "Reference Analyzer" },
   { id: "live", label: "Live View" },
+  { id: "looper", label: "Live Looper" },
 ];
 
 export function StudioSearch() {
