@@ -1225,6 +1225,7 @@ function BusStrip({
           step={0.01}
           onValueChange={([v = 0]) => onChange({ volume: v })}
         />
+        <MidiLearnButton id={`bus:${id}`} param="volume" label={`${id} bus level`} />
         <Meter id={`bus:${id}`} level={level} tall />
       </div>
       <div className={cn(ROW.readout, "flex items-center justify-center gap-1 border-b border-border/60")}>
@@ -1237,7 +1238,8 @@ function BusStrip({
       >
         <span className="truncate font-mono text-[9px] font-bold uppercase tracking-wider text-foreground">{id}</span>
       </div>
-      <div className={cn(ROW.buttons, "flex items-start px-1 pt-1")}>
+       <div className={cn(ROW.buttons, "flex items-start px-1 pt-1")}>
+         <MidiLearnButton id={`bus:${id}`} param="mute" label={`${id} bus mute`} />
         <button
           onClick={() => onChange({ muted: !state.muted })}
           title={state.muted ? "Bus muted — click to unmute" : "Mute this bus"}
@@ -1267,6 +1269,7 @@ function ControlStrip({ kind, name, state, onChange, memberCount }: {
   return (
     <div className="flex w-[116px] shrink-0 flex-col border-r border-border bg-surface-2/70">
       <div className={cn(ROW.head, "flex items-center justify-center border-b border-border font-mono text-[9px] font-bold tracking-wider", aux ? "text-primary" : "text-accent-foreground")}>{kind}</div>
+       <div className="flex justify-center border-b border-border/60"><MidiLearnButton id={`${aux ? "aux" : "vca"}:${name}`} param="volume" label={`${kind} ${name} level`} /><MidiLearnButton id={`${aux ? "aux" : "vca"}:${name}`} param="mute" label={`${kind} ${name} mute`} /></div>
       {advanced && <div className={cn(ROW.scope, "border-b border-border/60")} />}
       <div className={cn(ROW.eq, "flex items-center justify-center border-b border-border/60 font-mono text-[9px] text-muted-foreground")}>{aux ? "FX RETURN" : `${memberCount ?? 0} CHANNELS`}</div>
       <div className={cn(ROW.devices, "flex items-center border-b border-border/60 p-2")}>
