@@ -1,4 +1,5 @@
 import { useCallback, useRef } from "react";
+import { MidiLearnButton } from "./MidiLearn";
 
 interface KnobProps {
   label: string;
@@ -9,9 +10,10 @@ interface KnobProps {
   unit?: string;
   size?: number;
   onChange: (v: number) => void;
+  midiTarget?: { id: string; param: string };
 }
 
-export function Knob({ label, value, min = 0, max = 1, step = 0.01, unit = "", size = 44, onChange }: KnobProps) {
+export function Knob({ label, value, min = 0, max = 1, step = 0.01, unit = "", size = 44, onChange, midiTarget }: KnobProps) {
   const start = useRef<{ y: number; v: number } | null>(null);
 
   const onPointerDown = useCallback(
@@ -68,6 +70,7 @@ export function Knob({ label, value, min = 0, max = 1, step = 0.01, unit = "", s
         />
       </div>
       <span className="label-xs text-[9px] leading-none">{label}</span>
+      {midiTarget && <MidiLearnButton {...midiTarget} label={label} />}
       <span className="font-mono text-[10px] text-foreground/70">
         {display}
         {unit}

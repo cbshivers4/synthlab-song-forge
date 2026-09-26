@@ -331,42 +331,46 @@ export function DrumMachine({ track }: { track: Track }) {
             </div>
             {openPad === pad.id && (
               <div className="panel flex flex-wrap gap-3 p-3 sm:ml-24">
-                <Knob label="VOL" value={pad.volume} onChange={(v) => updatePad(track.id, pad.id, { volume: v })} />
-                <Knob label="PAN" min={-1} max={1} value={pad.pan} onChange={(v) => updatePad(track.id, pad.id, { pan: v })} />
+                <Knob label="VOL" midiTarget={{ id: track.id, param: `drum:${pad.id}:volume` }} value={pad.volume} onChange={(v) => updatePad(track.id, pad.id, { volume: v })} />
+                <Knob label="PAN" midiTarget={{ id: track.id, param: `drum:${pad.id}:pan` }} min={-1} max={1} value={pad.pan} onChange={(v) => updatePad(track.id, pad.id, { pan: v })} />
                 <Knob
                   label="PITCH"
+                  midiTarget={{ id: track.id, param: `drum:${pad.id}:pitch` }}
                   min={-12}
                   max={12}
                   step={1}
                   value={pad.pitch}
                   onChange={(v) => updatePad(track.id, pad.id, { pitch: v })}
                 />
-                <Knob label="DECAY" value={pad.decay} onChange={(v) => updatePad(track.id, pad.id, { decay: v })} />
-                <Knob label="ATK" value={pad.attack ?? 0} onChange={(v) => updatePad(track.id, pad.id, { attack: v })} />
+                <Knob label="DECAY" midiTarget={{ id: track.id, param: `drum:${pad.id}:decay` }} value={pad.decay} onChange={(v) => updatePad(track.id, pad.id, { decay: v })} />
+                <Knob label="ATK" midiTarget={{ id: track.id, param: `drum:${pad.id}:attack` }} value={pad.attack ?? 0} onChange={(v) => updatePad(track.id, pad.id, { attack: v })} />
                 <Knob
                   label="SUS"
+                  midiTarget={{ id: track.id, param: `drum:${pad.id}:sustain` }}
                   value={pad.sustain ?? 0}
                   onChange={(v) => updatePad(track.id, pad.id, { sustain: v })}
                 />
                 <Knob
                   label="REL"
+                  midiTarget={{ id: track.id, param: `drum:${pad.id}:release` }}
                   value={pad.release ?? 0.2}
                   onChange={(v) => updatePad(track.id, pad.id, { release: v })}
                 />
-                <Knob label="START" value={pad.start ?? 0} onChange={(v) => updatePad(track.id, pad.id, { start: v })} />
-                <Knob label="END" value={pad.end ?? 1} onChange={(v) => updatePad(track.id, pad.id, { end: v })} />
+                <Knob label="START" midiTarget={{ id: track.id, param: `drum:${pad.id}:start` }} value={pad.start ?? 0} onChange={(v) => updatePad(track.id, pad.id, { start: v })} />
+                <Knob label="END" midiTarget={{ id: track.id, param: `drum:${pad.id}:end` }} value={pad.end ?? 1} onChange={(v) => updatePad(track.id, pad.id, { end: v })} />
                 <Knob
                   label="TONE"
+                  midiTarget={{ id: track.id, param: `drum:${pad.id}:tone` }}
                   value={pad.tone ?? 0.5}
                   onChange={(v) => updatePad(track.id, pad.id, { tone: v })}
                 />
-                 <Knob label="DISTORT" value={pad.drive ?? 0} onChange={(v) => updatePad(track.id, pad.id, { drive: v })} />
-                 <Knob label="COMP" value={pad.compressor ?? 0} onChange={(v) => updatePad(track.id, pad.id, { compressor: v })} />
-                <Knob label="SNAP" value={pad.snap ?? 0} onChange={(v) => updatePad(track.id, pad.id, { snap: v })} />
-                <Knob label="NOISE" value={pad.noise ?? 0} onChange={(v) => updatePad(track.id, pad.id, { noise: v })} />
-                <Knob label="WIDTH" value={pad.width ?? 0} onChange={(v) => updatePad(track.id, pad.id, { width: v })} />
-                <Knob label="CRUSH" value={pad.crush ?? 0} onChange={(v) => updatePad(track.id, pad.id, { crush: v })} />
-                 <Knob label="MUTATION" value={pad.mutation ?? 0.2} onChange={(v) => updatePad(track.id, pad.id, { mutation: v })} />
+                 <Knob label="DISTORT" midiTarget={{ id: track.id, param: `drum:${pad.id}:drive` }} value={pad.drive ?? 0} onChange={(v) => updatePad(track.id, pad.id, { drive: v })} />
+                 <Knob label="COMP" midiTarget={{ id: track.id, param: `drum:${pad.id}:compressor` }} value={pad.compressor ?? 0} onChange={(v) => updatePad(track.id, pad.id, { compressor: v })} />
+                <Knob label="SNAP" midiTarget={{ id: track.id, param: `drum:${pad.id}:snap` }} value={pad.snap ?? 0} onChange={(v) => updatePad(track.id, pad.id, { snap: v })} />
+                <Knob label="NOISE" midiTarget={{ id: track.id, param: `drum:${pad.id}:noise` }} value={pad.noise ?? 0} onChange={(v) => updatePad(track.id, pad.id, { noise: v })} />
+                <Knob label="WIDTH" midiTarget={{ id: track.id, param: `drum:${pad.id}:width` }} value={pad.width ?? 0} onChange={(v) => updatePad(track.id, pad.id, { width: v })} />
+                <Knob label="CRUSH" midiTarget={{ id: track.id, param: `drum:${pad.id}:crush` }} value={pad.crush ?? 0} onChange={(v) => updatePad(track.id, pad.id, { crush: v })} />
+                 <Knob label="MUTATION" midiTarget={{ id: track.id, param: `drum:${pad.id}:mutation` }} value={pad.mutation ?? 0.2} onChange={(v) => updatePad(track.id, pad.id, { mutation: v })} />
                 <div className="flex flex-col gap-1">
                   <span className="label-xs">FILTER</span>
                   <div className="flex gap-1">
@@ -383,10 +387,11 @@ export function DrumMachine({ track }: { track: Track }) {
                     ))}
                   </div>
                 </div>
-                <Knob label="CUTOFF" value={pad.cutoff ?? 1} onChange={(v) => updatePad(track.id, pad.id, { cutoff: v })} />
-                <Knob label="RESO" value={pad.resonance ?? 0} onChange={(v) => updatePad(track.id, pad.id, { resonance: v })} />
+                <Knob label="CUTOFF" midiTarget={{ id: track.id, param: `drum:${pad.id}:cutoff` }} value={pad.cutoff ?? 1} onChange={(v) => updatePad(track.id, pad.id, { cutoff: v })} />
+                <Knob label="RESO" midiTarget={{ id: track.id, param: `drum:${pad.id}:resonance` }} value={pad.resonance ?? 0} onChange={(v) => updatePad(track.id, pad.id, { resonance: v })} />
                 <Knob
                   label="F.ENV"
+                  midiTarget={{ id: track.id, param: `drum:${pad.id}:filterEnv` }}
                   min={-1}
                   max={1}
                   value={pad.filterEnv ?? 0}
@@ -394,6 +399,7 @@ export function DrumMachine({ track }: { track: Track }) {
                 />
                 <Knob
                   label="CHOKE"
+                  midiTarget={{ id: track.id, param: `drum:${pad.id}:choke` }}
                   min={0}
                   max={4}
                   step={1}

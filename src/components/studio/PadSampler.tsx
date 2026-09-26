@@ -22,6 +22,7 @@ import { useSkin } from "@/lib/synclab/skins";
 import { WaveformView } from "@/components/studio/WaveformView";
 import { LiveWave } from "@/components/studio/LiveWave";
 import { getPadBank, setPadBank, subscribePadBank, type SavedPad } from "@/lib/synclab/pad-session";
+import { MidiLearnButton } from "./MidiLearn";
 
 const BANKS = ["A", "B", "C", "D"] as const;
 /** Koala-style bank colors — each bank tints its loaded pads. */
@@ -335,7 +336,7 @@ export function PadSampler() {
     }
     ensureTrack();
     const loaded = await getEngine().loadSampleFile(file, file.name.replace(/\.[^.]+$/, ""));
-    setPads((p) => ({ ...p, [i]: makePad(loaded) }));
+    setPadBank({ ...getPadBank(), [i]: makePad(loaded) });
     setSel(i);
   };
 
@@ -407,7 +408,7 @@ export function PadSampler() {
     if (!blob.size) return;
     ensureTrack();
     const loaded = await getEngine().loadSampleFile(blob, `REC ${r.pad + 1}`);
-    setPads((p) => ({ ...p, [r.pad]: makePad(loaded) }));
+    setPadBank({ ...getPadBank(), [r.pad]: makePad(loaded) });
     setSel(r.pad);
   };
 
@@ -850,18 +851,23 @@ export function PadSampler() {
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <Row label="Level" value={`${Math.round(selPad.gain * 100)}%`}>
+              <MidiLearnButton id={`sampler-pad:${sel}`} param="pad:gain" label={`Pad ${sel + 1} level`} />
               <Slider value={[selPad.gain]} min={0} max={2} step={0.01} onValueChange={([v]) => patch(sel, { gain: v ?? 1 })} />
             </Row>
             <Row label="Tune" value={`${selPad.pitch > 0 ? "+" : ""}${selPad.pitch.toFixed(1)} st`}>
+              <MidiLearnButton id={`sampler-pad:${sel}`} param="pad:pitch" label={`Pad ${sel + 1} tune`} />
               <Slider value={[selPad.pitch]} min={-24} max={24} step={0.1} onValueChange={([v]) => patch(sel, { pitch: v ?? 0 })} />
             </Row>
             <Row label="Attack" value={`${Math.round(selPad.attack * 1000)} ms`}>
+              <MidiLearnButton id={`sampler-pad:${sel}`} param="pad:attack" label={`Pad ${sel + 1} attack`} />
               <Slider value={[selPad.attack]} min={0} max={1} step={0.001} onValueChange={([v]) => patch(sel, { attack: v ?? 0 })} />
             </Row>
             <Row label="Release" value={`${Math.round(selPad.release * 1000)} ms`}>
+              <MidiLearnButton id={`sampler-pad:${sel}`} param="pad:release" label={`Pad ${sel + 1} release`} />
               <Slider value={[selPad.release]} min={0.005} max={4} step={0.005} onValueChange={([v]) => patch(sel, { release: v ?? 0.08 })} />
             </Row>
             <Row label="Choke group" value={selPad.choke ? `Group ${selPad.choke}` : "Off"}>
+              <MidiLearnButton id={`sampler-pad:${sel}`} param="pad:choke" label={`Pad ${sel + 1} choke`} />
               <Slider value={[selPad.choke]} min={0} max={4} step={1} onValueChange={([v]) => patch(sel, { choke: v ?? 0 })} />
             </Row>
             <div className="space-y-2">

@@ -8,6 +8,7 @@ import { getEngine } from "@/lib/synclab/audio-engine";
 import { getLooper, type LoopSlot } from "@/lib/synclab/live-looper";
 import { cn } from "@/lib/utils";
 import { TRACK_PALETTE } from "./TrackStyle";
+import { MidiLearnButton } from "./MidiLearn";
 
 const labels: Record<LoopSlot["state"], string> = {
   empty: "RECORD", armed: "ARMED", recording: "REC", playing: "PLAYING", stopped: "STOPPED",
@@ -85,6 +86,7 @@ function LoopDonut({ slot, send }: { slot: LoopSlot; send: (i: number) => void }
       <div className="flex w-full max-w-52 items-center gap-2 px-1">
         <Volume2 className="size-4 shrink-0 text-muted-foreground" />
         <Slider value={[slot.volume]} min={0} max={1.2} step={0.01} onValueChange={(v) => looper.setVolume(slot.index, v[0] ?? 0)} aria-label={`Loop ${slot.index + 1} volume`} />
+        <MidiLearnButton id={`looper:${slot.index}`} param="volume" label={`Loop ${slot.index + 1} volume`} />
       </div>
       <div className="flex w-full max-w-52 items-center justify-center gap-1">
         <Button size="icon" variant="secondary" className="size-10" disabled={!slot.buffer} aria-label={`Loop ${slot.index + 1} ${slot.state === "playing" ? "stop" : "play"}`} title="Play / stop" onClick={() => slot.state === "playing" ? looper.stop(slot.index) : looper.play(slot.index)}>{slot.state === "playing" ? <Square className="size-4" /> : <Play className="size-4" />}</Button>

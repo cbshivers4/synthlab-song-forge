@@ -15,3 +15,4 @@ Meter and looper visuals refresh at 20 fps from shared timers; keep high-frequen
 Phone settings open to Phone features and remain reachable from More and the full-screen beat maker; this keeps accessibility controls available without menu hunting.
 Mixer VCAs scale assigned channel gains without changing individual faders, while aux returns control post-effect levels before the master; this avoids routing returns back into their own sends.
 The timeline overview scrolls one fixed-width arrangement; synchronize its ruler and song-part header with track scrolling while pinning header controls, so bar positions stay aligned at every zoom and viewport width.
+MIDI Learn stores CC-to-target mappings by stable track/device IDs and applies incoming values through existing state or the singleton looper; only expose Learn on controls with a real implemented dispatch path.

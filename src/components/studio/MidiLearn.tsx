@@ -1,6 +1,32 @@
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useStudio, type MidiTarget } from "@/lib/synclab/store";
+import { Button } from "@/components/ui/button";
+
+/** Small assign/clear control beside any continuous parameter. */
+export function MidiLearnButton({ id, param, label }: MidiTarget & { label: string }) {
+  const { midiMap, midiLearn, startMidiLearn, cancelMidiLearn, clearMidiMapping, midiInputId, enableMidi } = useStudio();
+  const target = { id, param };
+  const assigned = Object.entries(midiMap).find(([, v]) => v.id === id && v.param === param);
+  const learning = midiLearn?.id === id && midiLearn.param === param;
+  return (
+    <span className="inline-flex items-center gap-0.5">
+      <Button type="button" size="sm" variant={learning || assigned ? "secondary" : "ghost"}
+        className="h-6 min-w-8 px-1 font-mono text-[9px]" aria-label={`${learning ? "Cancel learning" : "MIDI Learn"} ${label}`}
+        title={learning ? `Move a controller for ${label}` : assigned ? `${label}: CC ${assigned[0].split(":")[1]}` : `MIDI Learn ${label}`}
+        onClick={() => {
+          if (learning) cancelMidiLearn();
+          else {
+            startMidiLearn(target);
+            if (!midiInputId) enableMidi();
+          }
+        }}>
+        {learning ? "MOVE" : assigned ? `CC ${assigned[0].split(":")[1]}` : "MIDI"}
+      </Button>
+      {assigned && <Button type="button" size="icon" variant="ghost" className="size-6" aria-label={`Clear ${label} MIDI mapping`} onClick={() => clearMidiMapping(target)}><X className="size-3" /></Button>}
+    </span>
+  );
+}
 
 /** Assign hardware knobs/faders to a channel's controls. Shared by the mixer and the editors. */
 export function MidiLearnBlock({

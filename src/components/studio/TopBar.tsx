@@ -45,6 +45,7 @@ import { INSTRUMENTS } from "@/lib/synclab/presets";
 import { toast } from "sonner";
 import { openExport } from "@/components/studio/ExportDialog";
 import { StudioSearch } from "@/components/studio/StudioSearch";
+import { MidiLearnButton } from "@/components/studio/MidiLearn";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { PlanBadge } from "@/lib/synclab/plan";
 import { openHelp } from "@/components/studio/HelpCenter";
@@ -164,6 +165,7 @@ export function TopBar() {
             step={1}
             onValueChange={([v = 0]) => setTransport({ bpm: v })}
           />
+          <MidiLearnButton id="transport" param="bpm" label="Tempo" />
           <div className="hidden sm:block">
             <span className="label-xs">Swing</span>
             <Slider
@@ -174,6 +176,7 @@ export function TopBar() {
               step={0.01}
               onValueChange={([v = 0]) => setTransport({ swing: v })}
             />
+            <MidiLearnButton id="transport" param="swing" label="Swing" />
           </div>
         </div>
 

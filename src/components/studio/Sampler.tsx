@@ -11,6 +11,7 @@ import { encodeWav } from "@/lib/synclab/bounce";
 import { uid } from "@/lib/synclab/presets";
 import { wsolaStretch } from "@/lib/synclab/stretch";
 import { WaveformView } from "@/components/studio/WaveformView";
+import { MidiLearnButton } from "./MidiLearn";
 
 const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 const noteName = (m: number) => `${NOTE_NAMES[((m % 12) + 12) % 12]}${Math.floor(m / 12) - 1}`;
@@ -18,12 +19,13 @@ const AUDIO_RE = /\.(mp3|wav|wave|aif|aiff|m4a|aac|ogg|flac|webm)$/i;
 /** every chop gets its own colour so a sliced sample reads at a glance */
 const chopColor = (i: number) => `hsl(${(187 + i * 27) % 360} 85% 56%)`;
 
-function Row({ label, value, children }: { label: string; value: string; children: React.ReactNode }) {
+function Row({ label, value, children, midiId, midiParam }: { label: string; value: string; children: React.ReactNode; midiId?: string; midiParam?: string }) {
   return (
     <div className="space-y-1">
       <div className="flex items-baseline justify-between">
         <span className="label-xs">{label}</span>
         <span className="font-mono text-[10px] text-primary">{value}</span>
+        {midiId && midiParam && <MidiLearnButton id={midiId} param={`sampler:${midiParam}`} label={`Sampler ${label}`} />}
       </div>
       {children}
     </div>
@@ -513,7 +515,7 @@ export function Sampler() {
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <Row label="Trim start" value={`${(s.start * s.duration).toFixed(2)}s`}>
+            <Row label="Trim start" midiId={track.id} midiParam="start" value={`${(s.start * s.duration).toFixed(2)}s`}>
               <Slider
                 value={[s.start]}
                 min={0}
@@ -522,7 +524,7 @@ export function Sampler() {
                 onValueChange={([v]) => updateSampler(track.id, { start: Math.min(v ?? 0, s.end - 0.002) })}
               />
             </Row>
-            <Row label="Trim end" value={`${(s.end * s.duration).toFixed(2)}s`}>
+            <Row label="Trim end" midiId={track.id} midiParam="end" value={`${(s.end * s.duration).toFixed(2)}s`}>
               <Slider
                 value={[s.end]}
                 min={0}
@@ -531,13 +533,13 @@ export function Sampler() {
                 onValueChange={([v]) => updateSampler(track.id, { end: Math.max(v ?? 1, s.start + 0.002) })}
               />
             </Row>
-            <Row label="Level" value={`${Math.round(s.gain * 100)}%`}>
+            <Row label="Level" midiId={track.id} midiParam="gain" value={`${Math.round(s.gain * 100)}%`}>
               <Slider value={[s.gain]} min={0} max={2} step={0.01} onValueChange={([v]) => updateSampler(track.id, { gain: v ?? 1 })} />
             </Row>
-            <Row label="Tune" value={`${s.pitch > 0 ? "+" : ""}${s.pitch.toFixed(1)} st`}>
+            <Row label="Tune" midiId={track.id} midiParam="pitch" value={`${s.pitch > 0 ? "+" : ""}${s.pitch.toFixed(1)} st`}>
               <Slider value={[s.pitch]} min={-24} max={24} step={0.1} onValueChange={([v]) => updateSampler(track.id, { pitch: v ?? 0 })} />
             </Row>
-            <Row label="Root note" value={noteName(s.rootNote)}>
+            <Row label="Root note" midiId={track.id} midiParam="rootNote" value={noteName(s.rootNote)}>
               <Slider
                 value={[s.rootNote]}
                 min={24}
@@ -546,22 +548,22 @@ export function Sampler() {
                 onValueChange={([v]) => updateSampler(track.id, { rootNote: v ?? 60 })}
               />
             </Row>
-            <Row label="Attack" value={`${Math.round(s.attack * 1000)} ms`}>
+            <Row label="Attack" midiId={track.id} midiParam="attack" value={`${Math.round(s.attack * 1000)} ms`}>
               <Slider value={[s.attack]} min={0} max={2} step={0.001} onValueChange={([v]) => updateSampler(track.id, { attack: v ?? 0 })} />
             </Row>
-            <Row label="Release" value={`${Math.round(s.release * 1000)} ms`}>
+            <Row label="Release" midiId={track.id} midiParam="release" value={`${Math.round(s.release * 1000)} ms`}>
               <Slider value={[s.release]} min={0.005} max={4} step={0.005} onValueChange={([v]) => updateSampler(track.id, { release: v ?? 0.06 })} />
             </Row>
-            <Row label="Decay" value={`${Math.round((s.decay ?? 0) * 1000)} ms`}>
+            <Row label="Decay" midiId={track.id} midiParam="decay" value={`${Math.round((s.decay ?? 0) * 1000)} ms`}>
               <Slider value={[s.decay ?? 0]} min={0} max={3} step={0.005} onValueChange={([v]) => updateSampler(track.id, { decay: v ?? 0 })} />
             </Row>
-            <Row label="Sustain" value={`${Math.round((s.sustain ?? 1) * 100)}%`}>
+            <Row label="Sustain" midiId={track.id} midiParam="sustain" value={`${Math.round((s.sustain ?? 1) * 100)}%`}>
               <Slider value={[s.sustain ?? 1]} min={0} max={1} step={0.01} onValueChange={([v]) => updateSampler(track.id, { sustain: v ?? 1 })} />
             </Row>
-            <Row label="Fade in" value={`${Math.round((s.fadeIn ?? 0) * 1000)} ms`}>
+            <Row label="Fade in" midiId={track.id} midiParam="fadeIn" value={`${Math.round((s.fadeIn ?? 0) * 1000)} ms`}>
               <Slider value={[s.fadeIn ?? 0]} min={0} max={2} step={0.005} onValueChange={([v]) => updateSampler(track.id, { fadeIn: v ?? 0 })} />
             </Row>
-            <Row label="Fade out" value={`${Math.round((s.fadeOut ?? 0) * 1000)} ms`}>
+            <Row label="Fade out" midiId={track.id} midiParam="fadeOut" value={`${Math.round((s.fadeOut ?? 0) * 1000)} ms`}>
               <Slider value={[s.fadeOut ?? 0]} min={0} max={2} step={0.005} onValueChange={([v]) => updateSampler(track.id, { fadeOut: v ?? 0 })} />
             </Row>
             <div className="space-y-1.5">
@@ -580,10 +582,10 @@ export function Sampler() {
                 ))}
               </div>
             </div>
-            <Row label="Cutoff" value={`${Math.round(s.cutoff ?? 18000)} Hz`}>
+            <Row label="Cutoff" midiId={track.id} midiParam="cutoff" value={`${Math.round(s.cutoff ?? 18000)} Hz`}>
               <Slider value={[Math.log10(s.cutoff ?? 18000)]} min={Math.log10(20)} max={Math.log10(20000)} step={0.01} disabled={(s.filterType ?? "off") === "off"} onValueChange={([v]) => updateSampler(track.id, { cutoff: Math.round(Math.pow(10, v ?? 4.25)) })} />
             </Row>
-            <Row label="Resonance" value={(s.resonance ?? 0.7).toFixed(1)}>
+            <Row label="Resonance" midiId={track.id} midiParam="resonance" value={(s.resonance ?? 0.7).toFixed(1)}>
               <Slider value={[s.resonance ?? 0.7]} min={0.1} max={20} step={0.1} disabled={(s.filterType ?? "off") === "off"} onValueChange={([v]) => updateSampler(track.id, { resonance: v ?? 0.7 })} />
             </Row>
             <div className="space-y-2 rounded border border-border p-2">

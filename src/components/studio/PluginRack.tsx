@@ -18,6 +18,7 @@ import { VocoderPanel } from "./VocoderPanel";
 import { Scope } from "./Scope";
 import { XYPad } from "./XYPad";
 import { EffectDisplay } from "./EffectDisplay";
+import { MidiLearnButton } from "./MidiLearn";
 import { PluginBridge } from "./PluginBridge";
 import { toast } from "sonner";
 
@@ -93,6 +94,7 @@ function ParamRow({
         {value >= 100 ? value.toFixed(0) : value.toFixed(2)}
         {unit ? ` ${unit}` : ""}
       </span>
+      <MidiLearnButton id={trackId} param={`plugin:${plugin.id}:${paramId}`} label={`${plugin.name} ${name}`} />
     </div>
   );
 }
