@@ -2454,7 +2454,7 @@ export function Timeline() {
     }
   }, [transport.follow, transport.playing, transport.step, totalSteps]);
   return (
-    <section className="mobile-timeline relative flex min-h-0 flex-1 flex-col overflow-hidden border-x border-b border-border bg-background/60">
+    <section className="mobile-timeline relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden border-x border-b border-border bg-background/60">
       <EditToolbar />
       <div className="shrink-0 overflow-hidden">
         <div ref={timelineHeaderRef} className="min-w-[720px] sm:min-w-0">
