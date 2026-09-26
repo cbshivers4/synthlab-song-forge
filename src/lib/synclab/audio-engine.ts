@@ -192,7 +192,7 @@ export class SyncLabEngine {
     const reverbReturn = ctx.createGain();
     conv.connect(reverbReturn);
     reverbReturn.connect(master);
-    reverbReturn.gain.value = this.auxStates.reverb?.muted ? 0 : this.auxStates.reverb?.volume ?? 1;
+    reverbReturn.gain.value = this.auxStates["reverb"]?.muted ? 0 : this.auxStates["reverb"]?.volume ?? 1;
     this.auxReturns.set("reverb", reverbReturn);
     this.reverb = conv;
     this.reverbSend = send;
@@ -210,7 +210,7 @@ export class SyncLabEngine {
     const delayReturn = ctx.createGain();
     delay.connect(delayReturn);
     delayReturn.connect(master);
-    delayReturn.gain.value = this.auxStates.delay?.muted ? 0 : this.auxStates.delay?.volume ?? 1;
+    delayReturn.gain.value = this.auxStates["delay"]?.muted ? 0 : this.auxStates["delay"]?.volume ?? 1;
     this.auxReturns.set("delay", delayReturn);
     this.delaySend = dSend;
     this.sendOut.set("delay", delay);
@@ -232,7 +232,7 @@ export class SyncLabEngine {
     const chorusReturn = ctx.createGain();
     cDelay.connect(chorusReturn);
     chorusReturn.connect(master);
-    chorusReturn.gain.value = this.auxStates.chorus?.muted ? 0 : this.auxStates.chorus?.volume ?? 1;
+    chorusReturn.gain.value = this.auxStates["chorus"]?.muted ? 0 : this.auxStates["chorus"]?.volume ?? 1;
     this.auxReturns.set("chorus", chorusReturn);
     this.chorusSend = cSend;
     this.sendOut.set("chorus", cDelay);
