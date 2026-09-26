@@ -2198,9 +2198,7 @@ function Ruler() {
         {/* one column per beat; every fourth column starts a new bar.
             Numbering is density-aware: once bars get narrow, only every Nth
             bar keeps a number (small ticks between) so labels never overlap. */}
-        <BarNumbering gridRef={gridRef} bars={bars}>
-          {(bar) => bar + 1}
-        </BarNumbering>
+        <BarNumbering gridRef={gridRef} bars={bars} />
 
 
         {/* dim outside the loop */}
