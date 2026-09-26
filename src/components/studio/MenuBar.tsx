@@ -324,6 +324,7 @@ export function MenuBar() {
           <MenubarTrigger className="text-xs">View</MenubarTrigger>
           <MenubarContent>
             <MenubarItem onClick={() => setPanel("live")}>Live View</MenubarItem>
+            <MenubarItem onClick={() => setPanel("looper")}>Live Looper</MenubarItem>
             <MenubarItem onClick={() => setPanel("mixer")}>Mixer</MenubarItem>
             <MenubarItem onClick={() => setPanel("reference")}>Reference Analyzer</MenubarItem>
             <MenubarItem onClick={() => setPanel("piano")}>Piano Roll</MenubarItem>

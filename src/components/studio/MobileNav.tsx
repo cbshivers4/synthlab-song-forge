@@ -47,6 +47,7 @@ export function MobileNav({ onBeatMode }: { onBeatMode: () => void }) {
     { label: "AI Stem Generator", icon: <Sparkles />, panel: "stemgen" },
     { label: "Hum-to-Beat", icon: <AudioLines />, panel: "hum" },
     { label: "Live View", icon: <Radio />, panel: "live" },
+    { label: "Live Looper", icon: <Disc3 />, panel: "looper" },
   ];
   const more: Item[] = [
     { label: "Piano Roll", icon: <Music />, panel: "piano" },

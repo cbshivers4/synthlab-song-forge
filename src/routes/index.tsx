@@ -44,6 +44,7 @@ import { DesktopUpdateBanner } from "@/components/studio/DesktopUpdateBanner";
 import { DesktopWebsiteStatus } from "@/components/studio/DesktopWebsiteStatus";
 import { ReferenceAnalyzer } from "@/components/studio/ReferenceAnalyzer";
 import { LiveView } from "@/components/studio/LiveView";
+import { LiveLooperView } from "@/components/studio/LiveLooperView";
 import { Bot } from "lucide-react";
 import { AppProvider, useApp, useMaybeApp } from "@/lib/synclab/app-state";
 import { PlanProvider } from "@/lib/synclab/plan";
@@ -161,6 +162,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
     notes: { title: "TRACK NOTES", icon: <NotebookPen className="size-4" /> },
     reference: { title: "REFERENCE ANALYZER", icon: <FileSearch className="size-4" /> },
     live: { title: "LIVE VIEW", icon: <Radio className="size-4" /> },
+    looper: { title: "LIVE LOOPER", icon: <Disc3 className="size-4" /> },
   };
   const current = config[panel];
 
@@ -289,6 +291,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
       {panel === "notes" && <NotesPanel />}
       {panel === "reference" && <ReferenceAnalyzer />}
       {panel === "live" && <LiveView />}
+      {panel === "looper" && <LiveLooperView />}
 
       </div>
 

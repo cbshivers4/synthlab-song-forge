@@ -8,6 +8,9 @@
 
 # Roadmap
 
+- [x] Separate Live Looper from Live View, with circular waveform pads, selectable bar lengths, overdub, mute, reverse, and timeline transfer
+- [ ] Verify Live Looper input timing and playback on real audio-interface hardware (requires a physical device)
+
 - [x] Make the original SYNCLAB logo clearly visible on the welcome/login screen
 - [ ] Restyle the welcome/login screen after the user chooses a visual direction
 - [x] Color the main record button
