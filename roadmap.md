@@ -8,6 +8,8 @@
 
 # Roadmap
 
+- [x] Add an Ableton Live file handoff for aligned audio stems, standard MIDI, and WAV mix export without claiming embedded Ableton support
+
 - [x] Add project-saved VCA groups and aux-return mixing controls without removing existing mixer controls
 - [x] Make phone accessibility settings prominent in the More menu and beat maker, open directly to mobile options; verify on a phone-sized screen
 - [x] Polish mixer while preserving every channel control; center and enlarge its channel icons

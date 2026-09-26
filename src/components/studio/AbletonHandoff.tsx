@@ -9,7 +9,7 @@ import { openExport } from "@/components/studio/ExportDialog";
 import { toast } from "sonner";
 
 export function AbletonHandoff({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
-  const { addTrack, addClip, setNotes, setTransport, select } = useStudio();
+  const { addTrack, addClip, setNotes, select } = useStudio();
   const audioRef = useRef<HTMLInputElement>(null);
   const midiRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
