@@ -57,7 +57,9 @@ export class LiveLooper {
     const engine = getEngine();
     this.ctx = engine.init();
     this.bus = this.ctx.createGain();
-    this.bus.connect(engine.master!);
+    // Keep loop playback out of the app-output capture tap: routing it into
+    // master would record the existing loops again on every new layer.
+    this.bus.connect(this.ctx.destination);
     this.slots = Array.from({ length: SLOTS }, (_, index) => ({
       index,
       state: "empty" as SlotState,
