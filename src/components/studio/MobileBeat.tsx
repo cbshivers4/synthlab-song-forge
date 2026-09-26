@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Disc3, Grid2x2, Mic, Minus, Play, Plus, Shuffle, SlidersHorizontal, Square, X } from "lucide-react";
+import { Disc3, Grid2x2, Mic, Minus, Play, Plus, Settings2, Shuffle, SlidersHorizontal, Square, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Knob } from "./Knob";
@@ -31,7 +31,7 @@ function buzz(ms = 12) {
  * same project state as the desktop studio — no separate engine, no demo mode.
  */
 export function MobileBeat({ onClose }: { onClose: () => void }) {
-  const { tracks, addTrack, updatePad, generateBeat, transport, setTransport, togglePlay, stop, updateTrack, addClip, previewClip } =
+  const { tracks, addTrack, updatePad, generateBeat, transport, setTransport, togglePlay, stop, updateTrack, addClip, previewClip, setPanel } =
     useStudio();
   const [tab, setTab] = useState<Tab>("pads");
   const [padIdx, setPadIdx] = useState(0);
@@ -198,9 +198,14 @@ export function MobileBeat({ onClose }: { onClose: () => void }) {
             <Plus className="size-5" />
           </Button>
         </div>
-        <Button size="icon" variant="ghost" className="size-11" aria-label="Leave beat mode" onClick={onClose}>
-          <X className="size-6" />
-        </Button>
+        <div className="flex shrink-0 items-center gap-1">
+          <Button size="icon" variant="secondary" className="size-11" aria-label="Phone settings" onClick={() => { onClose(); setPanel("settings"); }}>
+            <Settings2 className="size-5" />
+          </Button>
+          <Button size="icon" variant="ghost" className="size-11" aria-label="Leave beat mode" onClick={onClose}>
+            <X className="size-6" />
+          </Button>
+        </div>
       </header>
 
       {/* Voice selector */}
