@@ -584,11 +584,12 @@ export function StudioProvider({ children }: { children: ReactNode }) {
                }
                if ((field === "osc" || field === "lfo") && path[1] && path[2]) {
                  const index = Number(path[1]);
+                  const property = path[2];
                  const list = field === "osc" ? patch.oscillators : patch.lfos;
                  const item = list[index];
-                 if (!item || typeof (item as unknown as Record<string, unknown>)[path[2]] !== "number") return t;
-                 const range = field === "osc" ? ({ octave: [-3, 3, 1], semitone: [-12, 12, 1], fine: [-50, 50, 1], detune: [-50, 50, 1], pulseWidth: [0.05, 0.95], pan: [-1, 1] } as Record<string, [number, number, number?]>)[path[2]] : path[2] === "rate" ? [0.05, 20, 0.05] as [number, number, number?] : undefined;
-                 const updated = list.map((item, i) => i === index ? { ...item, [path[2]]: range ? ccRange(v, ...range) : v } : item);
+                  if (!property || !item || typeof (item as unknown as Record<string, unknown>)[property] !== "number") return t;
+                  const range = field === "osc" ? ({ octave: [-3, 3, 1], semitone: [-12, 12, 1], fine: [-50, 50, 1], detune: [-50, 50, 1], pulseWidth: [0.05, 0.95], pan: [-1, 1] } as Record<string, [number, number, number?]>)[property] : property === "rate" ? [0.05, 20, 0.05] as [number, number, number?] : undefined;
+                  const updated = list.map((item, i) => i === index ? { ...item, [property]: range ? ccRange(v, ...range) : v } : item);
                  return { ...t, patch: { ...patch, [field === "osc" ? "oscillators" : "lfos"]: updated } };
                }
                return t;
