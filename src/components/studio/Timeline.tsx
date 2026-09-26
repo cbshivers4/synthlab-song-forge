@@ -406,12 +406,11 @@ function RecordingClip({ track }: { track: Track }) {
   const isNote = track.kind === "instrument" || track.kind === "midi" || track.kind === "drum";
 
   useEffect(() => {
-    if (isNote) return;
     const engine = getEngine();
     let raf = 0;
     const draw = () => {
       raf = requestAnimationFrame(draw);
-      peaksRef.current.push(engine.inputLevel());
+      peaksRef.current.push(isNote ? engine.getTrackLevel(track.id) : engine.inputLevel());
       if (peaksRef.current.length > 2000) peaksRef.current.shift();
       const canvas = canvasRef.current;
       const g = canvas?.getContext("2d");
@@ -431,7 +430,7 @@ function RecordingClip({ track }: { track: Track }) {
     };
     draw();
     return () => cancelAnimationFrame(raf);
-  }, [isNote]);
+  }, [isNote, track.id]);
 
   const start = startRef.current;
   const now = transport.step ?? start;
@@ -448,7 +447,9 @@ function RecordingClip({ track }: { track: Track }) {
         <span className="size-1.5 animate-pulse rounded-full bg-destructive" />
         <span className="font-mono text-[9px] font-semibold text-destructive">RECORDING</span>
       </div>
-      {track.kind === "drum" ? (
+      <canvas ref={canvasRef} className="min-h-0 w-full flex-1 text-destructive" aria-label="Incoming recording waveform" role="img" />
+      {/* Note and drum events remain editable in their respective editors. */}
+      {false && track.kind === "drum" ? (
         <div className="relative min-h-0 w-full flex-1" aria-label="Drum hits being recorded" role="img">
           {(track.pads ?? []).flatMap((pad, row, arr) => {
             const padLen = pad.steps.length || track.steps || 16;
@@ -490,9 +491,7 @@ function RecordingClip({ track }: { track: Track }) {
               );
             })}
         </div>
-      ) : (
-        <canvas ref={canvasRef} className="min-h-0 w-full flex-1 text-destructive" aria-label="Incoming recording waveform" role="img" />
-      )}
+      ) : null}
     </div>
   );
 }

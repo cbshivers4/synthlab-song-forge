@@ -674,7 +674,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         const len = Math.max(1, t.steps);
         const s = n % len;
         // arrangement clips fire at their own position on the timeline
-        if (t.clips?.length && !t.recording) {
+        if (t.clips?.length && !t.recording &&
+            (!(["instrument", "midi", "drum"].includes(t.kind)) || t.printedAudio)) {
           const at = n % totalSteps;
           // after a start or jump (loop wrap), pick up clips already in progress
           const jumped = lastScheduled === null || at !== (lastScheduled + 1) % totalSteps;

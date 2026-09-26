@@ -1182,7 +1182,7 @@ export class SyncLabEngine {
     if (this.trackRecorder) return;
     const ctx = this.init();
     const destination = ctx.createMediaStreamDestination();
-    const source = this.channel(trackId).input;
+    const source = this.channel(trackId).meter;
     source.connect(destination);
     const mime = preferredRecordingMime();
     try {
