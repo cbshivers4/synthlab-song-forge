@@ -537,15 +537,15 @@ export function Settings() {
       </TabsContent>
 
       <TabsContent value="mobile" className="mt-4">
-        <label htmlFor="phone-large-controls" className="settings-row grid min-h-20 cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-4 border-b border-border/60 py-3">
+        <label htmlFor="phone-large-controls" className="settings-row phone-feature-row grid min-h-20 cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-4 border-b border-border/60 py-3">
           <span className="min-w-0"><span className="block text-base">Extra-large controls</span><span className="block text-sm text-muted-foreground">Larger buttons and more room for your fingers</span></span>
           <Switch id="phone-large-controls" className="h-7 w-12 shrink-0 [&>span]:size-6 data-[state=checked]:[&>span]:translate-x-5" checked={mobilePrefs.extraLargeControls} onCheckedChange={(value) => saveMobileAccessibility({ ...mobilePrefs, extraLargeControls: value })} />
         </label>
-        <label htmlFor="phone-text-size" className="settings-row grid min-h-20 cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-4 border-b border-border/60 py-3">
+        <label htmlFor="phone-text-size" className="settings-row phone-feature-row grid min-h-20 cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-4 border-b border-border/60 py-3">
           <span className="min-w-0"><span className="block text-base">Increased text size</span><span className="block text-sm text-muted-foreground">Bigger labels and text in the studio</span></span>
           <Switch id="phone-text-size" className="h-7 w-12 shrink-0 [&>span]:size-6 data-[state=checked]:[&>span]:translate-x-5" checked={mobilePrefs.increasedText} onCheckedChange={(value) => saveMobileAccessibility({ ...mobilePrefs, increasedText: value })} />
         </label>
-        <label htmlFor="phone-high-contrast" className="settings-row grid min-h-20 cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-4 border-b border-border/60 py-3">
+        <label htmlFor="phone-high-contrast" className="settings-row phone-feature-row grid min-h-20 cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-4 border-b border-border/60 py-3">
           <span className="min-w-0"><span className="block text-base">High-contrast mode</span><span className="block text-sm text-muted-foreground">Clearer text, borders and selected controls</span></span>
           <Switch id="phone-high-contrast" className="h-7 w-12 shrink-0 [&>span]:size-6 data-[state=checked]:[&>span]:translate-x-5" checked={mobilePrefs.highContrast} onCheckedChange={(value) => saveMobileAccessibility({ ...mobilePrefs, highContrast: value })} />
         </label>
