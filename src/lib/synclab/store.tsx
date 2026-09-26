@@ -614,9 +614,10 @@ export function StudioProvider({ children }: { children: ReactNode }) {
                fadeIn: [0, 2, 0.005], fadeOut: [0, 2, 0.005], resonance: [0.1, 20, 0.1],
                sampleBpm: [60, 200, 1],
              };
-             if (field === "cutoff" || ranges[field]) setTracks((ts) => ts.map((t) => {
+              const range = ranges[field];
+              if (field === "cutoff" || range) setTracks((ts) => ts.map((t) => {
                if (t.id !== target.id || !t.sampler) return t;
-               const value = field === "cutoff" ? Math.round(Math.pow(10, ccRange(v, Math.log10(20), Math.log10(20000)))) : ccRange(v, ...ranges[field]);
+                const value = field === "cutoff" ? Math.round(Math.pow(10, ccRange(v, Math.log10(20), Math.log10(20000)))) : range ? ccRange(v, ...range) : 0;
                const bounded = field === "start" ? Math.min(value, t.sampler.end - 0.002) : field === "end" ? Math.max(value, t.sampler.start + 0.002) : value;
                return { ...t, sampler: { ...t.sampler, [field]: bounded } };
              }));
