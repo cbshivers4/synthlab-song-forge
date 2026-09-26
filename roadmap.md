@@ -8,9 +8,9 @@
 
 # Roadmap
 
-- [ ] Polish mixer while preserving every channel control; center and enlarge its channel icons
-- [ ] Give each Live Looper circle a persistent custom color
-- [ ] Reduce visual update work that can cause playback/recording stutters, then verify browser flows
+- [x] Polish mixer while preserving every channel control; center and enlarge its channel icons
+- [x] Give each Live Looper circle a persistent custom color
+- [x] Reduce visual update work that can cause playback/recording stutters, then verify browser flows
 - [x] Show captured audio waveforms for recorded instruments and drums alongside editable notes; open recorded takes in the waveform editor
 - [x] Verify audio, instrument, and drum recording in the signed-in browser studio with simulated microphone input
 - [ ] Verify physical input/interface latency and playback on real devices (requires hardware)
