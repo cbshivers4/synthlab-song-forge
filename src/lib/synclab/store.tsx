@@ -24,6 +24,8 @@ import type {
   AutomationParam,
   AutomationPoint,
   BusId,
+  AuxId,
+  VcaId,
   BusState,
   DrumPad,
   MidiNote,
@@ -147,6 +149,8 @@ interface StudioState {
   panel: PanelId;
   userPresets: SynthPatch[];
   buses: Record<BusId, BusState>;
+  vcas: Record<VcaId, BusState>;
+  auxReturns: Record<AuxId, BusState>;
   sections: SongSection[];
 }
 
@@ -183,6 +187,8 @@ interface StudioApi extends StudioState {
   savedAt: number | null;
   selected: Track | null;
   setBus: (id: BusId, patch: Partial<BusState>) => void;
+  setVca: (id: VcaId, patch: Partial<BusState>) => void;
+  setAuxReturn: (id: AuxId, patch: Partial<BusState>) => void;
   addSection: (name?: string, start?: number, length?: number) => void;
   updateSection: (id: string, patch: Partial<SongSection>) => void;
   removeSection: (id: string) => void;
@@ -324,6 +330,13 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     synths: { volume: 1, muted: false },
     fx: { volume: 1, muted: false },
     master: { volume: 1, muted: false },
+  });
+  const [vcas, setVcas] = useState<Record<VcaId, BusState>>({
+    A: { volume: 1, muted: false }, B: { volume: 1, muted: false },
+    C: { volume: 1, muted: false }, D: { volume: 1, muted: false },
+  });
+  const [auxReturns, setAuxReturns] = useState<Record<AuxId, BusState>>({
+    reverb: { volume: 1, muted: false }, delay: { volume: 1, muted: false }, chorus: { volume: 1, muted: false },
   });
 
   const [installedPlugins, setInstalledPlugins] = useState<PluginDef[]>(BUILT_IN_PLUGINS);
@@ -626,6 +639,16 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     if (typeof window === "undefined" || !getEngine().ctx) return;
     for (const [id, b] of Object.entries(buses)) getEngine().setBus(id, b.volume, b.muted);
   }, [buses]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !getEngine().ctx) return;
+    getEngine().setVcaStates(vcas, tracksRef.current);
+  }, [vcas]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !getEngine().ctx) return;
+    for (const [id, value] of Object.entries(auxReturns)) getEngine().setAuxReturn(id, value.volume, value.muted);
+  }, [auxReturns]);
 
   useEffect(() => {
     if (typeof window === "undefined" || !getEngine().ctx) return;
@@ -1045,13 +1068,15 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       tracks: structuredClone(tracksRef.current),
       transport: { ...transportRef.current, playing: false, recording: false, paused: false, step: 0 },
       buses: structuredClone(buses),
+      vcas: structuredClone(vcas),
+      auxReturns: structuredClone(auxReturns),
       fxChains: structuredClone(fxChains),
       installedPlugins: structuredClone(installedPlugins),
       userPresets: structuredClone(userPresets),
       padBank: getPadBank(),
       sections: structuredClone(sectionsRef.current),
     }),
-    [buses, fxChains, installedPlugins, userPresets],
+    [buses, vcas, auxReturns, fxChains, installedPlugins, userPresets],
   );
 
   const applySession = useCallback((session: CloudSession) => {
@@ -1060,6 +1085,13 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     setTracks(structuredClone(session.tracks));
     setTransportState({ ...session.transport, playing: false, recording: false, paused: false, step: 0 });
     setBuses(structuredClone(session.buses));
+    setVcas(structuredClone(session.vcas ?? {
+      A: { volume: 1, muted: false }, B: { volume: 1, muted: false },
+      C: { volume: 1, muted: false }, D: { volume: 1, muted: false },
+    }));
+    setAuxReturns(structuredClone(session.auxReturns ?? {
+      reverb: { volume: 1, muted: false }, delay: { volume: 1, muted: false }, chorus: { volume: 1, muted: false },
+    }));
     setFxChains(structuredClone(session.fxChains));
     setInstalledPlugins(structuredClone(session.installedPlugins));
     setUserPresets(structuredClone(session.userPresets));
@@ -1099,7 +1131,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       }
     }, 600);
     return () => window.clearTimeout(id);
-  }, [tracks, buses, fxChains, installedPlugins, userPresets, sections, buildSnapshot]);
+  }, [tracks, buses, vcas, auxReturns, fxChains, installedPlugins, userPresets, sections, buildSnapshot]);
 
   // Bring the last session back after a refresh or a crash.
   useEffect(() => {
@@ -1189,6 +1221,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       panel,
       userPresets,
       buses,
+      vcas,
+      auxReturns,
       sections,
       snapshot: buildSnapshot,
       restore: (session) => {
@@ -1203,6 +1237,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       savedAt,
       selected,
       setBus: (id, patch) => setBuses((b) => ({ ...b, [id]: { ...b[id], ...patch } })),
+      setVca: (id, patch) => setVcas((v) => ({ ...v, [id]: { ...v[id], ...patch } })),
+      setAuxReturn: (id, patch) => setAuxReturns((a) => ({ ...a, [id]: { ...a[id], ...patch } })),
       addSection: (name, start, length) => {
         setSections((list) => {
           const sorted = [...list].sort((a, b) => a.start - b.start);
@@ -2038,7 +2074,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           ),
         })),
     };
-  }, [tracks, transport, selectedId, selectedIds, editTool, panel, userPresets, buses, sections, installedPlugins, fxChains, midiInputs, midiInputId, midiLearning, midiMap, midiLearn, clipboardName, enableMidi, setMidiInputPersist, updateTrack, finishRecording, finishTrackRecording, splitClipAtImpl, buildSnapshot, applySession, historyTick, automationHistoryTick, savedAt]);
+  }, [tracks, transport, selectedId, selectedIds, editTool, panel, userPresets, buses, vcas, auxReturns, sections, installedPlugins, fxChains, midiInputs, midiInputId, midiLearning, midiMap, midiLearn, clipboardName, enableMidi, setMidiInputPersist, updateTrack, finishRecording, finishTrackRecording, splitClipAtImpl, buildSnapshot, applySession, historyTick, automationHistoryTick, savedAt]);
 
 
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>;
