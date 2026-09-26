@@ -63,6 +63,7 @@ export class LiveLooper {
   private timer: number | null = null;
   private listeners = new Set<() => void>();
   private opening: Promise<void> | null = null;
+  private waveCache = new WeakMap<AudioBuffer, Map<number, number[]>>();
 
   constructor() {
     const engine = getEngine();
@@ -426,18 +427,26 @@ export class LiveLooper {
   levels(i: number, count = 64): number[] {
     const s = this.slots[i];
     if (!s) return [];
-    const values = new Array<number>(count).fill(0);
+    let values = new Array<number>(count).fill(0);
     if (s.buffer) {
-      const data = s.buffer.getChannelData(0);
-      for (let n = 0; n < count; n++) {
-        let peak = 0;
-        const from = Math.floor(n * data.length / count);
-        const to = Math.floor((n + 1) * data.length / count);
-        for (let j = from; j < to; j += Math.max(1, Math.floor((to - from) / 32))) peak = Math.max(peak, Math.abs(data[j] ?? 0));
-        values[n] = peak;
+      let byCount = this.waveCache.get(s.buffer);
+      const cached = byCount?.get(count);
+      if (cached) values = cached;
+      else {
+        const data = s.buffer.getChannelData(0);
+        for (let n = 0; n < count; n++) {
+          let peak = 0;
+          const from = Math.floor(n * data.length / count);
+          const to = Math.floor((n + 1) * data.length / count);
+          for (let j = from; j < to; j += Math.max(1, Math.floor((to - from) / 32))) peak = Math.max(peak, Math.abs(data[j] ?? 0));
+          values[n] = peak;
+        }
+        if (!byCount) { byCount = new Map(); this.waveCache.set(s.buffer, byCount); }
+        byCount.set(count, values);
       }
     }
     if (s.state === "recording") {
+      values = [...values];
       const length = s.recEnd ? s.recEnd - s.recStart : Math.max(1, this.now - s.recStart);
       for (const chunk of this.chunks) {
         const n = Math.floor(((chunk.t - s.recStart) / length) * count);
