@@ -484,6 +484,7 @@ function StudioWorkspace() {
   const [float, setFloat] = useState<FloatState>({ synth: false, drums: false });
   const [beatMode, setBeatMode] = useState(false);
   useShortcuts();
+  useEffect(() => { if (panel) setBeatMode(false); }, [panel]);
   useEffect(() => {
     const root = document.documentElement;
     root.classList.toggle("mobile-controls-xl", isMobile && mobileAccessibility.extraLargeControls);
