@@ -1994,7 +1994,58 @@ function EditToolbar() {
   );
 }
 
-function Ruler() {
+/** Density-aware measure numbering for the ruler: keeps bar labels readable
+ *  past 100+ bars by numbering every Nth bar (snapped to 1/2/5/10/25/50/100)
+ *  based on real pixels per bar, with ticks for the bars in between. */
+function BarNumbering({ gridRef, bars }: { gridRef: React.RefObject<HTMLDivElement | null>; bars: number }) {
+  const [gridW, setGridW] = useState(0);
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el) return;
+    const update = () => setGridW(el.clientWidth);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [gridRef]);
+
+  const beats = Math.max(1, bars) * 4;
+  const pxPerBar = gridW > 0 ? gridW / Math.max(1, bars) : 0;
+  // ~56px keeps up to 5-digit numbers from colliding; snap to a musical step.
+  const need = pxPerBar > 0 ? Math.ceil(56 / pxPerBar) : 1;
+  const step = [1, 2, 5, 10, 25, 50, 100, 250, 500].find((s) => s >= need) ?? need;
+  const showBeats = pxPerBar === 0 || pxPerBar >= 18;
+
+  return (
+    <div className="grid w-full" style={{ gridTemplateColumns: `repeat(${beats},minmax(0,1fr))` }}>
+      {Array.from({ length: beats }).map((_, i) => {
+        const isBar = i % 4 === 0;
+        const bar = i / 4;
+        const labeled = isBar && bar % step === 0;
+        return (
+          <div
+            key={i}
+            className={`border-l py-1 pl-1 font-mono leading-none ${labeled ? "text-[10px]" : "text-[9px]"} ${
+              isBar ? "border-border" : "border-border/30"
+            }`}
+          >
+            {labeled ? (
+              <span className="inline-block rounded-[2px] bg-surface-2/80 px-1 py-0.5 font-medium text-foreground/85">
+                {bar + 1}
+              </span>
+            ) : isBar ? (
+              <span className="text-muted-foreground/45">{pxPerBar >= 10 ? "·" : ""}</span>
+            ) : (
+              showBeats ? <span className="text-muted-foreground/25">·</span> : null
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+
   const { transport, setTransport } = useStudio();
   const gridRef = useRef<HTMLDivElement>(null);
   const bars = Math.max(1, transport.bars ?? 4);
