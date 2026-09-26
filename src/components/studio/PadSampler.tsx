@@ -657,7 +657,9 @@ export function PadSampler() {
               )}
               {pad && !recording && (
                 <span className="pointer-events-none absolute inset-x-1.5 top-4 bottom-6">
-                  <WaveformView peaks={pad.peaks} color={c} grid={false} label={`${pad.name} waveform`} />
+                  <span className="absolute inset-0" style={{ filter: "drop-shadow(0 0 1px hsl(0 0% 0% / 0.95)) drop-shadow(0 0 3px hsl(0 0% 0% / 0.7))" }}>
+                    <WaveformView peaks={pad.peaks} color="hsl(0 0% 100%)" grid={false} label={`${pad.name} waveform`} />
+                  </span>
                   <span
                     className="absolute inset-y-0 left-0 bg-black/55"
                     style={{ width: `${pad.start * 100}%` }}

@@ -1494,6 +1494,28 @@ export function Mixer() {
   const [showBuses, setShowBuses] = useState(true);
   const [showVcas, setShowVcas] = useState(true);
   const [showAux, setShowAux] = useState(true);
+  // How many bus / VCA / aux strips to show. Bus 0 = auto (only buses in use).
+  const [counts, setCounts] = useState<{ bus: number; vca: number; aux: number }>({ bus: 0, vca: VCA_IDS.length, aux: AUX_IDS.length });
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem("synclab.mixer.counts");
+      if (raw) {
+        const c = JSON.parse(raw);
+        setCounts({
+          bus: Math.min(BUS_STRIPS.length, Math.max(0, Number(c.bus) || 0)),
+          vca: Math.min(VCA_IDS.length, Math.max(0, Number(c.vca ?? VCA_IDS.length))),
+          aux: Math.min(AUX_IDS.length, Math.max(0, Number(c.aux ?? AUX_IDS.length))),
+        });
+      }
+    } catch { /* ignore */ }
+  }, []);
+  const setCount = (k: "bus" | "vca" | "aux", v: number) => {
+    setCounts((prev) => {
+      const next = { ...prev, [k]: v };
+      try { window.localStorage.setItem("synclab.mixer.counts", JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  };
   const [styleId, setStyleId] = useState<ConsoleStyleId>(() => {
     if (typeof window === "undefined") return "ssl";
     const saved = window.localStorage.getItem("synclab.mixer.style") as ConsoleStyleId | null;
@@ -1545,6 +1567,37 @@ export function Mixer() {
           {tracks.length} ch · {activeBuses.length} buses
         </span>
         <div className="ml-auto flex shrink-0 items-center gap-1">
+          <Popover>
+            <PopoverTrigger asChild>
+              <button title="Choose how many bus, VCA and aux channels to show" className="flex h-6 items-center gap-1 rounded-sm bg-surface px-2 font-mono text-[9px] uppercase tracking-wider text-muted-foreground hover:text-foreground">
+                Channels
+              </button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-64 p-3">
+              <div className="mb-2 font-mono text-[8px] uppercase tracking-widest text-muted-foreground">Channel count</div>
+              {([
+                ["bus", "Buses", BUS_STRIPS.length],
+                ["vca", "VCA groups", VCA_IDS.length],
+                ["aux", "Aux returns", AUX_IDS.length],
+              ] as const).map(([k, label, max]) => (
+                <div key={k} className="mb-2">
+                  <div className="mb-1 text-[11px] text-foreground">{label}</div>
+                  <div className="flex flex-wrap gap-1">
+                    {Array.from({ length: max + 1 }, (_, n) => (
+                      <button
+                        key={n}
+                        onClick={() => setCount(k, n)}
+                        className={cn("h-7 min-w-7 rounded-sm border px-1.5 font-mono text-[10px]", counts[k] === n ? "border-primary bg-primary/20 text-foreground" : "border-border text-muted-foreground hover:text-foreground")}
+                      >
+                        {k === "bus" && n === 0 ? "Auto" : n}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              <p className="text-[10px] leading-snug text-muted-foreground">Up to {BUS_STRIPS.length} buses, {VCA_IDS.length} VCAs and {AUX_IDS.length} aux returns are available. Auto shows only buses that have tracks.</p>
+            </PopoverContent>
+          </Popover>
           <Popover>
             <PopoverTrigger asChild>
               <button
@@ -1707,13 +1760,13 @@ export function Mixer() {
             />
           ))}
           {showBuses &&
-            activeBuses.map((id) => (
+            (counts.bus === 0 ? activeBuses : BUS_STRIPS.slice(0, counts.bus)).map((id) => (
               <BusStrip key={id} id={id} state={buses[id]} level={busLevel(id)} onChange={(p) => setBus(id, p)} />
             ))}
-          {showVcas && VCA_IDS.map((id) => (
+          {showVcas && VCA_IDS.slice(0, counts.vca).map((id) => (
             <ControlStrip key={`vca-${id}`} kind="VCA" name={id} state={vcas[id]} memberCount={tracks.filter((t) => t.vca === id).length} onChange={(patch) => setVca(id, patch)} />
           ))}
-          {showAux && AUX_IDS.map((id) => (
+          {showAux && AUX_IDS.slice(0, counts.aux).map((id) => (
             <ControlStrip key={`aux-${id}`} kind="AUX" name={id} state={auxReturns[id]} onChange={(patch) => setAuxReturn(id, patch)} />
           ))}
           <div className="sticky right-0 z-10 bg-surface shadow-[-12px_0_18px_-12px_rgba(0,0,0,0.8)]">
