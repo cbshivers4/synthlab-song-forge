@@ -2141,7 +2141,7 @@ function Ruler() {
 
   return (
     <div className="sticky top-0 z-10 flex border-b border-border bg-surface-2/70 backdrop-blur">
-      <div className="flex w-[172px] shrink-0 flex-col justify-center gap-1 border-r border-border px-2 py-1 sm:w-[244px] sm:px-3">
+      <div className="relative z-20 flex w-[172px] shrink-0 flex-col justify-center gap-1 border-r border-border bg-surface-2 px-2 py-1 sm:w-[244px] sm:px-3" style={{ transform: "translateX(var(--timeline-scroll-x, 0px))" }}>
         <div className="flex items-center gap-2">
           <span className="font-display text-[11px] font-semibold tracking-[0.2em]">TIMELINE</span>
           <span className="label-xs ml-auto">
@@ -2431,6 +2431,7 @@ export function Timeline() {
     const sync = () => {
       header.style.width = `${arrangement.getBoundingClientRect().width}px`;
       header.style.transform = `translateX(${-viewport.scrollLeft}px)`;
+      header.style.setProperty("--timeline-scroll-x", `${viewport.scrollLeft}px`);
     };
     sync();
     viewport.addEventListener("scroll", sync, { passive: true });
