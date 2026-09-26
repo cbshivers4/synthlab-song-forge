@@ -124,6 +124,7 @@ export class SyncLabEngine {
   chorusSend: GainNode | null = null;
   private buses = new Map<string, GainNode>();
   private auxReturns = new Map<string, GainNode>();
+  private auxStates: Record<string, { volume: number; muted: boolean }> = {};
   private vcaStates: Record<string, { volume: number; muted: boolean }> = {};
   private automatedPluginParams = new Map<string, AutomatableAudioParam>();
   private sendOut = new Map<string, AudioNode>();
@@ -189,6 +190,7 @@ export class SyncLabEngine {
     const reverbReturn = ctx.createGain();
     conv.connect(reverbReturn);
     reverbReturn.connect(master);
+    reverbReturn.gain.value = this.auxStates.reverb?.muted ? 0 : this.auxStates.reverb?.volume ?? 1;
     this.auxReturns.set("reverb", reverbReturn);
     this.reverb = conv;
     this.reverbSend = send;
@@ -206,6 +208,7 @@ export class SyncLabEngine {
     const delayReturn = ctx.createGain();
     delay.connect(delayReturn);
     delayReturn.connect(master);
+    delayReturn.gain.value = this.auxStates.delay?.muted ? 0 : this.auxStates.delay?.volume ?? 1;
     this.auxReturns.set("delay", delayReturn);
     this.delaySend = dSend;
     this.sendOut.set("delay", delay);
@@ -227,6 +230,7 @@ export class SyncLabEngine {
     const chorusReturn = ctx.createGain();
     cDelay.connect(chorusReturn);
     chorusReturn.connect(master);
+    chorusReturn.gain.value = this.auxStates.chorus?.muted ? 0 : this.auxStates.chorus?.volume ?? 1;
     this.auxReturns.set("chorus", chorusReturn);
     this.chorusSend = cSend;
     this.sendOut.set("chorus", cDelay);
@@ -358,6 +362,7 @@ export class SyncLabEngine {
   }
 
   setAuxReturn(id: string, volume: number, muted: boolean) {
+    this.auxStates[id] = { volume, muted };
     const node = this.auxReturns.get(id);
     if (!node || !this.ctx) return;
     node.gain.setTargetAtTime(muted ? 0 : clamp(volume, 0, 1.5), this.ctx.currentTime, 0.02);

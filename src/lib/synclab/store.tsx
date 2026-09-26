@@ -641,12 +641,12 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   }, [buses]);
 
   useEffect(() => {
-    if (typeof window === "undefined" || !getEngine().ctx) return;
+    if (typeof window === "undefined") return;
     getEngine().setVcaStates(vcas, tracksRef.current);
   }, [vcas]);
 
   useEffect(() => {
-    if (typeof window === "undefined" || !getEngine().ctx) return;
+    if (typeof window === "undefined") return;
     for (const [id, value] of Object.entries(auxReturns)) getEngine().setAuxReturn(id, value.volume, value.muted);
   }, [auxReturns]);
 
