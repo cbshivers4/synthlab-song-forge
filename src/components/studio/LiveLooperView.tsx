@@ -7,6 +7,7 @@ import { useStudio } from "@/lib/synclab/store";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { getLooper, type LoopSlot } from "@/lib/synclab/live-looper";
 import { cn } from "@/lib/utils";
+import { TRACK_PALETTE } from "./TrackStyle";
 
 const labels: Record<LoopSlot["state"], string> = {
   empty: "RECORD", armed: "ARMED", recording: "REC", playing: "PLAYING", stopped: "STOPPED",
@@ -15,19 +16,13 @@ const polar = (angle: number, radius: number) => ({ x: 100 + Math.cos(angle) * r
 
 function LoopDonut({ slot, send }: { slot: LoopSlot; send: (i: number) => void }) {
   const looper = getLooper();
-  const [, tick] = useReducer((n: number) => n + 1, 0);
-  useEffect(() => {
-    if (!["armed", "recording", "playing"].includes(slot.state)) return;
-    const interval = window.setInterval(tick, 80);
-    return () => window.clearInterval(interval);
-  }, [slot.state]);
   let progress = 0;
   if (slot.state === "playing" && slot.buffer) progress = (((looper.now - slot.start) % slot.buffer.duration) + slot.buffer.duration) % slot.buffer.duration / slot.buffer.duration;
   else if (slot.state === "recording") progress = slot.recEnd ? (looper.now - slot.recStart) / (slot.recEnd - slot.recStart) : 0;
   else if (slot.state === "armed") progress = looper.phase;
   progress = Math.max(0, Math.min(1, progress));
   const levels = looper.levels(slot.index);
-  const ringColor = slot.state === "recording" ? "var(--destructive)" : slot.state === "armed" ? "var(--amber)" : "var(--primary)";
+  const ringColor = slot.state === "recording" ? "var(--destructive)" : slot.state === "armed" ? "var(--amber)" : slot.color;
   const circle = 2 * Math.PI * 78;
   return (
     <div className="flex min-w-0 flex-col items-center gap-2 border-b border-border pb-4">
@@ -55,6 +50,26 @@ function LoopDonut({ slot, send }: { slot: LoopSlot; send: (i: number) => void }
           <span className={cn("font-mono text-[10px] uppercase", slot.state === "recording" ? "text-destructive" : "text-muted-foreground")}>{slot.overdubbing ? "DUB" : labels[slot.state]}</span>
         </span>
       </Button>
+      <div className="flex w-full max-w-52 items-center justify-center gap-1" aria-label={`Loop ${slot.index + 1} color`}>
+        {TRACK_PALETTE.slice(slot.index % 3, slot.index % 3 + 6).map((color) => (
+          <Button
+            key={color.id}
+            type="button"
+            variant="ghost"
+            size="icon"
+            className={cn("size-7 rounded-full p-1", slot.color === color.value && "ring-2 ring-foreground/70")}
+            onClick={() => looper.setColor(slot.index, color.value)}
+            title={`${color.name} loop color`}
+            aria-label={`${color.name} loop color`}
+          >
+            <span className="size-full rounded-full border border-foreground/20" style={{ backgroundColor: color.value }} />
+          </Button>
+        ))}
+        <label className="relative flex size-7 cursor-pointer items-center justify-center rounded-full border border-border bg-surface-2" title="Custom loop color">
+          <span className="size-4 rounded-full" style={{ backgroundColor: slot.color }} />
+          <input className="absolute inset-0 cursor-pointer opacity-0" type="color" aria-label={`Custom color for loop ${slot.index + 1}`} onChange={(event) => looper.setColor(slot.index, event.target.value)} />
+        </label>
+      </div>
       <div className="flex w-full max-w-52 items-center gap-2 px-1">
         <Volume2 className="size-4 shrink-0 text-muted-foreground" />
         <Slider value={[slot.volume]} min={0} max={1.2} step={0.01} onValueChange={(v) => looper.setVolume(slot.index, v[0] ?? 0)} aria-label={`Loop ${slot.index + 1} volume`} />
@@ -78,6 +93,19 @@ export function LiveLooperView() {
   const looper = getLooper();
   const [, rerender] = useReducer((n: number) => n + 1, 0);
   useEffect(() => looper.subscribe(rerender), [looper]);
+  useEffect(() => {
+    let frame = 0;
+    let last = 0;
+    const animate = (time: number) => {
+      if (time - last >= 50 && looper.slots.some((slot) => ["armed", "recording", "playing"].includes(slot.state))) {
+        last = time;
+        rerender();
+      }
+      frame = window.requestAnimationFrame(animate);
+    };
+    frame = window.requestAnimationFrame(animate);
+    return () => window.cancelAnimationFrame(frame);
+  }, [looper]);
   useEffect(() => { looper.bpm = transport.bpm; }, [looper, transport.bpm]);
   const locked = !looper.isEmpty;
   const capturing = looper.slots.some((slot) => slot.state === "armed" || slot.state === "recording");

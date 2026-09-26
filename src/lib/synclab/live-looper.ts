@@ -24,12 +24,23 @@ export interface LoopSlot {
   overdubbing: boolean;
   muted: boolean;
   reversed: boolean;
+  color: string;
 }
 
 type Chunk = { t: number; l: Float32Array; r: Float32Array };
 
 const SLOTS = 8;
 const BLOCK = 2048;
+const DEFAULT_COLORS = [
+  "oklch(0.78 0.16 195)",
+  "oklch(0.75 0.19 330)",
+  "oklch(0.82 0.17 80)",
+  "oklch(0.78 0.18 145)",
+  "oklch(0.72 0.18 285)",
+  "oklch(0.75 0.19 45)",
+  "oklch(0.8 0.14 220)",
+  "oklch(0.72 0.2 5)",
+];
 
 export class LiveLooper {
   private ctx: AudioContext;
@@ -60,6 +71,11 @@ export class LiveLooper {
     // Keep loop playback out of the app-output capture tap: routing it into
     // master would record the existing loops again on every new layer.
     this.bus.connect(this.ctx.destination);
+    let savedColors: string[] = [];
+    try {
+      const stored = window.localStorage.getItem("synclab.looper.colors");
+      savedColors = stored ? JSON.parse(stored) as string[] : [];
+    } catch { /* use the professional default palette */ }
     this.slots = Array.from({ length: SLOTS }, (_, index) => ({
       index,
       state: "empty" as SlotState,
@@ -71,6 +87,7 @@ export class LiveLooper {
       overdubbing: false,
       muted: false,
       reversed: false,
+      color: savedColors[index] ?? DEFAULT_COLORS[index] ?? "oklch(0.78 0.16 195)",
     }));
     for (let i = 0; i < SLOTS; i++) {
       const g = this.ctx.createGain();
@@ -357,6 +374,14 @@ export class LiveLooper {
     const s = this.slots[i]!;
     s.volume = v;
     if (s.state === "playing" || s.overdubbing) this.gains[i]!.gain.setTargetAtTime(s.muted ? 0 : v, this.ctx.currentTime, 0.02);
+    this.emit();
+  }
+
+  setColor(i: number, color: string) {
+    const slot = this.slots[i];
+    if (!slot || !/^(#[0-9a-fA-F]{6}|oklch\(.+\))$/.test(color)) return;
+    slot.color = color;
+    window.localStorage.setItem("synclab.looper.colors", JSON.stringify(this.slots.map((item) => item.color)));
     this.emit();
   }
 

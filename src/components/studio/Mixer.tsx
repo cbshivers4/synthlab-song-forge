@@ -93,7 +93,7 @@ function useMeters(tracks: Track[], transport: Transport) {
   tracksRef.current = tracks;
   transportRef.current = transport;
   useEffect(() => {
-    let raf = 0;
+    let timer = 0;
     const loop = () => {
       const engine = getEngine();
       const tracks: Record<string, number> = {};
@@ -115,10 +115,10 @@ function useMeters(tracks: Track[], transport: Transport) {
       const m = mRaw > mPrev ? mRaw : mPrev * 0.86;
       smooth.current["__master"] = m;
       setLevels({ tracks, master: dbToFrac(toDb(Math.max(m, 0.0005))) });
-      raf = requestAnimationFrame(loop);
     };
-    raf = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(raf);
+    loop();
+    timer = window.setInterval(loop, 50);
+    return () => window.clearInterval(timer);
   }, [idsKey]);
   return levels;
 }
@@ -340,7 +340,7 @@ const ROW = {
   fader: "h-[300px]",
   readout: "h-5",
   buttons: "h-[68px]",
-  name: "h-8",
+  name: "h-12",
 } as const;
 
 /** Console desk finishes the user can pick between. */
@@ -1086,15 +1086,15 @@ function Strip({
 
       {/* coloured name plate */}
       <div
-        className={cn(ROW.name, "flex items-center gap-1 border-b border-black/40 px-1.5")}
+        className={cn(ROW.name, "flex flex-col items-center justify-center gap-0.5 border-b border-black/40 px-1.5 text-center")}
         style={{
           background: `linear-gradient(90deg, color-mix(in oklab, ${t.color} 70%, transparent), color-mix(in oklab, ${t.color} 40%, transparent))`,
           boxShadow: `inset 0 2px 0 0 ${t.color}`,
         }}
         title={t.name}
       >
-        <KindIcon t={t} className="size-7 shrink-0" />
-        <span className="truncate font-mono text-[9px] font-semibold uppercase tracking-wider text-foreground">
+        <KindIcon t={t} className="size-9 shrink-0" />
+        <span className="w-full truncate font-mono text-[9px] font-semibold uppercase tracking-wider text-foreground">
           {t.name}
         </span>
       </div>
@@ -1482,7 +1482,7 @@ export function Mixer() {
   const activeBuses = BUS_STRIPS.filter((id) => tracks.some((t) => t.bus === id));
   return (
     <div
-      className="mx-console flex flex-col border border-border bg-surface"
+      className="mx-console flex flex-col overflow-hidden border border-border bg-surface shadow-panel"
       data-console={desk.id}
       style={
         {
@@ -1494,8 +1494,8 @@ export function Mixer() {
       }
     >
       {/* console toolbar */}
-      <div className="flex items-center gap-2 border-b border-border bg-surface-2/70 px-2 py-1.5">
-        <span className="font-display text-[11px] font-bold uppercase tracking-widest text-primary">Mix Console</span>
+      <div className="mx-console-toolbar flex min-h-10 items-center gap-3 border-b border-border px-3 py-2">
+        <span className="font-display text-xs font-bold uppercase tracking-widest text-primary">Mix Console</span>
 
         <span className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
           {tracks.length} ch · {activeBuses.length} buses
