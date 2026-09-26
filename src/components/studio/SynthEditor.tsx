@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Knob } from "./Knob";
+import { MidiLearnButton } from "./MidiLearn";
 import { useStudio } from "@/lib/synclab/store";
 import { SYNTH_PRESETS } from "@/lib/synclab/presets";
 import type { EnvelopeParams, LfoWave, ModDest, ModSource, OscWave, SynthPatch, Track } from "@/lib/synclab/types";
@@ -196,6 +197,7 @@ export function SynthEditor({ track }: { track: Track }) {
                 <Knob
                   key={key}
                   label={label}
+                  midiTarget={{ id: track.id, param: `synth:osc:${i}:${key}` }}
                   min={min}
                   max={max}
                   step={step}
@@ -222,6 +224,7 @@ export function SynthEditor({ track }: { track: Track }) {
               {patch.oscillators.map((o, i) => (
                 <div key={i}>
                   <span className="label-xs">OSC {i + 1}</span>
+                   <MidiLearnButton id={track.id} param={`synth:osc:${i}:level`} label={`Oscillator ${i + 1} level`} />
                   <Slider
                     value={[o.level]}
                     min={0}
@@ -235,6 +238,7 @@ export function SynthEditor({ track }: { track: Track }) {
               ))}
               <div>
                 <span className="label-xs">NOISE</span>
+                 <MidiLearnButton id={track.id} param="synth:noise" label="Noise" />
                 <Slider value={[patch.noise]} min={0} max={1} step={0.01} onValueChange={([v = 0]) => set({ noise: v })} />
               </div>
             </div>
@@ -255,17 +259,18 @@ export function SynthEditor({ track }: { track: Track }) {
                 ))}
               </SelectContent>
             </Select>
-            <Knob label="CUTOFF" min={40} max={16000} step={10} value={patch.cutoff} onChange={(v) => set({ cutoff: v })} />
-            <Knob label="RES" min={0} max={28} step={0.5} value={patch.resonance} onChange={(v) => set({ resonance: v })} />
-            <Knob label="DRIVE" value={patch.drive} onChange={(v) => set({ drive: v })} />
+            <Knob label="CUTOFF" midiTarget={{ id: track.id, param: "synth:cutoff" }} min={40} max={16000} step={10} value={patch.cutoff} onChange={(v) => set({ cutoff: v })} />
+            <Knob label="RES" midiTarget={{ id: track.id, param: "synth:resonance" }} min={0} max={28} step={0.5} value={patch.resonance} onChange={(v) => set({ resonance: v })} />
+            <Knob label="DRIVE" midiTarget={{ id: track.id, param: "synth:drive" }} value={patch.drive} onChange={(v) => set({ drive: v })} />
             <Knob
               label="KEY TRK"
+              midiTarget={{ id: track.id, param: "synth:keyTracking" }}
               min={0}
               max={1}
               value={patch.keyTracking ?? 0}
               onChange={(v) => set({ keyTracking: v })}
             />
-            <Knob label="GLIDE" min={0} max={0.5} value={patch.glide} onChange={(v) => set({ glide: v })} />
+            <Knob label="GLIDE" midiTarget={{ id: track.id, param: "synth:glide" }} min={0} max={0.5} value={patch.glide} onChange={(v) => set({ glide: v })} />
             <Select
               value={patch.glideMode ?? "always"}
               onValueChange={(v) => set({ glideMode: v as "always" | "legato" })}
@@ -299,8 +304,8 @@ export function SynthEditor({ track }: { track: Track }) {
                 ))}
               </SelectContent>
             </Select>
-            <Knob label="CUTOFF" min={40} max={16000} step={10} value={f2.cutoff} onChange={(v) => set({ filter2: { ...f2, cutoff: v } })} />
-            <Knob label="RES" min={0} max={28} step={0.5} value={f2.resonance} onChange={(v) => set({ filter2: { ...f2, resonance: v } })} />
+            <Knob label="CUTOFF" midiTarget={{ id: track.id, param: "synth:filter2:cutoff" }} min={40} max={16000} step={10} value={f2.cutoff} onChange={(v) => set({ filter2: { ...f2, cutoff: v } })} />
+            <Knob label="RES" midiTarget={{ id: track.id, param: "synth:filter2:resonance" }} min={0} max={28} step={0.5} value={f2.resonance} onChange={(v) => set({ filter2: { ...f2, resonance: v } })} />
             <Select
               value={f2.routing}
               onValueChange={(v) => set({ filter2: { ...f2, routing: v as "series" | "parallel" } })}
@@ -325,6 +330,7 @@ export function SynthEditor({ track }: { track: Track }) {
                 <Knob
                   key={k}
                   label={k.slice(0, 3).toUpperCase()}
+                  midiTarget={{ id: track.id, param: `synth:amp:${k}` }}
                   min={0}
                   max={k === "sustain" ? 1 : 3}
                   value={patch.amp[k]}
@@ -341,6 +347,7 @@ export function SynthEditor({ track }: { track: Track }) {
                 <Knob
                   key={k}
                   label={k.slice(0, 3).toUpperCase()}
+                  midiTarget={{ id: track.id, param: `synth:filterEnv:${k}` }}
                   min={0}
                   max={k === "sustain" ? 1 : 3}
                   value={patch.filterEnv[k]}
@@ -349,6 +356,7 @@ export function SynthEditor({ track }: { track: Track }) {
               ))}
               <Knob
                 label="AMOUNT"
+                midiTarget={{ id: track.id, param: "synth:filterEnv:amount" }}
                 min={-6000}
                 max={6000}
                 step={50}
@@ -365,6 +373,7 @@ export function SynthEditor({ track }: { track: Track }) {
                 <Knob
                   key={k}
                   label={k.slice(0, 3).toUpperCase()}
+                  midiTarget={{ id: track.id, param: `synth:modEnv:${k}` }}
                   min={0}
                   max={k === "sustain" ? 1 : 3}
                   value={modEnv[k]}
@@ -404,6 +413,7 @@ export function SynthEditor({ track }: { track: Track }) {
               </Select>
               <Knob
                 label="RATE"
+                midiTarget={{ id: track.id, param: `synth:lfo:${i}:rate` }}
                 min={0.05}
                 max={20}
                 step={0.05}
@@ -412,6 +422,7 @@ export function SynthEditor({ track }: { track: Track }) {
               />
               <Knob
                 label="AMOUNT"
+                midiTarget={{ id: track.id, param: `synth:lfo:${i}:amount` }}
                 value={lfo.amount}
                 onChange={(v) => set({ lfos: patch.lfos.map((l, j) => (j === i ? { ...l, amount: v } : l)) })}
               />
@@ -445,6 +456,7 @@ export function SynthEditor({ track }: { track: Track }) {
             <span className="label-xs w-full">Unison</span>
             <Knob
               label="VOICES"
+              midiTarget={{ id: track.id, param: "synth:unison:voices" }}
               min={1}
               max={7}
               step={1}
@@ -453,6 +465,7 @@ export function SynthEditor({ track }: { track: Track }) {
             />
             <Knob
               label="DETUNE"
+              midiTarget={{ id: track.id, param: "synth:unison:detune" }}
               min={0}
               max={60}
               step={1}
@@ -461,6 +474,7 @@ export function SynthEditor({ track }: { track: Track }) {
             />
             <Knob
               label="WIDTH"
+              midiTarget={{ id: track.id, param: "synth:unison:width" }}
               value={patch.unison.width}
               onChange={(v) => set({ unison: { ...patch.unison, width: v } })}
             />
@@ -474,6 +488,7 @@ export function SynthEditor({ track }: { track: Track }) {
               <Knob
                 key={i}
                 label={`MACRO ${i + 1}`}
+                midiTarget={{ id: track.id, param: `synth:macro:${i}` }}
                 value={macros[i] ?? 0}
                 onChange={(v) => set({ macros: macros.map((m, j) => (j === i ? v : m)) })}
               />
@@ -589,13 +604,14 @@ export function SynthEditor({ track }: { track: Track }) {
                 <SelectItem value="legato">legato</SelectItem>
               </SelectContent>
             </Select>
-            <Knob label="GLIDE" min={0} max={0.5} value={patch.glide} onChange={(v) => set({ glide: v })} />
+            <Knob label="GLIDE" midiTarget={{ id: track.id, param: "synth:glide" }} min={0} max={0.5} value={patch.glide} onChange={(v) => set({ glide: v })} />
             <Knob
               label="VEL SENS"
+              midiTarget={{ id: track.id, param: "synth:velocitySens" }}
               value={patch.velocitySens ?? 1}
               onChange={(v) => set({ velocitySens: v })}
             />
-            <Knob label="ANALOG" value={patch.analog ?? 0} onChange={(v) => set({ analog: v })} />
+            <Knob label="ANALOG" midiTarget={{ id: track.id, param: "synth:analog" }} value={patch.analog ?? 0} onChange={(v) => set({ analog: v })} />
             <Knob
               label="VOICES"
               min={1}
@@ -629,6 +645,7 @@ export function SynthEditor({ track }: { track: Track }) {
               <Knob
                 key={key}
                 label={label}
+                midiTarget={{ id: track.id, param: `synth:fx:${key}` }}
                 value={patch.fx[key] ?? 0}
                 onChange={(v) => set({ fx: { ...patch.fx, [key]: v } })}
               />

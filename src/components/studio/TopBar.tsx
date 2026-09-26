@@ -45,6 +45,7 @@ import { INSTRUMENTS } from "@/lib/synclab/presets";
 import { toast } from "sonner";
 import { openExport } from "@/components/studio/ExportDialog";
 import { StudioSearch } from "@/components/studio/StudioSearch";
+import { MidiLearnButton } from "@/components/studio/MidiLearn";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { PlanBadge } from "@/lib/synclab/plan";
 import { openHelp } from "@/components/studio/HelpCenter";
