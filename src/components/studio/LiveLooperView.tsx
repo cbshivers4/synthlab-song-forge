@@ -37,7 +37,7 @@ function LoopDonut({ slot, send }: { slot: LoopSlot; send: (i: number) => void }
         aria-label={`Loop ${slot.index + 1}: ${slot.state === "recording" && slot.recEnd === null ? "close recording" : labels[slot.state]}`}
         onClick={() => void looper.tap(slot.index).catch((error) => toast.error("Couldn't start the looper", { description: error instanceof Error ? error.message : undefined }))}
       >
-        <svg className="absolute inset-0 size-full overflow-visible" viewBox="0 0 200 200" aria-hidden="true">
+         <svg className="absolute inset-0 !h-full !w-full overflow-visible" viewBox="0 0 200 200" aria-hidden="true">
           <circle cx="100" cy="100" r="78" fill="none" stroke="var(--border)" strokeWidth="20" />
           <circle cx="100" cy="100" r="78" fill="none" stroke={ringColor} strokeOpacity="0.22" strokeWidth="20" />
           {levels.map((level, n) => {
