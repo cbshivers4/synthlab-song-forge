@@ -8,6 +8,7 @@
 
 # Roadmap
 
+- [ ] Make phone accessibility settings prominent in the More menu and open directly to mobile options; verify on a phone-sized screen
 - [x] Polish mixer while preserving every channel control; center and enlarge its channel icons
 - [x] Give each Live Looper circle a persistent custom color
 - [x] Reduce visual update work that can cause playback/recording stutters, then verify browser flows

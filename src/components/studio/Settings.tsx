@@ -25,6 +25,7 @@ import {
 import { midiSupported } from "@/lib/synclab/midi";
 import { DesktopPanel } from "@/components/studio/DesktopPanel";
 import { replayMobileTour, saveMobileAccessibility, useMobileAccessibility } from "@/lib/synclab/mobile-accessibility";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type Prefs = {
   sampleRate: string;
@@ -170,6 +171,8 @@ function Num({
 }
 
 export function Settings() {
+  const isMobile = useIsMobile();
+  const [activeTab, setActiveTab] = useState("audio");
   const { transport, setTransport, midiInputs, midiInputId, enableMidi, setMidiInput } = useStudio();
   const [p, setP] = useState<Prefs>(DEFAULTS);
   const [inputs, setInputs] = useState<{ id: string; label: string }[]>([]);
@@ -178,6 +181,7 @@ export function Settings() {
   const mobilePrefs = useMobileAccessibility();
   const midiRef = useRef(midiInputs);
   midiRef.current = midiInputs;
+  useEffect(() => { if (isMobile) setActiveTab("mobile"); }, [isMobile]);
 
   const scanDevices = async (askPermission: boolean) => {
     if (typeof navigator === "undefined" || !navigator.mediaDevices?.enumerateDevices) return;
@@ -278,11 +282,11 @@ export function Settings() {
   };
 
   return (
-    <Tabs defaultValue="audio" className="min-w-0 w-full overflow-x-hidden">
+    <Tabs value={activeTab} onValueChange={setActiveTab} className="min-w-0 w-full overflow-x-hidden">
       <TabsList className="flex h-auto max-w-full flex-nowrap justify-start gap-1 overflow-x-auto bg-surface sm:flex-wrap">
-        {["audio", "recording", "metronome", "timing", "timeline", "midi", "mixing", "export", "desktop", "mobile", "general"].map((t) => (
+        {(isMobile ? ["mobile", "audio", "recording", "metronome", "timing", "timeline", "midi", "mixing", "export", "desktop", "general"] : ["audio", "recording", "metronome", "timing", "timeline", "midi", "mixing", "export", "desktop", "mobile", "general"]).map((t) => (
           <TabsTrigger key={t} value={t} className="font-mono text-[11px] uppercase tracking-widest">
-            {t}
+            {t === "mobile" && isMobile ? "Phone features" : t}
           </TabsTrigger>
         ))}
       </TabsList>
@@ -533,15 +537,18 @@ export function Settings() {
       </TabsContent>
 
       <TabsContent value="mobile" className="mt-4">
-        <Row label="Extra-large controls" hint="Adds more height and spacing for large fingers on phones">
-          <Switch className="h-7 w-12 [&>span]:size-6 data-[state=checked]:[&>span]:translate-x-5" checked={mobilePrefs.extraLargeControls} onCheckedChange={(value) => saveMobileAccessibility({ ...mobilePrefs, extraLargeControls: value })} />
-        </Row>
-        <Row label="Increased text size" hint="Makes phone labels, forms and tool text easier to read">
-          <Switch className="h-7 w-12 [&>span]:size-6 data-[state=checked]:[&>span]:translate-x-5" checked={mobilePrefs.increasedText} onCheckedChange={(value) => saveMobileAccessibility({ ...mobilePrefs, increasedText: value })} />
-        </Row>
-        <Row label="High-contrast mode" hint="Strengthens text, borders, focus rings and selected controls">
-          <Switch className="h-7 w-12 [&>span]:size-6 data-[state=checked]:[&>span]:translate-x-5" checked={mobilePrefs.highContrast} onCheckedChange={(value) => saveMobileAccessibility({ ...mobilePrefs, highContrast: value })} />
-        </Row>
+        <label htmlFor="phone-large-controls" className="settings-row grid min-h-20 cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-4 border-b border-border/60 py-3">
+          <span className="min-w-0"><span className="block text-base">Extra-large controls</span><span className="block text-sm text-muted-foreground">Larger buttons and more room for your fingers</span></span>
+          <Switch id="phone-large-controls" className="h-7 w-12 shrink-0 [&>span]:size-6 data-[state=checked]:[&>span]:translate-x-5" checked={mobilePrefs.extraLargeControls} onCheckedChange={(value) => saveMobileAccessibility({ ...mobilePrefs, extraLargeControls: value })} />
+        </label>
+        <label htmlFor="phone-text-size" className="settings-row grid min-h-20 cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-4 border-b border-border/60 py-3">
+          <span className="min-w-0"><span className="block text-base">Increased text size</span><span className="block text-sm text-muted-foreground">Bigger labels and text in the studio</span></span>
+          <Switch id="phone-text-size" className="h-7 w-12 shrink-0 [&>span]:size-6 data-[state=checked]:[&>span]:translate-x-5" checked={mobilePrefs.increasedText} onCheckedChange={(value) => saveMobileAccessibility({ ...mobilePrefs, increasedText: value })} />
+        </label>
+        <label htmlFor="phone-high-contrast" className="settings-row grid min-h-20 cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-4 border-b border-border/60 py-3">
+          <span className="min-w-0"><span className="block text-base">High-contrast mode</span><span className="block text-sm text-muted-foreground">Clearer text, borders and selected controls</span></span>
+          <Switch id="phone-high-contrast" className="h-7 w-12 shrink-0 [&>span]:size-6 data-[state=checked]:[&>span]:translate-x-5" checked={mobilePrefs.highContrast} onCheckedChange={(value) => saveMobileAccessibility({ ...mobilePrefs, highContrast: value })} />
+        </label>
         <div className="pt-4">
           <Button variant="secondary" className="h-12" onClick={replayMobileTour}>Replay mobile tour</Button>
         </div>

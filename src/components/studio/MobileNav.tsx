@@ -56,7 +56,6 @@ export function MobileNav({ onBeatMode }: { onBeatMode: () => void }) {
     { label: "Stem Separator", icon: <Waves />, panel: "stems" },
     { label: "Voice Remover", icon: <Waves />, panel: "voice" },
     { label: "Reference Analyzer", icon: <FileSearch />, panel: "reference" },
-    { label: "Settings", icon: <SettingsIcon />, panel: "settings" },
     { label: "Help", icon: <LifeBuoy />, run: () => openHelp("help") },
   ];
 
@@ -110,6 +109,18 @@ export function MobileNav({ onBeatMode }: { onBeatMode: () => void }) {
           <SheetHeader className="sticky top-0 z-10 border-b border-border bg-background px-5 py-5 text-left">
             <SheetTitle className="text-xl">{sheet === "create" ? "Create & Sounds" : "More Tools"}</SheetTitle>
           </SheetHeader>
+          {sheet === "more" && (
+            <div className="px-4 pt-4">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => pick({ label: "Phone settings", icon: <SettingsIcon />, panel: "settings" })}
+                className="h-16 w-full justify-start gap-4 border border-primary/50 px-4 text-base font-semibold [&_svg]:size-7 [&_svg]:shrink-0"
+              >
+                <SettingsIcon /> Phone settings
+              </Button>
+            </div>
+          )}
           <div className="mobile-tool-grid grid grid-cols-2 gap-3 p-4">
             {list.map((i) => (
               <Button
