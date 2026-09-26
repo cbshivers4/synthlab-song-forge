@@ -42,16 +42,36 @@ import type {
 } from "./types";
 import { clipRate, SECTION_COLORS } from "./types";
 
-/** A mixer control a hardware knob/fader can drive. id is a track id, or "master". */
+/** A persistent hardware CC destination. Namespaced parameters identify device controls. */
 export interface MidiTarget {
   id: string;
-  param: "volume" | "pan" | "mute" | "solo";
+  param: string;
 }
 
 export const midiTargetKey = (t: MidiTarget) => `${t.id}:${t.param}`;
 const MIDI_MAP_KEY = "synclab.midimap";
 const MIDI_INPUT_KEY = "synclab.midi.input";
 const AUTOSAVE_KEY = "synclab.autosave.v1";
+
+const ccRange = (value: number, min: number, max: number, step = 0) => {
+  const scaled = min + value * (max - min);
+  return step ? Math.round(scaled / step) * step : scaled;
+};
+
+/** Use the same ranges as the visible controls; never map a CC to an unsupported audio parameter. */
+const synthRanges: Record<string, [number, number, number?]> = {
+  cutoff: [40, 16000, 10], resonance: [0, 28, 0.5], drive: [0, 1], glide: [0, 0.5],
+  noise: [0, 1], keyTracking: [0, 1], velocitySens: [0, 1], analog: [0, 1],
+  "filter2.cutoff": [40, 16000, 10], "filter2.resonance": [0, 28, 0.5],
+  "filterEnv.amount": [-6000, 6000, 50],
+};
+const drumRanges: Record<string, [number, number, number?]> = {
+  volume: [0, 1], pan: [-1, 1], pitch: [-12, 12, 1], decay: [0, 1], attack: [0, 1],
+  sustain: [0, 1], release: [0, 1], start: [0, 1], end: [0, 1], tone: [0, 1],
+  drive: [0, 1], compressor: [0, 1], snap: [0, 1], noise: [0, 1], width: [0, 1],
+  crush: [0, 1], mutation: [0, 1], cutoff: [0, 1], resonance: [0, 1],
+  filterEnv: [-1, 1], choke: [0, 4, 1],
+};
 
 const busFor = (kind: TrackKind): BusId =>
   kind === "drum"
