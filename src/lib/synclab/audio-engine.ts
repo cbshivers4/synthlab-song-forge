@@ -2392,6 +2392,8 @@ export const getEngine = () => {
     "setFxInserts",
     "startInputMonitoring",
     "stopInputMonitoring",
+    "setVcaStates",
+    "setAuxReturn",
   ];
   if (!current || required.some((m) => typeof current[m] !== "function")) {
     engineGlobal.__synclabEngine = new SyncLabEngine();
