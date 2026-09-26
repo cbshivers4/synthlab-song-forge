@@ -16,6 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
+import { Button } from "@/components/ui/button";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -26,7 +27,7 @@ import { MidiLearnBlock } from "./MidiLearn";
 import { TrackNotes } from "@/components/studio/TrackNotes";
 import { TrackIcon, TrackStylePicker } from "@/components/studio/TrackStyle";
 import { BUILT_IN_PLUGINS } from "@/lib/synclab/plugins";
-import type { BusId, BusState, PluginInstance, Track, Transport } from "@/lib/synclab/types";
+import type { AuxId, BusId, BusState, PluginInstance, Track, Transport, VcaId } from "@/lib/synclab/types";
 import { cn } from "@/lib/utils";
 import { clearClip, reportLevel, useClipped } from "@/lib/synclab/clip-monitor";
 import { Scope } from "./Scope";
@@ -41,6 +42,8 @@ const SEND_KEYS: [keyof NonNullable<Track["sends"]>, string][] = [
   ["chorus", "CHO"],
 ];
 const BUS_STRIPS: BusId[] = ["drums", "vocals", "instruments", "synths", "fx"];
+const VCA_IDS: VcaId[] = ["A", "B", "C", "D"];
+const AUX_IDS: AuxId[] = ["reverb", "delay", "chorus"];
 const BUS_COLOR: Record<string, string> = {
   drums: "oklch(0.75 0.19 30)",
   vocals: "oklch(0.75 0.19 330)",
@@ -1018,9 +1021,15 @@ function Strip({
             ))}
           </SelectContent>
         </Select>
-        <div className="truncate text-center font-mono text-[7px] uppercase tracking-wider text-muted-foreground">
-          {t.instrument ?? t.kind}
-        </div>
+        <Select value={t.vca ?? "none"} onValueChange={(v) => updateTrack(t.id, { vca: v === "none" ? undefined : v as VcaId })}>
+          <SelectTrigger onClick={(e) => e.stopPropagation()} aria-label={`${t.name} VCA group`} className="h-5 w-full rounded-sm border-border px-1 font-mono text-[8px] uppercase">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">No VCA</SelectItem>
+            {VCA_IDS.map((id) => <SelectItem key={id} value={id}>VCA {id}</SelectItem>)}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* pan */}
@@ -1246,6 +1255,39 @@ function BusStrip({
   );
 }
 
+function ControlStrip({ kind, name, state, onChange, memberCount }: {
+  kind: "VCA" | "AUX";
+  name: string;
+  state: BusState;
+  onChange: (patch: Partial<BusState>) => void;
+  memberCount?: number;
+}) {
+  const advanced = useApp().mode === "advanced";
+  const aux = kind === "AUX";
+  return (
+    <div className="flex w-[116px] shrink-0 flex-col border-r border-border bg-surface-2/70">
+      <div className={cn(ROW.head, "flex items-center justify-center border-b border-border font-mono text-[9px] font-bold tracking-wider", aux ? "text-primary" : "text-accent-foreground")}>{kind}</div>
+      {advanced && <div className={cn(ROW.scope, "border-b border-border/60")} />}
+      <div className={cn(ROW.eq, "flex items-center justify-center border-b border-border/60 font-mono text-[9px] text-muted-foreground")}>{aux ? "FX RETURN" : `${memberCount ?? 0} CHANNELS`}</div>
+      <div className={cn(ROW.devices, "flex items-center border-b border-border/60 p-2")}>
+        {aux ? <FxMenu target={`send:${name}`} label="Return FX" /> : <span className="w-full text-center font-mono text-[9px] text-muted-foreground">LEVEL CONTROL</span>}
+      </div>
+      {advanced && <div className={cn(ROW.sends, "border-b border-border/60")} />}
+      {advanced && <div className={cn(ROW.sendBars, "border-b border-border/60")} />}
+      <div className={cn(ROW.io, "flex items-center justify-center border-b border-border/60 font-mono text-[9px] uppercase text-muted-foreground")}>{aux ? "Master" : "Assigned channels"}</div>
+      <div className={cn(ROW.pan, "border-b border-border/60")} />
+      <div className={cn(ROW.fader, "flex justify-center border-b border-border/60 py-1")}>
+        <Slider aria-label={`${kind} ${name} level`} orientation="vertical" className={cn("h-full w-8", FADER_CAP)} value={[state.volume]} min={0} max={1.2} step={0.01} onValueChange={([value = 0]) => onChange({ volume: value })} />
+      </div>
+      <div className={cn(ROW.readout, "flex items-center justify-center border-b border-border/60 font-mono text-[9px] text-muted-foreground")}>{toDb(state.volume).toFixed(1)} dB</div>
+      <div className={cn(ROW.name, "flex items-center justify-center border-b border-border/60 px-2 text-center font-mono text-[10px] font-bold uppercase text-foreground")}>{aux ? name : `VCA ${name}`}</div>
+      <div className={cn(ROW.buttons, "px-2 pt-1")}>
+        <Button variant={state.muted ? "destructive" : "outline"} size="sm" className="h-8 w-full text-[10px]" onClick={() => onChange({ muted: !state.muted })} aria-label={`${state.muted ? "Unmute" : "Mute"} ${kind} ${name}`}>{state.muted ? "MUTED" : "MUTE"}</Button>
+      </div>
+    </div>
+  );
+}
+
 function FxMenu({ target, label }: { target: string; label: string }) {
   const { fxChains, addFxPlugin, removeFxPlugin, toggleFxBypass, setFxParam } = useStudio();
   const list = fxChains[target] ?? [];
@@ -1446,10 +1488,12 @@ function MasterStrip({ level: peak }: { level: number }) {
 }
 
 export function Mixer() {
-  const { tracks, transport, selectedId, select, buses, setBus, updateTrack, addTrack } = useStudio();
+  const { tracks, transport, selectedId, select, buses, setBus, vcas, setVca, auxReturns, setAuxReturn, updateTrack, addTrack } = useStudio();
   const levels = useMeters(tracks, transport);
   const [narrow, setNarrow] = useState(false);
   const [showBuses, setShowBuses] = useState(true);
+  const [showVcas, setShowVcas] = useState(true);
+  const [showAux, setShowAux] = useState(true);
   const [styleId, setStyleId] = useState<ConsoleStyleId>(() => {
     if (typeof window === "undefined") return "ssl";
     const saved = window.localStorage.getItem("synclab.mixer.style") as ConsoleStyleId | null;
@@ -1602,6 +1646,8 @@ export function Mixer() {
           >
             Buses
           </button>
+          <Button variant={showVcas ? "secondary" : "ghost"} size="sm" className="h-7 text-[10px]" onClick={() => setShowVcas((v) => !v)} aria-pressed={showVcas}>VCA</Button>
+          <Button variant={showAux ? "secondary" : "ghost"} size="sm" className="h-7 text-[10px]" onClick={() => setShowAux((v) => !v)} aria-pressed={showAux}>Aux</Button>
           <button
             onClick={() => setNarrow((v) => !v)}
             title={narrow ? "Wide strips" : "Narrow strips"}
@@ -1664,6 +1710,12 @@ export function Mixer() {
             activeBuses.map((id) => (
               <BusStrip key={id} id={id} state={buses[id]} level={busLevel(id)} onChange={(p) => setBus(id, p)} />
             ))}
+          {showVcas && VCA_IDS.map((id) => (
+            <ControlStrip key={`vca-${id}`} kind="VCA" name={id} state={vcas[id]} memberCount={tracks.filter((t) => t.vca === id).length} onChange={(patch) => setVca(id, patch)} />
+          ))}
+          {showAux && AUX_IDS.map((id) => (
+            <ControlStrip key={`aux-${id}`} kind="AUX" name={id} state={auxReturns[id]} onChange={(patch) => setAuxReturn(id, patch)} />
+          ))}
           <div className="sticky right-0 z-10 bg-surface shadow-[-12px_0_18px_-12px_rgba(0,0,0,0.8)]">
             <MasterStrip level={levels.master} />
           </div>
