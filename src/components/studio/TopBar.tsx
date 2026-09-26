@@ -164,6 +164,7 @@ export function TopBar() {
             step={1}
             onValueChange={([v = 0]) => setTransport({ bpm: v })}
           />
+          <MidiLearnButton id="transport" param="bpm" label="Tempo" />
           <div className="hidden sm:block">
             <span className="label-xs">Swing</span>
             <Slider
@@ -174,6 +175,7 @@ export function TopBar() {
               step={0.01}
               onValueChange={([v = 0]) => setTransport({ swing: v })}
             />
+            <MidiLearnButton id="transport" param="swing" label="Swing" />
           </div>
         </div>
 
