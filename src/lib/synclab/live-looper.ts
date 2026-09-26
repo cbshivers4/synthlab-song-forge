@@ -147,9 +147,10 @@ export class LiveLooper {
       const r = e.inputBuffer.numberOfChannels > 1 ? e.inputBuffer.getChannelData(1) : l;
       // the input block was rendered one block before its playback time
       this.chunks.push({ t: e.playbackTime - BLOCK / this.ctx.sampleRate, l: new Float32Array(l), r: new Float32Array(r) });
-      // keep ~30s of history only
-      const oldest = this.ctx.currentTime - 30;
-      while (this.chunks.length && this.chunks[0]!.t < oldest && !this.slots.some((s) => s.state === "recording" && s.recStart < oldest + 1)) this.chunks.shift();
+      // Retain the entire active take, including 32-bar takes at slow tempos.
+      const activeStarts = this.slots.filter((s) => s.state === "armed" || s.state === "recording").map((s) => s.recStart);
+      const oldest = activeStarts.length ? Math.min(...activeStarts) - 0.1 : this.ctx.currentTime - 1;
+      while (this.chunks.length && this.chunks[0]!.t + BLOCK / this.ctx.sampleRate < oldest) this.chunks.shift();
     };
     node.connect(proc);
     proc.connect(sink).connect(this.ctx.destination);
@@ -290,9 +291,9 @@ export class LiveLooper {
 
   async record(i: number) {
     const s = this.slots[i];
-    if (!s || s.state !== "empty") return;
+    if (!s || s.state !== "empty" || this.slots.some((slot) => slot.state === "armed" || slot.state === "recording")) return;
     await this.openInput();
-    if (s.state !== "empty") { if (!this.slots.some((slot) => slot.state === "armed" || slot.state === "recording")) this.closeInput(); return; }
+    if (s.state !== "empty" || this.slots.some((slot) => slot.state === "armed" || slot.state === "recording")) { if (!this.slots.some((slot) => slot.state === "armed" || slot.state === "recording")) this.closeInput(); return; }
     const now = this.ctx.currentTime + 0.03;
     if (this.cycle === null) {
       if (this.mode === "sync") {
@@ -382,10 +383,10 @@ export class LiveLooper {
 
   async overdub(i: number) {
     const s = this.slots[i];
-    if (!s?.buffer || s.state !== "playing" || !this.cycle || this.slots.some((slot) => slot.state === "armed" || slot.state === "recording")) return;
+    if (!s?.buffer || s.state !== "playing" || !this.cycle || this.source !== "mic" || this.slots.some((slot) => slot.state === "armed" || slot.state === "recording")) return;
     if (this.ctx.state === "suspended") await this.ctx.resume();
     await this.openInput();
-    if (s.state !== "playing") return;
+    if (s.state !== "playing" || this.slots.some((slot) => slot.state === "armed" || slot.state === "recording")) return;
     s.recStart = this.nextBoundary(this.ctx.currentTime + 0.05);
     s.recEnd = s.recStart + this.cycle;
     s.overdubbing = true;
