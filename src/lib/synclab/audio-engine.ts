@@ -1165,11 +1165,71 @@ export class SyncLabEngine {
   private monitorNode: MediaStreamAudioSourceNode | null = null;
   private monitorGain: GainNode | null = null;
   private recAnalyser: AnalyserNode | null = null;
+  private trackRecorder: { recorder: MediaRecorder; destination: MediaStreamAudioDestinationNode; source: AudioNode; trackId: string; chunks: Blob[] } | null = null;
 
   private monitorTrackId: string | null = null;
 
   get isRecording() {
     return this.recorder?.state === "recording";
+  }
+
+  get isTrackRecording() {
+    return this.trackRecorder?.recorder.state === "recording";
+  }
+
+  /** Print an instrument or drum channel directly, without capturing the rest of the song. */
+  startTrackRecording(trackId: string) {
+    if (this.trackRecorder) return;
+    const ctx = this.init();
+    const destination = ctx.createMediaStreamDestination();
+    const source = this.channel(trackId).meter;
+    source.connect(destination);
+    const mime = preferredRecordingMime();
+    try {
+      const recorder = new MediaRecorder(destination.stream, mime ? { mimeType: mime } : undefined);
+      const chunks: Blob[] = [];
+      recorder.ondataavailable = (event) => { if (event.data.size) chunks.push(event.data); };
+      recorder.start(200);
+      this.trackRecorder = { recorder, destination, source, trackId, chunks };
+    } catch (error) {
+      source.disconnect(destination);
+      destination.stream.getTracks().forEach((track) => track.stop());
+      throw error;
+    }
+  }
+
+  async stopTrackRecording(): Promise<{ peaks: number[]; duration: number; url: string; trackId: string } | null> {
+    const session = this.trackRecorder;
+    if (!session) return null;
+    this.trackRecorder = null;
+    const { recorder, destination, source, trackId, chunks } = session;
+    try {
+      const blob = await new Promise<Blob>((resolve) => {
+        recorder.onstop = () => resolve(new Blob(chunks, { type: recorder.mimeType || "audio/webm" }));
+        if (recorder.state !== "inactive") recorder.stop();
+        else resolve(new Blob(chunks, { type: recorder.mimeType || "audio/webm" }));
+      });
+      if (!blob.size) return null;
+      const ctx = this.init();
+      let buffer: AudioBuffer;
+      try { buffer = await ctx.decodeAudioData(await blob.arrayBuffer()); }
+      catch { throw new Error("This browser cannot play back its recorded audio. Try Chrome or Safari."); }
+      const data = buffer.getChannelData(0);
+      const buckets = Math.min(1600, Math.max(160, Math.ceil(buffer.duration * 80)));
+      const peaks = Array.from({ length: buckets }, (_, bucket) => {
+        const from = Math.floor(bucket * data.length / buckets);
+        const to = Math.floor((bucket + 1) * data.length / buckets);
+        let peak = 0;
+        for (let i = from; i < to; i++) peak = Math.max(peak, Math.abs(data[i] ?? 0));
+        return peak;
+      });
+      const url = URL.createObjectURL(blob);
+      this.sampleBuffers.set(url, buffer);
+      return { peaks, duration: buffer.duration, url, trackId };
+    } finally {
+      source.disconnect(destination);
+      destination.stream.getTracks().forEach((track) => track.stop());
+    }
   }
 
   get monitoredTrack() {
@@ -1285,8 +1345,8 @@ export class SyncLabEngine {
     }
     duration = buf.duration;
     const data = buf.getChannelData(0);
-    const buckets = 160;
-    const size = Math.max(1, Math.floor(data.length / buckets));
+    const buckets = Math.min(1600, Math.max(160, Math.ceil(duration * 80)));
+    const size = Math.max(1, Math.ceil(data.length / buckets));
     for (let b = 0; b < buckets; b++) {
       let peak = 0;
       for (let i = b * size; i < Math.min(data.length, (b + 1) * size); i++) peak = Math.max(peak, Math.abs(data[i] ?? 0));

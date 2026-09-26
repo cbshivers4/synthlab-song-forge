@@ -28,7 +28,7 @@ type Drag =
 
 export function PianoRoll({ track }: { track: Track }) {
   const isMobile = useIsMobile();
-  const { setNotes, previewNote, transport, setStepCount } = useStudio();
+  const { setNotes, previewNote, transport, setStepCount, updateTrack } = useStudio();
   const [low, setLow] = useState(48);
   const [grid, setGrid] = useState(1); // steps per snap
   const [len, setLen] = useState(1);
@@ -137,6 +137,12 @@ export function PianoRoll({ track }: { track: Track }) {
 
   return (
     <div className="space-y-1.5" onPointerUp={endDrag} onPointerLeave={endDrag}>
+      {track.printedAudio && (
+        <div className="flex items-center justify-between gap-2 border-b border-border px-2 py-1 text-xs text-muted-foreground">
+          <span>Recorded waveform is playing; notes remain editable here.</span>
+          <Button size="sm" variant="secondary" onClick={() => updateTrack(track.id, { printedAudio: false })}>PLAY NOTES</Button>
+        </div>
+      )}
       {/* toolbar */}
       <div className="flex items-center overflow-x-auto whitespace-nowrap scrollbar-hide gap-1.5 rounded-sm border border-border bg-surface/60 p-1.5">
         <span className="label-xs px-1">GRID</span>

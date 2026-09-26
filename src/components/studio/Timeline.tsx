@@ -406,12 +406,11 @@ function RecordingClip({ track }: { track: Track }) {
   const isNote = track.kind === "instrument" || track.kind === "midi" || track.kind === "drum";
 
   useEffect(() => {
-    if (isNote) return;
     const engine = getEngine();
     let raf = 0;
     const draw = () => {
       raf = requestAnimationFrame(draw);
-      peaksRef.current.push(engine.inputLevel());
+      peaksRef.current.push(isNote ? engine.getTrackLevel(track.id) : engine.inputLevel());
       if (peaksRef.current.length > 2000) peaksRef.current.shift();
       const canvas = canvasRef.current;
       const g = canvas?.getContext("2d");
@@ -431,7 +430,7 @@ function RecordingClip({ track }: { track: Track }) {
     };
     draw();
     return () => cancelAnimationFrame(raf);
-  }, [isNote]);
+  }, [isNote, track.id]);
 
   const start = startRef.current;
   const now = transport.step ?? start;
@@ -448,58 +447,26 @@ function RecordingClip({ track }: { track: Track }) {
         <span className="size-1.5 animate-pulse rounded-full bg-destructive" />
         <span className="font-mono text-[9px] font-semibold text-destructive">RECORDING</span>
       </div>
-      {track.kind === "drum" ? (
-        <div className="relative min-h-0 w-full flex-1" aria-label="Drum hits being recorded" role="img">
-          {(track.pads ?? []).flatMap((pad, row, arr) => {
-            const padLen = pad.steps.length || track.steps || 16;
-            const hits: React.ReactNode[] = [];
-            for (let s = start; s <= now; s++) {
-              if ((pad.steps[s % padLen] ?? 0) <= 0) continue;
-              const l = ((s - start) / Math.max(1, length)) * 100;
-              hits.push(
-                <div
-                  key={`${pad.id}-${s}`}
-                  className="absolute rounded-[2px] bg-destructive"
-                  style={{
-                    left: `${l}%`,
-                    width: `${Math.max(2, (1 / Math.max(1, length)) * 100)}%`,
-                    top: `${(row / Math.max(1, arr.length)) * 100}%`,
-                    height: `${Math.max(8, 100 / Math.max(1, arr.length) - 2)}%`,
-                  }}
-                />,
-              );
-            }
-            return hits;
-          })}
-        </div>
-      ) : isNote ? (
-        <div className="relative min-h-0 w-full flex-1" aria-label="Notes being recorded" role="img">
-          {(track.notes ?? [])
-            .filter((n) => n.step >= start && n.step <= now)
-            .map((n) => {
-              const span = Math.max(1, length);
-              const l = ((n.step - start) / span) * 100;
-              const w = Math.max(3, ((n.length || 1) / span) * 100);
-              const top = Math.min(92, Math.max(0, 100 - ((n.pitch - 36) / 48) * 100));
-              return (
-                <div
-                  key={n.id}
-                  className="absolute h-[8%] min-h-[3px] rounded-[2px] bg-destructive"
-                  style={{ left: `${l}%`, width: `${Math.min(100 - l, w)}%`, top: `${top}%` }}
-                />
-              );
-            })}
-        </div>
-      ) : (
-        <canvas ref={canvasRef} className="min-h-0 w-full flex-1 text-destructive" aria-label="Incoming recording waveform" role="img" />
-      )}
+      <canvas ref={canvasRef} className="min-h-0 w-full flex-1 text-destructive" aria-label="Incoming recording waveform" role="img" />
     </div>
   );
 }
 
 function Lane({ track }: { track: Track }) {
+  const { updateTrack } = useStudio();
   const isMidi = track.kind === "instrument" || track.kind === "midi" || track.kind === "sampler";
   const live = track.recording ? <RecordingClip track={track} /> : null;
+  if ((track.kind === "instrument" || track.kind === "midi" || track.kind === "drum") && (track.clips?.length ?? 0) > 0)
+    return (
+      <>
+        <div className="absolute right-2 top-2 z-20 flex rounded-sm border border-border bg-background/90 p-0.5 shadow-sm">
+          <Button size="sm" variant={track.printedAudio ? "secondary" : "ghost"} className="h-6 px-2 text-[10px]" onClick={() => updateTrack(track.id, { printedAudio: true })} title="Play and edit recorded audio">WAVE</Button>
+          <Button size="sm" variant={!track.printedAudio ? "secondary" : "ghost"} className="h-6 px-2 text-[10px]" onClick={() => updateTrack(track.id, { printedAudio: false })} title="Play and edit MIDI or drum pattern">NOTES</Button>
+        </div>
+        {track.printedAudio ? <Waveform track={track} /> : track.kind === "drum" ? <DrumClip track={track} /> : <MidiClip track={track} />}
+        {live}
+      </>
+    );
   if (track.kind === "drum")
     return (
       <>

@@ -674,7 +674,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         const len = Math.max(1, t.steps);
         const s = n % len;
         // arrangement clips fire at their own position on the timeline
-        if (t.clips?.length) {
+        if (t.clips?.length && !t.recording &&
+            (!(["instrument", "midi", "drum"].includes(t.kind)) || t.printedAudio)) {
           const at = n % totalSteps;
           // after a start or jump (loop wrap), pick up clips already in progress
           const jumped = lastScheduled === null || at !== (lastScheduled + 1) % totalSteps;
@@ -705,6 +706,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             );
           }
         }
+        if (t.printedAudio && t.clips?.length && !t.recording) continue;
         if (t.kind === "drum" && t.pads) {
           const padSolo = t.pads.some((p) => p.solo);
           for (const pad of t.pads) {
@@ -944,6 +946,30 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         : `${result.duration.toFixed(1)}s captured — pick your best take on the track.`,
     });
   }, [updateTrack]);
+
+  const finishTrackRecording = useCallback(async () => {
+    const engine = getEngine();
+    if (!engine.isTrackRecording) return;
+    try {
+      const result = await engine.stopTrackRecording();
+      if (!result) return;
+      const target = tracksRef.current.find((t) => t.id === result.trackId);
+      if (!target) return;
+      const clip: AudioClip = {
+        id: uid(), name: `${target.name} TAKE ${(target.clips?.length ?? 0) + 1}`,
+        peaks: result.peaks, duration: result.duration, url: result.url,
+        start: recStartStepRef.current, offset: 0, length: result.duration, gain: 1,
+      };
+      // Keep the editable notes/steps intact. The printed audio takes their place
+      // during playback until the user explicitly switches back to the pattern.
+      setTracks((ts) => ts.map((t) => t.id === result.trackId
+        ? { ...t, clips: [...(t.clips ?? []), clip], activeClipId: clip.id, printedAudio: true }
+        : t));
+      toast.success(`${clip.name} recorded`, { description: "Double-click the waveform to edit it; switch to Notes to edit the pattern." });
+    } catch (err) {
+      toast.error("Take couldn't be kept", { description: err instanceof Error ? err.message : undefined });
+    }
+  }, []);
 
   // keep the punch hooks pointing at the current record helpers
   useEffect(() => {
@@ -1547,9 +1573,15 @@ export function StudioProvider({ children }: { children: ReactNode }) {
                 );
             } else if (armedNote) {
               recStartStepRef.current = transportRef.current.step ?? 0;
+              try {
+                engine.startTrackRecording(armedNote.id);
+              } catch (err) {
+                toast.error("Could not record this channel", { description: err instanceof Error ? err.message : undefined });
+                return;
+              }
               updateTrack(armedNote.id, { recording: true });
-              toast("Recording notes", {
-                description: `Play your controller or the on-screen keyboard — notes land on ${armedNote.name}.`,
+              toast("Recording notes and audio", {
+                description: `Playing ${armedNote.name} captures an editable pattern and waveform.`,
               });
             } else {
               toast("Select or arm a channel first", {
@@ -1603,6 +1635,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           begin();
         } else {
           void finishRecording();
+          void finishTrackRecording();
           setTracks((ts) => ts.map((t) => (t.recording ? { ...t, recording: false } : t)));
           setTransportState((s) => ({ ...s, recording: false }));
         }
@@ -1613,6 +1646,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           countInTimerRef.current = null;
         }
         if (transportRef.current.recording) void finishRecording();
+        if (transportRef.current.recording) void finishTrackRecording();
         setTracks((ts) => ts.map((t) => (t.recording ? { ...t, recording: false } : t)));
         setTransportState((s) => ({ ...s, playing: false, recording: false, paused: false, step: 0, countInLeft: null }));
       },
@@ -2004,7 +2038,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           ),
         })),
     };
-  }, [tracks, transport, selectedId, selectedIds, editTool, panel, userPresets, buses, sections, installedPlugins, fxChains, midiInputs, midiInputId, midiLearning, midiMap, midiLearn, clipboardName, enableMidi, setMidiInputPersist, updateTrack, finishRecording, splitClipAtImpl, buildSnapshot, applySession, historyTick, automationHistoryTick, savedAt]);
+  }, [tracks, transport, selectedId, selectedIds, editTool, panel, userPresets, buses, sections, installedPlugins, fxChains, midiInputs, midiInputId, midiLearning, midiMap, midiLearn, clipboardName, enableMidi, setMidiInputPersist, updateTrack, finishRecording, finishTrackRecording, splitClipAtImpl, buildSnapshot, applySession, historyTick, automationHistoryTick, savedAt]);
 
 
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>;

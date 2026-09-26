@@ -423,6 +423,8 @@ export interface Track {
   clips?: AudioClip[] | undefined;
   sampler?: SamplerState | undefined;
   activeClipId?: string | undefined;
+  /** Play recorded instrument/drum audio instead of the editable live pattern. */
+  printedAudio?: boolean;
   recording?: boolean;
   automation?: AutomationLane[] | undefined;
   /** free-text note the producer keeps on this channel; saved with the project */
