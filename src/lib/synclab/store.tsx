@@ -16,6 +16,7 @@ import { TRACK_COLORS, applyPreset, defaultPads, defaultPatch, uid } from "./pre
 import { BUILT_IN_PLUGINS, instantiate, processMidiThroughPlugins } from "./plugins";
 import { getMidiAccess, listInputs, midiSupported, subscribe, type MidiPortInfo } from "./midi";
 import { getPadBank, setPadBank } from "./pad-session";
+import { getLooper } from "./live-looper";
 import { padNote } from "./drum-notes";
 import type { CloudSession } from "./cloud";
 import type {
@@ -540,6 +541,11 @@ export function StudioProvider({ children }: { children: ReactNode }) {
            if (target.id === "transport") {
              if (target.param === "bpm") setTransportState((s) => ({ ...s, bpm: ccRange(v, 60, 190, 1) }));
              else if (target.param === "swing") setTransportState((s) => ({ ...s, swing: ccRange(v, 0, 0.6, 0.01) }));
+             return;
+           }
+           if (target.id.startsWith("looper:") && target.param === "volume") {
+             const index = Number(target.id.slice(7));
+             if (Number.isInteger(index) && index >= 0 && index < 8) getLooper().setVolume(index, ccRange(v, 0, 1.2));
              return;
            }
            if (target.id.startsWith("bus:") || target.id.startsWith("vca:") || target.id.startsWith("aux:")) {
