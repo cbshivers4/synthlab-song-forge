@@ -2323,7 +2323,7 @@ function TimelineOverview({
       el.removeEventListener("scroll", read);
       ro.disconnect();
     };
-  }, [scrollRef, zoom]);
+  }, [scrollRef, zoom, transport.bars]);
 
   const scrollTo = (clientX: number) => {
     const bar = barRef.current;
@@ -2463,7 +2463,7 @@ export function Timeline() {
         </div>
       </div>
       <div id="timeline-scroll" ref={scrollRef} className="relative min-h-0 flex-1 overflow-auto">
-        <div className="min-w-[720px] sm:min-w-0" style={{ width: `${zoom * 100}%` }}>
+        <div className="min-w-[720px]" style={{ width: `max(${zoom * 100}%, ${transport.bars * 32 + 244}px)` }}>
         {/* SYNCLAB watermark, low and centred in the empty workspace */}
         <div className="pointer-events-none sticky top-[68%] z-0 h-0" aria-hidden="true">
           <img
