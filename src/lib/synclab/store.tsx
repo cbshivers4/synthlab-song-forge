@@ -535,14 +535,88 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           const target = midiMapRef.current[key];
           if (!target) return;
           const v = msg.value;
+           if (target.id === "transport") {
+             if (target.param === "bpm") setTransportState((s) => ({ ...s, bpm: ccRange(v, 60, 190, 1) }));
+             else if (target.param === "swing") setTransportState((s) => ({ ...s, swing: ccRange(v, 0, 0.6, 0.01) }));
+             return;
+           }
+           if (target.id.startsWith("bus:") || target.id.startsWith("vca:") || target.id.startsWith("aux:")) {
+             const [kind, id] = target.id.split(":");
+             if (!id || !["volume", "mute"].includes(target.param)) return;
+             const patch = target.param === "volume" ? { volume: ccRange(v, 0, 1.2) } : { muted: v >= 0.5 };
+             if (kind === "bus" && ["drums", "synths", "vocals", "fx", "master"].includes(id))
+               setBuses((b) => ({ ...b, [id]: { ...b[id as BusId], ...patch } }));
+             if (kind === "vca" && ["A", "B", "C", "D"].includes(id))
+               setVcas((b) => ({ ...b, [id]: { ...b[id as VcaId], ...patch } }));
+             if (kind === "aux" && ["reverb", "delay", "chorus"].includes(id))
+               setAuxReturns((b) => ({ ...b, [id]: { ...b[id as AuxId], ...patch } }));
+             return;
+           }
           if (target.id === "master") {
             if (target.param === "volume") setBuses((b) => ({ ...b, master: { ...b.master, volume: v * 1.2 } }));
             else if (target.param === "mute") setBuses((b) => ({ ...b, master: { ...b.master, muted: v >= 0.5 } }));
             return;
           }
+           if (target.param.startsWith("synth:")) {
+             const path = target.param.slice(6).split(":");
+             const field = path[0];
+             setTracks((ts) => ts.map((t) => {
+               if (t.id !== target.id || !t.patch || !field) return t;
+               const patch = t.patch;
+               if (path.length === 1 && synthRanges[field]) {
+                 const [min, max, step] = synthRanges[field];
+                 return { ...t, patch: { ...patch, [field]: ccRange(v, min, max, step) } };
+               }
+               if (field === "macro" && path[1] && /^[0-3]$/.test(path[1])) {
+                 const macros = [...(patch.macros ?? [0, 0, 0, 0])];
+                 macros[Number(path[1])] = v;
+                 return { ...t, patch: { ...patch, macros } };
+               }
+               if (field === "fx" && path[1] && Object.hasOwn(patch.fx, path[1]) && typeof patch.fx[path[1] as keyof typeof patch.fx] === "number")
+                 return { ...t, patch: { ...patch, fx: { ...patch.fx, [path[1]]: v } } };
+               if (["amp", "filterEnv", "modEnv", "filter2", "unison", "arp"].includes(field) && path[1]) {
+                 const group = patch[field as "amp" | "filterEnv" | "modEnv" | "filter2" | "unison" | "arp"];
+                 if (!group || typeof group !== "object" || typeof (group as Record<string, unknown>)[path[1]] !== "number") return t;
+                 const range = synthRanges[`${field}.${path[1]}`];
+                 const max = field === "amp" || field === "filterEnv" || field === "modEnv" ? (path[1] === "sustain" ? 1 : 3) : 1;
+                 const value = range ? ccRange(v, ...range) : ccRange(v, 0, max);
+                 return { ...t, patch: { ...patch, [field]: { ...group, [path[1]]: value } } };
+               }
+               if ((field === "osc" || field === "lfo") && path[1] && path[2]) {
+                 const index = Number(path[1]);
+                 const list = field === "osc" ? patch.oscillators : patch.lfos;
+                 const item = list[index];
+                 if (!item || typeof (item as unknown as Record<string, unknown>)[path[2]] !== "number") return t;
+                 const range = field === "osc" ? ({ octave: [-3, 3, 1], semitone: [-12, 12, 1], fine: [-50, 50, 1], detune: [-50, 50, 1], pulseWidth: [0.05, 0.95], pan: [-1, 1] } as Record<string, [number, number, number?]>)[path[2]] : path[2] === "rate" ? [0.05, 20, 0.05] as [number, number, number?] : undefined;
+                 const updated = list.map((item, i) => i === index ? { ...item, [path[2]]: range ? ccRange(v, ...range) : v } : item);
+                 return { ...t, patch: { ...patch, [field === "osc" ? "oscillators" : "lfos"]: updated } };
+               }
+               return t;
+             }));
+             return;
+           }
+           if (target.param.startsWith("drum:")) {
+             const [, padId, field] = target.param.split(":");
+             const range = field ? drumRanges[field] : undefined;
+             if (padId && field && range) setTracks((ts) => ts.map((t) => t.id === target.id && t.pads
+               ? { ...t, pads: t.pads.map((pad) => pad.id === padId ? { ...pad, [field]: ccRange(v, ...range) } : pad) } : t));
+             return;
+           }
+           if (target.param.startsWith("plugin:")) {
+             const [, instanceId, paramId] = target.param.split(":");
+             if (instanceId && paramId) setTracks((ts) => ts.map((t) => t.id === target.id ? { ...t, plugins: (t.plugins ?? []).map((p) => p.id === instanceId
+               ? { ...p, params: p.params.map((param) => param.id === paramId ? { ...param, value: ccRange(v, param.min, param.max) } : param) } : p) } : t));
+             return;
+           }
+           if (target.param.startsWith("fx:")) {
+             const [, instanceId, paramId] = target.param.split(":");
+             if (instanceId && paramId) setFxChains((chains) => ({ ...chains, [target.id]: (chains[target.id] ?? []).map((p) => p.id === instanceId
+               ? { ...p, params: p.params.map((param) => param.id === paramId ? { ...param, value: ccRange(v, param.min, param.max) } : param) } : p) }));
+             return;
+           }
           setTracks((ts) =>
             ts.map((t) =>
-              t.id === target.id
+               t.id === target.id && ["volume", "pan", "mute", "solo"].includes(target.param)
                 ? target.param === "volume"
                   ? { ...t, volume: v * 1.2 }
                   : target.param === "pan"
