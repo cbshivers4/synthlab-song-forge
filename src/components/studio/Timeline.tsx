@@ -2141,7 +2141,7 @@ function Ruler() {
 
   return (
     <div className="sticky top-0 z-10 flex border-b border-border bg-surface-2/70 backdrop-blur">
-      <div className="flex w-[172px] shrink-0 flex-col justify-center gap-1 border-r border-border px-2 py-1 sm:w-[244px] sm:px-3">
+      <div className="relative z-20 flex w-[172px] shrink-0 flex-col justify-center gap-1 border-r border-border bg-surface-2 px-2 py-1 sm:w-[244px] sm:px-3" style={{ transform: "translateX(var(--timeline-scroll-x, 0px))" }}>
         <div className="flex items-center gap-2">
           <span className="font-display text-[11px] font-semibold tracking-[0.2em]">TIMELINE</span>
           <span className="label-xs ml-auto">
@@ -2323,7 +2323,7 @@ function TimelineOverview({
       el.removeEventListener("scroll", read);
       ro.disconnect();
     };
-  }, [scrollRef, zoom]);
+  }, [scrollRef, zoom, transport.bars]);
 
   const scrollTo = (clientX: number) => {
     const bar = barRef.current;
@@ -2419,6 +2419,30 @@ export function Timeline() {
   const [over, setOver] = useState(false);
   const [zoom, setZoom] = useState(1);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const timelineHeaderRef = useRef<HTMLDivElement>(null);
+
+  // The ruler and song parts live above the vertically scrolling tracks, but
+  // must share their horizontal coordinate system when the overview pans.
+  useEffect(() => {
+    const viewport = scrollRef.current;
+    const header = timelineHeaderRef.current;
+    const arrangement = viewport?.firstElementChild;
+    if (!viewport || !header || !(arrangement instanceof HTMLElement)) return;
+    const sync = () => {
+      header.style.width = `${arrangement.getBoundingClientRect().width}px`;
+      header.style.transform = `translateX(${-viewport.scrollLeft}px)`;
+      header.style.setProperty("--timeline-scroll-x", `${viewport.scrollLeft}px`);
+    };
+    sync();
+    viewport.addEventListener("scroll", sync, { passive: true });
+    const observer = new ResizeObserver(sync);
+    observer.observe(viewport);
+    observer.observe(arrangement);
+    return () => {
+      viewport.removeEventListener("scroll", sync);
+      observer.disconnect();
+    };
+  }, [zoom]);
 
   // keeps the playhead in view while the song plays, when FOLLOW is on
   useEffect(() => {
@@ -2431,12 +2455,16 @@ export function Timeline() {
     }
   }, [transport.follow, transport.playing, transport.step, totalSteps]);
   return (
-    <section className="mobile-timeline relative flex min-h-0 flex-1 flex-col overflow-hidden border-x border-b border-border bg-background/60">
+    <section className="mobile-timeline relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden border-x border-b border-border bg-background/60">
       <EditToolbar />
-      <Ruler />
-      <SectionLane />
+      <div className="shrink-0 overflow-hidden">
+        <div ref={timelineHeaderRef} className="min-w-[720px] sm:min-w-0">
+          <Ruler />
+          <SectionLane />
+        </div>
+      </div>
       <div id="timeline-scroll" ref={scrollRef} className="relative min-h-0 flex-1 overflow-auto">
-        <div className="min-w-[720px] sm:min-w-0" style={{ width: `${zoom * 100}%` }}>
+        <div className="min-w-[720px]" style={{ width: `max(${zoom * 100}%, ${transport.bars * 32 + 244}px)` }}>
         {/* SYNCLAB watermark, low and centred in the empty workspace */}
         <div className="pointer-events-none sticky top-[68%] z-0 h-0" aria-hidden="true">
           <img

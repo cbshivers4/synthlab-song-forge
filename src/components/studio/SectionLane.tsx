@@ -61,7 +61,7 @@ export function SectionLane() {
 
   return (
     <div className="flex border-b border-border bg-surface-2/40">
-      <div className="flex w-[172px] shrink-0 items-center gap-1 border-r border-border px-2 py-1 sm:w-[244px] sm:px-3">
+      <div className="relative z-20 flex w-[172px] shrink-0 items-center gap-1 border-r border-border bg-surface-2 px-2 py-1 sm:w-[244px] sm:px-3" style={{ transform: "translateX(var(--timeline-scroll-x, 0px))" }}>
         <LayoutList className="size-3 text-muted-foreground" />
         <span className="font-display text-[10px] font-semibold tracking-[0.18em] text-muted-foreground">SONG</span>
         <button
