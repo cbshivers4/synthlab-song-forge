@@ -29,6 +29,7 @@ import { saveUserTemplate } from "@/lib/synclab/user-templates";
 import { parseMidiFile } from "@/lib/synclab/midi-file";
 import { useDesktopMenu } from "@/lib/synclab/desktop-menu";
 import { SYNCLAB_VERSION } from "@/lib/synclab/support";
+import { AbletonHandoff } from "@/components/studio/AbletonHandoff";
 
 
 const notYet = (what: string, why: string) => () => toast(what, { description: why });
@@ -63,6 +64,7 @@ export function MenuBar() {
   } = useStudio();
   const importRef = useRef<HTMLInputElement>(null);
   const midiRef = useRef<HTMLInputElement>(null);
+  const [abletonOpen, setAbletonOpen] = useState(false);
 
   /** Loads a .mid file and puts each of its tracks on its own MIDI channel. */
   const importMidi = async (file: File) => {
@@ -267,6 +269,7 @@ export function MenuBar() {
             <MenubarSeparator />
             <MenubarItem onClick={() => importRef.current?.click()}>Import Audio…</MenubarItem>
             <MenubarItem onClick={() => midiRef.current?.click()}>Import MIDI…</MenubarItem>
+            <MenubarItem onClick={() => setAbletonOpen(true)}>Ableton Live handoff…</MenubarItem>
             <MenubarItem onClick={openExport}>Export / Share (WAV, MP3)</MenubarItem>
             <MenubarSeparator />
             <MenubarItem onClick={() => setPanel(null)}>Close Editor</MenubarItem>
@@ -487,6 +490,7 @@ export function MenuBar() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <AbletonHandoff open={abletonOpen} onOpenChange={setAbletonOpen} />
     </div>
   );
 }
