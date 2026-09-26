@@ -7,6 +7,8 @@ export type TrackKind =
   | "ai-vocal";
 
 export type BusId = "drums" | "vocals" | "instruments" | "synths" | "fx" | "master";
+export type VcaId = "A" | "B" | "C" | "D";
+export type AuxId = "reverb" | "delay" | "chorus";
 
 export type OscWave = "sine" | "triangle" | "sawtooth" | "square" | "pulse" | "noise" | "wavetable";
 
@@ -409,6 +411,8 @@ export interface Track {
   monitor?: boolean;
   input: string;
   bus: BusId;
+  /** A VCA controls channel level without changing its individual fader setting. */
+  vca?: VcaId | undefined;
   sends?: { reverb: number; delay: number; chorus: number } | undefined;
   steps: number;
   instrument?: string | undefined;
