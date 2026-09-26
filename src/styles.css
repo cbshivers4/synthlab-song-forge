@@ -221,6 +221,20 @@
 }
 
 /* ---- Mix console desk finishes ---- */
+.mx-console {
+  box-shadow: var(--shadow-panel), 0 18px 48px color-mix(in oklab, var(--background) 82%, transparent);
+}
+.mx-console-toolbar {
+  background: linear-gradient(180deg, color-mix(in oklab, var(--surface-2) 92%, var(--foreground)), var(--surface));
+  box-shadow: inset 0 1px color-mix(in oklab, var(--foreground) 8%, transparent), 0 1px var(--background);
+}
+.mx-console .mobile-mixer-strips {
+  background: var(--background);
+  scrollbar-color: var(--muted) var(--surface);
+}
+.mx-console .mobile-mixer-strips > * {
+  box-shadow: inset -1px 0 color-mix(in oklab, var(--foreground) 6%, transparent);
+}
 .mx-console[data-console="live"] .mx-screw,
 .mx-console[data-console="neon"] .mx-screw,
 .mx-console[data-console="solid"] .mx-screw {
