@@ -13,3 +13,4 @@ Live Looper and Live View are separate studio panels; the singleton audio looper
 Live Looper playback uses a direct monitor bus outside the song master; otherwise app-output recording re-captures playing loops and creates feedback. Send loops to the timeline for project export and master processing.
 Meter and looper visuals refresh at 20 fps from shared timers; keep high-frequency React updates off the audio path to reduce recording and playback stutters.
 Phone settings open to Phone features and remain reachable from More and the full-screen beat maker; this keeps accessibility controls available without menu hunting.
+Mixer VCAs scale assigned channel gains without changing individual faders, while aux returns control post-effect levels before the master; this avoids routing returns back into their own sends.

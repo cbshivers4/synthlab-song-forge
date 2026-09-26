@@ -123,6 +123,11 @@ export class SyncLabEngine {
   delaySend: GainNode | null = null;
   chorusSend: GainNode | null = null;
   private buses = new Map<string, GainNode>();
+  private auxReturns = new Map<string, GainNode>();
+  private auxStates: Record<string, { volume: number; muted: boolean }> = {};
+  private vcaStates: Record<string, { volume: number; muted: boolean }> = {};
+  private trackVcas = new Map<string, string>();
+  private trackAudible = new Map<string, boolean>();
   private automatedPluginParams = new Map<string, AutomatableAudioParam>();
   private sendOut = new Map<string, AudioNode>();
   private sendFeedback = new Map<string, AudioNode>();
@@ -184,7 +189,11 @@ export class SyncLabEngine {
     const send = ctx.createGain();
     send.gain.value = 1;
     send.connect(conv);
-    conv.connect(master);
+    const reverbReturn = ctx.createGain();
+    conv.connect(reverbReturn);
+    reverbReturn.connect(master);
+    reverbReturn.gain.value = this.auxStates["reverb"]?.muted ? 0 : this.auxStates["reverb"]?.volume ?? 1;
+    this.auxReturns.set("reverb", reverbReturn);
     this.reverb = conv;
     this.reverbSend = send;
 
@@ -198,7 +207,11 @@ export class SyncLabEngine {
     dSend.connect(delay);
     delay.connect(fb);
     fb.connect(delay);
-    delay.connect(master);
+    const delayReturn = ctx.createGain();
+    delay.connect(delayReturn);
+    delayReturn.connect(master);
+    delayReturn.gain.value = this.auxStates["delay"]?.muted ? 0 : this.auxStates["delay"]?.volume ?? 1;
+    this.auxReturns.set("delay", delayReturn);
     this.delaySend = dSend;
     this.sendOut.set("delay", delay);
     this.sendFeedback.set("delay", fb);
@@ -216,7 +229,11 @@ export class SyncLabEngine {
     lfoGain.connect(cDelay.delayTime);
     lfo.start();
     cSend.connect(cDelay);
-    cDelay.connect(master);
+    const chorusReturn = ctx.createGain();
+    cDelay.connect(chorusReturn);
+    chorusReturn.connect(master);
+    chorusReturn.gain.value = this.auxStates["chorus"]?.muted ? 0 : this.auxStates["chorus"]?.volume ?? 1;
+    this.auxReturns.set("chorus", chorusReturn);
     this.chorusSend = cSend;
     this.sendOut.set("chorus", cDelay);
     this.sendOut.set("reverb", conv);
@@ -344,6 +361,18 @@ export class SyncLabEngine {
   setBus(id: string, volume: number, muted: boolean) {
     if (!this.ctx) return;
     this.busNode(id).gain.setTargetAtTime(muted ? 0 : clamp(volume, 0, 1.5), this.ctx.currentTime, 0.02);
+  }
+
+  setAuxReturn(id: string, volume: number, muted: boolean) {
+    this.auxStates[id] = { volume, muted };
+    const node = this.auxReturns.get(id);
+    if (!node || !this.ctx) return;
+    node.gain.setTargetAtTime(muted ? 0 : clamp(volume, 0, 1.5), this.ctx.currentTime, 0.02);
+  }
+
+  setVcaStates(states: Record<string, { volume: number; muted: boolean }>, tracks: Track[]) {
+    this.vcaStates = states;
+    this.syncMix(tracks);
   }
 
   getLevel() {
@@ -497,7 +526,7 @@ export class SyncLabEngine {
     }
     const nodes = this.buildInsertNodes(ctx, active, targetId);
     this.fxInserts.set(targetId, { key, nodes });
-    this.linkInsertChain(source, nodes, active, master);
+    this.linkInsertChain(source, nodes, active, kind === "send" ? this.auxReturns.get(name) ?? master : master);
   }
 
   private linkInsertChain(from: AudioNode, nodes: AudioNode[], active: PluginInstance[], to: AudioNode) {
@@ -1066,7 +1095,12 @@ export class SyncLabEngine {
     if (!this.ctx) return;
     const ch = this.channel(trackId);
     const t = this.ctx.currentTime;
-    if (v["volume"] !== undefined) ch.gain.gain.setTargetAtTime(clamp(v["volume"], 0, 1.5), t, 0.02);
+    if (v["volume"] !== undefined) {
+      const group = this.trackVcas.get(trackId);
+      const vca = group ? this.vcaStates[group] : undefined;
+      ch.gain.gain.setTargetAtTime(this.trackAudible.get(trackId) !== false && !vca?.muted
+        ? clamp(v["volume"] * (vca?.volume ?? 1), 0, 1.5) : 0, t, 0.02);
+    }
     if (v["pan"] !== undefined) ch.pan.pan.setTargetAtTime(clamp(v["pan"], -1, 1), t, 0.02);
     if (v["sendReverb"] !== undefined) ch.sendReverb.gain.setTargetAtTime(clamp(v["sendReverb"], 0, 1), t, 0.02);
     if (v["sendDelay"] !== undefined) ch.sendDelay.gain.setTargetAtTime(clamp(v["sendDelay"], 0, 1), t, 0.02);
@@ -1089,7 +1123,11 @@ export class SyncLabEngine {
     for (const t of tracks) {
       const ch = this.channel(t.id);
       const audible = !t.muted && (!anySolo || t.solo);
-      ch.gain.gain.setTargetAtTime(audible ? t.volume : 0, this.ctx.currentTime, 0.02);
+      this.trackAudible.set(t.id, audible);
+      if (t.vca) this.trackVcas.set(t.id, t.vca);
+      else this.trackVcas.delete(t.id);
+      const vca = t.vca ? this.vcaStates[t.vca] : undefined;
+      ch.gain.gain.setTargetAtTime(audible && !vca?.muted ? t.volume * (vca?.volume ?? 1) : 0, this.ctx.currentTime, 0.02);
       ch.pan.pan.setTargetAtTime(clamp(t.pan, -1, 1), this.ctx.currentTime, 0.02);
       const bus = t.bus ?? "master";
       if (ch.bus !== bus) {
@@ -1114,6 +1152,8 @@ export class SyncLabEngine {
     const ch = this.channels.get(id);
     if (ch) {
       this.channels.delete(id);
+      this.trackVcas.delete(id);
+      this.trackAudible.delete(id);
       this.pluginScopes.delete(`ch:${id}`);
       const now = this.ctx?.currentTime ?? 0;
       try {
