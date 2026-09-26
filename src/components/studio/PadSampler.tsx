@@ -336,7 +336,7 @@ export function PadSampler() {
     }
     ensureTrack();
     const loaded = await getEngine().loadSampleFile(file, file.name.replace(/\.[^.]+$/, ""));
-    setPads((p) => ({ ...p, [i]: makePad(loaded) }));
+    setPadBank({ ...getPadBank(), [i]: makePad(loaded) });
     setSel(i);
   };
 
@@ -408,7 +408,7 @@ export function PadSampler() {
     if (!blob.size) return;
     ensureTrack();
     const loaded = await getEngine().loadSampleFile(blob, `REC ${r.pad + 1}`);
-    setPads((p) => ({ ...p, [r.pad]: makePad(loaded) }));
+    setPadBank({ ...getPadBank(), [r.pad]: makePad(loaded) });
     setSel(r.pad);
   };
 
