@@ -61,12 +61,11 @@ const ccRange = (value: number, min: number, max: number, step = 0) => {
 
 /** Use the same ranges as the visible controls; never map a CC to an unsupported audio parameter. */
 const synthRanges: Record<string, [number, number, number?]> = {
-  cutoff: [40, 16000, 10], resonance: [0, 28, 0.5], drive: [0, 1], glide: [0, 0.5],
+  cutoff: [40, 16000, 10], resonance: [0, 28, 0.5], drive: [0, 1], glide: [0, 0.5, 0.01],
   noise: [0, 1], keyTracking: [0, 1], velocitySens: [0, 1], analog: [0, 1],
   "filter2.cutoff": [40, 16000, 10], "filter2.resonance": [0, 28, 0.5],
   "filterEnv.amount": [-6000, 6000, 50],
   "unison.voices": [1, 7, 1], "unison.detune": [0, 60, 1],
-  glide: [0, 0.5, 0.01],
   "arp.octaves": [1, 4, 1], "arp.rate": [0.5, 4, 0.5],
 };
 const drumRanges: Record<string, [number, number, number?]> = {
