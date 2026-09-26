@@ -16,6 +16,18 @@ const polar = (angle: number, radius: number) => ({ x: 100 + Math.cos(angle) * r
 
 function LoopDonut({ slot, send }: { slot: LoopSlot; send: (i: number) => void }) {
   const looper = getLooper();
+  const [, tick] = useReducer((n: number) => n + 1, 0);
+  useEffect(() => {
+    if (!["armed", "recording", "playing"].includes(slot.state)) return;
+    let frame = 0;
+    let last = 0;
+    const animate = (time: number) => {
+      if (time - last >= 50) { last = time; tick(); }
+      frame = window.requestAnimationFrame(animate);
+    };
+    frame = window.requestAnimationFrame(animate);
+    return () => window.cancelAnimationFrame(frame);
+  }, [slot.state]);
   let progress = 0;
   if (slot.state === "playing" && slot.buffer) progress = (((looper.now - slot.start) % slot.buffer.duration) + slot.buffer.duration) % slot.buffer.duration / slot.buffer.duration;
   else if (slot.state === "recording") progress = slot.recEnd ? (looper.now - slot.recStart) / (slot.recEnd - slot.recStart) : 0;
@@ -93,19 +105,6 @@ export function LiveLooperView() {
   const looper = getLooper();
   const [, rerender] = useReducer((n: number) => n + 1, 0);
   useEffect(() => looper.subscribe(rerender), [looper]);
-  useEffect(() => {
-    let frame = 0;
-    let last = 0;
-    const animate = (time: number) => {
-      if (time - last >= 50 && looper.slots.some((slot) => ["armed", "recording", "playing"].includes(slot.state))) {
-        last = time;
-        rerender();
-      }
-      frame = window.requestAnimationFrame(animate);
-    };
-    frame = window.requestAnimationFrame(animate);
-    return () => window.cancelAnimationFrame(frame);
-  }, [looper]);
   useEffect(() => { looper.bpm = transport.bpm; }, [looper, transport.bpm]);
   const locked = !looper.isEmpty;
   const capturing = looper.slots.some((slot) => slot.state === "armed" || slot.state === "recording");
