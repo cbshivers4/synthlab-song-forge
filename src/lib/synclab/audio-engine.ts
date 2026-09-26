@@ -126,6 +126,8 @@ export class SyncLabEngine {
   private auxReturns = new Map<string, GainNode>();
   private auxStates: Record<string, { volume: number; muted: boolean }> = {};
   private vcaStates: Record<string, { volume: number; muted: boolean }> = {};
+  private trackVcas = new Map<string, string>();
+  private trackAudible = new Map<string, boolean>();
   private automatedPluginParams = new Map<string, AutomatableAudioParam>();
   private sendOut = new Map<string, AudioNode>();
   private sendFeedback = new Map<string, AudioNode>();
@@ -1093,7 +1095,12 @@ export class SyncLabEngine {
     if (!this.ctx) return;
     const ch = this.channel(trackId);
     const t = this.ctx.currentTime;
-    if (v["volume"] !== undefined) ch.gain.gain.setTargetAtTime(clamp(v["volume"], 0, 1.5), t, 0.02);
+    if (v["volume"] !== undefined) {
+      const group = this.trackVcas.get(trackId);
+      const vca = group ? this.vcaStates[group] : undefined;
+      ch.gain.gain.setTargetAtTime(this.trackAudible.get(trackId) !== false && !vca?.muted
+        ? clamp(v["volume"] * (vca?.volume ?? 1), 0, 1.5) : 0, t, 0.02);
+    }
     if (v["pan"] !== undefined) ch.pan.pan.setTargetAtTime(clamp(v["pan"], -1, 1), t, 0.02);
     if (v["sendReverb"] !== undefined) ch.sendReverb.gain.setTargetAtTime(clamp(v["sendReverb"], 0, 1), t, 0.02);
     if (v["sendDelay"] !== undefined) ch.sendDelay.gain.setTargetAtTime(clamp(v["sendDelay"], 0, 1), t, 0.02);
@@ -1116,6 +1123,9 @@ export class SyncLabEngine {
     for (const t of tracks) {
       const ch = this.channel(t.id);
       const audible = !t.muted && (!anySolo || t.solo);
+      this.trackAudible.set(t.id, audible);
+      if (t.vca) this.trackVcas.set(t.id, t.vca);
+      else this.trackVcas.delete(t.id);
       const vca = t.vca ? this.vcaStates[t.vca] : undefined;
       ch.gain.gain.setTargetAtTime(audible && !vca?.muted ? t.volume * (vca?.volume ?? 1) : 0, this.ctx.currentTime, 0.02);
       ch.pan.pan.setTargetAtTime(clamp(t.pan, -1, 1), this.ctx.currentTime, 0.02);
@@ -1142,6 +1152,8 @@ export class SyncLabEngine {
     const ch = this.channels.get(id);
     if (ch) {
       this.channels.delete(id);
+      this.trackVcas.delete(id);
+      this.trackAudible.delete(id);
       this.pluginScopes.delete(`ch:${id}`);
       const now = this.ctx?.currentTime ?? 0;
       try {
