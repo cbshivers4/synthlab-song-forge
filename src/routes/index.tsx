@@ -170,7 +170,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
   return (
     <section
       className="phone-tool-panel rack fixed inset-0 z-40 flex min-w-0 flex-col overflow-x-hidden border-t-2 border-border sm:relative sm:inset-auto sm:z-auto sm:shrink-0"
-      style={{ height: isMobile ? "100dvh" : rackH }}
+       style={{ height: isMobile ? "100dvh" : panel === "looper" ? Math.max(600, rackH) : rackH }}
     >
       <div
         onPointerDown={startResize}

@@ -116,7 +116,7 @@ export function LiveLooperView() {
         </div>
         <span className="ml-auto font-mono text-xs text-muted-foreground">{looper.mode === "sync" ? `${looper.bars} ${looper.bars === 1 ? "BAR" : "BARS"} · ${transport.bpm} BPM` : "FREE LENGTH"}</span>
       </div>
-      <div className="grid grid-cols-2 gap-x-4 gap-y-5 sm:grid-cols-4 xl:grid-cols-8">
+      <div className="grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4">
         {looper.slots.map((slot) => <LoopDonut key={slot.index} slot={slot} send={send} />)}
       </div>
       <div className="flex flex-wrap gap-2 border-t border-border pt-4">
