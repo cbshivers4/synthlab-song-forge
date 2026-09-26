@@ -479,6 +479,7 @@ function useShortcuts() {
 
 function StudioWorkspace() {
   const isMobile = useIsMobile();
+  const { panel } = useStudio();
   const mobileAccessibility = useMobileAccessibility();
   const [float, setFloat] = useState<FloatState>({ synth: false, drums: false });
   const [beatMode, setBeatMode] = useState(false);
@@ -517,7 +518,7 @@ function StudioWorkspace() {
       <FloatingDevices float={float} setFloat={setFloat} />
       <DeviceSetup />
       <ExportDialog />
-      {isMobile && beatMode && <MobileBeat onClose={() => setBeatMode(false)} />}
+      {isMobile && beatMode && !panel && <MobileBeat onClose={() => setBeatMode(false)} />}
       <MobileOnboarding enabled={isMobile && !beatMode} />
       <DesktopUpdateBanner />
       <DesktopWebsiteStatus />
