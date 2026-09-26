@@ -11,6 +11,7 @@ import { encodeWav } from "@/lib/synclab/bounce";
 import { uid } from "@/lib/synclab/presets";
 import { wsolaStretch } from "@/lib/synclab/stretch";
 import { WaveformView } from "@/components/studio/WaveformView";
+import { MidiLearnButton } from "./MidiLearn";
 
 const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 const noteName = (m: number) => `${NOTE_NAMES[((m % 12) + 12) % 12]}${Math.floor(m / 12) - 1}`;
@@ -18,12 +19,13 @@ const AUDIO_RE = /\.(mp3|wav|wave|aif|aiff|m4a|aac|ogg|flac|webm)$/i;
 /** every chop gets its own colour so a sliced sample reads at a glance */
 const chopColor = (i: number) => `hsl(${(187 + i * 27) % 360} 85% 56%)`;
 
-function Row({ label, value, children }: { label: string; value: string; children: React.ReactNode }) {
+function Row({ label, value, children, midiId, midiParam }: { label: string; value: string; children: React.ReactNode; midiId?: string; midiParam?: string }) {
   return (
     <div className="space-y-1">
       <div className="flex items-baseline justify-between">
         <span className="label-xs">{label}</span>
         <span className="font-mono text-[10px] text-primary">{value}</span>
+        {midiId && midiParam && <MidiLearnButton id={midiId} param={`sampler:${midiParam}`} label={`Sampler ${label}`} />}
       </div>
       {children}
     </div>

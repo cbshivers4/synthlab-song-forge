@@ -64,6 +64,8 @@ const synthRanges: Record<string, [number, number, number?]> = {
   noise: [0, 1], keyTracking: [0, 1], velocitySens: [0, 1], analog: [0, 1],
   "filter2.cutoff": [40, 16000, 10], "filter2.resonance": [0, 28, 0.5],
   "filterEnv.amount": [-6000, 6000, 50],
+  "unison.voices": [1, 7, 1], "unison.detune": [0, 60, 1],
+  "arp.octaves": [1, 4, 1], "arp.rate": [0.5, 4, 0.5],
 };
 const drumRanges: Record<string, [number, number, number?]> = {
   volume: [0, 1], pan: [-1, 1], pitch: [-12, 12, 1], decay: [0, 1], attack: [0, 1],
@@ -601,6 +603,23 @@ export function StudioProvider({ children }: { children: ReactNode }) {
              const range = field ? drumRanges[field] : undefined;
              if (padId && field && range) setTracks((ts) => ts.map((t) => t.id === target.id && t.pads
                ? { ...t, pads: t.pads.map((pad) => pad.id === padId ? { ...pad, [field]: ccRange(v, ...range) } : pad) } : t));
+             return;
+           }
+           if (target.param.startsWith("sampler:")) {
+             const field = target.param.slice(8);
+             const ranges: Record<string, [number, number, number?]> = {
+               start: [0, 1, 0.001], end: [0, 1, 0.001], gain: [0, 2, 0.01],
+               pitch: [-24, 24, 0.1], rootNote: [24, 96, 1], attack: [0, 2, 0.001],
+               release: [0.005, 4, 0.005], decay: [0, 3, 0.005], sustain: [0, 1, 0.01],
+               fadeIn: [0, 2, 0.005], fadeOut: [0, 2, 0.005], resonance: [0.1, 20, 0.1],
+               sampleBpm: [60, 200, 1],
+             };
+             if (field === "cutoff" || ranges[field]) setTracks((ts) => ts.map((t) => {
+               if (t.id !== target.id || !t.sampler) return t;
+               const value = field === "cutoff" ? Math.round(Math.pow(10, ccRange(v, Math.log10(20), Math.log10(20000)))) : ccRange(v, ...ranges[field]);
+               const bounded = field === "start" ? Math.min(value, t.sampler.end - 0.002) : field === "end" ? Math.max(value, t.sampler.start + 0.002) : value;
+               return { ...t, sampler: { ...t.sampler, [field]: bounded } };
+             }));
              return;
            }
            if (target.param.startsWith("plugin:")) {
