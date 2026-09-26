@@ -1994,6 +1994,57 @@ function EditToolbar() {
   );
 }
 
+/** Density-aware measure numbering for the ruler: keeps bar labels readable
+ *  past 100+ bars by numbering every Nth bar (snapped to 1/2/5/10/25/50/100)
+ *  based on real pixels per bar, with ticks for the bars in between. */
+function BarNumbering({ gridRef, bars }: { gridRef: React.RefObject<HTMLDivElement | null>; bars: number }) {
+  const [gridW, setGridW] = useState(0);
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el) return;
+    const update = () => setGridW(el.clientWidth);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [gridRef]);
+
+  const beats = Math.max(1, bars) * 4;
+  const pxPerBar = gridW > 0 ? gridW / Math.max(1, bars) : 0;
+  // ~56px keeps up to 5-digit numbers from colliding; snap to a musical step.
+  const need = pxPerBar > 0 ? Math.ceil(56 / pxPerBar) : 1;
+  const step = [1, 2, 5, 10, 25, 50, 100, 250, 500].find((s) => s >= need) ?? need;
+  const showBeats = pxPerBar === 0 || pxPerBar >= 18;
+
+  return (
+    <div className="grid w-full" style={{ gridTemplateColumns: `repeat(${beats},minmax(0,1fr))` }}>
+      {Array.from({ length: beats }).map((_, i) => {
+        const isBar = i % 4 === 0;
+        const bar = i / 4;
+        const labeled = isBar && bar % step === 0;
+        return (
+          <div
+            key={i}
+            className={`border-l py-1 pl-1 font-mono leading-none ${labeled ? "text-[10px]" : "text-[9px]"} ${
+              isBar ? "border-border" : "border-border/30"
+            }`}
+          >
+            {labeled ? (
+              <span className="inline-block rounded-[2px] bg-surface-2/80 px-1 py-0.5 font-medium text-foreground/85">
+                {bar + 1}
+              </span>
+            ) : isBar ? (
+              <span className="text-muted-foreground/45">{pxPerBar >= 10 ? "·" : ""}</span>
+            ) : (
+              showBeats ? <span className="text-muted-foreground/25">·</span> : null
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function Ruler() {
   const { transport, setTransport } = useStudio();
   const gridRef = useRef<HTMLDivElement>(null);
@@ -2144,19 +2195,10 @@ function Ruler() {
         title="Drag on the ruler to set the loop region"
         className="relative flex flex-1 cursor-ew-resize select-none"
       >
-        {/* one column per beat; every fourth column starts a new bar */}
-        <div className="grid w-full" style={{ gridTemplateColumns: `repeat(${bars * 4},minmax(0,1fr))` }}>
-          {Array.from({ length: bars * 4 }).map((_, i) => (
-            <div
-              key={i}
-              className={`border-l py-1 pl-1 font-mono text-[9px] ${
-                i % 4 === 0 ? "border-border text-foreground/70" : "border-border/30 text-muted-foreground/50"
-              }`}
-            >
-              {i % 4 === 0 ? `${i / 4 + 1}` : "·"}
-            </div>
-          ))}
-        </div>
+        {/* one column per beat; every fourth column starts a new bar.
+            Numbering is density-aware: once bars get narrow, only every Nth
+            bar keeps a number (small ticks between) so labels never overlap. */}
+        <BarNumbering gridRef={gridRef} bars={bars} />
 
 
         {/* dim outside the loop */}
