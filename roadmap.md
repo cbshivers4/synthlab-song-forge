@@ -9,7 +9,8 @@
 # Roadmap
 
 - [x] Show captured audio waveforms for recorded instruments and drums alongside editable notes; open recorded takes in the waveform editor
-- [ ] Verify audio, instrument, and drum recording in a browser; physical input/interface latency needs real-device testing
+- [x] Verify audio, instrument, and drum recording in the signed-in browser studio with simulated microphone input
+- [ ] Verify physical input/interface latency and playback on real devices (requires hardware)
 
 - [x] Separate Live Looper from Live View, with circular waveform pads, selectable bar lengths, overdub, mute, reverse, and timeline transfer
 - [ ] Verify Live Looper input timing and playback on real audio-interface hardware (requires a physical device)
