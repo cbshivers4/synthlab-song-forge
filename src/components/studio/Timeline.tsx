@@ -2419,6 +2419,29 @@ export function Timeline() {
   const [over, setOver] = useState(false);
   const [zoom, setZoom] = useState(1);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const timelineHeaderRef = useRef<HTMLDivElement>(null);
+
+  // The ruler and song parts live above the vertically scrolling tracks, but
+  // must share their horizontal coordinate system when the overview pans.
+  useEffect(() => {
+    const viewport = scrollRef.current;
+    const header = timelineHeaderRef.current;
+    const arrangement = viewport?.firstElementChild;
+    if (!viewport || !header || !(arrangement instanceof HTMLElement)) return;
+    const sync = () => {
+      header.style.width = `${arrangement.getBoundingClientRect().width}px`;
+      header.style.transform = `translateX(${-viewport.scrollLeft}px)`;
+    };
+    sync();
+    viewport.addEventListener("scroll", sync, { passive: true });
+    const observer = new ResizeObserver(sync);
+    observer.observe(viewport);
+    observer.observe(arrangement);
+    return () => {
+      viewport.removeEventListener("scroll", sync);
+      observer.disconnect();
+    };
+  }, [zoom]);
 
   // keeps the playhead in view while the song plays, when FOLLOW is on
   useEffect(() => {
@@ -2433,8 +2456,12 @@ export function Timeline() {
   return (
     <section className="mobile-timeline relative flex min-h-0 flex-1 flex-col overflow-hidden border-x border-b border-border bg-background/60">
       <EditToolbar />
-      <Ruler />
-      <SectionLane />
+      <div className="shrink-0 overflow-hidden">
+        <div ref={timelineHeaderRef} className="min-w-[720px] sm:min-w-0">
+          <Ruler />
+          <SectionLane />
+        </div>
+      </div>
       <div id="timeline-scroll" ref={scrollRef} className="relative min-h-0 flex-1 overflow-auto">
         <div className="min-w-[720px] sm:min-w-0" style={{ width: `${zoom * 100}%` }}>
         {/* SYNCLAB watermark, low and centred in the empty workspace */}
