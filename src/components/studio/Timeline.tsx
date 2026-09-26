@@ -2045,7 +2045,7 @@ function BarNumbering({ gridRef, bars }: { gridRef: React.RefObject<HTMLDivEleme
   );
 }
 
-
+function Ruler() {
   const { transport, setTransport } = useStudio();
   const gridRef = useRef<HTMLDivElement>(null);
   const bars = Math.max(1, transport.bars ?? 4);
