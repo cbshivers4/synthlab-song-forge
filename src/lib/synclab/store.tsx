@@ -615,6 +615,21 @@ export function StudioProvider({ children }: { children: ReactNode }) {
                ? { ...p, params: p.params.map((param) => param.id === paramId ? { ...param, value: ccRange(v, param.min, param.max) } : param) } : p) }));
              return;
            }
+           if (target.id.startsWith("sampler-pad:") && target.param.startsWith("pad:")) {
+             const index = Number(target.id.slice("sampler-pad:".length));
+             const field = target.param.slice(4);
+             const ranges: Record<string, [number, number, number?]> = {
+               gain: [0, 2, 0.01], pitch: [-24, 24, 0.1], attack: [0, 1, 0.001],
+               release: [0.005, 4, 0.005], choke: [0, 4, 1],
+             };
+             const range = ranges[field];
+             if (Number.isInteger(index) && range) {
+               const pads = getPadBank();
+               const pad = pads[index];
+               if (pad) setPadBank({ ...pads, [index]: { ...pad, [field]: ccRange(v, ...range) } });
+             }
+             return;
+           }
           setTracks((ts) =>
             ts.map((t) =>
                t.id === target.id && ["volume", "pan", "mute", "solo"].includes(target.param)
