@@ -33,11 +33,11 @@ export function ExportDialog() {
 
   const projectName = project?.name ?? "SYNCLAB Session";
   const safeName = projectName.replace(/[^\w\-. ]+/g, "").trim() || "synclab-mix";
-  const barSeconds = (60 / transport.bpm) * 4;
+  const barSeconds = (60 / transport.bpm) * (transport.beatsPerBar ?? 4);
   const flagsOn = transport.exportStart != null && transport.exportEnd != null;
   const flagStart = flagsOn ? Math.min(transport.exportStart!, transport.exportEnd! - 1) : 0;
   const flagEnd = flagsOn ? Math.max(transport.exportEnd!, flagStart + 1) : 0;
-  const flagBars = (flagEnd - flagStart) / 16;
+  const flagBars = (flagEnd - flagStart) / ((transport.beatsPerBar ?? 4) * 4);
   const total = (flagsOn ? flagBars : bars) * barSeconds + 1;
 
   const { requirePro } = usePlan();
@@ -136,7 +136,7 @@ export function ExportDialog() {
             </div>
             {flagsOn ? (
               <div className="rounded-sm border border-amber-400/50 bg-amber-400/10 px-2 py-2 font-mono text-[10px] text-amber-200">
-                Using the export flags on the timeline: bar {Math.floor(flagStart / 16) + 1} → bar {Math.ceil(flagEnd / 16)}.
+                Using the export flags on the timeline: bar {Math.floor(flagStart / ((transport.beatsPerBar ?? 4) * 4)) + 1} → bar {Math.ceil(flagEnd / ((transport.beatsPerBar ?? 4) * 4))}.
                 Drag the amber flags to change the range, or press EXPORT on the ruler to turn them off.
               </div>
             ) : (

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { stepsPerBar, STEPS_PER_BEAT, songSteps, stepSeconds, positionLabel } from "@/lib/synclab/timebase";
+import { stepsPerBar, getBeatsPerBar, STEPS_PER_BEAT, songSteps, stepSeconds, positionLabel } from "@/lib/synclab/timebase";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   ArrowLeftToLine,
@@ -2009,7 +2009,8 @@ function BarNumbering({ gridRef, bars }: { gridRef: React.RefObject<HTMLDivEleme
     return () => ro.disconnect();
   }, [gridRef]);
 
-  const beats = Math.max(1, bars) * 4;
+  const bpb = getBeatsPerBar();
+  const beats = Math.max(1, bars) * bpb;
   const pxPerBar = gridW > 0 ? gridW / Math.max(1, bars) : 0;
   // ~56px keeps up to 5-digit numbers from colliding; snap to a musical step.
   const need = pxPerBar > 0 ? Math.ceil(56 / pxPerBar) : 1;
@@ -2019,8 +2020,8 @@ function BarNumbering({ gridRef, bars }: { gridRef: React.RefObject<HTMLDivEleme
   return (
     <div className="grid w-full" style={{ gridTemplateColumns: `repeat(${beats},minmax(0,1fr))` }}>
       {Array.from({ length: beats }).map((_, i) => {
-        const isBar = i % 4 === 0;
-        const bar = i / 4;
+        const isBar = i % bpb === 0;
+        const bar = i / bpb;
         const labeled = isBar && bar % step === 0;
         return (
           <div

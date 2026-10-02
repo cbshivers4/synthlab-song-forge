@@ -439,7 +439,7 @@ export function PianoRoll({ track }: { track: Track }) {
                 style={{
                   left: `${(s / steps) * 100}%`,
                   width: 1,
-                   background: s % 16 === 0 ? "var(--editor-grid-strong)" : s % 4 === 0 ? "var(--editor-grid)" : "color-mix(in oklab, var(--editor-grid) 35%, transparent)",
+                   background: s % stepsPerBar() === 0 ? "var(--editor-grid-strong)" : s % 4 === 0 ? "var(--editor-grid)" : "color-mix(in oklab, var(--editor-grid) 35%, transparent)",
                 }}
               />
             ))}

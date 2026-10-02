@@ -347,14 +347,15 @@ export class LiveLooper {
     if (this.cycle === null && this.precount > 0) {
       // metronome count-in on the audio clock; recording starts only after the last beat
       const beat = 60 / (this.bpm || 120);
-      const beats = this.precount * 4;
+      const bpb = getBeatsPerBar();
+      const beats = this.precount * bpb;
       this.precountStart = now;
-      for (let b = 0; b < beats; b++) this.click(now + b * beat, b % 4 === 0);
+      for (let b = 0; b < beats; b++) this.click(now + b * beat, b % bpb === 0);
       now += beats * beat;
     }
     if (this.cycle === null) {
       if (this.mode === "sync") {
-        const len = (this.bars * 4 * 60) / (this.bpm || 120);
+        const len = (this.bars * getBeatsPerBar() * 60) / (this.bpm || 120);
         s.recStart = now;
         s.recEnd = now + len;
       } else {

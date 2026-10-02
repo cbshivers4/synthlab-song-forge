@@ -29,7 +29,7 @@ import {
   Menu,
 } from "lucide-react";
 
-import { stepsPerBar, STEPS_PER_BEAT, songSteps, stepSeconds } from "@/lib/synclab/timebase";
+import { stepsPerBar, STEPS_PER_BEAT, METERS, getBeatsPerBar, songSteps, stepSeconds } from "@/lib/synclab/timebase";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -96,7 +96,7 @@ export function TopBar() {
             <div>
               <span className="label-xs">COUNT-IN</span>
               <div className="animate-pulse text-base leading-none text-destructive">
-                {Math.ceil(transport.countInLeft / 4)}.{((transport.countInLeft - 1) % 4) + 1}
+                {Math.ceil(transport.countInLeft / getBeatsPerBar())}.{((transport.countInLeft - 1) % getBeatsPerBar()) + 1}
               </div>
             </div>
           ) : (
@@ -156,6 +156,17 @@ export function TopBar() {
             onValueChange={([v = 0]) => setTransport({ bpm: v })}
           />
           <MidiLearnButton id="transport" param="bpm" label="Tempo" />
+          <label className="block" title="Time signature (beats per bar, quarter-note beat)">
+            <span className="label-xs">METER</span>
+            <select
+              aria-label="Time signature"
+              className="block bg-transparent font-mono text-base leading-none text-primary outline-none"
+              value={transport.beatsPerBar ?? 4}
+              onChange={(e) => setTransport({ beatsPerBar: Number(e.target.value) })}
+            >
+              {METERS.map((m) => <option key={m} value={m} className="bg-background">{m}/4</option>)}
+            </select>
+          </label>
           <div className="hidden sm:block">
             <span className="label-xs">Swing</span>
             <Slider

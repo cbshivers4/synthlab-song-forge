@@ -350,7 +350,7 @@ function StatusBar() {
       <span title="Sample rate">{(engine.rate / 1000).toFixed(1)} kHz</span>
       <span title="Round-trip latency reported by the browser">{engine.latency} ms</span>
       <span>{transport.bpm} BPM</span>
-      <span>4/4</span>
+      <span>{transport.beatsPerBar ?? 4}/4</span>
       <span>{tracks.length} CH</span>
       <span>
         BAR {barBeat(transport.step).bar}.{barBeat(transport.step).beat} / {transport.bars ?? 4}
