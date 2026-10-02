@@ -110,4 +110,5 @@
 - [x] Keep synth recording waveforms visible and constrain recorded material to captured measures
 - [x] Show recent projects and templates as lists
 - [x] Reduce insert-change pops and generator preview drift
+- [x] Verify bus effect gain changes alter the live output and preserve sound through insertion, adjustment, and removal
 - [ ] Listen to synth recording, Vocal Forge voices and effects/generator previews on real speakers (requires ears and device audio)
