@@ -1119,7 +1119,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     };
     const replace = !!transportRef.current.replace;
     const stepDur = 60 / (transportRef.current.bpm || 120) / 4;
-    const newEnd = (clip.start ?? 0) + clip.length / stepDur;
+    const newEnd = (clip.start ?? 0) + (clip.length ?? clip.duration) / stepDur;
     const oldClips = target.clips ?? [];
     const kept = replace ? replaceTakeRegion(oldClips, clip.start ?? 0, newEnd, stepDur) : oldClips;
     const replaced = oldClips.filter((c) => (c.start ?? 0) < newEnd && (c.start ?? 0) + (c.length ?? c.duration) / clipRate(c) / stepDur > (clip.start ?? 0)).length;
@@ -1170,7 +1170,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       // during playback until the user explicitly switches back to the pattern.
       // Only the explicit overdub mode should stack printed takes at the same position.
       const replace = !!transportRef.current.replace || !transportRef.current.overdub;
-      const newEnd = (clip.start ?? 0) + clip.length / stepDur;
+      const newEnd = (clip.start ?? 0) + (clip.length ?? clip.duration) / stepDur;
       setTracks((ts) => ts.map((t) => t.id === result.trackId
         ? { ...t, clips: [...(replace ? replaceTakeRegion(t.clips ?? [], clip.start ?? 0, newEnd, stepDur) : (t.clips ?? [])), clip], activeClipId: clip.id, printedAudio: true }
         : t));
