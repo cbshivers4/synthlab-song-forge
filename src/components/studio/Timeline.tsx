@@ -1196,6 +1196,17 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
           return;
         }}
       >
+        {transport.loop && (() => {
+          const total = songSteps(transport.bars);
+          const lo = transport.loopStart ?? 0;
+          const hi = Math.max(lo + 1, transport.loopEnd ?? total);
+          return (
+            <div
+              className="pointer-events-none absolute inset-y-0 z-0 border-x border-primary/25 bg-primary/[0.06]"
+              style={{ left: `${(lo / total) * 100}%`, width: `${((hi - lo) / total) * 100}%` }}
+            />
+          );
+        })()}
         <Lane track={track} />
       </div>
 
@@ -2557,15 +2568,6 @@ export function Timeline() {
           drag a tool or instrument here or press + ADD TRACK
         </div>
 
-        {transport.loop && (
-          <div
-            className="pointer-events-none absolute inset-y-0 border-x border-primary/25 bg-primary/[0.04]"
-            style={{
-              left: `calc(244px + (100% - 244px) * ${(transport.loopStart ?? 0) / totalSteps})`,
-              width: `calc((100% - 244px) * ${(Math.max((transport.loopStart ?? 0) + 1, transport.loopEnd ?? totalSteps) - (transport.loopStart ?? 0)) / totalSteps})`,
-            }}
-          />
-        )}
         {transport.exportStart != null && transport.exportEnd != null && (
           <div
             className="pointer-events-none absolute inset-y-0 border-x border-amber-400/30 bg-amber-400/[0.05]"

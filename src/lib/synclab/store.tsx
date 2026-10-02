@@ -369,6 +369,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const recStartStepRef = useRef(0);
   /** punch recording hooks, filled in once the record helpers exist */
   const punchRef = useRef<{ start: () => void; stop: () => void } | null>(null);
+  const loopStopRef = useRef<(() => void) | null>(null);
 
   const [sections, setSections] = useState<SongSection[]>([]);
   const sectionsRef = useRef<SongSection[]>([]);
@@ -968,12 +969,19 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     };
 
     /** Everything that should happen the moment a step is actually heard. */
+    let prevAt = -1;
     const reachStep = (n: number) => {
       const tp = transportRef.current;
       const list = tracksRef.current;
       const anySolo = list.some((t) => t.solo);
       const totalSteps = songSteps(tp.bars);
       const at = n % totalSteps;
+      // a loop wrap ends the take: recording never runs past the selected bars
+      if (tp.loop && prevAt >= 0 && at < prevAt) {
+        const lo = Math.max(0, Math.min(totalSteps - 1, tp.loopStart ?? 0));
+        if (at === lo) loopStopRef.current?.();
+      }
+      prevAt = at;
       // punch in / out: the take starts and stops itself at the markers
       if (tp.punchIn != null && at === tp.punchIn) punchRef.current?.start();
       if (tp.punchOut != null && at === tp.punchOut) punchRef.current?.stop();
@@ -1217,7 +1225,17 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         toast("Punched out", { description: "The take stops at your punch-out marker." });
       },
     };
-  }, [finishRecording, updateTrack]);
+    loopStopRef.current = () => {
+      const engine = getEngine();
+      const audio = engine.isRecording;
+      const inst = engine.isTrackRecording;
+      if (!audio && !inst) return;
+      if (audio) void finishRecording();
+      if (inst) void finishTrackRecording();
+      setTransportState((t) => ({ ...t, recording: false }));
+      toast("Recording stopped at the loop end", { description: "Takes stay inside the bars you selected." });
+    };
+  }, [finishRecording, finishTrackRecording, updateTrack]);
 
   const splitClipAtImpl = useCallback(
     (trackId: string, frac: number) => {
