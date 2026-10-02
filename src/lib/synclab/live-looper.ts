@@ -52,6 +52,10 @@ export class LiveLooper {
   bars = 2;
   bpm = 120;
   source: LoopSource = "mic";
+  /** bars of clicked count-in before the first loop records (0 = off) */
+  precount = 0;
+  /** audio time the current count-in started, or null when none is running */
+  precountStart: number | null = null;
   origin: number | null = null;
   cycle: number | null = null;
 
@@ -90,6 +94,10 @@ export class LiveLooper {
       reversed: false,
       color: savedColors[index] ?? DEFAULT_COLORS[index] ?? "oklch(0.78 0.16 195)",
     }));
+    try {
+      const pc = Number(window.localStorage.getItem("synclab.looper.precount"));
+      if ([1, 2, 4].includes(pc)) this.precount = pc;
+    } catch { /* */ }
     for (let i = 0; i < SLOTS; i++) {
       const g = this.ctx.createGain();
       g.gain.value = 0.9;
@@ -132,6 +140,25 @@ export class LiveLooper {
     this.bars = b;
     this.emit();
   }
+  setPrecount(b: number) {
+    if (![0, 1, 2, 4].includes(b)) return;
+    this.precount = b;
+    try { window.localStorage.setItem("synclab.looper.precount", String(b)); } catch { /* */ }
+    this.emit();
+  }
+
+  private click(at: number, accent: boolean) {
+    const o = this.ctx.createOscillator();
+    const g = this.ctx.createGain();
+    o.frequency.value = accent ? 1760 : 1100;
+    g.gain.setValueAtTime(0, at);
+    g.gain.linearRampToValueAtTime(accent ? 0.5 : 0.3, at + 0.002);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + 0.06);
+    o.connect(g).connect(this.bus);
+    o.start(at);
+    o.stop(at + 0.08);
+  }
+
   setSource(s: LoopSource) {
     if (this.slots.some((x) => x.state === "armed" || x.state === "recording")) return;
     this.source = s;
@@ -231,6 +258,7 @@ export class LiveLooper {
     for (const s of this.slots) {
       if (s.state === "armed" && now >= s.recStart) {
         s.state = "recording";
+        this.precountStart = null;
         changed = true;
       }
       if (s.state === "recording" && s.recEnd !== null && now >= s.recEnd + (BLOCK * 2) / this.ctx.sampleRate) {
@@ -300,6 +328,7 @@ export class LiveLooper {
     }
     if (s.state === "armed") {
       s.state = "empty";
+      this.precountStart = null;
       this.emit();
       return;
     }
@@ -314,7 +343,15 @@ export class LiveLooper {
     if (!s || s.state !== "empty" || this.slots.some((slot) => slot.state === "armed" || slot.state === "recording")) return;
     await this.openInput();
     if (s.state !== "empty" || this.slots.some((slot) => slot.state === "armed" || slot.state === "recording")) { if (!this.slots.some((slot) => slot.state === "armed" || slot.state === "recording")) this.closeInput(); return; }
-    const now = this.ctx.currentTime + 0.03;
+    let now = this.ctx.currentTime + 0.03;
+    if (this.cycle === null && this.precount > 0) {
+      // metronome count-in on the audio clock; recording starts only after the last beat
+      const beat = 60 / (this.bpm || 120);
+      const beats = this.precount * 4;
+      this.precountStart = now;
+      for (let b = 0; b < beats; b++) this.click(now + b * beat, b % 4 === 0);
+      now += beats * beat;
+    }
     if (this.cycle === null) {
       if (this.mode === "sync") {
         const len = (this.bars * 4 * 60) / (this.bpm || 120);
@@ -328,7 +365,7 @@ export class LiveLooper {
       s.recStart = this.nextBoundary(now);
       s.recEnd = s.recStart + this.cycle;
     }
-    s.state = s.recStart <= now ? "recording" : "armed";
+    s.state = s.recStart <= this.ctx.currentTime ? "recording" : "armed";
     this.ensureTimer();
     this.emit();
   }
