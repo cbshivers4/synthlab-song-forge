@@ -224,8 +224,6 @@ export function Browser() {
   const previewKit = (kit: DrumKitId) => {
     const def = DRUM_KITS.find((k) => k.id === kit);
     const engine = getEngine();
-    const ctx = (engine as unknown as { ctx?: AudioContext }).ctx;
-    const now = ctx?.currentTime ?? 0;
     const mk = (kind: DrumPad["kind"]): DrumPad => ({
       id: "browser-preview",
       name: kind,
@@ -236,25 +234,18 @@ export function Browser() {
       pitch: 0,
       decay: def?.decay ?? 0.25,
     });
-    engine.playDrum("browser-preview", mk("kick"), 1, now + 0.01);
-    engine.playDrum("browser-preview", mk("snare"), 0.9, now + 0.25);
-    engine.playDrum("browser-preview", mk("hat"), 0.8, now + 0.375);
+    engine.playDrum("browser-preview", mk("kick"), 1);
+    window.setTimeout(() => engine.playDrum("browser-preview", mk("snare"), 0.9), 250);
+    window.setTimeout(() => engine.playDrum("browser-preview", mk("hat"), 0.8), 375);
   };
 
   const addKitTrack = (kit: DrumKitId) => {
     const def = DRUM_KITS.find((k) => k.id === kit);
     const id = addTrack("drum", (def?.name ?? kit).toUpperCase());
     if (!id) return;
-    // apply the kit to every pad of the new track
-    const t = tracks.find((x) => x.id === id);
-    void t;
-    // pads are created by addTrack; set the kit on each via a microtask so state has settled
-    window.setTimeout(() => {
-      const track = useStudio.getState?.() as unknown as { tracks?: { id: string; pads?: { id: string }[] }[] } | undefined;
-      const pads = track?.tracks?.find((x) => x.id === id)?.pads ?? [];
-      for (const p of pads) updatePad(id, p.id, { kit, decay: def?.decay });
-      toast.success(`${def?.name ?? kit} kit added`, { description: "New drum channel on the timeline." });
-    }, 0);
+    // replace the default pads with this kit's voices
+    updateTrack(id, { pads: defaultPads(16, kit) });
+    toast.success(`${def?.name ?? kit} kit added`, { description: "New drum channel on the timeline." });
     setPanel("drums");
   };
 
