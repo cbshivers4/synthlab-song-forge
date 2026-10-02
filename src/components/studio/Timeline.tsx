@@ -74,7 +74,7 @@ import { useApp } from "@/lib/synclab/app-state";
 import { AddTrackMenu } from "@/components/studio/AddTrackMenu";
 
 import { INSTRUMENTS, KIND_LABEL, uid } from "@/lib/synclab/presets";
-import type { EditTool } from "@/lib/synclab/store";
+import type { EditTool, PanelId } from "@/lib/synclab/store";
 import type { AutomationLane, AutomationParam, AutomationPoint, BusId, MidiNote, Track } from "@/lib/synclab/types";
 
 const CORE_LANE_LABEL: Record<Exclude<AutomationParam, `plugin:${string}:${string}`>, string> = {
