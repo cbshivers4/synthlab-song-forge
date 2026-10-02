@@ -137,6 +137,9 @@ export class SyncLabEngine {
   private pluginScopes = new Map<string, AnalyserNode>();
   private channels = new Map<string, ChannelStrip>();
   private analyser: AnalyserNode | null = null;
+  private masterL: AnalyserNode | null = null;
+  private masterR: AnalyserNode | null = null;
+  private masterBufs = new Map<string, Float32Array>();
   private resumeListenersInstalled = false;
   private monitorGeneration = 0;
   private recordingStart: Promise<void> | null = null;
@@ -176,6 +179,16 @@ export class SyncLabEngine {
     this.master = master;
     // the master output doubles as a scope source
     this.pluginScopes.set("master", analyser);
+    // stereo taps for the master meter / scope (analysers pass audio through, splitter is a dead end)
+    const split = ctx.createChannelSplitter(2);
+    analyser.connect(split);
+    const anL = ctx.createAnalyser();
+    const anR = ctx.createAnalyser();
+    for (const a of [anL, anR]) { a.fftSize = 2048; a.smoothingTimeConstant = 0.6; }
+    split.connect(anL, 0);
+    split.connect(anR, 1);
+    this.masterL = anL;
+    this.masterR = anR;
 
     // simple algorithmic reverb
     const conv = ctx.createConvolver();
@@ -382,6 +395,23 @@ export class SyncLabEngine {
     let peak = 0;
     for (let i = 0; i < data.length; i++) peak = Math.max(peak, Math.abs((data[i] ?? 128) - 128) / 128);
     return peak;
+  }
+
+  /** Real post-master audio for one channel (0 = left, 1 = right); buffers are reused, so copy if you keep them. */
+  getMasterChannel(ch: 0 | 1, kind: "wave" | "spectrum"): Float32Array | null {
+    const an = ch === 0 ? this.masterL : this.masterR;
+    if (!an) return null;
+    const key = `${ch}${kind}`;
+    const len = kind === "wave" ? an.fftSize : an.frequencyBinCount;
+    let buf = this.masterBufs.get(key);
+    if (!buf || buf.length !== len) { buf = new Float32Array(len); this.masterBufs.set(key, buf); }
+    if (kind === "wave") an.getFloatTimeDomainData(buf as Float32Array<ArrayBuffer>);
+    else an.getFloatFrequencyData(buf as Float32Array<ArrayBuffer>);
+    return buf;
+  }
+
+  get audioState(): AudioContextState | "off" {
+    return this.ctx?.state ?? "off";
   }
 
   get sampleRate() {
@@ -2394,6 +2424,7 @@ export const getEngine = () => {
     "stopInputMonitoring",
     "setVcaStates",
     "setAuxReturn",
+    "getMasterChannel",
   ];
   if (!current || required.some((m) => typeof current[m] !== "function")) {
     engineGlobal.__synclabEngine = new SyncLabEngine();
