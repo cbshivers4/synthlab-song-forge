@@ -1,5 +1,5 @@
 import type { DrumKitId, DrumPad, PluginInstance, SynthPatch, Track } from "./types";
-import { openMicOrThrow, preferredRecordingMime, releaseMic } from "./mic";
+import { getInputChannel, getInputGainDb, getOutputDevice, openMicOrThrow, preferredRecordingMime, releaseMic } from "./mic";
 
 type KitVoice = {
   kick: [number, number, number, OscillatorType];
@@ -156,6 +156,9 @@ export class SyncLabEngine {
       (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext ??
       window.AudioContext;
     const ctx = new Ctor({ latencyHint: "interactive" });
+    const savedOut = getOutputDevice();
+    const sinkCtx = ctx as AudioContext & { setSinkId?: (id: string) => Promise<void> };
+    if (savedOut && sinkCtx.setSinkId) void sinkCtx.setSinkId(savedOut).catch(() => undefined);
     this.ctx = ctx;
     if (!this.resumeListenersInstalled) {
       this.resumeListenersInstalled = true;
