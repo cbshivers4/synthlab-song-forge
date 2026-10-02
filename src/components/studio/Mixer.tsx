@@ -19,6 +19,7 @@ import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useStudio } from "@/lib/synclab/store";
 import { useApp } from "@/lib/synclab/app-state";
@@ -215,31 +216,35 @@ function InsertRack({
                 <Trash2 className="size-3 text-muted-foreground hover:text-destructive" />
               </button>
             </div>
-            {open === p.id && (
-              <div className="space-y-1 pt-1">
-                <EffectDisplay plugin={p} height={72} onParam={(paramId, v) => onParam(p.id, paramId, v)} />
-                <Scope scopeId={p.id} height={52} />
-                <XYPad plugin={p} onParam={(paramId, v) => onParam(p.id, paramId, v)} />
-              </div>
-            )}
-            {open === p.id &&
-              p.params.map((x) => (
-                <div key={x.id} className="flex items-center gap-1 pt-1">
-                  <span className="w-12 shrink-0 font-mono text-[8px] uppercase text-muted-foreground">{x.name}</span>
-                  <Slider
-                    value={[x.value]}
-                    min={x.min}
-                    max={x.max}
-                    step={(x.max - x.min) / 100}
-                    className="h-2 flex-1"
-                    onValueChange={([v = 0]) => onParam(p.id, x.id, v)}
-                  />
-                  <span className="w-8 shrink-0 text-right font-mono text-[8px] text-muted-foreground">
-                    {x.value.toFixed(1)}
-                  </span>
-                   <MidiLearnButton id={midiId} param={`${midiPrefix}:${p.id}:${x.id}`} label={`${p.name} ${x.name}`} />
+            <Dialog open={open === p.id} onOpenChange={(o) => setOpen(o ? p.id : null)}>
+              <DialogContent className="max-h-[90vh] w-[min(96vw,56rem)] max-w-none overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 font-mono uppercase tracking-wider">
+                    <button type="button" onClick={() => onBypass(p.id)} title={p.bypass ? "Turn on" : "Bypass"} aria-label="Bypass effect">
+                      <Power className={cn("size-4", p.bypass ? "text-muted-foreground" : "text-primary")} />
+                    </button>
+                    {p.name} <span className="text-xs text-muted-foreground">{title} · {p.format}</span>
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="grid gap-4 md:grid-cols-[1.4fr_1fr]">
+                  <div className="space-y-3">
+                    <EffectDisplay plugin={p} height={220} onParam={(paramId, v) => onParam(p.id, paramId, v)} />
+                    <Scope scopeId={p.id} height={130} />
+                  </div>
+                  <div className="space-y-3">
+                    <XYPad plugin={p} onParam={(paramId, v) => onParam(p.id, paramId, v)} />
+                    {p.params.map((x) => (
+                      <div key={x.id} className="flex items-center gap-2">
+                        <span className="w-20 shrink-0 font-mono text-[11px] uppercase text-muted-foreground">{x.name}</span>
+                        <Slider value={[x.value]} min={x.min} max={x.max} step={(x.max - x.min) / 200} className="flex-1" onValueChange={([v = 0]) => onParam(p.id, x.id, v)} aria-label={`${p.name} ${x.name}`} />
+                        <span className="w-12 shrink-0 text-right font-mono text-[11px]">{x.value.toFixed(2)}</span>
+                        <MidiLearnButton id={midiId} param={`${midiPrefix}:${p.id}:${x.id}`} label={`${p.name} ${x.name}`} />
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              ))}
+              </DialogContent>
+            </Dialog>
           </div>
         ))}
       </div>
@@ -572,7 +577,7 @@ function DeviceSlots({ t, narrow }: { t: Track; narrow: boolean }) {
             <Settings2 className="size-2.5" /> {list.length ? `Edit ${list.length}` : "Add"}
           </button>
         </PopoverTrigger>
-        <PopoverContent align="start" className="max-h-[70vh] w-[360px] overflow-y-auto p-3" onClick={(e) => e.stopPropagation()}>
+        <PopoverContent onInteractOutside={(e) => { if ((e.target as HTMLElement | null)?.closest?.("[role=dialog]")) e.preventDefault(); }} align="start" className="max-h-[70vh] w-[360px] overflow-y-auto p-3" onClick={(e) => e.stopPropagation()}>
           <InsertRack
             title={`${t.name} — inserts`}
             midiId={t.id}
@@ -1320,7 +1325,7 @@ function FxMenu({ target, label }: { target: string; label: string }) {
           {list.length > 0 ? ` ${list.length}` : ""}
         </button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-64 p-3">
+      <PopoverContent onInteractOutside={(e) => { if ((e.target as HTMLElement | null)?.closest?.("[role=dialog]")) e.preventDefault(); }} align="start" className="w-64 p-3">
         <InsertRack
           title={`${target.split(":")[1]?.toUpperCase()} effects`}
             midiId={target}

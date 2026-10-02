@@ -57,6 +57,12 @@ export class LiveLooper {
   precount = 0;
   /** audio time the current count-in started, or null when none is running */
   precountStart: number | null = null;
+  /** Input threshold in dB (null = off). When on, the first loop waits for signal above it. */
+  threshold: number | null = null;
+  /** slot waiting for the input to cross the threshold */
+  private waitingSlot: number | null = null;
+  /** recent input peak (0..1) for the threshold meter */
+  inputPeak = 0;
   origin: number | null = null;
   cycle: number | null = null;
 
@@ -98,6 +104,8 @@ export class LiveLooper {
     try {
       const pc = Number(window.localStorage.getItem("synclab.looper.precount"));
       if ([1, 2, 4].includes(pc)) this.precount = pc;
+      const th = window.localStorage.getItem("synclab.looper.threshold");
+      if (th && th !== "off" && Number.isFinite(Number(th))) this.threshold = Math.max(-60, Math.min(0, Number(th)));
     } catch { /* */ }
     for (let i = 0; i < SLOTS; i++) {
       const g = this.ctx.createGain();
@@ -148,6 +156,13 @@ export class LiveLooper {
     this.emit();
   }
 
+  setThreshold(db: number | null) {
+    this.threshold = db === null ? null : Math.max(-60, Math.min(0, db));
+    try { window.localStorage.setItem("synclab.looper.threshold", this.threshold === null ? "off" : String(this.threshold)); } catch { /* */ }
+    this.emit();
+  }
+  get isWaitingForSignal() { return this.waitingSlot !== null; }
+
   private click(at: number, accent: boolean) {
     const o = this.ctx.createOscillator();
     const g = this.ctx.createGain();
@@ -194,7 +209,30 @@ export class LiveLooper {
       const l = e.inputBuffer.getChannelData(0);
       const r = e.inputBuffer.numberOfChannels > 1 ? e.inputBuffer.getChannelData(1) : l;
       // the input block was rendered one block before its playback time
-      this.chunks.push({ t: e.playbackTime - BLOCK / this.ctx.sampleRate, l: new Float32Array(l), r: new Float32Array(r) });
+      const t0 = e.playbackTime - BLOCK / this.ctx.sampleRate;
+      this.chunks.push({ t: t0, l: new Float32Array(l), r: new Float32Array(r) });
+      let peak = 0; let hit = -1;
+      const lin = this.threshold === null ? 2 : Math.pow(10, this.threshold / 20);
+      for (let i = 0; i < l.length; i++) {
+        const v = Math.max(Math.abs(l[i]!), Math.abs(r[i]!));
+        if (v > peak) peak = v;
+        if (hit < 0 && v >= lin) hit = i;
+      }
+      this.inputPeak = peak;
+      if (this.waitingSlot !== null) {
+        const ws = this.slots[this.waitingSlot];
+        if (ws && hit >= 0) {
+          // start ~10 ms before the crossing so the attack is kept
+          const start = Math.max(this.chunks[0]!.t, t0 + hit / this.ctx.sampleRate - 0.01);
+          ws.recStart = start;
+          ws.recEnd = this.mode === "sync" ? start + (this.bars * getBeatsPerBar() * 60) / (this.bpm || 120) : null;
+          ws.state = "recording";
+          this.waitingSlot = null;
+          this.emit();
+        } else if (ws) {
+          ws.recStart = this.ctx.currentTime; // keep only a short pre-roll while waiting
+        }
+      }
       // Retain the entire active take, including 32-bar takes at slow tempos.
       const activeStarts = this.slots.filter((s) => s.state === "armed" || s.state === "recording").map((s) => s.recStart);
       const oldest = activeStarts.length ? Math.min(...activeStarts) - 0.1 : this.ctx.currentTime - 1;
@@ -257,7 +295,7 @@ export class LiveLooper {
     const now = this.ctx.currentTime;
     let changed = false;
     for (const s of this.slots) {
-      if (s.state === "armed" && now >= s.recStart) {
+      if (s.state === "armed" && s.index !== this.waitingSlot && now >= s.recStart) {
         s.state = "recording";
         this.precountStart = null;
         changed = true;
@@ -328,6 +366,7 @@ export class LiveLooper {
       return;
     }
     if (s.state === "armed") {
+      if (this.waitingSlot === i) this.waitingSlot = null;
       s.state = "empty";
       this.precountStart = null;
       this.emit();
@@ -345,6 +384,16 @@ export class LiveLooper {
     await this.openInput();
     if (s.state !== "empty" || this.slots.some((slot) => slot.state === "armed" || slot.state === "recording")) { if (!this.slots.some((slot) => slot.state === "armed" || slot.state === "recording")) this.closeInput(); return; }
     let now = this.ctx.currentTime + 0.03;
+    if (this.cycle === null && this.threshold !== null) {
+      // wait for the player: recording starts the moment the input crosses the threshold
+      s.recStart = this.ctx.currentTime;
+      s.recEnd = null;
+      s.state = "armed";
+      this.waitingSlot = i;
+      this.ensureTimer();
+      this.emit();
+      return;
+    }
     if (this.cycle === null && this.precount > 0) {
       // metronome count-in on the audio clock; recording starts only after the last beat
       const beat = 60 / (this.bpm || 120);
@@ -376,6 +425,7 @@ export class LiveLooper {
     const s = this.slots[i];
     if (!s) return;
     if (!s.buffer) return;
+    if (this.ctx.state === "suspended") void this.ctx.resume();
     try { this.sources[i]?.stop(); } catch { /* already ended */ }
     const src = this.ctx.createBufferSource();
     src.buffer = s.buffer;
@@ -502,6 +552,7 @@ export class LiveLooper {
     this.stop(i);
     const s = this.slots[i]!;
     s.buffer = null;
+    if (this.waitingSlot === i) this.waitingSlot = null;
     s.state = "empty";
     s.recEnd = null;
     s.overdubbing = false;
