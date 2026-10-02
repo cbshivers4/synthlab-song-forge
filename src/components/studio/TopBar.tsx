@@ -130,9 +130,9 @@ export function TopBar() {
           {!isMobile && (
             <>
               <span className="w-px bg-border" />
-              <div title="Time signature — SYNCLAB currently runs in 4/4 only">
+              <div title="Time signature — change it with METER next to the tempo">
                 <span className="label-xs">SIG</span>
-                <div className="text-base leading-none text-muted-foreground">4/4</div>
+                <div className="text-base leading-none text-primary">{transport.beatsPerBar ?? 4}/4</div>
               </div>
               <span className="w-px bg-border" />
               <LoopRange />
