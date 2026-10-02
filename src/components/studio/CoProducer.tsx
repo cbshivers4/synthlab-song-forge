@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from "react";
-import { Bot, Loader2, Send, Sparkles, Trash2 } from "lucide-react";
+import { Bot, Loader2, RotateCcw, Send, Sparkles, Trash2 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -27,6 +27,7 @@ export function CoProducer() {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState<{ question: string; message: string } | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const { theme, setTheme } = useCreativeToolTheme("coproducer");
 
@@ -114,6 +115,15 @@ export function CoProducer() {
           <p className="flex items-center gap-2 text-xs text-muted-foreground">
             <Loader2 className="size-3.5 animate-spin" /> Thinking about your session…
           </p>
+        )}
+        {failed && !busy && (
+          <div className="flex flex-wrap items-center gap-2 rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2">
+            <span className="font-mono text-[10px] tracking-widest text-destructive">FAILED</span>
+            <span className="min-w-0 flex-1 text-xs text-foreground/80">{failed.message}</span>
+            <Button size="sm" variant="outline" className="min-h-9 gap-1.5" onClick={() => void send(failed.question)}>
+              <RotateCcw className="size-3.5" /> Retry
+            </Button>
+          </div>
         )}
       </div>
 
