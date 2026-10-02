@@ -594,7 +594,7 @@ function AudioStatus() {
     <button
       type="button"
       title={ok ? "Audio engine running" : "Audio is paused by the browser — click to start it"}
-      onClick={() => void getEngine().resume?.()}
+      onClick={() => getEngine().init()}
       className="text-left"
     >
       <span className="label-xs">AUDIO</span>
