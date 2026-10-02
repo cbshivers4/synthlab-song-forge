@@ -177,6 +177,9 @@ export function Settings() {
   const [activeTab, setActiveTab] = useState("audio");
   const { transport, setTransport, midiInputs, midiInputId, enableMidi, setMidiInput } = useStudio();
   const [p, setP] = useState<Prefs>(DEFAULTS);
+  const [inChan, setInChan] = useState<InputChannel>("stereo");
+  const [inGain, setInGain] = useState(0);
+  useEffect(() => { setInChan(getInputChannel()); setInGain(getInputGainDb()); }, []);
   const [inputs, setInputs] = useState<{ id: string; label: string }[]>([]);
   const [outputs, setOutputs] = useState<{ id: string; label: string }[]>([]);
   const [scanning, setScanning] = useState(false);
