@@ -166,7 +166,6 @@ export type PanelId =
   | "synth"
   | "drums"
   | "piano"
-  | "vocal"
   | "settings"
   | "keys"
   | "browser"
