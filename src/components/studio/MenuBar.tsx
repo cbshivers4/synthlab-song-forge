@@ -156,6 +156,20 @@ export function MenuBar() {
     fn(selected.id);
   };
 
+  /** Runs a clip action on the selected track's active clip. */
+  const needClip = (fn: (trackId: string, clipId: string) => void) => () => {
+    if (!selected) {
+      toast("Select a track first", { description: "Click a track name in the timeline, then try again." });
+      return;
+    }
+    const clipId = selected.activeClipId ?? selected.clips?.[0]?.id;
+    if (!clipId) {
+      toast("No clip on this track", { description: "Click a clip in the timeline first, then try again." });
+      return;
+    }
+    fn(selected.id, clipId);
+  };
+
   /** Native desktop menu — every command below runs the same action as the in-app menu. */
   useDesktopMenu({
     "file:new": () => setStage("start"),
