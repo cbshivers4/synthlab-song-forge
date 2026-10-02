@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { stepsPerBar, getBeatsPerBar } from "@/lib/synclab/timebase";
 import { SkinControls, skinBackground } from "@/components/studio/SkinControls";
 import { useSkin } from "@/lib/synclab/skins";
 import { Copy, Plus, RotateCcw, Save, Sparkles, Trash2, Upload } from "lucide-react";
@@ -203,9 +204,9 @@ export function DrumMachine({ track }: { track: Track }) {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {[16, 32, 64].map((s) => (
+            {Array.from(new Set([16, 32, 64, ...[1, 2, 4].map((b) => b * stepsPerBar()), track.steps])).sort((x, y) => x - y).map((s) => (
               <SelectItem key={s} value={String(s)}>
-                {s} steps
+                {s} steps{s % stepsPerBar() === 0 ? ` · ${s / stepsPerBar()} bar${s === stepsPerBar() ? "" : "s"} ${getBeatsPerBar()}/4` : ""}
               </SelectItem>
             ))}
           </SelectContent>
@@ -316,13 +317,15 @@ export function DrumMachine({ track }: { track: Track }) {
                     style={{
                       minWidth: 12,
                       borderColor:
-                        transport.playing && transport.step === i % 16 ? "var(--neon)" : "var(--color-border)",
+                        transport.playing && transport.step % Math.max(1, pad.steps.length) === i ? "var(--neon)" : "var(--color-border)",
                       opacity: v > 0 ? 0.35 + v * 0.65 : 1,
                       background:
                         v > 0
                           ? "var(--gradient-neon)"
                           : i % 4 === 0
-                            ? "color-mix(in oklab, var(--surface-2) 90%, transparent)"
+                            ? i % stepsPerBar() === 0
+                              ? "color-mix(in oklab, var(--primary) 18%, var(--surface-2))"
+                              : "color-mix(in oklab, var(--surface-2) 90%, transparent)"
                             : "color-mix(in oklab, var(--surface) 80%, transparent)",
                     }}
                   />
