@@ -1,7 +1,5 @@
 import {
   AudioLines,
-  AudioWaveform,
-  Bot,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -16,9 +14,6 @@ import {
   Radio,
   Scissors,
   SlidersHorizontal,
-  Sparkles,
-  Split,
-  Volume2,
   Waves,
 } from "lucide-react";
 import { useState } from "react";
