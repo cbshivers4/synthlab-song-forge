@@ -139,7 +139,6 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
     synth: { title: "INSTRUMENT EDITOR", icon: <Music2 className="size-4" /> },
     drums: { title: "DRUM MACHINE", icon: <Disc3 className="size-4" /> },
     piano: { title: "PIANO ROLL", icon: <Piano className="size-4" /> },
-    vocal: { title: "VOCAL FORGE", icon: <Waves className="size-4" /> },
     settings: { title: "SETTINGS", icon: <Settings2 className="size-4" /> },
     keys: { title: "KEYBOARD", icon: <KeyboardMusic className="size-4" /> },
     browser: { title: "BROWSER", icon: <FolderOpen className="size-4" /> },
