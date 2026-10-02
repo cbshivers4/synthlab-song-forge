@@ -19,7 +19,6 @@ import { VocoderPanel } from "./VocoderPanel";
 import { Scope } from "./Scope";
 import { XYPad } from "./XYPad";
 import { EffectDisplay } from "./EffectDisplay";
-import { MidiLearnButton } from "./MidiLearn";
 import { PluginBridge } from "./PluginBridge";
 import { toast } from "sonner";
 
