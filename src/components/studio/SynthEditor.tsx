@@ -9,7 +9,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Knob } from "./Knob";
-import { MidiLearnButton } from "./MidiLearn";
 import { useStudio } from "@/lib/synclab/store";
 import { SYNTH_PRESETS } from "@/lib/synclab/presets";
 import type { EnvelopeParams, LfoWave, ModDest, ModSource, OscWave, SynthPatch, Track } from "@/lib/synclab/types";
@@ -222,25 +221,28 @@ export function SynthEditor({ track }: { track: Track }) {
             <span className="label-xs">Oscillator mix</span>
             <div className="mt-2 grid gap-2 sm:grid-cols-4">
               {patch.oscillators.map((o, i) => (
-                <div key={i}>
-                  <span className="label-xs">OSC {i + 1}</span>
-                   <MidiLearnButton id={track.id} param={`synth:osc:${i}:level`} label={`Oscillator ${i + 1} level`} />
-                  <Slider
-                    value={[o.level]}
-                    min={0}
-                    max={1}
-                    step={0.01}
-                    onValueChange={([v = 0]) =>
-                      set({ oscillators: patch.oscillators.map((x, j) => (j === i ? { ...x, level: v } : x)) })
-                    }
-                  />
-                </div>
+                <Knob
+                  key={i}
+                  label={`OSC ${i + 1}`}
+                  value={o.level}
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  midiTarget={{ id: track.id, param: `synth:osc:${i}:level` }}
+                  onChange={(v) =>
+                    set({ oscillators: patch.oscillators.map((x, j) => (j === i ? { ...x, level: v } : x)) })
+                  }
+                />
               ))}
-              <div>
-                <span className="label-xs">NOISE</span>
-                 <MidiLearnButton id={track.id} param="synth:noise" label="Noise" />
-                <Slider value={[patch.noise]} min={0} max={1} step={0.01} onValueChange={([v = 0]) => set({ noise: v })} />
-              </div>
+              <Knob
+                label="NOISE"
+                value={patch.noise}
+                min={0}
+                max={1}
+                step={0.01}
+                midiTarget={{ id: track.id, param: "synth:noise" }}
+                onChange={(v) => set({ noise: v })}
+              />
             </div>
           </div>
         </TabsContent>
