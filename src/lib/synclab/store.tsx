@@ -771,7 +771,12 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           if (!held) return;
           heldRef.current.delete(pitch);
           const elapsed = Math.round(((performance.now() - held.t0) / 1000 / stepDur) * 4) / 4;
-          const steps = Math.max(0.25, Math.min(elapsed, stepsPerBar() - (held.startStep % stepsPerBar()), Math.max(1, target.steps - (held.startStep % Math.max(1, target.steps)))));
+          // A held note may cross bar lines, but never the end of the loop
+          // region being recorded.
+          const regionEnd = tp.loop && (tp.loopEnd ?? 0) > (tp.loopStart ?? 0)
+            ? (tp.loopEnd ?? 0)
+            : Number.POSITIVE_INFINITY;
+          const steps = Math.max(0.25, Math.min(elapsed, regionEnd - held.startStep));
           setTracks((ts) =>
             ts.map((t) =>
               t.id === held.trackId
@@ -1145,12 +1150,17 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const finishTrackRecording = useCallback(async () => {
     const engine = getEngine();
     if (!engine.isTrackRecording) return;
-    // Held MIDI notes cannot extend into measures beyond the captured take.
-    const endStep = transportRef.current.step;
+    // Held MIDI notes cannot extend past the end of the recorded region:
+    // the loop end when looping, otherwise where the transport stopped.
+    const tp = transportRef.current;
+    const endStep = tp.step;
+    const regionEnd = tp.loop && (tp.loopEnd ?? 0) > (tp.loopStart ?? 0)
+      ? (tp.loopEnd ?? 0)
+      : endStep;
     for (const [pitch, held] of heldRef.current) {
       heldRef.current.delete(pitch);
-      const end = endStep >= held.startStep ? endStep : endStep + songSteps(transportRef.current.bars);
-      const length = Math.max(0.25, Math.min(end - held.startStep, stepsPerBar() - (held.startStep % stepsPerBar())));
+      const end = regionEnd >= held.startStep ? regionEnd : regionEnd + songSteps(tp.bars);
+      const length = Math.max(0.25, end - held.startStep);
       setTracks((ts) => ts.map((t) => t.id === held.trackId ? { ...t, notes: (t.notes ?? []).map((n) => held.ids.includes(n.id) ? { ...n, length } : n) } : t));
     }
     try {
@@ -1164,7 +1174,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       setTracks((ts) => ts.map((t) => t.id === result.trackId ? {
         ...t, notes: (t.notes ?? []).map((n) => capturedIds.has(n.id) ? {
           ...n, recordedEnd: takeEnd,
-          length: Math.max(0.25, Math.min(n.length, takeEnd - n.step, stepsPerBar() - n.step % stepsPerBar())),
+          length: Math.max(0.25, Math.min(n.length, takeEnd - n.step)),
         } : n),
       } : t));
       recordedNoteIdsRef.current = new Set();

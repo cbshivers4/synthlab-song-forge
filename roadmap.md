@@ -119,3 +119,4 @@
 
 ## Removed (Oct 2)
 - [x] Removed AI Studio group (Vocal Forge, Stem Separator, Voice Remover, AI Co-Producer, Hum to Beat, AI Stem Generator) and Bass Generator — panels, menus, tools rail, mobile nav, search, help articles, component + server-function files deleted. ai-vocal track kind kept for playback of existing projects.
+- [x] Recorded MIDI notes clamp to the loop end (e.g. 2-bar loop = no notes past bar 2); notes may still cross bar lines inside the region. Build OK, not yet played with a real controller.
