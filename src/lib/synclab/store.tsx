@@ -1145,12 +1145,17 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const finishTrackRecording = useCallback(async () => {
     const engine = getEngine();
     if (!engine.isTrackRecording) return;
-    // Held MIDI notes cannot extend into measures beyond the captured take.
-    const endStep = transportRef.current.step;
+    // Held MIDI notes cannot extend past the end of the recorded region:
+    // the loop end when looping, otherwise where the transport stopped.
+    const tp = transportRef.current;
+    const endStep = tp.step;
+    const regionEnd = tp.loop && (tp.loopEnd ?? 0) > (tp.loopStart ?? 0)
+      ? (tp.loopEnd ?? 0)
+      : endStep;
     for (const [pitch, held] of heldRef.current) {
       heldRef.current.delete(pitch);
-      const end = endStep >= held.startStep ? endStep : endStep + songSteps(transportRef.current.bars);
-      const length = Math.max(0.25, Math.min(end - held.startStep, stepsPerBar() - (held.startStep % stepsPerBar())));
+      const end = regionEnd >= held.startStep ? regionEnd : regionEnd + songSteps(tp.bars);
+      const length = Math.max(0.25, end - held.startStep);
       setTracks((ts) => ts.map((t) => t.id === held.trackId ? { ...t, notes: (t.notes ?? []).map((n) => held.ids.includes(n.id) ? { ...n, length } : n) } : t));
     }
     try {
