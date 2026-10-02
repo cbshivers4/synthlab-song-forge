@@ -26,6 +26,7 @@ import { midiSupported } from "@/lib/synclab/midi";
 import { getInputChannel, getInputGainDb, setInputChannel, setInputGainDb, setOutputDevice, type InputChannel } from "@/lib/synclab/mic";
 import { openExport } from "@/components/studio/ExportDialog";
 import { DesktopPanel } from "@/components/studio/DesktopPanel";
+import { PluginManager } from "@/components/studio/PluginManager";
 import { replayMobileTour, saveMobileAccessibility, useMobileAccessibility } from "@/lib/synclab/mobile-accessibility";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -392,6 +393,7 @@ export function Settings() {
             }}
           />
         </Row>
+        <PluginManager />
       </TabsContent>
 
       <TabsContent value="recording" className="mt-4">
