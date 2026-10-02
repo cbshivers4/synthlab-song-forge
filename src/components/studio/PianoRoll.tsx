@@ -509,7 +509,7 @@ export function PianoRoll({ track }: { track: Track }) {
                   window.addEventListener("pointermove", mv);
                   window.addEventListener("pointerup", up);
                 }}
-                 className="absolute bottom-0 w-1.5 cursor-ns-resize touch-none rounded-t-[1px] bg-clip-midi"
+                 className="absolute bottom-0 w-2.5 cursor-ns-resize touch-none rounded-t-[1px] bg-clip-midi"
                 style={{
                   left: `calc(${(n.step / steps) * 100}% )`,
                   height: `${n.velocity * 100}%`,
