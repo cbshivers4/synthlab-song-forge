@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { songSteps } from "@/lib/synclab/timebase";
 import { Mic, Play, Sparkles, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,15 +9,22 @@ import { useStudio } from "@/lib/synclab/store";
 import { toast } from "sonner";
 import { CreativeToolThemePicker, useCreativeToolTheme } from "./CreativeToolTheme";
 
-const VOICES = ["Detroit Baritone", "Electro Vocoder", "Soul Alto", "Ghetto Tech Chant", "Robotic Whisper"];
-
 export function VocalForge() {
   const { addTrack, transport, setTransport, select, setPanel } = useStudio();
-  const [voice, setVoice] = useState<string>(VOICES[0] as string);
+  const [voice, setVoice] = useState("");
+  const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [lyrics, setLyrics] = useState("");
   const [tone, setTone] = useState(0.5);
   const [playing, setPlaying] = useState(false);
   const { theme, setTheme } = useCreativeToolTheme("vocal");
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.speechSynthesis) return;
+    const refresh = () => setAvailableVoices(window.speechSynthesis.getVoices());
+    refresh();
+    window.speechSynthesis.addEventListener("voiceschanged", refresh);
+    return () => window.speechSynthesis.removeEventListener("voiceschanged", refresh);
+  }, []);
 
   return (
     <div className="creative-tool grid gap-3 p-3 md:grid-cols-2" data-creative-theme={theme}>
@@ -31,20 +38,21 @@ export function VocalForge() {
           className="min-h-28"
         />
         <div className="flex flex-wrap items-center gap-3">
-          <Select value={voice} onValueChange={setVoice}>
+          <Select value={voice || "default"} onValueChange={setVoice}>
             <SelectTrigger className="w-52">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {VOICES.map((v) => (
-                <SelectItem key={v} value={v}>
-                  {v}
+              <SelectItem value="default">Device default</SelectItem>
+              {availableVoices.map((v) => (
+                <SelectItem key={`${v.name}-${v.lang}`} value={`${v.name}-${v.lang}`}>
+                  {v.name} ({v.lang})
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
           <div className="flex items-center gap-2">
-            <span className="label-xs">Grit</span>
+            <span className="label-xs">Pitch</span>
             <Slider className="w-28" value={[tone]} min={0} max={1} step={0.01} onValueChange={([v = 0]) => setTone(v)} />
           </div>
         </div>
@@ -59,6 +67,7 @@ export function VocalForge() {
               }
               window.speechSynthesis.cancel();
               const u = new SpeechSynthesisUtterance(lyrics.trim());
+              if (voice !== "default") u.voice = availableVoices.find((v) => `${v.name}-${v.lang}` === voice) ?? null;
               u.pitch = 0.4 + (1 - tone) * 1.2;
               u.rate = Math.min(1.6, Math.max(0.6, transport.bpm / 120));
               u.onend = () => setPlaying(false);
@@ -98,8 +107,7 @@ export function VocalForge() {
           </Button>
         </div>
         <p className="text-xs text-muted-foreground">
-          Preview only — PREVIEW reads your lines with your device's built-in voice as a timing guide (Grit lowers the
-          voice). Nothing is added to your song until you press ADD TO TIMELINE.
+          Preview reads your lines with the selected voice installed on your device. Pitch changes its spoken tone; it does not sing or render a vocal take. Record your own voice to add audio to the song.
         </p>
       </div>
       <div className="panel space-y-3 p-4">

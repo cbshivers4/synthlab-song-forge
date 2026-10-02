@@ -394,7 +394,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const clipboardRef = useRef<Track | null>(null);
   const selectedIdRef = useRef(selectedId);
   selectedIdRef.current = selectedId;
-  const heldRef = useRef(new Map<number, { ids: string[]; trackId: string; t0: number }>());
+  const heldRef = useRef(new Map<number, { ids: string[]; trackId: string; t0: number; startStep: number }>());
   /** TOUCH releases shortly after a gesture; LATCH holds until playback stops. */
   const automationGestureRef = useRef(new Map<string, { touchedUntil: number; latched: boolean }>());
   // Per-lane edit history so a device automation lane can be stepped back on its
@@ -738,7 +738,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
               pitch: recordedPitch,
               velocity: Math.max(0.15, velocity),
             }));
-            heldRef.current.set(pitch, { ids: notes.map((note) => note.id), trackId: target.id, t0: performance.now() });
+            heldRef.current.set(pitch, { ids: notes.map((note) => note.id), trackId: target.id, t0: performance.now(), startStep: tp.step });
             setTracks((ts) =>
               ts.map((t) => (t.id === target.id ? { ...t, notes: [...(t.notes ?? []), ...notes] } : t)),
             );
@@ -748,7 +748,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           const held = heldRef.current.get(pitch);
           if (!held) return;
           heldRef.current.delete(pitch);
-          const steps = Math.max(0.25, Math.round(((performance.now() - held.t0) / 1000 / stepDur) * 4) / 4);
+          const elapsed = Math.round(((performance.now() - held.t0) / 1000 / stepDur) * 4) / 4;
+          const steps = Math.max(0.25, Math.min(elapsed, stepsPerBar() - (held.startStep % stepsPerBar()), Math.max(1, target.steps - (held.startStep % Math.max(1, target.steps)))));
           setTracks((ts) =>
             ts.map((t) =>
               t.id === held.trackId
@@ -1111,6 +1112,14 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const finishTrackRecording = useCallback(async () => {
     const engine = getEngine();
     if (!engine.isTrackRecording) return;
+    // Held MIDI notes cannot extend into measures beyond the captured take.
+    const endStep = transportRef.current.step;
+    for (const [pitch, held] of heldRef.current) {
+      heldRef.current.delete(pitch);
+      const end = endStep >= held.startStep ? endStep : endStep + songSteps(transportRef.current.bars);
+      const length = Math.max(0.25, Math.min(end - held.startStep, stepsPerBar() - (held.startStep % stepsPerBar())));
+      setTracks((ts) => ts.map((t) => t.id === held.trackId ? { ...t, notes: (t.notes ?? []).map((n) => held.ids.includes(n.id) ? { ...n, length } : n) } : t));
+    }
     try {
       const result = await engine.stopTrackRecording();
       if (!result) return;

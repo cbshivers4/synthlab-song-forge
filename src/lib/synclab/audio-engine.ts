@@ -1264,7 +1264,7 @@ export class SyncLabEngine {
       const recorder = new MediaRecorder(destination.stream, mime ? { mimeType: mime } : undefined);
       const chunks: Blob[] = [];
       recorder.ondataavailable = (event) => { if (event.data.size) chunks.push(event.data); };
-      recorder.start(200);
+      recorder.start(40);
       this.trackRecorder = { recorder, destination, source, trackId, chunks };
     } catch (error) {
       source.disconnect(destination);
