@@ -28,6 +28,7 @@ export interface CloudProject {
   template: string;
   openedAt: number;
   updatedAt: number;
+  trackCount?: number;
   session?: CloudSession;
 }
 
@@ -100,9 +101,12 @@ async function restoreSession(session: CloudSession): Promise<CloudSession> {
 }
 
 export async function listCloudProjects(): Promise<CloudProject[]> {
-  const { data, error } = await supabase.from("cloud_projects").select("id,name,bpm,musical_key,time_signature,template,opened_at,updated_at").order("updated_at", { ascending: false });
+  const { data, error } = await supabase.from("cloud_projects").select("id,name,bpm,musical_key,time_signature,template,opened_at,updated_at,session").order("updated_at", { ascending: false });
   if (error) throw error;
-  return data.map((row) => ({ id: row.id, name: row.name, bpm: row.bpm, key: row.musical_key, timeSig: row.time_signature, template: row.template, openedAt: new Date(row.opened_at).getTime(), updatedAt: new Date(row.updated_at).getTime() }));
+  return data.map((row) => {
+    const session = row.session as unknown as CloudSession | null;
+    return { id: row.id, name: row.name, bpm: row.bpm, key: row.musical_key, timeSig: row.time_signature, template: row.template, openedAt: new Date(row.opened_at).getTime(), updatedAt: new Date(row.updated_at).getTime(), trackCount: session?.tracks?.length ?? 0 };
+  });
 }
 
 export async function saveCloudProject(project: Omit<CloudProject, "updatedAt" | "session">, session: CloudSession) {

@@ -1,5 +1,8 @@
-import { useEffect, useState } from "react";
-import { Cloud, Clock, FolderOpen, Import, LayoutTemplate, Loader2, LogOut, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  AudioWaveform, Cloud, Copy, Disc3, Drum, FileMusic, Flame, FolderOpen, Guitar, Heart, Home,
+  Import, LayoutTemplate, Loader2, LogOut, Mic, Pencil, Plus, Radio, Sparkles, Square, Star, Trash2, Waves, Zap,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,8 +14,78 @@ import { useStudio } from "@/lib/synclab/store";
 import { toast } from "sonner";
 import synclabLogoAsset from "@/assets/synclab-logo-neon.jpg.asset.json";
 import { listUserTemplates, removeUserTemplate, type UserTemplate } from "@/lib/synclab/user-templates";
-import { deleteCloudProject, listCloudProjects, loadCloudProject, renameCloudProject, type CloudProject } from "@/lib/synclab/cloud";
+import { deleteCloudProject, listCloudProjects, loadCloudProject, renameCloudProject, saveCloudProject, type CloudProject } from "@/lib/synclab/cloud";
 import { supabase } from "@/integrations/supabase/client";
+
+const FAVS_KEY = "synclab.start.favs";
+
+function loadFavs(): string[] {
+  try {
+    const raw = localStorage.getItem(FAVS_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+function hashOf(text: string) {
+  let h = 0;
+  for (let i = 0; i < text.length; i++) h = (h * 31 + text.charCodeAt(i)) >>> 0;
+  return h;
+}
+
+function relTime(ts: number) {
+  const diff = Date.now() - ts;
+  const min = Math.floor(diff / 60000);
+  if (min < 1) return "just now";
+  if (min < 60) return `${min}m ago`;
+  const hours = Math.floor(min / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days}d ago`;
+  return new Date(ts).toLocaleDateString();
+}
+
+/** Deterministic project thumbnail: gradient + initials + bar pattern derived from the name. */
+function ProjectThumb({ name, className = "" }: { name: string; className?: string }) {
+  const h = hashOf(name);
+  const hue = h % 360;
+  const hue2 = (hue + 60 + (h % 90)) % 360;
+  const initials = name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("") || "?";
+  const bars = Array.from({ length: 12 }, (_, i) => 20 + ((h >> (i % 24)) & 0x3f) % 70);
+  return (
+    <div
+      className={`relative flex items-center justify-center overflow-hidden rounded-md ${className}`}
+      style={{ background: `linear-gradient(135deg, hsl(${hue} 45% 16%), hsl(${hue2} 55% 26%))` }}
+      aria-hidden
+    >
+      <div className="absolute inset-x-2 bottom-2 flex items-end gap-[2px] opacity-40">
+        {bars.map((b, i) => (
+          <div key={i} className="flex-1 rounded-sm bg-white/70" style={{ height: `${(b / 100) * 28}px` }} />
+        ))}
+      </div>
+      <span className="font-display text-lg font-bold tracking-widest text-white/90 drop-shadow">{initials}</span>
+    </div>
+  );
+}
+
+const TEMPLATE_ICONS: Record<string, React.ReactNode> = {
+  empty: <Square className="size-5" />,
+  "detroit-techno": <Zap className="size-5" />,
+  "detroit-electro": <Radio className="size-5" />,
+  "ghetto-tech": <Flame className="size-5" />,
+  house: <Home className="size-5" />,
+  "deep-house": <Waves className="size-5" />,
+  "hip-hop": <Disc3 className="size-5" />,
+  trap: <Drum className="size-5" />,
+  rnb: <Heart className="size-5" />,
+  pop: <Star className="size-5" />,
+  rock: <Guitar className="size-5" />,
+  ambient: <Cloud className="size-5" />,
+  podcast: <Mic className="size-5" />,
+  vocal: <AudioWaveform className="size-5" />,
+};
 
 export function StartScreen() {
   const { setStage, setProject, setSignedIn, removeRecent, renameRecent, recents } = useApp();
@@ -20,6 +93,7 @@ export function StartScreen() {
   const [cloud, setCloud] = useState<CloudProject[]>([]);
   const [templates, setTemplates] = useState<UserTemplate[]>([]);
   const [cloudBusy, setCloudBusy] = useState<string | null>(null);
+  const [favs, setFavs] = useState<string[]>(loadFavs);
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("Untitled Project");
   const [templateId, setTemplateId] = useState("empty");
@@ -29,6 +103,19 @@ export function StartScreen() {
   const [rename, setRename] = useState<{ kind: "cloud"; item: CloudProject } | { kind: "recent"; item: (typeof recents)[number] } | null>(null);
   const [renameName, setRenameName] = useState("");
   const [renameBusy, setRenameBusy] = useState(false);
+
+  const toggleFav = (id: string) => {
+    setFavs((prev) => {
+      const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
+      try { localStorage.setItem(FAVS_KEY, JSON.stringify(next)); } catch { /* storage full/blocked */ }
+      return next;
+    });
+  };
+
+  const sortedCloud = useMemo(
+    () => [...cloud].sort((a, b) => Number(favs.includes(`cloud:${b.id}`)) - Number(favs.includes(`cloud:${a.id}`)) || b.updatedAt - a.updatedAt),
+    [cloud, favs],
+  );
 
   const openRename = (target: NonNullable<typeof rename>) => {
     setRename(target);
@@ -95,6 +182,24 @@ export function StartScreen() {
     }
   };
 
+  const duplicateCloud = async (item: CloudProject) => {
+    setCloudBusy(item.id);
+    try {
+      const loaded = await loadCloudProject(item.id);
+      if (!loaded.session) throw new Error("This project has no saved session.");
+      await saveCloudProject(
+        { id: "", name: `${loaded.name} copy`, bpm: loaded.bpm, key: loaded.key, timeSig: loaded.timeSig, template: loaded.template, openedAt: Date.now() },
+        loaded.session,
+      );
+      setCloud(await listCloudProjects());
+      toast.success(`Duplicated as “${loaded.name} copy”`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not duplicate project");
+    } finally {
+      setCloudBusy(null);
+    }
+  };
+
   const openDialog = (tpl: string) => {
     const t = templateById(tpl);
     setTemplateId(tpl);
@@ -119,14 +224,19 @@ export function StartScreen() {
     });
   };
 
+  const importHint = (what: string, where: string) => {
+    setStage("studio");
+    toast(`Import ${what} from the studio`, { description: where });
+  };
+
   return (
     <div className="min-h-screen overflow-y-auto bg-background">
-      <div className="mx-auto w-full max-w-5xl px-5 py-12">
+      <div className="mx-auto w-full max-w-6xl px-5 py-10">
         <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
           <img src={synclabLogoAsset.url} alt="SYNCLAB" className="h-10 w-auto rounded object-cover" />
           <div className="min-w-0">
-            <h1 className="font-display text-xl font-semibold tracking-tight">Start a session</h1>
-            <p className="text-xs text-muted-foreground">Pick where you want to begin. Everything happens on one screen after this.</p>
+            <h1 className="font-display text-xl font-semibold tracking-tight">Projects</h1>
+            <p className="text-xs text-muted-foreground">Open a recent session or start something new.</p>
           </div>
           <Button
             variant="outline"
@@ -137,88 +247,107 @@ export function StartScreen() {
           </Button>
         </div>
 
-        <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <Action icon={<Plus className="size-4" />} title="New empty project" body="A blank timeline." onClick={() => openDialog("empty")} />
-          <Action icon={<LayoutTemplate className="size-4" />} title="Choose template" body="Start with tracks ready." onClick={() => document.getElementById("tpl")?.scrollIntoView({ behavior: "smooth" })} />
-          <Action
-            icon={<Import className="size-4" />}
-            title="Import song"
-            body="Bring an instrumental in."
-            onClick={() => {
-              setStage("studio");
-              toast("Import from the studio", { description: "Use File → Import Audio, or drag a file onto the timeline." });
-            }}
-          />
-          <Action
-            icon={<Sparkles className="size-4" />}
-            title="Start with AI"
-            body="Describe the track you want."
-            onClick={() => {
-              setStage("studio");
-              setPanel("coproducer");
-              toast("Co-Producer open", { description: "Describe the track you want and it will plan it with you." });
-            }}
-          />
-          <Action
-            icon={<FolderOpen className="size-4" />}
-            title="Open project"
-            body={cloud.length ? `${cloud.length} saved in your cloud.` : "Open a saved cloud project."}
-            onClick={() => document.getElementById("cloud-projects")?.scrollIntoView({ behavior: "smooth" })}
-          />
-          <Action
-            icon={<Clock className="size-4" />}
-            title="Continue in studio"
-            body="Keep the current session."
-            onClick={() => setStage("studio")}
-          />
+        <div className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <Action icon={<Plus className="size-4" />} title="New Project" body="Blank timeline." onClick={() => openDialog("empty")} />
+          <Action icon={<FolderOpen className="size-4" />} title="Open Project" body={cloud.length ? `${cloud.length} in your cloud.` : "Your saved projects."} onClick={() => document.getElementById("recent-projects")?.scrollIntoView({ behavior: "smooth" })} />
+          <Action icon={<Import className="size-4" />} title="Import Audio" body="Bring a file in." onClick={() => importHint("audio", "Use File → Import Audio, or drag a file onto the timeline.")} />
+          <Action icon={<FileMusic className="size-4" />} title="Import MIDI" body="Standard MIDI files." onClick={() => importHint("MIDI", "Use Tools → Ableton Handoff to import a .mid file onto a track.")} />
         </div>
 
-        <section id="cloud-projects" className="mt-10">
+        <section id="recent-projects" className="mt-10">
           <div className="flex items-center gap-2">
             <Cloud className="size-4 text-primary" />
-            <h2 className="label-xs">Your cloud projects</h2>
+            <h2 className="label-xs">Recent projects</h2>
           </div>
           {cloud.length === 0 ? (
             <p className="mt-2 text-sm text-muted-foreground">No cloud projects yet. Open a session and choose File → Save.</p>
           ) : (
-            <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-              {cloud.map((item) => (
-                <div key={item.id} className="group panel relative p-3">
-                  <button className="block w-full text-left" onClick={() => void openCloud(item)} disabled={cloudBusy !== null}>
-                    <div className="flex items-center gap-2 font-display text-sm font-semibold">
-                      {cloudBusy === item.id && <Loader2 className="size-3.5 animate-spin" />}{item.name}
+            <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {sortedCloud.map((item) => {
+                const fav = favs.includes(`cloud:${item.id}`);
+                return (
+                  <div key={item.id} className="group panel relative overflow-hidden">
+                    <button className="block w-full text-left" onClick={() => void openCloud(item)} disabled={cloudBusy !== null}>
+                      <ProjectThumb name={item.name} className="h-24 w-full" />
+                      <div className="p-3">
+                        <div className="flex items-center gap-2 font-display text-sm font-semibold">
+                          {cloudBusy === item.id && <Loader2 className="size-3.5 animate-spin" />}{item.name}
+                        </div>
+                        <div className="mt-0.5 font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
+                          {item.bpm} BPM · {item.key} · {item.timeSig}{item.trackCount ? ` · ${item.trackCount} tracks` : ""}
+                        </div>
+                        <div className="mt-0.5 font-mono text-[10px] tracking-widest text-muted-foreground/70 uppercase">
+                          Modified {relTime(item.updatedAt)}
+                        </div>
+                      </div>
+                    </button>
+                    <div className="absolute right-2 top-2 flex gap-1 opacity-100 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100">
+                      <IconBtn label={`Favorite ${item.name}`} title={fav ? "Unfavorite" : "Favorite"} onClick={() => toggleFav(`cloud:${item.id}`)} active={fav}>
+                        <Star className={`size-3.5 ${fav ? "fill-primary text-primary" : ""}`} />
+                      </IconBtn>
+                      <IconBtn label={`Rename ${item.name}`} title="Rename" onClick={() => openRename({ kind: "cloud", item })}>
+                        <Pencil className="size-3.5" />
+                      </IconBtn>
+                      <IconBtn label={`Duplicate ${item.name}`} title="Duplicate" onClick={() => void duplicateCloud(item)}>
+                        <Copy className="size-3.5" />
+                      </IconBtn>
+                      <IconBtn
+                        label={`Delete ${item.name}`}
+                        title="Delete"
+                        danger
+                        onClick={() => {
+                          setCloudBusy(item.id);
+                          void deleteCloudProject(item)
+                            .then(() => { setCloud((items) => items.filter((p) => p.id !== item.id)); toast.success("Cloud project deleted"); })
+                            .catch((error: unknown) => toast.error(error instanceof Error ? error.message : "Could not delete project"))
+                            .finally(() => setCloudBusy(null));
+                        }}
+                      >
+                        <Trash2 className="size-3.5" />
+                      </IconBtn>
                     </div>
-                    <div className="font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
-                      {item.bpm} BPM · {item.key} · {item.timeSig}
-                    </div>
-                  </button>
-                  <button
-                    aria-label={`Rename cloud project ${item.name}`}
-                    title="Rename project"
-                    className="absolute right-9 top-2 rounded p-1.5 text-muted-foreground hover:bg-surface-2 hover:text-foreground"
-                    onClick={() => openRename({ kind: "cloud", item })}
-                  >
-                    <Pencil className="size-3.5" />
-                  </button>
-                  <button
-                    aria-label={`Delete cloud project ${item.name}`}
-                    title="Delete cloud project"
-                    className="absolute right-2 top-2 rounded p-1.5 text-muted-foreground hover:bg-destructive/15 hover:text-destructive"
-                    onClick={() => {
-                      setCloudBusy(item.id);
-                      void deleteCloudProject(item)
-                        .then(() => { setCloud((items) => items.filter((p) => p.id !== item.id)); toast.success("Cloud project deleted"); })
-                        .catch((error: unknown) => toast.error(error instanceof Error ? error.message : "Could not delete project"))
-                        .finally(() => setCloudBusy(null));
-                    }}
-                  >
-                    <Trash2 className="size-3.5" />
-                  </button>
-                </div>
-              ))}
+                  </div>
+                );
+              })}
             </div>
           )}
         </section>
+
+        {recents.length > 0 && (
+          <section className="mt-10">
+            <h2 className="label-xs">On this device</h2>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {recents.map((r) => {
+                const id = `recent:${r.name}-${r.openedAt}`;
+                const fav = favs.includes(id);
+                return (
+                  <div key={id} className="group panel relative p-3 text-left transition-colors hover:bg-surface-2">
+                    <button
+                      onClick={() => { setProject(r); setStage("studio"); }}
+                      className="block w-full"
+                    >
+                      <div className="font-display text-sm font-semibold">{r.name}</div>
+                      <div className="font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
+                        {r.bpm} BPM · {r.key} · {r.timeSig} · opened {relTime(r.openedAt)}
+                      </div>
+                    </button>
+                    <div className="absolute right-2 top-2 flex gap-1">
+                      <IconBtn label={`Favorite ${r.name}`} title={fav ? "Unfavorite" : "Favorite"} onClick={() => toggleFav(id)} active={fav}>
+                        <Star className={`size-3.5 ${fav ? "fill-primary text-primary" : ""}`} />
+                      </IconBtn>
+                      <IconBtn label={`Rename ${r.name}`} title="Rename" onClick={() => openRename({ kind: "recent", item: r })}>
+                        <Pencil className="size-3.5" />
+                      </IconBtn>
+                      <IconBtn label={`Remove ${r.name}`} title="Remove from list" danger onClick={() => removeRecent(r)}>
+                        <Trash2 className="size-3.5" />
+                      </IconBtn>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         {templates.length > 0 && (
           <section className="mt-10">
@@ -226,7 +355,7 @@ export function StartScreen() {
               <LayoutTemplate className="size-4 text-primary" />
               <h2 className="label-xs">Your templates</h2>
             </div>
-            <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
               {templates.map((tpl) => (
                 <div key={tpl.id} className="group panel relative p-3">
                   <button className="block w-full text-left" onClick={() => openTemplate(tpl)}>
@@ -235,61 +364,19 @@ export function StartScreen() {
                       {tpl.bpm} BPM · {tpl.trackCount} tracks
                     </div>
                   </button>
-                  <button
-                    aria-label={`Delete template ${tpl.name}`}
+                  <IconBtn
+                    label={`Delete template ${tpl.name}`}
                     title="Delete template"
+                    danger
+                    className="absolute right-2 top-2"
                     onClick={() => {
                       removeUserTemplate(tpl.id);
                       setTemplates(listUserTemplates());
                       toast.success("Template deleted");
                     }}
-                    className="absolute right-2 top-2 rounded p-1.5 text-muted-foreground hover:bg-destructive/15 hover:text-destructive"
                   >
                     <Trash2 className="size-3.5" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {recents.length > 0 && (
-          <section className="mt-10">
-            <h2 className="label-xs">Recent</h2>
-            <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-              {recents.map((r) => (
-                <div
-                  key={`${r.name}-${r.openedAt}`}
-                  className="group panel relative p-3 text-left transition-colors hover:bg-surface-2"
-                >
-                  <button
-                    onClick={() => {
-                      setProject(r);
-                      setStage("studio");
-                    }}
-                    className="block w-full"
-                  >
-                    <div className="font-display text-sm font-semibold">{r.name}</div>
-                    <div className="font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
-                      {r.bpm} BPM · {r.key} · {r.timeSig}
-                    </div>
-                  </button>
-                  <button
-                    aria-label={`Rename recent project ${r.name}`}
-                    title="Rename project"
-                    onClick={() => openRename({ kind: "recent", item: r })}
-                    className="absolute top-2 right-9 rounded p-1.5 text-muted-foreground hover:bg-surface-2 hover:text-foreground"
-                  >
-                    <Pencil className="size-3.5" />
-                  </button>
-                  <button
-                    aria-label={`Delete recent project ${r.name}`}
-                    title="Remove from recent"
-                    onClick={() => removeRecent(r)}
-                    className="absolute top-2 right-2 rounded p-1.5 text-muted-foreground hover:bg-destructive/15 hover:text-destructive"
-                  >
-                    <Trash2 className="size-3.5" />
-                  </button>
+                  </IconBtn>
                 </div>
               ))}
             </div>
@@ -298,21 +385,43 @@ export function StartScreen() {
 
         <section id="tpl" className="mt-10">
           <h2 className="label-xs">Templates</h2>
-          <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {TEMPLATES.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => openDialog(t.id)}
-                className="panel p-3 text-left transition-colors hover:bg-surface-2"
-              >
-                <div className="font-display text-sm font-semibold tracking-wide">{t.name}</div>
-                <p className="mt-1 text-xs text-muted-foreground">{t.description}</p>
-                <div className="mt-2 font-mono text-[10px] tracking-widest text-primary uppercase">
-                  {t.bpm} BPM · {t.key} · {t.tracks.length} tracks
-                </div>
-              </button>
-            ))}
+          <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {TEMPLATES.map((t) => {
+              const hue = hashOf(t.id) % 360;
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => openDialog(t.id)}
+                  className="panel group p-4 text-left transition-colors hover:bg-surface-2"
+                >
+                  <div
+                    className="flex size-10 items-center justify-center rounded-md text-white/90"
+                    style={{ background: `linear-gradient(135deg, hsl(${hue} 55% 30%), hsl(${(hue + 50) % 360} 60% 40%))` }}
+                  >
+                    {TEMPLATE_ICONS[t.id] ?? <LayoutTemplate className="size-5" />}
+                  </div>
+                  <div className="mt-3 font-display text-sm font-semibold tracking-wide">{t.name}</div>
+                  <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{t.description}</p>
+                  <div className="mt-2 font-mono text-[10px] tracking-widest text-primary uppercase">
+                    {t.bpm} BPM · {t.key} · {t.tracks.length} tracks
+                  </div>
+                </button>
+              );
+            })}
           </div>
+        </section>
+
+        <section className="mt-10">
+          <button
+            onClick={() => { setStage("studio"); setPanel("coproducer"); toast("Co-Producer open", { description: "Describe the track you want and it will plan it with you." }); }}
+            className="panel flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-surface-2"
+          >
+            <span className="text-primary"><Sparkles className="size-4" /></span>
+            <div>
+              <div className="font-display text-sm font-semibold tracking-wide">Start with AI</div>
+              <p className="mt-1 text-xs text-muted-foreground">Describe the track you want and let the Co-Producer plan it.</p>
+            </div>
+          </button>
         </section>
       </div>
 
@@ -403,6 +512,29 @@ function Action({ icon, title, body, onClick }: { icon: React.ReactNode; title: 
         <div className="font-display text-sm font-semibold tracking-wide">{title}</div>
         <p className="mt-1 text-xs text-muted-foreground">{body}</p>
       </div>
+    </button>
+  );
+}
+
+function IconBtn({ label, title, onClick, danger, active, className = "", children }: {
+  label: string;
+  title: string;
+  onClick: () => void;
+  danger?: boolean;
+  active?: boolean;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      aria-label={label}
+      title={title}
+      onClick={(e) => { e.stopPropagation(); onClick(); }}
+      className={`rounded bg-background/70 p-1.5 backdrop-blur-sm transition-colors ${
+        danger ? "text-muted-foreground hover:bg-destructive/15 hover:text-destructive" : active ? "text-primary hover:bg-surface-2" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+      } ${className}`}
+    >
+      {children}
     </button>
   );
 }
