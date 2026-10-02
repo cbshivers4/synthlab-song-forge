@@ -87,6 +87,8 @@ const laneLabel = (track: Track, param: AutomationParam) => {
 
 let automationClipboard: { duration: number; points: AutomationPoint[] } | null = null;
 import { WaveformView } from "@/components/studio/WaveformView";
+
+const EMPTY_PEAKS: number[] = [0];
 import { LevelBar } from "@/components/studio/LevelBar";
 import { ClipEditor } from "@/components/studio/ClipEditor";
 import { clipSeconds } from "@/lib/synclab/types";
@@ -187,7 +189,7 @@ function Waveform({ track }: { track: Track }) {
         const left = (start / total) * 100;
         const width = Math.min(100 - left, (steps / total) * 100);
         const active = clip.id === track.activeClipId;
-        const peaks = clip.peaks.length > 0 ? clip.peaks : [0];
+        const peaks = clip.peaks.length > 0 ? clip.peaks : EMPTY_PEAKS;
         return (
           <div
             key={clip.id}

@@ -1,4 +1,4 @@
-import { useId, useMemo } from "react";
+import { memo, useId, useMemo } from "react";
 import { cn } from "@/lib/utils";
 
 /**
@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
  * core, crisp peak outlines and a centre line. Purely presentational — callers
  * keep their own overlays (trim, chops, playhead) on top.
  */
-export function WaveformView({
+export const WaveformView = memo(function WaveformView({
   peaks,
   color = "var(--color-primary)",
   className,
@@ -93,4 +93,4 @@ export function WaveformView({
       <line x1="0" y1="50" x2="1000" y2="50" stroke={color} strokeOpacity="0.35" strokeWidth="0.5" />
     </svg>
   );
-}
+});
