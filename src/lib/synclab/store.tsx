@@ -1144,8 +1144,12 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       };
       // Keep the editable notes/steps intact. The printed audio takes their place
       // during playback until the user explicitly switches back to the pattern.
+      // Only the explicit overdub mode should stack printed takes at the same position.
+      const replace = !!transportRef.current.replace || !transportRef.current.overdub;
+      const endOf = (c: AudioClip) => (c.start ?? 0) + (c.length ?? c.duration ?? 0) / stepDur;
+      const newEnd = endOf(clip);
       setTracks((ts) => ts.map((t) => t.id === result.trackId
-        ? { ...t, clips: [...(t.clips ?? []), clip], activeClipId: clip.id, printedAudio: true }
+        ? { ...t, clips: [...(t.clips ?? []).filter((c) => !replace || endOf(c) <= (clip.start ?? 0) || (c.start ?? 0) >= newEnd), clip], activeClipId: clip.id, printedAudio: true }
         : t));
       toast.success(`${clip.name} recorded`, { description: "Double-click the waveform to edit it; switch to Notes to edit the pattern." });
     } catch (err) {

@@ -19,3 +19,4 @@ MIDI Learn stores CC-to-target mappings by stable track/device IDs and applies i
 Ableton Live interoperability uses user-exported audio stems and standard MIDI files, not embedded Ableton software or proprietary project decoding; this keeps the handoff functional without misrepresenting native integration.
 - Time signature is transport.beatsPerBar over a quarter-note beat; bar math goes through timebase helpers (stepsPerBar/getBeatsPerBar), synced by the store each render, so ruler, metronome, count-ins and looper agree.
 Bus and send insert changes crossfade parallel audio paths after the bus scope or send output; never disconnect the active source on each parameter edit, because that cuts live sound and bypasses the actual effect chain.
+Printed instrument and drum takes replace overlapping clips by default; only explicit overdub stacks them, so ordinary re-recording does not double playback.

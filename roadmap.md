@@ -111,4 +111,6 @@
 - [x] Show recent projects and templates as lists
 - [x] Reduce insert-change pops and generator preview drift
 - [x] Verify bus effect gain changes alter the live output and preserve sound through insertion, adjustment, and removal
+- [x] Prevent repeated instrument/drum recordings from stacking unless overdub is enabled
+- [x] Review Live Looper export routing; retain direct monitor to prevent loop feedback and use Timeline transfer for export
 - [ ] Listen to synth recording, Vocal Forge voices and effects/generator previews on real speakers (requires ears and device audio)
