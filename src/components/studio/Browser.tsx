@@ -1,11 +1,30 @@
-import { useState } from "react";
-import { AudioLines, FolderOpen, Music2, Plus, Search, Sparkles, Waves, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useEffect, useMemo, useState } from "react";
+import {
+  AudioLines,
+  ChevronDown,
+  ChevronRight,
+  Drum,
+  FolderOpen,
+  Folder,
+  Music2,
+  Play,
+  Plus,
+  Save,
+  Search,
+  Sparkles,
+  Star,
+  Waves,
+  X,
+} from "lucide-react";
 import { useStudio } from "@/lib/synclab/store";
-import { SYNTH_PRESETS, uid } from "@/lib/synclab/presets";
+import { useApp } from "@/lib/synclab/app-state";
+import { DRUM_KITS, SYNTH_PRESETS, uid } from "@/lib/synclab/presets";
+import { getEngine } from "@/lib/synclab/audio-engine";
+import { listCloudProjects, loadCloudProject, type CloudProject } from "@/lib/synclab/cloud";
+import { listUserTemplates, type UserTemplate } from "@/lib/synclab/user-templates";
+import { TEMPLATES, templateById } from "@/lib/synclab/templates";
+import type { DrumKitId, DrumPad } from "@/lib/synclab/types";
 import { toast } from "sonner";
-
-type Tab = "samples" | "plugins" | "presets";
 
 const SAMPLE_PACKS: { pack: string; samples: { name: string; kind: string }[] }[] = [
   {
@@ -77,12 +96,89 @@ const peaksFromName = (name: string) => {
   });
 };
 
+/** Map a sample's label to the closest real drum voice for the preview. */
+const PREVIEW_KIND: Record<string, DrumPad["kind"]> = {
+  KICK: "kick",
+  SNARE: "snare",
+  CLAP: "clap",
+  HAT: "hat",
+  SHAKER: "hat",
+  TOM: "tom",
+  RIM: "rim",
+  PERC: "perc",
+  LOOP: "perc",
+  STAB: "perc",
+  VOX: "fx",
+  FX: "fx",
+};
+
+/** A favorite is a re-runnable action, stored so stars survive reloads. */
+type Fav =
+  | { key: string; type: "sample"; label: string; sub: string; sample: string; pack: string }
+  | { key: string; type: "plugin"; label: string; sub: string; fx: string }
+  | { key: string; type: "preset"; label: string; sub: string; preset: string }
+  | { key: string; type: "instrument"; label: string; sub: string; preset: string }
+  | { key: string; type: "kit"; label: string; sub: string; kit: DrumKitId };
+
+const FAVS_KEY = "synclab.browser.favs";
+
+const loadFavs = (): Fav[] => {
+  try {
+    return JSON.parse(window.localStorage.getItem(FAVS_KEY) ?? "[]") as Fav[];
+  } catch {
+    return [];
+  }
+};
+
 export function Browser() {
-  const [tab, setTab] = useState<Tab>("samples");
   const [q, setQ] = useState("");
-  const { tracks, selected, select, addTrack, addClip, loadPreset, updatePatch, setPanel } = useStudio();
+  const [open, setOpen] = useState<Record<string, boolean>>({});
+  const [favs, setFavs] = useState<Fav[]>(loadFavs);
+  const [cloud, setCloud] = useState<CloudProject[]>([]);
+  const [userTemplates, setUserTemplates] = useState<UserTemplate[]>([]);
+  const [busyProject, setBusyProject] = useState<string | null>(null);
+  const {
+    tracks,
+    selected,
+    select,
+    addTrack,
+    addClip,
+    loadPreset,
+    updatePatch,
+    updatePad,
+    setPanel,
+    restore,
+    removeTrack,
+    setTransport,
+  } = useStudio();
+  const { setProject } = useApp();
+
+  useEffect(() => {
+    void listCloudProjects().then(setCloud).catch(() => setCloud([]));
+    setUserTemplates(listUserTemplates());
+  }, []);
+
   const query = q.trim().toLowerCase();
   const match = (...fields: (string | undefined)[]) => !query || fields.some((f) => f?.toLowerCase().includes(query));
+  const searching = query.length > 0;
+
+  const isOpen = (id: string, hasMatch: boolean) => (searching ? hasMatch : (open[id] ?? false));
+  const toggle = (id: string) => setOpen((o) => ({ ...o, [id]: !o[id] }));
+
+  const toggleFav = (fav: Fav) => {
+    setFavs((cur) => {
+      const next = cur.some((f) => f.key === fav.key) ? cur.filter((f) => f.key !== fav.key) : [...cur, fav];
+      try {
+        window.localStorage.setItem(FAVS_KEY, JSON.stringify(next));
+      } catch {
+        /* storage full */
+      }
+      return next;
+    });
+  };
+  const isFav = (key: string) => favs.some((f) => f.key === key);
+
+  /* ---------- actions ---------- */
 
   const addSampleToTimeline = (sample: string, pack: string) => {
     const target =
@@ -107,6 +203,59 @@ export function Browser() {
       }
     }
     setPanel(null);
+  };
+
+  /** Real on-device preview: synthesizes the closest drum voice through the master. */
+  const previewSample = (sample: string) => {
+    const kind = PREVIEW_KIND[sample] ?? "perc";
+    const pad: DrumPad = {
+      id: "browser-preview",
+      name: sample,
+      kit: "909",
+      kind,
+      volume: 0.9,
+      pan: 0,
+      pitch: 0,
+      decay: 0.25,
+    };
+    getEngine().playDrum("browser-preview", pad, 1);
+  };
+
+  const previewKit = (kit: DrumKitId) => {
+    const def = DRUM_KITS.find((k) => k.id === kit);
+    const engine = getEngine();
+    const ctx = (engine as unknown as { ctx?: AudioContext }).ctx;
+    const now = ctx?.currentTime ?? 0;
+    const mk = (kind: DrumPad["kind"]): DrumPad => ({
+      id: "browser-preview",
+      name: kind,
+      kit,
+      kind,
+      volume: 0.9,
+      pan: 0,
+      pitch: 0,
+      decay: def?.decay ?? 0.25,
+    });
+    engine.playDrum("browser-preview", mk("kick"), 1, now + 0.01);
+    engine.playDrum("browser-preview", mk("snare"), 0.9, now + 0.25);
+    engine.playDrum("browser-preview", mk("hat"), 0.8, now + 0.375);
+  };
+
+  const addKitTrack = (kit: DrumKitId) => {
+    const def = DRUM_KITS.find((k) => k.id === kit);
+    const id = addTrack("drum", (def?.name ?? kit).toUpperCase());
+    if (!id) return;
+    // apply the kit to every pad of the new track
+    const t = tracks.find((x) => x.id === id);
+    void t;
+    // pads are created by addTrack; set the kit on each via a microtask so state has settled
+    window.setTimeout(() => {
+      const track = useStudio.getState?.() as unknown as { tracks?: { id: string; pads?: { id: string }[] }[] } | undefined;
+      const pads = track?.tracks?.find((x) => x.id === id)?.pads ?? [];
+      for (const p of pads) updatePad(id, p.id, { kit, decay: def?.decay });
+      toast.success(`${def?.name ?? kit} kit added`, { description: "New drum channel on the timeline." });
+    }, 0);
+    setPanel("drums");
   };
 
   const loadPresetOnto = (preset: string) => {
@@ -139,21 +288,126 @@ export function Browser() {
     setPanel("synth");
   };
 
-  const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
-    { id: "samples", label: "SAMPLES", icon: <AudioLines className="size-3.5" /> },
-    { id: "plugins", label: "PLUGINS", icon: <Sparkles className="size-3.5" /> },
-    { id: "presets", label: "PRESETS", icon: <Music2 className="size-3.5" /> },
-  ];
+  const openUserTemplate = (tpl: UserTemplate) => {
+    restore(tpl.session);
+    setProject({ name: `${tpl.name} copy`, bpm: tpl.bpm, key: "A Minor", timeSig: "4/4", template: tpl.id, openedAt: Date.now() });
+    toast.success(`Started from “${tpl.name}”`);
+    setPanel(null);
+  };
+
+  const openCloud = async (item: CloudProject) => {
+    setBusyProject(item.id);
+    try {
+      const loaded = await loadCloudProject(item.id);
+      if (!loaded.session) throw new Error("This project has no saved session.");
+      restore(loaded.session);
+      setProject({ id: loaded.id, name: loaded.name, bpm: loaded.bpm, key: loaded.key, timeSig: loaded.timeSig, template: loaded.template, openedAt: Date.now() });
+      toast.success(`${loaded.name} opened from your cloud`);
+      setPanel(null);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not open cloud project");
+    } finally {
+      setBusyProject(null);
+    }
+  };
+
+  const startFromTemplate = (templateId: string) => {
+    const tpl = templateById(templateId);
+    if (!tpl) return;
+    for (const t of tracks) removeTrack(t.id);
+    for (const t of tpl.tracks) addTrack(t.kind, t.name, t.preset);
+    setTransport({ bpm: tpl.bpm, playing: false, recording: false, step: 0 });
+    setProject({ name: tpl.id === "empty" ? "Untitled Project" : tpl.name, bpm: tpl.bpm, key: tpl.key, timeSig: "4/4", template: tpl.id, openedAt: Date.now() });
+    toast.success(`${tpl.name} is open`, { description: `${tpl.bpm} BPM · ${tpl.key} · ${tpl.tracks.length} tracks` });
+    setPanel(null);
+  };
+
+  const runFav = (f: Fav) => {
+    if (f.type === "sample") addSampleToTimeline(f.sample, f.pack);
+    else if (f.type === "plugin") insertEffect(f.label, f.fx);
+    else if (f.type === "preset") loadPresetOnto(f.preset);
+    else if (f.type === "instrument") addTrack("instrument", f.preset.toUpperCase(), f.preset);
+    else if (f.type === "kit") addKitTrack(f.kit);
+  };
+
+  /* ---------- row building blocks ---------- */
+
+  const StarButton = ({ fav }: { fav: Fav }) => (
+    <button
+      type="button"
+      aria-label={isFav(fav.key) ? `Remove ${fav.label} from favorites` : `Add ${fav.label} to favorites`}
+      aria-pressed={isFav(fav.key)}
+      onClick={(e) => {
+        e.stopPropagation();
+        toggleFav(fav);
+      }}
+      className={`shrink-0 ${isFav(fav.key) ? "text-amber-400" : "text-muted-foreground/40 opacity-0 group-hover:opacity-100 hover:text-amber-400"}`}
+    >
+      <Star className="size-3" fill={isFav(fav.key) ? "currentColor" : "none"} />
+    </button>
+  );
+
+  const FolderHeader = ({
+    id,
+    icon,
+    label,
+    count,
+    hasMatch,
+    nested,
+  }: {
+    id: string;
+    icon: React.ReactNode;
+    label: string;
+    count: number;
+    hasMatch: boolean;
+    nested?: boolean;
+  }) => {
+    const expanded = isOpen(id, hasMatch);
+    return (
+      <button
+        type="button"
+        onClick={() => toggle(id)}
+        aria-expanded={expanded}
+        className={`flex w-full items-center gap-1.5 border border-border bg-surface-2/60 px-2 py-1.5 text-left hover:border-primary/40 ${nested ? "ml-3 border-l-2" : ""}`}
+      >
+        {expanded ? <ChevronDown className="size-3.5 text-primary" /> : <ChevronRight className="size-3.5 text-muted-foreground" />}
+        {expanded ? <FolderOpen className="size-3.5 text-primary" /> : <Folder className="size-3.5 text-muted-foreground" />}
+        {icon}
+        <span className="font-display text-[10px] font-semibold tracking-[0.15em]">{label}</span>
+        <span className="ml-auto font-mono text-[9px] text-muted-foreground">{count}</span>
+      </button>
+    );
+  };
+
+  /* ---------- filtered data ---------- */
+
+  const filteredPacks = useMemo(
+    () =>
+      SAMPLE_PACKS.map((p) => ({ ...p, samples: p.samples.filter((s) => match(s.name, s.kind, p.pack)) })).filter(
+        (p) => p.samples.length > 0,
+      ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [query],
+  );
+  const filteredPlugins = EFFECT_PLUGINS.filter((e) => match(e.name, e.desc, e.fx));
+  const filteredPresets = SYNTH_PRESETS.filter((p) => match(p.name, p.category));
+  const filteredKits = DRUM_KITS.filter((k) => match(k.name, k.desc, k.category));
+  const filteredTemplates = TEMPLATES.filter((t) => match(t.name, t.key));
+  const filteredCloud = cloud.filter((c) => match(c.name));
+  const filteredUserTemplates = userTemplates.filter((t) => match(t.name));
+  const filteredFavs = favs.filter((f) => match(f.label, f.sub));
+
+  const samplesCount = SAMPLE_PACKS.reduce((n, p) => n + p.samples.length, 0);
 
   return (
-    <div className="space-y-3">
-      {/* search across samples, plugins and presets */}
+    <div className="space-y-2">
+      {/* search across every folder */}
       <div className="relative">
         <Search className="pointer-events-none absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Search samples, plugins, presets…"
+          placeholder="Search files, samples, drums, instruments, plugins, presets, projects…"
           aria-label="Search the browser"
           className="h-8 w-full rounded-[3px] border border-border bg-background/70 pl-7 pr-7 font-mono text-[11px] outline-none placeholder:text-muted-foreground/60 focus:border-primary/60"
         />
@@ -168,75 +422,135 @@ export function Browser() {
           </button>
         )}
       </div>
-      <div className="flex gap-1">
-        {tabs.map((t) => (
-          <Button
-            key={t.id}
-            size="sm"
-            variant={tab === t.id ? "secondary" : "ghost"}
-            className="h-7 gap-1 font-mono text-[10px] tracking-widest"
-            onClick={() => setTab(t.id)}
-          >
-            {t.icon}
-            {t.label}
-          </Button>
-        ))}
-        <span className="ml-auto self-center label-xs hidden sm:inline">
-          {tab === "samples" ? "click a sample to drop it on the timeline" : tab === "plugins" ? "click to insert on the selected instrument" : "click to load on the selected instrument"}
-        </span>
-      </div>
+      <p className="label-xs">Folders stay closed until you open them. Click a row to use it; press ▶ to hear it first.</p>
 
-      {tab === "samples" && (
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {SAMPLE_PACKS.map((p) => ({ ...p, samples: p.samples.filter((s) => match(s.name, s.kind, p.pack)) }))
-            .filter((p) => p.samples.length > 0)
-            .map((p) => (
-            <div key={p.pack} className="panel overflow-hidden">
-              <div className="flex items-center gap-1.5 border-b border-border bg-surface-2/60 px-2 py-1">
-                <FolderOpen className="size-3.5 text-primary" />
-                <span className="font-display text-[10px] font-semibold tracking-[0.15em]">{p.pack}</span>
-              </div>
-              {p.samples.map((s) => (
+      {/* FAVORITES */}
+      {(filteredFavs.length > 0 || (!searching && favs.length > 0)) && (
+        <div>
+          <FolderHeader id="favs" icon={<Star className="size-3 text-amber-400" />} label="FAVORITES" count={favs.length} hasMatch={filteredFavs.length > 0} />
+          {isOpen("favs", filteredFavs.length > 0) && (
+            <div className="ml-3 border-l-2 border-border">
+              {filteredFavs.map((f) => (
                 <button
-                  key={s.name}
-                  onClick={() => addSampleToTimeline(s.name, p.pack)}
+                  key={f.key}
+                  onClick={() => runFav(f)}
                   className="group flex w-full items-center gap-2 px-2 py-1 text-left hover:bg-primary/10"
                 >
-                  <span className="w-12 shrink-0 font-mono text-[9px] tracking-wider text-primary">{s.kind}</span>
-                  <span className="flex-1 truncate font-mono text-[11px]">{s.name}</span>
-                  <Plus className="size-3 opacity-0 transition-opacity group-hover:opacity-100" />
+                  <span className="w-16 shrink-0 font-mono text-[9px] uppercase tracking-wider text-primary">{f.type}</span>
+                  <span className="flex-1 truncate font-mono text-[11px]">{f.label}</span>
+                  <span className="truncate text-[9px] text-muted-foreground">{f.sub}</span>
+                  <StarButton fav={f} />
                 </button>
               ))}
             </div>
-          ))}
+          )}
         </div>
       )}
 
-      {tab === "plugins" && (
-        <div className="space-y-3">
-          <div>
-            <p className="label-xs mb-1.5">EFFECTS — insert on selected instrument</p>
-            <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-4">
-              {EFFECT_PLUGINS.filter((e) => match(e.name, e.desc, e.fx)).map((e) => (
-                <button
-                  key={e.name}
-                  onClick={() => insertEffect(e.name, e.fx)}
-                  className="panel flex items-center gap-2 px-2 py-1.5 text-left transition-colors hover:border-primary/50"
-                >
-                  <Waves className="size-4 shrink-0 text-primary" />
-                  <span className="min-w-0">
-                    <span className="block truncate text-[11px] font-medium">{e.name}</span>
-                    <span className="block truncate text-[10px] text-muted-foreground">{e.desc}</span>
-                  </span>
-                </button>
-              ))}
-            </div>
+      {/* MY FILES */}
+      <div>
+        <FolderHeader id="myfiles" icon={<Save className="size-3 text-primary" />} label="MY FILES" count={userTemplates.length} hasMatch={filteredUserTemplates.length > 0} />
+        {isOpen("myfiles", filteredUserTemplates.length > 0) && (
+          <div className="ml-3 border-l-2 border-border">
+            {filteredUserTemplates.length === 0 && (
+              <p className="px-2 py-1.5 text-[10px] text-muted-foreground">
+                {searching ? "No matches." : "Nothing saved yet — use File → Save as template to keep a session here."}
+              </p>
+            )}
+            {filteredUserTemplates.map((t) => (
+              <button key={t.id} onClick={() => openUserTemplate(t)} className="group flex w-full items-center gap-2 px-2 py-1 text-left hover:bg-primary/10">
+                <span className="w-16 shrink-0 font-mono text-[9px] uppercase tracking-wider text-primary">SESSION</span>
+                <span className="flex-1 truncate font-mono text-[11px]">{t.name}</span>
+                <Plus className="size-3 opacity-0 transition-opacity group-hover:opacity-100" />
+              </button>
+            ))}
           </div>
-          <div>
-            <p className="label-xs mb-1.5">INSTRUMENTS — drag onto the timeline or click to add a channel</p>
-            <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-4">
-              {SYNTH_PRESETS.filter((p) => match(p.name, p.category)).map((p) => (
-                <button
+        )}
+      </div>
+
+      {/* SAMPLES */}
+      <div>
+        <FolderHeader id="samples" icon={<AudioLines className="size-3 text-primary" />} label="SAMPLES" count={samplesCount} hasMatch={filteredPacks.length > 0} />
+        {isOpen("samples", filteredPacks.length > 0) && (
+          <div className="space-y-1 pt-1">
+            {filteredPacks.map((p) => (
+              <div key={p.pack}>
+                <FolderHeader id={`pack:${p.pack}`} icon={<AudioLines className="size-3 text-primary" />} label={p.pack} count={p.samples.length} hasMatch nested />
+                {isOpen(`pack:${p.pack}`, true) && (
+                  <div className="ml-6 border-l-2 border-border">
+                    {p.samples.map((s) => {
+                      const fav: Fav = { key: `sample:${p.pack}:${s.name}`, type: "sample", label: s.name, sub: p.pack, sample: s.name, pack: p.pack };
+                      return (
+                        <div key={s.name} className="group flex w-full items-center gap-2 px-2 py-1 hover:bg-primary/10">
+                          <button
+                            type="button"
+                            aria-label={`Preview ${s.name}`}
+                            title="Hear it (synthesized on your device)"
+                            onClick={() => previewSample(s.kind)}
+                            className="shrink-0 text-muted-foreground hover:text-primary"
+                          >
+                            <Play className="size-3" />
+                          </button>
+                          <button type="button" onClick={() => addSampleToTimeline(s.name, p.pack)} className="flex min-w-0 flex-1 items-center gap-2 text-left">
+                            <span className="w-12 shrink-0 font-mono text-[9px] tracking-wider text-primary">{s.kind}</span>
+                            <span className="flex-1 truncate font-mono text-[11px]">{s.name}</span>
+                            <Plus className="size-3 opacity-0 transition-opacity group-hover:opacity-100" />
+                          </button>
+                          <StarButton fav={fav} />
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            ))}
+            {filteredPacks.length === 0 && <p className="px-2 py-1.5 text-[10px] text-muted-foreground">No samples match.</p>}
+          </div>
+        )}
+      </div>
+
+      {/* DRUMS */}
+      <div>
+        <FolderHeader id="drums" icon={<Drum className="size-3 text-primary" />} label="DRUMS" count={DRUM_KITS.length} hasMatch={filteredKits.length > 0} />
+        {isOpen("drums", filteredKits.length > 0) && (
+          <div className="ml-3 border-l-2 border-border">
+            {filteredKits.map((k) => {
+              const fav: Fav = { key: `kit:${k.id}`, type: "kit", label: k.name, sub: k.category, kit: k.id };
+              return (
+                <div key={k.id} className="group flex w-full items-center gap-2 px-2 py-1 hover:bg-primary/10">
+                  <button
+                    type="button"
+                    aria-label={`Preview ${k.name} kit`}
+                    title="Hear kick, snare and hat from this kit"
+                    onClick={() => previewKit(k.id)}
+                    className="shrink-0 text-muted-foreground hover:text-primary"
+                  >
+                    <Play className="size-3" />
+                  </button>
+                  <button type="button" onClick={() => addKitTrack(k.id)} className="flex min-w-0 flex-1 items-center gap-2 text-left">
+                    <span className="flex-1 truncate font-mono text-[11px]">{k.name}</span>
+                    <span className="truncate text-[9px] text-muted-foreground">{k.category}</span>
+                    <Plus className="size-3 opacity-0 transition-opacity group-hover:opacity-100" />
+                  </button>
+                  <StarButton fav={fav} />
+                </div>
+              );
+            })}
+            {filteredKits.length === 0 && <p className="px-2 py-1.5 text-[10px] text-muted-foreground">No kits match.</p>}
+          </div>
+        )}
+      </div>
+
+      {/* INSTRUMENTS */}
+      <div>
+        <FolderHeader id="instruments" icon={<Music2 className="size-3 text-primary" />} label="INSTRUMENTS" count={SYNTH_PRESETS.length} hasMatch={filteredPresets.length > 0} />
+        {isOpen("instruments", filteredPresets.length > 0) && (
+          <div className="ml-3 border-l-2 border-border">
+            <p className="px-2 py-1 text-[9px] text-muted-foreground">Drag onto the timeline or click to add a channel.</p>
+            {filteredPresets.map((p) => {
+              const fav: Fav = { key: `instrument:${p.name}`, type: "instrument", label: p.name, sub: p.category, preset: p.name };
+              return (
+                <div
                   key={p.name}
                   draggable
                   onDragStart={(e) => {
@@ -245,38 +559,98 @@ export function Browser() {
                     e.dataTransfer.setData("text/plain", payload);
                     e.dataTransfer.effectAllowed = "copy";
                   }}
-                  onClick={() => addTrack("instrument", p.name.toUpperCase(), p.name)}
-                  className="panel flex cursor-grab items-center gap-2 px-2 py-1.5 text-left transition-colors hover:border-primary/50 active:cursor-grabbing"
+                  className="group flex w-full cursor-grab items-center gap-2 px-2 py-1 hover:bg-primary/10 active:cursor-grabbing"
                 >
-                  <Music2 className="size-4 shrink-0 text-primary" />
-                  <span className="min-w-0">
-                    <span className="block truncate text-[11px] font-medium">{p.name}</span>
-                    <span className="block truncate text-[10px] text-muted-foreground">{p.category}</span>
-                  </span>
-                </button>
-              ))}
-            </div>
+                  <button type="button" onClick={() => addTrack("instrument", p.name.toUpperCase(), p.name)} className="flex min-w-0 flex-1 items-center gap-2 text-left">
+                    <span className="flex-1 truncate font-mono text-[11px]">{p.name}</span>
+                    <span className="truncate text-[9px] text-muted-foreground">{p.category}</span>
+                    <Plus className="size-3 opacity-0 transition-opacity group-hover:opacity-100" />
+                  </button>
+                  <StarButton fav={fav} />
+                </div>
+              );
+            })}
+            {filteredPresets.length === 0 && <p className="px-2 py-1.5 text-[10px] text-muted-foreground">No instruments match.</p>}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      {tab === "presets" && (
-        <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-4">
-          {SYNTH_PRESETS.filter((p) => match(p.name, p.category)).map((p) => (
-            <button
-              key={p.name}
-              onClick={() => loadPresetOnto(p.name)}
-              className="panel flex items-center gap-2 px-2 py-1.5 text-left transition-colors hover:border-primary/50"
-            >
-              <Sparkles className="size-4 shrink-0 text-primary" />
-              <span className="min-w-0">
-                <span className="block truncate text-[11px] font-medium">{p.name}</span>
-                <span className="block truncate text-[10px] text-muted-foreground">{p.category}</span>
-              </span>
-            </button>
-          ))}
-        </div>
-      )}
+      {/* PLUGINS */}
+      <div>
+        <FolderHeader id="plugins" icon={<Waves className="size-3 text-primary" />} label="PLUGINS" count={EFFECT_PLUGINS.length} hasMatch={filteredPlugins.length > 0} />
+        {isOpen("plugins", filteredPlugins.length > 0) && (
+          <div className="ml-3 border-l-2 border-border">
+            <p className="px-2 py-1 text-[9px] text-muted-foreground">Click to insert on the selected instrument channel.</p>
+            {filteredPlugins.map((e) => {
+              const fav: Fav = { key: `plugin:${e.fx}`, type: "plugin", label: e.name, sub: e.desc, fx: e.fx };
+              return (
+                <div key={e.name} className="group flex w-full items-center gap-2 px-2 py-1 hover:bg-primary/10">
+                  <button type="button" onClick={() => insertEffect(e.name, e.fx)} className="flex min-w-0 flex-1 items-center gap-2 text-left">
+                    <span className="flex-1 truncate font-mono text-[11px]">{e.name}</span>
+                    <span className="truncate text-[9px] text-muted-foreground">{e.desc}</span>
+                  </button>
+                  <StarButton fav={fav} />
+                </div>
+              );
+            })}
+            {filteredPlugins.length === 0 && <p className="px-2 py-1.5 text-[10px] text-muted-foreground">No plugins match.</p>}
+          </div>
+        )}
+      </div>
+
+      {/* PRESETS */}
+      <div>
+        <FolderHeader id="presets" icon={<Sparkles className="size-3 text-primary" />} label="PRESETS" count={SYNTH_PRESETS.length} hasMatch={filteredPresets.length > 0} />
+        {isOpen("presets", filteredPresets.length > 0) && (
+          <div className="ml-3 border-l-2 border-border">
+            <p className="px-2 py-1 text-[9px] text-muted-foreground">Click to load on the selected instrument.</p>
+            {filteredPresets.map((p) => {
+              const fav: Fav = { key: `preset:${p.name}`, type: "preset", label: p.name, sub: p.category, preset: p.name };
+              return (
+                <div key={p.name} className="group flex w-full items-center gap-2 px-2 py-1 hover:bg-primary/10">
+                  <button type="button" onClick={() => loadPresetOnto(p.name)} className="flex min-w-0 flex-1 items-center gap-2 text-left">
+                    <span className="flex-1 truncate font-mono text-[11px]">{p.name}</span>
+                    <span className="truncate text-[9px] text-muted-foreground">{p.category}</span>
+                  </button>
+                  <StarButton fav={fav} />
+                </div>
+              );
+            })}
+            {filteredPresets.length === 0 && <p className="px-2 py-1.5 text-[10px] text-muted-foreground">No presets match.</p>}
+          </div>
+        )}
+      </div>
+
+      {/* PROJECTS */}
+      <div>
+        <FolderHeader id="projects" icon={<FolderOpen className="size-3 text-primary" />} label="PROJECTS" count={cloud.length + TEMPLATES.length} hasMatch={filteredCloud.length + filteredTemplates.length > 0} />
+        {isOpen("projects", filteredCloud.length + filteredTemplates.length > 0) && (
+          <div className="ml-3 border-l-2 border-border">
+            {filteredCloud.length > 0 && <p className="px-2 py-1 text-[9px] text-muted-foreground">YOUR CLOUD PROJECTS</p>}
+            {filteredCloud.map((c) => (
+              <button
+                key={c.id}
+                onClick={() => void openCloud(c)}
+                disabled={busyProject === c.id}
+                className="group flex w-full items-center gap-2 px-2 py-1 text-left hover:bg-primary/10 disabled:opacity-50"
+              >
+                <span className="w-16 shrink-0 font-mono text-[9px] uppercase tracking-wider text-primary">CLOUD</span>
+                <span className="flex-1 truncate font-mono text-[11px]">{c.name}</span>
+                <span className="truncate text-[9px] text-muted-foreground">{busyProject === c.id ? "opening…" : `${c.bpm} BPM`}</span>
+              </button>
+            ))}
+            <p className="px-2 py-1 text-[9px] text-muted-foreground">STARTER TEMPLATES — replaces the current song</p>
+            {filteredTemplates.map((t) => (
+              <button key={t.id} onClick={() => startFromTemplate(t.id)} className="group flex w-full items-center gap-2 px-2 py-1 text-left hover:bg-primary/10">
+                <span className="w-16 shrink-0 font-mono text-[9px] uppercase tracking-wider text-primary">TEMPLATE</span>
+                <span className="flex-1 truncate font-mono text-[11px]">{t.name}</span>
+                <span className="truncate text-[9px] text-muted-foreground">{t.bpm} BPM · {t.key}</span>
+              </button>
+            ))}
+            {filteredCloud.length + filteredTemplates.length === 0 && <p className="px-2 py-1.5 text-[10px] text-muted-foreground">No projects match.</p>}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
