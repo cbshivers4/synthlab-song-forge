@@ -656,21 +656,6 @@ export function PadSampler() {
                   <LiveWave stream={recStream} color="hsl(0 0% 100%)" label="Recording waveform" />
                 </span>
               )}
-              {pad && !recording && (
-                <span className="pointer-events-none absolute inset-x-1.5 top-4 bottom-6">
-                  <span className="absolute inset-0" style={{ filter: "drop-shadow(0 0 1px hsl(0 0% 0% / 0.95)) drop-shadow(0 0 3px hsl(0 0% 0% / 0.7))" }}>
-                    <WaveformView peaks={pad.peaks} color="hsl(0 0% 100%)" grid={false} label={`${pad.name} waveform`} />
-                  </span>
-                  <span
-                    className="absolute inset-y-0 left-0 bg-black/55"
-                    style={{ width: `${pad.start * 100}%` }}
-                  />
-                  <span
-                    className="absolute inset-y-0 right-0 bg-black/55"
-                    style={{ width: `${(1 - pad.end) * 100}%` }}
-                  />
-                </span>
-              )}
               <span
                 className={`line-clamp-2 font-mono text-[10px] ${pad || recording ? "" : "text-foreground"}`}
                 style={pad || recording ? { color: "hsl(0 0% 100%)", textShadow: "0 1px 2px hsl(0 0% 0% / 0.5)" } : undefined}

@@ -47,29 +47,6 @@ function relTime(ts: number) {
   return new Date(ts).toLocaleDateString();
 }
 
-/** Deterministic project thumbnail: gradient + initials + bar pattern derived from the name. */
-function ProjectThumb({ name, className = "" }: { name: string; className?: string }) {
-  const h = hashOf(name);
-  const hue = h % 360;
-  const hue2 = (hue + 60 + (h % 90)) % 360;
-  const initials = name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("") || "?";
-  const bars = Array.from({ length: 12 }, (_, i) => 20 + ((h >> (i % 24)) & 0x3f) % 70);
-  return (
-    <div
-      className={`relative flex items-center justify-center overflow-hidden rounded-md ${className}`}
-      style={{ background: `linear-gradient(135deg, hsl(${hue} 45% 16%), hsl(${hue2} 55% 26%))` }}
-      aria-hidden
-    >
-      <div className="absolute inset-x-2 bottom-2 flex items-end gap-[2px] opacity-40">
-        {bars.map((b, i) => (
-          <div key={i} className="flex-1 rounded-sm bg-white/70" style={{ height: `${(b / 100) * 28}px` }} />
-        ))}
-      </div>
-      <span className="font-display text-lg font-bold tracking-widest text-white/90 drop-shadow">{initials}</span>
-    </div>
-  );
-}
-
 const TEMPLATE_ICONS: Record<string, React.ReactNode> = {
   empty: <Square className="size-5" />,
   "detroit-techno": <Zap className="size-5" />,
@@ -262,14 +239,14 @@ export function StartScreen() {
           {cloud.length === 0 ? (
             <p className="mt-2 text-sm text-muted-foreground">No cloud projects yet. Open a session and choose File → Save.</p>
           ) : (
-            <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-3 divide-y divide-border border-y border-border">
               {sortedCloud.map((item) => {
                 const fav = favs.includes(`cloud:${item.id}`);
                 return (
-                  <div key={item.id} className="group panel relative overflow-hidden">
-                    <button className="block w-full text-left" onClick={() => void openCloud(item)} disabled={cloudBusy !== null}>
-                      <ProjectThumb name={item.name} className="h-24 w-full" />
-                      <div className="p-3">
+                  <div key={item.id} className="group flex min-h-16 items-center gap-2 py-2">
+                    <Button variant="ghost" className="min-w-0 flex-1 justify-start gap-3 px-2 text-left h-auto py-2" onClick={() => void openCloud(item)} disabled={cloudBusy !== null}>
+                      <span className="flex size-9 shrink-0 items-center justify-center rounded bg-primary/10 text-primary"><FolderOpen className="size-4" /></span>
+                      <div className="min-w-0">
                         <div className="flex items-center gap-2 font-display text-sm font-semibold">
                           {cloudBusy === item.id && <Loader2 className="size-3.5 animate-spin" />}{item.name}
                         </div>
@@ -280,8 +257,8 @@ export function StartScreen() {
                           Modified {relTime(item.updatedAt)}
                         </div>
                       </div>
-                    </button>
-                    <div className="absolute right-2 top-2 flex gap-1 opacity-100 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100">
+                    </Button>
+                    <div className="flex shrink-0 gap-1">
                       <IconBtn label={`Favorite ${item.name}`} title={fav ? "Unfavorite" : "Favorite"} onClick={() => toggleFav(`cloud:${item.id}`)} active={fav}>
                         <Star className={`size-3.5 ${fav ? "fill-primary text-primary" : ""}`} />
                       </IconBtn>
@@ -316,22 +293,22 @@ export function StartScreen() {
         {recents.length > 0 && (
           <section className="mt-10">
             <h2 className="label-xs">On this device</h2>
-            <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-3 divide-y divide-border border-y border-border">
               {recents.map((r) => {
                 const id = `recent:${r.name}-${r.openedAt}`;
                 const fav = favs.includes(id);
                 return (
-                  <div key={id} className="group panel relative p-3 text-left transition-colors hover:bg-surface-2">
+                  <div key={id} className="group flex min-h-14 items-center gap-2 py-2 text-left transition-colors hover:bg-surface-2">
                     <button
                       onClick={() => { setProject(r); setStage("studio"); }}
-                      className="block w-full"
+                      className="min-w-0 flex-1 text-left px-2"
                     >
                       <div className="font-display text-sm font-semibold">{r.name}</div>
                       <div className="font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
                         {r.bpm} BPM · {r.key} · {r.timeSig} · opened {relTime(r.openedAt)}
                       </div>
                     </button>
-                    <div className="absolute right-2 top-2 flex gap-1">
+                    <div className="flex shrink-0 gap-1">
                       <IconBtn label={`Favorite ${r.name}`} title={fav ? "Unfavorite" : "Favorite"} onClick={() => toggleFav(id)} active={fav}>
                         <Star className={`size-3.5 ${fav ? "fill-primary text-primary" : ""}`} />
                       </IconBtn>
@@ -355,20 +332,20 @@ export function StartScreen() {
               <LayoutTemplate className="size-4 text-primary" />
               <h2 className="label-xs">Your templates</h2>
             </div>
-            <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-3 divide-y divide-border border-y border-border">
               {templates.map((tpl) => (
-                <div key={tpl.id} className="group panel relative p-3">
-                  <button className="block w-full text-left" onClick={() => openTemplate(tpl)}>
+                <div key={tpl.id} className="group flex min-h-14 items-center gap-2 py-2">
+                  <Button variant="ghost" className="min-w-0 flex-1 justify-start text-left h-auto px-2" onClick={() => openTemplate(tpl)}>
                     <div className="font-display text-sm font-semibold">{tpl.name}</div>
                     <div className="font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
                       {tpl.bpm} BPM · {tpl.trackCount} tracks
                     </div>
-                  </button>
+                  </Button>
                   <IconBtn
                     label={`Delete template ${tpl.name}`}
                     title="Delete template"
                     danger
-                    className="absolute right-2 top-2"
+                    className="shrink-0"
                     onClick={() => {
                       removeUserTemplate(tpl.id);
                       setTemplates(listUserTemplates());
@@ -385,27 +362,15 @@ export function StartScreen() {
 
         <section id="tpl" className="mt-10">
           <h2 className="label-xs">Templates</h2>
-          <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="mt-3 divide-y divide-border border-y border-border">
             {TEMPLATES.map((t) => {
-              const hue = hashOf(t.id) % 360;
               return (
-                <button
-                  key={t.id}
-                  onClick={() => openDialog(t.id)}
-                  className="panel group p-4 text-left transition-colors hover:bg-surface-2"
-                >
-                  <div
-                    className="flex size-10 items-center justify-center rounded-md text-white/90"
-                    style={{ background: `linear-gradient(135deg, hsl(${hue} 55% 30%), hsl(${(hue + 50) % 360} 60% 40%))` }}
-                  >
-                    {TEMPLATE_ICONS[t.id] ?? <LayoutTemplate className="size-5" />}
-                  </div>
-                  <div className="mt-3 font-display text-sm font-semibold tracking-wide">{t.name}</div>
-                  <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{t.description}</p>
-                  <div className="mt-2 font-mono text-[10px] tracking-widest text-primary uppercase">
-                    {t.bpm} BPM · {t.key} · {t.tracks.length} tracks
-                  </div>
-                </button>
+                <Button key={t.id} variant="ghost" onClick={() => openDialog(t.id)}
+                  className="flex h-auto min-h-16 w-full items-center justify-start gap-3 rounded-none px-2 py-3 text-left">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded bg-primary/10 text-primary">{TEMPLATE_ICONS[t.id] ?? <LayoutTemplate className="size-5" />}</span>
+                  <span className="min-w-0 flex-1"><span className="block font-display text-sm font-semibold">{t.name}</span><span className="block truncate text-xs text-muted-foreground">{t.description}</span></span>
+                  <span className="hidden shrink-0 font-mono text-[10px] text-muted-foreground sm:block">{t.bpm} BPM · {t.key} · {t.tracks.length} tracks</span>
+                </Button>
               );
             })}
           </div>

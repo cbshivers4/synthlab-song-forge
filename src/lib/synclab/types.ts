@@ -234,6 +234,8 @@ export interface MidiNote {
   length: number;
   pitch: number; // midi note number
   velocity: number;
+  /** Captured note's absolute take end; unlike programmed patterns it does not repeat outside its recorded measures. */
+  recordedEnd?: number;
 }
 
 export interface AudioClip {

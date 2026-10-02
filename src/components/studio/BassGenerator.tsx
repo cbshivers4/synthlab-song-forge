@@ -89,7 +89,7 @@ export function BassGenerator() {
         schedule(next);
         next += passSeconds;
       }
-    }, 40);
+    }, 50);
   };
 
   const apply = () => {

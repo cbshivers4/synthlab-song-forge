@@ -111,6 +111,7 @@ interface ChannelStrip {
   bus: string;
   insertNodes: AudioNode[];
   insertKey: string;
+  insertOut: GainNode;
 }
 
 type AutomatableAudioParam = { param: AudioParam; min: number; max: number; logarithmic?: boolean };
@@ -471,7 +472,9 @@ export class SyncLabEngine {
       // channel meter doubles as the strip scope source
       this.pluginScopes.set(`ch:${id}`, meter);
       input.connect(gain);
-      gain.connect(meter);
+      const insertOut = ctx.createGain();
+      gain.connect(insertOut);
+      insertOut.connect(meter);
       meter.connect(pan);
       pan.connect(this.busNode("master"));
       const sendReverb = ctx.createGain();
@@ -486,7 +489,7 @@ export class SyncLabEngine {
       sendReverb.connect(this.reverbSend!);
       sendDelay.connect(this.delaySend!);
       sendChorus.connect(this.chorusSend!);
-      ch = { input, gain, pan, meter, sendReverb, sendDelay, sendChorus, bus: "master", insertNodes: [], insertKey: "" };
+      ch = { input, gain, pan, meter, sendReverb, sendDelay, sendChorus, bus: "master", insertNodes: [], insertKey: "", insertOut };
       this.channels.set(id, ch);
     }
     return ch;
@@ -501,23 +504,23 @@ export class SyncLabEngine {
     if (key === ch.insertKey) return;
     ch.insertKey = key;
 
-    try {
-      ch.gain.disconnect();
-    } catch {
-      /* noop */
-    }
-    for (const n of ch.insertNodes) {
-      try {
-        n.disconnect();
-      } catch {
-        /* noop */
-      }
-    }
-
+    const oldOut = ch.insertOut;
+    const oldNodes = ch.insertNodes;
     for (const key of [...this.automatedPluginParams.keys()]) if (key.startsWith(`${trackId}:`)) this.automatedPluginParams.delete(key);
     const nodes = this.buildInsertNodes(ctx, active, trackId);
     ch.insertNodes = nodes;
-    this.linkInsertChain(ch.gain, nodes, active, ch.meter);
+    const nextOut = ctx.createGain();
+    nextOut.gain.setValueAtTime(0, ctx.currentTime);
+    ch.gain.connect(nextOut);
+    this.linkInsertChain(nextOut, nodes, active, ch.meter);
+    ch.insertOut = nextOut;
+    nextOut.gain.linearRampToValueAtTime(1, ctx.currentTime + 0.015);
+    oldOut.gain.setValueAtTime(oldOut.gain.value, ctx.currentTime);
+    oldOut.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.015);
+    window.setTimeout(() => {
+      try { ch.gain.disconnect(oldOut); oldOut.disconnect(); } catch { /* already disconnected */ }
+      for (const n of oldNodes) try { n.disconnect(); } catch { /* already disconnected */ }
+    }, 40);
   }
 
   /** Inserts on a bus ("bus:drums") or an FX send ("send:reverb"). */
@@ -1264,7 +1267,7 @@ export class SyncLabEngine {
       const recorder = new MediaRecorder(destination.stream, mime ? { mimeType: mime } : undefined);
       const chunks: Blob[] = [];
       recorder.ondataavailable = (event) => { if (event.data.size) chunks.push(event.data); };
-      recorder.start(200);
+      recorder.start(40);
       this.trackRecorder = { recorder, destination, source, trackId, chunks };
     } catch (error) {
       source.disconnect(destination);
