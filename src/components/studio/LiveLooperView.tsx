@@ -37,6 +37,14 @@ function LoopDonut({ slot, send }: { slot: LoopSlot; send: (i: number) => void }
   const levels = looper.levels(slot.index);
   const ringColor = slot.state === "recording" ? "var(--destructive)" : slot.state === "armed" ? "var(--amber)" : slot.color;
   const circle = 2 * Math.PI * 78;
+  const beatLen = 60 / (looper.bpm || 120);
+  let countLabel: string | null = null;
+  if (slot.state === "armed" && looper.precountStart !== null && looper.now < slot.recStart) {
+    const left = Math.ceil((slot.recStart - looper.now) / beatLen - 1e-3);
+    countLabel = String(((left - 1) % 4) + 1);
+  } else if (slot.state === "recording" && looper.precount > 0 && looper.now - slot.recStart < 0.5 && looper.now >= slot.recStart) {
+    countLabel = "GO";
+  }
   return (
     <div className="flex min-w-0 flex-col items-center gap-2 border-b border-border pb-4">
       <Button
@@ -59,7 +67,11 @@ function LoopDonut({ slot, send }: { slot: LoopSlot; send: (i: number) => void }
           {slot.state !== "empty" && <circle cx={polar(-Math.PI / 2 + progress * 2 * Math.PI, 78).x} cy={polar(-Math.PI / 2 + progress * 2 * Math.PI, 78).y} r="4" fill={ringColor} />}
         </svg>
         <span className="relative z-10 flex flex-col items-center gap-1 leading-none">
-          <span className="font-display text-3xl font-bold">{String(slot.index + 1).padStart(2, "0")}</span>
+          {countLabel ? (
+            <span aria-live="assertive" className={cn("font-display text-5xl font-bold", countLabel === "GO" ? "text-destructive" : "text-primary")}>{countLabel}</span>
+          ) : (
+            <span className="font-display text-3xl font-bold">{String(slot.index + 1).padStart(2, "0")}</span>
+          )}
           <span className={cn("font-mono text-[10px] uppercase", slot.state === "recording" ? "text-destructive" : "text-muted-foreground")}>{slot.overdubbing ? "DUB" : labels[slot.state]}</span>
         </span>
       </Button>
@@ -136,6 +148,11 @@ export function LiveLooperView() {
             {[1, 2, 4, 8, 16, 32].map((bar) => <option key={bar} value={bar}>{bar} {bar === 1 ? "bar" : "bars"}</option>)}
           </select>
         </label>}
+        <label className="flex flex-col gap-1 font-mono text-[10px] uppercase text-muted-foreground">Pre-count
+          <select aria-label="Looper pre-count" value={looper.precount} disabled={capturing} onChange={(e) => looper.setPrecount(Number(e.target.value))} className="h-9 rounded border border-border bg-surface-2 px-3 text-sm text-foreground disabled:opacity-50">
+            {[0, 1, 2, 4].map((bar) => <option key={bar} value={bar}>{bar === 0 ? "Off" : `${bar} ${bar === 1 ? "bar" : "bars"}`}</option>)}
+          </select>
+        </label>
         <div>
           <div className="mb-1 font-mono text-[10px] uppercase text-muted-foreground">Record from</div>
           <div className="flex gap-1">
@@ -153,7 +170,7 @@ export function LiveLooperView() {
         <Button variant="secondary" onClick={() => looper.stopAll()}><Square className="size-4" /> Stop all</Button>
         <Button variant="secondary" onClick={() => looper.clearAll()}><Trash2 className="size-4" /> Clear all</Button>
       </div>
-       <p className="text-xs text-muted-foreground">The first loop sets the shared cycle. Later recordings wait for the next cycle. Free length closes on a second tap; sync closes after the selected bars. Overdub adds one mic cycle. Loops play outside the song master effects to prevent app-output capture feeding back into itself. Loops remain in this session until cleared; send them to the timeline to include them in your project. Input delay depends on your browser and audio interface; use headphones when recording.</p>
+       <p className="text-xs text-muted-foreground">The pre-count clicks before the first loop only and recording starts on GO; later loops wait for the next cycle instead. The first loop sets the shared cycle. Later recordings wait for the next cycle. Free length closes on a second tap; sync closes after the selected bars. Overdub adds one mic cycle. Loops play outside the song master effects to prevent app-output capture feeding back into itself. Loops remain in this session until cleared; send them to the timeline to include them in your project. Input delay depends on your browser and audio interface; use headphones when recording.</p>
     </div>
   );
 }
