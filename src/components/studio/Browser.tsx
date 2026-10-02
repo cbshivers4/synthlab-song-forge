@@ -217,6 +217,9 @@ export function Browser() {
       pan: 0,
       pitch: 0,
       decay: 0.25,
+      muted: false,
+      solo: false,
+      steps: [],
     };
     getEngine().playDrum("browser-preview", pad, 1);
   };
@@ -233,6 +236,9 @@ export function Browser() {
       pan: 0,
       pitch: 0,
       decay: def?.decay ?? 0.25,
+      muted: false,
+      solo: false,
+      steps: [],
     });
     engine.playDrum("browser-preview", mk("kick"), 1);
     window.setTimeout(() => engine.playDrum("browser-preview", mk("snare"), 0.9), 250);
