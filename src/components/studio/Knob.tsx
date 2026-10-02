@@ -50,11 +50,12 @@ export function Knob({ label, value, min = 0, max = 1, step = 0.01, unit = "", s
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={() => (start.current = null)}
+        onPointerCancel={() => (start.current = null)}
         onKeyDown={(e) => {
           if (e.key === "ArrowUp") onChange(Math.min(max, value + step));
           if (e.key === "ArrowDown") onChange(Math.max(min, value - step));
         }}
-        className="relative cursor-ns-resize rounded-full border border-border bg-surface-2 transition-shadow hover:glow"
+        className="relative cursor-ns-resize touch-none rounded-full border border-border bg-surface-2 transition-shadow hover:glow"
         style={{ width: size, height: size }}
       >
         <div
