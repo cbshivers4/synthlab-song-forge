@@ -34,6 +34,7 @@ export function StemSeparator({ mode = "stems" }: { mode?: "stems" | "voice" }) 
   const [stage, setStage] = useState("");
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<Separation | null>(null);
+  const [failed, setFailed] = useState<string | null>(null);
   const [strength, setStrength] = useState(1);
   const [playing, setPlaying] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -86,6 +87,7 @@ export function StemSeparator({ mode = "stems" }: { mode?: "stems" | "voice" }) 
     if (!buffer) return;
     setBusy(true);
     setResult(null);
+    setFailed(null);
     setProgress(0);
     try {
       const separation = await separate(buffer, {
@@ -107,9 +109,9 @@ export function StemSeparator({ mode = "stems" }: { mode?: "stems" | "voice" }) 
         });
       }
     } catch (err) {
-      toast.error("Separation failed", {
-        description: err instanceof Error ? err.message : "This browser could not process that audio offline.",
-      });
+      const message = err instanceof Error ? err.message : "This browser could not process that audio offline.";
+      setFailed(message);
+      toast.error("Separation failed", { description: message });
     } finally {
       setBusy(false);
       setStage("");
