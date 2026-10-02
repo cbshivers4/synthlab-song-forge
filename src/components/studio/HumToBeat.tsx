@@ -134,20 +134,30 @@ export function HumToBeat() {
     return (row: Row) => kit.find((p) => p.id === row)!;
   }, [genre.kit]);
 
+  const beatRef = useRef(beat);
+  beatRef.current = beat;
+  const padsRef = useRef(padsFor);
+  padsRef.current = padsFor;
+
   const preview = () => {
     if (previewing) return stopPreview();
     if (!beat) return;
     const engine = getEngine();
     const ctx = engine.init();
+    if (ctx.state === "suspended") void ctx.resume();
     const dur = stepSeconds(transport.bpm);
     let next = ctx.currentTime + 0.08;
     let n = 0;
     const tick = () => {
+      const live = beatRef.current;
+      if (!live) return;
+      // if the context is still waking up, don't pile up a burst of hits
+      if (next < ctx.currentTime) next = ctx.currentTime + 0.05;
       while (next < ctx.currentTime + 0.15) {
         const s = n % steps;
         for (const r of ROWS) {
-          const v = beat[r.id][s] ?? 0;
-          if (v > 0) engine.playDrum("hum-preview", padsFor(r.id), v, next);
+          const v = live[r.id][s] ?? 0;
+          if (v > 0) engine.playDrum("hum-preview", padsRef.current(r.id), v, next);
         }
         const at = next, shown = s;
         window.setTimeout(() => setPlayStep(shown), Math.max(0, (at - ctx.currentTime) * 1000));
