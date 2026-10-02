@@ -28,7 +28,15 @@
  *   out : preset  { id, action, name? }
  */
 
-export type BridgeFormat = "VST3" | "AU" | "CLAP" | "AAX";
+export type BridgeFormat = "VST3" | "AU" | "CLAP" | "AAX" | "VST2";
+const FORMATS: string[] = ["VST3", "AU", "CLAP", "AAX", "VST2"];
+
+export interface BridgeFolder {
+  path: string;
+  exists: boolean;
+  count: number;
+  custom: boolean;
+}
 
 export interface BridgePlugin {
   uid: string;
@@ -41,7 +49,7 @@ export interface BridgePlugin {
   /** e.g. "EQ", "Reverb", "Synth" — as reported by the plugin */
   category?: string;
   /** "failed" when the bridge could not load it during scanning */
-  status?: "ok" | "failed";
+  status?: "ok" | "failed" | "unsupported";
   error?: string;
 }
 
@@ -72,6 +80,8 @@ export interface BridgeState {
   plugins: BridgePlugin[];
   editors: Record<string, BridgeEditor>;
   scanning: boolean;
+  progress?: { done: number; total: number; current: string } | undefined;
+  folders: BridgeFolder[];
   message?: string | undefined;
 }
 
@@ -97,6 +107,7 @@ class BridgeClient {
     plugins: [],
     editors: {},
     scanning: false,
+    folders: [],
   };
 
   get snapshot() {
@@ -151,8 +162,7 @@ class BridgeClient {
     socket.onopen = () => {
       clearTimeout(timer);
       this.set({ status: "connected", message: undefined });
-      this.send({ t: "scan" });
-      this.set({ scanning: true });
+      this.scan();
     };
     socket.onerror = () => {
       clearTimeout(timer);
@@ -211,7 +221,7 @@ class BridgeClient {
     switch (msg["t"]) {
       case "hello":
         const formats = Array.isArray(msg["formats"])
-          ? msg["formats"].filter((value): value is BridgeFormat => ["VST3", "AU", "CLAP", "AAX"].includes(String(value)))
+          ? msg["formats"].filter((value): value is BridgeFormat => FORMATS.includes(String(value)))
           : [];
         const capabilities = Array.isArray(msg["capabilities"])
           ? msg["capabilities"].filter((value): value is "scan" | "host" => value === "scan" || value === "host")
@@ -224,8 +234,18 @@ class BridgeClient {
         });
         break;
       case "plugins":
-        this.set({ plugins: validPlugins(msg["list"]), scanning: false });
+        this.set({ plugins: validPlugins(msg["list"]), folders: validFolders(msg["folders"]), scanning: false, progress: undefined });
         break;
+      case "progress":
+        this.set({ progress: { done: Number(msg["done"]) || 0, total: Number(msg["total"]) || 0, current: String(msg["current"] ?? "") } });
+        break;
+      case "plugin": {
+        const [one] = validPlugins([msg["plugin"]]);
+        if (!one) break;
+        const rest = this.state.plugins.filter((p) => p.uid !== one.uid);
+        this.set({ plugins: [...rest, one].sort((a, b) => a.name.localeCompare(b.name)) });
+        break;
+      }
       case "opened": {
         const id = String(msg["id"]);
         this.set({
@@ -284,9 +304,13 @@ class BridgeClient {
   }
 
   scan() {
-    if (!this.send({ t: "scan" })) return false;
-    this.set({ scanning: true });
+    if (!this.send({ t: "scan", folders: customPluginFolders() })) return false;
+    this.set({ scanning: true, progress: undefined, message: undefined });
     return true;
+  }
+
+  scanOne(path: string) {
+    return this.send({ t: "scan-one", path });
   }
 
   open(uid: string) {
@@ -337,7 +361,7 @@ function validPlugins(input: unknown): BridgePlugin[] {
     if (!value || typeof value !== "object") return [];
     const item = value as Record<string, unknown>;
     const format = String(item["format"] ?? "");
-    if (typeof item["uid"] !== "string" || typeof item["name"] !== "string" || !["VST3", "AU", "CLAP", "AAX"].includes(format)) return [];
+    if (typeof item["uid"] !== "string" || typeof item["name"] !== "string" || !FORMATS.includes(format)) return [];
     return [{
       uid: item["uid"],
       name: item["name"],
@@ -347,8 +371,35 @@ function validPlugins(input: unknown): BridgePlugin[] {
       ...(typeof item["isInstrument"] === "boolean" ? { isInstrument: item["isInstrument"] } : {}),
       ...(typeof item["version"] === "string" ? { version: item["version"] } : {}),
       ...(typeof item["category"] === "string" ? { category: item["category"] } : {}),
-      ...(item["status"] === "ok" || item["status"] === "failed" ? { status: item["status"] } : {}),
+      ...(item["status"] === "ok" || item["status"] === "failed" || item["status"] === "unsupported" ? { status: item["status"] } : {}),
       ...(typeof item["error"] === "string" ? { error: item["error"] } : {}),
     }];
   });
+}
+
+function validFolders(input: unknown): BridgeFolder[] {
+  if (!Array.isArray(input)) return [];
+  return input.flatMap((v) => {
+    if (!v || typeof v !== "object" || typeof (v as BridgeFolder).path !== "string") return [];
+    const f = v as BridgeFolder;
+    return [{ path: f.path, exists: Boolean(f.exists), count: Number(f.count) || 0, custom: Boolean(f.custom) }];
+  });
+}
+
+const FOLDERS_KEY = "synclab.plugins.folders";
+export function customPluginFolders(): string[] {
+  if (typeof localStorage === "undefined") return [];
+  try {
+    const v = JSON.parse(localStorage.getItem(FOLDERS_KEY) ?? "[]");
+    return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
+}
+export function setCustomPluginFolders(list: string[]) {
+  try {
+    localStorage.setItem(FOLDERS_KEY, JSON.stringify([...new Set(list)]));
+  } catch {
+    /* storage blocked */
+  }
 }
