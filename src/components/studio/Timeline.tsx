@@ -10,6 +10,9 @@ import {
   MousePointer2,
   Pencil,
   Scissors,
+  ScissorsLineDashed,
+  SquareScissors,
+  SquareSplitHorizontal,
   Waves,
   ChevronDown,
 
