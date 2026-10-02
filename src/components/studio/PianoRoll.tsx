@@ -470,6 +470,7 @@ export function PianoRoll({ track }: { track: Track }) {
               return (
                 <div
                   key={n.id}
+                  data-note
                   onPointerDown={(e) => onNoteDown(e, n, false)}
                   onContextMenu={(e) => {
                     e.preventDefault();
