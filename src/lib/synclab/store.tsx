@@ -55,7 +55,7 @@ const MIDI_INPUT_KEY = "synclab.midi.input";
 const AUTOSAVE_KEY = "synclab.autosave.v1";
 
 /** Preserve the untouched portions of an older take when a new recording covers only part of it. */
-function replaceTakeRegion(clips: AudioClip[], start: number, end: number, stepDur: number): AudioClip[] {
+export function replaceTakeRegion(clips: AudioClip[], start: number, end: number, stepDur: number): AudioClip[] {
   return clips.flatMap((clip) => {
     const from = clip.start ?? 0;
     const rate = clipRate(clip);

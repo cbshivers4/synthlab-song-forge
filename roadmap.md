@@ -104,6 +104,7 @@
 - [ ] Validate latency and audio-interface behavior on real macOS, Windows, iPhone and Android hardware
 
 ## Current studio refinement
+- [x] Preserve the audio outside the recorded measures when replacing only part of an existing take
 - [x] Make VCA and aux meters show actual audio, and verify their faders/mutes and the mixer master level control the intended signal paths
 - [x] Replace sample-pad mini waveforms with clean pad labels while preserving the waveform editor
 - [x] Simplify the timeline track menu without removing actions
