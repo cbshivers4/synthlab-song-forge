@@ -287,7 +287,6 @@ export function MenuBar() {
             <MenubarItem onClick={() => setAbletonOpen(true)}>Ableton Live handoff…</MenubarItem>
             <MenubarItem onClick={openExport}>Export / Share (WAV, MP3)</MenubarItem>
             <MenubarSeparator />
-            <MenubarItem onClick={() => setPanel(null)}>Close Editor</MenubarItem>
             <MenubarItem onClick={() => setStage("start")}>
               Close Project <MenubarShortcut>⌘W</MenubarShortcut>
             </MenubarItem>
