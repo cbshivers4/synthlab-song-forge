@@ -116,3 +116,6 @@
 - [x] Prevent repeated instrument/drum recordings from stacking unless overdub is enabled
 - [x] Review Live Looper export routing; retain direct monitor to prevent loop feedback and use Timeline transfer for export
 - [ ] Listen to synth recording, Vocal Forge voices and effects/generator previews on real speakers (requires ears and device audio)
+
+## Removed (Oct 2)
+- [x] Removed AI Studio group (Vocal Forge, Stem Separator, Voice Remover, AI Co-Producer, Hum to Beat, AI Stem Generator) and Bass Generator — panels, menus, tools rail, mobile nav, search, help articles, component + server-function files deleted. ai-vocal track kind kept for playback of existing projects.
