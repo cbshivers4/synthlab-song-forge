@@ -27,7 +27,7 @@ import { MidiLearnBlock, MidiLearnButton } from "./MidiLearn";
 import { TrackNotes } from "@/components/studio/TrackNotes";
 import { TrackIcon, TrackStylePicker } from "@/components/studio/TrackStyle";
 import { BUILT_IN_PLUGINS } from "@/lib/synclab/plugins";
-import type { AuxId, BusId, BusState, PluginInstance, Track, Transport, VcaId } from "@/lib/synclab/types";
+import type { AuxId, BusId, BusState, PluginInstance, Track, VcaId } from "@/lib/synclab/types";
 import { cn } from "@/lib/utils";
 import { clearClip, reportLevel, useClipped } from "@/lib/synclab/clip-monitor";
 import { Scope } from "./Scope";
@@ -65,59 +65,40 @@ function fracToDb(frac: number) {
   return frac * 54 - 48;
 }
 
-function sequencedLevel(track: Track, step: number) {
-  const s = step % Math.max(1, track.steps);
-  if (track.kind === "drum") {
-    return Math.max(0, ...(track.pads ?? []).filter((pad) => !pad.muted).map((pad) => pad.steps[s] ?? 0)) * 0.9;
-  }
-  if (track.kind === "instrument" || track.kind === "midi" || track.kind === "sampler") {
-    const active = (track.notes ?? []).filter((note) => {
-      const start = note.step % Math.max(1, track.steps);
-      return s >= start && s < start + Math.max(1, note.length);
-    });
-    return Math.max(0, ...active.map((note) => note.velocity)) * 0.72;
-  }
-  const clip = track.clips?.find((item) => item.id === track.activeClipId) ?? track.clips?.[0];
-  if (!clip?.peaks.length) return 0;
-  const index = Math.floor((s / Math.max(1, track.steps)) * clip.peaks.length) % clip.peaks.length;
-  return (clip.peaks[index] ?? 0) * 0.82;
-}
-
-/** Live audio peaks with sequenced clip activity for channels represented by timeline media. */
-function useMeters(tracks: Track[], transport: Transport) {
-  const [levels, setLevels] = useState<{ tracks: Record<string, number>; master: number }>({
+/** Real post-fader signal readings; one shared 20 fps refresh for every strip. */
+function useMeters(tracks: Track[]) {
+  const [levels, setLevels] = useState<{ tracks: Record<string, number>; buses: Record<string, number>; vcas: Record<string, number>; aux: Record<string, number>; master: number }>({
     tracks: {},
+    buses: {}, vcas: {}, aux: {},
     master: 0,
   });
   const smooth = useRef<Record<string, number>>({});
   const idsKey = tracks.map((track) => track.id).join(",");
   const tracksRef = useRef(tracks);
-  const transportRef = useRef(transport);
   tracksRef.current = tracks;
-  transportRef.current = transport;
   useEffect(() => {
     let timer = 0;
     const loop = () => {
       const engine = getEngine();
       const tracks: Record<string, number> = {};
-      let loudest = 0;
-      for (const track of tracksRef.current) {
-        const id = track.id;
-        const timeline = transportRef.current.playing ? sequencedLevel(track, transportRef.current.step) : 0;
-        const raw = Math.max(engine.getTrackLevel(id), timeline * track.volume);
+      const buses: Record<string, number> = {};
+      const vcas: Record<string, number> = {};
+      const aux: Record<string, number> = {};
+      const read = (id: string, raw: number) => {
         reportLevel(id, raw);
         const prev = smooth.current[id] ?? 0;
-        const v = raw > prev ? raw : prev * 0.86;
-        smooth.current[id] = v;
-        tracks[id] = dbToFrac(toDb(Math.max(v, 0.0005)));
-        if (v > loudest) loudest = v;
+        const value = raw > prev ? raw : prev * 0.86;
+        smooth.current[id] = value;
+        return dbToFrac(toDb(Math.max(value, 0.0005)));
+      };
+      for (const track of tracksRef.current) {
+        const id = track.id;
+        tracks[id] = read(id, engine.getTrackLevel(id));
       }
-      const mRaw = Math.max(engine.getLevel(), loudest * 0.95);
-      reportLevel("master", mRaw);
-      const mPrev = smooth.current["__master"] ?? 0;
-      const m = mRaw > mPrev ? mRaw : mPrev * 0.86;
-      smooth.current["__master"] = m;
-      setLevels({ tracks, master: dbToFrac(toDb(Math.max(m, 0.0005))) });
+      for (const id of BUS_STRIPS) buses[id] = read(`bus:${id}`, engine.getBusLevel(id));
+      for (const id of VCA_IDS) vcas[id] = read(`vca:${id}`, engine.getVcaLevel(id));
+      for (const id of AUX_IDS) aux[id] = read(`aux:${id}`, engine.getAuxLevel(id));
+      setLevels({ tracks, buses, vcas, aux, master: read("master", engine.getLevel()) });
     };
     loop();
     timer = window.setInterval(loop, 50);
@@ -1263,12 +1244,13 @@ function BusStrip({
   );
 }
 
-function ControlStrip({ kind, name, state, onChange, memberCount }: {
+function ControlStrip({ kind, name, state, onChange, memberCount, level }: {
   kind: "VCA" | "AUX";
   name: string;
   state: BusState;
   onChange: (patch: Partial<BusState>) => void;
   memberCount?: number;
+  level: number;
 }) {
   const advanced = useApp().mode === "advanced";
   const aux = kind === "AUX";
@@ -1276,8 +1258,7 @@ function ControlStrip({ kind, name, state, onChange, memberCount }: {
     <div className="flex w-[116px] shrink-0 flex-col border-r border-border bg-surface-2/70">
       <div className={cn(ROW.head, "flex items-center justify-center border-b border-border font-mono text-[9px] font-bold tracking-wider", aux ? "text-primary" : "text-accent-foreground")}>{kind}</div>
        <div className={cn(ROW.eq, "flex items-center justify-center gap-1 border-b border-border/60")}><MidiLearnButton id={`${aux ? "aux" : "vca"}:${name}`} param="volume" label={`${kind} ${name} level`} /><MidiLearnButton id={`${aux ? "aux" : "vca"}:${name}`} param="mute" label={`${kind} ${name} mute`} /></div>
-      {advanced && <div className={cn(ROW.scope, "border-b border-border/60")} />}
-       <div className="sr-only">{aux ? "FX RETURN" : `${memberCount ?? 0} CHANNELS`}</div>
+      {advanced && <div className={cn(ROW.scope, "flex items-center justify-center border-b border-border/60 font-mono text-[9px] text-muted-foreground")}>{aux ? "FX RETURN" : `${memberCount ?? 0} CHANNELS`}</div>}
       <div className={cn(ROW.devices, "flex items-center border-b border-border/60 p-2")}>
         {aux ? <FxMenu target={`send:${name}`} label="Return FX" /> : <span className="w-full text-center font-mono text-[9px] text-muted-foreground">LEVEL CONTROL</span>}
       </div>
@@ -1285,10 +1266,11 @@ function ControlStrip({ kind, name, state, onChange, memberCount }: {
       {advanced && <div className={cn(ROW.sendBars, "border-b border-border/60")} />}
       <div className={cn(ROW.io, "flex items-center justify-center border-b border-border/60 font-mono text-[9px] uppercase text-muted-foreground")}>{aux ? "Master" : "Assigned channels"}</div>
       <div className={cn(ROW.pan, "border-b border-border/60")} />
-      <div className={cn(ROW.fader, "flex justify-center border-b border-border/60 py-1")}>
+      <div className={cn(ROW.fader, "flex items-stretch justify-center gap-2 border-b border-border/60 py-1")}>
         <Slider aria-label={`${kind} ${name} level`} orientation="vertical" className={cn("h-full w-8", FADER_CAP)} value={[state.volume]} min={0} max={1.2} step={0.01} onValueChange={([value = 0]) => onChange({ volume: value })} />
+        <Meter id={`${aux ? "aux" : "vca"}:${name}`} level={level} tall />
       </div>
-      <div className={cn(ROW.readout, "flex items-center justify-center border-b border-border/60 font-mono text-[9px] text-muted-foreground")}>{toDb(state.volume).toFixed(1)} dB</div>
+      <div className={cn(ROW.readout, "flex items-center justify-between gap-1 border-b border-border/60 px-1 font-mono text-[9px] text-muted-foreground")}><span>{toDb(state.volume).toFixed(1)}</span><span>{fracToDb(level).toFixed(0)}</span><ClipLed id={`${aux ? "aux" : "vca"}:${name}`} compact /></div>
       <div className={cn(ROW.name, "flex items-center justify-center border-b border-border/60 px-2 text-center font-mono text-[10px] font-bold uppercase text-foreground")}>{aux ? name : `VCA ${name}`}</div>
       <div className={cn(ROW.buttons, "px-2 pt-1")}>
         <Button variant={state.muted ? "destructive" : "outline"} size="sm" className="h-8 w-full text-[10px]" onClick={() => onChange({ muted: !state.muted })} aria-label={`${state.muted ? "Unmute" : "Mute"} ${kind} ${name}`}>{state.muted ? "MUTED" : "MUTE"}</Button>
@@ -1499,8 +1481,8 @@ function MasterStrip({ level: peak }: { level: number }) {
 }
 
 export function Mixer() {
-  const { tracks, transport, selectedId, select, buses, setBus, vcas, setVca, auxReturns, setAuxReturn, updateTrack, addTrack } = useStudio();
-  const levels = useMeters(tracks, transport);
+  const { tracks, selectedId, select, buses, setBus, vcas, setVca, auxReturns, setAuxReturn, updateTrack, addTrack } = useStudio();
+  const levels = useMeters(tracks);
   const [narrow, setNarrow] = useState(false);
   const [showBuses, setShowBuses] = useState(true);
   const [showVcas, setShowVcas] = useState(true);
@@ -1548,13 +1530,6 @@ export function Mixer() {
     desk.id === "solid" ? { a: solid, b: solid, c: solid } : { a: desk.a, b: desk.b, c: desk.c };
   const soloed = tracks.some((t) => t.solo);
   const muted = tracks.some((t) => t.muted);
-  const busLevel = (id: BusId) => {
-    const members = tracks.filter((t) => t.bus === id && !t.muted);
-    const peak = Math.max(0, ...members.map((t) => levels.tracks[t.id] ?? 0));
-    const out = buses[id].muted ? 0 : peak * Math.min(1, buses[id].volume);
-    reportLevel(`bus:${id}`, out);
-    return out;
-  };
   // Only show bus strips that actually have channels routed to them.
   const activeBuses = BUS_STRIPS.filter((id) => tracks.some((t) => t.bus === id));
   return (
@@ -1772,13 +1747,13 @@ export function Mixer() {
           ))}
           {showBuses &&
             (counts.bus === 0 ? activeBuses : BUS_STRIPS.slice(0, counts.bus)).map((id) => (
-              <BusStrip key={id} id={id} state={buses[id]} level={busLevel(id)} onChange={(p) => setBus(id, p)} />
+              <BusStrip key={id} id={id} state={buses[id]} level={levels.buses[id] ?? 0} onChange={(p) => setBus(id, p)} />
             ))}
           {showVcas && VCA_IDS.slice(0, counts.vca).map((id) => (
-            <ControlStrip key={`vca-${id}`} kind="VCA" name={id} state={vcas[id]} memberCount={tracks.filter((t) => t.vca === id).length} onChange={(patch) => setVca(id, patch)} />
+            <ControlStrip key={`vca-${id}`} kind="VCA" name={id} state={vcas[id]} level={levels.vcas[id] ?? 0} memberCount={tracks.filter((t) => t.vca === id).length} onChange={(patch) => setVca(id, patch)} />
           ))}
           {showAux && AUX_IDS.slice(0, counts.aux).map((id) => (
-            <ControlStrip key={`aux-${id}`} kind="AUX" name={id} state={auxReturns[id]} onChange={(patch) => setAuxReturn(id, patch)} />
+            <ControlStrip key={`aux-${id}`} kind="AUX" name={id} state={auxReturns[id]} level={levels.aux[id] ?? 0} onChange={(patch) => setAuxReturn(id, patch)} />
           ))}
           <div className="sticky right-0 z-10 bg-surface shadow-[-12px_0_18px_-12px_rgba(0,0,0,0.8)]">
             <MasterStrip level={levels.master} />

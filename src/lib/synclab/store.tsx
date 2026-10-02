@@ -776,7 +776,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   }, [tracks]);
 
   useEffect(() => {
-    if (typeof window === "undefined" || !getEngine().ctx) return;
+    if (typeof window === "undefined") return;
     for (const [id, b] of Object.entries(buses)) getEngine().setBus(id, b.volume, b.muted);
   }, [buses]);
 
@@ -808,6 +808,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     const ctx = engine.init();
     engine.syncMix(tracksRef.current);
     for (const track of tracksRef.current) engine.setInserts(track.id, track.plugins ?? []);
+    for (const [target, list] of Object.entries(fxChains)) engine.setFxInserts(target, list);
     // make sure every arrangement clip is decoded before the playhead reaches it
     for (const t of tracksRef.current)
       for (const c of t.clips ?? []) if (c.url) void engine.ensureBuffer(c.url);
