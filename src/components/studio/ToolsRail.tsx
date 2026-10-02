@@ -42,13 +42,7 @@ interface Tool {
 
 
 const TOOLS: Tool[] = [
-  { id: "vocal", label: "Vocal Forge", icon: <Sparkles className="size-4" />, panel: "vocal", drag: { kind: "ai-vocal", name: "Vocal Forge" } },
-  { id: "stems", label: "Stem Separator", icon: <Split className="size-4" />, panel: "stems" },
-  { id: "voice", label: "Voice Remover", icon: <Volume2 className="size-4" />, panel: "voice" },
-  { id: "coproducer", label: "AI Co-Producer", icon: <Bot className="size-4" />, panel: "coproducer" },
-  { id: "hum", label: "Hum to Beat", icon: <Waves className="size-4" />, panel: "hum" },
   { id: "synth", label: "Synthesizers", icon: <Music2 className="size-4" />, panel: "synth", drag: { kind: "instrument", name: "Synth" } },
-  { id: "bass", label: "Bass Generator", icon: <AudioWaveform className="size-4" />, panel: "bass" },
   { id: "drums", label: "Drum Machine", icon: <Disc3 className="size-4" />, panel: "drums", drag: { kind: "drum", name: "Drums" } },
   { id: "beat", label: "Pad Sampler", icon: <Grid2x2 className="size-4" />, panel: "pads", drag: { kind: "sampler", name: "Pad Sampler" } },
   { id: "chop", label: "Sample Chopper", icon: <Scissors className="size-4" />, panel: "pads", advanced: true },
