@@ -309,14 +309,8 @@ export function TopBar() {
                 <DropdownMenuItem onClick={() => setPanel("mixer")}>
                   <SlidersHorizontal className="mr-2 size-4" /> Mixer
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setPanel("vocal")}>
-                  <Mic className="mr-2 size-4" /> Vocal Forge
-                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setPanel("pads")}>
                   <Grid2x2 className="mr-2 size-4" /> Sample Pads
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setPanel("hum")}>
-                  <Waves className="mr-2 size-4" /> Hum to Beat
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuLabel className="font-mono text-[10px] tracking-wider">COUNT-IN</DropdownMenuLabel>
@@ -386,13 +380,6 @@ export function TopBar() {
                 onClick={() => setPanel(panel === "mixer" ? null : "mixer")}
               >
                 <SlidersHorizontal className="size-4" /> MIX
-              </Button>
-              <Button
-                variant={panel === "vocal" ? "secondary" : "ghost"}
-                size="sm"
-                onClick={() => setPanel(panel === "vocal" ? null : "vocal")}
-              >
-                <Mic className="size-4" /> VOCAL FORGE
               </Button>
               <Button variant="ghost" size="sm" onClick={() => toast("Import instrumental", { description: "Drop a file on the timeline to analyse BPM, key and structure." })}>
                 <Import className="size-4" /> IMPORT
