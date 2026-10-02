@@ -158,7 +158,7 @@ export function StemGenerator() {
         scheduleLoop(next);
         next += loop;
       }
-    }, 100);
+    }, 50);
     setPlaying(index);
   };
 
