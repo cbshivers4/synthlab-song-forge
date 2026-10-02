@@ -132,7 +132,7 @@ export class SyncLabEngine {
   private automatedPluginParams = new Map<string, AutomatableAudioParam>();
   private sendOut = new Map<string, AudioNode>();
   private sendFeedback = new Map<string, AudioNode>();
-  private fxInserts = new Map<string, { key: string; nodes: AudioNode[] }>();
+  private fxInserts = new Map<string, { key: string; nodes: AudioNode[]; input: GainNode }>();
   /** Post-EQ analysers for the Pro-EQ display, keyed by plugin instance id. */
   private eqAnalysers = new Map<string, AnalyserNode>();
   private pluginScopes = new Map<string, AnalyserNode>();
@@ -544,25 +544,32 @@ export class SyncLabEngine {
     const prev = this.fxInserts.get(targetId);
     if (prev?.key === key) return;
 
-    try {
+    // The source is disconnected only on its first insert. Subsequent edits
+    // crossfade two parallel paths; disconnecting it every time cuts the sound.
+    if (!prev) {
       source.disconnect();
-    } catch {
-      /* noop */
-    }
-    for (const n of prev?.nodes ?? []) {
-      try {
-        n.disconnect();
-      } catch {
-        /* noop */
+      if (kind === "send" && name === "delay") {
+        const fb = this.sendFeedback.get("delay");
+        if (fb) source.connect(fb);
       }
     }
-    if (kind === "send" && name === "delay") {
-      const fb = this.sendFeedback.get("delay");
-      if (fb) source.connect(fb);
-    }
+    for (const key of [...this.automatedPluginParams.keys()]) if (key.startsWith(`${targetId}:`)) this.automatedPluginParams.delete(key);
     const nodes = this.buildInsertNodes(ctx, active, targetId);
-    this.fxInserts.set(targetId, { key, nodes });
-    this.linkInsertChain(source, nodes, active, kind === "send" ? this.auxReturns.get(name) ?? master : master);
+    const input = ctx.createGain();
+    input.gain.setValueAtTime(0, ctx.currentTime);
+    source.connect(input);
+    this.linkInsertChain(input, nodes, active, kind === "send" ? this.auxReturns.get(name) ?? master : master);
+    this.fxInserts.set(targetId, { key, nodes, input });
+    input.gain.linearRampToValueAtTime(1, ctx.currentTime + 0.02);
+    if (prev) {
+      prev.input.gain.cancelScheduledValues(ctx.currentTime);
+      prev.input.gain.setValueAtTime(prev.input.gain.value, ctx.currentTime);
+      prev.input.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.02);
+      window.setTimeout(() => {
+        try { source.disconnect(prev.input); prev.input.disconnect(); } catch { /* already detached */ }
+        for (const node of prev.nodes) try { node.disconnect(); } catch { /* already detached */ }
+      }, 45);
+    }
   }
 
   private linkInsertChain(from: AudioNode, nodes: AudioNode[], active: PluginInstance[], to: AudioNode) {
