@@ -874,16 +874,21 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             const rate = clipRate(c);
             const fullLen = c.length ?? c.duration ?? 0;
             let skip = 0;
-            if (cs !== at) {
-              if (!jumped || at < cs) continue;
+            let startWhen = when;
+            if (cs >= at && cs < at + 1) {
+              // A replacement can leave a clip starting between grid steps.
+              startWhen += (cs - at) * stepDur;
+            } else if (jumped && at > cs) {
               skip = (at - cs) * stepDur * rate;
               if (skip >= fullLen - 0.02) continue;
-            }
+            } else continue;
             engine.playClip(
               t.id,
               {
                 url: c.url,
-                offset: (c.offset ?? 0) + skip,
+                // Reversed playback starts at the far end of the trim window:
+                // shortening its length advances the heard start, not its offset.
+                offset: (c.offset ?? 0) + (c.reverse ? 0 : skip),
                 length: fullLen - skip,
                 gain: c.gain ?? 1,
                 fadeIn: skip ? 0.01 : (c.fadeIn ?? 0.004),
@@ -891,7 +896,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
                 rate,
                 reverse: c.reverse ?? false,
               },
-              when,
+              startWhen,
             );
           }
         }
