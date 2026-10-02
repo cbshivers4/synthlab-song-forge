@@ -29,6 +29,7 @@ import {
   Menu,
 } from "lucide-react";
 
+import { STEPS_PER_BAR, STEPS_PER_BEAT, songSteps, stepSeconds } from "@/lib/synclab/timebase";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -532,20 +533,20 @@ function PositionDisplay({ step: beatStep, bpm, playing }: { step: number; bpm: 
   const toggle = () => {
     setAbs((a) => { localStorage.setItem("synclab.timeMode", a ? "bars" : "abs"); return !a; });
   };
-  // The scheduler reports whole beats; interpolate within the beat at 20 fps so ticks and ms move.
+  // The scheduler reports whole 1/16 steps; interpolate within the step at 20 fps so ticks and ms move.
   const [frac, setFrac] = useState(0);
   useEffect(() => {
     setFrac(0);
     if (!playing) return;
     const t0 = performance.now();
-    const beatMs = 60000 / bpm;
+    const beatMs = stepSeconds(bpm) * 1000;
     const id = window.setInterval(() => setFrac(Math.min(0.999, (performance.now() - t0) / beatMs)), 50);
     return () => window.clearInterval(id);
   }, [beatStep, playing, bpm]);
   const step = beatStep + frac;
   const whole = Math.floor(step);
-  const tick = Math.floor((step - whole) * TICKS);
-  const secs = step * (60 / bpm);
+  const tick = Math.floor((((step % STEPS_PER_BEAT) + STEPS_PER_BEAT) % STEPS_PER_BEAT / STEPS_PER_BEAT) * TICKS);
+  const secs = step * stepSeconds(bpm);
   const hh = Math.floor(secs / 3600), mm = Math.floor((secs % 3600) / 60), ss = Math.floor(secs % 60);
   const ms = Math.floor((secs * 1000) % 1000);
   return (
@@ -554,7 +555,7 @@ function PositionDisplay({ step: beatStep, bpm, playing }: { step: number; bpm: 
       <div className="whitespace-nowrap text-base leading-none tabular-nums text-primary">
         {abs
           ? `${hh}:${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")}.${String(ms).padStart(3, "0")}`
-          : `${Math.floor(whole / 4) + 1} | ${(whole % 4) + 1} | ${String(tick).padStart(3, "0")}`}
+          : `${Math.floor(whole / STEPS_PER_BAR) + 1} | ${Math.floor((whole % STEPS_PER_BAR) / STEPS_PER_BEAT) + 1} | ${String(tick).padStart(3, "0")}`}
       </div>
     </button>
   );
@@ -562,12 +563,12 @@ function PositionDisplay({ step: beatStep, bpm, playing }: { step: number; bpm: 
 
 function LoopRange() {
   const { transport, setTransport } = useStudio();
-  const total = (transport.bars ?? 4) * 4;
+  const total = songSteps(transport.bars);
   const lo = transport.loopStart ?? 0;
   const hi = transport.loopEnd ?? total;
   const nudge = (which: "loopStart" | "loopEnd", d: number) => {
-    if (which === "loopStart") setTransport({ loopStart: Math.max(0, Math.min(hi - 4, lo + d)) });
-    else setTransport({ loopEnd: Math.min(total, Math.max(lo + 4, hi + d)) });
+    if (which === "loopStart") setTransport({ loopStart: Math.max(0, Math.min(hi - STEPS_PER_BAR, lo + d)) });
+    else setTransport({ loopEnd: Math.min(total, Math.max(lo + STEPS_PER_BAR, hi + d)) });
   };
   const Btn = ({ k, d, l }: { k: "loopStart" | "loopEnd"; d: number; l: string }) => (
     <button type="button" aria-label={l} onClick={() => nudge(k, d)}
@@ -579,13 +580,13 @@ function LoopRange() {
     <div title="Loop range in bars">
       <span className="label-xs">LOOP {transport.loop ? "ON" : "OFF"}</span>
       <div className="flex items-center gap-0.5 text-sm leading-none text-primary">
-        <Btn k="loopStart" d={-4} l="Loop start earlier" />
-        <span className="tabular-nums">{lo / 4 + 1}</span>
-        <Btn k="loopStart" d={4} l="Loop start later" />
+        <Btn k="loopStart" d={-STEPS_PER_BAR} l="Loop start earlier" />
+        <span className="tabular-nums">{Math.floor(lo / STEPS_PER_BAR) + 1}</span>
+        <Btn k="loopStart" d={STEPS_PER_BAR} l="Loop start later" />
         <span className="px-0.5 text-muted-foreground">–</span>
-        <Btn k="loopEnd" d={-4} l="Loop end earlier" />
-        <span className="tabular-nums">{hi / 4 + 1}</span>
-        <Btn k="loopEnd" d={4} l="Loop end later" />
+        <Btn k="loopEnd" d={-STEPS_PER_BAR} l="Loop end earlier" />
+        <span className="tabular-nums">{Math.floor(hi / STEPS_PER_BAR) + 1}</span>
+        <Btn k="loopEnd" d={STEPS_PER_BAR} l="Loop end later" />
       </div>
     </div>
   );
