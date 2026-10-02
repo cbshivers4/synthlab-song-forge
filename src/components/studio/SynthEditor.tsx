@@ -9,7 +9,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Knob } from "./Knob";
-import { MidiLearnButton } from "./MidiLearn";
 import { useStudio } from "@/lib/synclab/store";
 import { SYNTH_PRESETS } from "@/lib/synclab/presets";
 import type { EnvelopeParams, LfoWave, ModDest, ModSource, OscWave, SynthPatch, Track } from "@/lib/synclab/types";
