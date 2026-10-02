@@ -1204,8 +1204,10 @@ export class SyncLabEngine {
         ? clamp(v["volume"] * (vca?.volume ?? 1), 0, 1.5) : 0, t, 0.02);
     }
     if (v["pan"] !== undefined) ch.pan.pan.setTargetAtTime(clamp(v["pan"], -1, 1), t, 0.02);
-    if (v["sendReverb"] !== undefined) ch.sendReverb.gain.setTargetAtTime(clamp(v["sendReverb"], 0, 1), t, 0.02);
-    if (v["sendDelay"] !== undefined) ch.sendDelay.gain.setTargetAtTime(clamp(v["sendDelay"], 0, 1), t, 0.02);
+    const bus = this.busStates[ch.bus];
+    const sendScale = ch.bus === "master" || !bus ? 1 : bus.muted ? 0 : clamp(bus.volume, 0, 1.5);
+    if (v["sendReverb"] !== undefined) ch.sendReverb.gain.setTargetAtTime(clamp(v["sendReverb"] * sendScale, 0, 1.5), t, 0.02);
+    if (v["sendDelay"] !== undefined) ch.sendDelay.gain.setTargetAtTime(clamp(v["sendDelay"] * sendScale, 0, 1.5), t, 0.02);
     for (const [key, normalized] of Object.entries(v)) {
       if (!key.startsWith("plugin:")) continue;
       const [, instanceId = "", paramId = ""] = key.split(":");
