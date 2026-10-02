@@ -56,6 +56,20 @@ export function PianoRoll({ track }: { track: Track }) {
     if (needed > bars) setBars(needed);
   }, [track.notes, bars]);
   const notes = track.notes ?? [];
+
+  // when the roll opens on a track that already has notes, center the visible
+  // pitch range on those notes instead of leaving the user staring at empty rows
+  useEffect(() => {
+    if (notes.length === 0) return;
+    const avg = notes.reduce((a, n) => a + n.pitch, 0) / notes.length;
+    // put the notes near the top of the window, then scroll the panel to them
+    setLow(Math.max(12, Math.min(96, Math.round(avg - ROWS + 6))));
+    requestAnimationFrame(() => {
+      gridRef.current?.querySelector("[data-note]")?.scrollIntoView({ block: "center" });
+    });
+    // only on open / track change — not on every note edit
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [track.id]);
   const pitches = Array.from({ length: ROWS }, (_, i) => low + ROWS - 1 - i);
   const scale = SCALES[scaleName] ?? SCALES["Minor"]!;
   const inScale = (p: number) => scale.includes((((p - root) % 12) + 12) % 12);
@@ -456,6 +470,7 @@ export function PianoRoll({ track }: { track: Track }) {
               return (
                 <div
                   key={n.id}
+                  data-note
                   onPointerDown={(e) => onNoteDown(e, n, false)}
                   onContextMenu={(e) => {
                     e.preventDefault();
