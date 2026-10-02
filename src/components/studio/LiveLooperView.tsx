@@ -6,6 +6,7 @@ import { Slider } from "@/components/ui/slider";
 import { useStudio } from "@/lib/synclab/store";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { getLooper, type LoopSlot } from "@/lib/synclab/live-looper";
+import { getBeatsPerBar } from "@/lib/synclab/timebase";
 import { cn } from "@/lib/utils";
 import { TRACK_PALETTE } from "./TrackStyle";
 import { MidiLearnButton } from "./MidiLearn";
@@ -41,7 +42,7 @@ function LoopDonut({ slot, send }: { slot: LoopSlot; send: (i: number) => void }
   let countLabel: string | null = null;
   if (slot.state === "armed" && looper.precountStart !== null && looper.now < slot.recStart) {
     const left = Math.ceil((slot.recStart - looper.now) / beatLen - 1e-3);
-    countLabel = String(((left - 1) % 4) + 1);
+    countLabel = String(((left - 1) % getBeatsPerBar()) + 1);
   } else if (slot.state === "recording" && looper.precount > 0 && looper.now - slot.recStart < 0.5 && looper.now >= slot.recStart) {
     countLabel = "GO";
   }
