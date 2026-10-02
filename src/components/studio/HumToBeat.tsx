@@ -131,7 +131,7 @@ export function HumToBeat() {
 
   const padsFor = useMemo(() => {
     const kit = defaultPads(16, genre.kit);
-    return (row: Row) => kit.find((p) => p.id === row)!;
+    return (row: Row) => kit.find((p) => p.kind === row)!;
   }, [genre.kit]);
 
   const beatRef = useRef(beat);
@@ -176,7 +176,7 @@ export function HumToBeat() {
     const id = addTrack("drum", `HUM ${genre.name.toUpperCase()}`);
     setStepCount(id, steps);
     for (const p of defaultPads(steps, genre.kit)) {
-      const row = (ROWS.find((r) => r.id === p.id)?.id ?? null) as Row | null;
+      const row = (ROWS.find((r) => r.id === p.kind)?.id ?? null) as Row | null;
       updatePad(id, p.id, { kit: genre.kit, steps: row ? beat[row] : new Array(steps).fill(0) });
     }
     select(id);
