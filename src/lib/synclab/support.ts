@@ -182,42 +182,12 @@ export const KNOWLEDGE_BASE: Article[] = [
     ],
   },
   {
-    id: "humtobeat",
-    title: "Hum-to-Beat",
-    tags: "hum beatbox tap clap rhythm beat generate",
-    body: [
-      "Record a hum, beatbox, clap or tap. SYNCLAB detects the hits, their timing and their intensity.",
-      "It maps low hits to kick, mid hits to snare/clap and short bright hits to hats, then writes the pattern onto a drum track.",
-      "Your original recording is kept — the generated beat is added alongside it.",
-    ],
-  },
-  {
-    id: "vocalforge",
-    title: "AI Vocal Forge",
-    tags: "ai vocal voice lyrics generate align bpm",
-    body: [
-      "Write or paste lyrics, choose a voice, emotion, energy and style, then generate.",
-      "Generated vocals are aligned to your project tempo and can be nudged to bars and beats by hand.",
-      "Preview before inserting. Nothing is written to your project until you insert it.",
-    ],
-  },
-  {
     id: "vocoder",
     title: "Vocoder",
     tags: "vocoder robot carrier modulator formant bands",
     body: [
       "Pick a carrier (usually a synth) and a modulator (usually a voice). The vocoder imposes the voice's shape on the synth.",
       "Bands controls resolution, formant shifts the character, and dry/wet blends with the untouched signal.",
-    ],
-  },
-  {
-    id: "stems",
-    title: "Stem separation and voice removal",
-    tags: "stems separate vocals instrumental voice remover karaoke",
-    body: [
-      "SYNCLAB separates using mid/side, band and transient processing on your device. This is signal processing, not a trained AI model, so results vary by track.",
-      "Wide or mono material separates less cleanly. Expect some bleed.",
-      "Your original audio is never modified — separated parts arrive as new tracks.",
     ],
   },
   {
