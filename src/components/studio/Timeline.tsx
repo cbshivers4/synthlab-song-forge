@@ -1175,6 +1175,11 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
             }
             return;
           }
+          // razor tool — slice any clip under the pointer at the exact position
+          if (editTool === "razor") {
+            razorAt(track.id, frac * songSteps(transport.bars));
+            return;
+          }
           // split tool
           if (track.kind === "audio" || track.kind === "ai-vocal") {
             if ((track.clips?.length ?? 0) === 0) {
