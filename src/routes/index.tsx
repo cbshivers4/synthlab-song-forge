@@ -147,13 +147,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
     appearance: { title: "APPEARANCE & THEMES", icon: <Palette className="size-4" /> },
     sampler: { title: "SAMPLER", icon: <AudioLines className="size-4" /> },
     pads: { title: "PAD SAMPLER", icon: <Grid2x2 className="size-4" /> },
-    bass: { title: "BASS GENERATOR", icon: <AudioWaveform className="size-4" /> },
-    coproducer: { title: "AI CO-PRODUCER", icon: <Bot className="size-4" /> },
-    hum: { title: "HUM TO BEAT", icon: <Waves className="size-4" /> },
-    stems: { title: "STEM SEPARATOR", icon: <Split className="size-4" /> },
-    voice: { title: "VOICE REMOVER", icon: <Split className="size-4" /> },
     mastering: { title: "MASTERING", icon: <Gauge className="size-4" /> },
-    stemgen: { title: "AI STEM GENERATOR", icon: <Sparkles className="size-4" /> },
     notes: { title: "TRACK NOTES", icon: <NotebookPen className="size-4" /> },
     reference: { title: "REFERENCE ANALYZER", icon: <FileSearch className="size-4" /> },
     live: { title: "LIVE VIEW", icon: <Radio className="size-4" /> },
@@ -268,7 +262,6 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
         ) : (
           <p className="text-sm text-muted-foreground">Select an instrument, MIDI or drum track to edit its notes.</p>
         ))}
-      {panel === "vocal" && <VocalForge />}
       {panel === "settings" && <Settings />}
       {panel === "keys" && <Keyboard />}
       {panel === "browser" && <Browser />}
@@ -276,13 +269,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
       {panel === "appearance" && <Appearance />}
       {panel === "sampler" && <Sampler />}
       {panel === "pads" && <PadSampler />}
-      {panel === "bass" && <BassGenerator />}
-      {panel === "coproducer" && <CoProducer />}
-      {panel === "hum" && <HumToBeat />}
-      {panel === "stems" && <StemSeparator mode="stems" />}
       {panel === "mastering" && <Mastering />}
-      {panel === "voice" && <StemSeparator mode="voice" />}
-      {panel === "stemgen" && <StemGenerator />}
       {panel === "notes" && <NotesPanel />}
       {panel === "reference" && <ReferenceAnalyzer />}
       {panel === "live" && <LiveView />}
