@@ -1,6 +1,6 @@
 import { getEngine } from "./audio-engine";
 import { getBeatsPerBar } from "./timebase";
-import { openMic, releaseMic } from "./mic";
+import { borrowActiveMic, openMic, releaseMic } from "./mic";
 import { encodeWav } from "./bounce";
 
 /**
@@ -61,6 +61,8 @@ export class LiveLooper {
   threshold: number | null = null;
   /** slot waiting for the input to cross the threshold */
   private waitingSlot: number | null = null;
+  /** true when the input belongs to another SYNCLAB tool and must not be stopped here */
+  private micBorrowed = false;
   /** recent input peak (0..1) for the threshold meter */
   inputPeak = 0;
   origin: number | null = null;
@@ -194,10 +196,20 @@ export class LiveLooper {
   private async connectInput() {
     let node: AudioNode | null = null;
     if (this.source === "mic") {
-      const res = await openMic(undefined, "looper");
-      if ("error" in res) throw new Error(res.error);
-      this.micStream = res.stream;
-      node = this.ctx.createMediaStreamSource(res.stream);
+      // share an input another SYNCLAB tool (e.g. an armed track) already holds instead of failing
+      const shared = borrowActiveMic();
+      let stream: MediaStream;
+      if (shared) {
+        stream = shared;
+        this.micBorrowed = true;
+      } else {
+        const res = await openMic(undefined, "looper");
+        if ("error" in res) throw new Error(res.error);
+        stream = res.stream;
+        this.micBorrowed = false;
+      }
+      this.micStream = stream;
+      node = this.ctx.createMediaStreamSource(stream);
     } else {
       node = getEngine().outputNode;
     }
@@ -252,7 +264,8 @@ export class LiveLooper {
     this.proc.disconnect();
     this.procSink?.disconnect();
     if (this.inputNode && this.source === "mic") try { this.inputNode.disconnect(); } catch { /* */ }
-    releaseMic(this.micStream);
+    if (!this.micBorrowed) releaseMic(this.micStream);
+    this.micBorrowed = false;
     this.micStream = null;
     this.proc = null;
     this.procSink = null;
@@ -380,7 +393,8 @@ export class LiveLooper {
 
   async record(i: number) {
     const s = this.slots[i];
-    if (!s || s.state !== "empty" || this.slots.some((slot) => slot.state === "armed" || slot.state === "recording")) return;
+    if (!s || s.state !== "empty") return;
+    if (this.slots.some((slot) => slot.state === "armed" || slot.state === "recording")) throw new Error("Another loop is still recording — finish or cancel it first.");
     await this.openInput();
     if (s.state !== "empty" || this.slots.some((slot) => slot.state === "armed" || slot.state === "recording")) { if (!this.slots.some((slot) => slot.state === "armed" || slot.state === "recording")) this.closeInput(); return; }
     let now = this.ctx.currentTime + 0.03;

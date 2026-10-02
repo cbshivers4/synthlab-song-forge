@@ -19,6 +19,11 @@ export function releaseMic(stream: MediaStream | null | undefined) {
   }
 }
 
+/** Read-only access to an input another SYNCLAB tool already opened (the caller must not stop it). */
+export function borrowActiveMic(): MediaStream | null {
+  return activeStream?.active ? activeStream : null;
+}
+
 function inFrame() {
   try {
     return window.self !== window.top;
