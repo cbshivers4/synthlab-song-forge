@@ -31,9 +31,6 @@ import { useDesktopMenu } from "@/lib/synclab/desktop-menu";
 import { SYNCLAB_VERSION } from "@/lib/synclab/support";
 import { AbletonHandoff } from "@/components/studio/AbletonHandoff";
 
-
-const notYet = (what: string, why: string) => () => toast(what, { description: why });
-
 export function MenuBar() {
   const {
     setPanel,
@@ -61,6 +58,9 @@ export function MenuBar() {
     redo,
     canUndo,
     canRedo,
+    updateClip,
+    removeClip,
+    previewClip,
   } = useStudio();
   const importRef = useRef<HTMLInputElement>(null);
   const midiRef = useRef<HTMLInputElement>(null);
