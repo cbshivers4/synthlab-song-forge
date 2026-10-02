@@ -334,6 +334,9 @@ export function MenuBar() {
             <MenubarItem onClick={() => setEditTool("split")}>
               {editTool === "split" ? "✓ " : ""}Split Tool <MenubarShortcut>C</MenubarShortcut>
             </MenubarItem>
+            <MenubarItem onClick={() => setEditTool("razor")}>
+              {editTool === "razor" ? "✓ " : ""}Razor Tool <MenubarShortcut>R</MenubarShortcut>
+            </MenubarItem>
           </MenubarContent>
         </MenubarMenu>
 
