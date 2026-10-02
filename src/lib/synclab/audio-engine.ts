@@ -1915,6 +1915,22 @@ export class SyncLabEngine {
 
     // flanger / phaser colouring before the voice output
     let tail: AudioNode = shaper;
+    const crushAmt = clamp(patch.fx.bitcrush ?? 0, 0, 1);
+    if (crushAmt > 0.01) {
+      // bit-depth reduction: 12 bits down to 2 bits
+      const bits = Math.round(12 - crushAmt * 10);
+      const levels = 2 ** bits;
+      const n = 4096;
+      const curve = new Float32Array(n);
+      for (let i = 0; i < n; i++) {
+        const x = (i / (n - 1)) * 2 - 1;
+        curve[i] = Math.round(x * levels) / levels;
+      }
+      const crusher = ctx.createWaveShaper();
+      crusher.curve = curve;
+      shaper.connect(crusher);
+      tail = crusher;
+    }
     const flanger = patch.fx.flanger ?? 0;
     if (flanger > 0) {
       const d = ctx.createDelay(0.02);
@@ -1962,6 +1978,12 @@ export class SyncLabEngine {
       delay.connect(fb);
       fb.connect(delay);
       delay.connect(ch.input);
+    }
+    if ((patch.fx.chorus ?? 0) > 0 && this.chorusSend) {
+      const wet = ctx.createGain();
+      wet.gain.value = patch.fx.chorus * 0.7;
+      voicePan.connect(wet);
+      wet.connect(this.chorusSend);
     }
     if (patch.fx.reverb > 0 && this.reverbSend) {
       const wet = ctx.createGain();
