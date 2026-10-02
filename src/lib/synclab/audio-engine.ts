@@ -124,7 +124,9 @@ export class SyncLabEngine {
   delaySend: GainNode | null = null;
   chorusSend: GainNode | null = null;
   private buses = new Map<string, GainNode>();
+  private busMeters = new Map<string, AnalyserNode>();
   private auxReturns = new Map<string, GainNode>();
+  private auxMeters = new Map<string, AnalyserNode>();
   private auxStates: Record<string, { volume: number; muted: boolean }> = {};
   private vcaStates: Record<string, { volume: number; muted: boolean }> = {};
   private trackVcas = new Map<string, string>();
@@ -208,7 +210,11 @@ export class SyncLabEngine {
     send.connect(conv);
     const reverbReturn = ctx.createGain();
     conv.connect(reverbReturn);
-    reverbReturn.connect(master);
+    const reverbMeter = ctx.createAnalyser();
+    reverbMeter.fftSize = 1024;
+    reverbReturn.connect(reverbMeter);
+    reverbMeter.connect(master);
+    this.auxMeters.set("reverb", reverbMeter);
     reverbReturn.gain.value = this.auxStates["reverb"]?.muted ? 0 : this.auxStates["reverb"]?.volume ?? 1;
     this.auxReturns.set("reverb", reverbReturn);
     this.reverb = conv;
@@ -226,7 +232,11 @@ export class SyncLabEngine {
     fb.connect(delay);
     const delayReturn = ctx.createGain();
     delay.connect(delayReturn);
-    delayReturn.connect(master);
+    const delayMeter = ctx.createAnalyser();
+    delayMeter.fftSize = 1024;
+    delayReturn.connect(delayMeter);
+    delayMeter.connect(master);
+    this.auxMeters.set("delay", delayMeter);
     delayReturn.gain.value = this.auxStates["delay"]?.muted ? 0 : this.auxStates["delay"]?.volume ?? 1;
     this.auxReturns.set("delay", delayReturn);
     this.delaySend = dSend;
@@ -248,7 +258,11 @@ export class SyncLabEngine {
     cSend.connect(cDelay);
     const chorusReturn = ctx.createGain();
     cDelay.connect(chorusReturn);
-    chorusReturn.connect(master);
+    const chorusMeter = ctx.createAnalyser();
+    chorusMeter.fftSize = 1024;
+    chorusReturn.connect(chorusMeter);
+    chorusMeter.connect(master);
+    this.auxMeters.set("chorus", chorusMeter);
     chorusReturn.gain.value = this.auxStates["chorus"]?.muted ? 0 : this.auxStates["chorus"]?.volume ?? 1;
     this.auxReturns.set("chorus", chorusReturn);
     this.chorusSend = cSend;
@@ -262,9 +276,13 @@ export class SyncLabEngine {
       const busScope = ctx.createAnalyser();
       busScope.fftSize = 1024;
       busScope.smoothingTimeConstant = 0.6;
+      const busMeter = ctx.createAnalyser();
+      busMeter.fftSize = 1024;
       g.connect(busScope);
-      busScope.connect(master);
+      busScope.connect(busMeter);
+      busMeter.connect(master);
       this.pluginScopes.set(`bus:${id}`, busScope);
+      this.busMeters.set(id, busMeter);
       this.buses.set(id, g);
     }
     return ctx;
@@ -377,6 +395,12 @@ export class SyncLabEngine {
 
   setBus(id: string, volume: number, muted: boolean) {
     if (!this.ctx) return;
+    // The master fader controls the complete mix, including every bus and FX return.
+    // The "master" routing bus stays at unity so direct tracks are not attenuated twice.
+    if (id === "master") {
+      this.master?.gain.setTargetAtTime(muted ? 0 : 0.85 * clamp(volume, 0, 1.5), this.ctx.currentTime, 0.02);
+      return;
+    }
     this.busNode(id).gain.setTargetAtTime(muted ? 0 : clamp(volume, 0, 1.5), this.ctx.currentTime, 0.02);
   }
 
@@ -393,13 +417,21 @@ export class SyncLabEngine {
   }
 
   getLevel() {
-    if (!this.analyser) return 0;
-    const data = new Uint8Array(this.analyser.frequencyBinCount);
-    this.analyser.getByteTimeDomainData(data);
+    return this.peakOf(this.analyser);
+  }
+
+  private peakOf(node: AnalyserNode | null | undefined) {
+    if (!node) return 0;
+    const data = new Uint8Array(node.fftSize);
+    node.getByteTimeDomainData(data);
     let peak = 0;
     for (let i = 0; i < data.length; i++) peak = Math.max(peak, Math.abs((data[i] ?? 128) - 128) / 128);
     return peak;
   }
+
+  getBusLevel(id: string) { return this.peakOf(this.busMeters.get(id)); }
+
+  getAuxLevel(id: string) { return this.peakOf(this.auxMeters.get(id)); }
 
   /** Real post-master audio for one channel (0 = left, 1 = right); buffers are reused, so copy if you keep them. */
   getMasterChannel(ch: 0 | 1, kind: "wave" | "spectrum"): Float32Array | null {
@@ -451,12 +483,7 @@ export class SyncLabEngine {
 
   getTrackLevel(id: string) {
     const ch = this.channels.get(id);
-    if (!ch) return 0;
-    const data = new Uint8Array(ch.meter.frequencyBinCount);
-    ch.meter.getByteTimeDomainData(data);
-    let peak = 0;
-    for (let i = 0; i < data.length; i++) peak = Math.max(peak, Math.abs((data[i] ?? 128) - 128) / 128);
-    return peak;
+    return this.peakOf(ch?.meter);
   }
 
   channel(id: string): ChannelStrip {
@@ -558,7 +585,7 @@ export class SyncLabEngine {
     const input = ctx.createGain();
     input.gain.setValueAtTime(0, ctx.currentTime);
     source.connect(input);
-    this.linkInsertChain(input, nodes, active, kind === "send" ? this.auxReturns.get(name) ?? master : master);
+    this.linkInsertChain(input, nodes, active, kind === "send" ? this.auxReturns.get(name) ?? master : this.busMeters.get(name) ?? master);
     this.fxInserts.set(targetId, { key, nodes, input });
     input.gain.linearRampToValueAtTime(1, ctx.currentTime + 0.02);
     if (prev) {
