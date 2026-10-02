@@ -74,7 +74,7 @@ import { useApp } from "@/lib/synclab/app-state";
 import { AddTrackMenu } from "@/components/studio/AddTrackMenu";
 
 import { INSTRUMENTS, KIND_LABEL, uid } from "@/lib/synclab/presets";
-import type { EditTool } from "@/lib/synclab/store";
+import type { EditTool, PanelId } from "@/lib/synclab/store";
 import type { AutomationLane, AutomationParam, AutomationPoint, BusId, MidiNote, Track } from "@/lib/synclab/types";
 
 const CORE_LANE_LABEL: Record<Exclude<AutomationParam, `plugin:${string}:${string}`>, string> = {
@@ -578,6 +578,23 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
   const activeClip = clips.find((c) => c.id === track.activeClipId) ?? clips[clips.length - 1];
   const playFrac = Math.min(0.98, Math.max(0.02, ((transport.step ?? 0) % 16) / 16));
 
+  const editorPanel: PanelId =
+    track.kind === "drum" ? "drums"
+    : track.kind === "sampler" ? "sampler"
+    : track.kind === "ai-vocal" ? "vocal"
+    : track.kind === "instrument" || track.kind === "midi" ? "synth"
+    : null;
+  const editorLabel =
+    track.kind === "drum" ? "Open drum machine"
+    : track.kind === "sampler" ? "Open sampler"
+    : track.kind === "ai-vocal" ? "Open Vocal Forge"
+    : "Open instrument";
+  const openTrackEditor = () => {
+    if (!editorPanel) return;
+    select(track.id);
+    setPanel(editorPanel);
+  };
+
   const writeClips = (next: typeof clips, activeId?: string) =>
     updateTrack(track.id, activeId ? { clips: next, activeClipId: activeId } : { clips: next });
 
@@ -855,6 +872,18 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
               {index + 1}. {track.name}
             </button>
           )}
+          {editorPanel && (
+            <Button
+              size="icon"
+              variant="ghost"
+              className="size-10 touch-manipulation sm:size-6"
+              aria-label={editorLabel}
+              title={editorLabel}
+              onClick={openTrackEditor}
+            >
+              {track.kind === "drum" ? <Disc3 className="size-3.5" /> : track.kind === "sampler" ? <Music2 className="size-3.5" /> : track.kind === "ai-vocal" ? <Mic className="size-3.5" /> : <Piano className="size-3.5" />}
+            </Button>
+          )}
           <TrackNotes track={track} className="ml-auto" />
           <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
             <DropdownMenuTrigger asChild>
@@ -864,6 +893,12 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="min-w-56">
               <DropdownMenuItem onClick={() => setRenaming(true)}>Rename</DropdownMenuItem>
+              {editorPanel && (
+                <DropdownMenuItem onClick={openTrackEditor}>
+                  {track.kind === "drum" ? <Disc3 className="size-4" /> : track.kind === "sampler" ? <Music2 className="size-4" /> : track.kind === "ai-vocal" ? <Mic className="size-4" /> : <Piano className="size-4" />}
+                  {editorLabel}
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem onClick={() => duplicateTrack(track.id)}>
                 <Copy className="size-4" /> Duplicate track
               </DropdownMenuItem>
