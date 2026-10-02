@@ -924,6 +924,12 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
                 <Settings2 className="size-4" /> Track settings
               </DropdownMenuItem>
               <DropdownMenuSeparator />
+              <DropdownMenuSub><DropdownMenuSubTrigger>VCA group{track.vca ? ` (${track.vca})` : ""}</DropdownMenuSubTrigger><DropdownMenuSubContent>
+                <DropdownMenuItem onClick={() => updateTrack(track.id, { vca: undefined })}>{!track.vca ? "● " : ""}None</DropdownMenuItem>
+                {(["A", "B", "C", "D"] as const).map((id) => (
+                  <DropdownMenuItem key={id} onClick={() => updateTrack(track.id, { vca: id })}>{track.vca === id ? "● " : ""}VCA {id}</DropdownMenuItem>
+                ))}
+              </DropdownMenuSubContent></DropdownMenuSub>
               <DropdownMenuSub><DropdownMenuSubTrigger>Send to bus</DropdownMenuSubTrigger><DropdownMenuSubContent>
               {TRACK_BUSES.map((b) => {
                 const fx = fxChains[`bus:${b.id}`] ?? [];
@@ -1127,7 +1133,8 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
               )}
             </DropdownMenuContent>
           </DropdownMenu>}
-          {!isMobile && <span className="label-xs ml-auto whitespace-nowrap">{KIND_LABEL[track.kind]}</span>}
+          {track.vca && <span className="ml-auto rounded-sm border border-primary/60 px-1 font-mono text-[9px] text-primary" title={`Volume also controlled by VCA ${track.vca} in the mixer`}>VCA {track.vca}</span>}
+          {!isMobile && <span className={`label-xs whitespace-nowrap ${track.vca ? "" : "ml-auto"}`}>{KIND_LABEL[track.kind]}</span>}
         </div>
 
         <div className="flex items-center gap-2">
