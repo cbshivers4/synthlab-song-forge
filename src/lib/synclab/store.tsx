@@ -54,6 +54,31 @@ const MIDI_MAP_KEY = "synclab.midimap";
 const MIDI_INPUT_KEY = "synclab.midi.input";
 const AUTOSAVE_KEY = "synclab.autosave.v1";
 
+/** Preserve the untouched portions of an older take when a new recording covers only part of it. */
+function replaceTakeRegion(clips: AudioClip[], start: number, end: number, stepDur: number): AudioClip[] {
+  return clips.flatMap((clip) => {
+    const from = clip.start ?? 0;
+    const rate = clipRate(clip);
+    const length = clip.length ?? clip.duration;
+    const until = from + length / rate / stepDur;
+    if (until <= start || from >= end) return [clip];
+    const left = Math.max(0, Math.min(start, until) - from) * stepDur * rate;
+    const right = Math.max(0, until - Math.max(end, from)) * stepDur * rate;
+    const pieces: AudioClip[] = [];
+    if (left > 0.01) pieces.push({
+      ...clip, id: uid(), length: left,
+      offset: (clip.offset ?? 0) + (clip.reverse ? length - left : 0),
+      fadeOut: Math.min(clip.fadeOut ?? 0.01, left / rate / 2),
+    });
+    if (right > 0.01) pieces.push({
+      ...clip, id: uid(), start: until - right / rate / stepDur, length: right,
+      offset: (clip.offset ?? 0) + (clip.reverse ? 0 : length - right),
+      fadeIn: Math.min(clip.fadeIn ?? 0.004, right / rate / 2),
+    });
+    return pieces;
+  });
+}
+
 const ccRange = (value: number, min: number, max: number, step = 0) => {
   const scaled = min + value * (max - min);
   return step ? Math.round(scaled / step) * step : scaled;
@@ -1094,12 +1119,10 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     };
     const replace = !!transportRef.current.replace;
     const stepDur = 60 / (transportRef.current.bpm || 120) / 4;
-    const endOf = (c: AudioClip) => (c.start ?? 0) + (c.length ?? c.duration ?? 0) / stepDur;
-    const newEnd = endOf(clip);
-    const kept = (target.clips ?? []).filter(
-      (c) => !replace || endOf(c) <= (clip.start ?? 0) || (c.start ?? 0) >= newEnd,
-    );
-    const removed = (target.clips?.length ?? 0) - kept.length;
+    const newEnd = (clip.start ?? 0) + clip.length / stepDur;
+    const oldClips = target.clips ?? [];
+    const kept = replace ? replaceTakeRegion(oldClips, clip.start ?? 0, newEnd, stepDur) : oldClips;
+    const replaced = oldClips.filter((c) => (c.start ?? 0) < newEnd && (c.start ?? 0) + (c.length ?? c.duration) / clipRate(c) / stepDur > (clip.start ?? 0)).length;
     setTracks((ts) =>
       ts.map((t) =>
         t.id === target.id ? { ...t, recording: false, clips: [...kept, clip], activeClipId: clip.id } : t,
@@ -1107,7 +1130,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     );
     toast.success(`${clip.name} recorded on ${target.name}`, {
       description: replace
-        ? `${result.duration.toFixed(1)}s captured — replaced ${removed} overlapping take${removed === 1 ? "" : "s"}. Undo brings them back.`
+        ? `${result.duration.toFixed(1)}s captured — replaced ${replaced} overlapping take${replaced === 1 ? "" : "s"} in the recorded region. Undo brings them back.`
         : `${result.duration.toFixed(1)}s captured — pick your best take on the track.`,
     });
   }, [updateTrack]);
@@ -1147,10 +1170,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       // during playback until the user explicitly switches back to the pattern.
       // Only the explicit overdub mode should stack printed takes at the same position.
       const replace = !!transportRef.current.replace || !transportRef.current.overdub;
-      const endOf = (c: AudioClip) => (c.start ?? 0) + (c.length ?? c.duration ?? 0) / stepDur;
-      const newEnd = endOf(clip);
+      const newEnd = (clip.start ?? 0) + clip.length / stepDur;
       setTracks((ts) => ts.map((t) => t.id === result.trackId
-        ? { ...t, clips: [...(t.clips ?? []).filter((c) => !replace || endOf(c) <= (clip.start ?? 0) || (c.start ?? 0) >= newEnd), clip], activeClipId: clip.id, printedAudio: true }
+        ? { ...t, clips: [...(replace ? replaceTakeRegion(t.clips ?? [], clip.start ?? 0, newEnd, stepDur) : (t.clips ?? [])), clip], activeClipId: clip.id, printedAudio: true }
         : t));
       toast.success(`${clip.name} recorded`, { description: "Double-click the waveform to edit it; switch to Notes to edit the pattern." });
     } catch (err) {
