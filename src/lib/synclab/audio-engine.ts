@@ -1520,7 +1520,7 @@ export class SyncLabEngine {
 
   inputLevel() {
     if (!this.recAnalyser) return 0;
-    const data = new Uint8Array(this.recAnalyser.frequencyBinCount);
+    const data = new Uint8Array(this.recAnalyser.fftSize);
     this.recAnalyser.getByteTimeDomainData(data);
     let peak = 0;
     for (let i = 0; i < data.length; i++) peak = Math.max(peak, Math.abs((data[i] ?? 128) - 128) / 128);
