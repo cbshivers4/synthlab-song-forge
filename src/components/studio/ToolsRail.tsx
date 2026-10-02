@@ -49,7 +49,6 @@ const TOOLS: Tool[] = [
   { id: "sampler", label: "Sampler", icon: <AudioLines className="size-4" />, panel: "sampler", drag: { kind: "sampler", name: "Sampler" } },
   { id: "plugins", label: "Plugins (VST)", icon: <Cpu className="size-4" />, panel: "plugins", advanced: true },
   { id: "mixer", label: "Mixer", icon: <SlidersHorizontal className="size-4" />, panel: "mixer" },
-  { id: "stemgen", label: "AI Stem Generator", icon: <Sparkles className="size-4" />, panel: "stemgen", advanced: true },
   { id: "notes", label: "Track Notes", icon: <NotebookPen className="size-4" />, panel: "notes", advanced: true },
   { id: "master", label: "Mastering", icon: <Gauge className="size-4" />, panel: "mastering" },
   { id: "live", label: "Live View", icon: <Radio className="size-4" />, panel: "live" },
