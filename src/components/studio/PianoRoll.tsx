@@ -461,7 +461,7 @@ export function PianoRoll({ track }: { track: Track }) {
                     e.preventDefault();
                     del(n.id);
                   }}
-                  className="absolute rounded-[1px] border border-clip-midi-dark/60 bg-clip-midi shadow-sm"
+                  className="absolute touch-none rounded-[1px] border border-clip-midi-dark/60 bg-clip-midi shadow-sm"
                   style={{
                     left: `${(n.step / steps) * 100}%`,
                     width: `${(n.length / steps) * 100}%`,
@@ -475,7 +475,7 @@ export function PianoRoll({ track }: { track: Track }) {
                 >
                   <div
                     onPointerDown={(e) => onNoteDown(e, n, true)}
-                     className="absolute inset-y-0 right-0 w-1.5 cursor-ew-resize bg-clip-midi-dark/35"
+                     className="absolute inset-y-0 right-0 w-1.5 cursor-ew-resize touch-none bg-clip-midi-dark/35"
                   />
                 </div>
               );
@@ -509,7 +509,7 @@ export function PianoRoll({ track }: { track: Track }) {
                   window.addEventListener("pointermove", mv);
                   window.addEventListener("pointerup", up);
                 }}
-                 className="absolute bottom-0 w-1.5 cursor-ns-resize rounded-t-[1px] bg-clip-midi"
+                 className="absolute bottom-0 w-1.5 cursor-ns-resize touch-none rounded-t-[1px] bg-clip-midi"
                 style={{
                   left: `calc(${(n.step / steps) * 100}% )`,
                   height: `${n.velocity * 100}%`,
