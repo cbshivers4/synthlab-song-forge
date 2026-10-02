@@ -10,7 +10,7 @@ import {
 } from "react";
 import { toast } from "sonner";
 import { getEngine } from "./audio-engine";
-import { stepsPerBar, songSteps, stepSeconds, barsForSteps } from "./timebase";
+import { stepsPerBar, setBeatsPerBar, getBeatsPerBar, STEPS_PER_BEAT, songSteps, stepSeconds, barsForSteps } from "./timebase";
 import { openInOwnTab } from "./mic";
 import { TRACK_COLORS, applyPreset, defaultPads, defaultPatch, uid } from "./presets";
 import { BUILT_IN_PLUGINS, instantiate, processMidiThroughPlugins } from "./plugins";
@@ -337,6 +337,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   tracksRef.current = tracks;
   const transportRef = useRef(transport);
   transportRef.current = transport;
+  setBeatsPerBar(transport.beatsPerBar);
   const countInTimerRef = useRef<number | null>(null);
   /** timeline step where the current take started, so the clip lands there */
   const recStartStepRef = useRef(0);
@@ -909,16 +910,17 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           }
         }
       }
-      if (tp.metronome) {
+      if (tp.metronome && n % STEPS_PER_BEAT === 0) {
+        const downbeat = n % stepsPerBar() === 0;
         engine.playDrum(
           "metronome",
           {
             id: "m",
             name: "click",
-            kind: n % 4 === 0 ? "rim" : "hat",
+            kind: downbeat ? "rim" : "hat",
             volume: 0.35,
             pan: 0,
-            pitch: n % 4 === 0 ? 5 : 0,
+            pitch: downbeat ? 5 : 0,
             decay: 0,
             muted: false,
             solo: false,
@@ -1769,7 +1771,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             // so each countdown tick must last one full beat—not one sequencer
             // sixteenth step.
             const beatMs = (60 / tp0.bpm) * 1000;
-            let left = ciBars * 4;
+            const bpb = getBeatsPerBar();
+            let left = ciBars * bpb;
             // Hold the transport during the count-in, even if it was already rolling.
             setTransportState((s) => ({ ...s, playing: false, paused: true, countInLeft: left }));
             const click = (accent: boolean) =>
@@ -1798,7 +1801,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
                 setTransportState((s) => ({ ...s, countInLeft: null }));
                 begin();
               } else {
-                click(left % 4 === 0);
+                click(left % bpb === 0);
                 setTransportState((s) => ({ ...s, countInLeft: left }));
               }
             }, beatMs);
