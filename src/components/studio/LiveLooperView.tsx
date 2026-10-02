@@ -73,7 +73,7 @@ function LoopDonut({ slot, send }: { slot: LoopSlot; send: (i: number) => void }
           ) : (
             <span className="font-display text-3xl font-bold">{String(slot.index + 1).padStart(2, "0")}</span>
           )}
-          <span className={cn("font-mono text-[10px] uppercase", slot.state === "recording" ? "text-destructive" : "text-muted-foreground")}>{slot.overdubbing ? "DUB" : labels[slot.state]}</span>
+          <span className={cn("font-mono text-[10px] uppercase", slot.state === "recording" ? "text-destructive" : "text-muted-foreground")}>{slot.overdubbing ? "DUB" : slot.state === "armed" && looper.isWaitingForSignal ? "PLAY TO START" : labels[slot.state]}</span>
         </span>
       </Button>
       <div className="flex w-full max-w-52 items-center justify-center gap-1" aria-label={`Loop ${slot.index + 1} color`}>
@@ -110,6 +110,25 @@ function LoopDonut({ slot, send }: { slot: LoopSlot; send: (i: number) => void }
       <div className="flex w-full max-w-52 gap-1">
         <Button variant="outline" className="h-10 flex-1" disabled={!slot.buffer} onClick={() => send(slot.index)} aria-label={`Send loop ${slot.index + 1} to timeline`}><ArrowDownToLine className="size-4" /> Timeline</Button>
         <Button variant="outline" size="icon" className="size-10" disabled={slot.state === "empty"} onClick={() => looper.clear(slot.index)} aria-label={`Clear loop ${slot.index + 1}`} title="Clear"><Trash2 className="size-4" /></Button>
+      </div>
+    </div>
+  );
+}
+
+/** Live input level against the threshold line while the looper listens. */
+function ThresholdMeter() {
+  const looper = getLooper();
+  const [, tick] = useReducer((n: number) => n + 1, 0);
+  useEffect(() => { const id = window.setInterval(tick, 50); return () => window.clearInterval(id); }, []);
+  const toPct = (lin: number) => Math.max(0, Math.min(100, ((20 * Math.log10(Math.max(1e-5, lin)) + 60) / 60) * 100));
+  const level = looper.isWaitingForSignal || looper.slots.some((x) => x.state === "recording") ? looper.inputPeak : 0;
+  const th = looper.threshold ?? -60;
+  return (
+    <div className="flex w-40 flex-col gap-1">
+      <div className="font-mono text-[10px] uppercase text-muted-foreground">{looper.isWaitingForSignal ? "Waiting for sound…" : "Input"}</div>
+      <div className="relative h-3 overflow-hidden rounded-sm border border-border bg-surface-2" role="meter" aria-label="Looper input level" aria-valuenow={Math.round(toPct(level))}>
+        <div className={cn("h-full", level >= Math.pow(10, th / 20) ? "bg-destructive" : "bg-primary")} style={{ width: `${toPct(level)}%` }} />
+        <div className="absolute inset-y-0 w-0.5 bg-foreground" style={{ left: `${((th + 60) / 60) * 100}%` }} />
       </div>
     </div>
   );
@@ -154,6 +173,13 @@ export function LiveLooperView() {
             {[0, 1, 2, 4].map((bar) => <option key={bar} value={bar}>{bar === 0 ? "Off" : `${bar} ${bar === 1 ? "bar" : "bars"}`}</option>)}
           </select>
         </label>
+        <label className="flex flex-col gap-1 font-mono text-[10px] uppercase text-muted-foreground">Start on sound
+          <select aria-label="Looper input threshold" value={looper.threshold === null ? "off" : String(looper.threshold)} disabled={capturing} onChange={(e) => looper.setThreshold(e.target.value === "off" ? null : Number(e.target.value))} className="h-9 rounded border border-border bg-surface-2 px-3 text-sm text-foreground disabled:opacity-50">
+            <option value="off">Off</option>
+            {[-50, -40, -30, -24, -18, -12, -6].map((db) => <option key={db} value={db}>Threshold {db} dB</option>)}
+          </select>
+        </label>
+        {looper.threshold !== null && <ThresholdMeter />}
         <div>
           <div className="mb-1 font-mono text-[10px] uppercase text-muted-foreground">Record from</div>
           <div className="flex gap-1">
@@ -171,7 +197,7 @@ export function LiveLooperView() {
         <Button variant="secondary" onClick={() => looper.stopAll()}><Square className="size-4" /> Stop all</Button>
         <Button variant="secondary" onClick={() => looper.clearAll()}><Trash2 className="size-4" /> Clear all</Button>
       </div>
-       <p className="text-xs text-muted-foreground">The pre-count clicks before the first loop only and recording starts on GO; later loops wait for the next cycle instead. The first loop sets the shared cycle. Later recordings wait for the next cycle. Free length closes on a second tap; sync closes after the selected bars. Overdub adds one mic cycle. Loops play outside the song master effects to prevent app-output capture feeding back into itself. Loops remain in this session until cleared; send them to the timeline to include them in your project. Input delay depends on your browser and audio interface; use headphones when recording.</p>
+       <p className="text-xs text-muted-foreground">Start on sound: tap a loop and it waits — recording begins the moment your input crosses the threshold (first loop only; it replaces the pre-count). The pre-count clicks before the first loop only and recording starts on GO; later loops wait for the next cycle instead. The first loop sets the shared cycle. Later recordings wait for the next cycle. Free length closes on a second tap; sync closes after the selected bars. Overdub adds one mic cycle. Loops play outside the song master effects to prevent app-output capture feeding back into itself. Loops remain in this session until cleared; send them to the timeline to include them in your project. Input delay depends on your browser and audio interface; use headphones when recording.</p>
     </div>
   );
 }
