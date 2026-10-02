@@ -74,8 +74,7 @@ interface Section {
 
 const SECTIONS: Section[] = [
   { id: "perform", label: "Perform", tools: ["live", "looper"].map(tool) },
-  { id: "ai", label: "AI Studio", tools: ["vocal", "stems", "voice", "coproducer", "hum", "stemgen"].map(tool) },
-  { id: "instruments", label: "Instruments", tools: ["synth", "bass", "drums", "beat", "chop", "sampler"].map(tool) },
+  { id: "instruments", label: "Instruments", tools: ["synth", "drums", "beat", "chop", "sampler"].map(tool) },
   { id: "mix", label: "Mix & Master", tools: ["mixer", "master", "reference", "notes"].map(tool) },
   { id: "plugins", label: "Plugins", tools: ["plugins"].map(tool) },
 ];
