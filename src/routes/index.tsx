@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { barBeat } from "@/lib/synclab/timebase";
 import { createFileRoute } from "@tanstack/react-router";
 import { ArrowDownToLine, ArrowUpFromLine, AudioLines, AudioWaveform, Cpu, Gauge, Disc3, FileSearch, FolderOpen, Grid2x2, KeyboardMusic, Music2, NotebookPen, Palette, Piano, Radio, SlidersHorizontal, Split, Settings2, Sparkles, Waves, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -352,7 +353,7 @@ function StatusBar() {
       <span>4/4</span>
       <span>{tracks.length} CH</span>
       <span>
-        BAR {Math.floor(transport.step / 4) + 1}.{(transport.step % 4) + 1} / {transport.bars ?? 4}
+        BAR {barBeat(transport.step).bar}.{barBeat(transport.step).beat} / {transport.bars ?? 4}
       </span>
       <span className="hidden sm:inline">{saved ? `SAVED ${saved}` : "NOT SAVED YET"}</span>
       <span className="ml-auto hidden sm:inline">{panel ? `${panel} editor open` : "synclab studio"}</span>

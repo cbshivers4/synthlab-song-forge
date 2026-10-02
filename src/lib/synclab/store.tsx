@@ -1389,7 +1389,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             color: SECTION_COLORS[sorted.length % SECTION_COLORS.length] as string,
           };
           toast.success(`${next.name} added`, {
-            description: `Bar ${Math.floor(next.start / 4) + 1} to ${Math.floor((next.start + next.length) / 4) + 1}`,
+            description: `Bar ${Math.floor(next.start / STEPS_PER_BAR) + 1} to ${Math.floor((next.start + next.length) / STEPS_PER_BAR) + 1}`,
           });
           return [...sorted, next].sort((a, b) => a.start - b.start);
         });
