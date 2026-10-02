@@ -577,7 +577,7 @@ function DeviceSlots({ t, narrow }: { t: Track; narrow: boolean }) {
             <Settings2 className="size-2.5" /> {list.length ? `Edit ${list.length}` : "Add"}
           </button>
         </PopoverTrigger>
-        <PopoverContent align="start" className="max-h-[70vh] w-[360px] overflow-y-auto p-3" onClick={(e) => e.stopPropagation()}>
+        <PopoverContent onInteractOutside={(e) => { if ((e.target as HTMLElement | null)?.closest?.("[role=dialog]")) e.preventDefault(); }} align="start" className="max-h-[70vh] w-[360px] overflow-y-auto p-3" onClick={(e) => e.stopPropagation()}>
           <InsertRack
             title={`${t.name} — inserts`}
             midiId={t.id}
@@ -1325,7 +1325,7 @@ function FxMenu({ target, label }: { target: string; label: string }) {
           {list.length > 0 ? ` ${list.length}` : ""}
         </button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-64 p-3">
+      <PopoverContent onInteractOutside={(e) => { if ((e.target as HTMLElement | null)?.closest?.("[role=dialog]")) e.preventDefault(); }} align="start" className="w-64 p-3">
         <InsertRack
           title={`${target.split(":")[1]?.toUpperCase()} effects`}
             midiId={target}
