@@ -1863,7 +1863,8 @@ function EditToolbar() {
     <div className="flex min-h-11 items-center gap-1 overflow-x-auto border-b border-border bg-surface-2/60 px-2 py-1 [scrollbar-width:none]">
       <ToolBtn tool="select" icon={<MousePointer2 className="size-3" />} label="Select" keys="V" />
       <ToolBtn tool="draw" icon={<Pencil className="size-3" />} label="Draw" keys="B" />
-      <ToolBtn tool="split" icon={<Scissors className="size-3" />} label="Split" keys="C" />
+      <ToolBtn tool="split" icon={<ScissorsLineDashed className="size-3" />} label="Split" keys="C" />
+      <ToolBtn tool="razor" icon={<RazorIcon className="size-3" />} label="Razor" keys="R" />
       <div className="mx-1 h-4 w-px bg-border" />
       <Button size="sm" variant="ghost" className="h-6 gap-1 px-2 text-[10px]" title="Select all channels (⌘A / Ctrl+A)" onClick={selectAll}>
         <ListChecks className="size-3" /> All
@@ -1875,7 +1876,7 @@ function EditToolbar() {
         title="Split the selected channel's clip or notes at the playhead (S)"
         onClick={splitAtPlayhead}
       >
-        <Scissors className="size-3" /> Split at Playhead
+        <SquareSplitHorizontal className="size-3" /> Split at Playhead
       </Button>
       <div className="mx-1 h-4 w-px bg-border" />
       <Button
@@ -1886,7 +1887,7 @@ function EditToolbar() {
         title="Cut selection (⌘X / Ctrl+X)"
         onClick={() => targets.forEach((id) => cutTrack(id))}
       >
-        <Scissors className="size-3" /> Cut
+        <SquareScissors className="size-3" /> Cut
       </Button>
       <Button
         size="sm"
