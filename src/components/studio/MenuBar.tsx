@@ -353,16 +353,6 @@ export function MenuBar() {
         </MenubarMenu>
 
         <MenubarMenu>
-          <MenubarTrigger className="text-xs">Project</MenubarTrigger>
-          <MenubarContent>
-            <MenubarItem disabled>{project ? project.name : "Untitled session"}</MenubarItem>
-            <MenubarSeparator />
-            <MenubarItem onClick={() => setPanel("settings")}>Project Settings</MenubarItem>
-            <MenubarItem onClick={() => setStage("start")}>Templates</MenubarItem>
-          </MenubarContent>
-        </MenubarMenu>
-
-        <MenubarMenu>
           <MenubarTrigger className="text-xs">Track</MenubarTrigger>
           <MenubarContent>
             <MenubarItem onClick={() => addTrack("audio", "AUDIO")}>Add Audio Track</MenubarItem>
