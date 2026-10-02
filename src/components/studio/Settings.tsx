@@ -646,7 +646,7 @@ function InputMeter() {
       const v = getEngine().inputLevel();
       if (bar.current) {
         bar.current.style.width = `${Math.min(100, v * 100)}%`;
-        bar.current.dataset.clip = v >= 0.99 ? "1" : "0";
+        bar.current.dataset["clip"] = v >= 0.99 ? "1" : "0";
       }
     }, 50);
     return () => window.clearInterval(id);
