@@ -2210,7 +2210,8 @@ function Ruler() {
             {/* loop band — drag it to move the whole region */}
             <div
               onPointerDown={dragLoop("band")}
-              title={`Loop bar ${Math.floor(lo / stepsPerBar()) + 1} to ${Math.floor(hi / stepsPerBar()) + 1} — drag to move`}
+              onDoubleClick={() => setTransport({ loop: false })}
+              title={`Loop bar ${Math.floor(lo / stepsPerBar()) + 1} to ${Math.floor(hi / stepsPerBar()) + 1} — drag to move, double-click to clear`}
               className="absolute inset-y-0 z-10 cursor-grab touch-none border-x border-primary/70 bg-primary/15 active:cursor-grabbing"
               style={{ left: `${(lo / total) * 100}%`, width: `${((hi - lo) / total) * 100}%` }}
             />
@@ -2235,8 +2236,8 @@ function Ruler() {
                     else setTransport({ loopEnd: Math.min(total, Math.max(hi + d, lo + 1)), loop: true });
                   }}
                   title={`Loop ${which} — drag or use arrow keys (bar ${Math.floor(p / stepsPerBar()) + 1})`}
-                  className="absolute top-0 z-20 flex h-full w-4 cursor-ew-resize touch-none flex-col items-center outline-none focus-visible:ring-1 focus-visible:ring-primary"
-                  style={{ left: `calc(${(p / total) * 100}% - 8px)` }}
+                  className="absolute top-0 z-20 flex h-full w-6 cursor-ew-resize touch-none flex-col items-center outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                  style={{ left: `calc(${(p / total) * 100}% - 12px)` }}
                 >
                   <div className="h-0 w-0 border-x-[6px] border-x-transparent" style={{ borderTop: "9px solid var(--primary)" }} />
                   <div className="w-[2px] flex-1 bg-primary/80" />
@@ -2264,8 +2265,8 @@ function Ruler() {
                   aria-valuenow={p}
                   onPointerDown={dragFlag(which)}
                   title={`Export ${which} — drag to move (bar ${Math.floor(p / stepsPerBar()) + 1})`}
-                  className="absolute top-0 z-20 flex h-full w-3 cursor-ew-resize touch-none flex-col items-center"
-                  style={{ left: `calc(${(p / total) * 100}% - 6px)` }}
+                  className="absolute top-0 z-20 flex h-full w-5 cursor-ew-resize touch-none flex-col items-center"
+                  style={{ left: `calc(${(p / total) * 100}% - 10px)` }}
                 >
                   <div
                     className="h-0 w-0 border-x-[6px] border-x-transparent"
@@ -2278,12 +2279,10 @@ function Ruler() {
           </>
         )}
 
-        {transport.playing && (
-          <div
-            className="pointer-events-none absolute top-0 h-full w-[2px] bg-primary"
-            style={{ left: `${(transport.step / total) * 100}%` }}
-          />
-        )}
+        <div
+          className={`pointer-events-none absolute top-0 h-full w-[2px] ${transport.playing ? "bg-primary" : "bg-primary/50"}`}
+          style={{ left: `${(transport.step / total) * 100}%` }}
+        />
       </div>
     </div>
   );
