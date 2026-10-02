@@ -34,9 +34,6 @@ export function AddTrackMenu({ size = "default" }: { size?: "default" | "sm" }) 
         <DropdownMenuItem onClick={() => addTrack("sampler", "SAMPLER", "Metro Pluck")}>
           <AudioLines className="size-4" /> Sampler
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => addTrack("ai-vocal", "AI VOCAL", "Vocoder Bot")}>
-          <Waves className="size-4" /> AI vocal
-        </DropdownMenuItem>
         <DropdownMenuItem onClick={() => addTrack("midi", "MIDI", "Deep Keys")}>
           <Piano className="size-4" /> MIDI channel
         </DropdownMenuItem>

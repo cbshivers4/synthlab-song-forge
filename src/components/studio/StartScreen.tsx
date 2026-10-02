@@ -376,18 +376,6 @@ export function StartScreen() {
           </div>
         </section>
 
-        <section className="mt-10">
-          <button
-            onClick={() => { setStage("studio"); setPanel("coproducer"); toast("Co-Producer open", { description: "Describe the track you want and it will plan it with you." }); }}
-            className="panel flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-surface-2"
-          >
-            <span className="text-primary"><Sparkles className="size-4" /></span>
-            <div>
-              <div className="font-display text-sm font-semibold tracking-wide">Start with AI</div>
-              <p className="mt-1 text-xs text-muted-foreground">Describe the track you want and let the Co-Producer plan it.</p>
-            </div>
-          </button>
-        </section>
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>

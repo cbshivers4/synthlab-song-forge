@@ -43,18 +43,12 @@ export function MobileNav({ onBeatMode }: { onBeatMode: () => void }) {
     { label: "Synth", icon: <Piano />, panel: "synth" },
     { label: "Sampler", icon: <Scissors />, panel: "sampler" },
     { label: "Pad Sampler", icon: <Grid2x2 />, panel: "pads" },
-    { label: "AI Vocal", icon: <Mic />, panel: "vocal" },
-    { label: "AI Stem Generator", icon: <Sparkles />, panel: "stemgen" },
-    { label: "Hum-to-Beat", icon: <AudioLines />, panel: "hum" },
     { label: "Live View", icon: <Radio />, panel: "live" },
     { label: "Live Looper", icon: <Disc3 />, panel: "looper" },
   ];
   const more: Item[] = [
     { label: "Piano Roll", icon: <Music />, panel: "piano" },
     { label: "Mastering", icon: <Wand2 />, panel: "mastering" },
-    { label: "Co-Producer", icon: <Bot />, panel: "coproducer" },
-    { label: "Stem Separator", icon: <Waves />, panel: "stems" },
-    { label: "Voice Remover", icon: <Waves />, panel: "voice" },
     { label: "Reference Analyzer", icon: <FileSearch />, panel: "reference" },
     { label: "Help", icon: <LifeBuoy />, run: () => openHelp("help") },
   ];
