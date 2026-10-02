@@ -1,4 +1,4 @@
-import { Slider } from "@/components/ui/slider";
+import { Knob as SharedKnob } from "./Knob";
 import { useStudio } from "@/lib/synclab/store";
 import type { PluginInstance } from "@/lib/synclab/types";
 
@@ -11,32 +11,9 @@ const PRESETS: { name: string; values: Record<string, number> }[] = [
   { name: "Whisper Wind", values: { bands: 18, carrier: 2, pitch: 110, detune: 0, formant: 0, response: 30, sense: 1.6, sibilance: 0.7, mix: 0.9 } },
 ];
 
-function Knob({
-  label,
-  value,
-  min,
-  max,
-  unit,
-  onChange,
-}: {
-  label: string;
-  value: number;
-  min: number;
-  max: number;
-  unit?: string | undefined;
-  onChange: (v: number) => void;
-}) {
-  const step = max - min > 40 ? 1 : (max - min) / 200;
-  return (
-    <div className="flex items-center gap-2">
-      <span className="w-20 shrink-0 font-mono text-[10px] tracking-wider text-muted-foreground uppercase">{label}</span>
-      <Slider className="flex-1" min={min} max={max} step={step} value={[value]} onValueChange={([v = value]) => onChange(v)} />
-      <span className="w-16 shrink-0 text-right font-mono text-[10px] text-primary">
-        {value >= 100 ? value.toFixed(0) : value.toFixed(2)}
-        {unit ? ` ${unit}` : ""}
-      </span>
-    </div>
-  );
+function Knob(props: { label: string; value: number; min: number; max: number; unit?: string | undefined; onChange: (v: number) => void }) {
+  const step = props.max - props.min > 40 ? 1 : (props.max - props.min) / 200;
+  return <SharedKnob {...props} step={step} unit={props.unit ? ` ${props.unit}` : ""} size={48} />;
 }
 
 /** Vintage channel vocoder editor: voice on this channel modulates an internal carrier. */
@@ -87,6 +64,7 @@ export function VocoderPanel({ trackId, plugin }: { trackId: string; plugin: Plu
         </div>
       </div>
 
+      <div className="flex flex-wrap justify-center gap-2">
       <Knob label="Bands" value={bands} min={8} max={24} onChange={(v) => set("bands", Math.round(v))} />
       <Knob label="Pitch" value={get("pitch", 110)} min={40} max={440} unit="Hz" onChange={(v) => set("pitch", v)} />
       <Knob label="Detune" value={get("detune", 14)} min={0} max={50} unit="ct" onChange={(v) => set("detune", v)} />
@@ -96,6 +74,7 @@ export function VocoderPanel({ trackId, plugin }: { trackId: string; plugin: Plu
       <Knob label="Sibilance" value={get("sibilance", 0.35)} min={0} max={1} onChange={(v) => set("sibilance", v)} />
       <Knob label="Mix" value={get("mix", 1)} min={0} max={1} onChange={(v) => set("mix", v)} />
       <Knob label="Output" value={get("output", 0)} min={-24} max={12} unit="dB" onChange={(v) => set("output", v)} />
+      </div>
 
       <p className="font-mono text-[9px] leading-relaxed text-muted-foreground">
         Put this on a voice channel: the voice opens the filter bank and the internal oscillator bank sings the words. The
