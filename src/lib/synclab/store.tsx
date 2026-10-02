@@ -1225,7 +1225,17 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         toast("Punched out", { description: "The take stops at your punch-out marker." });
       },
     };
-  }, [finishRecording, updateTrack]);
+    loopStopRef.current = () => {
+      const engine = getEngine();
+      const audio = engine.isRecording;
+      const inst = engine.isTrackRecording;
+      if (!audio && !inst) return;
+      if (audio) void finishRecording();
+      if (inst) void finishTrackRecording();
+      setTransportState((t) => ({ ...t, recording: false }));
+      toast("Recording stopped at the loop end", { description: "Takes stay inside the bars you selected." });
+    };
+  }, [finishRecording, finishTrackRecording, updateTrack]);
 
   const splitClipAtImpl = useCallback(
     (trackId: string, frac: number) => {
