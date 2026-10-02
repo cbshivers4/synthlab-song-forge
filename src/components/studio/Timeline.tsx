@@ -10,6 +10,9 @@ import {
   MousePointer2,
   Pencil,
   Scissors,
+  ScissorsLineDashed,
+  SquareScissors,
+  SquareSplitHorizontal,
   Waves,
   ChevronDown,
 
@@ -558,7 +561,7 @@ const TRACK_BUSES: { id: BusId; label: string }[] = [
 
 function TrackRow({ track, index }: { track: Track; index: number }) {
   const isMobile = useIsMobile();
-  const { selectedId, selectedIds, select, toggleSelectId, updateTrack, removeTrack, duplicateTrack, moveTrack, setPanel, changeInstrument, installedPlugins, addPlugin, editTool, splitClipAt, toggleStep, toggleAutomationLane, copyTrack, cutTrack, pasteTrack, clipboardName } =
+  const { selectedId, selectedIds, select, toggleSelectId, updateTrack, removeTrack, duplicateTrack, moveTrack, setPanel, changeInstrument, installedPlugins, addPlugin, editTool, splitClipAt, razorAt, toggleStep, toggleAutomationLane, copyTrack, cutTrack, pasteTrack, clipboardName } =
     useStudio();
   const { transport, setNotes, loadSample, fxChains } = useStudio();
   const advanced = useApp().mode === "advanced";
@@ -1134,14 +1137,22 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
         data-lane
         data-lane-track={track.id}
         className={`lane-grid relative min-h-[92px] flex-1 bg-background/70 ${
-          editTool === "draw" ? "cursor-crosshair" : editTool === "split" ? "cursor-col-resize" : ""
+          editTool === "draw"
+            ? "cursor-crosshair"
+            : editTool === "split"
+              ? "cursor-col-resize"
+              : editTool === "razor"
+                ? "cursor-crosshair"
+                : ""
         }`}
         title={
           editTool === "draw"
             ? "Draw tool — click to write a note or drum hit"
             : editTool === "split"
               ? "Split tool — click a clip to cut it there"
-              : undefined
+              : editTool === "razor"
+                ? "Razor tool — click inside a clip to slice it exactly where you click"
+                : undefined
         }
         onClick={(e) => {
           if (editTool === "select") return;
@@ -1167,6 +1178,11 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
             }
             return;
           }
+          // razor tool — slice any clip under the pointer at the exact position
+          if (editTool === "razor") {
+            razorAt(track.id, frac * songSteps(transport.bars));
+            return;
+          }
           // split tool
           if (track.kind === "audio" || track.kind === "ai-vocal") {
             if ((track.clips?.length ?? 0) === 0) {
@@ -1177,6 +1193,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
           } else {
             toast("Split audio clips with a click", { description: "For note channels, park the playhead and press S." });
           }
+          return;
         }}
       >
         <Lane track={track} />
@@ -1712,6 +1729,26 @@ const SNAP_OPTIONS: { label: string; value: number }[] = [
   { label: "BAR", value: 4 },
 ];
 
+/** Razor-blade tool icon (lucide stroke style) — distinct from the scissors. */
+function RazorIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M8 2h8l3 3v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5z" />
+      <path d="M10 2v3h4V2" />
+      <path d="M12 10.5a2 2 0 0 0-2 2v1a2 2 0 0 0 4 0v-1a2 2 0 0 0-2-2z" />
+    </svg>
+  );
+}
+
 function EditToolbar() {
   const {
     editTool,
@@ -1846,7 +1883,8 @@ function EditToolbar() {
     <div className="flex min-h-11 items-center gap-1 overflow-x-auto border-b border-border bg-surface-2/60 px-2 py-1 [scrollbar-width:none]">
       <ToolBtn tool="select" icon={<MousePointer2 className="size-3" />} label="Select" keys="V" />
       <ToolBtn tool="draw" icon={<Pencil className="size-3" />} label="Draw" keys="B" />
-      <ToolBtn tool="split" icon={<Scissors className="size-3" />} label="Split" keys="C" />
+      <ToolBtn tool="split" icon={<ScissorsLineDashed className="size-3" />} label="Split" keys="C" />
+      <ToolBtn tool="razor" icon={<RazorIcon className="size-3" />} label="Razor" keys="R" />
       <div className="mx-1 h-4 w-px bg-border" />
       <Button size="sm" variant="ghost" className="h-6 gap-1 px-2 text-[10px]" title="Select all channels (⌘A / Ctrl+A)" onClick={selectAll}>
         <ListChecks className="size-3" /> All
@@ -1858,7 +1896,7 @@ function EditToolbar() {
         title="Split the selected channel's clip or notes at the playhead (S)"
         onClick={splitAtPlayhead}
       >
-        <Scissors className="size-3" /> Split at Playhead
+        <SquareSplitHorizontal className="size-3" /> Split at Playhead
       </Button>
       <div className="mx-1 h-4 w-px bg-border" />
       <Button
@@ -1869,7 +1907,7 @@ function EditToolbar() {
         title="Cut selection (⌘X / Ctrl+X)"
         onClick={() => targets.forEach((id) => cutTrack(id))}
       >
-        <Scissors className="size-3" /> Cut
+        <SquareScissors className="size-3" /> Cut
       </Button>
       <Button
         size="sm"

@@ -459,6 +459,11 @@ function useShortcuts() {
           setEditTool("split");
           toast("Split tool", { description: "Click an audio clip to cut it right there." });
           break;
+        case "r":
+        case "R":
+          setEditTool("razor");
+          toast("Razor tool", { description: "Click inside a clip to slice it exactly where you click." });
+          break;
         case "Escape":
           stop();
           break;
