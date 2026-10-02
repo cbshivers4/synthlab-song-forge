@@ -41,7 +41,7 @@ import type {
   TrackKind,
   Transport,
 } from "./types";
-import { clipRate, SECTION_COLORS } from "./types";
+import { clipRate, clipSeconds, SECTION_COLORS } from "./types";
 
 /** A persistent hardware CC destination. Namespaced parameters identify device controls. */
 export interface MidiTarget {
