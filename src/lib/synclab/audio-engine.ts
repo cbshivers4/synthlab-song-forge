@@ -130,6 +130,7 @@ export class SyncLabEngine {
   private auxMeters = new Map<string, AnalyserNode>();
   private auxStates: Record<string, { volume: number; muted: boolean }> = {};
   private vcaStates: Record<string, { volume: number; muted: boolean }> = {};
+  private vcaMeters = new Map<string, AnalyserNode>();
   private trackVcas = new Map<string, string>();
   private trackAudible = new Map<string, boolean>();
   private automatedPluginParams = new Map<string, AutomatableAudioParam>();
@@ -286,6 +287,12 @@ export class SyncLabEngine {
       this.busMeters.set(id, busMeter);
       this.buses.set(id, g);
     }
+    // Meter VCA members without routing this tap to the speakers a second time.
+    for (const id of ["A", "B", "C", "D"]) {
+      const meter = ctx.createAnalyser();
+      meter.fftSize = 1024;
+      this.vcaMeters.set(id, meter);
+    }
     return ctx;
   }
 
@@ -434,6 +441,8 @@ export class SyncLabEngine {
   getBusLevel(id: string) { return this.peakOf(this.busMeters.get(id)); }
 
   getAuxLevel(id: string) { return this.peakOf(this.auxMeters.get(id)); }
+
+  getVcaLevel(id: string) { return this.peakOf(this.vcaMeters.get(id)); }
 
   /** Real post-master audio for one channel (0 = left, 1 = right); buffers are reused, so copy if you keep them. */
   getMasterChannel(ch: 0 | 1, kind: "wave" | "spectrum"): Float32Array | null {
@@ -1196,6 +1205,15 @@ export class SyncLabEngine {
       const ch = this.channel(t.id);
       const audible = !t.muted && (!anySolo || t.solo);
       this.trackAudible.set(t.id, audible);
+      const previousVca = this.trackVcas.get(t.id);
+      if (previousVca !== t.vca) {
+        if (previousVca) {
+          const previousMeter = this.vcaMeters.get(previousVca);
+          if (previousMeter) try { ch.pan.disconnect(previousMeter); } catch { /* already detached */ }
+        }
+        const nextMeter = t.vca ? this.vcaMeters.get(t.vca) : undefined;
+        if (nextMeter) ch.pan.connect(nextMeter);
+      }
       if (t.vca) this.trackVcas.set(t.id, t.vca);
       else this.trackVcas.delete(t.id);
       const vca = t.vca ? this.vcaStates[t.vca] : undefined;
