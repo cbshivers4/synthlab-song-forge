@@ -20,7 +20,7 @@ const ROWS: { id: Row; label: string }[] = [
 type Beat = Record<Row, number[]>;
 
 export function HumToBeat() {
-  const { addTrack, updatePad, updateTrack, setStepCount, setPanel, select, transport } = useStudio();
+  const { addTrack, updatePad, setStepCount, setPanel, select, transport } = useStudio();
   const [recording, setRecording] = useState(false);
   const [busy, setBusy] = useState(false);
   const [take, setTake] = useState<{ url: string; buffer: AudioBuffer } | null>(null);
@@ -165,7 +165,6 @@ export function HumToBeat() {
     stopPreview();
     const id = addTrack("drum", `HUM ${genre.name.toUpperCase()}`);
     setStepCount(id, steps);
-    updateTrack(id, { kit: genre.kit } as never);
     for (const p of defaultPads(steps, genre.kit)) {
       const row = (ROWS.find((r) => r.id === p.id)?.id ?? null) as Row | null;
       updatePad(id, p.id, { kit: genre.kit, steps: row ? beat[row] : new Array(steps).fill(0) });
