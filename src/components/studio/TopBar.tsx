@@ -99,7 +99,7 @@ export function TopBar() {
               </div>
             </div>
           ) : (
-            <PositionDisplay step={transport.step} bpm={transport.bpm} />
+            <PositionDisplay step={transport.step} bpm={transport.bpm} playing={transport.playing} />
           )}
           <span className="hidden w-px bg-border sm:block" />
           <div className="hidden sm:block" title="Timeline length — click + to add bars (Shift = +16), up to 512">
@@ -524,7 +524,7 @@ function MidiControl() {
 const TICKS = 960;
 
 /** Musical (BAR | BEAT | TICK) or absolute (H:MM:SS.mmm) playhead position, click to switch. */
-function PositionDisplay({ step, bpm }: { step: number; bpm: number }) {
+function PositionDisplay({ step: beatStep, bpm, playing }: { step: number; bpm: number; playing: boolean }) {
   const [abs, setAbs] = useState(false);
   useEffect(() => {
     if (localStorage.getItem("synclab.timeMode") === "abs") setAbs(true);
@@ -532,8 +532,19 @@ function PositionDisplay({ step, bpm }: { step: number; bpm: number }) {
   const toggle = () => {
     setAbs((a) => { localStorage.setItem("synclab.timeMode", a ? "bars" : "abs"); return !a; });
   };
+  // The scheduler reports whole beats; interpolate within the beat at 20 fps so ticks and ms move.
+  const [frac, setFrac] = useState(0);
+  useEffect(() => {
+    setFrac(0);
+    if (!playing) return;
+    const t0 = performance.now();
+    const beatMs = 60000 / bpm;
+    const id = window.setInterval(() => setFrac(Math.min(0.999, (performance.now() - t0) / beatMs)), 50);
+    return () => window.clearInterval(id);
+  }, [beatStep, playing, bpm]);
+  const step = beatStep + frac;
   const whole = Math.floor(step);
-  const tick = Math.round((step - whole) * TICKS);
+  const tick = Math.floor((step - whole) * TICKS);
   const secs = step * (60 / bpm);
   const hh = Math.floor(secs / 3600), mm = Math.floor((secs % 3600) / 60), ss = Math.floor(secs % 60);
   const ms = Math.floor((secs * 1000) % 1000);
