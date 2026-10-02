@@ -49,6 +49,9 @@ import { MidiLearnButton } from "@/components/studio/MidiLearn";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { PlanBadge } from "@/lib/synclab/plan";
 import { openHelp } from "@/components/studio/HelpCenter";
+import { MasterMeter } from "@/components/studio/MasterMeter";
+import { useEffect, useState } from "react";
+import { SkipBack } from "lucide-react";
 import synclabLogoAsset from "@/assets/synclab-logo-neon.jpg.asset.json";
 const synclabLogo = synclabLogoAsset.url;
 
@@ -72,7 +75,10 @@ export function TopBar() {
         <div className="hidden sm:block"><StudioSearch /></div>
 
         <div className="flex shrink-0 items-center gap-0.5 rounded-[3px] border border-border bg-background/70 p-0.5 shadow-[inset_0_1px_0_oklch(1_0_0/0.04)]">
-          <TBtn label="PLAY" active={transport.playing} onClick={togglePlay}>
+          <TBtn label="RTZ" onClick={() => setTransport({ step: transport.loop ? (transport.loopStart ?? 0) : 0 })}>
+            <SkipBack className="size-4" />
+          </TBtn>
+          <TBtn label={transport.playing ? "PAUSE" : "PLAY"} active={transport.playing} onClick={togglePlay}>
             {transport.playing ? <Pause className="size-4" /> : <Play className="size-4" />}
           </TBtn>
           <TBtn label="STOP" onClick={stop}>
@@ -93,28 +99,7 @@ export function TopBar() {
               </div>
             </div>
           ) : (
-            <div>
-              <span className="label-xs">BAR.BEAT</span>
-              <div className="text-base leading-none text-primary">
-                {Math.floor(transport.step / 4) + 1}.{(transport.step % 4) + 1}
-              </div>
-            </div>
-          )}
-          {!isMobile && (
-            <>
-              <span className="w-px bg-border" />
-              <div>
-                <span className="label-xs">TIME</span>
-                <div className="text-base leading-none text-primary">
-                  {(() => {
-                    const secs = (transport.step / 4) * (60 / transport.bpm);
-                    const m = Math.floor(secs / 60);
-                    const s = Math.floor(secs % 60);
-                    return `${m}:${String(s).padStart(2, "0")}`;
-                  })()}
-                </div>
-              </div>
-            </>
+            <PositionDisplay step={transport.step} bpm={transport.bpm} />
           )}
           <span className="hidden w-px bg-border sm:block" />
           <div className="hidden sm:block" title="Timeline length — click + to add bars (Shift = +16), up to 512">
@@ -144,10 +129,14 @@ export function TopBar() {
           {!isMobile && (
             <>
               <span className="w-px bg-border" />
-              <div>
+              <div title="Time signature — SYNCLAB currently runs in 4/4 only">
                 <span className="label-xs">SIG</span>
                 <div className="text-base leading-none text-muted-foreground">4/4</div>
               </div>
+              <span className="w-px bg-border" />
+              <LoopRange />
+              <span className="w-px bg-border" />
+              <AudioStatus />
             </>
           )}
         </div>
@@ -267,6 +256,7 @@ export function TopBar() {
         )}
 
         {!isMobile && <MidiControl />}
+        {!isMobile && <MasterMeter />}
 
         <div className="ml-auto flex shrink-0 items-center gap-1">
           <PlanBadge />
@@ -528,5 +518,90 @@ function MidiControl() {
         </DropdownMenu>
       )}
     </div>
+  );
+}
+
+const TICKS = 960;
+
+/** Musical (BAR | BEAT | TICK) or absolute (H:MM:SS.mmm) playhead position, click to switch. */
+function PositionDisplay({ step, bpm }: { step: number; bpm: number }) {
+  const [abs, setAbs] = useState(false);
+  useEffect(() => {
+    if (localStorage.getItem("synclab.timeMode") === "abs") setAbs(true);
+  }, []);
+  const toggle = () => {
+    setAbs((a) => { localStorage.setItem("synclab.timeMode", a ? "bars" : "abs"); return !a; });
+  };
+  const whole = Math.floor(step);
+  const tick = Math.round((step - whole) * TICKS);
+  const secs = step * (60 / bpm);
+  const hh = Math.floor(secs / 3600), mm = Math.floor((secs % 3600) / 60), ss = Math.floor(secs % 60);
+  const ms = Math.floor((secs * 1000) % 1000);
+  return (
+    <button type="button" onClick={toggle} className="text-left" title="Click to switch musical / absolute time">
+      <span className="label-xs">{abs ? "H:MM:SS.MS" : "BAR | BEAT | TICK"}</span>
+      <div className="whitespace-nowrap text-base leading-none tabular-nums text-primary">
+        {abs
+          ? `${hh}:${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")}.${String(ms).padStart(3, "0")}`
+          : `${Math.floor(whole / 4) + 1} | ${(whole % 4) + 1} | ${String(tick).padStart(3, "0")}`}
+      </div>
+    </button>
+  );
+}
+
+function LoopRange() {
+  const { transport, setTransport } = useStudio();
+  const total = (transport.bars ?? 4) * 4;
+  const lo = transport.loopStart ?? 0;
+  const hi = transport.loopEnd ?? total;
+  const nudge = (which: "loopStart" | "loopEnd", d: number) => {
+    if (which === "loopStart") setTransport({ loopStart: Math.max(0, Math.min(hi - 4, lo + d)) });
+    else setTransport({ loopEnd: Math.min(total, Math.max(lo + 4, hi + d)) });
+  };
+  const Btn = ({ k, d, l }: { k: "loopStart" | "loopEnd"; d: number; l: string }) => (
+    <button type="button" aria-label={l} onClick={() => nudge(k, d)}
+      className="rounded-[2px] px-0.5 text-muted-foreground hover:bg-accent hover:text-foreground">
+      {d < 0 ? <Minus className="size-3" /> : <Plus className="size-3" />}
+    </button>
+  );
+  return (
+    <div title="Loop range in bars">
+      <span className="label-xs">LOOP {transport.loop ? "ON" : "OFF"}</span>
+      <div className="flex items-center gap-0.5 text-sm leading-none text-primary">
+        <Btn k="loopStart" d={-4} l="Loop start earlier" />
+        <span className="tabular-nums">{lo / 4 + 1}</span>
+        <Btn k="loopStart" d={4} l="Loop start later" />
+        <span className="px-0.5 text-muted-foreground">–</span>
+        <Btn k="loopEnd" d={-4} l="Loop end earlier" />
+        <span className="tabular-nums">{hi / 4 + 1}</span>
+        <Btn k="loopEnd" d={4} l="Loop end later" />
+      </div>
+    </div>
+  );
+}
+
+/** Real AudioContext state and sample rate, polled once a second. */
+function AudioStatus() {
+  const [st, setSt] = useState<{ s: string; sr: number }>({ s: "off", sr: 0 });
+  useEffect(() => {
+    const read = () => { const e = getEngine(); setSt({ s: e.audioState, sr: e.sampleRate }); };
+    read();
+    const id = window.setInterval(read, 1000);
+    return () => window.clearInterval(id);
+  }, []);
+  const ok = st.s === "running";
+  return (
+    <button
+      type="button"
+      title={ok ? "Audio engine running" : "Audio is paused by the browser — click to start it"}
+      onClick={() => void getEngine().resume?.()}
+      className="text-left"
+    >
+      <span className="label-xs">AUDIO</span>
+      <div className={`flex items-center gap-1 text-xs leading-none ${ok ? "text-primary" : "text-destructive"}`}>
+        <span className={`size-1.5 rounded-full ${ok ? "bg-primary" : "bg-destructive"}`} />
+        {ok ? `${(st.sr / 1000).toFixed(1)}k` : st.s === "off" ? "IDLE" : "PAUSED"}
+      </div>
+    </button>
   );
 }
