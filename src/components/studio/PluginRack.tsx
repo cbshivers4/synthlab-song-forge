@@ -81,21 +81,18 @@ function ParamRow({
   const { setPluginParam } = useStudio();
   const step = max - min > 40 ? 1 : (max - min) / 200;
   return (
-    <div className="flex items-center gap-2">
-      <span className="w-20 shrink-0 font-mono text-[10px] tracking-wider text-muted-foreground uppercase">{name}</span>
-      <Slider
-        className="flex-1"
+    <div className="inline-flex flex-col items-center">
+      <Knob
+        label={name}
+        value={value}
         min={min}
         max={max}
         step={step}
-        value={[value]}
-        onValueChange={([v = value]) => setPluginParam(trackId, plugin.id, paramId, v)}
+        unit={unit ? ` ${unit}` : ""}
+        size={52}
+        onChange={(v) => setPluginParam(trackId, plugin.id, paramId, v)}
+        midiTarget={{ id: trackId, param: `plugin:${plugin.id}:${paramId}` }}
       />
-      <span className="w-16 shrink-0 text-right font-mono text-[10px] text-primary">
-        {value >= 100 ? value.toFixed(0) : value.toFixed(2)}
-        {unit ? ` ${unit}` : ""}
-      </span>
-      <MidiLearnButton id={trackId} param={`plugin:${plugin.id}:${paramId}`} label={`${plugin.name} ${name}`} />
     </div>
   );
 }

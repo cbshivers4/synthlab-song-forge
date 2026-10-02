@@ -233,14 +233,21 @@ function InsertRack({
                   </div>
                   <div className="space-y-3">
                     <XYPad plugin={p} onParam={(paramId, v) => onParam(p.id, paramId, v)} />
-                    {p.params.map((x) => (
-                      <div key={x.id} className="flex items-center gap-2">
-                        <span className="w-20 shrink-0 font-mono text-[11px] uppercase text-muted-foreground">{x.name}</span>
-                        <Slider value={[x.value]} min={x.min} max={x.max} step={(x.max - x.min) / 200} className="flex-1" onValueChange={([v = 0]) => onParam(p.id, x.id, v)} aria-label={`${p.name} ${x.name}`} />
-                        <span className="w-12 shrink-0 text-right font-mono text-[11px]">{x.value.toFixed(2)}</span>
-                        <MidiLearnButton id={midiId} param={`${midiPrefix}:${p.id}:${x.id}`} label={`${p.name} ${x.name}`} />
-                      </div>
-                    ))}
+                    <div className="flex flex-wrap justify-center gap-2">
+                      {p.params.map((x) => (
+                        <Knob
+                          key={x.id}
+                          label={x.name}
+                          value={x.value}
+                          min={x.min}
+                          max={x.max}
+                          step={(x.max - x.min) / 200}
+                          size={52}
+                          onChange={(v) => onParam(p.id, x.id, v)}
+                          midiTarget={{ id: midiId, param: `${midiPrefix}:${p.id}:${x.id}` }}
+                        />
+                      ))}
+                    </div>
                   </div>
                 </div>
               </DialogContent>
