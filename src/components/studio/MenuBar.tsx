@@ -31,9 +31,6 @@ import { useDesktopMenu } from "@/lib/synclab/desktop-menu";
 import { SYNCLAB_VERSION } from "@/lib/synclab/support";
 import { AbletonHandoff } from "@/components/studio/AbletonHandoff";
 
-
-const notYet = (what: string, why: string) => () => toast(what, { description: why });
-
 export function MenuBar() {
   const {
     setPanel,
@@ -61,6 +58,9 @@ export function MenuBar() {
     redo,
     canUndo,
     canRedo,
+    updateClip,
+    removeClip,
+    previewClip,
   } = useStudio();
   const importRef = useRef<HTMLInputElement>(null);
   const midiRef = useRef<HTMLInputElement>(null);
@@ -156,6 +156,20 @@ export function MenuBar() {
     fn(selected.id);
   };
 
+  /** Runs a clip action on the selected track's active clip. */
+  const needClip = (fn: (trackId: string, clipId: string) => void) => () => {
+    if (!selected) {
+      toast("Select a track first", { description: "Click a track name in the timeline, then try again." });
+      return;
+    }
+    const clipId = selected.activeClipId ?? selected.clips?.[0]?.id;
+    if (!clipId) {
+      toast("No clip on this track", { description: "Click a clip in the timeline first, then try again." });
+      return;
+    }
+    fn(selected.id, clipId);
+  };
+
   /** Native desktop menu — every command below runs the same action as the in-app menu. */
   useDesktopMenu({
     "file:new": () => setStage("start"),
@@ -244,6 +258,7 @@ export function MenuBar() {
           <MenubarContent>
             <MenubarItem onClick={() => setStage("start")}>New Project</MenubarItem>
             <MenubarItem onClick={() => setStage("start")}>Open Project</MenubarItem>
+            <MenubarItem onClick={() => setStage("start")}>Templates</MenubarItem>
             <MenubarSeparator />
             <MenubarItem onClick={() => void save()}>
               Save <MenubarShortcut>⌘S</MenubarShortcut>
@@ -272,7 +287,6 @@ export function MenuBar() {
             <MenubarItem onClick={() => setAbletonOpen(true)}>Ableton Live handoff…</MenubarItem>
             <MenubarItem onClick={openExport}>Export / Share (WAV, MP3)</MenubarItem>
             <MenubarSeparator />
-            <MenubarItem onClick={() => setPanel(null)}>Close Editor</MenubarItem>
             <MenubarItem onClick={() => setStage("start")}>
               Close Project <MenubarShortcut>⌘W</MenubarShortcut>
             </MenubarItem>
@@ -330,23 +344,10 @@ export function MenuBar() {
             <MenubarItem onClick={() => setPanel("looper")}>Live Looper</MenubarItem>
             <MenubarItem onClick={() => setPanel("mixer")}>Mixer</MenubarItem>
             <MenubarItem onClick={() => setPanel("reference")}>Reference Analyzer</MenubarItem>
-            <MenubarItem onClick={() => setPanel("piano")}>Piano Roll</MenubarItem>
-            <MenubarItem onClick={() => setPanel("keys")}>Keyboard</MenubarItem>
-            <MenubarItem onClick={() => setPanel("appearance")}>Appearance & Themes</MenubarItem>
             <MenubarSeparator />
             <MenubarItem onClick={toggleMode}>
               {mode === "simple" ? "Switch to Advanced Mode" : "Switch to Simple Mode"}
             </MenubarItem>
-          </MenubarContent>
-        </MenubarMenu>
-
-        <MenubarMenu>
-          <MenubarTrigger className="text-xs">Project</MenubarTrigger>
-          <MenubarContent>
-            <MenubarItem disabled>{project ? project.name : "Untitled session"}</MenubarItem>
-            <MenubarSeparator />
-            <MenubarItem onClick={() => setPanel("settings")}>Project Settings</MenubarItem>
-            <MenubarItem onClick={() => setStage("start")}>Templates</MenubarItem>
           </MenubarContent>
         </MenubarMenu>
 
@@ -359,6 +360,24 @@ export function MenuBar() {
             <MenubarItem onClick={() => addTrack("drum", "DRUM MACHINE")}>Add Drum Machine</MenubarItem>
             <MenubarItem onClick={() => addTrack("sampler", "SAMPLER", "Metro Pluck")}>Add Sampler</MenubarItem>
             <MenubarItem onClick={() => addTrack("ai-vocal", "AI VOCAL", "Vocoder Bot")}>Add AI Vocal</MenubarItem>
+          </MenubarContent>
+        </MenubarMenu>
+
+        <MenubarMenu>
+          <MenubarTrigger className="text-xs">Clip</MenubarTrigger>
+          <MenubarContent>
+            <MenubarItem onClick={splitAtPlayhead}>
+              Split at Playhead <MenubarShortcut>S</MenubarShortcut>
+            </MenubarItem>
+            <MenubarItem onClick={selectAll}>
+              Select All <MenubarShortcut>⌘A</MenubarShortcut>
+            </MenubarItem>
+            <MenubarSeparator />
+            <MenubarItem onClick={needClip((t, c) => updateClip(t, c, { fadeIn: 0.25 }))}>Fade In</MenubarItem>
+            <MenubarItem onClick={needClip((t, c) => updateClip(t, c, { fadeOut: 0.25 }))}>Fade Out</MenubarItem>
+            <MenubarItem onClick={needClip((t, c) => previewClip(t, c))}>Preview Clip</MenubarItem>
+            <MenubarSeparator />
+            <MenubarItem onClick={needClip((t, c) => removeClip(t, c))}>Delete Clip</MenubarItem>
           </MenubarContent>
         </MenubarMenu>
 
@@ -389,8 +408,10 @@ export function MenuBar() {
           <MenubarContent>
             <MenubarItem onClick={() => setPanel("synth")}>Synthesizer</MenubarItem>
             <MenubarItem onClick={() => setPanel("drums")}>Drum Machine</MenubarItem>
+            <MenubarItem onClick={() => setPanel("sampler")}>Sampler</MenubarItem>
             <MenubarItem onClick={() => setPanel("browser")}>Browser</MenubarItem>
-            <MenubarItem onClick={() => setPanel("mixer")}>Mixer</MenubarItem>
+            <MenubarSeparator />
+            <MenubarItem onClick={() => setPanel("plugins")}>Plugin Rack</MenubarItem>
           </MenubarContent>
         </MenubarMenu>
 
@@ -406,10 +427,10 @@ export function MenuBar() {
         </MenubarMenu>
 
         <MenubarMenu>
-          <MenubarTrigger className="text-xs">Plugins</MenubarTrigger>
+          <MenubarTrigger className="text-xs">Settings</MenubarTrigger>
           <MenubarContent>
-            <MenubarItem onClick={() => setPanel("plugins")}>Plugin Rack</MenubarItem>
-            <MenubarItem onClick={() => setPanel("settings")}>Plugin Settings</MenubarItem>
+            <MenubarItem onClick={() => setPanel("settings")}>Preferences</MenubarItem>
+            <MenubarItem onClick={() => setPanel("appearance")}>Appearance & Themes</MenubarItem>
           </MenubarContent>
         </MenubarMenu>
 
@@ -429,7 +450,6 @@ export function MenuBar() {
             <MenubarItem onClick={() => openHelp("problem")}>Report a Problem</MenubarItem>
             <MenubarItem onClick={() => openHelp("about")}>About SYNCLAB Vocal Forge</MenubarItem>
             <MenubarSeparator />
-            <MenubarItem onClick={() => setPanel("settings")}>Preferences</MenubarItem>
             <MenubarItem
               onClick={() =>
                 toast("Keyboard shortcuts", {
