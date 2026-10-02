@@ -1879,7 +1879,6 @@ export function StudioProvider({ children }: { children: ReactNode }) {
               // The printed take is captured after the channel fader, so a muted
               // channel would record silence (a flat line). Unmute it first.
               if (armedNote.muted) {
-                getEngine().setTrackMute?.(armedNote.id, false);
                 updateTrack(armedNote.id, { muted: false });
                 toast("Unmuted " + armedNote.name, { description: "A muted channel records silence, so it was unmuted for this take." });
               }
