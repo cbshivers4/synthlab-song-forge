@@ -1312,7 +1312,21 @@ export class SyncLabEngine {
   }
 
   /** Open the microphone for metering/monitoring when a channel is armed. */
+  private monitorPending: { trackId: string; p: Promise<void> } | null = null;
+
   async startInputMonitoring(trackId: string, monitor: boolean) {
+    // arming and REC can both open the input at once; share the in-flight request
+    if (this.monitorPending?.trackId === trackId) {
+      await this.monitorPending.p;
+      this.setMonitoring(monitor);
+      return;
+    }
+    const p = this.openInputMonitoring(trackId, monitor);
+    this.monitorPending = { trackId, p };
+    try { await p; } finally { if (this.monitorPending?.p === p) this.monitorPending = null; }
+  }
+
+  private async openInputMonitoring(trackId: string, monitor: boolean) {
     if (this.monitorTrackId === trackId && this.recStream) {
       this.setMonitoring(monitor);
       return;
