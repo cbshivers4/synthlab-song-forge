@@ -251,7 +251,6 @@ export function TopBar() {
               onClick={() => {
                 const next = !transport.monitor;
                 setTransport({ monitor: next });
-                getEngine().setMonitoring(next);
               }}
             />
             <FeatBtn
