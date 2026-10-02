@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { STEPS_PER_BAR } from "@/lib/synclab/timebase";
+import { stepsPerBar } from "@/lib/synclab/timebase";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -32,7 +32,7 @@ export function PianoRoll({ track }: { track: Track }) {
   const [low, setLow] = useState(48);
   const [grid, setGrid] = useState(1); // steps per snap
   const [len, setLen] = useState(1);
-  const [bars, setBars] = useState(() => Math.max(1, Math.round((track.steps || STEPS_PER_BAR) / STEPS_PER_BAR)));
+  const [bars, setBars] = useState(() => Math.max(1, Math.round((track.steps || stepsPerBar()) / stepsPerBar())));
   const [scaleLock, setScaleLock] = useState(false);
   const [root, setRoot] = useState(0);
   const [scaleName, setScaleName] = useState("Minor");
@@ -41,7 +41,7 @@ export function PianoRoll({ track }: { track: Track }) {
   const gridRef = useRef<HTMLDivElement | null>(null);
   const drag = useRef<Drag>(null);
 
-  const steps = bars * STEPS_PER_BAR;
+  const steps = bars * stepsPerBar();
 
   // the piano roll page length IS the track's loop length, so what you draw is
   // exactly what the timeline plays back
@@ -52,7 +52,7 @@ export function PianoRoll({ track }: { track: Track }) {
   // drawing past the end grows the loop instead of silently dropping the notes
   useEffect(() => {
     const end = Math.max(0, ...(track.notes ?? []).map((n) => n.step + Math.max(1, n.length)));
-    const needed = Math.max(1, Math.ceil(end / STEPS_PER_BAR));
+    const needed = Math.max(1, Math.ceil(end / stepsPerBar()));
     if (needed > bars) setBars(needed);
   }, [track.notes, bars]);
   const notes = track.notes ?? [];
@@ -439,7 +439,7 @@ export function PianoRoll({ track }: { track: Track }) {
                 style={{
                   left: `${(s / steps) * 100}%`,
                   width: 1,
-                   background: s % 16 === 0 ? "var(--editor-grid-strong)" : s % 4 === 0 ? "var(--editor-grid)" : "color-mix(in oklab, var(--editor-grid) 35%, transparent)",
+                   background: s % stepsPerBar() === 0 ? "var(--editor-grid-strong)" : s % 4 === 0 ? "var(--editor-grid)" : "color-mix(in oklab, var(--editor-grid) 35%, transparent)",
                 }}
               />
             ))}

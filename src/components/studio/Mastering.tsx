@@ -68,7 +68,7 @@ export function Mastering() {
   const [playing, setPlaying] = useState(false);
 
   const safeName = (project?.name ?? "synclab-master").replace(/[^\w\-. ]+/g, "").trim() || "synclab-master";
-  const barSeconds = (60 / transport.bpm) * 4;
+  const barSeconds = (60 / transport.bpm) * (transport.beatsPerBar ?? 4);
   const bars = Math.max(1, transport.bars ?? 8);
   const total = bars * barSeconds + 0.6;
 

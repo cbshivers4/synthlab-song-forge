@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { STEPS_PER_BAR, STEPS_PER_BEAT, songSteps, stepSeconds, positionLabel } from "@/lib/synclab/timebase";
+import { stepsPerBar, getBeatsPerBar, STEPS_PER_BEAT, songSteps, stepSeconds, positionLabel } from "@/lib/synclab/timebase";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   ArrowLeftToLine,
@@ -268,7 +268,7 @@ function MidiClip({ track }: { track: Track }) {
   const notes = track.notes ?? [];
   // the pattern loops for the whole song, so draw every repeat where it is heard
   const total = songSteps(transport.bars);
-  const patLen = Math.max(STEPS_PER_BAR, track.steps || STEPS_PER_BAR);
+  const patLen = Math.max(stepsPerBar(), track.steps || stepsPerBar());
   const reps = Math.max(1, Math.ceil(total / patLen));
   if (notes.length === 0)
     return (
@@ -2009,7 +2009,8 @@ function BarNumbering({ gridRef, bars }: { gridRef: React.RefObject<HTMLDivEleme
     return () => ro.disconnect();
   }, [gridRef]);
 
-  const beats = Math.max(1, bars) * 4;
+  const bpb = getBeatsPerBar();
+  const beats = Math.max(1, bars) * bpb;
   const pxPerBar = gridW > 0 ? gridW / Math.max(1, bars) : 0;
   // ~56px keeps up to 5-digit numbers from colliding; snap to a musical step.
   const need = pxPerBar > 0 ? Math.ceil(56 / pxPerBar) : 1;
@@ -2019,8 +2020,8 @@ function BarNumbering({ gridRef, bars }: { gridRef: React.RefObject<HTMLDivEleme
   return (
     <div className="grid w-full" style={{ gridTemplateColumns: `repeat(${beats},minmax(0,1fr))` }}>
       {Array.from({ length: beats }).map((_, i) => {
-        const isBar = i % 4 === 0;
-        const bar = i / 4;
+        const isBar = i % bpb === 0;
+        const bar = i / bpb;
         const labeled = isBar && bar % step === 0;
         return (
           <div
@@ -2049,7 +2050,7 @@ function Ruler() {
   const { transport, setTransport } = useStudio();
   const gridRef = useRef<HTMLDivElement>(null);
   const bars = Math.max(1, transport.bars ?? 4);
-  const total = bars * STEPS_PER_BAR;
+  const total = bars * stepsPerBar();
   const lo = transport.loopStart ?? 0;
   const hi = Math.max(lo + 1, transport.loopEnd ?? total);
   const exportOn = transport.exportStart != null && transport.exportEnd != null;
@@ -2058,7 +2059,7 @@ function Ruler() {
 
   const setBars = (next: number) => {
     const b = Math.min(512, Math.max(1, next));
-    const steps = b * STEPS_PER_BAR;
+    const steps = b * stepsPerBar();
     setTransport({
       bars: b,
       loopStart: Math.min(lo, steps - 1),
@@ -2209,7 +2210,7 @@ function Ruler() {
             {/* loop band — drag it to move the whole region */}
             <div
               onPointerDown={dragLoop("band")}
-              title={`Loop bar ${Math.floor(lo / STEPS_PER_BAR) + 1} to ${Math.floor(hi / STEPS_PER_BAR) + 1} — drag to move`}
+              title={`Loop bar ${Math.floor(lo / stepsPerBar()) + 1} to ${Math.floor(hi / stepsPerBar()) + 1} — drag to move`}
               className="absolute inset-y-0 z-10 cursor-grab touch-none border-x border-primary/70 bg-primary/15 active:cursor-grabbing"
               style={{ left: `${(lo / total) * 100}%`, width: `${((hi - lo) / total) * 100}%` }}
             />
@@ -2233,7 +2234,7 @@ function Ruler() {
                     if (which === "start") setTransport({ loopStart: Math.max(0, Math.min(lo + d, hi - 1)), loop: true });
                     else setTransport({ loopEnd: Math.min(total, Math.max(hi + d, lo + 1)), loop: true });
                   }}
-                  title={`Loop ${which} — drag or use arrow keys (bar ${Math.floor(p / STEPS_PER_BAR) + 1})`}
+                  title={`Loop ${which} — drag or use arrow keys (bar ${Math.floor(p / stepsPerBar()) + 1})`}
                   className="absolute top-0 z-20 flex h-full w-4 cursor-ew-resize touch-none flex-col items-center outline-none focus-visible:ring-1 focus-visible:ring-primary"
                   style={{ left: `calc(${(p / total) * 100}% - 8px)` }}
                 >
@@ -2262,7 +2263,7 @@ function Ruler() {
                   aria-label={which === "start" ? "Export start flag" : "Export end flag"}
                   aria-valuenow={p}
                   onPointerDown={dragFlag(which)}
-                  title={`Export ${which} — drag to move (bar ${Math.floor(p / STEPS_PER_BAR) + 1})`}
+                  title={`Export ${which} — drag to move (bar ${Math.floor(p / stepsPerBar()) + 1})`}
                   className="absolute top-0 z-20 flex h-full w-3 cursor-ew-resize touch-none flex-col items-center"
                   style={{ left: `calc(${(p / total) * 100}% - 6px)` }}
                 >

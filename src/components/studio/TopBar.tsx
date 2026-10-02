@@ -29,7 +29,7 @@ import {
   Menu,
 } from "lucide-react";
 
-import { STEPS_PER_BAR, STEPS_PER_BEAT, songSteps, stepSeconds } from "@/lib/synclab/timebase";
+import { stepsPerBar, STEPS_PER_BEAT, METERS, getBeatsPerBar, songSteps, stepSeconds } from "@/lib/synclab/timebase";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -96,7 +96,7 @@ export function TopBar() {
             <div>
               <span className="label-xs">COUNT-IN</span>
               <div className="animate-pulse text-base leading-none text-destructive">
-                {Math.ceil(transport.countInLeft / 4)}.{((transport.countInLeft - 1) % 4) + 1}
+                {Math.ceil(transport.countInLeft / getBeatsPerBar())}.{((transport.countInLeft - 1) % getBeatsPerBar()) + 1}
               </div>
             </div>
           ) : (
@@ -130,9 +130,9 @@ export function TopBar() {
           {!isMobile && (
             <>
               <span className="w-px bg-border" />
-              <div title="Time signature — SYNCLAB currently runs in 4/4 only">
+              <div title="Time signature — change it with METER next to the tempo">
                 <span className="label-xs">SIG</span>
-                <div className="text-base leading-none text-muted-foreground">4/4</div>
+                <div className="text-base leading-none text-primary">{transport.beatsPerBar ?? 4}/4</div>
               </div>
               <span className="w-px bg-border" />
               <LoopRange />
@@ -156,6 +156,17 @@ export function TopBar() {
             onValueChange={([v = 0]) => setTransport({ bpm: v })}
           />
           <MidiLearnButton id="transport" param="bpm" label="Tempo" />
+          <label className="block" title="Time signature (beats per bar, quarter-note beat)">
+            <span className="label-xs">METER</span>
+            <select
+              aria-label="Time signature"
+              className="block bg-transparent font-mono text-base leading-none text-primary outline-none"
+              value={transport.beatsPerBar ?? 4}
+              onChange={(e) => setTransport({ beatsPerBar: Number(e.target.value) })}
+            >
+              {METERS.map((m) => <option key={m} value={m} className="bg-background">{m}/4</option>)}
+            </select>
+          </label>
           <div className="hidden sm:block">
             <span className="label-xs">Swing</span>
             <Slider
@@ -555,7 +566,7 @@ function PositionDisplay({ step: beatStep, bpm, playing }: { step: number; bpm: 
       <div className="whitespace-nowrap text-base leading-none tabular-nums text-primary">
         {abs
           ? `${hh}:${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")}.${String(ms).padStart(3, "0")}`
-          : `${Math.floor(whole / STEPS_PER_BAR) + 1} | ${Math.floor((whole % STEPS_PER_BAR) / STEPS_PER_BEAT) + 1} | ${String(tick).padStart(3, "0")}`}
+          : `${Math.floor(whole / stepsPerBar()) + 1} | ${Math.floor((whole % stepsPerBar()) / STEPS_PER_BEAT) + 1} | ${String(tick).padStart(3, "0")}`}
       </div>
     </button>
   );
@@ -567,8 +578,8 @@ function LoopRange() {
   const lo = transport.loopStart ?? 0;
   const hi = transport.loopEnd ?? total;
   const nudge = (which: "loopStart" | "loopEnd", d: number) => {
-    if (which === "loopStart") setTransport({ loopStart: Math.max(0, Math.min(hi - STEPS_PER_BAR, lo + d)) });
-    else setTransport({ loopEnd: Math.min(total, Math.max(lo + STEPS_PER_BAR, hi + d)) });
+    if (which === "loopStart") setTransport({ loopStart: Math.max(0, Math.min(hi - stepsPerBar(), lo + d)) });
+    else setTransport({ loopEnd: Math.min(total, Math.max(lo + stepsPerBar(), hi + d)) });
   };
   const Btn = ({ k, d, l }: { k: "loopStart" | "loopEnd"; d: number; l: string }) => (
     <button type="button" aria-label={l} onClick={() => nudge(k, d)}
@@ -580,13 +591,13 @@ function LoopRange() {
     <div title="Loop range in bars">
       <span className="label-xs">LOOP {transport.loop ? "ON" : "OFF"}</span>
       <div className="flex items-center gap-0.5 text-sm leading-none text-primary">
-        <Btn k="loopStart" d={-STEPS_PER_BAR} l="Loop start earlier" />
-        <span className="tabular-nums">{Math.floor(lo / STEPS_PER_BAR) + 1}</span>
-        <Btn k="loopStart" d={STEPS_PER_BAR} l="Loop start later" />
+        <Btn k="loopStart" d={-stepsPerBar()} l="Loop start earlier" />
+        <span className="tabular-nums">{Math.floor(lo / stepsPerBar()) + 1}</span>
+        <Btn k="loopStart" d={stepsPerBar()} l="Loop start later" />
         <span className="px-0.5 text-muted-foreground">–</span>
-        <Btn k="loopEnd" d={-STEPS_PER_BAR} l="Loop end earlier" />
-        <span className="tabular-nums">{Math.floor(hi / STEPS_PER_BAR) + 1}</span>
-        <Btn k="loopEnd" d={STEPS_PER_BAR} l="Loop end later" />
+        <Btn k="loopEnd" d={-stepsPerBar()} l="Loop end earlier" />
+        <span className="tabular-nums">{Math.floor(hi / stepsPerBar()) + 1}</span>
+        <Btn k="loopEnd" d={stepsPerBar()} l="Loop end later" />
       </div>
     </div>
   );
