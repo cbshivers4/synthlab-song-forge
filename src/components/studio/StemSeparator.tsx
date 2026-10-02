@@ -249,6 +249,16 @@ export function StemSeparator({ mode = "stems" }: { mode?: "stems" | "voice" }) 
             <div className="h-full bg-primary transition-all" style={{ width: `${Math.round(progress * 100)}%` }} />
           </div>
         )}
+        {failed && !busy && (
+          <div className="mt-3 flex flex-wrap items-center gap-2 rounded-[3px] border border-destructive/50 bg-destructive/10 p-2">
+            <span className="font-mono text-[10px] tracking-widest text-destructive">FAILED</span>
+            <span className="min-w-0 flex-1 text-xs text-foreground/80">{failed}</span>
+            <Button size="sm" variant="outline" className="min-h-10 gap-2" onClick={() => void run()}>
+              <RotateCcw className="size-4" />
+              Retry
+            </Button>
+          </div>
+        )}
       </div>
 
       {pieces.length > 0 && (
