@@ -292,6 +292,10 @@ export class SyncLabEngine {
     for (const id of ["A", "B", "C", "D"]) {
       const meter = ctx.createAnalyser();
       meter.fftSize = 1024;
+      const silentSink = ctx.createGain();
+      silentSink.gain.value = 0;
+      meter.connect(silentSink);
+      silentSink.connect(ctx.destination);
       this.vcaMeters.set(id, meter);
     }
     return ctx;
