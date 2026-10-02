@@ -10,7 +10,7 @@ import {
 } from "react";
 import { toast } from "sonner";
 import { getEngine } from "./audio-engine";
-import { STEPS_PER_BAR, songSteps, stepSeconds, barsForSteps } from "./timebase";
+import { stepsPerBar, songSteps, stepSeconds, barsForSteps } from "./timebase";
 import { openInOwnTab } from "./mic";
 import { TRACK_COLORS, applyPreset, defaultPads, defaultPatch, uid } from "./presets";
 import { BUILT_IN_PLUGINS, instantiate, processMidiThroughPlugins } from "./plugins";
@@ -1389,7 +1389,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             color: SECTION_COLORS[sorted.length % SECTION_COLORS.length] as string,
           };
           toast.success(`${next.name} added`, {
-            description: `Bar ${Math.floor(next.start / STEPS_PER_BAR) + 1} to ${Math.floor((next.start + next.length) / STEPS_PER_BAR) + 1}`,
+            description: `Bar ${Math.floor(next.start / stepsPerBar()) + 1} to ${Math.floor((next.start + next.length) / stepsPerBar()) + 1}`,
           });
           return [...sorted, next].sort((a, b) => a.start - b.start);
         });
@@ -1479,9 +1479,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         const part = Math.max(1, Math.round(bars / names.length));
         const built: SongSection[] = [];
         let at = 0;
-        for (let i = 0; i < names.length && at < bars * STEPS_PER_BAR; i++) {
-          const len = Math.min(part * STEPS_PER_BAR, bars * STEPS_PER_BAR - at);
-          if (len < STEPS_PER_BAR) break;
+        for (let i = 0; i < names.length && at < bars * stepsPerBar(); i++) {
+          const len = Math.min(part * stepsPerBar(), bars * stepsPerBar() - at);
+          if (len < stepsPerBar()) break;
           built.push({
             id: uid(),
             name: names[i] as string,

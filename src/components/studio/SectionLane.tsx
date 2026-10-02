@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { songSteps, STEPS_PER_BAR } from "@/lib/synclab/timebase";
+import { songSteps, stepsPerBar } from "@/lib/synclab/timebase";
 import { Copy, LayoutList, Plus, Trash2 } from "lucide-react";
 import { useStudio } from "@/lib/synclab/store";
 import { SECTION_COLORS, SECTION_NAMES } from "@/lib/synclab/types";
@@ -120,7 +120,7 @@ export function SectionLane() {
                 setRenaming(sec.id);
                 setDraft(sec.name);
               }}
-              title={`${sec.name} — bar ${Math.floor(sec.start / STEPS_PER_BAR) + 1} to ${Math.floor((sec.start + sec.length) / STEPS_PER_BAR) + 1}. Drag to move, double-click to rename.`}
+              title={`${sec.name} — bar ${Math.floor(sec.start / stepsPerBar()) + 1} to ${Math.floor((sec.start + sec.length) / stepsPerBar()) + 1}. Drag to move, double-click to rename.`}
               className="group absolute inset-y-[3px] flex cursor-grab items-center gap-1 overflow-hidden rounded-[3px] border px-1.5 active:cursor-grabbing"
               style={{
                 left: `${left}%`,
