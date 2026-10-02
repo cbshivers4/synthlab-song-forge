@@ -428,10 +428,10 @@ export function MenuBar() {
         </MenubarMenu>
 
         <MenubarMenu>
-          <MenubarTrigger className="text-xs">Plugins</MenubarTrigger>
+          <MenubarTrigger className="text-xs">Settings</MenubarTrigger>
           <MenubarContent>
-            <MenubarItem onClick={() => setPanel("plugins")}>Plugin Rack</MenubarItem>
-            <MenubarItem onClick={() => setPanel("settings")}>Plugin Settings</MenubarItem>
+            <MenubarItem onClick={() => setPanel("settings")}>Preferences</MenubarItem>
+            <MenubarItem onClick={() => setPanel("appearance")}>Appearance & Themes</MenubarItem>
           </MenubarContent>
         </MenubarMenu>
 
@@ -451,7 +451,6 @@ export function MenuBar() {
             <MenubarItem onClick={() => openHelp("problem")}>Report a Problem</MenubarItem>
             <MenubarItem onClick={() => openHelp("about")}>About SYNCLAB Vocal Forge</MenubarItem>
             <MenubarSeparator />
-            <MenubarItem onClick={() => setPanel("settings")}>Preferences</MenubarItem>
             <MenubarItem
               onClick={() =>
                 toast("Keyboard shortcuts", {
