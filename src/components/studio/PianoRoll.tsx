@@ -62,9 +62,10 @@ export function PianoRoll({ track }: { track: Track }) {
   useEffect(() => {
     if (notes.length === 0) return;
     const avg = notes.reduce((a, n) => a + n.pitch, 0) / notes.length;
-    setLow((cur) => {
-      const inView = avg >= cur && avg < cur + ROWS;
-      return inView ? cur : Math.max(12, Math.min(96, Math.round(avg - ROWS / 2)));
+    // put the notes near the top of the window, then scroll the panel to them
+    setLow(Math.max(12, Math.min(96, Math.round(avg - ROWS + 6))));
+    requestAnimationFrame(() => {
+      gridRef.current?.querySelector("[data-note]")?.scrollIntoView({ block: "center" });
     });
     // only on open / track change — not on every note edit
     // eslint-disable-next-line react-hooks/exhaustive-deps
