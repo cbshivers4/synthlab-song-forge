@@ -1169,7 +1169,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       setTracks((ts) => ts.map((t) => t.id === result.trackId ? {
         ...t, notes: (t.notes ?? []).map((n) => capturedIds.has(n.id) ? {
           ...n, recordedEnd: takeEnd,
-          length: Math.max(0.25, Math.min(n.length, takeEnd - n.step, stepsPerBar() - n.step % stepsPerBar())),
+          length: Math.max(0.25, Math.min(n.length, takeEnd - n.step)),
         } : n),
       } : t));
       recordedNoteIdsRef.current = new Set();
