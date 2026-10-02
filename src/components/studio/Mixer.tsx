@@ -303,7 +303,6 @@ function SendsMenu({ t }: { t: Track }) {
           return (
             <div key={key} className="space-y-1 rounded-sm border border-border bg-surface-2/40 px-2 py-1.5">
               <div className="flex items-center gap-2">
-                <span className="w-12 shrink-0 font-mono text-[9px] uppercase text-muted-foreground">{label}</span>
                 <Knob
                   label={label}
                   value={value}
@@ -314,9 +313,7 @@ function SendsMenu({ t }: { t: Track }) {
                     })
                   }
                 />
-                <span className="w-7 shrink-0 text-right font-mono text-[9px] text-muted-foreground">
-                  {Math.round(value * 100)}
-                </span>
+                
               </div>
               <FxMenu target={`send:${key}`} label={`${key} return FX`} />
             </div>
