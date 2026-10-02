@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { ChevronDown, ChevronUp, Cpu, FolderSearch, Plus, Power, Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import {
@@ -244,11 +245,18 @@ export function PluginRack() {
                 <Trash2 className="size-3.5" />
               </Button>
             </div>
-            {openId === p.id && (
-              <div className="space-y-2 p-2">
-                <EffectDisplay plugin={p} onParam={(paramId, v) => setPluginParam(track.id, p.id, paramId, v)} />
-                <Scope scopeId={p.id} />
+            <Dialog open={openId === p.id} onOpenChange={(o) => setOpen(o ? p.id : "")}>
+              <DialogContent className="max-h-[90vh] w-[min(96vw,60rem)] max-w-none overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle className="font-mono uppercase tracking-wider">{p.name} <span className="text-xs text-muted-foreground">{track.name} · {p.vendor}</span></DialogTitle>
+                </DialogHeader>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-3">
+                <EffectDisplay plugin={p} height={220} onParam={(paramId, v) => setPluginParam(track.id, p.id, paramId, v)} />
+                <Scope scopeId={p.id} height={130} />
                 <XYPad trackId={track.id} plugin={p} />
+                </div>
+                <div className="space-y-3">
                 {p.kind === "paraeq" && <ProEq trackId={track.id} plugin={p} />}
                 {p.kind === "vocoder" && <VocoderPanel trackId={track.id} plugin={p} />}
                 {p.kind !== "paraeq" && p.kind !== "vocoder" && p.params.map((prm) => (
@@ -264,8 +272,10 @@ export function PluginRack() {
                     unit={prm.unit}
                   />
                 ))}
+                </div>
               </div>
-            )}
+              </DialogContent>
+            </Dialog>
           </div>
         ))}
       </div>
