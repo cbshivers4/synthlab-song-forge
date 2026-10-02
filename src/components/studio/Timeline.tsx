@@ -872,6 +872,18 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
               {index + 1}. {track.name}
             </button>
           )}
+          {editorPanel && (
+            <Button
+              size="icon"
+              variant="ghost"
+              className="size-10 touch-manipulation sm:size-6"
+              aria-label={editorLabel}
+              title={editorLabel}
+              onClick={openTrackEditor}
+            >
+              {track.kind === "drum" ? <Disc3 className="size-3.5" /> : track.kind === "sampler" ? <Music2 className="size-3.5" /> : track.kind === "ai-vocal" ? <Mic className="size-3.5" /> : <Piano className="size-3.5" />}
+            </Button>
+          )}
           <TrackNotes track={track} className="ml-auto" />
           <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
             <DropdownMenuTrigger asChild>
@@ -881,6 +893,12 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="min-w-56">
               <DropdownMenuItem onClick={() => setRenaming(true)}>Rename</DropdownMenuItem>
+              {editorPanel && (
+                <DropdownMenuItem onClick={openTrackEditor}>
+                  {track.kind === "drum" ? <Disc3 className="size-4" /> : track.kind === "sampler" ? <Music2 className="size-4" /> : track.kind === "ai-vocal" ? <Mic className="size-4" /> : <Piano className="size-4" />}
+                  {editorLabel}
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem onClick={() => duplicateTrack(track.id)}>
                 <Copy className="size-4" /> Duplicate track
               </DropdownMenuItem>
