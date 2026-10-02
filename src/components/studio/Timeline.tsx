@@ -314,7 +314,8 @@ function MidiClip({ track }: { track: Track }) {
         ))}
         {Array.from({ length: reps }).flatMap((_, rep) =>
           notes.map((n) => {
-            const at = rep * patLen + (n.step % patLen);
+            if (n.recordedEnd != null && rep > 0) return null;
+            const at = n.recordedEnd != null ? n.step : rep * patLen + (n.step % patLen);
             if (at >= total) return null;
             return (
           <div
@@ -323,7 +324,7 @@ function MidiClip({ track }: { track: Track }) {
             title={`${NOTE_NAMES[n.pitch % 12]}${Math.floor(n.pitch / 12) - 1}`}
             style={{
               left: `${(at / total) * 100}%`,
-              width: `${Math.max(0.3, (Math.min(n.length, patLen - (n.step % patLen), total - at) / total) * 100 - 0.1)}%`,
+              width: `${Math.max(0.3, (Math.min(n.length, n.recordedEnd != null ? n.recordedEnd - at : patLen - (n.step % patLen), total - at) / total) * 100 - 0.1)}%`,
               top: `${(1 - (n.pitch - lo) / span) * 82 + 4}%`,
               height: "6%",
               opacity: 0.5 + (n.velocity ?? 0.8) * 0.35,
