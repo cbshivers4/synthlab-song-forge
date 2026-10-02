@@ -1892,7 +1892,7 @@ export class SyncLabEngine {
     filterIn.connect(filter);
 
     const shaper = ctx.createWaveShaper();
-    shaper.curve = this.distortionCurve(0.05 + patch.fx.distortion + (patch.fx.saturation ?? 0) * 0.6);
+    shaper.curve = this.distortionCurve(Math.min(1.5, 0.05 + patch.fx.distortion + (patch.fx.saturation ?? 0) * 0.6 + (patch.drive ?? 0) * 0.8));
 
     const f2 = patch.filter2;
     let filter2: BiquadFilterNode | null = null;
