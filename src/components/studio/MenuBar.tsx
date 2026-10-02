@@ -258,6 +258,7 @@ export function MenuBar() {
           <MenubarContent>
             <MenubarItem onClick={() => setStage("start")}>New Project</MenubarItem>
             <MenubarItem onClick={() => setStage("start")}>Open Project</MenubarItem>
+            <MenubarItem onClick={() => setStage("start")}>Templates</MenubarItem>
             <MenubarSeparator />
             <MenubarItem onClick={() => void save()}>
               Save <MenubarShortcut>⌘S</MenubarShortcut>
@@ -344,9 +345,6 @@ export function MenuBar() {
             <MenubarItem onClick={() => setPanel("looper")}>Live Looper</MenubarItem>
             <MenubarItem onClick={() => setPanel("mixer")}>Mixer</MenubarItem>
             <MenubarItem onClick={() => setPanel("reference")}>Reference Analyzer</MenubarItem>
-            <MenubarItem onClick={() => setPanel("piano")}>Piano Roll</MenubarItem>
-            <MenubarItem onClick={() => setPanel("keys")}>Keyboard</MenubarItem>
-            <MenubarItem onClick={() => setPanel("appearance")}>Appearance & Themes</MenubarItem>
             <MenubarSeparator />
             <MenubarItem onClick={toggleMode}>
               {mode === "simple" ? "Switch to Advanced Mode" : "Switch to Simple Mode"}
