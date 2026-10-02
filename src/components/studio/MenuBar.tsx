@@ -207,7 +207,6 @@ export function MenuBar() {
     "track:midi": () => addTrack("midi", "MIDI", "Deep Keys"),
     "track:drum": () => addTrack("drum", "DRUM MACHINE"),
     "track:sampler": () => addTrack("sampler", "SAMPLER", "Metro Pluck"),
-    "track:ai-vocal": () => addTrack("ai-vocal", "AI VOCAL", "Vocoder Bot"),
     "help:center": () => openHelp("help"),
     "help:shortcuts": () => setPanel("settings"),
     "help:problem": () => openHelp("problem"),
@@ -357,7 +356,6 @@ export function MenuBar() {
             <MenubarItem onClick={() => addTrack("midi", "MIDI", "Deep Keys")}>Add MIDI Track</MenubarItem>
             <MenubarItem onClick={() => addTrack("drum", "DRUM MACHINE")}>Add Drum Machine</MenubarItem>
             <MenubarItem onClick={() => addTrack("sampler", "SAMPLER", "Metro Pluck")}>Add Sampler</MenubarItem>
-            <MenubarItem onClick={() => addTrack("ai-vocal", "AI VOCAL", "Vocoder Bot")}>Add AI Vocal</MenubarItem>
           </MenubarContent>
         </MenubarMenu>
 
@@ -410,17 +408,6 @@ export function MenuBar() {
             <MenubarItem onClick={() => setPanel("browser")}>Browser</MenubarItem>
             <MenubarSeparator />
             <MenubarItem onClick={() => setPanel("plugins")}>Plugin Rack</MenubarItem>
-          </MenubarContent>
-        </MenubarMenu>
-
-        <MenubarMenu>
-          <MenubarTrigger className="text-xs">AI</MenubarTrigger>
-          <MenubarContent>
-            <MenubarItem onClick={() => setPanel("vocal")}>Vocal Forge</MenubarItem>
-            <MenubarItem onClick={() => setPanel("coproducer")}>AI Co-Producer</MenubarItem>
-            <MenubarItem onClick={() => setPanel("bass")}>Bass Generator</MenubarItem>
-            <MenubarItem onClick={() => setPanel("stems")}>Stem Separator</MenubarItem>
-            <MenubarItem onClick={() => setPanel("voice")}>Voice Remover</MenubarItem>
           </MenubarContent>
         </MenubarMenu>
 
