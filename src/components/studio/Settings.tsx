@@ -23,6 +23,8 @@ import {
   onDeviceChange,
 } from "@/lib/synclab/mic";
 import { midiSupported } from "@/lib/synclab/midi";
+import { getInputChannel, getInputGainDb, setInputChannel, setInputGainDb, setOutputDevice, type InputChannel } from "@/lib/synclab/mic";
+import { openExport } from "@/components/studio/ExportDialog";
 import { DesktopPanel } from "@/components/studio/DesktopPanel";
 import { replayMobileTour, saveMobileAccessibility, useMobileAccessibility } from "@/lib/synclab/mobile-accessibility";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -311,11 +313,60 @@ export function Settings() {
             }}
           />
         </Row>
-        <Row label="Output device" hint={outputs.length ? "Monitors, headphones or interface outputs" : ""}>
+        <Row label="Input channel" hint="Pick input 1 or 2 of your interface, or record both as stereo">
+          <Pick
+            value={inChan === "in1" ? "Input 1 (mono)" : inChan === "in2" ? "Input 2 (mono)" : "Stereo (1+2)"}
+            options={["Input 1 (mono)", "Input 2 (mono)", "Stereo (1+2)"]}
+            onChange={(v) => {
+              const c = v.startsWith("Input 1") ? "in1" : v.startsWith("Input 2") ? "in2" : "stereo";
+              setInChan(c);
+              setInputChannel(c);
+              toast.success("Input channel saved", { description: "Disarm and re-arm the track to apply it." });
+            }}
+          />
+        </Row>
+        <Row label="Input gain" hint={`${inGain > 0 ? "+" : ""}${inGain} dB — applied before the meter and the recording`}>
+          <Slider
+            className="w-40"
+            value={[inGain]}
+            min={-24}
+            max={24}
+            step={1}
+            onValueChange={([v = 0]) => {
+              setInGain(v);
+              setInputGainDb(v);
+              getEngine().setInputGain(v);
+            }}
+          />
+        </Row>
+        <Row label="Input meter" hint="Arm an audio track to open the input">
+          <InputMeter />
+        </Row>
+        <Row
+          label="Output device"
+          hint={
+            !getEngine().canPickOutput
+              ? "This browser plays through your computer's selected output — change it in system sound settings"
+              : outputs.length
+                ? "Speakers, headphones or interface outputs — all playback moves here"
+                : "Press Detect devices to list outputs"
+          }
+        >
           <Pick
             value={p.outputDevice}
             options={["System default", ...outputs.map((d) => d.label)]}
-            onChange={(v) => set("outputDevice", v)}
+            onChange={(v) => {
+              const match = outputs.find((d) => d.label === v);
+              const id = v === "System default" || !match ? null : match.id;
+              void getEngine()
+                .setOutputDevice(id)
+                .then(() => {
+                  set("outputDevice", v);
+                  setOutputDevice(id);
+                  toast.success(`Output set to ${v}`);
+                })
+                .catch((e: unknown) => toast.error("Couldn't change output", { description: e instanceof Error ? e.message : undefined }));
+            }}
           />
         </Row>
         <Row
@@ -326,17 +377,8 @@ export function Settings() {
             {scanning ? "Scanning…" : "Detect devices"}
           </Button>
         </Row>
-        <Row label="Sample rate" hint="Higher rates cost more CPU">
-          <Pick value={p.sampleRate} options={["44100", "48000", "88200", "96000"]} onChange={(v) => set("sampleRate", v)} width="w-32" />
-        </Row>
-        <Row label="Buffer size" hint="Lower = less latency, more glitch risk">
-          <Pick value={p.bufferSize} options={["64", "128", "256", "512", "1024"]} onChange={(v) => set("bufferSize", v)} width="w-32" />
-        </Row>
-        <Row label="Bit depth">
-          <Pick value={p.bitDepth} options={["16", "24", "32 float"]} onChange={(v) => set("bitDepth", v)} width="w-32" />
-        </Row>
-        <Row label="Latency compensation">
-          <Num value={p.latency} min={0} max={100} unit="ms" onChange={(v) => set("latency", v)} />
+        <Row label="Sample rate" hint="Set by your device and browser">
+          <span className="font-mono text-sm text-primary">{getEngine().sampleRate} Hz</span>
         </Row>
         <Row label="Input monitoring" hint="Hear yourself while recording">
           <Switch
@@ -347,25 +389,17 @@ export function Settings() {
             }}
           />
         </Row>
-        <div className="pt-3">
-          <Button size="sm" variant="secondary" onClick={() => toast.success("Audio engine restarted", { description: `${p.sampleRate} Hz · ${p.bufferSize} samples` })}>
-            Apply audio settings
-          </Button>
-        </div>
       </TabsContent>
 
       <TabsContent value="recording" className="mt-4">
-        <Row label="Record file format">
-          <Pick value={p.recFormat} options={["WAV", "AIFF", "FLAC", "MP3 320"]} onChange={(v) => set("recFormat", v)} width="w-32" />
+        <Row label="Audio record" hint="Records only the armed track's selected input — never other tracks, previews or browser audio">
+          <span className="font-mono text-xs text-muted-foreground">ARM + REC</span>
         </Row>
-        <Row label="Record mode">
-          <Pick value={p.recMode} options={["Replace", "Overdub", "Punch", "Loop takes"]} onChange={(v) => set("recMode", v)} />
+        <Row label="Resample / bounce" hint="Render tracks or the master to a file">
+          <Button size="sm" variant="secondary" onClick={openExport}>Open export</Button>
         </Row>
-        <Row label="Keep take lanes" hint="Stack every pass as a separate take">
-          <Switch checked={p.takeLanes} onCheckedChange={(v) => set("takeLanes", v)} />
-        </Row>
-        <Row label="Auto-quantize while recording">
-          <Switch checked={p.autoQuantizeRec} onCheckedChange={(v) => set("autoQuantizeRec", v)} />
+        <Row label="Replace overlapping takes">
+          <Switch checked={Boolean(transport.replace)} onCheckedChange={(v) => setTransport({ replace: v })} />
         </Row>
         <Row label="Loop recording">
           <Switch checked={Boolean(transport.loop)} onCheckedChange={(v) => setTransport({ loop: v })} />
@@ -599,5 +633,24 @@ export function Settings() {
         </div>
       </TabsContent>
     </Tabs>
+  );
+}
+
+function InputMeter() {
+  const bar = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      const v = getEngine().inputLevel();
+      if (bar.current) {
+        bar.current.style.width = `${Math.min(100, v * 100)}%`;
+        bar.current.dataset.clip = v >= 0.99 ? "1" : "0";
+      }
+    }, 50);
+    return () => window.clearInterval(id);
+  }, []);
+  return (
+    <div className="h-3 w-40 overflow-hidden rounded-sm bg-surface-2">
+      <div ref={bar} className="h-full w-0 bg-primary data-[clip=1]:bg-destructive" />
+    </div>
   );
 }
