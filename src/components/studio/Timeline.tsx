@@ -578,6 +578,23 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
   const activeClip = clips.find((c) => c.id === track.activeClipId) ?? clips[clips.length - 1];
   const playFrac = Math.min(0.98, Math.max(0.02, ((transport.step ?? 0) % 16) / 16));
 
+  const editorPanel: PanelId =
+    track.kind === "drum" ? "drums"
+    : track.kind === "sampler" ? "sampler"
+    : track.kind === "ai-vocal" ? "vocal"
+    : track.kind === "instrument" || track.kind === "midi" ? "synth"
+    : null;
+  const editorLabel =
+    track.kind === "drum" ? "Open drum machine"
+    : track.kind === "sampler" ? "Open sampler"
+    : track.kind === "ai-vocal" ? "Open Vocal Forge"
+    : "Open instrument";
+  const openTrackEditor = () => {
+    if (!editorPanel) return;
+    select(track.id);
+    setPanel(editorPanel);
+  };
+
   const writeClips = (next: typeof clips, activeId?: string) =>
     updateTrack(track.id, activeId ? { clips: next, activeClipId: activeId } : { clips: next });
 
