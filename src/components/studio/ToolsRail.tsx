@@ -1,7 +1,5 @@
 import {
   AudioLines,
-  AudioWaveform,
-  Bot,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -16,9 +14,6 @@ import {
   Radio,
   Scissors,
   SlidersHorizontal,
-  Sparkles,
-  Split,
-  Volume2,
   Waves,
 } from "lucide-react";
 import { useState } from "react";
@@ -42,20 +37,13 @@ interface Tool {
 
 
 const TOOLS: Tool[] = [
-  { id: "vocal", label: "Vocal Forge", icon: <Sparkles className="size-4" />, panel: "vocal", drag: { kind: "ai-vocal", name: "Vocal Forge" } },
-  { id: "stems", label: "Stem Separator", icon: <Split className="size-4" />, panel: "stems" },
-  { id: "voice", label: "Voice Remover", icon: <Volume2 className="size-4" />, panel: "voice" },
-  { id: "coproducer", label: "AI Co-Producer", icon: <Bot className="size-4" />, panel: "coproducer" },
-  { id: "hum", label: "Hum to Beat", icon: <Waves className="size-4" />, panel: "hum" },
   { id: "synth", label: "Synthesizers", icon: <Music2 className="size-4" />, panel: "synth", drag: { kind: "instrument", name: "Synth" } },
-  { id: "bass", label: "Bass Generator", icon: <AudioWaveform className="size-4" />, panel: "bass" },
   { id: "drums", label: "Drum Machine", icon: <Disc3 className="size-4" />, panel: "drums", drag: { kind: "drum", name: "Drums" } },
   { id: "beat", label: "Pad Sampler", icon: <Grid2x2 className="size-4" />, panel: "pads", drag: { kind: "sampler", name: "Pad Sampler" } },
   { id: "chop", label: "Sample Chopper", icon: <Scissors className="size-4" />, panel: "pads", advanced: true },
   { id: "sampler", label: "Sampler", icon: <AudioLines className="size-4" />, panel: "sampler", drag: { kind: "sampler", name: "Sampler" } },
   { id: "plugins", label: "Plugins (VST)", icon: <Cpu className="size-4" />, panel: "plugins", advanced: true },
   { id: "mixer", label: "Mixer", icon: <SlidersHorizontal className="size-4" />, panel: "mixer" },
-  { id: "stemgen", label: "AI Stem Generator", icon: <Sparkles className="size-4" />, panel: "stemgen", advanced: true },
   { id: "notes", label: "Track Notes", icon: <NotebookPen className="size-4" />, panel: "notes", advanced: true },
   { id: "master", label: "Mastering", icon: <Gauge className="size-4" />, panel: "mastering" },
   { id: "live", label: "Live View", icon: <Radio className="size-4" />, panel: "live" },
@@ -74,8 +62,7 @@ interface Section {
 
 const SECTIONS: Section[] = [
   { id: "perform", label: "Perform", tools: ["live", "looper"].map(tool) },
-  { id: "ai", label: "AI Studio", tools: ["vocal", "stems", "voice", "coproducer", "hum", "stemgen"].map(tool) },
-  { id: "instruments", label: "Instruments", tools: ["synth", "bass", "drums", "beat", "chop", "sampler"].map(tool) },
+  { id: "instruments", label: "Instruments", tools: ["synth", "drums", "beat", "chop", "sampler"].map(tool) },
   { id: "mix", label: "Mix & Master", tools: ["mixer", "master", "reference", "notes"].map(tool) },
   { id: "plugins", label: "Plugins", tools: ["plugins"].map(tool) },
 ];

@@ -30,11 +30,6 @@ import { openHelp } from "@/components/studio/HelpCenter";
 
 
 const FEATURES: { icon: React.ReactNode; title: string; body: string }[] = [
-  { icon: <Sparkles className="size-4" />, title: "AI Vocal Forge", body: "Write lyrics, pick a voice, land it on the beat." },
-  { icon: <Split className="size-4" />, title: "Stem Separation", body: "Pull vocals, drums, bass and more out of a mix." },
-  { icon: <Volume2 className="size-4" />, title: "Voice Remover", body: "Make an instrumental from any track." },
-  { icon: <Bot className="size-4" />, title: "AI Co-Producer", body: "Ask for a bassline, a breakdown, harder drums." },
-  { icon: <Waves className="size-4" />, title: "Hum to Beat", body: "Hum or beatbox a rhythm, get a real drum pattern." },
   { icon: <Music2 className="size-4" />, title: "Flagship Synth", body: "4 oscillators, dual filters, FM, mod matrix, 67 presets." },
   { icon: <Disc3 className="size-4" />, title: "Drum Machine", body: "24 kits — 909, 808, LinnDrum and more — with a step sequencer." },
   { icon: <Grid2x2 className="size-4" />, title: "Pad Sampler", body: "64 performance pads, live mic sampling, slice-to-pads, patterns." },

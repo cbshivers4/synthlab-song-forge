@@ -581,13 +581,11 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
   const editorPanel: PanelId =
     track.kind === "drum" ? "drums"
     : track.kind === "sampler" ? "sampler"
-    : track.kind === "ai-vocal" ? "vocal"
     : track.kind === "instrument" || track.kind === "midi" ? "synth"
     : null;
   const editorLabel =
     track.kind === "drum" ? "Open drum machine"
     : track.kind === "sampler" ? "Open sampler"
-    : track.kind === "ai-vocal" ? "Open Vocal Forge"
     : "Open instrument";
   const openTrackEditor = () => {
     if (!editorPanel) return;

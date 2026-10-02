@@ -251,7 +251,7 @@ export function HelpCenter() {
                 <Input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search the knowledge base — recording, MIDI, VST, sampler, time stretch, hum-to-beat…"
+                  placeholder="Search the knowledge base — recording, MIDI, VST, sampler, time stretch…"
                   className="pl-8"
                   aria-label="Search the knowledge base"
                 />

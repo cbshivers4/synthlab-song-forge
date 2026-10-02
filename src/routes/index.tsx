@@ -7,7 +7,6 @@ import { useStudio, type PanelId } from "@/lib/synclab/store";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { TopBar } from "@/components/studio/TopBar";
 import { Mastering } from "@/components/studio/Mastering";
-import { StemGenerator } from "@/components/studio/StemGenerator";
 import { NotesPanel } from "@/components/studio/TrackNotes";
 import { Timeline } from "@/components/studio/Timeline";
 import { Mixer } from "@/components/studio/Mixer";
@@ -17,7 +16,6 @@ import { DrumMachine } from "@/components/studio/DrumMachine";
 import { PianoRoll } from "@/components/studio/PianoRoll";
 import { DrumRoll } from "@/components/studio/DrumRoll";
 import { MidiLearnStrip } from "@/components/studio/MidiLearn";
-import { VocalForge } from "@/components/studio/VocalForge";
 import { Settings } from "@/components/studio/Settings";
 import { Keyboard } from "@/components/studio/Keyboard";
 import { Browser } from "@/components/studio/Browser";
@@ -34,10 +32,6 @@ import { StartScreen } from "@/components/studio/StartScreen";
 import { DeviceSetup } from "@/components/studio/DeviceSetup";
 import { ExportDialog } from "@/components/studio/ExportDialog";
 import { HelpCenter } from "@/components/studio/HelpCenter";
-import { BassGenerator } from "@/components/studio/BassGenerator";
-import { CoProducer } from "@/components/studio/CoProducer";
-import { StemSeparator } from "@/components/studio/StemSeparator";
-import { HumToBeat } from "@/components/studio/HumToBeat";
 import { MobileBeat } from "@/components/studio/MobileBeat";
 import { MobileNav } from "@/components/studio/MobileNav";
 import { MobileOnboarding } from "@/components/studio/MobileOnboarding";
@@ -145,7 +139,6 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
     synth: { title: "INSTRUMENT EDITOR", icon: <Music2 className="size-4" /> },
     drums: { title: "DRUM MACHINE", icon: <Disc3 className="size-4" /> },
     piano: { title: "PIANO ROLL", icon: <Piano className="size-4" /> },
-    vocal: { title: "VOCAL FORGE", icon: <Waves className="size-4" /> },
     settings: { title: "SETTINGS", icon: <Settings2 className="size-4" /> },
     keys: { title: "KEYBOARD", icon: <KeyboardMusic className="size-4" /> },
     browser: { title: "BROWSER", icon: <FolderOpen className="size-4" /> },
@@ -153,13 +146,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
     appearance: { title: "APPEARANCE & THEMES", icon: <Palette className="size-4" /> },
     sampler: { title: "SAMPLER", icon: <AudioLines className="size-4" /> },
     pads: { title: "PAD SAMPLER", icon: <Grid2x2 className="size-4" /> },
-    bass: { title: "BASS GENERATOR", icon: <AudioWaveform className="size-4" /> },
-    coproducer: { title: "AI CO-PRODUCER", icon: <Bot className="size-4" /> },
-    hum: { title: "HUM TO BEAT", icon: <Waves className="size-4" /> },
-    stems: { title: "STEM SEPARATOR", icon: <Split className="size-4" /> },
-    voice: { title: "VOICE REMOVER", icon: <Split className="size-4" /> },
     mastering: { title: "MASTERING", icon: <Gauge className="size-4" /> },
-    stemgen: { title: "AI STEM GENERATOR", icon: <Sparkles className="size-4" /> },
     notes: { title: "TRACK NOTES", icon: <NotebookPen className="size-4" /> },
     reference: { title: "REFERENCE ANALYZER", icon: <FileSearch className="size-4" /> },
     live: { title: "LIVE VIEW", icon: <Radio className="size-4" /> },
@@ -274,7 +261,6 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
         ) : (
           <p className="text-sm text-muted-foreground">Select an instrument, MIDI or drum track to edit its notes.</p>
         ))}
-      {panel === "vocal" && <VocalForge />}
       {panel === "settings" && <Settings />}
       {panel === "keys" && <Keyboard />}
       {panel === "browser" && <Browser />}
@@ -282,13 +268,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
       {panel === "appearance" && <Appearance />}
       {panel === "sampler" && <Sampler />}
       {panel === "pads" && <PadSampler />}
-      {panel === "bass" && <BassGenerator />}
-      {panel === "coproducer" && <CoProducer />}
-      {panel === "hum" && <HumToBeat />}
-      {panel === "stems" && <StemSeparator mode="stems" />}
       {panel === "mastering" && <Mastering />}
-      {panel === "voice" && <StemSeparator mode="voice" />}
-      {panel === "stemgen" && <StemGenerator />}
       {panel === "notes" && <NotesPanel />}
       {panel === "reference" && <ReferenceAnalyzer />}
       {panel === "live" && <LiveView />}
