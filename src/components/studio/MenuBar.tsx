@@ -365,6 +365,24 @@ export function MenuBar() {
         </MenubarMenu>
 
         <MenubarMenu>
+          <MenubarTrigger className="text-xs">Clip</MenubarTrigger>
+          <MenubarContent>
+            <MenubarItem onClick={splitAtPlayhead}>
+              Split at Playhead <MenubarShortcut>S</MenubarShortcut>
+            </MenubarItem>
+            <MenubarItem onClick={selectAll}>
+              Select All <MenubarShortcut>⌘A</MenubarShortcut>
+            </MenubarItem>
+            <MenubarSeparator />
+            <MenubarItem onClick={needClip((t, c) => updateClip(t, c, { fadeIn: 0.25 }))}>Fade In</MenubarItem>
+            <MenubarItem onClick={needClip((t, c) => updateClip(t, c, { fadeOut: 0.25 }))}>Fade Out</MenubarItem>
+            <MenubarItem onClick={needClip((t, c) => previewClip(t, c))}>Preview Clip</MenubarItem>
+            <MenubarSeparator />
+            <MenubarItem onClick={needClip((t, c) => removeClip(t, c))}>Delete Clip</MenubarItem>
+          </MenubarContent>
+        </MenubarMenu>
+
+        <MenubarMenu>
           <MenubarTrigger className="text-xs">Audio</MenubarTrigger>
           <MenubarContent>
             <MenubarItem onClick={togglePlay}>{transport.playing ? "Pause" : "Play"}</MenubarItem>
@@ -391,8 +409,10 @@ export function MenuBar() {
           <MenubarContent>
             <MenubarItem onClick={() => setPanel("synth")}>Synthesizer</MenubarItem>
             <MenubarItem onClick={() => setPanel("drums")}>Drum Machine</MenubarItem>
+            <MenubarItem onClick={() => setPanel("sampler")}>Sampler</MenubarItem>
             <MenubarItem onClick={() => setPanel("browser")}>Browser</MenubarItem>
-            <MenubarItem onClick={() => setPanel("mixer")}>Mixer</MenubarItem>
+            <MenubarSeparator />
+            <MenubarItem onClick={() => setPanel("plugins")}>Plugin Rack</MenubarItem>
           </MenubarContent>
         </MenubarMenu>
 
