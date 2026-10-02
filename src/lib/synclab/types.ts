@@ -460,7 +460,9 @@ export interface Transport {
   /** export range in steps; both null/undefined when the flags are off */
   exportStart?: number | null;
   exportEnd?: number | null;
-  /** timeline length in bars (1 bar = 4 steps) */
+  /** time signature numerator over 4 (2–7); defaults to 4 */
+  beatsPerBar?: number;
+  /** timeline length in bars */
   bars: number;
   /** snap grid for clip edits, in steps (1 step = a 1/4 note). 0 = free move */
   snap?: number;
