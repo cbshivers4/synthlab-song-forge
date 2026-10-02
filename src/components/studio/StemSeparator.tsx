@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Download, Loader2, Music2, Pause, Play, Plus, Upload } from "lucide-react";
+import { Download, Loader2, Music2, Pause, Play, Plus, RotateCcw, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { getEngine } from "@/lib/synclab/audio-engine";
@@ -34,6 +34,7 @@ export function StemSeparator({ mode = "stems" }: { mode?: "stems" | "voice" }) 
   const [stage, setStage] = useState("");
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<Separation | null>(null);
+  const [failed, setFailed] = useState<string | null>(null);
   const [strength, setStrength] = useState(1);
   const [playing, setPlaying] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -86,6 +87,7 @@ export function StemSeparator({ mode = "stems" }: { mode?: "stems" | "voice" }) 
     if (!buffer) return;
     setBusy(true);
     setResult(null);
+    setFailed(null);
     setProgress(0);
     try {
       const separation = await separate(buffer, {
@@ -107,9 +109,9 @@ export function StemSeparator({ mode = "stems" }: { mode?: "stems" | "voice" }) 
         });
       }
     } catch (err) {
-      toast.error("Separation failed", {
-        description: err instanceof Error ? err.message : "This browser could not process that audio offline.",
-      });
+      const message = err instanceof Error ? err.message : "This browser could not process that audio offline.";
+      setFailed(message);
+      toast.error("Separation failed", { description: message });
     } finally {
       setBusy(false);
       setStage("");
@@ -245,6 +247,16 @@ export function StemSeparator({ mode = "stems" }: { mode?: "stems" | "voice" }) 
         {busy && (
           <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-surface-2">
             <div className="h-full bg-primary transition-all" style={{ width: `${Math.round(progress * 100)}%` }} />
+          </div>
+        )}
+        {failed && !busy && (
+          <div className="mt-3 flex flex-wrap items-center gap-2 rounded-[3px] border border-destructive/50 bg-destructive/10 p-2">
+            <span className="font-mono text-[10px] tracking-widest text-destructive">FAILED</span>
+            <span className="min-w-0 flex-1 text-xs text-foreground/80">{failed}</span>
+            <Button size="sm" variant="outline" className="min-h-10 gap-2" onClick={() => void run()}>
+              <RotateCcw className="size-4" />
+              Retry
+            </Button>
           </div>
         )}
       </div>
