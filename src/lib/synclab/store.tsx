@@ -174,12 +174,6 @@ export type PanelId =
   | "appearance"
   | "sampler"
   | "pads"
-  | "bass"
-  | "coproducer"
-  | "hum"
-  | "stems"
-  | "voice"
-  | "stemgen"
   | "notes"
   | "reference"
   | "live"
@@ -1674,7 +1668,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         setTracks((ts) => {
           const t = { ...newTrack(kind, name ?? `TRACK ${ts.length + 1}`, ts.length, preset), id };
           setSelectedId(t.id);
-          setPanel(kind === "drum" ? "drums" : kind === "ai-vocal" ? "vocal" : kind === "audio" ? null : "synth");
+          setPanel(kind === "drum" ? "drums" : kind === "ai-vocal" || kind === "audio" ? null : "synth");
           return [...ts, t];
         });
         return id;
