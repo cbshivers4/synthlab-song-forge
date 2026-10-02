@@ -50,13 +50,16 @@ export function CoProducer() {
     setMessages(next);
     setInput("");
     setBusy(true);
+    setFailed(null);
     try {
       const res = await ask({ data: { messages: next, session } });
       setMessages([...next, { role: "assistant", content: res.text }]);
       requestAnimationFrame(() => listRef.current?.scrollTo({ top: 1e6, behavior: "smooth" }));
     } catch (error) {
-      toast.error("Co-Producer unavailable", { description: (error as Error)?.message });
+      const message = (error as Error)?.message ?? "The assistant did not answer.";
+      toast.error("Co-Producer unavailable", { description: message });
       setMessages(next);
+      setFailed({ question, message });
     } finally {
       setBusy(false);
     }
