@@ -16,6 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
+import { Knob } from "./Knob";
 import { Button } from "@/components/ui/button";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -303,13 +304,11 @@ function SendsMenu({ t }: { t: Track }) {
             <div key={key} className="space-y-1 rounded-sm border border-border bg-surface-2/40 px-2 py-1.5">
               <div className="flex items-center gap-2">
                 <span className="w-12 shrink-0 font-mono text-[9px] uppercase text-muted-foreground">{label}</span>
-                <Slider
-                  value={[value]}
-                  min={0}
-                  max={1}
-                  step={0.01}
-                  className="h-2 flex-1"
-                  onValueChange={([v = 0]) =>
+                <Knob
+                  label={label}
+                  value={value}
+                  size={36}
+                  onChange={(v) =>
                     updateTrack(t.id, {
                       sends: { reverb: 0, delay: 0, chorus: 0, ...(t.sends ?? {}), [key]: v },
                     })

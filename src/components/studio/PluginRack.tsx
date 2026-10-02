@@ -3,7 +3,7 @@ import { ChevronDown, ChevronUp, Cpu, FolderSearch, Plus, Power, Trash2, Upload 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Slider } from "@/components/ui/slider";
+import { Knob } from "./Knob";
 import {
   Select,
   SelectContent,
@@ -256,7 +256,7 @@ export function PluginRack() {
                 <div className="space-y-3">
                 {p.kind === "paraeq" && <ProEq trackId={track.id} plugin={p} />}
                 {p.kind === "vocoder" && <VocoderPanel trackId={track.id} plugin={p} />}
-                {p.kind !== "paraeq" && p.kind !== "vocoder" && p.params.map((prm) => (
+                {p.kind !== "paraeq" && p.kind !== "vocoder" && <div className="flex flex-wrap justify-center gap-2">{p.params.map((prm) => (
                   <ParamRow
                     key={prm.id}
                     trackId={track.id}
@@ -268,7 +268,7 @@ export function PluginRack() {
                     max={prm.max}
                     unit={prm.unit}
                   />
-                ))}
+                ))}</div>}
                 </div>
               </div>
               </DialogContent>

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Slider } from "@/components/ui/slider";
+import { Knob } from "./Knob";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import type { PluginInstance, PluginKind } from "@/lib/synclab/types";
 
@@ -500,14 +500,9 @@ export function EffectDisplay({
                   <span className="font-mono text-[8px] font-bold uppercase tracking-wider" style={{ color: band.color }}>{band.label}</span>
                   <span className="font-mono text-[8px] text-muted-foreground">{p.value > 0 ? "+" : ""}{p.value.toFixed(1)} dB</span>
                 </div>
-                <Slider
-                  value={[p.value]}
-                  min={p.min}
-                  max={p.max}
-                  step={0.5}
-                  onDoubleClick={() => onParam(p.id, 0)}
-                  onValueChange={([v = p.value]) => onParam(p.id, v)}
-                />
+                <div className="flex justify-center" onDoubleClick={() => onParam(p.id, 0)}>
+                  <Knob label={band.label} value={p.value} min={p.min} max={p.max} step={0.5} unit=" dB" size={40} onChange={(v) => onParam(p.id, v)} />
+                </div>
               </div>
             );
           })}
