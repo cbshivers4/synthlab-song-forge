@@ -171,6 +171,7 @@ export function PluginBridge() {
   };
   const failed = state.plugins.filter((p) => p.status === "failed");
   const list = state.plugins
+    .filter((p) => p.status !== "unsupported")
     .filter((p) => (filter ? `${p.name} ${p.vendor} ${p.category ?? ""}`.toLowerCase().includes(filter.toLowerCase()) : true))
     .filter((p) => matchesTab(p, tab, favs, recent))
     .sort((a, b) => (tab === "Recently Used" ? recent.indexOf(a.uid) - recent.indexOf(b.uid) : a.name.localeCompare(b.name)));
