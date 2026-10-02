@@ -1873,8 +1873,20 @@ export function StudioProvider({ children }: { children: ReactNode }) {
                     });
                   },
                 );
-            } else if (armedNote) {
+            }
+            if (armedNote) {
               recStartStepRef.current = transportRef.current.step ?? 0;
+              // The printed take is captured after the channel fader, so a muted
+              // channel would record silence (a flat line). Unmute it first.
+              if (armedNote.muted) {
+                getEngine().setTrackMute?.(armedNote.id, false);
+                updateTrack(armedNote.id, { muted: false });
+                toast("Unmuted " + armedNote.name, { description: "A muted channel records silence, so it was unmuted for this take." });
+              }
+              const otherSolo = tracksRef.current.some((t) => t.solo && t.id !== armedNote!.id) && !armedNote.solo;
+              if (otherSolo) {
+                toast.warning("Another track is soloed", { description: `${armedNote.name} is silenced by solo and would record a flat line — un-solo the other track.` });
+              }
               try {
                 engine.startTrackRecording(armedNote.id);
               } catch (err) {
@@ -1885,7 +1897,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
               toast("Recording notes and audio", {
                 description: `Playing ${armedNote.name} captures an editable pattern and waveform.`,
               });
-            } else {
+            }
+            if (!armedAudio && !armedNote) {
               toast("Select or arm a channel first", {
                 description: "Click a track, or press ● ARM on it, then record.",
               });
