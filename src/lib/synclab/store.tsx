@@ -771,7 +771,12 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           if (!held) return;
           heldRef.current.delete(pitch);
           const elapsed = Math.round(((performance.now() - held.t0) / 1000 / stepDur) * 4) / 4;
-          const steps = Math.max(0.25, Math.min(elapsed, stepsPerBar() - (held.startStep % stepsPerBar()), Math.max(1, target.steps - (held.startStep % Math.max(1, target.steps)))));
+          // A held note may cross bar lines, but never the end of the loop
+          // region being recorded.
+          const regionEnd = tp.loop && (tp.loopEnd ?? 0) > (tp.loopStart ?? 0)
+            ? (tp.loopEnd ?? 0)
+            : Number.POSITIVE_INFINITY;
+          const steps = Math.max(0.25, Math.min(elapsed, regionEnd - held.startStep));
           setTracks((ts) =>
             ts.map((t) =>
               t.id === held.trackId
