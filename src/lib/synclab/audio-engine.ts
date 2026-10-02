@@ -124,6 +124,7 @@ export class SyncLabEngine {
   delaySend: GainNode | null = null;
   chorusSend: GainNode | null = null;
   private buses = new Map<string, GainNode>();
+  private busStates: Record<string, { volume: number; muted: boolean }> = {};
   private busMeters = new Map<string, AnalyserNode>();
   private auxReturns = new Map<string, GainNode>();
   private auxMeters = new Map<string, AnalyserNode>();
@@ -176,7 +177,7 @@ export class SyncLabEngine {
       window.addEventListener("keydown", resume);
     }
     const master = ctx.createGain();
-    master.gain.value = 0.85;
+    master.gain.value = this.busStates["master"]?.muted ? 0 : 0.85 * (this.busStates["master"]?.volume ?? 1);
     const analyser = ctx.createAnalyser();
     analyser.fftSize = 1024;
     master.connect(analyser);
@@ -272,7 +273,7 @@ export class SyncLabEngine {
 
     for (const id of ["drums", "vocals", "instruments", "synths", "fx", "master"]) {
       const g = ctx.createGain();
-      g.gain.value = 1;
+      g.gain.value = id === "master" ? 1 : this.busStates[id]?.muted ? 0 : this.busStates[id]?.volume ?? 1;
       const busScope = ctx.createAnalyser();
       busScope.fftSize = 1024;
       busScope.smoothingTimeConstant = 0.6;
@@ -394,6 +395,7 @@ export class SyncLabEngine {
   }
 
   setBus(id: string, volume: number, muted: boolean) {
+    this.busStates[id] = { volume, muted };
     if (!this.ctx) return;
     // The master fader controls the complete mix, including every bus and FX return.
     // The "master" routing bus stays at unity so direct tracks are not attenuated twice.

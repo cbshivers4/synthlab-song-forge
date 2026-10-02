@@ -776,7 +776,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   }, [tracks]);
 
   useEffect(() => {
-    if (typeof window === "undefined" || !getEngine().ctx) return;
+    if (typeof window === "undefined") return;
     for (const [id, b] of Object.entries(buses)) getEngine().setBus(id, b.volume, b.muted);
   }, [buses]);
 
