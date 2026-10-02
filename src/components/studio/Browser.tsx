@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { useStudio } from "@/lib/synclab/store";
 import { useApp } from "@/lib/synclab/app-state";
-import { DRUM_KITS, SYNTH_PRESETS, uid } from "@/lib/synclab/presets";
+import { DRUM_KITS, SYNTH_PRESETS, defaultPads, uid } from "@/lib/synclab/presets";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { listCloudProjects, loadCloudProject, type CloudProject } from "@/lib/synclab/cloud";
 import { listUserTemplates, type UserTemplate } from "@/lib/synclab/user-templates";
@@ -145,7 +145,7 @@ export function Browser() {
     addClip,
     loadPreset,
     updatePatch,
-    updatePad,
+    updateTrack,
     setPanel,
     restore,
     removeTrack,
