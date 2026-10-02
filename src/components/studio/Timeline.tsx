@@ -48,6 +48,9 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -320,7 +323,7 @@ function MidiClip({ track }: { track: Track }) {
             title={`${NOTE_NAMES[n.pitch % 12]}${Math.floor(n.pitch / 12) - 1}`}
             style={{
               left: `${(at / total) * 100}%`,
-              width: `${Math.max(0.3, (Math.max(1, n.length) / total) * 100 - 0.1)}%`,
+              width: `${Math.max(0.3, (Math.min(n.length, patLen - (n.step % patLen), total - at) / total) * 100 - 0.1)}%`,
               top: `${(1 - (n.pitch - lo) / span) * 82 + 4}%`,
               height: "6%",
               opacity: 0.5 + (n.velocity ?? 0.8) * 0.35,
@@ -855,11 +858,12 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
                 <MoreVertical className="size-3.5" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className="min-w-56">
               <DropdownMenuItem onClick={() => setRenaming(true)}>Rename</DropdownMenuItem>
               <DropdownMenuItem onClick={() => duplicateTrack(track.id)}>
                 <Copy className="size-4" /> Duplicate track
               </DropdownMenuItem>
+              <DropdownMenuSub><DropdownMenuSubTrigger>Clipboard &amp; arrange</DropdownMenuSubTrigger><DropdownMenuSubContent>
               <DropdownMenuItem onClick={() => cutTrack(track.id)}>
                 <Scissors className="size-4" /> Cut track
               </DropdownMenuItem>
@@ -876,11 +880,14 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
                 {track.hidden ? <Eye className="size-4" /> : <EyeOff className="size-4" />}
                 {track.hidden ? "Show" : "Hide"}
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => moveTrack(track.id, -1)}><ChevronUp className="size-4" /> Move up</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => moveTrack(track.id, 1)}><ChevronDown className="size-4" /> Move down</DropdownMenuItem>
+              </DropdownMenuSubContent></DropdownMenuSub>
               <DropdownMenuItem onClick={openEditor}>
                 <Settings2 className="size-4" /> Track settings
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuLabel className="label-xs">Send track to bus</DropdownMenuLabel>
+              <DropdownMenuSub><DropdownMenuSubTrigger>Send to bus</DropdownMenuSubTrigger><DropdownMenuSubContent>
               {TRACK_BUSES.map((b) => {
                 const fx = fxChains[`bus:${b.id}`] ?? [];
                 return (
@@ -901,10 +908,10 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
               >
                 <Settings2 className="size-4" /> Edit bus effects in mixer
               </DropdownMenuItem>
+              </DropdownMenuSubContent></DropdownMenuSub>
               <DropdownMenuSeparator />
               {advanced && (
-                <>
-                  <DropdownMenuLabel className="label-xs">Automation</DropdownMenuLabel>
+                <DropdownMenuSub><DropdownMenuSubTrigger>Automation</DropdownMenuSubTrigger><DropdownMenuSubContent>
                   {(["volume", "pan", "sendReverb", "sendDelay"] as AutomationParam[]).map((param) => (
                     <DropdownMenuItem key={param} onClick={() => toggleAutomationLane(track.id, param)}>
                       {(track.automation ?? []).some((l) => l.param === param) ? "Hide" : "Show"} {laneLabel(track, param).toLowerCase()} lane
@@ -920,10 +927,9 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
                       );
                     }),
                   )}
-                </>
+                </DropdownMenuSubContent></DropdownMenuSub>
               )}
-              <DropdownMenuSeparator />
-              <DropdownMenuLabel className="label-xs">Edit</DropdownMenuLabel>
+              <DropdownMenuSub><DropdownMenuSubTrigger>Clip &amp; note editing</DropdownMenuSubTrigger><DropdownMenuSubContent>
               {activeClip && (
                 <>
                   <DropdownMenuItem onClick={splitClip}>
@@ -984,24 +990,16 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
                 </>
               )}
 
+              </DropdownMenuSubContent></DropdownMenuSub>
               {track.patch && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuLabel className="label-xs">Swap instrument (keeps MIDI)</DropdownMenuLabel>
+                <DropdownMenuSub><DropdownMenuSubTrigger>Swap instrument</DropdownMenuSubTrigger><DropdownMenuSubContent>
                   {INSTRUMENTS.flatMap((g) => g.items).map((name) => (
                     <DropdownMenuItem key={name} onClick={() => changeInstrument(track.id, name)}>
                       <Repeat className="size-4" /> {name}
                     </DropdownMenuItem>
                   ))}
-                </>
+                </DropdownMenuSubContent></DropdownMenuSub>
               )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => moveTrack(track.id, -1)}>
-                <ChevronUp className="size-4" /> Move up
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => moveTrack(track.id, 1)}>
-                <ChevronDown className="size-4" /> Move down
-              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
 
