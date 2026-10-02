@@ -102,3 +102,11 @@
 - [x] Move Bass Generator preview timing onto the audio clock
 - [x] Move Pad Sampler sequence timing onto the audio clock
 - [ ] Validate latency and audio-interface behavior on real macOS, Windows, iPhone and Android hardware
+
+## Current studio refinement
+- [ ] Replace sample-pad mini waveforms with clean pad labels while preserving the waveform editor
+- [ ] Simplify the timeline track menu without removing actions
+- [ ] Make Vocal Forge voice choices audibly distinct within browser voice limits
+- [ ] Keep synth recording waveforms visible and constrain recorded material to captured measures
+- [ ] Show recent projects and templates as lists
+- [ ] Reduce effects/generator playback glitches
