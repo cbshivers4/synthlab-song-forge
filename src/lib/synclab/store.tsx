@@ -186,7 +186,7 @@ export type PanelId =
   | "looper"
   | null;
 
-export type EditTool = "select" | "draw" | "split";
+export type EditTool = "select" | "draw" | "split" | "razor";
 
 interface StudioState {
   tracks: Track[];
@@ -251,6 +251,7 @@ interface StudioApi extends StudioState {
   selectAll: () => void;
   toggleSelectId: (id: string) => void;
   splitClipAt: (trackId: string, frac: number) => void;
+  razorAt: (trackId: string, posSteps: number) => void;
   splitAtPlayhead: () => void;
   addTrack: (kind: TrackKind, name?: string, preset?: string) => string;
   updateTrack: (id: string, patch: Partial<Track>) => void;
@@ -1253,6 +1254,57 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     [updateTrack],
   );
 
+  /** Razor tool: slice every clip under the pointer at the exact clicked position. */
+  const razorAtImpl = useCallback(
+    (trackId: string, posSteps: number) => {
+      const t = tracksRef.current.find((x) => x.id === trackId);
+      const clips = t?.clips ?? [];
+      if (!t || clips.length === 0) {
+        toast("Nothing to slice", { description: "That channel has no clip. Record audio first." });
+        return;
+      }
+      const stepDur = stepSeconds(transportRef.current.bpm);
+      const stamp = Date.now();
+      let sliced = 0;
+      const next = clips.flatMap((c) => {
+        const start = c.start ?? 0;
+        const lenSteps = clipSeconds(c) / stepDur;
+        const posIn = posSteps - start;
+        if (posIn <= 0.05 || posIn >= lenSteps - 0.05) return [c];
+        sliced += 1;
+        const f = Math.min(0.95, Math.max(0.05, posIn / lenSteps));
+        const cut = Math.max(1, Math.min(c.peaks.length - 1, Math.round(c.peaks.length * f)));
+        const a: AudioClip = {
+          ...c,
+          id: `${c.id}-a${stamp}`,
+          name: `${c.name} A`,
+          peaks: c.peaks.slice(0, cut),
+          duration: c.duration * f,
+        };
+        const b: AudioClip = {
+          ...c,
+          id: `${c.id}-b${stamp}`,
+          name: `${c.name} B`,
+          peaks: c.peaks.slice(cut),
+          duration: c.duration * (1 - f),
+        };
+        return [a, b];
+      });
+      if (sliced === 0) {
+        toast("Razor missed", { description: "Click inside a clip to slice it exactly there." });
+        return;
+      }
+      const activeId = t.activeClipId;
+      const activeSliced = sliced > 0 && activeId && clips.some((c) => c.id === activeId && posSteps - (c.start ?? 0) > 0.05 && posSteps - (c.start ?? 0) < clipSeconds(c) / stepDur - 0.05);
+      updateTrack(trackId, {
+        clips: next,
+        activeClipId: activeSliced && activeId ? `${activeId}-a${stamp}` : activeId,
+      });
+      toast.success(`Sliced ${sliced} clip${sliced > 1 ? "s" : ""}`, { description: "The razor cut at the exact click position." });
+    },
+    [updateTrack],
+  );
+
   const buildSnapshot = useCallback(
     (): CloudSession => ({
       version: 1,
@@ -1565,6 +1617,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       toggleSelectId: (id) =>
         setSelectedIds((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id])),
       splitClipAt: splitClipAtImpl,
+      razorAt: razorAtImpl,
       splitAtPlayhead: () => {
         const id = selectedIdRef.current;
         if (!id) {
@@ -2267,7 +2320,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           ),
         })),
     };
-  }, [tracks, transport, selectedId, selectedIds, editTool, panel, userPresets, buses, vcas, auxReturns, sections, installedPlugins, fxChains, midiInputs, midiInputId, midiLearning, midiMap, midiLearn, clipboardName, enableMidi, setMidiInputPersist, updateTrack, finishRecording, finishTrackRecording, splitClipAtImpl, buildSnapshot, applySession, historyTick, automationHistoryTick, savedAt]);
+  }, [tracks, transport, selectedId, selectedIds, editTool, panel, userPresets, buses, vcas, auxReturns, sections, installedPlugins, fxChains, midiInputs, midiInputId, midiLearning, midiMap, midiLearn, clipboardName, enableMidi, setMidiInputPersist, updateTrack, finishRecording, finishTrackRecording, splitClipAtImpl, razorAtImpl, buildSnapshot, applySession, historyTick, automationHistoryTick, savedAt]);
 
 
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>;
