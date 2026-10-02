@@ -1235,6 +1235,8 @@ export class SyncLabEngine {
   private monitorNode: MediaStreamAudioSourceNode | null = null;
   private monitorGain: GainNode | null = null;
   private recAnalyser: AnalyserNode | null = null;
+  private inputGainNode: GainNode | null = null;
+  private recDest: MediaStreamAudioDestinationNode | null = null;
   private trackRecorder: { recorder: MediaRecorder; destination: MediaStreamAudioDestinationNode; source: AudioNode; trackId: string; chunks: Blob[] } | null = null;
 
   private monitorTrackId: string | null = null;
@@ -1320,6 +1322,7 @@ export class SyncLabEngine {
       echoCancellation: false,
       noiseSuppression: false,
       autoGainControl: false,
+      channelCount: { ideal: 2 },
     }, "timeline");
     // The target may have changed while the browser permission prompt was open.
     if (generation !== this.monitorGeneration) {
@@ -1328,13 +1331,31 @@ export class SyncLabEngine {
     }
     this.recStream = stream;
     const src = ctx.createMediaStreamSource(stream);
+    // input channel pick + input gain; everything downstream (meter, monitor, recorder) hears this
+    const inGain = ctx.createGain();
+    inGain.gain.value = 10 ** (getInputGainDb() / 20);
+    const chan = getInputChannel();
+    if (chan === "stereo") src.connect(inGain);
+    else {
+      const sp = ctx.createChannelSplitter(2);
+      const mg2 = ctx.createChannelMerger(2);
+      const c = chan === "in1" ? 0 : 1;
+      src.connect(sp);
+      sp.connect(mg2, c, 0);
+      sp.connect(mg2, c, 1);
+      mg2.connect(inGain);
+    }
+    const dest = ctx.createMediaStreamDestination();
+    inGain.connect(dest);
+    this.inputGainNode = inGain;
+    this.recDest = dest;
     const analyser = ctx.createAnalyser();
     analyser.fftSize = 1024;
-    src.connect(analyser);
+    inGain.connect(analyser);
     this.recAnalyser = analyser;
     const mg = ctx.createGain();
     mg.gain.value = monitor ? 1 : 0;
-    src.connect(mg);
+    inGain.connect(mg);
     mg.connect(this.channel(trackId).input);
     this.monitorNode = src;
     this.monitorGain = mg;
@@ -1349,6 +1370,9 @@ export class SyncLabEngine {
     this.recStream = null;
     this.monitorNode?.disconnect();
     this.monitorGain?.disconnect();
+    this.inputGainNode?.disconnect();
+    this.inputGainNode = null;
+    this.recDest = null;
     this.monitorNode = null;
     this.monitorGain = null;
     this.recAnalyser = null;
@@ -1360,7 +1384,7 @@ export class SyncLabEngine {
     if (this.recordingStart) return this.recordingStart;
     this.recordingStart = (async () => {
       await this.startInputMonitoring(trackId, monitor);
-      const stream = this.recStream;
+      const stream = this.recDest?.stream ?? this.recStream;
       if (!stream) throw new Error("The microphone input is not open.");
       this.recChunks = [];
       const mime = preferredRecordingMime();
@@ -1374,6 +1398,24 @@ export class SyncLabEngine {
     } finally {
       this.recordingStart = null;
     }
+  }
+
+  /** Live input gain in dB (-24..+24), applied before metering, monitoring and recording. */
+  setInputGain(db: number) {
+    if (this.inputGainNode && this.ctx)
+      this.inputGainNode.gain.setTargetAtTime(10 ** (db / 20), this.ctx.currentTime, 0.02);
+  }
+
+  /** True when the browser can route playback to a chosen output device. */
+  get canPickOutput() {
+    return typeof (AudioContext.prototype as unknown as { setSinkId?: unknown }).setSinkId === "function";
+  }
+
+  /** Route all app playback to an output device (null = system default). */
+  async setOutputDevice(id: string | null) {
+    const ctx = this.init() as AudioContext & { setSinkId?: (id: string) => Promise<void> };
+    if (!ctx.setSinkId) throw new Error("This browser can't choose an output. Change it in your computer's sound settings.");
+    await ctx.setSinkId(id ?? "");
   }
 
   setMonitoring(on: boolean) {

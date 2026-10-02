@@ -94,6 +94,31 @@ export function setPreferredInput(deviceId: string | null) {
   }
 }
 
+/* ---------------- input channel, gain and output routing ---------------- */
+
+export type InputChannel = "stereo" | "in1" | "in2";
+const CH_KEY = "synclab.input.channel";
+const GAIN_KEY = "synclab.input.gainDb";
+const OUT_KEY = "synclab.output.device";
+
+const readLs = (k: string) => { try { return localStorage.getItem(k); } catch { return null; } };
+const writeLs = (k: string, v: string | null) => {
+  try { if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch { /* blocked */ }
+};
+
+export function getInputChannel(): InputChannel {
+  const v = readLs(CH_KEY);
+  return v === "in1" || v === "in2" ? v : "stereo";
+}
+export function setInputChannel(c: InputChannel) { writeLs(CH_KEY, c); }
+export function getInputGainDb(): number {
+  const n = Number(readLs(GAIN_KEY));
+  return Number.isFinite(n) ? Math.max(-24, Math.min(24, n)) : 0;
+}
+export function setInputGainDb(db: number) { writeLs(GAIN_KEY, String(db)); }
+export function getOutputDevice(): string | null { return readLs(OUT_KEY) || null; }
+export function setOutputDevice(id: string | null) { writeLs(OUT_KEY, id); }
+
 /** List audio inputs and outputs. Names only appear once microphone access is allowed. */
 export async function listAudioDevices(): Promise<AudioDeviceInfo[]> {
   if (typeof navigator === "undefined" || !navigator.mediaDevices?.enumerateDevices) return [];
