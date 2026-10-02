@@ -2,7 +2,6 @@
 
 import {
   AudioLines,
-  Bot,
   Disc3,
   Grid2x2,
   Mic,
@@ -10,10 +9,7 @@ import {
   Piano,
   Scissors,
   SlidersHorizontal,
-  Sparkles,
-  Split,
   Users,
-  Volume2,
   Waves,
   Cpu,
 } from "lucide-react";
