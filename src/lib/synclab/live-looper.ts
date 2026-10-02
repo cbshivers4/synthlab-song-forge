@@ -1,6 +1,6 @@
 import { getEngine } from "./audio-engine";
 import { getBeatsPerBar } from "./timebase";
-import { openMic, releaseMic } from "./mic";
+import { borrowActiveMic, openMic, releaseMic } from "./mic";
 import { encodeWav } from "./bounce";
 
 /**
