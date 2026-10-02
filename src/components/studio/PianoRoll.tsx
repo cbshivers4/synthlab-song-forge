@@ -57,14 +57,15 @@ export function PianoRoll({ track }: { track: Track }) {
   }, [track.notes, bars]);
   const notes = track.notes ?? [];
 
-  // when the roll opens on a track that already has notes, scroll so those
-  // notes are in view instead of leaving the user staring at empty rows
+  // when the roll opens on a track that already has notes, center the visible
+  // pitch range on those notes instead of leaving the user staring at empty rows
   useEffect(() => {
-    const el = gridRef.current;
-    if (!el || notes.length === 0) return;
+    if (notes.length === 0) return;
     const avg = notes.reduce((a, n) => a + n.pitch, 0) / notes.length;
-    const rowIndex = low + ROWS - 1 - avg;
-    el.scrollTop = Math.max(0, rowIndex * ROW_H - el.clientHeight / 2);
+    setLow((cur) => {
+      const inView = avg >= cur && avg < cur + ROWS;
+      return inView ? cur : Math.max(12, Math.min(96, Math.round(avg - ROWS / 2)));
+    });
     // only on open / track change — not on every note edit
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [track.id]);
