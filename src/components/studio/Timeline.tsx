@@ -947,7 +947,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
               </DropdownMenuItem>
               </DropdownMenuSubContent></DropdownMenuSub>
               <DropdownMenuSeparator />
-              {advanced && (
+              {(
                 <DropdownMenuSub><DropdownMenuSubTrigger>Automation</DropdownMenuSubTrigger><DropdownMenuSubContent>
                   {(["volume", "pan", "sendReverb", "sendDelay"] as AutomationParam[]).map((param) => (
                     <DropdownMenuItem key={param} onClick={() => toggleAutomationLane(track.id, param)}>
@@ -1082,7 +1082,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
           >
             ● ARM
           </Button>
-          {advanced && <DropdownMenu>
+          {<DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 size="sm"
@@ -1266,7 +1266,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
       </AlertDialog>
       </div>
 
-      {advanced &&
+      {
         (track.automation ?? []).map((lane) => <AutomationRow key={lane.param} track={track} lane={lane} />)}
 
     </div>
