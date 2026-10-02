@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Download, Loader2, Music2, Pause, Play, Plus, Upload } from "lucide-react";
+import { Download, Loader2, Music2, Pause, Play, Plus, RotateCcw, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { getEngine } from "@/lib/synclab/audio-engine";
