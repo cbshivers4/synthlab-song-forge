@@ -531,7 +531,7 @@ export class SyncLabEngine {
     const [kind = "", name = ""] = targetId.split(":");
     const source: AudioNode | null =
       kind === "bus"
-        ? this.busNode(name)
+        ? (this.pluginScopes.get(`bus:${name}`) ?? this.busNode(name))
         : name === "reverb"
           ? this.reverb
           : name === "delay"
