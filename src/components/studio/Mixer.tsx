@@ -1244,6 +1244,31 @@ function BusStrip({
   );
 }
 
+/** Picks which tracks a VCA fader scales; a VCA with no members has nothing to control. */
+function VcaAssign({ id, memberCount }: { id: VcaId; memberCount: number }) {
+  const { tracks, updateTrack } = useStudio();
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant={memberCount ? "outline" : "secondary"} size="sm" className="h-7 w-full font-mono text-[9px]" aria-label={`Assign tracks to VCA ${id}`}>
+          {memberCount ? `${memberCount} TRACK${memberCount > 1 ? "S" : ""}` : "ASSIGN TRACKS"}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-56 p-2">
+        <div className="mb-1 font-mono text-[10px] font-bold uppercase text-muted-foreground">VCA {id} controls</div>
+        {tracks.length === 0 && <div className="text-xs text-muted-foreground">No tracks yet.</div>}
+        {tracks.map((t) => (
+          <label key={t.id} className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 text-xs hover:bg-muted">
+            <input type="checkbox" checked={t.vca === id} onChange={(e) => updateTrack(t.id, { vca: e.target.checked ? id : undefined })} aria-label={`${t.name} on VCA ${id}`} />
+            <span className="truncate">{t.name}</span>
+            {t.vca && t.vca !== id && <span className="ml-auto font-mono text-[9px] text-muted-foreground">VCA {t.vca}</span>}
+          </label>
+        ))}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 function ControlStrip({ kind, name, state, onChange, memberCount, level }: {
   kind: "VCA" | "AUX";
   name: string;
@@ -1260,7 +1285,7 @@ function ControlStrip({ kind, name, state, onChange, memberCount, level }: {
        <div className={cn(ROW.eq, "flex items-center justify-center gap-1 border-b border-border/60")}><MidiLearnButton id={`${aux ? "aux" : "vca"}:${name}`} param="volume" label={`${kind} ${name} level`} /><MidiLearnButton id={`${aux ? "aux" : "vca"}:${name}`} param="mute" label={`${kind} ${name} mute`} /></div>
       {advanced && <div className={cn(ROW.scope, "flex items-center justify-center border-b border-border/60 font-mono text-[9px] text-muted-foreground")}>{aux ? "FX RETURN" : `${memberCount ?? 0} CHANNELS`}</div>}
       <div className={cn(ROW.devices, "flex items-center border-b border-border/60 p-2")}>
-        {aux ? <FxMenu target={`send:${name}`} label="Return FX" /> : <span className="w-full text-center font-mono text-[9px] text-muted-foreground">LEVEL CONTROL</span>}
+        {aux ? <FxMenu target={`send:${name}`} label="Return FX" /> : <VcaAssign id={name as VcaId} memberCount={memberCount ?? 0} />}
       </div>
       {advanced && <div className={cn(ROW.sends, "border-b border-border/60")} />}
       {advanced && <div className={cn(ROW.sendBars, "border-b border-border/60")} />}
