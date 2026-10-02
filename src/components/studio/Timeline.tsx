@@ -2209,7 +2209,7 @@ function Ruler() {
             {/* loop band — drag it to move the whole region */}
             <div
               onPointerDown={dragLoop("band")}
-              title={`Loop bar ${Math.floor(lo / 4) + 1} to ${Math.floor(hi / 4) + 1} — drag to move`}
+              title={`Loop bar ${Math.floor(lo / STEPS_PER_BAR) + 1} to ${Math.floor(hi / STEPS_PER_BAR) + 1} — drag to move`}
               className="absolute inset-y-0 z-10 cursor-grab touch-none border-x border-primary/70 bg-primary/15 active:cursor-grabbing"
               style={{ left: `${(lo / total) * 100}%`, width: `${((hi - lo) / total) * 100}%` }}
             />
@@ -2233,7 +2233,7 @@ function Ruler() {
                     if (which === "start") setTransport({ loopStart: Math.max(0, Math.min(lo + d, hi - 1)), loop: true });
                     else setTransport({ loopEnd: Math.min(total, Math.max(hi + d, lo + 1)), loop: true });
                   }}
-                  title={`Loop ${which} — drag or use arrow keys (bar ${Math.floor(p / 4) + 1})`}
+                  title={`Loop ${which} — drag or use arrow keys (bar ${Math.floor(p / STEPS_PER_BAR) + 1})`}
                   className="absolute top-0 z-20 flex h-full w-4 cursor-ew-resize touch-none flex-col items-center outline-none focus-visible:ring-1 focus-visible:ring-primary"
                   style={{ left: `calc(${(p / total) * 100}% - 8px)` }}
                 >
@@ -2262,7 +2262,7 @@ function Ruler() {
                   aria-label={which === "start" ? "Export start flag" : "Export end flag"}
                   aria-valuenow={p}
                   onPointerDown={dragFlag(which)}
-                  title={`Export ${which} — drag to move (bar ${Math.floor(p / 4) + 1})`}
+                  title={`Export ${which} — drag to move (bar ${Math.floor(p / STEPS_PER_BAR) + 1})`}
                   className="absolute top-0 z-20 flex h-full w-3 cursor-ew-resize touch-none flex-col items-center"
                   style={{ left: `calc(${(p / total) * 100}% - 6px)` }}
                 >

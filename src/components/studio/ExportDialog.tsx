@@ -37,7 +37,7 @@ export function ExportDialog() {
   const flagsOn = transport.exportStart != null && transport.exportEnd != null;
   const flagStart = flagsOn ? Math.min(transport.exportStart!, transport.exportEnd! - 1) : 0;
   const flagEnd = flagsOn ? Math.max(transport.exportEnd!, flagStart + 1) : 0;
-  const flagBars = (flagEnd - flagStart) / 4;
+  const flagBars = (flagEnd - flagStart) / 16;
   const total = (flagsOn ? flagBars : bars) * barSeconds + 1;
 
   const { requirePro } = usePlan();
@@ -136,7 +136,7 @@ export function ExportDialog() {
             </div>
             {flagsOn ? (
               <div className="rounded-sm border border-amber-400/50 bg-amber-400/10 px-2 py-2 font-mono text-[10px] text-amber-200">
-                Using the export flags on the timeline: bar {Math.floor(flagStart / 4) + 1} → bar {Math.ceil(flagEnd / 4)}.
+                Using the export flags on the timeline: bar {Math.floor(flagStart / 16) + 1} → bar {Math.ceil(flagEnd / 16)}.
                 Drag the amber flags to change the range, or press EXPORT on the ruler to turn them off.
               </div>
             ) : (

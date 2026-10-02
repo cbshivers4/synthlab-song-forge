@@ -352,7 +352,7 @@ function StatusBar() {
       <span>4/4</span>
       <span>{tracks.length} CH</span>
       <span>
-        BAR {Math.floor(transport.step / 4) + 1}.{(transport.step % 4) + 1} / {transport.bars ?? 4}
+        BAR {barBeat(transport.step).bar}.{barBeat(transport.step).beat} / {transport.bars ?? 4}
       </span>
       <span className="hidden sm:inline">{saved ? `SAVED ${saved}` : "NOT SAVED YET"}</span>
       <span className="ml-auto hidden sm:inline">{panel ? `${panel} editor open` : "synclab studio"}</span>
