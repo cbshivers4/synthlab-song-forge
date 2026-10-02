@@ -558,7 +558,7 @@ const TRACK_BUSES: { id: BusId; label: string }[] = [
 
 function TrackRow({ track, index }: { track: Track; index: number }) {
   const isMobile = useIsMobile();
-  const { selectedId, selectedIds, select, toggleSelectId, updateTrack, removeTrack, duplicateTrack, moveTrack, setPanel, changeInstrument, installedPlugins, addPlugin, editTool, splitClipAt, toggleStep, toggleAutomationLane, copyTrack, cutTrack, pasteTrack, clipboardName } =
+  const { selectedId, selectedIds, select, toggleSelectId, updateTrack, removeTrack, duplicateTrack, moveTrack, setPanel, changeInstrument, installedPlugins, addPlugin, editTool, splitClipAt, razorAt, toggleStep, toggleAutomationLane, copyTrack, cutTrack, pasteTrack, clipboardName } =
     useStudio();
   const { transport, setNotes, loadSample, fxChains } = useStudio();
   const advanced = useApp().mode === "advanced";
@@ -1134,14 +1134,22 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
         data-lane
         data-lane-track={track.id}
         className={`lane-grid relative min-h-[92px] flex-1 bg-background/70 ${
-          editTool === "draw" ? "cursor-crosshair" : editTool === "split" ? "cursor-col-resize" : ""
+          editTool === "draw"
+            ? "cursor-crosshair"
+            : editTool === "split"
+              ? "cursor-col-resize"
+              : editTool === "razor"
+                ? "cursor-crosshair"
+                : ""
         }`}
         title={
           editTool === "draw"
             ? "Draw tool — click to write a note or drum hit"
             : editTool === "split"
               ? "Split tool — click a clip to cut it there"
-              : undefined
+              : editTool === "razor"
+                ? "Razor tool — click inside a clip to slice it exactly where you click"
+                : undefined
         }
         onClick={(e) => {
           if (editTool === "select") return;
@@ -1177,6 +1185,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
           } else {
             toast("Split audio clips with a click", { description: "For note channels, park the playhead and press S." });
           }
+          return;
         }}
       >
         <Lane track={track} />
