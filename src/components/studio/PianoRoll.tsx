@@ -56,6 +56,18 @@ export function PianoRoll({ track }: { track: Track }) {
     if (needed > bars) setBars(needed);
   }, [track.notes, bars]);
   const notes = track.notes ?? [];
+
+  // when the roll opens on a track that already has notes, scroll so those
+  // notes are in view instead of leaving the user staring at empty rows
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || notes.length === 0) return;
+    const avg = notes.reduce((a, n) => a + n.pitch, 0) / notes.length;
+    const rowIndex = low + ROWS - 1 - avg;
+    el.scrollTop = Math.max(0, rowIndex * ROW_H - el.clientHeight / 2);
+    // only on open / track change — not on every note edit
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [track.id]);
   const pitches = Array.from({ length: ROWS }, (_, i) => low + ROWS - 1 - i);
   const scale = SCALES[scaleName] ?? SCALES["Minor"]!;
   const inScale = (p: number) => scale.includes((((p - root) % 12) + 12) % 12);
