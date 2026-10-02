@@ -125,6 +125,7 @@ export class SyncLabEngine {
   chorusSend: GainNode | null = null;
   private buses = new Map<string, GainNode>();
   private busStates: Record<string, { volume: number; muted: boolean }> = {};
+  private mixTracks: Track[] = [];
   private busMeters = new Map<string, AnalyserNode>();
   private auxReturns = new Map<string, GainNode>();
   private auxMeters = new Map<string, AnalyserNode>();
@@ -411,6 +412,22 @@ export class SyncLabEngine {
       return;
     }
     this.busNode(id).gain.setTargetAtTime(muted ? 0 : clamp(volume, 0, 1.5), this.ctx.currentTime, 0.02);
+    // Sends leave the track before the subgroup, so follow its fader/mute too.
+    for (const track of this.mixTracks) {
+      if ((track.bus ?? "master") !== id) continue;
+      const ch = this.channels.get(track.id);
+      if (ch) this.syncTrackSends(ch, track, this.ctx.currentTime);
+    }
+  }
+
+  private syncTrackSends(ch: ChannelStrip, track: Track, time: number) {
+    if (!this.ctx) return;
+    const bus = this.busStates[track.bus ?? "master"];
+    const scale = track.bus === "master" || !bus ? 1 : bus.muted ? 0 : clamp(bus.volume, 0, 1.5);
+    const sends = track.sends ?? { reverb: 0, delay: 0, chorus: 0 };
+    ch.sendReverb.gain.setTargetAtTime(clamp(sends.reverb * scale, 0, 1.5), time, 0.02);
+    ch.sendDelay.gain.setTargetAtTime(clamp(sends.delay * scale, 0, 1.5), time, 0.02);
+    ch.sendChorus.gain.setTargetAtTime(clamp(sends.chorus * scale, 0, 1.5), time, 0.02);
   }
 
   setAuxReturn(id: string, volume: number, muted: boolean) {
@@ -1199,6 +1216,7 @@ export class SyncLabEngine {
   }
 
   syncMix(tracks: Track[]) {
+    this.mixTracks = tracks;
     if (!this.ctx) return;
     const anySolo = tracks.some((t) => t.solo);
     for (const t of tracks) {
@@ -1229,10 +1247,7 @@ export class SyncLabEngine {
         ch.pan.connect(this.busNode(bus));
         ch.bus = bus;
       }
-      const sends = t.sends ?? { reverb: 0, delay: 0, chorus: 0 };
-      ch.sendReverb.gain.setTargetAtTime(clamp(sends.reverb, 0, 1), this.ctx.currentTime, 0.02);
-      ch.sendDelay.gain.setTargetAtTime(clamp(sends.delay, 0, 1), this.ctx.currentTime, 0.02);
-      ch.sendChorus.gain.setTargetAtTime(clamp(sends.chorus, 0, 1), this.ctx.currentTime, 0.02);
+      this.syncTrackSends(ch, t, this.ctx.currentTime);
     }
   }
 
