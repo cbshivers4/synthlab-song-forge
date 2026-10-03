@@ -20,7 +20,7 @@ import { getLooper } from "./live-looper";
 import { padNote } from "./drum-notes";
 import { markLiveHit, isLiveHit, clearLiveHits } from "./live-take";
 import { keyDown, keyUp } from "./active-keys";
-import { autoMapEnabled, isKorgMixer, korgAutoMap } from "./korg-automap";
+import { controllerAutoMap } from "./controller-profiles";
 import type { CloudSession } from "./cloud";
 import type {
   AudioClip,
@@ -581,7 +581,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           if (!target) {
             // Korg 8-channel mixer: faders, knobs and S/M/R buttons follow track order automatically.
             const portName = midiInputsRef.current.find((p) => p.id === midiInputId)?.name;
-            const hit = autoMapEnabled() && (midiInputId === "all" || isKorgMixer(portName)) ? korgAutoMap(msg.cc) : null;
+            const hit = controllerAutoMap(portName, msg.cc);
             if (!hit) return;
             const track = tracksRef.current[hit.strip];
             if (!track) return;
