@@ -287,8 +287,47 @@ function Waveform({ track }: { track: Track }) {
 const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 
 function MidiClip({ track }: { track: Track }) {
-  const { setPanel, select, transport } = useStudio();
+  const { setPanel, select, transport, updateTrack } = useStudio();
   const notes = track.notes ?? [];
+  /** Drag the pattern to any grid position: every note shifts by the same
+   *  snapped step delta, so the whole part lands on a measure/beat line. */
+  const beginPatternDrag = (e: React.PointerEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const lane = (e.currentTarget as HTMLElement).closest("[data-lane]") as HTMLElement | null;
+    if (!lane) return;
+    const rect = lane.getBoundingClientRect();
+    const perStep = rect.width / total;
+    const x0 = e.clientX;
+    const grid = transport.snap ?? 1;
+    const orig = notes.map((n) => ({ id: n.id, step: n.step, recordedEnd: n.recordedEnd }));
+    const el = e.currentTarget as HTMLElement;
+    el.setPointerCapture(e.pointerId);
+    const onMove = (ev: PointerEvent) => {
+      const raw = (ev.clientX - x0) / Math.max(1, perStep);
+      let d = grid > 0 ? Math.round(raw / grid) * grid : Math.round(raw * 100) / 100;
+      const minStep = Math.min(...orig.map((o) => o.step));
+      if (minStep + d < 0) d = -minStep;
+      updateTrack(track.id, {
+        notes: (track.notes ?? []).map((n) => {
+          const o = orig.find((x) => x.id === n.id);
+          if (!o) return n;
+          return {
+            ...n,
+            step: Math.max(0, o.step + d),
+            recordedEnd: o.recordedEnd != null ? Math.max(0, o.recordedEnd + d) : o.recordedEnd,
+          };
+        }),
+      });
+    };
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      el.style.transform = "";
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  };
   // the pattern loops for the whole song, so draw every repeat where it is heard
   const total = songSteps(transport.bars);
   const patLen = Math.max(stepsPerBar(), track.steps || stepsPerBar());
