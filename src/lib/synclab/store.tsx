@@ -1819,6 +1819,30 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         setSections(built);
         toast.success("Song structure laid out", { description: `${built.length} parts across ${bars} bars — rename or drag any of them.` });
       },
+      folders,
+      addFolder: (name) => {
+        const id = uid();
+        setFolders((list) => [
+          ...list,
+          {
+            id,
+            name: (name ?? `FOLDER ${list.length + 1}`).toUpperCase().slice(0, 18),
+            color: SECTION_COLORS[list.length % SECTION_COLORS.length] as string,
+            collapsed: false,
+          },
+        ]);
+        return id;
+      },
+      renameFolder: (id, name) =>
+        setFolders((list) => list.map((f) => (f.id === id ? { ...f, name: name.toUpperCase().slice(0, 18) || f.name } : f))),
+      removeFolder: (id) => {
+        setFolders((list) => list.filter((f) => f.id !== id));
+        setTracks((ts) => ts.map((t) => (t.folderId === id ? { ...t, folderId: undefined } : t)));
+      },
+      toggleFolderCollapsed: (id) =>
+        setFolders((list) => list.map((f) => (f.id === id ? { ...f, collapsed: !f.collapsed } : f))),
+      assignTrackFolder: (trackId, folderId) =>
+        setTracks((ts) => ts.map((t) => (t.id === trackId ? { ...t, folderId: folderId ?? undefined } : t))),
       setPanel,
       select: (id) => {
         setSelectedId(id);
