@@ -53,7 +53,7 @@ import { PlanBadge } from "@/lib/synclab/plan";
 import { openHelp } from "@/components/studio/HelpCenter";
 import { MasterMeter } from "@/components/studio/MasterMeter";
 import { useEffect, useState } from "react";
-import { SkipBack } from "lucide-react";
+import { Keyboard, SkipBack } from "lucide-react";
 import synclabLogoAsset from "@/assets/synclab-logo-neon.jpg.asset.json";
 const synclabLogo = synclabLogoAsset.url;
 
