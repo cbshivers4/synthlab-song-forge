@@ -374,7 +374,7 @@ function FloatingDevices({ float, setFloat }: { float: FloatState; setFloat: (f:
 
 /** Global DAW keyboard shortcuts. */
 function useShortcuts() {
-  const { togglePlay, toggleRecord, stop, selected, duplicateTrack, removeTrack, setPanel, copyTrack, cutTrack, pasteTrack, selectAll, splitAtPlayhead, setEditTool, undo, redo, tracks, previewNote } =
+  const { togglePlay, toggleRecord, stop, selected, duplicateTrack, removeTrack, setPanel, copyTrack, cutTrack, pasteTrack, copyClip, cutClip, pasteClip, clipClipboardName, selectAll, splitAtPlayhead, setEditTool, undo, redo, tracks, previewNote } =
     useStudio();
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -409,13 +409,18 @@ function useShortcuts() {
           duplicateTrack(selected.id);
         } else if (k === "c" && selected) {
           e.preventDefault();
-          copyTrack(selected.id);
+          const clip = selected.clips?.find((c) => c.id === selected.activeClipId);
+          if (clip) copyClip(selected.id, clip.id);
+          else copyTrack(selected.id);
         } else if (k === "x" && selected) {
           e.preventDefault();
-          cutTrack(selected.id);
+          const clip = selected.clips?.find((c) => c.id === selected.activeClipId);
+          if (clip) cutClip(selected.id, clip.id);
+          else cutTrack(selected.id);
         } else if (k === "v") {
           e.preventDefault();
-          pasteTrack();
+          if (clipClipboardName) pasteClip();
+          else pasteTrack();
         } else if (k === "a") {
           e.preventDefault();
           selectAll();
@@ -475,7 +480,7 @@ function useShortcuts() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [togglePlay, toggleRecord, stop, selected, duplicateTrack, removeTrack, setPanel, copyTrack, cutTrack, pasteTrack, selectAll, splitAtPlayhead, setEditTool, undo, redo, tracks, previewNote]);
+  }, [togglePlay, toggleRecord, stop, selected, duplicateTrack, removeTrack, setPanel, copyTrack, cutTrack, pasteTrack, copyClip, cutClip, pasteClip, clipClipboardName, selectAll, splitAtPlayhead, setEditTool, undo, redo, tracks, previewNote]);
 }
 
 function StudioWorkspace() {
