@@ -153,3 +153,4 @@
 - [ ] Verify no-doubling with a real MIDI keyboard/pads while recording (needs hardware)
 - [x] Mirror every timeline track in the mixer by default; keep Master visible and bus/VCA/aux strips optional
 - [x] Clear/cut track content without deleting the channel (toolbar Clear button + track menu "Clear track contents"; channel delete stays in the ⋮ menu)
+- [x] Let the user add their own JPEG wallpaper: Appearance → Wallpaper (choose file, darken slider, per-panel ticks, remove), per-panel Wallpaper button with framing popover, drag a JPEG onto any of the 7 panels

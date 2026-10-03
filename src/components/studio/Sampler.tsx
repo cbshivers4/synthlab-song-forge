@@ -12,7 +12,7 @@ import { uid } from "@/lib/synclab/presets";
 import { wsolaStretch } from "@/lib/synclab/stretch";
 import { WaveformView } from "@/components/studio/WaveformView";
 import { MidiLearnButton } from "./MidiLearn";
-import { SkinControls, skinBackground } from "@/components/studio/SkinControls";
+import { SkinControls, skinBackground, useImageDrop } from "@/components/studio/SkinControls";
 import { useSkin } from "@/lib/synclab/skins";
 
 const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
@@ -132,6 +132,7 @@ function Waveform({ track, onSlice }: { track: Track; onSlice: (i: number) => vo
 
 export function Sampler() {
   const skin = useSkin("sample");
+  const drop = useImageDrop("sample");
   const { tracks, selected, select, addTrack, addClip, loadSample, updateSampler, clearSample, stopSamples, previewNote } =
     useStudio();
   const [over, setOver] = useState(false);
@@ -295,7 +296,7 @@ export function Sampler() {
   };
 
   return (
-    <div className="studio-wallpaper space-y-3 rounded-md p-3" data-studio-panel="sample" style={skinBackground(skin)}>
+    <div className="studio-wallpaper space-y-3 rounded-md p-3" data-studio-panel="sample" style={skinBackground(skin)} {...drop}>
       <SkinControls skinKey="sample" image />
       <div
         onDragOver={(e) => {

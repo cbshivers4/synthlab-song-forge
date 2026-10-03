@@ -10,7 +10,7 @@ import { getBeatsPerBar } from "@/lib/synclab/timebase";
 import { cn } from "@/lib/utils";
 import { TRACK_PALETTE } from "./TrackStyle";
 import { MidiLearnButton } from "./MidiLearn";
-import { SkinControls, skinBackground } from "@/components/studio/SkinControls";
+import { SkinControls, skinBackground, useImageDrop } from "@/components/studio/SkinControls";
 import { useSkin } from "@/lib/synclab/skins";
 
 const labels: Record<LoopSlot["state"], string> = {
@@ -170,6 +170,7 @@ function ThresholdMeter() {
 
 export function LiveLooperView() {
   const skin = useSkin("looper");
+  const drop = useImageDrop("looper");
   const { transport, addTrack, addClip } = useStudio();
   const looper = getLooper();
   const [, rerender] = useReducer((n: number) => n + 1, 0);
@@ -189,7 +190,7 @@ export function LiveLooperView() {
     } catch (error) { toast.error("Couldn't send the loop", { description: error instanceof Error ? error.message : undefined }); }
   };
   return (
-    <div className="studio-wallpaper space-y-5 rounded-md p-3" data-studio-panel="looper" style={skinBackground(skin)}>
+    <div className="studio-wallpaper space-y-5 rounded-md p-3" data-studio-panel="looper" style={skinBackground(skin)} {...drop}>
       <SkinControls skinKey="looper" image />
       <div className="flex flex-wrap items-end gap-4 border-b border-border pb-4">
         <div>

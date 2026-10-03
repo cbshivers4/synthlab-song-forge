@@ -1,11 +1,121 @@
-import { useState } from "react";
-import { Check, Palette, Trash2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Check, ImagePlus, Palette, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useApp } from "@/lib/synclab/app-state";
+import {
+  WALLPANEL_PANELS,
+  imageToDataUrl,
+  setSkin,
+  startSkinSync,
+  useSkin,
+  type SkinKey,
+} from "@/lib/synclab/skins";
 import type { Theme, ThemeVars } from "@/lib/synclab/themes";
 import { toast } from "sonner";
+
+/** One picture, chosen once, shown behind the studio panels you tick. */
+function WallpaperSection() {
+  const shared = useSkin("shared");
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => startSkinSync(), []);
+  const allKeys = WALLPANEL_PANELS.map((p) => p.key);
+  const on = (key: SkinKey) => (shared.panels ?? allKeys).includes(key);
+
+  const pick = async (f?: File) => {
+    if (!f) return;
+    setBusy(true);
+    try {
+      const image = await imageToDataUrl(f, 1600);
+      setSkin("shared", { image, imageZoom: 1, imageX: 50, imageY: 50 });
+      toast.success("Wallpaper chosen — pick where it shows");
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const toggle = (key: SkinKey) => {
+    const cur = new Set(shared.panels ?? allKeys);
+    if (cur.has(key)) cur.delete(key);
+    else cur.add(key);
+    setSkin("shared", { panels: [...cur] });
+  };
+
+  return (
+    <section className="panel p-3" data-wallpaper-settings>
+      <span className="label-xs flex items-center gap-1">
+        <ImagePlus className="size-3.5" /> Wallpaper
+      </span>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Use your own JPEG, PNG or WEBP picture behind the studio panels. Choose one here and tick where it shows,
+        or drag a picture straight onto any panel.
+      </p>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            e.target.value = "";
+            void pick(f);
+          }}
+        />
+        <Button size="sm" variant="outline" disabled={busy} onClick={() => fileRef.current?.click()}>
+          <ImagePlus className="size-4" /> {busy ? "Opening…" : "Choose picture"}
+        </Button>
+        {shared.image && (
+          <div
+            className="h-12 w-20 rounded border border-border bg-cover bg-center"
+            style={{ backgroundImage: `url(${shared.image})` }}
+            aria-label="Chosen wallpaper"
+          />
+        )}
+        {shared.image && (
+          <label className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+            Darken
+            <input
+              type="range"
+              aria-label="Darken wallpaper"
+              min={0}
+              max={0.8}
+              step={0.05}
+              value={shared.dim ?? 0.35}
+              onChange={(e) => setSkin("shared", { dim: Number(e.target.value) })}
+              className="w-28"
+            />
+          </label>
+        )}
+        {shared.image && (
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              setSkin("shared", { image: undefined, panels: undefined, dim: undefined });
+              toast.success("Wallpaper removed");
+            }}
+          >
+            <Trash2 className="size-4" /> Remove
+          </Button>
+        )}
+      </div>
+      {shared.image && (
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {WALLPANEL_PANELS.map((p) => (
+            <Button key={p.key} size="sm" variant={on(p.key) ? "secondary" : "ghost"} onClick={() => toggle(p.key)}>
+              {p.label}
+            </Button>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
 
 const FIELDS: { key: keyof ThemeVars; label: string }[] = [
   { key: "background", label: "Background" },
@@ -41,6 +151,7 @@ export function Appearance() {
 
   return (
     <div className="space-y-4">
+      <WallpaperSection />
       <section>
         <span className="label-xs">Interface mode</span>
         <div className="mt-2 flex gap-2">

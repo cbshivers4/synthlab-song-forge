@@ -19,7 +19,7 @@ import { Switch } from "@/components/ui/switch";
 import { useStudio } from "@/lib/synclab/store";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { toast } from "sonner";
-import { SkinControls, skinBackground, useImageDrag } from "@/components/studio/SkinControls";
+import { SkinControls, skinBackground, useImageDrag, useImageDrop } from "@/components/studio/SkinControls";
 import { useSkin } from "@/lib/synclab/skins";
 import { WaveformView } from "@/components/studio/WaveformView";
 import { LiveWave } from "@/components/studio/LiveWave";
@@ -448,13 +448,14 @@ export function PadSampler() {
   const monitorId = playing ?? recPad ?? sel;
   const skin = useSkin("sampler");
   const imageDrag = useImageDrag("sampler", skin);
+  const drop = useImageDrop("sampler");
   const monitorSample = pads[monitorId];
   const monitorPad = monitorSample
     ? { pad: monitorSample, color: padColor(Math.floor(monitorId / PADS_PER_BANK), monitorId % PADS_PER_BANK) }
     : null;
 
   return (
-    <div className="studio-wallpaper space-y-3 rounded-md p-3" data-studio-panel="pads">
+    <div className="studio-wallpaper space-y-3 rounded-md p-3" data-studio-panel="pads" {...drop}>
       <SkinControls skinKey="sampler" image padColor colorLabel="Around pads" />
       <div className="flex flex-wrap items-center gap-2">
         <Grid2x2 className="size-4 text-primary" />

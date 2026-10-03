@@ -7,6 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   applyPreset,
+  clearPanelWallpaper,
   deletePreset,
   imageToDataUrl,
   savePreset,
@@ -141,7 +142,23 @@ function ImageFraming({ skinKey, skin }: { skinKey: SkinKey; skin: Skin }) {
         {row("Zoom / crop", skin.imageZoom ?? 1, 1, 4, 0.05, "imageZoom")}
         {row("Left ↔ Right", skin.imageX ?? 50, 0, 100, 1, "imageX")}
         {row("Up ↕ Down", skin.imageY ?? 50, 0, 100, 1, "imageY")}
-        <p className="text-xs text-muted-foreground">Tip: drag the picture around the pads to move it.</p>
+        <div className="space-y-1.5">
+          <div className="flex justify-between font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+            <span>Darken over picture</span>
+            <span>{Math.round(((skin.dim ?? 0.35) / 0.8) * 100)}%</span>
+          </div>
+          <Slider
+            aria-label="Darken over picture"
+            min={0}
+            max={0.8}
+            step={0.05}
+            value={[skin.dim ?? 0.35]}
+            onValueChange={([v]) => safe(() => setSkin(skinKey, { dim: v }))}
+          />
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Tip: drag the picture around the pads to move it, or drop a JPEG straight onto the panel.
+        </p>
         <Button
           size="sm"
           variant="ghost"
@@ -201,8 +218,13 @@ export function SkinControls({ skinKey, image, padColor, colorLabel = "Backgroun
               }
             }}
           />
-          <Button size="sm" variant="outline" onClick={() => fileRef.current?.click()}>
-            <ImagePlus className="size-4" /> Picture
+          <Button
+            size="sm"
+            variant="outline"
+            title="Use a JPEG, PNG or WEBP from your computer as this panel's wallpaper"
+            onClick={() => fileRef.current?.click()}
+          >
+            <ImagePlus className="size-4" /> Wallpaper
           </Button>
           {skin.image && <ImageFraming skinKey={skinKey} skin={skin} />}
         </>
@@ -210,18 +232,12 @@ export function SkinControls({ skinKey, image, padColor, colorLabel = "Backgroun
       <Button
         size="sm"
         variant="ghost"
-        title="Reset colors and picture"
+        title="Remove this panel's picture and colors"
         onClick={() =>
-          safe(() =>
-            setSkin(skinKey, {
-              color: undefined,
-              padColor: undefined,
-              image: undefined,
-              imageZoom: undefined,
-              imageX: undefined,
-              imageY: undefined,
-            }),
-          )
+          safe(() => {
+            setSkin(skinKey, { color: undefined, padColor: undefined });
+            clearPanelWallpaper(skinKey);
+          })
         }
       >
         <RotateCcw className="size-4" /> Reset
@@ -232,14 +248,16 @@ export function SkinControls({ skinKey, image, padColor, colorLabel = "Backgroun
 }
 
 export function skinBackground(skin: Skin): React.CSSProperties | undefined {
-  if (skin.image)
+  if (skin.image) {
+    const d = skin.dim ?? 0.35;
     return {
-      backgroundImage: `linear-gradient(hsl(0 0% 0% / 0.35), hsl(0 0% 0% / 0.35)), url(${skin.image})`,
+      backgroundImage: `linear-gradient(hsl(0 0% 0% / ${d}), hsl(0 0% 0% / ${d})), url(${skin.image})`,
       backgroundSize: `cover, ${(skin.imageZoom ?? 1) * 100}% auto`,
       backgroundPosition: `center, ${skin.imageX ?? 50}% ${skin.imageY ?? 50}%`,
       backgroundRepeat: "no-repeat",
       backgroundColor: skin.color,
     };
+  }
   if (skin.color) return { backgroundColor: skin.color };
   return undefined;
 }
@@ -267,6 +285,29 @@ export function useImageDrag(skinKey: SkinKey, skin: Skin) {
     },
     onPointerUp: () => {
       drag.current = null;
+    },
+  };
+}
+
+/** Drop a picture file from your computer onto a panel to make it that panel's wallpaper. */
+export function useImageDrop(skinKey: SkinKey) {
+  return {
+    onDragOver: (e: React.DragEvent<HTMLElement>) => {
+      if (!Array.from(e.dataTransfer?.types ?? []).includes("Files")) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "copy";
+    },
+    onDrop: async (e: React.DragEvent<HTMLElement>) => {
+      const f = e.dataTransfer?.files?.[0];
+      if (!f || !/^image\/(jpeg|jpg|png|webp)$/i.test(f.type)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      try {
+        setSkin(skinKey, { image: await imageToDataUrl(f), imageZoom: 1, imageX: 50, imageY: 50 });
+        toast.success("Wallpaper set");
+      } catch (err) {
+        toast.error((err as Error).message);
+      }
     },
   };
 }
