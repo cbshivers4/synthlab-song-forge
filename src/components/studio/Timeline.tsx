@@ -489,7 +489,9 @@ function DrumClip({ track }: { track: Track }) {
   const hits = pads.reduce((n, p) => n + p.steps.filter((s) => s > 0).length, 0);
   return (
     <div
-      className="absolute inset-y-2 left-1 right-1 overflow-hidden rounded-[3px] border border-clip-drum/30 bg-clip-drum/10 shadow-sm transition-colors hover:bg-clip-drum/15"
+      className="absolute inset-y-2 left-1 right-1 cursor-grab overflow-hidden rounded-[3px] border border-clip-drum/30 bg-clip-drum/10 shadow-sm transition-colors hover:bg-clip-drum/15 active:cursor-grabbing"
+      onPointerDown={beginPatternDrag}
+      title="Drag to shift this beat along the grid — double-click to open the drum machine"
       onDoubleClick={() => {
         select(track.id);
         setPanel("drums");
