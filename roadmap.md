@@ -106,7 +106,7 @@
 ## Current studio refinement
 - [x] Preserve the audio outside the recorded measures when replacing only part of an existing take
 - [x] Make VCA and aux meters show actual audio, and verify their faders/mutes and the mixer master level control the intended signal paths
-- [x] Replace sample-pad mini waveforms with clean pad labels while preserving the waveform editor
+- [x] Sample pads show a solid (no-outline) waveform behind the label (user reversed the earlier no-waveform request)
 - [x] Simplify the timeline track menu without removing actions
 - [x] Select actual installed speech voices in Vocal Forge, rather than relabeling the same voice as different templates
 - [x] Keep synth recording waveforms visible and constrain recorded material to captured measures
@@ -122,10 +122,10 @@
 - [x] Recorded MIDI notes clamp to the loop end (e.g. 2-bar loop = no notes past bar 2); notes may still cross bar lines inside the region. Build OK, not yet played with a real controller.
 
 ## Oct 3 requests
-- [ ] Synth recording like other DAWs (arm instrument track, record from looper/track without fuss)
-- [ ] Click a track header to highlight it for copy/paste
-- [ ] Live Looper: arm/record from inside the looper without the top REC button
-- [ ] dB markings next to the master meter
-- [ ] Track header volume follows its VCA fader visually
-- [ ] Sample pads show a filled waveform on each pad
-- [ ] Drum/MIDI clips show a waveform-style display in the timeline
+- [x] Synth recording like other DAWs (arm instrument track, record from looper/track without fuss)
+- [x] Click a track header to highlight it for copy/paste
+- [x] Live Looper: arm/record from inside the looper without the top REC button
+- [x] dB markings next to the master meter
+- [x] Track header volume follows its VCA fader visually
+- [x] Sample pads show a filled waveform on each pad
+- [x] Drum/MIDI clips show a waveform-style display in the timeline
