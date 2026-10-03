@@ -96,8 +96,8 @@ export function SynthEditor({ track }: { track: Track }) {
 
   const skin = useSkin("synth");
   return (
-    <div className={`space-y-4 ${skinBackground(skin) ? "rounded-xl p-3" : ""}`} style={skinBackground(skin)}>
-      <SkinControls skinKey="synth" />
+    <div className="studio-wallpaper space-y-4 rounded-md p-3" data-studio-panel="synth" style={skinBackground(skin)}>
+      <SkinControls skinKey="synth" image />
       <div className="flex flex-wrap items-center gap-2">
         <Select value={patch.name} onValueChange={(v) => loadPreset(track.id, v)}>
           <SelectTrigger className="w-64">

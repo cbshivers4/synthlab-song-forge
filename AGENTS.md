@@ -26,3 +26,4 @@ Detached studio panels use a synchronous user-click window.open and React portal
 Bottom device displays read post-device or track analyser taps at 20 fps; never substitute animated decoration for live signal.
 - The post-login menu presents cloud projects, device recents, saved templates, and starter templates in one responsive workspace; retain their existing storage and open actions when changing its layout.
 - Every security-definer helper used inside an RLS policy (e.g. public.has_role) must be explicitly GRANTed EXECUTE to anon/authenticated/service_role; Supabase does not grant function EXECUTE by default, and a missing grant makes the policy error out so reads silently return empty results instead of rows.
+Studio panel wallpaper uses one bundled JPEG with a dark semantic overlay and per-panel skin overrides; this keeps controls legible while letting users customize each panel without external image dependencies.

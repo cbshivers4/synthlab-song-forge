@@ -454,7 +454,7 @@ export function PadSampler() {
     : null;
 
   return (
-    <div className="space-y-3">
+    <div className="studio-wallpaper space-y-3 rounded-md p-3" data-studio-panel="pads">
       <SkinControls skinKey="sampler" image padColor colorLabel="Around pads" />
       <div className="flex flex-wrap items-center gap-2">
         <Grid2x2 className="size-4 text-primary" />
@@ -610,6 +610,7 @@ export function PadSampler() {
             <button
               key={id}
               type="button"
+              data-loaded={Boolean(pad)}
               onPointerDown={(e) => {
                 setSel(id);
                 if (armRec || !pad) {
@@ -681,7 +682,7 @@ export function PadSampler() {
                         ? { borderColor: `color-mix(in hsl, ${c} 60%, transparent)` }
                         : undefined
               }
-              className={`relative flex aspect-square min-w-0 touch-none flex-col items-start justify-between rounded-lg border-2 p-4 text-left transition-all select-none active:scale-[0.97] ${
+              className={`sample-pad-wallpaper relative flex aspect-square min-w-0 touch-none flex-col items-start justify-between rounded-lg border-2 p-4 text-left transition-all select-none active:scale-[0.97] ${
                 pad || recording ? "" : "border-dashed border-border bg-surface-2/40 hover:border-muted-foreground/60"
               } ${recording ? "animate-pulse" : ""}`}
             >
