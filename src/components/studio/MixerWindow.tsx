@@ -104,9 +104,40 @@ export function DetachedWindow({
       window.removeEventListener("beforeunload", closeChild);
       if (!win.closed) win.close();
       setContainer(null);
+      setWinRef(null);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return container ? createPortal(children, container) : null;
+  const resizeTo = (wFrac: number, hFrac: number) => {
+    if (!winRef || winRef.closed) return;
+    const w = Math.round(winRef.screen.availWidth * wFrac);
+    const h = Math.round(winRef.screen.availHeight * hFrac);
+    winRef.resizeTo(w, h);
+  };
+
+  return container
+    ? createPortal(
+        <div className="flex h-full flex-col">
+          <div className="flex shrink-0 items-center gap-1 border-b border-border bg-card px-2 py-1">
+            <span className="mr-auto text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+              {title}
+            </span>
+            <span className="text-[9px] uppercase tracking-wider text-muted-foreground">Size</span>
+            {PRESETS.map((p) => (
+              <button
+                key={p.label}
+                type="button"
+                onClick={() => resizeTo(p.w, p.h)}
+                className="rounded border border-border px-1.5 py-0.5 text-[9px] font-semibold text-muted-foreground hover:bg-accent hover:text-foreground"
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+          <div className="min-h-0 flex-1 overflow-auto">{children}</div>
+        </div>,
+        container,
+      )
+    : null;
 }
