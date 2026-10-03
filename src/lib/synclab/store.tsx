@@ -47,6 +47,17 @@ import type {
 import { clipRate, clipSeconds, SECTION_COLORS } from "./types";
 
 /** A persistent hardware CC destination. Namespaced parameters identify device controls. */
+/** A recorded instrument/drum take normally plays back as printed audio, which
+ *  can't follow a new preset. When the sound changes and the part still has its
+ *  notes or drum hits, switch the track back to live notes so the change is heard
+ *  immediately — even while the song is playing. */
+function liveSound(t: Track): Track {
+  if (!t.printedAudio || t.recording) return t;
+  const hasNotes = (t.notes?.length ?? 0) > 0;
+  const hasHits = t.pads?.some((p) => p.steps.some((v) => v > 0)) ?? false;
+  return hasNotes || hasHits ? { ...t, printedAudio: false } : t;
+}
+
 export interface MidiTarget {
   id: string;
   param: string;
@@ -1988,13 +1999,13 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       },
       updatePatch: (id, patch) =>
         setTracks((ts) =>
-          ts.map((t) => (t.id === id && t.patch ? { ...t, patch: { ...t.patch, ...patch } } : t)),
+          ts.map((t) => (t.id === id && t.patch ? liveSound({ ...t, patch: { ...t.patch, ...patch } }) : t)),
         ),
       updatePad: (trackId, padId, patch) =>
         setTracks((ts) =>
           ts.map((t) =>
             t.id === trackId && t.pads
-              ? { ...t, pads: t.pads.map((p) => (p.id === padId ? { ...p, ...patch } : p)) }
+              ? liveSound({ ...t, pads: t.pads.map((p) => (p.id === padId ? { ...p, ...patch } : p)) })
               : t,
           ),
         ),
@@ -2365,7 +2376,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         const user = userPresets.find((p) => p.name === name);
         setTracks((ts) =>
           ts.map((t) =>
-            t.id === trackId ? { ...t, patch: user ? structuredClone(user) : applyPreset(name) } : t,
+            t.id === trackId ? liveSound({ ...t, patch: user ? structuredClone(user) : applyPreset(name) }) : t,
           ),
         );
       },
