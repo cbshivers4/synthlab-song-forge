@@ -410,6 +410,9 @@ export function ToolsRail() {
         </nav>
       )}
 
+      {/* File preview player with live scope — pinned above the mode toggle while a file plays */}
+      {open && playingFile && <PreviewScope playingFile={playingFile} />}
+
       <div className="border-t border-border p-1.5">
         <button
           type="button"
