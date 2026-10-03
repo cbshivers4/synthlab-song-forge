@@ -440,6 +440,31 @@ export function PianoRoll({ track }: { track: Track }) {
           FLAM
         </Tool>
         <Tool onClick={() => apply((n) => ({ ...n, length: Math.max(0.25, n.length * 0.5) }))}>STACCATO</Tool>
+        <Tool
+          onClick={() => {
+            // strum: spread notes that start together, low to high, like a guitar downstroke
+            const t = targets();
+            const off = new Map<string, number>();
+            const groups = new Map<number, MidiNote[]>();
+            t.forEach((n) => groups.set(Math.floor(n.step), [...(groups.get(Math.floor(n.step)) ?? []), n]));
+            groups.forEach((g, st) => g.sort((a, b) => a.pitch - b.pitch).forEach((n, i) => off.set(n.id, st + Math.min(0.9, i * 0.15))));
+            setNotes(track.id, notes.map((n) => (off.has(n.id) ? { ...n, step: off.get(n.id)! } : n)));
+          }}
+        >
+          STRUM ↑
+        </Tool>
+        <Tool
+          onClick={() => {
+            const t = targets();
+            const off = new Map<string, number>();
+            const groups = new Map<number, MidiNote[]>();
+            t.forEach((n) => groups.set(Math.floor(n.step), [...(groups.get(Math.floor(n.step)) ?? []), n]));
+            groups.forEach((g, st) => g.sort((a, b) => b.pitch - a.pitch).forEach((n, i) => off.set(n.id, st + Math.min(0.9, i * 0.15))));
+            setNotes(track.id, notes.map((n) => (off.has(n.id) ? { ...n, step: off.get(n.id)! } : n)));
+          }}
+        >
+          STRUM ↓
+        </Tool>
       </div>
 
       {/* editor */}
@@ -542,6 +567,53 @@ export function PianoRoll({ track }: { track: Track }) {
               );
             })}
           </div>
+
+          {/* pitch-bend & mod-wheel lanes: click or drag to draw, right-click a point to delete */}
+          {(["bendLane", "modLane"] as const).map((key) => {
+            const pts = track[key] ?? [];
+            const bipolar = key === "bendLane";
+            const draw = (e: React.PointerEvent<HTMLDivElement>) => {
+              e.preventDefault();
+              const r = e.currentTarget.getBoundingClientRect();
+              let cur = [...(track[key] ?? [])];
+              const put = (cx: number, cy: number) => {
+                const step = Math.max(0, Math.min(steps - 1, Math.floor(((cx - r.left) / r.width) * steps)));
+                const y = Math.min(1, Math.max(0, 1 - (cy - r.top) / r.height));
+                const value = bipolar ? Math.round((y * 2 - 1) * 20) / 20 : Math.round(y * 20) / 20;
+                cur = [...cur.filter((p) => p.step !== step), { step, value }].sort((a, b) => a.step - b.step);
+                updateTrack(track.id, { [key]: cur });
+              };
+              put(e.clientX, e.clientY);
+              const mv = (ev: PointerEvent) => put(ev.clientX, ev.clientY);
+              const up = () => { window.removeEventListener("pointermove", mv); window.removeEventListener("pointerup", up); };
+              window.addEventListener("pointermove", mv);
+              window.addEventListener("pointerup", up);
+            };
+            return (
+              <div key={key} className="relative h-12 touch-none border-t border-border bg-surface/70" onPointerDown={draw}
+                title={bipolar ? "Pitch bend: draw up/down (±2 semitones). Right-click a point to remove it." : "Mod wheel: draw vibrato depth. Right-click a point to remove it."}>
+                <span className="label-xs pointer-events-none absolute top-0.5 left-1 z-10">{bipolar ? "PITCH BEND" : "MOD WHEEL"}</span>
+                {pts.length > 0 && (
+                  <button type="button" onPointerDown={(e) => e.stopPropagation()} onClick={() => updateTrack(track.id, { [key]: undefined })}
+                    className="label-xs absolute top-0.5 right-1 z-10 text-muted-foreground hover:text-destructive">CLEAR</button>
+                )}
+                {bipolar && <div className="pointer-events-none absolute inset-x-0 top-1/2 h-px bg-border" />}
+                {pts.map((p) => (
+                  <div key={p.step}
+                    onContextMenu={(e) => { e.preventDefault(); updateTrack(track.id, { [key]: pts.filter((x) => x.step !== p.step) }); }}
+                    onPointerDown={(e) => { if (e.button === 2) e.stopPropagation(); }}
+                    className="absolute w-1.5 rounded-[1px] bg-primary"
+                    style={{
+                      left: `${(p.step / steps) * 100}%`,
+                      ...(bipolar
+                        ? p.value >= 0 ? { bottom: "50%", height: `${p.value * 50}%` } : { top: "50%", height: `${-p.value * 50}%` }
+                        : { bottom: 0, height: `${p.value * 100}%` }),
+                      minHeight: 2,
+                    }} />
+                ))}
+              </div>
+            );
+          })}
 
           {/* velocity lane */}
           <div className="relative h-16 border-t border-border bg-surface/70">

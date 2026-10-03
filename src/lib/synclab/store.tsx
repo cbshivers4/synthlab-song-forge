@@ -45,7 +45,9 @@ import type {
   TrackKind,
   Transport,
 } from "./types";
-import { clipRate, clipSeconds, SECTION_COLORS } from "./types";
+import { clipRate, clipSeconds, laneValueAt, SECTION_COLORS } from "./types";
+import { wsolaStretch } from "./stretch";
+import { encodeWav } from "./bounce";
 
 /** A persistent hardware CC destination. Namespaced parameters identify device controls. */
 /** A recorded instrument/drum take normally plays back as printed audio, which
@@ -98,6 +100,16 @@ export function replaceTakeRegion(clips: AudioClip[], start: number, end: number
     });
     return pieces;
   });
+}
+
+/** Older takes a new recording covers — kept on the new clip so the user can comp between them. */
+export function coveredTakes(clips: AudioClip[], start: number, end: number, stepDur: number): AudioClip[] {
+  const hit = clips.filter((c) => {
+    const from = c.start ?? 0;
+    const until = from + (c.length ?? c.duration) / clipRate(c) / stepDur;
+    return until > start && from < end;
+  });
+  return [...hit.map((c) => ({ ...c, alts: undefined })), ...hit.flatMap((c) => c.alts ?? [])].slice(0, 12);
 }
 
 const ccRange = (value: number, min: number, max: number, step = 0) => {
@@ -316,6 +328,10 @@ interface StudioApi extends StudioState {
   removeClip: (trackId: string, clipId: string) => void;
   /** Remove every clip, note and drum hit from a track but keep the channel, instrument and settings. */
   clearTrackContent: (id: string) => void;
+  /** Comping: swap this clip's region to an earlier take recorded over it. */
+  swapTake: (trackId: string, clipId: string, altIndex: number) => void;
+  /** Time-stretch an audio clip without changing pitch (factor > 1 = longer/slower). */
+  stretchClip: (trackId: string, clipId: string, factor: number) => Promise<void>;
   addClip: (trackId: string, clip: AudioClip) => void;
   updateClip: (trackId: string, clipId: string, patch: Partial<AudioClip>) => void;
   previewClip: (trackId: string, clipId: string) => void;
@@ -789,7 +805,16 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           );
           return;
         }
-        if (msg.type === "pitchbend") return;
+        if (msg.type === "pitchbend") {
+          // live pitch wheel: ±2 semitones on the track the keyboard is playing
+          const ch0 = msg.channel + 1;
+          const pbTarget =
+            tracksRef.current.find((t) => t.patch && t.midiChannel === ch0) ??
+            tracksRef.current.find((t) => t.patch && t.armed && (t.midiChannel == null || t.midiChannel === ch0)) ??
+            tracksRef.current.find((t) => t.patch && t.id === selectedIdRef.current);
+          if (pbTarget) getEngine().setPitchBend(pbTarget.id, (msg.value * 2 - 1) * 200);
+          return;
+        }
         const { type, pitch, velocity } = msg;
         // A track with a MIDI channel set only hears notes on that channel
         // (msg.channel is 0-based; Track.midiChannel is 1-16). Tracks set to
@@ -1068,9 +1093,14 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             // scheduler fires on whole steps only, so compare the floored step
             const step0 = Math.floor(note.step);
             if (recordedNoteIdsRef.current.has(note.id) || replacedNoteIdsRef.current.has(note.id)) continue;
-            if (step0 % len === s && (note.recordedEnd == null || (n >= step0 && n < note.recordedEnd))) triggerNote(engine, t, note.pitch, note.length * stepDur, note.velocity, swung);
+            if (step0 % len === s && (note.recordedEnd == null || (n >= step0 && n < note.recordedEnd))) triggerNote(engine, t, note.pitch, note.length * stepDur, note.velocity, swung + (note.step - step0) * stepDur);
           }
         } else if (t.patch && t.notes) {
+          // piano-roll pitch-bend / mod-wheel lanes, interpolated per step
+          const bend = laneValueAt(t.bendLane, s);
+          if (bend != null) engine.setPitchBend(t.id, bend * 200, swung);
+          const mod = laneValueAt(t.modLane, s);
+          if (mod != null) engine.setModWheel(t.id, mod, swung);
           for (const note of t.notes) {
             const step0 = Math.floor(note.step);
             // notes played live into this take were already heard — don't double them
@@ -1085,7 +1115,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
                 engine.playNote(t.id, t.patch, note.pitch + dir, stepDur * t.patch.arp.gate, note.velocity, swung + i * stepDur);
               }
             } else {
-              engine.playNote(t.id, t.patch, note.pitch, dur, note.velocity, swung);
+              engine.playNote(t.id, t.patch, note.pitch, dur, note.velocity, swung + (note.step - step0) * stepDur);
             }
           }
         }
@@ -1281,6 +1311,10 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     const newEnd = (clip.start ?? 0) + (clip.length ?? clip.duration) / stepDur;
     const oldClips = target.clips ?? [];
     const kept = replace ? replaceTakeRegion(oldClips, clip.start ?? 0, newEnd, stepDur) : oldClips;
+    if (replace) {
+      const alts = coveredTakes(oldClips, clip.start ?? 0, newEnd, stepDur);
+      if (alts.length) clip.alts = alts;
+    }
     const replaced = oldClips.filter((c) => (c.start ?? 0) < newEnd && (c.start ?? 0) + (c.length ?? c.duration) / clipRate(c) / stepDur > (clip.start ?? 0)).length;
     setTracks((ts) =>
       ts.map((t) =>
@@ -1369,9 +1403,10 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         // own notes every pattern length — grow the pattern to hold the take.
         const lastCaptured = notes.reduce((m, n) => (capturedIds.has(n.id) ? Math.max(m, Math.floor(n.step) + 1) : m), 0);
         const steps = t.kind !== "drum" && lastCaptured > t.steps ? Math.ceil(takeEnd / barSteps) * barSteps : t.steps;
+        const alts = replace ? coveredTakes(t.clips ?? [], clip.start ?? 0, newEnd, stepDur) : [];
         return {
           ...t, notes, steps, recording: false,
-          clips: [...(replace ? replaceTakeRegion(t.clips ?? [], clip.start ?? 0, newEnd, stepDur) : (t.clips ?? [])), clip],
+          clips: [...(replace ? replaceTakeRegion(t.clips ?? [], clip.start ?? 0, newEnd, stepDur) : (t.clips ?? [])), alts.length ? { ...clip, alts } : clip],
           activeClipId: clip.id, printedAudio: true,
         };
       }));
@@ -1903,6 +1938,62 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         return id;
       },
       updateTrack,
+      swapTake: (trackId, clipId, altIndex) => {
+        const stepDur = 60 / (transportRef.current.bpm || 120) / 4;
+        setTracks((ts) => ts.map((t) => {
+          if (t.id !== trackId) return t;
+          return { ...t, clips: (t.clips ?? []).map((c) => {
+            if (c.id !== clipId || !c.alts?.[altIndex]) return c;
+            const alt = c.alts[altIndex]!;
+            const start = c.start ?? 0;
+            const regionSec = (c.length ?? c.duration) / clipRate(c);
+            const altRate = clipRate(alt);
+            const into = Math.max(0, (start - (alt.start ?? 0)) * stepDur * altRate);
+            const offset = (alt.offset ?? 0) + into;
+            const length = Math.max(0.02, Math.min(regionSec * altRate, alt.duration - offset));
+            const rest = c.alts.filter((_, i) => i !== altIndex);
+            return {
+              ...alt, id: uid(), start, offset, length,
+              fadeIn: Math.min(0.01, length / 4), fadeOut: Math.min(0.01, length / 4),
+              alts: [{ ...c, alts: undefined }, ...rest],
+            };
+          }) };
+        }));
+        toast.success("Take swapped", { description: "This section now plays the earlier take. Pick again to switch back." });
+      },
+      stretchClip: async (trackId, clipId, factor) => {
+        const t = tracksRef.current.find((x) => x.id === trackId);
+        const c = t?.clips?.find((x) => x.id === clipId);
+        if (!t || !c?.url) return;
+        const engine = getEngine();
+        const buf = await engine.ensureBuffer(c.url);
+        if (!buf) { toast.error("Couldn't read this clip's audio"); return; }
+        const id = toast.loading(`Stretching ${c.name}…`);
+        await new Promise((r) => setTimeout(r, 30));
+        const sr = buf.sampleRate;
+        const from = Math.floor((c.offset ?? 0) * sr);
+        const to = Math.min(buf.length, from + Math.floor((c.length ?? c.duration) * sr));
+        const chan = (i: number) => wsolaStretch(buf.getChannelData(Math.min(i, buf.numberOfChannels - 1)).slice(from, to), 1 / factor);
+        const left = chan(0);
+        const right = buf.numberOfChannels > 1 ? chan(1) : left;
+        const url = URL.createObjectURL(encodeWav({ left, right, sampleRate: sr }));
+        const peaks: number[] = [];
+        const size = Math.max(1, Math.floor(left.length / 160));
+        for (let b = 0; b < 160; b++) {
+          let p = 0;
+          for (let i = b * size; i < Math.min(left.length, (b + 1) * size); i++) p = Math.max(p, Math.abs(left[i] ?? 0));
+          peaks.push(p);
+        }
+        const duration = left.length / sr;
+        setTracks((ts) => ts.map((x) => x.id !== trackId ? x : {
+          ...x,
+          clips: (x.clips ?? []).map((k) => k.id !== clipId ? k : {
+            ...k, url, cloudPath: undefined, peaks, duration, offset: 0, length: duration,
+            fadeIn: Math.min(k.fadeIn ?? 0, duration / 2), fadeOut: Math.min(k.fadeOut ?? 0, duration / 2),
+          }),
+        }));
+        toast.success(`Stretched to ${Math.round(factor * 100)}%`, { id, description: `${duration.toFixed(2)}s, pitch unchanged. Undo restores the original.` });
+      },
       clearTrackContent: (id) => {
         const src = tracksRef.current.find((t) => t.id === id);
         if (!src) return;

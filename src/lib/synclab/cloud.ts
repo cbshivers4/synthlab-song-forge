@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
-import type { AuxId, BusId, BusState, PluginDef, PluginInstance, SongSection, SynthPatch, Track, TrackFolder, Transport, VcaId } from "./types";
+import type { AudioClip, AuxId, BusId, BusState, PluginDef, PluginInstance, SongSection, SynthPatch, Track, TrackFolder, Transport, VcaId } from "./types";
 import type { SavedPad } from "./pad-session";
 
 const BUCKET = "synclab-cloud";
@@ -56,10 +56,12 @@ async function uploadUrl(url: string, path: string) {
 
 async function prepareSession(session: CloudSession, userId: string, projectId: string): Promise<CloudSession> {
   const tracks = await Promise.all(session.tracks.map(async (track) => {
-    const clips = await Promise.all((track.clips ?? []).map(async (clip) => {
+    const up = async (clip: AudioClip): Promise<AudioClip> => {
       const cloudPath = clip.cloudPath ?? `${userId}/${projectId}/audio/${clip.id}-${safe(clip.name)}`;
-      return clip.url ? { ...clip, cloudPath: await uploadUrl(clip.url, cloudPath), url: undefined } : clip;
-    }));
+      const alts = clip.alts ? await Promise.all(clip.alts.map(up)) : undefined;
+      return clip.url ? { ...clip, alts, cloudPath: await uploadUrl(clip.url, cloudPath), url: undefined } : { ...clip, alts };
+    };
+    const clips = await Promise.all((track.clips ?? []).map(up));
     let sampler = track.sampler;
     if (sampler?.url) {
       const cloudPath = sampler.cloudPath ?? `${userId}/${projectId}/samples/${track.id}-${safe(sampler.name)}`;
@@ -85,10 +87,13 @@ async function signedUrl(path?: string) {
 async function restoreSession(session: CloudSession): Promise<CloudSession> {
   const tracks = await Promise.all(session.tracks.map(async (track) => ({
     ...track,
-    clips: await Promise.all((track.clips ?? []).map(async (clip) => ({
-      ...clip,
-      url: clip.cloudPath ? await signedUrl(clip.cloudPath) : clip.url,
-    }))),
+    clips: await Promise.all((track.clips ?? []).map(async function down(clip: AudioClip): Promise<AudioClip> {
+      return {
+        ...clip,
+        alts: clip.alts ? await Promise.all(clip.alts.map(down)) : undefined,
+        url: clip.cloudPath ? await signedUrl(clip.cloudPath) : clip.url,
+      };
+    })),
     sampler: track.sampler
       ? { ...track.sampler, url: track.sampler.cloudPath ? await signedUrl(track.sampler.cloudPath) : track.sampler.url }
       : undefined,

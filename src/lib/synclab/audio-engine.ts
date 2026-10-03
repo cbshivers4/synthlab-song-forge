@@ -2113,6 +2113,39 @@ export class SyncLabEngine {
   private monoVoice = new Map<string, { out: GainNode; stop: (t: number) => void }>();
 
   /* ---------------- synth voice ---------------- */
+  /** Per-track pitch modulation bus (cents) feeding every synth oscillator's detune: pitch bend + mod-wheel vibrato. */
+  private pitchMods = new Map<string, { bend: ConstantSourceNode; depth: GainNode; sum: GainNode }>();
+  private pitchMod(trackId: string) {
+    let pm = this.pitchMods.get(trackId);
+    if (pm) return pm;
+    const ctx = this.init();
+    const sum = ctx.createGain();
+    const bend = ctx.createConstantSource();
+    bend.offset.value = 0;
+    bend.connect(sum);
+    const lfo = ctx.createOscillator();
+    lfo.frequency.value = 5.5;
+    const depth = ctx.createGain();
+    depth.gain.value = 0;
+    lfo.connect(depth);
+    depth.connect(sum);
+    bend.start();
+    lfo.start();
+    pm = { bend, depth, sum };
+    this.pitchMods.set(trackId, pm);
+    return pm;
+  }
+  /** Pitch bend in cents (e.g. ±200 = ±2 semitones) for every voice on this track. */
+  setPitchBend(trackId: string, cents: number, when?: number) {
+    const ctx = this.init();
+    this.pitchMod(trackId).bend.offset.setTargetAtTime(clamp(cents, -2400, 2400), when ?? ctx.currentTime, 0.008);
+  }
+  /** Mod wheel 0..1 → vibrato depth up to ±60 cents. */
+  setModWheel(trackId: string, amount: number, when?: number) {
+    const ctx = this.init();
+    this.pitchMod(trackId).depth.gain.setTargetAtTime(clamp(amount, 0, 1) * 60, when ?? ctx.currentTime, 0.02);
+  }
+
   playNote(trackId: string, patch: SynthPatch, midi: number, duration: number, velocity = 1, when?: number) {
     const ctx = this.init();
     const t0 = when ?? ctx.currentTime;
@@ -2329,6 +2362,11 @@ export class SyncLabEngine {
           osc.detune + (osc.fine ?? 0) + spread * unisonDetune + fixedMod("pitch") * 1200 + drift * 12,
           t0,
         );
+        {
+          const pmSum = this.pitchMod(trackId).sum;
+          pmSum.connect(o.detune);
+          o.addEventListener("ended", () => { try { pmSum.disconnect(o.detune); } catch { /* already gone */ } });
+        }
         // hard-sync flavour: snap the partial back toward the root pitch
         if (osc.sync) o.frequency.setValueAtTime(rootFreq * Math.round(freq / rootFreq || 1), t0);
 
