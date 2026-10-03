@@ -39,6 +39,7 @@ import {
   Volume2,
   VolumeX,
   X,
+  Circle,
 } from "lucide-react";
 import synclabLogoAsset from "@/assets/synclab-logo-neon.jpg.asset.json";
 const synclabLogo = synclabLogoAsset.url;
