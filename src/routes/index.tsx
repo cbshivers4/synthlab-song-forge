@@ -166,11 +166,13 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
         title="Drag to resize this editor"
         className="absolute inset-x-0 -top-1 z-20 h-2 cursor-ns-resize hover:bg-primary/40"
       />
-      <div className="grid min-h-14 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 border-b border-border bg-surface-2/60 px-3 py-1.5">
+      <div className="flex min-h-14 items-center gap-2 border-b border-border bg-surface-2/60 px-3 py-1.5">
         <span className="shrink-0 text-primary">{current.icon}</span>
-        <h2 className="truncate font-display text-sm font-semibold tracking-[0.12em] sm:text-[11px] sm:tracking-[0.2em]">{current.title}</h2>
-        {selected && <span className="hidden label-xs sm:inline">· {selected.name}</span>}
-        <div className="ml-auto flex items-center gap-1">
+        <h2 className="min-w-0 flex-1 truncate font-display text-sm font-semibold tracking-[0.12em] sm:text-[11px] sm:tracking-[0.2em]">
+          {current.title}
+          {selected && <span className="ml-2 hidden label-xs sm:inline">· {selected.name}</span>}
+        </h2>
+        <div className="ml-auto flex shrink-0 items-center gap-1">
           {(panel === "synth" || panel === "drums") && (
             <Button
               size="sm"
