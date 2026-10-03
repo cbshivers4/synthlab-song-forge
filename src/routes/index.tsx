@@ -11,7 +11,7 @@ import { Mastering } from "@/components/studio/Mastering";
 import { NotesPanel } from "@/components/studio/TrackNotes";
 import { Timeline } from "@/components/studio/Timeline";
 import { Mixer } from "@/components/studio/Mixer";
-import { DetachedWindow, setDetached, useDetached, type DetachId } from "@/components/studio/MixerWindow";
+import { DetachedWindow, popOutPanel, setDetached, useDetached, type DetachId } from "@/components/studio/MixerWindow";
 import { SynthEditor } from "@/components/studio/SynthEditor";
 import { DrumMachine } from "@/components/studio/DrumMachine";
 import { PianoRoll } from "@/components/studio/PianoRoll";
@@ -241,15 +241,15 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
               {float[panel === "synth" ? "synth" : "drums"] ? "Hide hardware" : "Hardware panel"}
             </Button>
           )}
-          {(panel === "mixer" || panel === "drums" || panel === "keys" || panel === "synth") && !isMobile && (
+          {(panel === "mixer" || panel === "drums" || panel === "keys" || panel === "synth") && (!isMobile || (typeof window !== "undefined" && window.matchMedia("(pointer: fine)").matches)) && (
             <Button
               size="sm"
               variant="ghost"
               title="Open in its own window — drag it to your second monitor"
               className="h-11 gap-1.5 px-2 font-mono text-[10px] tracking-widest uppercase sm:h-7"
               onClick={() => {
-                setDetached(panel as DetachId, true);
-                setPanel(null);
+                if (popOutPanel(panel as DetachId)) setPanel(null);
+                else toast.error("Window blocked", { description: "Allow pop-ups for SYNCLAB in your browser, then try Pop out again." });
               }}
             >
               <ArrowUpFromLine className="size-3.5" />

@@ -23,9 +23,7 @@ export function Scope({
   colorRef.current = color;
 
   useEffect(() => {
-    let raf = 0;
     const draw = () => {
-      raf = requestAnimationFrame(draw);
       const cv = ref.current;
       if (!cv) return;
       const ctx = cv.getContext("2d");
@@ -41,7 +39,7 @@ export function Scope({
       ctx.clearRect(0, 0, w, h);
 
       // grid
-      ctx.strokeStyle = "rgba(255,255,255,0.07)";
+      ctx.strokeStyle = getComputedStyle(cv).getPropertyValue("--border").trim();
       ctx.lineWidth = 1;
       for (let i = 1; i < 4; i++) {
         const y = (h * i) / 4;
@@ -52,7 +50,7 @@ export function Scope({
       }
 
       const engine = getEngine();
-      const accent = colorRef.current ?? "hsl(187 85% 55%)";
+      const accent = colorRef.current ?? getComputedStyle(cv).color;
       if (modeRef.current === "wave") {
         const data = engine.getScopeWave(scopeId);
         ctx.strokeStyle = accent;
@@ -74,8 +72,8 @@ export function Scope({
         const data = engine.getScopeSpectrum(scopeId);
         if (data) {
           const grad = ctx.createLinearGradient(0, 0, 0, h);
-          grad.addColorStop(0, "hsl(187 85% 55% / 0.85)");
-          grad.addColorStop(1, "hsl(187 85% 55% / 0.15)");
+          grad.addColorStop(0, accent);
+          grad.addColorStop(1, "transparent");
           ctx.fillStyle = grad;
           ctx.beginPath();
           ctx.moveTo(0, h);
@@ -94,8 +92,9 @@ export function Scope({
         }
       }
     };
-    raf = requestAnimationFrame(draw);
-    return () => cancelAnimationFrame(raf);
+    draw();
+    const timer = window.setInterval(draw, 50);
+    return () => window.clearInterval(timer);
   }, [scopeId]);
 
   if (compact) {
@@ -107,7 +106,7 @@ export function Scope({
           setMode(mode === "wave" ? "spectrum" : "wave");
         }}
         title={mode === "wave" ? "Scope — click for spectrum" : "Spectrum — click for waveform"}
-        className="panel relative block w-full overflow-hidden bg-black/40"
+        className="panel relative block w-full overflow-hidden bg-surface-2/50 text-[color:var(--device-accent,var(--primary))]"
         style={{ height }}
       >
         <canvas ref={ref} className="h-full w-full" />
