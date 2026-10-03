@@ -1161,7 +1161,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       peaks: result.peaks,
       duration: result.duration,
       url: result.url,
-      start: recStartStepRef.current,
+      start: snapRecStart(recStartStepRef.current, transportRef.current.snap),
       offset: 0,
       length: result.duration,
       gain: 1,
@@ -1218,7 +1218,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       const clip: AudioClip = {
         id: uid(), name: `${target.name} TAKE ${(target.clips?.length ?? 0) + 1}`,
         peaks: result.peaks, duration: result.duration, url: result.url,
-        start: recStartStepRef.current, offset: 0, length: result.duration, gain: 1,
+        start: snapRecStart(recStartStepRef.current, transportRef.current.snap), offset: 0, length: result.duration, gain: 1,
       };
       // Keep the editable notes/steps intact. The printed audio takes their place
       // during playback until the user explicitly switches back to the pattern.
