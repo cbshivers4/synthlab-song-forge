@@ -15,6 +15,7 @@ import {
   Scissors,
   SlidersHorizontal,
   Waves,
+  FolderOpen,
 } from "lucide-react";
 import { useState } from "react";
 import { useStudio, type PanelId } from "@/lib/synclab/store";
@@ -37,6 +38,7 @@ interface Tool {
 
 
 const TOOLS: Tool[] = [
+  { id: "files", label: "My Computer / Browser", icon: <FolderOpen className="size-4" />, panel: "browser" },
   { id: "synth", label: "Synthesizers", icon: <Music2 className="size-4" />, panel: "synth", drag: { kind: "instrument", name: "Synth" } },
   { id: "drums", label: "Drum Machine", icon: <Disc3 className="size-4" />, panel: "drums", drag: { kind: "drum", name: "Drums" } },
   { id: "beat", label: "Pad Sampler", icon: <Grid2x2 className="size-4" />, panel: "pads", drag: { kind: "sampler", name: "Pad Sampler" } },
@@ -61,6 +63,7 @@ interface Section {
 }
 
 const SECTIONS: Section[] = [
+  { id: "files", label: "Files", tools: ["files"].map(tool) },
   { id: "perform", label: "Perform", tools: ["live", "looper"].map(tool) },
   { id: "instruments", label: "Instruments", tools: ["synth", "drums", "beat", "chop", "sampler"].map(tool) },
   { id: "mix", label: "Mix & Master", tools: ["mixer", "master", "reference", "notes"].map(tool) },

@@ -26,7 +26,7 @@ import { listUserTemplates, type UserTemplate } from "@/lib/synclab/user-templat
 import { TEMPLATES, templateById } from "@/lib/synclab/templates";
 import type { DrumKitId, DrumPad } from "@/lib/synclab/types";
 import { toast } from "sonner";
-import { pickFolder, playPreview, stopPreview, onPreviewChange, type LocalFolder } from "@/lib/synclab/local-files";
+import { clipFromLocalFile, pickFolder, playPreview, stopPreview, onPreviewChange, type LocalFolder } from "@/lib/synclab/local-files";
 
 const SAMPLE_PACKS: { pack: string; samples: { name: string; kind: string }[] }[] = [
   {
@@ -143,6 +143,17 @@ export function Browser() {
   const [playingFile, setPlayingFile] = useState<string | null>(null);
   useEffect(() => onPreviewChange(setPlayingFile), []);
   useEffect(() => () => stopPreview(), []);
+  const addLocalFile = async (id: string, name: string) => {
+    try {
+      const clip = await clipFromLocalFile(id, transport.step);
+      const target = selected?.kind === "audio" ? selected.id : addTrack("audio", clip.name);
+      if (!target) return;
+      addClip(target, clip);
+      toast.success(`${name} on the timeline`, { description: "Placed at the playhead" });
+    } catch (err) {
+      toast.error("Could not read that audio file", { description: err instanceof Error ? err.message : undefined });
+    }
+  };
   const openComputerFolder = async () => {
     try {
       const f = await pickFolder();
@@ -171,6 +182,7 @@ export function Browser() {
     restore,
     removeTrack,
     setTransport,
+    transport,
   } = useStudio();
   const { setProject } = useApp();
 
@@ -515,6 +527,7 @@ export function Browser() {
                             </button>
                             <span className="flex-1 truncate font-mono text-[11px]">{x.path}</span>
                             <span className="text-[9px] text-muted-foreground">{(x.size / 1048576).toFixed(1)} MB</span>
+                            <button type="button" aria-label={`Add ${x.name} to the timeline`} title="Add at the playhead" onClick={() => void addLocalFile(x.id, x.name)} className="grid size-5 shrink-0 place-items-center text-muted-foreground hover:text-primary"><Plus className="size-3" /></button>
                           </div>
                         );
                       })}
