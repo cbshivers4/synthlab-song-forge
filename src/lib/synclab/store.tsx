@@ -1588,7 +1588,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       }
     }, 600);
     return () => window.clearTimeout(id);
-  }, [tracks, buses, vcas, auxReturns, fxChains, installedPlugins, userPresets, sections, buildSnapshot]);
+  }, [tracks, buses, vcas, auxReturns, fxChains, installedPlugins, userPresets, sections, folders, buildSnapshot]);
 
   // Bring the last session back after a refresh or a crash.
   useEffect(() => {
