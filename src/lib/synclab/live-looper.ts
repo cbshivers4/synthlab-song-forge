@@ -105,7 +105,9 @@ export class LiveLooper {
     }));
     try {
       const pc = Number(window.localStorage.getItem("synclab.looper.precount"));
-      if ([1, 2, 4].includes(pc)) this.precount = pc;
+      const raw = window.localStorage.getItem("synclab.looper.precount");
+      if (raw === null) this.precount = 1;
+      else if ([1, 2, 4].includes(pc)) this.precount = pc;
       const th = window.localStorage.getItem("synclab.looper.threshold");
       if (th && th !== "off" && Number.isFinite(Number(th))) this.threshold = Math.max(-60, Math.min(0, Number(th)));
     } catch { /* */ }
@@ -389,6 +391,15 @@ export class LiveLooper {
     if (s.state === "playing") return this.stop(i);
     if (s.state === "stopped") return this.play(i);
     await this.record(i);
+  }
+
+  /** Record on this slot with a pre-count (at least 1 bar), ignoring start-on-sound. */
+  async recordCounted(i: number) {
+    if (this.ctx.state === "suspended") await this.ctx.resume();
+    const th = this.threshold, pc = this.precount;
+    this.threshold = null;
+    this.precount = pc || 1;
+    try { await this.record(i); } finally { this.threshold = th; this.precount = pc; }
   }
 
   /** Record immediately on this slot, skipping the pre-count and start-on-sound wait. */

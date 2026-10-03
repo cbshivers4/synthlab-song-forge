@@ -36,6 +36,33 @@ function LoopDonut({ slot, send }: { slot: LoopSlot; send: (i: number) => void }
   else if (slot.state === "armed") progress = looper.phase;
   progress = Math.max(0, Math.min(1, progress));
   const levels = looper.levels(slot.index);
+  const wave = useMemo(() => {
+    const buf = slot.buffer;
+    if (!buf) return null;
+    const N = 180;
+    const data = buf.getChannelData(0);
+    const size = Math.max(1, Math.floor(data.length / N));
+    const peaks: number[] = [];
+    let max = 0;
+    for (let b = 0; b < N; b++) {
+      let p = 0;
+      for (let i = b * size, e = Math.min(data.length, (b + 1) * size); i < e; i += 4) p = Math.max(p, Math.abs(data[i] ?? 0));
+      peaks.push(p);
+      max = Math.max(max, p);
+    }
+    const norm = max > 0 ? 1 / max : 0;
+    const outer: string[] = [];
+    const inner: string[] = [];
+    peaks.forEach((p, n) => {
+      const ang = -Math.PI / 2 + (n / N) * Math.PI * 2;
+      const amp = Math.max(0.04, p * norm) * 19;
+      const o = polar(ang, 78 + amp);
+      const i = polar(ang, 78 - amp);
+      outer.push(`${o.x.toFixed(1)},${o.y.toFixed(1)}`);
+      inner.unshift(`${i.x.toFixed(1)},${i.y.toFixed(1)}`);
+    });
+    return `M${outer.join("L")}Z M${inner.join("L")}Z`;
+  }, [slot.buffer]);
   const ringColor = slot.state === "recording" ? "var(--destructive)" : slot.state === "armed" ? "var(--amber)" : slot.color;
   const circle = 2 * Math.PI * 78;
   const beatLen = 60 / (looper.bpm || 120);
@@ -50,14 +77,17 @@ function LoopDonut({ slot, send }: { slot: LoopSlot; send: (i: number) => void }
     <div className="flex min-w-0 flex-col items-center gap-2 border-b border-border pb-4">
       <Button
         type="button" variant="ghost"
-        className="relative aspect-square h-auto w-full max-w-52 rounded-full p-0 text-foreground hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-primary"
+        className="relative aspect-square h-auto w-full max-w-72 rounded-full p-0 text-foreground hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-primary"
         aria-label={`Loop ${slot.index + 1}: ${slot.state === "recording" && slot.recEnd === null ? "close recording" : labels[slot.state]}`}
         onClick={() => void looper.tap(slot.index).catch((error) => toast.error("Couldn't start the looper", { description: error instanceof Error ? error.message : undefined }))}
       >
          <svg className="absolute inset-0 !h-full !w-full overflow-visible" viewBox="0 0 200 200" aria-hidden="true">
           <circle cx="100" cy="100" r="78" fill="none" stroke="var(--border)" strokeWidth="20" />
           <circle cx="100" cy="100" r="78" fill="none" stroke={ringColor} strokeOpacity="0.22" strokeWidth="20" />
-          {levels.map((level, n) => {
+          {wave && slot.state !== "recording" && (
+            <path d={wave} fill={ringColor} fillRule="evenodd" opacity={slot.muted ? 0.35 : 0.85} />
+          )}
+          {!(wave && slot.state !== "recording") && levels.map((level, n) => {
             const angle = -Math.PI / 2 + n * Math.PI * 2 / levels.length;
             const a = polar(angle, 67);
             const b = polar(angle, 71 + Math.max(0.12, level) * 17);
@@ -76,7 +106,7 @@ function LoopDonut({ slot, send }: { slot: LoopSlot; send: (i: number) => void }
           <span className={cn("font-mono text-[10px] uppercase", slot.state === "recording" ? "text-destructive" : "text-muted-foreground")}>{slot.overdubbing ? "DUB" : slot.state === "armed" && looper.isWaitingForSignal ? "PLAY TO START" : labels[slot.state]}</span>
         </span>
       </Button>
-      <div className="flex w-full max-w-52 items-center justify-center gap-1" aria-label={`Loop ${slot.index + 1} color`}>
+      <div className="flex w-full max-w-72 items-center justify-center gap-1" aria-label={`Loop ${slot.index + 1} color`}>
         {TRACK_PALETTE.slice(slot.index % 3, slot.index % 3 + 6).map((color) => (
           <Button
             key={color.id}
@@ -96,20 +126,20 @@ function LoopDonut({ slot, send }: { slot: LoopSlot; send: (i: number) => void }
           <input className="absolute inset-0 cursor-pointer opacity-0" type="color" aria-label={`Custom color for loop ${slot.index + 1}`} onChange={(event) => looper.setColor(slot.index, event.target.value)} />
         </label>
       </div>
-      <div className="flex w-full max-w-52 items-center gap-2 px-1">
+      <div className="flex w-full max-w-72 items-center gap-2 px-1">
         <Volume2 className="size-4 shrink-0 text-muted-foreground" />
         <Slider value={[slot.volume]} min={0} max={1.2} step={0.01} onValueChange={(v) => looper.setVolume(slot.index, v[0] ?? 0)} aria-label={`Loop ${slot.index + 1} volume`} />
         <MidiLearnButton id={`looper:${slot.index}`} param="volume" label={`Loop ${slot.index + 1} volume`} />
       </div>
-      <div className="flex w-full max-w-52 items-center justify-center gap-1">
+      <div className="flex w-full max-w-72 items-center justify-center gap-1">
         <Button size="sm" variant={slot.state === "armed" ? "default" : "secondary"} className="h-10 px-2 font-mono text-[10px]" disabled={slot.state !== "empty" && slot.state !== "armed"} aria-label={`${slot.state === "armed" ? "Disarm" : "Arm"} loop ${slot.index + 1}`} title="Arm: uses the pre-count / start-on-sound / next cycle" onClick={() => void looper.tap(slot.index).catch((error) => toast.error("Couldn't start the looper", { description: error instanceof Error ? error.message : undefined }))}>ARM</Button>
-        <Button size="sm" variant={slot.state === "recording" ? "destructive" : "secondary"} className="h-10 px-2 font-mono text-[10px]" disabled={slot.state !== "empty" && !(slot.state === "recording" && slot.recEnd === null)} aria-label={`Record loop ${slot.index + 1} now`} title="Record now (skips the pre-count). In Free mode tap again to close the loop." onClick={() => void (slot.state === "recording" ? looper.tap(slot.index) : looper.recordNow(slot.index)).catch((error) => toast.error("Couldn't start the looper", { description: error instanceof Error ? error.message : undefined }))}><Circle className="size-3 fill-current text-destructive" /> REC</Button>
+        <Button size="sm" variant={slot.state === "recording" ? "destructive" : "secondary"} className="h-10 px-2 font-mono text-[10px]" disabled={slot.state !== "empty" && !(slot.state === "recording" && slot.recEnd === null)} aria-label={`Record loop ${slot.index + 1}`} title="Record with the pre-count (1 bar if pre-count is Off). In Free mode tap again to close the loop." onClick={() => void (slot.state === "recording" ? looper.tap(slot.index) : looper.recordCounted(slot.index)).catch((error) => toast.error("Couldn't start the looper", { description: error instanceof Error ? error.message : undefined }))}><Circle className="size-3 fill-current text-destructive" /> REC</Button>
         <Button size="icon" variant="secondary" className="size-10" disabled={!slot.buffer} aria-label={`Loop ${slot.index + 1} ${slot.state === "playing" ? "stop" : "play"}`} title="Play / stop" onClick={() => slot.state === "playing" ? looper.stop(slot.index) : looper.play(slot.index)}>{slot.state === "playing" ? <Square className="size-4" /> : <Play className="size-4" />}</Button>
         <Button size="icon" variant="secondary" className="size-10" disabled={slot.state !== "playing" || slot.overdubbing || looper.source === "output"} aria-label={`Overdub loop ${slot.index + 1}`} title={looper.source === "output" ? "Overdub uses mic / interface only to prevent feedback" : "Overdub one cycle"} onClick={() => void looper.overdub(slot.index).catch((error) => toast.error("Overdub failed", { description: error instanceof Error ? error.message : undefined }))}><Circle className="size-4" /></Button>
         <Button size="icon" variant="secondary" className="size-10" disabled={!slot.buffer} aria-label={`${slot.muted ? "Unmute" : "Mute"} loop ${slot.index + 1}`} title={slot.muted ? "Unmute" : "Mute"} onClick={() => looper.toggleMute(slot.index)}>{slot.muted ? <VolumeX className="size-4 text-destructive" /> : <Volume2 className="size-4" />}</Button>
         <Button size="icon" variant="secondary" className="size-10" disabled={!slot.buffer || slot.overdubbing} aria-label={`${slot.reversed ? "Restore" : "Reverse"} loop ${slot.index + 1}`} title={slot.reversed ? "Restore direction" : "Reverse"} onClick={() => looper.toggleReverse(slot.index)}><RotateCcw className={cn("size-4", slot.reversed && "text-primary")} /></Button>
       </div>
-      <div className="flex w-full max-w-52 gap-1">
+      <div className="flex w-full max-w-72 gap-1">
         <Button variant="outline" className="h-10 flex-1" disabled={!slot.buffer} onClick={() => send(slot.index)} aria-label={`Send loop ${slot.index + 1} to timeline`}><ArrowDownToLine className="size-4" /> Timeline</Button>
         <Button variant="outline" size="icon" className="size-10" disabled={slot.state === "empty"} onClick={() => looper.clear(slot.index)} aria-label={`Clear loop ${slot.index + 1}`} title="Clear"><Trash2 className="size-4" /></Button>
       </div>
@@ -191,7 +221,7 @@ export function LiveLooperView() {
         </div>
         <span className="ml-auto font-mono text-xs text-muted-foreground">{looper.mode === "sync" ? `${looper.bars} ${looper.bars === 1 ? "BAR" : "BARS"} · ${transport.bpm} BPM` : "FREE LENGTH"}</span>
       </div>
-      <div className="grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-x-4 gap-y-6 min-[560px]:grid-cols-2 2xl:grid-cols-4">
         {looper.slots.map((slot) => <LoopDonut key={slot.index} slot={slot} send={send} />)}
       </div>
       <div className="flex flex-wrap gap-2 border-t border-border pt-4">
