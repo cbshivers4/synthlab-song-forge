@@ -1,5 +1,6 @@
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Monitor, Cpu, HardDrive, Cloud, Sparkles, Waves, LayoutGrid, Plug } from "lucide-react";
+import { Monitor, Cpu, HardDrive, Cloud, Sparkles, Waves, LayoutGrid, Plug, Download, Apple, AppWindow } from "lucide-react";
 import { ARCHITECTURE, isDesktop, runtimeLabel, platformName, desktopApi, saveBytes } from "@/lib/synclab/desktop";
 import { useBridge } from "@/components/studio/PluginBridge";
 import { bridge, savedBridgeUrl } from "@/lib/synclab/bridge";
@@ -14,6 +15,60 @@ const ICONS: Record<string, typeof Monitor> = {
   ai: Sparkles,
   cloud: Cloud,
 };
+
+type ReleaseInfo = { version: string; notes?: string; downloads: Record<string, string> };
+
+const DOWNLOADS: { key: string; label: string; sub: string; Icon: typeof Monitor }[] = [
+  { key: "win32-x64", label: "Windows", sub: "64-bit installer", Icon: AppWindow },
+  { key: "darwin-arm64", label: "Mac", sub: "Apple silicon (M1–M4)", Icon: Apple },
+  { key: "darwin-x64", label: "Mac", sub: "Intel", Icon: Apple },
+];
+
+/** Download buttons fed by public/desktop-release.json; empty URLs mean that build is not published yet. */
+function DesktopDownloads() {
+  const [release, setRelease] = useState<ReleaseInfo | null>(null);
+  useEffect(() => {
+    fetch("/desktop-release.json")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => setRelease(j as ReleaseInfo | null))
+      .catch(() => setRelease(null));
+  }, []);
+  return (
+    <div className="space-y-2">
+      <div className="grid gap-2 sm:grid-cols-3">
+        {DOWNLOADS.map(({ key, label, sub, Icon }) => {
+          const url = release?.downloads?.[key] ?? "";
+          return (
+            <div key={key} className="flex flex-col gap-2 rounded-md border border-border/60 bg-background p-2.5">
+              <div className="flex items-center gap-2">
+                <Icon className="size-4 text-primary" />
+                <div>
+                  <div className="text-[13px] font-semibold">{label}</div>
+                  <div className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">{sub}</div>
+                </div>
+              </div>
+              {url ? (
+                <Button size="sm" asChild>
+                  <a href={url} download>
+                    <Download className="size-3.5" /> Download {release?.version ? `v${release.version}` : ""}
+                  </a>
+                </Button>
+              ) : (
+                <span className="rounded-sm border border-dashed border-border px-2 py-1 text-center font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                  Not published yet
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      <p className="text-[11px] leading-relaxed text-muted-foreground">
+        Installers are built and signed on a real Mac or Windows machine (see DESKTOP_BUILD.md) and published here —
+        this panel reads the live release list, so a button appears the moment a build is published. No fake links.
+      </p>
+    </div>
+  );
+}
 
 /** What the studio runs on, what the desktop shell adds, and how the layers fit together. */
 export function DesktopPanel() {
@@ -96,6 +151,11 @@ export function DesktopPanel() {
             );
           })}
         </div>
+      </div>
+
+      <div className="rounded-lg border border-border bg-surface p-3">
+        <div className="label-xs mb-2">Download the desktop app</div>
+        <DesktopDownloads />
       </div>
 
       <div className="rounded-lg border border-border bg-surface p-3">

@@ -830,7 +830,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
   return (
     <div className="border-b border-border/80">
     <div
-      className={`relative flex items-stretch transition-colors ${isSelected ? "bg-primary/10 ring-2 ring-inset ring-primary" : "hover:bg-surface/50"} ${track.hidden ? "opacity-40" : ""} ${dropping ? "ring-1 ring-primary ring-inset" : ""}`}
+      className={`relative flex items-stretch transition-colors ${isSelected ? "bg-foreground/10 ring-2 ring-inset ring-foreground" : "hover:bg-surface/50"} ${track.hidden ? "opacity-40" : ""} ${dropping ? "ring-1 ring-primary ring-inset" : ""}`}
       style={{ height: track.height ?? undefined }}
       onClick={(e) => {
         if (suppressClickRef.current) {
