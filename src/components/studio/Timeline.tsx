@@ -440,7 +440,42 @@ function VcaLevel({ track }: { track: Track }) {
 }
 
 function DrumClip({ track }: { track: Track }) {
-  const { setPanel, select, transport } = useStudio();
+  const { setPanel, select, transport, updateTrack } = useStudio();
+  /** Drag the pattern along the grid: every pad's hits rotate by the same
+   *  snapped step amount, so the whole beat shifts to a new grid position. */
+  const beginPatternDrag = (e: React.PointerEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const lane = (e.currentTarget as HTMLElement).closest("[data-lane]") as HTMLElement | null;
+    if (!lane) return;
+    const rect = lane.getBoundingClientRect();
+    const perStep = rect.width / songSteps(transport.bars);
+    const x0 = e.clientX;
+    const grid = transport.snap ?? 1;
+    const orig = (track.pads ?? []).map((p) => ({ id: p.id, steps: [...p.steps] }));
+    const len = orig[0]?.steps.length ?? 16;
+    let applied = 0;
+    const onMove = (ev: PointerEvent) => {
+      const raw = (ev.clientX - x0) / Math.max(1, perStep);
+      const d = grid > 0 ? Math.round(raw / grid) * grid : Math.round(raw);
+      if (d === applied) return;
+      applied = d;
+      const shift = ((d % len) + len) % len;
+      updateTrack(track.id, {
+        pads: (track.pads ?? []).map((p) => {
+          const o = orig.find((x) => x.id === p.id);
+          if (!o) return p;
+          return { ...p, steps: o.steps.map((_, i) => o.steps[(i - shift + len) % len]) };
+        }),
+      });
+    };
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  };
   const total = songSteps(transport.bars);
   const pads = (track.pads ?? []).filter((p) => p.steps.some((s) => s > 0));
   if (pads.length === 0)
