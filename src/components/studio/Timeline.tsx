@@ -287,8 +287,47 @@ function Waveform({ track }: { track: Track }) {
 const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 
 function MidiClip({ track }: { track: Track }) {
-  const { setPanel, select, transport } = useStudio();
+  const { setPanel, select, transport, updateTrack } = useStudio();
   const notes = track.notes ?? [];
+  /** Drag the pattern to any grid position: every note shifts by the same
+   *  snapped step delta, so the whole part lands on a measure/beat line. */
+  const beginPatternDrag = (e: React.PointerEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const lane = (e.currentTarget as HTMLElement).closest("[data-lane]") as HTMLElement | null;
+    if (!lane) return;
+    const rect = lane.getBoundingClientRect();
+    const perStep = rect.width / total;
+    const x0 = e.clientX;
+    const grid = transport.snap ?? 1;
+    const orig = notes.map((n) => ({ id: n.id, step: n.step, recordedEnd: n.recordedEnd }));
+    const el = e.currentTarget as HTMLElement;
+    el.setPointerCapture(e.pointerId);
+    const onMove = (ev: PointerEvent) => {
+      const raw = (ev.clientX - x0) / Math.max(1, perStep);
+      let d = grid > 0 ? Math.round(raw / grid) * grid : Math.round(raw * 100) / 100;
+      const minStep = Math.min(...orig.map((o) => o.step));
+      if (minStep + d < 0) d = -minStep;
+      updateTrack(track.id, {
+        notes: (track.notes ?? []).map((n) => {
+          const o = orig.find((x) => x.id === n.id);
+          if (!o) return n;
+          return {
+            ...n,
+            step: Math.max(0, o.step + d),
+            ...(o.recordedEnd != null ? { recordedEnd: Math.max(0, o.recordedEnd + d) } : {}),
+          };
+        }),
+      });
+    };
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      el.style.transform = "";
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  };
   // the pattern loops for the whole song, so draw every repeat where it is heard
   const total = songSteps(transport.bars);
   const patLen = Math.max(stepsPerBar(), track.steps || stepsPerBar());
@@ -306,7 +345,9 @@ function MidiClip({ track }: { track: Track }) {
   const rows = 12;
   return (
     <div
-      className="absolute inset-y-2 left-1 right-1 overflow-hidden rounded-[3px] border border-clip-midi/30 bg-clip-midi/10 shadow-sm transition-colors hover:bg-clip-midi/15"
+      className="absolute inset-y-2 left-1 right-1 cursor-grab overflow-hidden rounded-[3px] border border-clip-midi/30 bg-clip-midi/10 shadow-sm transition-colors hover:bg-clip-midi/15 active:cursor-grabbing"
+      onPointerDown={beginPatternDrag}
+      title="Drag to move this part to any grid position — double-click to open the piano roll"
       onDoubleClick={() => {
         select(track.id);
         setPanel("piano");
@@ -399,7 +440,42 @@ function VcaLevel({ track }: { track: Track }) {
 }
 
 function DrumClip({ track }: { track: Track }) {
-  const { setPanel, select, transport } = useStudio();
+  const { setPanel, select, transport, updateTrack } = useStudio();
+  /** Drag the pattern along the grid: every pad's hits rotate by the same
+   *  snapped step amount, so the whole beat shifts to a new grid position. */
+  const beginPatternDrag = (e: React.PointerEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const lane = (e.currentTarget as HTMLElement).closest("[data-lane]") as HTMLElement | null;
+    if (!lane) return;
+    const rect = lane.getBoundingClientRect();
+    const perStep = rect.width / songSteps(transport.bars);
+    const x0 = e.clientX;
+    const grid = transport.snap ?? 1;
+    const orig = (track.pads ?? []).map((p) => ({ id: p.id, steps: [...p.steps] }));
+    const len = orig[0]?.steps.length ?? 16;
+    let applied = 0;
+    const onMove = (ev: PointerEvent) => {
+      const raw = (ev.clientX - x0) / Math.max(1, perStep);
+      const d = grid > 0 ? Math.round(raw / grid) * grid : Math.round(raw);
+      if (d === applied) return;
+      applied = d;
+      const shift = ((d % len) + len) % len;
+      updateTrack(track.id, {
+        pads: (track.pads ?? []).map((p) => {
+          const o = orig.find((x) => x.id === p.id);
+          if (!o) return p;
+          return { ...p, steps: o.steps.map((_, i) => o.steps[(i - shift + len) % len] ?? 0) };
+        }),
+      });
+    };
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  };
   const total = songSteps(transport.bars);
   const pads = (track.pads ?? []).filter((p) => p.steps.some((s) => s > 0));
   if (pads.length === 0)
@@ -413,7 +489,9 @@ function DrumClip({ track }: { track: Track }) {
   const hits = pads.reduce((n, p) => n + p.steps.filter((s) => s > 0).length, 0);
   return (
     <div
-      className="absolute inset-y-2 left-1 right-1 overflow-hidden rounded-[3px] border border-clip-drum/30 bg-clip-drum/10 shadow-sm transition-colors hover:bg-clip-drum/15"
+      className="absolute inset-y-2 left-1 right-1 cursor-grab overflow-hidden rounded-[3px] border border-clip-drum/30 bg-clip-drum/10 shadow-sm transition-colors hover:bg-clip-drum/15 active:cursor-grabbing"
+      onPointerDown={beginPatternDrag}
+      title="Drag to shift this beat along the grid — double-click to open the drum machine"
       onDoubleClick={() => {
         select(track.id);
         setPanel("drums");
