@@ -420,6 +420,8 @@ export interface Track {
   instrument?: string | undefined;
   /** MIDI channel (1-16) this instrument listens to; undefined = all channels */
   midiChannel?: number | undefined;
+  /** octave transpose (-3…+3) applied to every note this track plays; 0/undefined = none */
+  octave?: number | undefined;
   patch?: SynthPatch | undefined;
   notes?: MidiNote[] | undefined;
   pads?: DrumPad[] | undefined;

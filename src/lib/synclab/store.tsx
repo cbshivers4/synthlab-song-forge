@@ -167,6 +167,7 @@ function triggerNote(
     const s = t.sampler;
     const chops = s.slices ?? [];
     const idx = midi - s.rootNote;
+    const shifted = midi + (t.octave ?? 0) * 12;
     if (chops.length > 1 && idx >= 0 && idx < chops.length) {
       // each key from the root upwards plays one chop at its original pitch
       const start = chops[idx] as number;
@@ -174,10 +175,10 @@ function triggerNote(
       engine.playSample(t.id, { ...s, start, end, loop: false, oneShot: true }, s.rootNote, dur, vel, when);
       return;
     }
-    engine.playSample(t.id, s, midi, dur, vel, when);
+    engine.playSample(t.id, s, shifted, dur, vel, when);
     return;
   }
-  if (t.patch) for (const pitch of processMidiThroughPlugins(midi, t.plugins)) engine.playNote(t.id, t.patch, pitch, dur, vel, when);
+  if (t.patch) for (const pitch of processMidiThroughPlugins(midi + (t.octave ?? 0) * 12, t.plugins)) engine.playNote(t.id, t.patch, pitch, dur, vel, when);
 }
 
 export type PanelId =

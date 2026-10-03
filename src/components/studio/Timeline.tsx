@@ -1092,6 +1092,13 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuSubContent></DropdownMenuSub>
+              <DropdownMenuSub><DropdownMenuSubTrigger>Octave{track.octave ? ` (${track.octave > 0 ? "+" : ""}${track.octave})` : ""}</DropdownMenuSubTrigger><DropdownMenuSubContent>
+                {[-3, -2, -1, 0, 1, 2, 3].map((o) => (
+                  <DropdownMenuItem key={o} onClick={() => updateTrack(track.id, { octave: o === 0 ? undefined : o })}>
+                    <span className="w-4">{(track.octave ?? 0) === o ? "✓" : ""}</span>{o === 0 ? "None" : `${o > 0 ? "+" : ""}${o} octave${Math.abs(o) > 1 ? "s" : ""}`}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuSubContent></DropdownMenuSub>
               <DropdownMenuSeparator />
               {(
                 <DropdownMenuSub><DropdownMenuSubTrigger>Automation</DropdownMenuSubTrigger><DropdownMenuSubContent>
