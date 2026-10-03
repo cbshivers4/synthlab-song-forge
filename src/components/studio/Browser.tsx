@@ -27,6 +27,7 @@ import { TEMPLATES, templateById } from "@/lib/synclab/templates";
 import type { DrumKitId, DrumPad } from "@/lib/synclab/types";
 import { toast } from "sonner";
 import { clipFromLocalFile, pickFolder, playPreview, stopPreview, onPreviewChange, getLocalFile, getPreviewAnalyser, getLocalFolders, addLocalFolder, removeLocalFolder, onFoldersChange } from "@/lib/synclab/local-files";
+import { LibraryPanel } from "./LibraryPanel";
 
 /** Bottom-of-browser player: shows the file being previewed with a live waveform scope. */
 function PreviewPlayer({ playingFile }: { playingFile: string | null }) {
@@ -537,6 +538,11 @@ export function Browser() {
         </div>
       )}
 
+      {/* MY LIBRARY — saved samples, synth sounds, drum kits and notes in custom folders */}
+      <div>
+        <FolderHeader id="library" icon={<Save className="size-3 text-primary" />} label="MY LIBRARY" count={0} hasMatch={false} />
+        {isOpen("library", false) && <div className="ml-3 border-l-2 border-border"><LibraryPanel /></div>}
+      </div>
       {/* COMPUTER — real audio files from a folder the user picks */}
       <div>
         <FolderHeader id="computer" icon={<FolderOpen className="size-3 text-primary" />} label="COMPUTER" count={folders.reduce((n, f) => n + f.files.length, 0)} hasMatch={folders.some((f) => f.files.some((x) => match(x.name)))} />

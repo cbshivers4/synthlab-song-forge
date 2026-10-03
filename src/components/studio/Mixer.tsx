@@ -230,7 +230,7 @@ function InsertRack({
               </button>
             </div>
             <Dialog open={open === p.id} onOpenChange={(o) => setOpen(o ? p.id : null)}>
-              <DialogContent className="max-h-[90vh] w-[min(96vw,56rem)] max-w-none overflow-y-auto">
+              <DialogContent data-fx-skin={p.kind} className="max-h-[90vh] w-[min(96vw,56rem)] max-w-none overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2 font-mono uppercase tracking-wider">
                     <button type="button" onClick={() => onBypass(p.id)} title={p.bypass ? "Turn on" : "Bypass"} aria-label="Bypass effect">

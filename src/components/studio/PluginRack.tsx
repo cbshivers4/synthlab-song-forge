@@ -242,7 +242,7 @@ export function PluginRack() {
               </Button>
             </div>
             <Dialog open={openId === p.id} onOpenChange={(o) => setOpen(o ? p.id : "")}>
-              <DialogContent className="max-h-[90vh] w-[min(96vw,60rem)] max-w-none overflow-y-auto">
+              <DialogContent data-fx-skin={p.kind} className="max-h-[90vh] w-[min(96vw,60rem)] max-w-none overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle className="font-mono uppercase tracking-wider">{p.name} <span className="text-xs text-muted-foreground">{track.name} · {p.vendor}</span></DialogTitle>
                 </DialogHeader>

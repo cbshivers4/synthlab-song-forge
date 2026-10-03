@@ -56,6 +56,39 @@ export type Database = {
         }
         Relationships: []
       }
+      library_items: {
+        Row: {
+          audio_path: string | null
+          created_at: string
+          data: Json
+          folder: string
+          id: string
+          kind: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          audio_path?: string | null
+          created_at?: string
+          data?: Json
+          folder?: string
+          id?: string
+          kind: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          audio_path?: string | null
+          created_at?: string
+          data?: Json
+          folder?: string
+          id?: string
+          kind?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           cancel_at_period_end: boolean | null
