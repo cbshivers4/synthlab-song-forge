@@ -274,7 +274,7 @@ export function Keyboard() {
               key={midi}
               onPointerDown={() => play(midi)}
               className={`relative flex-1 rounded-b-[3px] transition-colors ${
-                held.includes(midi)
+                litKeys.has(midi)
                   ? "bg-[oklch(0.75_0.12_250)]"
                   : inScale(midi)
                     ? "bg-[oklch(0.94_0.035_195)] hover:bg-[oklch(0.88_0.06_195)]"
@@ -301,7 +301,7 @@ export function Keyboard() {
             key={midi}
             onPointerDown={() => play(midi)}
             className={`absolute top-0 z-10 h-[58%] rounded-b-[3px] transition-colors ${
-               held.includes(midi)
+               litKeys.has(midi)
                  ? "bg-[oklch(0.5_0.12_250)]"
                  : inScale(midi)
                    ? "bg-[oklch(0.24_0.055_195)] hover:bg-[oklch(0.3_0.07_195)]"
