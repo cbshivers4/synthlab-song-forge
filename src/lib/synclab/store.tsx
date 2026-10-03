@@ -57,6 +57,12 @@ const MIDI_INPUT_KEY = "synclab.midi.input";
 const AUTOSAVE_KEY = "synclab.autosave.v1";
 
 /** Preserve the untouched portions of an older take when a new recording covers only part of it. */
+/** Snaps where a finished take lands to the edit grid (defaults to the nearest step). */
+export function snapRecStart(step: number, snap?: number): number {
+  const g = snap && snap > 0 ? snap : 1;
+  return Math.max(0, Math.round(step / g) * g);
+}
+
 export function replaceTakeRegion(clips: AudioClip[], start: number, end: number, stepDur: number): AudioClip[] {
   return clips.flatMap((clip) => {
     const from = clip.start ?? 0;
