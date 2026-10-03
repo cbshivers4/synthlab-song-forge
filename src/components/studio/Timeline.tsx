@@ -102,7 +102,7 @@ import { WaveformView } from "@/components/studio/WaveformView";
 const EMPTY_PEAKS: number[] = [0];
 import { LevelBar } from "@/components/studio/LevelBar";
 import { ClipEditor } from "@/components/studio/ClipEditor";
-import { clipSeconds } from "@/lib/synclab/types";
+import { clipRate, clipSeconds } from "@/lib/synclab/types";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { parseMidiFile } from "@/lib/synclab/midi-file";
 
