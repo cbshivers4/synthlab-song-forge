@@ -1,4 +1,4 @@
-# SYNCLAB Vocal Forge — desktop build guide
+# SYNCLAB — desktop build guide
 
 This document describes how the desktop application is built, what it currently does, and what
 still requires a real macOS or Windows machine. Nothing here is aspirational: if a step cannot be
@@ -56,14 +56,14 @@ npm run desktop:package -- --platform=win32  --arch=x64
 ```
 
 Output goes to `electron-release/`, zipped as
-`SYNCLAB-Vocal-Forge-<version>-<macOS|Windows>-<arch>.zip`.
+`SYNCLAB-<version>-<macOS|Windows>-<arch>.zip`.
 
 ## What still needs a real Mac / Windows machine
 
 | Artifact | Requirement |
 | --- | --- |
 | `.dmg` | macOS only (`hdiutil` / `electron-builder` on macOS). Cross-compiling produces the `.app` and a `.zip`, never a `.dmg`. |
-| macOS code signing | Apple Developer ID certificate in the keychain: `codesign --deep --force --options runtime --sign "Developer ID Application: <name>" SYNCLAB\ Vocal\ Forge.app` |
+| macOS code signing | Apple Developer ID certificate in the keychain: `codesign --deep --force --options runtime --sign "Developer ID Application: <name>" SYNCLAB.app` |
 | macOS notarization | `xcrun notarytool submit <zip> --apple-id <id> --team-id <team> --password <app-specific> --wait`, then `xcrun stapler staple`. |
 | `.exe` installer | Windows: `electron-builder --win nsis` or Squirrel/Inno Setup on a Windows host. The portable `.zip` is produced here. |
 | Windows code signing | An EV or OV code-signing certificate and `signtool sign /fd sha256 /tr <timestamp> /td sha256 /f cert.pfx /p <pass>`. |
