@@ -68,6 +68,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { clipFromLocalFile } from "@/lib/synclab/local-files";
 import { SectionLane } from "./SectionLane";
 import { useStudio } from "@/lib/synclab/store";
 import { useApp } from "@/lib/synclab/app-state";
@@ -552,14 +553,15 @@ function Lane({ track }: { track: Track }) {
 export type DragPayload =
   | { type: "instrument"; name: string; preset: string }
   | { type: "plugin"; defId: string }
-  | { type: "tool"; kind: Track["kind"]; name: string; preset?: string };
+  | { type: "tool"; kind: Track["kind"]; name: string; preset?: string }
+  | { type: "localfile"; id: string; name: string };
 
 export const readDrag = (e: React.DragEvent): DragPayload | null => {
   const raw = e.dataTransfer.getData("application/synclab") || e.dataTransfer.getData("text/plain");
   if (!raw) return null;
   try {
     const v = JSON.parse(raw) as DragPayload;
-    return v?.type === "instrument" || v?.type === "plugin" || v?.type === "tool" ? v : null;
+    return v?.type === "instrument" || v?.type === "plugin" || v?.type === "tool" || v?.type === "localfile" ? v : null;
   } catch {
     return null;
   }
@@ -579,6 +581,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
   const { selectedId, selectedIds, select, toggleSelectId, updateTrack, removeTrack, duplicateTrack, moveTrack, setPanel, changeInstrument, installedPlugins, addPlugin, editTool, splitClipAt, razorAt, toggleStep, toggleAutomationLane, copyTrack, cutTrack, pasteTrack, clipboardName } =
     useStudio();
   const { transport, setNotes, loadSample, fxChains } = useStudio();
+  const fileStudio = useStudio();
   const advanced = useApp().mode === "advanced";
 
   const [renaming, setRenaming] = useState(false);
@@ -706,6 +709,24 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
     if (!payload) return;
     e.preventDefault();
     e.stopPropagation();
+    if (payload.type === "localfile") {
+      void (async () => {
+        try {
+          const clip = await clipFromLocalFile(payload.id, transport.step);
+          if (track.kind === "audio") {
+            fileStudio.addClip(track.id, clip);
+            select(track.id);
+          } else {
+            const id = fileStudio.addTrack("audio", clip.name);
+            if (id) fileStudio.addClip(id, clip);
+          }
+          toast.success(`${payload.name} on the timeline`, { description: track.kind === "audio" ? `Added to ${track.name} at the playhead` : "Placed on a new audio track" });
+        } catch (err) {
+          toast.error("Could not read that audio file", { description: err instanceof Error ? err.message : undefined });
+        }
+      })();
+      return;
+    }
     if (payload.type === "instrument") {
       if (track.patch) {
         changeInstrument(track.id, payload.preset);
@@ -2612,6 +2633,16 @@ export function Timeline() {
             const payload = readDrag(e);
             if (!payload) return;
             e.preventDefault();
+            if (payload.type === "localfile") {
+              void clipFromLocalFile(payload.id, transport.step)
+                .then((clip) => {
+                  const id = addTrack("audio", clip.name);
+                  if (id) addClip(id, clip);
+                  toast.success(`${payload.name} on the timeline`, { description: "Placed on a new audio track at the playhead" });
+                })
+                .catch((err) => toast.error("Could not read that audio file", { description: err instanceof Error ? err.message : undefined }));
+              return;
+            }
             if (payload.type === "instrument") {
               addTrack("instrument", payload.name.toUpperCase(), payload.preset);
               toast.success(`${payload.name} added as a new channel`);
