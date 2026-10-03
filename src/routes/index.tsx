@@ -11,7 +11,7 @@ import { Mastering } from "@/components/studio/Mastering";
 import { NotesPanel } from "@/components/studio/TrackNotes";
 import { Timeline } from "@/components/studio/Timeline";
 import { Mixer } from "@/components/studio/Mixer";
-import { MixerWindow } from "@/components/studio/MixerWindow";
+import { DetachedWindow, setDetached, useDetached, type DetachId } from "@/components/studio/MixerWindow";
 import { SynthEditor } from "@/components/studio/SynthEditor";
 import { DrumMachine } from "@/components/studio/DrumMachine";
 import { PianoRoll } from "@/components/studio/PianoRoll";
@@ -102,10 +102,62 @@ export const Route = createFileRoute("/")({
   component: Studio,
 });
 
+function DetachedPanels() {
+  const ids = useDetached();
+  const { selected, tracks } = useStudio();
+  const drumTrack = selected?.kind === "drum" ? selected : tracks.find((t) => t.kind === "drum");
+  const synthTrack = selected?.patch ? selected : tracks.find((t) => t.patch);
+  const meta: Record<DetachId, { title: string; icon: React.ReactNode; body: React.ReactNode }> = {
+    mixer: { title: "MIXER", icon: <SlidersHorizontal className="size-4" />, body: <Mixer /> },
+    keys: { title: "KEYBOARD", icon: <KeyboardMusic className="size-4" />, body: <Keyboard /> },
+    drums: {
+      title: "DRUM MACHINE",
+      icon: <Disc3 className="size-4" />,
+      body: drumTrack ? <DrumMachine track={drumTrack} /> : <p className="text-sm text-muted-foreground">Add a drum machine track to program a beat.</p>,
+    },
+    synth: {
+      title: "INSTRUMENT EDITOR",
+      icon: <Music2 className="size-4" />,
+      body: synthTrack ? (
+        <>
+          <p className="label-xs mb-3">Editing {synthTrack.name}</p>
+          <SynthEditor track={synthTrack} />
+        </>
+      ) : (
+        <p className="text-sm text-muted-foreground">Add an instrument track to open the synthesizer.</p>
+      ),
+    },
+  };
+  return (
+    <>
+      {ids.map((id) => (
+        <DetachedWindow key={id} id={id} title={meta[id].title} onClose={() => setDetached(id, false)}>
+          <div className="rack flex h-full flex-col">
+            <div className="flex items-center gap-2 border-b border-border bg-surface-2/60 px-3 py-1.5">
+              <span className="text-primary">{meta[id].icon}</span>
+              <h2 className="font-display text-[11px] font-semibold tracking-[0.2em]">{meta[id].title}</h2>
+              <span className="label-xs">· detached</span>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="ml-auto h-7 gap-1.5 font-mono text-[10px] tracking-widest uppercase"
+                onClick={() => setDetached(id, false)}
+              >
+                <ArrowDownToLine className="size-3.5" />
+                Dock
+              </Button>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto p-3">{meta[id].body}</div>
+          </div>
+        </DetachedWindow>
+      ))}
+    </>
+  );
+}
+
 function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: FloatState) => FloatState) => void }) {
   const isMobile = useIsMobile();
   const { selected, tracks, panel, setPanel, select } = useStudio();
-  const [mixerDetached, setMixerDetached] = useState(false);
   // Resizable editor height, remembered between sessions.
   const [rackH, setRackH] = useState(() => {
     if (typeof window === "undefined") return 380;
@@ -189,15 +241,19 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
               {float[panel === "synth" ? "synth" : "drums"] ? "Hide hardware" : "Hardware panel"}
             </Button>
           )}
-          {panel === "mixer" && (
+          {(panel === "mixer" || panel === "drums" || panel === "keys" || panel === "synth") && !isMobile && (
             <Button
               size="sm"
               variant="ghost"
-               className="h-11 gap-1.5 px-2 font-mono text-[10px] tracking-widest uppercase sm:h-7"
-              onClick={() => setMixerDetached((d) => !d)}
+              title="Open in its own window — drag it to your second monitor"
+              className="h-11 gap-1.5 px-2 font-mono text-[10px] tracking-widest uppercase sm:h-7"
+              onClick={() => {
+                setDetached(panel as DetachId, true);
+                setPanel(null);
+              }}
             >
-              {mixerDetached ? <ArrowDownToLine className="size-3.5" /> : <ArrowUpFromLine className="size-3.5" />}
-              {mixerDetached ? "Dock" : "Pop out"}
+              <ArrowUpFromLine className="size-3.5" />
+              Pop out
             </Button>
           )}
           <Button size="icon" variant="secondary" className="size-12 sm:size-7" onClick={() => setPanel(null)} aria-label="Close editor">
@@ -206,32 +262,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
         </div>
       </div>
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3 pb-24 sm:pb-3">
-      {panel === "mixer" &&
-        (mixerDetached ? (
-          <MixerWindow onClose={() => setMixerDetached(false)}>
-            <div className="rack flex h-full flex-col">
-              <div className="flex items-center gap-2 border-b border-border bg-surface-2/60 px-3 py-1.5">
-                <SlidersHorizontal className="size-4 text-primary" />
-                <h2 className="font-display text-[11px] font-semibold tracking-[0.2em]">MIXER</h2>
-                <span className="label-xs">· detached</span>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="ml-auto h-7 gap-1.5 font-mono text-[10px] tracking-widest uppercase"
-                  onClick={() => setMixerDetached(false)}
-                >
-                  <ArrowDownToLine className="size-3.5" />
-                  Dock
-                </Button>
-              </div>
-              <div className="min-h-0 flex-1 overflow-y-auto p-3">
-                <Mixer />
-              </div>
-            </div>
-          </MixerWindow>
-        ) : (
-          <Mixer />
-        ))}
+      {panel === "mixer" && <Mixer />}
       {panel === "synth" &&
         (synthTrack ? (
           <>
@@ -522,6 +553,7 @@ function StudioWorkspace() {
           <h1 className="sr-only">SYNCLAB Studio — browser digital audio workstation</h1>
           <Timeline />
           <Panels float={float} setFloat={setFloat} />
+          <DetachedPanels />
           <DeviceBar />
         </main>
       </div>
