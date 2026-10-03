@@ -644,6 +644,12 @@ export class SyncLabEngine {
     const key = JSON.stringify(active.map((pl) => [pl.kind, pl.params.map((x) => x.value)]));
     const prev = this.fxInserts.get(targetId);
     if (prev?.key === key) return;
+    if (prev && this.tryLiveUpdate(targetId, active, prev.key)) {
+      prev.key = key;
+      this.rememberParams(targetId, active);
+      return;
+    }
+    this.rememberParams(targetId, active);
 
     // The source is disconnected only on its first insert. Subsequent edits
     // crossfade two parallel paths; disconnecting it every time cuts the sound.
