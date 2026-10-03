@@ -1810,21 +1810,10 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         const endOf = (t: Track) => (t.clips ?? []).reduce((m, c) => Math.max(m, (c.start ?? 0) + (c.length ?? 0)), 0);
         const at = atEnd ? endOf(target) : transportRef.current.step;
         const clip: AudioClip = { ...(structuredClone(src) as AudioClip), id: uid(), start: at };
-        if (target.kind === "drum" || target.kind === "instrument" || target.kind === "midi") {
-          const nid = uid();
-          setTracks((ts) => {
-            const nt = { ...newTrack("audio", clip.name, ts.length), id: nid, clips: [clip], activeClipId: clip.id };
-            const i = ts.findIndex((t) => t.id === target.id);
-            const next = [...ts];
-            next.splice(i + 1, 0, nt);
-            return next;
-          });
-          setSelectedId(nid);
-          toast.success(`${clip.name} pasted on a new audio track`, { description: `${target.name} plays notes, so the audio went on its own track below it.` });
-          return;
-        }
+        const isNotes = target.kind === "drum" || target.kind === "instrument" || target.kind === "midi";
+        // Paste onto the selected track itself; note tracks switch to WAVE so the audio plays there.
         setTracks((ts) =>
-          ts.map((t) => (t.id === target.id ? { ...t, clips: [...(t.clips ?? []), clip], activeClipId: clip.id } : t)),
+          ts.map((t) => (t.id === target.id ? { ...t, clips: [...(t.clips ?? []), clip], activeClipId: clip.id, ...(isNotes ? { printedAudio: true } : {}) } : t)),
         );
         toast.success(`${clip.name} pasted on ${target.name}`, { description: `At step ${at} — drag it anywhere from there.` });
       },
