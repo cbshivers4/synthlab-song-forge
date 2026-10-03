@@ -116,16 +116,23 @@ export function TopBar() {
             <Square className="size-4" />
           </TBtn>
           <TBtn label="REC" danger active={transport.recording} onClick={toggleRecord}>
-            <span
-              className={`size-4 rounded-full bg-destructive ${transport.recording ? "animate-pulse" : ""}`}
-              style={{
-                boxShadow: transport.recording
-                  ? "0 0 0 2px color-mix(in oklab, var(--destructive) 45%, transparent), 0 0 14px 3px color-mix(in oklab, var(--destructive) 75%, transparent)"
-                  : "0 0 0 1px color-mix(in oklab, var(--destructive) 55%, transparent), 0 0 8px 1px color-mix(in oklab, var(--destructive) 45%, transparent)",
-                background:
-                  "radial-gradient(circle at 35% 30%, color-mix(in oklab, var(--destructive) 55%, white), var(--destructive) 55%, color-mix(in oklab, var(--destructive) 75%, black))",
-              }}
-            />
+            <span className="relative flex size-4 items-center justify-center">
+              <span
+                className={`absolute -inset-1 rounded-full border border-destructive ${
+                  transport.recording ? "animate-pulse" : "opacity-0"
+                }`}
+              />
+              <span
+                className="size-4 rounded-full"
+                style={{
+                  boxShadow: transport.recording
+                    ? "0 0 0 2px color-mix(in oklab, var(--destructive) 55%, transparent), 0 0 16px 4px color-mix(in oklab, var(--destructive) 85%, transparent)"
+                    : "0 0 0 1px color-mix(in oklab, var(--destructive) 55%, transparent), 0 0 8px 1px color-mix(in oklab, var(--destructive) 45%, transparent)",
+                  background:
+                    "radial-gradient(circle at 35% 30%, color-mix(in oklab, var(--destructive) 55%, white), var(--destructive) 55%, color-mix(in oklab, var(--destructive) 75%, black))",
+                }}
+              />
+            </span>
           </TBtn>
         </div>
 
