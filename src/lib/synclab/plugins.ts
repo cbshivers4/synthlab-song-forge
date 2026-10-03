@@ -179,6 +179,7 @@ export const BUILT_IN_PLUGINS: PluginDef[] = [
   def("Analog Filter", "SYNCLAB", "Built-in", "filter"),
   def("Tube Drive", "SYNCLAB", "Built-in", "drive"),
   def("Bus Compressor", "SYNCLAB", "Built-in", "compressor"),
+  def("Stereo Delay", "SYNCLAB", "Built-in", "delay"),
   def("Tape Echo", "SYNCLAB", "Built-in", "delay"),
   def("Stereo Width", "SYNCLAB", "Built-in", "width"),
   def("Utility Gain", "SYNCLAB", "Built-in", "gain"),
