@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { QWERTY_MAP, qwertyEnabled, qwertyOctave, setQwertyOctave } from "@/lib/synclab/qwerty";
 import { barBeat } from "@/lib/synclab/timebase";
 import { createFileRoute } from "@tanstack/react-router";
 import { ArrowDownToLine, ArrowUpFromLine, AudioLines, AudioWaveform, Cpu, Gauge, Disc3, FileSearch, FolderOpen, Grid2x2, KeyboardMusic, Music2, NotebookPen, Palette, Piano, Radio, SlidersHorizontal, Split, Settings2, Sparkles, Waves, X } from "lucide-react";
@@ -373,12 +374,26 @@ function FloatingDevices({ float, setFloat }: { float: FloatState; setFloat: (f:
 
 /** Global DAW keyboard shortcuts. */
 function useShortcuts() {
-  const { togglePlay, toggleRecord, stop, selected, duplicateTrack, removeTrack, setPanel, copyTrack, cutTrack, pasteTrack, selectAll, splitAtPlayhead, setEditTool, undo, redo } =
+  const { togglePlay, toggleRecord, stop, selected, duplicateTrack, removeTrack, setPanel, copyTrack, cutTrack, pasteTrack, selectAll, splitAtPlayhead, setEditTool, undo, redo, tracks, previewNote } =
     useStudio();
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement | null;
       if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
+      // Typing keys play the armed (or selected) instrument, like a DAW's computer MIDI keyboard.
+      if (!e.metaKey && !e.ctrlKey && !e.altKey && qwertyEnabled()) {
+        const isPlayable = (t?: { kind: string; patch?: unknown }) => !!t && (t.kind === "instrument" || t.kind === "midi" || t.kind === "sampler");
+        const target = tracks.find((t) => t.armed && isPlayable(t)) ?? (isPlayable(selected) ? selected : undefined);
+        const k = e.key.toLowerCase();
+        if (target && (k in QWERTY_MAP || k === "z" || k === "x")) {
+          e.preventDefault();
+          if (e.repeat) return;
+          if (k === "z") { setQwertyOctave(qwertyOctave() - 1); toast(`Typing keys octave C${qwertyOctave()}`); return; }
+          if (k === "x") { setQwertyOctave(qwertyOctave() + 1); toast(`Typing keys octave C${qwertyOctave()}`); return; }
+          previewNote(target.id, (qwertyOctave() + 1) * 12 + QWERTY_MAP[k]!);
+          return;
+        }
+      }
       const meta = e.metaKey || e.ctrlKey;
       if (meta) {
         const k = e.key.toLowerCase();
@@ -460,7 +475,7 @@ function useShortcuts() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [togglePlay, toggleRecord, stop, selected, duplicateTrack, removeTrack, setPanel, copyTrack, cutTrack, pasteTrack, selectAll, splitAtPlayhead, setEditTool, undo, redo]);
+  }, [togglePlay, toggleRecord, stop, selected, duplicateTrack, removeTrack, setPanel, copyTrack, cutTrack, pasteTrack, selectAll, splitAtPlayhead, setEditTool, undo, redo, tracks, previewNote]);
 }
 
 function StudioWorkspace() {
