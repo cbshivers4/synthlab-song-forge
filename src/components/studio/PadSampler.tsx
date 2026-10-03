@@ -409,7 +409,7 @@ export function PadSampler() {
     ensureTrack();
     const loaded = await getEngine().loadSampleFile(blob, `REC ${r.pad + 1}`);
     setPadBank({ ...getPadBank(), [r.pad]: makePad(loaded) });
-    setSel(r.pad);
+    // Stay on the pad grid — only open the pad's detail view when the user taps the pad.
   };
 
   /** press and hold a pad to record into it, release to stop */
@@ -417,7 +417,6 @@ export function PadSampler() {
     if (recRef.current || holdRef.current) return;
     holdRef.current = { pad: i, active: true };
     setRecPad(i);
-    setSel(i);
     await startMic(i);
     if (!recRef.current) {
       // microphone refused — clear the hold so the next press can try again
