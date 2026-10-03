@@ -136,3 +136,10 @@
 ## Current request
 - [x] Show real moving audio displays in bottom instrument and effect modules.
 - [x] Make pop-outs open from the click and give desktop windows a draggable header; browser-tested all four panels, Mac hardware test still needed.
+
+## Branding: SYNCLAB, not Lovable (Oct 3)
+- [x] Hide the "Edit with Lovable" badge on the published site; verified 0 visible matches on the published URL
+- [x] Rewrite README.md to SYNCLAB Vocal Forge branding
+- [x] Set the support contact to cbshivers@gmail.com and verify it shows in-app ("Prefer email? cbshivers@gmail.com")
+- [x] Fix the hidden backend break: public.has_role lacked EXECUTE for authenticated, so every RLS policy using it failed and support settings read as empty
+- [ ] Point the app's own links (About tab Website, electron/app-info.cjs, index.tsx og:url/canonical, sitemap) at a custom domain once one is connected — they currently use the real published lovable.app URL
