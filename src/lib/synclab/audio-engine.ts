@@ -1,3 +1,4 @@
+import { keysSnapshot, subscribeKeys } from "./active-keys";
 import type { DrumKitId, DrumPad, PluginInstance, SynthPatch, Track } from "./types";
 import { getInputChannel, getInputGainDb, getOutputDevice, openMicOrThrow, preferredRecordingMime, releaseMic } from "./mic";
 
@@ -115,6 +116,8 @@ interface ChannelStrip {
 }
 
 type AutomatableAudioParam = { param: AudioParam; min: number; max: number; logarithmic?: boolean };
+
+const vocoderCleanups = new Map<string, () => void>();
 
 export class SyncLabEngine {
   ctx: AudioContext | null = null;
@@ -1076,7 +1079,7 @@ export class SyncLabEngine {
             const modBp = ctx.createBiquadFilter();
             modBp.type = "bandpass";
             modBp.frequency.value = f;
-            modBp.Q.value = q;
+            modBp.Q.value = q / width;
 
             // envelope follower: rectify then smooth
             const rect = ctx.createWaveShaper();
@@ -1092,7 +1095,7 @@ export class SyncLabEngine {
             const carBp = ctx.createBiquadFilter();
             carBp.type = "bandpass";
             carBp.frequency.value = clamp(f * formant, 40, 18000);
-            carBp.Q.value = q;
+            carBp.Q.value = q / width;
             const vca = ctx.createGain();
             vca.gain.value = 0;
 
