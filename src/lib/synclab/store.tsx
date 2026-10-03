@@ -844,6 +844,18 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     }
   }, [tracks]);
 
+  // A new recording pass starts with an empty "played live" list, so earlier
+  // takes keep sounding while only this pass's live notes skip re-voicing.
+  useEffect(() => {
+    if (transport.recording) {
+      recordedNoteIdsRef.current = new Set();
+      clearLiveHits();
+    } else {
+      clearLiveHits();
+    }
+  }, [transport.recording]);
+
+
   useEffect(() => {
     if (typeof window === "undefined") return;
     for (const [id, b] of Object.entries(buses)) getEngine().setBus(id, b.volume, b.muted);
