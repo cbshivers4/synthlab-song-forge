@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronUp, Disc3, AudioLines, Music2, Piano, Plus, Power, X } from "lucide-react";
 import { useStudio } from "@/lib/synclab/store";
 import { BUILT_IN_PLUGINS } from "@/lib/synclab/plugins";
-import type { PluginInstance, PluginKind, Track } from "@/lib/synclab/types";
+import type { PluginInstance, Track } from "@/lib/synclab/types";
 import { Knob } from "./Knob";
 import { Button } from "@/components/ui/button";
 
@@ -31,7 +31,6 @@ function EffectModule({ track, plugin }: { track: Track; plugin: PluginInstance 
           role="button"
           tabIndex={0}
           aria-label={plugin.bypass ? `Turn ${plugin.name} on` : `Turn ${plugin.name} off`}
-          className="grid size-5 shrink-0 place-items-center rounded-full border"
           className="device-module-power grid size-5 shrink-0 place-items-center rounded-full border"
           onClick={(e) => {
             e.stopPropagation();

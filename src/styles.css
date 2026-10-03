@@ -176,6 +176,30 @@
   box-shadow: var(--shadow-glow);
 }
 
+/* Device chain: each processor family has its own console color. */
+[data-device-kind="eq"], [data-device-kind="paraeq"], [data-device-kind="audio"] { --device-accent: var(--chart-1); }
+[data-device-kind="filter"], [data-device-kind="stepfilter"], [data-device-kind="sampler"] { --device-accent: var(--chart-5); }
+[data-device-kind="drive"], [data-device-kind="bitcrusher"], [data-device-kind="drums"] { --device-accent: var(--clip-drum); }
+[data-device-kind="compressor"], [data-device-kind="limiter"], [data-device-kind="gate"], [data-device-kind="transient"] { --device-accent: var(--amber); }
+[data-device-kind="delay"], [data-device-kind="synth"] { --device-accent: var(--chart-4); }
+[data-device-kind="reverb"] { --device-accent: var(--chart-1); }
+[data-device-kind="chorus"], [data-device-kind="flanger"], [data-device-kind="phaser"], [data-device-kind="resonator"], [data-device-kind="scalechord"] { --device-accent: var(--magenta); }
+[data-device-kind="tremolo"], [data-device-kind="autopan"], [data-device-kind="width"] { --device-accent: var(--chart-5); }
+[data-device-kind="vocoder"] { --device-accent: var(--primary); }
+[data-device-kind="gain"] { --device-accent: var(--foreground); }
+.device-module {
+  --device-accent: var(--primary);
+  border-color: color-mix(in oklab, var(--device-accent) 66%, var(--border));
+  background: linear-gradient(160deg, color-mix(in oklab, var(--device-accent) 25%, var(--surface-2)), var(--surface) 84%);
+  box-shadow: inset 3px 0 var(--device-accent);
+}
+.device-module:hover { border-color: var(--device-accent); }
+.device-module-header {
+  background: color-mix(in oklab, var(--device-accent) 30%, var(--surface-2));
+  border-bottom: 1px solid color-mix(in oklab, var(--device-accent) 38%, var(--border));
+}
+.device-module-power { border-color: var(--device-accent); color: var(--device-accent); }
+
 .creative-tool {
   --tool-accent: var(--primary);
   --tool-surface: color-mix(in oklab, var(--tool-accent) 10%, var(--surface));
