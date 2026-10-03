@@ -11,6 +11,7 @@ import {
   Plus,
   Save,
   Search,
+  Square,
   Sparkles,
   Star,
   Waves,
