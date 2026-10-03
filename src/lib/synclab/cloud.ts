@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
-import type { AuxId, BusId, BusState, PluginDef, PluginInstance, SongSection, SynthPatch, Track, TrackFolder, Transport, VcaId } from "./types";
+import type { AudioClip, AuxId, BusId, BusState, PluginDef, PluginInstance, SongSection, SynthPatch, Track, TrackFolder, Transport, VcaId } from "./types";
 import type { SavedPad } from "./pad-session";
 
 const BUCKET = "synclab-cloud";
