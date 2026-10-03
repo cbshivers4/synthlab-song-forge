@@ -10,6 +10,24 @@ export const AUDIO_EXT = /\.(mp3|wav|wave|aif|aiff|m4a|aac|ogg|flac|webm)$/i;
 const registry = new Map<string, LocalFile>();
 export const getLocalFile = (id: string) => registry.get(id);
 
+/* ---------- opened folders, shared between the browser panel and the tools rail ---------- */
+let folders: LocalFolder[] = [];
+const folderListeners = new Set<() => void>();
+const emitFolders = () => folderListeners.forEach((l) => l());
+export const getLocalFolders = () => folders;
+export function addLocalFolder(f: LocalFolder) {
+  folders = [f, ...folders];
+  emitFolders();
+}
+export function removeLocalFolder(id: string) {
+  folders = folders.filter((f) => f.id !== id);
+  emitFolders();
+}
+export const onFoldersChange = (fn: () => void) => {
+  folderListeners.add(fn);
+  return () => void folderListeners.delete(fn);
+};
+
 function toFolder(name: string, entries: { file: File; path: string }[]): LocalFolder {
   const files = entries
     .filter((e) => AUDIO_EXT.test(e.file.name))

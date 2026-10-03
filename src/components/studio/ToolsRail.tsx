@@ -16,8 +16,12 @@ import {
   SlidersHorizontal,
   Waves,
   FolderOpen,
+  Play,
+  Plus,
+  Square,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { addLocalFolder, getLocalFolders, onFoldersChange, onPreviewChange, pickFolder, playPreview, stopPreview } from "@/lib/synclab/local-files";
 import { useStudio, type PanelId } from "@/lib/synclab/store";
 import { useApp } from "@/lib/synclab/app-state";
 import type { TrackKind } from "@/lib/synclab/types";
@@ -77,6 +81,27 @@ export function ToolsRail() {
   const [open, setOpen] = useState(true);
   const [pluginDrop, setPluginDrop] = useState(false);
   const [closedSections, setClosedSections] = useState<Record<string, boolean>>({});
+  const [folders, setFolders] = useState(getLocalFolders);
+  const [playingFile, setPlayingFile] = useState<string | null>(null);
+  const [openFolders, setOpenFolders] = useState<Record<string, boolean>>({});
+  useEffect(() => onFoldersChange(() => setFolders(getLocalFolders())), []);
+  useEffect(() => onPreviewChange(setPlayingFile), []);
+
+  const openComputerFolder = async () => {
+    try {
+      const f = await pickFolder();
+      if (!f) return;
+      if (f.files.length === 0) {
+        toast("No audio files in that folder", { description: "Looking for WAV, MP3, AIFF, FLAC, OGG and M4A." });
+        return;
+      }
+      addLocalFolder(f);
+      setOpenFolders((o) => ({ ...o, [f.id]: true }));
+      toast.success(`${f.name}: ${f.files.length} audio file${f.files.length === 1 ? "" : "s"}`);
+    } catch (err) {
+      toast.error("Couldn't open that folder", { description: err instanceof Error ? err.message : undefined });
+    }
+  };
 
   const visible = (t: Tool) => advanced || !t.advanced;
   const sections = SECTIONS.map((s) => ({ ...s, tools: s.tools.filter(visible) })).filter((s) => s.tools.length > 0);
@@ -214,6 +239,78 @@ export function ToolsRail() {
                 {!closed && (
                   <div className="space-y-0.5 pb-0.5 pl-1.5">
                     {s.tools.map((t) => renderToolButton(t, false))}
+
+                    {/* My Files lives inside the Files section — same folders as the browser */}
+                    {s.id === "files" && (
+                      <div className="pt-1.5">
+                        <div className="px-2 pb-1 font-mono text-[9px] tracking-[0.18em] text-muted-foreground/70">
+                          MY FILES — PREVIEW, THEN DRAG ONTO THE TIMELINE
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => void openComputerFolder()}
+                          className="flex w-full items-center gap-2 rounded-[3px] px-2 py-1.5 text-left text-xs text-primary transition-colors hover:bg-surface-2"
+                        >
+                          <Plus className="size-3.5 shrink-0" />
+                          <span className="font-medium tracking-wide">Open a folder…</span>
+                        </button>
+                        {folders.length === 0 ? (
+                          <p className="px-2 text-[10px] leading-snug text-muted-foreground/80">
+                            No folders open yet. Files stay on your device and clear when you reload.
+                          </p>
+                        ) : (
+                          folders.map((f) => {
+                            const isOpen = !!openFolders[f.id];
+                            return (
+                              <div key={f.id}>
+                                <button
+                                  type="button"
+                                  onClick={() => setOpenFolders((o) => ({ ...o, [f.id]: !o[f.id] }))}
+                                  aria-expanded={isOpen}
+                                  className="flex w-full items-center gap-1.5 rounded-[3px] px-2 py-1 text-left text-xs text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground"
+                                >
+                                  <ChevronDown className={`size-3 shrink-0 transition-transform duration-200 ${isOpen ? "" : "-rotate-90"}`} />
+                                  <FolderOpen className="size-3.5 shrink-0 text-amber-400" />
+                                  <span className="min-w-0 flex-1 truncate font-medium tracking-wide">{f.name}</span>
+                                  <span className="shrink-0 font-mono text-[8px] text-muted-foreground/70">{f.files.length}</span>
+                                </button>
+                                {isOpen && (
+                                  <div className="ml-4 border-l border-border/70">
+                                    {f.files.map((x) => {
+                                      const playing = playingFile === x.id;
+                                      return (
+                                        <div
+                                          key={x.id}
+                                          draggable
+                                          onDragStart={(e) => {
+                                            const payload = JSON.stringify({ type: "localfile", id: x.id, name: x.name });
+                                            e.dataTransfer.setData("application/synclab", payload);
+                                            e.dataTransfer.setData("text/plain", payload);
+                                            e.dataTransfer.effectAllowed = "copy";
+                                          }}
+                                          title={`${x.path} — drag onto the timeline`}
+                                          className={`group flex cursor-grab items-center gap-1.5 rounded-[3px] px-2 py-1 active:cursor-grabbing ${playing ? "bg-primary/15" : "hover:bg-surface-2"}`}
+                                        >
+                                          <button
+                                            type="button"
+                                            aria-label={playing ? `Stop ${x.name}` : `Play ${x.name}`}
+                                            onClick={() => (playing ? stopPreview() : void playPreview(x.id).catch(() => toast.error(`Can't play ${x.name}`, { description: "This browser can't decode that file type." })))}
+                                            className="grid size-5 shrink-0 place-items-center rounded-sm border border-border text-primary hover:border-primary"
+                                          >
+                                            {playing ? <Square className="size-2.5 fill-current" /> : <Play className="size-2.5 fill-current" />}
+                                          </button>
+                                          <span className="min-w-0 flex-1 truncate font-mono text-[10px]">{x.name}</span>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+                    )}
 
                     {/* My Plugins lives inside the Plugins section */}
                     {s.id === "plugins" && (

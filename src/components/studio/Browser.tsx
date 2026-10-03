@@ -26,7 +26,7 @@ import { listUserTemplates, type UserTemplate } from "@/lib/synclab/user-templat
 import { TEMPLATES, templateById } from "@/lib/synclab/templates";
 import type { DrumKitId, DrumPad } from "@/lib/synclab/types";
 import { toast } from "sonner";
-import { clipFromLocalFile, pickFolder, playPreview, stopPreview, onPreviewChange, getLocalFile, getPreviewAnalyser, type LocalFolder } from "@/lib/synclab/local-files";
+import { clipFromLocalFile, pickFolder, playPreview, stopPreview, onPreviewChange, getLocalFile, getPreviewAnalyser, getLocalFolders, addLocalFolder, removeLocalFolder, onFoldersChange } from "@/lib/synclab/local-files";
 
 /** Bottom-of-browser player: shows the file being previewed with a live waveform scope. */
 function PreviewPlayer({ playingFile }: { playingFile: string | null }) {
@@ -198,7 +198,8 @@ export function Browser() {
   const [cloud, setCloud] = useState<CloudProject[]>([]);
   const [userTemplates, setUserTemplates] = useState<UserTemplate[]>([]);
   const [busyProject, setBusyProject] = useState<string | null>(null);
-  const [folders, setFolders] = useState<LocalFolder[]>([]);
+  const [folders, setFolders] = useState(getLocalFolders);
+  useEffect(() => onFoldersChange(() => setFolders(getLocalFolders())), []);
   const [playingFile, setPlayingFile] = useState<string | null>(null);
   useEffect(() => onPreviewChange(setPlayingFile), []);
   useEffect(() => () => stopPreview(), []);
@@ -221,7 +222,7 @@ export function Browser() {
         toast("No audio files in that folder", { description: "Looking for WAV, MP3, AIFF, FLAC, OGG and M4A." });
         return;
       }
-      setFolders((cur) => [f, ...cur]);
+      addLocalFolder(f);
       setOpen((o) => ({ ...o, computer: true, [`cf:${f.id}`]: true }));
       toast.success(`${f.name}: ${f.files.length} audio file${f.files.length === 1 ? "" : "s"}`);
     } catch (err) {
@@ -557,7 +558,7 @@ export function Browser() {
                       <span className="flex-1 truncate">{f.name}</span>
                       <span className="text-[9px] text-muted-foreground">{f.files.length}</span>
                     </button>
-                    <button type="button" aria-label={`Close folder ${f.name}`} onClick={() => setFolders((cur) => cur.filter((x) => x.id !== f.id))} className="px-1.5 text-muted-foreground hover:text-foreground"><X className="size-3" /></button>
+                    <button type="button" aria-label={`Close folder ${f.name}`} onClick={() => removeLocalFolder(f.id)} className="px-1.5 text-muted-foreground hover:text-foreground"><X className="size-3" /></button>
                   </div>
                   {isOpen(key, files.length > 0) && (
                     <div className="ml-3 border-l border-border/70">
