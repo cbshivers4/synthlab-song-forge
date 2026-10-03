@@ -24,6 +24,7 @@ import { Sampler } from "@/components/studio/Sampler";
 import { PadSampler } from "@/components/studio/PadSampler";
 import { SplashScreen } from "@/components/studio/SplashScreen";
 import { PluginRack } from "@/components/studio/PluginRack";
+import { DeviceBar } from "@/components/studio/DeviceBar";
 import { FloatingDevice } from "@/components/studio/FloatingDevice";
 import { MenuBar } from "@/components/studio/MenuBar";
 import { ToolsRail } from "@/components/studio/ToolsRail";
@@ -521,6 +522,7 @@ function StudioWorkspace() {
           <h1 className="sr-only">SYNCLAB Studio — browser digital audio workstation</h1>
           <Timeline />
           <Panels float={float} setFloat={setFloat} />
+          <DeviceBar />
         </main>
       </div>
       {isMobile ? <MobileNav onBeatMode={() => setBeatMode(true)} /> : <StatusBar />}
