@@ -74,6 +74,62 @@ const SECTIONS: Section[] = [
   { id: "plugins", label: "Plugins", tools: ["plugins"].map(tool) },
 ];
 
+/** Pinned to the bottom of the left menu while a file previews: stop button, name, live waveform scope. */
+function PreviewScope({ playingFile }: { playingFile: string }) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const file = getLocalFile(playingFile);
+
+  useEffect(() => {
+    let raf = 0;
+    let last = 0;
+    const data = new Float32Array(2048);
+    const draw = (t: number) => {
+      raf = requestAnimationFrame(draw);
+      if (t - last < 50) return; // 20 fps, off the audio path
+      last = t;
+      const canvas = canvasRef.current;
+      const an = getPreviewAnalyser();
+      if (!canvas || !an) return;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      const w = (canvas.width = canvas.clientWidth * (window.devicePixelRatio || 1));
+      const h = (canvas.height = canvas.clientHeight * (window.devicePixelRatio || 1));
+      an.getFloatTimeDomainData(data);
+      ctx.clearRect(0, 0, w, h);
+      const color = getComputedStyle(canvas).color || "#7ef0c8";
+      ctx.strokeStyle = color;
+      ctx.lineWidth = Math.max(1, h / 24);
+      ctx.beginPath();
+      for (let i = 0; i < data.length; i++) {
+        const x = (i / (data.length - 1)) * w;
+        const y = h / 2 - data[i]! * (h / 2) * 0.9;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    };
+    raf = requestAnimationFrame(draw);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  return (
+    <div className="flex shrink-0 items-center gap-2 border-t border-border bg-surface-1/95 p-2">
+      <button
+        type="button"
+        aria-label={`Stop playing ${file?.name ?? "file"}`}
+        onClick={() => stopPreview()}
+        className="grid size-7 shrink-0 place-items-center rounded-[3px] border border-border text-primary hover:border-primary"
+      >
+        <Square className="size-3 fill-current" />
+      </button>
+      <div className="min-w-0 flex-1">
+        <p className="truncate font-mono text-[10px] text-primary">{file?.name ?? "Preview"}</p>
+        <canvas ref={canvasRef} className="h-8 w-full text-primary" aria-label="Waveform scope of the playing file" />
+      </div>
+    </div>
+  );
+}
+
 export function ToolsRail() {
   const { panel, setPanel, installedPlugins, installPlugin } = useStudio();
   const { mode, setMode } = useApp();
