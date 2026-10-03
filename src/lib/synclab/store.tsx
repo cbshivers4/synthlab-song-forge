@@ -18,6 +18,7 @@ import { getMidiAccess, listInputs, midiSupported, subscribe, type MidiPortInfo 
 import { getPadBank, setPadBank } from "./pad-session";
 import { getLooper } from "./live-looper";
 import { padNote } from "./drum-notes";
+import { keyDown, keyUp } from "./active-keys";
 import { autoMapEnabled, isKorgMixer, korgAutoMap } from "./korg-automap";
 import type { CloudSession } from "./cloud";
 import type {
@@ -798,6 +799,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             );
           }
         } else {
+          keyUp(pitch);
           setMidiLearning(false);
           const held = heldRef.current.get(pitch);
           if (!held) return;
