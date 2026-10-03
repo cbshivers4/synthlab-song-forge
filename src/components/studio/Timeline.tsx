@@ -2727,12 +2727,12 @@ export function Timeline() {
             }}
           />
         )}
-        {transport.playing && (
-          <div
-            className="pointer-events-none absolute top-0 bottom-0 w-[1.5px] bg-primary/80"
-            style={{ left: `calc(244px + (100% - 244px) * ${transport.step / totalSteps})` }}
-          />
-        )}
+        {/* playhead line across every track — always visible so you can see where Paste lands */}
+        <div
+          className={`pointer-events-none absolute top-0 bottom-0 z-10 w-[2px] -translate-x-1/2 ${transport.playing ? "bg-primary" : "bg-primary/80 shadow-[0_0_6px_var(--primary)]"}`}
+          style={{ left: `calc(244px + (100% - 244px) * ${(transport.step % totalSteps) / totalSteps})` }}
+          aria-hidden="true"
+        />
         </div>
       </div>
       <TimelineOverview scrollRef={scrollRef} zoom={zoom} setZoom={setZoom} />

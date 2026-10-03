@@ -57,6 +57,12 @@ const MIDI_INPUT_KEY = "synclab.midi.input";
 const AUTOSAVE_KEY = "synclab.autosave.v1";
 
 /** Preserve the untouched portions of an older take when a new recording covers only part of it. */
+/** Snaps where a finished take lands to the edit grid (defaults to the nearest step). */
+export function snapRecStart(step: number, snap?: number): number {
+  const g = snap && snap > 0 ? snap : 1;
+  return Math.max(0, Math.round(step / g) * g);
+}
+
 export function replaceTakeRegion(clips: AudioClip[], start: number, end: number, stepDur: number): AudioClip[] {
   return clips.flatMap((clip) => {
     const from = clip.start ?? 0;
@@ -1161,7 +1167,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       peaks: result.peaks,
       duration: result.duration,
       url: result.url,
-      start: recStartStepRef.current,
+      start: snapRecStart(recStartStepRef.current, transportRef.current.snap),
       offset: 0,
       length: result.duration,
       gain: 1,
@@ -1218,7 +1224,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       const clip: AudioClip = {
         id: uid(), name: `${target.name} TAKE ${(target.clips?.length ?? 0) + 1}`,
         peaks: result.peaks, duration: result.duration, url: result.url,
-        start: recStartStepRef.current, offset: 0, length: result.duration, gain: 1,
+        start: snapRecStart(recStartStepRef.current, transportRef.current.snap), offset: 0, length: result.duration, gain: 1,
       };
       // Keep the editable notes/steps intact. The printed audio takes their place
       // during playback until the user explicitly switches back to the pattern.
