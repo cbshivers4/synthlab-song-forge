@@ -641,7 +641,7 @@ const TRACK_BUSES: { id: BusId; label: string }[] = [
 
 function TrackRow({ track, index }: { track: Track; index: number }) {
   const isMobile = useIsMobile();
-  const { selectedId, selectedIds, select, toggleSelectId, updateTrack, removeTrack, duplicateTrack, moveTrack, setPanel, changeInstrument, installedPlugins, addPlugin, editTool, splitClipAt, razorAt, toggleStep, toggleAutomationLane, copyTrack, cutTrack, pasteTrack, clipboardName, copyClip, cutClip, pasteClip, clipClipboardName, clearTrackContent, folders, addFolder, assignTrackFolder } =
+  const { selectedId, selectedIds, select, toggleSelectId, updateTrack, removeTrack, duplicateTrack, moveTrack, setPanel, changeInstrument, installedPlugins, addPlugin, editTool, splitClipAt, razorAt, toggleStep, toggleAutomationLane, copyTrack, cutTrack, pasteTrack, clipboardName, copyClip, cutClip, pasteClip, clipClipboardName, clearTrackContent, folders, addFolder, assignTrackFolder, swapTake, stretchClip } =
     useStudio();
   const { transport, setNotes, loadSample, fxChains, tracks: allTracks } = useStudio();
   const fileStudio = useStudio();
@@ -1159,6 +1159,38 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
                   <DropdownMenuItem onClick={() => clipOp("fade")}>
                     <Waves className="size-4" /> Fade in / out
                   </DropdownMenuItem>
+                  {activeClip.url && (
+                    <DropdownMenuSub><DropdownMenuSubTrigger>Time-stretch (keep pitch)</DropdownMenuSubTrigger><DropdownMenuSubContent>
+                      {(() => {
+                        const stepDur = 60 / (transport.bpm || 120) / 4;
+                        const cur = (activeClip.length ?? activeClip.duration) / clipRate(activeClip);
+                        const barSec = stepDur * stepsPerBar();
+                        const bars = Math.max(1, Math.round(cur / barSec));
+                        return (
+                          <DropdownMenuItem onClick={() => void stretchClip(track.id, activeClip.id, (bars * barSec) / cur)}>
+                            Fit to {bars} bar{bars === 1 ? "" : "s"} at {transport.bpm} BPM
+                          </DropdownMenuItem>
+                        );
+                      })()}
+                      <DropdownMenuSeparator />
+                      {[0.5, 0.75, 0.9, 1.1, 1.25, 1.5, 2].map((f) => (
+                        <DropdownMenuItem key={f} onClick={() => void stretchClip(track.id, activeClip.id, f)}>
+                          {f < 1 ? "Shorter" : "Longer"} — {Math.round(f * 100)}%
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuSubContent></DropdownMenuSub>
+                  )}
+                  <DropdownMenuSub><DropdownMenuSubTrigger>Takes ({(activeClip.alts?.length ?? 0) + 1})</DropdownMenuSubTrigger><DropdownMenuSubContent>
+                    <DropdownMenuItem disabled><span className="w-4">✓</span>{activeClip.name} (playing)</DropdownMenuItem>
+                    {(activeClip.alts ?? []).map((a, i) => (
+                      <DropdownMenuItem key={a.id} onClick={() => swapTake(track.id, activeClip.id, i)}>
+                        <span className="w-4" />{a.name}
+                      </DropdownMenuItem>
+                    ))}
+                    {!activeClip.alts?.length && (
+                      <DropdownMenuItem disabled>Record again over this clip to add takes</DropdownMenuItem>
+                    )}
+                  </DropdownMenuSubContent></DropdownMenuSub>
                   <DropdownMenuItem onClick={duplicateClip}>
                     <Copy className="size-4" /> Duplicate clip
                   </DropdownMenuItem>
