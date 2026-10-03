@@ -427,7 +427,7 @@ function TBtn({
         danger
           ? active
             ? "bg-destructive text-destructive-foreground shadow-[0_0_12px_color-mix(in_oklab,var(--destructive)_70%,transparent)] hover:bg-destructive/90"
-            : "bg-destructive/15 text-destructive shadow-[inset_0_0_0_1px_var(--destructive)] hover:bg-destructive/25"
+            : "bg-destructive text-destructive-foreground shadow-[0_0_0_1px_color-mix(in_oklab,var(--destructive)_60%,transparent)] hover:bg-destructive/85"
           : active
             ? "text-primary"
             : ""
