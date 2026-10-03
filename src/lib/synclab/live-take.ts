@@ -16,3 +16,20 @@ export function isLiveHit(trackId: string, padId: string, step: number) {
 export function clearLiveHits() {
   hits.clear();
 }
+
+/**
+ * Hits on the same pad one step either side, written earlier in this take.
+ * Playing the same beat again on a later pass lands a hair early or late;
+ * the new hit replaces the old one instead of stacking a flam next to it.
+ */
+export function neighbourLiveHits(trackId: string, padId: string, step: number, total: number) {
+  const out: number[] = [];
+  for (const d of [-1, 1]) {
+    const i = (step + d + total) % total;
+    if (hits.has(key(trackId, padId, i))) {
+      hits.delete(key(trackId, padId, i));
+      out.push(i);
+    }
+  }
+  return out;
+}
