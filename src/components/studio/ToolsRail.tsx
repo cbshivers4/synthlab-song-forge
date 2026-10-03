@@ -20,8 +20,8 @@ import {
   Plus,
   Square,
 } from "lucide-react";
-import { useEffect, useState } from "react";
-import { addLocalFolder, getLocalFolders, onFoldersChange, onPreviewChange, pickFolder, playPreview, stopPreview } from "@/lib/synclab/local-files";
+import { useEffect, useRef, useState } from "react";
+import { addLocalFolder, getLocalFile, getLocalFolders, getPreviewAnalyser, onFoldersChange, onPreviewChange, pickFolder, playPreview, stopPreview } from "@/lib/synclab/local-files";
 import { useStudio, type PanelId } from "@/lib/synclab/store";
 import { useApp } from "@/lib/synclab/app-state";
 import type { TrackKind } from "@/lib/synclab/types";
