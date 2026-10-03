@@ -6,6 +6,7 @@ export type DetachId = "mixer" | "drums" | "keys" | "synth";
 
 let detached: DetachId[] = [];
 const pendingWindows = new Map<DetachId, Window>();
+const closingTimers = new Map<DetachId, number>();
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
 export const setDetached = (id: DetachId, on: boolean, opened?: Window) => {
@@ -73,6 +74,11 @@ export function DetachedWindow({
   const [winRef, setWinRef] = useState<Window | null>(null);
 
   useEffect(() => {
+    const previousClose = closingTimers.get(id);
+    if (previousClose !== undefined) {
+      window.clearTimeout(previousClose);
+      closingTimers.delete(id);
+    }
     const win = pendingWindows.get(id);
     if (!win) {
       onClose();
@@ -116,8 +122,14 @@ export function DetachedWindow({
     return () => {
       window.clearInterval(poll);
       window.removeEventListener("beforeunload", closeChild);
-      if (!win.closed) win.close();
-      pendingWindows.delete(id);
+      // React Strict Mode replays effects in development. Defer closing so its
+      // immediate second setup can reuse the same native/browser window.
+      const timer = window.setTimeout(() => {
+        if (!win.closed) win.close();
+        if (pendingWindows.get(id) === win) pendingWindows.delete(id);
+        closingTimers.delete(id);
+      }, 0);
+      closingTimers.set(id, timer);
       setContainer(null);
       setWinRef(null);
     };
