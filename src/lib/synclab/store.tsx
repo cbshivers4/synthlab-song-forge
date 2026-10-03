@@ -1794,7 +1794,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           toast("Select a track first", { description: "Click the track you want the clip on, then paste." });
           return;
         }
-        const at = transportRef.current.step;
+        const endOf = (t: Track) => (t.clips ?? []).reduce((m, c) => Math.max(m, c.start + c.length), 0);
+        const at = atEnd ? endOf(target) : transportRef.current.step;
         const clip: AudioClip = { ...(structuredClone(src) as AudioClip), id: uid(), start: at };
         if (target.kind === "drum" || target.kind === "instrument" || target.kind === "midi") {
           const nid = uid();
