@@ -40,6 +40,8 @@ export function PianoRoll({ track }: { track: Track }) {
   const [trackOct, setTrackOct] = useState(0);
   const gridRef = useRef<HTMLDivElement | null>(null);
   const drag = useRef<Drag>(null);
+  const marq = useRef<{ x: number; y: number; active: boolean } | null>(null);
+  const [marquee, setMarquee] = useState<{ x0: number; y0: number; x1: number; y1: number } | null>(null);
 
   const steps = bars * stepsPerBar();
 
@@ -120,9 +122,22 @@ export function PianoRoll({ track }: { track: Track }) {
   };
 
   const onMove = (e: React.PointerEvent) => {
-    const d = drag.current;
     const el = gridRef.current;
-    if (!d || !el) return;
+    if (!el) return;
+    // marquee select: pressed on empty grid and dragged
+    const m = marq.current;
+    if (m && !drag.current) {
+      const r = el.getBoundingClientRect();
+      const x = e.clientX - r.left;
+      const y = e.clientY - r.top;
+      if (m.active || Math.hypot(x - m.x, y - m.y) > 4) {
+        m.active = true;
+        setMarquee({ x0: Math.min(m.x, x), y0: Math.min(m.y, y), x1: Math.max(m.x, x), y1: Math.max(m.y, y) });
+      }
+      return;
+    }
+    const d = drag.current;
+    if (!d) return;
     const stepPx = el.getBoundingClientRect().width / steps;
     if (d.mode === "resize") {
       const nl = Math.max(grid, snap(d.length + (e.clientX - d.startX) / stepPx) || grid);
@@ -139,6 +154,21 @@ export function PianoRoll({ track }: { track: Track }) {
 
   const endDrag = () => {
     drag.current = null;
+    const m = marq.current;
+    marq.current = null;
+    if (m?.active && marquee) {
+      const el = gridRef.current;
+      if (el) {
+        const r = el.getBoundingClientRect();
+        const stepPx = r.width / steps;
+        const s0 = marquee.x0 / stepPx;
+        const s1 = marquee.x1 / stepPx;
+        const pTop = pitches[Math.min(ROWS - 1, Math.max(0, Math.floor(marquee.y0 / ROW_H)))]!;
+        const pBot = pitches[Math.min(ROWS - 1, Math.max(0, Math.floor(marquee.y1 / ROW_H)))]!;
+        setSel(notes.filter((n) => n.step < s1 && n.step + n.length > s0 && n.pitch <= pTop && n.pitch >= pBot).map((n) => n.id));
+      }
+    }
+    setMarquee(null);
   };
 
   const del = (id: string) => setNotes(track.id, notes.filter((n) => n.id !== id));
@@ -432,6 +462,10 @@ export function PianoRoll({ track }: { track: Track }) {
             className="relative select-none bg-background"
             style={{ height: ROWS * ROW_H }}
             onDoubleClick={addNote}
+            onPointerDown={(e) => {
+              const r = e.currentTarget.getBoundingClientRect();
+              marq.current = { x: e.clientX - r.left, y: e.clientY - r.top, active: false };
+            }}
             onPointerMove={onMove}
           >
             {pitches.map((p, i) => (
@@ -461,6 +495,12 @@ export function PianoRoll({ track }: { track: Track }) {
               <div
                 className="pointer-events-none absolute top-0 bottom-0 w-px bg-[var(--neon)]"
                 style={{ left: `${((transport.step % steps) / steps) * 100}%` }}
+              />
+            )}
+            {marquee && (
+              <div
+                className="pointer-events-none absolute z-10 border border-primary bg-primary/15"
+                style={{ left: marquee.x0, top: marquee.y0, width: marquee.x1 - marquee.x0, height: marquee.y1 - marquee.y0 }}
               />
             )}
             {notes.map((n) => {
@@ -537,8 +577,8 @@ export function PianoRoll({ track }: { track: Track }) {
       </div>
 
       <p className="label-xs">
-        DOUBLE-CLICK TO DRAW · DRAG TO MOVE · DRAG RIGHT EDGE TO RESIZE · RIGHT-CLICK TO DELETE · SHIFT-CLICK TO MULTI-SELECT ·
-        DRAG BARS IN VELOCITY LANE
+        DOUBLE-CLICK TO DRAW · DRAG A NOTE TO MOVE · DRAG EMPTY SPACE TO SELECT A GROUP · OCT +/− MOVES THE SELECTION AN OCTAVE ·
+        RIGHT-CLICK TO DELETE · SHIFT-CLICK TO MULTI-SELECT · DRAG BARS IN VELOCITY LANE
       </p>
     </div>
   );
