@@ -1,29 +1,48 @@
-# Welcome to your Lovable project
+# SYNCLAB Vocal Forge
 
-This project was built with [Lovable](https://lovable.dev).
+**CREATE. RECORD. PRODUCE. FINISH.**
 
-## Build with Lovable
+SYNCLAB Vocal Forge is a web, desktop and mobile digital audio workstation. Record vocals and
+instruments, build beats with the drum machine and piano roll, arrange on the timeline, mix with
+buses, sends, VCA groups and mastering, and finish the song — then export it.
 
-Open your project in the [Lovable editor](https://lovable.dev) and keep building.
+- **Product:** SYNCLAB Vocal Forge
+- **Version:** 1.0.0
+- **Desktop app id:** `com.synclab.vocalforge`
+- **Publisher:** Christopher Shivers, Detroit, Michigan — cbshivers@gmail.com
+- **Payments:** Paddle (merchant of record). 7-day free trial, then $19.95/month or $149/year.
+  The founder account keeps lifetime access.
 
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: connect the project to GitHub and every change made in Lovable is committed straight to your repository.
-- **Full ownership**: this code is yours. Push to your repository and your changes sync back into Lovable, ready for your next prompt.
+## What is in the repo
 
-## Development
+```
+src/                     React app (TanStack Start)
+  routes/                pages: studio, pricing, privacy, refunds, terms, api
+  components/studio/     transport, timeline, mixer, device bar, piano roll, sampler, live view
+  lib/synclab/           audio engine, timebase, presets, MIDI, looper, bounce/export, plans
+electron/                desktop shell: window, menu, preload bridge, plug-in scanner, app identity
+public/                  favicon, robots, sitemap, desktop release metadata
+scripts/                 desktop build tooling
+supabase/                database, auth, storage (Lovable Cloud)
+```
 
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+## Running it
+
+You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
 
 ```sh
 git clone <this-repository-url>
-cd <repository-name>
+cd vocal-forge
 npm i
 npm run dev
 ```
 
-## Built with
+Desktop builds (macOS/Windows) are described in `DESKTOP_BUILD.md`.
 
-- TanStack Start
+## Stack
+
+- TanStack Start (React 19, Vite)
+- Web Audio API + Web MIDI
+- Tailwind CSS v4
 - TypeScript
-- React
-- Tailwind CSS
+- Electron for the desktop app
