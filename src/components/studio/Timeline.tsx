@@ -341,6 +341,35 @@ function MidiClip({ track }: { track: Track }) {
   );
 }
 
+/** Hit-envelope view of a drum pattern: every programmed hit draws a decaying
+ *  transient sized by its velocity. It reflects the real pattern; recorded audio
+ *  (WAVE) shows the true rendered waveform. */
+const DrumHitWave = memo(function DrumHitWave({ pads, steps, total }: { pads: { steps: number[] }[]; steps: number; total: number }) {
+  const path = useMemo(() => {
+    const res = 6;
+    const n = Math.max(2, total * res);
+    const env = new Float32Array(n);
+    for (let at = 0; at < total; at++) {
+      const i = at % Math.max(1, steps);
+      let hit = 0;
+      for (const p of pads) hit += p.steps[i] ?? 0;
+      if (hit <= 0) continue;
+      const amp = Math.min(1, 0.35 + hit * 0.4);
+      for (let k = 0; k < res * 3 && at * res + k < n; k++) env[at * res + k] = Math.max(env[at * res + k]!, amp * Math.exp(-k / (res * 0.9)) * (0.85 + 0.15 * Math.sin(k * 2.7)));
+    }
+    const x = (i: number) => ((i / (n - 1)) * 1000).toFixed(1);
+    const top = Array.from(env, (v, i) => `${x(i)},${(50 - Math.max(0.6, v * 46)).toFixed(1)}`);
+    const bot = Array.from(env, (v, i) => `${x(i)},${(50 + Math.max(0.6, v * 46)).toFixed(1)}`).reverse();
+    return `M ${top.join(" L ")} L ${bot.join(" L ")} Z`;
+  }, [pads, steps, total]);
+  return (
+    <svg viewBox="0 0 1000 100" preserveAspectRatio="none" className="absolute inset-0 h-full w-full text-clip-drum" role="img" aria-label="Drum pattern hit envelope">
+      <path d={path} fill="currentColor" fillOpacity="0.7" />
+      <line x1="0" y1="50" x2="1000" y2="50" stroke="currentColor" strokeOpacity="0.3" strokeWidth="0.5" />
+    </svg>
+  );
+});
+
 function DrumClip({ track }: { track: Track }) {
   const { setPanel, select, transport } = useStudio();
   const total = songSteps(transport.bars);
@@ -371,34 +400,7 @@ function DrumClip({ track }: { track: Track }) {
         </span>
       </div>
       <div className="relative flex-1" style={{ height: "calc(100% - 17px)" }}>
-        {shown.map((_, r) => (
-          <div
-            key={r}
-            className="absolute left-0 right-0 border-t border-clip-drum/5"
-            style={{ top: `${(r / shown.length) * 100}%` }}
-          />
-        ))}
-        {Array.from({ length: Math.max(1, Math.ceil(total / Math.max(1, steps))) }).flatMap((_, rep) =>
-          shown.flatMap((p, r) =>
-          p.steps.slice(0, steps).map((vel, i) => {
-            const at = rep * steps + i;
-            return vel > 0 && at < total ? (
-              <div
-                key={`${p.id}-${rep}-${i}`}
-                 className="absolute rounded-full bg-clip-drum/60"
-                title={`${p.name} · step ${i + 1}`}
-                style={{
-                  left: `${(at / total) * 100}%`,
-                  width: `${Math.max(0.3, 100 / total - 0.1)}%`,
-                  top: `${(r / shown.length) * 100 + 100 / shown.length * 0.18}%`,
-                  height: `${Math.max(8, (100 / shown.length) * 0.42)}%`,
-                  opacity: 0.4 + vel * 0.45,
-                }}
-              />
-            ) : null;
-          }),
-          ),
-        )}
+        <DrumHitWave pads={pads} steps={steps} total={total} />
       </div>
     </div>
   );
