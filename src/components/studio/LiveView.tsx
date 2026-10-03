@@ -35,17 +35,21 @@ function FxPad({ fx }: { fx: LiveFxInfo }) {
 
   const active = pos !== null;
   return (
-    <div className={cn("panel flex flex-col gap-1.5 p-2 transition-colors", active && "border-primary")}>
+    <div
+      className="panel flex flex-col gap-1.5 p-2 transition-colors"
+      style={{ borderColor: active ? fx.color : `${fx.color}55`, boxShadow: active ? `0 0 18px ${fx.color}44` : undefined }}
+    >
       <div className="flex items-center justify-between gap-1">
-        <span className="font-display text-[11px] font-semibold tracking-[0.14em] uppercase">{fx.name}</span>
+        <span className="font-display text-[11px] font-semibold tracking-[0.14em] uppercase" style={{ color: fx.color }}>{fx.name}</span>
         <button
           type="button"
           onClick={() => setHold((h) => !h)}
           aria-pressed={hold}
           className={cn(
             "rounded-[3px] border px-2 py-1 font-mono text-[9px] tracking-widest uppercase",
-            hold ? "border-primary bg-primary text-primary-foreground" : "border-border text-muted-foreground",
+            hold ? "text-background" : "text-muted-foreground",
           )}
+          style={hold ? { background: fx.color, borderColor: fx.color } : { borderColor: `${fx.color}66` }}
         >
           Hold
         </button>
@@ -74,13 +78,14 @@ function FxPad({ fx }: { fx: LiveFxInfo }) {
         onPointerCancel={end}
       >
         <div className="pointer-events-none absolute inset-0 opacity-40 [background-image:linear-gradient(to_right,var(--border)_1px,transparent_1px),linear-gradient(to_bottom,var(--border)_1px,transparent_1px)] [background-size:25%_25%]" />
+        <div className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(circle at 50% 120%, ${fx.color}22, transparent 70%)` }} />
         {pos && (
           <>
-            <div className="pointer-events-none absolute inset-y-0 w-px bg-primary/50" style={{ left: `${pos.x * 100}%` }} />
-            <div className="pointer-events-none absolute inset-x-0 h-px bg-primary/50" style={{ top: `${(1 - pos.y) * 100}%` }} />
+            <div className="pointer-events-none absolute inset-y-0 w-px" style={{ left: `${pos.x * 100}%`, background: `${fx.color}88` }} />
+            <div className="pointer-events-none absolute inset-x-0 h-px" style={{ top: `${(1 - pos.y) * 100}%`, background: `${fx.color}88` }} />
             <div
-              className="pointer-events-none absolute size-6 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary shadow-[0_0_18px_var(--primary)]"
-              style={{ left: `${pos.x * 100}%`, top: `${(1 - pos.y) * 100}%` }}
+              className="pointer-events-none absolute size-6 -translate-x-1/2 -translate-y-1/2 rounded-full"
+              style={{ left: `${pos.x * 100}%`, top: `${(1 - pos.y) * 100}%`, background: fx.color, boxShadow: `0 0 18px ${fx.color}` }}
             />
           </>
         )}

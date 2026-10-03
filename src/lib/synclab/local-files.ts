@@ -64,6 +64,9 @@ export async function pickFolder(): Promise<LocalFolder | null> {
 /* ---------- preview through the master (so the master scope shows it) ---------- */
 let current: AudioBufferSourceNode | null = null;
 let currentId: string | null = null;
+let analyser: AnalyserNode | null = null;
+/** Live tap on the file being previewed — the browser's player bar draws its scope from this. */
+export const getPreviewAnalyser = () => analyser;
 const listeners = new Set<(id: string | null) => void>();
 const emit = () => listeners.forEach((l) => l(currentId));
 export const onPreviewChange = (fn: (id: string | null) => void) => {
@@ -88,7 +91,12 @@ export async function playPreview(id: string) {
   const buf = await ctx.decodeAudioData(await lf.file.arrayBuffer());
   const src = ctx.createBufferSource();
   src.buffer = buf;
-  src.connect(engine.master ?? ctx.destination);
+  if (!analyser) {
+    analyser = ctx.createAnalyser();
+    analyser.fftSize = 2048;
+  }
+  src.connect(analyser);
+  analyser.connect(engine.master ?? ctx.destination);
   src.onended = () => {
     if (current === src) { current = null; currentId = null; emit(); }
   };
