@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Check, ImagePlus, Palette, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +20,7 @@ function WallpaperSection() {
   const shared = useSkin("shared");
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
+  useEffect(() => startSkinSync(), []);
   const allKeys = WALLPANEL_PANELS.map((p) => p.key);
   const on = (key: SkinKey) => (shared.panels ?? allKeys).includes(key);
 
