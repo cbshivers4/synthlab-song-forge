@@ -62,8 +62,36 @@ export function TopBar() {
   const isMobile = useIsMobile();
   const { transport, setTransport, togglePlay, toggleRecord, stop, addTrack, setPanel, panel } = useStudio();
 
+  const bpb = getBeatsPerBar();
+  const ciTotal = (transport.countInBars ?? 1) * bpb;
+  const ciElapsed = transport.countInLeft != null ? ciTotal - transport.countInLeft : 0;
+  const ciBeat = (ciElapsed % bpb) + 1;
+  const ciBar = Math.floor(ciElapsed / bpb) + 1;
+
   return (
     <header className="rack sticky top-0 z-30 shrink-0">
+      {transport.countInLeft != null && (
+        <div className="pointer-events-none fixed inset-0 z-50 flex flex-col items-center justify-center bg-background/40">
+          <div className="label-xs tracking-[0.3em] text-muted-foreground">COUNT-IN · BAR {ciBar}</div>
+          <div
+            key={transport.countInLeft}
+            className={`font-mono text-[9rem] font-bold leading-none sm:text-[12rem] ${
+              ciBeat === 1 ? "text-destructive" : "text-primary"
+            }`}
+            style={{ textShadow: "0 0 60px currentColor" }}
+          >
+            {ciBeat}
+          </div>
+          <div className="mt-2 flex gap-2">
+            {Array.from({ length: bpb }, (_, i) => (
+              <span
+                key={i}
+                className={`h-2 w-6 rounded-full ${i < ciBeat ? "bg-primary" : "bg-muted"}`}
+              />
+            ))}
+          </div>
+        </div>
+      )}
       <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2 px-2 py-2 sm:flex sm:flex-wrap sm:px-3">
         <div className="hidden items-center pr-1 sm:flex">
           <img
