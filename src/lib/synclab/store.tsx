@@ -41,6 +41,7 @@ import type {
   SongSection,
   SynthPatch,
   Track,
+  TrackFolder,
   TrackKind,
   Transport,
 } from "./types";
@@ -259,6 +260,14 @@ interface StudioApi extends StudioState {
   /** move the playhead (and loop, when it is on) to a section */
   gotoSection: (id: string) => void;
   autoSections: () => void;
+  /** track folders shown as collapsible groups on the timeline */
+  folders: TrackFolder[];
+  addFolder: (name?: string) => string;
+  renameFolder: (id: string, name: string) => void;
+  /** removes the folder; its tracks stay, ungrouped */
+  removeFolder: (id: string) => void;
+  toggleFolderCollapsed: (id: string) => void;
+  assignTrackFolder: (trackId: string, folderId: string | null) => void;
   setPanel: (p: PanelId) => void;
   select: (id: string) => void;
   setEditTool: (t: EditTool) => void;
@@ -394,6 +403,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const [sections, setSections] = useState<SongSection[]>([]);
   const sectionsRef = useRef<SongSection[]>([]);
   sectionsRef.current = sections;
+  const [folders, setFolders] = useState<TrackFolder[]>([]);
+  const foldersRef = useRef<TrackFolder[]>([]);
+  foldersRef.current = folders;
   const [buses, setBuses] = useState<Record<BusId, BusState>>({
     drums: { volume: 1, muted: false },
     vocals: { volume: 1, muted: false },
@@ -1518,6 +1530,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       userPresets: structuredClone(userPresets),
       padBank: getPadBank(),
       sections: structuredClone(sectionsRef.current),
+      folders: structuredClone(foldersRef.current),
     }),
     [buses, vcas, auxReturns, fxChains, installedPlugins, userPresets],
   );
@@ -1540,6 +1553,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     setUserPresets(structuredClone(session.userPresets));
     setPadBank(session.padBank ?? {});
     setSections(structuredClone(session.sections ?? []));
+    setFolders(structuredClone(session.folders ?? []));
     setSelectedId(session.tracks[0]?.id ?? null);
     setSelectedIds(session.tracks[0] ? [session.tracks[0].id] : []);
     setPanel(null);
@@ -1574,7 +1588,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       }
     }, 600);
     return () => window.clearTimeout(id);
-  }, [tracks, buses, vcas, auxReturns, fxChains, installedPlugins, userPresets, sections, buildSnapshot]);
+  }, [tracks, buses, vcas, auxReturns, fxChains, installedPlugins, userPresets, sections, folders, buildSnapshot]);
 
   // Bring the last session back after a refresh or a crash.
   useEffect(() => {
@@ -1805,6 +1819,30 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         setSections(built);
         toast.success("Song structure laid out", { description: `${built.length} parts across ${bars} bars — rename or drag any of them.` });
       },
+      folders,
+      addFolder: (name) => {
+        const id = uid();
+        setFolders((list) => [
+          ...list,
+          {
+            id,
+            name: (name ?? `FOLDER ${list.length + 1}`).toUpperCase().slice(0, 18),
+            color: SECTION_COLORS[list.length % SECTION_COLORS.length] as string,
+            collapsed: false,
+          },
+        ]);
+        return id;
+      },
+      renameFolder: (id, name) =>
+        setFolders((list) => list.map((f) => (f.id === id ? { ...f, name: name.toUpperCase().slice(0, 18) || f.name } : f))),
+      removeFolder: (id) => {
+        setFolders((list) => list.filter((f) => f.id !== id));
+        setTracks((ts) => ts.map((t) => (t.folderId === id ? { ...t, folderId: undefined } : t)));
+      },
+      toggleFolderCollapsed: (id) =>
+        setFolders((list) => list.map((f) => (f.id === id ? { ...f, collapsed: !f.collapsed } : f))),
+      assignTrackFolder: (trackId, folderId) =>
+        setTracks((ts) => ts.map((t) => (t.id === trackId ? { ...t, folderId: folderId ?? undefined } : t))),
       setPanel,
       select: (id) => {
         setSelectedId(id);
@@ -2605,7 +2643,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           ),
         })),
     };
-  }, [tracks, transport, selectedId, selectedIds, editTool, panel, userPresets, buses, vcas, auxReturns, sections, installedPlugins, fxChains, midiInputs, midiInputId, midiLearning, midiMap, midiLearn, clipboardName, enableMidi, setMidiInputPersist, updateTrack, finishRecording, finishTrackRecording, splitClipAtImpl, razorAtImpl, buildSnapshot, applySession, historyTick, automationHistoryTick, savedAt]);
+  }, [tracks, transport, selectedId, selectedIds, editTool, panel, userPresets, buses, vcas, auxReturns, sections, folders, installedPlugins, fxChains, midiInputs, midiInputId, midiLearning, midiMap, midiLearn, clipboardName, enableMidi, setMidiInputPersist, updateTrack, finishRecording, finishTrackRecording, splitClipAtImpl, razorAtImpl, buildSnapshot, applySession, historyTick, automationHistoryTick, savedAt]);
 
 
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>;

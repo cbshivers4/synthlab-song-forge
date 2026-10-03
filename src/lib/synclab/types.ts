@@ -420,6 +420,8 @@ export interface Track {
   instrument?: string | undefined;
   /** MIDI channel (1-16) this instrument listens to; undefined = all channels */
   midiChannel?: number | undefined;
+  /** folder this track belongs to on the timeline; undefined = ungrouped */
+  folderId?: string | undefined;
   /** octave transpose (-3…+3) applied to every note this track plays; 0/undefined = none */
   octave?: number | undefined;
   patch?: SynthPatch | undefined;
@@ -479,6 +481,14 @@ export interface Transport {
 export interface BusState {
   volume: number;
   muted: boolean;
+}
+
+/** A folder that groups tracks on the timeline and mixer, like Logic/FL track folders. */
+export interface TrackFolder {
+  id: string;
+  name: string;
+  color: string;
+  collapsed: boolean;
 }
 
 /** A named part of the arrangement — intro, verse, drop and so on. */

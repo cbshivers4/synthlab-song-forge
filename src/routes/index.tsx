@@ -408,7 +408,7 @@ function FloatingDevices({ float, setFloat }: { float: FloatState; setFloat: (f:
 
 /** Global DAW keyboard shortcuts. */
 function useShortcuts() {
-  const { togglePlay, toggleRecord, stop, selected, duplicateTrack, removeTrack, setPanel, copyTrack, cutTrack, pasteTrack, copyClip, cutClip, pasteClip, clipClipboardName, selectAll, splitAtPlayhead, setEditTool, undo, redo, tracks, previewNote } =
+  const { togglePlay, toggleRecord, stop, selected, duplicateTrack, removeTrack, setPanel, copyTrack, cutTrack, pasteTrack, copyClip, cutClip, pasteClip, clipClipboardName, selectAll, splitAtPlayhead, setEditTool, undo, redo, tracks, previewNote, transport, setTransport, updateTrack } =
     useStudio();
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -493,11 +493,39 @@ function useShortcuts() {
           setEditTool("split");
           toast("Split tool", { description: "Click an audio clip to cut it right there." });
           break;
-        case "r":
-        case "R":
+        case "t":
+        case "T":
           setEditTool("razor");
           toast("Razor tool", { description: "Click inside a clip to slice it exactly where you click." });
           break;
+        case "l":
+        case "L":
+          e.preventDefault();
+          setTransport({ loop: !transport.loop });
+          toast(transport.loop ? "Loop off" : "Loop on");
+          break;
+        case "m":
+        case "M":
+          if (selected) {
+            e.preventDefault();
+            updateTrack(selected.id, { muted: !selected.muted });
+            toast(selected.muted ? `${selected.name} unmuted` : `${selected.name} muted`);
+          }
+          break;
+        case "Home":
+          e.preventDefault();
+          setTransport({ step: 0 });
+          break;
+        case "ArrowLeft":
+        case "ArrowRight": {
+          e.preventDefault();
+          const dir = e.key === "ArrowRight" ? 1 : -1;
+          const amount = e.shiftKey ? 1 : 4;
+          const total = transport.bars * 4;
+          const step = Math.min(total, Math.max(0, transport.step + dir * amount));
+          setTransport({ step });
+          break;
+        }
         case "Escape":
           stop();
           break;
@@ -514,7 +542,7 @@ function useShortcuts() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [togglePlay, toggleRecord, stop, selected, duplicateTrack, removeTrack, setPanel, copyTrack, cutTrack, pasteTrack, copyClip, cutClip, pasteClip, clipClipboardName, selectAll, splitAtPlayhead, setEditTool, undo, redo, tracks, previewNote]);
+  }, [togglePlay, toggleRecord, stop, selected, duplicateTrack, removeTrack, setPanel, copyTrack, cutTrack, pasteTrack, copyClip, cutClip, pasteClip, clipClipboardName, selectAll, splitAtPlayhead, setEditTool, undo, redo, tracks, previewNote, transport, setTransport, updateTrack]);
 }
 
 function StudioWorkspace() {

@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { Fragment, memo, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { stepsPerBar, getBeatsPerBar, STEPS_PER_BEAT, songSteps, stepSeconds, positionLabel } from "@/lib/synclab/timebase";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
@@ -40,6 +40,9 @@ import {
   VolumeX,
   X,
   Circle,
+  Plus,
+  Folder,
+  FolderOpen,
 } from "lucide-react";
 import synclabLogoAsset from "@/assets/synclab-logo-neon.jpg.asset.json";
 const synclabLogo = synclabLogoAsset.url;
@@ -77,7 +80,7 @@ import { AddTrackMenu } from "@/components/studio/AddTrackMenu";
 
 import { INSTRUMENTS, KIND_LABEL, uid } from "@/lib/synclab/presets";
 import type { EditTool, PanelId } from "@/lib/synclab/store";
-import type { AutomationLane, AutomationParam, AutomationPoint, BusId, MidiNote, Track } from "@/lib/synclab/types";
+import type { AutomationLane, AutomationParam, AutomationPoint, BusId, MidiNote, Track, TrackFolder } from "@/lib/synclab/types";
 
 const CORE_LANE_LABEL: Record<Exclude<AutomationParam, `plugin:${string}:${string}`>, string> = {
   volume: "VOLUME",
@@ -638,7 +641,7 @@ const TRACK_BUSES: { id: BusId; label: string }[] = [
 
 function TrackRow({ track, index }: { track: Track; index: number }) {
   const isMobile = useIsMobile();
-  const { selectedId, selectedIds, select, toggleSelectId, updateTrack, removeTrack, duplicateTrack, moveTrack, setPanel, changeInstrument, installedPlugins, addPlugin, editTool, splitClipAt, razorAt, toggleStep, toggleAutomationLane, copyTrack, cutTrack, pasteTrack, clipboardName, copyClip, cutClip, pasteClip, clipClipboardName, clearTrackContent } =
+  const { selectedId, selectedIds, select, toggleSelectId, updateTrack, removeTrack, duplicateTrack, moveTrack, setPanel, changeInstrument, installedPlugins, addPlugin, editTool, splitClipAt, razorAt, toggleStep, toggleAutomationLane, copyTrack, cutTrack, pasteTrack, clipboardName, copyClip, cutClip, pasteClip, clipClipboardName, clearTrackContent, folders, addFolder, assignTrackFolder } =
     useStudio();
   const { transport, setNotes, loadSample, fxChains, tracks: allTracks } = useStudio();
   const fileStudio = useStudio();
@@ -1098,6 +1101,22 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
                     <span className="w-4">{(track.octave ?? 0) === o ? "✓" : ""}</span>{o === 0 ? "None" : `${o > 0 ? "+" : ""}${o} octave${Math.abs(o) > 1 ? "s" : ""}`}
                   </DropdownMenuItem>
                 ))}
+              </DropdownMenuSubContent></DropdownMenuSub>
+              <DropdownMenuSub><DropdownMenuSubTrigger>Move to folder{track.folderId ? ` (${folders.find((f) => f.id === track.folderId)?.name ?? ""})` : ""}</DropdownMenuSubTrigger><DropdownMenuSubContent>
+                <DropdownMenuItem onClick={() => assignTrackFolder(track.id, null)}>
+                  <span className="w-4">{!track.folderId ? "✓" : ""}</span>No folder
+                </DropdownMenuItem>
+                {folders.map((f) => (
+                  <DropdownMenuItem key={f.id} onClick={() => assignTrackFolder(track.id, f.id)}>
+                    <span className="w-4">{track.folderId === f.id ? "✓" : ""}</span>
+                    <span className="mr-1.5 inline-block size-2 rounded-full" style={{ background: f.color }} />
+                    {f.name}
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => assignTrackFolder(track.id, addFolder())}>
+                  <Plus className="size-4" /> New folder with this track
+                </DropdownMenuItem>
               </DropdownMenuSubContent></DropdownMenuSub>
               <DropdownMenuSeparator />
               {(
@@ -2721,8 +2740,88 @@ function TimelineOverview({
   );
 }
 
+/** Collapsible folder header row grouping tracks, like Logic/FL track folders. */
+function FolderRow({
+  folder,
+  count,
+  onToggle,
+  onRename,
+  onUngroup,
+}: {
+  folder: TrackFolder;
+  count: number;
+  onToggle: () => void;
+  onRename: (name: string) => void;
+  onUngroup: () => void;
+}) {
+  const [renaming, setRenaming] = useState(false);
+  const [draft, setDraft] = useState(folder.name);
+  return (
+    <div className="flex border-b border-border bg-surface-2/60">
+      <div
+        className="relative z-20 flex w-[172px] shrink-0 items-center gap-1.5 border-r border-border px-2 py-1 sm:w-[244px] sm:px-3"
+        style={{ transform: "translateX(var(--timeline-scroll-x, 0px))" }}
+      >
+        <button
+          type="button"
+          onClick={onToggle}
+          title={folder.collapsed ? `Open ${folder.name} (${count} tracks hidden)` : `Collapse ${folder.name}`}
+          aria-label={folder.collapsed ? `Open folder ${folder.name}` : `Collapse folder ${folder.name}`}
+          className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground"
+        >
+          {folder.collapsed ? <Folder className="size-3.5" /> : <FolderOpen className="size-3.5" />}
+          <ChevronDown className={`size-3 transition-transform ${folder.collapsed ? "-rotate-90" : ""}`} />
+        </button>
+        <span className="size-2 rounded-full" style={{ background: folder.color }} />
+        {renaming ? (
+          <input
+            autoFocus
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={() => {
+              onRename(draft);
+              setRenaming(false);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") e.currentTarget.blur();
+              if (e.key === "Escape") setRenaming(false);
+            }}
+            className="w-24 bg-transparent font-mono text-[10px] uppercase text-foreground outline-none"
+          />
+        ) : (
+          <button
+            type="button"
+            onDoubleClick={() => {
+              setDraft(folder.name);
+              setRenaming(true);
+            }}
+            title="Double-click to rename this folder"
+            className="truncate font-display text-[10px] font-semibold uppercase tracking-widest"
+            style={{ color: folder.color }}
+          >
+            {folder.name}
+          </button>
+        )}
+        <span className="font-mono text-[9px] text-muted-foreground">
+          {count} track{count === 1 ? "" : "s"}
+        </span>
+        <button
+          type="button"
+          onClick={onUngroup}
+          title="Ungroup — the tracks stay, the folder goes"
+          className="ml-auto text-muted-foreground hover:text-destructive"
+          aria-label={`Ungroup folder ${folder.name}`}
+        >
+          <X className="size-3" />
+        </button>
+      </div>
+      <div className="flex-1" style={{ background: `color-mix(in oklab, ${folder.color} 8%, transparent)` }} />
+    </div>
+  );
+}
+
 export function Timeline() {
-  const { tracks, transport, addTrack, addClip, setPanel, loadSample } = useStudio();
+  const { tracks, transport, addTrack, addClip, setPanel, loadSample, folders, renameFolder, removeFolder, toggleFolderCollapsed } = useStudio();
   const totalSteps = songSteps(transport.bars);
   const [over, setOver] = useState(false);
   const [zoom, setZoom] = useState(1);
@@ -2781,9 +2880,25 @@ export function Timeline() {
             className="absolute left-1/2 top-0 w-[min(360px,38%)] -translate-x-[calc(50%-122px)] -translate-y-1/2 select-none opacity-[0.06]"
           />
         </div>
-        {tracks.map((t, i) => (
-          <TrackRow key={t.id} track={t} index={i} />
-        ))}
+        {tracks.map((t, i) => {
+          const folder = t.folderId ? folders.find((f) => f.id === t.folderId) : undefined;
+          const firstInFolder = folder && !tracks.slice(0, i).some((x) => x.folderId === folder.id);
+          if (folder?.collapsed && !firstInFolder) return null;
+          return (
+            <Fragment key={t.id}>
+              {firstInFolder && folder && (
+                <FolderRow
+                  folder={folder}
+                  count={tracks.filter((x) => x.folderId === folder.id).length}
+                  onToggle={() => toggleFolderCollapsed(folder.id)}
+                  onRename={(name) => renameFolder(folder.id, name)}
+                  onUngroup={() => removeFolder(folder.id)}
+                />
+              )}
+              {!folder?.collapsed && <TrackRow track={t} index={i} />}
+            </Fragment>
+          );
+        })}
         <div className="flex items-center gap-3 px-2 pt-2">
           <AddTrackMenu size="sm" />
           <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
