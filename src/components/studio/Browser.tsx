@@ -25,6 +25,7 @@ import { listUserTemplates, type UserTemplate } from "@/lib/synclab/user-templat
 import { TEMPLATES, templateById } from "@/lib/synclab/templates";
 import type { DrumKitId, DrumPad } from "@/lib/synclab/types";
 import { toast } from "sonner";
+import { pickFolder, playPreview, stopPreview, onPreviewChange, type LocalFolder } from "@/lib/synclab/local-files";
 
 const SAMPLE_PACKS: { pack: string; samples: { name: string; kind: string }[] }[] = [
   {
@@ -137,6 +138,25 @@ export function Browser() {
   const [cloud, setCloud] = useState<CloudProject[]>([]);
   const [userTemplates, setUserTemplates] = useState<UserTemplate[]>([]);
   const [busyProject, setBusyProject] = useState<string | null>(null);
+  const [folders, setFolders] = useState<LocalFolder[]>([]);
+  const [playingFile, setPlayingFile] = useState<string | null>(null);
+  useEffect(() => onPreviewChange(setPlayingFile), []);
+  useEffect(() => () => stopPreview(), []);
+  const openComputerFolder = async () => {
+    try {
+      const f = await pickFolder();
+      if (!f) return;
+      if (f.files.length === 0) {
+        toast("No audio files in that folder", { description: "Looking for WAV, MP3, AIFF, FLAC, OGG and M4A." });
+        return;
+      }
+      setFolders((cur) => [f, ...cur]);
+      setOpen((o) => ({ ...o, computer: true, [`cf:${f.id}`]: true }));
+      toast.success(`${f.name}: ${f.files.length} audio file${f.files.length === 1 ? "" : "s"}`);
+    } catch (err) {
+      toast.error("Couldn't open that folder", { description: err instanceof Error ? err.message : undefined });
+    }
+  };
   const {
     tracks,
     selected,
@@ -443,6 +463,69 @@ export function Browser() {
           )}
         </div>
       )}
+
+      {/* COMPUTER — real audio files from a folder the user picks */}
+      <div>
+        <FolderHeader id="computer" icon={<FolderOpen className="size-3 text-primary" />} label="COMPUTER" count={folders.reduce((n, f) => n + f.files.length, 0)} hasMatch={folders.some((f) => f.files.some((x) => match(x.name)))} />
+        {isOpen("computer", folders.some((f) => f.files.some((x) => match(x.name)))) && (
+          <div className="ml-3 border-l-2 border-border">
+            <button type="button" onClick={() => void openComputerFolder()} className="flex w-full items-center gap-2 px-2 py-1.5 text-left font-mono text-[11px] text-primary hover:bg-primary/10">
+              <Plus className="size-3" /> Open a folder on this computer…
+            </button>
+            {folders.length === 0 && <p className="px-2 pb-1.5 text-[9px] text-muted-foreground">Files are read on your device only and stay open until you reload.</p>}
+            {folders.map((f) => {
+              const files = f.files.filter((x) => match(x.name, x.path));
+              const key = `cf:${f.id}`;
+              return (
+                <div key={f.id}>
+                  <div className="flex items-center">
+                    <button type="button" onClick={() => toggle(key)} className="flex flex-1 items-center gap-1.5 px-2 py-1 text-left font-mono text-[11px] hover:bg-primary/10" aria-expanded={isOpen(key, files.length > 0)}>
+                      {isOpen(key, files.length > 0) ? <ChevronDown className="size-3" /> : <ChevronRight className="size-3" />}
+                      <FolderOpen className="size-3 text-amber-400" />
+                      <span className="flex-1 truncate">{f.name}</span>
+                      <span className="text-[9px] text-muted-foreground">{f.files.length}</span>
+                    </button>
+                    <button type="button" aria-label={`Close folder ${f.name}`} onClick={() => setFolders((cur) => cur.filter((x) => x.id !== f.id))} className="px-1.5 text-muted-foreground hover:text-foreground"><X className="size-3" /></button>
+                  </div>
+                  {isOpen(key, files.length > 0) && (
+                    <div className="ml-3 border-l border-border/70">
+                      {files.map((x) => {
+                        const playing = playingFile === x.id;
+                        return (
+                          <div
+                            key={x.id}
+                            draggable
+                            onDragStart={(e) => {
+                              const payload = JSON.stringify({ type: "localfile", id: x.id, name: x.name });
+                              e.dataTransfer.setData("application/synclab", payload);
+                              e.dataTransfer.setData("text/plain", payload);
+                              e.dataTransfer.effectAllowed = "copy";
+                            }}
+                            title={`${x.path} — drag onto the timeline`}
+                            className={`group flex cursor-grab items-center gap-2 px-2 py-1 active:cursor-grabbing ${playing ? "bg-primary/15" : "hover:bg-primary/10"}`}
+                          >
+                            <button
+                              type="button"
+                              aria-label={playing ? `Stop ${x.name}` : `Play ${x.name}`}
+                              onClick={() => (playing ? stopPreview() : void playPreview(x.id).catch(() => toast.error(`Can't play ${x.name}`, { description: "This browser can't decode that file type." })))}
+                              className="grid size-5 shrink-0 place-items-center rounded-sm border border-border text-primary hover:border-primary"
+                            >
+                              {playing ? <Square className="size-2.5 fill-current" /> : <Play className="size-2.5 fill-current" />}
+                            </button>
+                            <span className="flex-1 truncate font-mono text-[11px]">{x.path}</span>
+                            <span className="text-[9px] text-muted-foreground">{(x.size / 1048576).toFixed(1)} MB</span>
+                          </div>
+                        );
+                      })}
+                      {files.length === 0 && <p className="px-2 py-1 text-[10px] text-muted-foreground">No matches.</p>}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       {/* MY FILES */}
       <div>
