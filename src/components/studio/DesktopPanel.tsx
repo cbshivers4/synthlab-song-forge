@@ -100,6 +100,11 @@ export function DesktopPanel() {
       </div>
 
       <div className="rounded-lg border border-border bg-surface p-3">
+        <div className="label-xs mb-2">Download the desktop app</div>
+        <DesktopDownloads />
+      </div>
+
+      <div className="rounded-lg border border-border bg-surface p-3">
         <div className="label-xs mb-2">Desktop app</div>
         <p className="text-[11px] leading-relaxed text-muted-foreground">
           The macOS and Windows app is the same studio in its own window, plus real Save and Open dialogs on your disk
