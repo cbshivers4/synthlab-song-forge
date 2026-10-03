@@ -26,11 +26,19 @@ export function useDetached() {
 }
 
 const SIZES: Record<DetachId, string> = {
-  mixer: "width=1320,height=560",
-  drums: "width=1200,height=720",
-  keys: "width=1200,height=380",
-  synth: "width=1100,height=760",
+  mixer: "width=1320,height=560,resizable=yes",
+  drums: "width=1200,height=720,resizable=yes",
+  keys: "width=1200,height=380,resizable=yes",
+  synth: "width=1100,height=760,resizable=yes",
 };
+
+/** Preset window sizes (percent of the screen) offered in the popup header. */
+const PRESETS = [
+  { label: "S", w: 0.45, h: 0.45 },
+  { label: "M", w: 0.65, h: 0.65 },
+  { label: "L", w: 0.85, h: 0.85 },
+  { label: "FULL", w: 1, h: 1 },
+] as const;
 
 /**
  * Renders children into a real browser/desktop window, so it can be dragged to
