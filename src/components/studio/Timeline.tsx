@@ -939,12 +939,13 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
         }}
         onContextMenu={(e) => isMobile && e.preventDefault()}
         onClick={(e) => {
-          // Selecting a channel from its header opens its edit menu.
+          // Clicking a track's header opens its editor (instrument, drums, sampler).
           if (e.metaKey || e.ctrlKey) return;
           const el = e.target as HTMLElement;
           if (el.closest("button,input,[role='slider'],[role='combobox']")) return;
           select(track.id);
-          if (!isMobile) setMenuOpen(true);
+          if (editorPanel) setPanel(editorPanel);
+          else if (!isMobile) setMenuOpen(true);
         }}
       >
         <div className="flex items-center gap-1.5">
@@ -1338,6 +1339,12 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
                 ? "cursor-crosshair"
                 : ""
         }`}
+        style={{
+          // Clips, waveforms and notes take the track's own colour.
+          "--clip-audio": track.color, "--color-clip-audio": track.color,
+          "--clip-midi": track.color, "--color-clip-midi": track.color,
+          "--clip-drum": track.color, "--color-clip-drum": track.color,
+        } as React.CSSProperties}
         title={
           editTool === "draw"
             ? "Draw tool — click to write a note or drum hit"
