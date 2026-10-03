@@ -1,16 +1,38 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Disc3, Grid2x2, Mic, Minus, Play, Plus, Settings2, Shuffle, SlidersHorizontal, Square, X } from "lucide-react";
+import { Disc3, Grid2x2, Mic, Minus, Play, Plus, Settings2, Shuffle, SlidersHorizontal, Square, Waves, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Knob } from "./Knob";
+import { LiveWave } from "./LiveWave";
 import { useStudio } from "@/lib/synclab/store";
 import { getEngine } from "@/lib/synclab/audio-engine";
-import { openInOwnTab } from "@/lib/synclab/mic";
+import { openInOwnTab, openMic, preferredRecordingMime, releaseMic } from "@/lib/synclab/mic";
+import { getPadBank, setPadBank, subscribePadBank, type SavedPad } from "@/lib/synclab/pad-session";
 import { uid } from "@/lib/synclab/presets";
 import type { DrumPad, Track } from "@/lib/synclab/types";
 import { toast } from "sonner";
 
-type Tab = "pads" | "steps" | "sound" | "rec";
+type Tab = "pads" | "steps" | "sound" | "rec" | "sample";
+
+const SAMPLE_PADS = 8;
+
+const makeSavedPad = (loaded: { url: string; name: string; peaks: number[]; duration: number }): SavedPad => ({
+  name: loaded.name.slice(0, 18),
+  url: loaded.url,
+  duration: loaded.duration,
+  peaks: loaded.peaks,
+  start: 0,
+  end: 1,
+  gain: 1,
+  pitch: 0,
+  reverse: false,
+  loop: false,
+  oneShot: true,
+  attack: 0.002,
+  release: 0.08,
+  choke: 0,
+  steps: Array.from({ length: 16 }, () => 0),
+});
 
 const PAD_HUES = [187, 320, 45, 100, 265, 10, 160, 210];
 
@@ -56,6 +78,127 @@ export function MobileBeat({ onClose }: { onClose: () => void }) {
     },
     [],
   );
+
+  // ---- Koala-style pad sampling (shares the pad bank with the Pad Sampler) ----
+  const [samplePads, setSamplePads] = useState<Record<number, SavedPad>>(() => getPadBank());
+  const [recPad, setRecPad] = useState<number | null>(null);
+  const [recStream, setRecStream] = useState<MediaStream | null>(null);
+  const [sampArm, setSampArm] = useState(false);
+  const [playingPad, setPlayingPad] = useState<number | null>(null);
+  const sampRecRef = useRef<{ rec: MediaRecorder; stream: MediaStream; chunks: Blob[]; pad: number } | null>(null);
+  const sampHoldRef = useRef<{ pad: number; active: boolean } | null>(null);
+  const samplePadsRef = useRef(samplePads);
+  samplePadsRef.current = samplePads;
+  useEffect(() => subscribePadBank((next) => setSamplePads(next)), []);
+  useEffect(
+    () => () => {
+      const current = sampRecRef.current;
+      if (!current) return;
+      if (current.rec.state !== "inactive") current.rec.stop();
+      releaseMic(current.stream);
+      sampRecRef.current = null;
+    },
+    [],
+  );
+
+  const ensureSamplerTrack = (): string => {
+    const existing = tracks.find((t) => t.kind === "sampler" && t.name === "PAD SAMPLER");
+    if (existing) return existing.id;
+    return addTrack("sampler", "PAD SAMPLER");
+  };
+
+  const playSamplePad = (i: number) => {
+    const pad = samplePadsRef.current[i];
+    if (!pad) return;
+    buzz();
+    const engine = getEngine();
+    engine.init().resume().catch(() => undefined);
+    engine.playSample(
+      ensureSamplerTrack(),
+      {
+        url: pad.url,
+        start: pad.start,
+        end: pad.end,
+        gain: pad.gain,
+        pitch: pad.pitch,
+        rootNote: 60,
+        loop: pad.loop,
+        reverse: pad.reverse,
+        oneShot: pad.oneShot,
+        attack: pad.attack,
+        release: pad.release,
+      },
+      60,
+      undefined,
+      1,
+      undefined,
+      pad.choke ? `choke${pad.choke}` : `mpad${i}`,
+    );
+    setPlayingPad(i);
+    window.setTimeout(() => setPlayingPad((p) => (p === i ? null : p)), 140);
+  };
+
+  const startSampleRec = async (i: number) => {
+    const res = await openMic(undefined, "mobile-sample");
+    if ("error" in res) {
+      toast.error("Microphone not available", {
+        description: res.error,
+        duration: 9000,
+        ...(res.canOpenTab ? { action: { label: "Open in tab", onClick: openInOwnTab } } : {}),
+      });
+      return;
+    }
+    const stream = res.stream;
+    const mimeType = preferredRecordingMime();
+    const rec = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+    const chunks: Blob[] = [];
+    rec.ondataavailable = (e) => e.data.size > 0 && chunks.push(e.data);
+    rec.start(200);
+    sampRecRef.current = { rec, stream, chunks, pad: i };
+    setRecStream(stream);
+  };
+
+  const stopSampleRec = async () => {
+    const r = sampRecRef.current;
+    if (!r) return;
+    const blob: Blob = await new Promise((resolve) => {
+      r.rec.onstop = () => resolve(new Blob(r.chunks, { type: r.rec.mimeType || "audio/webm" }));
+      r.rec.stop();
+    });
+    releaseMic(r.stream);
+    sampRecRef.current = null;
+    setRecStream(null);
+    if (!blob.size) return;
+    const loaded = await getEngine().loadSampleFile(blob, `SAMPLE ${r.pad + 1}`);
+    setPadBank({ ...getPadBank(), [r.pad]: makeSavedPad(loaded) });
+    buzz(30);
+    toast.success(`SAMPLE ${r.pad + 1} recorded`, { description: "Tap the pad to play it back." });
+  };
+
+  const beginSampleHold = async (i: number) => {
+    if (sampRecRef.current || sampHoldRef.current) return;
+    sampHoldRef.current = { pad: i, active: true };
+    setRecPad(i);
+    buzz(20);
+    await startSampleRec(i);
+    if (!sampRecRef.current) {
+      sampHoldRef.current = null;
+      setRecPad(null);
+      return;
+    }
+    if (!sampHoldRef.current?.active) {
+      setRecPad(null);
+      await stopSampleRec();
+    }
+  };
+
+  const endSampleHold = () => {
+    if (!sampHoldRef.current) return;
+    sampHoldRef.current.active = false;
+    sampHoldRef.current = null;
+    setRecPad(null);
+    if (sampRecRef.current) void stopSampleRec();
+  };
 
   const startRec = async () => {
     if (recording) return;
@@ -396,6 +539,85 @@ export function MobileBeat({ onClose }: { onClose: () => void }) {
           </div>
         )}
 
+        {tab === "sample" && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <span className="label-xs">Hold an empty pad to sample · tap to play</span>
+              <Button
+                size="sm"
+                variant={sampArm ? "destructive" : "secondary"}
+                className="h-9 rounded-lg font-mono text-[10px] tracking-widest"
+                onClick={() => setSampArm((a) => !a)}
+              >
+                {sampArm ? "RE-RECORD: ON" : "RE-RECORD"}
+              </Button>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {Array.from({ length: SAMPLE_PADS }, (_, i) => {
+                const pad = samplePads[i];
+                const recording = recPad === i;
+                const c = padColor(i);
+                return (
+                  <button
+                    key={i}
+                    aria-label={pad ? `Play ${pad.name}` : `Hold to record sample ${i + 1}`}
+                    onPointerDown={(e) => {
+                      e.preventDefault();
+                      try {
+                        e.currentTarget.setPointerCapture(e.pointerId);
+                      } catch {
+                        /* synthetic pointers */
+                      }
+                      if (pad && !sampArm) playSamplePad(i);
+                      else void beginSampleHold(i);
+                    }}
+                    onPointerUp={endSampleHold}
+                    onPointerCancel={endSampleHold}
+                    className={`relative flex h-32 touch-none flex-col items-center justify-center gap-1 overflow-hidden rounded-2xl border-2 font-mono text-xs tracking-widest uppercase select-none active:scale-95 ${
+                      recording ? "animate-pulse" : ""
+                    } ${!pad && !recording ? "border-dashed" : ""}`}
+                    style={{
+                      borderColor: recording ? "var(--destructive)" : pad ? c : "var(--color-border)",
+                      color: recording ? "var(--destructive)" : pad ? c : "var(--color-muted-foreground)",
+                      background: pad
+                        ? `linear-gradient(150deg, color-mix(in oklab, ${c} 22%, transparent), transparent)`
+                        : "transparent",
+                      boxShadow:
+                        playingPad === i
+                          ? `0 0 22px color-mix(in oklab, ${c} 60%, transparent)`
+                          : recording
+                            ? "0 0 26px color-mix(in oklab, var(--destructive) 55%, transparent)"
+                            : undefined,
+                    }}
+                  >
+                    {recording && recStream ? (
+                      <LiveWave stream={recStream} color="var(--destructive)" label="Recording waveform" />
+                    ) : pad ? (
+                      <div className="flex h-10 w-full items-end justify-center gap-px px-3" aria-hidden>
+                        {pad.peaks.slice(0, 40).map((p, j) => (
+                          <span
+                            key={j}
+                            className="w-full rounded-sm"
+                            style={{ height: `${Math.max(8, p * 100)}%`, background: c, opacity: 0.85 }}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <Mic className="size-7 opacity-70" />
+                    )}
+                    <span>{recording ? "RECORDING…" : pad ? pad.name : `HOLD ${i + 1}`}</span>
+                    {pad && <span className="text-[10px] opacity-60">{pad.duration.toFixed(1)}s</span>}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="label-xs px-1 text-center">
+              These are the same pads as the Pad Sampler — samples you record here show up there too, and save with
+              your project.
+            </p>
+          </div>
+        )}
+
         {tab === "sound" && pad && (
           <div className="space-y-4">
             <div className="flex flex-wrap justify-center gap-4">
@@ -429,13 +651,14 @@ export function MobileBeat({ onClose }: { onClose: () => void }) {
       </div>
 
       {/* Bottom tabs — thumb reach */}
-      <nav className="mobile-beat-tabs grid shrink-0 grid-cols-4 gap-1.5 border-t-2 border-border bg-surface-2/70 px-2 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+      <nav className="mobile-beat-tabs grid shrink-0 grid-cols-5 gap-1.5 border-t-2 border-border bg-surface-2/70 px-2 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
         {(
           [
             ["pads", "PADS", <Grid2x2 key="a" className="size-5" />],
             ["steps", "STEPS", <Disc3 key="b" className="size-5" />],
             ["sound", "SOUND", <SlidersHorizontal key="c" className="size-5" />],
             ["rec", "MIC", <Mic key="d" className="size-5" />],
+            ["sample", "SAMPLE", <Waves key="e" className="size-5" />],
           ] as [Tab, string, React.ReactNode][]
         ).map(([id, label, icon]) => (
           <button
