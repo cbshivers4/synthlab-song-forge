@@ -967,11 +967,15 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           }
         } else if (t.kind === "sampler" && t.sampler && t.notes) {
           for (const note of t.notes) {
-            if (note.step % len === s && (note.recordedEnd == null || (n >= note.step && n < note.recordedEnd))) triggerNote(engine, t, note.pitch, note.length * stepDur, note.velocity, swung);
+            // recorded notes keep a sub-step fraction for quantize; the
+            // scheduler fires on whole steps only, so compare the floored step
+            const step0 = Math.floor(note.step);
+            if (step0 % len === s && (note.recordedEnd == null || (n >= step0 && n < note.recordedEnd))) triggerNote(engine, t, note.pitch, note.length * stepDur, note.velocity, swung);
           }
         } else if (t.patch && t.notes) {
           for (const note of t.notes) {
-            if (note.step % len !== s || (note.recordedEnd != null && (n < note.step || n >= note.recordedEnd))) continue;
+            const step0 = Math.floor(note.step);
+            if (step0 % len !== s || (note.recordedEnd != null && (n < step0 || n >= note.recordedEnd))) continue;
             const dur = (note.length * stepDur) / (t.patch.arp.on ? 2 : 1);
             if (t.patch.arp.on) {
               const oct = t.patch.arp.octaves;
