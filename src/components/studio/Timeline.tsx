@@ -370,6 +370,19 @@ const DrumHitWave = memo(function DrumHitWave({ pads, steps, total }: { pads: { 
   );
 });
 
+/** Shows the track's level after its VCA so moving the VCA fader is visible on the track. */
+function VcaLevel({ track }: { track: Track }) {
+  const { vcas } = useStudio();
+  const st = track.vca ? vcas[track.vca] : undefined;
+  const eff = Math.min(1, track.volume * (st ? (st.muted ? 0 : st.volume) : 1));
+  return (
+    <div className="flex w-14 flex-col gap-0.5" title={`Level after VCA ${track.vca}`} aria-label={`Level after VCA ${track.vca}`}>
+      <div className="h-1.5 rounded-sm bg-surface-2"><div className="h-full rounded-sm bg-primary transition-[width] duration-75" style={{ width: `${eff * 100}%` }} /></div>
+      <span className="font-mono text-[8px] leading-none text-primary">VCA {track.vca} {eff > 0 ? `${(20 * Math.log10(eff)).toFixed(1)} dB` : "-∞"}</span>
+    </div>
+  );
+}
+
 function DrumClip({ track }: { track: Track }) {
   const { setPanel, select, transport } = useStudio();
   const total = songSteps(transport.bars);
@@ -1162,6 +1175,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
             step={0.01}
             onValueChange={([v = 0]) => updateTrack(track.id, { volume: v })}
           />
+          {track.vca && <VcaLevel track={track} />}
         </div>
 
         <LevelBar

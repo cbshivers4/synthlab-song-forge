@@ -899,7 +899,10 @@ function Strip({
   index: number;
   onSelect: () => void;
 }) {
-  const { updateTrack, moveTrack, tracks, transport, setTransport } = useStudio();
+  const { updateTrack, moveTrack, tracks, transport, setTransport, vcas } = useStudio();
+  const vcaState = t.vca ? vcas[t.vca] : undefined;
+  const vcaGain = vcaState ? (vcaState.muted ? 0 : vcaState.volume) : 1;
+  const effective = Math.min(1, t.volume * vcaGain);
   const advanced = useApp().mode === "advanced";
 
   const [clip, setClip] = useState(false);
@@ -1076,12 +1079,18 @@ function Strip({
           onDoubleClick={() => updateTrack(t.id, { volume: 0.8 })}
           onValueChange={([v = 0]) => updateTrack(t.id, { volume: v })}
         />
+        {vcaState && (
+          <div className="relative w-2 shrink-0 rounded-sm bg-surface-2" title={`After VCA ${t.vca}: ${toDb(effective).toFixed(1)} dB`} aria-label={`Level after VCA ${t.vca}`}>
+            <div className="absolute inset-x-0 bottom-0 rounded-sm bg-primary/70 transition-[height] duration-75" style={{ height: `${effective * 100}%` }} />
+            <span className="absolute -top-3 left-1/2 -translate-x-1/2 font-mono text-[7px] text-primary">{t.vca}</span>
+          </div>
+        )}
         <Meter id={t.id} level={level} tall />
       </div>
 
       {/* fader dB + live peak dB */}
       <div className={cn(ROW.readout, "flex items-center justify-between border-b border-border/60 px-1.5")}>
-        <span className="font-mono text-[9px] text-muted-foreground">{toDb(t.volume).toFixed(1)}</span>
+        <span className={cn("font-mono text-[9px]", vcaState ? "text-primary" : "text-muted-foreground")} title={vcaState ? `Fader ${toDb(t.volume).toFixed(1)} dB, after VCA ${t.vca}` : undefined}>{toDb(effective).toFixed(1)}</span>
         <span className={cn("font-mono text-[9px]", level > 0.98 ? "text-red-400" : "text-foreground/70")}>
           {fracToDb(level).toFixed(0)}
         </span>
