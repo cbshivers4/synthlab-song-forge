@@ -6,6 +6,7 @@ import {
   Mic,
   Play,
   Scissors,
+  Sparkles,
   Square,
   Trash2,
   Upload,
@@ -22,6 +23,7 @@ import { useSkin } from "@/lib/synclab/skins";
 import { WaveformView } from "@/components/studio/WaveformView";
 import { LiveWave } from "@/components/studio/LiveWave";
 import { getPadBank, setPadBank, subscribePadBank, type SavedPad } from "@/lib/synclab/pad-session";
+import { renderStarterSamples } from "@/lib/synclab/starter-samples";
 import { MidiLearnButton } from "./MidiLearn";
 
 const BANKS = ["A", "B", "C", "D"] as const;
@@ -508,6 +510,34 @@ export function PadSampler() {
           </Button>
           <Button size="sm" variant="ghost" className="h-9 gap-1.5 sm:h-7" onClick={() => getEngine().stopSamples()}>
             <Square className="size-3.5" /> Panic
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-9 gap-1.5 sm:h-7"
+            onClick={async () => {
+              ensureTrack();
+              const starters = await renderStarterSamples();
+              const current = getPadBank();
+              const empties: number[] = [];
+              for (let i = 0; i < PADS_PER_BANK && empties.length < starters.length; i++) if (!current[i]) empties.push(i);
+              if (!empties.length) {
+                toast("Bank A is full", { description: "Clear a pad or switch banks — starter samples load onto bank A's empty pads." });
+                return;
+              }
+              const next = { ...current };
+              for (let s = 0; s < empties.length; s++) {
+                const st = starters[s]!;
+                const loaded = await getEngine().loadSampleFile(st.blob, st.name);
+                next[empties[s]!] = makePad(loaded);
+              }
+              setPadBank(next);
+              toast.success(`Loaded ${empties.length} starter samples`, {
+                description: "Kick, snare, clap, hats, rim, shaker and tom — real synthesized audio on bank A.",
+              });
+            }}
+          >
+            <Sparkles className="size-3.5" /> Starter samples
           </Button>
         </div>
       </div>
