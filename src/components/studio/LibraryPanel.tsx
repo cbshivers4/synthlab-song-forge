@@ -63,6 +63,7 @@ export function LibraryPanel() {
         if (!source) throw new Error("Pick a pad, file or clip to save.");
         if (type === "pad") {
           const p = pads[Number(id)];
+          if (!p) throw new Error("That pad is empty.");
           audio = await blobFromUrl(p.url);
           fallbackName = p.name;
           data = { duration: p.duration, peaks: p.peaks };
