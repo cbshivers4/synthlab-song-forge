@@ -409,13 +409,18 @@ function useShortcuts() {
           duplicateTrack(selected.id);
         } else if (k === "c" && selected) {
           e.preventDefault();
-          copyTrack(selected.id);
+          const clip = selected.clips?.find((c) => c.id === selected.activeClipId);
+          if (clip) copyClip(selected.id, clip.id);
+          else copyTrack(selected.id);
         } else if (k === "x" && selected) {
           e.preventDefault();
-          cutTrack(selected.id);
+          const clip = selected.clips?.find((c) => c.id === selected.activeClipId);
+          if (clip) cutClip(selected.id, clip.id);
+          else cutTrack(selected.id);
         } else if (k === "v") {
           e.preventDefault();
-          pasteTrack();
+          if (clipClipboardName) pasteClip();
+          else pasteTrack();
         } else if (k === "a") {
           e.preventDefault();
           selectAll();
