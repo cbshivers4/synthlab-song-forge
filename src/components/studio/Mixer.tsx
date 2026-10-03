@@ -153,6 +153,7 @@ function Meter({ id, level, tall }: { id: string; level: number; tall?: boolean 
           />
         );
       })}
+      </div>
     </div>
   );
 }
