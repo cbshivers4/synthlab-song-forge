@@ -54,7 +54,7 @@ function ThemePresets() {
       <Button
         size="sm"
         variant="outline"
-        title="Save sampler, drum machine and synth colors as a theme"
+        title="Save studio panel colors and pictures as a theme"
         onClick={() => {
           const name = window.prompt("Name this theme");
           if (name === null) return;
@@ -188,7 +188,7 @@ export function SkinControls({ skinKey, image, padColor, colorLabel = "Backgroun
           <input
             ref={fileRef}
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/png,image/webp"
             className="hidden"
             onChange={async (e) => {
               const f = e.target.files?.[0];

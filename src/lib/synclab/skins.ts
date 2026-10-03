@@ -11,7 +11,7 @@ export type Skin = {
   imageX?: number | undefined;
   imageY?: number | undefined;
 };
-export type SkinKey = "sampler" | "drums" | "synth";
+export type SkinKey = "sampler" | "drums" | "synth" | "transport" | "live" | "looper" | "sample";
 export type Skins = Partial<Record<SkinKey, Skin>>;
 export type SkinPreset = { id: string; name: string; skins: Skins };
 

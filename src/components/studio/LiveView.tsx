@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { useStudio } from "@/lib/synclab/store";
 import { LIVE_FX, getLiveFx, type LiveFxInfo } from "@/lib/synclab/live-fx";
 import { cn } from "@/lib/utils";
+import { SkinControls, skinBackground } from "@/components/studio/SkinControls";
+import { useSkin } from "@/lib/synclab/skins";
 
 function FxPad({ fx }: { fx: LiveFxInfo }) {
   const box = useRef<HTMLDivElement | null>(null);
@@ -97,11 +99,13 @@ function FxPad({ fx }: { fx: LiveFxInfo }) {
 }
 
 export function LiveView() {
+  const skin = useSkin("live");
   const { transport } = useStudio();
   useEffect(() => { getLiveFx().bpm = transport.bpm; }, [transport.bpm]);
   useEffect(() => () => getLiveFx().detach(), []);
   return (
-    <section className="space-y-2">
+    <section className="studio-wallpaper space-y-3 rounded-md p-3" data-studio-panel="live" style={skinBackground(skin)}>
+      <SkinControls skinKey="live" image />
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h3 className="font-display text-xs font-semibold tracking-[0.2em]">PERFORMANCE FX · WHOLE SONG</h3>
         <p className="text-[11px] text-muted-foreground">Touch and drag a pad to play the effect. Let go to return to dry, or tap HOLD to latch it.</p>

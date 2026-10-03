@@ -16,6 +16,7 @@ import {
   Minus,
   Music2,
   Pause,
+  Palette,
   Piano,
   Play,
   Plus,
@@ -41,6 +42,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Slider } from "@/components/ui/slider";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { SkinControls, skinBackground } from "@/components/studio/SkinControls";
+import { useSkin } from "@/lib/synclab/skins";
 import { useStudio } from "@/lib/synclab/store";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { INSTRUMENTS } from "@/lib/synclab/presets";
@@ -60,6 +64,7 @@ const synclabLogo = synclabLogoAsset.url;
 
 export function TopBar() {
   const isMobile = useIsMobile();
+  const transportSkin = useSkin("transport");
   const { transport, setTransport, togglePlay, toggleRecord, stop, addTrack, setPanel, panel } = useStudio();
 
   const bpb = getBeatsPerBar();
@@ -69,7 +74,7 @@ export function TopBar() {
   const ciBar = Math.floor(ciElapsed / bpb) + 1;
 
   return (
-    <header className="rack sticky top-0 z-30 shrink-0">
+    <header className="studio-wallpaper rack sticky top-0 z-30 shrink-0" data-studio-panel="transport" style={skinBackground(transportSkin)}>
       {transport.countInLeft != null && (
         <div className="pointer-events-none fixed inset-0 z-50 flex flex-col items-center justify-center bg-background/40">
           <div className="label-xs tracking-[0.3em] text-muted-foreground">COUNT-IN · BAR {ciBar}</div>
@@ -316,6 +321,12 @@ export function TopBar() {
         {!isMobile && <MasterMeter />}
 
         <div className="ml-auto flex shrink-0 items-center gap-1">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="icon" className={isMobile ? "size-11" : "size-8"} aria-label="Transport color and wallpaper" title="Transport color and wallpaper"><Palette className="size-4" /></Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-[min(92vw,420px)]"><SkinControls skinKey="transport" image /></PopoverContent>
+          </Popover>
           <PlanBadge />
           <Button
             variant="outline"

@@ -167,8 +167,8 @@ export function DrumMachine({ track }: { track: Track }) {
 
   const skin = useSkin("drums");
   return (
-    <div className={`space-y-3 ${skinBackground(skin) ? "rounded-xl p-3" : ""}`} style={skinBackground(skin)}>
-      <SkinControls skinKey="drums" />
+    <div className="studio-wallpaper space-y-3 rounded-md p-3" data-studio-panel="drums" style={skinBackground(skin)}>
+      <SkinControls skinKey="drums" image />
       <div className="flex flex-wrap items-center gap-2 rounded-[3px] border border-border bg-surface/80 p-2">
         <span className="label-xs mr-1">PATTERNS</span>
         {Array.from({ length: 8 }, (_, index) => (
