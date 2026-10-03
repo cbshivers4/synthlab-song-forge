@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { stepsPerBar, getBeatsPerBar } from "@/lib/synclab/timebase";
-import { SkinControls, skinBackground } from "@/components/studio/SkinControls";
+import { SkinControls, skinBackground, useImageDrop } from "@/components/studio/SkinControls";
 import { useSkin } from "@/lib/synclab/skins";
 import { Copy, Plus, RotateCcw, Save, Sparkles, Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -166,8 +166,9 @@ export function DrumMachine({ track }: { track: Track }) {
   })();
 
   const skin = useSkin("drums");
+  const drop = useImageDrop("drums");
   return (
-    <div className="studio-wallpaper space-y-3 rounded-md p-3" data-studio-panel="drums" style={skinBackground(skin)}>
+    <div className="studio-wallpaper space-y-3 rounded-md p-3" data-studio-panel="drums" style={skinBackground(skin)} {...drop}>
       <SkinControls skinKey="drums" image />
       <div className="flex flex-wrap items-center gap-2 rounded-[3px] border border-border bg-surface/80 p-2">
         <span className="label-xs mr-1">PATTERNS</span>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { SkinControls, skinBackground } from "@/components/studio/SkinControls";
+import { SkinControls, skinBackground, useImageDrop } from "@/components/studio/SkinControls";
 import { useSkin } from "@/lib/synclab/skins";
 import { Plus, Save, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -95,8 +95,9 @@ export function SynthEditor({ track }: { track: Track }) {
   })();
 
   const skin = useSkin("synth");
+  const drop = useImageDrop("synth");
   return (
-    <div className="studio-wallpaper space-y-4 rounded-md p-3" data-studio-panel="synth" style={skinBackground(skin)}>
+    <div className="studio-wallpaper space-y-4 rounded-md p-3" data-studio-panel="synth" style={skinBackground(skin)} {...drop}>
       <SkinControls skinKey="synth" image />
       <div className="flex flex-wrap items-center gap-2">
         <Select value={patch.name} onValueChange={(v) => loadPreset(track.id, v)}>

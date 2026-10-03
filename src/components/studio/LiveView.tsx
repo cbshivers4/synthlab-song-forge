@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useStudio } from "@/lib/synclab/store";
 import { LIVE_FX, getLiveFx, type LiveFxInfo } from "@/lib/synclab/live-fx";
 import { cn } from "@/lib/utils";
-import { SkinControls, skinBackground } from "@/components/studio/SkinControls";
+import { SkinControls, skinBackground, useImageDrop } from "@/components/studio/SkinControls";
 import { useSkin } from "@/lib/synclab/skins";
 
 function FxPad({ fx }: { fx: LiveFxInfo }) {
@@ -100,11 +100,12 @@ function FxPad({ fx }: { fx: LiveFxInfo }) {
 
 export function LiveView() {
   const skin = useSkin("live");
+  const drop = useImageDrop("live");
   const { transport } = useStudio();
   useEffect(() => { getLiveFx().bpm = transport.bpm; }, [transport.bpm]);
   useEffect(() => () => getLiveFx().detach(), []);
   return (
-    <section className="studio-wallpaper space-y-3 rounded-md p-3" data-studio-panel="live" style={skinBackground(skin)}>
+    <section className="studio-wallpaper space-y-3 rounded-md p-3" data-studio-panel="live" style={skinBackground(skin)} {...drop}>
       <SkinControls skinKey="live" image />
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h3 className="font-display text-xs font-semibold tracking-[0.2em]">PERFORMANCE FX · WHOLE SONG</h3>

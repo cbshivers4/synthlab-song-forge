@@ -43,7 +43,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Slider } from "@/components/ui/slider";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { SkinControls, skinBackground } from "@/components/studio/SkinControls";
+import { SkinControls, skinBackground, useImageDrop } from "@/components/studio/SkinControls";
 import { useSkin } from "@/lib/synclab/skins";
 import { useStudio } from "@/lib/synclab/store";
 import { getEngine } from "@/lib/synclab/audio-engine";
@@ -65,6 +65,7 @@ const synclabLogo = synclabLogoAsset.url;
 export function TopBar() {
   const isMobile = useIsMobile();
   const transportSkin = useSkin("transport");
+  const transportDrop = useImageDrop("transport");
   const { transport, setTransport, togglePlay, toggleRecord, stop, addTrack, setPanel, panel } = useStudio();
 
   const bpb = getBeatsPerBar();
@@ -74,7 +75,7 @@ export function TopBar() {
   const ciBar = Math.floor(ciElapsed / bpb) + 1;
 
   return (
-    <header className="studio-wallpaper rack sticky top-0 z-30 shrink-0" data-studio-panel="transport" style={skinBackground(transportSkin)}>
+    <header className="studio-wallpaper rack sticky top-0 z-30 shrink-0" data-studio-panel="transport" style={skinBackground(transportSkin)} {...transportDrop}>
       {transport.countInLeft != null && (
         <div className="pointer-events-none fixed inset-0 z-50 flex flex-col items-center justify-center bg-background/40">
           <div className="label-xs tracking-[0.3em] text-muted-foreground">COUNT-IN · BAR {ciBar}</div>
