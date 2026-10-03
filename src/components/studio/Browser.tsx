@@ -222,7 +222,7 @@ export function Browser() {
         toast("No audio files in that folder", { description: "Looking for WAV, MP3, AIFF, FLAC, OGG and M4A." });
         return;
       }
-      setFolders((cur) => [f, ...cur]);
+      addLocalFolder(f);
       setOpen((o) => ({ ...o, computer: true, [`cf:${f.id}`]: true }));
       toast.success(`${f.name}: ${f.files.length} audio file${f.files.length === 1 ? "" : "s"}`);
     } catch (err) {
@@ -558,7 +558,7 @@ export function Browser() {
                       <span className="flex-1 truncate">{f.name}</span>
                       <span className="text-[9px] text-muted-foreground">{f.files.length}</span>
                     </button>
-                    <button type="button" aria-label={`Close folder ${f.name}`} onClick={() => setFolders((cur) => cur.filter((x) => x.id !== f.id))} className="px-1.5 text-muted-foreground hover:text-foreground"><X className="size-3" /></button>
+                    <button type="button" aria-label={`Close folder ${f.name}`} onClick={() => removeLocalFolder(f.id)} className="px-1.5 text-muted-foreground hover:text-foreground"><X className="size-3" /></button>
                   </div>
                   {isOpen(key, files.length > 0) && (
                     <div className="ml-3 border-l border-border/70">
