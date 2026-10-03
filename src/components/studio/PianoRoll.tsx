@@ -497,6 +497,12 @@ export function PianoRoll({ track }: { track: Track }) {
                 style={{ left: `${((transport.step % steps) / steps) * 100}%` }}
               />
             )}
+            {marquee && (
+              <div
+                className="pointer-events-none absolute z-10 border border-primary bg-primary/15"
+                style={{ left: marquee.x0, top: marquee.y0, width: marquee.x1 - marquee.x0, height: marquee.y1 - marquee.y0 }}
+              />
+            )}
             {notes.map((n) => {
               const rowIndex = pitches.indexOf(n.pitch);
               if (rowIndex < 0) return null;
@@ -571,8 +577,8 @@ export function PianoRoll({ track }: { track: Track }) {
       </div>
 
       <p className="label-xs">
-        DOUBLE-CLICK TO DRAW · DRAG TO MOVE · DRAG RIGHT EDGE TO RESIZE · RIGHT-CLICK TO DELETE · SHIFT-CLICK TO MULTI-SELECT ·
-        DRAG BARS IN VELOCITY LANE
+        DOUBLE-CLICK TO DRAW · DRAG A NOTE TO MOVE · DRAG EMPTY SPACE TO SELECT A GROUP · OCT +/− MOVES THE SELECTION AN OCTAVE ·
+        RIGHT-CLICK TO DELETE · SHIFT-CLICK TO MULTI-SELECT · DRAG BARS IN VELOCITY LANE
       </p>
     </div>
   );
