@@ -81,6 +81,27 @@ export function ToolsRail() {
   const [open, setOpen] = useState(true);
   const [pluginDrop, setPluginDrop] = useState(false);
   const [closedSections, setClosedSections] = useState<Record<string, boolean>>({});
+  const [folders, setFolders] = useState(getLocalFolders);
+  const [playingFile, setPlayingFile] = useState<string | null>(null);
+  const [openFolders, setOpenFolders] = useState<Record<string, boolean>>({});
+  useEffect(() => onFoldersChange(() => setFolders(getLocalFolders())), []);
+  useEffect(() => onPreviewChange(setPlayingFile), []);
+
+  const openComputerFolder = async () => {
+    try {
+      const f = await pickFolder();
+      if (!f) return;
+      if (f.files.length === 0) {
+        toast("No audio files in that folder", { description: "Looking for WAV, MP3, AIFF, FLAC, OGG and M4A." });
+        return;
+      }
+      addLocalFolder(f);
+      setOpenFolders((o) => ({ ...o, [f.id]: true }));
+      toast.success(`${f.name}: ${f.files.length} audio file${f.files.length === 1 ? "" : "s"}`);
+    } catch (err) {
+      toast.error("Couldn't open that folder", { description: err instanceof Error ? err.message : undefined });
+    }
+  };
 
   const visible = (t: Tool) => advanced || !t.advanced;
   const sections = SECTIONS.map((s) => ({ ...s, tools: s.tools.filter(visible) })).filter((s) => s.tools.length > 0);
