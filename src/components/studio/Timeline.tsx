@@ -345,7 +345,9 @@ function MidiClip({ track }: { track: Track }) {
   const rows = 12;
   return (
     <div
-      className="absolute inset-y-2 left-1 right-1 overflow-hidden rounded-[3px] border border-clip-midi/30 bg-clip-midi/10 shadow-sm transition-colors hover:bg-clip-midi/15"
+      className="absolute inset-y-2 left-1 right-1 cursor-grab overflow-hidden rounded-[3px] border border-clip-midi/30 bg-clip-midi/10 shadow-sm transition-colors hover:bg-clip-midi/15 active:cursor-grabbing"
+      onPointerDown={beginPatternDrag}
+      title="Drag to move this part to any grid position — double-click to open the piano roll"
       onDoubleClick={() => {
         select(track.id);
         setPanel("piano");
