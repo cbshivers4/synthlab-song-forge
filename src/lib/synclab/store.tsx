@@ -2376,7 +2376,12 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             if (t.id !== trackId) return t;
             const plugins = (t.plugins ?? []).map((p) =>
               p.id === instanceId
-                ? { ...p, params: p.params.map((x: PluginParam) => (x.id === paramId ? { ...x, value } : x)) }
+                ? {
+                    ...p,
+                    params: p.params.some((x: PluginParam) => x.id === paramId)
+                      ? p.params.map((x: PluginParam) => (x.id === paramId ? { ...x, value } : x))
+                      : [...p.params, { id: paramId, label: paramId, value, min: value, max: value, unit: "" } as PluginParam],
+                  }
                 : p,
             );
             const lane = (t.automation ?? []).find((item) => item.param === automationParam);
