@@ -11,14 +11,15 @@ function emit() {
   listeners.forEach((fn) => fn());
 }
 
-export function keyDown(midi: number) {
+export function keyDown(midi: number, holdMs = 1500) {
   active.add(midi);
   const old = timers.get(midi);
   if (old) clearTimeout(old);
-  // Safety: sources without note-off (on-screen taps, typing keys) auto-release.
+  // Safety: sources without note-off (on-screen taps) auto-release. MIDI
+  // controllers send a real note-off, so they pass a long hold.
   timers.set(
     midi,
-    setTimeout(() => keyUp(midi), 1500),
+    setTimeout(() => keyUp(midi), holdMs),
   );
   emit();
 }
