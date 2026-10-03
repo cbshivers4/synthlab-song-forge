@@ -1,5 +1,5 @@
 /**
- * Native application menu for SYNCLAB Vocal Forge.
+ * Native application menu for SYNCLAB.
  *
  * Every item here is wired to something the studio actually does: each one sends
  * a command string to the page, which src/lib/synclab/desktop-menu.ts maps onto a
@@ -136,14 +136,6 @@ function buildMenu(win) {
         item("Stem Separator", "panel:stems"),
         item("Voice Remover", "panel:voice"),
         item("Browser", "panel:browser"),
-      ],
-    },
-    {
-      label: "AI",
-      submenu: [
-        item("AI Vocal Forge", "panel:vocal"),
-        item("AI Co-Producer", "panel:coproducer"),
-        item("Bass Generator", "panel:bass"),
       ],
     },
     {
