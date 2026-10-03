@@ -18,6 +18,7 @@ import { getMidiAccess, listInputs, midiSupported, subscribe, type MidiPortInfo 
 import { getPadBank, setPadBank } from "./pad-session";
 import { getLooper } from "./live-looper";
 import { padNote } from "./drum-notes";
+import { autoMapEnabled, isKorgMixer, korgAutoMap } from "./korg-automap";
 import type { CloudSession } from "./cloud";
 import type {
   AudioClip,
@@ -390,6 +391,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const [installedPlugins, setInstalledPlugins] = useState<PluginDef[]>(BUILT_IN_PLUGINS);
   const [fxChains, setFxChains] = useState<Record<string, PluginInstance[]>>({});
   const [midiInputs, setMidiInputs] = useState<MidiPortInfo[]>([]);
+  const midiInputsRef = useRef(midiInputs);
+  midiInputsRef.current = midiInputs;
   // Chosen controller is remembered so it reconnects on its own next visit.
   const [midiInputId, setMidiInputId] = useState<string | null>(() => {
     if (typeof window === "undefined") return null;
