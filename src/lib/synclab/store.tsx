@@ -1468,7 +1468,16 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       const t = tracksRef.current.find((x) => x.id === trackId);
       if (!t || !tp.recording) return;
       if (t.kind !== "instrument" && t.kind !== "midi" && t.kind !== "sampler") return;
-      const note: MidiNote = { id: uid(), step: tp.step, length: 1, pitch: midi, velocity };
+      // stamp the true sub-step position from the audio clock so the take keeps
+      // the player's timing — quantize then has something real to snap
+      let stepPos = tp.step;
+      const ls = lastStepRef.current;
+      const eng = getEngine();
+      if (tp.playing && ls && eng.ctx) {
+        const frac = Math.min(0.999, Math.max(0, (eng.ctx.currentTime - ls.time) / ls.dur));
+        stepPos = (ls.step + frac) % songSteps(tp.bars);
+      }
+      const note: MidiNote = { id: uid(), step: Math.max(0, stepPos), length: 1, pitch: midi, velocity };
       recordedNoteIdsRef.current.add(note.id);
       setTracks((ts) => ts.map((x) => (x.id === t.id ? { ...x, notes: [...(x.notes ?? []), note] } : x)));
     };
