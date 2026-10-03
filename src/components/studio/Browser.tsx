@@ -804,6 +804,9 @@ export function Browser() {
           </div>
         )}
       </div>
+
+      {/* file player with live scope — pinned to the bottom of the browser */}
+      <PreviewPlayer playingFile={playingFile} />
     </div>
   );
 }
