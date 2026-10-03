@@ -27,6 +27,7 @@ import { TEMPLATES, templateById } from "@/lib/synclab/templates";
 import type { DrumKitId, DrumPad } from "@/lib/synclab/types";
 import { toast } from "sonner";
 import { clipFromLocalFile, pickFolder, playPreview, stopPreview, onPreviewChange, getLocalFile, getPreviewAnalyser, getLocalFolders, addLocalFolder, removeLocalFolder, onFoldersChange } from "@/lib/synclab/local-files";
+import { LibraryPanel } from "./LibraryPanel";
 
 /** Bottom-of-browser player: shows the file being previewed with a live waveform scope. */
 function PreviewPlayer({ playingFile }: { playingFile: string | null }) {
