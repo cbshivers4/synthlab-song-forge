@@ -866,6 +866,187 @@ export const SYNTH_PRESETS: PresetDef[] = [
   },
 ];
 
+// ---- 100 additional factory presets, grouped by category ----
+type PresetCfg = {
+  wave?: OscillatorParams["wave"];
+  wave2?: OscillatorParams["wave"] | null;
+  oct?: number;
+  oct2?: number;
+  detune2?: number;
+  level2?: number;
+  cutoff?: number;
+  res?: number;
+  attack?: number;
+  decay?: number;
+  sustain?: number;
+  release?: number;
+  envAmt?: number;
+  envDecay?: number;
+  glide?: number;
+  unison?: number;
+  width?: number;
+  drive?: number;
+  dist?: number;
+  chorus?: number;
+  delay?: number;
+  reverb?: number;
+  crush?: number;
+  noise?: number;
+  lfo?: { rate: number; wave: "sine" | "triangle" | "square" | "sawtooth"; amount: number; destination: "filter" | "pitch" | "pan" | "amp" };
+  filterType?: BiquadFilterType;
+  arp?: boolean;
+};
+const mk = (name: string, category: string, c: PresetCfg): PresetDef => ({
+  name,
+  category,
+  mutate: (p) => {
+    if (c.wave) O(p, 0).wave = c.wave;
+    if (c.oct !== undefined) O(p, 0).octave = c.oct;
+    if (c.wave2 === null) O(p, 1).on = false;
+    else if (c.wave2) {
+      O(p, 1).on = true;
+      O(p, 1).wave = c.wave2;
+      if (c.oct2 !== undefined) O(p, 1).octave = c.oct2;
+      if (c.detune2 !== undefined) O(p, 1).detune = c.detune2;
+      if (c.level2 !== undefined) O(p, 1).level = c.level2;
+    }
+    if (c.cutoff !== undefined) p.cutoff = c.cutoff;
+    if (c.res !== undefined) p.resonance = c.res;
+    if (c.filterType) p.filterType = c.filterType;
+    if (c.attack !== undefined) p.amp.attack = c.attack;
+    if (c.decay !== undefined) p.amp.decay = c.decay;
+    if (c.sustain !== undefined) p.amp.sustain = c.sustain;
+    if (c.release !== undefined) p.amp.release = c.release;
+    if (c.envAmt !== undefined) p.filterEnv.amount = c.envAmt;
+    if (c.envDecay !== undefined) p.filterEnv.decay = c.envDecay;
+    if (c.glide !== undefined) p.glide = c.glide;
+    if (c.unison !== undefined) p.unison.voices = c.unison;
+    if (c.width !== undefined) p.unison.width = c.width;
+    if (c.drive !== undefined) p.drive = c.drive;
+    if (c.dist !== undefined) p.fx.distortion = c.dist;
+    if (c.chorus !== undefined) p.fx.chorus = c.chorus;
+    if (c.delay !== undefined) p.fx.delay = c.delay;
+    if (c.reverb !== undefined) p.fx.reverb = c.reverb;
+    if (c.crush !== undefined) p.fx.bitcrush = c.crush;
+    if (c.noise !== undefined) p.noise = c.noise;
+    if (c.lfo) p.lfos[0] = { on: true, ...c.lfo };
+    if (c.arp) p.arp = { on: true, rate: 1, direction: "up", octaves: 1, gate: 0.5 };
+  },
+});
+
+SYNTH_PRESETS.push(
+  // Bass
+  mk("Sub Pressure", "Bass", { wave: "sine", wave2: null, oct: -1, cutoff: 500, attack: 0.003, sustain: 0.9, release: 0.2 }),
+  mk("Reese Growl", "Bass", { wave: "sawtooth", wave2: "sawtooth", oct: -1, detune2: 22, cutoff: 800, res: 4, dist: 0.4, sustain: 0.8 }),
+  mk("Pluck Bass", "Bass", { wave: "square", wave2: null, oct: -1, cutoff: 1400, envAmt: 2200, envDecay: 0.12, attack: 0.002, decay: 0.15, sustain: 0.05, release: 0.1 }),
+  mk("Round Bass", "Bass", { wave: "triangle", wave2: "sine", oct: -1, cutoff: 900, attack: 0.01, sustain: 0.7, release: 0.25 }),
+  mk("Wobble Bass", "Bass", { wave: "sawtooth", wave2: "square", oct: -1, cutoff: 600, res: 10, lfo: { rate: 2, wave: "sine", amount: 0.8, destination: "filter" }, sustain: 0.8 }),
+  mk("Distorted 808", "Bass", { wave: "sine", wave2: null, oct: -1, cutoff: 400, dist: 0.55, drive: 0.5, attack: 0.002, decay: 0.5, sustain: 0.3, release: 0.3 }),
+  mk("FM-Style Bass", "Bass", { wave: "square", wave2: "sawtooth", oct: -1, oct2: 0, detune2: 3, cutoff: 1100, envAmt: 1500, attack: 0.002, sustain: 0.5 }),
+  mk("Upright-ish", "Bass", { wave: "triangle", wave2: null, cutoff: 1200, attack: 0.004, decay: 0.4, sustain: 0.15, release: 0.3 }),
+  mk("Acid Bass II", "Bass", { wave: "sawtooth", wave2: null, oct: -1, cutoff: 650, res: 18, envAmt: 3800, envDecay: 0.18, glide: 0.05, dist: 0.35 }),
+  mk("Deep Sub Drone", "Bass", { wave: "sine", wave2: "triangle", oct: -2, oct2: -1, cutoff: 300, attack: 0.15, sustain: 1, release: 0.8 }),
+  // Lead
+  mk("Saw Hero", "Lead", { wave: "sawtooth", wave2: "sawtooth", detune2: 10, cutoff: 3200, res: 6, glide: 0.04, delay: 0.3, reverb: 0.3 }),
+  mk("Square Caller", "Lead", { wave: "square", wave2: null, cutoff: 2600, res: 8, glide: 0.06, attack: 0.005, sustain: 0.6 }),
+  mk("Soft Flute Lead", "Lead", { wave: "triangle", wave2: "sine", oct2: 1, level2: 0.25, cutoff: 2000, attack: 0.08, sustain: 0.7, reverb: 0.4 }),
+  mk("Aggro Stab Lead", "Lead", { wave: "sawtooth", wave2: "square", detune2: -8, cutoff: 3800, res: 10, dist: 0.4, attack: 0.002, decay: 0.2, sustain: 0.3 }),
+  mk("Portamento Cry", "Lead", { wave: "sawtooth", wave2: null, cutoff: 2400, res: 12, glide: 0.12, lfo: { rate: 5.5, wave: "sine", amount: 0.25, destination: "pitch" } }),
+  mk("Chip Lead", "Lead", { wave: "square", wave2: null, oct: 1, cutoff: 6000, attack: 0.001, decay: 0.1, sustain: 0.5, release: 0.08, crush: 0.3 }),
+  mk("Wide Unison Lead", "Lead", { wave: "sawtooth", wave2: "sawtooth", detune2: 14, unison: 5, width: 0.8, cutoff: 3000, chorus: 0.5 }),
+  mk("Dark Mono Lead", "Lead", { wave: "sawtooth", wave2: null, oct: -1, cutoff: 1600, res: 8, glide: 0.08, dist: 0.25 }),
+  mk("Glass Lead", "Lead", { wave: "triangle", wave2: "sine", oct2: 2, level2: 0.2, cutoff: 4500, attack: 0.02, reverb: 0.5, delay: 0.35 }),
+  mk("Vocal Lead", "Lead", { wave: "sawtooth", wave2: null, filterType: "bandpass", cutoff: 1100, res: 12, lfo: { rate: 4, wave: "sine", amount: 0.35, destination: "filter" }, chorus: 0.35 }),
+  // Pad
+  mk("Warm Analog Pad", "Pad", { wave: "sawtooth", wave2: "sawtooth", detune2: 12, cutoff: 1600, attack: 0.6, sustain: 0.85, release: 1.8, chorus: 0.5, reverb: 0.55 }),
+  mk("Glass Pad", "Pad", { wave: "triangle", wave2: "sine", oct2: 1, cutoff: 2400, attack: 0.8, sustain: 0.8, release: 2.4, reverb: 0.7 }),
+  mk("Dark Drone Pad", "Pad", { wave: "sawtooth", wave2: "square", oct: -1, detune2: 6, cutoff: 700, attack: 1.2, sustain: 0.9, release: 3, reverb: 0.6 }),
+  mk("Strings Ensemble", "Pad", { wave: "sawtooth", wave2: "sawtooth", detune2: 18, unison: 4, width: 0.6, cutoff: 2000, attack: 0.4, sustain: 0.85, release: 1.5, chorus: 0.55 }),
+  mk("Shimmer Pad", "Pad", { wave: "triangle", wave2: "triangle", oct2: 2, level2: 0.2, cutoff: 3000, attack: 0.9, sustain: 0.75, release: 2.8, reverb: 0.8, delay: 0.3 }),
+  mk("Lo-Fi Pad", "Pad", { wave: "sawtooth", wave2: null, cutoff: 1200, attack: 0.5, sustain: 0.7, release: 1.6, crush: 0.35, noise: 0.08, chorus: 0.4 }),
+  mk("Choir-ish Pad", "Pad", { wave: "sawtooth", wave2: "triangle", filterType: "bandpass", cutoff: 900, res: 4, attack: 0.7, sustain: 0.8, release: 2, reverb: 0.75 }),
+  mk("Pulse Pad", "Pad", { wave: "square", wave2: "square", detune2: 8, cutoff: 1400, attack: 0.4, sustain: 0.7, release: 1.4, lfo: { rate: 0.8, wave: "triangle", amount: 0.4, destination: "filter" } }),
+  mk("Ice Pad", "Pad", { wave: "sine", wave2: "triangle", oct2: 1, cutoff: 3500, attack: 1, sustain: 0.8, release: 3, reverb: 0.85 }),
+  mk("Vintage String Pad", "Pad", { wave: "sawtooth", wave2: "sawtooth", detune2: 9, cutoff: 1800, attack: 0.35, sustain: 0.8, release: 1.2, chorus: 0.6, reverb: 0.4 }),
+  // Keys
+  mk("Electric Piano", "Keys", { wave: "triangle", wave2: "sine", oct2: 1, level2: 0.3, cutoff: 2200, attack: 0.002, decay: 0.8, sustain: 0.2, release: 0.5, chorus: 0.3 }),
+  mk("Clav Funk", "Keys", { wave: "square", wave2: null, cutoff: 2800, res: 6, attack: 0.001, decay: 0.18, sustain: 0.1, release: 0.12, dist: 0.2 }),
+  mk("Grand-ish Piano", "Keys", { wave: "triangle", wave2: "sine", oct2: 1, level2: 0.2, cutoff: 3500, attack: 0.001, decay: 1.2, sustain: 0.1, release: 0.4, reverb: 0.3 }),
+  mk("Organ Drawbar", "Keys", { wave: "sine", wave2: "sine", oct2: 1, level2: 0.5, cutoff: 4000, attack: 0.005, sustain: 0.95, release: 0.1, chorus: 0.25 }),
+  mk("Rock Organ", "Keys", { wave: "square", wave2: "sawtooth", level2: 0.3, cutoff: 3200, attack: 0.003, sustain: 0.9, release: 0.12, dist: 0.3, chorus: 0.35 }),
+  mk("Wurly", "Keys", { wave: "sawtooth", wave2: "triangle", cutoff: 1800, attack: 0.002, decay: 0.6, sustain: 0.25, release: 0.35, dist: 0.15, chorus: 0.3 }),
+  mk("Harpsi Pluck", "Keys", { wave: "square", wave2: null, oct: 1, cutoff: 4500, attack: 0.001, decay: 0.25, sustain: 0, release: 0.15 }),
+  mk("Mellow Rhodes", "Keys", { wave: "sine", wave2: "triangle", cutoff: 1600, attack: 0.004, decay: 0.9, sustain: 0.3, release: 0.6, chorus: 0.4, reverb: 0.35 }),
+  mk("Detroit Keys", "Keys", { wave: "triangle", wave2: "square", level2: 0.2, cutoff: 2000, attack: 0.003, decay: 0.5, sustain: 0.25, release: 0.4, delay: 0.25 }),
+  mk("Toy Piano", "Keys", { wave: "square", wave2: "sine", oct: 1, oct2: 2, level2: 0.3, cutoff: 5000, attack: 0.001, decay: 0.4, sustain: 0.05, release: 0.3, crush: 0.15 }),
+  // Pluck
+  mk("Marimba Pluck", "Pluck", { wave: "sine", wave2: "triangle", cutoff: 2400, envAmt: 1800, envDecay: 0.15, attack: 0.001, decay: 0.3, sustain: 0, release: 0.2 }),
+  mk("Kalimba", "Pluck", { wave: "triangle", wave2: null, oct: 1, cutoff: 3000, envAmt: 2000, envDecay: 0.1, attack: 0.001, decay: 0.35, sustain: 0, release: 0.25 }),
+  mk("Acid Pluck", "Pluck", { wave: "sawtooth", wave2: null, cutoff: 900, res: 14, envAmt: 3200, envDecay: 0.12, attack: 0.001, decay: 0.15, sustain: 0, release: 0.1 }),
+  mk("Harp Pluck", "Pluck", { wave: "triangle", wave2: "sawtooth", level2: 0.15, cutoff: 4000, attack: 0.001, decay: 0.7, sustain: 0, release: 0.5, reverb: 0.45 }),
+  mk("Funk Guitar-ish", "Pluck", { wave: "sawtooth", wave2: "square", level2: 0.3, cutoff: 2200, envAmt: 1500, envDecay: 0.08, attack: 0.001, decay: 0.12, sustain: 0.05, release: 0.08, dist: 0.25 }),
+  mk("Bell Pluck", "Pluck", { wave: "sine", wave2: "sine", oct2: 2, level2: 0.25, cutoff: 5000, attack: 0.001, decay: 0.9, sustain: 0, release: 0.7, reverb: 0.5 }),
+  mk("Rubber Pluck", "Pluck", { wave: "square", wave2: null, cutoff: 1200, res: 8, envAmt: 1200, envDecay: 0.09, attack: 0.002, decay: 0.14, sustain: 0.05, release: 0.1 }),
+  mk("Steel Drum-ish", "Pluck", { wave: "triangle", wave2: "sine", oct2: 1, detune2: 5, cutoff: 3800, attack: 0.001, decay: 0.5, sustain: 0.05, release: 0.4, delay: 0.2 }),
+  mk("Muted Pluck", "Pluck", { wave: "sawtooth", wave2: null, cutoff: 700, envAmt: 900, envDecay: 0.07, attack: 0.001, decay: 0.1, sustain: 0, release: 0.06 }),
+  mk("Dream Pluck", "Pluck", { wave: "triangle", wave2: "triangle", detune2: 10, cutoff: 2600, attack: 0.005, decay: 0.5, sustain: 0.1, release: 0.6, reverb: 0.6, chorus: 0.4 }),
+  // Arp
+  mk("Trance Arp", "Arp", { wave: "sawtooth", wave2: "square", level2: 0.3, cutoff: 2800, res: 8, envAmt: 2000, envDecay: 0.1, attack: 0.001, decay: 0.12, sustain: 0.1, release: 0.08, arp: true, delay: 0.3 }),
+  mk("Chip Arp", "Arp", { wave: "square", wave2: null, cutoff: 5500, attack: 0.001, decay: 0.08, sustain: 0.2, release: 0.05, arp: true, crush: 0.25 }),
+  mk("Dark Sequence", "Arp", { wave: "sawtooth", wave2: null, oct: -1, cutoff: 1100, res: 10, envAmt: 1600, envDecay: 0.14, attack: 0.002, decay: 0.16, sustain: 0.15, release: 0.1, arp: true, dist: 0.3 }),
+  mk("Glass Arp", "Arp", { wave: "triangle", wave2: "sine", oct2: 1, cutoff: 4200, attack: 0.002, decay: 0.3, sustain: 0.1, release: 0.3, arp: true, reverb: 0.5 }),
+  mk("Berlin School", "Arp", { wave: "sawtooth", wave2: "sawtooth", detune2: 7, cutoff: 1800, envAmt: 2400, envDecay: 0.18, attack: 0.002, decay: 0.2, sustain: 0.2, release: 0.15, arp: true, delay: 0.4 }),
+  mk("Plucky Arp", "Arp", { wave: "square", wave2: null, cutoff: 2000, envAmt: 1800, envDecay: 0.09, attack: 0.001, decay: 0.1, sustain: 0, release: 0.08, arp: true }),
+  mk("Wide Arp", "Arp", { wave: "sawtooth", wave2: "sawtooth", detune2: 15, unison: 4, width: 0.7, cutoff: 3000, attack: 0.002, decay: 0.15, sustain: 0.15, release: 0.12, arp: true, chorus: 0.4 }),
+  mk("Minor Pulse", "Arp", { wave: "square", wave2: null, oct: -1, cutoff: 1400, res: 6, attack: 0.003, decay: 0.2, sustain: 0.3, release: 0.15, arp: true }),
+  mk("Sparkle Arp", "Arp", { wave: "triangle", wave2: null, oct: 1, cutoff: 6000, attack: 0.001, decay: 0.2, sustain: 0.05, release: 0.2, arp: true, delay: 0.35, reverb: 0.4 }),
+  mk("Driving 16ths", "Arp", { wave: "sawtooth", wave2: "square", oct: -1, cutoff: 1600, res: 8, envAmt: 1400, envDecay: 0.1, attack: 0.001, decay: 0.12, sustain: 0.2, release: 0.08, arp: true, dist: 0.2 }),
+  // Strings
+  mk("Chamber Strings", "Strings", { wave: "sawtooth", wave2: "sawtooth", detune2: 10, unison: 3, cutoff: 2200, attack: 0.25, sustain: 0.85, release: 1, chorus: 0.4, reverb: 0.45 }),
+  mk("Pizzicato", "Strings", { wave: "sawtooth", wave2: null, cutoff: 2600, envAmt: 1200, envDecay: 0.06, attack: 0.001, decay: 0.12, sustain: 0, release: 0.1 }),
+  mk("Cello Section", "Strings", { wave: "sawtooth", wave2: "triangle", oct: -1, cutoff: 1400, attack: 0.2, sustain: 0.8, release: 0.8, reverb: 0.4 }),
+  mk("Synth Strings 80s", "Strings", { wave: "sawtooth", wave2: "square", detune2: 12, cutoff: 2600, attack: 0.3, sustain: 0.85, release: 1.2, chorus: 0.6 }),
+  mk("Tremolo Strings", "Strings", { wave: "sawtooth", wave2: "sawtooth", detune2: 8, cutoff: 2400, attack: 0.15, sustain: 0.85, release: 0.9, lfo: { rate: 6, wave: "sine", amount: 0.3, destination: "amp" } }),
+  mk("Octave Strings", "Strings", { wave: "sawtooth", wave2: "sawtooth", oct2: 1, detune2: 6, cutoff: 2000, attack: 0.3, sustain: 0.8, release: 1.1, reverb: 0.5 }),
+  mk("Muted Strings", "Strings", { wave: "sawtooth", wave2: null, cutoff: 1100, attack: 0.2, sustain: 0.75, release: 0.7, chorus: 0.3 }),
+  mk("Epic Strings", "Strings", { wave: "sawtooth", wave2: "sawtooth", detune2: 16, unison: 5, width: 0.7, cutoff: 2800, attack: 0.4, sustain: 0.9, release: 1.6, reverb: 0.65, chorus: 0.5 }),
+  mk("Solo Violin-ish", "Strings", { wave: "sawtooth", wave2: null, cutoff: 2600, res: 3, attack: 0.12, sustain: 0.8, release: 0.4, glide: 0.03, lfo: { rate: 5.5, wave: "sine", amount: 0.15, destination: "pitch" } }),
+  mk("Low Strings", "Strings", { wave: "sawtooth", wave2: "sawtooth", oct: -1, detune2: 10, cutoff: 900, attack: 0.35, sustain: 0.85, release: 1.3, reverb: 0.5 }),
+  // Brass
+  mk("Synth Brass", "Brass", { wave: "sawtooth", wave2: "square", level2: 0.3, cutoff: 2000, envAmt: 1200, envDecay: 0.2, attack: 0.06, sustain: 0.75, release: 0.3, chorus: 0.3 }),
+  mk("Trumpet-ish", "Brass", { wave: "sawtooth", wave2: null, cutoff: 2400, res: 4, attack: 0.05, sustain: 0.8, release: 0.25, lfo: { rate: 5, wave: "sine", amount: 0.1, destination: "pitch" } }),
+  mk("Brass Stab", "Brass", { wave: "sawtooth", wave2: "sawtooth", detune2: 8, cutoff: 2600, envAmt: 1800, envDecay: 0.15, attack: 0.005, decay: 0.25, sustain: 0.3, release: 0.2 }),
+  mk("Tuba Bass", "Brass", { wave: "sawtooth", wave2: null, oct: -2, cutoff: 900, attack: 0.04, sustain: 0.8, release: 0.3 }),
+  mk("Horn Section", "Brass", { wave: "sawtooth", wave2: "sawtooth", detune2: 12, unison: 3, cutoff: 2200, attack: 0.04, sustain: 0.8, release: 0.3, chorus: 0.35 }),
+  mk("Muted Trumpet", "Brass", { wave: "sawtooth", wave2: null, cutoff: 1300, res: 5, attack: 0.05, sustain: 0.7, release: 0.25 }),
+  mk("Fanfare", "Brass", { wave: "sawtooth", wave2: "square", detune2: 6, cutoff: 3000, envAmt: 1500, envDecay: 0.25, attack: 0.03, sustain: 0.85, release: 0.4, reverb: 0.4 }),
+  mk("Soft Trombone", "Brass", { wave: "sawtooth", wave2: "triangle", cutoff: 1500, attack: 0.08, sustain: 0.8, release: 0.4, glide: 0.04 }),
+  mk("Brass Swell", "Brass", { wave: "sawtooth", wave2: "sawtooth", detune2: 9, cutoff: 1800, envAmt: 1600, envDecay: 0.6, attack: 0.5, sustain: 0.85, release: 0.8, reverb: 0.5 }),
+  mk("Funk Horn Hit", "Brass", { wave: "square", wave2: "sawtooth", level2: 0.4, cutoff: 2800, envAmt: 2000, envDecay: 0.1, attack: 0.002, decay: 0.15, sustain: 0.1, release: 0.12, dist: 0.2 }),
+  // FX
+  mk("Riser Sweep", "FX", { wave: "sawtooth", wave2: null, cutoff: 800, res: 10, attack: 1.5, sustain: 1, release: 1, lfo: { rate: 0.3, wave: "sawtooth", amount: 0.9, destination: "filter" }, noise: 0.15, reverb: 0.6 }),
+  mk("Noise Sweep", "FX", { wave: "sine", wave2: null, noise: 0.6, cutoff: 1000, res: 8, attack: 1, sustain: 0.9, release: 1.5, lfo: { rate: 0.2, wave: "triangle", amount: 0.8, destination: "filter" } }),
+  mk("Laser Zap", "FX", { wave: "square", wave2: null, oct: 1, cutoff: 5000, res: 12, glide: 0.02, lfo: { rate: 8, wave: "sawtooth", amount: 0.7, destination: "pitch" }, attack: 0.001, decay: 0.3, sustain: 0, release: 0.2 }),
+  mk("Sub Drop", "FX", { wave: "sine", wave2: null, oct: -1, cutoff: 400, glide: 0.3, attack: 0.005, decay: 1, sustain: 0, release: 0.8, dist: 0.3 }),
+  mk("Atmosphere", "FX", { wave: "triangle", wave2: "sawtooth", level2: 0.15, noise: 0.2, cutoff: 1200, attack: 2, sustain: 0.9, release: 3, reverb: 0.85, chorus: 0.5 }),
+  mk("Vinyl Crackle", "FX", { wave: "sine", wave2: null, noise: 0.4, cutoff: 3000, attack: 0.01, sustain: 0.6, release: 0.5, crush: 0.4 }),
+  mk("Metal Hit", "FX", { wave: "square", wave2: "square", detune2: 31, noise: 0.3, filterType: "bandpass", cutoff: 2500, res: 14, attack: 0.001, decay: 0.6, sustain: 0, release: 0.5, reverb: 0.5 }),
+  mk("Wind", "FX", { wave: "sine", wave2: null, noise: 0.7, filterType: "bandpass", cutoff: 800, res: 6, attack: 1.2, sustain: 0.8, release: 2, lfo: { rate: 0.4, wave: "sine", amount: 0.5, destination: "filter" } }),
+  mk("Alarm", "FX", { wave: "square", wave2: null, cutoff: 4000, lfo: { rate: 2, wave: "square", amount: 0.6, destination: "pitch" }, attack: 0.005, sustain: 0.9, release: 0.2 }),
+  mk("Space Echo", "FX", { wave: "triangle", wave2: null, cutoff: 2000, attack: 0.3, sustain: 0.5, release: 1.5, delay: 0.7, reverb: 0.8 }),
+  // Detroit Classics
+  mk("UR Assault", "Detroit Classics", { wave: "sawtooth", wave2: "square", oct: -1, cutoff: 1200, res: 10, envAmt: 2400, envDecay: 0.15, attack: 0.002, decay: 0.18, sustain: 0.2, release: 0.12, dist: 0.4 }),
+  mk("Model 500 Keys", "Detroit Classics", { wave: "triangle", wave2: "sine", oct2: 1, level2: 0.25, cutoff: 2000, attack: 0.004, decay: 0.6, sustain: 0.25, release: 0.5, delay: 0.3, reverb: 0.35 }),
+  mk("Juan's Strings", "Detroit Classics", { wave: "sawtooth", wave2: "sawtooth", detune2: 14, cutoff: 1700, attack: 0.3, sustain: 0.85, release: 1.4, chorus: 0.5, reverb: 0.5 }),
+  mk("Derrick's Stab", "Detroit Classics", { wave: "square", wave2: "sawtooth", level2: 0.35, cutoff: 2400, envAmt: 1600, envDecay: 0.1, attack: 0.001, decay: 0.14, sustain: 0.1, release: 0.1, delay: 0.25 }),
+  mk("Kevin's Chord", "Detroit Classics", { wave: "sawtooth", wave2: "square", detune2: 8, cutoff: 1900, attack: 0.01, decay: 0.4, sustain: 0.4, release: 0.4, chorus: 0.35, reverb: 0.3 }),
+  mk("Electro Bass 313", "Detroit Classics", { wave: "square", wave2: null, oct: -1, cutoff: 800, res: 8, envAmt: 1400, envDecay: 0.12, attack: 0.002, decay: 0.15, sustain: 0.15, release: 0.1, dist: 0.35 }),
+  mk("Belleville Bells", "Detroit Classics", { wave: "sine", wave2: "sine", oct2: 2, level2: 0.3, cutoff: 4500, attack: 0.001, decay: 1, sustain: 0, release: 0.8, reverb: 0.55, delay: 0.3 }),
+  mk("Highland Park Pad", "Detroit Classics", { wave: "sawtooth", wave2: "triangle", detune2: 10, cutoff: 1400, attack: 0.7, sustain: 0.8, release: 2, chorus: 0.45, reverb: 0.6 }),
+  mk("Eastern Market Lead", "Detroit Classics", { wave: "square", wave2: "sawtooth", detune2: -6, cutoff: 3000, res: 8, glide: 0.05, attack: 0.004, sustain: 0.5, release: 0.25, delay: 0.3 }),
+  mk("Motown Bass", "Detroit Classics", { wave: "triangle", wave2: "square", oct: -1, level2: 0.3, cutoff: 1100, attack: 0.004, decay: 0.3, sustain: 0.4, release: 0.2 }),
+);
+
 export const applyPreset = (name: string): SynthPatch => {
   const base = defaultPatch(name);
   const def = SYNTH_PRESETS.find((p) => p.name === name);
