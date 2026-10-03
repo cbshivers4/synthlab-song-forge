@@ -241,7 +241,7 @@ export function StartScreen() {
           <Action icon={<FileMusic />} title="Import MIDI" onClick={() => importHint("MIDI", "Use Tools → Ableton Handoff to import a .mid file onto a track.")} />
         </nav>
 
-        <div className="grid min-h-[650px] grid-cols-1 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)]">
+        <div className="grid grid-cols-1 lg:min-h-[650px] lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)]">
         <section id="recent-projects" className="min-w-0 border-b border-border lg:border-b-0 lg:border-r">
           <div className="flex border-b border-border bg-surface-2/60" role="tablist" aria-label="Project lists">
             {([ ["cloud", "Recent files"], ["device", "This device"], ["saved", "My templates"] ] as const).map(([id, label]) => (
@@ -367,7 +367,7 @@ export function StartScreen() {
           </div>
         </section>
 
-        <section className="flex min-w-0 flex-col border-b border-border lg:border-b-0 lg:border-r">
+        <section className="order-3 flex min-w-0 flex-col border-b border-border lg:order-2 lg:border-b-0 lg:border-r">
           <div className="flex h-10 items-center border-b border-border bg-surface-2/60 px-4"><h2 className="font-display text-xs font-semibold text-primary">Project details</h2></div>
           <div className="flex flex-1 flex-col p-5 sm:p-6">
             <div className="flex size-16 items-center justify-center border border-primary/30 bg-primary/10 text-primary"><AudioWaveform className="size-8" /></div>
@@ -390,7 +390,7 @@ export function StartScreen() {
           </div>
         </section>
 
-        <section id="tpl" className="min-w-0">
+        <section id="tpl" className="order-2 min-w-0 lg:order-3">
           <div className="flex h-10 items-center border-b border-border bg-surface-2/60 px-4"><h2 className="font-display text-xs font-semibold text-primary">Start from a template</h2></div>
           <div className="border-b border-border p-3"><div className="relative"><Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input aria-label="Search templates" placeholder="Search templates" value={templateSearch} onChange={(e) => setTemplateSearch(e.target.value)} className="h-8 bg-background pl-9 text-xs" />
