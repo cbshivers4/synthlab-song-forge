@@ -258,7 +258,7 @@ interface StudioApi extends StudioState {
   clipClipboardName: string | null;
   copyClip: (trackId: string, clipId: string) => void;
   cutClip: (trackId: string, clipId: string) => void;
-  pasteClip: () => void;
+  pasteClip: (atEnd?: boolean) => void;
   updatePatch: (id: string, patch: Partial<SynthPatch>) => void;
   updatePad: (trackId: string, padId: string, patch: Partial<DrumPad>) => void;
   toggleStep: (trackId: string, padId: string, step: number) => void;
@@ -1783,7 +1783,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         );
         toast("Clip cut", { description: `${clip.name} — paste it at the playhead with ⌘V / Ctrl+V.` });
       },
-      pasteClip: () => {
+      pasteClip: (atEnd) => {
         const src = clipClipboardRef.current;
         if (!src) {
           toast("Clip clipboard is empty", { description: "Click a clip and press ⌘C / Ctrl+C first." });
