@@ -4,7 +4,10 @@ const active = new Set<number>();
 const listeners = new Set<() => void>();
 const timers = new Map<number, ReturnType<typeof setTimeout>>();
 
+let cached: number[] = [];
+
 function emit() {
+  cached = Array.from(active);
   listeners.forEach((fn) => fn());
 }
 
@@ -33,5 +36,5 @@ export function subscribeKeys(fn: () => void): () => void {
 }
 
 export function keysSnapshot(): number[] {
-  return Array.from(active);
+  return cached;
 }
