@@ -382,8 +382,8 @@ function useShortcuts() {
       if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
       // Typing keys play the armed (or selected) instrument, like a DAW's computer MIDI keyboard.
       if (!e.metaKey && !e.ctrlKey && !e.altKey && qwertyEnabled()) {
-        const isPlayable = (t?: { kind: string; patch?: unknown }) => !!t && (t.kind === "instrument" || t.kind === "midi" || t.kind === "sampler");
-        const target = tracks.find((t) => t.armed && isPlayable(t)) ?? (isPlayable(selected) ? selected : undefined);
+        const isPlayable = (t?: { kind: string } | null) => !!t && (t.kind === "instrument" || t.kind === "midi" || t.kind === "sampler");
+        const target = tracks.find((t) => t.armed && isPlayable(t)) ?? (selected && isPlayable(selected) ? selected : undefined);
         const k = e.key.toLowerCase();
         if (target && (k in QWERTY_MAP || k === "z" || k === "x")) {
           e.preventDefault();
