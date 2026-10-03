@@ -748,7 +748,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           const hit = drumTarget.pads.find((p) => padNote(p, drumTarget.pads!) === pitch);
           if (hit) {
             if (type === "on") {
-              keyDown(pitch);
+              keyDown(pitch, 30000);
               const engine = getEngine();
               engine.init();
               engine.syncMix(tracksRef.current);
@@ -791,7 +791,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         const tp = transportRef.current;
         const stepDur = stepSeconds(tp.bpm);
         if (type === "on") {
-          keyDown(pitch);
+          keyDown(pitch, 30000);
           setMidiLearning(true);
           engine.syncMix(tracksRef.current);
           triggerNote(engine, target, pitch, 0.6, Math.max(0.15, velocity));

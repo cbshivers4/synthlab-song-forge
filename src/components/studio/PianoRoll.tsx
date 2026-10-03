@@ -1,4 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { keysSnapshot, subscribeKeys } from "@/lib/synclab/active-keys";
+
+const NO_KEYS: number[] = [];
 import { stepsPerBar } from "@/lib/synclab/timebase";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
@@ -29,6 +32,7 @@ type Drag =
 export function PianoRoll({ track }: { track: Track }) {
   const isMobile = useIsMobile();
   const { setNotes, previewNote, transport, setStepCount, updateTrack } = useStudio();
+  const litKeys = useSyncExternalStore(subscribeKeys, keysSnapshot, () => NO_KEYS);
   const [low, setLow] = useState(48);
   const [grid, setGrid] = useState(1); // steps per snap
   const [len, setLen] = useState(1);
@@ -446,8 +450,10 @@ export function PianoRoll({ track }: { track: Track }) {
               key={p}
               onClick={() => previewNote(track.id, p)}
               style={{ height: ROW_H }}
-              className={`flex w-full items-center justify-end border-b border-background px-1 font-mono text-[8px] font-semibold ${
-                 isBlack(p) ? "bg-background text-muted-foreground" : "bg-foreground text-background"
+              className={`flex w-full items-center justify-end border-b border-background px-1 font-mono text-[8px] font-semibold transition-colors duration-75 ${
+                litKeys.includes(p)
+                  ? "bg-primary text-primary-foreground shadow-[inset_0_0_8px_var(--primary)]"
+                  : isBlack(p) ? "bg-background text-muted-foreground" : "bg-foreground text-background"
               }`}
             >
               {NOTE_NAMES[((p % 12) + 12) % 12]}
