@@ -159,3 +159,9 @@
 - [x] Track folders: TrackFolder type, store actions (add/rename/remove/collapse/assign), cloud session sync, FolderRow in Timeline, "Move to folder" submenu in track menu
 - [x] Shortcuts: L loop, M mute selected track, arrows move playhead (bar/shift=step), Home to start, razor moved R->T (fixed duplicate key)
 - [x] MenuBar shortcut help text updated; verified in preview (folder create/collapse/ungroup, L/M/arrows); project state restored after test
+
+## Done: DAW gaps 2-4
+- [x] Time-stretch audio clips keeping pitch (clip menu: Fit to N bars, 50–200%)
+- [x] Comping: replaced takes kept on the new clip; clip menu "Takes" swaps a region (split first to comp pieces); saved with project
+- [x] Piano roll: pitch-bend + mod-wheel lanes (drive synth), live MIDI pitch wheel, STRUM up/down; note sub-step timing now audible
+- [ ] Click-through test of the new menus/lanes in the preview and listening test on real speakers
