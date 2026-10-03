@@ -134,7 +134,7 @@ const loadFavs = (): Fav[] => {
 
 export function Browser() {
   const [q, setQ] = useState("");
-  const [open, setOpen] = useState<Record<string, boolean>>({});
+  const [open, setOpen] = useState<Record<string, boolean>>({ computer: true });
   const [favs, setFavs] = useState<Fav[]>(loadFavs);
   const [cloud, setCloud] = useState<CloudProject[]>([]);
   const [userTemplates, setUserTemplates] = useState<UserTemplate[]>([]);
