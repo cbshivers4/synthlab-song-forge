@@ -83,7 +83,7 @@ export function MasterMeter() {
         }
         // 0 dB and -12 marks
         c.fillStyle = muted;
-        for (const db of [-48, -24, -12, -6, 0]) c.fillRect(dbPos(db) * w, 0, 1, h);
+        for (const db of [-48, -36, -24, -18, -12, -6, -3, 0]) c.fillRect(dbPos(db) * w, 0, 1, h);
         if (clipChanged) setClip([...clipRef.current] as [boolean, boolean]);
       }
 
@@ -152,7 +152,14 @@ export function MasterMeter() {
           </button>
         </div>
         <canvas ref={meterRef} className="h-5 w-full" aria-label="Master stereo level meter" role="img" />
-        <div className="flex justify-between font-mono text-[8px] text-muted-foreground"><span>-48</span><span>-12</span><span>0</span></div>
+        <div className="relative h-3 font-mono text-[8px] leading-none text-muted-foreground" aria-hidden>
+          {[-60, -48, -36, -24, -18, -12, -6, -3, 0, 3].map((db) => (
+            <span key={db} className="absolute top-0 flex -translate-x-1/2 flex-col items-center" style={{ left: `${dbPos(db) * 100}%` }}>
+              <span className="h-1 w-px bg-muted-foreground/70" />
+              <span className={db >= 0 ? "text-destructive" : db >= -6 ? "text-foreground/80" : undefined}>{db > 0 ? `+${db}` : db}</span>
+            </span>
+          ))}
+        </div>
       </div>
       <div className="flex w-40 flex-col gap-0.5">
         <div className="flex items-center gap-1 font-mono text-[9px] tracking-wider">

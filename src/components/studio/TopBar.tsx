@@ -29,6 +29,7 @@ import {
   Menu,
 } from "lucide-react";
 
+import { qwertyEnabled, setQwertyEnabled } from "@/lib/synclab/qwerty";
 import { stepsPerBar, STEPS_PER_BEAT, METERS, getBeatsPerBar, songSteps, stepSeconds } from "@/lib/synclab/timebase";
 import { Button } from "@/components/ui/button";
 import {
@@ -52,7 +53,7 @@ import { PlanBadge } from "@/lib/synclab/plan";
 import { openHelp } from "@/components/studio/HelpCenter";
 import { MasterMeter } from "@/components/studio/MasterMeter";
 import { useEffect, useState } from "react";
-import { SkipBack } from "lucide-react";
+import { Keyboard, SkipBack } from "lucide-react";
 import synclabLogoAsset from "@/assets/synclab-logo-neon.jpg.asset.json";
 const synclabLogo = synclabLogoAsset.url;
 
@@ -468,6 +469,28 @@ function FeatBtn({
   );
 }
 
+function TypingKeysToggle() {
+  const [on, setOn] = useState(true);
+  useEffect(() => {
+    const sync = () => setOn(qwertyEnabled());
+    sync();
+    window.addEventListener("synclab:qwerty", sync);
+    return () => window.removeEventListener("synclab:qwerty", sync);
+  }, []);
+  return (
+    <Button
+      size="sm"
+      variant="ghost"
+      aria-pressed={on}
+      onClick={() => setQwertyEnabled(!on)}
+      title="Play the armed or selected instrument with your computer keys: A W S E D F T G Y H U J K (Z / X change octave). Press record to capture."
+      className={`h-7 gap-1 px-2 font-mono text-[10px] tracking-wider ${on ? "bg-primary/15 text-primary shadow-[inset_0_0_0_1px_var(--primary)]" : "text-muted-foreground"}`}
+    >
+      <Keyboard className="size-3.5" /> KEYS
+    </Button>
+  );
+}
+
 function MidiControl() {
   const { midiInputs, midiInputId, midiLearning, enableMidi, setMidiInput, tracks } = useStudio();
   const armedNote = tracks.find((t) => t.armed && (t.kind === "instrument" || t.kind === "midi"));
@@ -488,6 +511,7 @@ function MidiControl() {
         <KeyboardMusic className="size-3.5" />
         MIDI IN
       </Button>
+      <TypingKeysToggle />
 
       {midiInputs.length > 0 && (
         <DropdownMenu>

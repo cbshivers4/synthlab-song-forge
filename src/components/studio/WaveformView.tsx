@@ -13,7 +13,10 @@ export const WaveformView = memo(function WaveformView({
   label,
   grid = true,
   gain = 1,
+  outline = true,
 }: {
+  /** Draw the crisp peak outlines; off gives a solid filled shape only. */
+  outline?: boolean;
   peaks: number[];
   /** Any CSS colour; the gradient and outlines are derived from it. */
   color?: string;
@@ -72,7 +75,7 @@ export const WaveformView = memo(function WaveformView({
 
       <path d={body} fill={`url(#wv-${uid})`} />
       <path d={core} fill={color} fillOpacity="0.55" />
-      <path
+      {outline && <><path
         d={top}
         fill="none"
         stroke={color}
@@ -89,7 +92,7 @@ export const WaveformView = memo(function WaveformView({
         strokeWidth="1"
         vectorEffect="non-scaling-stroke"
         strokeLinejoin="round"
-      />
+      /></>}
       <line x1="0" y1="50" x2="1000" y2="50" stroke={color} strokeOpacity="0.35" strokeWidth="0.5" />
     </svg>
   );

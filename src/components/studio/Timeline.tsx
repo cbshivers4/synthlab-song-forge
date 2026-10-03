@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { stepsPerBar, getBeatsPerBar, STEPS_PER_BEAT, songSteps, stepSeconds, positionLabel } from "@/lib/synclab/timebase";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
@@ -341,6 +341,48 @@ function MidiClip({ track }: { track: Track }) {
   );
 }
 
+/** Hit-envelope view of a drum pattern: every programmed hit draws a decaying
+ *  transient sized by its velocity. It reflects the real pattern; recorded audio
+ *  (WAVE) shows the true rendered waveform. */
+const DrumHitWave = memo(function DrumHitWave({ pads, steps, total }: { pads: { steps: number[] }[]; steps: number; total: number }) {
+  const path = useMemo(() => {
+    const res = 6;
+    const n = Math.max(2, total * res);
+    const env = new Float32Array(n);
+    for (let at = 0; at < total; at++) {
+      const i = at % Math.max(1, steps);
+      let hit = 0;
+      for (const p of pads) hit += p.steps[i] ?? 0;
+      if (hit <= 0) continue;
+      const amp = Math.min(1, 0.35 + hit * 0.4);
+      for (let k = 0; k < res * 3 && at * res + k < n; k++) env[at * res + k] = Math.max(env[at * res + k]!, amp * Math.exp(-k / (res * 0.9)) * (0.85 + 0.15 * Math.sin(k * 2.7)));
+    }
+    const x = (i: number) => ((i / (n - 1)) * 1000).toFixed(1);
+    const top = Array.from(env, (v, i) => `${x(i)},${(50 - Math.max(0.6, v * 46)).toFixed(1)}`);
+    const bot = Array.from(env, (v, i) => `${x(i)},${(50 + Math.max(0.6, v * 46)).toFixed(1)}`).reverse();
+    return `M ${top.join(" L ")} L ${bot.join(" L ")} Z`;
+  }, [pads, steps, total]);
+  return (
+    <svg viewBox="0 0 1000 100" preserveAspectRatio="none" className="absolute inset-0 h-full w-full text-clip-drum" role="img" aria-label="Drum pattern hit envelope">
+      <path d={path} fill="currentColor" fillOpacity="0.7" />
+      <line x1="0" y1="50" x2="1000" y2="50" stroke="currentColor" strokeOpacity="0.3" strokeWidth="0.5" />
+    </svg>
+  );
+});
+
+/** Shows the track's level after its VCA so moving the VCA fader is visible on the track. */
+function VcaLevel({ track }: { track: Track }) {
+  const { vcas } = useStudio();
+  const st = track.vca ? vcas[track.vca] : undefined;
+  const eff = Math.min(1, track.volume * (st ? (st.muted ? 0 : st.volume) : 1));
+  return (
+    <div className="flex w-14 flex-col gap-0.5" title={`Level after VCA ${track.vca}`} aria-label={`Level after VCA ${track.vca}`}>
+      <div className="h-1.5 rounded-sm bg-surface-2"><div className="h-full rounded-sm bg-primary transition-[width] duration-75" style={{ width: `${eff * 100}%` }} /></div>
+      <span className="font-mono text-[8px] leading-none text-primary">VCA {track.vca} {eff > 0 ? `${(20 * Math.log10(eff)).toFixed(1)} dB` : "-∞"}</span>
+    </div>
+  );
+}
+
 function DrumClip({ track }: { track: Track }) {
   const { setPanel, select, transport } = useStudio();
   const total = songSteps(transport.bars);
@@ -371,34 +413,7 @@ function DrumClip({ track }: { track: Track }) {
         </span>
       </div>
       <div className="relative flex-1" style={{ height: "calc(100% - 17px)" }}>
-        {shown.map((_, r) => (
-          <div
-            key={r}
-            className="absolute left-0 right-0 border-t border-clip-drum/5"
-            style={{ top: `${(r / shown.length) * 100}%` }}
-          />
-        ))}
-        {Array.from({ length: Math.max(1, Math.ceil(total / Math.max(1, steps))) }).flatMap((_, rep) =>
-          shown.flatMap((p, r) =>
-          p.steps.slice(0, steps).map((vel, i) => {
-            const at = rep * steps + i;
-            return vel > 0 && at < total ? (
-              <div
-                key={`${p.id}-${rep}-${i}`}
-                 className="absolute rounded-full bg-clip-drum/60"
-                title={`${p.name} · step ${i + 1}`}
-                style={{
-                  left: `${(at / total) * 100}%`,
-                  width: `${Math.max(0.3, 100 / total - 0.1)}%`,
-                  top: `${(r / shown.length) * 100 + 100 / shown.length * 0.18}%`,
-                  height: `${Math.max(8, (100 / shown.length) * 0.42)}%`,
-                  opacity: 0.4 + vel * 0.45,
-                }}
-              />
-            ) : null;
-          }),
-          ),
-        )}
+        <DrumHitWave pads={pads} steps={steps} total={total} />
       </div>
     </div>
   );
@@ -793,7 +808,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
   return (
     <div className="border-b border-border/80">
     <div
-      className={`relative flex items-stretch transition-colors ${isSelected ? "bg-surface-2/40 ring-1 ring-inset ring-foreground/80" : "hover:bg-surface/50"} ${track.hidden ? "opacity-40" : ""} ${dropping ? "ring-1 ring-primary ring-inset" : ""}`}
+      className={`relative flex items-stretch transition-colors ${isSelected ? "bg-primary/10 ring-2 ring-inset ring-primary" : "hover:bg-surface/50"} ${track.hidden ? "opacity-40" : ""} ${dropping ? "ring-1 ring-primary ring-inset" : ""}`}
       style={{ height: track.height ?? undefined }}
       onClick={(e) => {
         if (suppressClickRef.current) {
@@ -804,10 +819,12 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
           toggleSelectId(track.id);
           return;
         }
+        // Click highlights the track (Ctrl/Cmd+C, X, V or the toolbar act on it); the ⋮ menu or right-click opens actions.
         select(track.id);
-        // Selecting a track opens its edit menu (cut, copy, clip tools…).
-        const el = e.target as HTMLElement;
-        if (el.closest("button,input,textarea,select,[role='slider'],[role='combobox'],[contenteditable]")) return;
+      }}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        select(track.id);
         setMenuOpen(true);
       }}
       onDragOver={(e) => {
@@ -1158,6 +1175,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
             step={0.01}
             onValueChange={([v = 0]) => updateTrack(track.id, { volume: v })}
           />
+          {track.vca && <VcaLevel track={track} />}
         </div>
 
         <LevelBar

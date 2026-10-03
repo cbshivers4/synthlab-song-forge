@@ -651,6 +651,11 @@ export function PadSampler() {
                   {i + 1} · {KEYMAP[i]?.toUpperCase()}
                 </span>
               </span>
+              {pad && !recording && pad.peaks.length > 1 && (
+                <span className="pointer-events-none absolute inset-x-1.5 top-5 bottom-7 opacity-80">
+                  <WaveformView peaks={pad.peaks} color="hsl(0 0% 100%)" grid={false} outline={false} label={`${pad.name} waveform`} />
+                </span>
+              )}
               {recording && recStream && (
                 <span className="pointer-events-none absolute inset-x-1.5 top-4 bottom-6">
                   <LiveWave stream={recStream} color="hsl(0 0% 100%)" label="Recording waveform" />
