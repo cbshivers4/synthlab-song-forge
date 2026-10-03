@@ -2439,9 +2439,18 @@ function Ruler() {
         )}
 
         <div
-          className={`pointer-events-none absolute top-0 h-full w-[2px] ${transport.playing ? "bg-primary" : "bg-primary/50"}`}
+          className="pointer-events-none absolute top-0 z-20 h-full"
           style={{ left: `${(transport.step / total) * 100}%` }}
-        />
+        >
+          {/* arrow cursor */}
+          <div
+            className={`absolute left-1/2 top-0 h-0 w-0 -translate-x-1/2 border-x-[6px] border-x-transparent ${transport.playing ? "border-t-primary" : "border-t-primary/50"}`}
+            style={{ borderTopWidth: 9 }}
+          />
+          <div
+            className={`absolute bottom-0 left-1/2 top-2 w-[2px] -translate-x-1/2 ${transport.playing ? "bg-primary" : "bg-primary/50"}`}
+          />
+        </div>
       </div>
     </div>
   );
