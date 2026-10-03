@@ -938,6 +938,18 @@ export function StudioProvider({ children }: { children: ReactNode }) {
               skip = (at - cs) * stepDur * rate;
               if (skip >= fullLen - 0.02) continue;
             } else continue;
+            // A clip never rings past the loop end: when the loop wraps it is
+            // started again, and a still-playing tail would sound doubled.
+            let playLen = fullLen - skip;
+            if (tp.loop) {
+              const lo = Math.max(0, Math.min(totalSteps - 1, tp.loopStart ?? 0));
+              const hi = Math.min(totalSteps, Math.max(lo + 1, tp.loopEnd ?? totalSteps));
+              if (at < hi) {
+                const room = ((hi - at) * stepDur - (startWhen - when)) * rate;
+                playLen = Math.min(playLen, room);
+              }
+            }
+            if (playLen < 0.02) continue;
             engine.playClip(
               t.id,
               {
@@ -945,7 +957,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
                 // Reversed playback starts at the far end of the trim window:
                 // shortening its length advances the heard start, not its offset.
                 offset: (c.offset ?? 0) + (c.reverse ? 0 : skip),
-                length: fullLen - skip,
+                length: playLen,
                 gain: c.gain ?? 1,
                 fadeIn: skip ? 0.01 : (c.fadeIn ?? 0.004),
                 fadeOut: c.fadeOut ?? 0.01,
