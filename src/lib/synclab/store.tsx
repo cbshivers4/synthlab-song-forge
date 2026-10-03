@@ -2005,23 +2005,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             let left = ciBars * bpb;
             // Hold the transport during the count-in, even if it was already rolling.
             setTransportState((s) => ({ ...s, playing: false, paused: true, countInLeft: left }));
-            const click = (accent: boolean) =>
-              engine.playDrum(
-                "metronome",
-                {
-                  id: "m",
-                  name: "click",
-                  kind: accent ? "rim" : "hat",
-                  volume: 0.4,
-                  pan: 0,
-                  pitch: accent ? 5 : 0,
-                  decay: 0,
-                  muted: false,
-                  solo: false,
-                  steps: [],
-                },
-                1,
-              );
+            const click = (accent: boolean) => engine.playClick(accent);
             click(true);
             countInTimerRef.current = window.setInterval(() => {
               left -= 1;
