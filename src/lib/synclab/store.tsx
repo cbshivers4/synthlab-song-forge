@@ -422,6 +422,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   selectedIdRef.current = selectedId;
   const heldRef = useRef(new Map<number, { ids: string[]; trackId: string; t0: number; startStep: number }>());
   const recordedNoteIdsRef = useRef(new Set<string>());
+  // last scheduled step + its audio-clock time, so note capture can stamp the
+  // true sub-step position instead of the rounded playhead step
+  const lastStepRef = useRef<{ step: number; time: number; dur: number } | null>(null);
   /** TOUCH releases shortly after a gesture; LATCH holds until playback stops. */
   const automationGestureRef = useRef(new Map<string, { touchedUntil: number; latched: boolean }>());
   // Per-lane edit history so a device automation lane can be stepped back on its
@@ -1042,6 +1045,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         scheduleStep(step, nextTime);
         lastScheduled = step % total;
         queue.push({ step: step % total, time: nextTime });
+        lastStepRef.current = { step: step % total, time: nextTime, dur: stepDur };
         nextTime += stepDur;
         step += 1;
         if (tp.loop) {
@@ -1464,7 +1468,16 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       const t = tracksRef.current.find((x) => x.id === trackId);
       if (!t || !tp.recording) return;
       if (t.kind !== "instrument" && t.kind !== "midi" && t.kind !== "sampler") return;
-      const note: MidiNote = { id: uid(), step: tp.step, length: 1, pitch: midi, velocity };
+      // stamp the true sub-step position from the audio clock so the take keeps
+      // the player's timing — quantize then has something real to snap
+      let stepPos = tp.step;
+      const ls = lastStepRef.current;
+      const eng = getEngine();
+      if (tp.playing && ls && eng.ctx) {
+        const frac = Math.min(0.999, Math.max(0, (eng.ctx.currentTime - ls.time) / ls.dur));
+        stepPos = (ls.step + frac) % songSteps(tp.bars);
+      }
+      const note: MidiNote = { id: uid(), step: Math.max(0, stepPos), length: 1, pitch: midi, velocity };
       recordedNoteIdsRef.current.add(note.id);
       setTracks((ts) => ts.map((x) => (x.id === t.id ? { ...x, notes: [...(x.notes ?? []), note] } : x)));
     };
