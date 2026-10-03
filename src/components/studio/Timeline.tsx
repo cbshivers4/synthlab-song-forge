@@ -40,6 +40,9 @@ import {
   VolumeX,
   X,
   Circle,
+  Plus,
+  Folder,
+  FolderOpen,
 } from "lucide-react";
 import synclabLogoAsset from "@/assets/synclab-logo-neon.jpg.asset.json";
 const synclabLogo = synclabLogoAsset.url;
@@ -2733,6 +2736,86 @@ function TimelineOverview({
           +
         </button>
       </div>
+    </div>
+  );
+}
+
+/** Collapsible folder header row grouping tracks, like Logic/FL track folders. */
+function FolderRow({
+  folder,
+  count,
+  onToggle,
+  onRename,
+  onUngroup,
+}: {
+  folder: TrackFolder;
+  count: number;
+  onToggle: () => void;
+  onRename: (name: string) => void;
+  onUngroup: () => void;
+}) {
+  const [renaming, setRenaming] = useState(false);
+  const [draft, setDraft] = useState(folder.name);
+  return (
+    <div className="flex border-b border-border bg-surface-2/60">
+      <div
+        className="relative z-20 flex w-[172px] shrink-0 items-center gap-1.5 border-r border-border px-2 py-1 sm:w-[244px] sm:px-3"
+        style={{ transform: "translateX(var(--timeline-scroll-x, 0px))" }}
+      >
+        <button
+          type="button"
+          onClick={onToggle}
+          title={folder.collapsed ? `Open ${folder.name} (${count} tracks hidden)` : `Collapse ${folder.name}`}
+          aria-label={folder.collapsed ? `Open folder ${folder.name}` : `Collapse folder ${folder.name}`}
+          className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground"
+        >
+          {folder.collapsed ? <Folder className="size-3.5" /> : <FolderOpen className="size-3.5" />}
+          <ChevronDown className={`size-3 transition-transform ${folder.collapsed ? "-rotate-90" : ""}`} />
+        </button>
+        <span className="size-2 rounded-full" style={{ background: folder.color }} />
+        {renaming ? (
+          <input
+            autoFocus
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={() => {
+              onRename(draft);
+              setRenaming(false);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") e.currentTarget.blur();
+              if (e.key === "Escape") setRenaming(false);
+            }}
+            className="w-24 bg-transparent font-mono text-[10px] uppercase text-foreground outline-none"
+          />
+        ) : (
+          <button
+            type="button"
+            onDoubleClick={() => {
+              setDraft(folder.name);
+              setRenaming(true);
+            }}
+            title="Double-click to rename this folder"
+            className="truncate font-display text-[10px] font-semibold uppercase tracking-widest"
+            style={{ color: folder.color }}
+          >
+            {folder.name}
+          </button>
+        )}
+        <span className="font-mono text-[9px] text-muted-foreground">
+          {count} track{count === 1 ? "" : "s"}
+        </span>
+        <button
+          type="button"
+          onClick={onUngroup}
+          title="Ungroup — the tracks stay, the folder goes"
+          className="ml-auto text-muted-foreground hover:text-destructive"
+          aria-label={`Ungroup folder ${folder.name}`}
+        >
+          <X className="size-3" />
+        </button>
+      </div>
+      <div className="flex-1" style={{ background: `color-mix(in oklab, ${folder.color} 8%, transparent)` }} />
     </div>
   );
 }
