@@ -1538,8 +1538,7 @@ export function Mixer() {
   const { tracks, selectedId, select, buses, setBus, vcas, setVca, auxReturns, setAuxReturn, updateTrack, addTrack } = useStudio();
   const levels = useMeters(tracks);
   const [narrow, setNarrow] = useState(false);
-  // Opens focused: one channel + master. Buses, VCAs and aux returns are opened on request.
-  const [showAll, setShowAll] = useState(false);
+  // Timeline tracks are always mirrored in the mixer. Extra routing strips open on request.
   const [showBuses, setShowBuses] = useState(false);
   const [showVcas, setShowVcas] = useState(false);
   const [showAux, setShowAux] = useState(false);
@@ -1732,7 +1731,6 @@ export function Mixer() {
           >
             <VolumeX className="size-3" /> Unmute all
           </button>
-          <Button variant={showAll ? "secondary" : "ghost"} size="sm" className="h-7 text-[10px]" onClick={() => setShowAll((v) => !v)} aria-pressed={showAll} title="Show every track channel, or just the selected one">{showAll ? "All channels" : "1 channel"}</Button>
           <button
             onClick={() => setShowBuses((v) => !v)}
             className={cn(
@@ -1791,7 +1789,7 @@ export function Mixer() {
       ) : (
         <div className="mobile-mixer-strips flex overflow-x-auto">
           <LabelRail />
-          {(showAll ? tracks : [tracks.find((x) => x.id === selectedId) ?? tracks[0]].filter((x): x is Track => !!x)).map((t) => (
+          {tracks.map((t) => (
             <Strip
               key={t.id}
               t={t}

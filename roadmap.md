@@ -149,3 +149,4 @@
 - [x] Per-track select checkboxes + Select All; clicking a track header opens its editor
 - [x] MIDI controller library by manufacturer with device drawings and factory auto-maps
 - [ ] Verify no-doubling with a real MIDI keyboard/pads while recording (needs hardware)
+- [x] Mirror every timeline track in the mixer by default; keep Master visible and bus/VCA/aux strips optional
