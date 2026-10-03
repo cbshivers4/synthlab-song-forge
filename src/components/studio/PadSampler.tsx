@@ -651,7 +651,7 @@ export function PadSampler() {
                 </span>
               </span>
               {pad && !recording && pad.peaks.length > 1 && (
-                <span className="pointer-events-none absolute inset-x-1.5 top-5 bottom-7 opacity-80">
+                <span className="pointer-events-none absolute inset-x-1.5 top-5 bottom-7 opacity-90">
                   <WaveformView peaks={pad.peaks} color="hsl(0 0% 0%)" grid={false} outline={false} label={`${pad.name} waveform`} />
                 </span>
               )}
