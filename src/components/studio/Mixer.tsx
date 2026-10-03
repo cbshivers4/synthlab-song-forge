@@ -1791,7 +1791,7 @@ export function Mixer() {
       ) : (
         <div className="mobile-mixer-strips flex overflow-x-auto">
           <LabelRail />
-          {(showAll ? tracks : [tracks.find((x) => x.id === selectedId) ?? tracks[0]]).map((t) => (
+          {(showAll ? tracks : [tracks.find((x) => x.id === selectedId) ?? tracks[0]].filter((x): x is Track => !!x)).map((t) => (
             <Strip
               key={t.id}
               t={t}

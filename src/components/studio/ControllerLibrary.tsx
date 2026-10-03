@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -113,7 +113,7 @@ function LayoutList({ p }: { p: ControllerProfile }) {
 }
 
 /** Pick your controller's maker and model; its factory layout then maps automatically. */
-export function ControllerLibrary({ trigger }: { trigger?: React.ReactNode }) {
+export function ControllerLibrary({ trigger }: { trigger?: ReactNode }) {
   const [chosen, setChosen] = useState("auto");
   const [maker, setMaker] = useState<string>(MAKERS[0] as string);
   useEffect(() => {
