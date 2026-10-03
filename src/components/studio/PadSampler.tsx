@@ -1,3 +1,4 @@
+import { getLocalFile } from "@/lib/synclab/local-files";
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import {
   Circle,
@@ -644,7 +645,16 @@ export function PadSampler() {
               onDrop={(e) => {
                 e.preventDefault();
                 setOver(null);
-                void loadInto(id, e.dataTransfer.files[0]);
+                const file = e.dataTransfer.files[0];
+                if (file) return void loadInto(id, file);
+                const raw = e.dataTransfer.getData("application/synclab") || e.dataTransfer.getData("text/plain");
+                try {
+                  const v = JSON.parse(raw) as { type?: string; id?: string };
+                  const local = v?.type === "localfile" && v.id ? getLocalFile(v.id) : undefined;
+                  if (local) void loadInto(id, local.file);
+                } catch {
+                  /* not a file drag */
+                }
               }}
               style={
                 recording
