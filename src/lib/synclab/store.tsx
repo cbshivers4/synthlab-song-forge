@@ -255,6 +255,10 @@ interface StudioApi extends StudioState {
   copyTrack: (id: string) => void;
   cutTrack: (id: string) => void;
   pasteTrack: () => void;
+  clipClipboardName: string | null;
+  copyClip: (trackId: string, clipId: string) => void;
+  cutClip: (trackId: string, clipId: string) => void;
+  pasteClip: () => void;
   updatePatch: (id: string, patch: Partial<SynthPatch>) => void;
   updatePad: (trackId: string, padId: string, patch: Partial<DrumPad>) => void;
   toggleStep: (trackId: string, padId: string, step: number) => void;
