@@ -103,7 +103,7 @@ export function VocoderPanel({ trackId, plugin }: { trackId: string; plugin: Plu
       </div>
 
       <p className="font-mono text-[9px] leading-relaxed text-muted-foreground">
-        Put this on a voice channel: the voice opens the filter bank and the internal oscillator bank sings the words. In Keyboard notes mode, play\n        chords on your MIDI keyboard, typing keys or the on-screen keys while the voice plays (up to 4 notes).
+        Put this on a voice channel: the voice opens the filter bank and the internal oscillator bank sings the words. In Keyboard notes mode, play chords on your MIDI keyboard, typing keys or the on-screen keys while the voice plays (up to 4 notes).
       </p>
     </div>
   );
