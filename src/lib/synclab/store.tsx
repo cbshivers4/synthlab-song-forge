@@ -1229,7 +1229,17 @@ export function StudioProvider({ children }: { children: ReactNode }) {
 
   const finishTrackRecording = useCallback(async () => {
     const engine = getEngine();
-    if (!engine.isTrackRecording) return;
+    /** Nothing more is pending for this pass: let notes and hits play normally again. */
+    const releaseTake = () => {
+      recordedNoteIdsRef.current = new Set();
+      replacedNoteIdsRef.current = new Set();
+      clearLiveHits();
+      setTracks((ts) => ts.map((t) => (t.recording && (t.kind === "instrument" || t.kind === "midi" || t.kind === "drum") ? { ...t, recording: false } : t)));
+    };
+    if (!engine.isTrackRecording) {
+      releaseTake();
+      return;
+    }
     // Held MIDI notes cannot extend past the end of the recorded region:
     // the loop end when looping, otherwise where the transport stopped.
     const tp = transportRef.current;
@@ -1243,6 +1253,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       const length = Math.max(0.25, end - held.startStep);
       setTracks((ts) => ts.map((t) => t.id === held.trackId ? { ...t, notes: (t.notes ?? []).map((n) => held.ids.includes(n.id) ? { ...n, length } : n) } : t));
     }
+    let landed = false;
     try {
       const result = await engine.stopTrackRecording();
       if (!result) return;
@@ -1254,14 +1265,6 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       // Replace mode: older notes under the new take are removed, so the part
       // is exactly what was just played (overdub keeps them).
       const replacedIds = replacedNoteIdsRef.current;
-      setTracks((ts) => ts.map((t) => t.id === result.trackId ? {
-        ...t, notes: (t.notes ?? []).filter((n) => !replacedIds.has(n.id)).map((n) => capturedIds.has(n.id) ? {
-          ...n, recordedEnd: takeEnd,
-          length: Math.max(0.25, Math.min(n.length, takeEnd - n.step)),
-        } : n),
-      } : t));
-      recordedNoteIdsRef.current = new Set();
-      replacedNoteIdsRef.current = new Set();
       const clip: AudioClip = {
         id: uid(), name: `${target.name} TAKE ${(target.clips?.length ?? 0) + 1}`,
         peaks: result.peaks, duration: result.duration, url: result.url,
@@ -1280,12 +1283,32 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       // Only the explicit overdub mode should stack printed takes at the same position.
       const replace = !!transportRef.current.replace || !transportRef.current.overdub;
       const newEnd = (clip.start ?? 0) + (clip.length ?? clip.duration) / stepDur;
-      setTracks((ts) => ts.map((t) => t.id === result.trackId
-        ? { ...t, clips: [...(replace ? replaceTakeRegion(t.clips ?? [], clip.start ?? 0, newEnd, stepDur) : (t.clips ?? [])), clip], activeClipId: clip.id, printedAudio: true }
-        : t));
+      const barSteps = stepsPerBar();
+      // the printed take starts mid-pass: the scheduler picks it up where the playhead is
+      pickupClipIdsRef.current.add(clip.id);
+      setTracks((ts) => ts.map((t) => {
+        if (t.id !== result.trackId) return t;
+        const notes = (t.notes ?? []).filter((n) => !replacedIds.has(n.id)).map((n) => capturedIds.has(n.id) ? {
+          ...n, recordedEnd: takeEnd,
+          length: Math.max(0.25, Math.min(n.length, takeEnd - n.step)),
+        } : n);
+        // A take longer than the pattern would otherwise wrap and replay its
+        // own notes every pattern length — grow the pattern to hold the take.
+        const lastCaptured = notes.reduce((m, n) => (capturedIds.has(n.id) ? Math.max(m, Math.floor(n.step) + 1) : m), 0);
+        const steps = t.kind !== "drum" && lastCaptured > t.steps ? Math.ceil(takeEnd / barSteps) * barSteps : t.steps;
+        return {
+          ...t, notes, steps, recording: false,
+          clips: [...(replace ? replaceTakeRegion(t.clips ?? [], clip.start ?? 0, newEnd, stepDur) : (t.clips ?? [])), clip],
+          activeClipId: clip.id, printedAudio: true,
+        };
+      }));
+      landed = true;
       toast.success(`${clip.name} recorded`, { description: "Double-click the waveform to edit it; switch to Notes to edit the pattern." });
     } catch (err) {
       toast.error("Take couldn't be kept", { description: err instanceof Error ? err.message : undefined });
+    } finally {
+      releaseTake();
+      if (!landed) pickupClipIdsRef.current.clear();
     }
   }, []);
 
@@ -1326,7 +1349,10 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       const inst = engine.isTrackRecording;
       if (!audio && !inst) return;
       if (audio) void finishRecording();
+      // an instrument take clears its own recording flag when it lands, so its
+      // printed audio takes over from the notes without a gap or a double
       if (inst) void finishTrackRecording();
+      setTracks((ts) => ts.map((t) => (t.recording && (t.kind === "audio" || t.kind === "ai-vocal" || t.kind === "sampler") ? { ...t, recording: false } : t)));
       setTransportState((t) => ({ ...t, recording: false }));
       toast("Recording stopped at the loop end", { description: "Takes stay inside the bars you selected." });
     };
@@ -1550,15 +1576,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       const t = tracksRef.current.find((x) => x.id === trackId);
       if (!t || !tp.recording) return;
       if (t.kind !== "instrument" && t.kind !== "midi" && t.kind !== "sampler") return;
-      // stamp the true sub-step position from the audio clock so the take keeps
-      // the player's timing — quantize then has something real to snap
-      let stepPos = tp.step;
-      const ls = lastStepRef.current;
-      const eng = getEngine();
-      if (tp.playing && ls && eng.ctx) {
-        const frac = Math.min(0.999, Math.max(0, (eng.ctx.currentTime - ls.time) / ls.dur));
-        stepPos = (ls.step + frac) % songSteps(tp.bars);
-      }
+      // stamp the true sub-step position you heard, so the take keeps the
+      // player's timing — quantize then has something real to snap
+      const stepPos = heardStepPos();
       const note: MidiNote = { id: uid(), step: Math.max(0, stepPos), length: 1, pitch: midi, velocity };
       recordedNoteIdsRef.current.add(note.id);
       setTracks((ts) => ts.map((x) => (x.id === t.id ? { ...x, notes: [...(x.notes ?? []), note] } : x)));
