@@ -465,7 +465,7 @@ function DrumClip({ track }: { track: Track }) {
         pads: (track.pads ?? []).map((p) => {
           const o = orig.find((x) => x.id === p.id);
           if (!o) return p;
-          return { ...p, steps: o.steps.map((_, i) => o.steps[(i - shift + len) % len]) };
+          return { ...p, steps: o.steps.map((_, i) => o.steps[(i - shift + len) % len] ?? 0) };
         }),
       });
     };
