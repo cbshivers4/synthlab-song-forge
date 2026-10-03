@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { stepsPerBar, getBeatsPerBar, STEPS_PER_BEAT, songSteps, stepSeconds, positionLabel } from "@/lib/synclab/timebase";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
@@ -1344,7 +1344,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
           "--clip-audio": track.color, "--color-clip-audio": track.color,
           "--clip-midi": track.color, "--color-clip-midi": track.color,
           "--clip-drum": track.color, "--color-clip-drum": track.color,
-        } as React.CSSProperties}
+        } as CSSProperties}
         title={
           editTool === "draw"
             ? "Draw tool — click to write a note or drum hit"
