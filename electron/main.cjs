@@ -91,7 +91,14 @@ function createWindow() {
   win.loadURL(APP_URL);
 
   // External links open in the user's browser, not inside the studio window.
-  win.webContents.setWindowOpenHandler(({ url }) => {
+  win.webContents.setWindowOpenHandler(({ url, frameName }) => {
+    // Studio pop-out panels (mixer, drums, keys, synth) open as real windows for a second monitor.
+    if ((url === "about:blank" || url === "") && String(frameName).startsWith("synclab-")) {
+      return {
+        action: "allow",
+        overrideBrowserWindowOptions: { backgroundColor: "#0b0b0d", autoHideMenuBar: true },
+      };
+    }
     shell.openExternal(url);
     return { action: "deny" };
   });
