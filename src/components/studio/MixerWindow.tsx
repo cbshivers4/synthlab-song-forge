@@ -57,6 +57,7 @@ export function DetachedWindow({
   children: React.ReactNode;
 }) {
   const [container, setContainer] = useState<HTMLElement | null>(null);
+  const [winRef, setWinRef] = useState<Window | null>(null);
 
   useEffect(() => {
     const win = window.open("", `synclab-${id}`, SIZES[id]);
@@ -79,6 +80,7 @@ export function DetachedWindow({
     root.style.overflow = "auto";
     win.document.body.appendChild(root);
     setContainer(root);
+    setWinRef(win);
 
     // Forward typing keys so the computer keyboard still plays notes while the popup is focused.
     const forward = (e: KeyboardEvent) => {
