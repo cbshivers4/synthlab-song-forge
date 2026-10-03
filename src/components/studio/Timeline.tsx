@@ -795,7 +795,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
   return (
     <div className="border-b border-border/80">
     <div
-      className={`relative flex items-stretch transition-colors ${isSelected ? "bg-surface-2/40 ring-1 ring-inset ring-foreground/80" : "hover:bg-surface/50"} ${track.hidden ? "opacity-40" : ""} ${dropping ? "ring-1 ring-primary ring-inset" : ""}`}
+      className={`relative flex items-stretch transition-colors ${isSelected ? "bg-primary/10 ring-2 ring-inset ring-primary" : "hover:bg-surface/50"} ${track.hidden ? "opacity-40" : ""} ${dropping ? "ring-1 ring-primary ring-inset" : ""}`}
       style={{ height: track.height ?? undefined }}
       onClick={(e) => {
         if (suppressClickRef.current) {
@@ -806,10 +806,12 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
           toggleSelectId(track.id);
           return;
         }
+        // Click highlights the track (Ctrl/Cmd+C, X, V or the toolbar act on it); the ⋮ menu or right-click opens actions.
         select(track.id);
-        // Selecting a track opens its edit menu (cut, copy, clip tools…).
-        const el = e.target as HTMLElement;
-        if (el.closest("button,input,textarea,select,[role='slider'],[role='combobox'],[contenteditable]")) return;
+      }}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        select(track.id);
         setMenuOpen(true);
       }}
       onDragOver={(e) => {
