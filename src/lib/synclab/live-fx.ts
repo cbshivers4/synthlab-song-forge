@@ -19,17 +19,19 @@ export interface LiveFxInfo {
   name: string;
   x: string;
   y: string;
+  /** Pad identity color (hex) — shown on the Live View pad. */
+  color: string;
 }
 
 export const LIVE_FX: LiveFxInfo[] = [
-  { id: "tapestop", name: "Tape Stop", x: "Stop time", y: "Spin-up" },
-  { id: "filter", name: "Filter", x: "Low-pass ← → High-pass", y: "Resonance" },
-  { id: "compressor", name: "Compressor", x: "Threshold", y: "Ratio" },
-  { id: "beatrepeat", name: "Beat Repeat", x: "Division", y: "Repeat decay" },
-  { id: "isolator", name: "Isolator", x: "Lows · Mids · Highs", y: "Kill depth" },
-  { id: "grain", name: "Grain Scatter", x: "Grain size", y: "Scatter" },
-  { id: "vinyl", name: "Vinyl Warp", x: "Wow speed", y: "Warp depth" },
-  { id: "crusher", name: "Crusher", x: "Bit depth", y: "Rate (darkening)" },
+  { id: "tapestop", name: "Tape Stop", x: "Stop time", y: "Spin-up", color: "#f97316" },
+  { id: "filter", name: "Filter", x: "Low-pass ← → High-pass", y: "Resonance", color: "#38bdf8" },
+  { id: "compressor", name: "Compressor", x: "Threshold", y: "Ratio", color: "#a3e635" },
+  { id: "beatrepeat", name: "Beat Repeat", x: "Division", y: "Repeat decay", color: "#f43f5e" },
+  { id: "isolator", name: "Isolator", x: "Lows · Mids · Highs", y: "Kill depth", color: "#facc15" },
+  { id: "grain", name: "Grain Scatter", x: "Grain size", y: "Scatter", color: "#c084fc" },
+  { id: "vinyl", name: "Vinyl Warp", x: "Wow speed", y: "Warp depth", color: "#fb7185" },
+  { id: "crusher", name: "Crusher", x: "Bit depth", y: "Rate (darkening)", color: "#2dd4bf" },
 ];
 
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
