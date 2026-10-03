@@ -293,6 +293,8 @@ interface StudioApi extends StudioState {
   setAutomationLaneLock: (trackId: string, param: AutomationParam, locked: boolean) => void;
   previewAutomation: (trackId: string, param: AutomationParam, value: number) => void;
   removeClip: (trackId: string, clipId: string) => void;
+  /** Remove every clip, note and drum hit from a track but keep the channel, instrument and settings. */
+  clearTrackContent: (id: string) => void;
   addClip: (trackId: string, clip: AudioClip) => void;
   updateClip: (trackId: string, clipId: string, patch: Partial<AudioClip>) => void;
   previewClip: (trackId: string, clipId: string) => void;
@@ -1844,6 +1846,27 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         return id;
       },
       updateTrack,
+      clearTrackContent: (id) => {
+        const src = tracksRef.current.find((t) => t.id === id);
+        if (!src) return;
+        setTracks((ts) =>
+          ts.map((t) =>
+            t.id !== id
+              ? t
+              : {
+                  ...t,
+                  clips: [],
+                  notes: t.notes ? [] : t.notes,
+                  pads: t.pads?.map((p) => ({ ...p, steps: p.steps.map(() => 0) })),
+                  drumPatterns: t.drumPatterns?.map((pat) => pat.map((p) => ({ ...p, steps: p.steps.map(() => 0) }))),
+                  activeClipId: undefined,
+                  printedAudio: false,
+                  recording: false,
+                },
+          ),
+        );
+        toast.success("Track cleared", { description: `${src.name} kept its channel — clips, notes and drum hits removed.` });
+      },
       removeTrack: (id) => {
         getEngine().removeChannel(id);
         setTracks((ts) => ts.filter((t) => t.id !== id));

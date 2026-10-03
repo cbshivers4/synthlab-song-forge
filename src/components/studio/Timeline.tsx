@@ -638,7 +638,7 @@ const TRACK_BUSES: { id: BusId; label: string }[] = [
 
 function TrackRow({ track, index }: { track: Track; index: number }) {
   const isMobile = useIsMobile();
-  const { selectedId, selectedIds, select, toggleSelectId, updateTrack, removeTrack, duplicateTrack, moveTrack, setPanel, changeInstrument, installedPlugins, addPlugin, editTool, splitClipAt, razorAt, toggleStep, toggleAutomationLane, copyTrack, cutTrack, pasteTrack, clipboardName, copyClip, cutClip, pasteClip, clipClipboardName } =
+  const { selectedId, selectedIds, select, toggleSelectId, updateTrack, removeTrack, duplicateTrack, moveTrack, setPanel, changeInstrument, installedPlugins, addPlugin, editTool, splitClipAt, razorAt, toggleStep, toggleAutomationLane, copyTrack, cutTrack, pasteTrack, clipboardName, copyClip, cutClip, pasteClip, clipClipboardName, clearTrackContent } =
     useStudio();
   const { transport, setNotes, loadSample, fxChains, tracks: allTracks } = useStudio();
   const fileStudio = useStudio();
@@ -1186,6 +1186,12 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
                 </DropdownMenuSubContent></DropdownMenuSub>
               )}
               <DropdownMenuSeparator />
+              <DropdownMenuItem
+                disabled={(track.clips?.length ?? 0) === 0 && (track.notes?.length ?? 0) === 0 && !track.pads?.some((p) => p.steps.some((s) => s > 0))}
+                onClick={() => clearTrackContent(track.id)}
+              >
+                <Eraser className="size-4" /> Clear track contents
+              </DropdownMenuItem>
               <DropdownMenuItem
 
                 onClick={() =>
@@ -1982,6 +1988,7 @@ function EditToolbar() {
     copyTrack,
     pasteTrack,
     removeTrack,
+    clearTrackContent,
     clipboardName,
     undo,
     redo,
@@ -2154,10 +2161,10 @@ function EditToolbar() {
         variant="ghost"
         className="h-6 gap-1 px-2 text-[10px] text-destructive"
         disabled={targets.length === 0}
-        title="Delete selection (Del)"
-        onClick={() => targets.forEach((id) => removeTrack(id))}
+        title="Clear the clips and notes on the selected channels — the channels themselves stay"
+        onClick={() => targets.forEach((id) => clearTrackContent(id))}
       >
-        <Trash2 className="size-3" /> Delete{targets.length > 1 ? ` ${targets.length}` : ""}
+        <Trash2 className="size-3" /> Clear{targets.length > 1 ? ` ${targets.length}` : ""}
       </Button>
       <div className="mx-1 h-4 w-px bg-border" />
       <Button size="sm" variant="ghost" className="h-6 gap-1 px-2 text-[10px]" title="Undo (⌘Z / Ctrl+Z)" onClick={undo}>
