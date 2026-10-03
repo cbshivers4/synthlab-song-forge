@@ -34,7 +34,7 @@ export function listInputs(a: AnyAccess | null): MidiPortInfo[] {
 }
 
 export type MidiMessage =
-  | { type: "on" | "off"; pitch: number; velocity: number }
+  | { type: "on" | "off"; pitch: number; velocity: number; channel: number }
   | { type: "cc"; cc: number; value: number; channel: number }
   | { type: "pitchbend"; value: number; channel: number };
 
@@ -48,8 +48,8 @@ export function subscribe(a: AnyAccess | null, id: string, handler: MidiHandler)
     const [status = 0, d1 = 0, d2 = 0] = Array.from(e.data);
     const cmd = status & 0xf0;
     const channel = status & 0x0f;
-    if (cmd === 0x90 && d2 > 0) handler({ type: "on", pitch: d1, velocity: d2 / 127 });
-    else if (cmd === 0x80 || (cmd === 0x90 && d2 === 0)) handler({ type: "off", pitch: d1, velocity: 0 });
+    if (cmd === 0x90 && d2 > 0) handler({ type: "on", pitch: d1, velocity: d2 / 127, channel });
+    else if (cmd === 0x80 || (cmd === 0x90 && d2 === 0)) handler({ type: "off", pitch: d1, velocity: 0, channel });
     else if (cmd === 0xb0) handler({ type: "cc", cc: d1, value: d2 / 127, channel });
     else if (cmd === 0xe0) handler({ type: "pitchbend", value: ((d2 << 7) | d1) / 16383, channel });
   };
