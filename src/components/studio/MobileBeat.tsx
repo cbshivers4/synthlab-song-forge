@@ -651,13 +651,14 @@ export function MobileBeat({ onClose }: { onClose: () => void }) {
       </div>
 
       {/* Bottom tabs — thumb reach */}
-      <nav className="mobile-beat-tabs grid shrink-0 grid-cols-4 gap-1.5 border-t-2 border-border bg-surface-2/70 px-2 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+      <nav className="mobile-beat-tabs grid shrink-0 grid-cols-5 gap-1.5 border-t-2 border-border bg-surface-2/70 px-2 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
         {(
           [
             ["pads", "PADS", <Grid2x2 key="a" className="size-5" />],
             ["steps", "STEPS", <Disc3 key="b" className="size-5" />],
             ["sound", "SOUND", <SlidersHorizontal key="c" className="size-5" />],
             ["rec", "MIC", <Mic key="d" className="size-5" />],
+            ["sample", "SAMPLE", <Waves key="e" className="size-5" />],
           ] as [Tab, string, React.ReactNode][]
         ).map(([id, label, icon]) => (
           <button
