@@ -2722,7 +2722,7 @@ function TimelineOverview({
 }
 
 export function Timeline() {
-  const { tracks, transport, addTrack, addClip, setPanel, loadSample } = useStudio();
+  const { tracks, transport, addTrack, addClip, setPanel, loadSample, folders, addFolder, renameFolder, removeFolder, toggleFolderCollapsed } = useStudio();
   const totalSteps = songSteps(transport.bars);
   const [over, setOver] = useState(false);
   const [zoom, setZoom] = useState(1);
@@ -2781,9 +2781,25 @@ export function Timeline() {
             className="absolute left-1/2 top-0 w-[min(360px,38%)] -translate-x-[calc(50%-122px)] -translate-y-1/2 select-none opacity-[0.06]"
           />
         </div>
-        {tracks.map((t, i) => (
-          <TrackRow key={t.id} track={t} index={i} />
-        ))}
+        {tracks.map((t, i) => {
+          const folder = t.folderId ? folders.find((f) => f.id === t.folderId) : undefined;
+          const firstInFolder = folder && !tracks.slice(0, i).some((x) => x.folderId === folder.id);
+          if (folder?.collapsed && !firstInFolder) return null;
+          return (
+            <Fragment key={t.id}>
+              {firstInFolder && folder && (
+                <FolderRow
+                  folder={folder}
+                  count={tracks.filter((x) => x.folderId === folder.id).length}
+                  onToggle={() => toggleFolderCollapsed(folder.id)}
+                  onRename={(name) => renameFolder(folder.id, name)}
+                  onUngroup={() => removeFolder(folder.id)}
+                />
+              )}
+              {!folder?.collapsed && <TrackRow track={t} index={i} />}
+            </Fragment>
+          );
+        })}
         <div className="flex items-center gap-3 px-2 pt-2">
           <AddTrackMenu size="sm" />
           <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
