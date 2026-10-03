@@ -47,7 +47,7 @@ export function DesktopUpdateBanner() {
   return (
     <div className="fixed left-1/2 top-3 z-[100] flex max-w-[92vw] -translate-x-1/2 items-center gap-3 rounded-md border border-primary bg-card px-4 py-2 text-sm text-card-foreground shadow-lg">
       <span>
-        SYNCLAB Vocal Forge {release.version} is available (you have {api?.appVersion}).
+        SYNCLAB {release.version} is available (you have {api?.appVersion}).
         {release.notes ? ` ${release.notes}` : ""}
       </span>
       {url ? (

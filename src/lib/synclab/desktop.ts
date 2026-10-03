@@ -133,7 +133,7 @@ export const ARCHITECTURE: Layer[] = [
   {
     id: "ui",
     name: "Modular UI",
-    detail: "Timeline, piano roll, mixer, instruments and Vocal Forge — one screen, panels open on demand.",
+    detail: "Timeline, piano roll, mixer, instruments and effects — one screen, panels open on demand.",
     where: "Web + Desktop",
     status: "shipped",
   },
@@ -170,8 +170,9 @@ export const ARCHITECTURE: Layer[] = [
   {
     id: "ai",
     name: "AI Services",
-    detail: "Vocal Forge writing, the co-producer and arrangement ideas run as server calls from either runtime.",
-    where: "Cloud",
+    detail:
+      "Vocal tone (the vocoder), the reference analyser and the mastering chain run inside the studio itself; nothing is sent to a server.",
+    where: "Web + Desktop",
     status: "shipped",
   },
   {

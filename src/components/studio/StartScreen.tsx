@@ -225,7 +225,7 @@ export function StartScreen() {
           <div className="flex min-w-0 items-center gap-3">
             <img src={synclabLogoAsset.url} alt="SYNCLAB logo" className="size-11 shrink-0 rounded-sm object-cover" />
             <div className="min-w-0">
-              <h1 className="font-display text-lg font-semibold text-foreground sm:text-xl">SYNCLAB <span className="text-primary">VOCAL FORGE</span></h1>
+              <h1 className="font-display text-lg font-semibold text-foreground sm:text-xl">SYNCLAB</h1>
               <p className="font-mono text-[10px] text-muted-foreground">CREATE. RECORD. PRODUCE. FINISH.</p>
             </div>
           </div>
@@ -410,7 +410,7 @@ export function StartScreen() {
           </div>
         </section>
         </div>
-        <footer className="flex flex-wrap justify-between gap-1 border-t border-border bg-surface-2/60 px-4 py-2 font-mono text-[10px] text-muted-foreground"><span>SYNCLAB VOCAL FORGE · DETROIT, MI</span><span>CREATE. RECORD. PRODUCE. FINISH.</span></footer>
+        <footer className="flex flex-wrap justify-between gap-1 border-t border-border bg-surface-2/60 px-4 py-2 font-mono text-[10px] text-muted-foreground"><span>SYNCLAB · DETROIT, MI</span><span>CREATE. RECORD. PRODUCE. FINISH.</span></footer>
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>

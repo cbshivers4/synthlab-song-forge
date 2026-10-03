@@ -212,7 +212,7 @@ export function MenuBar() {
     "help:problem": () => openHelp("problem"),
     "help:about": () => openHelp("about"),
     "app:check-updates": () =>
-      toast("You are on SYNCLAB Vocal Forge " + SYNCLAB_VERSION, {
+      toast("You are on SYNCLAB " + SYNCLAB_VERSION, {
         description: "This build loads the studio over the network, so it is always up to date. Automatic desktop updates arrive with the signed installers.",
       }),
   });
@@ -433,7 +433,7 @@ export function MenuBar() {
             <MenubarItem onClick={() => openHelp("help")}>SYNCLAB Help Center</MenubarItem>
             <MenubarItem onClick={() => openHelp("support")}>Contact SYNCLAB Support</MenubarItem>
             <MenubarItem onClick={() => openHelp("problem")}>Report a Problem</MenubarItem>
-            <MenubarItem onClick={() => openHelp("about")}>About SYNCLAB Vocal Forge</MenubarItem>
+            <MenubarItem onClick={() => openHelp("about")}>About SYNCLAB</MenubarItem>
             <MenubarSeparator />
             <MenubarItem
               onClick={() =>
