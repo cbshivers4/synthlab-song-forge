@@ -38,7 +38,7 @@ export function MobileNav({ onBeatMode }: { onBeatMode: () => void }) {
 
   const create: Item[] = [
     { label: "Sounds", icon: <FolderOpen />, panel: "browser" },
-    { label: "Beat Maker", icon: <Grid2x2 />, run: onBeatMode },
+    { label: "Beat Maker", icon: <Grid2x2 />, run: () => { setPanel(null); onBeatMode(); } },
     { label: "Drum Machine", icon: <Disc3 />, panel: "drums" },
     { label: "Synth", icon: <Piano />, panel: "synth" },
     { label: "Sampler", icon: <Scissors />, panel: "sampler" },
