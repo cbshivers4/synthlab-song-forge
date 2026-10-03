@@ -1,3 +1,4 @@
+import { keysSnapshot, subscribeKeys } from "./active-keys";
 import type { DrumKitId, DrumPad, PluginInstance, SynthPatch, Track } from "./types";
 import { getInputChannel, getInputGainDb, getOutputDevice, openMicOrThrow, preferredRecordingMime, releaseMic } from "./mic";
 
@@ -115,6 +116,8 @@ interface ChannelStrip {
 }
 
 type AutomatableAudioParam = { param: AudioParam; min: number; max: number; logarithmic?: boolean };
+
+const vocoderCleanups = new Map<string, () => void>();
 
 export class SyncLabEngine {
   ctx: AudioContext | null = null;
@@ -968,10 +971,30 @@ export class SyncLabEngine {
           const sense = clamp(val(pl, "sense", 1.4), 0.2, 4);
           const sib = clamp(val(pl, "sibilance", 0.35), 0, 1);
           const mix = clamp(val(pl, "mix", 1), 0, 1);
+          const playKeys = Math.round(val(pl, "play", 0)) === 1;
+          const glide = clamp(val(pl, "glide", 30), 0, 1000) / 1000;
+          const unison = Math.round(clamp(val(pl, "unison", 3), 1, 5));
+          const tone = clamp(val(pl, "tone", 9000), 500, 16000);
+          const width = clamp(val(pl, "width", 1), 0.4, 3);
+          const octave = Math.round(clamp(val(pl, "octave", 0), -2, 2));
 
-          // carrier source
+          // release the previous build of this vocoder (after the insert crossfade)
+          const prevCleanup = vocoderCleanups.get(pl.id);
+          if (prevCleanup) setTimeout(prevCleanup, 400);
+
+          // carrier source -> tone filter
+          const carrierSum = ctx.createGain();
+          const toneLp = ctx.createBiquadFilter();
+          toneLp.type = "lowpass";
+          toneLp.frequency.value = tone;
+          toneLp.Q.value = 0.5;
+          carrierSum.connect(toneLp);
           const carrier = ctx.createGain();
           carrier.gain.value = 1;
+          toneLp.connect(carrier);
+          keep.push(carrierSum, toneLp);
+          const stoppers: (() => void)[] = [];
+          let unsubscribe: (() => void) | null = null;
           if (wave === 2) {
             const len = Math.floor(ctx.sampleRate * 2);
             const buf = ctx.createBuffer(1, len, ctx.sampleRate);
@@ -980,22 +1003,69 @@ export class SyncLabEngine {
             const src = ctx.createBufferSource();
             src.buffer = buf;
             src.loop = true;
-            src.connect(carrier);
+            src.connect(carrierSum);
             src.start();
+            stoppers.push(() => src.stop());
           } else {
-            for (let i = 0; i < 3; i++) {
-              const osc = ctx.createOscillator();
-              osc.type = wave === 1 ? "square" : "sawtooth";
-              osc.frequency.value = pitch;
-              osc.detune.value = (i - 1) * detune;
-              const g = ctx.createGain();
-              g.gain.value = 0.34;
-              osc.connect(g);
-              g.connect(carrier);
-              osc.start();
-              keep.push(osc, g);
+            // Polyphonic carrier: 4 voices, each with `unison` detuned oscillators.
+            // In "Keys" mode the voices follow the notes played on the keyboard,
+            // MIDI controller or typing keys, like a classic vocoder keyboard.
+            const VOICES = playKeys ? 4 : 1;
+            const voices: { oscs: OscillatorNode[]; amp: GainNode }[] = [];
+            const octMul = Math.pow(2, octave);
+            for (let v = 0; v < VOICES; v++) {
+              const amp = ctx.createGain();
+              amp.gain.value = playKeys ? 0 : 1;
+              amp.connect(carrierSum);
+              const oscs: OscillatorNode[] = [];
+              for (let i = 0; i < unison; i++) {
+                const osc = ctx.createOscillator();
+                osc.type = wave === 1 ? "square" : "sawtooth";
+                osc.frequency.value = pitch * octMul;
+                osc.detune.value = unison === 1 ? 0 : (i / (unison - 1) - 0.5) * 2 * detune;
+                const g = ctx.createGain();
+                g.gain.value = 1 / Math.sqrt(unison) / (playKeys ? 2 : 1);
+                osc.connect(g);
+                g.connect(amp);
+                osc.start();
+                oscs.push(osc);
+                keep.push(osc, g);
+                stoppers.push(() => osc.stop());
+              }
+              keep.push(amp);
+              voices.push({ oscs, amp });
+            }
+            if (playKeys) {
+              const apply = () => {
+                const notes = keysSnapshot().slice(-VOICES);
+                const t = ctx.currentTime;
+                voices.forEach((vc, i) => {
+                  const n = notes[i];
+                  if (n === undefined) {
+                    vc.amp.gain.setTargetAtTime(0, t, 0.04);
+                    return;
+                  }
+                  const hz = 440 * Math.pow(2, (n - 69) / 12) * octMul;
+                  vc.oscs.forEach((o) => o.frequency.setTargetAtTime(hz, t, Math.max(0.002, glide / 3)));
+                  vc.amp.gain.setTargetAtTime(1, t, 0.008);
+                });
+              };
+              apply();
+              unsubscribe = subscribeKeys(apply);
             }
           }
+          vocoderCleanups.set(pl.id, () => {
+            unsubscribe?.();
+            stoppers.forEach((s) => {
+              try {
+                s();
+              } catch {
+                /* already stopped */
+              }
+            });
+            if (vocoderCleanups.get(pl.id) === cleanupRef) vocoderCleanups.delete(pl.id);
+          });
+          const cleanupRef = vocoderCleanups.get(pl.id);
 
           // filter bank
           const lo = 120;
@@ -1009,7 +1079,7 @@ export class SyncLabEngine {
             const modBp = ctx.createBiquadFilter();
             modBp.type = "bandpass";
             modBp.frequency.value = f;
-            modBp.Q.value = q;
+            modBp.Q.value = q / width;
 
             // envelope follower: rectify then smooth
             const rect = ctx.createWaveShaper();
@@ -1025,7 +1095,7 @@ export class SyncLabEngine {
             const carBp = ctx.createBiquadFilter();
             carBp.type = "bandpass";
             carBp.frequency.value = clamp(f * formant, 40, 18000);
-            carBp.Q.value = q;
+            carBp.Q.value = q / width;
             const vca = ctx.createGain();
             vca.gain.value = 0;
 

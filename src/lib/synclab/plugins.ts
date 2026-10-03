@@ -115,6 +115,12 @@ export const PARAMS_BY_KIND: Record<PluginKind, () => PluginParam[]> = {
     p("sibilance", "Sibilance", 0.35, 0, 1, ""),
     p("mix", "Mix", 1, 0, 1, ""),
     p("output", "Output", 0, -24, 12, "dB"),
+    p("play", "Play Mode", 0, 0, 1, ""), // 0 fixed pitch, 1 follow keyboard notes
+    p("glide", "Glide", 30, 0, 1000, "ms"),
+    p("unison", "Unison", 3, 1, 5, ""),
+    p("tone", "Tone", 9000, 500, 16000, "Hz"),
+    p("width", "Band Width", 1, 0.4, 3, ""),
+    p("octave", "Octave", 0, -2, 2, ""),
   ],
   gate: () => [
     p("threshold", "Threshold", -45, -80, 0, "dB"),
