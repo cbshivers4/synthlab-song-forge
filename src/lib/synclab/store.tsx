@@ -1265,7 +1265,15 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       const clip: AudioClip = {
         id: uid(), name: `${target.name} TAKE ${(target.clips?.length ?? 0) + 1}`,
         peaks: result.peaks, duration: result.duration, url: result.url,
-        start: snapRecStart(recStartStepRef.current, transportRef.current.snap), offset: 0, length: result.duration, gain: 1,
+        start: snapRecStart(recStartStepRef.current, transportRef.current.snap), offset: 0,
+        // a looped take never runs past the loop end (its tail would overlap the next pass)
+        length: (() => {
+          const tpl = transportRef.current;
+          const s0 = snapRecStart(recStartStepRef.current, tpl.snap);
+          if (!tpl.loop || (tpl.loopEnd ?? 0) <= s0) return result.duration;
+          return Math.min(result.duration, ((tpl.loopEnd ?? 0) - s0) * stepDur);
+        })(),
+        gain: 1,
       };
       // Keep the editable notes/steps intact. The printed audio takes their place
       // during playback until the user explicitly switches back to the pattern.
@@ -2017,6 +2025,14 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             }
             if (armedNote) {
               recStartStepRef.current = transportRef.current.step ?? 0;
+              {
+                const tpr = transportRef.current;
+                const from = tpr.loop ? (tpr.loopStart ?? 0) : recStartStepRef.current;
+                const to = tpr.loop && (tpr.loopEnd ?? 0) > from ? (tpr.loopEnd ?? 0) : Number.POSITIVE_INFINITY;
+                replacedNoteIdsRef.current = tpr.overdub && !tpr.replace
+                  ? new Set()
+                  : new Set((armedNote.notes ?? []).filter((n) => n.step >= from && n.step < to).map((n) => n.id));
+              }
               // The printed take is captured after the channel fader, so a muted
               // channel would record silence (a flat line). Unmute it first.
               if (armedNote.muted) {
