@@ -1,16 +1,38 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Disc3, Grid2x2, Mic, Minus, Play, Plus, Settings2, Shuffle, SlidersHorizontal, Square, X } from "lucide-react";
+import { Disc3, Grid2x2, Mic, Minus, Play, Plus, Settings2, Shuffle, SlidersHorizontal, Square, Waves, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Knob } from "./Knob";
+import { LiveWave } from "./LiveWave";
 import { useStudio } from "@/lib/synclab/store";
 import { getEngine } from "@/lib/synclab/audio-engine";
-import { openInOwnTab } from "@/lib/synclab/mic";
+import { openInOwnTab, openMic, preferredRecordingMime, releaseMic } from "@/lib/synclab/mic";
+import { getPadBank, setPadBank, subscribePadBank, type SavedPad } from "@/lib/synclab/pad-session";
 import { uid } from "@/lib/synclab/presets";
 import type { DrumPad, Track } from "@/lib/synclab/types";
 import { toast } from "sonner";
 
-type Tab = "pads" | "steps" | "sound" | "rec";
+type Tab = "pads" | "steps" | "sound" | "rec" | "sample";
+
+const SAMPLE_PADS = 8;
+
+const makeSavedPad = (loaded: { url: string; name: string; peaks: number[]; duration: number }): SavedPad => ({
+  name: loaded.name.slice(0, 18),
+  url: loaded.url,
+  duration: loaded.duration,
+  peaks: loaded.peaks,
+  start: 0,
+  end: 1,
+  gain: 1,
+  pitch: 0,
+  reverse: false,
+  loop: false,
+  oneShot: true,
+  attack: 0.002,
+  release: 0.08,
+  choke: 0,
+  steps: Array.from({ length: 16 }, () => 0),
+});
 
 const PAD_HUES = [187, 320, 45, 100, 265, 10, 160, 210];
 
