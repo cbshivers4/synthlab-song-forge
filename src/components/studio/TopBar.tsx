@@ -48,6 +48,7 @@ import { toast } from "sonner";
 import { openExport } from "@/components/studio/ExportDialog";
 import { StudioSearch } from "@/components/studio/StudioSearch";
 import { MidiLearnButton } from "@/components/studio/MidiLearn";
+import { autoMapEnabled, setAutoMapEnabled } from "@/lib/synclab/korg-automap";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { PlanBadge } from "@/lib/synclab/plan";
 import { openHelp } from "@/components/studio/HelpCenter";
@@ -535,6 +536,8 @@ function MidiControl() {
               {midiInputId === "all" ? "● " : "○ "}ALL DEVICES
             </DropdownMenuItem>
             <DropdownMenuSeparator />
+            <AutoMapItem />
+            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => setMidiInput(null)}>Disconnect</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -636,5 +639,23 @@ function AudioStatus() {
         {ok ? `${(st.sr / 1000).toFixed(1)}k` : st.s === "off" ? "IDLE" : "PAUSED"}
       </div>
     </button>
+  );
+}
+
+function AutoMapItem() {
+  const [on, setOn] = useState(true);
+  useEffect(() => setOn(autoMapEnabled()), []);
+  return (
+    <DropdownMenuItem
+      onSelect={(e) => {
+        e.preventDefault();
+        const next = !on;
+        setAutoMapEnabled(next);
+        setOn(next);
+      }}
+      title="Korg nanoKONTROL-style mixer: faders = volume, knobs = pan, S/M/R = solo/mute/arm for tracks 1–8"
+    >
+      {on ? "● " : "○ "}AUTO-MAP KORG MIXER (TRACKS 1–8)
+    </DropdownMenuItem>
   );
 }

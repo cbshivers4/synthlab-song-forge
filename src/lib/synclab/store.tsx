@@ -18,6 +18,7 @@ import { getMidiAccess, listInputs, midiSupported, subscribe, type MidiPortInfo 
 import { getPadBank, setPadBank } from "./pad-session";
 import { getLooper } from "./live-looper";
 import { padNote } from "./drum-notes";
+import { autoMapEnabled, isKorgMixer, korgAutoMap } from "./korg-automap";
 import type { CloudSession } from "./cloud";
 import type {
   AudioClip,
@@ -390,6 +391,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const [installedPlugins, setInstalledPlugins] = useState<PluginDef[]>(BUILT_IN_PLUGINS);
   const [fxChains, setFxChains] = useState<Record<string, PluginInstance[]>>({});
   const [midiInputs, setMidiInputs] = useState<MidiPortInfo[]>([]);
+  const midiInputsRef = useRef(midiInputs);
+  midiInputsRef.current = midiInputs;
   // Chosen controller is remembered so it reconnects on its own next visit.
   const [midiInputId, setMidiInputId] = useState<string | null>(() => {
     if (typeof window === "undefined") return null;
@@ -567,7 +570,25 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             return;
           }
           const target = midiMapRef.current[key];
-          if (!target) return;
+          if (!target) {
+            // Korg 8-channel mixer: faders, knobs and S/M/R buttons follow track order automatically.
+            const portName = midiInputsRef.current.find((p) => p.id === midiInputId)?.name;
+            const hit = autoMapEnabled() && (midiInputId === "all" || isKorgMixer(portName)) ? korgAutoMap(msg.cc) : null;
+            if (!hit) return;
+            const track = tracksRef.current[hit.strip];
+            if (!track) return;
+            const v = msg.value;
+            if ((hit.param === "solo" || hit.param === "mute" || hit.param === "arm") && v < 0.5) return; // toggle on press only
+            setTracks((ts) => ts.map((t) => {
+              if (t.id !== track.id) return t;
+              if (hit.param === "volume") return { ...t, volume: v * 1.2 };
+              if (hit.param === "pan") return { ...t, pan: v * 2 - 1 };
+              if (hit.param === "solo") return { ...t, solo: !t.solo };
+              if (hit.param === "mute") return { ...t, muted: !t.muted };
+              return { ...t, armed: !t.armed };
+            }));
+            return;
+          }
           const v = msg.value;
            if (target.id === "transport") {
              if (target.param === "bpm") setTransportState((s) => ({ ...s, bpm: ccRange(v, 60, 190, 1) }));
