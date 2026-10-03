@@ -1,6 +1,6 @@
 import { getEngine } from "./audio-engine";
 import { uid } from "./presets";
-import type { Clip } from "./types";
+import type { AudioClip as Clip } from "./types";
 
 /** Audio files read from a folder on the user's computer (kept in memory for this session only). */
 export type LocalFile = { id: string; name: string; path: string; size: number; file: File };
@@ -22,7 +22,7 @@ function toFolder(name: string, entries: { file: File; path: string }[]): LocalF
   return { id: uid(), name, files };
 }
 
-type DirHandle = { name: string; kind: "directory"; values(): AsyncIterable<{ kind: string; name: string; getFile?: () => Promise<File> } & DirHandle> };
+type DirHandle = { name: string; kind: string; values(): AsyncIterable<{ kind: string; name: string; getFile?: () => Promise<File> } & DirHandle> };
 
 async function walk(dir: DirHandle, prefix: string, out: { file: File; path: string }[], depth: number) {
   for await (const h of dir.values()) {

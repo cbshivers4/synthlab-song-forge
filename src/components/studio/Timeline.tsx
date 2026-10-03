@@ -2543,7 +2543,7 @@ function TimelineOverview({
 }
 
 export function Timeline() {
-  const { tracks, transport, addTrack, setPanel, loadSample } = useStudio();
+  const { tracks, transport, addTrack, addClip, setPanel, loadSample } = useStudio();
   const totalSteps = songSteps(transport.bars);
   const [over, setOver] = useState(false);
   const [zoom, setZoom] = useState(1);
