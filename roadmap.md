@@ -146,6 +146,7 @@
 - [x] Mixer mirrors every timeline track plus Master; Buses/VCA/Aux open only on request
 - [x] Track colour drives timeline clips, waveforms and mixer strip
 - [x] Live-played notes and drum hits are not re-voiced during the same recording pass (no doubling)
+- [x] Loop-end auto-stop hands over from notes to the printed take without replaying notes on top; notes stamped at the heard position; long takes grow the pattern instead of wrapping; repeated pad hits replace neighbours instead of flamming
 - [x] Per-track select checkboxes + Select All; clicking a track header opens its editor
 - [x] MIDI controller library by manufacturer with device drawings and factory auto-maps
 - [ ] Verify no-doubling with a real MIDI keyboard/pads while recording (needs hardware)
