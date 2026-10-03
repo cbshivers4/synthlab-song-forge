@@ -154,6 +154,21 @@ export function PianoRoll({ track }: { track: Track }) {
 
   const endDrag = () => {
     drag.current = null;
+    const m = marq.current;
+    marq.current = null;
+    if (m?.active && marquee) {
+      const el = gridRef.current;
+      if (el) {
+        const r = el.getBoundingClientRect();
+        const stepPx = r.width / steps;
+        const s0 = marquee.x0 / stepPx;
+        const s1 = marquee.x1 / stepPx;
+        const pTop = pitches[Math.min(ROWS - 1, Math.max(0, Math.floor(marquee.y0 / ROW_H)))]!;
+        const pBot = pitches[Math.min(ROWS - 1, Math.max(0, Math.floor(marquee.y1 / ROW_H)))]!;
+        setSel(notes.filter((n) => n.step < s1 && n.step + n.length > s0 && n.pitch <= pTop && n.pitch >= pBot).map((n) => n.id));
+      }
+    }
+    setMarquee(null);
   };
 
   const del = (id: string) => setNotes(track.id, notes.filter((n) => n.id !== id));
@@ -447,6 +462,10 @@ export function PianoRoll({ track }: { track: Track }) {
             className="relative select-none bg-background"
             style={{ height: ROWS * ROW_H }}
             onDoubleClick={addNote}
+            onPointerDown={(e) => {
+              const r = e.currentTarget.getBoundingClientRect();
+              marq.current = { x: e.clientX - r.left, y: e.clientY - r.top, active: false };
+            }}
             onPointerMove={onMove}
           >
             {pitches.map((p, i) => (
