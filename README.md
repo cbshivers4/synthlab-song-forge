@@ -1,12 +1,12 @@
-# SYNCLAB Vocal Forge
+# SYNCLAB
 
 **CREATE. RECORD. PRODUCE. FINISH.**
 
-SYNCLAB Vocal Forge is a web, desktop and mobile digital audio workstation. Record vocals and
+SYNCLAB is a web, desktop and mobile digital audio workstation. Record vocals and
 instruments, build beats with the drum machine and piano roll, arrange on the timeline, mix with
 buses, sends, VCA groups and mastering, and finish the song — then export it.
 
-- **Product:** SYNCLAB Vocal Forge
+- **Product:** SYNCLAB
 - **Version:** 1.0.0
 - **Desktop app id:** `com.synclab.vocalforge`
 - **Publisher:** Christopher Shivers, Detroit, Michigan — cbshivers@gmail.com

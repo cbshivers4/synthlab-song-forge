@@ -3,11 +3,11 @@
  * process both read this file, so name, id and version cannot drift apart.
  */
 module.exports = {
-  productName: "SYNCLAB Vocal Forge",
+  productName: "SYNCLAB",
   appId: "com.synclab.vocalforge",
   version: "1.0.0",
   tagline: "CREATE. RECORD. PRODUCE. FINISH.",
-  description: "SYNCLAB Vocal Forge — record, produce and finish music.",
+  description: "SYNCLAB — record, produce and finish music.",
   publisher: "Christopher Shivers",
   copyright: `Copyright © ${new Date().getFullYear()} Christopher Shivers`,
   website: "https://synthlab-song-forge.lovable.app/",

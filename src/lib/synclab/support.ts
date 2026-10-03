@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
 export const SYNCLAB_VERSION = "1.0.0";
-export const SYNCLAB_NAME = "SYNCLAB VOCAL FORGE";
+export const SYNCLAB_NAME = "SYNCLAB";
 export const SYNCLAB_TAGLINE = "Create. Record. Produce. Finish.";
 
 export type SupportSettings = {
@@ -255,7 +255,7 @@ export const KNOWLEDGE_BASE: Article[] = [
     title: "Phones and tablets",
     tags: "mobile phone ipad iphone android tablet touch",
     body: [
-      "On a phone SYNCLAB opens a touch layout: big drum pads, a step grid, the synth keyboard, the mic tab and Vocal Forge.",
+      "On a phone SYNCLAB opens a touch layout: big drum pads, a step grid, the synth keyboard and the mic tab.",
       "Tablets get the full workflow with larger touch targets.",
       "Browsers on phones limit microphone and MIDI access; SYNCLAB reports what your device allows rather than hiding it.",
     ],

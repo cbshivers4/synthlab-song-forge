@@ -102,8 +102,8 @@
     "typescript-eslint": "^8.56.1",
     "vite": "8.1.5"
   },
-  "productName": "SYNCLAB Vocal Forge",
+  "productName": "SYNCLAB",
   "version": "1.0.0",
-  "description": "SYNCLAB Vocal Forge — record, produce and finish music.",
+  "description": "SYNCLAB — record, produce and finish music.",
   "author": "Christopher Shivers"
 }

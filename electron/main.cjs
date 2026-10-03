@@ -1,5 +1,5 @@
 /**
- * SYNCLAB VOCAL FORGE — desktop shell (Electron main process).
+ * SYNCLAB — desktop shell (Electron main process).
  *
  * Honest scope: this shell hosts the SYNCLAB studio in a native window and adds the things a
  * browser tab cannot do — a real Save/Open dialog on your own disk, a native application menu,

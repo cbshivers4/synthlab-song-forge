@@ -1,5 +1,5 @@
 /**
- * SYNCLAB Vocal Forge — desktop packaging.
+ * SYNCLAB — desktop packaging.
  *
  * Produces a real Electron application folder per platform and zips it with a
  * version-stamped name. Signing, notarization and .dmg / .exe installers need a
@@ -47,8 +47,8 @@ const appPaths = await packager({
   icon,
   extendInfo: {
     NSMicrophoneUsageDescription:
-      "SYNCLAB Vocal Forge records from your microphone or audio interface into tracks and sampler pads.",
-    NSCameraUsageDescription: "SYNCLAB Vocal Forge does not use the camera.",
+      "SYNCLAB records from your microphone or audio interface into tracks and sampler pads.",
+    NSCameraUsageDescription: "SYNCLAB does not use the camera.",
   },
   win32metadata: {
     CompanyName: info.publisher,
@@ -71,7 +71,7 @@ const appPaths = await packager({
 
 const label = platform === "darwin" ? "macOS" : platform === "win32" ? "Windows" : "Linux";
 for (const built of appPaths) {
-  const zip = path.join(out, `SYNCLAB-Vocal-Forge-${info.version}-${label}-${arch}.zip`);
+  const zip = path.join(out, `SYNCLAB-${info.version}-${label}-${arch}.zip`);
   execFileSync("zip", ["-qry", zip, path.basename(built)], { cwd: path.dirname(built), stdio: "inherit" });
   console.log(`packaged ${built}\nzipped    ${zip}`);
 }
