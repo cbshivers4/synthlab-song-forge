@@ -422,6 +422,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   selectedIdRef.current = selectedId;
   const heldRef = useRef(new Map<number, { ids: string[]; trackId: string; t0: number; startStep: number }>());
   const recordedNoteIdsRef = useRef(new Set<string>());
+  // last scheduled step + its audio-clock time, so note capture can stamp the
+  // true sub-step position instead of the rounded playhead step
+  const lastStepRef = useRef<{ step: number; time: number; dur: number } | null>(null);
   /** TOUCH releases shortly after a gesture; LATCH holds until playback stops. */
   const automationGestureRef = useRef(new Map<string, { touchedUntil: number; latched: boolean }>());
   // Per-lane edit history so a device automation lane can be stepped back on its
@@ -1042,6 +1045,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         scheduleStep(step, nextTime);
         lastScheduled = step % total;
         queue.push({ step: step % total, time: nextTime });
+        lastStepRef.current = { step: step % total, time: nextTime, dur: stepDur };
         nextTime += stepDur;
         step += 1;
         if (tp.loop) {
