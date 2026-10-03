@@ -949,6 +949,15 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
         }}
       >
         <div className="flex items-center gap-1.5">
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onClick={(e) => e.stopPropagation()}
+            onChange={() => toggleSelectId(track.id)}
+            title={`Select ${track.name}`}
+            aria-label={`Select ${track.name}`}
+            className="size-3.5 shrink-0 cursor-pointer accent-primary"
+          />
           <span
             draggable
             onDragStart={(e) => {
@@ -2098,7 +2107,7 @@ function EditToolbar() {
       <ToolBtn tool="razor" icon={<RazorIcon className="size-3" />} label="Razor" keys="R" />
       <div className="mx-1 h-4 w-px bg-border" />
       <Button size="sm" variant="ghost" className="h-6 gap-1 px-2 text-[10px]" title="Select all channels (⌘A / Ctrl+A)" onClick={selectAll}>
-        <ListChecks className="size-3" /> All
+        <ListChecks className="size-3" /> Select All
       </Button>
       <Button
         size="sm"
