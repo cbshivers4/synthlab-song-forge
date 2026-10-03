@@ -24,3 +24,4 @@ Printed instrument and drum takes replace overlapping clips by default; only exp
 - Computer typing keys (src/lib/synclab/qwerty.ts) play the armed/selected instrument via previewNote, which both sounds and captures notes; keep it the single note path so recording stays consistent.
 Detached studio panels use a synchronous user-click window.open and React portal to preserve shared audio/state; desktop child windows need a draggable header for moving between monitors without reloading the studio.
 Bottom device displays read post-device or track analyser taps at 20 fps; never substitute animated decoration for live signal.
+- Every security-definer helper used inside an RLS policy (e.g. public.has_role) must be explicitly GRANTed EXECUTE to anon/authenticated/service_role; Supabase does not grant function EXECUTE by default, and a missing grant makes the policy error out so reads silently return empty results instead of rows.
