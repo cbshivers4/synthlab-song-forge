@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useStudio } from "@/lib/synclab/store";
 import { getEngine } from "@/lib/synclab/audio-engine";
+import { markLiveHit } from "@/lib/synclab/live-take";
 import type { DrumPad, Track } from "@/lib/synclab/types";
 
 /**
@@ -23,6 +24,7 @@ export function DrumPads({ track, compact }: { track: Track; compact?: boolean }
       if ((!tapRec && !transport.recording) || !transport.playing) return;
       const total = pad.steps.length || track.steps || 16;
       const at = transport.step % total;
+      if (transport.recording) markLiveHit(track.id, pad.id, at);
       updatePad(track.id, pad.id, { steps: pad.steps.map((v, i) => (i === at ? velocity : v)) });
     },
     [tapRec, transport.playing, transport.recording, transport.step, track.id, track.steps, updatePad],

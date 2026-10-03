@@ -18,6 +18,7 @@ import { getMidiAccess, listInputs, midiSupported, subscribe, type MidiPortInfo 
 import { getPadBank, setPadBank } from "./pad-session";
 import { getLooper } from "./live-looper";
 import { padNote } from "./drum-notes";
+import { markLiveHit, isLiveHit, clearLiveHits } from "./live-take";
 import { keyDown, keyUp } from "./active-keys";
 import { autoMapEnabled, isKorgMixer, korgAutoMap } from "./korg-automap";
 import type { CloudSession } from "./cloud";
@@ -754,6 +755,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
               if (tp.recording && tp.playing) {
                 const total = hit.steps.length || drumTarget.steps || 16;
                 const at = tp.step % total;
+                markLiveHit(drumTarget.id, hit.id, at);
                 setTracks((ts) =>
                   ts.map((t) =>
                     t.id === drumTarget.id
@@ -949,6 +951,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             if (pad.muted || (padSolo && !pad.solo)) continue;
             const v = pad.steps[s] ?? 0;
             if (v <= 0) continue;
+            // a hit just played live into this take was already heard — don't double it
+            if (tp.recording && isLiveHit(t.id, pad.id, s)) continue;
             // a step with a chance below 100% only fires that often
             const chance = pad.probability?.[s];
             if (typeof chance === "number" && chance < 1 && Math.random() > chance) continue;
@@ -970,11 +974,14 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             // recorded notes keep a sub-step fraction for quantize; the
             // scheduler fires on whole steps only, so compare the floored step
             const step0 = Math.floor(note.step);
+            if (tp.recording && recordedNoteIdsRef.current.has(note.id)) continue;
             if (step0 % len === s && (note.recordedEnd == null || (n >= step0 && n < note.recordedEnd))) triggerNote(engine, t, note.pitch, note.length * stepDur, note.velocity, swung);
           }
         } else if (t.patch && t.notes) {
           for (const note of t.notes) {
             const step0 = Math.floor(note.step);
+            // notes played live into this take were already heard — don't double them
+            if (tp.recording && recordedNoteIdsRef.current.has(note.id)) continue;
             if (step0 % len !== s || (note.recordedEnd != null && (n < step0 || n >= note.recordedEnd))) continue;
             const dur = (note.length * stepDur) / (t.patch.arp.on ? 2 : 1);
             if (t.patch.arp.on) {
