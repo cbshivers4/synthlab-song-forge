@@ -1794,12 +1794,21 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           toast("Select a track first", { description: "Click the track you want the clip on, then paste." });
           return;
         }
-        if (target.kind === "drum" || target.kind === "instrument" || target.kind === "midi") {
-          toast("Clips paste onto audio channels", { description: "Select an audio or vocal track, then paste." });
-          return;
-        }
         const at = transportRef.current.step;
         const clip: AudioClip = { ...(structuredClone(src) as AudioClip), id: uid(), start: at };
+        if (target.kind === "drum" || target.kind === "instrument" || target.kind === "midi") {
+          const nid = uid();
+          setTracks((ts) => {
+            const nt = { ...newTrack("audio", clip.name, ts.length), id: nid, clips: [clip], activeClipId: clip.id };
+            const i = ts.findIndex((t) => t.id === target.id);
+            const next = [...ts];
+            next.splice(i + 1, 0, nt);
+            return next;
+          });
+          setSelectedId(nid);
+          toast.success(`${clip.name} pasted on a new audio track`, { description: `${target.name} plays notes, so the audio went on its own track below it.` });
+          return;
+        }
         setTracks((ts) =>
           ts.map((t) => (t.id === target.id ? { ...t, clips: [...(t.clips ?? []), clip], activeClipId: clip.id } : t)),
         );
@@ -2061,7 +2070,10 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           });
         });
       },
-      setActiveClip: (trackId, clipId) => updateTrack(trackId, { activeClipId: clipId }),
+      setActiveClip: (trackId, clipId) => {
+        updateTrack(trackId, { activeClipId: clipId });
+        setSelectedId(trackId);
+      },
       toggleAutomationLane: (trackId, param) => {
         const t = tracksRef.current.find((x) => x.id === trackId);
         const lanes = t?.automation ?? [];
