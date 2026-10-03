@@ -122,6 +122,7 @@
 - [x] Recorded MIDI notes clamp to the loop end (e.g. 2-bar loop = no notes past bar 2); notes may still cross bar lines inside the region. Build OK, not yet played with a real controller.
 
 ## Oct 3 requests
+- [x] Make Delay clearly discoverable in the bottom effect picker and color the bottom modules by device family
 - [x] Synth recording like other DAWs (arm instrument track, record from looper/track without fuss)
 - [x] Click a track header to highlight it for copy/paste
 - [x] Live Looper: arm/record from inside the looper without the top REC button

@@ -6,52 +6,24 @@ import type { PluginInstance, PluginKind, Track } from "@/lib/synclab/types";
 import { Knob } from "./Knob";
 import { Button } from "@/components/ui/button";
 
-/** Accent color per effect family, so each module reads differently at a glance. */
-const KIND_COLOR: Record<PluginKind, string> = {
-  eq: "#7dd3fc",
-  paraeq: "#7dd3fc",
-  filter: "#4ade80",
-  stepfilter: "#4ade80",
-  drive: "#fb923c",
-  bitcrusher: "#fb923c",
-  compressor: "#facc15",
-  limiter: "#facc15",
-  gate: "#facc15",
-  delay: "#c084fc",
-  reverb: "#93c5fd",
-  chorus: "#f472b6",
-  flanger: "#f472b6",
-  phaser: "#f472b6",
-  tremolo: "#a3e635",
-  autopan: "#a3e635",
-  width: "#a3e635",
-  vocoder: "#2dd4bf",
-  gain: "#e2e8f0",
-  resonator: "#fb7185",
-  scalechord: "#fb7185",
-  transient: "#fbbf24",
-};
-
-function instrumentModule(track: Track): { label: string; icon: React.ReactNode; panel: "synth" | "drums" | "sampler" | "piano" } {
-  if (track.kind === "drum") return { label: "Drum Machine", icon: <Disc3 className="size-3.5" />, panel: "drums" };
-  if (track.kind === "sampler") return { label: "Sampler", icon: <AudioLines className="size-3.5" />, panel: "sampler" };
-  if (track.kind === "audio" || track.kind === "ai-vocal") return { label: "Audio Track", icon: <AudioLines className="size-3.5" />, panel: "piano" };
-  return { label: "Synthesizer", icon: <Music2 className="size-3.5" />, panel: "synth" };
+function instrumentModule(track: Track): { label: string; icon: React.ReactNode; panel: "synth" | "drums" | "sampler" | "piano"; tone: string } {
+  if (track.kind === "drum") return { label: "Drum Machine", icon: <Disc3 className="size-3.5" />, panel: "drums", tone: "drums" };
+  if (track.kind === "sampler") return { label: "Sampler", icon: <AudioLines className="size-3.5" />, panel: "sampler", tone: "sampler" };
+  if (track.kind === "audio" || track.kind === "ai-vocal") return { label: "Audio Track", icon: <AudioLines className="size-3.5" />, panel: "piano", tone: "audio" };
+  return { label: "Synthesizer", icon: <Music2 className="size-3.5" />, panel: "synth", tone: "synth" };
 }
 
 function EffectModule({ track, plugin }: { track: Track; plugin: PluginInstance }) {
   const { setPluginParam, togglePluginBypass, removePlugin, setPanel } = useStudio();
-  const color = KIND_COLOR[plugin.kind] ?? "#e2e8f0";
   const shown = plugin.params.slice(0, 3);
   return (
     <div
-      className={`flex w-[168px] shrink-0 flex-col overflow-hidden rounded-md border bg-surface-2/70 ${plugin.bypass ? "opacity-50" : ""}`}
-      style={{ borderColor: `${color}55` }}
+      data-device-kind={plugin.kind}
+      className={`device-module flex w-[168px] shrink-0 flex-col overflow-hidden rounded-md border ${plugin.bypass ? "opacity-50" : ""}`}
     >
       <button
         type="button"
-        className="flex items-center gap-1.5 px-2 py-1 text-left"
-        style={{ background: `linear-gradient(180deg, ${color}26, transparent)` }}
+        className="device-module-header flex items-center gap-1.5 px-2 py-1 text-left"
         onClick={() => setPanel("plugins")}
         title="Open the full effect window"
       >
@@ -60,7 +32,7 @@ function EffectModule({ track, plugin }: { track: Track; plugin: PluginInstance 
           tabIndex={0}
           aria-label={plugin.bypass ? `Turn ${plugin.name} on` : `Turn ${plugin.name} off`}
           className="grid size-5 shrink-0 place-items-center rounded-full border"
-          style={{ borderColor: color, color: plugin.bypass ? "#64748b" : color }}
+          className="device-module-power grid size-5 shrink-0 place-items-center rounded-full border"
           onClick={(e) => {
             e.stopPropagation();
             togglePluginBypass(track.id, plugin.id);
@@ -74,7 +46,7 @@ function EffectModule({ track, plugin }: { track: Track; plugin: PluginInstance 
         >
           <Power className="size-3" />
         </span>
-        <span className="min-w-0 flex-1 truncate font-mono text-[10px] font-semibold tracking-wide" style={{ color }}>
+        <span className="min-w-0 flex-1 truncate font-mono text-[10px] font-semibold tracking-wide text-foreground">
           {plugin.name}
         </span>
         <span
@@ -177,12 +149,13 @@ export function DeviceBar() {
         <div className="flex h-[118px] items-stretch gap-2 overflow-x-auto p-2">
           <button
             type="button"
-            className="flex w-[150px] shrink-0 flex-col items-start gap-1 rounded-md border border-primary/50 bg-primary/10 px-2 py-1.5 text-left hover:bg-primary/15"
+            data-device-kind={inst.tone}
+            className="device-module flex w-[150px] shrink-0 flex-col items-start gap-1 rounded-md border px-2 py-1.5 text-left"
             onClick={() => setPanel(inst.panel)}
             title={`Open the ${inst.label} editor`}
           >
-            <span className="flex items-center gap-1.5 text-primary">{inst.icon}</span>
-            <span className="font-mono text-[10px] font-semibold tracking-wide text-primary">{inst.label}</span>
+            <span className="flex items-center gap-1.5 text-[color:var(--device-accent)]">{inst.icon}</span>
+            <span className="font-mono text-[10px] font-semibold tracking-wide text-foreground">{inst.label}</span>
             <span className="text-[9px] text-muted-foreground">Tap to open the editor</span>
           </button>
           {plugins.map((p) => (
@@ -208,17 +181,19 @@ export function DeviceBar() {
                 className="fixed z-50 max-h-64 w-56 overflow-y-auto rounded-md border border-border bg-popover p-1 shadow-xl"
                 style={{ left: pickerPos.left, bottom: pickerPos.bottom }}
               >
-                {addable.map((d) => (
+                <div className="px-2 py-1 font-mono text-[9px] tracking-widest text-muted-foreground">BUILT-IN EFFECTS</div>
+                {[...addable].sort((a, b) => (a.name === "Stereo Delay" ? -1 : b.name === "Stereo Delay" ? 1 : 0)).map((d) => (
                   <button
                     key={d.id}
                     type="button"
+                    data-device-kind={d.kind}
                     className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs hover:bg-accent"
                     onClick={() => {
                       addPlugin(track.id, d);
                       setPickerOpen(false);
                     }}
                   >
-                    <span className="size-2 shrink-0 rounded-full" style={{ background: KIND_COLOR[d.kind] ?? "#e2e8f0" }} />
+                    <span className="size-2 shrink-0 rounded-full bg-[color:var(--device-accent)]" />
                     <span className="min-w-0 flex-1 truncate">{d.name}</span>
                     <span className="shrink-0 text-[9px] text-muted-foreground">{d.format}</span>
                   </button>
