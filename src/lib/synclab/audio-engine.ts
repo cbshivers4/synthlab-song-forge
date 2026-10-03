@@ -138,6 +138,9 @@ export class SyncLabEngine {
   private trackVcas = new Map<string, string>();
   private trackAudible = new Map<string, boolean>();
   private automatedPluginParams = new Map<string, AutomatableAudioParam>();
+  /** Knob setters that update a running effect in place (no chain rebuild, tails keep ringing). */
+  private liveParams = new Map<string, (v: number, t: number) => void>();
+  private insertParamMap = new Map<string, string>();
   private sendOut = new Map<string, AudioNode>();
   private sendFeedback = new Map<string, AudioNode>();
   private fxInserts = new Map<string, { key: string; nodes: AudioNode[]; input: GainNode }>();
@@ -558,12 +561,48 @@ export class SyncLabEngine {
   }
 
   /** Rebuild the insert (plugin) chain between gain and meter for a track. */
+  /** Turning a knob on a running effect: update it in place when every changed
+   *  knob has a live setter, so playback and effect tails never drop out. */
+  private tryLiveUpdate(targetId: string, active: PluginInstance[], prevKey: string): boolean {
+    const ctx = this.ctx;
+    if (!ctx || !prevKey) return false;
+    let prev: [string, string, number[]][];
+    try { prev = JSON.parse(this.insertParamMap.get(targetId) ?? "null"); } catch { return false; }
+    if (!prev || prev.length !== active.length) return false;
+    const changes: (() => void)[] = [];
+    const t = ctx.currentTime;
+    for (let i = 0; i < active.length; i++) {
+      const pl = active[i]!;
+      const [id, kind, values] = prev[i]!;
+      if (id !== pl.id || kind !== pl.kind || values.length !== pl.params.length) return false;
+      for (let j = 0; j < pl.params.length; j++) {
+        const p = pl.params[j]!;
+        if (p.value === values[j]) continue;
+        const fn = this.liveParams.get(`${targetId}:${pl.id}:${p.id}`);
+        if (!fn) return false;
+        changes.push(() => fn(p.value, t));
+      }
+    }
+    for (const c of changes) c();
+    return true;
+  }
+
+  private rememberParams(targetId: string, active: PluginInstance[]) {
+    this.insertParamMap.set(targetId, JSON.stringify(active.map((pl) => [pl.id, pl.kind, pl.params.map((x) => x.value)])));
+  }
+
   setInserts(trackId: string, plugins: PluginInstance[]) {
     const ctx = this.init();
     const ch = this.channel(trackId);
     const active = plugins.filter((pl) => !pl.bypass);
     const key = JSON.stringify(active.map((pl) => [pl.kind, pl.params.map((x) => x.value)]));
     if (key === ch.insertKey) return;
+    if (this.tryLiveUpdate(trackId, active, ch.insertKey)) {
+      ch.insertKey = key;
+      this.rememberParams(trackId, active);
+      return;
+    }
+    this.rememberParams(trackId, active);
     ch.insertKey = key;
 
     const oldOut = ch.insertOut;
@@ -689,6 +728,10 @@ export class SyncLabEngine {
     const dbToGain = (db: number) => Math.pow(10, db / 20);
     const bind = (pl: PluginInstance, id: string, param: AudioParam, min: number, max: number, logarithmic = false) =>
       this.automatedPluginParams.set(`${targetId}:${pl.id}:${id}`, { param, min, max, logarithmic });
+    const live = (pl: PluginInstance, id: string, fn: (v: number, t: number) => void) =>
+      this.liveParams.set(`${targetId}:${pl.id}:${id}`, fn);
+    const glide = (param: AudioParam, v: number, t: number) => param.setTargetAtTime(v, t, 0.015);
+    for (const k of [...this.liveParams.keys()]) if (k.startsWith(`${targetId}:`)) this.liveParams.delete(k);
 
 
     for (const pl of active) {
@@ -712,6 +755,11 @@ export class SyncLabEngine {
           low.connect(mid);
           mid.connect(high);
           high.connect(out);
+          live(pl, "low", (v, t) => glide(low.gain, v, t));
+          live(pl, "mid", (v, t) => glide(mid.gain, v, t));
+          live(pl, "midFreq", (v, t) => glide(mid.frequency, v, t));
+          live(pl, "high", (v, t) => glide(high.gain, v, t));
+          live(pl, "mix", (v, t) => glide(out.gain, dbToGain(v), t));
           nodes.push(low, mid, high, out);
           break;
         }
@@ -748,6 +796,9 @@ export class SyncLabEngine {
           f.Q.value = val(pl, "resonance", 1);
           bind(pl, "cutoff", f.frequency, 60, 18000, true);
           bind(pl, "resonance", f.Q, 0.1, 20);
+          live(pl, "cutoff", (v, t) => glide(f.frequency, v, t));
+          live(pl, "resonance", (v, t) => glide(f.Q, v, t));
+          live(pl, "type", (v) => { const m = Math.round(v); f.type = m === 1 ? "highpass" : m === 2 ? "bandpass" : "lowpass"; });
           nodes.push(f);
           break;
         }
@@ -762,6 +813,9 @@ export class SyncLabEngine {
           out.gain.value = dbToGain(val(pl, "output", 0));
           ws.connect(tone);
           tone.connect(out);
+          live(pl, "drive", (v) => { ws.curve = makeDistortionCurve(clamp(v, 0, 1)); });
+          live(pl, "tone", (v, t) => glide(tone.frequency, v, t));
+          live(pl, "output", (v, t) => glide(out.gain, dbToGain(v), t));
           nodes.push(ws, tone, out);
           break;
         }
@@ -774,6 +828,11 @@ export class SyncLabEngine {
           const out = ctx.createGain();
           out.gain.value = dbToGain(val(pl, "makeup", 0));
           c.connect(out);
+          live(pl, "threshold", (v, t) => glide(c.threshold, v, t));
+          live(pl, "ratio", (v, t) => glide(c.ratio, v, t));
+          live(pl, "attack", (v, t) => glide(c.attack, v / 1000, t));
+          live(pl, "release", (v, t) => glide(c.release, v / 1000, t));
+          live(pl, "makeup", (v, t) => glide(out.gain, dbToGain(v), t));
           nodes.push(c, out);
           break;
         }
@@ -792,18 +851,23 @@ export class SyncLabEngine {
           fb.connect(d);
           d.connect(wet);
           wet.connect(out);
+          live(pl, "time", (v, t) => d.delayTime.setTargetAtTime(clamp(v / 1000, 0.01, 2), t, 0.05));
+          live(pl, "feedback", (v, t) => glide(fb.gain, clamp(v, 0, 0.92), t));
+          live(pl, "mix", (v, t) => glide(wet.gain, clamp(v, 0, 1), t));
           nodes.push(inNode, d, fb, wet, out);
           break;
         }
         case "width": {
           const w = ctx.createGain();
           w.gain.value = dbToGain(val(pl, "output", 0));
+          live(pl, "output", (v, t) => glide(w.gain, dbToGain(v), t));
           nodes.push(w);
           break;
         }
         case "gain": {
           const g2 = ctx.createGain();
           g2.gain.value = dbToGain(val(pl, "gain", 0));
+          live(pl, "gain", (v, t) => glide(g2.gain, dbToGain(v), t));
           nodes.push(g2);
           break;
         }
@@ -821,6 +885,8 @@ export class SyncLabEngine {
           pre.connect(conv);
           conv.connect(wet);
           wet.connect(out);
+          live(pl, "predelay", (v, t) => glide(pre.delayTime, clamp(v / 1000, 0, 0.5), t));
+          live(pl, "mix", (v, t) => glide(wet.gain, clamp(v, 0, 1), t));
           nodes.push(inNode, pre, conv, wet, out);
           break;
         }
