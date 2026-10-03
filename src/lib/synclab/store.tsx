@@ -967,11 +967,15 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           }
         } else if (t.kind === "sampler" && t.sampler && t.notes) {
           for (const note of t.notes) {
-            if (note.step % len === s && (note.recordedEnd == null || (n >= note.step && n < note.recordedEnd))) triggerNote(engine, t, note.pitch, note.length * stepDur, note.velocity, swung);
+            // recorded notes keep a sub-step fraction for quantize; the
+            // scheduler fires on whole steps only, so compare the floored step
+            const step0 = Math.floor(note.step);
+            if (step0 % len === s && (note.recordedEnd == null || (n >= step0 && n < note.recordedEnd))) triggerNote(engine, t, note.pitch, note.length * stepDur, note.velocity, swung);
           }
         } else if (t.patch && t.notes) {
           for (const note of t.notes) {
-            if (note.step % len !== s || (note.recordedEnd != null && (n < note.step || n >= note.recordedEnd))) continue;
+            const step0 = Math.floor(note.step);
+            if (step0 % len !== s || (note.recordedEnd != null && (n < step0 || n >= note.recordedEnd))) continue;
             const dur = (note.length * stepDur) / (t.patch.arp.on ? 2 : 1);
             if (t.patch.arp.on) {
               const oct = t.patch.arp.octaves;
@@ -1840,8 +1844,12 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           toast("Select a track first", { description: "Click the track you want the clip on, then paste." });
           return;
         }
-        const endOf = (t: Track) => (t.clips ?? []).reduce((m, c) => Math.max(m, (c.start ?? 0) + (c.length ?? 0)), 0);
-        const at = atEnd ? endOf(target) : transportRef.current.step;
+        // start is in steps but length is in seconds — convert so the paste
+        // lands after the last clip instead of on top of it
+        const pasteStepDur = stepSeconds(transportRef.current.bpm);
+        const endOf = (t: Track) =>
+          (t.clips ?? []).reduce((m, c) => Math.max(m, (c.start ?? 0) + clipSeconds(c) / pasteStepDur), 0);
+        const at = atEnd ? Math.round(endOf(target)) : transportRef.current.step;
         const clip: AudioClip = { ...(structuredClone(src) as AudioClip), id: uid(), start: at };
         const isNotes = target.kind === "drum" || target.kind === "instrument" || target.kind === "midi";
         // Paste onto the selected track itself; note tracks switch to WAVE so the audio plays there.
