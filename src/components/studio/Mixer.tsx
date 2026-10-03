@@ -1538,9 +1538,11 @@ export function Mixer() {
   const { tracks, selectedId, select, buses, setBus, vcas, setVca, auxReturns, setAuxReturn, updateTrack, addTrack } = useStudio();
   const levels = useMeters(tracks);
   const [narrow, setNarrow] = useState(false);
-  const [showBuses, setShowBuses] = useState(true);
-  const [showVcas, setShowVcas] = useState(true);
-  const [showAux, setShowAux] = useState(true);
+  // Opens focused: one channel + master. Buses, VCAs and aux returns are opened on request.
+  const [showAll, setShowAll] = useState(false);
+  const [showBuses, setShowBuses] = useState(false);
+  const [showVcas, setShowVcas] = useState(false);
+  const [showAux, setShowAux] = useState(false);
   // How many bus / VCA / aux strips to show. Bus 0 = auto (only buses in use).
   const [counts, setCounts] = useState<{ bus: number; vca: number; aux: number }>({ bus: 0, vca: VCA_IDS.length, aux: AUX_IDS.length });
   useEffect(() => {
@@ -1730,6 +1732,7 @@ export function Mixer() {
           >
             <VolumeX className="size-3" /> Unmute all
           </button>
+          <Button variant={showAll ? "secondary" : "ghost"} size="sm" className="h-7 text-[10px]" onClick={() => setShowAll((v) => !v)} aria-pressed={showAll} title="Show every track channel, or just the selected one">{showAll ? "All channels" : "1 channel"}</Button>
           <button
             onClick={() => setShowBuses((v) => !v)}
             className={cn(
@@ -1788,11 +1791,11 @@ export function Mixer() {
       ) : (
         <div className="mobile-mixer-strips flex overflow-x-auto">
           <LabelRail />
-          {tracks.map((t, i) => (
+          {(showAll ? tracks : [tracks.find((x) => x.id === selectedId) ?? tracks[0]].filter((x): x is Track => !!x)).map((t) => (
             <Strip
               key={t.id}
               t={t}
-              index={i}
+              index={tracks.indexOf(t)}
               narrow={narrow}
               level={t.muted ? 0 : (levels.tracks[t.id] ?? 0)}
               selected={t.id === selectedId}

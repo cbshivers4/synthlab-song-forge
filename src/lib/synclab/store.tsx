@@ -18,8 +18,9 @@ import { getMidiAccess, listInputs, midiSupported, subscribe, type MidiPortInfo 
 import { getPadBank, setPadBank } from "./pad-session";
 import { getLooper } from "./live-looper";
 import { padNote } from "./drum-notes";
+import { markLiveHit, isLiveHit, clearLiveHits } from "./live-take";
 import { keyDown, keyUp } from "./active-keys";
-import { autoMapEnabled, isKorgMixer, korgAutoMap } from "./korg-automap";
+import { controllerAutoMap } from "./controller-profiles";
 import type { CloudSession } from "./cloud";
 import type {
   AudioClip,
@@ -580,7 +581,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           if (!target) {
             // Korg 8-channel mixer: faders, knobs and S/M/R buttons follow track order automatically.
             const portName = midiInputsRef.current.find((p) => p.id === midiInputId)?.name;
-            const hit = autoMapEnabled() && (midiInputId === "all" || isKorgMixer(portName)) ? korgAutoMap(msg.cc) : null;
+            const hit = controllerAutoMap(portName, msg.cc);
             if (!hit) return;
             const track = tracksRef.current[hit.strip];
             if (!track) return;
@@ -754,6 +755,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
               if (tp.recording && tp.playing) {
                 const total = hit.steps.length || drumTarget.steps || 16;
                 const at = tp.step % total;
+                markLiveHit(drumTarget.id, hit.id, at);
                 setTracks((ts) =>
                   ts.map((t) =>
                     t.id === drumTarget.id
@@ -841,6 +843,18 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       for (const t of tracks) getEngine().setInserts(t.id, t.plugins ?? []);
     }
   }, [tracks]);
+
+  // A new recording pass starts with an empty "played live" list, so earlier
+  // takes keep sounding while only this pass's live notes skip re-voicing.
+  useEffect(() => {
+    if (transport.recording) {
+      recordedNoteIdsRef.current = new Set();
+      clearLiveHits();
+    } else {
+      clearLiveHits();
+    }
+  }, [transport.recording]);
+
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -949,6 +963,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             if (pad.muted || (padSolo && !pad.solo)) continue;
             const v = pad.steps[s] ?? 0;
             if (v <= 0) continue;
+            // a hit just played live into this take was already heard — don't double it
+            if (tp.recording && isLiveHit(t.id, pad.id, s)) continue;
             // a step with a chance below 100% only fires that often
             const chance = pad.probability?.[s];
             if (typeof chance === "number" && chance < 1 && Math.random() > chance) continue;
@@ -970,11 +986,14 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             // recorded notes keep a sub-step fraction for quantize; the
             // scheduler fires on whole steps only, so compare the floored step
             const step0 = Math.floor(note.step);
+            if (tp.recording && recordedNoteIdsRef.current.has(note.id)) continue;
             if (step0 % len === s && (note.recordedEnd == null || (n >= step0 && n < note.recordedEnd))) triggerNote(engine, t, note.pitch, note.length * stepDur, note.velocity, swung);
           }
         } else if (t.patch && t.notes) {
           for (const note of t.notes) {
             const step0 = Math.floor(note.step);
+            // notes played live into this take were already heard — don't double them
+            if (tp.recording && recordedNoteIdsRef.current.has(note.id)) continue;
             if (step0 % len !== s || (note.recordedEnd != null && (n < step0 || n >= note.recordedEnd))) continue;
             const dur = (note.length * stepDur) / (t.patch.arp.on ? 2 : 1);
             if (t.patch.arp.on) {

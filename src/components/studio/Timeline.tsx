@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { stepsPerBar, getBeatsPerBar, STEPS_PER_BEAT, songSteps, stepSeconds, positionLabel } from "@/lib/synclab/timebase";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
@@ -939,15 +939,25 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
         }}
         onContextMenu={(e) => isMobile && e.preventDefault()}
         onClick={(e) => {
-          // Selecting a channel from its header opens its edit menu.
+          // Clicking a track's header opens its editor (instrument, drums, sampler).
           if (e.metaKey || e.ctrlKey) return;
           const el = e.target as HTMLElement;
           if (el.closest("button,input,[role='slider'],[role='combobox']")) return;
           select(track.id);
-          if (!isMobile) setMenuOpen(true);
+          if (editorPanel) setPanel(editorPanel);
+          else if (!isMobile) setMenuOpen(true);
         }}
       >
         <div className="flex items-center gap-1.5">
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onClick={(e) => e.stopPropagation()}
+            onChange={() => toggleSelectId(track.id)}
+            title={`Select ${track.name}`}
+            aria-label={`Select ${track.name}`}
+            className="size-3.5 shrink-0 cursor-pointer accent-primary"
+          />
           <span
             draggable
             onDragStart={(e) => {
@@ -1338,6 +1348,12 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
                 ? "cursor-crosshair"
                 : ""
         }`}
+        style={{
+          // Clips, waveforms and notes take the track's own colour.
+          "--clip-audio": track.color, "--color-clip-audio": track.color,
+          "--clip-midi": track.color, "--color-clip-midi": track.color,
+          "--clip-drum": track.color, "--color-clip-drum": track.color,
+        } as CSSProperties}
         title={
           editTool === "draw"
             ? "Draw tool — click to write a note or drum hit"
@@ -2091,7 +2107,7 @@ function EditToolbar() {
       <ToolBtn tool="razor" icon={<RazorIcon className="size-3" />} label="Razor" keys="R" />
       <div className="mx-1 h-4 w-px bg-border" />
       <Button size="sm" variant="ghost" className="h-6 gap-1 px-2 text-[10px]" title="Select all channels (⌘A / Ctrl+A)" onClick={selectAll}>
-        <ListChecks className="size-3" /> All
+        <ListChecks className="size-3" /> Select All
       </Button>
       <Button
         size="sm"

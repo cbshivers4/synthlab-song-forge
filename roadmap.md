@@ -143,3 +143,9 @@
 - [x] Set the support contact to cbshivers@gmail.com and verify it shows in-app ("Prefer email? cbshivers@gmail.com")
 - [x] Fix the hidden backend break: public.has_role lacked EXECUTE for authenticated, so every RLS policy using it failed and support settings read as empty
 - [ ] Point the app's own links (About tab Website, electron/app-info.cjs, index.tsx og:url/canonical, sitemap) at a custom domain once one is connected — they currently use the real published lovable.app URL
+- [x] Mixer opens with one channel + master; Buses/VCA/Aux/All channels opened on request
+- [x] Track colour drives timeline clips, waveforms and mixer strip
+- [x] Live-played notes and drum hits are not re-voiced during the same recording pass (no doubling)
+- [x] Per-track select checkboxes + Select All; clicking a track header opens its editor
+- [x] MIDI controller library by manufacturer with device drawings and factory auto-maps
+- [ ] Verify no-doubling with a real MIDI keyboard/pads while recording (needs hardware)
