@@ -438,7 +438,9 @@ export function MenuBar() {
             <MenubarItem
               onClick={() =>
                 toast("Keyboard shortcuts", {
-                  description: "Space play/stop · R record · S split · Delete remove · ⌘D duplicate",
+                  description:
+                    "Space play/stop · R record · L loop · M mute track · ←/→ playhead by bar (⇧ by step) · Home back to start · V select · B draw · S split · T razor · ⌘Z undo · ⇧⌘Z redo · ⌘D duplicate · ⌘A select all · ⌘S save · Delete remove track",
+                  duration: 12000,
                 })
               }
             >
