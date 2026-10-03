@@ -1082,6 +1082,16 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
                 <Settings2 className="size-4" /> Edit bus effects in mixer
               </DropdownMenuItem>
               </DropdownMenuSubContent></DropdownMenuSub>
+              <DropdownMenuSub><DropdownMenuSubTrigger>MIDI channel{track.midiChannel ? ` (${track.midiChannel})` : ""}</DropdownMenuSubTrigger><DropdownMenuSubContent>
+                <DropdownMenuItem onClick={() => updateTrack(track.id, { midiChannel: undefined })}>
+                  <span className="w-4">{track.midiChannel == null ? "✓" : ""}</span>All channels
+                </DropdownMenuItem>
+                {Array.from({ length: 16 }, (_, i) => i + 1).map((ch) => (
+                  <DropdownMenuItem key={ch} onClick={() => updateTrack(track.id, { midiChannel: ch })}>
+                    <span className="w-4">{track.midiChannel === ch ? "✓" : ""}</span>Channel {ch}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuSubContent></DropdownMenuSub>
               <DropdownMenuSeparator />
               {(
                 <DropdownMenuSub><DropdownMenuSubTrigger>Automation</DropdownMenuSubTrigger><DropdownMenuSubContent>

@@ -778,12 +778,18 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         }
         if (msg.type === "pitchbend") return;
         const { type, pitch, velocity } = msg;
+        // A track with a MIDI channel set only hears notes on that channel
+        // (msg.channel is 0-based; Track.midiChannel is 1-16). Tracks set to
+        // "All" hear everything, so a channel-routed instrument wins over them.
+        const ch = msg.channel + 1;
+        const hears = (t: Track) => t.midiChannel == null || t.midiChannel === ch;
 
         // A drum controller speaks General MIDI notes. When an armed drum track
         // owns the incoming note, that pad plays — and while recording, the note
         // is written onto the step that is sounding, exactly like tapping a pad.
         const drumTarget =
-          tracksRef.current.find((t) => t.armed && t.kind === "drum" && t.pads?.length) ??
+          tracksRef.current.find((t) => t.kind === "drum" && t.pads?.length && t.midiChannel === ch) ??
+          tracksRef.current.find((t) => t.armed && t.kind === "drum" && t.pads?.length && hears(t)) ??
           (tracksRef.current.find((t) => t.id === selectedIdRef.current && t.kind === "drum" && t.pads?.length) as
             | Track
             | undefined);
@@ -826,9 +832,10 @@ export function StudioProvider({ children }: { children: ReactNode }) {
 
         const notable = (t: Track) => t.kind === "instrument" || t.kind === "midi" || t.kind === "sampler";
         const target =
-          tracksRef.current.find((t) => t.armed && notable(t)) ??
-          tracksRef.current.find((t) => t.id === selectedIdRef.current && notable(t)) ??
-          tracksRef.current.find(notable);
+          tracksRef.current.find((t) => notable(t) && t.midiChannel === ch) ??
+          tracksRef.current.find((t) => t.armed && notable(t) && hears(t)) ??
+          tracksRef.current.find((t) => t.id === selectedIdRef.current && notable(t) && hears(t)) ??
+          tracksRef.current.find((t) => notable(t) && hears(t));
         if (!target) return;
         const engine = getEngine();
         engine.init();
