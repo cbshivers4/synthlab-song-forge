@@ -188,7 +188,6 @@
 [data-device-kind="vocoder"] { --device-accent: var(--primary); }
 [data-device-kind="gain"] { --device-accent: var(--foreground); }
 .device-module {
-  --device-accent: var(--primary);
   border-color: color-mix(in oklab, var(--device-accent) 66%, var(--border));
   background: linear-gradient(160deg, color-mix(in oklab, var(--device-accent) 25%, var(--surface-2)), var(--surface) 84%);
   box-shadow: inset 3px 0 var(--device-accent);
