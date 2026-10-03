@@ -535,6 +535,8 @@ function MidiControl() {
               {midiInputId === "all" ? "● " : "○ "}ALL DEVICES
             </DropdownMenuItem>
             <DropdownMenuSeparator />
+            <AutoMapItem />
+            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => setMidiInput(null)}>Disconnect</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
