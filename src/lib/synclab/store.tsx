@@ -1844,8 +1844,12 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           toast("Select a track first", { description: "Click the track you want the clip on, then paste." });
           return;
         }
-        const endOf = (t: Track) => (t.clips ?? []).reduce((m, c) => Math.max(m, (c.start ?? 0) + (c.length ?? 0)), 0);
-        const at = atEnd ? endOf(target) : transportRef.current.step;
+        // start is in steps but length is in seconds — convert so the paste
+        // lands after the last clip instead of on top of it
+        const pasteStepDur = stepSeconds(transportRef.current.bpm);
+        const endOf = (t: Track) =>
+          (t.clips ?? []).reduce((m, c) => Math.max(m, (c.start ?? 0) + clipSeconds(c) / pasteStepDur), 0);
+        const at = atEnd ? Math.round(endOf(target)) : transportRef.current.step;
         const clip: AudioClip = { ...(structuredClone(src) as AudioClip), id: uid(), start: at };
         const isNotes = target.kind === "drum" || target.kind === "instrument" || target.kind === "midi";
         // Paste onto the selected track itself; note tracks switch to WAVE so the audio plays there.
