@@ -1035,6 +1035,15 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
                   <DropdownMenuItem onClick={duplicateClip}>
                     <Copy className="size-4" /> Duplicate clip
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => activeClip && copyClip(track.id, activeClip.id)}>
+                    <Copy className="size-4" /> Copy clip
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => activeClip && cutClip(track.id, activeClip.id)}>
+                    <Scissors className="size-4" /> Cut clip
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={pasteClip} disabled={!clipClipboardName}>
+                    <ClipboardPaste className="size-4" /> Paste clip at playhead{clipClipboardName ? ` (${clipClipboardName})` : ""}
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={deleteActiveClip}>
                     <Trash2 className="size-4" /> Delete clip
                   </DropdownMenuItem>
