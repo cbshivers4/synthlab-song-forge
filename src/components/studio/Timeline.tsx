@@ -315,7 +315,7 @@ function MidiClip({ track }: { track: Track }) {
           return {
             ...n,
             step: Math.max(0, o.step + d),
-            recordedEnd: o.recordedEnd != null ? Math.max(0, o.recordedEnd + d) : o.recordedEnd,
+            ...(o.recordedEnd != null ? { recordedEnd: Math.max(0, o.recordedEnd + d) } : {}),
           };
         }),
       });
