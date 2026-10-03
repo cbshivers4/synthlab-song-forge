@@ -433,6 +433,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   selectedIdRef.current = selectedId;
   const heldRef = useRef(new Map<number, { ids: string[]; trackId: string; t0: number; startStep: number }>());
   const recordedNoteIdsRef = useRef(new Set<string>());
+  /** Older notes inside the region being re-recorded (replace mode): silent while recording, removed when the take lands. */
+  const replacedNoteIdsRef = useRef(new Set<string>());
   // last scheduled step + its audio-clock time, so note capture can stamp the
   // true sub-step position instead of the rounded playhead step
   const lastStepRef = useRef<{ step: number; time: number; dur: number } | null>(null);
@@ -938,6 +940,18 @@ export function StudioProvider({ children }: { children: ReactNode }) {
               skip = (at - cs) * stepDur * rate;
               if (skip >= fullLen - 0.02) continue;
             } else continue;
+            // A clip never rings past the loop end: when the loop wraps it is
+            // started again, and a still-playing tail would sound doubled.
+            let playLen = fullLen - skip;
+            if (tp.loop) {
+              const lo = Math.max(0, Math.min(totalSteps - 1, tp.loopStart ?? 0));
+              const hi = Math.min(totalSteps, Math.max(lo + 1, tp.loopEnd ?? totalSteps));
+              if (at < hi) {
+                const room = ((hi - at) * stepDur - (startWhen - when)) * rate;
+                playLen = Math.min(playLen, room);
+              }
+            }
+            if (playLen < 0.02) continue;
             engine.playClip(
               t.id,
               {
@@ -945,7 +959,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
                 // Reversed playback starts at the far end of the trim window:
                 // shortening its length advances the heard start, not its offset.
                 offset: (c.offset ?? 0) + (c.reverse ? 0 : skip),
-                length: fullLen - skip,
+                length: playLen,
                 gain: c.gain ?? 1,
                 fadeIn: skip ? 0.01 : (c.fadeIn ?? 0.004),
                 fadeOut: c.fadeOut ?? 0.01,
@@ -986,14 +1000,14 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             // recorded notes keep a sub-step fraction for quantize; the
             // scheduler fires on whole steps only, so compare the floored step
             const step0 = Math.floor(note.step);
-            if (tp.recording && recordedNoteIdsRef.current.has(note.id)) continue;
+            if (tp.recording && (recordedNoteIdsRef.current.has(note.id) || replacedNoteIdsRef.current.has(note.id))) continue;
             if (step0 % len === s && (note.recordedEnd == null || (n >= step0 && n < note.recordedEnd))) triggerNote(engine, t, note.pitch, note.length * stepDur, note.velocity, swung);
           }
         } else if (t.patch && t.notes) {
           for (const note of t.notes) {
             const step0 = Math.floor(note.step);
             // notes played live into this take were already heard — don't double them
-            if (tp.recording && recordedNoteIdsRef.current.has(note.id)) continue;
+            if (tp.recording && (recordedNoteIdsRef.current.has(note.id) || replacedNoteIdsRef.current.has(note.id))) continue;
             if (step0 % len !== s || (note.recordedEnd != null && (n < step0 || n >= note.recordedEnd))) continue;
             const dur = (note.length * stepDur) / (t.patch.arp.on ? 2 : 1);
             if (t.patch.arp.on) {
@@ -1237,17 +1251,29 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       const stepDur = stepSeconds(transportRef.current.bpm);
       const takeEnd = Math.min(songSteps(transportRef.current.bars), recStartStepRef.current + Math.max(1, Math.ceil(result.duration / stepDur)));
       const capturedIds = recordedNoteIdsRef.current;
+      // Replace mode: older notes under the new take are removed, so the part
+      // is exactly what was just played (overdub keeps them).
+      const replacedIds = replacedNoteIdsRef.current;
       setTracks((ts) => ts.map((t) => t.id === result.trackId ? {
-        ...t, notes: (t.notes ?? []).map((n) => capturedIds.has(n.id) ? {
+        ...t, notes: (t.notes ?? []).filter((n) => !replacedIds.has(n.id)).map((n) => capturedIds.has(n.id) ? {
           ...n, recordedEnd: takeEnd,
           length: Math.max(0.25, Math.min(n.length, takeEnd - n.step)),
         } : n),
       } : t));
       recordedNoteIdsRef.current = new Set();
+      replacedNoteIdsRef.current = new Set();
       const clip: AudioClip = {
         id: uid(), name: `${target.name} TAKE ${(target.clips?.length ?? 0) + 1}`,
         peaks: result.peaks, duration: result.duration, url: result.url,
-        start: snapRecStart(recStartStepRef.current, transportRef.current.snap), offset: 0, length: result.duration, gain: 1,
+        start: snapRecStart(recStartStepRef.current, transportRef.current.snap), offset: 0,
+        // a looped take never runs past the loop end (its tail would overlap the next pass)
+        length: (() => {
+          const tpl = transportRef.current;
+          const s0 = snapRecStart(recStartStepRef.current, tpl.snap);
+          if (!tpl.loop || (tpl.loopEnd ?? 0) <= s0) return result.duration;
+          return Math.min(result.duration, ((tpl.loopEnd ?? 0) - s0) * stepDur);
+        })(),
+        gain: 1,
       };
       // Keep the editable notes/steps intact. The printed audio takes their place
       // during playback until the user explicitly switches back to the pattern.
@@ -1999,6 +2025,14 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             }
             if (armedNote) {
               recStartStepRef.current = transportRef.current.step ?? 0;
+              {
+                const tpr = transportRef.current;
+                const from = tpr.loop ? (tpr.loopStart ?? 0) : recStartStepRef.current;
+                const to = tpr.loop && (tpr.loopEnd ?? 0) > from ? (tpr.loopEnd ?? 0) : Number.POSITIVE_INFINITY;
+                replacedNoteIdsRef.current = tpr.overdub && !tpr.replace
+                  ? new Set()
+                  : new Set((armedNote.notes ?? []).filter((n) => n.step >= from && n.step < to).map((n) => n.id));
+              }
               // The printed take is captured after the channel fader, so a muted
               // channel would record silence (a flat line). Unmute it first.
               if (armedNote.muted) {
