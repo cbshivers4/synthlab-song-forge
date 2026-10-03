@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { Lock, Minus, Music2, Plus, Unlock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { useStudio } from "@/lib/synclab/store";
+import { keysSnapshot, subscribeKeys } from "@/lib/synclab/active-keys";
 
 const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 const BLACK = new Set([1, 3, 6, 8, 10]);
@@ -17,6 +18,7 @@ const SCALES: Record<string, number[]> = {
   Blues: [0, 3, 5, 6, 7, 10],
   Chromatic: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
 };
+const EMPTY: number[] = [];
 const CHORDS = [
   { name: "MAJ", intervals: [0, 4, 7] },
   { name: "MIN", intervals: [0, 3, 7] },
@@ -37,6 +39,23 @@ export function Keyboard() {
   const [root, setRoot] = useState(0);
   const [scaleName, setScaleName] = useState("Minor");
   const [scaleLock, setScaleLock] = useState(false);
+  // Notes sounding from any source (MIDI controller, typing keys, screen taps).
+  const external = useSyncExternalStore(subscribeKeys, keysSnapshot, () => EMPTY);
+  const litKeys = new Set([...held, ...external]);
+
+  // Follow the player: when a note lands outside the visible two octaves,
+  // slide the keyboard so it is in view (bass ←→ treble), unless range-locked.
+  useEffect(() => {
+    if (locked || external.length === 0) return;
+    const lo = Math.min(...external);
+    const hi = Math.max(...external);
+    setOctave((o) => {
+      const base = (o + 1) * 12;
+      if (lo >= base && hi <= base + 23) return o;
+      const center = Math.floor((lo + hi) / 2 / 12) - 1;
+      return Math.min(7, Math.max(1, center));
+    });
+  }, [external, locked]);
 
   const slideTo = (o: number) => {
     if (locked) return;
