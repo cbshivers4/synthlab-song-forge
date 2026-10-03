@@ -125,8 +125,19 @@ function Meter({ id, level, tall }: { id: string; level: number; tall?: boolean 
     return () => clearInterval(id);
   }, []);
   const holdSeg = Math.round(Math.max(held, hold.current) * segs) - 1;
+  // dB scale: level is a 0..1 linear fraction, so dB = 20·log10(level); show -60..0 dB.
+  const DB_TICKS = [0, -6, -12, -24, -36, -48, -60];
   return (
-    <div className={cn("flex w-4 flex-col-reverse gap-px rounded-[3px] border border-black/60 bg-black/60 p-[3px] shadow-inner", tall ? "h-full min-h-40" : "h-44")}>
+    <div className={cn("flex items-stretch gap-0.5", tall ? "h-full min-h-40" : "h-44")}>
+      <div className="relative w-5 shrink-0" aria-hidden>
+        {DB_TICKS.map((db) => (
+          <div key={db} className="absolute right-0 flex items-center gap-px" style={{ top: `${(db / -60) * 100}%` }}>
+            <span className="font-mono text-[6px] leading-none text-muted-foreground/80">{db}</span>
+            <span className="inline-block h-px w-1 bg-muted-foreground/60" />
+          </div>
+        ))}
+      </div>
+      <div className="flex w-4 flex-col-reverse gap-px rounded-[3px] border border-black/60 bg-black/60 p-[3px] shadow-inner">
       {Array.from({ length: segs }, (_, i) => {
         const on = i < lit;
         const isHold = i === holdSeg;
@@ -142,6 +153,7 @@ function Meter({ id, level, tall }: { id: string; level: number; tall?: boolean 
           />
         );
       })}
+      </div>
     </div>
   );
 }
