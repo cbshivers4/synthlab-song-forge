@@ -1,4 +1,4 @@
-import type { DrumKitId, DrumPad, SynthPatch, TrackKind } from "./types";
+import type { DrumKitId, DrumPad, OscillatorParams, SynthPatch, TrackKind } from "./types";
 
 export const uid = () => Math.random().toString(36).slice(2, 10);
 
@@ -892,7 +892,7 @@ type PresetCfg = {
   reverb?: number;
   crush?: number;
   noise?: number;
-  lfo?: { rate: number; wave: "sine" | "triangle" | "square" | "sawtooth"; amount: number; destination: "filter" | "pitch" | "pan" | "amp" };
+  lfo?: { rate: number; wave: "sine" | "triangle" | "square" | "sawtooth"; amount: number; destination: "filter" | "pitch" | "pan" | "volume" };
   filterType?: BiquadFilterType;
   arp?: boolean;
 };
@@ -1006,7 +1006,7 @@ SYNTH_PRESETS.push(
   mk("Pizzicato", "Strings", { wave: "sawtooth", wave2: null, cutoff: 2600, envAmt: 1200, envDecay: 0.06, attack: 0.001, decay: 0.12, sustain: 0, release: 0.1 }),
   mk("Cello Section", "Strings", { wave: "sawtooth", wave2: "triangle", oct: -1, cutoff: 1400, attack: 0.2, sustain: 0.8, release: 0.8, reverb: 0.4 }),
   mk("Synth Strings 80s", "Strings", { wave: "sawtooth", wave2: "square", detune2: 12, cutoff: 2600, attack: 0.3, sustain: 0.85, release: 1.2, chorus: 0.6 }),
-  mk("Tremolo Strings", "Strings", { wave: "sawtooth", wave2: "sawtooth", detune2: 8, cutoff: 2400, attack: 0.15, sustain: 0.85, release: 0.9, lfo: { rate: 6, wave: "sine", amount: 0.3, destination: "amp" } }),
+  mk("Tremolo Strings", "Strings", { wave: "sawtooth", wave2: "sawtooth", detune2: 8, cutoff: 2400, attack: 0.15, sustain: 0.85, release: 0.9, lfo: { rate: 6, wave: "sine", amount: 0.3, destination: "volume" } }),
   mk("Octave Strings", "Strings", { wave: "sawtooth", wave2: "sawtooth", oct2: 1, detune2: 6, cutoff: 2000, attack: 0.3, sustain: 0.8, release: 1.1, reverb: 0.5 }),
   mk("Muted Strings", "Strings", { wave: "sawtooth", wave2: null, cutoff: 1100, attack: 0.2, sustain: 0.75, release: 0.7, chorus: 0.3 }),
   mk("Epic Strings", "Strings", { wave: "sawtooth", wave2: "sawtooth", detune2: 16, unison: 5, width: 0.7, cutoff: 2800, attack: 0.4, sustain: 0.9, release: 1.6, reverb: 0.65, chorus: 0.5 }),
