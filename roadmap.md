@@ -134,5 +134,5 @@
 - [x] My Library (cloud/computer folders for samples, synth, drums, notes) + distinct effect window looks
 
 ## Current request
-- [ ] Show real moving audio displays in bottom instrument and effect modules.
-- [ ] Make Mac pop-out windows open reliably and draggable to a second monitor.
+- [x] Show real moving audio displays in bottom instrument and effect modules.
+- [x] Make pop-outs open from the click and give desktop windows a draggable header; browser-tested all four panels, Mac hardware test still needed.
