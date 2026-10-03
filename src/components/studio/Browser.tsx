@@ -26,7 +26,7 @@ import { listUserTemplates, type UserTemplate } from "@/lib/synclab/user-templat
 import { TEMPLATES, templateById } from "@/lib/synclab/templates";
 import type { DrumKitId, DrumPad } from "@/lib/synclab/types";
 import { toast } from "sonner";
-import { clipFromLocalFile, pickFolder, playPreview, stopPreview, onPreviewChange, getLocalFile, getPreviewAnalyser, type LocalFolder } from "@/lib/synclab/local-files";
+import { clipFromLocalFile, pickFolder, playPreview, stopPreview, onPreviewChange, getLocalFile, getPreviewAnalyser, getLocalFolders, addLocalFolder, removeLocalFolder, onFoldersChange } from "@/lib/synclab/local-files";
 
 /** Bottom-of-browser player: shows the file being previewed with a live waveform scope. */
 function PreviewPlayer({ playingFile }: { playingFile: string | null }) {
@@ -198,7 +198,8 @@ export function Browser() {
   const [cloud, setCloud] = useState<CloudProject[]>([]);
   const [userTemplates, setUserTemplates] = useState<UserTemplate[]>([]);
   const [busyProject, setBusyProject] = useState<string | null>(null);
-  const [folders, setFolders] = useState<LocalFolder[]>([]);
+  const [folders, setFolders] = useState(getLocalFolders);
+  useEffect(() => onFoldersChange(() => setFolders(getLocalFolders())), []);
   const [playingFile, setPlayingFile] = useState<string | null>(null);
   useEffect(() => onPreviewChange(setPlayingFile), []);
   useEffect(() => () => stopPreview(), []);
