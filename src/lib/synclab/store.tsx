@@ -18,6 +18,7 @@ import { getMidiAccess, listInputs, midiSupported, subscribe, type MidiPortInfo 
 import { getPadBank, setPadBank } from "./pad-session";
 import { getLooper } from "./live-looper";
 import { padNote } from "./drum-notes";
+import { keyDown, keyUp } from "./active-keys";
 import { autoMapEnabled, isKorgMixer, korgAutoMap } from "./korg-automap";
 import type { CloudSession } from "./cloud";
 import type {
@@ -738,6 +739,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           const hit = drumTarget.pads.find((p) => padNote(p, drumTarget.pads!) === pitch);
           if (hit) {
             if (type === "on") {
+              keyDown(pitch);
               const engine = getEngine();
               engine.init();
               engine.syncMix(tracksRef.current);
@@ -761,6 +763,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
                   ),
                 );
               }
+            } else {
+              keyUp(pitch);
             }
             return;
           }
@@ -777,6 +781,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         const tp = transportRef.current;
         const stepDur = stepSeconds(tp.bpm);
         if (type === "on") {
+          keyDown(pitch);
           setMidiLearning(true);
           engine.syncMix(tracksRef.current);
           triggerNote(engine, target, pitch, 0.6, Math.max(0.15, velocity));
@@ -796,6 +801,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             );
           }
         } else {
+          keyUp(pitch);
           setMidiLearning(false);
           const held = heldRef.current.get(pitch);
           if (!held) return;
@@ -2280,6 +2286,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         engine.init();
         engine.syncMix(tracksRef.current);
         if (t) triggerNote(engine, t, midi, 0.35, 0.9);
+        keyDown(midi);
         // Notes played on screen are captured while the transport records.
         if (t) capture(t.id, midi, 0.9);
       },

@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { Lock, Minus, Music2, Plus, Unlock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { useStudio } from "@/lib/synclab/store";
+import { keysSnapshot, subscribeKeys } from "@/lib/synclab/active-keys";
 
 const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 const BLACK = new Set([1, 3, 6, 8, 10]);
@@ -17,6 +18,7 @@ const SCALES: Record<string, number[]> = {
   Blues: [0, 3, 5, 6, 7, 10],
   Chromatic: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
 };
+const EMPTY: number[] = [];
 const CHORDS = [
   { name: "MAJ", intervals: [0, 4, 7] },
   { name: "MIN", intervals: [0, 3, 7] },
@@ -37,6 +39,23 @@ export function Keyboard() {
   const [root, setRoot] = useState(0);
   const [scaleName, setScaleName] = useState("Minor");
   const [scaleLock, setScaleLock] = useState(false);
+  // Notes sounding from any source (MIDI controller, typing keys, screen taps).
+  const external = useSyncExternalStore(subscribeKeys, keysSnapshot, () => EMPTY);
+  const litKeys = new Set([...held, ...external]);
+
+  // Follow the player: when a note lands outside the visible two octaves,
+  // slide the keyboard so it is in view (bass ←→ treble), unless range-locked.
+  useEffect(() => {
+    if (locked || external.length === 0) return;
+    const lo = Math.min(...external);
+    const hi = Math.max(...external);
+    setOctave((o) => {
+      const base = (o + 1) * 12;
+      if (lo >= base && hi <= base + 23) return o;
+      const center = Math.floor((lo + hi) / 2 / 12) - 1;
+      return Math.min(7, Math.max(1, center));
+    });
+  }, [external, locked]);
 
   const slideTo = (o: number) => {
     if (locked) return;
@@ -255,14 +274,16 @@ export function Keyboard() {
               key={midi}
               onPointerDown={() => play(midi)}
               className={`relative flex-1 rounded-b-[3px] transition-colors ${
-                held.includes(midi)
+                litKeys.has(midi)
                   ? "bg-[oklch(0.75_0.12_250)]"
                   : inScale(midi)
                     ? "bg-[oklch(0.94_0.035_195)] hover:bg-[oklch(0.88_0.06_195)]"
                     : "bg-[oklch(0.96_0.005_90)] hover:bg-[oklch(0.9_0.005_90)]"
               }`}
               style={{
-                backgroundImage: inScale(midi)
+                backgroundImage: litKeys.has(midi)
+                  ? "linear-gradient(180deg, var(--primary) 0%, color-mix(in oklab, var(--primary) 55%, white) 100%)"
+                  : inScale(midi)
                   ? "linear-gradient(180deg, color-mix(in oklab, var(--primary) 32%, oklch(0.9 0.005 90)) 0%, color-mix(in oklab, var(--primary) 12%, oklch(0.98 0.003 90)) 16%, oklch(0.95 0.02 195) 100%)"
                   : "linear-gradient(180deg, oklch(0.9 0.005 90) 0%, oklch(0.98 0.003 90) 12%, oklch(0.96 0.005 90) 100%)",
               }}
@@ -282,7 +303,7 @@ export function Keyboard() {
             key={midi}
             onPointerDown={() => play(midi)}
             className={`absolute top-0 z-10 h-[58%] rounded-b-[3px] transition-colors ${
-               held.includes(midi)
+               litKeys.has(midi)
                  ? "bg-[oklch(0.5_0.12_250)]"
                  : inScale(midi)
                    ? "bg-[oklch(0.24_0.055_195)] hover:bg-[oklch(0.3_0.07_195)]"
@@ -291,7 +312,9 @@ export function Keyboard() {
             style={{
               left: `calc(${(pos / whiteCount) * 100}% + ${100 / whiteCount * 0.72}%)`,
               width: `${(100 / whiteCount) * 0.62}%`,
-               backgroundImage: inScale(midi)
+               backgroundImage: litKeys.has(midi)
+                 ? "linear-gradient(180deg, color-mix(in oklab, var(--primary) 70%, black) 0%, var(--primary) 100%)"
+                 : inScale(midi)
                  ? "linear-gradient(180deg, color-mix(in oklab, var(--primary) 45%, oklch(0.25 0.005 255)) 0%, oklch(0.12 0.03 195) 80%)"
                  : "linear-gradient(180deg, oklch(0.25 0.005 255) 0%, oklch(0.08 0.005 255) 80%)",
               boxShadow: "0 3px 6px oklch(0 0 0 / 0.6)",
