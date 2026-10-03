@@ -132,3 +132,7 @@
 - [x] Drum/MIDI clips show a waveform-style display in the timeline
 - [x] Phone recording like Koala Sampler: SAMPLE tab in Beat Maker — hold a pad to record into it, tap to play, shares the Pad Sampler bank; fixed Beat Maker not opening while a tool panel was up
 - [x] My Library (cloud/computer folders for samples, synth, drums, notes) + distinct effect window looks
+
+## Current request
+- [x] Show real moving audio displays in bottom instrument and effect modules.
+- [x] Make pop-outs open from the click and give desktop windows a draggable header; browser-tested all four panels, Mac hardware test still needed.

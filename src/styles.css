@@ -198,6 +198,8 @@
   border-bottom: 1px solid color-mix(in oklab, var(--device-accent) 38%, var(--border));
 }
 .device-module-power { border-color: var(--device-accent); color: var(--device-accent); }
+.detached-window-handle { -webkit-app-region: drag; user-select: none; }
+.detached-window-control { -webkit-app-region: no-drag; }
 
 .creative-tool {
   --tool-accent: var(--primary);

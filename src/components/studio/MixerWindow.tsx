@@ -5,14 +5,28 @@ import { createPortal } from "react-dom";
 export type DetachId = "mixer" | "drums" | "keys" | "synth";
 
 let detached: DetachId[] = [];
+const pendingWindows = new Map<DetachId, Window>();
+const closingTimers = new Map<DetachId, number>();
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
-export const setDetached = (id: DetachId, on: boolean) => {
+export const setDetached = (id: DetachId, on: boolean, opened?: Window) => {
+  if (opened) pendingWindows.set(id, opened);
   const has = detached.includes(id);
   if (on === has) return;
   detached = on ? [...detached, id] : detached.filter((d) => d !== id);
   emit();
 };
+/** Must be called directly from a click; opening in an effect is blocked by Safari and Chrome. */
+export function popOutPanel(id: DetachId): boolean {
+  if (detached.includes(id)) {
+    pendingWindows.get(id)?.focus();
+    return true;
+  }
+  const opened = window.open("", `synclab-${id}`, SIZES[id]);
+  if (!opened) return false;
+  setDetached(id, true, opened);
+  return true;
+}
 const EMPTY: DetachId[] = [];
 export function useDetached() {
   return useSyncExternalStore(
@@ -60,7 +74,12 @@ export function DetachedWindow({
   const [winRef, setWinRef] = useState<Window | null>(null);
 
   useEffect(() => {
-    const win = window.open("", `synclab-${id}`, SIZES[id]);
+    const previousClose = closingTimers.get(id);
+    if (previousClose !== undefined) {
+      window.clearTimeout(previousClose);
+      closingTimers.delete(id);
+    }
+    const win = pendingWindows.get(id);
     if (!win) {
       onClose();
       return;
@@ -79,6 +98,7 @@ export function DetachedWindow({
     root.style.height = "100vh";
     root.style.overflow = "auto";
     win.document.body.appendChild(root);
+    win.focus();
     setContainer(root);
     setWinRef(win);
 
@@ -102,7 +122,14 @@ export function DetachedWindow({
     return () => {
       window.clearInterval(poll);
       window.removeEventListener("beforeunload", closeChild);
-      if (!win.closed) win.close();
+      // React Strict Mode replays effects in development. Defer closing so its
+      // immediate second setup can reuse the same native/browser window.
+      const timer = window.setTimeout(() => {
+        if (!win.closed) win.close();
+        if (pendingWindows.get(id) === win) pendingWindows.delete(id);
+        closingTimers.delete(id);
+      }, 0);
+      closingTimers.set(id, timer);
       setContainer(null);
       setWinRef(null);
     };
@@ -119,7 +146,7 @@ export function DetachedWindow({
   return container
     ? createPortal(
         <div className="flex h-full flex-col">
-          <div className="flex shrink-0 items-center gap-1 border-b border-border bg-card px-2 py-1">
+          <div className="detached-window-handle flex shrink-0 items-center gap-1 border-b border-border bg-card px-2 py-1">
             <span className="mr-auto text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
               {title}
             </span>
@@ -128,8 +155,8 @@ export function DetachedWindow({
               <button
                 key={p.label}
                 type="button"
+                className="detached-window-control rounded border border-border px-1.5 py-0.5 text-[9px] font-semibold text-muted-foreground hover:bg-accent hover:text-foreground"
                 onClick={() => resizeTo(p.w, p.h)}
-                className="rounded border border-border px-1.5 py-0.5 text-[9px] font-semibold text-muted-foreground hover:bg-accent hover:text-foreground"
               >
                 {p.label}
               </button>
