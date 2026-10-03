@@ -16,8 +16,12 @@ import {
   SlidersHorizontal,
   Waves,
   FolderOpen,
+  Play,
+  Plus,
+  Square,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { addLocalFolder, getLocalFolders, onFoldersChange, onPreviewChange, pickFolder, playPreview, stopPreview } from "@/lib/synclab/local-files";
 import { useStudio, type PanelId } from "@/lib/synclab/store";
 import { useApp } from "@/lib/synclab/app-state";
 import type { TrackKind } from "@/lib/synclab/types";
