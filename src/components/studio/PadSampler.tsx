@@ -6,6 +6,7 @@ import {
   Mic,
   Play,
   Scissors,
+  Sparkles,
   Square,
   Trash2,
   Upload,
@@ -22,6 +23,7 @@ import { useSkin } from "@/lib/synclab/skins";
 import { WaveformView } from "@/components/studio/WaveformView";
 import { LiveWave } from "@/components/studio/LiveWave";
 import { getPadBank, setPadBank, subscribePadBank, type SavedPad } from "@/lib/synclab/pad-session";
+import { renderStarterSamples } from "@/lib/synclab/starter-samples";
 import { MidiLearnButton } from "./MidiLearn";
 
 const BANKS = ["A", "B", "C", "D"] as const;
