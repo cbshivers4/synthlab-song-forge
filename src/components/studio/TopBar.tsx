@@ -464,8 +464,8 @@ function TBtn({
       className={`h-12 min-w-12 flex-col gap-0.5 px-2 sm:h-10 sm:min-w-0 sm:px-2.5 ${
         danger
           ? active
-            ? "bg-destructive/15 text-destructive shadow-[inset_0_0_0_1px_color-mix(in_oklab,var(--destructive)_60%,transparent),0_0_12px_color-mix(in_oklab,var(--destructive)_45%,transparent)] hover:bg-destructive/25"
-            : "bg-background/60 text-destructive shadow-[inset_0_0_0_1px_color-mix(in_oklab,var(--destructive)_35%,transparent)] hover:bg-destructive/10"
+            ? "bg-destructive/15 text-destructive shadow-[inset_0_0_0_1px_color-mix(in_oklab,var(--destructive)_60%,transparent),0_0_12px_color-mix(in_oklab,var(--destructive)_45%,transparent)] hover:bg-destructive/25 hover:text-destructive"
+            : "bg-background/60 text-destructive shadow-[inset_0_0_0_1px_color-mix(in_oklab,var(--destructive)_35%,transparent)] hover:bg-destructive/10 hover:text-destructive"
           : active
             ? "text-primary"
             : ""
