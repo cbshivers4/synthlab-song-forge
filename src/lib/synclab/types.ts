@@ -268,6 +268,19 @@ export interface AudioClip {
   alts?: AudioClip[] | undefined;
 }
 
+/** Value of a piano-roll lane at a pattern step, linearly interpolated between points; null when the lane is empty. */
+export function laneValueAt(points: { step: number; value: number }[] | undefined, step: number): number | null {
+  if (!points?.length) return null;
+  const pts = [...points].sort((a, b) => a.step - b.step);
+  let prev = pts[0]!;
+  if (step <= prev.step) return prev.value;
+  for (const p of pts) {
+    if (p.step > step) return prev.value + ((p.value - prev.value) * (step - prev.step)) / Math.max(1e-6, p.step - prev.step);
+    prev = p;
+  }
+  return prev.value;
+}
+
 /** Combined playback rate for a clip — pitch and speed share one rate in the browser. */
 export function clipRate(c: Pick<AudioClip, "pitch" | "speed">): number {
   const speed = c.speed ?? 1;
