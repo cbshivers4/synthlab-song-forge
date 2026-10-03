@@ -1,4 +1,4 @@
-import { useEffect, useReducer } from "react";
+import { useEffect, useMemo, useReducer } from "react";
 import { ArrowDownToLine, Circle, Mic, Play, RotateCcw, Square, Trash2, Volume2, VolumeX } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
