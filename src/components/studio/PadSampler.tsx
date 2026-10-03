@@ -341,6 +341,7 @@ export function PadSampler() {
     const loaded = await getEngine().loadSampleFile(file, file.name.replace(/\.[^.]+$/, ""));
     setPadBank({ ...getPadBank(), [i]: makePad(loaded) });
     setSel(i);
+    toast.success(`${loaded.name ?? file.name} loaded on the pad`, { description: "Tap the pad to play it." });
   };
 
   const patch = (i: number, next: Partial<Pad>) =>
