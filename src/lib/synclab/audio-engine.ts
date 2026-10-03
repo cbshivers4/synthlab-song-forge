@@ -2448,6 +2448,24 @@ export class SyncLabEngine {
   }
 
   /* ---------------- drum voices ---------------- */
+  /** Loud metronome click straight to the master output (count-in / pre-count). */
+  playClick(accent = false) {
+    const ctx = this.init();
+    if (!this.master) return;
+    const t = ctx.currentTime + 0.002;
+    const osc = ctx.createOscillator();
+    osc.type = "square";
+    osc.frequency.value = accent ? 1760 : 1174.7;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.35, t + 0.003);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.08);
+    osc.connect(g);
+    g.connect(this.master);
+    osc.start(t);
+    osc.stop(t + 0.1);
+  }
+
   playDrum(trackId: string, pad: DrumPad, velocity = 1, when?: number) {
     const ctx = this.init();
     const t = Math.max(when ?? ctx.currentTime, ctx.currentTime + 0.002);
