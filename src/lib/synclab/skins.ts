@@ -10,8 +10,31 @@ export type Skin = {
   /** Focus point, 0-100 %. */
   imageX?: number | undefined;
   imageY?: number | undefined;
+  /** Dark overlay painted over a picture so controls stay readable. 0 = none. */
+  dim?: number | undefined;
+  /** Only used by the "shared" entry: which panels use the shared picture. */
+  panels?: string[] | undefined;
 };
-export type SkinKey = "sampler" | "drums" | "synth" | "transport" | "live" | "looper" | "sample";
+export type SkinKey =
+  | "sampler"
+  | "drums"
+  | "synth"
+  | "transport"
+  | "live"
+  | "looper"
+  | "sample"
+  | "shared";
+
+/** Panels that can show a wallpaper, in the order the Appearance screen lists them. */
+export const WALLPANEL_PANELS: { key: SkinKey; label: string }[] = [
+  { key: "transport", label: "Transport bar" },
+  { key: "drums", label: "Drum machine" },
+  { key: "synth", label: "Synth instrument" },
+  { key: "live", label: "Live View" },
+  { key: "looper", label: "Live Looper" },
+  { key: "sample", label: "Sampler" },
+  { key: "sampler", label: "Sample pads" },
+];
 export type Skins = Partial<Record<SkinKey, Skin>>;
 export type SkinPreset = { id: string; name: string; skins: Skins };
 
@@ -59,15 +82,56 @@ export function deletePreset(id: string) {
   write(PRESET_KEY, readPresets().filter((x) => x.id !== id));
 }
 
+/**
+ * The picture for one panel: its own if it has one, otherwise the shared
+ * picture picked in Appearance when that panel is ticked there.
+ */
+function resolve(all: Skins, key: SkinKey): Skin {
+  const own = all[key] ?? {};
+  if (key === "shared" || own.image) return own;
+  const shared = all.shared;
+  if (!shared?.image) return own;
+  if (shared.panels && !shared.panels.includes(key)) return own;
+  return {
+    ...shared,
+    color: own.color,
+    padColor: own.padColor,
+    imageZoom: own.imageZoom ?? shared.imageZoom,
+    imageX: own.imageX ?? shared.imageX,
+    imageY: own.imageY ?? shared.imageY,
+    dim: own.dim ?? shared.dim,
+  };
+}
+
 export function useSkin(key: SkinKey): Skin {
   const [skin, set] = useState<Skin>({});
   useEffect(() => {
-    const load = () => set(readSkins()[key] ?? {});
+    const load = () => set(resolve(readSkins(), key));
     load();
     window.addEventListener(EVT, load);
     return () => window.removeEventListener(EVT, load);
   }, [key]);
   return skin;
+}
+
+/** Clears one panel's picture: its own copy, and its tick in the shared picture. */
+export function clearPanelWallpaper(key: SkinKey) {
+  if (key === "shared") return;
+  const all = readSkins();
+  const shared = all.shared;
+  if (shared?.image && (!shared.panels || shared.panels.includes(key))) {
+    const panels = (shared.panels ?? WALLPANEL_PANELS.map((p) => p.key)).filter((p) => p !== key);
+    all.shared = { ...shared, panels };
+  }
+  all[key] = {
+    ...all[key],
+    image: undefined,
+    imageZoom: undefined,
+    imageX: undefined,
+    imageY: undefined,
+    dim: undefined,
+  };
+  write(KEY, all);
 }
 
 export function usePresets(): SkinPreset[] {
