@@ -581,7 +581,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
   const isMobile = useIsMobile();
   const { selectedId, selectedIds, select, toggleSelectId, updateTrack, removeTrack, duplicateTrack, moveTrack, setPanel, changeInstrument, installedPlugins, addPlugin, editTool, splitClipAt, razorAt, toggleStep, toggleAutomationLane, copyTrack, cutTrack, pasteTrack, clipboardName, copyClip, cutClip, pasteClip, clipClipboardName } =
     useStudio();
-  const { transport, setNotes, loadSample, fxChains } = useStudio();
+  const { transport, setNotes, loadSample, fxChains, tracks: allTracks } = useStudio();
   const fileStudio = useStudio();
   const advanced = useApp().mode === "advanced";
 
@@ -693,6 +693,17 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
 
   const onDrop = (e: React.DragEvent) => {
     setDropping(false);
+    const movedId = e.dataTransfer.getData("application/x-synclab-track");
+    if (movedId) {
+      e.preventDefault();
+      e.stopPropagation();
+      const from = allTracks.findIndex((t) => t.id === movedId);
+      if (from < 0 || movedId === track.id) return;
+      const delta = index - from;
+      for (let k = 0; k < Math.abs(delta); k++) moveTrack(movedId, delta < 0 ? -1 : 1);
+      toast(`Track moved to position ${index + 1}`);
+      return;
+    }
     const file = e.dataTransfer.files?.[0];
     if (file && (file.type.startsWith("audio") || /\.(mp3|wav|wave|aif|aiff|m4a|aac|ogg|flac|webm)$/i.test(file.name))) {
       e.preventDefault();
@@ -878,6 +889,17 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
         }}
       >
         <div className="flex items-center gap-1.5">
+          <span
+            draggable
+            onDragStart={(e) => {
+              e.dataTransfer.setData("application/x-synclab-track", track.id);
+              e.dataTransfer.effectAllowed = "move";
+            }}
+            onClick={(e) => e.stopPropagation()}
+            className="cursor-grab select-none px-0.5 text-muted-foreground hover:text-foreground active:cursor-grabbing"
+            title="Drag to move this track above or below another track"
+            aria-label={`Drag to reorder ${track.name}`}
+          >⋮⋮</span>
           <TrackStylePicker track={track}>
             <button
               type="button"
@@ -2442,9 +2464,25 @@ function Ruler() {
           className="pointer-events-none absolute top-0 z-20 h-full"
           style={{ left: `${(transport.step / total) * 100}%` }}
         >
-          {/* arrow cursor */}
+          {/* arrow cursor — drag it to move the playhead */}
           <div
-            className={`absolute left-1/2 top-0 h-0 w-0 -translate-x-1/2 border-x-[6px] border-x-transparent ${transport.playing ? "border-t-primary" : "border-t-primary/50"}`}
+            className="pointer-events-auto absolute left-1/2 top-0 h-4 w-5 -translate-x-1/2 cursor-ew-resize touch-none"
+            title="Drag to move the playhead"
+            aria-label="Playhead"
+            onPointerDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              const move = (ev: PointerEvent) => setTransport({ step: Math.min(total - 1, stepFromX(ev.clientX)) });
+              const up = () => {
+                window.removeEventListener("pointermove", move);
+                window.removeEventListener("pointerup", up);
+              };
+              window.addEventListener("pointermove", move);
+              window.addEventListener("pointerup", up);
+            }}
+          />
+          <div
+            className={`pointer-events-none absolute left-1/2 top-0 h-0 w-0 -translate-x-1/2 border-x-[6px] border-x-transparent ${transport.playing ? "border-t-primary" : "border-t-primary/50"}`}
             style={{ borderTopWidth: 9 }}
           />
           <div
