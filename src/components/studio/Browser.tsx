@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AudioLines,
   ChevronDown,
@@ -26,7 +26,66 @@ import { listUserTemplates, type UserTemplate } from "@/lib/synclab/user-templat
 import { TEMPLATES, templateById } from "@/lib/synclab/templates";
 import type { DrumKitId, DrumPad } from "@/lib/synclab/types";
 import { toast } from "sonner";
-import { clipFromLocalFile, pickFolder, playPreview, stopPreview, onPreviewChange, type LocalFolder } from "@/lib/synclab/local-files";
+import { clipFromLocalFile, pickFolder, playPreview, stopPreview, onPreviewChange, getLocalFile, getPreviewAnalyser, type LocalFolder } from "@/lib/synclab/local-files";
+
+/** Bottom-of-browser player: shows the file being previewed with a live waveform scope. */
+function PreviewPlayer({ playingFile }: { playingFile: string | null }) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const file = playingFile ? getLocalFile(playingFile) : undefined;
+
+  useEffect(() => {
+    if (!playingFile) return;
+    let raf = 0;
+    let last = 0;
+    const data = new Float32Array(2048);
+    const draw = (t: number) => {
+      raf = requestAnimationFrame(draw);
+      if (t - last < 50) return; // 20 fps, off the audio path
+      last = t;
+      const canvas = canvasRef.current;
+      const an = getPreviewAnalyser();
+      if (!canvas || !an) return;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      const w = (canvas.width = canvas.clientWidth * (window.devicePixelRatio || 1));
+      const h = (canvas.height = canvas.clientHeight * (window.devicePixelRatio || 1));
+      an.getFloatTimeDomainData(data);
+      ctx.clearRect(0, 0, w, h);
+      const color = getComputedStyle(canvas).color || "#7ef0c8";
+      ctx.strokeStyle = color;
+      ctx.lineWidth = Math.max(1, h / 24);
+      ctx.beginPath();
+      const n = data.length;
+      for (let i = 0; i < n; i++) {
+        const x = (i / (n - 1)) * w;
+        const y = h / 2 - data[i]! * (h / 2) * 0.9;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    };
+    raf = requestAnimationFrame(draw);
+    return () => cancelAnimationFrame(raf);
+  }, [playingFile]);
+
+  if (!playingFile) return null;
+  return (
+    <div className="sticky bottom-0 z-10 mt-2 flex items-center gap-2 border border-primary/40 bg-surface-1/95 p-2 backdrop-blur">
+      <button
+        type="button"
+        aria-label={`Stop playing ${file?.name ?? "file"}`}
+        onClick={() => stopPreview()}
+        className="grid size-7 shrink-0 place-items-center rounded-[3px] border border-border text-primary hover:border-primary"
+      >
+        <Square className="size-3 fill-current" />
+      </button>
+      <div className="min-w-0 flex-1">
+        <p className="truncate font-mono text-[10px] text-primary">{file?.name ?? "Preview"}</p>
+        <canvas ref={canvasRef} className="h-8 w-full text-primary" aria-label="Waveform scope of the playing file" />
+      </div>
+    </div>
+  );
+}
 
 const SAMPLE_PACKS: { pack: string; samples: { name: string; kind: string }[] }[] = [
   {
