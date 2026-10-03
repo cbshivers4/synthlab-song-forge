@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   AudioWaveform, Cloud, Copy, Disc3, Drum, FileMusic, Flame, FolderOpen, Guitar, Heart, Home,
-  Import, LayoutTemplate, Loader2, LogOut, Mic, Pencil, Plus, Radio, Sparkles, Square, Star, Trash2, Waves, Zap,
+  Import, LayoutTemplate, Loader2, LogOut, Mic, Pencil, Plus, Radio, Search, Square, Star, Trash2, Waves, Zap, ArrowRight, SlidersHorizontal,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -80,6 +80,11 @@ export function StartScreen() {
   const [rename, setRename] = useState<{ kind: "cloud"; item: CloudProject } | { kind: "recent"; item: (typeof recents)[number] } | null>(null);
   const [renameName, setRenameName] = useState("");
   const [renameBusy, setRenameBusy] = useState(false);
+  const [projectTab, setProjectTab] = useState<"cloud" | "device" | "saved">("cloud");
+  const [projectSearch, setProjectSearch] = useState("");
+  const [templateSearch, setTemplateSearch] = useState("");
+  const [selectedCloudId, setSelectedCloudId] = useState<string | null>(null);
+  const [accountEmail, setAccountEmail] = useState("");
 
   const toggleFav = (id: string) => {
     setFavs((prev) => {
@@ -127,7 +132,14 @@ export function StartScreen() {
   useEffect(() => {
     void listCloudProjects().then(setCloud).catch(() => setCloud([]));
     setTemplates(listUserTemplates());
+    void supabase.auth.getUser().then(({ data }) => setAccountEmail(data.user?.email ?? ""));
   }, []);
+
+  const selectedCloud = sortedCloud.find((item) => item.id === selectedCloudId) ?? sortedCloud[0];
+  const matchingCloud = sortedCloud.filter((item) => item.name.toLowerCase().includes(projectSearch.toLowerCase()));
+  const matchingRecents = recents.filter((item) => item.name.toLowerCase().includes(projectSearch.toLowerCase()));
+  const matchingSaved = templates.filter((item) => item.name.toLowerCase().includes(projectSearch.toLowerCase()));
+  const matchingTemplates = TEMPLATES.filter((item) => `${item.name} ${item.description}`.toLowerCase().includes(templateSearch.toLowerCase()));
 
   const openTemplate = (tpl: UserTemplate) => {
     restore(tpl.session);
@@ -207,58 +219,63 @@ export function StartScreen() {
   };
 
   return (
-    <div className="min-h-screen overflow-y-auto bg-background">
-      <div className="mx-auto w-full max-w-6xl px-5 py-10">
-        <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
-          <img src={synclabLogoAsset.url} alt="SYNCLAB" className="h-10 w-auto rounded object-cover" />
-          <div className="min-w-0">
-            <h1 className="font-display text-xl font-semibold tracking-tight">Projects</h1>
-            <p className="text-xs text-muted-foreground">Open a recent session or start something new.</p>
+    <div className="min-h-screen overflow-y-auto bg-background px-3 py-5 sm:px-6 sm:py-8">
+      <div className="mx-auto w-full max-w-7xl overflow-hidden rounded-md border border-border bg-surface shadow-xl shadow-background">
+        <header className="flex flex-wrap items-center justify-between gap-4 border-b border-border bg-surface-2 px-4 py-4 sm:px-6">
+          <div className="flex min-w-0 items-center gap-3">
+            <img src={synclabLogoAsset.url} alt="SYNCLAB logo" className="size-11 shrink-0 rounded-sm object-cover" />
+            <div className="min-w-0">
+              <h1 className="font-display text-lg font-semibold text-foreground sm:text-xl">SYNCLAB <span className="text-primary">VOCAL FORGE</span></h1>
+              <p className="font-mono text-[10px] text-muted-foreground">CREATE. RECORD. PRODUCE. FINISH.</p>
+            </div>
           </div>
-          <Button
-            variant="outline"
-            className="min-h-11 gap-2"
-            onClick={() => void supabase.auth.signOut().then(() => { setSignedIn(false); setStage("welcome"); })}
-          >
-            <LogOut className="size-4" /> <span className="hidden sm:inline">Sign out</span>
+          <Button variant="ghost" size="sm" className="gap-2" onClick={() => void supabase.auth.signOut().then(() => { setSignedIn(false); setStage("welcome"); })}>
+            <LogOut className="size-4" /> Sign out
           </Button>
-        </div>
+        </header>
 
-        <div className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-4">
-          <Action icon={<Plus className="size-4" />} title="New Project" body="Blank timeline." onClick={() => openDialog("empty")} />
-          <Action icon={<FolderOpen className="size-4" />} title="Open Project" body={cloud.length ? `${cloud.length} in your cloud.` : "Your saved projects."} onClick={() => document.getElementById("recent-projects")?.scrollIntoView({ behavior: "smooth" })} />
-          <Action icon={<Import className="size-4" />} title="Import Audio" body="Bring a file in." onClick={() => importHint("audio", "Use File → Import Audio, or drag a file onto the timeline.")} />
-          <Action icon={<FileMusic className="size-4" />} title="Import MIDI" body="Standard MIDI files." onClick={() => importHint("MIDI", "Use Tools → Ableton Handoff to import a .mid file onto a track.")} />
-        </div>
+        <nav aria-label="Project actions" className="flex flex-wrap gap-1 border-b border-border bg-surface px-3 py-2 sm:px-5">
+          <Action icon={<Plus />} title="New" onClick={() => openDialog("empty")} />
+          <Action icon={<FolderOpen />} title="Open" onClick={() => { setProjectTab("cloud"); document.getElementById("recent-projects")?.scrollIntoView({ behavior: "smooth" }); }} />
+          <Action icon={<Import />} title="Import audio" onClick={() => importHint("audio", "Use File → Import Audio, or drag a file onto the timeline.")} />
+          <Action icon={<FileMusic />} title="Import MIDI" onClick={() => importHint("MIDI", "Use Tools → Ableton Handoff to import a .mid file onto a track.")} />
+        </nav>
 
-        <section id="recent-projects" className="mt-10">
-          <div className="flex items-center gap-2">
-            <Cloud className="size-4 text-primary" />
-            <h2 className="label-xs">Recent projects</h2>
+        <div className="grid min-h-[650px] grid-cols-1 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)]">
+        <section id="recent-projects" className="min-w-0 border-b border-border lg:border-b-0 lg:border-r">
+          <div className="flex border-b border-border bg-surface-2/60" role="tablist" aria-label="Project lists">
+            {([ ["cloud", "Recent files"], ["device", "This device"], ["saved", "My templates"] ] as const).map(([id, label]) => (
+              <Button key={id} role="tab" aria-selected={projectTab === id} variant="ghost" onClick={() => setProjectTab(id)}
+                className={`h-10 min-w-0 flex-1 rounded-none px-1 text-[11px] sm:text-xs ${projectTab === id ? "border-b-2 border-primary bg-primary/10 text-primary" : "text-muted-foreground"}`}>
+                {label}
+              </Button>
+            ))}
           </div>
-          {cloud.length === 0 ? (
-            <p className="mt-2 text-sm text-muted-foreground">No cloud projects yet. Open a session and choose File → Save.</p>
+          <div className="border-b border-border p-3">
+            <div className="relative"><Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input aria-label="Search projects" placeholder="Search projects" value={projectSearch} onChange={(e) => setProjectSearch(e.target.value)} className="h-8 bg-background pl-9 text-xs" />
+            </div>
+          </div>
+          <div className="max-h-[570px] min-h-40 overflow-y-auto">
+          {projectTab === "cloud" && (matchingCloud.length === 0 ? (
+            <p className="p-5 text-sm text-muted-foreground">{projectSearch ? "No matching projects." : "No cloud projects yet. Open a session and choose File → Save."}</p>
           ) : (
-            <div className="mt-3 divide-y divide-border border-y border-border">
-              {sortedCloud.map((item) => {
+            <div className="divide-y divide-border/60">
+              {matchingCloud.map((item) => {
                 const fav = favs.includes(`cloud:${item.id}`);
                 return (
-                  <div key={item.id} className="group flex min-h-16 items-center gap-2 py-2">
-                    <Button variant="ghost" className="min-w-0 flex-1 justify-start gap-3 px-2 text-left h-auto py-2" onClick={() => void openCloud(item)} disabled={cloudBusy !== null}>
-                      <span className="flex size-9 shrink-0 items-center justify-center rounded bg-primary/10 text-primary"><FolderOpen className="size-4" /></span>
+                  <div key={item.id} className={`group flex min-h-14 items-center gap-1 px-2 transition-colors ${selectedCloud?.id === item.id ? "bg-primary/10" : "hover:bg-surface-2"}`}>
+                    <Button variant="ghost" className="h-auto min-w-0 flex-1 justify-start gap-2 px-1 py-2 text-left hover:bg-transparent" onClick={() => setSelectedCloudId(item.id)} onDoubleClick={() => void openCloud(item)} disabled={cloudBusy !== null}>
+                      <span className="flex size-7 shrink-0 items-center justify-center text-primary"><FileMusic className="size-4" /></span>
                       <div className="min-w-0">
-                        <div className="flex items-center gap-2 font-display text-sm font-semibold">
+                        <div className="flex items-center gap-2 truncate font-display text-xs font-semibold">
                           {cloudBusy === item.id && <Loader2 className="size-3.5 animate-spin" />}{item.name}
                         </div>
-                        <div className="mt-0.5 font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
-                          {item.bpm} BPM · {item.key} · {item.timeSig}{item.trackCount ? ` · ${item.trackCount} tracks` : ""}
-                        </div>
-                        <div className="mt-0.5 font-mono text-[10px] tracking-widest text-muted-foreground/70 uppercase">
-                          Modified {relTime(item.updatedAt)}
-                        </div>
+                        <div className="truncate font-mono text-[10px] text-muted-foreground">{item.bpm} BPM · {item.key} · {relTime(item.updatedAt)}</div>
                       </div>
                     </Button>
-                    <div className="flex shrink-0 gap-1">
+                    <div className="flex shrink-0 items-center gap-0.5">
+                      <IconBtn label={`Open ${item.name}`} title="Open project" onClick={() => void openCloud(item)}><ArrowRight className="size-3.5" /></IconBtn>
                       <IconBtn label={`Favorite ${item.name}`} title={fav ? "Unfavorite" : "Favorite"} onClick={() => toggleFav(`cloud:${item.id}`)} active={fav}>
                         <Star className={`size-3.5 ${fav ? "fill-primary text-primary" : ""}`} />
                       </IconBtn>
@@ -287,27 +304,23 @@ export function StartScreen() {
                 );
               })}
             </div>
-          )}
-        </section>
-
-        {recents.length > 0 && (
-          <section className="mt-10">
-            <h2 className="label-xs">On this device</h2>
-            <div className="mt-3 divide-y divide-border border-y border-border">
-              {recents.map((r) => {
+          ))}
+          {projectTab === "device" && (matchingRecents.length === 0 ? <p className="p-5 text-sm text-muted-foreground">No matching sessions on this device.</p> :
+            <div className="divide-y divide-border/60">
+              {matchingRecents.map((r) => {
                 const id = `recent:${r.name}-${r.openedAt}`;
                 const fav = favs.includes(id);
                 return (
                   <div key={id} className="group flex min-h-14 items-center gap-2 py-2 text-left transition-colors hover:bg-surface-2">
-                    <button
+                    <Button variant="ghost"
                       onClick={() => { setProject(r); setStage("studio"); }}
-                      className="min-w-0 flex-1 text-left px-2"
+                      className="h-auto min-w-0 flex-1 justify-start px-2 py-2 text-left"
                     >
-                      <div className="font-display text-sm font-semibold">{r.name}</div>
+                      <div className="min-w-0"><div className="truncate font-display text-sm font-semibold">{r.name}</div>
                       <div className="font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
                         {r.bpm} BPM · {r.key} · {r.timeSig} · opened {relTime(r.openedAt)}
-                      </div>
-                    </button>
+                      </div></div>
+                    </Button>
                     <div className="flex shrink-0 gap-1">
                       <IconBtn label={`Favorite ${r.name}`} title={fav ? "Unfavorite" : "Favorite"} onClick={() => toggleFav(id)} active={fav}>
                         <Star className={`size-3.5 ${fav ? "fill-primary text-primary" : ""}`} />
@@ -323,17 +336,10 @@ export function StartScreen() {
                 );
               })}
             </div>
-          </section>
-        )}
-
-        {templates.length > 0 && (
-          <section className="mt-10">
-            <div className="flex items-center gap-2">
-              <LayoutTemplate className="size-4 text-primary" />
-              <h2 className="label-xs">Your templates</h2>
-            </div>
-            <div className="mt-3 divide-y divide-border border-y border-border">
-              {templates.map((tpl) => (
+          )}
+          {projectTab === "saved" && (matchingSaved.length === 0 ? <p className="p-5 text-sm text-muted-foreground">No matching saved templates.</p> :
+            <div className="divide-y divide-border/60">
+              {matchingSaved.map((tpl) => (
                 <div key={tpl.id} className="group flex min-h-14 items-center gap-2 py-2">
                   <Button variant="ghost" className="min-w-0 flex-1 justify-start text-left h-auto px-2" onClick={() => openTemplate(tpl)}>
                     <div className="font-display text-sm font-semibold">{tpl.name}</div>
@@ -357,25 +363,54 @@ export function StartScreen() {
                 </div>
               ))}
             </div>
-          </section>
-        )}
+          )}
+          </div>
+        </section>
 
-        <section id="tpl" className="mt-10">
-          <h2 className="label-xs">Templates</h2>
-          <div className="mt-3 divide-y divide-border border-y border-border">
-            {TEMPLATES.map((t) => {
+        <section className="flex min-w-0 flex-col border-b border-border lg:border-b-0 lg:border-r">
+          <div className="flex h-10 items-center border-b border-border bg-surface-2/60 px-4"><h2 className="font-display text-xs font-semibold text-primary">Project details</h2></div>
+          <div className="flex flex-1 flex-col p-5 sm:p-6">
+            <div className="flex size-16 items-center justify-center border border-primary/30 bg-primary/10 text-primary"><AudioWaveform className="size-8" /></div>
+            <h3 className="mt-5 break-words font-display text-xl font-semibold">{selectedCloud?.name ?? "Your studio"}</h3>
+            <p className="mt-1 text-xs text-muted-foreground">{selectedCloud ? `Last edited ${relTime(selectedCloud.updatedAt)}` : "Create a project to get started."}</p>
+            {selectedCloud && <div className="mt-6 grid grid-cols-2 gap-y-4 border-y border-border py-5 text-xs">
+              <div><span className="label-xs block">Tempo</span><strong>{selectedCloud.bpm} BPM</strong></div>
+              <div><span className="label-xs block">Key</span><strong>{selectedCloud.key}</strong></div>
+              <div><span className="label-xs block">Meter</span><strong>{selectedCloud.timeSig}</strong></div>
+              <div><span className="label-xs block">Tracks</span><strong>{selectedCloud.trackCount}</strong></div>
+            </div>}
+            <Button className="mt-6 w-full justify-between" onClick={() => selectedCloud ? void openCloud(selectedCloud) : openDialog("empty")} disabled={cloudBusy !== null}>
+              {selectedCloud ? "Open selected project" : "New project"}<ArrowRight className="size-4" />
+            </Button>
+            <div className="mt-auto border-t border-border pt-6">
+              <div className="flex items-center gap-2 text-primary"><SlidersHorizontal className="size-4" /><span className="label-xs">Studio</span></div>
+              <p className="mt-2 truncate text-xs text-foreground" title={accountEmail}>{accountEmail || "Signed in"}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{cloud.length} saved {cloud.length === 1 ? "project" : "projects"} in your cloud</p>
+            </div>
+          </div>
+        </section>
+
+        <section id="tpl" className="min-w-0">
+          <div className="flex h-10 items-center border-b border-border bg-surface-2/60 px-4"><h2 className="font-display text-xs font-semibold text-primary">Start from a template</h2></div>
+          <div className="border-b border-border p-3"><div className="relative"><Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input aria-label="Search templates" placeholder="Search templates" value={templateSearch} onChange={(e) => setTemplateSearch(e.target.value)} className="h-8 bg-background pl-9 text-xs" />
+          </div></div>
+          <div className="max-h-[570px] overflow-y-auto divide-y divide-border/60">
+            {matchingTemplates.length === 0 && <p className="p-5 text-sm text-muted-foreground">No matching templates.</p>}
+            {matchingTemplates.map((t) => {
               return (
                 <Button key={t.id} variant="ghost" onClick={() => openDialog(t.id)}
-                  className="flex h-auto min-h-16 w-full items-center justify-start gap-3 rounded-none px-2 py-3 text-left">
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded bg-primary/10 text-primary">{TEMPLATE_ICONS[t.id] ?? <LayoutTemplate className="size-5" />}</span>
-                  <span className="min-w-0 flex-1"><span className="block font-display text-sm font-semibold">{t.name}</span><span className="block truncate text-xs text-muted-foreground">{t.description}</span></span>
-                  <span className="hidden shrink-0 font-mono text-[10px] text-muted-foreground sm:block">{t.bpm} BPM · {t.key} · {t.tracks.length} tracks</span>
+                  className="flex h-auto min-h-14 w-full items-center justify-start gap-3 rounded-none px-4 py-2 text-left hover:bg-primary/10 hover:text-foreground">
+                  <span className="flex size-7 shrink-0 items-center justify-center text-primary">{TEMPLATE_ICONS[t.id] ?? <LayoutTemplate className="size-5" />}</span>
+                  <span className="min-w-0 flex-1"><span className="block truncate font-display text-xs font-semibold">{t.name}</span><span className="block truncate font-mono text-[10px] text-muted-foreground">{t.bpm} BPM · {t.key} · {t.tracks.length} tracks</span></span>
+                  <ArrowRight className="size-3.5 shrink-0 text-muted-foreground" />
                 </Button>
               );
             })}
           </div>
         </section>
-
+        </div>
+        <footer className="flex flex-wrap justify-between gap-1 border-t border-border bg-surface-2/60 px-4 py-2 font-mono text-[10px] text-muted-foreground"><span>SYNCLAB VOCAL FORGE · DETROIT, MI</span><span>CREATE. RECORD. PRODUCE. FINISH.</span></footer>
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
@@ -457,15 +492,11 @@ export function StartScreen() {
   );
 }
 
-function Action({ icon, title, body, onClick }: { icon: React.ReactNode; title: string; body: string; onClick: () => void }) {
+function Action({ icon, title, onClick }: { icon: React.ReactNode; title: string; onClick: () => void }) {
   return (
-    <button onClick={onClick} className="panel flex gap-3 p-4 text-left transition-colors hover:bg-surface-2">
-      <span className="mt-0.5 text-primary">{icon}</span>
-      <div>
-        <div className="font-display text-sm font-semibold tracking-wide">{title}</div>
-        <p className="mt-1 text-xs text-muted-foreground">{body}</p>
-      </div>
-    </button>
+    <Button variant="ghost" onClick={onClick} className="h-14 min-w-18 flex-col gap-1 rounded-sm px-2 text-[11px] font-normal hover:bg-primary/10 hover:text-foreground sm:min-w-24">
+      <span className="text-primary [&_svg]:size-5">{icon}</span><span>{title}</span>
+    </Button>
   );
 }
 
@@ -479,15 +510,15 @@ function IconBtn({ label, title, onClick, danger, active, className = "", childr
   children: React.ReactNode;
 }) {
   return (
-    <button
+    <Button variant="ghost" size="icon"
       aria-label={label}
       title={title}
       onClick={(e) => { e.stopPropagation(); onClick(); }}
-      className={`rounded bg-background/70 p-1.5 backdrop-blur-sm transition-colors ${
+      className={`size-7 shrink-0 rounded-sm p-1.5 transition-colors ${
         danger ? "text-muted-foreground hover:bg-destructive/15 hover:text-destructive" : active ? "text-primary hover:bg-surface-2" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"
       } ${className}`}
     >
       {children}
-    </button>
+    </Button>
   );
 }
