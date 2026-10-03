@@ -1988,6 +1988,7 @@ function EditToolbar() {
     copyTrack,
     pasteTrack,
     removeTrack,
+    clearTrackContent,
     clipboardName,
     undo,
     redo,
