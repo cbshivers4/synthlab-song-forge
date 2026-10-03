@@ -123,7 +123,9 @@ export function DeviceBar() {
     return window.localStorage.getItem("synclab.devicebar.collapsed") === "1";
   });
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerPos, setPickerPos] = useState<{ left: number; bottom: number } | null>(null);
   const pickerRef = useRef<HTMLDivElement>(null);
+  const pickerBtnRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     try {
@@ -189,15 +191,23 @@ export function DeviceBar() {
           <div className="relative shrink-0" ref={pickerRef}>
             <button
               type="button"
+              ref={pickerBtnRef}
               className="flex h-full w-[110px] flex-col items-center justify-center gap-1 rounded-md border border-dashed border-border text-muted-foreground hover:border-primary/60 hover:text-primary"
-              onClick={() => setPickerOpen((o) => !o)}
+              onClick={() => {
+                const r = pickerBtnRef.current?.getBoundingClientRect();
+                if (r) setPickerPos({ left: Math.max(8, Math.min(r.left, window.innerWidth - 232)), bottom: window.innerHeight - r.top + 4 });
+                setPickerOpen((o) => !o);
+              }}
               aria-expanded={pickerOpen}
             >
               <Plus className="size-4" />
               <span className="font-mono text-[10px] tracking-wide">Add effect</span>
             </button>
-            {pickerOpen && (
-              <div className="absolute bottom-full left-0 z-30 mb-1 max-h-64 w-56 overflow-y-auto rounded-md border border-border bg-popover p-1 shadow-xl">
+            {pickerOpen && pickerPos && (
+              <div
+                className="fixed z-50 max-h-64 w-56 overflow-y-auto rounded-md border border-border bg-popover p-1 shadow-xl"
+                style={{ left: pickerPos.left, bottom: pickerPos.bottom }}
+              >
                 {addable.map((d) => (
                   <button
                     key={d.id}
