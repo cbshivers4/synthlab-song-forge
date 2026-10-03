@@ -1126,6 +1126,26 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
           >
             ● ARM
           </Button>
+          {track.kind !== "ai-vocal" && (
+            <Button
+              size="sm"
+              variant={track.recording || (track.armed && fileStudio.transport.recording) ? "destructive" : "ghost"}
+              className="h-6 px-2 text-[10px]"
+              aria-label={fileStudio.transport.recording || fileStudio.transport.countInLeft != null ? `Stop recording ${track.name}` : `Record on ${track.name}`}
+              title="Record on this track: arms it, counts in, then records from the playhead. Press again (or STOP) to finish."
+              onClick={() => {
+                if (fileStudio.transport.recording || fileStudio.transport.countInLeft != null) {
+                  fileStudio.toggleRecord();
+                  return;
+                }
+                fileStudio.select(track.id);
+                if (!track.armed) updateTrack(track.id, { armed: true });
+                window.setTimeout(() => fileStudio.toggleRecord(), 60);
+              }}
+            >
+              <Circle className="size-2.5 fill-current" /> REC
+            </Button>
+          )}
           {<DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
