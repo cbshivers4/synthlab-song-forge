@@ -539,6 +539,85 @@ export function MobileBeat({ onClose }: { onClose: () => void }) {
           </div>
         )}
 
+        {tab === "sample" && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <span className="label-xs">Hold an empty pad to sample · tap to play</span>
+              <Button
+                size="sm"
+                variant={sampArm ? "destructive" : "secondary"}
+                className="h-9 rounded-lg font-mono text-[10px] tracking-widest"
+                onClick={() => setSampArm((a) => !a)}
+              >
+                {sampArm ? "RE-RECORD: ON" : "RE-RECORD"}
+              </Button>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {Array.from({ length: SAMPLE_PADS }, (_, i) => {
+                const pad = samplePads[i];
+                const recording = recPad === i;
+                const c = padColor(i);
+                return (
+                  <button
+                    key={i}
+                    aria-label={pad ? `Play ${pad.name}` : `Hold to record sample ${i + 1}`}
+                    onPointerDown={(e) => {
+                      e.preventDefault();
+                      try {
+                        e.currentTarget.setPointerCapture(e.pointerId);
+                      } catch {
+                        /* synthetic pointers */
+                      }
+                      if (pad && !sampArm) playSamplePad(i);
+                      else void beginSampleHold(i);
+                    }}
+                    onPointerUp={endSampleHold}
+                    onPointerCancel={endSampleHold}
+                    className={`relative flex h-32 touch-none flex-col items-center justify-center gap-1 overflow-hidden rounded-2xl border-2 font-mono text-xs tracking-widest uppercase select-none active:scale-95 ${
+                      recording ? "animate-pulse" : ""
+                    } ${!pad && !recording ? "border-dashed" : ""}`}
+                    style={{
+                      borderColor: recording ? "var(--destructive)" : pad ? c : "var(--color-border)",
+                      color: recording ? "var(--destructive)" : pad ? c : "var(--color-muted-foreground)",
+                      background: pad
+                        ? `linear-gradient(150deg, color-mix(in oklab, ${c} 22%, transparent), transparent)`
+                        : "transparent",
+                      boxShadow:
+                        playingPad === i
+                          ? `0 0 22px color-mix(in oklab, ${c} 60%, transparent)`
+                          : recording
+                            ? "0 0 26px color-mix(in oklab, var(--destructive) 55%, transparent)"
+                            : undefined,
+                    }}
+                  >
+                    {recording && recStream ? (
+                      <LiveWave stream={recStream} color="var(--destructive)" label="Recording waveform" />
+                    ) : pad ? (
+                      <div className="flex h-10 w-full items-end justify-center gap-px px-3" aria-hidden>
+                        {pad.peaks.slice(0, 40).map((p, j) => (
+                          <span
+                            key={j}
+                            className="w-full rounded-sm"
+                            style={{ height: `${Math.max(8, p * 100)}%`, background: c, opacity: 0.85 }}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <Mic className="size-7 opacity-70" />
+                    )}
+                    <span>{recording ? "RECORDING…" : pad ? pad.name : `HOLD ${i + 1}`}</span>
+                    {pad && <span className="text-[10px] opacity-60">{pad.duration.toFixed(1)}s</span>}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="label-xs px-1 text-center">
+              These are the same pads as the Pad Sampler — samples you record here show up there too, and save with
+              your project.
+            </p>
+          </div>
+        )}
+
         {tab === "sound" && pad && (
           <div className="space-y-4">
             <div className="flex flex-wrap justify-center gap-4">
