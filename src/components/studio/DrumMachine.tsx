@@ -199,6 +199,18 @@ export function DrumMachine({ track }: { track: Track }) {
             ))}
           </SelectContent>
         </Select>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            pads.forEach((p) =>
+              updatePad(track.id, p.id, { kit: "909", volume: 0.8, pan: 0, pitch: 0, decay: 0.5, muted: false, solo: false }),
+            );
+            toast.success("Drum sounds initialized", { description: "All pads reset to a clean 909 starting point — your pattern steps are kept." });
+          }}
+        >
+          Initialize sounds
+        </Button>
         <Select value={String(track.steps)} onValueChange={(v) => setStepCount(track.id, Number(v))}>
           <SelectTrigger className="w-28">
             <SelectValue />

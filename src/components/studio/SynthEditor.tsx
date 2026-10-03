@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrig
 import { Slider } from "@/components/ui/slider";
 import { Knob } from "./Knob";
 import { useStudio } from "@/lib/synclab/store";
-import { SYNTH_PRESETS } from "@/lib/synclab/presets";
+import { SYNTH_PRESETS, defaultPatch } from "@/lib/synclab/presets";
 import type { EnvelopeParams, LfoWave, ModDest, ModSource, OscWave, SynthPatch, Track } from "@/lib/synclab/types";
 import { uid } from "@/lib/synclab/presets";
 import { toast } from "sonner";
@@ -136,6 +136,15 @@ export function SynthEditor({ track }: { track: Track }) {
         </Button>
         <Button variant="secondary" onClick={() => previewNote(track.id, 60)}>
           Audition
+        </Button>
+        <Button
+          variant="outline"
+          onClick={() => {
+            updatePatch(track.id, defaultPatch("Init Saw"));
+            toast.success("Synth initialized", { description: "Blank starting patch — shape it into your own sound, then SAVE PRESET." });
+          }}
+        >
+          Initialize
         </Button>
       </div>
 
