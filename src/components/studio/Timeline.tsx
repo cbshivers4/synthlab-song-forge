@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { Fragment, memo, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { stepsPerBar, getBeatsPerBar, STEPS_PER_BEAT, songSteps, stepSeconds, positionLabel } from "@/lib/synclab/timebase";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
@@ -638,7 +638,7 @@ const TRACK_BUSES: { id: BusId; label: string }[] = [
 
 function TrackRow({ track, index }: { track: Track; index: number }) {
   const isMobile = useIsMobile();
-  const { selectedId, selectedIds, select, toggleSelectId, updateTrack, removeTrack, duplicateTrack, moveTrack, setPanel, changeInstrument, installedPlugins, addPlugin, editTool, splitClipAt, razorAt, toggleStep, toggleAutomationLane, copyTrack, cutTrack, pasteTrack, clipboardName, copyClip, cutClip, pasteClip, clipClipboardName, clearTrackContent } =
+  const { selectedId, selectedIds, select, toggleSelectId, updateTrack, removeTrack, duplicateTrack, moveTrack, setPanel, changeInstrument, installedPlugins, addPlugin, editTool, splitClipAt, razorAt, toggleStep, toggleAutomationLane, copyTrack, cutTrack, pasteTrack, clipboardName, copyClip, cutClip, pasteClip, clipClipboardName, clearTrackContent, folders, addFolder, assignTrackFolder } =
     useStudio();
   const { transport, setNotes, loadSample, fxChains, tracks: allTracks } = useStudio();
   const fileStudio = useStudio();
@@ -1098,6 +1098,22 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
                     <span className="w-4">{(track.octave ?? 0) === o ? "✓" : ""}</span>{o === 0 ? "None" : `${o > 0 ? "+" : ""}${o} octave${Math.abs(o) > 1 ? "s" : ""}`}
                   </DropdownMenuItem>
                 ))}
+              </DropdownMenuSubContent></DropdownMenuSub>
+              <DropdownMenuSub><DropdownMenuSubTrigger>Move to folder{track.folderId ? ` (${folders.find((f) => f.id === track.folderId)?.name ?? ""})` : ""}</DropdownMenuSubTrigger><DropdownMenuSubContent>
+                <DropdownMenuItem onClick={() => assignTrackFolder(track.id, null)}>
+                  <span className="w-4">{!track.folderId ? "✓" : ""}</span>No folder
+                </DropdownMenuItem>
+                {folders.map((f) => (
+                  <DropdownMenuItem key={f.id} onClick={() => assignTrackFolder(track.id, f.id)}>
+                    <span className="w-4">{track.folderId === f.id ? "✓" : ""}</span>
+                    <span className="mr-1.5 inline-block size-2 rounded-full" style={{ background: f.color }} />
+                    {f.name}
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => assignTrackFolder(track.id, addFolder())}>
+                  <Plus className="size-4" /> New folder with this track
+                </DropdownMenuItem>
               </DropdownMenuSubContent></DropdownMenuSub>
               <DropdownMenuSeparator />
               {(
@@ -2722,7 +2738,7 @@ function TimelineOverview({
 }
 
 export function Timeline() {
-  const { tracks, transport, addTrack, addClip, setPanel, loadSample, folders, addFolder, renameFolder, removeFolder, toggleFolderCollapsed } = useStudio();
+  const { tracks, transport, addTrack, addClip, setPanel, loadSample, folders, renameFolder, removeFolder, toggleFolderCollapsed } = useStudio();
   const totalSteps = songSteps(transport.bars);
   const [over, setOver] = useState(false);
   const [zoom, setZoom] = useState(1);
