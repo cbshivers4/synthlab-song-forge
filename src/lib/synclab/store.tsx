@@ -763,6 +763,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
                   ),
                 );
               }
+            } else {
+              keyUp(pitch);
             }
             return;
           }
