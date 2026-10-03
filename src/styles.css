@@ -214,7 +214,7 @@
   justify-content: center;
 }
 .spin-logo {
-  animation: spin-y 6s linear infinite;
+  animation: spin-y 14s linear infinite;
   transform-style: preserve-3d;
   backface-visibility: visible;
   will-change: transform;
