@@ -416,6 +416,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   midiLearnRef.current = midiLearn;
   const [clipboardName, setClipboardName] = useState<string | null>(null);
   const clipboardRef = useRef<Track | null>(null);
+  const [clipClipboardName, setClipClipboardName] = useState<string | null>(null);
+  const clipClipboardRef = useRef<Track["clips"] extends (infer C)[] | undefined ? C | null : never>(null) as React.MutableRefObject<import("@/lib/synclab/types").AudioClip | null>;
   const selectedIdRef = useRef(selectedId);
   selectedIdRef.current = selectedId;
   const heldRef = useRef(new Map<number, { ids: string[]; trackId: string; t0: number; startStep: number }>());
