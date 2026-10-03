@@ -391,6 +391,15 @@ export class LiveLooper {
     await this.record(i);
   }
 
+  /** Record immediately on this slot, skipping the pre-count and start-on-sound wait. */
+  async recordNow(i: number) {
+    if (this.ctx.state === "suspended") await this.ctx.resume();
+    const th = this.threshold, pc = this.precount;
+    this.threshold = null;
+    this.precount = 0;
+    try { await this.record(i); } finally { this.threshold = th; this.precount = pc; }
+  }
+
   async record(i: number) {
     const s = this.slots[i];
     if (!s || s.state !== "empty") return;
