@@ -40,6 +40,8 @@ export function PianoRoll({ track }: { track: Track }) {
   const [trackOct, setTrackOct] = useState(0);
   const gridRef = useRef<HTMLDivElement | null>(null);
   const drag = useRef<Drag>(null);
+  const marq = useRef<{ x: number; y: number; active: boolean } | null>(null);
+  const [marquee, setMarquee] = useState<{ x0: number; y0: number; x1: number; y1: number } | null>(null);
 
   const steps = bars * stepsPerBar();
 
@@ -120,9 +122,22 @@ export function PianoRoll({ track }: { track: Track }) {
   };
 
   const onMove = (e: React.PointerEvent) => {
-    const d = drag.current;
     const el = gridRef.current;
-    if (!d || !el) return;
+    if (!el) return;
+    // marquee select: pressed on empty grid and dragged
+    const m = marq.current;
+    if (m && !drag.current) {
+      const r = el.getBoundingClientRect();
+      const x = e.clientX - r.left;
+      const y = e.clientY - r.top;
+      if (m.active || Math.hypot(x - m.x, y - m.y) > 4) {
+        m.active = true;
+        setMarquee({ x0: Math.min(m.x, x), y0: Math.min(m.y, y), x1: Math.max(m.x, x), y1: Math.max(m.y, y) });
+      }
+      return;
+    }
+    const d = drag.current;
+    if (!d) return;
     const stepPx = el.getBoundingClientRect().width / steps;
     if (d.mode === "resize") {
       const nl = Math.max(grid, snap(d.length + (e.clientX - d.startX) / stepPx) || grid);
