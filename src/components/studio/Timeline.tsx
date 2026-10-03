@@ -187,12 +187,10 @@ function Waveform({ track }: { track: Track }) {
       const src = all.find((t) => t.id === track.id);
       const moved = src?.clips?.find((c) => c.id === clip.id);
       if (!dest || !src || !moved) return;
-      if (dest.kind === "drum" || dest.kind === "instrument" || dest.kind === "midi") {
-        toast("That track plays notes, not audio", { description: "Drop the clip on an audio or vocal track." });
-        return;
-      }
+      const destIsNotes = dest.kind === "drum" || dest.kind === "instrument" || dest.kind === "midi";
       updateTrack(src.id, { clips: (src.clips ?? []).filter((c) => c.id !== clip.id), activeClipId: undefined });
-      updateTrack(dest.id, { clips: [...(dest.clips ?? []), moved], activeClipId: moved.id });
+      // Note tracks switch to WAVE so the moved audio actually plays there.
+      updateTrack(dest.id, { clips: [...(dest.clips ?? []), moved], activeClipId: moved.id, ...(destIsNotes ? { printedAudio: true } : {}) });
       setActiveClip(dest.id, moved.id);
       toast.success(`${moved.name} moved to ${dest.name}`);
     };
@@ -438,41 +436,12 @@ function DrumClip({ track }: { track: Track }) {
 
 /** The take you are capturing right now: a red region that grows from the punch-in
  *  point and draws the incoming microphone level live. */
+// Classic DAW-style take region: a plain red block that grows from the record
+// start to the playhead. No live waveform — the real waveform appears when the take is finished.
 function RecordingClip({ track }: { track: Track }) {
   const { transport } = useStudio();
   const total = songSteps(transport.bars);
   const startRef = useRef(transport.step ?? 0);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const peaksRef = useRef<number[]>([]);
-  const isNote = track.kind === "instrument" || track.kind === "midi" || track.kind === "drum";
-
-  useEffect(() => {
-    const engine = getEngine();
-    let raf = 0;
-    const draw = () => {
-      raf = requestAnimationFrame(draw);
-      peaksRef.current.push(isNote ? engine.getTrackLevel(track.id) : engine.inputLevel());
-      if (peaksRef.current.length > 2000) peaksRef.current.shift();
-      const canvas = canvasRef.current;
-      const g = canvas?.getContext("2d");
-      if (!canvas || !g) return;
-      const w = (canvas.width = Math.max(2, canvas.clientWidth * 2));
-      const h = (canvas.height = Math.max(2, canvas.clientHeight * 2));
-      g.clearRect(0, 0, w, h);
-      const peaks = peaksRef.current;
-      const style = getComputedStyle(canvas);
-      g.fillStyle = style.color;
-      const step = Math.max(1, Math.ceil(peaks.length / Math.max(1, w / 2)));
-      for (let i = 0, x = 0; i < peaks.length; i += step, x += 2) {
-        const v = Math.min(1, peaks[i] ?? 0);
-        const bh = Math.max(2, v * h * 0.92);
-        g.fillRect(x, (h - bh) / 2, 1.6, bh);
-      }
-    };
-    draw();
-    return () => cancelAnimationFrame(raf);
-  }, [isNote, track.id]);
-
   const start = startRef.current;
   const now = transport.step ?? start;
   const length = Math.max(1, (now >= start ? now - start : total - start) + 1);
@@ -481,14 +450,11 @@ function RecordingClip({ track }: { track: Track }) {
 
   return (
     <div
-      className="pointer-events-none absolute inset-y-1 z-10 flex flex-col overflow-hidden rounded-[3px] border-2 border-destructive bg-destructive/15"
+      className="pointer-events-none absolute inset-y-1 z-10 overflow-hidden rounded-[3px] border border-destructive bg-destructive/30"
       style={{ left: `${left}%`, width: `${Math.max(1.5, width)}%` }}
+      aria-label={`Recording on ${track.name}`}
     >
-      <div className="flex shrink-0 items-center gap-1 bg-destructive/25 px-1.5 py-[1px]">
-        <span className="size-1.5 animate-pulse rounded-full bg-destructive" />
-        <span className="font-mono text-[9px] font-semibold text-destructive">RECORDING</span>
-      </div>
-      <canvas ref={canvasRef} className="min-h-0 w-full flex-1 text-destructive" aria-label="Incoming recording waveform" role="img" />
+      <span className="block truncate bg-destructive px-1.5 py-[1px] font-mono text-[9px] font-semibold text-destructive-foreground">{track.name}</span>
     </div>
   );
 }
