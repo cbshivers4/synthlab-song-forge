@@ -1,5 +1,6 @@
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Monitor, Cpu, HardDrive, Cloud, Sparkles, Waves, LayoutGrid, Plug } from "lucide-react";
+import { Monitor, Cpu, HardDrive, Cloud, Sparkles, Waves, LayoutGrid, Plug, Download, Apple, AppWindow } from "lucide-react";
 import { ARCHITECTURE, isDesktop, runtimeLabel, platformName, desktopApi, saveBytes } from "@/lib/synclab/desktop";
 import { useBridge } from "@/components/studio/PluginBridge";
 import { bridge, savedBridgeUrl } from "@/lib/synclab/bridge";
