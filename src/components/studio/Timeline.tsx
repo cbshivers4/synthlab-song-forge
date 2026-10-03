@@ -116,6 +116,8 @@ function Waveform({ track }: { track: Track }) {
   const total = songSteps(transport.bars);
   const stepDur = stepSeconds(transport.bpm);
   const editing = clips.find((c) => c.id === editingId) ?? null;
+  const tracksLive = useRef(tracks);
+  tracksLive.current = tracks;
 
   const writeClip = (clipId: string, patch: Partial<(typeof clips)[number]>) =>
     updateTrack(track.id, { clips: clips.map((c) => (c.id === clipId ? { ...c, ...patch } : c)) });
@@ -141,7 +143,12 @@ function Waveform({ track }: { track: Track }) {
     el.setPointerCapture(e.pointerId);
 
     const grid = transport.snap ?? 1;
+    const y0 = e.clientY;
     const onMove = (ev: PointerEvent) => {
+      if (mode === "move") {
+        el.style.transform = `translateY(${ev.clientY - y0}px)`;
+        el.style.zIndex = "50";
+      }
       const raw = (ev.clientX - x0) / Math.max(1, perStep);
       const dSteps = grid > 0 ? Math.round(raw / grid) * grid : Math.round(raw * 100) / 100;
       if (mode === "move") {
@@ -166,19 +173,27 @@ function Waveform({ track }: { track: Track }) {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
       if (mode !== "move") return;
-      const under = document.elementFromPoint(ev.clientX, ev.clientY) as HTMLElement | null;
-      const targetLane = under?.closest("[data-lane-track]") as HTMLElement | null;
-      const targetId = targetLane?.dataset["laneTrack"];
+      el.style.transform = "";
+      el.style.zIndex = "";
+      let targetId: string | undefined;
+      for (const n of document.elementsFromPoint(ev.clientX, ev.clientY)) {
+        const hit = (n as HTMLElement).closest?.("[data-lane-track], [data-track-row]") as HTMLElement | null;
+        const id = hit?.dataset["laneTrack"] ?? hit?.dataset["trackRow"];
+        if (id) { targetId = id; break; }
+      }
       if (!targetId || targetId === track.id) return;
-      const dest = tracks.find((t) => t.id === targetId);
-      if (!dest || dest.kind === "drum" || dest.kind === "instrument" || dest.kind === "midi") {
-        toast("Clips move between audio channels", { description: "Drop it on an audio or vocal channel." });
+      const all = tracksLive.current;
+      const dest = all.find((t) => t.id === targetId);
+      const src = all.find((t) => t.id === track.id);
+      const moved = src?.clips?.find((c) => c.id === clip.id);
+      if (!dest || !src || !moved) return;
+      if (dest.kind === "drum" || dest.kind === "instrument" || dest.kind === "midi") {
+        toast("That track plays notes, not audio", { description: "Drop the clip on an audio or vocal track." });
         return;
       }
-      const moved = clips.find((c) => c.id === clip.id);
-      if (!moved) return;
-      updateTrack(track.id, { clips: clips.filter((c) => c.id !== clip.id) });
+      updateTrack(src.id, { clips: (src.clips ?? []).filter((c) => c.id !== clip.id), activeClipId: undefined });
       updateTrack(dest.id, { clips: [...(dest.clips ?? []), moved], activeClipId: moved.id });
+      setActiveClip(dest.id, moved.id);
       toast.success(`${moved.name} moved to ${dest.name}`);
     };
 

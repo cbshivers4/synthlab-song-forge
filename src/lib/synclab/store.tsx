@@ -1797,16 +1797,15 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         const at = transportRef.current.step;
         const clip: AudioClip = { ...(structuredClone(src) as AudioClip), id: uid(), start: at };
         if (target.kind === "drum" || target.kind === "instrument" || target.kind === "midi") {
-          const nt = createTrack("audio", clip.name);
-          nt.clips = [clip];
-          nt.activeClipId = clip.id;
+          const nid = uid();
           setTracks((ts) => {
+            const nt = { ...newTrack("audio", clip.name, ts.length), id: nid, clips: [clip], activeClipId: clip.id };
             const i = ts.findIndex((t) => t.id === target.id);
             const next = [...ts];
             next.splice(i + 1, 0, nt);
             return next;
           });
-          setSelectedId(nt.id);
+          setSelectedId(nid);
           toast.success(`${clip.name} pasted on a new audio track`, { description: `${target.name} plays notes, so the audio went on its own track below it.` });
           return;
         }
