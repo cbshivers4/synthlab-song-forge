@@ -433,6 +433,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   selectedIdRef.current = selectedId;
   const heldRef = useRef(new Map<number, { ids: string[]; trackId: string; t0: number; startStep: number }>());
   const recordedNoteIdsRef = useRef(new Set<string>());
+  /** Older notes inside the region being re-recorded (replace mode): silent while recording, removed when the take lands. */
+  const replacedNoteIdsRef = useRef(new Set<string>());
   // last scheduled step + its audio-clock time, so note capture can stamp the
   // true sub-step position instead of the rounded playhead step
   const lastStepRef = useRef<{ step: number; time: number; dur: number } | null>(null);
@@ -998,14 +1000,14 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             // recorded notes keep a sub-step fraction for quantize; the
             // scheduler fires on whole steps only, so compare the floored step
             const step0 = Math.floor(note.step);
-            if (tp.recording && recordedNoteIdsRef.current.has(note.id)) continue;
+            if (tp.recording && (recordedNoteIdsRef.current.has(note.id) || replacedNoteIdsRef.current.has(note.id))) continue;
             if (step0 % len === s && (note.recordedEnd == null || (n >= step0 && n < note.recordedEnd))) triggerNote(engine, t, note.pitch, note.length * stepDur, note.velocity, swung);
           }
         } else if (t.patch && t.notes) {
           for (const note of t.notes) {
             const step0 = Math.floor(note.step);
             // notes played live into this take were already heard — don't double them
-            if (tp.recording && recordedNoteIdsRef.current.has(note.id)) continue;
+            if (tp.recording && (recordedNoteIdsRef.current.has(note.id) || replacedNoteIdsRef.current.has(note.id))) continue;
             if (step0 % len !== s || (note.recordedEnd != null && (n < step0 || n >= note.recordedEnd))) continue;
             const dur = (note.length * stepDur) / (t.patch.arp.on ? 2 : 1);
             if (t.patch.arp.on) {
@@ -1249,13 +1251,17 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       const stepDur = stepSeconds(transportRef.current.bpm);
       const takeEnd = Math.min(songSteps(transportRef.current.bars), recStartStepRef.current + Math.max(1, Math.ceil(result.duration / stepDur)));
       const capturedIds = recordedNoteIdsRef.current;
+      // Replace mode: older notes under the new take are removed, so the part
+      // is exactly what was just played (overdub keeps them).
+      const replacedIds = replacedNoteIdsRef.current;
       setTracks((ts) => ts.map((t) => t.id === result.trackId ? {
-        ...t, notes: (t.notes ?? []).map((n) => capturedIds.has(n.id) ? {
+        ...t, notes: (t.notes ?? []).filter((n) => !replacedIds.has(n.id)).map((n) => capturedIds.has(n.id) ? {
           ...n, recordedEnd: takeEnd,
           length: Math.max(0.25, Math.min(n.length, takeEnd - n.step)),
         } : n),
       } : t));
       recordedNoteIdsRef.current = new Set();
+      replacedNoteIdsRef.current = new Set();
       const clip: AudioClip = {
         id: uid(), name: `${target.name} TAKE ${(target.clips?.length ?? 0) + 1}`,
         peaks: result.peaks, duration: result.duration, url: result.url,
