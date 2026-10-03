@@ -79,6 +79,127 @@ export function MobileBeat({ onClose }: { onClose: () => void }) {
     [],
   );
 
+  // ---- Koala-style pad sampling (shares the pad bank with the Pad Sampler) ----
+  const [samplePads, setSamplePads] = useState<Record<number, SavedPad>>(() => getPadBank());
+  const [recPad, setRecPad] = useState<number | null>(null);
+  const [recStream, setRecStream] = useState<MediaStream | null>(null);
+  const [sampArm, setSampArm] = useState(false);
+  const [playingPad, setPlayingPad] = useState<number | null>(null);
+  const sampRecRef = useRef<{ rec: MediaRecorder; stream: MediaStream; chunks: Blob[]; pad: number } | null>(null);
+  const sampHoldRef = useRef<{ pad: number; active: boolean } | null>(null);
+  const samplePadsRef = useRef(samplePads);
+  samplePadsRef.current = samplePads;
+  useEffect(() => subscribePadBank((next) => setSamplePads(next)), []);
+  useEffect(
+    () => () => {
+      const current = sampRecRef.current;
+      if (!current) return;
+      if (current.rec.state !== "inactive") current.rec.stop();
+      releaseMic(current.stream);
+      sampRecRef.current = null;
+    },
+    [],
+  );
+
+  const ensureSamplerTrack = (): string => {
+    const existing = tracks.find((t) => t.kind === "sampler" && t.name === "PAD SAMPLER");
+    if (existing) return existing.id;
+    return addTrack("sampler", "PAD SAMPLER");
+  };
+
+  const playSamplePad = (i: number) => {
+    const pad = samplePadsRef.current[i];
+    if (!pad) return;
+    buzz();
+    const engine = getEngine();
+    engine.init().resume().catch(() => undefined);
+    engine.playSample(
+      ensureSamplerTrack(),
+      {
+        url: pad.url,
+        start: pad.start,
+        end: pad.end,
+        gain: pad.gain,
+        pitch: pad.pitch,
+        rootNote: 60,
+        loop: pad.loop,
+        reverse: pad.reverse,
+        oneShot: pad.oneShot,
+        attack: pad.attack,
+        release: pad.release,
+      },
+      60,
+      undefined,
+      1,
+      undefined,
+      pad.choke ? `choke${pad.choke}` : `mpad${i}`,
+    );
+    setPlayingPad(i);
+    window.setTimeout(() => setPlayingPad((p) => (p === i ? null : p)), 140);
+  };
+
+  const startSampleRec = async (i: number) => {
+    const res = await openMic(undefined, "mobile-sample");
+    if ("error" in res) {
+      toast.error("Microphone not available", {
+        description: res.error,
+        duration: 9000,
+        ...(res.canOpenTab ? { action: { label: "Open in tab", onClick: openInOwnTab } } : {}),
+      });
+      return;
+    }
+    const stream = res.stream;
+    const mimeType = preferredRecordingMime();
+    const rec = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+    const chunks: Blob[] = [];
+    rec.ondataavailable = (e) => e.data.size > 0 && chunks.push(e.data);
+    rec.start(200);
+    sampRecRef.current = { rec, stream, chunks, pad: i };
+    setRecStream(stream);
+  };
+
+  const stopSampleRec = async () => {
+    const r = sampRecRef.current;
+    if (!r) return;
+    const blob: Blob = await new Promise((resolve) => {
+      r.rec.onstop = () => resolve(new Blob(r.chunks, { type: r.rec.mimeType || "audio/webm" }));
+      r.rec.stop();
+    });
+    releaseMic(r.stream);
+    sampRecRef.current = null;
+    setRecStream(null);
+    if (!blob.size) return;
+    const loaded = await getEngine().loadSampleFile(blob, `SAMPLE ${r.pad + 1}`);
+    setPadBank({ ...getPadBank(), [r.pad]: makeSavedPad(loaded) });
+    buzz(30);
+    toast.success(`SAMPLE ${r.pad + 1} recorded`, { description: "Tap the pad to play it back." });
+  };
+
+  const beginSampleHold = async (i: number) => {
+    if (sampRecRef.current || sampHoldRef.current) return;
+    sampHoldRef.current = { pad: i, active: true };
+    setRecPad(i);
+    buzz(20);
+    await startSampleRec(i);
+    if (!sampRecRef.current) {
+      sampHoldRef.current = null;
+      setRecPad(null);
+      return;
+    }
+    if (!sampHoldRef.current?.active) {
+      setRecPad(null);
+      await stopSampleRec();
+    }
+  };
+
+  const endSampleHold = () => {
+    if (!sampHoldRef.current) return;
+    sampHoldRef.current.active = false;
+    sampHoldRef.current = null;
+    setRecPad(null);
+    if (sampRecRef.current) void stopSampleRec();
+  };
+
   const startRec = async () => {
     if (recording) return;
     buzz(20);
