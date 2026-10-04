@@ -179,7 +179,7 @@ export function ExportDialog() {
   );
 
   const start = () => {
-    if (!formats.length) return toast("Pick at least one file type");
+    if (!formats.length) { toast("Pick at least one file type"); return; }
     setResults([]);
     setElapsed(0);
     const engine = getEngine();

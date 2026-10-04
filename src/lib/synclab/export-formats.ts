@@ -236,7 +236,7 @@ export async function encodeWithBrowser(cap: Capture, mime: string, kbps: number
   src.start();
   await done;
   await ctx.close();
-  return new Blob(chunks, { type: mime.split(";")[0] });
+  return new Blob(chunks, { type: mime.split(";")[0] ?? mime });
 }
 
 /* ---------------- Sample rate + loudness ---------------- */
