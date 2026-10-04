@@ -8,6 +8,13 @@
       "when": 1790995518758,
       "tag": "0000_sound_library",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791101161992,
+      "tag": "0001_restore_has_role_execute_for_rls",
+      "breakpoints": true
     }
   ]
 }
