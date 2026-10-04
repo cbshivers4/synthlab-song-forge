@@ -16,6 +16,7 @@ import {
   Star,
   Waves,
   X,
+  Library,
 } from "lucide-react";
 import { useStudio } from "@/lib/synclab/store";
 import { useApp } from "@/lib/synclab/app-state";
@@ -459,6 +460,7 @@ export function Browser() {
         type="button"
         onClick={() => toggle(id)}
         aria-expanded={expanded}
+        data-folder={id}
         className={`flex w-full items-center gap-1.5 border border-border bg-surface-2/60 px-2 py-1.5 text-left hover:border-primary/40 ${nested ? "ml-3 border-l-2" : ""}`}
       >
         {expanded ? <ChevronDown className="size-3.5 text-primary" /> : <ChevronRight className="size-3.5 text-muted-foreground" />}
@@ -514,6 +516,66 @@ export function Browser() {
         )}
       </div>
       <p className="label-xs">Folders stay closed until you open them. Click a row to use it; press ▶ to hear it first.</p>
+
+      {/* HOME — quick cards that open a folder */}
+      {!searching && (
+        <div className="grid grid-cols-2 gap-1.5">
+          {[
+            { id: "instruments", label: "Instruments", sub: "Synths and sounds", icon: <Music2 className="size-4" /> },
+            { id: "plugins", label: "Effects", sub: "Built-in effects", icon: <Waves className="size-4" /> },
+            { id: "samples", label: "Loops & samples", sub: "Sample packs", icon: <AudioLines className="size-4" /> },
+            { id: "drums", label: "Drum kits", sub: "Kits for the drum machine", icon: <Drum className="size-4" /> },
+            { id: "computer", label: "Files", sub: "Folders on your computer", icon: <FolderOpen className="size-4" /> },
+            { id: "pool", label: "Pool", sub: "Audio used in this song", icon: <Library className="size-4" /> },
+          ].map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => {
+                setOpen((o) => ({ ...o, [c.id]: true }));
+                requestAnimationFrame(() =>
+                  document.querySelector(`[data-folder="${c.id}"]`)?.scrollIntoView({ behavior: "smooth", block: "start" }),
+                );
+              }}
+              className="flex items-center gap-2 rounded-[3px] border border-border bg-surface-2/60 p-2 text-left hover:border-primary/50"
+            >
+              <span className="text-primary">{c.icon}</span>
+              <span className="min-w-0">
+                <span className="block truncate text-[11px] font-semibold">{c.label}</span>
+                <span className="block truncate font-mono text-[9px] text-muted-foreground">{c.sub}</span>
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* POOL — every audio clip in this session */}
+      {(() => {
+        const pool = tracks.flatMap((t) => (t.clips ?? []).map((c) => ({ t, c }))).filter(({ c }) => match(c.name));
+        return (
+          <div>
+            <FolderHeader id="pool" icon={<Library className="size-3 text-primary" />} label="POOL" count={pool.length} hasMatch={pool.length > 0} />
+            {isOpen("pool", pool.length > 0) && (
+              <div className="ml-3 border-l border-border pl-1">
+                {pool.length === 0 && <p className="px-2 py-1.5 font-mono text-[10px] text-muted-foreground">No audio in this song yet.</p>}
+                {pool.map(({ t, c }) => (
+                  <button
+                    key={`${t.id}:${c.id}`}
+                    type="button"
+                    onClick={() => { select(t.id); setTransport({ step: Math.floor(c.start ?? 0) }); }}
+                    title="Select this track and move the playhead to the clip"
+                    className="flex w-full items-center gap-2 px-2 py-1 text-left hover:bg-surface-2"
+                  >
+                    <AudioLines className="size-3 shrink-0" style={{ color: t.color }} />
+                    <span className="truncate font-mono text-[10px]">{c.name}</span>
+                    <span className="ml-auto shrink-0 font-mono text-[9px] text-muted-foreground">{t.name} · {c.duration.toFixed(1)}s</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* FAVORITES */}
       {(filteredFavs.length > 0 || (!searching && favs.length > 0)) && (

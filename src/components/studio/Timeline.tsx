@@ -744,7 +744,10 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
     setNotes(
       track.id,
       notes.map((n) => {
-        if (op === "quantize") return { ...n, step: Math.round(n.step) };
+        if (op === "quantize") {
+          const q = transport.quantize ?? 1;
+          return { ...n, step: Math.round(n.step / q) * q };
+        }
         const pitch = Math.min(120, Math.max(0, n.pitch + (op === "up" ? 12 : -12)));
         return { ...n, pitch };
       }),
@@ -2016,12 +2019,16 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
   );
 }
 
-const SNAP_OPTIONS: { label: string; value: number }[] = [
-  { label: "OFF", value: 0 },
-  { label: "1/4", value: 1 },
-  { label: "1/2 BAR", value: 2 },
-  { label: "BAR", value: 4 },
+/** Grid values in steps (1 step = a 1/16 note). */
+const GRID_OPTIONS = () => [
+  { label: "1/32", value: 0.5 },
+  { label: "1/16", value: 1 },
+  { label: "1/8", value: 2 },
+  { label: "1/4", value: 4 },
+  { label: "1/2", value: 8 },
+  { label: "BAR", value: stepsPerBar() },
 ];
+const SNAP_OPTIONS = () => [{ label: "OFF", value: 0 }, ...GRID_OPTIONS().slice(1)];
 
 /** Razor-blade tool icon (lucide stroke style) — distinct from the scissors. */
 function RazorIcon({ className }: { className?: string }) {
@@ -2258,13 +2265,36 @@ function EditToolbar() {
         Fade Out
       </Button>
       <div className="mx-1 h-4 w-px bg-border" />
-      <span className="label-xs shrink-0">SNAP</span>
-      <Select value={String(snap)} onValueChange={(v) => setTransport({ snap: Number(v) })}>
-        <SelectTrigger className="h-6 w-[88px] shrink-0 font-mono text-[10px]" title="Snap grid for moving and trimming clips">
+      <span className="label-xs shrink-0">QUANTIZE</span>
+      <Select value={String(transport.quantize ?? 1)} onValueChange={(v) => setTransport({ quantize: Number(v) })}>
+        <SelectTrigger className="h-6 w-[72px] shrink-0 font-mono text-[10px]" title="Grid that Quantize snaps notes to">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          {SNAP_OPTIONS.map((o) => (
+          {GRID_OPTIONS().map((o) => (
+            <SelectItem key={o.value} value={String(o.value)} className="font-mono text-[11px]">
+              {o.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <span className="label-xs shrink-0">TIMEBASE</span>
+      <Select value={transport.timebase ?? "bars"} onValueChange={(v) => setTransport({ timebase: v as "bars" | "seconds" })}>
+        <SelectTrigger className="h-6 w-[78px] shrink-0 font-mono text-[10px]" title="Show the playhead position in bars or in minutes and seconds">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="bars" className="font-mono text-[11px]">BARS</SelectItem>
+          <SelectItem value="seconds" className="font-mono text-[11px]">SECONDS</SelectItem>
+        </SelectContent>
+      </Select>
+      <span className="label-xs shrink-0">SNAP</span>
+      <Select value={String(snap)} onValueChange={(v) => setTransport({ snap: Number(v) })}>
+        <SelectTrigger className="h-6 w-[72px] shrink-0 font-mono text-[10px]" title="Snap grid for moving and trimming clips">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {SNAP_OPTIONS().map((o) => (
             <SelectItem key={o.value} value={String(o.value)} className="font-mono text-[11px]">
               {o.label}
             </SelectItem>
@@ -2480,7 +2510,9 @@ function Ruler() {
         <div className="flex items-center gap-2">
           <span className="font-display text-[11px] font-semibold tracking-[0.2em]">TIMELINE</span>
           <span className="label-xs ml-auto">
-            {positionLabel(transport.step)}
+            {(transport.timebase ?? "bars") === "seconds"
+              ? (() => { const t = transport.step * stepSeconds(transport.bpm); return `${Math.floor(t / 60)}:${(t % 60).toFixed(2).padStart(5, "0")}`; })()
+              : positionLabel(transport.step)}
           </span>
         </div>
         <div className="flex items-center gap-1.5">
