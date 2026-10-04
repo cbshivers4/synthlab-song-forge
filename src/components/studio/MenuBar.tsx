@@ -64,7 +64,13 @@ export function MenuBar() {
     previewClip,
     sections,
     addSection,
+    tracks,
   } = useStudio();
+  const nextEvent = (dir: 1 | -1) => {
+    const pts = [...new Set(tracks.flatMap((t) => [...(t.clips ?? []).map((c) => Math.floor(c.start ?? 0)), ...(t.notes ?? []).map((n) => Math.floor(n.step))]))].sort((a, b) => a - b);
+    const p = dir > 0 ? pts.find((x) => x > transport.step) : [...pts].reverse().find((x) => x < transport.step);
+    if (p != null) setTransport({ step: p }); else toast("No more clips or notes that way");
+  };
   const spb = stepsPerBar();
   const go = (step: number) => setTransport({ step: Math.max(0, Math.min(step, transport.bars * spb - 1)) });
   const marks = [...sections].sort((a, b) => a.start - b.start);
@@ -421,6 +427,8 @@ export function MenuBar() {
             <MenubarItem onClick={() => { addSection(undefined, Math.floor(transport.step / spb) * spb, spb * 4); toast("Marker added at the playhead"); }}>Insert Marker</MenubarItem>
             <MenubarItem disabled={!marks.length} onClick={() => nextMark(1)}>Go to Next Marker</MenubarItem>
             <MenubarItem disabled={!marks.length} onClick={() => nextMark(-1)}>Go to Previous Marker</MenubarItem>
+            <MenubarItem onClick={() => nextEvent(1)}>Go to Next Event</MenubarItem>
+            <MenubarItem onClick={() => nextEvent(-1)}>Go to Previous Event</MenubarItem>
             {marks.length > 0 && <MenubarSeparator />}
             {marks.map((m) => (
               <MenubarItem key={m.id} onClick={() => go(m.start)}>

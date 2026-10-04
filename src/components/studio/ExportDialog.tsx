@@ -47,7 +47,8 @@ const sel = "h-7 rounded-sm border border-border bg-surface-2 px-1.5 font-mono t
 interface Result { blob: Blob; name: string }
 
 export function ExportDialog() {
-  const { transport, stop, setTransport } = useStudio();
+  const { transport, stop, setTransport, addTrack, addClip } = useStudio();
+  const [importBack, setImportBack] = useState(false);
   const { project } = useApp();
   const [open, setOpen] = useState(false);
   const [formats, setFormats] = useState<Fmt[]>(["wav"]);
@@ -165,6 +166,17 @@ export function ExportDialog() {
         setInfo(notes.join(" · "));
         setResults(out);
         setStatus("done");
+        if (importBack && out[0]) {
+          const engine = getEngine();
+          await engine.init();
+          const nm = `MIX ${safeName}`.toUpperCase().slice(0, 18);
+          const loaded = await engine.loadSampleFile(new File([out[0].blob], out[0].name, { type: out[0].blob.type }), nm);
+          const id = addTrack("audio", nm);
+          if (id) {
+            addClip(id, { id: crypto.randomUUID(), name: nm, peaks: loaded.peaks, duration: loaded.duration, url: loaded.url, start: startStep, offset: 0, length: loaded.duration, gain: 1 });
+            toast.success("Mixdown placed on a new track");
+          }
+        }
         if (closeAfter) {
           out.forEach((r) => downloadBlob(r.blob, r.name));
           setOpen(false);
@@ -176,7 +188,7 @@ export function ExportDialog() {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [formats, rate, depth, kbps, loud, loudPreset, peakDb, norm, closeAfter, safeName, stop, setTransport, support]
+    [formats, rate, depth, kbps, loud, loudPreset, peakDb, norm, closeAfter, importBack, startStep, addTrack, addClip, safeName, stop, setTransport, support]
   );
 
   const start = () => {
@@ -310,7 +322,11 @@ export function ExportDialog() {
               )}
             </section>
 
-            <section className="rounded-sm border border-border bg-surface-2/40 p-2">
+            <section className="space-y-1.5 rounded-sm border border-border bg-surface-2/40 p-2">
+              <label className="flex items-center justify-between font-mono text-[10px]">
+                Import to new track (first file)
+                <Switch checked={importBack} onCheckedChange={setImportBack} disabled={busy} />
+              </label>
               <label className="flex items-center justify-between font-mono text-[10px]">
                 Save and close when finished
                 <Switch checked={closeAfter} onCheckedChange={setCloseAfter} disabled={busy} />
