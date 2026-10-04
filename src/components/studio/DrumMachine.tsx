@@ -14,6 +14,7 @@ import type { DrumKitId } from "@/lib/synclab/types";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import type { DrumPad, Track } from "@/lib/synclab/types";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 const PRESET_KEY = "synclab.drumPresets.v1";
 type DrumPreset = { name: string; pads: Partial<DrumPad>[] };
@@ -26,15 +27,39 @@ function readPresets(): DrumPreset[] {
   }
 }
 
+const BANKS = ["A", "B", "C", "D", "E", "F", "G", "H"];
+
+/** Small vertical fader used for the A / H / D envelope sliders, Impact-style. */
+function VSlider({ label, value, min = 0, max = 1, onChange }: { label: string; value: number; min?: number; max?: number; onChange: (v: number) => void }) {
+  return (
+    <label className="flex w-7 flex-col items-center gap-1">
+      <Slider orientation="vertical" className="h-14" min={min} max={max} step={0.01} value={[value]} onValueChange={([v = 0]) => onChange(v)} />
+      <span className="font-mono text-[9px] text-muted-foreground">{label}</span>
+    </label>
+  );
+}
+
+function Section({ title, active, children }: { title: string; active?: boolean; children: React.ReactNode }) {
+  return (
+    <div className="rounded-[3px] border border-border bg-surface/80">
+      <div className="flex items-center gap-1.5 border-b border-border px-2 py-1">
+        <span className={cn("size-1.5 rounded-full", active ? "bg-primary" : "bg-muted-foreground/40")} />
+        <span className="font-mono text-[10px] font-semibold uppercase tracking-widest">{title}</span>
+      </div>
+      <div className="flex flex-wrap items-end gap-2 p-2">{children}</div>
+    </div>
+  );
+}
 
 export function DrumMachine({ track }: { track: Track }) {
   const { updatePad, updateTrack, setStepCount, addPad, generateBeat, transport } = useStudio();
   const [genre, setGenre] = useState("Detroit Techno");
   const [energy, setEnergy] = useState(6);
-  const [openPad, setOpenPad] = useState<string | null>(null);
+  const [focusPadId, setFocusPadId] = useState<string | null>(null);
   const [selectedStep, setSelectedStep] = useState<{ padId: string; index: number } | null>(null);
   const pads = track.pads ?? [];
   const activePattern = Math.max(0, Math.min(7, track.activeDrumPattern ?? 0));
+  const focusPad = pads.find((p) => p.id === focusPadId) ?? pads[0];
 
   const clonePads = (source: DrumPad[]) => structuredClone(source) as DrumPad[];
   const switchPattern = (next: number) => {
@@ -170,16 +195,8 @@ export function DrumMachine({ track }: { track: Track }) {
   return (
     <div className="studio-wallpaper space-y-3 rounded-md p-3" data-studio-panel="drums" style={skinBackground(skin)} {...drop}>
       <SkinControls skinKey="drums" image />
-      <div className="flex flex-wrap items-center gap-2 rounded-[3px] border border-border bg-surface/80 p-2">
-        <span className="label-xs mr-1">PATTERNS</span>
-        {Array.from({ length: 8 }, (_, index) => (
-          <Button key={index} size="icon" variant={activePattern === index ? "default" : "outline"} className="size-10" aria-label={`Pattern ${index + 1}`} onClick={() => switchPattern(index)}>
-            {index + 1}
-          </Button>
-        ))}
-        <Button size="sm" variant="secondary" onClick={copyPattern}><Copy className="size-4" /> Copy next</Button>
-        <Button size="sm" variant="ghost" onClick={clearPattern}><RotateCcw className="size-4" /> Clear</Button>
-      </div>
+
+      {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2">
         <Select value={kit} onValueChange={(v) => loadKit(v as DrumKitId)}>
           <SelectTrigger className="w-56">
@@ -287,35 +304,189 @@ export function DrumMachine({ track }: { track: Track }) {
         )}
       </div>
 
+      {/* Impact-style instrument surface */}
+      <div className="rounded-[3px] border border-border bg-background/70 p-2">
+        {/* Display strip */}
+        <div className="mb-2 flex items-center justify-between rounded-[3px] border border-border bg-black/60 px-3 py-2">
+          <span className="font-display text-lg font-bold tracking-wide text-foreground/90">
+            SYNC<span className="text-primary">PADS</span>
+          </span>
+          <div className="flex items-center gap-4 font-mono text-[10px] text-muted-foreground">
+            <span>{focusPad ? focusPad.name : "—"}</span>
+            <span>{focusPad?.sample ?? "synthesized voice"}</span>
+            <span>Start {Math.round((focusPad?.start ?? 0) * 100)}</span>
+            <span>End {Math.round((focusPad?.end ?? 1) * 100)}</span>
+          </div>
+          {focusPad && (
+            <Button
+              size="sm"
+              variant={focusPad.reverse ? "default" : "ghost"}
+              className="h-6 px-2 text-[10px]"
+              onClick={() => updatePad(track.id, focusPad.id, { reverse: !focusPad.reverse })}
+            >
+              Reverse
+            </Button>
+          )}
+        </div>
+
+        <div className="flex gap-2">
+          {/* Bank letters → the 8 patterns */}
+          <div className="flex flex-col gap-1">
+            {BANKS.map((letter, index) => (
+              <button
+                key={letter}
+                aria-label={`Bank ${letter} (pattern ${index + 1})`}
+                onClick={() => switchPattern(index)}
+                className={cn(
+                  "flex h-full min-h-8 w-6 items-center justify-center rounded-[3px] border font-mono text-[11px] font-semibold",
+                  activePattern === index
+                    ? "border-primary bg-primary/20 text-primary"
+                    : "border-border bg-surface-2 text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {letter}
+              </button>
+            ))}
+          </div>
+
+          {/* Pad grid */}
+          <div className="grid flex-1 grid-cols-4 gap-1.5">
+            {pads.map((pad) => {
+              const focused = focusPad?.id === pad.id;
+              const hasSteps = pad.steps.some((v) => v > 0);
+              return (
+                <button
+                  key={pad.id}
+                  onClick={() => {
+                    getEngine().playDrum(track.id, pad, 1);
+                    setFocusPadId(pad.id);
+                  }}
+                  className={cn(
+                    "flex min-h-16 flex-col justify-between rounded-[3px] border p-1.5 text-left transition-colors",
+                    focused ? "border-primary bg-primary/10" : "border-border bg-surface-2 hover:border-primary/50",
+                  )}
+                >
+                  <span className="font-mono text-[10px] font-semibold tracking-wider">{pad.name}</span>
+                  <span className="font-mono text-[8px] text-muted-foreground">
+                    {pad.sample ? "SMP" : pad.kit?.toUpperCase() ?? "909"}
+                    {hasSteps ? " ·" : ""}
+                  </span>
+                  <span className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                    <Button
+                      size="sm"
+                      variant={pad.solo ? "default" : "ghost"}
+                      className="h-5 px-1 text-[9px]"
+                      onClick={() => updatePad(track.id, pad.id, { solo: !pad.solo })}
+                    >
+                      S
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={pad.muted ? "secondary" : "ghost"}
+                      className="h-5 px-1 text-[9px]"
+                      onClick={() => updatePad(track.id, pad.id, { muted: !pad.muted })}
+                    >
+                      M
+                    </Button>
+                    <span className="ml-auto font-mono text-[9px] text-muted-foreground">{Math.round(pad.volume * 100)}</span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Pad settings column */}
+          {focusPad && (
+            <div className="flex w-64 shrink-0 flex-col gap-2">
+              <Section title="Pitch" active>
+                <Knob label="TRANSP" midiTarget={{ id: track.id, param: `drum:${focusPad.id}:pitch` }} min={-12} max={12} step={1} value={focusPad.pitch} onChange={(v) => updatePad(track.id, focusPad.id, { pitch: v })} />
+                <VSlider label="A" value={focusPad.attack ?? 0} onChange={(v) => updatePad(track.id, focusPad.id, { attack: v })} />
+                <VSlider label="H" value={focusPad.sustain ?? 0} onChange={(v) => updatePad(track.id, focusPad.id, { sustain: v })} />
+                <VSlider label="D" value={focusPad.decay} onChange={(v) => updatePad(track.id, focusPad.id, { decay: v })} />
+                <Knob label="ENV" midiTarget={{ id: track.id, param: `drum:${focusPad.id}:filterEnv` }} min={-1} max={1} value={focusPad.filterEnv ?? 0} onChange={(v) => updatePad(track.id, focusPad.id, { filterEnv: v })} />
+                <Knob label="VEL" value={focusPad.volume} onChange={(v) => updatePad(track.id, focusPad.id, { volume: v })} />
+              </Section>
+              <Section title="Filter" active={(focusPad.filterType ?? "off") !== "off"}>
+                <div className="flex w-full gap-1">
+                  {(["off", "lowpass", "highpass", "bandpass"] as const).map((ft) => (
+                    <Button
+                      key={ft}
+                      size="sm"
+                      variant={(focusPad.filterType ?? "off") === ft ? "default" : "ghost"}
+                      className="h-6 flex-1 px-1 text-[9px]"
+                      onClick={() => updatePad(track.id, focusPad.id, { filterType: ft })}
+                    >
+                      {ft === "off" ? "OFF" : ft === "lowpass" ? "LP" : ft === "highpass" ? "HP" : "BP"}
+                    </Button>
+                  ))}
+                </div>
+                <Knob label="CUTOFF" midiTarget={{ id: track.id, param: `drum:${focusPad.id}:cutoff` }} value={focusPad.cutoff ?? 1} onChange={(v) => updatePad(track.id, focusPad.id, { cutoff: v })} />
+                <Knob label="RES" midiTarget={{ id: track.id, param: `drum:${focusPad.id}:resonance` }} value={focusPad.resonance ?? 0} onChange={(v) => updatePad(track.id, focusPad.id, { resonance: v })} />
+                <Knob label="DRIVE" midiTarget={{ id: track.id, param: `drum:${focusPad.id}:drive` }} value={focusPad.drive ?? 0} onChange={(v) => updatePad(track.id, focusPad.id, { drive: v })} />
+                <Knob label="PUNCH" midiTarget={{ id: track.id, param: `drum:${focusPad.id}:snap` }} value={focusPad.snap ?? 0} onChange={(v) => updatePad(track.id, focusPad.id, { snap: v })} />
+              </Section>
+              <Section title="Amp" active>
+                <Knob label="GAIN" midiTarget={{ id: track.id, param: `drum:${focusPad.id}:volume` }} value={focusPad.volume} onChange={(v) => updatePad(track.id, focusPad.id, { volume: v })} />
+                <Knob label="PAN" midiTarget={{ id: track.id, param: `drum:${focusPad.id}:pan` }} min={-1} max={1} value={focusPad.pan} onChange={(v) => updatePad(track.id, focusPad.id, { pan: v })} />
+                <VSlider label="A" value={focusPad.attack ?? 0} onChange={(v) => updatePad(track.id, focusPad.id, { attack: v })} />
+                <VSlider label="D" value={focusPad.decay} onChange={(v) => updatePad(track.id, focusPad.id, { decay: v })} />
+                <VSlider label="R" value={focusPad.release ?? 0.2} onChange={(v) => updatePad(track.id, focusPad.id, { release: v })} />
+              </Section>
+              <div className="flex flex-wrap gap-1">
+                <Button size="sm" variant="ghost" className="h-6 px-1.5 text-[10px]" onClick={() => flam(focusPad.id, focusPad.steps)}>Flam</Button>
+                <Button size="sm" variant="ghost" className="h-6 px-1.5 text-[10px]" onClick={() => roll(focusPad.id, focusPad.steps)}>Roll</Button>
+                <Button size="sm" variant="secondary" className="h-6 px-1.5 text-[10px]" onClick={() => mutate(focusPad)}>Mutate</Button>
+                <label className="cursor-pointer rounded-md px-1.5 py-0.5 text-[10px] text-muted-foreground hover:text-foreground">
+                  Load sample
+                  <input
+                    type="file"
+                    accept="audio/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      try {
+                        const info = await getEngine().peaksFromFile(file);
+                        updatePad(track.id, focusPad.id, { sample: file.name });
+                        toast.success(`${file.name} loaded on ${focusPad.name}`, {
+                          description: `${info.duration.toFixed(2)}s — trim, pitch and reverse from this pad.`,
+                        });
+                      } catch {
+                        toast.error("Could not read that audio file");
+                      }
+                    }}
+                  />
+                </label>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Pattern controls */}
+        <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-border pt-2">
+          <span className="label-xs">PATTERN {activePattern + 1}</span>
+          <Button size="sm" variant="secondary" onClick={copyPattern}><Copy className="size-4" /> Copy next</Button>
+          <Button size="sm" variant="ghost" onClick={clearPattern}><RotateCcw className="size-4" /> Clear</Button>
+        </div>
+      </div>
+
+      {/* Step sequencer */}
       <div className="space-y-1 overflow-x-auto">
         {pads.map((pad) => (
           <div key={pad.id} className="space-y-1">
             <div className="flex items-center gap-2">
               <button
-                className="w-24 shrink-0 rounded-md border border-border bg-surface-2 px-2 py-1 text-left font-mono text-[10px] tracking-wider hover:glow"
+                className={cn(
+                  "w-24 shrink-0 rounded-md border px-2 py-1 text-left font-mono text-[10px] tracking-wider hover:glow",
+                  focusPad?.id === pad.id ? "border-primary bg-primary/10" : "border-border bg-surface-2",
+                )}
                 onClick={() => {
                   getEngine().playDrum(track.id, pad, 1);
-                  setOpenPad(openPad === pad.id ? null : pad.id);
+                  setFocusPadId(pad.id);
                 }}
               >
                 {pad.name}
               </button>
-              <Button
-                size="sm"
-                variant={pad.muted ? "secondary" : "ghost"}
-                className="h-6 px-1.5 text-[10px]"
-                onClick={() => updatePad(track.id, pad.id, { muted: !pad.muted })}
-              >
-                M
-              </Button>
-              <Button
-                size="sm"
-                variant={pad.solo ? "default" : "ghost"}
-                className="h-6 px-1.5 text-[10px]"
-                onClick={() => updatePad(track.id, pad.id, { solo: !pad.solo })}
-              >
-                S
-              </Button>
               <div className="flex flex-1 gap-[3px]">
                 {pad.steps.map((v, i) => (
                   <button
@@ -345,129 +516,6 @@ export function DrumMachine({ track }: { track: Track }) {
                 ))}
               </div>
             </div>
-            {openPad === pad.id && (
-              <div className="panel flex flex-wrap gap-3 p-3 sm:ml-24">
-                <Knob label="VOL" midiTarget={{ id: track.id, param: `drum:${pad.id}:volume` }} value={pad.volume} onChange={(v) => updatePad(track.id, pad.id, { volume: v })} />
-                <Knob label="PAN" midiTarget={{ id: track.id, param: `drum:${pad.id}:pan` }} min={-1} max={1} value={pad.pan} onChange={(v) => updatePad(track.id, pad.id, { pan: v })} />
-                <Knob
-                  label="PITCH"
-                  midiTarget={{ id: track.id, param: `drum:${pad.id}:pitch` }}
-                  min={-12}
-                  max={12}
-                  step={1}
-                  value={pad.pitch}
-                  onChange={(v) => updatePad(track.id, pad.id, { pitch: v })}
-                />
-                <Knob label="DECAY" midiTarget={{ id: track.id, param: `drum:${pad.id}:decay` }} value={pad.decay} onChange={(v) => updatePad(track.id, pad.id, { decay: v })} />
-                <Knob label="ATK" midiTarget={{ id: track.id, param: `drum:${pad.id}:attack` }} value={pad.attack ?? 0} onChange={(v) => updatePad(track.id, pad.id, { attack: v })} />
-                <Knob
-                  label="SUS"
-                  midiTarget={{ id: track.id, param: `drum:${pad.id}:sustain` }}
-                  value={pad.sustain ?? 0}
-                  onChange={(v) => updatePad(track.id, pad.id, { sustain: v })}
-                />
-                <Knob
-                  label="REL"
-                  midiTarget={{ id: track.id, param: `drum:${pad.id}:release` }}
-                  value={pad.release ?? 0.2}
-                  onChange={(v) => updatePad(track.id, pad.id, { release: v })}
-                />
-                <Knob label="START" midiTarget={{ id: track.id, param: `drum:${pad.id}:start` }} value={pad.start ?? 0} onChange={(v) => updatePad(track.id, pad.id, { start: v })} />
-                <Knob label="END" midiTarget={{ id: track.id, param: `drum:${pad.id}:end` }} value={pad.end ?? 1} onChange={(v) => updatePad(track.id, pad.id, { end: v })} />
-                <Knob
-                  label="TONE"
-                  midiTarget={{ id: track.id, param: `drum:${pad.id}:tone` }}
-                  value={pad.tone ?? 0.5}
-                  onChange={(v) => updatePad(track.id, pad.id, { tone: v })}
-                />
-                 <Knob label="DISTORT" midiTarget={{ id: track.id, param: `drum:${pad.id}:drive` }} value={pad.drive ?? 0} onChange={(v) => updatePad(track.id, pad.id, { drive: v })} />
-                 <Knob label="COMP" midiTarget={{ id: track.id, param: `drum:${pad.id}:compressor` }} value={pad.compressor ?? 0} onChange={(v) => updatePad(track.id, pad.id, { compressor: v })} />
-                <Knob label="SNAP" midiTarget={{ id: track.id, param: `drum:${pad.id}:snap` }} value={pad.snap ?? 0} onChange={(v) => updatePad(track.id, pad.id, { snap: v })} />
-                <Knob label="NOISE" midiTarget={{ id: track.id, param: `drum:${pad.id}:noise` }} value={pad.noise ?? 0} onChange={(v) => updatePad(track.id, pad.id, { noise: v })} />
-                <Knob label="WIDTH" midiTarget={{ id: track.id, param: `drum:${pad.id}:width` }} value={pad.width ?? 0} onChange={(v) => updatePad(track.id, pad.id, { width: v })} />
-                <Knob label="CRUSH" midiTarget={{ id: track.id, param: `drum:${pad.id}:crush` }} value={pad.crush ?? 0} onChange={(v) => updatePad(track.id, pad.id, { crush: v })} />
-                 <Knob label="MUTATION" midiTarget={{ id: track.id, param: `drum:${pad.id}:mutation` }} value={pad.mutation ?? 0.2} onChange={(v) => updatePad(track.id, pad.id, { mutation: v })} />
-                <div className="flex flex-col gap-1">
-                  <span className="label-xs">FILTER</span>
-                  <div className="flex gap-1">
-                    {(["off", "lowpass", "highpass", "bandpass"] as const).map((ft) => (
-                      <Button
-                        key={ft}
-                        size="sm"
-                        variant={(pad.filterType ?? "off") === ft ? "default" : "ghost"}
-                        className="h-6 px-1.5 text-[10px]"
-                        onClick={() => updatePad(track.id, pad.id, { filterType: ft })}
-                      >
-                        {ft === "off" ? "OFF" : ft === "lowpass" ? "LP" : ft === "highpass" ? "HP" : "BP"}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-                <Knob label="CUTOFF" midiTarget={{ id: track.id, param: `drum:${pad.id}:cutoff` }} value={pad.cutoff ?? 1} onChange={(v) => updatePad(track.id, pad.id, { cutoff: v })} />
-                <Knob label="RESO" midiTarget={{ id: track.id, param: `drum:${pad.id}:resonance` }} value={pad.resonance ?? 0} onChange={(v) => updatePad(track.id, pad.id, { resonance: v })} />
-                <Knob
-                  label="F.ENV"
-                  midiTarget={{ id: track.id, param: `drum:${pad.id}:filterEnv` }}
-                  min={-1}
-                  max={1}
-                  value={pad.filterEnv ?? 0}
-                  onChange={(v) => updatePad(track.id, pad.id, { filterEnv: v })}
-                />
-                <Knob
-                  label="CHOKE"
-                  midiTarget={{ id: track.id, param: `drum:${pad.id}:choke` }}
-                  min={0}
-                  max={4}
-                  step={1}
-                  value={pad.choke ?? 0}
-                  onChange={(v) => updatePad(track.id, pad.id, { choke: Math.round(v) })}
-                />
-                <div className="flex items-end gap-1">
-                  <Button
-                    size="sm"
-                    variant={pad.reverse ? "default" : "ghost"}
-                    onClick={() => updatePad(track.id, pad.id, { reverse: !pad.reverse })}
-                  >
-                    Reverse
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={() => flam(pad.id, pad.steps)}>
-                    Flam
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={() => roll(pad.id, pad.steps)}>
-                    Roll
-                  </Button>
-                   <Button size="sm" variant="secondary" onClick={() => mutate(pad)}>
-                     Mutate
-                   </Button>
-                  <label className="cursor-pointer rounded-md px-2 py-1 text-xs text-muted-foreground hover:text-foreground">
-                    Load sample
-                    <input
-                      type="file"
-                      accept="audio/*"
-                      className="hidden"
-                      onChange={async (e) => {
-                        const file = e.target.files?.[0];
-                        if (!file) return;
-                        try {
-                          const info = await getEngine().peaksFromFile(file);
-                          updatePad(track.id, pad.id, { sample: file.name });
-                          toast.success(`${file.name} loaded on ${pad.name}`, {
-                            description: `${info.duration.toFixed(2)}s — trim, pitch and reverse from this pad.`,
-                          });
-                        } catch {
-                          toast.error("Could not read that audio file");
-                        }
-                      }}
-                    />
-                  </label>
-                </div>
-                <div className="flex items-end">
-                  <Button variant="ghost" size="sm" onClick={() => toast("Sample editor", { description: "Trim, normalise, reverse and time-stretch this pad's sample." })}>
-                    Sample editor
-                  </Button>
-                </div>
-              </div>
-            )}
              {selectedStep?.padId === pad.id && (
                <div className="panel flex flex-wrap items-end gap-3 p-3 sm:ml-24">
                  <div className="min-w-20"><span className="label-xs">STEP</span><div className="font-mono text-sm text-primary">{selectedStep.index + 1}</div></div>
