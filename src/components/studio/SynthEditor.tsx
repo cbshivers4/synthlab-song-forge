@@ -149,349 +149,225 @@ export function SynthEditor({ track }: { track: Track }) {
         </Button>
       </div>
 
-      <Tabs defaultValue="osc">
-        <TabsList>
-          <TabsTrigger value="osc">Oscillators</TabsTrigger>
-          <TabsTrigger value="filter">Filter</TabsTrigger>
-          <TabsTrigger value="env">Envelopes</TabsTrigger>
-          <TabsTrigger value="mod">LFO / Unison</TabsTrigger>
-          <TabsTrigger value="matrix">Mod Matrix</TabsTrigger>
-          <TabsTrigger value="voice">Voice</TabsTrigger>
-          <TabsTrigger value="fx">Effects</TabsTrigger>
-          <TabsTrigger value="arp">Arpeggiator</TabsTrigger>
-          <TabsTrigger value="chords">Chords / Scale</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="osc" className="space-y-3 pt-3">
+      {/* Mai Tai-style main surface */}
+      <div className="grid gap-3 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
+        {/* Oscillators + noise */}
+        <div className="space-y-3">
           {patch.oscillators.map((osc, i) => (
-            <div key={i} className="panel flex flex-wrap items-center gap-3 p-3">
-              <div className="flex w-28 items-center gap-2">
+            <div key={i} className="rounded-[3px] border border-border bg-surface/80">
+              <div className="flex items-center gap-2 border-b border-border px-2 py-1">
+                <span className={`size-1.5 rounded-full ${osc.on ? "bg-primary" : "bg-muted-foreground/40"}`} />
+                <span className="font-mono text-[10px] font-semibold uppercase tracking-widest">Osc {i + 1}</span>
+                <div className="ml-auto flex gap-0.5">
+                  {WAVES.map((w) => (
+                    <button
+                      key={w}
+                      title={w}
+                      onClick={() => set({ oscillators: patch.oscillators.map((o, j) => (j === i ? { ...o, wave: w } : o)) })}
+                      className={`rounded-[2px] border px-1.5 py-0.5 font-mono text-[8px] uppercase ${osc.wave === w ? "border-primary bg-primary/20 text-primary" : "border-border text-muted-foreground hover:text-foreground"}`}
+                    >
+                      {w === "sawtooth" ? "saw" : w === "triangle" ? "tri" : w === "wavetable" ? "wt" : w.slice(0, 4)}
+                    </button>
+                  ))}
+                </div>
                 <Switch
                   checked={osc.on}
-                  onCheckedChange={(v) =>
-                    set({ oscillators: patch.oscillators.map((o, j) => (j === i ? { ...o, on: v } : o)) })
-                  }
+                  onCheckedChange={(v) => set({ oscillators: patch.oscillators.map((o, j) => (j === i ? { ...o, on: v } : o)) })}
+                  aria-label={`Oscillator ${i + 1} on`}
                 />
-                <span className="font-display text-xs font-semibold">OSC {i + 1}</span>
               </div>
-              <Select
-                value={osc.wave}
-                onValueChange={(v) =>
-                  set({ oscillators: patch.oscillators.map((o, j) => (j === i ? { ...o, wave: v as OscWave } : o)) })
-                }
-              >
-                <SelectTrigger className="w-32">
+              <div className="flex flex-wrap items-end gap-2 p-2">
+                <Knob label="OCT" midiTarget={{ id: track.id, param: `synth:osc:${i}:octave` }} min={-3} max={3} step={1} value={osc.octave ?? 0} onChange={(v) => set({ oscillators: patch.oscillators.map((o, j) => (j === i ? { ...o, octave: v } : o)) })} />
+                <Knob label="SEMI" midiTarget={{ id: track.id, param: `synth:osc:${i}:semitone` }} min={-12} max={12} step={1} value={osc.semitone ?? 0} onChange={(v) => set({ oscillators: patch.oscillators.map((o, j) => (j === i ? { ...o, semitone: v } : o)) })} />
+                <Knob label="FINE" midiTarget={{ id: track.id, param: `synth:osc:${i}:fine` }} min={-50} max={50} step={1} value={osc.fine ?? 0} onChange={(v) => set({ oscillators: patch.oscillators.map((o, j) => (j === i ? { ...o, fine: v } : o)) })} />
+                <Knob label="LEVEL" midiTarget={{ id: track.id, param: `synth:osc:${i}:level` }} value={osc.level} onChange={(v) => set({ oscillators: patch.oscillators.map((o, j) => (j === i ? { ...o, level: v } : o)) })} />
+                <Knob label="PAN" midiTarget={{ id: track.id, param: `synth:osc:${i}:pan` }} min={-1} max={1} value={osc.pan ?? 0} onChange={(v) => set({ oscillators: patch.oscillators.map((o, j) => (j === i ? { ...o, pan: v } : o)) })} />
+                <Knob label="PW" midiTarget={{ id: track.id, param: `synth:osc:${i}:pulseWidth` }} min={0.05} max={0.95} value={osc.pulseWidth ?? 0.5} onChange={(v) => set({ oscillators: patch.oscillators.map((o, j) => (j === i ? { ...o, pulseWidth: v } : o)) })} />
+                <label className="flex flex-col items-center gap-1">
+                  <span className="label-xs text-[9px]">SYNC</span>
+                  <Switch
+                    checked={Boolean(osc.sync)}
+                    onCheckedChange={(v) => set({ oscillators: patch.oscillators.map((o, j) => (j === i ? { ...o, sync: v } : o)) })}
+                  />
+                </label>
+              </div>
+            </div>
+          ))}
+          <div className="rounded-[3px] border border-border bg-surface/80">
+            <div className="flex items-center gap-2 border-b border-border px-2 py-1">
+              <span className={`size-1.5 rounded-full ${patch.noise > 0 ? "bg-primary" : "bg-muted-foreground/40"}`} />
+              <span className="font-mono text-[10px] font-semibold uppercase tracking-widest">Noise</span>
+            </div>
+            <div className="p-2">
+              <Knob label="LEVEL" midiTarget={{ id: track.id, param: "synth:noise" }} value={patch.noise} onChange={(v) => set({ noise: v })} />
+            </div>
+          </div>
+        </div>
+
+        {/* Filter + LFOs */}
+        <div className="space-y-3">
+          <div className="rounded-[3px] border border-border bg-surface/80">
+            <div className="flex items-center gap-2 border-b border-border px-2 py-1">
+              <span className="size-1.5 rounded-full bg-primary" />
+              <span className="font-mono text-[10px] font-semibold uppercase tracking-widest">Filter</span>
+              <Select value={patch.filterType} onValueChange={(v) => set({ filterType: v as BiquadFilterType })}>
+                <SelectTrigger className="ml-auto h-6 w-28 text-[10px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {WAVES.map((w) => (
-                    <SelectItem key={w} value={w}>
-                      {w}
-                    </SelectItem>
+                  {["lowpass", "highpass", "bandpass", "notch"].map((f) => (
+                    <SelectItem key={f} value={f}>{f}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {(
-                [
-                  ["OCT", "octave", -3, 3, 1],
-                  ["SEMI", "semitone", -12, 12, 1],
-                  ["FINE", "fine", -50, 50, 1],
-                  ["DETUNE", "detune", -50, 50, 1],
-                  ["PHASE", "phase", 0, 1, 0.01],
-                  ["PW", "pulseWidth", 0.05, 0.95, 0.01],
-                  ["LEVEL", "level", 0, 1, 0.01],
-                  ["PAN", "pan", -1, 1, 0.01],
-                ] as const
-              ).map(([label, key, min, max, step]) => (
-                <Knob
-                  key={key}
-                  label={label}
-                  midiTarget={{ id: track.id, param: `synth:osc:${i}:${key}` }}
-                  min={min}
-                  max={max}
-                  step={step}
-                  value={(osc[key] as number | undefined) ?? 0}
-                  onChange={(v) =>
-                    set({ oscillators: patch.oscillators.map((o, j) => (j === i ? { ...o, [key]: v } : o)) })
-                  }
-                />
-              ))}
-              <label className="flex w-16 flex-col items-center gap-1">
-                <span className="label-xs text-[9px]">SYNC</span>
-                <Switch
-                  checked={Boolean(osc.sync)}
-                  onCheckedChange={(v) =>
-                    set({ oscillators: patch.oscillators.map((o, j) => (j === i ? { ...o, sync: v } : o)) })
-                  }
-                />
-              </label>
             </div>
-          ))}
-          <div className="panel p-3">
-            <span className="label-xs">Oscillator mix</span>
-            <div className="mt-2 grid gap-2 sm:grid-cols-4">
-              {patch.oscillators.map((o, i) => (
-                <Knob
-                  key={i}
-                  label={`OSC ${i + 1}`}
-                  value={o.level}
-                  min={0}
-                  max={1}
-                  step={0.01}
-                  midiTarget={{ id: track.id, param: `synth:osc:${i}:level` }}
-                  onChange={(v) =>
-                    set({ oscillators: patch.oscillators.map((x, j) => (j === i ? { ...x, level: v } : x)) })
-                  }
-                />
-              ))}
-              <Knob
-                label="NOISE"
-                value={patch.noise}
-                min={0}
-                max={1}
-                step={0.01}
-                midiTarget={{ id: track.id, param: "synth:noise" }}
-                onChange={(v) => set({ noise: v })}
-              />
+            <div className="flex flex-wrap items-end gap-2 p-2">
+              <Knob label="CUTOFF" midiTarget={{ id: track.id, param: "synth:cutoff" }} min={40} max={16000} step={10} value={patch.cutoff} onChange={(v) => set({ cutoff: v })} />
+              <Knob label="RES" midiTarget={{ id: track.id, param: "synth:resonance" }} min={0} max={28} step={0.5} value={patch.resonance} onChange={(v) => set({ resonance: v })} />
+              <Knob label="DRIVE" midiTarget={{ id: track.id, param: "synth:drive" }} value={patch.drive} onChange={(v) => set({ drive: v })} />
+              <Knob label="KEY" midiTarget={{ id: track.id, param: "synth:keyTracking" }} value={patch.keyTracking ?? 0} onChange={(v) => set({ keyTracking: v })} />
+            </div>
+            <div className="flex flex-wrap items-center gap-2 border-t border-border px-2 py-1.5">
+              <Switch checked={Boolean(patch.filter2?.on)} onCheckedChange={(v) => set({ filter2: { ...f2, on: v } })} aria-label="Filter 2 on" />
+              <span className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">Filter 2</span>
+              <Select value={f2.type} onValueChange={(v) => set({ filter2: { ...f2, type: v as BiquadFilterType } })}>
+                <SelectTrigger className="h-6 w-24 text-[10px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {["lowpass", "highpass", "bandpass", "notch", "peaking"].map((t) => (
+                    <SelectItem key={t} value={t}>{t}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={f2.routing} onValueChange={(v) => set({ filter2: { ...f2, routing: v as "series" | "parallel" } })}>
+                <SelectTrigger className="h-6 w-24 text-[10px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="series">series</SelectItem>
+                  <SelectItem value="parallel">parallel</SelectItem>
+                </SelectContent>
+              </Select>
+              <Knob label="CUT" midiTarget={{ id: track.id, param: "synth:filter2:cutoff" }} min={40} max={16000} step={10} value={f2.cutoff} onChange={(v) => set({ filter2: { ...f2, cutoff: v } })} />
+              <Knob label="RES" midiTarget={{ id: track.id, param: "synth:filter2:resonance" }} min={0} max={28} step={0.5} value={f2.resonance} onChange={(v) => set({ filter2: { ...f2, resonance: v } })} />
             </div>
           </div>
-        </TabsContent>
+          {patch.lfos.map((lfo, i) => (
+            <div key={i} className="rounded-[3px] border border-border bg-surface/80">
+              <div className="flex items-center gap-2 border-b border-border px-2 py-1">
+                <span className={`size-1.5 rounded-full ${lfo.on ? "bg-primary" : "bg-muted-foreground/40"}`} />
+                <span className="font-mono text-[10px] font-semibold uppercase tracking-widest">LFO {i + 1}</span>
+                <div className="ml-auto flex gap-0.5">
+                  {(["sine", "triangle", "sawtooth", "square"] as LfoWave[]).map((w) => (
+                    <button
+                      key={w}
+                      title={w}
+                      onClick={() => set({ lfos: patch.lfos.map((l, j) => (j === i ? { ...l, wave: w } : l)) })}
+                      className={`rounded-[2px] border px-1.5 py-0.5 font-mono text-[8px] uppercase ${lfo.wave === w ? "border-primary bg-primary/20 text-primary" : "border-border text-muted-foreground hover:text-foreground"}`}
+                    >
+                      {w === "triangle" ? "tri" : w === "sawtooth" ? "saw" : w.slice(0, 4)}
+                    </button>
+                  ))}
+                </div>
+                <Switch checked={lfo.on} onCheckedChange={(v) => set({ lfos: patch.lfos.map((l, j) => (j === i ? { ...l, on: v } : l)) })} aria-label={`LFO ${i + 1} on`} />
+              </div>
+              <div className="flex flex-wrap items-end gap-2 p-2">
+                <Knob label="RATE" midiTarget={{ id: track.id, param: `synth:lfo:${i}:rate` }} min={0.05} max={20} step={0.05} value={lfo.rate} onChange={(v) => set({ lfos: patch.lfos.map((l, j) => (j === i ? { ...l, rate: v } : l)) })} />
+                <Knob label="AMOUNT" midiTarget={{ id: track.id, param: `synth:lfo:${i}:amount` }} value={lfo.amount} onChange={(v) => set({ lfos: patch.lfos.map((l, j) => (j === i ? { ...l, amount: v } : l)) })} />
+                <Select value={lfo.destination} onValueChange={(v) => set({ lfos: patch.lfos.map((l, j) => (j === i ? { ...l, destination: v as never } : l)) })}>
+                  <SelectTrigger className="h-6 w-24 text-[10px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {["pitch", "filter", "volume", "pan", "wavetable"].map((d) => (
+                      <SelectItem key={d} value={d}>{d}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <label className="flex items-center gap-1.5">
+                  <span className="label-xs text-[9px]">SYNC</span>
+                  <Switch checked={Boolean(lfo.sync)} onCheckedChange={(v) => set({ lfos: patch.lfos.map((l, j) => (j === i ? { ...l, sync: v } : l)) })} />
+                </label>
+              </div>
+            </div>
+          ))}
+        </div>
 
-        <TabsContent value="filter" className="pt-3">
-          <div className="panel flex flex-wrap items-center gap-4 p-3">
-            <Select value={patch.filterType} onValueChange={(v) => set({ filterType: v as BiquadFilterType })}>
-              <SelectTrigger className="w-36">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {["lowpass", "highpass", "bandpass", "notch"].map((f) => (
-                  <SelectItem key={f} value={f}>
-                    {f}
-                  </SelectItem>
+        {/* Envelope graphs */}
+        <div className="space-y-3">
+          <div className="rounded-[3px] border border-border bg-surface/80">
+            <div className="border-b border-border px-2 py-1"><span className="font-mono text-[10px] font-semibold uppercase tracking-widest">Amp Env</span></div>
+            <div className="space-y-1 p-2">
+              <EnvelopeGraph env={patch.amp} />
+              <div className="flex gap-2">
+                {(["attack", "decay", "sustain", "release"] as const).map((k) => (
+                  <Knob key={k} label={k.slice(0, 3).toUpperCase()} midiTarget={{ id: track.id, param: `synth:amp:${k}` }} min={0} max={k === "sustain" ? 1 : 3} value={patch.amp[k]} onChange={(v) => set({ amp: { ...patch.amp, [k]: v } })} />
                 ))}
-              </SelectContent>
-            </Select>
-            <Knob label="CUTOFF" midiTarget={{ id: track.id, param: "synth:cutoff" }} min={40} max={16000} step={10} value={patch.cutoff} onChange={(v) => set({ cutoff: v })} />
-            <Knob label="RES" midiTarget={{ id: track.id, param: "synth:resonance" }} min={0} max={28} step={0.5} value={patch.resonance} onChange={(v) => set({ resonance: v })} />
-            <Knob label="DRIVE" midiTarget={{ id: track.id, param: "synth:drive" }} value={patch.drive} onChange={(v) => set({ drive: v })} />
-            <Knob
-              label="KEY TRK"
-              midiTarget={{ id: track.id, param: "synth:keyTracking" }}
-              min={0}
-              max={1}
-              value={patch.keyTracking ?? 0}
-              onChange={(v) => set({ keyTracking: v })}
-            />
+              </div>
+            </div>
+          </div>
+          <div className="rounded-[3px] border border-border bg-surface/80">
+            <div className="border-b border-border px-2 py-1"><span className="font-mono text-[10px] font-semibold uppercase tracking-widest">Env 2 · Filter</span></div>
+            <div className="space-y-1 p-2">
+              <EnvelopeGraph env={patch.filterEnv} />
+              <div className="flex flex-wrap gap-2">
+                {(["attack", "decay", "sustain", "release"] as const).map((k) => (
+                  <Knob key={k} label={k.slice(0, 3).toUpperCase()} midiTarget={{ id: track.id, param: `synth:filterEnv:${k}` }} min={0} max={k === "sustain" ? 1 : 3} value={patch.filterEnv[k]} onChange={(v) => set({ filterEnv: { ...patch.filterEnv, [k]: v } })} />
+                ))}
+                <Knob label="AMT" midiTarget={{ id: track.id, param: "synth:filterEnv:amount" }} min={-6000} max={6000} step={50} value={patch.filterEnv.amount} onChange={(v) => set({ filterEnv: { ...patch.filterEnv, amount: v } })} />
+              </div>
+            </div>
+          </div>
+          <div className="rounded-[3px] border border-border bg-surface/80">
+            <div className="border-b border-border px-2 py-1"><span className="font-mono text-[10px] font-semibold uppercase tracking-widest">Env 3 · Mod</span></div>
+            <div className="space-y-1 p-2">
+              <EnvelopeGraph env={modEnv} />
+              <div className="flex gap-2">
+                {(["attack", "decay", "sustain", "release"] as const).map((k) => (
+                  <Knob key={k} label={k.slice(0, 3).toUpperCase()} midiTarget={{ id: track.id, param: `synth:modEnv:${k}` }} min={0} max={k === "sustain" ? 1 : 3} value={modEnv[k]} onChange={(v) => set({ modEnv: { ...modEnv, [k]: v } })} />
+                ))}
+              </div>
+              <p className="text-[9px] text-muted-foreground">Heard through the Mod Matrix below.</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Global column */}
+        <div className="rounded-[3px] border border-border bg-surface/80 xl:w-36">
+          <div className="border-b border-border px-2 py-1"><span className="font-mono text-[10px] font-semibold uppercase tracking-widest">Global</span></div>
+          <div className="flex flex-wrap gap-2 p-2 xl:flex-col xl:items-center">
+            <div className="flex gap-1 xl:flex-col">
+              {(["poly", "mono", "legato"] as const).map((mode) => (
+                <Button
+                  key={mode}
+                  size="sm"
+                  variant={(patch.voiceMode ?? "poly") === mode ? "default" : "ghost"}
+                  className="h-6 px-2 text-[10px] capitalize"
+                  onClick={() => set({ voiceMode: mode })}
+                >
+                  {mode}
+                </Button>
+              ))}
+            </div>
             <Knob label="GLIDE" midiTarget={{ id: track.id, param: "synth:glide" }} min={0} max={0.5} value={patch.glide} onChange={(v) => set({ glide: v })} />
-            <Select
-              value={patch.glideMode ?? "always"}
-              onValueChange={(v) => set({ glideMode: v as "always" | "legato" })}
-            >
-              <SelectTrigger className="w-32">
-                <SelectValue />
-              </SelectTrigger>
+            <Select value={patch.glideMode ?? "always"} onValueChange={(v) => set({ glideMode: v as "always" | "legato" })}>
+              <SelectTrigger className="h-6 w-24 text-[10px]"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="always">glide always</SelectItem>
                 <SelectItem value="legato">glide legato</SelectItem>
               </SelectContent>
             </Select>
+            <Knob label="VOICES" midiTarget={{ id: track.id, param: "synth:unison:voices" }} min={1} max={7} step={1} value={patch.unison.voices} onChange={(v) => set({ unison: { ...patch.unison, voices: Math.round(v) } })} />
+            <Knob label="DETUNE" midiTarget={{ id: track.id, param: "synth:unison:detune" }} min={0} max={60} step={1} value={patch.unison.detune} onChange={(v) => set({ unison: { ...patch.unison, detune: v } })} />
+            <Knob label="WIDTH" midiTarget={{ id: track.id, param: "synth:unison:width" }} value={patch.unison.width} onChange={(v) => set({ unison: { ...patch.unison, width: v } })} />
+            <Knob label="VEL SENS" midiTarget={{ id: track.id, param: "synth:velocitySens" }} value={patch.velocitySens ?? 1} onChange={(v) => set({ velocitySens: v })} />
+            <Knob label="ANALOG" midiTarget={{ id: track.id, param: "synth:analog" }} value={patch.analog ?? 0} onChange={(v) => set({ analog: v })} />
           </div>
-          <div className="panel mt-3 flex flex-wrap items-center gap-4 p-3">
-            <div className="flex items-center gap-2">
-              <Switch
-                checked={Boolean(patch.filter2?.on)}
-                onCheckedChange={(v) => set({ filter2: { ...f2, on: v } })}
-              />
-              <span className="font-display text-xs font-semibold">FILTER 2</span>
-            </div>
-            <Select value={f2.type} onValueChange={(v) => set({ filter2: { ...f2, type: v as BiquadFilterType } })}>
-              <SelectTrigger className="w-36">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {["lowpass", "highpass", "bandpass", "notch", "peaking"].map((t) => (
-                  <SelectItem key={t} value={t}>
-                    {t}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Knob label="CUTOFF" midiTarget={{ id: track.id, param: "synth:filter2:cutoff" }} min={40} max={16000} step={10} value={f2.cutoff} onChange={(v) => set({ filter2: { ...f2, cutoff: v } })} />
-            <Knob label="RES" midiTarget={{ id: track.id, param: "synth:filter2:resonance" }} min={0} max={28} step={0.5} value={f2.resonance} onChange={(v) => set({ filter2: { ...f2, resonance: v } })} />
-            <Select
-              value={f2.routing}
-              onValueChange={(v) => set({ filter2: { ...f2, routing: v as "series" | "parallel" } })}
-            >
-              <SelectTrigger className="w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="series">series</SelectItem>
-                <SelectItem value="parallel">parallel</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </TabsContent>
+        </div>
+      </div>
 
-        <TabsContent value="env" className="grid gap-3 pt-3 md:grid-cols-2">
-          <div className="panel space-y-2 p-3">
-            <span className="label-xs">Amp envelope</span>
-            <EnvelopeGraph env={patch.amp} />
-            <div className="flex gap-2">
-              {(["attack", "decay", "sustain", "release"] as const).map((k) => (
-                <Knob
-                  key={k}
-                  label={k.slice(0, 3).toUpperCase()}
-                  midiTarget={{ id: track.id, param: `synth:amp:${k}` }}
-                  min={0}
-                  max={k === "sustain" ? 1 : 3}
-                  value={patch.amp[k]}
-                  onChange={(v) => set({ amp: { ...patch.amp, [k]: v } })}
-                />
-              ))}
-            </div>
-          </div>
-          <div className="panel space-y-2 p-3">
-            <span className="label-xs">Filter envelope</span>
-            <EnvelopeGraph env={patch.filterEnv} />
-            <div className="flex flex-wrap gap-2">
-              {(["attack", "decay", "sustain", "release"] as const).map((k) => (
-                <Knob
-                  key={k}
-                  label={k.slice(0, 3).toUpperCase()}
-                  midiTarget={{ id: track.id, param: `synth:filterEnv:${k}` }}
-                  min={0}
-                  max={k === "sustain" ? 1 : 3}
-                  value={patch.filterEnv[k]}
-                  onChange={(v) => set({ filterEnv: { ...patch.filterEnv, [k]: v } })}
-                />
-              ))}
-              <Knob
-                label="AMOUNT"
-                midiTarget={{ id: track.id, param: "synth:filterEnv:amount" }}
-                min={-6000}
-                max={6000}
-                step={50}
-                value={patch.filterEnv.amount}
-                onChange={(v) => set({ filterEnv: { ...patch.filterEnv, amount: v } })}
-              />
-            </div>
-          </div>
-          <div className="panel space-y-2 p-3">
-            <span className="label-xs">Mod envelope — route it in the Mod Matrix</span>
-            <EnvelopeGraph env={modEnv} />
-            <div className="flex gap-2">
-              {(["attack", "decay", "sustain", "release"] as const).map((k) => (
-                <Knob
-                  key={k}
-                  label={k.slice(0, 3).toUpperCase()}
-                  midiTarget={{ id: track.id, param: `synth:modEnv:${k}` }}
-                  min={0}
-                  max={k === "sustain" ? 1 : 3}
-                  value={modEnv[k]}
-                  onChange={(v) => set({ modEnv: { ...modEnv, [k]: v } })}
-                />
-              ))}
-            </div>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="mod" className="grid gap-3 pt-3 md:grid-cols-2">
-          {patch.lfos.map((lfo, i) => (
-            <div key={i} className="panel flex flex-wrap items-center gap-3 p-3">
-              <div className="flex items-center gap-2">
-                <Switch
-                  checked={lfo.on}
-                  onCheckedChange={(v) => set({ lfos: patch.lfos.map((l, j) => (j === i ? { ...l, on: v } : l)) })}
-                />
-                <span className="font-display text-xs font-semibold">LFO {i + 1}</span>
-              </div>
-              <Select
-                value={lfo.destination}
-                onValueChange={(v) =>
-                  set({ lfos: patch.lfos.map((l, j) => (j === i ? { ...l, destination: v as never } : l)) })
-                }
-              >
-                <SelectTrigger className="w-28">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {["pitch", "filter", "volume", "pan", "wavetable"].map((d) => (
-                    <SelectItem key={d} value={d}>
-                      {d}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Knob
-                label="RATE"
-                midiTarget={{ id: track.id, param: `synth:lfo:${i}:rate` }}
-                min={0.05}
-                max={20}
-                step={0.05}
-                value={lfo.rate}
-                onChange={(v) => set({ lfos: patch.lfos.map((l, j) => (j === i ? { ...l, rate: v } : l)) })}
-              />
-              <Knob
-                label="AMOUNT"
-                midiTarget={{ id: track.id, param: `synth:lfo:${i}:amount` }}
-                value={lfo.amount}
-                onChange={(v) => set({ lfos: patch.lfos.map((l, j) => (j === i ? { ...l, amount: v } : l)) })}
-              />
-              <Select
-                value={lfo.wave}
-                onValueChange={(v) =>
-                  set({ lfos: patch.lfos.map((l, j) => (j === i ? { ...l, wave: v as LfoWave } : l)) })
-                }
-              >
-                <SelectTrigger className="w-28">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {(["sine", "triangle", "sawtooth", "square"] as LfoWave[]).map((w) => (
-                    <SelectItem key={w} value={w}>
-                      {w}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <label className="flex items-center gap-2">
-                <span className="label-xs">SYNC</span>
-                <Switch
-                  checked={Boolean(lfo.sync)}
-                  onCheckedChange={(v) => set({ lfos: patch.lfos.map((l, j) => (j === i ? { ...l, sync: v } : l)) })}
-                />
-              </label>
-            </div>
-          ))}
-          <div className="panel flex flex-wrap items-center gap-3 p-3">
-            <span className="label-xs w-full">Unison</span>
-            <Knob
-              label="VOICES"
-              midiTarget={{ id: track.id, param: "synth:unison:voices" }}
-              min={1}
-              max={7}
-              step={1}
-              value={patch.unison.voices}
-              onChange={(v) => set({ unison: { ...patch.unison, voices: Math.round(v) } })}
-            />
-            <Knob
-              label="DETUNE"
-              midiTarget={{ id: track.id, param: "synth:unison:detune" }}
-              min={0}
-              max={60}
-              step={1}
-              value={patch.unison.detune}
-              onChange={(v) => set({ unison: { ...patch.unison, detune: v } })}
-            />
-            <Knob
-              label="WIDTH"
-              midiTarget={{ id: track.id, param: "synth:unison:width" }}
-              value={patch.unison.width}
-              onChange={(v) => set({ unison: { ...patch.unison, width: v } })}
-            />
-          </div>
-        </TabsContent>
+      <Tabs defaultValue="matrix">
+        <TabsList>
+          <TabsTrigger value="matrix">Mod Matrix</TabsTrigger>
+          <TabsTrigger value="fx">Effects</TabsTrigger>
+          <TabsTrigger value="arp">Arpeggiator</TabsTrigger>
+          <TabsTrigger value="chords">Chords / Scale</TabsTrigger>
+        </TabsList>
 
         <TabsContent value="matrix" className="space-y-3 pt-3">
           <div className="panel flex flex-wrap items-center gap-4 p-3">
@@ -600,41 +476,6 @@ export function SynthEditor({ track }: { track: Track }) {
               Pitch, cutoff, filter 2, resonance, level and pan follow their source continuously. Pulse width, wavetable
               morph, FM and unison detune are set once at the start of each note, so use velocity, key position, random
               or a macro for those.
-            </p>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="voice" className="pt-3">
-          <div className="panel flex flex-wrap items-center gap-4 p-3">
-            <Select value={patch.voiceMode ?? "poly"} onValueChange={(v) => set({ voiceMode: v as "poly" | "mono" | "legato" })}>
-              <SelectTrigger className="w-36">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="poly">polyphonic</SelectItem>
-                <SelectItem value="mono">mono</SelectItem>
-                <SelectItem value="legato">legato</SelectItem>
-              </SelectContent>
-            </Select>
-            <Knob label="GLIDE" midiTarget={{ id: track.id, param: "synth:glide" }} min={0} max={0.5} value={patch.glide} onChange={(v) => set({ glide: v })} />
-            <Knob
-              label="VEL SENS"
-              midiTarget={{ id: track.id, param: "synth:velocitySens" }}
-              value={patch.velocitySens ?? 1}
-              onChange={(v) => set({ velocitySens: v })}
-            />
-            <Knob label="ANALOG" midiTarget={{ id: track.id, param: "synth:analog" }} value={patch.analog ?? 0} onChange={(v) => set({ analog: v })} />
-            <Knob
-              label="VOICES"
-              min={1}
-              max={7}
-              step={1}
-              value={patch.unison.voices}
-              onChange={(v) => set({ unison: { ...patch.unison, voices: Math.round(v) } })}
-            />
-            <p className="w-full text-[10px] text-muted-foreground">
-              Mono and legato keep one note sounding at a time so glide slides between them. Analog adds a small random
-              tuning and filter shift to every note, like an old hardware synth.
             </p>
           </div>
         </TabsContent>
