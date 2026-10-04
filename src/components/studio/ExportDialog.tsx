@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { uploadCloudExport } from "@/lib/synclab/cloud";
 import { usePlan } from "@/lib/synclab/plan";
+import { stepsPerBar } from "@/lib/synclab/timebase";
 
 export const EXPORT_EVENT = "synclab:export";
 export const openExport = () => window.dispatchEvent(new CustomEvent(EXPORT_EVENT));
@@ -73,7 +74,7 @@ export function ExportDialog() {
   const projectName = project?.name ?? "SYNCLAB Session";
   const safeName = (filename || projectName).replace(/[^\w\-. ]+/g, "").trim() || "synclab-mix";
   const bpb = transport.beatsPerBar ?? 4;
-  const stepsBar = bpb * 4;
+  const stepsBar = stepsPerBar();
   const barSeconds = (60 / transport.bpm) * bpb;
   const flagsOn = transport.exportStart != null && transport.exportEnd != null;
   const loopOk = transport.loopStart != null && transport.loopEnd != null && transport.loopEnd > transport.loopStart;
