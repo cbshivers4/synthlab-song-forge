@@ -493,6 +493,10 @@ export interface Transport {
   bars: number;
   /** snap grid for clip edits, in steps (1 step = a 1/4 note). 0 = free move */
   snap?: number;
+  /** quantize grid for note-snapping, in steps (1 = 1/16 note). Default 1 */
+  quantize?: number;
+  /** position readout: musical bars or clock time */
+  timebase?: "bars" | "seconds";
   /** keep the timeline scrolled to the playhead while it plays */
   follow?: boolean;
 }

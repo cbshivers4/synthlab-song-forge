@@ -1,3 +1,4 @@
+import { stepsPerBar } from "@/lib/synclab/timebase";
 import { useEffect, useRef, useState } from "react";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
@@ -475,10 +476,10 @@ export function Settings() {
         <Row label="Snap grid" hint="Used when you move or trim clips on the timeline">
           <Pick
             value={
-              (transport.snap ?? 1) === 0 ? "Off" : (transport.snap ?? 1) === 1 ? "1/4 note" : (transport.snap ?? 1) === 2 ? "Half bar" : "Bar"
+              ({ 0: "Off", 1: "1/16 note", 2: "1/8 note", 4: "1/4 note", 8: "Half note" } as Record<number, string>)[transport.snap ?? 1] ?? "Bar"
             }
-            options={["Off", "1/4 note", "Half bar", "Bar"]}
-            onChange={(v) => setTransport({ snap: v === "Off" ? 0 : v === "1/4 note" ? 1 : v === "Half bar" ? 2 : 4 })}
+            options={["Off", "1/16 note", "1/8 note", "1/4 note", "Half note", "Bar"]}
+            onChange={(v) => setTransport({ snap: ({ Off: 0, "1/16 note": 1, "1/8 note": 2, "1/4 note": 4, "Half note": 8 } as Record<string, number>)[v] ?? stepsPerBar() })}
             width="w-28"
           />
         </Row>
