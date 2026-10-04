@@ -353,7 +353,7 @@ const ROW = {
 } as const;
 
 /** Console desk finishes the user can pick between. */
-export type ConsoleStyleId = "ssl" | "neve" | "api" | "live" | "vintage" | "neon" | "solid";
+export type ConsoleStyleId = "studiopro" | "ssl" | "neve" | "api" | "live" | "vintage" | "neon" | "solid";
 type ConsoleStyle = {
   id: ConsoleStyleId;
   name: string;
@@ -368,6 +368,16 @@ type ConsoleStyle = {
 };
 
 const CONSOLE_STYLES: ConsoleStyle[] = [
+  {
+    id: "studiopro",
+    name: "Studio Pro",
+    desc: "Flat dark console with blue accent — the default desk",
+    a: "oklch(0.35 0.01 260)",
+    b: "oklch(0.31 0.01 260)",
+    c: "oklch(0.27 0.01 260)",
+    accent: "oklch(0.72 0.15 235)",
+    screws: false,
+  },
   {
     id: "ssl",
     name: "SL 9000 Grey",
@@ -462,7 +472,7 @@ function Screw({ className }: { className?: string }) {
     <span
       aria-hidden
       className={cn(
-        "mx-screw pointer-events-none inline-block size-[7px] shrink-0 rounded-full border border-black/70",
+        "mx-screw pointer-events-none inline-block size-[7px] shrink-0 rounded-full border border-black/70 [display:var(--mx-screw-display,inline-block)]",
         "bg-[radial-gradient(circle_at_35%_30%,rgba(255,255,255,0.55),rgba(0,0,0,0.65))]",
         className
       )}
@@ -1565,9 +1575,9 @@ export function Mixer() {
     });
   };
   const [styleId, setStyleId] = useState<ConsoleStyleId>(() => {
-    if (typeof window === "undefined") return "ssl";
+    if (typeof window === "undefined") return "studiopro";
     const saved = window.localStorage.getItem("synclab.mixer.style") as ConsoleStyleId | null;
-    return CONSOLE_STYLES.some((s) => s.id === saved) ? (saved as ConsoleStyleId) : "ssl";
+    return CONSOLE_STYLES.some((s) => s.id === saved) ? (saved as ConsoleStyleId) : "studiopro";
   });
   const [solid, setSolid] = useState<string>(() => {
     if (typeof window === "undefined") return "#1a1b1e";
@@ -1597,6 +1607,7 @@ export function Mixer() {
           "--mx-b": deskColors.b,
           "--mx-c": deskColors.c,
           "--mx-accent": desk.accent,
+          "--mx-screw-display": desk.screws ? "inline-block" : "none",
         } as CSSProperties
       }
     >
