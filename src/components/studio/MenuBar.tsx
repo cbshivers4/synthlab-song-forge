@@ -31,6 +31,7 @@ import { useDesktopMenu } from "@/lib/synclab/desktop-menu";
 import { SYNCLAB_VERSION } from "@/lib/synclab/support";
 import { AbletonHandoff } from "@/components/studio/AbletonHandoff";
 
+import { stepsPerBar } from "@/lib/synclab/timebase";
 export function MenuBar() {
   const {
     setPanel,
@@ -64,7 +65,7 @@ export function MenuBar() {
     sections,
     addSection,
   } = useStudio();
-  const spb = (transport.beatsPerBar ?? 4) * 4;
+  const spb = stepsPerBar();
   const go = (step: number) => setTransport({ step: Math.max(0, Math.min(step, transport.bars * spb - 1)) });
   const marks = [...sections].sort((a, b) => a.start - b.start);
   const nextMark = (dir: 1 | -1) => {
