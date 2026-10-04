@@ -1107,15 +1107,16 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             if (recordedNoteIdsRef.current.has(note.id) || replacedNoteIdsRef.current.has(note.id)) continue;
             if (step0 % len !== s || (note.recordedEnd != null && (n < step0 || n >= note.recordedEnd))) continue;
             const dur = (note.length * stepDur) / (t.patch.arp.on ? 2 : 1);
+            const octShift = (t.octave ?? 0) * 12;
             if (t.patch.arp.on) {
               const oct = t.patch.arp.octaves;
               for (let i = 0; i < note.length; i++) {
                 const shift = (i % Math.max(1, oct)) * 12;
                 const dir = t.patch.arp.direction === "down" ? -shift : shift;
-                engine.playNote(t.id, t.patch, note.pitch + dir, stepDur * t.patch.arp.gate, note.velocity, swung + i * stepDur);
+                engine.playNote(t.id, t.patch, note.pitch + octShift + dir, stepDur * t.patch.arp.gate, note.velocity, swung + i * stepDur);
               }
             } else {
-              engine.playNote(t.id, t.patch, note.pitch, dur, note.velocity, swung + (note.step - step0) * stepDur);
+              engine.playNote(t.id, t.patch, note.pitch + octShift, dur, note.velocity, swung + (note.step - step0) * stepDur);
             }
           }
         }
