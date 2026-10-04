@@ -31,6 +31,7 @@ import { useDesktopMenu } from "@/lib/synclab/desktop-menu";
 import { SYNCLAB_VERSION } from "@/lib/synclab/support";
 import { AbletonHandoff } from "@/components/studio/AbletonHandoff";
 
+import { stepsPerBar } from "@/lib/synclab/timebase";
 export function MenuBar() {
   const {
     setPanel,
@@ -61,7 +62,21 @@ export function MenuBar() {
     updateClip,
     removeClip,
     previewClip,
+    sections,
+    addSection,
   } = useStudio();
+  const spb = stepsPerBar();
+  const go = (step: number) => setTransport({ step: Math.max(0, Math.min(step, transport.bars * spb - 1)) });
+  const marks = [...sections].sort((a, b) => a.start - b.start);
+  const nextMark = (dir: 1 | -1) => {
+    const m = dir > 0 ? marks.find((x) => x.start > transport.step) : [...marks].reverse().find((x) => x.start < transport.step);
+    if (m) go(m.start); else toast(dir > 0 ? "No marker after the playhead" : "No marker before the playhead");
+  };
+  const gotoBar = () => {
+    const v = window.prompt("Go to bar", String(Math.floor(transport.step / spb) + 1));
+    const n = v ? parseInt(v, 10) : NaN;
+    if (Number.isFinite(n) && n >= 1) go((n - 1) * spb);
+  };
   const importRef = useRef<HTMLInputElement>(null);
   const midiRef = useRef<HTMLInputElement>(null);
   const [abletonOpen, setAbletonOpen] = useState(false);
@@ -387,6 +402,35 @@ export function MenuBar() {
             <MenubarItem onClick={() => setTransport({ metronome: !transport.metronome })}>Metronome</MenubarItem>
             <MenubarItem onClick={() => setTransport({ countIn: !transport.countIn })}>Count-in</MenubarItem>
             <MenubarItem onClick={() => setPanel("settings")}>Audio Settings</MenubarItem>
+          </MenubarContent>
+        </MenubarMenu>
+
+        <MenubarMenu>
+          <MenubarTrigger className="text-xs">Transport</MenubarTrigger>
+          <MenubarContent className="max-h-[80vh] overflow-y-auto">
+            <MenubarItem onClick={togglePlay}>{transport.playing ? "Pause" : "Start"} <MenubarShortcut>Space</MenubarShortcut></MenubarItem>
+            <MenubarItem onClick={stop}>Stop</MenubarItem>
+            <MenubarItem onClick={() => go(0)}>Return to Zero <MenubarShortcut>Home</MenubarShortcut></MenubarItem>
+            <MenubarItem onClick={gotoBar}>Go to Bar…</MenubarItem>
+            <MenubarSeparator />
+            <MenubarItem onClick={() => setTransport({ loop: !transport.loop })}>{transport.loop ? "✓ " : ""}Loop Active <MenubarShortcut>L</MenubarShortcut></MenubarItem>
+            <MenubarItem disabled={transport.loopStart == null} onClick={() => go(transport.loopStart ?? 0)}>Go to Loop Start</MenubarItem>
+            <MenubarItem disabled={transport.loopEnd == null} onClick={() => go(transport.loopEnd ?? 0)}>Go to Loop End</MenubarItem>
+            <MenubarItem onClick={() => { const s = Math.floor(transport.step / spb) * spb; setTransport({ loopStart: s, loopEnd: s + spb * 4, loop: true }); }}>Loop 4 Bars from Playhead</MenubarItem>
+            <MenubarSeparator />
+            <MenubarItem onClick={() => { addSection(undefined, Math.floor(transport.step / spb) * spb, spb * 4); toast("Marker added at the playhead"); }}>Insert Marker</MenubarItem>
+            <MenubarItem disabled={!marks.length} onClick={() => nextMark(1)}>Go to Next Marker</MenubarItem>
+            <MenubarItem disabled={!marks.length} onClick={() => nextMark(-1)}>Go to Previous Marker</MenubarItem>
+            {marks.length > 0 && <MenubarSeparator />}
+            {marks.map((m) => (
+              <MenubarItem key={m.id} onClick={() => go(m.start)}>
+                <span className="mr-2 inline-block size-2 rounded-full" style={{ background: m.color }} />{m.name}
+                <MenubarShortcut>bar {Math.floor(m.start / spb) + 1}</MenubarShortcut>
+              </MenubarItem>
+            ))}
+            <MenubarSeparator />
+            <MenubarItem onClick={() => setTransport({ metronome: !transport.metronome })}>{transport.metronome ? "✓ " : ""}Metronome</MenubarItem>
+            <MenubarItem onClick={() => setTransport({ countIn: !transport.countIn })}>{transport.countIn ? "✓ " : ""}Count-in</MenubarItem>
           </MenubarContent>
         </MenubarMenu>
 
