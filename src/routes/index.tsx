@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { QWERTY_MAP, qwertyEnabled, qwertyOctave, setQwertyOctave } from "@/lib/synclab/qwerty";
-import { barBeat } from "@/lib/synclab/timebase";
+import { barBeat, songSteps } from "@/lib/synclab/timebase";
 import { createFileRoute } from "@tanstack/react-router";
 import { ArrowDownToLine, ArrowUpFromLine, AudioLines, AudioWaveform, Cpu, Gauge, Disc3, FileSearch, FolderOpen, Grid2x2, KeyboardMusic, Music2, NotebookPen, Palette, Piano, Radio, SlidersHorizontal, Split, Settings2, Sparkles, Waves, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -521,7 +521,7 @@ function useShortcuts() {
           e.preventDefault();
           const dir = e.key === "ArrowRight" ? 1 : -1;
           const amount = e.shiftKey ? 1 : 4;
-          const total = transport.bars * 4;
+          const total = Math.max(0, songSteps(transport.bars) - 1);
           const step = Math.min(total, Math.max(0, transport.step + dir * amount));
           setTransport({ step });
           break;
