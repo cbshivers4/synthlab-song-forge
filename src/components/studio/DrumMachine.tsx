@@ -26,7 +26,7 @@ function readPresets(): DrumPreset[] {
   }
 }
 
-const BANKS = ["A", "B", "C", "D", "E", "F", "G", "H"];
+const BANKS = ["1", "2", "3", "4", "5", "6", "7", "8"];
 
 /** Instrument drawings, not abstract symbols; they fit inside the original pad layout. */
 const INSTRUMENT_COLOR: Record<DrumPad["kind"], string> = {
@@ -220,17 +220,17 @@ export function DrumMachine({ track }: { track: Track }) {
       <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Drum patterns">
         <span className="label-xs">PATTERN {activePattern + 1}</span>
         <div className="flex flex-wrap gap-1">
-          {BANKS.map((letter, index) => (
+          {BANKS.map((number, index) => (
             <Button
-              key={letter}
+              key={number}
               size="sm"
               variant={activePattern === index ? "default" : "secondary"}
               className="h-8 w-8 p-0 font-mono"
-              aria-label={`Pattern ${letter}`}
+              aria-label={`Pattern ${number}`}
               aria-pressed={activePattern === index}
               onClick={() => switchPattern(index)}
             >
-              {letter}
+              {number}
             </Button>
           ))}
         </div>
@@ -438,12 +438,12 @@ export function DrumMachine({ track }: { track: Track }) {
         </div>
 
         <div className="flex gap-2">
-          {/* Bank letters → the 8 patterns */}
+          {/* 1–8 → the 8 patterns */}
           <div className="flex flex-col gap-1">
-            {BANKS.map((letter, index) => (
+            {BANKS.map((number, index) => (
               <button
-                key={letter}
-                aria-label={`Bank ${letter} (pattern ${index + 1})`}
+                key={number}
+                aria-label={`Pattern ${number}`}
                 onClick={() => switchPattern(index)}
                 className={cn(
                   "flex h-full min-h-8 w-6 items-center justify-center rounded-[3px] border font-mono text-[11px] font-semibold",
@@ -452,7 +452,7 @@ export function DrumMachine({ track }: { track: Track }) {
                     : "border-border bg-surface-2 text-muted-foreground hover:text-foreground",
                 )}
               >
-                {letter}
+                {number}
               </button>
             ))}
           </div>
@@ -480,17 +480,17 @@ export function DrumMachine({ track }: { track: Track }) {
                     }
                   }}
                   className={cn(
-                    "flex min-h-16 cursor-pointer flex-col justify-between rounded-[3px] border p-1.5 text-left outline-none transition-colors focus-visible:ring-1 focus-visible:ring-ring",
+                    "relative flex min-h-16 cursor-pointer flex-col justify-between rounded-[3px] border p-1.5 text-left outline-none transition-colors focus-visible:ring-1 focus-visible:ring-ring",
                     focused ? "border-primary bg-primary/10" : "border-border bg-surface-2 hover:border-primary/50",
                   )}
                 >
-                  <span className="flex min-w-0 items-center gap-1.5">
+                  <span aria-hidden className="pointer-events-none absolute inset-0 flex items-center justify-center">
                     <DrumInstrumentIcon kind={pad.kind} className="size-8" />
-                    <span className="min-w-0">
-                      <span className="block truncate font-mono text-[10px] font-semibold tracking-wider">{pad.name}</span>
-                      <span className="block font-mono text-[8px] text-muted-foreground">
-                        {pad.sample ? "SMP" : pad.kit?.toUpperCase() ?? "909"}{hasSteps ? " ·" : ""}
-                      </span>
+                  </span>
+                  <span className="relative min-w-0">
+                    <span className="block truncate font-mono text-[10px] font-semibold tracking-wider">{pad.name}</span>
+                    <span className="block font-mono text-[8px] text-muted-foreground">
+                      {pad.sample ? "SMP" : pad.kit?.toUpperCase() ?? "909"}{hasSteps ? " ·" : ""}
                     </span>
                   </span>
                   <span className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
