@@ -95,6 +95,7 @@
   --chart-3: oklch(0.84 0.16 85);
   --chart-4: oklch(0.72 0.18 265);
   --chart-5: oklch(0.78 0.18 145);
+  --meter-clip-orange: oklch(0.75 0.19 55);
   --sidebar: oklch(0.18 0.02 255);
   --sidebar-foreground: oklch(0.95 0.01 230);
   --sidebar-primary: oklch(0.8 0.15 195);
