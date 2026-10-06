@@ -1928,12 +1928,14 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         }
         splitClipAtImpl(id, frac);
       },
-      addTrack: (kind, name, preset) => {
+      addTrack: (kind, name, preset, opts) => {
         const id = uid();
         setTracks((ts) => {
           const t = { ...newTrack(kind, name ?? `TRACK ${ts.length + 1}`, ts.length, preset), id };
           setSelectedId(t.id);
-          setPanel(kind === "drum" ? "drums" : kind === "ai-vocal" || kind === "audio" ? null : "synth");
+          // keepPanel: the pad sampler and phone beat maker create their channel while the
+          // user is playing — never navigate them away from what they are doing.
+          if (!opts?.keepPanel) setPanel(kind === "drum" ? "drums" : kind === "ai-vocal" || kind === "audio" ? null : "synth");
           return [...ts, t];
         });
         return id;
