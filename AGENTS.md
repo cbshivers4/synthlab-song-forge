@@ -30,3 +30,4 @@ Studio panel wallpaper uses one bundled JPEG with a dark semantic overlay and pe
 Timeline track names share one compact row with header controls; put the track-kind label beside the input selector to prevent it spilling into the arrangement.
 The arrangement playhead is scoped to the rendered track-row wrapper, never the empty workspace, so it stops after the last visible track.
 Synth feature sections share one tab group with a wrapping tab list and unchanged patch handlers, so navigation reduces clutter without changing sound or removing controls.
+The lower editor panel may shrink below its remembered height so the timeline always keeps a minimum height; this stops the toolbar's wrapped second row from being clipped when an editor is open.
