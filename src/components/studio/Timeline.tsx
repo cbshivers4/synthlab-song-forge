@@ -712,6 +712,52 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
     toast.success(op === "reverse" ? "Clip reversed" : op === "normalize" ? "Clip normalized" : "Fades applied");
   };
 
+  const [qStrength, setQStrength] = useState(100);
+  const applyQuantize = () => {
+    const notes = selected?.notes ?? [];
+    if (!selected || notes.length === 0) {
+      toast("Nothing to quantize", { description: "Select an instrument, sampler or MIDI track that has notes." });
+      return;
+    }
+    const q = transport.quantize ?? 1;
+    const k = qStrength / 100;
+    setNotes(
+      selected.id,
+      notes.map((n) => {
+        const target = Math.round(n.step / q) * q;
+        const step = Math.max(0, n.step + (target - n.step) * k);
+        const shift = step - n.step;
+        return { ...n, step, ...(n.recordedEnd != null ? { recordedEnd: Math.max(step + 1, n.recordedEnd + Math.max(0, shift)) } : {}) };
+      }),
+    );
+    toast.success(`Quantized ${notes.length} notes to ${GRID_OPTIONS().find((o) => o.value === q)?.label ?? q} at ${qStrength}%`);
+  };
+  const fineNudge = (dir: -1 | 1) => {
+    if (!selected) return;
+    const d = dir * 0.25;
+    if ((selected.notes?.length ?? 0) > 0) {
+      setNotes(
+        selected.id,
+        (selected.notes ?? []).map((n) => ({
+          ...n,
+          step: Math.max(0, n.step + d),
+          ...(n.recordedEnd != null ? { recordedEnd: Math.max(0, n.recordedEnd + d) } : {}),
+        })),
+      );
+      toast(dir < 0 ? "Notes nudged earlier" : "Notes nudged later");
+    } else if (activeClip) {
+      writeActive({ start: Math.max(0, (activeClip.start ?? 0) + d) });
+      toast(dir < 0 ? "Clip nudged earlier" : "Clip nudged later");
+    } else {
+      toast("Nothing to nudge", { description: "Select a track with notes or a clip." });
+    }
+  };
+  useEffect(() => {
+    const onQ = () => applyQuantize();
+    window.addEventListener("synclab:quantize", onQ);
+    return () => window.removeEventListener("synclab:quantize", onQ);
+  });
+
   const duplicateClip = () => {
     if (!activeClip) return;
     const copy = { ...activeClip, id: `${activeClip.id}-copy${Date.now()}`, name: `${activeClip.name} COPY` };
@@ -1227,7 +1273,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
                   {(track.notes?.length ?? 0) > 0 && (
                     <>
                       <DropdownMenuItem onClick={() => noteOp("quantize")}>
-                        <Grid3x3 className="size-4" /> Quantize notes 1/16
+                        <Grid3x3 className="size-4" /> Quantize notes {GRID_OPTIONS().find((o) => o.value === (transport.quantize ?? 1))?.label ?? ""}
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => noteOp("up")}>
                         <ChevronUp className="size-4" /> Transpose +12
@@ -2291,10 +2337,10 @@ function EditToolbar() {
       <Button size="sm" variant="secondary" className="h-6 px-2 text-[10px]" title="Snap the selected track's notes to the grid (Q)" onClick={() => applyQuantize()}>
         Apply Q
       </Button>
-      <Button size="sm" variant="ghost" className="h-6 px-1.5 text-[10px]" title="Nudge the selected track earlier (1/64 note; audio clips 10 ms)" onClick={() => nudge(-1)}>
+      <Button size="sm" variant="ghost" className="h-6 px-1.5 text-[10px]" title="Nudge the selected track earlier by a 1/64 note" onClick={() => fineNudge(-1)}>
         ◀ Nudge
       </Button>
-      <Button size="sm" variant="ghost" className="h-6 px-1.5 text-[10px]" title="Nudge the selected track later (1/64 note; audio clips 10 ms)" onClick={() => nudge(1)}>
+      <Button size="sm" variant="ghost" className="h-6 px-1.5 text-[10px]" title="Nudge the selected track later by a 1/64 note" onClick={() => fineNudge(1)}>
         Nudge ▶
       </Button>
       <span className="label-xs shrink-0">TIMEBASE</span>
