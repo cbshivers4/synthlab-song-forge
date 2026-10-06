@@ -2278,6 +2278,25 @@ function EditToolbar() {
           ))}
         </SelectContent>
       </Select>
+      <Select value={String(qStrength)} onValueChange={(v) => setQStrength(Number(v))}>
+        <SelectTrigger className="h-6 w-[62px] shrink-0 font-mono text-[10px]" title="How far notes move toward the grid">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {[100, 75, 50, 25].map((v) => (
+            <SelectItem key={v} value={String(v)} className="font-mono text-[11px]">{v}%</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Button size="sm" variant="secondary" className="h-6 px-2 text-[10px]" title="Snap the selected track's notes to the grid (Q)" onClick={() => applyQuantize()}>
+        Apply Q
+      </Button>
+      <Button size="sm" variant="ghost" className="h-6 px-1.5 text-[10px]" title="Nudge the selected track earlier (1/64 note; audio clips 10 ms)" onClick={() => nudge(-1)}>
+        ◀ Nudge
+      </Button>
+      <Button size="sm" variant="ghost" className="h-6 px-1.5 text-[10px]" title="Nudge the selected track later (1/64 note; audio clips 10 ms)" onClick={() => nudge(1)}>
+        Nudge ▶
+      </Button>
       <span className="label-xs shrink-0">TIMEBASE</span>
       <Select value={transport.timebase ?? "bars"} onValueChange={(v) => setTransport({ timebase: v as "bars" | "seconds" })}>
         <SelectTrigger className="h-6 w-[78px] shrink-0 font-mono text-[10px]" title="Show the playhead position in bars or in minutes and seconds">
