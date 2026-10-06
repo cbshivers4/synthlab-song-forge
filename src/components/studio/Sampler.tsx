@@ -303,7 +303,8 @@ export function Sampler() {
       const a = Math.floor(c * buf.length), b = Math.max(a + 1, Math.floor(end * buf.length));
       const left = buf.getChannelData(0).slice(a, b);
       const right = (buf.numberOfChannels > 1 ? buf.getChannelData(1) : buf.getChannelData(0)).slice(a, b);
-      const blob = encodeWav({ left, right, sampleRate: sr });
+      const cap = { left, right, sampleRate: sr };
+      const blob = encodeWav(cap);
       const buckets = 160, size = Math.max(1, Math.floor(left.length / buckets));
       const peaks: number[] = [];
       for (let k = 0; k < buckets; k++) { let p = 0; for (let j = k * size; j < Math.min(left.length, (k + 1) * size); j++) p = Math.max(p, Math.abs(left[j] ?? 0)); peaks.push(p); }
