@@ -180,4 +180,4 @@
 - [x] Stop the timeline being squeezed when an editor panel is open: timeline keeps a 210px minimum, the editor panel now shrinks instead of pushing the toolbar's second row out of view (verified: toolbar row fully legible, nothing overlapping at 1334x986)
 
 ## Drum pad glyphs
-- [x] Show a sizeable glyph in each instrument's colour on every drum pad (PAD_STYLE map: kind → colour + icon), plus the same glyph in the display strip for the selected pad; pads use a div[role=button] so the S/M buttons are no longer nested inside a button (console nesting error gone); pad rows no longer stretch (content-start/auto-rows) — verified in preview at 1334x986
+- [x] Restore original pad sizing and replace rejected abstract glyphs with recognizable coloured instrument drawings; preserve names and S/M controls

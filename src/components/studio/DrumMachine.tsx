@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { stepsPerBar, getBeatsPerBar } from "@/lib/synclab/timebase";
 import { SkinControls, skinBackground, useImageDrop } from "@/components/studio/SkinControls";
 import { useSkin } from "@/lib/synclab/skins";
-import { Asterisk, Circle, CircleDot, CircleSmall, Copy, Crosshair, Disc3, Hand, Plus, RotateCcw, Save, Sparkles, Sun, Trash2, Triangle, Upload, Zap } from "lucide-react";
+import { Copy, Plus, RotateCcw, Save, Sparkles, Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -28,21 +28,27 @@ function readPresets(): DrumPreset[] {
 
 const BANKS = ["A", "B", "C", "D", "E", "F", "G", "H"];
 
-/** Every drum voice gets its own glyph and colour, so a pad reads as its instrument at a glance. */
-const PAD_STYLE: Record<DrumPad["kind"], { color: string; Icon: typeof CircleDot }> = {
-  kick: { color: "oklch(0.72 0.19 25)", Icon: CircleDot },
-  snare: { color: "oklch(0.80 0.16 75)", Icon: Asterisk },
-  clap: { color: "oklch(0.75 0.18 320)", Icon: Hand },
-  hat: { color: "oklch(0.84 0.13 195)", Icon: CircleSmall },
-  openhat: { color: "oklch(0.86 0.12 185)", Icon: Sun },
-  tom: { color: "oklch(0.72 0.17 145)", Icon: Circle },
-  perc: { color: "oklch(0.78 0.17 55)", Icon: Triangle },
-  rim: { color: "oklch(0.80 0.05 250)", Icon: Crosshair },
-  crash: { color: "oklch(0.88 0.10 95)", Icon: Sparkles },
-  ride: { color: "oklch(0.78 0.14 230)", Icon: Disc3 },
-  fx: { color: "oklch(0.72 0.20 300)", Icon: Zap },
+/** Instrument drawings, not abstract symbols; they fit inside the original pad layout. */
+const INSTRUMENT_COLOR: Record<DrumPad["kind"], string> = {
+  kick: "text-destructive", snare: "text-amber", clap: "text-magenta",
+  hat: "text-primary", openhat: "text-neon", tom: "text-chart-2",
+  perc: "text-chart-3", rim: "text-foreground", crash: "text-amber",
+  ride: "text-chart-1", fx: "text-magenta",
 };
-const PAD_FALLBACK = PAD_STYLE.perc;
+function DrumInstrumentIcon({ kind, className }: { kind: DrumPad["kind"]; className?: string }) {
+  const drum = kind === "snare" || kind === "tom" || kind === "rim";
+  const cymbal = kind === "hat" || kind === "openhat" || kind === "crash" || kind === "ride";
+  return (
+    <svg viewBox="0 0 40 40" className={cn("shrink-0", INSTRUMENT_COLOR[kind], className)} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      {kind === "kick" && <><circle cx="20" cy="20" r="13" /><circle cx="20" cy="20" r="10" /><circle cx="25" cy="25" r="3" /><path d="m10 30-3 6m23-6 3 6M20 31v6m-3 0h6" /></>}
+      {drum && <><ellipse cx="20" cy="12" rx="14" ry="5" /><path d="M6 12v14c0 7 28 7 28 0V12M11 16v12m9-11v13m9-14v12m-18 3-3 6m21-6 3 6" />{kind === "snare" && <path d="M7 23h26M7 26h26m-22-22 14 9m8-10-17 11" />}{kind === "rim" && <path d="m4 3 24 15M7 4l24 15" />}</>}
+      {cymbal && <><path d="M20 5v30m-7 2 7-7 7 7" /><ellipse cx="20" cy="14" rx="17" ry="4" /><path d="M15 12q5-8 10 0" />{(kind === "hat" || kind === "openhat") && <ellipse cx="20" cy={kind === "openhat" ? "22" : "18"} rx="17" ry="3" />}{kind === "crash" && <path d="m3 4 4 4m26-4-4 4M5 25l4-3m22 0 4 3" />}{kind === "ride" && <ellipse cx="20" cy="14" rx="12" ry="2" />}</>}
+      {kind === "clap" && <><path d="m17 34-8-10q-3-4 0-5l6 5-5-15q-1-4 2-4l7 15-3-16q0-4 3-2l5 17 1-12q1-4 4-2l-1 17 4-7q2-3 4-1l-5 17-5 5Z" /><path d="m4 10-3-3m34-1 3-3M3 16H1" /></>}
+      {kind === "perc" && <><ellipse cx="20" cy="7" rx="9" ry="4" /><path d="M11 7l3 16-2 12q8 4 16 0l-2-12 3-16M14 23h12M12 11l14 12M28 11 14 23" /><ellipse cx="20" cy="35" rx="8" ry="2" /></>}
+      {kind === "fx" && <><rect x="6" y="9" width="28" height="24" rx="2" /><path d="M11 16h18M12 25h3m5 0h3m5 0h1M11 4v5m9-5v5m9-5v5" /><circle cx="14" cy="16" r="2" /><circle cx="27" cy="25" r="2" /></>}
+    </svg>
+  );
+}
 
 /** Small vertical fader used for the A / H / D envelope sliders, Impact-style. */
 function VSlider({ label, value, min = 0, max = 1, onChange }: { label: string; value: number; min?: number; max?: number; onChange: (v: number) => void }) {
@@ -75,7 +81,6 @@ export function DrumMachine({ track }: { track: Track }) {
   const pads = track.pads ?? [];
   const activePattern = Math.max(0, Math.min(7, track.activeDrumPattern ?? 0));
   const focusPad = pads.find((p) => p.id === focusPadId) ?? pads[0];
-  const focusStyle = focusPad ? PAD_STYLE[focusPad.kind] ?? PAD_FALLBACK : null;
 
   const clonePads = (source: DrumPad[]) => structuredClone(source) as DrumPad[];
   const switchPattern = (next: number) => {
@@ -329,7 +334,7 @@ export function DrumMachine({ track }: { track: Track }) {
           </span>
           <div className="flex items-center gap-4 font-mono text-[10px] text-muted-foreground">
             <span className="flex items-center gap-1.5">
-              {focusStyle && <focusStyle.Icon className="size-4 shrink-0" strokeWidth={1.7} style={{ color: focusStyle.color }} aria-hidden />}
+              {focusPad && <DrumInstrumentIcon kind={focusPad.kind} className="size-5" />}
               <span className="text-foreground/80">{focusPad ? focusPad.name : "—"}</span>
             </span>
             <span>{focusPad?.sample ?? "synthesized voice"}</span>
@@ -368,13 +373,11 @@ export function DrumMachine({ track }: { track: Track }) {
             ))}
           </div>
 
-          {/* Pad grid: each pad shows its instrument glyph in that instrument's colour */}
-          <div className="grid content-start auto-rows-[86px] flex-1 grid-cols-4 gap-1.5">
+          {/* Original pad proportions, with instrument artwork beside the labels. */}
+          <div className="grid flex-1 grid-cols-4 gap-1.5">
             {pads.map((pad) => {
               const focused = focusPad?.id === pad.id;
               const hasSteps = pad.steps.some((v) => v > 0);
-              const { color, Icon } = PAD_STYLE[pad.kind] ?? PAD_FALLBACK;
-              const tint = `color-mix(in oklab, ${color} ${focused ? 22 : 11}%, transparent)`;
               return (
                 <div
                   key={pad.id}
@@ -393,23 +396,18 @@ export function DrumMachine({ track }: { track: Track }) {
                     }
                   }}
                   className={cn(
-                    "flex min-h-[86px] cursor-pointer flex-col justify-between gap-1 rounded-[3px] border p-1.5 text-left outline-none transition-colors focus-visible:ring-1 focus-visible:ring-ring",
-                    focused ? "border-primary" : "border-border hover:border-primary/50",
+                    "flex min-h-16 cursor-pointer flex-col justify-between rounded-[3px] border p-1.5 text-left outline-none transition-colors focus-visible:ring-1 focus-visible:ring-ring",
+                    focused ? "border-primary bg-primary/10" : "border-border bg-surface-2 hover:border-primary/50",
                   )}
-                  style={{
-                    background: `linear-gradient(${tint}, ${tint})`,
-                    borderColor: focused ? undefined : `color-mix(in oklab, ${color} 38%, var(--border))`,
-                  }}
                 >
-                  <span className="flex items-center justify-between gap-1">
-                    <span className="min-w-0 truncate font-mono text-[10px] font-semibold tracking-wider">{pad.name}</span>
-                    <span className="shrink-0 font-mono text-[8px] text-muted-foreground">
-                      {pad.sample ? "SMP" : pad.kit?.toUpperCase() ?? "909"}
-                      {hasSteps ? " ·" : ""}
+                  <span className="flex min-w-0 items-center gap-1.5">
+                    <DrumInstrumentIcon kind={pad.kind} className="size-8" />
+                    <span className="min-w-0">
+                      <span className="block truncate font-mono text-[10px] font-semibold tracking-wider">{pad.name}</span>
+                      <span className="block font-mono text-[8px] text-muted-foreground">
+                        {pad.sample ? "SMP" : pad.kit?.toUpperCase() ?? "909"}{hasSteps ? " ·" : ""}
+                      </span>
                     </span>
-                  </span>
-                  <span className="flex flex-1 items-center justify-center" style={{ color }}>
-                    <Icon className="size-8" strokeWidth={1.5} aria-hidden />
                   </span>
                   <span className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                     <Button
