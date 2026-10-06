@@ -149,13 +149,24 @@ export function SynthEditor({ track }: { track: Track }) {
         </Button>
       </div>
 
-      {/* Mai Tai-style main surface */}
-      <div className="grid gap-3 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
+      <Tabs defaultValue="oscillators" className="min-w-0">
+        <TabsList aria-label="Synth features" className="flex h-auto w-full flex-wrap justify-start gap-1">
+          <TabsTrigger value="oscillators">Oscillators</TabsTrigger>
+          <TabsTrigger value="filters">Filters</TabsTrigger>
+          <TabsTrigger value="envelopes">Envelopes</TabsTrigger>
+          <TabsTrigger value="lfos">LFOs</TabsTrigger>
+          <TabsTrigger value="global">Global</TabsTrigger>
+          <TabsTrigger value="matrix">Mod Matrix</TabsTrigger>
+          <TabsTrigger value="fx">Effects</TabsTrigger>
+          <TabsTrigger value="arp">Arpeggiator</TabsTrigger>
+          <TabsTrigger value="chords">Chords / Scale</TabsTrigger>
+        </TabsList>
+        <TabsContent value="oscillators" className="pt-3">
         {/* Oscillators + noise */}
-        <div className="space-y-3">
+        <div className="grid min-w-0 gap-3 lg:grid-cols-2">
           {patch.oscillators.map((osc, i) => (
             <div key={i} className="rounded-[3px] border border-border bg-surface/80">
-              <div className="flex items-center gap-2 border-b border-border px-2 py-1">
+              <div className="flex flex-wrap items-center gap-2 border-b border-border px-2 py-1">
                 <span className={`size-1.5 rounded-full ${osc.on ? "bg-primary" : "bg-muted-foreground/40"}`} />
                 <span className="font-mono text-[10px] font-semibold uppercase tracking-widest">Osc {i + 1}</span>
                 <div className="ml-auto flex gap-0.5">
@@ -205,9 +216,9 @@ export function SynthEditor({ track }: { track: Track }) {
             </div>
           </div>
         </div>
+        </TabsContent>
 
-        {/* Filter + LFOs */}
-        <div className="space-y-3">
+        <TabsContent value="filters" className="space-y-3 pt-3">
           <div className="rounded-[3px] border border-border bg-surface/80">
             <div className="flex items-center gap-2 border-b border-border px-2 py-1">
               <span className="size-1.5 rounded-full bg-primary" />
@@ -251,6 +262,9 @@ export function SynthEditor({ track }: { track: Track }) {
               <Knob label="RES" midiTarget={{ id: track.id, param: "synth:filter2:resonance" }} min={0} max={28} step={0.5} value={f2.resonance} onChange={(v) => set({ filter2: { ...f2, resonance: v } })} />
             </div>
           </div>
+        </TabsContent>
+        <TabsContent value="lfos" className="pt-3">
+          <div className="grid min-w-0 gap-3 lg:grid-cols-2">
           {patch.lfos.map((lfo, i) => (
             <div key={i} className="rounded-[3px] border border-border bg-surface/80">
               <div className="flex items-center gap-2 border-b border-border px-2 py-1">
@@ -289,14 +303,16 @@ export function SynthEditor({ track }: { track: Track }) {
             </div>
           ))}
         </div>
+        </TabsContent>
 
         {/* Envelope graphs */}
-        <div className="space-y-3">
+        <TabsContent value="envelopes" className="pt-3">
+        <div className="grid min-w-0 gap-3 lg:grid-cols-3">
           <div className="rounded-[3px] border border-border bg-surface/80">
             <div className="border-b border-border px-2 py-1"><span className="font-mono text-[10px] font-semibold uppercase tracking-widest">Amp Env</span></div>
             <div className="space-y-1 p-2">
               <EnvelopeGraph env={patch.amp} />
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 {(["attack", "decay", "sustain", "release"] as const).map((k) => (
                   <Knob key={k} label={k.slice(0, 3).toUpperCase()} midiTarget={{ id: track.id, param: `synth:amp:${k}` }} min={0} max={k === "sustain" ? 1 : 3} value={patch.amp[k]} onChange={(v) => set({ amp: { ...patch.amp, [k]: v } })} />
                 ))}
@@ -319,7 +335,7 @@ export function SynthEditor({ track }: { track: Track }) {
             <div className="border-b border-border px-2 py-1"><span className="font-mono text-[10px] font-semibold uppercase tracking-widest">Env 3 · Mod</span></div>
             <div className="space-y-1 p-2">
               <EnvelopeGraph env={modEnv} />
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 {(["attack", "decay", "sustain", "release"] as const).map((k) => (
                   <Knob key={k} label={k.slice(0, 3).toUpperCase()} midiTarget={{ id: track.id, param: `synth:modEnv:${k}` }} min={0} max={k === "sustain" ? 1 : 3} value={modEnv[k]} onChange={(v) => set({ modEnv: { ...modEnv, [k]: v } })} />
                 ))}
@@ -328,12 +344,14 @@ export function SynthEditor({ track }: { track: Track }) {
             </div>
           </div>
         </div>
+        </TabsContent>
 
         {/* Global column */}
-        <div className="rounded-[3px] border border-border bg-surface/80 xl:w-36">
+        <TabsContent value="global" className="pt-3">
+        <div className="rounded-[3px] border border-border bg-surface/80">
           <div className="border-b border-border px-2 py-1"><span className="font-mono text-[10px] font-semibold uppercase tracking-widest">Global</span></div>
-          <div className="flex flex-wrap gap-2 p-2 xl:flex-col xl:items-center">
-            <div className="flex gap-1 xl:flex-col">
+          <div className="flex flex-wrap items-end gap-3 p-2">
+            <div className="flex gap-1">
               {(["poly", "mono", "legato"] as const).map((mode) => (
                 <Button
                   key={mode}
@@ -361,15 +379,7 @@ export function SynthEditor({ track }: { track: Track }) {
             <Knob label="ANALOG" midiTarget={{ id: track.id, param: "synth:analog" }} value={patch.analog ?? 0} onChange={(v) => set({ analog: v })} />
           </div>
         </div>
-      </div>
-
-      <Tabs defaultValue="matrix">
-        <TabsList>
-          <TabsTrigger value="matrix">Mod Matrix</TabsTrigger>
-          <TabsTrigger value="fx">Effects</TabsTrigger>
-          <TabsTrigger value="arp">Arpeggiator</TabsTrigger>
-          <TabsTrigger value="chords">Chords / Scale</TabsTrigger>
-        </TabsList>
+        </TabsContent>
 
         <TabsContent value="matrix" className="space-y-3 pt-3">
           <div className="panel flex flex-wrap items-center gap-4 p-3">
