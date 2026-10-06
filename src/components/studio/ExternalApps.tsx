@@ -78,7 +78,7 @@ export function ExternalApps() {
     } catch { /* user cancelled */ }
   };
 
-  const noteTracks = tracks.filter((t) => t.kind === "synth" || t.kind === "midi");
+  const noteTracks = tracks.filter((t) => t.kind === "instrument" || t.kind === "midi");
   const db = level > 0 ? 20 * Math.log10(level) : -Infinity;
 
   return (
