@@ -134,7 +134,7 @@ function Waveform({ track, onSlice }: { track: Track; onSlice: (i: number) => vo
 export function Sampler() {
   const skin = useSkin("sample");
   const drop = useImageDrop("sample");
-  const { tracks, selected, select, addTrack, addClip, loadSample, updateSampler, clearSample, stopSamples, previewNote } =
+  const { tracks, selected, select, addTrack, addClip, loadSample, updateSampler, clearSample, stopSamples, previewNote, setPanel } =
     useStudio();
   const [over, setOver] = useState(false);
   /** chop pad currently held down */
