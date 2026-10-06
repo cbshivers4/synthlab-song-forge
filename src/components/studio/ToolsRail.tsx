@@ -1,5 +1,6 @@
 import {
   AudioLines,
+  AppWindow,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -54,6 +55,7 @@ const TOOLS: Tool[] = [
   { id: "master", label: "Mastering", icon: <Gauge className="size-4" />, panel: "mastering" },
   { id: "live", label: "Live View", icon: <Radio className="size-4" />, panel: "live" },
   { id: "looper", label: "Live Looper", icon: <Disc3 className="size-4" />, panel: "looper" },
+  { id: "apps", label: "Other Apps", icon: <AppWindow className="size-4" />, panel: "apps" },
   { id: "reference", label: "Reference Analyzer", icon: <FileSearch className="size-4" />, panel: "reference" },
 
 ];
@@ -71,7 +73,7 @@ const SECTIONS: Section[] = [
   { id: "perform", label: "Perform", tools: ["live", "looper"].map(tool) },
   { id: "instruments", label: "Instruments", tools: ["synth", "drums", "beat", "chop", "sampler"].map(tool) },
   { id: "mix", label: "Mix & Master", tools: ["mixer", "master", "reference", "notes"].map(tool) },
-  { id: "plugins", label: "Plugins", tools: ["plugins"].map(tool) },
+  { id: "plugins", label: "Plugins", tools: ["plugins", "apps"].map(tool) },
 ];
 
 /** Pinned to the bottom of the left menu while a file previews: stop button, name, live waveform scope. */

@@ -42,6 +42,7 @@ import { DesktopWebsiteStatus } from "@/components/studio/DesktopWebsiteStatus";
 import { ReferenceAnalyzer } from "@/components/studio/ReferenceAnalyzer";
 import { LiveView } from "@/components/studio/LiveView";
 import { LiveLooperView } from "@/components/studio/LiveLooperView";
+import { ExternalApps } from "@/components/studio/ExternalApps";
 import { Bot } from "lucide-react";
 import { AppProvider, useApp, useMaybeApp } from "@/lib/synclab/app-state";
 import { PlanProvider } from "@/lib/synclab/plan";
@@ -311,6 +312,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
       {panel === "reference" && <ReferenceAnalyzer />}
       {panel === "live" && <LiveView />}
       {panel === "looper" && <LiveLooperView />}
+      {panel === "apps" && <ExternalApps />}
 
       </div>
 
