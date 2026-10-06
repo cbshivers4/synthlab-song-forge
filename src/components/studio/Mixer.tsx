@@ -371,10 +371,10 @@ const CONSOLE_STYLES: ConsoleStyle[] = [
   {
     id: "studiopro",
     name: "Studio Pro",
-    desc: "Flat dark console with blue accent — the default desk",
-    a: "oklch(0.35 0.01 260)",
+    desc: "One solid dark grey with blue accent — the default desk",
+    a: "oklch(0.31 0.01 260)",
     b: "oklch(0.31 0.01 260)",
-    c: "oklch(0.27 0.01 260)",
+    c: "oklch(0.31 0.01 260)",
     accent: "oklch(0.72 0.15 235)",
     screws: false,
   },
@@ -508,9 +508,9 @@ function VuMeter({ level, label }: { level: number; label: string }) {
   );
 }
 
-/** Chunky console fader thumb overrides for the shadcn slider. */
+/** Chunky console fader thumb overrides for the shadcn slider (cap face + centre line live in styles.css). */
 const FADER_CAP =
-  "mx-fader [&_[role=slider]]:h-6 [&_[role=slider]]:w-9 [&_[role=slider]]:rounded-[3px] [&_[role=slider]]:border-black/70 [&_[role=slider]]:shadow-[0_2px_4px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.35)]";
+  "mx-fader [&_[role=slider]]:h-6 [&_[role=slider]]:w-9 [&_[role=slider]]:rounded-[3px]";
 
 function SectionLabel({ children, className }: { children?: ReactNode; className?: string }) {
   return (
@@ -942,8 +942,8 @@ function Strip({
       )}
       style={{
         background: selected
-          ? `linear-gradient(${tint(20)}, ${tint(6)}), ${PANEL}`
-          : `linear-gradient(${tint(10)}, ${tint(2)}), ${PANEL}`,
+          ? `linear-gradient(${tint(16)}, ${tint(16)}), ${PANEL}`
+          : `linear-gradient(${tint(8)}, ${tint(8)}), ${PANEL}`,
         boxShadow: `inset 4px 0 0 0 ${t.color}, inset 0 1px 0 0 rgba(255,255,255,0.08)${selected ? `, inset 0 0 0 1px ${tint(45)}` : ""}`,
       }}
     >
@@ -1222,7 +1222,7 @@ function BusStrip({
   return (
     <div
       className="flex w-[116px] shrink-0 flex-col border-r border-black/50"
-      style={{ background: `linear-gradient(${tint(10)}, ${tint(3)}), ${PANEL}`, boxShadow: `inset 4px 0 0 0 ${color}, inset 0 1px 0 0 rgba(255,255,255,0.08)` }}
+      style={{ background: `linear-gradient(${tint(8)}, ${tint(8)}), ${PANEL}`, boxShadow: `inset 4px 0 0 0 ${color}, inset 0 1px 0 0 rgba(255,255,255,0.08)` }}
     >
       <div className={cn(ROW.head, "flex items-center justify-between border-b border-black/50 px-1.5 font-mono text-[8px] uppercase tracking-widest text-muted-foreground")} style={{ background: tint(16) }}>
         <Screw />
@@ -1454,7 +1454,7 @@ function MasterStrip({ level: peak }: { level: number }) {
     <div
       className="flex w-[210px] shrink-0 flex-col border-l-2 border-black/60"
       style={{
-        background: `linear-gradient(color-mix(in oklab, ${color} 12%, transparent), transparent), ${PANEL}`,
+        background: `linear-gradient(color-mix(in oklab, ${color} 12%, transparent), color-mix(in oklab, ${color} 12%, transparent)), ${PANEL}`,
         boxShadow: `inset 4px 0 0 0 ${color}, inset 0 1px 0 0 rgba(255,255,255,0.08)`,
       }}
     >
