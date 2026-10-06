@@ -38,8 +38,9 @@ export function MasterMeter() {
 
   useEffect(() => {
     const hold = [{ v: 0, t: 0 }, { v: 0, t: 0 }];
-    const primary = cssVar("--primary", "oklch(0.8 0.15 200)");
-    const warn = cssVar("--chart-4", "oklch(0.85 0.17 85)");
+    const green = cssVar("--chart-5", "oklch(0.78 0.18 145)");
+    const yellow = cssVar("--chart-3", "oklch(0.84 0.16 85)");
+    const orange = cssVar("--meter-clip-orange", "oklch(0.75 0.19 55)");
     const danger = cssVar("--destructive", "oklch(0.63 0.24 25)");
     const muted = cssVar("--border", "oklch(0.3 0 0)");
     const accent2 = cssVar("--chart-2", "oklch(0.75 0.15 330)");
@@ -79,11 +80,15 @@ export function MasterMeter() {
           c.fillStyle = muted; c.globalAlpha = 0.35; c.fillRect(0, y, w, barH); c.globalAlpha = 1;
           const pw = dbPos(toDb(peak)) * w;
           const g = c.createLinearGradient(0, 0, w, 0);
-          g.addColorStop(0, primary); g.addColorStop(dbPos(-12), primary); g.addColorStop(dbPos(-3), warn); g.addColorStop(dbPos(0), danger);
-          c.fillStyle = g; c.globalAlpha = 0.45; c.fillRect(0, y, pw, barH); c.globalAlpha = 1;
-          c.fillRect(0, y + barH * 0.25, dbPos(toDb(rms)) * w, barH * 0.5);
+          g.addColorStop(0, green);
+          g.addColorStop(dbPos(-12), green);
+          g.addColorStop(dbPos(-6), yellow);
+          g.addColorStop(dbPos(-3), orange);
+          g.addColorStop(dbPos(0.5), danger);
+          c.fillStyle = g; c.globalAlpha = 0.9; c.fillRect(0, y, pw, barH); c.globalAlpha = 1;
+          c.fillStyle = g; c.globalAlpha = 0.6; c.fillRect(0, y + barH * 0.25, dbPos(toDb(rms)) * w, barH * 0.5); c.globalAlpha = 1;
           const hx = dbPos(toDb(hd.v)) * w;
-          c.fillStyle = hd.v >= CLIP ? danger : warn; c.fillRect(Math.max(0, hx - 2), y, 2, barH);
+          c.fillStyle = hd.v >= CLIP ? danger : yellow; c.fillRect(Math.max(0, hx - 2), y, 2, barH);
         }
         // 0 dB and -12 marks
         c.fillStyle = muted;
@@ -99,7 +104,7 @@ export function MasterMeter() {
         const chans = ch === "stereo" ? [0, 1] : ch === "left" ? [0] : [1];
         c.lineWidth = 1.2;
         for (const i of chans) {
-          c.strokeStyle = i === 0 ? primary : accent2;
+          c.strokeStyle = i === 0 ? green : accent2;
           c.globalAlpha = chans.length > 1 ? 0.8 : 1;
           c.beginPath();
           if (m === "osc") {
