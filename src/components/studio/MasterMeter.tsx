@@ -7,6 +7,10 @@ type ScopeChan = "stereo" | "left" | "right";
 const FPS_MS = 50; // 20 fps, matches the other meters
 const HOLD_MS = 1500;
 const CLIP = 0.999;
+/** a latched clip warning lets go once the channel holds below this (≈ −1 dBFS) ... */
+const CLIP_CLEAR = 0.891;
+/** ... for this long, so a gap between hits doesn't dismiss it */
+const CLIP_CLEAR_MS = 900;
 
 function cssVar(name: string, fallback: string) {
   if (typeof window === "undefined") return fallback;
@@ -36,6 +40,7 @@ export function MasterMeter() {
   const opts = useRef({ mode, chan });
   opts.current = { mode, chan };
   const clipRef = useRef<[boolean, boolean]>([false, false]);
+  const clearSinceRef = useRef<[number, number]>([0, 0]);
   const holdDbRef = useRef<[number, number]>([-100, -100]);
 
   useEffect(() => {
@@ -77,7 +82,17 @@ export function MasterMeter() {
           const rms = d ? Math.sqrt(sum / d.length) : 0;
           const hd = hold[ch]!;
           if (peak >= hd.v || now - hd.t > HOLD_MS) { hd.v = peak; hd.t = now; }
-          if (peak >= CLIP && !clipRef.current[ch]) { clipRef.current[ch] = true; clipChanged = true; }
+          if (peak >= CLIP && !clipRef.current[ch]) {
+            clipRef.current[ch] = true; clearSinceRef.current[ch] = 0; clipChanged = true;
+          } else if (clipRef.current[ch]) {
+            // auto-dismiss: the warning releases itself once the level stays under the clip zone
+            if (peak < CLIP_CLEAR) {
+              if (!clearSinceRef.current[ch]) clearSinceRef.current[ch] = now;
+              else if (now - clearSinceRef.current[ch] >= CLIP_CLEAR_MS) {
+                clipRef.current[ch] = false; clearSinceRef.current[ch] = 0; clipChanged = true;
+              }
+            } else clearSinceRef.current[ch] = 0;
+          }
           const y = ch * (barH + 4);
           c.fillStyle = muted; c.globalAlpha = 0.35; c.fillRect(0, y, w, barH); c.globalAlpha = 1;
           const pw = dbPos(toDb(peak)) * w;
@@ -149,7 +164,7 @@ export function MasterMeter() {
     return () => window.clearInterval(id);
   }, []);
 
-  const resetClip = () => { clipRef.current = [false, false]; setClip([false, false]); };
+  const resetClip = () => { clipRef.current = [false, false]; clearSinceRef.current = [0, 0]; setClip([false, false]); };
   const anyClip = clip[0] || clip[1];
 
   return (
@@ -181,7 +196,7 @@ export function MasterMeter() {
             type="button"
             onClick={resetClip}
             className="animate-pulse rounded-[2px] bg-destructive px-1 py-0.5 text-center font-mono text-[9px] font-bold tracking-wider text-destructive-foreground"
-            title="Master is clipping — lower the master level, or click to reset this warning"
+            title="Master is clipping — this clears on its own once the level drops below the clip zone, or click to reset it now"
           >
             CLIPPING — LOWER MASTER / CLICK TO RESET
           </button>
