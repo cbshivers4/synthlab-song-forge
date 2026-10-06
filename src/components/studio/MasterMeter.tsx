@@ -32,9 +32,11 @@ export function MasterMeter() {
   const [mode, setMode] = useState<ScopeMode>("osc");
   const [chan, setChan] = useState<ScopeChan>("stereo");
   const [clip, setClip] = useState<[boolean, boolean]>([false, false]);
+  const [holdDb, setHoldDb] = useState<[number, number]>([-100, -100]);
   const opts = useRef({ mode, chan });
   opts.current = { mode, chan };
   const clipRef = useRef<[boolean, boolean]>([false, false]);
+  const holdDbRef = useRef<[number, number]>([-100, -100]);
 
   useEffect(() => {
     const hold = [{ v: 0, t: 0 }, { v: 0, t: 0 }];
@@ -94,6 +96,11 @@ export function MasterMeter() {
         c.fillStyle = muted;
         for (const db of [-48, -36, -24, -18, -12, -6, -3, 0]) c.fillRect(dbPos(db) * w, 0, 1, h);
         if (clipChanged) setClip([...clipRef.current] as [boolean, boolean]);
+        const hd0 = toDb(hold[0]!.v), hd1 = toDb(hold[1]!.v);
+        if (hd0 !== holdDbRef.current[0] || hd1 !== holdDbRef.current[1]) {
+          holdDbRef.current = [hd0, hd1];
+          setHoldDb([hd0, hd1]);
+        }
       }
 
       // ---- scope
@@ -161,6 +168,24 @@ export function MasterMeter() {
           </button>
         </div>
         <canvas ref={meterRef} className="h-5 w-full" aria-label="Master stereo level meter" role="img" />
+        <div className="flex items-center justify-between font-mono text-[9px] leading-none" aria-label="Peak hold levels">
+          <span className={clip[0] ? "font-bold text-destructive" : "text-foreground/80"}>
+            L {holdDb[0] <= -99 ? "-∞" : `${holdDb[0] > 0 ? "+" : ""}${holdDb[0].toFixed(1)}`} dB
+          </span>
+          <span className={clip[1] ? "font-bold text-destructive" : "text-foreground/80"}>
+            R {holdDb[1] <= -99 ? "-∞" : `${holdDb[1] > 0 ? "+" : ""}${holdDb[1].toFixed(1)}`} dB
+          </span>
+        </div>
+        {anyClip && (
+          <button
+            type="button"
+            onClick={resetClip}
+            className="animate-pulse rounded-[2px] bg-destructive px-1 py-0.5 text-center font-mono text-[9px] font-bold tracking-wider text-destructive-foreground"
+            title="Master is clipping — lower the master level, or click to reset this warning"
+          >
+            CLIPPING — LOWER MASTER / CLICK TO RESET
+          </button>
+        )}
         <div className="relative h-3 font-mono text-[8px] leading-none text-muted-foreground" aria-hidden>
           {SCALE_TICKS.map((db) => {
             const p = dbPos(db);
