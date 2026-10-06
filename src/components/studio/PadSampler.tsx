@@ -672,8 +672,8 @@ export function PadSampler() {
                         background: active
                           ? `linear-gradient(145deg, ${c}, color-mix(in hsl, ${c} 55%, transparent))`
                           : sel === id
-                            ? `linear-gradient(145deg, color-mix(in hsl, ${c} 55%, transparent), color-mix(in hsl, ${c} 22%, transparent))`
-                            : `linear-gradient(145deg, color-mix(in hsl, ${c} 30%, transparent), color-mix(in hsl, ${c} 10%, transparent))`,
+                            ? `linear-gradient(145deg, color-mix(in oklab, ${c} 65%, var(--sampler-pad-face)), color-mix(in oklab, ${c} 40%, var(--sampler-pad-face)))`
+                            : `linear-gradient(145deg, color-mix(in oklab, ${c} 45%, var(--sampler-pad-face)), color-mix(in oklab, ${c} 25%, var(--sampler-pad-face)))`,
                         boxShadow: active ? `0 0 18px ${c}` : sel === id ? `0 0 0 1px ${c}` : undefined,
                         opacity: over === id ? 0.85 : 1,
                       }
@@ -688,7 +688,7 @@ export function PadSampler() {
               } ${recording ? "animate-pulse" : ""}`}
             >
               <span className="relative z-10 font-mono text-[9px]" style={{ color: pad ? "hsl(0 0% 100% / 0.75)" : undefined }}>
-                <span className={pad ? "" : "text-muted-foreground"}>
+                <span className={pad ? "" : "text-foreground"}>
                   {BANKS[bank]}
                   {i + 1} · {KEYMAP[i]?.toUpperCase()}
                 </span>
