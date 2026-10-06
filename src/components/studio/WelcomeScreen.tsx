@@ -26,7 +26,7 @@ import { openHelp } from "@/components/studio/HelpCenter";
 
 
 const FEATURES: { icon: React.ReactNode; title: string; body: string }[] = [
-  { icon: <Music2 className="size-4" />, title: "Flagship Synth", body: "4 oscillators, dual filters, FM, mod matrix, 67 presets." },
+  { icon: <Music2 className="size-4" />, title: "Synth", body: "4 oscillators, dual filters, FM, mod matrix, 67 presets." },
   { icon: <Disc3 className="size-4" />, title: "Drum Machine", body: "24 kits — 909, 808, LinnDrum and more — with a step sequencer." },
   { icon: <Grid2x2 className="size-4" />, title: "Pad Sampler", body: "64 performance pads, live mic sampling, slice-to-pads, patterns." },
   { icon: <Scissors className="size-4" />, title: "Sample Chopper", body: "Drop any MP3/WAV, trim, chop and map slices to keys." },
