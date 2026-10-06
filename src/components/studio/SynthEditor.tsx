@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { SkinControls, skinBackground, useImageDrop } from "@/components/studio/SkinControls";
 import { useSkin } from "@/lib/synclab/skins";
-import { Plus, Save, Trash2 } from "lucide-react";
+import { Piano, Plus, Save, Trash2 } from "lucide-react";
+import { Keyboard } from "./Keyboard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -70,6 +71,7 @@ function EnvelopeGraph({ env }: { env: EnvelopeParams }) {
 export function SynthEditor({ track }: { track: Track }) {
   const { updatePatch, savePreset, loadPreset, userPresets, previewNote } = useStudio();
   const [presetName, setPresetName] = useState("");
+  const [showKeyboard, setShowKeyboard] = useState(false);
   const patch = track.patch as SynthPatch;
   if (!patch) return null;
   const set = (p: Partial<SynthPatch>) => updatePatch(track.id, p);
@@ -137,6 +139,9 @@ export function SynthEditor({ track }: { track: Track }) {
         </Button>
         <Button variant="secondary" onClick={() => previewNote(track.id, 60)}>
           Audition
+        </Button>
+        <Button variant={showKeyboard ? "secondary" : "outline"} aria-pressed={showKeyboard} onClick={() => setShowKeyboard((value) => !value)}>
+          <Piano className="size-4" /> {showKeyboard ? "Hide keyboard" : "Show keyboard"}
         </Button>
         <Button
           variant="outline"
@@ -575,6 +580,7 @@ export function SynthEditor({ track }: { track: Track }) {
           <ChordScale trackId={track.id} onPlay={(midi) => previewNote(track.id, midi)} />
         </TabsContent>
       </Tabs>
+      {showKeyboard && <div className="min-w-0 border-t border-border pt-3" aria-label="Synth keyboard"><Keyboard track={track} /></div>}
     </div>
   );
 }

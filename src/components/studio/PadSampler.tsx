@@ -6,6 +6,7 @@ import {
   Grid2x2,
   Mic,
   Play,
+  Piano,
   Scissors,
   Sparkles,
   Square,
@@ -26,6 +27,7 @@ import { LiveWave } from "@/components/studio/LiveWave";
 import { getPadBank, setPadBank, subscribePadBank, type SavedPad } from "@/lib/synclab/pad-session";
 import { renderStarterSamples } from "@/lib/synclab/starter-samples";
 import { MidiLearnButton } from "./MidiLearn";
+import { Keyboard } from "./Keyboard";
 
 const BANKS = ["A", "B", "C", "D"] as const;
 /** Koala-style bank colors — each bank tints its loaded pads. */
@@ -162,6 +164,7 @@ export function PadSampler() {
     });
   }, []);
   const [bank, setBank] = useState(0);
+  const [showKeyboard, setShowKeyboard] = useState(false);
   const [sel, setSel] = useState(0);
   const [hit, setHit] = useState<number | null>(null);
   const [seqOn, setSeqOn] = useState(false);
@@ -219,7 +222,7 @@ export function PadSampler() {
   const selPad = pads[sel];
 
   const trigger = useCallback(
-    (i: number, velocity = 1, when?: number) => {
+    (i: number, velocity = 1, when?: number, midi = 60) => {
       const pad = padsRef.current[i];
       if (!pad) return;
       const id = ensureTrack();
@@ -239,14 +242,14 @@ export function PadSampler() {
           attack: pad.attack,
           release: pad.release,
         },
-        60,
+        midi,
         when,
         velocity,
         undefined,
         pad.choke ? `choke${pad.choke}` : `pad${i}`,
       );
       // While the transport records, drop the hit into the sampler track's take on the timeline.
-      captureNote(id, 60, velocity);
+      captureNote(id, midi, velocity);
       const delay = Math.max(0, ((when ?? engine.init().currentTime) - engine.init().currentTime) * 1000);
       window.setTimeout(() => {
         setHit(i);
@@ -483,6 +486,9 @@ export function PadSampler() {
           ))}
         </div>
         <div className="ml-auto flex flex-wrap gap-1">
+          <Button size="sm" variant={showKeyboard ? "secondary" : "ghost"} className="h-7 gap-1.5" aria-pressed={showKeyboard} onClick={() => setShowKeyboard((value) => !value)}>
+            <Piano className="size-3.5" /> {showKeyboard ? "Hide keyboard" : "Show keyboard"}
+          </Button>
           <Button
             size="sm"
             variant={seqOn ? "secondary" : "ghost"}
@@ -923,6 +929,8 @@ export function PadSampler() {
           </div>
         </>
       )}
+
+      {showKeyboard && <div className="min-w-0 border-t border-border pt-3" aria-label="Sample pads keyboard"><Keyboard disabled={!selPad} onPlay={(midi, velocity) => trigger(sel, velocity, undefined, midi)} /></div>}
 
       <p className="text-xs text-muted-foreground">
         Pads play through their own mixer channel, so you can fade them, send them to reverb and add effects like any
