@@ -28,6 +28,7 @@ import { getInputChannel, getInputGainDb, setInputChannel, setInputGainDb, setOu
 import { openExport } from "@/components/studio/ExportDialog";
 import { DesktopPanel } from "@/components/studio/DesktopPanel";
 import { PluginManager } from "@/components/studio/PluginManager";
+import { AudioInterfaceCard } from "@/components/studio/AudioInterfaceCard";
 import { replayMobileTour, saveMobileAccessibility, useMobileAccessibility } from "@/lib/synclab/mobile-accessibility";
 import { useIsMobile } from "@/hooks/use-mobile";
 
