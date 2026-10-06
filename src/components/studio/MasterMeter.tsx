@@ -17,6 +17,10 @@ function cssVar(name: string, fallback: string) {
 const toDb = (v: number) => (v <= 0.00001 ? -100 : 20 * Math.log10(v));
 /** maps -60..+3 dBFS onto 0..1 */
 const dbPos = (db: number) => Math.max(0, Math.min(1, (db + 60) / 63));
+/** every tick drawn under the meter */
+const SCALE_TICKS = [-60, -48, -36, -24, -18, -12, -6, -3, 0, 3];
+/** only these get printed numbers — the rest stay as plain ticks so they never collide */
+const SCALE_LABELS = [-60, -48, -36, -24, -12, -6, 0];
 
 /**
  * Stereo master meter (peak, RMS, peak hold, clip latch) plus oscilloscope / spectrum,
@@ -138,7 +142,7 @@ export function MasterMeter() {
 
   return (
     <div className="flex items-stretch gap-2 rounded-[3px] border border-border bg-background px-2 py-1 shadow-[inset_0_1px_3px_oklch(0_0_0/0.6)]">
-      <div className="flex w-36 flex-col justify-center gap-0.5">
+      <div className="flex w-48 flex-col justify-center gap-0.5">
         <div className="flex items-center justify-between">
           <span className="label-xs">MASTER L/R</span>
           <button
@@ -153,15 +157,26 @@ export function MasterMeter() {
         </div>
         <canvas ref={meterRef} className="h-5 w-full" aria-label="Master stereo level meter" role="img" />
         <div className="relative h-3 font-mono text-[8px] leading-none text-muted-foreground" aria-hidden>
-          {[-60, -48, -36, -24, -18, -12, -6, -3, 0, 3].map((db) => (
-            <span key={db} className="absolute top-0 flex -translate-x-1/2 flex-col items-center" style={{ left: `${dbPos(db) * 100}%` }}>
-              <span className="h-1 w-px bg-muted-foreground/70" />
-              <span className={db >= 0 ? "text-destructive" : db >= -6 ? "text-foreground/80" : undefined}>{db > 0 ? `+${db}` : db}</span>
-            </span>
-          ))}
+          {SCALE_TICKS.map((db) => {
+            const p = dbPos(db);
+            const shift = p < 0.05 ? "" : p > 0.95 ? "-translate-x-full" : "-translate-x-1/2";
+            return (
+              <span key={db}>
+                <span className="absolute top-0 h-1 w-px -translate-x-1/2 bg-muted-foreground/70" style={{ left: `${p * 100}%` }} />
+                {SCALE_LABELS.includes(db) && (
+                  <span
+                    className={`absolute top-1 ${shift} ${db >= 0 ? "text-destructive" : db >= -6 ? "text-foreground/80" : ""}`}
+                    style={{ left: `${p * 100}%` }}
+                  >
+                    {db > 0 ? `+${db}` : db}
+                  </span>
+                )}
+              </span>
+            );
+          })}
         </div>
       </div>
-      <div className="flex w-40 flex-col gap-0.5">
+      <div className="flex w-60 flex-col gap-0.5">
         <div className="flex items-center gap-1 font-mono text-[9px] tracking-wider">
           {(["osc", "spectrum"] as const).map((m) => (
             <button key={m} type="button" onClick={() => setMode(m)} aria-pressed={mode === m}
@@ -178,7 +193,7 @@ export function MasterMeter() {
             ))}
           </span>
         </div>
-        <canvas ref={scopeRef} className="h-7 w-full" aria-label="Master oscilloscope and spectrum" role="img" />
+        <canvas ref={scopeRef} className="h-8 w-full" aria-label="Master oscilloscope and spectrum" role="img" />
       </div>
     </div>
   );

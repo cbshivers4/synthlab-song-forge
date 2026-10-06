@@ -167,3 +167,6 @@
 - [x] Comping: replaced takes kept on the new clip; clip menu "Takes" swaps a region (split first to comp pieces); saved with project
 - [x] Piano roll: pitch-bend + mod-wheel lanes (drive synth), live MIDI pitch wheel, STRUM up/down; note sub-step timing now audible
 - [ ] Click-through test of the new menus/lanes in the preview and listening test on real speakers
+
+## Transport meter and scope
+- [x] Widen the transport master meter and scope, keep the dB scale readable, and check nothing is cut off at 1280/1100/900
