@@ -57,6 +57,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { PlanBadge } from "@/lib/synclab/plan";
 import { openHelp } from "@/components/studio/HelpCenter";
 import { MasterMeter } from "@/components/studio/MasterMeter";
+import { IdeaRecorder } from "@/components/studio/IdeaRecorder";
 import { useEffect, useState } from "react";
 import { Keyboard, SkipBack } from "lucide-react";
 import synclabLogoAsset from "@/assets/synclab-logo-neon.jpg.asset.json";
@@ -322,6 +323,7 @@ export function TopBar() {
         {!isMobile && <MasterMeter />}
 
         <div className="ml-auto flex shrink-0 items-center gap-1">
+          <IdeaRecorder compact={isMobile} />
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline" size="icon" className={isMobile ? "size-11" : "size-8"} aria-label="Transport color and wallpaper" title="Transport color and wallpaper"><Palette className="size-4" /></Button>
