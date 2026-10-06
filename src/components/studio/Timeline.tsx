@@ -2941,7 +2941,7 @@ export function Timeline() {
           <img
             src={synclabLogo}
             alt=""
-            className="absolute left-1/2 top-0 w-[min(360px,38%)] -translate-x-[calc(50%-122px)] -translate-y-1/2 select-none opacity-[0.06]"
+            className="absolute left-1/2 top-0 w-[min(360px,38%)] -translate-x-[calc(50%-147px)] -translate-y-1/2 select-none opacity-[0.06]"
           />
         </div>
         {tracks.map((t, i) => {
@@ -3019,15 +3019,15 @@ export function Timeline() {
           <div
             className="pointer-events-none absolute inset-y-0 border-x border-amber-400/30 bg-amber-400/[0.05]"
             style={{
-              left: `calc(244px + (100% - 244px) * ${Math.min(transport.exportStart, transport.exportEnd - 1) / totalSteps})`,
-              width: `calc((100% - 244px) * ${(Math.max(transport.exportEnd, transport.exportStart + 1) - Math.min(transport.exportStart, transport.exportEnd - 1)) / totalSteps})`,
+              left: `calc(294px + (100% - 294px) * ${Math.min(transport.exportStart, transport.exportEnd - 1) / totalSteps})`,
+              width: `calc((100% - 294px) * ${(Math.max(transport.exportEnd, transport.exportStart + 1) - Math.min(transport.exportStart, transport.exportEnd - 1)) / totalSteps})`,
             }}
           />
         )}
         {/* playhead line across every track — always visible so you can see where Paste lands */}
         <div
           className={`pointer-events-none absolute top-0 bottom-0 z-10 w-[2px] -translate-x-1/2 ${transport.playing ? "bg-primary" : "bg-primary/80 shadow-[0_0_6px_var(--primary)]"}`}
-          style={{ left: `calc(244px + (100% - 244px) * ${(transport.step % totalSteps) / totalSteps})` }}
+          style={{ left: `calc(294px + (100% - 294px) * ${(transport.step % totalSteps) / totalSteps})` }}
           aria-hidden="true"
         />
         </div>
