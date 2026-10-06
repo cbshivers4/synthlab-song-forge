@@ -134,6 +134,7 @@
 - [x] My Library (cloud/computer folders for samples, synth, drums, notes) + distinct effect window looks
 
 ## Current request
+- [ ] Add optional playable keyboards below synth controls and sample pads; verify show/hide and note dispatch.
 - [x] Organize all synth features into nine uncluttered tabs without removing controls; verified every tab in the signed-in studio, with wrapping navigation and scrollable lower controls.
 - [x] Keep timeline headers on one line, align sampler kind labels, and stop the playhead after track rows; verified signed-in with sampler name fitting and cursor ending at the last track.
 - [x] Brighten sampler pads and show full timeline track names; verified in the signed-in studio with loaded starter samples.
