@@ -2149,6 +2149,7 @@ export class SyncLabEngine {
   playNote(trackId: string, patch: SynthPatch, midi: number, duration: number, velocity = 1, when?: number) {
     const ctx = this.init();
     const t0 = when ?? ctx.currentTime;
+    if (sendExternalNote(trackId, midi, duration, velocity, t0 - ctx.currentTime)) return;
     const ch = this.channel(trackId);
     const life = duration + patch.amp.release + 0.25;
 
