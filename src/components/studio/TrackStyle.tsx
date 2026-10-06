@@ -110,7 +110,8 @@ export function autoIcon(track: Pick<Track, "kind" | "name" | "instrument">) {
   if (track.kind === "ai-vocal") return Mic2;
   if (track.kind === "sampler") return AudioLines;
   if (/bass|sub/.test(name)) return Waves;
-  if (/piano|keys|organ|rhodes/.test(name)) return Piano;
+  if (/piano|keys|rhodes/.test(name)) return Piano;
+  if (/synth|organ/.test(name)) return KeyboardMusic;
   if (/guitar|pluck/.test(name)) return Guitar;
   if (/string|brass|pad|choir/.test(name)) return Radio;
   if (/fx|noise|sweep/.test(name)) return Sparkles;
