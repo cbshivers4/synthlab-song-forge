@@ -91,7 +91,7 @@ export function MobileNav({ onBeatMode, view, setView, moreSignal = 0, landscape
       <nav
         aria-label="Studio navigation"
         className={landscape
-          ? "relative z-50 order-last flex w-20 shrink-0 flex-col justify-center gap-1 overflow-y-auto border-l-2 border-border bg-surface-1 px-1 py-1 pr-[max(0.25rem,env(safe-area-inset-right))]"
+          ? "relative z-50 order-last flex w-20 shrink-0 flex-col justify-start gap-0.5 overflow-y-auto border-l-2 border-border bg-surface-1 px-1 py-1 pr-[max(0.25rem,env(safe-area-inset-right))]"
           : "mobile-nav relative z-50 grid shrink-0 grid-cols-5 gap-1 border-t-2 border-border bg-surface-1 px-1.5 pt-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))]"}
       >
         {shown.map((t) => (
@@ -101,7 +101,7 @@ export function MobileNav({ onBeatMode, view, setView, moreSignal = 0, landscape
             variant="ghost"
             onClick={t.onClick}
             aria-pressed={t.active}
-            className={`${landscape ? "h-14 [&_svg]:size-5 text-[10px]" : "h-16"} min-w-0 flex-col gap-1 rounded-md px-1 text-[11px] font-bold tracking-wider [&_svg]:size-6 ${
+            className={`${landscape ? "h-11 shrink-0 gap-0.5 [&_svg]:size-4 text-[9px]" : "h-16"} min-w-0 flex-col gap-1 rounded-md px-1 text-[11px] font-bold tracking-wider [&_svg]:size-6 ${
               "rec" in t ? landscape ? "border-2 border-destructive/70 bg-surface-2" : "relative -mt-3 h-[4.5rem] border-2 border-destructive/70 bg-surface-2 shadow-lg" : ""} ${
               t.active ? ("rec" in t ? "text-destructive" : "bg-primary/15 text-primary") : "text-muted-foreground"
             }`}
