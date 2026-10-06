@@ -170,3 +170,6 @@
 
 ## Transport meter and scope
 - [x] Widen the transport master meter and scope, keep the dB scale readable, and check nothing is cut off at 1280/1100/900
+- [x] Color the meter green→yellow→orange→red and light CLIP when the master clips
+- [x] Add per-channel peak-hold dB readouts and a clipping warning that stays visible
+- [x] Let the clipping warning clear itself once the level holds below the clip zone (~0.9 s), keeping click-to-reset
