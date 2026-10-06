@@ -101,7 +101,7 @@ export function MobileNav({ onBeatMode, view, setView, moreSignal = 0, landscape
             variant="ghost"
             onClick={t.onClick}
             aria-pressed={t.active}
-            className={`${landscape ? "h-11 shrink-0 gap-0.5 [&_svg]:size-4 text-[9px]" : "h-16"} min-w-0 flex-col gap-1 rounded-md px-1 text-[11px] font-bold tracking-wider [&_svg]:size-6 ${
+            className={`${landscape ? "!h-11 shrink-0 !gap-0.5 [&_svg]:!size-4 !text-[9px]" : "h-16"} min-w-0 flex-col gap-1 rounded-md px-1 text-[11px] font-bold tracking-wider [&_svg]:size-6 ${
               "rec" in t ? landscape ? "border-2 border-destructive/70 bg-surface-2" : "relative -mt-3 h-[4.5rem] border-2 border-destructive/70 bg-surface-2 shadow-lg" : ""} ${
               t.active ? ("rec" in t ? "text-destructive" : "bg-primary/15 text-primary") : "text-muted-foreground"
             }`}
