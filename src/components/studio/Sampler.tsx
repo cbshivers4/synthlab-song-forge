@@ -308,7 +308,7 @@ export function Sampler() {
       const buckets = 160, size = Math.max(1, Math.floor(left.length / buckets));
       const peaks: number[] = [];
       for (let k = 0; k < buckets; k++) { let p = 0; for (let j = k * size; j < Math.min(left.length, (k + 1) * size); j++) p = Math.max(p, Math.abs(left[j] ?? 0)); peaks.push(p); }
-      return { name: `${s.name} ${i + 1}`.slice(0, 18), blob, peaks, duration: left.length / sr };
+      return { name: `${s.name} ${i + 1}`.slice(0, 18), blob, cap, peaks, duration: left.length / sr };
     });
   };
 
