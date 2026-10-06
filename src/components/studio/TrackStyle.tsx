@@ -7,12 +7,22 @@ import {
   Bot,
   CassetteTape,
   Disc3,
+  DiscAlbum,
   Drum,
+  Drumstick,
   Guitar,
+  Hand,
   Headphones,
+  Headset,
   Keyboard,
+  KeyboardMusic,
+  ListMusic,
+  Metronome,
   Mic,
   Mic2,
+  MicVocal,
+  MonitorSpeaker,
+  Music,
   Music2,
   Music3,
   Music4,
@@ -57,14 +67,24 @@ export const TRACK_ICONS: { id: string; label: string; Icon: ComponentType<{ cla
   { id: "note", label: "Note", Icon: Music2 },
   { id: "notes", label: "Notes", Icon: Music3 },
   { id: "score", label: "Score", Icon: Music4 },
+  { id: "music", label: "Music", Icon: Music },
+  { id: "setlist", label: "Setlist", Icon: ListMusic },
   { id: "piano", label: "Piano", Icon: Piano },
   { id: "keys", label: "Keys", Icon: Keyboard },
+  { id: "synth", label: "Synth", Icon: KeyboardMusic },
+  { id: "metronome", label: "Metronome", Icon: Metronome },
   { id: "guitar", label: "Guitar", Icon: Guitar },
   { id: "drum", label: "Drums", Icon: Drum },
+  { id: "sticks", label: "Drum sticks", Icon: Drumstick },
+  { id: "percussion", label: "Percussion", Icon: Hand },
   { id: "disc", label: "Turntable", Icon: Disc3 },
+  { id: "album", label: "Album", Icon: DiscAlbum },
   { id: "mic", label: "Microphone", Icon: Mic },
-  { id: "vocal", label: "Vocal", Icon: Mic2 },
+  { id: "vocal", label: "Vocal mic", Icon: Mic2 },
+  { id: "livemic", label: "Live mic", Icon: MicVocal },
+  { id: "headset", label: "Headset mic", Icon: Headset },
   { id: "speaker", label: "Speaker", Icon: Speaker },
+  { id: "studioSpeaker", label: "Studio speaker", Icon: MonitorSpeaker },
   { id: "headphones", label: "Headphones", Icon: Headphones },
   { id: "radio", label: "Radio", Icon: Radio },
   { id: "tape", label: "Tape", Icon: CassetteTape },
@@ -90,7 +110,8 @@ export function autoIcon(track: Pick<Track, "kind" | "name" | "instrument">) {
   if (track.kind === "ai-vocal") return Mic2;
   if (track.kind === "sampler") return AudioLines;
   if (/bass|sub/.test(name)) return Waves;
-  if (/piano|keys|organ|rhodes/.test(name)) return Piano;
+  if (/piano|keys|rhodes/.test(name)) return Piano;
+  if (/synth|organ/.test(name)) return KeyboardMusic;
   if (/guitar|pluck/.test(name)) return Guitar;
   if (/string|brass|pad|choir/.test(name)) return Radio;
   if (/fx|noise|sweep/.test(name)) return Sparkles;
