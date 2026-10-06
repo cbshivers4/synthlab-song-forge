@@ -307,7 +307,7 @@ export function Settings() {
           midiInputs={midiInputs}
           onRescan={() => void scanDevices(true)}
           onMidiChanged={(id) => {
-            enableMidi({ quiet: true });
+            (enableMidi as (o?: { quiet?: boolean }) => void)({ quiet: true });
             if (id) setMidiInput(id);
           }}
           onUseInput={(label) => {
