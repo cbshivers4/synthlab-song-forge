@@ -321,7 +321,7 @@ export function Sampler() {
       if (nav.canShare?.({ files }) && nav.share) {
         try {
           await nav.share({ files, title: `${s?.name ?? "Sample"} chops` });
-          toast.success(`Shared ${out.length} chops — choose Save to Files on your phone`);
+          toast.success(`Shared ${out.length} chops as MP3 — choose Save to Files on your phone`);
           return;
         } catch (e) {
           if (e instanceof Error && e.name === "AbortError") return; // user cancelled the share sheet
@@ -330,10 +330,10 @@ export function Sampler() {
       out.forEach((c, i) => setTimeout(() => {
         const a = document.createElement("a");
         a.href = URL.createObjectURL(c.blob);
-        a.download = `${c.name.replace(/[^\w-]+/g, "_")}.wav`;
+        a.download = `${c.name.replace(/[^\w-]+/g, "_")}.mp3`;
         a.click();
       }, i * 250));
-      toast.success(`Saved ${out.length} chops as WAV files`);
+      toast.success(`Saved ${out.length} chops as MP3 files`);
     } catch (e) {
       toast.error("Could not save the chops", { description: e instanceof Error ? e.message : undefined });
     }
