@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { stepsPerBar, getBeatsPerBar } from "@/lib/synclab/timebase";
 import { SkinControls, skinBackground, useImageDrop } from "@/components/studio/SkinControls";
 import { useSkin } from "@/lib/synclab/skins";
-import { Copy, Plus, RotateCcw, Save, Sparkles, Trash2, Upload } from "lucide-react";
+import { Asterisk, Circle, CircleDot, CircleSmall, Copy, Crosshair, Disc3, Hand, Plus, RotateCcw, Save, Sparkles, Sun, Trash2, Triangle, Upload, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -27,6 +27,22 @@ function readPresets(): DrumPreset[] {
 }
 
 const BANKS = ["A", "B", "C", "D", "E", "F", "G", "H"];
+
+/** Every drum voice gets its own glyph and colour, so a pad reads as its instrument at a glance. */
+const PAD_STYLE: Record<DrumPad["kind"], { color: string; Icon: typeof CircleDot }> = {
+  kick: { color: "oklch(0.72 0.19 25)", Icon: CircleDot },
+  snare: { color: "oklch(0.80 0.16 75)", Icon: Asterisk },
+  clap: { color: "oklch(0.75 0.18 320)", Icon: Hand },
+  hat: { color: "oklch(0.84 0.13 195)", Icon: CircleSmall },
+  openhat: { color: "oklch(0.86 0.12 185)", Icon: Sun },
+  tom: { color: "oklch(0.72 0.17 145)", Icon: Circle },
+  perc: { color: "oklch(0.78 0.17 55)", Icon: Triangle },
+  rim: { color: "oklch(0.80 0.05 250)", Icon: Crosshair },
+  crash: { color: "oklch(0.88 0.10 95)", Icon: Sparkles },
+  ride: { color: "oklch(0.78 0.14 230)", Icon: Disc3 },
+  fx: { color: "oklch(0.72 0.20 300)", Icon: Zap },
+};
+const PAD_FALLBACK = PAD_STYLE.perc;
 
 /** Small vertical fader used for the A / H / D envelope sliders, Impact-style. */
 function VSlider({ label, value, min = 0, max = 1, onChange }: { label: string; value: number; min?: number; max?: number; onChange: (v: number) => void }) {
@@ -59,6 +75,7 @@ export function DrumMachine({ track }: { track: Track }) {
   const pads = track.pads ?? [];
   const activePattern = Math.max(0, Math.min(7, track.activeDrumPattern ?? 0));
   const focusPad = pads.find((p) => p.id === focusPadId) ?? pads[0];
+  const focusStyle = focusPad ? PAD_STYLE[focusPad.kind] ?? PAD_FALLBACK : null;
 
   const clonePads = (source: DrumPad[]) => structuredClone(source) as DrumPad[];
   const switchPattern = (next: number) => {
@@ -311,7 +328,10 @@ export function DrumMachine({ track }: { track: Track }) {
             SYNC<span className="text-primary">PADS</span>
           </span>
           <div className="flex items-center gap-4 font-mono text-[10px] text-muted-foreground">
-            <span>{focusPad ? focusPad.name : "—"}</span>
+            <span className="flex items-center gap-1.5">
+              {focusStyle && <focusStyle.Icon className="size-4 shrink-0" strokeWidth={1.7} style={{ color: focusStyle.color }} aria-hidden />}
+              <span className="text-foreground/80">{focusPad ? focusPad.name : "—"}</span>
+            </span>
             <span>{focusPad?.sample ?? "synthesized voice"}</span>
             <span>Start {Math.round((focusPad?.start ?? 0) * 100)}</span>
             <span>End {Math.round((focusPad?.end ?? 1) * 100)}</span>
@@ -328,7 +348,7 @@ export function DrumMachine({ track }: { track: Track }) {
           )}
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex items-start gap-2">
           {/* Bank letters → the 8 patterns */}
           <div className="flex flex-col gap-1">
             {BANKS.map((letter, index) => (
@@ -348,27 +368,48 @@ export function DrumMachine({ track }: { track: Track }) {
             ))}
           </div>
 
-          {/* Pad grid */}
-          <div className="grid flex-1 grid-cols-4 gap-1.5">
+          {/* Pad grid: each pad shows its instrument glyph in that instrument's colour */}
+          <div className="grid content-start auto-rows-[86px] flex-1 grid-cols-4 gap-1.5">
             {pads.map((pad) => {
               const focused = focusPad?.id === pad.id;
               const hasSteps = pad.steps.some((v) => v > 0);
+              const { color, Icon } = PAD_STYLE[pad.kind] ?? PAD_FALLBACK;
+              const tint = `color-mix(in oklab, ${color} ${focused ? 22 : 11}%, transparent)`;
               return (
-                <button
+                <div
                   key={pad.id}
+                  role="button"
+                  tabIndex={0}
+                  aria-pressed={focused}
                   onClick={() => {
                     getEngine().playDrum(track.id, pad, 1);
                     setFocusPadId(pad.id);
                   }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      getEngine().playDrum(track.id, pad, 1);
+                      setFocusPadId(pad.id);
+                    }
+                  }}
                   className={cn(
-                    "flex min-h-16 flex-col justify-between rounded-[3px] border p-1.5 text-left transition-colors",
-                    focused ? "border-primary bg-primary/10" : "border-border bg-surface-2 hover:border-primary/50",
+                    "flex min-h-[86px] cursor-pointer flex-col justify-between gap-1 rounded-[3px] border p-1.5 text-left outline-none transition-colors focus-visible:ring-1 focus-visible:ring-ring",
+                    focused ? "border-primary" : "border-border hover:border-primary/50",
                   )}
+                  style={{
+                    background: `linear-gradient(${tint}, ${tint})`,
+                    borderColor: focused ? undefined : `color-mix(in oklab, ${color} 38%, var(--border))`,
+                  }}
                 >
-                  <span className="font-mono text-[10px] font-semibold tracking-wider">{pad.name}</span>
-                  <span className="font-mono text-[8px] text-muted-foreground">
-                    {pad.sample ? "SMP" : pad.kit?.toUpperCase() ?? "909"}
-                    {hasSteps ? " ·" : ""}
+                  <span className="flex items-center justify-between gap-1">
+                    <span className="min-w-0 truncate font-mono text-[10px] font-semibold tracking-wider">{pad.name}</span>
+                    <span className="shrink-0 font-mono text-[8px] text-muted-foreground">
+                      {pad.sample ? "SMP" : pad.kit?.toUpperCase() ?? "909"}
+                      {hasSteps ? " ·" : ""}
+                    </span>
+                  </span>
+                  <span className="flex flex-1 items-center justify-center" style={{ color }}>
+                    <Icon className="size-8" strokeWidth={1.5} aria-hidden />
                   </span>
                   <span className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                     <Button
@@ -389,7 +430,7 @@ export function DrumMachine({ track }: { track: Track }) {
                     </Button>
                     <span className="ml-auto font-mono text-[9px] text-muted-foreground">{Math.round(pad.volume * 100)}</span>
                   </span>
-                </button>
+                </div>
               );
             })}
           </div>
