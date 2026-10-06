@@ -105,7 +105,7 @@ export function TopBar() {
             alt="SYNCLAB"
             width={1024}
             height={1024}
-            className="h-9 w-auto max-w-36 rounded-[3px] object-cover"
+            className="h-14 w-auto max-w-56 rounded-[3px] object-cover"
           />
         </div>
 
