@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import { useStudio } from "@/lib/synclab/store";
 import { keysSnapshot, subscribeKeys } from "@/lib/synclab/active-keys";
+import type { Track } from "@/lib/synclab/types";
 
 const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 const BLACK = new Set([1, 3, 6, 8, 10]);
@@ -30,8 +31,9 @@ const CHORDS = [
   { name: "DIM", intervals: [0, 3, 6] },
 ] as const;
 
-export function Keyboard() {
-  const { selected, previewNote } = useStudio();
+export function Keyboard({ track, onPlay, disabled = false }: { track?: Track; onPlay?: (midi: number, velocity: number) => void; disabled?: boolean } = {}) {
+  const { selected: studioSelected, previewNote } = useStudio();
+  const selected = track ?? studioSelected;
   const [octave, setOctave] = useState(4); // C4 base
   const [velocity, setVelocity] = useState(0.9);
   const [held, setHeld] = useState<number[]>([]);
@@ -86,10 +88,13 @@ export function Keyboard() {
   };
 
   const playNotes = (notes: number[]) => {
-    if (!selected) return;
+    if (disabled || (!onPlay && !selected)) return;
     const fitted = [...new Set(notes.map(fitToScale))];
     setHeld(fitted);
-    fitted.forEach((midi) => previewNote(selected.id, midi));
+    fitted.forEach((midi) => {
+      if (onPlay) onPlay(midi, velocity);
+      else if (selected) previewNote(selected.id, midi);
+    });
     window.setTimeout(() => setHeld([]), 240);
   };
 
@@ -98,7 +103,7 @@ export function Keyboard() {
 
   const label = (midi: number) => `${NOTE_NAMES[midi % 12]}${Math.floor(midi / 12) - 1}`;
 
-  if (!selected || !selected.patch)
+  if (!onPlay && (!selected || !selected.patch))
     return (
       <p className="text-sm text-muted-foreground">
         Select an instrument, MIDI or sampler track, then play the keys.
@@ -109,7 +114,7 @@ export function Keyboard() {
     <div className="space-y-2">
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 sm:flex sm:gap-3">
         <span className="label-xs">
-          Playing {selected.name} · {selected.instrument ?? "SYNTH"}
+          {onPlay ? "Selected sample" : `Playing ${selected?.name} · ${selected?.instrument ?? "SYNTH"}`}
         </span>
         <div className="flex shrink-0 items-center gap-1 sm:ml-auto">
           <span className="label-xs mr-1">OCTAVE</span>
@@ -252,7 +257,7 @@ export function Keyboard() {
 
       <div
         onWheel={(e) => slideTo(octave + (e.deltaY > 0 ? -1 : 1))}
-        className="relative h-36 min-w-[620px] select-none overflow-hidden rounded-[3px] border border-border bg-black"
+         className="relative h-36 w-full min-w-0 select-none overflow-hidden rounded-[3px] border border-border bg-background"
         style={{ touchAction: "none" }}
       >
         <div
@@ -264,6 +269,7 @@ export function Keyboard() {
           {whiteKeys.map((midi) => (
             <button
               key={midi}
+               disabled={disabled}
               onPointerDown={() => play(midi)}
               className={`relative flex-1 rounded-b-[3px] transition-colors ${
                 litKeys.has(midi)
@@ -293,6 +299,7 @@ export function Keyboard() {
         {blackKeys.map(({ midi, pos }) => (
           <button
             key={midi}
+             disabled={disabled}
             onPointerDown={() => play(midi)}
             className={`absolute top-0 z-10 h-[58%] rounded-b-[3px] transition-colors ${
                litKeys.has(midi)

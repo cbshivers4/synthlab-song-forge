@@ -34,3 +34,4 @@ The lower editor panel may shrink below its remembered height so the timeline al
 Drum pad instrument artwork uses inline SVG drawings and semantic colour classes inside the existing pad layout, so artwork does not require new audio paths or resize controls.
 
 Drum pattern selection and the scrollable step sequencer precede the pad sound surface so tall sound controls cannot bury pattern editing; retain the pad layout unchanged.
+Embedded instrument keyboards reuse Keyboard with an explicit track or sample callback; this keeps synth notes on previewNote and pitched pad notes on the existing sample playback path without switching panels.
