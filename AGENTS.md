@@ -35,3 +35,4 @@ Drum pad instrument artwork uses inline SVG drawings and semantic colour classes
 
 Drum pattern selection and the scrollable step sequencer precede the pad sound surface so tall sound controls cannot bury pattern editing; retain the pad layout unchanged.
 Embedded instrument keyboards reuse Keyboard with an explicit track or sample callback; this keeps synth notes on previewNote and pitched pad notes on the existing sample playback path without switching panels.
+Embedded keyboards share the global typing toggle and claim key events once; sampler pad shortcuts yield while its pitched keyboard is enabled to avoid double notes.

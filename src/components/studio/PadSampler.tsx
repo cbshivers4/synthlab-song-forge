@@ -28,6 +28,7 @@ import { getPadBank, setPadBank, subscribePadBank, type SavedPad } from "@/lib/s
 import { renderStarterSamples } from "@/lib/synclab/starter-samples";
 import { MidiLearnButton } from "./MidiLearn";
 import { Keyboard } from "./Keyboard";
+import { qwertyEnabled } from "@/lib/synclab/qwerty";
 
 const BANKS = ["A", "B", "C", "D"] as const;
 /** Koala-style bank colors — each bank tints its loaded pads. */
@@ -310,6 +311,7 @@ export function PadSampler() {
   /* computer keyboard pads */
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
+      if (showKeyboard && qwertyEnabled()) return;
       const el = e.target as HTMLElement | null;
       if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey || el?.tagName === "INPUT" || el?.tagName === "TEXTAREA" || el?.isContentEditable)
         return;
