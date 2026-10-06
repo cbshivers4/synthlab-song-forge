@@ -934,7 +934,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
     >
       <div className="w-1 shrink-0" style={{ background: track.color, opacity: isSelected ? 1 : 0.65 }} />
       <div
-        className="track-touch-header w-[168px] shrink-0 space-y-1 border-r border-border bg-surface px-2 py-1.5 sm:w-[240px]"
+        className="track-touch-header w-[168px] shrink-0 space-y-1 border-r border-border bg-surface px-2 py-1.5 sm:w-[290px]"
         onPointerDown={startPhoneGesture}
         onPointerMove={movePhoneGesture}
         onPointerUp={endPhoneGesture}
@@ -1810,7 +1810,7 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
       aria-label={`${label} automation lane. Command or Control Z undoes and Shift Z redoes lane edits, C copies the loop region, V pastes at the playhead, D duplicates, and Delete removes it.`}
     >
       <div className="w-1 shrink-0" style={{ background: track.color, opacity: 0.4 }} />
-      <div className="flex w-[168px] shrink-0 flex-wrap items-center gap-1 border-r border-border bg-surface/60 px-2 py-1 sm:w-[240px]">
+      <div className="flex w-[168px] shrink-0 flex-wrap items-center gap-1 border-r border-border bg-surface/60 px-2 py-1 sm:w-[290px]">
         <span className="min-w-0 flex-1 truncate font-mono text-[9px] tracking-[0.15em] text-muted-foreground">AUTO · {label}</span>
         <button
           onClick={() => setAutomationLaneLock(track.id, lane.param, !locked)}
@@ -2182,7 +2182,7 @@ function EditToolbar() {
   const targets = selectedIds.length > 1 ? selectedIds : selected ? [selected.id] : [];
 
   return (
-    <div className="flex min-h-11 items-center gap-1 overflow-x-auto border-b border-border bg-surface-2/60 px-2 py-1 [scrollbar-width:none]">
+    <div className="flex min-h-11 flex-wrap items-center gap-1 border-b border-border bg-surface-2/60 px-2 py-1">
       <ToolBtn tool="select" icon={<MousePointer2 className="size-3" />} label="Select" keys="V" />
       <ToolBtn tool="draw" icon={<Pencil className="size-3" />} label="Draw" keys="B" />
       <ToolBtn tool="split" icon={<ScissorsLineDashed className="size-3" />} label="Split" keys="C" />
@@ -2506,7 +2506,7 @@ function Ruler() {
 
   return (
     <div className="sticky top-0 z-10 flex border-b border-border bg-surface-2/70 backdrop-blur">
-      <div className="relative z-20 flex w-[172px] shrink-0 flex-col justify-center gap-1 border-r border-border bg-surface-2 px-2 py-1 sm:w-[244px] sm:px-3" style={{ transform: "translateX(var(--timeline-scroll-x, 0px))" }}>
+      <div className="relative z-20 flex w-[172px] shrink-0 flex-col justify-center gap-1 border-r border-border bg-surface-2 px-2 py-1 sm:w-[294px] sm:px-3" style={{ transform: "translateX(var(--timeline-scroll-x, 0px))" }}>
         <div className="flex items-center gap-2">
           <span className="font-display text-[11px] font-semibold tracking-[0.2em]">TIMELINE</span>
           <span className="label-xs ml-auto">
@@ -2823,7 +2823,7 @@ function FolderRow({
   return (
     <div className="flex border-b border-border bg-surface-2/60">
       <div
-        className="relative z-20 flex w-[172px] shrink-0 items-center gap-1.5 border-r border-border px-2 py-1 sm:w-[244px] sm:px-3"
+        className="relative z-20 flex w-[172px] shrink-0 items-center gap-1.5 border-r border-border px-2 py-1 sm:w-[294px] sm:px-3"
         style={{ transform: "translateX(var(--timeline-scroll-x, 0px))" }}
       >
         <button
@@ -2935,13 +2935,13 @@ export function Timeline() {
         </div>
       </div>
       <div id="timeline-scroll" ref={scrollRef} className="relative min-h-0 flex-1 overflow-auto">
-        <div className="min-w-[720px]" style={{ width: `max(${zoom * 100}%, ${transport.bars * 32 + 244}px)` }}>
+        <div className="min-w-[720px]" style={{ width: `max(${zoom * 100}%, ${transport.bars * 32 + 294}px)` }}>
         {/* SYNCLAB watermark, low and centred in the empty workspace */}
         <div className="pointer-events-none sticky top-[68%] z-0 h-0" aria-hidden="true">
           <img
             src={synclabLogo}
             alt=""
-            className="absolute left-1/2 top-0 w-[min(360px,38%)] -translate-x-[calc(50%-122px)] -translate-y-1/2 select-none opacity-[0.06]"
+            className="absolute left-1/2 top-0 w-[min(360px,38%)] -translate-x-[calc(50%-147px)] -translate-y-1/2 select-none opacity-[0.06]"
           />
         </div>
         {tracks.map((t, i) => {
@@ -3019,15 +3019,15 @@ export function Timeline() {
           <div
             className="pointer-events-none absolute inset-y-0 border-x border-amber-400/30 bg-amber-400/[0.05]"
             style={{
-              left: `calc(244px + (100% - 244px) * ${Math.min(transport.exportStart, transport.exportEnd - 1) / totalSteps})`,
-              width: `calc((100% - 244px) * ${(Math.max(transport.exportEnd, transport.exportStart + 1) - Math.min(transport.exportStart, transport.exportEnd - 1)) / totalSteps})`,
+              left: `calc(294px + (100% - 294px) * ${Math.min(transport.exportStart, transport.exportEnd - 1) / totalSteps})`,
+              width: `calc((100% - 294px) * ${(Math.max(transport.exportEnd, transport.exportStart + 1) - Math.min(transport.exportStart, transport.exportEnd - 1)) / totalSteps})`,
             }}
           />
         )}
         {/* playhead line across every track — always visible so you can see where Paste lands */}
         <div
           className={`pointer-events-none absolute top-0 bottom-0 z-10 w-[2px] -translate-x-1/2 ${transport.playing ? "bg-primary" : "bg-primary/80 shadow-[0_0_6px_var(--primary)]"}`}
-          style={{ left: `calc(244px + (100% - 244px) * ${(transport.step % totalSteps) / totalSteps})` }}
+          style={{ left: `calc(294px + (100% - 294px) * ${(transport.step % totalSteps) / totalSteps})` }}
           aria-hidden="true"
         />
         </div>
