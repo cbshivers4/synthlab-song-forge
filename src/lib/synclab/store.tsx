@@ -288,7 +288,7 @@ interface StudioApi extends StudioState {
   splitClipAt: (trackId: string, frac: number) => void;
   razorAt: (trackId: string, posSteps: number) => void;
   splitAtPlayhead: () => void;
-  addTrack: (kind: TrackKind, name?: string, preset?: string) => string;
+  addTrack: (kind: TrackKind, name?: string, preset?: string, opts?: { keepPanel?: boolean }) => string;
   updateTrack: (id: string, patch: Partial<Track>) => void;
   removeTrack: (id: string) => void;
   duplicateTrack: (id: string) => void;
