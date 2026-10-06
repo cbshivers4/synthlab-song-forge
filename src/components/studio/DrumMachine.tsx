@@ -217,6 +217,90 @@ export function DrumMachine({ track }: { track: Track }) {
     <div className="studio-wallpaper space-y-3 rounded-md p-3" data-studio-panel="drums" style={skinBackground(skin)} {...drop}>
       <SkinControls skinKey="drums" image />
 
+      <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Drum patterns">
+        <span className="label-xs">PATTERN {activePattern + 1}</span>
+        <div className="flex flex-wrap gap-1">
+          {BANKS.map((letter, index) => (
+            <Button
+              key={letter}
+              size="sm"
+              variant={activePattern === index ? "default" : "secondary"}
+              className="h-8 w-8 p-0 font-mono"
+              aria-label={`Pattern ${letter}`}
+              aria-pressed={activePattern === index}
+              onClick={() => switchPattern(index)}
+            >
+              {letter}
+            </Button>
+          ))}
+        </div>
+        <Button size="sm" variant="secondary" onClick={copyPattern}><Copy className="size-4" /> Copy next</Button>
+        <Button size="sm" variant="ghost" onClick={clearPattern}><RotateCcw className="size-4" /> Clear</Button>
+      </div>
+
+      {/* Step sequencer */}
+      <div aria-label="Drum pattern steps" className="max-h-48 space-y-1 overflow-auto">
+        {pads.map((pad) => (
+          <div key={pad.id} className="space-y-1">
+            <div className="flex items-center gap-2">
+              <button
+                className={cn(
+                  "w-24 shrink-0 rounded-md border px-2 py-1 text-left font-mono text-[10px] tracking-wider hover:glow",
+                  focusPad?.id === pad.id ? "border-primary bg-primary/10" : "border-border bg-surface-2",
+                )}
+                onClick={() => {
+                  getEngine().playDrum(track.id, pad, 1);
+                  setFocusPadId(pad.id);
+                }}
+              >
+                {pad.name}
+              </button>
+              <div className="flex flex-1 gap-[3px]">
+                {pad.steps.map((v, i) => (
+                  <button
+                    key={i}
+                    aria-label={`${pad.name} step ${i + 1}`}
+                     onClick={() => {
+                       cycleStep(pad.id, pad.steps, i);
+                       setSelectedStep({ padId: pad.id, index: i });
+                     }}
+                    title={v > 0 ? `velocity ${Math.round(v * 100)}%` : "empty"}
+                    className="h-6 flex-1 rounded-[3px] border transition-all"
+                    style={{
+                      minWidth: 12,
+                      borderColor:
+                        transport.playing && transport.step % Math.max(1, pad.steps.length) === i ? "var(--neon)" : "var(--color-border)",
+                      opacity: v > 0 ? 0.35 + v * 0.65 : 1,
+                      background:
+                        v > 0
+                          ? "var(--gradient-neon)"
+                          : i % 4 === 0
+                            ? i % stepsPerBar() === 0
+                              ? "color-mix(in oklab, var(--primary) 18%, var(--surface-2))"
+                              : "color-mix(in oklab, var(--surface-2) 90%, transparent)"
+                            : "color-mix(in oklab, var(--surface) 80%, transparent)",
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+             {selectedStep?.padId === pad.id && (
+               <div className="panel flex flex-wrap items-end gap-3 p-3 sm:ml-24">
+                 <div className="min-w-20"><span className="label-xs">STEP</span><div className="font-mono text-sm text-primary">{selectedStep.index + 1}</div></div>
+                 <Knob label="VELOCITY" value={pad.steps[selectedStep.index] ?? 0} onChange={(v) => updateStepValue(pad, "steps", selectedStep.index, v)} />
+                 <Knob label="PITCH" min={-12} max={12} step={1} value={pad.stepPitch?.[selectedStep.index] ?? 0} onChange={(v) => updateStepValue(pad, "stepPitch", selectedStep.index, v)} />
+                 <Knob label="DECAY" min={0.1} max={2} value={pad.stepDecay?.[selectedStep.index] ?? 1} onChange={(v) => updateStepValue(pad, "stepDecay", selectedStep.index, v)} />
+                 <Knob label="CHANCE" value={pad.probability?.[selectedStep.index] ?? 1} onChange={(v) => updateStepValue(pad, "probability", selectedStep.index, v)} />
+                 <Knob label="FLAM" value={pad.flam?.[selectedStep.index] ?? 0} onChange={(v) => updateStepValue(pad, "flam", selectedStep.index, v)} />
+                 <Knob label="RETRIG" min={1} max={4} step={1} value={pad.retrig?.[selectedStep.index] ?? 1} onChange={(v) => updateStepValue(pad, "retrig", selectedStep.index, Math.round(v))} />
+                 <Knob label="GLITCH" value={pad.glitch?.[selectedStep.index] ?? 0} onChange={(v) => updateStepValue(pad, "glitch", selectedStep.index, v)} />
+                 <Button size="sm" variant="ghost" onClick={() => setSelectedStep(null)}>Close step</Button>
+               </div>
+             )}
+          </div>
+        ))}
+      </div>
+
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2">
         <Select value={kit} onValueChange={(v) => loadKit(v as DrumKitId)}>
@@ -532,76 +616,9 @@ export function DrumMachine({ track }: { track: Track }) {
           )}
         </div>
 
-        {/* Pattern controls */}
-        <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-border pt-2">
-          <span className="label-xs">PATTERN {activePattern + 1}</span>
-          <Button size="sm" variant="secondary" onClick={copyPattern}><Copy className="size-4" /> Copy next</Button>
-          <Button size="sm" variant="ghost" onClick={clearPattern}><RotateCcw className="size-4" /> Clear</Button>
-        </div>
       </div>
 
-      {/* Step sequencer */}
-      <div className="space-y-1 overflow-x-auto">
-        {pads.map((pad) => (
-          <div key={pad.id} className="space-y-1">
-            <div className="flex items-center gap-2">
-              <button
-                className={cn(
-                  "w-24 shrink-0 rounded-md border px-2 py-1 text-left font-mono text-[10px] tracking-wider hover:glow",
-                  focusPad?.id === pad.id ? "border-primary bg-primary/10" : "border-border bg-surface-2",
-                )}
-                onClick={() => {
-                  getEngine().playDrum(track.id, pad, 1);
-                  setFocusPadId(pad.id);
-                }}
-              >
-                {pad.name}
-              </button>
-              <div className="flex flex-1 gap-[3px]">
-                {pad.steps.map((v, i) => (
-                  <button
-                    key={i}
-                    aria-label={`${pad.name} step ${i + 1}`}
-                     onClick={() => {
-                       cycleStep(pad.id, pad.steps, i);
-                       setSelectedStep({ padId: pad.id, index: i });
-                     }}
-                    title={v > 0 ? `velocity ${Math.round(v * 100)}%` : "empty"}
-                    className="h-6 flex-1 rounded-[3px] border transition-all"
-                    style={{
-                      minWidth: 12,
-                      borderColor:
-                        transport.playing && transport.step % Math.max(1, pad.steps.length) === i ? "var(--neon)" : "var(--color-border)",
-                      opacity: v > 0 ? 0.35 + v * 0.65 : 1,
-                      background:
-                        v > 0
-                          ? "var(--gradient-neon)"
-                          : i % 4 === 0
-                            ? i % stepsPerBar() === 0
-                              ? "color-mix(in oklab, var(--primary) 18%, var(--surface-2))"
-                              : "color-mix(in oklab, var(--surface-2) 90%, transparent)"
-                            : "color-mix(in oklab, var(--surface) 80%, transparent)",
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
-             {selectedStep?.padId === pad.id && (
-               <div className="panel flex flex-wrap items-end gap-3 p-3 sm:ml-24">
-                 <div className="min-w-20"><span className="label-xs">STEP</span><div className="font-mono text-sm text-primary">{selectedStep.index + 1}</div></div>
-                 <Knob label="VELOCITY" value={pad.steps[selectedStep.index] ?? 0} onChange={(v) => updateStepValue(pad, "steps", selectedStep.index, v)} />
-                 <Knob label="PITCH" min={-12} max={12} step={1} value={pad.stepPitch?.[selectedStep.index] ?? 0} onChange={(v) => updateStepValue(pad, "stepPitch", selectedStep.index, v)} />
-                 <Knob label="DECAY" min={0.1} max={2} value={pad.stepDecay?.[selectedStep.index] ?? 1} onChange={(v) => updateStepValue(pad, "stepDecay", selectedStep.index, v)} />
-                 <Knob label="CHANCE" value={pad.probability?.[selectedStep.index] ?? 1} onChange={(v) => updateStepValue(pad, "probability", selectedStep.index, v)} />
-                 <Knob label="FLAM" value={pad.flam?.[selectedStep.index] ?? 0} onChange={(v) => updateStepValue(pad, "flam", selectedStep.index, v)} />
-                 <Knob label="RETRIG" min={1} max={4} step={1} value={pad.retrig?.[selectedStep.index] ?? 1} onChange={(v) => updateStepValue(pad, "retrig", selectedStep.index, Math.round(v))} />
-                 <Knob label="GLITCH" value={pad.glitch?.[selectedStep.index] ?? 0} onChange={(v) => updateStepValue(pad, "glitch", selectedStep.index, v)} />
-                 <Button size="sm" variant="ghost" onClick={() => setSelectedStep(null)}>Close step</Button>
-               </div>
-             )}
-          </div>
-        ))}
-      </div>
+
     </div>
   );
 }
