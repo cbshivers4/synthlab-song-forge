@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 
 import { qwertyEnabled, setQwertyEnabled } from "@/lib/synclab/qwerty";
+import { requestBluetoothSettings } from "./Settings";
 import { stepsPerBar, STEPS_PER_BEAT, METERS, getBeatsPerBar, songSteps, stepSeconds } from "@/lib/synclab/timebase";
 import { Button } from "@/components/ui/button";
 import {
@@ -392,6 +393,7 @@ export function TopBar() {
                 <DropdownMenuItem onClick={() => setPanel("settings")}>
                   <Settings2 className="mr-2 size-4" /> Settings
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => { requestBluetoothSettings(); setPanel("settings"); }}>Bluetooth devices</DropdownMenuItem>
                 <DropdownMenuItem onClick={openExport}>
                   <Download className="mr-2 size-4" /> Export
                 </DropdownMenuItem>

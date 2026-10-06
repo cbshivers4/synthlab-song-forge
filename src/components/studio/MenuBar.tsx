@@ -325,7 +325,7 @@ export function MenuBar() {
             <MenubarItem onClick={needTrack((id) => copyTrack(id))}>
               Copy Track <MenubarShortcut>⌘C</MenubarShortcut>
             </MenubarItem>
-            <MenubarItem onClick={pasteTrack}>
+            <MenubarItem onClick={() => pasteTrack()}>
               Paste{clipboardName ? ` “${clipboardName}”` : ""} <MenubarShortcut>⌘V</MenubarShortcut>
             </MenubarItem>
             <MenubarSeparator />
