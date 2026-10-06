@@ -7,7 +7,7 @@ import { useStudio } from "@/lib/synclab/store";
 import type { Track } from "@/lib/synclab/types";
 import { toast } from "sonner";
 import { getEngine } from "@/lib/synclab/audio-engine";
-import { encodeWav } from "@/lib/synclab/bounce";
+import { encodeMp3, encodeWav } from "@/lib/synclab/bounce";
 import { uid } from "@/lib/synclab/presets";
 import { wsolaStretch } from "@/lib/synclab/stretch";
 import { WaveformView } from "@/components/studio/WaveformView";
@@ -303,24 +303,25 @@ export function Sampler() {
       const a = Math.floor(c * buf.length), b = Math.max(a + 1, Math.floor(end * buf.length));
       const left = buf.getChannelData(0).slice(a, b);
       const right = (buf.numberOfChannels > 1 ? buf.getChannelData(1) : buf.getChannelData(0)).slice(a, b);
-      const blob = encodeWav({ left, right, sampleRate: sr });
+      const cap = { left, right, sampleRate: sr };
+      const blob = encodeWav(cap);
       const buckets = 160, size = Math.max(1, Math.floor(left.length / buckets));
       const peaks: number[] = [];
       for (let k = 0; k < buckets; k++) { let p = 0; for (let j = k * size; j < Math.min(left.length, (k + 1) * size); j++) p = Math.max(p, Math.abs(left[j] ?? 0)); peaks.push(p); }
-      return { name: `${s.name} ${i + 1}`.slice(0, 18), blob, peaks, duration: left.length / sr };
+      return { name: `${s.name} ${i + 1}`.slice(0, 18), blob, cap, peaks, duration: left.length / sr };
     });
   };
 
   const saveChops = async () => {
     try {
       const out = await renderChops();
-      const files = out.map((c) => new File([c.blob], `${c.name.replace(/[^\w-]+/g, "_")}.wav`, { type: "audio/wav" }));
+      const files = out.map((c) => new File([encodeMp3(c.cap, 192)], `${c.name.replace(/[^\w-]+/g, "_")}.mp3`, { type: "audio/mpeg" }));
       // Phones: use the system share sheet so chops can be saved to Files / Drive / etc.
       const nav = navigator as Navigator & { canShare?: (d: { files: File[] }) => boolean; share?: (d: { files: File[]; title?: string }) => Promise<void> };
       if (nav.canShare?.({ files }) && nav.share) {
         try {
           await nav.share({ files, title: `${s?.name ?? "Sample"} chops` });
-          toast.success(`Shared ${out.length} chops — choose Save to Files on your phone`);
+          toast.success(`Shared ${out.length} chops as MP3 — choose Save to Files on your phone`);
           return;
         } catch (e) {
           if (e instanceof Error && e.name === "AbortError") return; // user cancelled the share sheet
@@ -329,10 +330,10 @@ export function Sampler() {
       out.forEach((c, i) => setTimeout(() => {
         const a = document.createElement("a");
         a.href = URL.createObjectURL(c.blob);
-        a.download = `${c.name.replace(/[^\w-]+/g, "_")}.wav`;
+        a.download = `${c.name.replace(/[^\w-]+/g, "_")}.mp3`;
         a.click();
       }, i * 250));
-      toast.success(`Saved ${out.length} chops as WAV files`);
+      toast.success(`Saved ${out.length} chops as MP3 files`);
     } catch (e) {
       toast.error("Could not save the chops", { description: e instanceof Error ? e.message : undefined });
     }
@@ -518,7 +519,7 @@ export function Sampler() {
               {chops.length > 0 && (
                 <>
                   <Button size="sm" variant="outline" className="h-9 font-mono text-[10px] tracking-widest sm:h-7" onClick={saveChops}>
-                    Save chops (WAV)
+                    Save chops (MP3)
                   </Button>
                   <Button size="sm" className="h-9 font-mono text-[10px] tracking-widest sm:h-7" onClick={sendChopsToPads}>
                     Send to sample pads
