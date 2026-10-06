@@ -134,7 +134,7 @@
 - [x] My Library (cloud/computer folders for samples, synth, drums, notes) + distinct effect window looks
 
 ## Current request
-- [ ] Brighten sampler pads and show full timeline track names; verify in the signed-in studio.
+- [x] Brighten sampler pads and show full timeline track names; verified in the signed-in studio with loaded starter samples.
 - [x] Add color and JPEG wallpaper to transport, drum machine, synth, Live View, Live Looper, sampler, and sample pads without obscuring controls.
 - [x] Show real moving audio displays in bottom instrument and effect modules.
 - [x] Make pop-outs open from the click and give desktop windows a draggable header; browser-tested all four panels, Mac hardware test still needed.
