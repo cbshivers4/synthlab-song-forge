@@ -36,6 +36,7 @@ import { ExportDialog } from "@/components/studio/ExportDialog";
 import { HelpCenter } from "@/components/studio/HelpCenter";
 import { MobileBeat } from "@/components/studio/MobileBeat";
 import { MobileNav } from "@/components/studio/MobileNav";
+import { MobileCreate } from "@/components/studio/MobileCreate";
 import { MobileOnboarding } from "@/components/studio/MobileOnboarding";
 import { DesktopUpdateBanner } from "@/components/studio/DesktopUpdateBanner";
 import { DesktopWebsiteStatus } from "@/components/studio/DesktopWebsiteStatus";
@@ -564,6 +565,8 @@ function StudioWorkspace() {
   const mobileAccessibility = useMobileAccessibility();
   const [float, setFloat] = useState<FloatState>({ synth: false, drums: false });
   const [beatMode, setBeatMode] = useState(false);
+  const [mobileView, setMobileView] = useState<"create" | "edit">("create");
+  const [moreSignal, setMoreSignal] = useState(0);
   useShortcuts();
   useEffect(() => { if (panel) setBeatMode(false); }, [panel]);
   useEffect(() => {
@@ -590,7 +593,8 @@ function StudioWorkspace() {
       <TopBar />
       <div className="flex min-h-0 flex-1">
         {!isMobile && <ToolsRail />}
-        <main className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <main className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+          {isMobile && mobileView === "create" && !panel && !beatMode && <MobileCreate onBeatMode={() => setBeatMode(true)} onMore={() => setMoreSignal((n) => n + 1)} />}
           <h1 className="sr-only">SYNCLAB Studio — browser digital audio workstation</h1>
           <Timeline />
           <Panels float={float} setFloat={setFloat} />
@@ -598,7 +602,7 @@ function StudioWorkspace() {
           <DeviceBar />
         </main>
       </div>
-      {isMobile ? <MobileNav onBeatMode={() => setBeatMode(true)} /> : <StatusBar />}
+      {isMobile ? <MobileNav onBeatMode={() => setBeatMode(true)} view={mobileView} setView={setMobileView} moreSignal={moreSignal} /> : <StatusBar />}
       <FloatingDevices float={float} setFloat={setFloat} />
       <DeviceSetup />
       <ExportDialog />

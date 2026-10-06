@@ -33,7 +33,7 @@ export function MobileCreate({ onBeatMode, onMore }: { onBeatMode: () => void; o
         onClick={toggleRecord}
         aria-pressed={!!transport.recording}
         className={`mb-3 h-20 w-full gap-3 rounded-lg border-2 text-lg font-black tracking-widest [&_svg]:size-8 ${
-          transport.recording ? "border-destructive bg-destructive text-destructive-foreground" : "border-destructive/70 bg-surface-2 text-destructive hover:bg-surface-3"
+          transport.recording ? "border-destructive bg-destructive text-destructive-foreground" : "border-destructive/70 bg-surface-2 text-destructive hover:bg-surface-1"
         }`}
       >
         <Mic /> {transport.recording ? "STOP RECORDING" : "● RECORD"}
