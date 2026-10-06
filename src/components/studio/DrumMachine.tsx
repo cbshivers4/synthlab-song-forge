@@ -451,7 +451,7 @@ export function DrumMachine({ track }: { track: Track }) {
                     <button
                       key={g}
                       title={g === 0 ? "No choke group" : `Choke group ${g} — pads in the same group cut each other off`}
-                      onClick={() => updatePad(track.id, focusPad.id, { choke: g === 0 ? undefined : g })}
+                      onClick={() => updatePad(track.id, focusPad.id, { choke: g })}
                       className={cn(
                         "h-6 w-6 rounded-[3px] border font-mono text-[10px]",
                         (focusPad.choke ?? 0) === g
