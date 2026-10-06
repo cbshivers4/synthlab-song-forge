@@ -376,14 +376,24 @@ export function DrumMachine({ track }: { track: Track }) {
               const { color, Icon } = PAD_STYLE[pad.kind] ?? PAD_FALLBACK;
               const tint = `color-mix(in oklab, ${color} ${focused ? 22 : 11}%, transparent)`;
               return (
-                <button
+                <div
                   key={pad.id}
+                  role="button"
+                  tabIndex={0}
+                  aria-pressed={focused}
                   onClick={() => {
                     getEngine().playDrum(track.id, pad, 1);
                     setFocusPadId(pad.id);
                   }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      getEngine().playDrum(track.id, pad, 1);
+                      setFocusPadId(pad.id);
+                    }
+                  }}
                   className={cn(
-                    "flex min-h-[86px] flex-col justify-between gap-1 rounded-[3px] border p-1.5 text-left transition-colors",
+                    "flex min-h-[86px] cursor-pointer flex-col justify-between gap-1 rounded-[3px] border p-1.5 text-left outline-none transition-colors focus-visible:ring-1 focus-visible:ring-ring",
                     focused ? "border-primary" : "border-border hover:border-primary/50",
                   )}
                   style={{
@@ -420,7 +430,7 @@ export function DrumMachine({ track }: { track: Track }) {
                     </Button>
                     <span className="ml-auto font-mono text-[9px] text-muted-foreground">{Math.round(pad.volume * 100)}</span>
                   </span>
-                </button>
+                </div>
               );
             })}
           </div>
