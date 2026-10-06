@@ -14,6 +14,7 @@ import { WaveformView } from "@/components/studio/WaveformView";
 import { MidiLearnButton } from "./MidiLearn";
 import { SkinControls, skinBackground, useImageDrop } from "@/components/studio/SkinControls";
 import { useSkin } from "@/lib/synclab/skins";
+import { getPadBank, setPadBank, type SavedPad } from "@/lib/synclab/pad-session";
 
 const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 const noteName = (m: number) => `${NOTE_NAMES[((m % 12) + 12) % 12]}${Math.floor(m / 12) - 1}`;
@@ -290,6 +291,63 @@ export function Sampler() {
     toast.success(`Chopped into ${n}`, { description: "Each chop plays from the root note upwards." });
   };
 
+
+  /** Cuts each chop out of the real sample as its own WAV (respects reverse off; uses the source file audio). */
+  const renderChops = async () => {
+    if (!track || !s || chops.length === 0) return [];
+    const ctx = getEngine().init();
+    const buf = await ctx.decodeAudioData(await (await fetch(s.url)).arrayBuffer());
+    const sr = buf.sampleRate;
+    return chops.map((c, i) => {
+      const end = chops[i + 1] ?? s.end;
+      const a = Math.floor(c * buf.length), b = Math.max(a + 1, Math.floor(end * buf.length));
+      const left = buf.getChannelData(0).slice(a, b);
+      const right = (buf.numberOfChannels > 1 ? buf.getChannelData(1) : buf.getChannelData(0)).slice(a, b);
+      const blob = encodeWav({ left, right, sampleRate: sr });
+      const buckets = 160, size = Math.max(1, Math.floor(left.length / buckets));
+      const peaks: number[] = [];
+      for (let k = 0; k < buckets; k++) { let p = 0; for (let j = k * size; j < Math.min(left.length, (k + 1) * size); j++) p = Math.max(p, Math.abs(left[j] ?? 0)); peaks.push(p); }
+      return { name: `${s.name} ${i + 1}`.slice(0, 18), blob, peaks, duration: left.length / sr };
+    });
+  };
+
+  const saveChops = async () => {
+    try {
+      const out = await renderChops();
+      out.forEach((c, i) => setTimeout(() => {
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(c.blob);
+        a.download = `${c.name.replace(/[^\w-]+/g, "_")}.wav`;
+        a.click();
+      }, i * 250));
+      toast.success(`Saved ${out.length} chops as WAV files`);
+    } catch (e) {
+      toast.error("Could not save the chops", { description: e instanceof Error ? e.message : undefined });
+    }
+  };
+
+  const sendChopsToPads = async () => {
+    try {
+      const out = (await renderChops()).slice(0, 16);
+      const bank = getPadBank();
+      out.forEach((c, i) => {
+        const pad: SavedPad = {
+          name: c.name, url: URL.createObjectURL(c.blob), duration: c.duration, peaks: c.peaks,
+          start: 0, end: 1, gain: 1, pitch: 0, reverse: false, loop: false, oneShot: true,
+          attack: 0.002, release: 0.08, choke: 0, steps: Array.from({ length: 16 }, () => 0),
+        };
+        bank[i] = pad;
+      });
+      setPadBank(bank);
+      toast.success(`${out.length} chops sent to sample pads 1–${out.length}`, {
+        description: "Open Sample Pads to play them. Those pads' old sounds were replaced.",
+        action: { label: "Open pads", onClick: () => setPanel("pads") },
+      });
+    } catch (e) {
+      toast.error("Could not send the chops", { description: e instanceof Error ? e.message : undefined });
+    }
+  };
+
   const removeChop = (i: number) => {
     if (!track) return;
     updateSampler(track.id, { slices: chops.filter((_, x) => x !== i) });
@@ -444,6 +502,16 @@ export function Sampler() {
                 >
                   Clear chops
                 </Button>
+              )}
+              {chops.length > 0 && (
+                <>
+                  <Button size="sm" variant="outline" className="h-9 font-mono text-[10px] tracking-widest sm:h-7" onClick={saveChops}>
+                    Save chops (WAV)
+                  </Button>
+                  <Button size="sm" className="h-9 font-mono text-[10px] tracking-widest sm:h-7" onClick={sendChopsToPads}>
+                    Send to sample pads
+                  </Button>
+                </>
               )}
             </div>
 
