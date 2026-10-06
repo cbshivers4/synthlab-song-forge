@@ -348,7 +348,7 @@ export function DrumMachine({ track }: { track: Track }) {
           )}
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex items-start gap-2">
           {/* Bank letters → the 8 patterns */}
           <div className="flex flex-col gap-1">
             {BANKS.map((letter, index) => (
