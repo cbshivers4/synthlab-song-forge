@@ -58,7 +58,7 @@ function Stat({ label, value }: { label: string; value: string }) {
 export function AudioInterfaceCard({ inputs, outputs, inputDevice, channel, sampleRate, scanning }: Props) {
   const current = inputDevice === "System default" ? null : inputs.find((d) => d.label === inputDevice) ?? null;
   const label = current?.label ?? "System default input";
-  const isVolt = true; /* TEMP-CHECK */
+  const isVolt = /volt/i.test(current?.label ?? "");
   const active = Boolean(current) || inputDevice !== "System default";
   return (
     <div className="flex flex-col overflow-hidden rounded-lg border border-border bg-surface sm:flex-row">
