@@ -520,7 +520,7 @@ export function MenuBar() {
         ● Live
       </button>
 
-      <span className="ml-auto hidden shrink-0 font-mono text-[10px] tracking-widest text-muted-foreground uppercase lg:inline">
+      <span className="ml-auto hidden min-w-0 truncate pl-2 pr-1 font-mono text-[10px] tracking-widest text-muted-foreground uppercase lg:inline">
         {project ? `${project.name} · ${project.key} · ${project.timeSig}` : "untitled session"} · {mode} mode
       </span>
 
