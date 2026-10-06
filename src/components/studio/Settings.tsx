@@ -300,6 +300,16 @@ export function Settings() {
       </TabsList>
 
       <TabsContent value="audio" className="mt-4">
+        <div className="mb-4">
+          <AudioInterfaceCard
+            inputs={inputs}
+            outputs={outputs}
+            inputDevice={p.inputDevice}
+            channel={inChan}
+            sampleRate={getEngine().sampleRate}
+            scanning={scanning}
+          />
+        </div>
         <Row
           label="Input device"
           hint={
