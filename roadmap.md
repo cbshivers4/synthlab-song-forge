@@ -174,3 +174,7 @@
 - [x] Color the meter green→yellow→orange→red and light CLIP when the master clips
 - [x] Add per-channel peak-hold dB readouts and a clipping warning that stays visible
 - [x] Let the clipping warning clear itself once the level holds below the clip zone (~0.9 s), keeping click-to-reset
+
+## Mixer colours
+- [x] Retint the default Studio Pro desk: charcoal body (#2b2b2e) with amber accent (#f0a03c); console highlights follow the desk accent instead of app blue; verified in preview (build OK, --primary/--ring/--mx-accent all amber, desk charcoal, no console errors)
+- [x] Stop the timeline being squeezed when an editor panel is open: timeline keeps a 210px minimum, the editor panel now shrinks instead of pushing the toolbar's second row out of view (verified: toolbar row fully legible, nothing overlapping at 1334x986)
