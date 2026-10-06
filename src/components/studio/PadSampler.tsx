@@ -308,15 +308,19 @@ export function PadSampler() {
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement | null;
-      if (e.metaKey || e.ctrlKey || el?.tagName === "INPUT" || el?.tagName === "TEXTAREA" || el?.isContentEditable)
+      if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey || el?.tagName === "INPUT" || el?.tagName === "TEXTAREA" || el?.isContentEditable)
         return;
       const k = KEYMAP.indexOf(e.key.toLowerCase());
       if (k < 0) return;
+      // Claim the key so the typing-keys instrument doesn't also play (and record) it.
       e.preventDefault();
+      // A held key auto-repeats; only the first press is a hit.
+      if (e.repeat) return;
       trigger(index(k));
     };
-    window.addEventListener("keydown", down);
-    return () => window.removeEventListener("keydown", down);
+    // capture phase: pads win over the global typing keys, so one press = one note
+    window.addEventListener("keydown", down, true);
+    return () => window.removeEventListener("keydown", down, true);
   });
 
   /** Stop just one pad's voice (and its choke group) without touching the others. */
