@@ -177,3 +177,4 @@
 
 ## Mixer colours
 - [x] Retint the default Studio Pro desk: charcoal body (#2b2b2e) with amber accent (#f0a03c); console highlights follow the desk accent instead of app blue; verified in preview (build OK, --primary/--ring/--mx-accent all amber, desk charcoal, no console errors)
+- [x] Stop the timeline being squeezed when an editor panel is open: timeline keeps a 210px minimum, the editor panel now shrinks instead of pushing the toolbar's second row out of view (verified: toolbar row fully legible, nothing overlapping at 1334x986)
