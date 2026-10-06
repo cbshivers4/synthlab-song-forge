@@ -181,3 +181,6 @@
 
 ## Drum pad glyphs
 - [x] Restore original pad sizing and replace rejected abstract glyphs with recognizable coloured instrument drawings; preserve names and S/M controls
+
+## Drum patterns visibility
+- [ ] Bring A–H pattern selection, Copy/Clear and editable steps above the tall pad sound controls; keep pad sizing and instrument artwork unchanged, then verify pattern recall.
