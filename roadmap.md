@@ -134,7 +134,7 @@
 - [x] My Library (cloud/computer folders for samples, synth, drums, notes) + distinct effect window looks
 
 ## Current request
-- [ ] Keep timeline headers on one line, align sampler kind labels, and stop the playhead after track rows; verify visually.
+- [x] Keep timeline headers on one line, align sampler kind labels, and stop the playhead after track rows; verified signed-in with sampler name fitting and cursor ending at the last track.
 - [x] Brighten sampler pads and show full timeline track names; verified in the signed-in studio with loaded starter samples.
 - [x] Add color and JPEG wallpaper to transport, drum machine, synth, Live View, Live Looper, sampler, and sample pads without obscuring controls.
 - [x] Show real moving audio displays in bottom instrument and effect modules.
