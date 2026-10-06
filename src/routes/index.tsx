@@ -127,6 +127,9 @@ function DetachedPanels() {
         <p className="text-sm text-muted-foreground">Add an instrument track to open the synthesizer.</p>
       ),
     },
+    live: { title: "LIVE VIEW", icon: <Radio className="size-4" />, body: <LiveView /> },
+    looper: { title: "LIVE LOOPER", icon: <Disc3 className="size-4" />, body: <LiveLooperView /> },
+    pads: { title: "PAD SAMPLER", icon: <Grid2x2 className="size-4" />, body: <PadSampler /> },
   };
   return (
     <>
@@ -241,7 +244,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
               {float[panel === "synth" ? "synth" : "drums"] ? "Hide hardware" : "Hardware panel"}
             </Button>
           )}
-          {(panel === "mixer" || panel === "drums" || panel === "keys" || panel === "synth") && (!isMobile || (typeof window !== "undefined" && window.matchMedia("(pointer: fine)").matches)) && (
+          {(["mixer", "drums", "keys", "synth", "live", "looper", "pads"] as PanelId[]).includes(panel) && (!isMobile || (typeof window !== "undefined" && window.matchMedia("(pointer: fine)").matches)) && (
             <Button
               size="sm"
               variant="ghost"
