@@ -138,7 +138,7 @@ export function MasterMeter() {
 
   return (
     <div className="flex items-stretch gap-2 rounded-[3px] border border-border bg-background px-2 py-1 shadow-[inset_0_1px_3px_oklch(0_0_0/0.6)]">
-      <div className="flex w-36 flex-col justify-center gap-0.5">
+      <div className="flex w-48 flex-col justify-center gap-0.5">
         <div className="flex items-center justify-between">
           <span className="label-xs">MASTER L/R</span>
           <button
@@ -161,7 +161,7 @@ export function MasterMeter() {
           ))}
         </div>
       </div>
-      <div className="flex w-40 flex-col gap-0.5">
+      <div className="flex w-60 flex-col gap-0.5">
         <div className="flex items-center gap-1 font-mono text-[9px] tracking-wider">
           {(["osc", "spectrum"] as const).map((m) => (
             <button key={m} type="button" onClick={() => setMode(m)} aria-pressed={mode === m}
@@ -178,7 +178,7 @@ export function MasterMeter() {
             ))}
           </span>
         </div>
-        <canvas ref={scopeRef} className="h-7 w-full" aria-label="Master oscilloscope and spectrum" role="img" />
+        <canvas ref={scopeRef} className="h-8 w-full" aria-label="Master oscilloscope and spectrum" role="img" />
       </div>
     </div>
   );
