@@ -22,6 +22,7 @@ import {
   Mic2,
   MicVocal,
   MonitorSpeaker,
+  Music,
   Music2,
   Music3,
   Music4,
