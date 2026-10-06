@@ -17,6 +17,10 @@ function cssVar(name: string, fallback: string) {
 const toDb = (v: number) => (v <= 0.00001 ? -100 : 20 * Math.log10(v));
 /** maps -60..+3 dBFS onto 0..1 */
 const dbPos = (db: number) => Math.max(0, Math.min(1, (db + 60) / 63));
+/** every tick drawn under the meter */
+const SCALE_TICKS = [-60, -48, -36, -24, -18, -12, -6, -3, 0, 3];
+/** only these get printed numbers — the rest stay as plain ticks so they never collide */
+const SCALE_LABELS = [-60, -48, -36, -24, -12, -6, 0];
 
 /**
  * Stereo master meter (peak, RMS, peak hold, clip latch) plus oscilloscope / spectrum,
