@@ -1043,7 +1043,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
               <DropdownMenuItem onClick={() => copyTrack(track.id)}>
                 <Copy className="size-4" /> Copy track
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={pasteTrack}>
+              <DropdownMenuItem onClick={() => pasteTrack(track.id)}>
                 <ClipboardPaste className="size-4" /> Paste track{clipboardName ? ` (${clipboardName})` : ""}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => updateTrack(track.id, { frozen: !track.frozen })}>
@@ -1203,10 +1203,10 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
                   <DropdownMenuItem onClick={() => activeClip && cutClip(track.id, activeClip.id)}>
                     <Scissors className="size-4" /> Cut clip
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => pasteClip()} disabled={!clipClipboardName}>
+                  <DropdownMenuItem onClick={() => pasteClip(false, track.id)} disabled={!clipClipboardName}>
                     <ClipboardPaste className="size-4" /> Paste clip at playhead{clipClipboardName ? ` (${clipClipboardName})` : ""}
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => pasteClip(true)} disabled={!clipClipboardName}>
+                  <DropdownMenuItem onClick={() => pasteClip(true, track.id)} disabled={!clipClipboardName}>
                     <ClipboardPaste className="size-4" /> Paste clip at end of track{clipClipboardName ? ` (${clipClipboardName})` : ""}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={deleteActiveClip}>
@@ -2273,7 +2273,7 @@ function EditToolbar() {
         className="h-6 gap-1 px-2 text-[10px]"
         disabled={!clipboardName}
         title="Paste (⌘V / Ctrl+V)"
-        onClick={pasteTrack}
+        onClick={() => pasteTrack()}
       >
         <ClipboardPaste className="size-3" /> Paste
       </Button>

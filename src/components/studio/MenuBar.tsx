@@ -8,6 +8,7 @@ import {
   MenubarTrigger,
 } from "@/components/ui/menubar";
 import { useStudio } from "@/lib/synclab/store";
+import { requestBluetoothSettings } from "./Settings";
 import { useApp } from "@/lib/synclab/app-state";
 import { toast } from "sonner";
 import { useEffect, useRef, useState } from "react";
@@ -324,7 +325,7 @@ export function MenuBar() {
             <MenubarItem onClick={needTrack((id) => copyTrack(id))}>
               Copy Track <MenubarShortcut>⌘C</MenubarShortcut>
             </MenubarItem>
-            <MenubarItem onClick={pasteTrack}>
+            <MenubarItem onClick={() => pasteTrack()}>
               Paste{clipboardName ? ` “${clipboardName}”` : ""} <MenubarShortcut>⌘V</MenubarShortcut>
             </MenubarItem>
             <MenubarSeparator />
@@ -467,6 +468,7 @@ export function MenuBar() {
           <MenubarTrigger className="text-xs">Settings</MenubarTrigger>
           <MenubarContent>
             <MenubarItem onClick={() => setPanel("settings")}>Preferences</MenubarItem>
+            <MenubarItem onClick={() => { requestBluetoothSettings(); setPanel("settings"); }}>Bluetooth devices</MenubarItem>
             <MenubarItem onClick={() => setPanel("appearance")}>Appearance & Themes</MenubarItem>
           </MenubarContent>
         </MenubarMenu>

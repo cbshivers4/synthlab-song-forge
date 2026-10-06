@@ -297,11 +297,11 @@ interface StudioApi extends StudioState {
   clipboardName: string | null;
   copyTrack: (id: string) => void;
   cutTrack: (id: string) => void;
-  pasteTrack: () => void;
+  pasteTrack: (targetId?: string) => void;
   clipClipboardName: string | null;
   copyClip: (trackId: string, clipId: string) => void;
   cutClip: (trackId: string, clipId: string) => void;
-  pasteClip: (atEnd?: boolean) => void;
+  pasteClip: (atEnd?: boolean, targetId?: string) => void;
   updatePatch: (id: string, patch: Partial<SynthPatch>) => void;
   updatePad: (trackId: string, padId: string, patch: Partial<DrumPad>) => void;
   toggleStep: (trackId: string, padId: string, step: number) => void;
@@ -2055,6 +2055,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         const src = tracksRef.current.find((t) => t.id === id);
         if (!src) return;
         clipboardRef.current = structuredClone(src) as Track;
+        clipClipboardRef.current = null;
+        setClipClipboardName(null);
         setClipboardName(src.name);
         toast("Copied", { description: `${src.name} is on the clipboard — press ⌘V / Ctrl+V to paste.` });
       },
@@ -2069,10 +2071,37 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         setSelectedIds((s) => s.filter((x) => x !== id));
         toast("Cut", { description: `${src.name} removed and placed on the clipboard.` });
       },
-      pasteTrack: () => {
+      pasteTrack: (targetId) => {
         const src = clipboardRef.current;
         if (!src) {
           toast("Clipboard is empty", { description: "Copy a track first with ⌘C / Ctrl+C." });
+          return;
+        }
+        const target = tracksRef.current.find((t) => t.id === (targetId ?? selectedIdRef.current ?? src.id));
+        if (target) {
+          const at = Math.max(0, transportRef.current.step);
+          const origin = Math.min(...(src.clips ?? []).map((c) => c.start ?? 0), ...(src.notes ?? []).map((n) => n.step), ...(src.pads?.some((p) => p.steps.some((v) => v > 0)) ? [0] : []));
+          const shift = at - (Number.isFinite(origin) ? origin : 0);
+          const clips = (src.clips ?? []).map((c) => ({ ...structuredClone(c), id: uid(), start: (c.start ?? 0) + shift }));
+          const notes = (src.notes ?? []).map((n) => ({ ...n, id: uid(), step: n.step + shift, ...(n.recordedEnd !== undefined ? { recordedEnd: n.recordedEnd + shift } : {}) }));
+          if ((notes.length || src.pads?.some((p) => p.steps.some((v) => v > 0))) && src.kind !== target.kind) {
+            toast.error("Choose a matching channel", { description: "Paste notes onto the same instrument type, or duplicate the track." });
+            return;
+          }
+          const steps = Math.max(target.steps, Math.ceil(at + src.steps), ...notes.map((n) => Math.ceil(n.step + n.length)));
+          setTracks((ts) => ts.map((t) => {
+            if (t.id !== target.id) return t;
+            const pads = t.pads?.map((pad, i) => {
+              const source = src.pads?.[i];
+              const values = Array.from({ length: steps }, (_, s) => pad.steps[s] ?? 0);
+              source?.steps.forEach((v, s) => { if (v > 0) values[Math.max(0, Math.round(at) + s)] = v; });
+              return { ...pad, steps: values };
+            });
+            return { ...t, steps, notes: [...(t.notes ?? []), ...notes], clips: [...(t.clips ?? []), ...clips], pads,
+              activeClipId: clips[0]?.id ?? t.activeClipId,
+              ...(clips.length && (t.kind === "instrument" || t.kind === "midi" || t.kind === "drum") ? { printedAudio: true } : {}) };
+          }));
+          toast.success(`Pasted on ${target.name}`, { description: "Channel and sound settings unchanged." });
           return;
         }
         const copy: Track = { ...(structuredClone(src) as Track), id: uid(), name: `${src.name} COPY`, recording: false };
@@ -2095,6 +2124,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         const clip = tracksRef.current.find((t) => t.id === trackId)?.clips?.find((c) => c.id === clipId);
         if (!clip) return;
         clipClipboardRef.current = structuredClone(clip) as AudioClip;
+        clipboardRef.current = null;
+        setClipboardName(null);
         setClipClipboardName(clip.name);
         toast("Clip copied", { description: `${clip.name} — press ⌘V / Ctrl+V to paste it at the playhead.` });
       },
@@ -2113,13 +2144,13 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         );
         toast("Clip cut", { description: `${clip.name} — paste it at the playhead with ⌘V / Ctrl+V.` });
       },
-      pasteClip: (atEnd) => {
+      pasteClip: (atEnd, targetId) => {
         const src = clipClipboardRef.current;
         if (!src) {
           toast("Clip clipboard is empty", { description: "Click a clip and press ⌘C / Ctrl+C first." });
           return;
         }
-        const target = tracksRef.current.find((t) => t.id === selectedIdRef.current);
+        const target = tracksRef.current.find((t) => t.id === (targetId ?? selectedIdRef.current));
         if (!target) {
           toast("Select a track first", { description: "Click the track you want the clip on, then paste." });
           return;

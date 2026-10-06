@@ -32,6 +32,12 @@ import { AudioInterfaceCard } from "@/components/studio/AudioInterfaceCard";
 import { BluetoothDevices } from "@/components/studio/BluetoothDevices";
 import { replayMobileTour, saveMobileAccessibility, useMobileAccessibility } from "@/lib/synclab/mobile-accessibility";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Bluetooth } from "lucide-react";
+
+export function requestBluetoothSettings() {
+  sessionStorage.setItem("synclab.settings.bluetooth", "open");
+  window.dispatchEvent(new Event("synclab:bluetooth-settings"));
+}
 
 type Prefs = {
   sampleRate: string;
@@ -191,6 +197,16 @@ export function Settings() {
   const midiRef = useRef(midiInputs);
   midiRef.current = midiInputs;
   useEffect(() => { if (isMobile) setActiveTab("mobile"); }, [isMobile]);
+  useEffect(() => {
+    const open = () => {
+      if (sessionStorage.getItem("synclab.settings.bluetooth") !== "open") return;
+      sessionStorage.removeItem("synclab.settings.bluetooth");
+      setActiveTab("audio");
+    };
+    open();
+    window.addEventListener("synclab:bluetooth-settings", open);
+    return () => window.removeEventListener("synclab:bluetooth-settings", open);
+  }, []);
 
   const scanDevices = async (askPermission: boolean) => {
     if (typeof navigator === "undefined" || !navigator.mediaDevices?.enumerateDevices) return;
@@ -292,6 +308,7 @@ export function Settings() {
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="min-w-0 w-full overflow-x-hidden">
+      <Button variant="outline" className="mb-2 gap-2" onClick={() => setActiveTab("audio")}><Bluetooth className="size-4" /> Bluetooth devices</Button>
       <TabsList className="flex h-auto max-w-full flex-nowrap justify-start gap-1 overflow-x-auto bg-surface sm:flex-wrap">
         {(isMobile ? ["mobile", "audio", "recording", "metronome", "timing", "timeline", "midi", "mixing", "export", "desktop", "general"] : ["audio", "recording", "metronome", "timing", "timeline", "midi", "mixing", "export", "desktop", "mobile", "general"]).map((t) => (
           <TabsTrigger key={t} value={t} className="font-mono text-[11px] uppercase tracking-widest">

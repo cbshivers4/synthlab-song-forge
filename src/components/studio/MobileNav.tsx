@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { requestBluetoothSettings } from "./Settings";
 import {
   AudioLines,
   Bot,
@@ -113,6 +114,7 @@ export function MobileNav({ onBeatMode }: { onBeatMode: () => void }) {
               >
                 <SettingsIcon /> Phone settings
               </Button>
+               <Button variant="outline" className="mt-2 h-12 w-full" onClick={() => { requestBluetoothSettings(); pick({ label: "Bluetooth devices", icon: <Radio />, panel: "settings" }); }}>Bluetooth devices</Button>
             </div>
           )}
           <div className="mobile-tool-grid grid grid-cols-2 gap-3 p-4">
