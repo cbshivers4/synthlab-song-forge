@@ -104,7 +104,7 @@ export function MobileBeat({ onClose }: { onClose: () => void }) {
   const ensureSamplerTrack = (): string => {
     const existing = tracks.find((t) => t.kind === "sampler" && t.name === "PAD SAMPLER");
     if (existing) return existing.id;
-    return addTrack("sampler", "PAD SAMPLER");
+    return addTrack("sampler", "PAD SAMPLER", undefined, { keepPanel: true });
   };
 
   const playSamplePad = (i: number) => {
@@ -265,7 +265,7 @@ export function MobileBeat({ onClose }: { onClose: () => void }) {
 
   // A beat needs a drum track — make one the first time this screen opens.
   useEffect(() => {
-    if (!drumTrack) addTrack("drum", "BEAT");
+    if (!drumTrack) addTrack("drum", "BEAT", undefined, { keepPanel: true });
   }, [drumTrack, addTrack]);
 
   const pads = drumTrack?.pads ?? [];

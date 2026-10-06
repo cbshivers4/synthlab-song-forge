@@ -208,7 +208,7 @@ export function PadSampler() {
       voiceTrackRef.current = existing.id;
       return existing.id;
     }
-    const id = addTrack("sampler", "PAD SAMPLER");
+    const id = addTrack("sampler", "PAD SAMPLER", undefined, { keepPanel: true });
     setTrackId(id);
     voiceTrackRef.current = id;
     select(id);
