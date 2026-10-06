@@ -178,3 +178,6 @@
 ## Mixer colours
 - [x] Retint the default Studio Pro desk: charcoal body (#2b2b2e) with amber accent (#f0a03c); console highlights follow the desk accent instead of app blue; verified in preview (build OK, --primary/--ring/--mx-accent all amber, desk charcoal, no console errors)
 - [x] Stop the timeline being squeezed when an editor panel is open: timeline keeps a 210px minimum, the editor panel now shrinks instead of pushing the toolbar's second row out of view (verified: toolbar row fully legible, nothing overlapping at 1334x986)
+
+## Drum pad glyphs
+- [x] Show a sizeable glyph in each instrument's colour on every drum pad (PAD_STYLE map: kind → colour + icon), plus the same glyph in the display strip for the selected pad; pads use a div[role=button] so the S/M buttons are no longer nested inside a button (console nesting error gone); pad rows no longer stretch (content-start/auto-rows) — verified in preview at 1334x986
