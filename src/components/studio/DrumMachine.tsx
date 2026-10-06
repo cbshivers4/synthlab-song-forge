@@ -563,5 +563,7 @@ export function DrumMachine({ track }: { track: Track }) {
           </div>
         ))}
       </div>
+    </div>
   );
 }
+
