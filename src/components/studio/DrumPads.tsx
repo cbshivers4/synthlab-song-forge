@@ -36,7 +36,7 @@ export function DrumPads({ track, compact }: { track: Track; compact?: boolean }
     const onKey = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement | null;
       if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable)) return;
-      if (e.metaKey || e.ctrlKey || e.altKey || e.repeat) return;
+      if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey || e.repeat) return;
       const idx = "12345678".indexOf(e.key);
       const pad = idx >= 0 ? pads[idx] : undefined;
       if (!pad) return;

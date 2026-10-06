@@ -414,6 +414,8 @@ function useShortcuts() {
     const onKey = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement | null;
       if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
+      // a panel (e.g. pad sampler keys) already played this key
+      if (e.defaultPrevented) return;
       // Typing keys play the armed (or selected) instrument, like a DAW's computer MIDI keyboard.
       if (!e.metaKey && !e.ctrlKey && !e.altKey && qwertyEnabled()) {
         const isPlayable = (t?: { kind: string } | null) => !!t && (t.kind === "instrument" || t.kind === "midi" || t.kind === "sampler");
