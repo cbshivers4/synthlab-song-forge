@@ -314,6 +314,18 @@ export function Sampler() {
   const saveChops = async () => {
     try {
       const out = await renderChops();
+      const files = out.map((c) => new File([c.blob], `${c.name.replace(/[^\w-]+/g, "_")}.wav`, { type: "audio/wav" }));
+      // Phones: use the system share sheet so chops can be saved to Files / Drive / etc.
+      const nav = navigator as Navigator & { canShare?: (d: { files: File[] }) => boolean; share?: (d: { files: File[]; title?: string }) => Promise<void> };
+      if (nav.canShare?.({ files }) && nav.share) {
+        try {
+          await nav.share({ files, title: `${s?.name ?? "Sample"} chops` });
+          toast.success(`Shared ${out.length} chops — choose Save to Files on your phone`);
+          return;
+        } catch (e) {
+          if (e instanceof Error && e.name === "AbortError") return; // user cancelled the share sheet
+        }
+      }
       out.forEach((c, i) => setTimeout(() => {
         const a = document.createElement("a");
         a.href = URL.createObjectURL(c.blob);
