@@ -6,6 +6,7 @@ import type { PluginInstance, Track } from "@/lib/synclab/types";
 import { Knob } from "./Knob";
 import { Button } from "@/components/ui/button";
 import { Scope } from "./Scope";
+import { EffectDisplay } from "./EffectDisplay";
 
 function instrumentModule(track: Track): { label: string; icon: React.ReactNode; panel: "synth" | "drums" | "sampler" | "piano"; tone: string } {
   if (track.kind === "drum") return { label: "Drum Machine", icon: <Disc3 className="size-3.5" />, panel: "drums", tone: "drums" };
@@ -16,11 +17,11 @@ function instrumentModule(track: Track): { label: string; icon: React.ReactNode;
 
 function EffectModule({ track, plugin }: { track: Track; plugin: PluginInstance }) {
   const { setPluginParam, togglePluginBypass, removePlugin, setPanel } = useStudio();
-  const shown = plugin.params.slice(0, 3);
+  const shown = plugin.params.slice(0, 8);
   return (
     <div
       data-device-kind={plugin.kind}
-      className={`device-module flex w-[168px] shrink-0 flex-col overflow-hidden rounded-md border ${plugin.bypass ? "opacity-50" : ""}`}
+      className={`device-module flex w-[300px] shrink-0 flex-col overflow-hidden rounded-md border ${plugin.bypass ? "opacity-50" : ""}`}
     >
       <button
         type="button"
@@ -68,7 +69,10 @@ function EffectModule({ track, plugin }: { track: Track; plugin: PluginInstance 
           <X className="size-3" />
         </span>
       </button>
-      <div className="flex flex-1 items-start justify-around gap-1 px-1 py-1.5">
+      <div className="px-1 pt-1">
+        <EffectDisplay plugin={plugin} height={64} onParam={(paramId, v) => setPluginParam(track.id, plugin.id, paramId, v)} />
+      </div>
+      <div className="flex flex-1 flex-wrap items-start justify-around gap-x-1 gap-y-0.5 px-1 py-1">
         {shown.map((p) => (
           <Knob
             key={p.id}
@@ -77,14 +81,14 @@ function EffectModule({ track, plugin }: { track: Track; plugin: PluginInstance 
             min={p.min}
             max={p.max}
             unit={p.unit ?? ""}
-            size={34}
+            size={28}
             onChange={(v) => setPluginParam(track.id, plugin.id, p.id, v)}
             midiTarget={{ id: track.id, param: `plugin:${plugin.id}:${p.id}` }}
           />
         ))}
         {shown.length === 0 && <span className="self-center text-[10px] text-muted-foreground">No controls</span>}
       </div>
-      <div className="px-1 pb-1"><Scope scopeId={plugin.id} height={29} compact /></div>
+      <div className="px-1 pb-1"><Scope scopeId={plugin.id} height={22} compact /></div>
     </div>
   );
 }
@@ -147,7 +151,7 @@ export function DeviceBar() {
         </Button>
       </div>
       {!collapsed && (
-        <div className="flex h-[118px] items-stretch gap-2 overflow-x-auto p-2">
+        <div className="flex h-[236px] items-stretch gap-2 overflow-x-auto p-2">
           <div
             data-device-kind={inst.tone}
             className="device-module flex w-[150px] shrink-0 flex-col rounded-md border px-2 py-1.5"
@@ -162,7 +166,7 @@ export function DeviceBar() {
             <span className="flex items-center gap-1.5 text-[color:var(--device-accent)]">{inst.icon}</span>
             <span className="font-mono text-[10px] font-semibold tracking-wide text-foreground">{inst.label}</span>
           </Button>
-          <div className="mt-auto"><Scope scopeId={`ch:${track.id}`} height={55} compact /></div>
+          <div className="mt-auto"><Scope scopeId={`ch:${track.id}`} height={150} compact /></div>
           </div>
           {plugins.map((p) => (
             <EffectModule key={p.id} track={track} plugin={p} />

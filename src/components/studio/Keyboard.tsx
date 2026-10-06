@@ -63,28 +63,16 @@ export function Keyboard() {
   };
 
   const base = (octave + 1) * 12; // C of the chosen octave in MIDI
-  const whiteCount = 14; // two octaves of white keys
-  const whiteKeys = Array.from({ length: whiteCount }, (_, i) => {
-    // walk semitones, skip blacks
-    let semis = 0;
-    let seen = 0;
-    while (true) {
-      if (!BLACK.has(semis % 12)) {
-        if (seen === i) break;
-        seen++;
-      }
-      semis++;
-    }
-    return base + semis;
-  });
+  const visibleWhite = 14; // two octaves of white keys in view
+  const LOW = 24; // C1 — the full strip spans C1..B8 and slides under the window
+  const whiteCount = 56;
+  const whiteKeys: number[] = [];
   const blackKeys: { midi: number; pos: number }[] = [];
-  {
-    let wi = 0;
-    for (let s = 0; s < 24 && wi < whiteCount; s++) {
-      if (BLACK.has(s % 12)) blackKeys.push({ midi: base + s, pos: wi });
-      else wi++;
-    }
+  for (let s = 0; s < 96; s++) {
+    if (BLACK.has(s % 12)) blackKeys.push({ midi: LOW + s, pos: whiteKeys.length });
+    else whiteKeys.push(LOW + s);
   }
+  const shiftPct = ((octave - 1) * 7 / whiteCount) * 100;
 
   const scale = SCALES[scaleName] ?? SCALES["Minor"] ?? [];
   const inScale = (midi: number) => scale.includes((((midi - root) % 12) + 12) % 12);
@@ -267,6 +255,10 @@ export function Keyboard() {
         className="relative h-36 min-w-[620px] select-none overflow-hidden rounded-[3px] border border-border bg-black"
         style={{ touchAction: "none" }}
       >
+        <div
+          className="absolute inset-y-0 left-0 transition-transform duration-300 ease-out"
+          style={{ width: `${(whiteCount / visibleWhite) * 100}%`, transform: `translateX(-${shiftPct}%)` }}
+        >
         {/* white keys */}
         <div className="flex h-full gap-px bg-black">
           {whiteKeys.map((midi) => (
@@ -322,6 +314,7 @@ export function Keyboard() {
             aria-label={label(midi)}
           />
         ))}
+        </div>
       </div>
       <p className="label-xs">Highlighted keys are in {NOTE_NAMES[root]} {scaleName} · click a chord to play it</p>
     </div>
