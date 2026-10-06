@@ -7,7 +7,7 @@ import { useStudio } from "@/lib/synclab/store";
 import type { Track } from "@/lib/synclab/types";
 import { toast } from "sonner";
 import { getEngine } from "@/lib/synclab/audio-engine";
-import { encodeWav } from "@/lib/synclab/bounce";
+import { encodeMp3, encodeWav } from "@/lib/synclab/bounce";
 import { uid } from "@/lib/synclab/presets";
 import { wsolaStretch } from "@/lib/synclab/stretch";
 import { WaveformView } from "@/components/studio/WaveformView";
@@ -519,7 +519,7 @@ export function Sampler() {
               {chops.length > 0 && (
                 <>
                   <Button size="sm" variant="outline" className="h-9 font-mono text-[10px] tracking-widest sm:h-7" onClick={saveChops}>
-                    Save chops (WAV)
+                    Save chops (MP3)
                   </Button>
                   <Button size="sm" className="h-9 font-mono text-[10px] tracking-widest sm:h-7" onClick={sendChopsToPads}>
                     Send to sample pads
