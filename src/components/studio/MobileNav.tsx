@@ -21,6 +21,9 @@ import {
   Wand2,
   FolderOpen,
   FileSearch,
+  Play,
+  Pause,
+  Square,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -33,8 +36,8 @@ type Item = { label: string; icon: React.ReactNode; panel?: PanelId; run?: () =>
  * Touch-first bottom navigation for phones. Every button opens a real studio
  * tool — the same project and engine as the desktop layout.
  */
-export function MobileNav({ onBeatMode, view, setView, moreSignal = 0, landscape = false }: { landscape?: boolean; onBeatMode: () => void; view: "create" | "edit"; setView: (v: "create" | "edit") => void; moreSignal?: number }) {
-  const { panel, setPanel, toggleRecord, transport } = useStudio();
+export function MobileNav({ onBeatMode, view, setView, moreSignal = 0, landscape = false, toolsOpen = false, onToggleTools }: { landscape?: boolean; toolsOpen?: boolean; onToggleTools?: () => void; onBeatMode: () => void; view: "create" | "edit"; setView: (v: "create" | "edit") => void; moreSignal?: number }) {
+  const { panel, setPanel, toggleRecord, togglePlay, stop, transport } = useStudio();
   const [sheet, setSheet] = useState<null | "create" | "more">(null);
   useEffect(() => { if (moreSignal) setSheet("more"); }, [moreSignal]);
 
@@ -76,10 +79,13 @@ export function MobileNav({ onBeatMode, view, setView, moreSignal = 0, landscape
   ];
 
   const prodTabs = [
+    { label: transport.playing ? "PAUSE" : "PLAY", icon: transport.playing ? <Pause /> : <Play />, active: !!transport.playing, onClick: togglePlay },
+    { label: "STOP", icon: <Square />, active: false, onClick: stop },
     { label: "TIMELINE", icon: <AudioLines />, active: panel === null, onClick: () => setPanel(null) },
     { label: "MIX", icon: <SlidersHorizontal />, active: panel === "mixer", onClick: () => setPanel("mixer") },
     { label: "MIDI", icon: <Music />, active: panel === "piano", onClick: () => setPanel("piano") },
     { label: transport.recording ? "STOP" : "REC", icon: <Mic />, active: !!transport.recording, onClick: toggleRecord, rec: true },
+    { label: "TOOLS", icon: <Wand2 />, active: toolsOpen, onClick: () => onToggleTools?.() },
     { label: "MORE", icon: <MoreHorizontal />, active: sheet === "more", onClick: () => setSheet("more") },
   ];
   const shown = landscape ? prodTabs : tabs;
