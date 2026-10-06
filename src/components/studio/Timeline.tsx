@@ -954,7 +954,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
           else if (!isMobile) setMenuOpen(true);
         }}
       >
-        <div className="flex items-center gap-1.5">
+        <div className="flex flex-wrap items-center gap-1.5">
           <input
             type="checkbox"
             checked={isSelected}
@@ -994,7 +994,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
             <Input
               autoFocus
               defaultValue={track.name}
-              className="h-7 text-xs"
+              className="order-last h-7 w-full text-xs"
               onBlur={(e) => {
                 updateTrack(track.id, { name: e.target.value.toUpperCase() });
                 setRenaming(false);
@@ -1002,9 +1002,9 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
               onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
             />
           ) : (
-            <button className="font-display text-sm font-semibold truncate" onDoubleClick={() => setRenaming(true)}>
+            <Button variant="ghost" className="order-last h-auto min-h-6 w-full justify-start whitespace-normal break-words px-0 py-0 text-left font-display text-sm font-semibold" title={track.name} onDoubleClick={() => setRenaming(true)}>
               {index + 1}. {track.name}
-            </button>
+            </Button>
           )}
           {editorPanel && (
             <Button

@@ -112,6 +112,8 @@
   --clip-drum-dark: oklch(0.31 0.07 78);
   --editor-grid: oklch(0.29 0.008 255);
   --editor-grid-strong: oklch(0.39 0.012 255);
+  --sampler-pad-face: oklch(0.38 0.025 235);
+  --sampler-pad-border: oklch(0.62 0.055 210);
 
   --gradient-neon: linear-gradient(135deg, var(--neon), var(--magenta));
   --gradient-panel: linear-gradient(180deg, oklch(0.205 0.011 256), oklch(0.175 0.009 255));
@@ -171,9 +173,8 @@
 .studio-wallpaper[data-studio-panel="pads"] { --studio-accent: var(--primary); }
 .studio-wallpaper .panel { border-color: color-mix(in oklab, var(--studio-accent) 35%, var(--border)); }
 .studio-wallpaper[data-studio-panel="pads"] .sample-pad-wallpaper:not([data-loaded="true"]) {
-  background-image: linear-gradient(color-mix(in oklab, var(--background) 62%, transparent), color-mix(in oklab, var(--background) 80%, transparent)), url("./assets/studio-console-wallpaper.jpg");
-  background-size: cover;
-  background-position: center;
+  background: var(--sampler-pad-face);
+  border-color: var(--sampler-pad-border);
 }
 
 @utility lane-grid {
