@@ -315,7 +315,7 @@ export function Sampler() {
   const saveChops = async () => {
     try {
       const out = await renderChops();
-      const files = out.map((c) => new File([c.blob], `${c.name.replace(/[^\w-]+/g, "_")}.wav`, { type: "audio/wav" }));
+      const files = out.map((c) => new File([encodeMp3(c.cap, 192)], `${c.name.replace(/[^\w-]+/g, "_")}.mp3`, { type: "audio/mpeg" }));
       // Phones: use the system share sheet so chops can be saved to Files / Drive / etc.
       const nav = navigator as Navigator & { canShare?: (d: { files: File[] }) => boolean; share?: (d: { files: File[]; title?: string }) => Promise<void> };
       if (nav.canShare?.({ files }) && nav.share) {
