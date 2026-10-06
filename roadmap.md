@@ -183,4 +183,4 @@
 - [x] Restore original pad sizing and replace rejected abstract glyphs with recognizable coloured instrument drawings; preserve names and S/M controls
 
 ## Drum patterns visibility
-- [ ] Bring A–H pattern selection, Copy/Clear and editable steps above the tall pad sound controls; keep pad sizing and instrument artwork unchanged, then verify pattern recall.
+- [x] Bring A–H pattern selection, Copy/Clear and editable steps above the tall pad sound controls; pad sizing and instrument artwork unchanged; signed-in browser verified step editing and recall between banks with no runtime errors.
