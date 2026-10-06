@@ -625,3 +625,9 @@
   background: linear-gradient(180deg, oklch(0.12 0.02 190), oklch(0.2 0.05 190));
   border-radius: 0.125rem; font-family: "Courier New", monospace;
 }
+
+/* Sideways phone: slim production view; TOOLS in the side rail reveals the full bars. */
+.landscape-prod:not(.landscape-tools) .studio-topbar,
+.landscape-prod:not(.landscape-tools) .timeline-edit-toolbar {
+  display: none;
+}

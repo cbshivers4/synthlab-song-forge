@@ -77,7 +77,7 @@ export function TopBar() {
   const ciBar = Math.floor(ciElapsed / bpb) + 1;
 
   return (
-    <header className="studio-wallpaper rack sticky top-0 z-30 shrink-0" data-studio-panel="transport" style={skinBackground(transportSkin)} {...transportDrop}>
+    <header className="studio-topbar studio-wallpaper rack sticky top-0 z-30 shrink-0" data-studio-panel="transport" style={skinBackground(transportSkin)} {...transportDrop}>
       {transport.countInLeft != null && (
         <div className="pointer-events-none fixed inset-0 z-50 flex flex-col items-center justify-center bg-background/40">
           <div className="label-xs tracking-[0.3em] text-muted-foreground">COUNT-IN · BAR {ciBar}</div>
