@@ -47,7 +47,7 @@ import { ExternalApps } from "@/components/studio/ExternalApps";
 import { Bot } from "lucide-react";
 import { AppProvider, useApp, useMaybeApp } from "@/lib/synclab/app-state";
 import { PlanProvider } from "@/lib/synclab/plan";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useIsMobile, useIsLandscapePhone } from "@/hooks/use-mobile";
 import { useMobileAccessibility } from "@/lib/synclab/mobile-accessibility";
 import { toast } from "sonner";
 import synthFace from "@/assets/hw-synth.jpg";
@@ -566,6 +566,7 @@ function StudioWorkspace() {
   const [float, setFloat] = useState<FloatState>({ synth: false, drums: false });
   const [beatMode, setBeatMode] = useState(false);
   const [mobileView, setMobileView] = useState<"create" | "edit">("create");
+  const landscape = useIsLandscapePhone() && isMobile;
   const [moreSignal, setMoreSignal] = useState(0);
   useShortcuts();
   useEffect(() => { if (panel) setBeatMode(false); }, [panel]);
@@ -593,8 +594,9 @@ function StudioWorkspace() {
       <TopBar />
       <div className="flex min-h-0 flex-1">
         {!isMobile && <ToolsRail />}
+        {landscape && <MobileNav landscape onBeatMode={() => setBeatMode(true)} view="edit" setView={setMobileView} moreSignal={moreSignal} />}
         <main className="relative flex min-h-0 min-w-0 flex-1 flex-col">
-          {isMobile && mobileView === "create" && !panel && !beatMode && <MobileCreate onBeatMode={() => setBeatMode(true)} onMore={() => setMoreSignal((n) => n + 1)} />}
+          {isMobile && !landscape && mobileView === "create" && !panel && !beatMode && <MobileCreate onBeatMode={() => setBeatMode(true)} onMore={() => setMoreSignal((n) => n + 1)} />}
           <h1 className="sr-only">SYNCLAB Studio — browser digital audio workstation</h1>
           <Timeline />
           <Panels float={float} setFloat={setFloat} />
@@ -602,7 +604,7 @@ function StudioWorkspace() {
           <DeviceBar />
         </main>
       </div>
-      {isMobile ? <MobileNav onBeatMode={() => setBeatMode(true)} view={mobileView} setView={setMobileView} moreSignal={moreSignal} /> : <StatusBar />}
+      {landscape ? null : isMobile ? <MobileNav onBeatMode={() => setBeatMode(true)} view={mobileView} setView={setMobileView} moreSignal={moreSignal} /> : <StatusBar />}
       <FloatingDevices float={float} setFloat={setFloat} />
       <DeviceSetup />
       <ExportDialog />

@@ -33,7 +33,7 @@ type Item = { label: string; icon: React.ReactNode; panel?: PanelId; run?: () =>
  * Touch-first bottom navigation for phones. Every button opens a real studio
  * tool — the same project and engine as the desktop layout.
  */
-export function MobileNav({ onBeatMode, view, setView, moreSignal = 0 }: { onBeatMode: () => void; view: "create" | "edit"; setView: (v: "create" | "edit") => void; moreSignal?: number }) {
+export function MobileNav({ onBeatMode, view, setView, moreSignal = 0, landscape = false }: { landscape?: boolean; onBeatMode: () => void; view: "create" | "edit"; setView: (v: "create" | "edit") => void; moreSignal?: number }) {
   const { panel, setPanel, toggleRecord, transport } = useStudio();
   const [sheet, setSheet] = useState<null | "create" | "more">(null);
   useEffect(() => { if (moreSignal) setSheet("more"); }, [moreSignal]);
@@ -75,23 +75,34 @@ export function MobileNav({ onBeatMode, view, setView, moreSignal = 0 }: { onBea
     { label: "SOUNDS", icon: <FolderOpen />, active: panel === "browser", onClick: () => setPanel("browser") },
   ];
 
+  const prodTabs = [
+    { label: "TIMELINE", icon: <AudioLines />, active: panel === null, onClick: () => setPanel(null) },
+    { label: "MIX", icon: <SlidersHorizontal />, active: panel === "mixer", onClick: () => setPanel("mixer") },
+    { label: "MIDI", icon: <Music />, active: panel === "piano", onClick: () => setPanel("piano") },
+    { label: transport.recording ? "STOP" : "REC", icon: <Mic />, active: !!transport.recording, onClick: toggleRecord, rec: true },
+    { label: "MORE", icon: <MoreHorizontal />, active: sheet === "more", onClick: () => setSheet("more") },
+  ];
+  const shown = landscape ? prodTabs : tabs;
+
   const list = sheet === "create" ? create : more;
 
   return (
     <>
       <nav
         aria-label="Studio navigation"
-        className="mobile-nav relative z-50 grid shrink-0 grid-cols-5 gap-1 border-t-2 border-border bg-surface-1 px-1.5 pt-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))]"
+        className={landscape
+          ? "relative z-50 order-last flex w-20 shrink-0 flex-col justify-start gap-0.5 overflow-y-auto border-l-2 border-border bg-surface-1 px-1 py-1 pr-[max(0.25rem,env(safe-area-inset-right))]"
+          : "mobile-nav relative z-50 grid shrink-0 grid-cols-5 gap-1 border-t-2 border-border bg-surface-1 px-1.5 pt-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))]"}
       >
-        {tabs.map((t) => (
+        {shown.map((t) => (
           <Button
             key={t.label}
             type="button"
             variant="ghost"
             onClick={t.onClick}
             aria-pressed={t.active}
-            className={`h-16 min-w-0 flex-col gap-1 rounded-md px-1 text-[11px] font-bold tracking-wider [&_svg]:size-6 ${
-              "rec" in t ? "relative -mt-3 h-[4.5rem] border-2 border-destructive/70 bg-surface-2 shadow-lg" : ""} ${
+            className={`${landscape ? "!h-11 shrink-0 !gap-0.5 [&_svg]:!size-4 !text-[9px]" : "h-16"} min-w-0 flex-col gap-1 rounded-md px-1 text-[11px] font-bold tracking-wider [&_svg]:size-6 ${
+              "rec" in t ? landscape ? "border-2 border-destructive/70 bg-surface-2" : "relative -mt-3 h-[4.5rem] border-2 border-destructive/70 bg-surface-2 shadow-lg" : ""} ${
               t.active ? ("rec" in t ? "text-destructive" : "bg-primary/15 text-primary") : "text-muted-foreground"
             }`}
           >
