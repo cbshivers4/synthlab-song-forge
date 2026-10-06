@@ -432,6 +432,38 @@ export function DrumMachine({ track }: { track: Track }) {
                 <VSlider label="D" value={focusPad.decay} onChange={(v) => updatePad(track.id, focusPad.id, { decay: v })} />
                 <VSlider label="R" value={focusPad.release ?? 0.2} onChange={(v) => updatePad(track.id, focusPad.id, { release: v })} />
               </Section>
+              <Section title="Sample" active={Boolean(focusPad.sample)}>
+                <Knob label="START" midiTarget={{ id: track.id, param: `drum:${focusPad.id}:start` }} value={focusPad.start ?? 0} onChange={(v) => updatePad(track.id, focusPad.id, { start: Math.min(v, (focusPad.end ?? 1) - 0.01) })} />
+                <Knob label="END" midiTarget={{ id: track.id, param: `drum:${focusPad.id}:end` }} value={focusPad.end ?? 1} onChange={(v) => updatePad(track.id, focusPad.id, { end: Math.max(v, (focusPad.start ?? 0) + 0.01) })} />
+              </Section>
+              <Section title="Shape" active={(focusPad.tone ?? 0.5) !== 0.5 || (focusPad.compressor ?? 0) > 0 || (focusPad.noise ?? 0) > 0 || (focusPad.crush ?? 0) > 0}>
+                <Knob label="TONE" midiTarget={{ id: track.id, param: `drum:${focusPad.id}:tone` }} value={focusPad.tone ?? 0.5} onChange={(v) => updatePad(track.id, focusPad.id, { tone: v })} />
+                <Knob label="COMP" midiTarget={{ id: track.id, param: `drum:${focusPad.id}:compressor` }} value={focusPad.compressor ?? 0} onChange={(v) => updatePad(track.id, focusPad.id, { compressor: v })} />
+                <Knob label="NOISE" midiTarget={{ id: track.id, param: `drum:${focusPad.id}:noise` }} value={focusPad.noise ?? 0} onChange={(v) => updatePad(track.id, focusPad.id, { noise: v })} />
+                <Knob label="WIDTH" midiTarget={{ id: track.id, param: `drum:${focusPad.id}:width` }} value={focusPad.width ?? 0} onChange={(v) => updatePad(track.id, focusPad.id, { width: v })} />
+                <Knob label="CRUSH" midiTarget={{ id: track.id, param: `drum:${focusPad.id}:crush` }} value={focusPad.crush ?? 0} onChange={(v) => updatePad(track.id, focusPad.id, { crush: v })} />
+                <Knob label="MUTATE" midiTarget={{ id: track.id, param: `drum:${focusPad.id}:mutation` }} value={focusPad.mutation ?? 0.2} onChange={(v) => updatePad(track.id, focusPad.id, { mutation: v })} />
+              </Section>
+              <div className="flex items-center gap-2">
+                <span className="label-xs text-[9px]">CHOKE</span>
+                <div className="flex gap-0.5">
+                  {[0, 1, 2, 3, 4].map((g) => (
+                    <button
+                      key={g}
+                      title={g === 0 ? "No choke group" : `Choke group ${g} — pads in the same group cut each other off`}
+                      onClick={() => updatePad(track.id, focusPad.id, { choke: g })}
+                      className={cn(
+                        "h-6 w-6 rounded-[3px] border font-mono text-[10px]",
+                        (focusPad.choke ?? 0) === g
+                          ? "border-primary bg-primary/20 text-primary"
+                          : "border-border bg-surface-2 text-muted-foreground hover:text-foreground",
+                      )}
+                    >
+                      {g === 0 ? "–" : g}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div className="flex flex-wrap gap-1">
                 <Button size="sm" variant="ghost" className="h-6 px-1.5 text-[10px]" onClick={() => flam(focusPad.id, focusPad.steps)}>Flam</Button>
                 <Button size="sm" variant="ghost" className="h-6 px-1.5 text-[10px]" onClick={() => roll(focusPad.id, focusPad.steps)}>Roll</Button>
