@@ -1052,26 +1052,24 @@ function Strip({
         </Select>
       </div>
 
-      {/* pan — Studio Pro style pan pot */}
+      {/* pan */}
       <div
-        className={cn(ROW.pan, "flex items-center justify-center gap-1 border-b border-border/60 px-1.5")}
+        className={cn(ROW.pan, "flex flex-col justify-center border-b border-border/60 px-1.5")}
         style={{ "--primary": t.color } as CSSProperties}
         onClick={(e) => e.stopPropagation()}
       >
-        <Knob
-          label=""
-          value={t.pan}
+        <Slider
+          value={[t.pan]}
           min={-1}
           max={1}
           step={0.01}
-          size={30}
-          onChange={(v) => updateTrack(t.id, { pan: v })}
-          midiTarget={{ id: t.id, param: "pan" }}
+          className="h-3"
+          onValueChange={([v = 0]) => updateTrack(t.id, { pan: v })}
         />
         <button
           onClick={(e) => { e.stopPropagation(); updateTrack(t.id, { pan: 0 }); }}
-          title="Pan — click to centre"
-          className="w-7 text-center font-mono text-[8px] text-muted-foreground hover:text-foreground"
+          title="Double-click resets to centre"
+          className="mt-0.5 text-center font-mono text-[8px] text-muted-foreground hover:text-foreground"
         >
           {t.pan === 0 ? "C" : t.pan < 0 ? `L${Math.round(-t.pan * 100)}` : `R${Math.round(t.pan * 100)}`}
         </button>
