@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { requestBluetoothSettings } from "./Settings";
 import {
   AudioLines,
@@ -33,9 +33,10 @@ type Item = { label: string; icon: React.ReactNode; panel?: PanelId; run?: () =>
  * Touch-first bottom navigation for phones. Every button opens a real studio
  * tool — the same project and engine as the desktop layout.
  */
-export function MobileNav({ onBeatMode }: { onBeatMode: () => void }) {
+export function MobileNav({ onBeatMode, view, setView, moreSignal = 0 }: { onBeatMode: () => void; view: "create" | "edit"; setView: (v: "create" | "edit") => void; moreSignal?: number }) {
   const { panel, setPanel, toggleRecord, transport } = useStudio();
   const [sheet, setSheet] = useState<null | "create" | "more">(null);
+  useEffect(() => { if (moreSignal) setSheet("more"); }, [moreSignal]);
 
   const create: Item[] = [
     { label: "Sounds", icon: <FolderOpen />, panel: "browser" },
@@ -61,17 +62,17 @@ export function MobileNav({ onBeatMode }: { onBeatMode: () => void }) {
   };
 
   const tabs = [
-    { label: "HOME", icon: <Home />, active: panel === null, onClick: () => setPanel(null) },
-    { label: "CREATE", icon: <Plus />, active: sheet === "create", onClick: () => setSheet("create") },
+    { label: "CREATE", icon: <Plus />, active: panel === null && view === "create", onClick: () => { setPanel(null); setView("create"); } },
+    { label: "EDIT", icon: <Scissors />, active: (panel === null && view === "edit") || panel === "piano", onClick: () => { setPanel(null); setView("edit"); } },
     {
-      label: transport.recording ? "STOP" : "RECORD",
+      label: transport.recording ? "STOP" : "REC",
       icon: <Mic />,
       active: !!transport.recording,
       onClick: toggleRecord,
       rec: true,
     },
     { label: "MIX", icon: <SlidersHorizontal />, active: panel === "mixer", onClick: () => setPanel("mixer") },
-    { label: "MORE", icon: <MoreHorizontal />, active: sheet === "more", onClick: () => setSheet("more") },
+    { label: "SOUNDS", icon: <FolderOpen />, active: panel === "browser", onClick: () => setPanel("browser") },
   ];
 
   const list = sheet === "create" ? create : more;
