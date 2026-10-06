@@ -96,6 +96,11 @@ export function MasterMeter() {
         c.fillStyle = muted;
         for (const db of [-48, -36, -24, -18, -12, -6, -3, 0]) c.fillRect(dbPos(db) * w, 0, 1, h);
         if (clipChanged) setClip([...clipRef.current] as [boolean, boolean]);
+        const hd0 = toDb(hold[0]!.v), hd1 = toDb(hold[1]!.v);
+        if (hd0 !== holdDbRef.current[0] || hd1 !== holdDbRef.current[1]) {
+          holdDbRef.current = [hd0, hd1];
+          setHoldDb([hd0, hd1]);
+        }
       }
 
       // ---- scope
