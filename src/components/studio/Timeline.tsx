@@ -954,7 +954,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
           else if (!isMobile) setMenuOpen(true);
         }}
       >
-        <div className="flex flex-wrap items-center gap-1.5">
+        <div className="flex min-w-0 items-center gap-1">
           <input
             type="checkbox"
             checked={isSelected}
@@ -981,7 +981,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
               onClick={(e) => e.stopPropagation()}
               title={`${track.name} — pick colour and icon`}
               aria-label={`${track.name} colour and icon`}
-              className="flex size-9 shrink-0 items-center justify-center rounded-md border transition-colors hover:bg-white/5"
+              className="flex size-6 shrink-0 items-center justify-center rounded-md border transition-colors hover:bg-muted"
               style={{
                 borderColor: `color-mix(in oklab, ${track.color} 60%, transparent)`,
                 background: `color-mix(in oklab, ${track.color} 16%, transparent)`,
@@ -994,7 +994,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
             <Input
               autoFocus
               defaultValue={track.name}
-              className="order-last h-7 w-full text-xs"
+              className="h-7 min-w-0 flex-1 text-xs"
               onBlur={(e) => {
                 updateTrack(track.id, { name: e.target.value.toUpperCase() });
                 setRenaming(false);
@@ -1002,15 +1002,15 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
               onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
             />
           ) : (
-            <Button variant="ghost" className="order-last h-auto min-h-6 w-full justify-start whitespace-normal break-words px-0 py-0 text-left font-display text-sm font-semibold" title={track.name} onDoubleClick={() => setRenaming(true)}>
-              {index + 1}. {track.name}
+            <Button variant="ghost" className="h-6 min-w-0 flex-1 justify-start px-0 py-0 text-left font-display text-[11px] font-semibold" title={track.name} onDoubleClick={() => setRenaming(true)}>
+              <span className="truncate">{index + 1}. {track.name}</span>
             </Button>
           )}
           {editorPanel && (
             <Button
               size="icon"
               variant="ghost"
-              className="size-10 touch-manipulation sm:size-6"
+              className="size-6 shrink-0 touch-manipulation"
               aria-label={editorLabel}
               title={editorLabel}
               onClick={openTrackEditor}
@@ -1021,7 +1021,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
           <TrackNotes track={track} className="ml-auto" />
           <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
             <DropdownMenuTrigger asChild>
-              <Button size="icon" variant="ghost" className="size-10 touch-manipulation sm:size-6" aria-label="Track menu">
+              <Button size="icon" variant="ghost" className="size-6 shrink-0 touch-manipulation" aria-label="Track menu">
                 <MoreVertical className="size-3.5" />
               </Button>
             </DropdownMenuTrigger>
@@ -1373,12 +1373,12 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
             </DropdownMenuContent>
           </DropdownMenu>}
           {track.vca && <span className="ml-auto rounded-sm border border-primary/60 px-1 font-mono text-[9px] text-primary" title={`Volume also controlled by VCA ${track.vca} in the mixer`}>VCA {track.vca}</span>}
-          {!isMobile && <span className={`label-xs whitespace-nowrap ${track.vca ? "" : "ml-auto"}`}>{KIND_LABEL[track.kind]}</span>}
         </div>
 
         <div className="flex items-center gap-2">
+          <span className="shrink-0 font-mono text-[9px] text-muted-foreground">{KIND_LABEL[track.kind]}</span>
           {!isMobile && <Select value={track.input} onValueChange={(v) => updateTrack(track.id, { input: v })}>
-            <SelectTrigger className="h-7 flex-1 text-[11px]">
+            <SelectTrigger className="h-7 min-w-0 flex-1 text-[11px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -2944,6 +2944,7 @@ export function Timeline() {
             className="absolute left-1/2 top-0 w-[min(360px,38%)] -translate-x-[calc(50%-147px)] -translate-y-1/2 select-none opacity-[0.06]"
           />
         </div>
+        <div className="relative" data-timeline-track-rows>
         {tracks.map((t, i) => {
           const folder = t.folderId ? folders.find((f) => f.id === t.folderId) : undefined;
           const firstInFolder = folder && !tracks.slice(0, i).some((x) => x.folderId === folder.id);
@@ -2963,6 +2964,13 @@ export function Timeline() {
             </Fragment>
           );
         })}
+        {tracks.length > 0 && <div
+          data-timeline-playhead
+          className={`pointer-events-none absolute inset-y-0 z-10 w-[2px] -translate-x-1/2 ${transport.playing ? "bg-primary" : "bg-primary/80"}`}
+          style={{ left: `calc(294px + (100% - 294px) * ${(transport.step % totalSteps) / totalSteps})` }}
+          aria-hidden="true"
+        />}
+        </div>
         <div className="flex items-center gap-3 px-2 pt-2">
           <AddTrackMenu size="sm" />
           <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
@@ -3024,12 +3032,6 @@ export function Timeline() {
             }}
           />
         )}
-        {/* playhead line across every track — always visible so you can see where Paste lands */}
-        <div
-          className={`pointer-events-none absolute top-0 bottom-0 z-10 w-[2px] -translate-x-1/2 ${transport.playing ? "bg-primary" : "bg-primary/80 shadow-[0_0_6px_var(--primary)]"}`}
-          style={{ left: `calc(294px + (100% - 294px) * ${(transport.step % totalSteps) / totalSteps})` }}
-          aria-hidden="true"
-        />
         </div>
       </div>
       <TimelineOverview scrollRef={scrollRef} zoom={zoom} setZoom={setZoom} />
