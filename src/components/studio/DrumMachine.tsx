@@ -369,7 +369,7 @@ export function DrumMachine({ track }: { track: Track }) {
           </div>
 
           {/* Pad grid: each pad shows its instrument glyph in that instrument's colour */}
-          <div className="grid flex-1 grid-cols-4 gap-1.5">
+          <div className="grid content-start auto-rows-[86px] flex-1 grid-cols-4 gap-1.5">
             {pads.map((pad) => {
               const focused = focusPad?.id === pad.id;
               const hasSteps = pad.steps.some((v) => v > 0);
