@@ -514,6 +514,11 @@ function useShortcuts() {
             toast(selected.muted ? `${selected.name} unmuted` : `${selected.name} muted`);
           }
           break;
+        case "q":
+        case "Q":
+          e.preventDefault();
+          window.dispatchEvent(new Event("synclab:quantize"));
+          break;
         case "Home":
           e.preventDefault();
           setTransport({ step: 0 });
