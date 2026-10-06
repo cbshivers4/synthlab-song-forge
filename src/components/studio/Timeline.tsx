@@ -919,6 +919,10 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
         }
         // Click highlights the track (Ctrl/Cmd+C, X, V or the toolbar act on it); the ⋮ menu or right-click opens actions.
         select(track.id);
+        const target = e.target as HTMLElement;
+        if ((track.kind === "instrument" || track.kind === "midi") && !target.closest("button,input,textarea,select,[role='slider'],[role='combobox'],[role='menuitem']")) {
+          setPanel("piano");
+        }
       }}
       onContextMenu={(e) => {
         e.preventDefault();
@@ -945,12 +949,13 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
         }}
         onContextMenu={(e) => isMobile && e.preventDefault()}
         onClick={(e) => {
-          // Clicking a track's header opens its editor (instrument, drums, sampler).
+          // Synth channels select the note editor; their instrument opens only by an explicit action.
           if (e.metaKey || e.ctrlKey) return;
           const el = e.target as HTMLElement;
           if (el.closest("button,input,[role='slider'],[role='combobox']")) return;
           select(track.id);
-          if (editorPanel) setPanel(editorPanel);
+          if (track.kind === "instrument" || track.kind === "midi") setPanel("piano");
+          else if (editorPanel) setPanel(editorPanel);
           else if (!isMobile) setMenuOpen(true);
         }}
       >
@@ -1002,7 +1007,10 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
               onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
             />
           ) : (
-            <Button variant="ghost" className="h-6 min-w-0 flex-1 justify-start px-0 py-0 text-left font-display text-[11px] font-semibold" title={track.name} onDoubleClick={() => setRenaming(true)}>
+            <Button variant="ghost" className="h-6 min-w-0 flex-1 justify-start px-0 py-0 text-left font-display text-[11px] font-semibold" title={track.name} onClick={() => {
+              select(track.id);
+              if (track.kind === "instrument" || track.kind === "midi") setPanel("piano");
+            }} onDoubleClick={() => setRenaming(true)}>
               <span className="truncate">{index + 1}. {track.name}</span>
             </Button>
           )}
