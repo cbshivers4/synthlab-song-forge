@@ -2,7 +2,7 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 
 /** Panels that can be popped out into their own window (e.g. a second monitor). */
-export type DetachId = "mixer" | "drums" | "keys" | "synth";
+export type DetachId = "mixer" | "drums" | "keys" | "synth" | "live" | "looper" | "pads";
 
 let detached: DetachId[] = [];
 const pendingWindows = new Map<DetachId, Window>();
@@ -44,6 +44,9 @@ const SIZES: Record<DetachId, string> = {
   drums: "width=1200,height=720,resizable=yes",
   keys: "width=1200,height=380,resizable=yes",
   synth: "width=1100,height=760,resizable=yes",
+  live: "width=1200,height=800,resizable=yes",
+  looper: "width=920,height=780,resizable=yes",
+  pads: "width=1100,height=780,resizable=yes",
 };
 
 /** Preset window sizes (percent of the screen) offered in the popup header. */
