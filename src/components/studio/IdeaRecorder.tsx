@@ -86,7 +86,7 @@ export function IdeaRecorder({ compact }: { compact?: boolean }) {
       let pl = 0, pr = 0, holdL = 0, holdR = 0;
       const peakOf = (a: AnalyserNode) => {
         a.getFloatTimeDomainData(buf);
-        let p = 0; for (let i = 0; i < buf.length; i++) p = Math.max(p, Math.abs(buf[i]));
+        let p = 0; for (let i = 0; i < buf.length; i++) p = Math.max(p, Math.abs(buf[i] ?? 0));
         return p;
       };
       timer = setInterval(() => {
