@@ -102,9 +102,12 @@ export function SectionLane() {
           <button
             type="button"
             onClick={() => addSection("INTRO", 0, 32)}
-            className="absolute inset-0 flex items-center px-2 font-mono text-[9px] uppercase tracking-widest text-muted-foreground/70 hover:text-foreground"
+            className="absolute inset-0 flex items-center justify-center px-2 text-center font-mono text-[9px] uppercase tracking-widest text-muted-foreground/70 hover:text-foreground"
           >
-            no song parts yet — click to add INTRO, then drag it to size
+            <span className="truncate">
+              no song parts yet — click to add INTRO
+              <span className="hidden sm:inline">, then drag it to size</span>
+            </span>
           </button>
         )}
         {sections.map((sec) => {
