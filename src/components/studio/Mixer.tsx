@@ -1135,12 +1135,12 @@ function Strip({
         </span>
       </div>
 
-      {/* M / S / REC / MON — Studio Pro style letter buttons at the bottom */}
-      <div className={cn(ROW.buttons, "flex items-start justify-center gap-1 px-1 pt-1")}>
+      {/* M / S / REC / MON — Studio Pro style letter buttons at the bottom (2x2 so they stay big and tappable) */}
+      <div className={cn(ROW.buttons, "grid grid-cols-2 gap-1 px-1")}>
         <button
           onClick={(e) => { e.stopPropagation(); updateTrack(t.id, { muted: !t.muted }); }}
           className={cn(
-            "h-7 w-7 rounded-[3px] font-mono text-[11px] font-bold transition-colors",
+            "h-8 w-full rounded-[3px] font-mono text-[13px] font-bold leading-none transition-colors",
             t.muted
               ? "bg-orange-500 text-black shadow-[0_0_10px_rgba(249,115,22,0.8)]"
               : "bg-black/30 text-muted-foreground hover:text-foreground"
@@ -1154,7 +1154,7 @@ function Strip({
         <button
           onClick={(e) => { e.stopPropagation(); updateTrack(t.id, { solo: !t.solo }); }}
           className={cn(
-            "h-7 w-7 rounded-[3px] font-mono text-[11px] font-bold transition-colors",
+            "h-8 w-full rounded-[3px] font-mono text-[13px] font-bold leading-none transition-colors",
             t.solo
               ? "bg-emerald-400 text-black shadow-[0_0_10px_rgba(52,211,153,0.8)]"
               : "bg-black/30 text-muted-foreground hover:text-foreground"
@@ -1171,11 +1171,11 @@ function Strip({
           aria-label={`Record arm ${t.name}`}
           aria-pressed={t.armed}
           className={cn(
-            "flex h-7 w-7 items-center justify-center rounded-[3px] transition-colors",
+            "flex h-8 w-full items-center justify-center rounded-[3px] transition-colors",
             t.armed ? "bg-red-500/20" : "bg-black/30 hover:bg-black/50"
           )}
         >
-          <span className={cn("size-3 rounded-full border", t.armed ? "border-red-300 bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.9)]" : "border-red-500/60 bg-red-500/20")} />
+          <span className={cn("size-4 rounded-full border", t.armed ? "border-red-300 bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.9)]" : "border-red-500/60 bg-red-500/20")} />
         </button>
         <button
           onClick={(e) => {
@@ -1191,7 +1191,7 @@ function Strip({
           aria-label={`Monitor ${t.name} input`}
           aria-pressed={t.armed && transport.monitor}
           className={cn(
-            "h-7 w-7 rounded-[3px] font-mono text-[11px] font-bold transition-colors disabled:opacity-40",
+            "h-8 w-full rounded-[3px] font-mono text-[13px] font-bold leading-none transition-colors disabled:opacity-40",
             t.armed && transport.monitor
               ? "bg-sky-400 text-black"
               : "bg-black/30 text-muted-foreground hover:text-foreground"
