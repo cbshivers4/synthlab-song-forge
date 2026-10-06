@@ -44,10 +44,20 @@ export type MidiHandler = (msg: MidiMessage) => void;
 export function subscribe(a: AnyAccess | null, id: string, handler: MidiHandler): () => void {
   if (!a) return () => {};
   const ports = Array.from(a.inputs.values()).filter((p) => id === "all" || p.id === id);
+  // Some controllers expose the same keys on two ports (e.g. "MIDI" + "DAW"),
+  // and listening to all inputs would then play and record every note twice.
+  const lastNote = new Map<string, number>();
   const onMsg = (e: { data: Uint8Array }) => {
     const [status = 0, d1 = 0, d2 = 0] = Array.from(e.data);
     const cmd = status & 0xf0;
     const channel = status & 0x0f;
+    if (cmd === 0x90 || cmd === 0x80) {
+      const key = `${cmd === 0x90 && d2 > 0 ? "on" : "off"}:${channel}:${d1}`;
+      const now = performance.now();
+      const prev = lastNote.get(key);
+      lastNote.set(key, now);
+      if (prev != null && now - prev < 25) return;
+    }
     if (cmd === 0x90 && d2 > 0) handler({ type: "on", pitch: d1, velocity: d2 / 127, channel });
     else if (cmd === 0x80 || (cmd === 0x90 && d2 === 0)) handler({ type: "off", pitch: d1, velocity: 0, channel });
     else if (cmd === 0xb0) handler({ type: "cc", cc: d1, value: d2 / 127, channel });
