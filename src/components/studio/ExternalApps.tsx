@@ -31,7 +31,7 @@ export function ExternalApps() {
 
   const scanMidi = async () => {
     const a = await getOutputAccess();
-    if (!a) return toast.error("MIDI isn't available", { description: "Use Chrome, Edge or the SYNCLAB desktop app." });
+    if (!a) { toast.error("MIDI isn't available", { description: "Use Chrome, Edge or the SYNCLAB desktop app." }); return; }
     const list = listOutputs();
     setOuts(list);
     if (!list.length) toast.message("No MIDI outputs", { description: "On a Mac, open Audio MIDI Setup → MIDI Studio → IAC Driver and tick 'Device is online'." });
@@ -68,7 +68,7 @@ export function ExternalApps() {
 
   const addView = async () => {
     const md = navigator.mediaDevices as MediaDevices & { getDisplayMedia?: MediaDevices["getDisplayMedia"] };
-    if (!md.getDisplayMedia) return toast.error("Window viewing isn't supported in this browser");
+    if (!md.getDisplayMedia) { toast.error("Window viewing is not supported in this browser"); return; }
     try {
       const stream = await md.getDisplayMedia({ video: true, audio: false });
       const label = stream.getVideoTracks()[0]?.label || "App window";
