@@ -32,9 +32,11 @@ export function MasterMeter() {
   const [mode, setMode] = useState<ScopeMode>("osc");
   const [chan, setChan] = useState<ScopeChan>("stereo");
   const [clip, setClip] = useState<[boolean, boolean]>([false, false]);
+  const [holdDb, setHoldDb] = useState<[number, number]>([-100, -100]);
   const opts = useRef({ mode, chan });
   opts.current = { mode, chan };
   const clipRef = useRef<[boolean, boolean]>([false, false]);
+  const holdDbRef = useRef<[number, number]>([-100, -100]);
 
   useEffect(() => {
     const hold = [{ v: 0, t: 0 }, { v: 0, t: 0 }];
