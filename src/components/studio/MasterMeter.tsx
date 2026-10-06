@@ -157,12 +157,23 @@ export function MasterMeter() {
         </div>
         <canvas ref={meterRef} className="h-5 w-full" aria-label="Master stereo level meter" role="img" />
         <div className="relative h-3 font-mono text-[8px] leading-none text-muted-foreground" aria-hidden>
-          {[-60, -48, -36, -24, -18, -12, -6, -3, 0, 3].map((db) => (
-            <span key={db} className="absolute top-0 flex -translate-x-1/2 flex-col items-center" style={{ left: `${dbPos(db) * 100}%` }}>
-              <span className="h-1 w-px bg-muted-foreground/70" />
-              <span className={db >= 0 ? "text-destructive" : db >= -6 ? "text-foreground/80" : undefined}>{db > 0 ? `+${db}` : db}</span>
-            </span>
-          ))}
+          {SCALE_TICKS.map((db) => {
+            const p = dbPos(db);
+            const shift = p < 0.05 ? "" : p > 0.95 ? "-translate-x-full" : "-translate-x-1/2";
+            return (
+              <span key={db}>
+                <span className="absolute top-0 h-1 w-px -translate-x-1/2 bg-muted-foreground/70" style={{ left: `${p * 100}%` }} />
+                {SCALE_LABELS.includes(db) && (
+                  <span
+                    className={`absolute top-1 ${shift} ${db >= 0 ? "text-destructive" : db >= -6 ? "text-foreground/80" : ""}`}
+                    style={{ left: `${p * 100}%` }}
+                  >
+                    {db > 0 ? `+${db}` : db}
+                  </span>
+                )}
+              </span>
+            );
+          })}
         </div>
       </div>
       <div className="flex w-60 flex-col gap-0.5">
