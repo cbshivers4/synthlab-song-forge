@@ -1,11 +1,12 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { Lock, Minus, Music2, Plus, Unlock } from "lucide-react";
+import { Keyboard as ComputerKeyboard, Lock, Minus, Music2, Plus, Unlock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { useStudio } from "@/lib/synclab/store";
 import { keysSnapshot, subscribeKeys } from "@/lib/synclab/active-keys";
 import type { Track } from "@/lib/synclab/types";
+import { QWERTY_MAP, qwertyEnabled, qwertyOctave, setQwertyEnabled, setQwertyOctave } from "@/lib/synclab/qwerty";
 
 const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 const BLACK = new Set([1, 3, 6, 8, 10]);
@@ -41,6 +42,14 @@ export function Keyboard({ track, onPlay, disabled = false }: { track?: Track; o
   const [root, setRoot] = useState(0);
   const [scaleName, setScaleName] = useState("Minor");
   const [scaleLock, setScaleLock] = useState(false);
+  const [typing, setTyping] = useState(false);
+  const [typingOctave, setTypingOctave] = useState(4);
+  useEffect(() => {
+    const sync = () => { setTyping(qwertyEnabled()); setTypingOctave(qwertyOctave()); };
+    sync();
+    window.addEventListener("synclab:qwerty", sync);
+    return () => window.removeEventListener("synclab:qwerty", sync);
+  }, []);
   // Notes sounding from any source (MIDI controller, typing keys, screen taps).
   const external = useSyncExternalStore(subscribeKeys, keysSnapshot, () => EMPTY);
   const litKeys = new Set([...held, ...external]);
@@ -101,6 +110,27 @@ export function Keyboard({ track, onPlay, disabled = false }: { track?: Track; o
   const play = (midi: number) => playNotes([midi]);
   const playChord = (intervals: readonly number[]) => playNotes(intervals.map((interval) => base + root + interval));
 
+  // Embedded keyboards claim typing once; never add a second global note path.
+  useEffect(() => {
+    if (!track && !onPlay) return;
+    const down = (event: KeyboardEvent) => {
+      const el = event.target as HTMLElement | null;
+      if (disabled || !qwertyEnabled() || event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey || el?.isContentEditable || (el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
+      const key = event.key.toLowerCase();
+      const offset = QWERTY_MAP[key];
+      if (offset === undefined && key !== "z" && key !== "x") return;
+      event.preventDefault();
+      if (event.repeat) return;
+      if (key === "z" || key === "x") {
+        const next = qwertyOctave() + (key === "z" ? -1 : 1);
+        setQwertyOctave(next);
+        slideTo(next);
+      } else if (offset !== undefined) play((qwertyOctave() + 1) * 12 + offset);
+    };
+    window.addEventListener("keydown", down, true);
+    return () => window.removeEventListener("keydown", down, true);
+  });
+
   const label = (midi: number) => `${NOTE_NAMES[midi % 12]}${Math.floor(midi / 12) - 1}`;
 
   if (!onPlay && (!selected || !selected.patch))
@@ -112,6 +142,14 @@ export function Keyboard({ track, onPlay, disabled = false }: { track?: Track; o
 
   return (
     <div className="space-y-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <Button size="sm" variant={typing ? "secondary" : "outline"} aria-pressed={typing} disabled={disabled}
+          title="A W S E D F T G Y H U J K O L play notes; Z / X change octave"
+          onClick={() => { setQwertyEnabled(!typing); if (!typing) setQwertyOctave(octave); }}>
+          <ComputerKeyboard className="size-4" /> Computer keys {typing ? "ON" : "OFF"}
+        </Button>
+        {typing && <span className="font-mono text-xs text-muted-foreground">C{typingOctave} · Z / X</span>}
+      </div>
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 sm:flex sm:gap-3">
         <span className="label-xs">
           {onPlay ? "Selected sample" : `Playing ${selected?.name} · ${selected?.instrument ?? "SYNTH"}`}
@@ -287,6 +325,7 @@ export function Keyboard({ track, onPlay, disabled = false }: { track?: Track; o
               }}
               aria-label={label(midi)}
             >
+              {typing && Object.entries(QWERTY_MAP).map(([key, offset]) => (typingOctave + 1) * 12 + offset === midi ? <span key={key} className="absolute bottom-5 left-1/2 -translate-x-1/2 font-mono text-xs text-background">{key.toUpperCase()}</span> : null)}
               {midi % 12 === 0 && (
                 <span className="absolute bottom-1 left-1/2 -translate-x-1/2 font-mono text-[9px] font-medium text-neutral-500">
                   {label(midi)}
@@ -319,7 +358,9 @@ export function Keyboard({ track, onPlay, disabled = false }: { track?: Track; o
               boxShadow: "0 3px 6px oklch(0 0 0 / 0.6)",
             }}
             aria-label={label(midi)}
-          />
+          >
+            {typing && Object.entries(QWERTY_MAP).map(([key, offset]) => (typingOctave + 1) * 12 + offset === midi ? <span key={key} className="absolute bottom-2 left-1/2 -translate-x-1/2 font-mono text-xs text-primary">{key.toUpperCase()}</span> : null)}
+          </button>
         ))}
         </div>
       </div>
