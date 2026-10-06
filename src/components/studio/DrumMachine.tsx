@@ -29,11 +29,17 @@ function readPresets(): DrumPreset[] {
 const BANKS = ["A", "B", "C", "D", "E", "F", "G", "H"];
 
 /** Instrument drawings, not abstract symbols; they fit inside the original pad layout. */
+const INSTRUMENT_COLOR: Record<DrumPad["kind"], string> = {
+  kick: "text-destructive", snare: "text-amber", clap: "text-magenta",
+  hat: "text-primary", openhat: "text-neon", tom: "text-chart-2",
+  perc: "text-chart-3", rim: "text-foreground", crash: "text-amber",
+  ride: "text-chart-1", fx: "text-magenta",
+};
 function DrumInstrumentIcon({ kind, className }: { kind: DrumPad["kind"]; className?: string }) {
   const drum = kind === "snare" || kind === "tom" || kind === "rim";
   const cymbal = kind === "hat" || kind === "openhat" || kind === "crash" || kind === "ride";
   return (
-    <svg viewBox="0 0 40 40" className={cn("shrink-0", className)} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <svg viewBox="0 0 40 40" className={cn("shrink-0", INSTRUMENT_COLOR[kind], className)} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       {kind === "kick" && <><circle cx="20" cy="20" r="13" /><circle cx="20" cy="20" r="10" /><circle cx="25" cy="25" r="3" /><path d="m10 30-3 6m23-6 3 6M20 31v6m-3 0h6" /></>}
       {drum && <><ellipse cx="20" cy="12" rx="14" ry="5" /><path d="M6 12v14c0 7 28 7 28 0V12M11 16v12m9-11v13m9-14v12m-18 3-3 6m21-6 3 6" />{kind === "snare" && <path d="M7 23h26M7 26h26m-22-22 14 9m8-10-17 11" />}{kind === "rim" && <path d="m4 3 24 15M7 4l24 15" />}</>}
       {cymbal && <><path d="M20 5v30m-7 2 7-7 7 7" /><ellipse cx="20" cy="14" rx="17" ry="4" /><path d="M15 12q5-8 10 0" />{(kind === "hat" || kind === "openhat") && <ellipse cx="20" cy={kind === "openhat" ? "22" : "18"} rx="17" ry="3" />}{kind === "crash" && <path d="m3 4 4 4m26-4-4 4M5 25l4-3m22 0 4 3" />}{kind === "ride" && <ellipse cx="20" cy="14" rx="12" ry="2" />}</>}
@@ -328,7 +334,7 @@ export function DrumMachine({ track }: { track: Track }) {
           </span>
           <div className="flex items-center gap-4 font-mono text-[10px] text-muted-foreground">
             <span className="flex items-center gap-1.5">
-              {focusPad && <DrumInstrumentIcon kind={focusPad.kind} className="size-5 text-primary" />}
+              {focusPad && <DrumInstrumentIcon kind={focusPad.kind} className="size-5" />}
               <span className="text-foreground/80">{focusPad ? focusPad.name : "—"}</span>
             </span>
             <span>{focusPad?.sample ?? "synthesized voice"}</span>
@@ -395,7 +401,7 @@ export function DrumMachine({ track }: { track: Track }) {
                   )}
                 >
                   <span className="flex min-w-0 items-center gap-1.5">
-                    <DrumInstrumentIcon kind={pad.kind} className="size-8 text-primary" />
+                    <DrumInstrumentIcon kind={pad.kind} className="size-8" />
                     <span className="min-w-0">
                       <span className="block truncate font-mono text-[10px] font-semibold tracking-wider">{pad.name}</span>
                       <span className="block font-mono text-[8px] text-muted-foreground">
