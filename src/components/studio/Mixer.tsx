@@ -371,11 +371,11 @@ const CONSOLE_STYLES: ConsoleStyle[] = [
   {
     id: "studiopro",
     name: "Studio Pro",
-    desc: "One solid dark grey with blue accent — the default desk",
-    a: "oklch(0.31 0.01 260)",
-    b: "oklch(0.31 0.01 260)",
-    c: "oklch(0.31 0.01 260)",
-    accent: "oklch(0.72 0.15 235)",
+    desc: "One solid charcoal with amber accent — the default desk",
+    a: "oklch(0.290 0.005 286)",
+    b: "oklch(0.290 0.005 286)",
+    c: "oklch(0.290 0.005 286)",
+    accent: "oklch(0.768 0.146 68)",
     screws: false,
   },
   {
@@ -461,6 +461,13 @@ const SOLID_PRESETS: { name: string; hex: string }[] = [
   { name: "Electric Violet", hex: "#221b33" },
   { name: "Warm Walnut", hex: "#2a211a" },
 ];
+
+/** Dark ink for anything sitting on the desk accent (accents are always light). */
+function accentInk(accent: string) {
+  const m = /^oklch\(([\d.]+)\s+([\d.]+)\s+([\d.-]+)\)/.exec(accent);
+  if (!m) return "#1a1b1e";
+  return `oklch(0.24 ${Math.min(0.05, Number(m[2]) * 0.3)} ${m[3]})`;
+}
 
 /** Panel background, driven by the picked desk (vars set on the console root). */
 const PANEL =
@@ -1617,6 +1624,10 @@ export function Mixer() {
           "--mx-c": deskColors.c,
           "--mx-accent": desk.accent,
           "--mx-screw-display": desk.screws ? "inline-block" : "none",
+          // Highlight colours inside the console follow the desk accent, not the app blue.
+          "--primary": desk.accent,
+          "--primary-foreground": accentInk(desk.accent),
+          "--ring": desk.accent,
         } as CSSProperties
       }
     >

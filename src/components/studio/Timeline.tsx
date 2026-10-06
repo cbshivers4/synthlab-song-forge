@@ -2228,7 +2228,7 @@ function EditToolbar() {
   const targets = selectedIds.length > 1 ? selectedIds : selected ? [selected.id] : [];
 
   return (
-    <div className="flex min-h-11 flex-wrap items-center gap-1 border-b border-border bg-surface-2/60 px-2 py-1">
+    <div className="flex min-h-11 shrink-0 flex-wrap items-center gap-1 border-b border-border bg-surface-2/60 px-2 py-1">
       <ToolBtn tool="select" icon={<MousePointer2 className="size-3" />} label="Select" keys="V" />
       <ToolBtn tool="draw" icon={<Pencil className="size-3" />} label="Draw" keys="B" />
       <ToolBtn tool="split" icon={<ScissorsLineDashed className="size-3" />} label="Split" keys="C" />
@@ -2991,7 +2991,7 @@ export function Timeline() {
     }
   }, [transport.follow, transport.playing, transport.step, totalSteps]);
   return (
-    <section className="mobile-timeline relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden border-x border-b border-border bg-background/60">
+    <section className="mobile-timeline relative flex min-h-[210px] min-w-0 flex-1 flex-col overflow-hidden border-x border-b border-border bg-background/60">
       <EditToolbar />
       <div className="shrink-0 overflow-hidden">
         <div ref={timelineHeaderRef} className="min-w-[720px] sm:min-w-0">
