@@ -92,8 +92,11 @@ export function AudioInterfaceCard({ inputs, outputs, inputDevice, channel, samp
           </div>
         </div>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          <Stat label="Inputs" value={String(inputs.length)} />
-          <Stat label="Outputs" value={String(outputs.length)} />
+          {/* Volt 1 hardware is fixed: one mic/line input, two line outputs.
+              The browser enumerates each playback/recording track separately,
+              which inflated the counts — show the real hardware instead. */}
+          <Stat label="Inputs" value={isVolt ? "1 (mic / line)" : String(inputs.length)} />
+          <Stat label="Outputs" value={isVolt ? "2 (line out)" : String(outputs.length)} />
           <Stat label="Record ch" value={channel === "in1" ? "1 (mono)" : channel === "in2" ? "2 (mono)" : "1+2 stereo"} />
           <Stat label="Sample rate" value={`${sampleRate} Hz`} />
         </div>
