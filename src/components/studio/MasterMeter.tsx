@@ -86,9 +86,10 @@ export function MasterMeter() {
             clipRef.current[ch] = true; clearSinceRef.current[ch] = 0; clipChanged = true;
           } else if (clipRef.current[ch]) {
             // auto-dismiss: the warning releases itself once the level stays under the clip zone
+            const since = clearSinceRef.current[ch] ?? 0;
             if (peak < CLIP_CLEAR) {
-              if (!clearSinceRef.current[ch]) clearSinceRef.current[ch] = now;
-              else if (now - clearSinceRef.current[ch] >= CLIP_CLEAR_MS) {
+              if (!since) clearSinceRef.current[ch] = now;
+              else if (now - since >= CLIP_CLEAR_MS) {
                 clipRef.current[ch] = false; clearSinceRef.current[ch] = 0; clipChanged = true;
               }
             } else clearSinceRef.current[ch] = 0;
