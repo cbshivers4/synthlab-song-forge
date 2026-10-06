@@ -28,9 +28,18 @@ export async function getMidiAccess(): Promise<AnyAccess | null> {
   }
 }
 
+/* Bluetooth LE MIDI devices connected through Web Bluetooth act as extra inputs. */
+const virtualPorts = new Map<string, string>();
+const virtualHandlers = new Set<{ id: string; fn: (e: { data: Uint8Array }) => void }>();
+export function addVirtualInput(id: string, name: string) { virtualPorts.set(id, name); }
+export function removeVirtualInput(id: string) { virtualPorts.delete(id); }
+export function feedVirtualInput(id: string, data: Uint8Array) {
+  for (const h of virtualHandlers) if (h.id === "all" || h.id === id) h.fn({ data });
+}
+
 export function listInputs(a: AnyAccess | null): MidiPortInfo[] {
-  if (!a) return [];
-  return Array.from(a.inputs.values()).map((i) => ({ id: i.id, name: i.name || "MIDI INPUT" }));
+  const real = a ? Array.from(a.inputs.values()).map((i) => ({ id: i.id, name: i.name || "MIDI INPUT" })) : [];
+  return [...real, ...Array.from(virtualPorts, ([id, name]) => ({ id, name }))];
 }
 
 export type MidiMessage =
@@ -42,8 +51,7 @@ export type MidiHandler = (msg: MidiMessage) => void;
 
 /** Subscribe to one input id, or all inputs when id is "all". Returns an unsubscribe fn. */
 export function subscribe(a: AnyAccess | null, id: string, handler: MidiHandler): () => void {
-  if (!a) return () => {};
-  const ports = Array.from(a.inputs.values()).filter((p) => id === "all" || p.id === id);
+  const ports = Array.from(a?.inputs.values() ?? []).filter((p) => id === "all" || p.id === id);
   // Some controllers expose the same keys on two ports (e.g. "MIDI" + "DAW"),
   // and listening to all inputs would then play and record every note twice.
   const lastNote = new Map<string, number>();
@@ -64,7 +72,10 @@ export function subscribe(a: AnyAccess | null, id: string, handler: MidiHandler)
     else if (cmd === 0xe0) handler({ type: "pitchbend", value: ((d2 << 7) | d1) / 16383, channel });
   };
   for (const p of ports) p.onmidimessage = onMsg;
+  const vh = { id, fn: onMsg };
+  virtualHandlers.add(vh);
   return () => {
+    virtualHandlers.delete(vh);
     for (const p of ports) if (p.onmidimessage === onMsg) p.onmidimessage = null;
   };
 }
