@@ -104,7 +104,7 @@ export function MasterMeter() {
         const chans = ch === "stereo" ? [0, 1] : ch === "left" ? [0] : [1];
         c.lineWidth = 1.2;
         for (const i of chans) {
-          c.strokeStyle = i === 0 ? primary : accent2;
+          c.strokeStyle = i === 0 ? green : accent2;
           c.globalAlpha = chans.length > 1 ? 0.8 : 1;
           c.beginPath();
           if (m === "osc") {
