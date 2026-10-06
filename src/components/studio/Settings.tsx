@@ -29,6 +29,7 @@ import { openExport } from "@/components/studio/ExportDialog";
 import { DesktopPanel } from "@/components/studio/DesktopPanel";
 import { PluginManager } from "@/components/studio/PluginManager";
 import { AudioInterfaceCard } from "@/components/studio/AudioInterfaceCard";
+import { BluetoothDevices } from "@/components/studio/BluetoothDevices";
 import { replayMobileTour, saveMobileAccessibility, useMobileAccessibility } from "@/lib/synclab/mobile-accessibility";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -300,6 +301,33 @@ export function Settings() {
       </TabsList>
 
       <TabsContent value="audio" className="mt-4">
+        <BluetoothDevices
+          inputs={inputs}
+          outputs={outputs}
+          midiInputs={midiInputs}
+          onRescan={() => void scanDevices(true)}
+          onMidiChanged={(id) => {
+            enableMidi({ quiet: true });
+            if (id) setMidiInput(id);
+          }}
+          onUseInput={(label) => {
+            const match = inputs.find((d) => d.label === label);
+            set("inputDevice", label);
+            setPreferredInput(match?.id ?? null);
+            toast.success(`Input set to ${label}`, { description: "Re-arm your track to use it." });
+          }}
+          onUseOutput={(label) => {
+            const match = outputs.find((d) => d.label === label);
+            void getEngine()
+              .setOutputDevice(match?.id ?? null)
+              .then(() => {
+                set("outputDevice", label);
+                setOutputDevice(match?.id ?? null);
+                toast.success(`Output set to ${label}`);
+              })
+              .catch((e: unknown) => toast.error("Couldn't change output", { description: e instanceof Error ? e.message : "This browser plays through your system output — pick the Bluetooth device in system sound settings." }));
+          }}
+        />
         <div className="mb-4">
           <AudioInterfaceCard
             inputs={inputs}
