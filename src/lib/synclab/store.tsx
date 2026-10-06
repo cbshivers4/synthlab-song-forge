@@ -211,6 +211,7 @@ export type PanelId =
   | "reference"
   | "live"
   | "looper"
+  | "apps"
   | null;
 
 export type EditTool = "select" | "draw" | "split" | "razor";
