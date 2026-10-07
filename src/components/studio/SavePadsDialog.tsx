@@ -34,7 +34,7 @@ async function savePads(list: { index: number; pad: SavedPad }[]) {
   // Desktop: one MP3 downloads directly; several pads are bundled into a single ZIP
   // so the browser doesn't block a burst of downloads.
   if (files.length === 1) {
-    downloadBlob(files[0], files[0].name);
+    downloadBlob(files[0]!, files[0]!.name);
     toast.success("Saved pad sample as MP3");
   } else {
     const entries: { name: string; data: Uint8Array }[] = [];
