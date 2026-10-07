@@ -196,6 +196,8 @@ TRACK_ICONS.push(
   { id: "tambourine", label: "Tambourine", Icon: TambourineIcon },
 );
 
+const ICON_BY_ID = new Map(TRACK_ICONS.map((i) => [i.id, i.Icon]));
+
 /** Falls back to a sensible icon from the track kind and name when none was picked. */
 export function autoIcon(track: Pick<Track, "kind" | "name" | "instrument">) {
   const name = `${track.instrument ?? ""} ${track.name}`.toLowerCase();
