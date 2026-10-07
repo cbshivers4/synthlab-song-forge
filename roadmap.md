@@ -92,7 +92,7 @@
 ## Drum performance and creative-tool themes
 - [x] Add drum distortion, compression, glitch, mutation, velocity, pitch, decay, chance, flam and retrigger controls
 - [x] Add eight recallable drum patterns per drum track
-- [x] Add saved color themes to Vocal Forge, Stem Separator, Voice Remover, AI Co-Producer and Hum to Beat
+- [x] Add saved color themes to SYNCLAB, Stem Separator, Voice Remover, AI Co-Producer and Hum to Beat
 - [x] Verify compilation, project tests, preview startup and the phone viewport
 
 ## Playback and recording stability
@@ -108,17 +108,17 @@
 - [x] Make VCA and aux meters show actual audio, and verify their faders/mutes and the mixer master level control the intended signal paths
 - [x] Sample pads show a solid (no-outline) waveform behind the label (user reversed the earlier no-waveform request)
 - [x] Simplify the timeline track menu without removing actions
-- [x] Select actual installed speech voices in Vocal Forge, rather than relabeling the same voice as different templates
+- [x] Select actual installed speech voices in SYNCLAB, rather than relabeling the same voice as different templates
 - [x] Keep synth recording waveforms visible and constrain recorded material to captured measures
 - [x] Show recent projects and templates as lists
 - [x] Reduce insert-change pops and generator preview drift
 - [x] Verify bus effect gain changes alter the live output and preserve sound through insertion, adjustment, and removal
 - [x] Prevent repeated instrument/drum recordings from stacking unless overdub is enabled
 - [x] Review Live Looper export routing; retain direct monitor to prevent loop feedback and use Timeline transfer for export
-- [ ] Listen to synth recording, Vocal Forge voices and effects/generator previews on real speakers (requires ears and device audio)
+- [ ] Listen to synth recording, SYNCLAB voices and effects/generator previews on real speakers (requires ears and device audio)
 
 ## Removed (Oct 2)
-- [x] Removed AI Studio group (Vocal Forge, Stem Separator, Voice Remover, AI Co-Producer, Hum to Beat, AI Stem Generator) and Bass Generator — panels, menus, tools rail, mobile nav, search, help articles, component + server-function files deleted. ai-vocal track kind kept for playback of existing projects.
+- [x] Removed AI Studio group (SYNCLAB, Stem Separator, Voice Remover, AI Co-Producer, Hum to Beat, AI Stem Generator) and Bass Generator — panels, menus, tools rail, mobile nav, search, help articles, component + server-function files deleted. ai-vocal track kind kept for playback of existing projects.
 - [x] Recorded MIDI notes clamp to the loop end (e.g. 2-bar loop = no notes past bar 2); notes may still cross bar lines inside the region. Build OK, not yet played with a real controller.
 
 ## Oct 3 requests
@@ -149,7 +149,7 @@
 
 ## Branding: SYNCLAB, not Lovable (Oct 3)
 - [x] Hide the "Edit with Lovable" badge on the published site; verified 0 visible matches on the published URL
-- [x] Rewrite README.md to SYNCLAB Vocal Forge branding
+- [x] Rewrite README.md to SYNCLAB SYNCLAB branding
 - [x] Set the support contact to cbshivers@gmail.com and verify it shows in-app ("Prefer email? cbshivers@gmail.com")
 - [x] Fix the hidden backend break: public.has_role lacked EXECUTE for authenticated, so every RLS policy using it failed and support settings read as empty
 - [ ] Point the app's own links (About tab Website, electron/app-info.cjs, index.tsx og:url/canonical, sitemap) at a custom domain once one is connected — they currently use the real published lovable.app URL

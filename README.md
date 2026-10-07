@@ -32,7 +32,7 @@ You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#in
 
 ```sh
 git clone <this-repository-url>
-cd vocal-forge
+cd synclab
 npm i
 npm run dev
 ```
