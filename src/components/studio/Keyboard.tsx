@@ -215,7 +215,7 @@ export function Keyboard({ track, onPlay, disabled = false }: { track?: Track; o
           BASS
         </Button>
         <Slider
-          className="flex-1"
+          className="flex-1 py-2 [&>span]:h-2.5 [&_[role=slider]]:size-7 [&_[role=slider]]:border-2"
           value={[octave]}
           min={1}
           max={7}
