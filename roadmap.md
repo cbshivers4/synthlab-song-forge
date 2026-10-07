@@ -134,7 +134,7 @@
 - [x] My Library (cloud/computer folders for samples, synth, drums, notes) + distinct effect window looks
 
 ## Current request
-- [ ] Restyle desktop and phone transport in Glass studio style without resizing controls; consolidate phone extras into a menu and verify playback/menu actions.
+- [x] Restyle desktop and phone transport in Glass studio style without resizing existing controls; phone extras use a menu. Signed-in browser verified Play/Stop, metronome toggle and tempo changes; no overflow at 508/390 phone widths, desktop screenshot checked, build OK.
 - [x] Remove top-bar Keys shortcuts and compact transport spacing; signed-in Play/Stop verified, no overflow at 1280/1100/508 widths, meter/scope remain 192/240px.
 - [x] Show sampler stretch below the waveform and Sampler for sampler instrument editing; signed-in test imported a 1s tone, stretched 120→60 BPM, confirmed 2s duration and INSTRUMENTS opened Sampler. Real-device listening remains unverified.
 - [x] Select synth/MIDI channels into the piano roll; signed-in browser verified Bass selection opens piano roll, Open instrument opens synth, and reselecting Bass returns to piano roll; build OK.
