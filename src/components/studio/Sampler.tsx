@@ -281,6 +281,9 @@ export function Sampler() {
 
   const s = track?.sampler;
   const chops = s?.slices ?? [];
+  const [pickChop, setPickChop] = useState(0);
+  const [padTarget, setPadTarget] = useState(0);
+  const chopFileRef = useRef<HTMLInputElement>(null);
 
   /** Cuts the trimmed region into n equal chops. */
   const chopInto = (n: number) => {
@@ -540,14 +543,36 @@ export function Sampler() {
               )}
               {chops.length > 0 && (
                 <>
-                  <Button size="sm" variant="outline" className="h-9 font-mono text-[10px] tracking-widest sm:h-7" onClick={saveChops}>
-                    Save chops (MP3)
+                  <Button size="sm" variant="outline" className="h-9 font-mono text-[10px] tracking-widest sm:h-7" onClick={() => saveChops()}>
+                    Save all chops (MP3)
                   </Button>
-                  <Button size="sm" className="h-9 font-mono text-[10px] tracking-widest sm:h-7" onClick={sendChopsToPads}>
-                    Send to sample pads
+                  <Button size="sm" className="h-9 font-mono text-[10px] tracking-widest sm:h-7" onClick={() => sendChopsToPads()}>
+                    Send all to sample pads
                   </Button>
                 </>
               )}
+            </div>
+            <div className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-card/60 p-2 font-mono text-[10px] tracking-widest">
+              <span className="text-muted-foreground">ONE CHOP</span>
+              {chops.length > 0 && (
+                <>
+                  <select aria-label="Chop" value={Math.min(pickChop, chops.length - 1)} onChange={(e) => setPickChop(Number(e.target.value))} className="h-9 rounded border border-border bg-background px-2 sm:h-7">
+                    {chops.map((_, i) => <option key={i} value={i}>Chop {i + 1}</option>)}
+                  </select>
+                  <Button size="sm" variant="outline" className="h-9 text-[10px] sm:h-7" onClick={() => saveChops(Math.min(pickChop, chops.length - 1))}>Save this chop (MP3)</Button>
+                </>
+              )}
+              <span className="text-muted-foreground">PAD</span>
+              <select aria-label="Target pad" value={padTarget} onChange={(e) => setPadTarget(Number(e.target.value))} className="h-9 rounded border border-border bg-background px-2 sm:h-7">
+                {Array.from({ length: 16 }, (_, i) => <option key={i} value={i}>Pad {i + 1}</option>)}
+              </select>
+              {chops.length > 0 && (
+                <Button size="sm" className="h-9 text-[10px] sm:h-7" onClick={() => sendChopsToPads(Math.min(pickChop, chops.length - 1))}>Send this chop to pad</Button>
+              )}
+              <Button size="sm" variant="outline" className="h-9 text-[10px] sm:h-7" onClick={() => chopFileRef.current?.click()}>
+                <Upload className="mr-1 h-3 w-3" /> Load a chop onto pad
+              </Button>
+              <input ref={chopFileRef} type="file" accept="audio/*,.mp3,.wav,.aiff,.aif,.m4a,.ogg,.flac" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void loadChopFile(f); e.target.value = ""; }} />
             </div>
 
             {chops.length > 1 ? (
