@@ -3000,7 +3000,7 @@ export function Timeline() {
     }
   }, [transport.follow, transport.playing, transport.step, totalSteps]);
   return (
-    <section className="mobile-timeline relative flex min-h-[210px] min-w-0 flex-1 flex-col overflow-hidden border-x border-b border-border bg-background/60">
+    <section className="mobile-timeline relative flex min-h-[210px] min-w-0 flex-1 flex-col overflow-hidden border-x border-b border-border bg-background/60 [--timeline-header-width:172px] sm:[--timeline-header-width:294px]">
       <EditToolbar />
       <div className="shrink-0 overflow-hidden">
         <div ref={timelineHeaderRef} className="min-w-[720px] sm:min-w-0">
@@ -3008,7 +3008,7 @@ export function Timeline() {
           <SectionLane />
         </div>
       </div>
-      <div id="timeline-scroll" ref={scrollRef} className="relative min-h-0 flex-1 overflow-auto">
+      <div id="timeline-scroll" ref={scrollRef} aria-label="Horizontal timeline" className="relative min-h-0 flex-1 overflow-auto overscroll-x-contain">
         <div className="min-w-[720px]" style={{ width: `max(${zoom * 100}%, ${transport.bars * 32 + 294}px)` }}>
         {/* SYNCLAB watermark, low and centred in the empty workspace */}
         <div className="pointer-events-none sticky top-[68%] z-0 h-0" aria-hidden="true">
@@ -3041,7 +3041,7 @@ export function Timeline() {
         {tracks.length > 0 && <div
           data-timeline-playhead
           className={`pointer-events-none absolute inset-y-0 z-10 w-[2px] -translate-x-1/2 ${transport.playing ? "bg-primary" : "bg-primary/80"}`}
-          style={{ left: `calc(294px + (100% - 294px) * ${(transport.step % totalSteps) / totalSteps})` }}
+          style={{ left: `calc(var(--timeline-header-width) + (100% - var(--timeline-header-width)) * ${(transport.step % totalSteps) / totalSteps})` }}
           aria-hidden="true"
         />}
         </div>
@@ -3101,8 +3101,8 @@ export function Timeline() {
           <div
             className="pointer-events-none absolute inset-y-0 border-x border-amber-400/30 bg-amber-400/[0.05]"
             style={{
-              left: `calc(294px + (100% - 294px) * ${Math.min(transport.exportStart, transport.exportEnd - 1) / totalSteps})`,
-              width: `calc((100% - 294px) * ${(Math.max(transport.exportEnd, transport.exportStart + 1) - Math.min(transport.exportStart, transport.exportEnd - 1)) / totalSteps})`,
+              left: `calc(var(--timeline-header-width) + (100% - var(--timeline-header-width)) * ${Math.min(transport.exportStart, transport.exportEnd - 1) / totalSteps})`,
+              width: `calc((100% - var(--timeline-header-width)) * ${(Math.max(transport.exportEnd, transport.exportStart + 1) - Math.min(transport.exportStart, transport.exportEnd - 1)) / totalSteps})`,
             }}
           />
         )}
