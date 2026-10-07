@@ -205,11 +205,20 @@ export function autoIcon(track: Pick<Track, "kind" | "name" | "instrument">) {
   if (track.kind === "audio") return Mic;
   if (track.kind === "ai-vocal") return Mic2;
   if (track.kind === "sampler") return AudioLines;
+  if (/bass ?guitar/.test(name)) return BassGuitarIcon;
+  if (/lead ?guitar|solo ?guitar/.test(name)) return LeadGuitarIcon;
   if (/bass|sub/.test(name)) return Waves;
   if (/piano|keys|rhodes/.test(name)) return Piano;
   if (/synth|organ/.test(name)) return KeyboardMusic;
   if (/guitar|pluck/.test(name)) return Guitar;
-  if (/string|brass|pad|choir/.test(name)) return Radio;
+  if (/violin|fiddle/.test(name)) return ViolinIcon;
+  if (/cello|viola|string/.test(name)) return CelloIcon;
+  if (/sax/.test(name)) return SaxIcon;
+  if (/horn|trumpet|brass|trombone|tuba/.test(name)) return HornIcon;
+  if (/drum ?set|kit/.test(name)) return DrumSetIcon;
+  if (/conga|bongo/.test(name)) return CongaIcon;
+  if (/tambourine/.test(name)) return TambourineIcon;
+  if (/pad|choir/.test(name)) return Radio;
   if (/fx|noise|sweep/.test(name)) return Sparkles;
   return Music2;
 }
