@@ -76,7 +76,7 @@ export function TopBar() {
   const ciBar = Math.floor(ciElapsed / bpb) + 1;
 
   return (
-    <header className="studio-topbar studio-wallpaper rack sticky top-0 z-30 shrink-0" data-studio-panel="transport" style={skinBackground(transportSkin)} {...transportDrop}>
+    <header className="studio-topbar transport-glass studio-wallpaper rack sticky top-0 z-30 shrink-0" data-studio-panel="transport" style={skinBackground(transportSkin)} {...transportDrop}>
       {transport.countInLeft != null && (
         <div className="pointer-events-none fixed inset-0 z-50 flex flex-col items-center justify-center bg-background/40">
           <div className="label-xs tracking-[0.3em] text-muted-foreground">COUNT-IN · BAR {ciBar}</div>
@@ -99,7 +99,7 @@ export function TopBar() {
           </div>
         </div>
       )}
-      <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2 px-2 py-2 sm:flex sm:flex-col sm:items-stretch sm:gap-1.5 sm:px-3">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-2 py-2 sm:flex sm:flex-col sm:items-stretch sm:gap-1.5 sm:px-3">
         <div className="contents sm:flex sm:items-center sm:gap-2">
         <div className="hidden items-center pr-1 sm:flex">
           <img
@@ -113,7 +113,7 @@ export function TopBar() {
 
         <div className="hidden min-w-0 sm:block sm:w-[420px]"><StudioSearch /></div>
 
-        <div className="flex shrink-0 items-center gap-0.5 rounded-[3px] border border-border bg-background/70 p-0.5 shadow-[inset_0_1px_0_oklch(1_0_0/0.04)] sm:ml-auto">
+        <div className="transport-glass-group transport-playback order-1 flex w-fit shrink-0 items-center gap-0.5 rounded-[3px] border border-border bg-background/70 p-0.5 sm:order-none sm:ml-auto">
           <TBtn label="RTZ" onClick={() => setTransport({ step: transport.loop ? (transport.loopStart ?? 0) : 0 })}>
             <SkipBack className="size-4" />
           </TBtn>
@@ -147,7 +147,7 @@ export function TopBar() {
         </div>
         <div className="contents sm:flex sm:flex-wrap sm:items-center sm:gap-2">
         {/* LCD position display */}
-        <div className="flex min-w-0 items-stretch gap-2 rounded-[3px] border border-border bg-background px-2 py-1 font-mono shadow-[inset_0_1px_3px_oklch(0_0_0/0.6)] sm:gap-3 sm:px-3">
+        <div className="transport-glass-display order-3 col-span-2 flex min-w-0 items-stretch gap-2 rounded-[3px] border border-border bg-background px-2 py-1 font-mono sm:order-none sm:gap-3 sm:px-3">
           {transport.countInLeft != null ? (
             <div>
               <span className="label-xs">COUNT-IN</span>
@@ -158,6 +158,7 @@ export function TopBar() {
           ) : (
             <PositionDisplay step={transport.step} bpm={transport.bpm} playing={transport.playing} />
           )}
+          {isMobile && <div className="ml-auto flex items-center gap-3 border-l border-border pl-3"><div><span className="label-xs">BPM</span><div className="text-base leading-none tabular-nums text-primary">{transport.bpm}</div></div><div><span className="label-xs">METER</span><div className="text-base leading-none text-primary">{transport.beatsPerBar ?? 4}/4</div></div></div>}
           <span className="hidden w-px bg-border sm:block" />
           <div className="hidden sm:block" title="Timeline length — click + to add bars (Shift = +16), up to 512">
             <span className="label-xs">BARS</span>
@@ -198,7 +199,7 @@ export function TopBar() {
           )}
         </div>
 
-        <div className="hidden min-w-0 items-center gap-3 rounded-[3px] border border-border bg-background/70 px-3 py-1 sm:flex">
+        <div className="transport-glass-group hidden min-w-0 items-center gap-3 rounded-[3px] border border-border bg-background/70 px-3 py-1 sm:flex">
           <div>
             <span className="label-xs">BPM</span>
             <div className="font-mono text-base leading-none text-primary">{transport.bpm}</div>
@@ -240,7 +241,7 @@ export function TopBar() {
         </div>
         <div className="contents sm:flex sm:flex-wrap sm:items-center sm:gap-2">
         {!isMobile && (
-          <div className="flex flex-wrap items-center gap-1 rounded-[3px] border border-border bg-background/70 p-1">
+          <div className="transport-glass-group flex flex-wrap items-center gap-1 rounded-[3px] border border-border bg-background/70 p-1">
             <FeatBtn
               label="METRONOME"
               icon={<Timer className="size-3.5" />}
@@ -327,7 +328,25 @@ export function TopBar() {
         {!isMobile && <MidiControl />}
         </div>
 
-        <div className="contents sm:flex sm:flex-wrap sm:items-center sm:gap-1">
+        <TransportExtras mobile={isMobile}>
+          {isMobile && <>
+            <div className="transport-glass-group flex flex-wrap items-center gap-3 rounded-md border border-border p-3">
+              <div><span className="label-xs">BPM</span><div className="font-mono text-base text-primary">{transport.bpm}</div></div>
+              <Slider aria-label="Tempo" className="w-40" value={[transport.bpm]} min={60} max={190} step={1} onValueChange={([bpm = 120]) => setTransport({ bpm })} />
+              <label><span className="label-xs">METER</span><select aria-label="Time signature" className="block bg-transparent font-mono text-base text-primary" value={transport.beatsPerBar ?? 4} onChange={(e) => setTransport({ beatsPerBar: Number(e.target.value) })}>{METERS.map((m) => <option key={m} value={m} className="bg-background">{m}/4</option>)}</select></label>
+              <div><span className="label-xs">Swing</span><Slider aria-label="Swing" className="w-20" value={[transport.swing]} min={0} max={0.6} step={0.01} onValueChange={([swing = 0]) => setTransport({ swing })} /></div>
+            </div>
+            <div className="flex flex-wrap gap-1">
+              <FeatBtn label="METRONOME" icon={<Timer className="size-3.5" />} active={transport.metronome} onClick={() => setTransport({ metronome: !transport.metronome })} />
+              <FeatBtn label="LOOP" icon={<Repeat className="size-3.5" />} active={transport.loop} onClick={() => setTransport({ loop: !transport.loop })} />
+              <FeatBtn label="OVERDUB" icon={<Layers className="size-3.5" />} active={transport.overdub} onClick={() => setTransport({ overdub: !transport.overdub })} />
+              <FeatBtn label="REPLACE" icon={<Layers className="size-3.5" />} active={!!transport.replace} onClick={() => setTransport({ replace: !transport.replace })} />
+              <FeatBtn label="INPUT MON" icon={<Headphones className="size-3.5" />} active={transport.monitor} onClick={() => setTransport({ monitor: !transport.monitor })} />
+              <FeatBtn label={transport.punchIn == null ? "PUNCH IN" : `PUNCH OUT @${transport.punchIn + 1}`} icon={<Scissors className="size-3.5" />} active={transport.punchIn != null} onClick={() => setTransport(transport.punchIn == null ? { punchIn: transport.step } : { punchOut: transport.step })} />
+            </div>
+            <div className="flex items-center justify-between gap-2 border-y border-border py-2"><LoopRange /><AudioStatus /><div className="flex items-center gap-1"><Button variant="ghost" size="icon" aria-label="Fewer bars" disabled={transport.bars <= 1} onClick={() => setTransport({ bars: Math.max(1, transport.bars - 1) })}><Minus className="size-3" /></Button><span className="font-mono text-sm">{transport.bars} bars</span><Button variant="ghost" size="icon" aria-label="More bars" disabled={transport.bars >= 512} onClick={() => setTransport({ bars: Math.min(512, transport.bars + 1) })}><Plus className="size-3" /></Button></div></div>
+            <MidiControl />
+          </>}
           <IdeaRecorder compact={isMobile} />
           <Popover>
             <PopoverTrigger asChild>
@@ -452,10 +471,15 @@ export function TopBar() {
               </Button>
             </>
           )}
-        </div>
+        </TransportExtras>
       </div>
     </header>
   );
+}
+
+function TransportExtras({ mobile, children }: { mobile: boolean; children: React.ReactNode }) {
+  if (!mobile) return <div className="transport-glass-tools flex flex-wrap items-center gap-1">{children}</div>;
+  return <div className="order-2 justify-self-end"><Popover><PopoverTrigger asChild><Button variant="outline" size="icon" className="transport-glass-group size-11" aria-label="Transport menu" title="Transport menu"><SlidersHorizontal className="size-5" /></Button></PopoverTrigger><PopoverContent align="end" className="transport-glass-menu max-h-[75dvh] w-[min(92vw,420px)] overflow-y-auto"><div className="mb-3 border-b border-border pb-2 font-semibold">Transport</div><div className="flex flex-wrap items-center gap-2">{children}</div></PopoverContent></Popover></div>;
 }
 
 function TBtn({

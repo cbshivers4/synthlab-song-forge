@@ -121,6 +121,10 @@
   --gradient-rack: linear-gradient(180deg, oklch(0.225 0.012 256), oklch(0.165 0.009 255));
   --shadow-glow: 0 0 22px -6px color-mix(in oklab, var(--neon) 65%, transparent);
   --shadow-panel: 0 1px 0 0 oklch(1 0 0 / 0.04) inset, 0 -1px 0 0 oklch(0 0 0 / 0.4) inset;
+  --transport-glass-face: color-mix(in oklab, var(--surface-2) 70%, transparent);
+  --transport-glass-edge: color-mix(in oklab, var(--foreground) 16%, var(--border));
+  --transport-glass-shadow: inset 0 1px color-mix(in oklab, var(--foreground) 10%, transparent), 0 3px 10px color-mix(in oklab, var(--background) 35%, transparent);
+  --transport-glass-display: linear-gradient(180deg, color-mix(in oklab, var(--primary) 5%, var(--background)), var(--background));
   --grid-line: oklch(1 0 0 / 0.045);
   --grid-line-strong: oklch(1 0 0 / 0.11);
 }
@@ -627,6 +631,17 @@
 }
 
 /* Sideways phone: slim production view; TOOLS in the side rail reveals the full bars. */
+.transport-glass { border-top-color: var(--transport-glass-edge); }
+.transport-glass-group, .transport-glass-tools, .transport-glass-menu {
+  background: var(--transport-glass-face);
+  border-color: var(--transport-glass-edge);
+  box-shadow: var(--transport-glass-shadow);
+  backdrop-filter: blur(18px) saturate(120%);
+}
+.transport-glass-tools { border: 1px solid var(--transport-glass-edge); border-radius: 6px; padding: 4px; }
+.transport-glass-display { background: var(--transport-glass-display); box-shadow: var(--transport-glass-shadow); border-color: var(--transport-glass-edge); }
+.transport-glass .transport-playback [aria-pressed="true"]:not(.text-destructive) { background: color-mix(in oklab, var(--primary) 15%, transparent); }
+.transport-glass-menu { background: color-mix(in oklab, var(--popover) 94%, transparent); }
 .landscape-prod:not(.landscape-tools) .studio-topbar,
 .landscape-prod:not(.landscape-tools) .timeline-edit-toolbar {
   display: none;
