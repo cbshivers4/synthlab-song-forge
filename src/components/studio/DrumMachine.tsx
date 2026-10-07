@@ -220,7 +220,7 @@ export function DrumMachine({ track }: { track: Track }) {
   return (
     <div className="drum-machine studio-wallpaper space-y-3 rounded-md p-3" data-phone-view={isMobile ? phoneView : undefined} data-sideways={isMobile && landscape ? "true" : undefined} data-studio-panel="drums" style={skinBackground(skin)} {...drop}>
       {isMobile && <div className="grid grid-cols-4 gap-1" role="tablist" aria-label="Drum machine views">
-        {[["pads", "Pads"], ["steps", "Pattern"], ["sound", "Sound"], ["kit", "Kit"]].map(([id, label]) => <Button key={id} role="tab" aria-selected={phoneView === id} variant={phoneView === id ? "default" : "secondary"} className="h-12 min-w-0 px-1" onClick={() => setPhoneView(id)}>{label}</Button>)}
+        {([['pads', 'Pads'], ['steps', 'Pattern'], ['sound', 'Sound'], ['kit', 'Kit']] as const).map(([id, label]) => <Button key={id} role="tab" aria-selected={phoneView === id} variant={phoneView === id ? "default" : "secondary"} className="h-12 min-w-0 px-1" onClick={() => setPhoneView(id)}>{label}</Button>)}
       </div>}
       <div className="drum-skin"><SkinControls skinKey="drums" image /></div>
 
