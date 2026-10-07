@@ -779,3 +779,44 @@ function ChordScale({ trackId, onPlay }: { trackId: string; onPlay: (midi: numbe
     </div>
   );
 }
+
+// Draggable performance pad: X = filter cutoff (log 40 Hz–16 kHz), Y = resonance.
+function XYPad({ cutoff, resonance, onChange }: { cutoff: number; resonance: number; onChange: (cutoff: number, resonance: number) => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const MIN = 40;
+  const MAX = 16000;
+  const toXY = (e: React.PointerEvent) => {
+    const el = ref.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const x = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+    const y = Math.min(1, Math.max(0, 1 - (e.clientY - r.top) / r.height));
+    onChange(Math.round(MIN * Math.pow(MAX / MIN, x)), Math.round(y * 28 * 2) / 2);
+  };
+  const px = (Math.log(cutoff / MIN) / Math.log(MAX / MIN)) * 100;
+  const py = (1 - resonance / 28) * 100;
+  return (
+    <div
+      ref={ref}
+      role="slider"
+      aria-label="X-Y pad: filter cutoff and resonance"
+      aria-valuetext={`cutoff ${Math.round(cutoff)} Hz, resonance ${resonance.toFixed(1)}`}
+      className="relative h-56 w-56 shrink-0 touch-none select-none overflow-hidden rounded-md border border-border bg-surface/60"
+      onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); toXY(e); }}
+      onPointerMove={(e) => { if (e.buttons & 1) toXY(e); }}
+    >
+      {/* grid */}
+      <div className="pointer-events-none absolute inset-0 opacity-40"
+        style={{ backgroundImage: "linear-gradient(to right, var(--border) 1px, transparent 1px), linear-gradient(to bottom, var(--border) 1px, transparent 1px)", backgroundSize: "25% 25%" }} />
+      <span className="pointer-events-none absolute left-1 top-1 font-mono text-[9px] text-muted-foreground">RES ↑</span>
+      <span className="pointer-events-none absolute bottom-1 right-1 font-mono text-[9px] text-muted-foreground">CUTOFF →</span>
+      {/* crosshair */}
+      <div className="pointer-events-none absolute inset-y-0 w-px bg-primary/50" style={{ left: `${px}%` }} />
+      <div className="pointer-events-none absolute inset-x-0 h-px bg-primary/50" style={{ top: `${py}%` }} />
+      <div
+        className="pointer-events-none absolute size-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-primary bg-primary/40 shadow-[0_0_10px_var(--primary)]"
+        style={{ left: `${px}%`, top: `${py}%` }}
+      />
+    </div>
+  );
+}
