@@ -134,7 +134,7 @@
 - [x] My Library (cloud/computer folders for samples, synth, drums, notes) + distinct effect window looks
 
 ## Current request
-- [ ] Make phone microphone permission and audio input selection directly accessible in Settings; verify with browser microphone input.
+- [x] Add phone Settings → Enable microphone shortcut that requests permission and opens Audio; browser test confirmed granted permission, three simulated inputs, and no phone overflow. Physical-phone capture remains unverified.
 - [x] Add Space (delay/reverb) and Texture (distortion/chorus) synth X-Y pads; signed-in desktop/phone-sized checks verified dragging and synchronized Effects knobs, no page overflow, build OK. Real-device listening remains unverified.
 - [x] Make phone mixer essentials large with all channels scrollable and complete channel dialogs; drum roll uses 48px step pages and single-line tools. Verified signed-in mute/fader changes, Master dialog, step writing/page changes, portrait and 942×508 sideways view, no page overflow; physical-phone rotation remains untested.
 - [x] Restyle desktop and phone transport in Glass studio style without resizing existing controls; phone extras use a menu. Signed-in browser verified Play/Stop, metronome toggle and tempo changes; no overflow at 508/390 phone widths, desktop screenshot checked, build OK.
