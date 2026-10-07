@@ -20,7 +20,7 @@ import { Knob } from "./Knob";
 import { Button } from "@/components/ui/button";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useStudio } from "@/lib/synclab/store";
 import { useApp } from "@/lib/synclab/app-state";
@@ -1860,7 +1860,7 @@ function PhoneChannel({ track, level, selected, index }: { track?: Track; level:
   return <section aria-label={`${name} mixer channel`} className={cn("phone-mix-channel flex w-[216px] shrink-0 snap-start flex-col border-r border-border bg-surface", selected && "bg-primary/10")}>
     <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center border-b border-border px-2">
       <Button variant="ghost" className="h-12 min-w-0 justify-start px-1" onClick={choose} title={name}><span className="truncate">{track ? `${index + 1}. ${name}` : name}</span></Button>
-      <Dialog><Button asChild variant="ghost" size="icon" className="size-12"><PhoneChannelTrigger name={name} /></Button><DialogContent className="max-h-[88dvh] w-[min(94vw,420px)] overflow-y-auto"><DialogHeader><DialogTitle className="truncate">{name}</DialogTitle></DialogHeader><div className="flex justify-center">{track ? <Strip t={track} index={index} selected={selected} narrow={false} level={level} onSelect={choose} /> : <MasterStrip level={level} />}</div></DialogContent></Dialog>
+      <Dialog><DialogTrigger asChild><Button variant="ghost" size="icon" className="size-12" aria-label={`${name} channel controls`} title="Channel controls"><Settings2 className="size-5" /></Button></DialogTrigger><DialogContent className="phone-channel-details max-h-[88dvh] w-[min(94vw,420px)] overflow-y-auto"><DialogHeader><DialogTitle className="truncate">{name}</DialogTitle></DialogHeader><div className="flex justify-center">{track ? <Strip t={track} index={index} selected={selected} narrow={false} level={level} onSelect={choose} /> : <MasterStrip level={level} />}</div></DialogContent></Dialog>
     </div>
     <div className="flex items-center justify-between px-3 py-2"><span className="font-mono text-sm">{toDb(volume).toFixed(1)} dB</span><ClipLed id={track?.id ?? "master"} /></div>
     <div className="flex h-48 items-stretch justify-center gap-6 px-3 py-2"><Slider aria-label={`${name} volume`} orientation="vertical" className={cn("mx-fader h-full w-12", FADER_CAP)} value={[volume]} min={0} max={track ? 1 : 1.5} step={0.01} onValueChange={([v = 0]) => track ? updateTrack(track.id, { volume: v }) : setBus("master", { volume: v })} /><Meter id={track?.id ?? "master"} level={level} tall /></div>
