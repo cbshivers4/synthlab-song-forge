@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { encodeMp3 } from "@/lib/synclab/bounce";
+import { buildZip, downloadBlob } from "@/lib/synclab/zip";
 import type { SavedPad } from "@/lib/synclab/pad-session";
 
 /** Encodes each pad's trimmed sample as MP3 and saves it (share sheet on phones, downloads on computers). */
