@@ -602,7 +602,7 @@ function StudioWorkspace() {
           <Timeline />
           <Panels float={float} setFloat={setFloat} />
           <DetachedPanels />
-          <DeviceBar />
+          {(!isMobile || !panel) && <DeviceBar />}
         </main>
       </div>
       {landscape ? null : isMobile ? <MobileNav onBeatMode={() => setBeatMode(true)} view={mobileView} setView={setMobileView} moreSignal={moreSignal} /> : <StatusBar />}
