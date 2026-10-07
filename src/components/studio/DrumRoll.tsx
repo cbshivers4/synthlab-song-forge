@@ -6,7 +6,7 @@
  * timeline play; there is no second copy of the pattern. Rows are labelled with
  * the drum name and the MIDI note the pad sends, instead of melodic note names.
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -28,7 +28,9 @@ export function DrumRoll({ track }: { track: Track }) {
   const [selected, setSelected] = useState<string | null>(null);
   const [paint, setPaint] = useState<number | null>(null);
   const [page, setPage] = useState(0);
-  const pageSize = isMobile ? 4 : total;
+  const [widePhone, setWidePhone] = useState(false);
+  useEffect(() => { const query = window.matchMedia("(min-width: 480px)"); const read = () => setWidePhone(query.matches); read(); query.addEventListener("change", read); return () => query.removeEventListener("change", read); }, []);
+  const pageSize = isMobile ? (widePhone ? 4 : 3) : total;
   const pages = Math.ceil(total / pageSize);
   const start = Math.min(page, pages - 1) * pageSize;
   const visibleSteps = Array.from({ length: Math.min(pageSize, total - start) }, (_, i) => start + i);

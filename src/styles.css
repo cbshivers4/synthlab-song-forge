@@ -652,6 +652,10 @@
 .mx-phone .mx-console-toolbar > * { flex-shrink: 0; }
 .mx-phone .mx-console-toolbar button { min-height: 48px; min-width: 48px; }
 .mx-phone .mobile-mixer-strips { scroll-snap-type: x proximity; touch-action: pan-x; }
+.mx-phone .phone-mix-channel { width: 224px; }
+.phone-mix-channel .mx-fader[data-orientation="vertical"] { flex-direction: column; width: 48px; }
+.phone-mix-channel .mx-fader[data-orientation="vertical"] > span:first-child { width: 8px; height: 100%; }
+.phone-mix-channel .mx-fader[data-orientation="vertical"] > span:first-child > span { width: 100%; }
 .phone-mix-channel [role="slider"] { min-width: 28px; min-height: 28px; }
 .phone-channel-details button { min-height: 48px; }
 .phone-channel-details .grid { height: auto; }
