@@ -29,7 +29,7 @@ Bottom device displays read post-device or track analyser taps at 20 fps; never 
 Studio panel wallpaper uses one bundled JPEG with a dark semantic overlay and per-panel skin overrides; this keeps controls legible while letting users customize each panel without external image dependencies.
 Timeline track names share one compact row with header controls; put the track-kind label beside the input selector to prevent it spilling into the arrangement.
 The arrangement playhead is scoped to the rendered track-row wrapper, never the empty workspace, so it stops after the last visible track.
-Synth feature sections share one tab group with a wrapping tab list and unchanged patch handlers, so navigation reduces clutter without changing sound or removing controls.
+Synth sections share wrapping tabs; X-Y pads dispatch through updatePatch to stay synchronized with knobs and saved presets without removing controls.
 Editors shrink below saved height to preserve the timeline minimum and avoid toolbar clipping.
 Drum artwork uses semantic inline SVG within unchanged pads to preserve controls and audio.
 
