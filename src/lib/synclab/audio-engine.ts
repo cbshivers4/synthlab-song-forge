@@ -2695,7 +2695,13 @@ export class SyncLabEngine {
       g.connect(out);
       const s0 = clamp(pad.start ?? 0, 0, 1) * sampleBuf.duration;
       const s1 = clamp(pad.end ?? 1, 0, 1) * sampleBuf.duration;
-      src.start(t, s0, Math.max(0.005, s1 - s0));
+      const len = Math.max(0.005, (s1 - s0) / tune);
+      env.gain.cancelScheduledValues(t);
+      env.gain.setValueAtTime(0.0001, t);
+      env.gain.linearRampToValueAtTime(1, t + atk);
+      env.gain.setValueAtTime(1, t + Math.max(atk, len - 0.01));
+      env.gain.linearRampToValueAtTime(0.0001, t + len);
+      src.start(t, s0, s1 - s0);
       return;
     }
 
