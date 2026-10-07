@@ -22,7 +22,7 @@ export function useIsMobile() {
 export function useIsLandscapePhone() {
   const [on, setOn] = React.useState(false);
   React.useEffect(() => {
-    const mql = window.matchMedia("(orientation: landscape) and (max-height: 500px)");
+    const mql = window.matchMedia("(orientation: landscape) and (max-height: 600px) and (pointer: coarse), (orientation: landscape) and (max-height: 500px)");
     const onChange = () => setOn(mql.matches);
     mql.addEventListener("change", onChange);
     onChange();

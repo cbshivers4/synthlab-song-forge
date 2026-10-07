@@ -1849,7 +1849,15 @@ export class SyncLabEngine {
     if (voiceKey) this.stopVoiceKey(trackId, voiceKey);
     const ctx = this.init();
     const base = s.reverse ? this.reversed(s.url) : this.sampleBuffers.get(s.url);
-    if (!base) return;
+    if (!base) {
+      // Sound not decoded yet (e.g. pad restored from a saved project): load it, then play once.
+      if (s.url && !this.sampleBuffers.has(s.url)) {
+        void this.ensureBuffer(s.url).then((b) => {
+          if (b) this.playSample(trackId, s, midi, duration, velocity, undefined, voiceKey);
+        });
+      }
+      return;
+    }
     const t0 = Math.max(when ?? ctx.currentTime, ctx.currentTime + 0.002);
     const ch = this.channel(trackId);
 
