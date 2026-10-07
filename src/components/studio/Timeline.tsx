@@ -909,7 +909,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
     <div className="border-b border-border/80">
     <div
       className={`relative flex items-stretch transition-colors ${isSelected ? "bg-foreground/10 ring-2 ring-inset ring-foreground" : "hover:bg-surface/50"} ${track.hidden ? "opacity-40" : ""} ${dropping ? "ring-1 ring-primary ring-inset" : ""}`}
-      style={{ height: track.height ?? undefined }}
+      style={{ height: isMobile ? undefined : track.height ?? undefined }}
       onClick={(e) => {
         if (suppressClickRef.current) {
           suppressClickRef.current = false;
@@ -1287,7 +1287,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
           </DropdownMenu>
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className={isMobile ? "timeline-track-actions flex max-w-full touch-pan-x items-center gap-1 overflow-x-auto overscroll-x-contain pb-1 [&>button]:h-12 [&>button]:shrink-0" : "flex items-center gap-1"}>
           <Button
             size="sm"
             variant={track.muted ? "secondary" : "ghost"}
@@ -1321,7 +1321,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
             <Button
               size="sm"
               variant={track.recording || (track.armed && fileStudio.transport.recording) ? "destructive" : "ghost"}
-              className="h-6 px-2 text-[10px]"
+              className={`h-6 px-2 text-[10px] ${isMobile ? "-order-2" : ""}`}
               aria-label={fileStudio.transport.recording || fileStudio.transport.countInLeft != null ? `Stop recording ${track.name}` : `Record on ${track.name}`}
               title="Record on this track: arms it, counts in, then records from the playhead. Press again (or STOP) to finish."
               onClick={() => {
@@ -1342,7 +1342,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
               <Button
                 size="sm"
                 variant={(track.automation?.length ?? 0) > 0 ? "secondary" : "ghost"}
-                className="h-7 gap-1 px-2 text-[9px] font-semibold sm:h-6"
+                className={`h-7 gap-1 px-2 text-[9px] font-semibold sm:h-6 ${isMobile ? "-order-1" : ""}`}
                 aria-label={`Automation lanes for ${track.name}`}
                 title="Show or hide automation lanes"
               >
