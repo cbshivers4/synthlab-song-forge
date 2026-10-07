@@ -70,6 +70,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { clipFromLocalFile } from "@/lib/synclab/local-files";
@@ -2246,6 +2247,19 @@ function EditToolbar() {
       <ToolBtn tool="split" icon={<ScissorsLineDashed className="size-3" />} label="Split" keys="C" />
       <ToolBtn tool="razor" icon={<RazorIcon className="size-3" />} label="Razor" keys="R" />
       <div className="mx-1 h-4 w-px bg-border" />
+      <Button size="sm" variant="ghost" className="h-6 gap-1 px-2 text-[10px]" title="Undo (⌘Z / Ctrl+Z)" onClick={undo}>
+        <Undo2 className="size-3" /> Undo
+      </Button>
+      <Button size="sm" variant="ghost" className="h-6 gap-1 px-2 text-[10px]" title="Redo (⌘⇧Z / Ctrl+Y)" onClick={redo}>
+        <Redo2 className="size-3" /> Redo
+      </Button>
+      <div className="mx-1 h-4 w-px bg-border" />
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button size="sm" variant="ghost" className="h-6 gap-1 px-2 text-[10px]">Edit <ChevronDown className="size-3" /></Button>
+        </PopoverTrigger>
+        <PopoverContent align="start" className="timeline-quick-menu w-auto min-w-44 p-1.5">
+          <div className="flex flex-col items-stretch gap-1 [&_button]:justify-start">
       <Button
         size="sm"
         variant="ghost"
@@ -2255,7 +2269,6 @@ function EditToolbar() {
       >
         <SquareSplitHorizontal className="size-3" /> Split at Playhead
       </Button>
-      <div className="mx-1 h-4 w-px bg-border" />
       <Button
         size="sm"
         variant="ghost"
@@ -2296,14 +2309,15 @@ function EditToolbar() {
       >
         <Trash2 className="size-3" /> Clear{targets.length > 1 ? ` ${targets.length}` : ""}
       </Button>
-      <div className="mx-1 h-4 w-px bg-border" />
-      <Button size="sm" variant="ghost" className="h-6 gap-1 px-2 text-[10px]" title="Undo (⌘Z / Ctrl+Z)" onClick={undo}>
-        <Undo2 className="size-3" /> Undo
-      </Button>
-      <Button size="sm" variant="ghost" className="h-6 gap-1 px-2 text-[10px]" title="Redo (⌘⇧Z / Ctrl+Y)" onClick={redo}>
-        <Redo2 className="size-3" /> Redo
-      </Button>
-      <div className="mx-1 h-4 w-px bg-border" />
+          </div>
+        </PopoverContent>
+      </Popover>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button size="sm" variant="ghost" className="h-6 gap-1 px-2 text-[10px]">Clip <ChevronDown className="size-3" /></Button>
+        </PopoverTrigger>
+        <PopoverContent align="start" className="timeline-quick-menu w-auto min-w-44 p-1.5">
+          <div className="flex flex-col items-stretch gap-1 [&_button]:justify-start">
       <Button size="sm" variant="ghost" className="h-6 gap-1 px-2 text-[10px]" title="Nudge the selected clip left" onClick={() => nudge(-1)}>
         <ArrowLeftToLine className="size-3" />
       </Button>
@@ -2319,7 +2333,15 @@ function EditToolbar() {
       <Button size="sm" variant="ghost" className="h-6 gap-1 px-2 text-[10px]" title="Fade out the selected clip" onClick={() => fade("out")}>
         Fade Out
       </Button>
-      <div className="mx-1 h-4 w-px bg-border" />
+          </div>
+        </PopoverContent>
+      </Popover>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button size="sm" variant="ghost" className="h-6 gap-1 px-2 text-[10px]">Quantize <ChevronDown className="size-3" /></Button>
+        </PopoverTrigger>
+        <PopoverContent align="start" className="timeline-quick-menu w-auto min-w-44 p-1.5">
+          <div className="grid grid-cols-[auto_auto] items-center gap-1 [&_button]:justify-start">
       <span className="label-xs shrink-0">QUANTIZE</span>
       <Select value={String(transport.quantize ?? 1)} onValueChange={(v) => setTransport({ quantize: Number(v) })}>
         <SelectTrigger className="h-6 w-[72px] shrink-0 font-mono text-[10px]" title="Grid that Quantize snaps notes to">
@@ -2352,6 +2374,15 @@ function EditToolbar() {
       <Button size="sm" variant="ghost" className="h-6 px-1.5 text-[10px]" title="Nudge the selected track later by a 1/64 note" onClick={() => fineNudge(1)}>
         Nudge ▶
       </Button>
+          </div>
+        </PopoverContent>
+      </Popover>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button size="sm" variant="ghost" className="h-6 gap-1 px-2 text-[10px]">Grid <ChevronDown className="size-3" /></Button>
+        </PopoverTrigger>
+        <PopoverContent align="start" className="timeline-quick-menu w-auto min-w-44 p-1.5">
+          <div className="grid grid-cols-[auto_auto] items-center gap-1 [&_button]:justify-start">
       <span className="label-xs shrink-0">TIMEBASE</span>
       <Select value={transport.timebase ?? "bars"} onValueChange={(v) => setTransport({ timebase: v as "bars" | "seconds" })}>
         <SelectTrigger className="h-6 w-[78px] shrink-0 font-mono text-[10px]" title="Show the playhead position in bars or in minutes and seconds">
@@ -2384,7 +2415,15 @@ function EditToolbar() {
       >
         <Eye className="size-3" /> Follow
       </Button>
-      <div className="mx-1 h-4 w-px bg-border" />
+          </div>
+        </PopoverContent>
+      </Popover>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button size="sm" variant="ghost" className="h-6 gap-1 px-2 text-[10px]">Import <ChevronDown className="size-3" /></Button>
+        </PopoverTrigger>
+        <PopoverContent align="start" className="timeline-quick-menu w-auto min-w-44 p-1.5">
+          <div className="flex flex-col items-stretch gap-1 [&_button]:justify-start">
       <Button
         size="sm"
         variant="ghost"
@@ -2425,6 +2464,9 @@ function EditToolbar() {
           if (file) void importMidiClip(file);
         }}
       />
+          </div>
+        </PopoverContent>
+      </Popover>
       <span className="label-xs ml-auto hidden shrink-0 sm:inline">
         {selectedIds.length > 1 ? `${selectedIds.length} selected` : `${tracks.length} channels`}
       </span>
