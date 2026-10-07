@@ -319,7 +319,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
       </div>
 
       {selected && (
-        <div className="flex flex-wrap items-center gap-1 border-t border-border bg-surface/60 px-3 py-1">
+        <div className="editor-track-actions flex flex-nowrap items-center gap-1 overflow-x-auto whitespace-nowrap border-t border-border bg-surface/60 px-3 py-1 [&>*]:shrink-0">
           <span className="label-xs self-center">Selected: {selected.name}</span>
           <Button size="sm" variant="ghost" className="h-6 text-[11px]" onClick={() => setPanel(selected.kind === "drum" ? "drums" : "synth")}>
             Open editor

@@ -134,7 +134,7 @@
 - [x] My Library (cloud/computer folders for samples, synth, drums, notes) + distinct effect window looks
 
 ## Current request
-- [ ] Make phone mixer channels and controls usable with big fingers, keep rows single-line, fit drum-roll step pages and repair sideways viewing; verify portrait and landscape.
+- [x] Make phone mixer essentials large with all channels scrollable and complete channel dialogs; drum roll uses 48px step pages and single-line tools. Verified signed-in mute/fader changes, Master dialog, step writing/page changes, portrait and 942×508 sideways view, no page overflow; physical-phone rotation remains untested.
 - [x] Restyle desktop and phone transport in Glass studio style without resizing existing controls; phone extras use a menu. Signed-in browser verified Play/Stop, metronome toggle and tempo changes; no overflow at 508/390 phone widths, desktop screenshot checked, build OK.
 - [x] Remove top-bar Keys shortcuts and compact transport spacing; signed-in Play/Stop verified, no overflow at 1280/1100/508 widths, meter/scope remain 192/240px.
 - [x] Show sampler stretch below the waveform and Sampler for sampler instrument editing; signed-in test imported a 1s tone, stretched 120→60 BPM, confirmed 2s duration and INSTRUMENTS opened Sampler. Real-device listening remains unverified.

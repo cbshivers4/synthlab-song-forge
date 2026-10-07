@@ -648,6 +648,8 @@
 .mobile-studio .phone-tool-panel { position: fixed; inset: 0; z-index: 40; min-height: 0; padding-bottom: 84px; }
 .landscape-prod .phone-tool-panel { inset: 0 5rem 0 0; padding-bottom: 0; }
 .mobile-studio .phone-tool-panel > div:last-child { padding-bottom: 1rem; }
+.mobile-studio .phone-tool-panel .editor-track-actions { padding-bottom: 4px; min-height: 52px; }
+.mobile-studio .editor-track-actions button { min-height: 48px; }
 .mx-phone .mx-console-toolbar { white-space: nowrap; }
 .mx-phone .mx-console-toolbar > * { flex-shrink: 0; }
 .mx-phone .mx-console-toolbar button { min-height: 48px; min-width: 48px; }
