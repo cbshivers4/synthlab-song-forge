@@ -36,4 +36,4 @@ Drum pad instrument artwork uses inline SVG drawings and semantic colour classes
 Drum pattern selection and the scrollable step sequencer precede the pad sound surface so tall sound controls cannot bury pattern editing; retain the pad layout unchanged.
 Embedded keyboards reuse Keyboard with a track or sample callback and shared typing toggle; claim events once and yield pad shortcuts to prevent doubled notes.
 Paste content at the playhead onto the selected or explicit channel, preserving its settings; Duplicate track separately clones channels.
-Synth/MIDI timeline selection opens the piano roll; explicit instrument buttons retain synth opening, and nested controls must not trigger selection-driven panel changes.
+Synth/MIDI selection opens piano roll; explicit instrument actions open synth. Sampler tracks show Sampler in docked/detached instrument editors, avoiding unrelated synths. Stretch precedes chops for visibility.

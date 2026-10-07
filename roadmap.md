@@ -134,6 +134,7 @@
 - [x] My Library (cloud/computer folders for samples, synth, drums, notes) + distinct effect window looks
 
 ## Current request
+- [ ] Show sampler stretch below the waveform and Sampler for sampler instrument editing; verify signed-in.
 - [x] Select synth/MIDI channels into the piano roll; signed-in browser verified Bass selection opens piano roll, Open instrument opens synth, and reselecting Bass returns to piano roll; build OK.
 - [x] Add Bluetooth shortcuts in Settings, More and phone settings; signed-in preview verified direct Audio access. Paste track material at the playhead onto the selected/explicit channel; imported WAV copy/paste verified two clips on IDEA with ten channels unchanged. Physical Bluetooth pairing remains hardware-dependent.
 - [x] Make computer-key playing visible on embedded keyboards; signed-in browser verified toggle, letter labels, synth/sample key presses and octave changes; events claim the existing note path without global duplication. Real-device listening remains unverified.

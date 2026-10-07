@@ -118,9 +118,9 @@ function DetachedPanels() {
       body: drumTrack ? <DrumMachine track={drumTrack} /> : <p className="text-sm text-muted-foreground">Add a drum machine track to program a beat.</p>,
     },
     synth: {
-      title: "INSTRUMENT EDITOR",
+      title: selected?.kind === "sampler" ? "SAMPLER" : "SYNTH",
       icon: <Music2 className="size-4" />,
-      body: synthTrack ? (
+      body: selected?.kind === "sampler" ? <Sampler /> : synthTrack ? (
         <>
           <p className="label-xs mb-3">Editing {synthTrack.name}</p>
           <SynthEditor track={synthTrack} />
@@ -195,7 +195,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
 
   const config: Record<Exclude<PanelId, null>, { title: string; icon: React.ReactNode }> = {
     mixer: { title: "MIXER", icon: <SlidersHorizontal className="size-4" /> },
-    synth: { title: "INSTRUMENT EDITOR", icon: <Music2 className="size-4" /> },
+    synth: { title: selected?.kind === "sampler" ? "SAMPLER" : "SYNTH", icon: <Music2 className="size-4" /> },
     drums: { title: "DRUM MACHINE", icon: <Disc3 className="size-4" /> },
     piano: { title: "PIANO ROLL", icon: <Piano className="size-4" /> },
     settings: { title: "SETTINGS", icon: <Settings2 className="size-4" /> },
@@ -232,7 +232,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
           {selected && <span className="ml-2 hidden label-xs sm:inline">· {selected.name}</span>}
         </h2>
         <div className="ml-auto flex shrink-0 items-center gap-1">
-          {(panel === "synth" || panel === "drums") && (
+          {((panel === "synth" && selected?.kind !== "sampler") || panel === "drums") && (
             <Button
               size="sm"
               variant="ghost"
@@ -270,7 +270,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3 pb-24 sm:pb-3">
       {panel === "mixer" && <Mixer />}
       {panel === "synth" &&
-        (synthTrack ? (
+        (selected?.kind === "sampler" ? <Sampler /> : synthTrack ? (
           <>
             <p className="label-xs mb-3">Editing {synthTrack.name}</p>
             <SynthEditor track={synthTrack} />
