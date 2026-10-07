@@ -100,6 +100,102 @@ export const TRACK_ICONS: { id: string; label: string; Icon: ComponentType<{ cla
   { id: "star", label: "Star", Icon: Star },
 ];
 
+// ---- Hand-drawn band instrument icons (lucide has no violin/horn/sax) ----
+type IconProps = { className?: string | undefined };
+const svg = (children: React.ReactNode) =>
+  function BandIcon({ className }: IconProps) {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
+        strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+        {children}
+      </svg>
+    );
+  };
+
+/** Trumpet / horn */
+const HornIcon = svg(<>
+  <path d="M3 10h8l7-4v12l-7-4H3z" />
+  <path d="M18 6c2 1.5 3 3.5 3 6s-1 4.5-3 6" />
+  <path d="M7 10v4M10 10v4" />
+</>);
+
+/** Saxophone */
+const SaxIcon = svg(<>
+  <path d="M6 3v9a5 5 0 0 0 10 0v-1" />
+  <path d="M16 11h4l-1.5 3H16" />
+  <path d="M6 3c0 1.5 1 2 2 2" />
+  <circle cx="9" cy="13" r="0.6" />
+  <circle cx="11" cy="15" r="0.6" />
+</>);
+
+/** Violin */
+const ViolinIcon = svg(<>
+  <path d="M14 3l7 7" />
+  <path d="M15.5 8.5c2-2 2-2 0 0z" />
+  <path d="M13 9c-2-1.5-5-1-6.5 1C5 12 5.5 13.5 5 14.5 4 16.5 5 19 7.5 19.5c1.5.3 2.5-.5 3-1.5.5-1.5 2-2 3.5-1 2 1 4.5.5 5.5-1.5.7-1.5.3-3.5-1.5-4.5" />
+  <path d="M13 9l5-5" />
+  <circle cx="10" cy="14" r="0.6" />
+</>);
+
+/** Bass guitar (4 tuners, longer neck) */
+const BassGuitarIcon = svg(<>
+  <path d="M4 20c-1.5-1.5-1.5-4 0-5.5 1-1 2.5-1.3 3.7-.8L19 2.5 21.5 5l-11.2 11.3c.5 1.2.2 2.7-.8 3.7-1.5 1.5-4 1.5-5.5 0z" />
+  <circle cx="7" cy="17" r="1.6" />
+  <path d="M17 5l2 2M15 3.5l1.5 1.5M20.5 8.5L19 7" />
+</>);
+
+/** Lead guitar (electric, pointed headstock) */
+const LeadGuitarIcon = svg(<>
+  <path d="M5 19c-2-2-2-5 .5-6.5 1.2-.7 2.7-.6 3.8.1L20 2l2 2-10.6 10.7c.7 1.1.8 2.6.1 3.8C10 21 7 21 5 19z" />
+  <circle cx="8" cy="16" r="1.6" />
+  <path d="M20 2l-3 1 1 2.5" />
+  <path d="M12.5 11.5l2 2" />
+</>);
+
+/** Drum set (kick + toms + cymbal) */
+const DrumSetIcon = svg(<>
+  <circle cx="12" cy="15" r="5" />
+  <circle cx="12" cy="15" r="1.2" />
+  <path d="M5 8h5M7.5 8v3M15 8h5M17.5 8v3" />
+  <path d="M3 5h8M19 5h-6" />
+  <path d="M7 5L5 15M19 5l2 10" />
+</>);
+
+/** Congas / hand drums */
+const CongaIcon = svg(<>
+  <path d="M6 4h6l-1 16H7z" />
+  <path d="M14 6h5l-.8 14h-3.4z" />
+  <path d="M6 6h6M14 8h5" />
+</>);
+
+/** Tambourine */
+const TambourineIcon = svg(<>
+  <circle cx="12" cy="12" r="8" />
+  <circle cx="12" cy="12" r="4.5" />
+  <circle cx="12" cy="4" r="0.8" /><circle cx="19" cy="9" r="0.8" />
+  <circle cx="16" cy="18" r="0.8" /><circle cx="8" cy="18" r="0.8" /><circle cx="5" cy="9" r="0.8" />
+</>);
+
+/** Cello / upright strings */
+const CelloIcon = svg(<>
+  <path d="M12 2v4" />
+  <path d="M10 3h4" />
+  <path d="M12 6c-3 0-4 2-3.5 3.5C9 11 8 12 8 14c0 4 2 8 4 8s4-4 4-8c0-2-1-3-.5-4.5C16 8 15 6 12 6z" />
+  <path d="M12 6v16" />
+</>);
+
+TRACK_ICONS.push(
+  { id: "horn", label: "Horn / trumpet", Icon: HornIcon },
+  { id: "sax", label: "Saxophone", Icon: SaxIcon },
+  { id: "violin", label: "Violin", Icon: ViolinIcon },
+  { id: "cello", label: "Cello / strings", Icon: CelloIcon },
+  { id: "bassguitar", label: "Bass guitar", Icon: BassGuitarIcon },
+  { id: "leadguitar", label: "Lead guitar", Icon: LeadGuitarIcon },
+  { id: "drumset", label: "Drum set", Icon: DrumSetIcon },
+  { id: "conga", label: "Congas", Icon: CongaIcon },
+  { id: "tambourine", label: "Tambourine", Icon: TambourineIcon },
+);
+
 const ICON_BY_ID = new Map(TRACK_ICONS.map((i) => [i.id, i.Icon]));
 
 /** Falls back to a sensible icon from the track kind and name when none was picked. */
@@ -109,11 +205,20 @@ export function autoIcon(track: Pick<Track, "kind" | "name" | "instrument">) {
   if (track.kind === "audio") return Mic;
   if (track.kind === "ai-vocal") return Mic2;
   if (track.kind === "sampler") return AudioLines;
+  if (/bass ?guitar/.test(name)) return BassGuitarIcon;
+  if (/lead ?guitar|solo ?guitar/.test(name)) return LeadGuitarIcon;
   if (/bass|sub/.test(name)) return Waves;
   if (/piano|keys|rhodes/.test(name)) return Piano;
   if (/synth|organ/.test(name)) return KeyboardMusic;
   if (/guitar|pluck/.test(name)) return Guitar;
-  if (/string|brass|pad|choir/.test(name)) return Radio;
+  if (/violin|fiddle/.test(name)) return ViolinIcon;
+  if (/cello|viola|string/.test(name)) return CelloIcon;
+  if (/sax/.test(name)) return SaxIcon;
+  if (/horn|trumpet|brass|trombone|tuba/.test(name)) return HornIcon;
+  if (/drum ?set|kit/.test(name)) return DrumSetIcon;
+  if (/conga|bongo/.test(name)) return CongaIcon;
+  if (/tambourine/.test(name)) return TambourineIcon;
+  if (/pad|choir/.test(name)) return Radio;
   if (/fx|noise|sweep/.test(name)) return Sparkles;
   return Music2;
 }
