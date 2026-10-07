@@ -37,7 +37,9 @@ async function savePads(list: { index: number; pad: SavedPad }[]) {
     downloadBlob(files[0], files[0].name);
     toast.success("Saved pad sample as MP3");
   } else {
-    const zip = buildZip(files.map((f) => ({ name: f.name, data: new Uint8Array(await f.arrayBuffer()) })));
+    const entries: { name: string; data: Uint8Array }[] = [];
+    for (const f of files) entries.push({ name: f.name, data: new Uint8Array(await f.arrayBuffer()) });
+    const zip = buildZip(entries);
     downloadBlob(zip, "synclab-pads.zip");
     toast.success(`Saved ${files.length} pad samples in synclab-pads.zip`);
   }
