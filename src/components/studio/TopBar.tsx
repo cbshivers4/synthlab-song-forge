@@ -330,13 +330,25 @@ export function TopBar() {
 
         <TransportExtras mobile={isMobile}>
           {isMobile && <>
+            <div className="flex w-full items-center gap-1 border-b border-border pb-2">
+              <TBtn label="RTZ" onClick={() => setTransport({ step: transport.loop ? (transport.loopStart ?? 0) : 0 })}><SkipBack className="size-4" /></TBtn>
+              <TBtn label={transport.playing ? "PAUSE" : "PLAY"} active={transport.playing} onClick={togglePlay}>{transport.playing ? <Pause className="size-4" /> : <Play className="size-4" />}</TBtn>
+              <TBtn label="STOP" onClick={stop}><Square className="size-4" /></TBtn>
+              <TBtn label="REC" danger active={transport.recording} onClick={toggleRecord}><Mic className="size-4" /></TBtn>
+            </div>
+            <div className="w-full overflow-x-auto"><MasterMeter /></div>
+            <PositionDisplay step={transport.step} bpm={transport.bpm} playing={transport.playing} />
             <div className="transport-glass-group flex flex-wrap items-center gap-3 rounded-md border border-border p-3">
               <div><span className="label-xs">BPM</span><div className="font-mono text-base text-primary">{transport.bpm}</div></div>
               <Slider aria-label="Tempo" className="w-40" value={[transport.bpm]} min={60} max={190} step={1} onValueChange={([bpm = 120]) => setTransport({ bpm })} />
+              <MidiLearnButton id="transport" param="bpm" label="Tempo" />
               <label><span className="label-xs">METER</span><select aria-label="Time signature" className="block bg-transparent font-mono text-base text-primary" value={transport.beatsPerBar ?? 4} onChange={(e) => setTransport({ beatsPerBar: Number(e.target.value) })}>{METERS.map((m) => <option key={m} value={m} className="bg-background">{m}/4</option>)}</select></label>
               <div><span className="label-xs">Swing</span><Slider aria-label="Swing" className="w-20" value={[transport.swing]} min={0} max={0.6} step={0.01} onValueChange={([swing = 0]) => setTransport({ swing })} /></div>
+              <MidiLearnButton id="transport" param="swing" label="Swing" />
             </div>
             <div className="flex flex-wrap gap-1">
+              <FeatBtn label="COUNT-IN" icon={<Hash className="size-3.5" />} active={transport.countIn} onClick={() => setTransport({ countIn: !transport.countIn })} />
+              {[1, 2, 4].map((bars) => <Button key={bars} size="sm" variant="outline" aria-label={`Count-in ${bars} ${bars === 1 ? "bar" : "bars"}`} aria-pressed={transport.countIn && (transport.countInBars ?? 1) === bars} onClick={() => setTransport({ countIn: true, countInBars: bars })}>{bars} {bars === 1 ? "bar" : "bars"}</Button>)}
               <FeatBtn label="METRONOME" icon={<Timer className="size-3.5" />} active={transport.metronome} onClick={() => setTransport({ metronome: !transport.metronome })} />
               <FeatBtn label="LOOP" icon={<Repeat className="size-3.5" />} active={transport.loop} onClick={() => setTransport({ loop: !transport.loop })} />
               <FeatBtn label="OVERDUB" icon={<Layers className="size-3.5" />} active={transport.overdub} onClick={() => setTransport({ overdub: !transport.overdub })} />

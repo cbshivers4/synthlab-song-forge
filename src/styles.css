@@ -640,7 +640,6 @@
 .transport-glass-display { background: var(--transport-glass-display); box-shadow: var(--transport-glass-shadow); border-color: var(--transport-glass-edge); }
 .transport-glass .transport-playback [aria-pressed="true"]:not(.text-destructive) { background: color-mix(in oklab, var(--primary) 15%, transparent); }
 .transport-glass-menu { background: color-mix(in oklab, var(--popover) 94%, transparent); }
-.landscape-prod:not(.landscape-tools) .studio-topbar,
 .landscape-prod:not(.landscape-tools) .timeline-edit-toolbar {
   display: none;
 }

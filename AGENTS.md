@@ -37,5 +37,5 @@ Drum pattern selection and the scrollable step sequencer precede the pad sound s
 Embedded keyboards reuse Keyboard with a track or sample callback and shared typing toggle; claim events once and yield pad shortcuts to prevent doubled notes.
 Paste content at the playhead onto the selected or explicit channel, preserving its settings; Duplicate track separately clones channels.
 Synth/MIDI selection opens piano roll; explicit instrument actions open synth. Sampler editors show Sampler with Stretch before chops.
-Transport glass tokens and named groups stay scoped; phone menus reuse existing handlers to preserve audio behavior.
+Transport tokens stay scoped; phone Home menus reuse handlers while Edit keeps the shared timeline without transport.
 Phone mixer essentials reuse track/bus actions; full strips remain in dialogs. Drum-roll step pages keep touch cells large without changing patterns.
