@@ -506,6 +506,46 @@ export function Sampler() {
 
           <Waveform track={track} onSlice={removeChop} />
 
+            <div className="space-y-3 border-y border-border py-3">
+              <p className="label-xs">TIME STRETCH & PITCH</p>
+              <div className="flex flex-wrap gap-1">
+                {(["keep", "repitch"] as const).map((m) => (
+                  <Button
+                    key={m}
+                    size="sm"
+                    variant={wMode === m ? "secondary" : "outline"}
+                    aria-pressed={wMode === m}
+                    onClick={() => { stopPreview(); setWMode(m); }}
+                    className={`rounded border px-2 py-1 text-[10px] uppercase ${wMode === m ? "border-primary bg-primary/20 text-primary" : "border-border text-muted-foreground"}`}
+                  >
+                    {m === "keep" ? "Keep pitch" : "Repitch"}
+                  </Button>
+                ))}
+              </div>
+              <Row label="Sample BPM" value={`${s.sampleBpm ?? 120} BPM`}>
+                <Slider aria-label="Time stretch sample BPM" value={[s.sampleBpm ?? 120]} min={60} max={200} step={1} onValueChange={([v]) => { stopPreview(); updateSampler(track.id, { sampleBpm: v ?? 120 }); }} />
+              </Row>
+              <Row label="Target tempo" value={`${Math.round(wTempo ?? getEngine().tempo)} BPM`}>
+                <Slider aria-label="Time stretch target tempo" value={[wTempo ?? getEngine().tempo]} min={60} max={200} step={1} onValueChange={([v]) => { stopPreview(); setWTempo(v ?? 120); }} />
+              </Row>
+              <Row label="Pitch" value={`${wPitch > 0 ? "+" : ""}${wPitch} st`}>
+                <Slider value={[wPitch]} min={-12} max={12} step={1} onValueChange={([v]) => { stopPreview(); setWPitch(v ?? 0); }} />
+              </Row>
+              <div className="flex gap-1.5">
+                <Button size="sm" variant="secondary" className="h-8 flex-1 gap-1.5" disabled={wBusy} onClick={() => void previewWarp(track)}>
+                  {wPlaying ? <Square className="size-3.5" /> : <Play className="size-3.5" />} {wPlaying ? "Stop" : wBusy ? "Rendering…" : "Preview"}
+                </Button>
+                <Button size="sm" className="h-8 flex-1" disabled={wBusy} onClick={() => void applyWarp(track)}>
+                  Apply stretch
+                </Button>
+              </div>
+              <p className="text-[10px] text-muted-foreground">
+                Stretches from Sample BPM to the target. Keep pitch changes speed only; Repitch changes speed and pitch together.
+                Preview loops the result; nothing changes until Apply.
+              </p>
+            </div>
+
+
           <div className="space-y-2 rounded-lg border border-border bg-surface-2/40 p-3">
             <div className="flex flex-wrap items-center gap-2">
               <Scissors className="size-4 text-primary" />
@@ -721,40 +761,6 @@ export function Sampler() {
             <Row label="Resonance" midiId={track.id} midiParam="resonance" value={(s.resonance ?? 0.7).toFixed(1)}>
               <Slider value={[s.resonance ?? 0.7]} min={0.1} max={20} step={0.1} disabled={(s.filterType ?? "off") === "off"} onValueChange={([v]) => updateSampler(track.id, { resonance: v ?? 0.7 })} />
             </Row>
-            <div className="space-y-2 rounded border border-border p-2">
-              <p className="label-xs">TEMPO & PITCH (preview before applying)</p>
-              <div className="flex gap-1">
-                {(["keep", "repitch"] as const).map((m) => (
-                  <button
-                    key={m}
-                    type="button"
-                    aria-pressed={wMode === m}
-                    onClick={() => { stopPreview(); setWMode(m); }}
-                    className={`rounded border px-2 py-1 text-[10px] uppercase ${wMode === m ? "border-primary bg-primary/20 text-primary" : "border-border text-muted-foreground"}`}
-                  >
-                    {m === "keep" ? "Keep pitch" : "Repitch"}
-                  </button>
-                ))}
-              </div>
-              <Row label="Target tempo" value={`${Math.round(wTempo ?? getEngine().tempo)} BPM`}>
-                <Slider value={[wTempo ?? getEngine().tempo]} min={60} max={200} step={1} onValueChange={([v]) => { stopPreview(); setWTempo(v ?? 120); }} />
-              </Row>
-              <Row label="Pitch" value={`${wPitch > 0 ? "+" : ""}${wPitch} st`}>
-                <Slider value={[wPitch]} min={-12} max={12} step={1} onValueChange={([v]) => { stopPreview(); setWPitch(v ?? 0); }} />
-              </Row>
-              <div className="flex gap-1.5">
-                <Button size="sm" variant="secondary" className="h-8 flex-1 gap-1.5" disabled={wBusy} onClick={() => void previewWarp(track)}>
-                  {wPlaying ? <Square className="size-3.5" /> : <Play className="size-3.5" />} {wPlaying ? "Stop" : wBusy ? "Rendering…" : "Preview"}
-                </Button>
-                <Button size="sm" className="h-8 flex-1" disabled={wBusy} onClick={() => void applyWarp(track)}>
-                  Apply
-                </Button>
-              </div>
-              <p className="text-[10px] text-muted-foreground">
-                Stretches from Sample BPM to the target. Keep pitch changes speed only; Repitch changes speed and pitch together.
-                Preview loops the result; nothing changes until Apply.
-              </p>
-            </div>
             <Row label="Sample BPM" value={s.sampleBpm ? `${s.sampleBpm}` : "—"}>
               <Slider value={[s.sampleBpm ?? 120]} min={60} max={200} step={1} onValueChange={([v]) => updateSampler(track.id, { sampleBpm: v ?? 120 })} />
             </Row>
@@ -781,7 +787,7 @@ export function Sampler() {
           <p className="text-xs text-muted-foreground">
             Play the trimmed sample from the on-screen keyboard, the piano roll or your MIDI controller — the root note
             plays it at its original speed and every other key pitches it up or down. Tempo sync uses Repitch (speed and pitch
-            move together); use the Tempo & Pitch panel to preview and apply a stretch that keeps pitch.
+            move together); use Time Stretch & Pitch to preview and apply a stretch that keeps pitch.
           </p>
         </>
       )}
