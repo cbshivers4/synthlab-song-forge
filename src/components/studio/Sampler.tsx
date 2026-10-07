@@ -281,6 +281,9 @@ export function Sampler() {
 
   const s = track?.sampler;
   const chops = s?.slices ?? [];
+  const [pickChop, setPickChop] = useState(0);
+  const [padTarget, setPadTarget] = useState(0);
+  const chopFileRef = useRef<HTMLInputElement>(null);
 
   /** Cuts the trimmed region into n equal chops. */
   const chopInto = (n: number) => {
@@ -312,52 +315,74 @@ export function Sampler() {
     });
   };
 
-  const saveChops = async () => {
+  const saveChops = async (only?: number) => {
     try {
-      const out = await renderChops();
+      const all = await renderChops();
+      const out = only === undefined ? all : all.slice(only, only + 1);
       const files = out.map((c) => new File([encodeMp3(c.cap, 192)], `${c.name.replace(/[^\w-]+/g, "_")}.mp3`, { type: "audio/mpeg" }));
       // Phones: use the system share sheet so chops can be saved to Files / Drive / etc.
       const nav = navigator as Navigator & { canShare?: (d: { files: File[] }) => boolean; share?: (d: { files: File[]; title?: string }) => Promise<void> };
       if (nav.canShare?.({ files }) && nav.share) {
         try {
           await nav.share({ files, title: `${s?.name ?? "Sample"} chops` });
-          toast.success(`Shared ${out.length} chops as MP3 — choose Save to Files on your phone`);
+          toast.success(`Shared ${out.length === 1 ? "the chop" : `${out.length} chops`} as MP3 — choose Save to Files on your phone`);
           return;
         } catch (e) {
           if (e instanceof Error && e.name === "AbortError") return; // user cancelled the share sheet
         }
       }
-      out.forEach((c, i) => setTimeout(() => {
+      files.forEach((f, i) => setTimeout(() => {
         const a = document.createElement("a");
-        a.href = URL.createObjectURL(c.blob);
-        a.download = `${c.name.replace(/[^\w-]+/g, "_")}.mp3`;
+        a.href = URL.createObjectURL(f);
+        a.download = f.name;
         a.click();
       }, i * 250));
-      toast.success(`Saved ${out.length} chops as MP3 files`);
+      toast.success(out.length === 1 ? `Saved ${files[0]?.name}` : `Saved ${out.length} chops as MP3 files`);
     } catch (e) {
       toast.error("Could not save the chops", { description: e instanceof Error ? e.message : undefined });
     }
   };
 
-  const sendChopsToPads = async () => {
+  const makePad = (name: string, url: string, duration: number, peaks: number[]): SavedPad => ({
+    name, url, duration, peaks,
+    start: 0, end: 1, gain: 1, pitch: 0, reverse: false, loop: false, oneShot: true,
+    attack: 0.002, release: 0.08, choke: 0, steps: Array.from({ length: 16 }, () => 0),
+  });
+
+  const sendChopsToPads = async (only?: number) => {
     try {
-      const out = (await renderChops()).slice(0, 16);
+      const all = await renderChops();
+      const out = only === undefined ? all.slice(0, 16) : all.slice(only, only + 1);
       const bank = getPadBank();
-      out.forEach((c, i) => {
-        const pad: SavedPad = {
-          name: c.name, url: URL.createObjectURL(c.blob), duration: c.duration, peaks: c.peaks,
-          start: 0, end: 1, gain: 1, pitch: 0, reverse: false, loop: false, oneShot: true,
-          attack: 0.002, release: 0.08, choke: 0, steps: Array.from({ length: 16 }, () => 0),
-        };
-        bank[i] = pad;
-      });
+      const engine = getEngine();
+      for (let i = 0; i < out.length; i++) {
+        const c = out[i]!;
+        // Decode into the engine now so the pad sounds on the very first hit.
+        const loaded = await engine.loadSampleFile(c.blob, c.name);
+        bank[only === undefined ? i : padTarget] = makePad(c.name, loaded.url, c.duration, c.peaks);
+      }
       setPadBank(bank);
-      toast.success(`${out.length} chops sent to sample pads 1–${out.length}`, {
-        description: "Open Sample Pads to play them. Those pads' old sounds were replaced.",
+      toast.success(only === undefined ? `${out.length} chops sent to sample pads 1–${out.length}` : `Chop ${only + 1} sent to pad ${padTarget + 1}`, {
+        description: "Those pads' old sounds were replaced.",
         action: { label: "Open pads", onClick: () => setPanel("pads") },
       });
     } catch (e) {
       toast.error("Could not send the chops", { description: e instanceof Error ? e.message : undefined });
+    }
+  };
+
+  /** Loads one chop (or any audio file) from the phone or computer onto the chosen pad. */
+  const loadChopFile = async (file: File) => {
+    try {
+      const loaded = await getEngine().loadSampleFile(file, file.name);
+      const bank = getPadBank();
+      const name = file.name.replace(/\.[^.]+$/, "").slice(0, 18);
+      const peaks = loaded.peaks.filter((_, i) => i % 3 === 0);
+      bank[padTarget] = makePad(name, loaded.url, loaded.duration, peaks);
+      setPadBank(bank);
+      toast.success(`${name} loaded on pad ${padTarget + 1}`, { action: { label: "Open pads", onClick: () => setPanel("pads") } });
+    } catch (e) {
+      toast.error("Could not load that file", { description: e instanceof Error ? e.message : undefined });
     }
   };
 
@@ -518,14 +543,36 @@ export function Sampler() {
               )}
               {chops.length > 0 && (
                 <>
-                  <Button size="sm" variant="outline" className="h-9 font-mono text-[10px] tracking-widest sm:h-7" onClick={saveChops}>
-                    Save chops (MP3)
+                  <Button size="sm" variant="outline" className="h-9 font-mono text-[10px] tracking-widest sm:h-7" onClick={() => saveChops()}>
+                    Save all chops (MP3)
                   </Button>
-                  <Button size="sm" className="h-9 font-mono text-[10px] tracking-widest sm:h-7" onClick={sendChopsToPads}>
-                    Send to sample pads
+                  <Button size="sm" className="h-9 font-mono text-[10px] tracking-widest sm:h-7" onClick={() => sendChopsToPads()}>
+                    Send all to sample pads
                   </Button>
                 </>
               )}
+            </div>
+            <div className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-card/60 p-2 font-mono text-[10px] tracking-widest">
+              <span className="text-muted-foreground">ONE CHOP</span>
+              {chops.length > 0 && (
+                <>
+                  <select aria-label="Chop" value={Math.min(pickChop, chops.length - 1)} onChange={(e) => setPickChop(Number(e.target.value))} className="h-9 rounded border border-border bg-background px-2 sm:h-7">
+                    {chops.map((_, i) => <option key={i} value={i}>Chop {i + 1}</option>)}
+                  </select>
+                  <Button size="sm" variant="outline" className="h-9 text-[10px] sm:h-7" onClick={() => saveChops(Math.min(pickChop, chops.length - 1))}>Save this chop (MP3)</Button>
+                </>
+              )}
+              <span className="text-muted-foreground">PAD</span>
+              <select aria-label="Target pad" value={padTarget} onChange={(e) => setPadTarget(Number(e.target.value))} className="h-9 rounded border border-border bg-background px-2 sm:h-7">
+                {Array.from({ length: 16 }, (_, i) => <option key={i} value={i}>Pad {i + 1}</option>)}
+              </select>
+              {chops.length > 0 && (
+                <Button size="sm" className="h-9 text-[10px] sm:h-7" onClick={() => sendChopsToPads(Math.min(pickChop, chops.length - 1))}>Send this chop to pad</Button>
+              )}
+              <Button size="sm" variant="outline" className="h-9 text-[10px] sm:h-7" onClick={() => chopFileRef.current?.click()}>
+                <Upload className="mr-1 h-3 w-3" /> Load a chop onto pad
+              </Button>
+              <input ref={chopFileRef} type="file" accept="audio/*,.mp3,.wav,.aiff,.aif,.m4a,.ogg,.flac" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void loadChopFile(f); e.target.value = ""; }} />
             </div>
 
             {chops.length > 1 ? (

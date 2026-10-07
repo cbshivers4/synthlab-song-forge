@@ -566,7 +566,7 @@ function StudioWorkspace() {
   const [float, setFloat] = useState<FloatState>({ synth: false, drums: false });
   const [beatMode, setBeatMode] = useState(false);
   const [mobileView, setMobileView] = useState<"create" | "edit">("create");
-  const landscape = useIsLandscapePhone() && isMobile;
+  const landscape = useIsLandscapePhone();
   const [landscapeTools, setLandscapeTools] = useState(false);
   const [moreSignal, setMoreSignal] = useState(0);
   useShortcuts();
