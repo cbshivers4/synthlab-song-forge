@@ -76,7 +76,7 @@ export function TopBar() {
   const ciBar = Math.floor(ciElapsed / bpb) + 1;
 
   return (
-    <header className="studio-topbar transport-glass studio-wallpaper rack sticky top-0 z-30 shrink-0" data-studio-panel="transport" data-desktop-transport={!isMobile ? "true" : undefined} style={skinBackground(transportSkin)} {...transportDrop}>
+    <header className="studio-topbar transport-glass studio-wallpaper rack sticky top-0 z-30 shrink-0" data-studio-panel="transport" data-desktop-transport={!isMobile ? "true" : undefined} data-phone-transport={isMobile ? "true" : undefined} style={skinBackground(transportSkin)} {...transportDrop}>
       {transport.countInLeft != null && (
         <div className="pointer-events-none fixed inset-0 z-50 flex flex-col items-center justify-center bg-background/40">
           <div className="label-xs tracking-[0.3em] text-muted-foreground">COUNT-IN · BAR {ciBar}</div>
@@ -101,7 +101,7 @@ export function TopBar() {
       )}
       <div className="transport-layout grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-2 py-2 sm:flex sm:flex-col sm:items-stretch sm:gap-1.5 sm:px-3">
         <div className="transport-row contents sm:flex sm:items-center sm:gap-2">
-        <div className="hidden items-center pr-1 sm:flex">
+        <div className="transport-logo hidden items-center pr-1 sm:flex">
           <img
             src={synclabLogo}
             alt="SYNCLAB"
@@ -111,7 +111,7 @@ export function TopBar() {
           />
         </div>
 
-        <div className="hidden min-w-0 sm:block sm:w-[420px]"><StudioSearch /></div>
+        <div className="transport-search hidden min-w-0 sm:block sm:w-[420px]"><StudioSearch /></div>
 
         <div className="transport-glass-group transport-playback order-1 flex w-fit shrink-0 items-center gap-0.5 rounded-[3px] border border-border bg-background/70 p-0.5 sm:order-none sm:ml-auto">
           <TBtn label="RTZ" onClick={() => setTransport({ step: transport.loop ? (transport.loopStart ?? 0) : 0 })}>
@@ -199,7 +199,7 @@ export function TopBar() {
           )}
         </div>
 
-        <div className="transport-glass-group hidden min-w-0 items-center gap-3 rounded-[3px] border border-border bg-background/70 px-3 py-1 sm:flex">
+        <div className="transport-tempo transport-glass-group hidden min-w-0 items-center gap-3 rounded-[3px] border border-border bg-background/70 px-3 py-1 sm:flex">
           <div>
             <span className="label-xs">BPM</span>
             <div className="font-mono text-base leading-none text-primary">{transport.bpm}</div>
