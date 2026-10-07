@@ -9,7 +9,7 @@
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
 
-Live Looper and Live View are separate studio panels; the singleton audio looper stays active between panel switches so recorded loops are not interrupted.
+Live Looper and Live View are separate panels; the singleton looper survives switching to preserve recorded loops.
 Live Looper playback uses a direct monitor bus outside the song master; otherwise app-output recording re-captures playing loops and creates feedback. Send loops to the timeline for project export and master processing.
 Meter and looper visuals refresh at 20 fps from shared timers; keep high-frequency React updates off the audio path to reduce recording and playback stutters.
 Phone settings open Phone features from More and the beat maker; Bluetooth shortcuts open Audio explicitly, keeping both accessible.
@@ -17,7 +17,7 @@ Mixer VCAs scale assigned channel gains without changing individual faders, whil
 Mixer meters read analyser taps from the actual bus, aux return, and VCA member signals; master gain controls the summed mix, while subgroup changes also scale their tracks' pre-bus sends.
 The timeline overview scrolls one fixed-width arrangement; synchronize its ruler and song-part header with track scrolling while pinning header controls, so bar positions stay aligned at every zoom and viewport width.
 MIDI Learn stores CC-to-target mappings by stable track/device IDs and applies incoming values through existing state or the singleton looper; only expose Learn on controls with a real implemented dispatch path.
-Ableton Live interoperability uses user-exported audio stems and standard MIDI files, not embedded Ableton software or proprietary project decoding; this keeps the handoff functional without misrepresenting native integration.
+Ableton handoff uses exported stems and standard MIDI, not embedded Ableton or proprietary decoding, to stay honest.
 - Time signature is transport.beatsPerBar over a quarter-note beat; bar math goes through timebase helpers (stepsPerBar/getBeatsPerBar), synced by the store each render, so ruler, metronome, count-ins and looper agree.
 Bus and send insert changes crossfade parallel audio paths after the bus scope or send output; never disconnect the active source on each parameter edit, because that cuts live sound and bypasses the actual effect chain.
 Printed instrument and drum takes replace overlapping clips by default; only explicit overdub stacks them, so ordinary re-recording does not double playback.
@@ -41,3 +41,4 @@ Transport stays scoped: desktop wraps intrinsic groups; phone Edit groups menu c
 Phone mixer reuses track/bus actions; drum editors share session-only navigation, page touch-sized steps and preserve one-finger scrolling during pinch zoom.
 Drum snap is session-only and affects step writes, not existing hits, preserving patterns.
 Count-in haptics use the shared beat timer and guarded vibration support, independent of audio.
+Cloud deletion reads raw sessions, confirms row deletion, then cleans owned project files; missing playback assets cannot block removal.
