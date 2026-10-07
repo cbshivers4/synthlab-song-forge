@@ -27,7 +27,7 @@ Bottom device displays read post-device or track analyser taps at 20 fps; never 
 - The post-login menu presents cloud projects, device recents, saved templates, and starter templates in one responsive workspace; retain their existing storage and open actions when changing its layout.
 - GRANT EXECUTE on RLS security-definer helpers to anon/authenticated/service_role; missing grants break policy reads.
 Studio panel wallpaper uses one bundled JPEG with a dark semantic overlay and per-panel skin overrides; this keeps controls legible while letting users customize each panel without external image dependencies.
-Timeline track names share one compact row with header controls; put the track-kind label beside the input selector to prevent it spilling into the arrangement.
+Timeline names stay single-line; phone actions scroll with REC/AUTO first, content-sized rows and isolated menu clicks to prevent clipping and unwanted editor opening.
 The arrangement playhead is scoped to the rendered track-row wrapper, never the empty workspace, so it stops after the last visible track.
 Synth sections share wrapping tabs; X-Y pads dispatch through updatePatch to stay synchronized with knobs and saved presets without removing controls.
 Editors shrink below saved height to preserve the timeline minimum and avoid toolbar clipping.

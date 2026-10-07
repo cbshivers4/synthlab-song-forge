@@ -210,3 +210,5 @@
 - [x] Bring A–H pattern selection, Copy/Clear and editable steps above the tall pad sound controls; pad sizing and instrument artwork unchanged; signed-in browser verified step editing and recall between banks with no runtime errors.
 
 - [x] Select All button placed immediately next to the Select tool in the editing toolbar (verified: 9 CHANNELS -> 9 SELECTED)
+
+- [x] Keep phone timeline REC and AUTO visible first, preserve other actions through horizontal scrolling, and prevent automation menu clicks from opening an instrument.
