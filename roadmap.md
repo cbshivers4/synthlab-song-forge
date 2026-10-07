@@ -7,6 +7,7 @@
 - [x] Add a playable bass generator that creates editable MIDI patterns
 
 # Roadmap
+- [ ] Make phone Edit countdown show large labeled bar and beat numbers; retain optional count-in click
 - [x] Add mobile drum-roll row/step indicators and pinch/button zoom; browser two-touch gesture changed zoom and row indicators followed scrolling
 - [x] Remember selected drum row/step across tabs and editor return; verified FX step 16 retained and visible
 - [x] Add optional count-in click in phone Edit Recording; verified 0 engine clicks when off and 4 when on, both automatically recording after the countdown
