@@ -37,5 +37,5 @@ Drum patterns precede pads; phone tabs separate pads, steps, sound and kits, wit
 Embedded keyboards reuse Keyboard with a track or sample callback and shared typing toggle; claim events once and yield pad shortcuts to prevent doubled notes.
 Paste content at the playhead onto the selected or explicit channel, preserving its settings; Duplicate track separately clones channels.
 Synth/MIDI selection opens piano roll; explicit instrument actions open synth. Sampler editors show Sampler with Stretch before chops.
-Transport stays scoped: desktop wraps intrinsic groups; phone Edit uses shared transport handlers with secondary controls in menus, keeping Home clear.
+Transport stays scoped: desktop wraps intrinsic groups; phone Edit groups menu controls by purpose and uses shared recording/count-in handlers; Home stays clear.
 Phone mixer reuses track/bus actions. Both drum editors page touch-sized steps; swipes scroll without painting to keep all rows reachable.

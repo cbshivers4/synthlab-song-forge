@@ -330,15 +330,36 @@ export function TopBar() {
 
         <TransportExtras mobile={isMobile}>
           {isMobile && <>
-            <div className="flex w-full items-center gap-1 border-b border-border pb-2">
+            <PhoneTransportSection title="Playback">
+            <div className="flex w-full items-center gap-1">
               <TBtn label="RTZ" onClick={() => setTransport({ step: transport.loop ? (transport.loopStart ?? 0) : 0 })}><SkipBack className="size-4" /></TBtn>
               <TBtn label={transport.playing ? "PAUSE" : "PLAY"} active={transport.playing} onClick={togglePlay}>{transport.playing ? <Pause className="size-4" /> : <Play className="size-4" />}</TBtn>
               <TBtn label="STOP" onClick={stop}><Square className="size-4" /></TBtn>
-              <TBtn label="REC" danger active={transport.recording} onClick={toggleRecord}><Mic className="size-4" /></TBtn>
             </div>
-            <div className="w-full overflow-x-auto"><MasterMeter /></div>
             <PositionDisplay step={transport.step} bpm={transport.bpm} playing={transport.playing} />
-            <div className="transport-glass-group flex flex-wrap items-center gap-3 rounded-md border border-border p-3">
+            <FeatBtn label="METRONOME" icon={<Timer className="size-3.5" />} active={transport.metronome} onClick={() => setTransport({ metronome: !transport.metronome })} />
+            </PhoneTransportSection>
+            <PhoneTransportSection title="Recording">
+              <TBtn label="REC" danger active={transport.recording || transport.countInLeft != null} onClick={toggleRecord}><Mic className="size-4" /></TBtn>
+              <div className="w-full space-y-2" role="group" aria-label="Recording count-in">
+                <h3 className="text-sm font-medium">Count-in before recording</h3>
+                <div className="grid grid-cols-4 gap-1">
+                  <Button variant={transport.countIn ? "outline" : "default"} className="h-12 px-1" aria-label="Count-in off" aria-pressed={!transport.countIn} onClick={() => setTransport({ countIn: false })}>Off</Button>
+                  {[1, 2, 4].map((bars) => <Button key={bars} variant={transport.countIn && (transport.countInBars ?? 1) === bars ? "default" : "outline"} className="h-12 px-1" aria-label={`Count-in ${bars} ${bars === 1 ? "bar" : "bars"}`} aria-pressed={transport.countIn && (transport.countInBars ?? 1) === bars} onClick={() => setTransport({ countIn: true, countInBars: bars })}>{bars} {bars === 1 ? "bar" : "bars"}</Button>)}
+                </div>
+              </div>
+              <FeatBtn label="OVERDUB" icon={<Layers className="size-3.5" />} active={transport.overdub} onClick={() => setTransport({ overdub: !transport.overdub })} />
+              <FeatBtn label="REPLACE" icon={<Layers className="size-3.5" />} active={!!transport.replace} onClick={() => setTransport({ replace: !transport.replace })} />
+              <FeatBtn label="INPUT MON" icon={<Headphones className="size-3.5" />} active={transport.monitor} onClick={() => setTransport({ monitor: !transport.monitor })} />
+              <FeatBtn label={transport.punchIn == null ? "PUNCH IN" : `PUNCH OUT @${transport.punchIn + 1}`} icon={<Scissors className="size-3.5" />} active={transport.punchIn != null} onClick={() => setTransport(transport.punchIn == null ? { punchIn: transport.step } : { punchOut: transport.step })} />
+            </PhoneTransportSection>
+            <PhoneTransportSection title="Loop">
+              <FeatBtn label="LOOP" icon={<Repeat className="size-3.5" />} active={transport.loop} onClick={() => setTransport({ loop: !transport.loop })} />
+              <div className="w-full overflow-x-auto"><LoopRange /></div>
+              <div className="flex items-center gap-1"><Button variant="ghost" size="icon" aria-label="Fewer bars" disabled={transport.bars <= 1} onClick={() => setTransport({ bars: Math.max(1, transport.bars - 1) })}><Minus className="size-3" /></Button><span className="font-mono text-sm">{transport.bars} bars</span><Button variant="ghost" size="icon" aria-label="More bars" disabled={transport.bars >= 512} onClick={() => setTransport({ bars: Math.min(512, transport.bars + 1) })}><Plus className="size-3" /></Button></div>
+            </PhoneTransportSection>
+            <PhoneTransportSection title="Tempo & rhythm">
+            <div className="flex flex-wrap items-center gap-3">
               <div><span className="label-xs">BPM</span><div className="font-mono text-base text-primary">{transport.bpm}</div></div>
               <Slider aria-label="Tempo" className="w-40" value={[transport.bpm]} min={60} max={190} step={1} onValueChange={([bpm = 120]) => setTransport({ bpm })} />
               <MidiLearnButton id="transport" param="bpm" label="Tempo" />
@@ -346,19 +367,14 @@ export function TopBar() {
               <div><span className="label-xs">Swing</span><Slider aria-label="Swing" className="w-20" value={[transport.swing]} min={0} max={0.6} step={0.01} onValueChange={([swing = 0]) => setTransport({ swing })} /></div>
               <MidiLearnButton id="transport" param="swing" label="Swing" />
             </div>
-            <div className="flex flex-wrap gap-1">
-              <FeatBtn label="COUNT-IN" icon={<Hash className="size-3.5" />} active={transport.countIn} onClick={() => setTransport({ countIn: !transport.countIn })} />
-              {[1, 2, 4].map((bars) => <Button key={bars} size="sm" variant="outline" aria-label={`Count-in ${bars} ${bars === 1 ? "bar" : "bars"}`} aria-pressed={transport.countIn && (transport.countInBars ?? 1) === bars} onClick={() => setTransport({ countIn: true, countInBars: bars })}>{bars} {bars === 1 ? "bar" : "bars"}</Button>)}
-              <FeatBtn label="METRONOME" icon={<Timer className="size-3.5" />} active={transport.metronome} onClick={() => setTransport({ metronome: !transport.metronome })} />
-              <FeatBtn label="LOOP" icon={<Repeat className="size-3.5" />} active={transport.loop} onClick={() => setTransport({ loop: !transport.loop })} />
-              <FeatBtn label="OVERDUB" icon={<Layers className="size-3.5" />} active={transport.overdub} onClick={() => setTransport({ overdub: !transport.overdub })} />
-              <FeatBtn label="REPLACE" icon={<Layers className="size-3.5" />} active={!!transport.replace} onClick={() => setTransport({ replace: !transport.replace })} />
-              <FeatBtn label="INPUT MON" icon={<Headphones className="size-3.5" />} active={transport.monitor} onClick={() => setTransport({ monitor: !transport.monitor })} />
-              <FeatBtn label={transport.punchIn == null ? "PUNCH IN" : `PUNCH OUT @${transport.punchIn + 1}`} icon={<Scissors className="size-3.5" />} active={transport.punchIn != null} onClick={() => setTransport(transport.punchIn == null ? { punchIn: transport.step } : { punchOut: transport.step })} />
-            </div>
-            <div className="flex items-center justify-between gap-2 border-y border-border py-2"><LoopRange /><AudioStatus /><div className="flex items-center gap-1"><Button variant="ghost" size="icon" aria-label="Fewer bars" disabled={transport.bars <= 1} onClick={() => setTransport({ bars: Math.max(1, transport.bars - 1) })}><Minus className="size-3" /></Button><span className="font-mono text-sm">{transport.bars} bars</span><Button variant="ghost" size="icon" aria-label="More bars" disabled={transport.bars >= 512} onClick={() => setTransport({ bars: Math.min(512, transport.bars + 1) })}><Plus className="size-3" /></Button></div></div>
+            </PhoneTransportSection>
+            <PhoneTransportSection title="Meters & MIDI">
+            <div className="w-full overflow-x-auto"><MasterMeter /></div>
+            <AudioStatus />
             <MidiControl />
+            </PhoneTransportSection>
           </>}
+          {isMobile && <h2 className="w-full border-t border-border pt-3 text-sm font-semibold">Studio tools</h2>}
           <IdeaRecorder compact={isMobile} />
           <Popover>
             <PopoverTrigger asChild>
@@ -492,6 +508,10 @@ export function TopBar() {
 function TransportExtras({ mobile, children }: { mobile: boolean; children: React.ReactNode }) {
   if (!mobile) return <div className="transport-glass-tools flex flex-wrap items-center gap-1">{children}</div>;
   return <div className="order-2 justify-self-end"><Popover><PopoverTrigger asChild><Button variant="outline" size="icon" className="transport-glass-group size-11" aria-label="Transport menu" title="Transport menu"><SlidersHorizontal className="size-5" /></Button></PopoverTrigger><PopoverContent align="end" className="transport-glass-menu max-h-[75dvh] w-[min(92vw,420px)] overflow-y-auto"><div className="mb-3 border-b border-border pb-2 font-semibold">Transport</div><div className="flex flex-wrap items-center gap-2">{children}</div></PopoverContent></Popover></div>;
+}
+
+function PhoneTransportSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return <section className="w-full min-w-0 space-y-2 border-b border-border pb-3" aria-label={title}><h2 className="text-sm font-semibold text-foreground">{title}</h2><div className="flex min-w-0 flex-wrap items-center gap-2">{children}</div></section>;
 }
 
 function TBtn({
