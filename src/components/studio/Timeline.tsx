@@ -1287,7 +1287,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
           </DropdownMenu>
         </div>
 
-        <div className={isMobile ? "timeline-track-actions flex max-w-full touch-pan-x items-center gap-1 overflow-x-auto overscroll-x-contain pb-1 [&>button]:h-12 [&>button]:shrink-0" : "flex items-center gap-1"}>
+        <div onClick={(e) => e.stopPropagation()} className={isMobile ? "timeline-track-actions flex max-w-full touch-pan-x items-center gap-1 overflow-x-auto overscroll-x-contain pb-1 [&>button]:h-12 [&>button]:shrink-0" : "flex items-center gap-1"}>
           <Button
             size="sm"
             variant={track.muted ? "secondary" : "ghost"}
