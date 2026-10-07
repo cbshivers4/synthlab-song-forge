@@ -29,6 +29,7 @@ import { renderStarterSamples } from "@/lib/synclab/starter-samples";
 import { MidiLearnButton } from "./MidiLearn";
 import { Keyboard } from "./Keyboard";
 import { qwertyEnabled } from "@/lib/synclab/qwerty";
+import { SavePadsDialog } from "./SavePadsDialog";
 
 const BANKS = ["A", "B", "C", "D"] as const;
 /** Koala-style bank colors — each bank tints its loaded pads. */
@@ -554,6 +555,7 @@ export function PadSampler() {
           >
             <Sparkles className="size-3.5" /> Starter samples
           </Button>
+          <SavePadsDialog pads={pads} selected={sel} />
         </div>
       </div>
 
