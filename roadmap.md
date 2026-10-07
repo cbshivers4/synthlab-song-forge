@@ -7,7 +7,7 @@
 - [x] Add a playable bass generator that creates editable MIDI patterns
 
 # Roadmap
-- [ ] Move phone transport from Home to Edit with uncluttered menu controls; preserve desktop
+- [x] Move phone transport from Home to Edit with uncluttered menu controls; preserve desktop
 - [x] Add and verify a horizontal phone drum machine view with accessible pads and all existing controls
 
 - [x] Add an Ableton Live file handoff for aligned audio stems, standard MIDI, and WAV mix export without claiming embedded Ableton support
