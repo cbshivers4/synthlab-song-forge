@@ -485,7 +485,7 @@ export function DrumMachine({ track }: { track: Track }) {
                   )}
                 >
                   <span aria-hidden className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                    <DrumInstrumentIcon kind={pad.kind} className="size-8" />
+                    <DrumInstrumentIcon kind={pad.kind} className="size-[52%]" />
                   </span>
                   <span className="relative min-w-0">
                     <span className="block truncate font-mono text-[10px] font-semibold tracking-wider">{pad.name}</span>
