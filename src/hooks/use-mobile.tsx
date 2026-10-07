@@ -1,6 +1,7 @@
 import * as React from "react";
 
-const MOBILE_QUERY = "(max-width: 767px), (max-height: 500px) and (pointer: coarse)";
+const LANDSCAPE_PHONE_QUERY = "(orientation: landscape) and (max-width: 1100px) and (max-height: 600px) and (pointer: coarse), (orientation: landscape) and (max-width: 1100px) and (max-height: 550px)";
+const MOBILE_QUERY = `(max-width: 767px), ${LANDSCAPE_PHONE_QUERY}`;
 
 export function useIsMobile() {
   const [isMobile, setIsMobile] = React.useState<boolean | undefined>(undefined);
@@ -22,7 +23,7 @@ export function useIsMobile() {
 export function useIsLandscapePhone() {
   const [on, setOn] = React.useState(false);
   React.useEffect(() => {
-    const mql = window.matchMedia("(orientation: landscape) and (max-height: 600px) and (pointer: coarse), (orientation: landscape) and (max-height: 500px)");
+    const mql = window.matchMedia(LANDSCAPE_PHONE_QUERY);
     const onChange = () => setOn(mql.matches);
     mql.addEventListener("change", onChange);
     onChange();

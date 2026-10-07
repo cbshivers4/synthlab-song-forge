@@ -6,7 +6,7 @@
  * timeline play; there is no second copy of the pattern. Rows are labelled with
  * the drum name and the MIDI note the pad sends, instead of melodic note names.
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -14,16 +14,26 @@ import { useStudio } from "@/lib/synclab/store";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { DRUM_KIND_LABEL, drumRows, noteName } from "@/lib/synclab/drum-notes";
 import type { DrumPad, Track } from "@/lib/synclab/types";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const VELOCITIES = [0, 0.35, 0.7, 1] as const;
 
 export function DrumRoll({ track }: { track: Track }) {
+  const isMobile = useIsMobile();
   const { updatePad, setStepCount, transport, setTransport } = useStudio();
   const pads = track.pads ?? [];
   const rows = drumRows(pads);
   const total = Math.max(1, track.steps || 16);
   const [selected, setSelected] = useState<string | null>(null);
   const [paint, setPaint] = useState<number | null>(null);
+  const [page, setPage] = useState(0);
+  const [widePhone, setWidePhone] = useState(false);
+  useEffect(() => { const query = window.matchMedia("(min-width: 480px)"); const read = () => setWidePhone(query.matches); read(); query.addEventListener("change", read); return () => query.removeEventListener("change", read); }, []);
+  const pageSize = isMobile ? (widePhone ? 4 : 3) : total;
+  const pages = Math.ceil(total / pageSize);
+  const start = Math.min(page, pages - 1) * pageSize;
+  const visibleSteps = Array.from({ length: Math.min(pageSize, total - start) }, (_, i) => start + i);
 
   const write = (pad: DrumPad, patch: Partial<DrumPad>) => updatePad(track.id, pad.id, patch);
 
@@ -73,12 +83,12 @@ export function DrumRoll({ track }: { track: Track }) {
 
   return (
     <div
-      className="space-y-1.5"
+      className={`drum-roll space-y-1.5 ${isMobile ? "phone-drum-roll" : ""}`}
       onPointerUp={() => setPaint(null)}
       onPointerLeave={() => setPaint(null)}
     >
-      <div className="flex flex-wrap items-center gap-2 rounded-sm border border-border bg-surface/60 p-1.5">
-        <span className="label-xs px-1">DRUM ROLL · {track.name}</span>
+      <div className="flex flex-nowrap items-center gap-2 overflow-x-auto rounded-sm border border-border bg-surface/60 p-1.5 [&>*]:shrink-0">
+        <span className="label-xs whitespace-nowrap px-1" title={track.name}>DRUM ROLL</span>
         <Select value={String(total)} onValueChange={(v) => setStepCount(track.id, Number(v))}>
           <SelectTrigger className="h-7 w-24 text-[10px]">
             <SelectValue />
@@ -119,15 +129,17 @@ export function DrumRoll({ track }: { track: Track }) {
         </Button>
       </div>
 
+      {isMobile && <div className="grid grid-cols-[48px_minmax(0,1fr)_48px] items-center gap-2"><Button variant="outline" size="icon" className="size-12" aria-label="Previous drum steps" disabled={start === 0} onClick={() => setPage(Math.max(0, page - 1))}><ChevronLeft /></Button><span className="text-center font-mono text-sm whitespace-nowrap">Steps {start + 1}–{Math.min(total, start + pageSize)} / {total}</span><Button variant="outline" size="icon" className="size-12" aria-label="Next drum steps" disabled={start + pageSize >= total} onClick={() => setPage(Math.min(pages - 1, page + 1))}><ChevronRight /></Button></div>}
+
       <div className="overflow-x-auto rounded-[2px] border border-border bg-background">
-        <div className="min-w-[640px]">
+        <div className={isMobile ? "w-full" : "min-w-[640px]"}>
           {/* bar numbers */}
           <div className="flex border-b border-border bg-surface-2/70">
             <div className="w-32 shrink-0 border-r border-border px-2 py-0.5 font-mono text-[8px] uppercase tracking-widest text-muted-foreground">
               Drum · note
             </div>
             <div className="flex flex-1 gap-[2px] px-1 py-0.5">
-              {Array.from({ length: total }).map((_, i) => (
+              {visibleSteps.map((i) => (
                 <div key={i} className="flex-1 text-center font-mono text-[7px] text-muted-foreground">
                   {i % 4 === 0 ? i / 4 + 1 : ""}
                 </div>
@@ -141,8 +153,8 @@ export function DrumRoll({ track }: { track: Track }) {
             return (
               <div key={pad.id}>
                 <div className={`flex items-center border-b border-border/40 ${isSel ? "bg-surface/60" : ""}`}>
-                  <button
-                    className="flex w-32 shrink-0 items-center justify-between gap-1 border-r border-border px-2 py-1 text-left hover:bg-surface"
+                  <Button variant="ghost"
+                    className="drum-row-name flex h-auto w-32 shrink-0 items-center justify-between gap-1 border-r border-border px-2 py-1 text-left hover:bg-surface"
                     onClick={() => {
                       getEngine().playDrum(track.id, pad, 1);
                       setSelected(isSel ? null : pad.id);
@@ -153,20 +165,21 @@ export function DrumRoll({ track }: { track: Track }) {
                       {DRUM_KIND_LABEL[pad.kind] ?? pad.name}
                     </span>
                     <span className="shrink-0 font-mono text-[8px] text-muted-foreground">{noteName(note)}</span>
-                  </button>
-                  <button
-                    className={`mx-1 h-5 w-5 shrink-0 rounded-[3px] font-mono text-[9px] ${pad.muted ? "bg-orange-500 text-black" : "bg-black/30 text-muted-foreground"}`}
+                  </Button>
+                  <Button variant="ghost"
+                    className={`drum-row-mute mx-1 h-5 w-5 shrink-0 rounded-[3px] p-0 font-mono text-[9px] ${pad.muted ? "bg-amber text-background" : "bg-surface text-muted-foreground"}`}
                     onClick={() => write(pad, { muted: !pad.muted })}
                     title={pad.muted ? "Muted" : "Mute this drum"}
                   >
                     M
-                  </button>
+                  </Button>
                   <div className="flex flex-1 gap-[2px] px-1 py-1">
-                    {steps.map((v, i) => {
+                    {visibleSteps.map((i) => {
+                      const v = steps[i] ?? 0;
                       const playing = transport.playing && transport.step % total === i;
                       const chance = pad.probability?.[i] ?? 1;
                       return (
-                        <button
+                        <Button variant="ghost"
                           key={i}
                           aria-label={`${pad.name} step ${i + 1}${v > 0 ? `, velocity ${Math.round(v * 100)}%` : ", empty"}`}
                           title={
@@ -174,7 +187,7 @@ export function DrumRoll({ track }: { track: Track }) {
                               ? `velocity ${Math.round(v * 100)}%${chance < 1 ? ` · ${Math.round(chance * 100)}% chance` : ""}`
                               : "empty"
                           }
-                          className="relative h-6 flex-1 rounded-[3px] border transition-all"
+                          className="drum-step relative h-6 min-w-0 flex-1 rounded-[3px] border p-0 transition-all"
                           style={{
                             minWidth: 10,
                             borderColor: playing ? "var(--neon)" : "var(--color-border)",
@@ -203,14 +216,14 @@ export function DrumRoll({ track }: { track: Track }) {
                           {v > 0 && chance < 1 && (
                             <span className="absolute inset-x-0 bottom-0 block h-[2px] bg-background/70" />
                           )}
-                        </button>
+                        </Button>
                       );
                     })}
                   </div>
                 </div>
 
                 {isSel && (
-                  <div className="flex flex-wrap items-center gap-1.5 border-b border-border/40 bg-surface/40 px-2 py-1.5">
+                  <div className="flex flex-nowrap items-center gap-1.5 overflow-x-auto whitespace-nowrap border-b border-border/40 bg-surface/40 px-2 py-1.5 [&>*]:shrink-0">
                     <span className="label-xs">{pad.name} tools</span>
                     {(
                       [

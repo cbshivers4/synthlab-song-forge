@@ -30,7 +30,7 @@ Studio panel wallpaper uses one bundled JPEG with a dark semantic overlay and pe
 Timeline track names share one compact row with header controls; put the track-kind label beside the input selector to prevent it spilling into the arrangement.
 The arrangement playhead is scoped to the rendered track-row wrapper, never the empty workspace, so it stops after the last visible track.
 Synth feature sections share one tab group with a wrapping tab list and unchanged patch handlers, so navigation reduces clutter without changing sound or removing controls.
-The lower editor panel may shrink below its remembered height so the timeline always keeps a minimum height; this stops the toolbar's wrapped second row from being clipped when an editor is open.
+Editors shrink below saved height to preserve the timeline minimum and avoid toolbar clipping.
 Drum artwork uses semantic inline SVG within unchanged pads to preserve controls and audio.
 
 Drum pattern selection and the scrollable step sequencer precede the pad sound surface so tall sound controls cannot bury pattern editing; retain the pad layout unchanged.
@@ -38,3 +38,4 @@ Embedded keyboards reuse Keyboard with a track or sample callback and shared typ
 Paste content at the playhead onto the selected or explicit channel, preserving its settings; Duplicate track separately clones channels.
 Synth/MIDI selection opens piano roll; explicit instrument actions open synth. Sampler editors show Sampler with Stretch before chops.
 Transport glass tokens and named groups stay scoped; phone menus reuse existing handlers to preserve audio behavior.
+Phone mixer essentials reuse track/bus actions; full strips remain in dialogs. Drum-roll step pages keep touch cells large without changing patterns.

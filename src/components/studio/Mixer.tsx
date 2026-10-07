@@ -20,7 +20,7 @@ import { Knob } from "./Knob";
 import { Button } from "@/components/ui/button";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useStudio } from "@/lib/synclab/store";
 import { useApp } from "@/lib/synclab/app-state";
@@ -35,6 +35,7 @@ import { clearClip, reportLevel, useClipped } from "@/lib/synclab/clip-monitor";
 import { Scope } from "./Scope";
 import { XYPad } from "./XYPad";
 import { EffectDisplay } from "./EffectDisplay";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const BUSES: BusId[] = ["drums", "vocals", "instruments", "synths", "fx", "master"];
 const DB_TICKS = [6, 0, -6, -12, -24, -48];
@@ -1561,6 +1562,7 @@ function MasterStrip({ level: peak }: { level: number }) {
 }
 
 export function Mixer() {
+  const isMobile = useIsMobile();
   const { tracks, selectedId, select, buses, setBus, vcas, setVca, auxReturns, setAuxReturn, updateTrack, addTrack } = useStudio();
   const levels = useMeters(tracks);
   const [narrow, setNarrow] = useState(false);
@@ -1615,7 +1617,7 @@ export function Mixer() {
   const activeBuses = BUS_STRIPS.filter((id) => tracks.some((t) => t.bus === id));
   return (
     <div
-      className="mx-console flex flex-col overflow-hidden border border-border bg-surface shadow-panel"
+      className={cn("mx-console flex flex-col overflow-hidden border border-border bg-surface shadow-panel", isMobile && "mx-phone")}
       data-console={desk.id}
       style={
         {
@@ -1819,9 +1821,9 @@ export function Mixer() {
         </div>
       ) : (
         <div className="mobile-mixer-strips flex overflow-x-auto">
-          <LabelRail />
+          {!isMobile && <LabelRail />}
           {tracks.map((t) => (
-            <Strip
+            isMobile ? <PhoneChannel key={t.id} track={t} level={levels.tracks[t.id] ?? 0} selected={t.id === selectedId} index={tracks.indexOf(t)} /> : <Strip
               key={t.id}
               t={t}
               index={tracks.indexOf(t)}
@@ -1841,11 +1843,30 @@ export function Mixer() {
           {showAux && AUX_IDS.slice(0, counts.aux).map((id) => (
             <ControlStrip key={`aux-${id}`} kind="AUX" name={id} state={auxReturns[id]} level={levels.aux[id] ?? 0} onChange={(patch) => setAuxReturn(id, patch)} />
           ))}
-          <div className="sticky right-0 z-10 bg-surface shadow-[-12px_0_18px_-12px_rgba(0,0,0,0.8)]">
-            <MasterStrip level={levels.master} />
+          <div className={cn("bg-surface", !isMobile && "sticky right-0 z-10 shadow-[-12px_0_18px_-12px_rgba(0,0,0,0.8)]")}>
+            {isMobile ? <PhoneChannel level={levels.master} selected={false} index={tracks.length} /> : <MasterStrip level={levels.master} />}
           </div>
         </div>
       )}
     </div>
   );
+}
+
+function PhoneChannel({ track, level, selected, index }: { track?: Track; level: number; selected: boolean; index: number }) {
+  const { updateTrack, buses, setBus, transport, setTransport, select, setPanel } = useStudio();
+  const name = track?.name ?? "MASTER";
+  const volume = track?.volume ?? buses.master.volume;
+  const choose = () => { if (track) { select(track.id); setPanel("mixer"); } };
+  return <section aria-label={`${name} mixer channel`} className={cn("phone-mix-channel flex w-[216px] shrink-0 snap-start flex-col border-r border-border bg-surface", selected && "bg-primary/10")}>
+    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center border-b border-border px-2">
+      <Button variant="ghost" className="h-12 min-w-0 justify-start px-1" onClick={choose} title={name}><span className="truncate">{track ? `${index + 1}. ${name}` : name}</span></Button>
+      <Dialog><DialogTrigger asChild><Button variant="ghost" size="icon" className="size-12" aria-label={`${name} channel controls`} title="Channel controls"><Settings2 className="size-5" /></Button></DialogTrigger><DialogContent className="phone-channel-details max-h-[88dvh] w-[min(94vw,420px)] overflow-y-auto"><DialogHeader><DialogTitle className="truncate">{name}</DialogTitle></DialogHeader><div className="flex justify-center">{track ? <Strip t={track} index={index} selected={selected} narrow={false} level={level} onSelect={choose} /> : <MasterStrip level={level} />}</div></DialogContent></Dialog>
+    </div>
+    <div className="flex items-center justify-between px-3 py-2"><span className="font-mono text-sm">{toDb(volume).toFixed(1)} dB</span><ClipLed id={track?.id ?? "master"} /></div>
+    <div className="flex h-48 items-stretch justify-center gap-6 px-3 py-2"><Slider aria-label={`${name} volume`} orientation="vertical" className={cn("mx-fader h-full w-12", FADER_CAP)} value={[volume]} min={0} max={track ? 1 : 1.5} step={0.01} onValueChange={([v = 0]) => track ? updateTrack(track.id, { volume: v }) : setBus("master", { volume: v })} /><Meter id={track?.id ?? "master"} level={level} tall /></div>
+    {track ? <>
+      <div className="grid h-14 grid-cols-[minmax(0,1fr)_48px] items-center gap-2 border-y border-border px-3"><Slider aria-label={`${name} pan`} className="h-12" value={[track.pan]} min={-1} max={1} step={0.01} onValueChange={([pan = 0]) => updateTrack(track.id, { pan })} /><Button variant="ghost" className="size-12 px-0 font-mono text-xs" title="Reset pan to centre" onClick={() => updateTrack(track.id, { pan: 0 })}>{track.pan === 0 ? "C" : `${track.pan < 0 ? "L" : "R"}${Math.round(Math.abs(track.pan) * 100)}`}</Button></div>
+      <div className="grid grid-cols-4 gap-1 p-2"><Button variant={track.muted ? "secondary" : "outline"} className="h-12 p-0" aria-label={`Mute ${name}`} aria-pressed={track.muted} onClick={() => updateTrack(track.id, { muted: !track.muted })}>M</Button><Button variant={track.solo ? "secondary" : "outline"} className="h-12 p-0" aria-label={`Solo ${name}`} aria-pressed={track.solo} onClick={() => updateTrack(track.id, { solo: !track.solo })}>S</Button><Button variant={track.armed ? "destructive" : "outline"} className="h-12 p-0" aria-label={`Record arm ${name}`} aria-pressed={track.armed} onClick={() => updateTrack(track.id, { armed: !track.armed })}><span className="size-4 rounded-full bg-destructive" /></Button><Button variant={transport.monitor ? "secondary" : "outline"} className="h-12 p-0" aria-label={`Monitor ${name}`} aria-pressed={transport.monitor} onClick={() => setTransport({ monitor: !transport.monitor })}><Waves className="size-5" /></Button></div>
+    </> : <div className="flex h-[120px] items-center justify-center"><Button variant="outline" className="h-12" onClick={() => clearClip("master")}>Reset clip</Button></div>}
+  </section>;
 }
