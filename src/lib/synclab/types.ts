@@ -369,6 +369,8 @@ export interface SamplerState {
   oneShot: boolean;
   /** chop points as sorted 0..1 fractions; slice n spans slices[n]..slices[n+1] */
   slices?: number[] | undefined;
+  /** Chop pads share this choke group; zero allows overlapping chops. */
+  chopChoke?: number | undefined;
   attack: number;
   release: number;
   /** envelope decay time in seconds (default 0) */

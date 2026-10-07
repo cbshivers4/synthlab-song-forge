@@ -15,6 +15,8 @@ import { MidiLearnButton } from "./MidiLearn";
 import { SkinControls, skinBackground, useImageDrop } from "@/components/studio/SkinControls";
 import { useSkin } from "@/lib/synclab/skins";
 import { getPadBank, setPadBank, type SavedPad } from "@/lib/synclab/pad-session";
+import { detectSampleChops } from "@/lib/synclab/sample-chops";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 const noteName = (m: number) => `${NOTE_NAMES[((m % 12) + 12) % 12]}${Math.floor(m / 12) - 1}`;
@@ -36,11 +38,12 @@ function Row({ label, value, children, midiId, midiParam }: { label: string; val
 }
 
 /** Waveform with draggable trim handles and chop markers. */
-function Waveform({ track, onSlice }: { track: Track; onSlice: (i: number) => void }) {
+function Waveform({ track, onSlice, drawSlice = false }: { track: Track; onSlice: (i: number) => void; drawSlice?: boolean }) {
   const { updateSampler } = useStudio();
-  const s = track.sampler!;
+  const s = track.sampler;
   const ref = useRef<HTMLDivElement | null>(null);
   const [drag, setDrag] = useState<"start" | "end" | number | null>(null);
+  if (!s) return null;
   const chops = s.slices ?? [];
 
   const fracAt = (clientX: number) => {
@@ -65,6 +68,12 @@ function Waveform({ track, onSlice }: { track: Track; onSlice: (i: number) => vo
     <div
       ref={ref}
       className="relative h-40 w-full touch-none overflow-hidden rounded-lg border border-border bg-surface-2/60"
+      onPointerDown={(e) => {
+        if (!drawSlice || (e.target as HTMLElement).closest('[role="slider"]')) return;
+        const at = Math.min(s.end - 0.002, Math.max(s.start, fracAt(e.clientX)));
+        if (chops.some((c) => Math.abs(c - at) < 0.002)) return;
+        updateSampler(track.id, { slices: Array.from(new Set([s.start, ...chops, at])).sort((a, b) => a - b) });
+      }}
       onPointerMove={move}
       onPointerUp={() => setDrag(null)}
       onPointerLeave={() => setDrag(null)}
@@ -87,7 +96,14 @@ function Waveform({ track, onSlice }: { track: Track; onSlice: (i: number) => vo
           aria-valuemax={100}
           onPointerDown={(e) => {
             e.preventDefault();
+            e.currentTarget.setPointerCapture(e.pointerId);
             setDrag(i);
+          }}
+          onKeyDown={(e) => {
+            const delta = e.key === "ArrowLeft" ? -0.001 : e.key === "ArrowRight" ? 0.001 : 0;
+            if (!delta) return;
+            e.preventDefault();
+            updateSampler(track.id, { slices: chops.map((value, index) => index === i ? Math.min(s.end - 0.002, Math.max(s.start, value + delta)) : value).sort((a, b) => a - b) });
           }}
           onDoubleClick={() => onSlice(i)}
           className="absolute inset-y-0 z-20 w-3 -translate-x-1/2 cursor-col-resize"
@@ -284,6 +300,25 @@ export function Sampler() {
   const [pickChop, setPickChop] = useState(0);
   const [padTarget, setPadTarget] = useState(0);
   const chopFileRef = useRef<HTMLInputElement>(null);
+  const [drawSlice, setDrawSlice] = useState(false);
+  const [sensitivity, setSensitivity] = useState(0.5);
+  const [chopBusy, setChopBusy] = useState(false);
+  const autoChop = async () => {
+    if (!track || !s) return;
+    setChopBusy(true);
+    try {
+      const buffer = await getEngine().init().decodeAudioData(await (await fetch(s.url)).arrayBuffer());
+      const channels = Array.from({ length: buffer.numberOfChannels }, (_, i) => buffer.getChannelData(i));
+      const slices = detectSampleChops(channels, buffer.sampleRate, s.start, s.end, sensitivity);
+      updateSampler(track.id, { slices });
+      toast.success(slices.length > 1 ? `${slices.length} transient chops` : "No additional attacks found");
+    } catch (error) { toast.error("Could not auto-chop", { description: error instanceof Error ? error.message : undefined }); }
+    finally { setChopBusy(false); }
+  };
+  const releaseChop = (index: number) => {
+    setHeld(null);
+    if (track && s && !s.oneShot) getEngine().stopVoiceKey(track.id, s.chopChoke ? `chop-choke-${s.chopChoke}` : `chop-${index}`);
+  };
 
   /** Cuts the trimmed region into n equal chops. */
   const chopInto = (n: number) => {
@@ -345,8 +380,8 @@ export function Sampler() {
 
   const makePad = (name: string, url: string, duration: number, peaks: number[]): SavedPad => ({
     name, url, duration, peaks,
-    start: 0, end: 1, gain: 1, pitch: 0, reverse: false, loop: false, oneShot: true,
-    attack: 0.002, release: 0.08, choke: 0, steps: Array.from({ length: 16 }, () => 0),
+    start: 0, end: 1, gain: 1, pitch: 0, reverse: false, loop: false, oneShot: s?.oneShot ?? true,
+    attack: 0.002, release: 0.08, choke: s?.chopChoke ?? 0, steps: Array.from({ length: 16 }, () => 0),
   });
 
   const sendChopsToPads = async (only?: number) => {
@@ -354,15 +389,23 @@ export function Sampler() {
       const all = await renderChops();
       const out = only === undefined ? all.slice(0, 16) : all.slice(only, only + 1);
       const bank = getPadBank();
+      const firstPad = padTarget;
+      if (only === undefined && firstPad + out.length > 16) {
+        toast.error("Choose an earlier starting pad so every chop fits");
+        return;
+      }
+      const targets = out.map((_, i) => only === undefined ? firstPad + i : padTarget);
+      if (targets.some((target) => bank[target]?.url) && !window.confirm("Replace the existing sounds on these sample pads?")) return;
       const engine = getEngine();
       for (let i = 0; i < out.length; i++) {
-        const c = out[i]!;
+        const c = out[i];
+        if (!c) continue;
         // Decode into the engine now so the pad sounds on the very first hit.
         const loaded = await engine.loadSampleFile(c.blob, c.name);
-        bank[only === undefined ? i : padTarget] = makePad(c.name, loaded.url, c.duration, c.peaks);
+        bank[only === undefined ? firstPad + i : padTarget] = makePad(c.name, loaded.url, c.duration, c.peaks);
       }
       setPadBank(bank);
-      toast.success(only === undefined ? `${out.length} chops sent to sample pads 1–${out.length}` : `Chop ${only + 1} sent to pad ${padTarget + 1}`, {
+      toast.success(only === undefined ? `${out.length} chops sent to sample pads ${firstPad + 1}–${firstPad + out.length}` : `Chop ${only + 1} sent to pad ${padTarget + 1}`, {
         description: "Those pads' old sounds were replaced.",
         action: { label: "Open pads", onClick: () => setPanel("pads") },
       });
@@ -504,7 +547,7 @@ export function Sampler() {
             </div>
           </div>
 
-          <Waveform track={track} onSlice={removeChop} />
+          <Waveform track={track} onSlice={removeChop} drawSlice={drawSlice} />
 
             <div className="space-y-3 border-y border-border py-3">
               <p className="label-xs">TIME STRETCH & PITCH</p>
@@ -550,6 +593,8 @@ export function Sampler() {
             <div className="flex flex-wrap items-center gap-2">
               <Scissors className="size-4 text-primary" />
               <span className="label-xs">Chop sample</span>
+              <Button size="sm" variant="secondary" disabled={chopBusy} onClick={() => void autoChop()} className="h-12 sm:h-8">{chopBusy ? "Analyzing…" : "Auto-chop attacks"}</Button>
+              <Button size="sm" variant={drawSlice ? "default" : "outline"} aria-pressed={drawSlice} onClick={() => setDrawSlice(!drawSlice)} className="h-12 sm:h-8"><Scissors className="size-4" /> Manual slice</Button>
               {[4, 8, 12, 16].map((n) => (
                 <Button
                   key={n}
@@ -592,6 +637,24 @@ export function Sampler() {
                 </>
               )}
             </div>
+            <div className="grid min-w-0 gap-3 sm:grid-cols-3">
+              <Row label="Attack sensitivity" value={`${Math.round(sensitivity * 100)}%`}>
+                <Slider aria-label="Attack sensitivity" value={[sensitivity]} min={0} max={1} step={0.01} onValueChange={([value = 0.5]) => setSensitivity(value)} />
+              </Row>
+              <div className="min-w-0 space-y-1">
+                <span className="label-xs">Chop playback</span>
+                <div className="flex gap-1">
+                  {[true, false].map((oneShot) => <Button key={String(oneShot)} variant={s.oneShot === oneShot ? "default" : "outline"} aria-pressed={s.oneShot === oneShot} className="h-12 flex-1 sm:h-8" onClick={() => { stopSamples(track.id); updateSampler(track.id, { oneShot }); }}>{oneShot ? "One-shot" : "Gate"}</Button>)}
+                </div>
+              </div>
+              <div className="min-w-0 space-y-1">
+                <span className="label-xs">Chop choke group</span>
+                <Select value={String(s.chopChoke ?? 0)} onValueChange={(value) => { stopSamples(track.id); updateSampler(track.id, { chopChoke: Number(value) }); }}>
+                  <SelectTrigger aria-label="Chop choke group" className="h-12 w-full sm:h-8"><SelectValue /></SelectTrigger>
+                  <SelectContent>{[0, 1, 2, 3, 4].map((group) => <SelectItem key={group} value={String(group)}>{group ? `Group ${group}` : "Off · overlap"}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </div>
             <div className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-card/60 p-2 font-mono text-[10px] tracking-widest">
               <span className="text-muted-foreground">ONE CHOP</span>
               {chops.length > 0 && (
@@ -612,7 +675,7 @@ export function Sampler() {
               <input ref={chopFileRef} type="file" accept="audio/*,.mp3,.wav,.aiff,.aif,.m4a,.ogg,.flac" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void loadChopFile(f); e.target.value = ""; }} />
             </div>
 
-            {chops.length > 1 ? (
+            {chops.length > 0 ? (
               <>
                 <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 xl:grid-cols-8 xl:gap-3">
                   {chops.map((c, i) => {
@@ -624,9 +687,13 @@ export function Sampler() {
                     );
                     const live = held === i;
                     return (
-                      <button
+                      <Button
                         key={`pad-${i}`}
                         type="button"
+                        variant="outline"
+                        aria-label={`Play chop ${i + 1}`}
+                        onKeyDown={(e) => { if ((e.key === " " || e.key === "Enter") && !e.repeat) { e.preventDefault(); setHeld(i); previewNote(track.id, s.rootNote + i, s.duration); } }}
+                        onKeyUp={(e) => { if (e.key === " " || e.key === "Enter") releaseChop(i); }}
                         onPointerDown={(e) => {
                           e.preventDefault();
                           try {
@@ -635,24 +702,11 @@ export function Sampler() {
                             /* pointer capture is unavailable in a few mobile webviews */
                           }
                           setHeld(i);
-                          previewNote(track.id, s.rootNote + i);
+                          previewNote(track.id, s.rootNote + i, s.duration);
                         }}
-                        onPointerUp={() => {
-                          setHeld(null);
-                          stopSamples(track.id);
-                        }}
-                        onPointerCancel={() => {
-                          setHeld(null);
-                          stopSamples(track.id);
-                        }}
-                        onLostPointerCapture={() => {
-                          setHeld(null);
-                          stopSamples(track.id);
-                        }}
-                        onPointerLeave={() => {
-                          setHeld(null);
-                          stopSamples(track.id);
-                        }}
+                        onPointerUp={() => releaseChop(i)}
+                        onPointerCancel={() => releaseChop(i)}
+                        onLostPointerCapture={() => releaseChop(i)}
                         style={{
                           borderColor: color,
                           background: live
@@ -660,20 +714,19 @@ export function Sampler() {
                             : `linear-gradient(145deg, color-mix(in hsl, ${color} 28%, transparent), color-mix(in hsl, ${color} 8%, transparent))`,
                           boxShadow: live ? `0 0 18px ${color}` : undefined,
                         }}
-                        className="relative flex aspect-square min-w-0 touch-none flex-col items-center justify-between rounded-lg border-2 p-4 font-mono text-xs transition-all select-none active:scale-[0.97]"
+                        className="relative flex h-auto aspect-square min-w-0 touch-none flex-col items-center justify-between rounded-lg border-2 p-4 font-mono text-xs transition-all select-none active:scale-[0.97]"
                       >
                         <span className="relative z-10 text-sm text-foreground">{i + 1}</span>
                         <span className="pointer-events-none absolute inset-x-1 top-5 bottom-4">
                           <WaveformView peaks={slice} color={color} grid={false} label={`Chop ${i + 1} waveform`} />
                         </span>
                         <span className="relative z-10 text-[9px] text-foreground/80">{(c * s.duration).toFixed(2)}s</span>
-                      </button>
+                      </Button>
                     );
                   })}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Hold a pad to play its chop and lift your finger to stop it. Chop {1} sits on {noteName(s.rootNote)}{" "}
-                  and each chop after it takes the next key up. Drag a marker to move a chop, double click it to delete.
+                  {chops.length} chops · {s.oneShot ? "One-shot" : "Gate"} · {s.chopChoke ? `Choke ${s.chopChoke}` : "Overlap"} · {noteName(s.rootNote)}
                 </p>
               </>
             ) : (
