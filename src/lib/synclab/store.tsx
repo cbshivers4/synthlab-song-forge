@@ -181,11 +181,11 @@ function triggerNote(
     const chops = s.slices ?? [];
     const idx = midi - s.rootNote;
     const shifted = midi + (t.octave ?? 0) * 12;
-    if (chops.length > 1 && idx >= 0 && idx < chops.length) {
+    if (chops.length > 0 && idx >= 0 && idx < chops.length) {
       // each key from the root upwards plays one chop at its original pitch
       const start = chops[idx] as number;
       const end = (chops[idx + 1] ?? s.end) as number;
-      engine.playSample(t.id, { ...s, start, end, loop: false }, s.rootNote, s.oneShot ? dur : Math.max(dur, s.duration), vel, when, s.chopChoke ? `chop-choke-${s.chopChoke}` : `chop-${idx}`);
+      engine.playSample(t.id, { ...s, start, end, loop: false }, s.rootNote, dur, vel, when, s.chopChoke ? `chop-choke-${s.chopChoke}` : `chop-${idx}`);
       return;
     }
     engine.playSample(t.id, s, shifted, dur, vel, when);
@@ -339,7 +339,7 @@ interface StudioApi extends StudioState {
   savePreset: (name: string) => void;
   loadPreset: (trackId: string, name: string) => void;
   generateBeat: (trackId: string, genre: string, energy: number) => void;
-  previewNote: (trackId: string, midi: number) => void;
+  previewNote: (trackId: string, midi: number, duration?: number) => void;
   /** Writes a note into the live timeline recording without playing it (the caller already sounded it). */
   captureNote: (trackId: string, midi: number, velocity?: number) => void;
   loadSample: (trackId: string, file: File) => Promise<void>;
@@ -2604,12 +2604,12 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             };
           }),
         ),
-      previewNote: (trackId, midi) => {
+      previewNote: (trackId, midi, duration = 0.35) => {
         const t = tracksRef.current.find((x) => x.id === trackId);
         const engine = getEngine();
         engine.init();
         engine.syncMix(tracksRef.current);
-        if (t) triggerNote(engine, t, midi, 0.35, 0.9);
+        if (t) triggerNote(engine, t, midi, duration, 0.9);
         keyDown(midi);
         // Notes played on screen are captured while the transport records.
         if (t) capture(t.id, midi, 0.9);

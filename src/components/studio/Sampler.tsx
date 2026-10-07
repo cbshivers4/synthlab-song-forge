@@ -547,7 +547,7 @@ export function Sampler() {
             </div>
           </div>
 
-          <Waveform track={track} onSlice={removeChop} />
+          <Waveform track={track} onSlice={removeChop} drawSlice={drawSlice} />
 
             <div className="space-y-3 border-y border-border py-3">
               <p className="label-xs">TIME STRETCH & PITCH</p>
@@ -593,6 +593,8 @@ export function Sampler() {
             <div className="flex flex-wrap items-center gap-2">
               <Scissors className="size-4 text-primary" />
               <span className="label-xs">Chop sample</span>
+              <Button size="sm" variant="secondary" disabled={chopBusy} onClick={() => void autoChop()} className="h-12 sm:h-8">{chopBusy ? "Analyzing…" : "Auto-chop attacks"}</Button>
+              <Button size="sm" variant={drawSlice ? "default" : "outline"} aria-pressed={drawSlice} onClick={() => setDrawSlice(!drawSlice)} className="h-12 sm:h-8"><Scissors className="size-4" /> Manual slice</Button>
               {[4, 8, 12, 16].map((n) => (
                 <Button
                   key={n}
@@ -635,6 +637,24 @@ export function Sampler() {
                 </>
               )}
             </div>
+            <div className="grid min-w-0 gap-3 sm:grid-cols-3">
+              <Row label="Attack sensitivity" value={`${Math.round(sensitivity * 100)}%`}>
+                <Slider aria-label="Attack sensitivity" value={[sensitivity]} min={0} max={1} step={0.01} onValueChange={([value = 0.5]) => setSensitivity(value)} />
+              </Row>
+              <div className="min-w-0 space-y-1">
+                <span className="label-xs">Chop playback</span>
+                <div className="flex gap-1">
+                  {[true, false].map((oneShot) => <Button key={String(oneShot)} variant={s.oneShot === oneShot ? "default" : "outline"} aria-pressed={s.oneShot === oneShot} className="h-12 flex-1 sm:h-8" onClick={() => { stopSamples(track.id); updateSampler(track.id, { oneShot }); }}>{oneShot ? "One-shot" : "Gate"}</Button>)}
+                </div>
+              </div>
+              <div className="min-w-0 space-y-1">
+                <span className="label-xs">Chop choke group</span>
+                <Select value={String(s.chopChoke ?? 0)} onValueChange={(value) => { stopSamples(track.id); updateSampler(track.id, { chopChoke: Number(value) }); }}>
+                  <SelectTrigger aria-label="Chop choke group" className="h-12 w-full sm:h-8"><SelectValue /></SelectTrigger>
+                  <SelectContent>{[0, 1, 2, 3, 4].map((group) => <SelectItem key={group} value={String(group)}>{group ? `Group ${group}` : "Off · overlap"}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </div>
             <div className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-card/60 p-2 font-mono text-[10px] tracking-widest">
               <span className="text-muted-foreground">ONE CHOP</span>
               {chops.length > 0 && (
@@ -655,7 +675,7 @@ export function Sampler() {
               <input ref={chopFileRef} type="file" accept="audio/*,.mp3,.wav,.aiff,.aif,.m4a,.ogg,.flac" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void loadChopFile(f); e.target.value = ""; }} />
             </div>
 
-            {chops.length > 1 ? (
+            {chops.length > 0 ? (
               <>
                 <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 xl:grid-cols-8 xl:gap-3">
                   {chops.map((c, i) => {
@@ -667,9 +687,13 @@ export function Sampler() {
                     );
                     const live = held === i;
                     return (
-                      <button
+                      <Button
                         key={`pad-${i}`}
                         type="button"
+                        variant="outline"
+                        aria-label={`Play chop ${i + 1}`}
+                        onKeyDown={(e) => { if ((e.key === " " || e.key === "Enter") && !e.repeat) { e.preventDefault(); setHeld(i); previewNote(track.id, s.rootNote + i, s.duration); } }}
+                        onKeyUp={(e) => { if (e.key === " " || e.key === "Enter") releaseChop(i); }}
                         onPointerDown={(e) => {
                           e.preventDefault();
                           try {
@@ -678,24 +702,11 @@ export function Sampler() {
                             /* pointer capture is unavailable in a few mobile webviews */
                           }
                           setHeld(i);
-                          previewNote(track.id, s.rootNote + i);
+                          previewNote(track.id, s.rootNote + i, s.duration);
                         }}
-                        onPointerUp={() => {
-                          setHeld(null);
-                          stopSamples(track.id);
-                        }}
-                        onPointerCancel={() => {
-                          setHeld(null);
-                          stopSamples(track.id);
-                        }}
-                        onLostPointerCapture={() => {
-                          setHeld(null);
-                          stopSamples(track.id);
-                        }}
-                        onPointerLeave={() => {
-                          setHeld(null);
-                          stopSamples(track.id);
-                        }}
+                        onPointerUp={() => releaseChop(i)}
+                        onPointerCancel={() => releaseChop(i)}
+                        onLostPointerCapture={() => releaseChop(i)}
                         style={{
                           borderColor: color,
                           background: live
@@ -703,20 +714,19 @@ export function Sampler() {
                             : `linear-gradient(145deg, color-mix(in hsl, ${color} 28%, transparent), color-mix(in hsl, ${color} 8%, transparent))`,
                           boxShadow: live ? `0 0 18px ${color}` : undefined,
                         }}
-                        className="relative flex aspect-square min-w-0 touch-none flex-col items-center justify-between rounded-lg border-2 p-4 font-mono text-xs transition-all select-none active:scale-[0.97]"
+                        className="relative flex h-auto aspect-square min-w-0 touch-none flex-col items-center justify-between rounded-lg border-2 p-4 font-mono text-xs transition-all select-none active:scale-[0.97]"
                       >
                         <span className="relative z-10 text-sm text-foreground">{i + 1}</span>
                         <span className="pointer-events-none absolute inset-x-1 top-5 bottom-4">
                           <WaveformView peaks={slice} color={color} grid={false} label={`Chop ${i + 1} waveform`} />
                         </span>
                         <span className="relative z-10 text-[9px] text-foreground/80">{(c * s.duration).toFixed(2)}s</span>
-                      </button>
+                      </Button>
                     );
                   })}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Hold a pad to play its chop and lift your finger to stop it. Chop {1} sits on {noteName(s.rootNote)}{" "}
-                  and each chop after it takes the next key up. Drag a marker to move a chop, double click it to delete.
+                  {chops.length} chops · {s.oneShot ? "One-shot" : "Gate"} · {s.chopChoke ? `Choke ${s.chopChoke}` : "Overlap"} · {noteName(s.rootNote)}
                 </p>
               </>
             ) : (

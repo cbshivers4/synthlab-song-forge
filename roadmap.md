@@ -212,3 +212,5 @@
 - [x] Select All button placed immediately next to the Select tool in the editing toolbar (verified: 9 CHANNELS -> 9 SELECTED)
 
 - [x] Keep phone timeline REC and AUTO visible first, preserve other actions through horizontal scrolling, and prevent automation menu clicks from opening an instrument.
+
+- [ ] Sampler phone/desktop chopping: PCM attacks, manual cuts, gate/one-shot, choke, pad spreading and preview checks.
