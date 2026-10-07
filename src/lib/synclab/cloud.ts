@@ -156,16 +156,32 @@ export async function renameCloudProject(id: string, name: string) {
 }
 
 export async function deleteCloudProject(project: CloudProject) {
-  const full = await loadCloudProject(project.id);
+  // Deletion reads stored paths directly; missing audio must not block removal.
+  const userId = await currentUserId();
+  const { data, error: readError } = await supabase.from("cloud_projects").select("session").eq("id", project.id).eq("user_id", userId).single();
+  if (readError) throw readError;
+  const session = data.session as unknown as CloudSession | null;
   const paths = new Set<string>();
-  for (const track of full.session?.tracks ?? []) {
-    for (const clip of track.clips ?? []) if (clip.cloudPath) paths.add(clip.cloudPath);
+  const collectClip = (clip: AudioClip) => {
+    if (clip.cloudPath) paths.add(clip.cloudPath);
+    for (const alternate of clip.alts ?? []) collectClip(alternate);
+  };
+  for (const track of session?.tracks ?? []) {
+    for (const clip of track.clips ?? []) collectClip(clip);
     if (track.sampler?.cloudPath) paths.add(track.sampler.cloudPath);
   }
-  for (const pad of Object.values(full.session?.padBank ?? {})) if (pad.cloudPath) paths.add(pad.cloudPath);
-  if (paths.size) await supabase.storage.from(BUCKET).remove([...paths]);
-  const { error } = await supabase.from("cloud_projects").delete().eq("id", project.id);
+  for (const pad of Object.values(session?.padBank ?? {})) if (pad.cloudPath) paths.add(pad.cloudPath);
+  const { data: deleted, error } = await supabase.from("cloud_projects").delete().eq("id", project.id).eq("user_id", userId).select("id").single();
   if (error) throw error;
+  if (!deleted) throw new Error("This project could not be deleted. Refresh the list and try again.");
+  const ownedPaths = [...paths].filter((path) => path.startsWith(`${userId}/${project.id}/`));
+  if (ownedPaths.length) {
+    const { error: cleanupError } = await supabase.storage.from(BUCKET).remove(ownedPaths);
+    if (cleanupError) {
+      const { toast } = await import("sonner");
+      toast.warning("Project deleted; some stored audio could not be removed.");
+    }
+  }
 }
 
 export async function uploadCloudExport(blob: Blob, name: string) {

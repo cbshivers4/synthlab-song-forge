@@ -7,6 +7,7 @@
 - [x] Add a playable bass generator that creates editable MIDI patterns
 
 # Roadmap
+- [x] Repair Recent files deletion without restoring sample URLs; signed-in test deleted a newly saved project with missing audio via its trash button and verified it stayed deleted after reload
 - [x] Add optional count-in haptic pulses and phone Recording toggle; browser tests verified 0/4 pulses, automatic recording, STOP cancellation and unsupported-browser status; physical vibration remains hardware-dependent
 - [x] Add phone drum-roll 1/16, 1/8 and 1/4 snapping; touch tests verified actual hits, unchanged existing hits and portrait/sideways layouts
 - [x] Make phone Edit countdown show large labeled bar and beat numbers; verified automatic recording and 0/4 engine clicks with click disabled/enabled in signed-in phone preview
