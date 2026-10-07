@@ -76,7 +76,7 @@ export function TopBar() {
   const ciBar = Math.floor(ciElapsed / bpb) + 1;
 
   return (
-    <header className="studio-topbar transport-glass studio-wallpaper rack sticky top-0 z-30 shrink-0" data-studio-panel="transport" style={skinBackground(transportSkin)} {...transportDrop}>
+    <header className="studio-topbar transport-glass studio-wallpaper rack sticky top-0 z-30 shrink-0" data-studio-panel="transport" data-desktop-transport={!isMobile ? "true" : undefined} style={skinBackground(transportSkin)} {...transportDrop}>
       {transport.countInLeft != null && (
         <div className="pointer-events-none fixed inset-0 z-50 flex flex-col items-center justify-center bg-background/40">
           <div className="label-xs tracking-[0.3em] text-muted-foreground">COUNT-IN · BAR {ciBar}</div>
@@ -99,8 +99,8 @@ export function TopBar() {
           </div>
         </div>
       )}
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-2 py-2 sm:flex sm:flex-col sm:items-stretch sm:gap-1.5 sm:px-3">
-        <div className="contents sm:flex sm:items-center sm:gap-2">
+      <div className="transport-layout grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-2 py-2 sm:flex sm:flex-col sm:items-stretch sm:gap-1.5 sm:px-3">
+        <div className="transport-row contents sm:flex sm:items-center sm:gap-2">
         <div className="hidden items-center pr-1 sm:flex">
           <img
             src={synclabLogo}
@@ -145,7 +145,7 @@ export function TopBar() {
         </div>
         {!isMobile && <MasterMeter />}
         </div>
-        <div className="contents sm:flex sm:flex-wrap sm:items-center sm:gap-2">
+        <div className="transport-row contents sm:flex sm:flex-wrap sm:items-center sm:gap-2">
         {/* LCD position display */}
         <div className="transport-glass-display order-3 col-span-2 flex min-w-0 items-stretch gap-2 rounded-[3px] border border-border bg-background px-2 py-1 font-mono sm:order-none sm:gap-3 sm:px-3">
           {transport.countInLeft != null ? (
@@ -239,7 +239,7 @@ export function TopBar() {
         </div>
 
         </div>
-        <div className="contents sm:flex sm:flex-wrap sm:items-center sm:gap-2">
+        <div className="transport-row contents sm:flex sm:flex-wrap sm:items-center sm:gap-2">
         {!isMobile && (
           <div className="transport-glass-group flex flex-wrap items-center gap-1 rounded-[3px] border border-border bg-background/70 p-1">
             <FeatBtn
