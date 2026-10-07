@@ -643,8 +643,8 @@ export function DrumMachine({ track }: { track: Track }) {
                       const file = e.target.files?.[0];
                       if (!file) return;
                       try {
-                        const info = await getEngine().peaksFromFile(file);
-                        updatePad(track.id, focusPad.id, { sample: file.name });
+                        const info = await getEngine().loadSampleFile(file, file.name);
+                        updatePad(track.id, focusPad.id, { sample: file.name, sampleUrl: info.url });
                         toast.success(`${file.name} loaded on ${focusPad.name}`, {
                           description: `${info.duration.toFixed(2)}s — trim, pitch and reverse from this pad.`,
                         });

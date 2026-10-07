@@ -15,7 +15,8 @@ import { getEngine } from "@/lib/synclab/audio-engine";
 import { DRUM_KIND_LABEL, drumRows, noteName } from "@/lib/synclab/drum-notes";
 import type { DrumPad, Track } from "@/lib/synclab/types";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { ChevronLeft, ChevronRight, Minus, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Maximize2, Minimize2, Minus, Plus, Upload } from "lucide-react";
+import { toast } from "sonner";
 import { useDrumEditorView } from "@/lib/synclab/drum-editor-view";
 
 const VELOCITIES = [0, 0.35, 0.7, 1] as const;
@@ -35,10 +36,11 @@ export function DrumRoll({ track }: { track: Track }) {
   const rowRefs = useRef(new Map<string, HTMLDivElement>());
   const [visibleRows, setVisibleRows] = useState([1, rows.length]);
   const [widePhone, setWidePhone] = useState(false);
+  const [full, setFull] = useState(false);
   useEffect(() => { const query = window.matchMedia("(min-width: 480px)"); const read = () => setWidePhone(query.matches); read(); query.addEventListener("change", read); return () => query.removeEventListener("change", read); }, []);
   const baseSize = widePhone ? 4 : 3;
-  const pageSize = isMobile ? Math.max(1, Math.floor(baseSize / view.zoom)) : total;
-  const start = isMobile ? Math.min(view.start, Math.max(0, total - 1)) : 0;
+  const pageSize = isMobile && !full ? Math.max(1, Math.floor(baseSize / view.zoom)) : total;
+  const start = isMobile && !full ? Math.min(view.start, Math.max(0, total - 1)) : 0;
   const visibleSteps = Array.from({ length: Math.min(pageSize, total - start) }, (_, i) => start + i);
   const zoomTo = (zoom: number, anchor = view.step) => {
     const next = Math.max(1, Math.min(3, zoom));
@@ -153,9 +155,26 @@ export function DrumRoll({ track }: { track: Track }) {
           steps: steps.map((v) => (v > 0 ? Math.min(1, Math.max(0.2, v + (Math.random() - 0.5) * 0.3)) : 0)),
         }),
       flam: () => write(pad, { steps: steps.map((v, i) => (v === 0 && (steps[i - 1] ?? 0) > 0 ? 0.3 : v)) }),
+      fill: (every: number, offset = 0) => write(pad, { steps: steps.map((_, i) => (i % every === offset ? 0.7 : 0)) }),
       roll: () => write(pad, { steps: steps.map((v, i) => (i % 2 === 0 ? v : Math.max(v, 0.45))) }),
       repeat: () => write(pad, { steps: steps.map((v, i) => (v > 0 ? v : i % 4 === 0 ? 0.6 : 0)) }),
     };
+  };
+
+  const loadSample = async (pad: DrumPad, file: File) => {
+    if (!file.type.startsWith("audio/") && !/\.(wav|mp3|aiff?|ogg|m4a|flac)$/i.test(file.name)) { toast.error("That file isn't audio"); return; }
+    try {
+      const info = await getEngine().loadSampleFile(file, file.name);
+      write(pad, { sample: file.name, sampleUrl: info.url, start: 0, end: 1 });
+      getEngine().playDrum(track.id, { ...pad, sample: file.name, sampleUrl: info.url, start: 0, end: 1 }, 1);
+      toast.success(`${file.name} is now on ${pad.name}`, { description: `${info.duration.toFixed(2)}s — this row plays your sample.` });
+    } catch { toast.error("Could not read that audio file"); }
+  };
+  const pickSample = (pad: DrumPad) => {
+    const input = document.createElement("input");
+    input.type = "file"; input.accept = "audio/*";
+    input.onchange = () => { const f = input.files?.[0]; if (f) void loadSample(pad, f); };
+    input.click();
   };
 
   if (pads.length === 0) {
@@ -208,9 +227,12 @@ export function DrumRoll({ track }: { track: Track }) {
         >
           CLEAR ALL
         </Button>
+        <Button size="sm" variant={full ? "secondary" : "ghost"} className="h-7 gap-1 text-[10px]" aria-pressed={full} onClick={() => setFull((f) => !f)}>
+          {full ? <Minimize2 className="size-3" /> : <Maximize2 className="size-3" />} {full ? "PAGED VIEW" : "FULL VIEW"}
+        </Button>
       </div>
 
-      {isMobile && <div className="space-y-1.5">
+      {isMobile && !full && <div className="space-y-1.5">
         <div className="flex items-center justify-between gap-2">
           <span className="whitespace-nowrap font-mono text-xs">STEP SNAP</span>
           <Select value={String(view.snap)} onValueChange={(value) => updateView({ snap: Number(value) })}>
@@ -230,8 +252,8 @@ export function DrumRoll({ track }: { track: Track }) {
         <div className="truncate font-mono text-xs text-primary" aria-label="Selected drum position">{selected ? `Row ${rows.findIndex(({ pad }) => pad.id === selected) + 1} · ${pads.find((pad) => pad.id === selected)?.name ?? "Drum"} · Step ${Math.min(total, view.step + 1)}` : "No step selected"}</div>
       </div>}
 
-      <div ref={gridRef} onScroll={readRows} aria-label="Drum roll grid" className={`overflow-auto rounded-[2px] border border-border bg-background ${isMobile ? "max-h-[45dvh] touch-pan-y" : ""}`}>
-        <div className={isMobile ? "w-full" : "min-w-[640px]"}>
+      <div ref={gridRef} onScroll={readRows} aria-label="Drum roll grid" className={`overflow-auto rounded-[2px] border border-border bg-background ${full ? "max-h-[78dvh]" : isMobile ? "max-h-[45dvh] touch-pan-y" : ""}`}>
+        <div className={isMobile && !full ? "w-full" : isMobile ? "" : "min-w-[640px]"} style={isMobile && full ? { minWidth: 152 + 28 + total * 30 } : undefined}>
           {/* bar numbers */}
           <div className="sticky top-0 z-10 flex border-b border-border bg-surface-2">
             <div className="drum-roll-label-header w-32 shrink-0 border-r border-border px-2 py-0.5 font-mono text-[8px] uppercase tracking-widest text-muted-foreground">
@@ -250,7 +272,7 @@ export function DrumRoll({ track }: { track: Track }) {
             const steps = rowSteps(pad);
             const isSel = selected === pad.id;
             return (
-              <div key={pad.id} ref={(el) => { if (el) rowRefs.current.set(pad.id, el); else rowRefs.current.delete(pad.id); }}>
+              <div key={pad.id} onDragOver={(e) => { if (e.dataTransfer.types.includes("Files")) e.preventDefault(); }} onDrop={(e) => { const f = e.dataTransfer.files?.[0]; if (!f) return; e.preventDefault(); void loadSample(pad, f); }} ref={(el) => { if (el) rowRefs.current.set(pad.id, el); else rowRefs.current.delete(pad.id); }}>
                 <div className={`flex items-center border-b border-border/40 ${isSel ? "bg-surface/60" : ""}`}>
                   <Button variant="ghost"
                     className="drum-row-name flex h-auto w-32 shrink-0 items-center justify-between gap-1 border-r border-border px-2 py-1 text-left hover:bg-surface"
@@ -263,7 +285,7 @@ export function DrumRoll({ track }: { track: Track }) {
                     <span className="truncate font-mono text-[10px] font-semibold uppercase tracking-wider">
                       {isMobile ? `${rowIndex + 1}. ` : ""}{DRUM_KIND_LABEL[pad.kind] ?? pad.name}
                     </span>
-                    <span className="shrink-0 font-mono text-[8px] text-muted-foreground">{noteName(note)}</span>
+                    <span className="shrink-0 font-mono text-[8px] text-muted-foreground">{pad.sampleUrl ? <span className="text-primary" title={pad.sample}>SMP</span> : noteName(note)}</span>
                   </Button>
                   <Button variant="ghost"
                     className={`drum-row-mute mx-1 h-5 w-5 shrink-0 rounded-[3px] p-0 font-mono text-[9px] ${pad.muted ? "bg-amber text-background" : "bg-surface text-muted-foreground"}`}
@@ -336,6 +358,12 @@ export function DrumRoll({ track }: { track: Track }) {
                 {isSel && (
                   <div className="flex flex-nowrap items-center gap-1.5 overflow-x-auto whitespace-nowrap border-b border-border/40 bg-surface/40 px-2 py-1.5 [&>*]:shrink-0">
                     <span className="label-xs">{pad.name} tools</span>
+                    <Button size="sm" variant="secondary" className="h-6 gap-1 px-2 text-[10px]" onClick={() => pickSample(pad)}><Upload className="size-3" /> {pad.sampleUrl ? "REPLACE SAMPLE" : "ADD SAMPLE"}</Button>
+                    {pad.sampleUrl && <Button size="sm" variant="ghost" className="h-6 px-2 text-[10px]" onClick={() => write(pad, { sample: undefined, sampleUrl: undefined })}>REMOVE SAMPLE</Button>}
+                    <span className="label-xs ml-2">QUICK FILL</span>
+                    {([["1/4", 4, 0], ["1/8", 2, 0], ["1/16", 1, 0], ["OFFBEAT", 4, 2], ["2 & 4", 8, 4]] as const).map(([label, every, offset]) => (
+                      <Button key={label} size="sm" variant="ghost" className="h-6 px-2 text-[10px]" onClick={() => tools(pad).fill(every, offset)}>{label}</Button>
+                    ))}
                     {(
                       [
                         ["ACCENT", tools(pad).accent],
@@ -369,7 +397,7 @@ export function DrumRoll({ track }: { track: Track }) {
       </div>
 
       <p className="font-mono text-[9px] leading-relaxed text-muted-foreground">
-        Click a step to cycle ghost → normal → accent, drag across steps to paint, right-click to clear. Each row sends
+        Click a step to cycle ghost → normal → accent, drag across steps to paint, right-click to clear. Tap a drum name for Quick fill and Add sample, or drop an audio file on a row. Each row sends
         its own MIDI note, so a drum controller on those notes plays and records these same pads.
       </p>
     </div>

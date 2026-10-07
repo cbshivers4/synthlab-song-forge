@@ -2683,6 +2683,28 @@ export class SyncLabEngine {
     env.connect(p);
     p.connect(ch.input);
 
+    // user sample on this pad: play the real audio through the same shaping chain
+    const sampleBuf = pad.sampleUrl ? (pad.reverse ? this.reversed(pad.sampleUrl) : this.sampleBuffers.get(pad.sampleUrl)) : undefined;
+    if (sampleBuf) {
+      const src = ctx.createBufferSource();
+      src.buffer = sampleBuf;
+      src.playbackRate.value = tune;
+      const g = ctx.createGain();
+      g.gain.value = vol;
+      src.connect(g);
+      g.connect(out);
+      const s0 = clamp(pad.start ?? 0, 0, 1) * sampleBuf.duration;
+      const s1 = clamp(pad.end ?? 1, 0, 1) * sampleBuf.duration;
+      const len = Math.max(0.005, (s1 - s0) / tune);
+      env.gain.cancelScheduledValues(t);
+      env.gain.setValueAtTime(0.0001, t);
+      env.gain.linearRampToValueAtTime(1, t + atk);
+      env.gain.setValueAtTime(1, t + Math.max(atk, len - 0.01));
+      env.gain.linearRampToValueAtTime(0.0001, t + len);
+      src.start(t, s0, s1 - s0);
+      return;
+    }
+
     const noiseBurst = (dur: number, freq: number, type: BiquadFilterType, q = 1, level = 1, spread = 0) => {
       const len = Math.ceil(ctx.sampleRate * dur);
       const buf = ctx.createBuffer(1, len, ctx.sampleRate);
