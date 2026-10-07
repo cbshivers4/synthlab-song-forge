@@ -31,9 +31,10 @@ Timeline track names share one compact row with header controls; put the track-k
 The arrangement playhead is scoped to the rendered track-row wrapper, never the empty workspace, so it stops after the last visible track.
 Synth feature sections share one tab group with a wrapping tab list and unchanged patch handlers, so navigation reduces clutter without changing sound or removing controls.
 The lower editor panel may shrink below its remembered height so the timeline always keeps a minimum height; this stops the toolbar's wrapped second row from being clipped when an editor is open.
-Drum pad instrument artwork uses inline SVG drawings and semantic colour classes inside the existing pad layout, so artwork does not require new audio paths or resize controls.
+Drum artwork uses semantic inline SVG within unchanged pads to preserve controls and audio.
 
 Drum pattern selection and the scrollable step sequencer precede the pad sound surface so tall sound controls cannot bury pattern editing; retain the pad layout unchanged.
 Embedded keyboards reuse Keyboard with a track or sample callback and shared typing toggle; claim events once and yield pad shortcuts to prevent doubled notes.
 Paste content at the playhead onto the selected or explicit channel, preserving its settings; Duplicate track separately clones channels.
-Synth/MIDI selection opens piano roll; explicit instrument actions open synth. Sampler tracks show Sampler in docked/detached instrument editors, avoiding unrelated synths. Stretch precedes chops for visibility.
+Synth/MIDI selection opens piano roll; explicit instrument actions open synth. Sampler editors show Sampler with Stretch before chops.
+Transport glass tokens and named groups stay scoped; phone menus reuse existing handlers to preserve audio behavior.
