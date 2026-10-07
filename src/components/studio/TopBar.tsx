@@ -79,7 +79,14 @@ export function TopBar() {
   return (
     <header className="studio-topbar transport-glass studio-wallpaper rack sticky top-0 z-30 shrink-0" data-studio-panel="transport" data-desktop-transport={!isMobile ? "true" : undefined} data-phone-transport={isMobile ? "true" : undefined} style={skinBackground(transportSkin)} {...transportDrop}>
       {transport.countInLeft != null && (
-        <div className="pointer-events-none fixed inset-0 z-50 flex flex-col items-center justify-center bg-background/40">
+        <div className={`pointer-events-none fixed inset-0 z-50 flex flex-col items-center justify-center ${isMobile ? "bg-background/95" : "bg-background/40"}`}>
+          {isMobile ? <div role="status" aria-label={`Count-in bar ${ciBar} of ${transport.countInBars ?? 1}, beat ${ciBeat} of ${bpb}`} className="w-full max-w-sm px-5 text-center">
+            <div className="mb-4 font-mono text-base font-semibold text-foreground">COUNT-IN</div>
+            <div className="grid grid-cols-2 gap-5">
+              <div><div className="font-mono text-sm text-foreground">BAR</div><div className="font-mono text-7xl font-bold leading-none text-primary">{ciBar}</div><div className="mt-2 font-mono text-sm text-muted-foreground">of {transport.countInBars ?? 1}</div></div>
+              <div><div className="font-mono text-sm text-foreground">BEAT</div><div className={`font-mono text-7xl font-bold leading-none ${ciBeat === 1 ? "text-destructive" : "text-primary"}`}>{ciBeat}</div><div className="mt-2 font-mono text-sm text-muted-foreground">of {bpb}</div></div>
+            </div>
+          </div> : <>
           <div className="label-xs tracking-[0.3em] text-muted-foreground">COUNT-IN · BAR {ciBar}</div>
           <div
             key={transport.countInLeft}
@@ -90,6 +97,7 @@ export function TopBar() {
           >
             {ciBeat}
           </div>
+          </>}
           <div className="mt-2 flex gap-2">
             {Array.from({ length: bpb }, (_, i) => (
               <span
