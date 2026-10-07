@@ -481,6 +481,8 @@ export interface Transport {
   countInBars?: number;
   /** Audible count-in, independent of the playback metronome; defaults to on. */
   countInClick?: boolean;
+  /** Optional device vibration on count-in beats; independent of audio clicks. */
+  countInHaptics?: boolean;
   /** clicks remaining while the count-in runs; null when not counting */
   countInLeft?: number | null;
   loop: boolean;

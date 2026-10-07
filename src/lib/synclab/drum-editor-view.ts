@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
-type DrumEditorView = { padId: string | null; step: number; start: number; zoom: number };
-const empty: DrumEditorView = { padId: null, step: 0, start: 0, zoom: 1 };
+type DrumEditorView = { padId: string | null; step: number; start: number; zoom: number; snap: number };
+const empty: DrumEditorView = { padId: null, step: 0, start: 0, zoom: 1, snap: 1 };
 const views = new Map<string, DrumEditorView>();
 
 /** Session-only editor navigation, independent of saved patterns and audio state. */

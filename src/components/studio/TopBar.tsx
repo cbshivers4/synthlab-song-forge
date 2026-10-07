@@ -75,6 +75,8 @@ export function TopBar() {
   const ciElapsed = transport.countInLeft != null ? ciTotal - transport.countInLeft : 0;
   const ciBeat = (ciElapsed % bpb) + 1;
   const ciBar = Math.floor(ciElapsed / bpb) + 1;
+  const [hapticsAvailable, setHapticsAvailable] = useState(false);
+  useEffect(() => { setHapticsAvailable(typeof navigator.vibrate === "function"); }, []);
 
   return (
     <header className="studio-topbar transport-glass studio-wallpaper rack sticky top-0 z-30 shrink-0" data-studio-panel="transport" data-desktop-transport={!isMobile ? "true" : undefined} data-phone-transport={isMobile ? "true" : undefined} style={skinBackground(transportSkin)} {...transportDrop}>
@@ -361,6 +363,11 @@ export function TopBar() {
                 <span className="min-w-0">Count-in click</span>
                 <Switch aria-label="Count-in click" checked={transport.countInClick !== false} onCheckedChange={(countInClick) => setTransport({ countInClick })} />
               </label>
+              <label className="grid min-h-12 w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 text-sm">
+                <span className="min-w-0">Count-in vibration</span>
+                <Switch aria-label="Count-in vibration" disabled={!hapticsAvailable} checked={hapticsAvailable && !!transport.countInHaptics} onCheckedChange={(countInHaptics) => setTransport({ countInHaptics })} />
+              </label>
+              {!hapticsAvailable && <p className="text-xs text-muted-foreground">Vibration unavailable in this browser.</p>}
               <FeatBtn label="OVERDUB" icon={<Layers className="size-3.5" />} active={transport.overdub} onClick={() => setTransport({ overdub: !transport.overdub })} />
               <FeatBtn label="REPLACE" icon={<Layers className="size-3.5" />} active={!!transport.replace} onClick={() => setTransport({ replace: !transport.replace })} />
               <FeatBtn label="INPUT MON" icon={<Headphones className="size-3.5" />} active={transport.monitor} onClick={() => setTransport({ monitor: !transport.monitor })} />

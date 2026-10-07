@@ -7,6 +7,8 @@
 - [x] Add a playable bass generator that creates editable MIDI patterns
 
 # Roadmap
+- [ ] Add optional count-in haptic pulses and phone Recording toggle with honest support status
+- [ ] Add phone drum-roll snapping choices and verify actual step edits
 - [x] Make phone Edit countdown show large labeled bar and beat numbers; verified automatic recording and 0/4 engine clicks with click disabled/enabled in signed-in phone preview
 - [x] Add mobile drum-roll row/step indicators and pinch/button zoom; browser two-touch gesture changed zoom and row indicators followed scrolling
 - [x] Remember selected drum row/step across tabs and editor return; verified FX step 16 retained and visible

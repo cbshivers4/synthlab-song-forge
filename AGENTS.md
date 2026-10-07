@@ -25,7 +25,7 @@ Printed instrument and drum takes replace overlapping clips by default; only exp
 Detached studio panels use a synchronous user-click window.open and React portal to preserve shared audio/state; desktop child windows need a draggable header for moving between monitors without reloading the studio.
 Bottom device displays read post-device or track analyser taps at 20 fps; never substitute animated decoration for live signal.
 - The post-login menu presents cloud projects, device recents, saved templates, and starter templates in one responsive workspace; retain their existing storage and open actions when changing its layout.
-- Every security-definer helper used inside an RLS policy (e.g. public.has_role) must be explicitly GRANTed EXECUTE to anon/authenticated/service_role; Supabase does not grant function EXECUTE by default, and a missing grant makes the policy error out so reads silently return empty results instead of rows.
+- GRANT EXECUTE on RLS security-definer helpers to anon/authenticated/service_role; missing grants break policy reads.
 Studio panel wallpaper uses one bundled JPEG with a dark semantic overlay and per-panel skin overrides; this keeps controls legible while letting users customize each panel without external image dependencies.
 Timeline track names share one compact row with header controls; put the track-kind label beside the input selector to prevent it spilling into the arrangement.
 The arrangement playhead is scoped to the rendered track-row wrapper, never the empty workspace, so it stops after the last visible track.
@@ -39,3 +39,5 @@ Paste content at the playhead onto the selected or explicit channel, preserving 
 Synth/MIDI selection opens piano roll; explicit instrument actions open synth. Sampler editors show Sampler with Stretch before chops.
 Transport stays scoped: desktop wraps intrinsic groups; phone Edit groups menu controls by purpose and uses shared recording/count-in handlers; Home stays clear.
 Phone mixer reuses track/bus actions; drum editors share session-only navigation, page touch-sized steps and preserve one-finger scrolling during pinch zoom.
+Drum snap is session-only and affects step writes, not existing hits, preserving patterns.
+Count-in haptics use the shared beat timer and guarded vibration support, independent of audio.
