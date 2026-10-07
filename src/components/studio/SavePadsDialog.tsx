@@ -66,7 +66,7 @@ export function SavePadsDialog({ pads, selected }: { pads: Record<number, SavedP
       </DialogTrigger>
       <DialogContent className="max-w-sm">
         <DialogHeader><DialogTitle>Save pad samples (MP3)</DialogTitle></DialogHeader>
-        <p className="text-xs text-muted-foreground">On a phone, pick "Save to Files" in the share menu. On a computer the files download.</p>
+        <p className="text-xs text-muted-foreground">On a phone, pick "Save to Files" in the share menu. On a computer the files download (several pads arrive as one ZIP).</p>
         <div className="grid gap-2">
           <Button disabled={busy || !pads[selected]?.url} className="h-12" onClick={() => void run(filled.filter((f) => f.index === selected))}>
             Save selected pad ({bankName(selected)})
