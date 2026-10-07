@@ -111,15 +111,20 @@ export function DrumRoll({ track }: { track: Track }) {
   }, [isMobile, track.id, rows.length, selected]);
 
   const write = (pad: DrumPad, patch: Partial<DrumPad>) => updatePad(track.id, pad.id, patch);
+  const snappedStep = (i: number) => {
+    const snap = isMobile ? view.snap : 1;
+    return Math.min(Math.floor((total - 1) / snap) * snap, Math.round(i / snap) * snap);
+  };
 
   const setStep = (pad: DrumPad, i: number, value: number) => {
     const steps = Array.from({ length: total }, (_, k) => pad.steps[k] ?? 0);
-    steps[i] = value;
+    steps[snappedStep(i)] = value;
     write(pad, { steps });
   };
 
   const cycle = (pad: DrumPad, i: number) => {
-    updateView({ padId: pad.id, step: i });
+    i = snappedStep(i);
+    updateView({ padId: pad.id, step: i, ...(isMobile ? { start: Math.floor(i / pageSize) * pageSize } : {}) });
     const current = pad.steps[i] ?? 0;
     const at = VELOCITIES.findIndex((v) => Math.abs(v - current) < 0.08);
     const next = VELOCITIES[(at + 1) % VELOCITIES.length] ?? 0;
@@ -206,6 +211,17 @@ export function DrumRoll({ track }: { track: Track }) {
       </div>
 
       {isMobile && <div className="space-y-1.5">
+        <div className="flex items-center justify-between gap-2">
+          <span className="whitespace-nowrap font-mono text-xs">STEP SNAP</span>
+          <Select value={String(view.snap)} onValueChange={(value) => updateView({ snap: Number(value) })}>
+            <SelectTrigger aria-label="Drum step snap" className="h-12 w-44"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem className="min-h-12" value="1">1/16 · Every step</SelectItem>
+              <SelectItem className="min-h-12" value="2">1/8 · Two steps</SelectItem>
+              <SelectItem className="min-h-12" value="4">1/4 · One beat</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         <div className="grid grid-cols-[48px_minmax(0,1fr)_48px] items-center gap-2"><Button variant="outline" size="icon" className="size-12" aria-label="Previous drum steps" disabled={start === 0} onClick={() => updateView({ start: Math.max(0, start - pageSize) })}><ChevronLeft /></Button><span className="min-w-0 text-center font-mono text-sm whitespace-nowrap">Steps {start + 1}–{Math.min(total, start + pageSize)} / {total}</span><Button variant="outline" size="icon" className="size-12" aria-label="Next drum steps" disabled={start + pageSize >= total} onClick={() => updateView({ start: Math.min(total - 1, start + pageSize) })}><ChevronRight /></Button></div>
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
           <span className="min-w-0 whitespace-nowrap font-mono text-xs" aria-label="Visible drum rows">Rows {visibleRows[0]}–{visibleRows[1]} / {rows.length}</span>
@@ -307,7 +323,7 @@ export function DrumRoll({ track }: { track: Track }) {
                             setStep(pad, i, 0);
                           }}
                         >
-                           {isMobile && <span className="font-mono text-xs">{i + 1}</span>}
+                           {isMobile && <span className={`font-mono text-xs ${i % view.snap === 0 ? "text-primary" : "text-muted-foreground"}`}>{i + 1}</span>}
                           {v > 0 && chance < 1 && (
                             <span className="absolute inset-x-0 bottom-0 block h-[2px] bg-background/70" />
                           )}

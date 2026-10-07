@@ -394,6 +394,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     countIn: true,
     countInBars: 1,
     countInClick: true,
+    countInHaptics: false,
     countInLeft: null,
     loop: true,
     loopStart: 0,
@@ -2339,7 +2340,12 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             let left = ciBars * bpb;
             // Hold the transport during the count-in, even if it was already rolling.
             setTransportState((s) => ({ ...s, playing: false, paused: true, countInLeft: left }));
-            const click = (accent: boolean) => { if (transportRef.current.countInClick !== false) engine.playClick(accent); };
+            const click = (accent: boolean) => {
+              if (transportRef.current.countInClick !== false) engine.playClick(accent);
+              if (transportRef.current.countInHaptics && typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
+                try { navigator.vibrate(accent ? 70 : 30); } catch { /* Device may block vibration; visual countdown continues. */ }
+              }
+            };
             click(true);
             countInTimerRef.current = window.setInterval(() => {
               left -= 1;
