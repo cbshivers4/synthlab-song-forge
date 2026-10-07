@@ -657,6 +657,36 @@
 }
 
 .mobile-studio .phone-tool-panel { position: fixed; inset: 0; z-index: 40; min-height: 0; padding-bottom: 84px; }
+.drum-machine[data-phone-view] { min-width: 0; padding: 4px; }
+.drum-machine[data-phone-view] button, .drum-machine[data-phone-view] [role="combobox"] { min-height: 48px; }
+.drum-machine[data-phone-view] .drum-skin,
+.drum-machine[data-phone-view] .drum-kit-tools,
+.drum-machine[data-phone-view] .drum-presets,
+.drum-machine[data-phone-view] .drum-steps,
+.drum-machine[data-phone-view] .drum-side-banks,
+.drum-machine[data-phone-view] .drum-sound-controls { display: none; }
+.drum-machine[data-phone-view="steps"] .drum-steps { display: block; max-height: none; }
+.drum-machine[data-phone-view="steps"] .drum-surface,
+.drum-machine[data-phone-view="kit"] .drum-surface { display: none; }
+.drum-machine[data-phone-view="kit"] .drum-kit-tools,
+.drum-machine[data-phone-view="kit"] .drum-presets { display: flex; }
+.drum-machine[data-phone-view="kit"] .drum-skin { display: block; }
+.drum-machine[data-phone-view="sound"] .drum-pad-grid { display: none; }
+.drum-machine[data-phone-view="sound"] .drum-sound-controls { display: grid; width: 100%; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.drum-machine[data-phone-view] .drum-patterns { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; }
+.drum-machine[data-phone-view] .drum-patterns > *,
+.drum-machine[data-phone-view] .drum-patterns > div > * { flex-shrink: 0; white-space: nowrap; }
+.drum-machine[data-phone-view] .drum-patterns > div { flex-wrap: nowrap; }
+.drum-machine[data-phone-view] .drum-patterns .label-xs { display: none; }
+.drum-machine[data-phone-view] .drum-patterns button { min-width: 48px; }
+.drum-machine[data-phone-view] .drum-display { gap: 8px; overflow-x: auto; white-space: nowrap; }
+.drum-machine[data-phone-view] .drum-display > * { flex-shrink: 0; }
+.drum-machine[data-phone-view] .drum-pad-grid > [role="button"] { min-height: 112px; }
+.drum-machine[data-phone-view] .drum-pad-grid button { min-width: 32px; }
+.drum-machine[data-phone-view] .drum-steps > div > div:first-child { min-width: max-content; }
+.drum-machine[data-phone-view] .drum-steps button { min-width: 48px; }
+.drum-machine[data-phone-view] .drum-steps button.w-24 { width: 96px; }
+.drum-machine[data-sideways="true"] .drum-pad-grid { grid-template-columns: repeat(8, minmax(96px, 1fr)); overflow-x: auto; }
 .landscape-prod .phone-tool-panel { inset: 0 5rem 0 0; padding-bottom: 0; }
 .mobile-studio .phone-tool-panel > div:last-child { padding-bottom: 1rem; }
 .mobile-studio .phone-tool-panel .editor-track-actions { padding-bottom: 4px; min-height: 52px; }

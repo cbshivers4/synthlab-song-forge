@@ -14,6 +14,7 @@ import { getEngine } from "@/lib/synclab/audio-engine";
 import type { DrumPad, Track } from "@/lib/synclab/types";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useIsMobile, useIsLandscapePhone } from "@/hooks/use-mobile";
 
 const PRESET_KEY = "synclab.drumPresets.v1";
 type DrumPreset = { name: string; pads: Partial<DrumPad>[] };
@@ -73,6 +74,9 @@ function Section({ title, active, children }: { title: string; active?: boolean;
 }
 
 export function DrumMachine({ track }: { track: Track }) {
+  const isMobile = useIsMobile();
+  const landscape = useIsLandscapePhone();
+  const [phoneView, setPhoneView] = useState("pads");
   const { updatePad, updateTrack, setStepCount, addPad, generateBeat, transport } = useStudio();
   const [genre, setGenre] = useState("Detroit Techno");
   const [energy, setEnergy] = useState(6);
@@ -214,10 +218,13 @@ export function DrumMachine({ track }: { track: Track }) {
   const skin = useSkin("drums");
   const drop = useImageDrop("drums");
   return (
-    <div className="studio-wallpaper space-y-3 rounded-md p-3" data-studio-panel="drums" style={skinBackground(skin)} {...drop}>
-      <SkinControls skinKey="drums" image />
+    <div className="drum-machine studio-wallpaper space-y-3 rounded-md p-3" data-phone-view={isMobile ? phoneView : undefined} data-sideways={isMobile && landscape ? "true" : undefined} data-studio-panel="drums" style={skinBackground(skin)} {...drop}>
+      {isMobile && <div className="grid grid-cols-4 gap-1" role="tablist" aria-label="Drum machine views">
+        {[["pads", "Pads"], ["steps", "Pattern"], ["sound", "Sound"], ["kit", "Kit"]].map(([id, label]) => <Button key={id} role="tab" aria-selected={phoneView === id} variant={phoneView === id ? "default" : "secondary"} className="h-12 min-w-0 px-1" onClick={() => setPhoneView(id)}>{label}</Button>)}
+      </div>}
+      <div className="drum-skin"><SkinControls skinKey="drums" image /></div>
 
-      <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Drum patterns">
+      <div className="drum-patterns flex flex-wrap items-center gap-2" role="group" aria-label="Drum patterns">
         <span className="label-xs">PATTERN {activePattern + 1}</span>
         <div className="flex flex-wrap gap-1">
           {BANKS.map((number, index) => (
@@ -239,7 +246,7 @@ export function DrumMachine({ track }: { track: Track }) {
       </div>
 
       {/* Step sequencer */}
-      <div aria-label="Drum pattern steps" className="max-h-48 space-y-1 overflow-auto">
+      <div aria-label="Drum pattern steps" className="drum-steps max-h-48 space-y-1 overflow-auto">
         {pads.map((pad) => (
           <div key={pad.id} className="space-y-1">
             <div className="flex items-center gap-2">
@@ -302,7 +309,7 @@ export function DrumMachine({ track }: { track: Track }) {
       </div>
 
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="drum-kit-tools flex flex-wrap items-center gap-2">
         <Select value={kit} onValueChange={(v) => loadKit(v as DrumKitId)}>
           <SelectTrigger className="w-56">
             <SelectValue placeholder="Kit" />
@@ -385,7 +392,7 @@ export function DrumMachine({ track }: { track: Track }) {
         </Button>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="drum-presets flex flex-wrap items-center gap-2">
         <span className="label-xs">SOUND PRESET</span>
         <Select value="" onValueChange={loadPreset}>
           <SelectTrigger className="w-48">
@@ -410,9 +417,9 @@ export function DrumMachine({ track }: { track: Track }) {
       </div>
 
       {/* Impact-style instrument surface */}
-      <div className="rounded-[3px] border border-border bg-background/70 p-2">
+      <div className="drum-surface rounded-[3px] border border-border bg-background/70 p-2">
         {/* Display strip */}
-        <div className="mb-2 flex items-center justify-between rounded-[3px] border border-border bg-black/60 px-3 py-2">
+        <div className="drum-display mb-2 flex items-center justify-between rounded-[3px] border border-border bg-background/60 px-3 py-2">
           <span className="font-display text-lg font-bold tracking-wide text-foreground/90">
             SYNC<span className="text-primary">PADS</span>
           </span>
@@ -439,7 +446,7 @@ export function DrumMachine({ track }: { track: Track }) {
 
         <div className="flex gap-2">
           {/* 1–8 → the 8 patterns */}
-          <div className="flex flex-col gap-1">
+          <div className="drum-side-banks flex flex-col gap-1">
             {BANKS.map((number, index) => (
               <button
                 key={number}
@@ -458,7 +465,7 @@ export function DrumMachine({ track }: { track: Track }) {
           </div>
 
           {/* Original pad proportions, with instrument artwork beside the labels. */}
-          <div className="grid flex-1 grid-cols-4 gap-1.5">
+          <div className="drum-pad-grid grid min-w-0 flex-1 grid-cols-4 gap-1.5">
             {pads.map((pad) => {
               const focused = focusPad?.id === pad.id;
               const hasSteps = pad.steps.some((v) => v > 0);
@@ -519,7 +526,7 @@ export function DrumMachine({ track }: { track: Track }) {
 
           {/* Pad settings column */}
           {focusPad && (
-            <div className="flex w-64 shrink-0 flex-col gap-2">
+            <div className="drum-sound-controls flex w-64 shrink-0 flex-col gap-2">
               <Section title="Pitch" active>
                 <Knob label="TRANSP" midiTarget={{ id: track.id, param: `drum:${focusPad.id}:pitch` }} min={-12} max={12} step={1} value={focusPad.pitch} onChange={(v) => updatePad(track.id, focusPad.id, { pitch: v })} />
                 <VSlider label="A" value={focusPad.attack ?? 0} onChange={(v) => updatePad(track.id, focusPad.id, { attack: v })} />

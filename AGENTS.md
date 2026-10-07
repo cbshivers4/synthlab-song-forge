@@ -33,7 +33,7 @@ Synth sections share wrapping tabs; X-Y pads dispatch through updatePatch to sta
 Editors shrink below saved height to preserve the timeline minimum and avoid toolbar clipping.
 Drum artwork uses semantic inline SVG within unchanged pads to preserve controls and audio.
 
-Drum pattern selection and the scrollable step sequencer precede the pad sound surface so tall sound controls cannot bury pattern editing; retain the pad layout unchanged.
+Drum patterns precede pads; phone tabs separate pads, steps, sound and kits, with sideways pad scrolling to preserve controls and avoid clipping.
 Embedded keyboards reuse Keyboard with a track or sample callback and shared typing toggle; claim events once and yield pad shortcuts to prevent doubled notes.
 Paste content at the playhead onto the selected or explicit channel, preserving its settings; Duplicate track separately clones channels.
 Synth/MIDI selection opens piano roll; explicit instrument actions open synth. Sampler editors show Sampler with Stretch before chops.
