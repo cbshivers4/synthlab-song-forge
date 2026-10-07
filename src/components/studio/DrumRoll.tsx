@@ -59,13 +59,18 @@ export function DrumRoll({ track }: { track: Track }) {
     const el = gridRef.current;
     if (!el || !isMobile) return;
     let initial: { distance: number; zoom: number; anchor: number } | null = null;
-    const distance = (e: TouchEvent) => Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+    const distance = (e: TouchEvent) => {
+      const first = e.touches.item(0), second = e.touches.item(1);
+      return first && second ? Math.hypot(first.clientX - second.clientX, first.clientY - second.clientY) : 1;
+    };
     const begin = (e: TouchEvent) => {
       if (e.touches.length !== 2) return;
+      const first = e.touches.item(0), second = e.touches.item(1);
+      if (!first || !second) return;
       e.preventDefault();
       touchStep.current = null;
       const rect = el.getBoundingClientRect();
-      const fraction = Math.max(0, Math.min(1, ((e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left - 152) / Math.max(1, rect.width - 152)));
+      const fraction = Math.max(0, Math.min(1, ((first.clientX + second.clientX) / 2 - rect.left - 152) / Math.max(1, rect.width - 152)));
       initial = { distance: Math.max(1, distance(e)), zoom: viewRef.current.zoom, anchor: viewRef.current.start + Math.floor(fraction * Math.max(1, Math.floor(baseSize / viewRef.current.zoom))) };
     };
     const move = (e: TouchEvent) => {
@@ -88,8 +93,17 @@ export function DrumRoll({ track }: { track: Track }) {
       const rect = rowRefs.current.get(pad.id)?.getBoundingClientRect();
       return rect && rect.bottom > bounds.top + 24 && rect.top < bounds.bottom ? [index + 1] : [];
     });
-    if (visible.length) setVisibleRows([visible[0], visible[visible.length - 1]]);
+    const first = visible[0], last = visible[visible.length - 1];
+    if (first != null && last != null) setVisibleRows([first, last]);
   };
+  useEffect(() => {
+    if (!isMobile) return;
+    const id = requestAnimationFrame(readRows);
+    const el = gridRef.current;
+    const observer = new ResizeObserver(readRows);
+    if (el) observer.observe(el);
+    return () => { cancelAnimationFrame(id); observer.disconnect(); };
+  }, [isMobile, track.id, rows.length, selected]);
 
   const write = (pad: DrumPad, patch: Partial<DrumPad>) => updatePad(track.id, pad.id, patch);
 
