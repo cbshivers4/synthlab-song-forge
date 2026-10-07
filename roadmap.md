@@ -213,4 +213,4 @@
 
 - [x] Keep phone timeline REC and AUTO visible first, preserve other actions through horizontal scrolling, and prevent automation menu clicks from opening an instrument.
 
-- [ ] Sampler phone/desktop chopping: PCM attacks, manual cuts, gate/one-shot, choke, pad spreading and preview checks.
+- [x] Sampler phone/desktop chopping: PCM attacks, manual cuts, gate/one-shot, choke, pad spreading; unit tests and signed-in portrait/sideways/desktop preview passed, including gate release and offset pad transfer. Physical-device listening remains unverified.
