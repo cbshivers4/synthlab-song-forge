@@ -100,8 +100,6 @@ export const TRACK_ICONS: { id: string; label: string; Icon: ComponentType<{ cla
   { id: "star", label: "Star", Icon: Star },
 ];
 
-const ICON_BY_ID = new Map(TRACK_ICONS.map((i) => [i.id, i.Icon]));
-
 // ---- Hand-drawn band instrument icons (lucide has no violin/horn/sax) ----
 type IconProps = { className?: string | undefined };
 const svg = (children: React.ReactNode) =>
