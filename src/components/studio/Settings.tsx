@@ -32,7 +32,7 @@ import { AudioInterfaceCard } from "@/components/studio/AudioInterfaceCard";
 import { BluetoothDevices } from "@/components/studio/BluetoothDevices";
 import { replayMobileTour, saveMobileAccessibility, useMobileAccessibility } from "@/lib/synclab/mobile-accessibility";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Bluetooth } from "lucide-react";
+import { Bluetooth, Mic } from "lucide-react";
 
 export function requestBluetoothSettings() {
   sessionStorage.setItem("synclab.settings.bluetooth", "open");
@@ -308,7 +308,10 @@ export function Settings() {
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="min-w-0 w-full overflow-x-hidden">
-      <Button variant="outline" className="mb-2 gap-2" onClick={() => setActiveTab("audio")}><Bluetooth className="size-4" /> Bluetooth devices</Button>
+      <div className="mb-2 flex flex-wrap gap-2">
+        {isMobile && <Button variant="secondary" className="h-12 gap-2 whitespace-nowrap" disabled={scanning} onClick={() => { setActiveTab("audio"); void scanDevices(true); }}><Mic className="size-4" /> {scanning ? "Connecting…" : "Enable microphone"}</Button>}
+        <Button variant="outline" className="gap-2" onClick={() => setActiveTab("audio")}><Bluetooth className="size-4" /> Bluetooth devices</Button>
+      </div>
       <TabsList className="flex h-auto max-w-full flex-nowrap justify-start gap-1 overflow-x-auto bg-surface sm:flex-wrap">
         {(isMobile ? ["mobile", "audio", "recording", "metronome", "timing", "timeline", "midi", "mixing", "export", "desktop", "general"] : ["audio", "recording", "metronome", "timing", "timeline", "midi", "mixing", "export", "desktop", "mobile", "general"]).map((t) => (
           <TabsTrigger key={t} value={t} className="font-mono text-[11px] uppercase tracking-widest">
