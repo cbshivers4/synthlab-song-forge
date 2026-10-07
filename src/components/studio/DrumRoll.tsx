@@ -6,7 +6,7 @@
  * timeline play; there is no second copy of the pattern. Rows are labelled with
  * the drum name and the MIDI note the pad sends, instead of melodic note names.
  */
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -27,6 +27,7 @@ export function DrumRoll({ track }: { track: Track }) {
   const total = Math.max(1, track.steps || 16);
   const [selected, setSelected] = useState<string | null>(null);
   const [paint, setPaint] = useState<number | null>(null);
+  const touchStep = useRef<string | null>(null);
   const [page, setPage] = useState(0);
   const [widePhone, setWidePhone] = useState(false);
   useEffect(() => { const query = window.matchMedia("(min-width: 480px)"); const read = () => setWidePhone(query.matches); read(); query.addEventListener("change", read); return () => query.removeEventListener("change", read); }, []);
@@ -135,7 +136,7 @@ export function DrumRoll({ track }: { track: Track }) {
         <div className={isMobile ? "w-full" : "min-w-[640px]"}>
           {/* bar numbers */}
           <div className="flex border-b border-border bg-surface-2/70">
-            <div className="w-32 shrink-0 border-r border-border px-2 py-0.5 font-mono text-[8px] uppercase tracking-widest text-muted-foreground">
+            <div className="drum-roll-label-header w-32 shrink-0 border-r border-border px-2 py-0.5 font-mono text-[8px] uppercase tracking-widest text-muted-foreground">
               Drum · note
             </div>
             <div className="flex flex-1 gap-[2px] px-1 py-0.5">
@@ -200,6 +201,8 @@ export function DrumRoll({ track }: { track: Track }) {
                                   : "color-mix(in oklab, var(--surface) 80%, transparent)",
                           }}
                           onPointerDown={(e) => {
+                            touchStep.current = e.pointerType === "touch" ? `${pad.id}:${i}` : null;
+                            if (e.pointerType === "touch") return;
                             e.preventDefault();
                             setSelected(pad.id);
                             setPaint(cycle(pad, i));
@@ -208,6 +211,14 @@ export function DrumRoll({ track }: { track: Track }) {
                             if (paint == null) return;
                             setStep(pad, i, paint);
                           }}
+                          onClick={(e) => {
+                            if (e.detail === 0 || touchStep.current === `${pad.id}:${i}`) {
+                              touchStep.current = null;
+                              setSelected(pad.id);
+                              cycle(pad, i);
+                            }
+                          }}
+                          onPointerCancel={() => { touchStep.current = null; }}
                           onContextMenu={(e) => {
                             e.preventDefault();
                             setStep(pad, i, 0);

@@ -7,6 +7,7 @@
 - [x] Add a playable bass generator that creates editable MIDI patterns
 
 # Roadmap
+- [x] Restore access to every phone drum-roll row and step: touch-sized pattern pages, swipe-safe drum roll, and unobstructed portrait/sideways scrolling; signed-in checks reached first/last steps and the final drum row.
 - [x] Move phone transport from Home to Edit with uncluttered menu controls; preserve desktop
 - [x] Add and verify a horizontal phone drum machine view with accessible pads and all existing controls
 
