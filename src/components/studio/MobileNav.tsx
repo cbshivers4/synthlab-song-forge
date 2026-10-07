@@ -65,7 +65,7 @@ export function MobileNav({ onBeatMode, view, setView, moreSignal = 0, landscape
   };
 
   const tabs = [
-    { label: "CREATE", icon: <Plus />, active: panel === null && view === "create", onClick: () => { setPanel(null); setView("create"); } },
+     { label: "HOME", icon: <Home />, active: panel === null && view === "create", onClick: () => { setPanel(null); setView("create"); } },
     { label: "EDIT", icon: <Scissors />, active: (panel === null && view === "edit") || panel === "piano", onClick: () => { setPanel(null); setView("edit"); } },
     {
       label: transport.recording ? "STOP" : "REC",
@@ -79,9 +79,8 @@ export function MobileNav({ onBeatMode, view, setView, moreSignal = 0, landscape
   ];
 
   const prodTabs = [
-    { label: transport.playing ? "PAUSE" : "PLAY", icon: transport.playing ? <Pause /> : <Play />, active: !!transport.playing, onClick: togglePlay },
-    { label: "STOP", icon: <Square />, active: false, onClick: stop },
-    { label: "TIMELINE", icon: <AudioLines />, active: panel === null, onClick: () => setPanel(null) },
+    { label: "HOME", icon: <Home />, active: panel === null && view === "create", onClick: () => { setPanel(null); setView("create"); } },
+    { label: "EDIT", icon: <AudioLines />, active: panel === null && view === "edit", onClick: () => { setPanel(null); setView("edit"); } },
     { label: "MIX", icon: <SlidersHorizontal />, active: panel === "mixer", onClick: () => setPanel("mixer") },
     { label: "MIDI", icon: <Music />, active: panel === "piano", onClick: () => setPanel("piano") },
     { label: transport.recording ? "STOP" : "REC", icon: <Mic />, active: !!transport.recording, onClick: toggleRecord, rec: true },

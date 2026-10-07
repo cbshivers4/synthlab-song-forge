@@ -569,6 +569,7 @@ function StudioWorkspace() {
   const landscape = useIsLandscapePhone();
   const [landscapeTools, setLandscapeTools] = useState(false);
   const [moreSignal, setMoreSignal] = useState(0);
+  useEffect(() => { if (landscape) setMobileView("edit"); }, [landscape]);
   useShortcuts();
   useEffect(() => { if (panel) setBeatMode(false); }, [panel]);
   useEffect(() => {
@@ -592,12 +593,12 @@ function StudioWorkspace() {
   return (
     <div className={`flex h-[100dvh] flex-col overflow-hidden ${landscape ? "landscape-prod" : ""} ${landscape && landscapeTools ? "landscape-tools" : ""} ${isMobile ? "mobile-studio" : ""} ${isMobile && mobileAccessibility.extraLargeControls ? "mobile-controls-xl" : ""} ${isMobile && mobileAccessibility.increasedText ? "mobile-text-xl" : ""} ${isMobile && mobileAccessibility.highContrast ? "mobile-high-contrast" : ""}`}>
       {!isMobile && <MenuBar />}
-      <TopBar />
+      {(!isMobile || mobileView === "create") && <TopBar />}
       <div className="flex min-h-0 flex-1">
         {!isMobile && <ToolsRail />}
-        {landscape && <MobileNav landscape toolsOpen={landscapeTools} onToggleTools={() => setLandscapeTools((v) => !v)} onBeatMode={() => setBeatMode(true)} view="edit" setView={setMobileView} moreSignal={moreSignal} />}
+        {landscape && <MobileNav landscape toolsOpen={landscapeTools} onToggleTools={() => setLandscapeTools((v) => !v)} onBeatMode={() => setBeatMode(true)} view={mobileView} setView={setMobileView} moreSignal={moreSignal} />}
         <main className="relative flex min-h-0 min-w-0 flex-1 flex-col">
-          {isMobile && !landscape && mobileView === "create" && !panel && !beatMode && <MobileCreate onBeatMode={() => setBeatMode(true)} onMore={() => setMoreSignal((n) => n + 1)} />}
+          {isMobile && mobileView === "create" && !panel && !beatMode && <MobileCreate onBeatMode={() => setBeatMode(true)} onMore={() => setMoreSignal((n) => n + 1)} />}
           <h1 className="sr-only">SYNCLAB Studio — browser digital audio workstation</h1>
           <Timeline />
           <Panels float={float} setFloat={setFloat} />

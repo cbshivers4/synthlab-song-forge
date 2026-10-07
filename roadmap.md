@@ -134,6 +134,7 @@
 - [x] My Library (cloud/computer folders for samples, synth, drums, notes) + distinct effect window looks
 
 ## Current request
+- [x] Phone Home retains transport and its complete menu; Edit removes the top transport in portrait/landscape, including when TOOLS is open. Verified menu Play/Stop, tempo/metronome changes, horizontal timeline scrolling, sideways Home return and no page overflow; aligned song header/playhead/export overlays with track widths, build OK.
 - [x] Add phone Settings → Enable microphone shortcut that requests permission and opens Audio; browser test confirmed granted permission, three simulated inputs, and no phone overflow. Physical-phone capture remains unverified.
 - [x] Add Space (delay/reverb) and Texture (distortion/chorus) synth X-Y pads; signed-in desktop/phone-sized checks verified dragging and synchronized Effects knobs, no page overflow, build OK. Real-device listening remains unverified.
 - [x] Make phone mixer essentials large with all channels scrollable and complete channel dialogs; drum roll uses 48px step pages and single-line tools. Verified signed-in mute/fader changes, Master dialog, step writing/page changes, portrait and 942×508 sideways view, no page overflow; physical-phone rotation remains untested.
