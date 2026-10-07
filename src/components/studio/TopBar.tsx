@@ -545,7 +545,6 @@ function MidiControl() {
         <KeyboardMusic className="size-3.5" />
         MIDI IN
       </Button>
-      <TypingKeysToggle />
 
       <ControllerLibrary />
       {midiInputs.length > 0 && (
