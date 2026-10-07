@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useDrumEditorView } from "@/lib/synclab/drum-editor-view";
 import { stepsPerBar, getBeatsPerBar } from "@/lib/synclab/timebase";
 import { SkinControls, skinBackground, useImageDrop } from "@/components/studio/SkinControls";
 import { useSkin } from "@/lib/synclab/skins";
@@ -77,6 +78,8 @@ export function DrumMachine({ track }: { track: Track }) {
   const isMobile = useIsMobile();
   const landscape = useIsLandscapePhone();
   const [phoneView, setPhoneView] = useState("pads");
+  const { view, updateView, ready } = useDrumEditorView(track.id);
+  const rowRefs = useRef(new Map<string, HTMLDivElement>());
   const [stepPage, setStepPage] = useState(0);
   const [widePhone, setWidePhone] = useState(false);
   useEffect(() => {
@@ -99,6 +102,15 @@ export function DrumMachine({ track }: { track: Track }) {
   const visibleSteps = Array.from({ length: isMobile ? Math.min(pageSize, track.steps - stepStart) : track.steps }, (_, i) => i + (isMobile ? stepStart : 0));
   const activePattern = Math.max(0, Math.min(7, track.activeDrumPattern ?? 0));
   const focusPad = pads.find((p) => p.id === focusPadId) ?? pads[0];
+  useEffect(() => {
+    if (!isMobile || !ready || !view.padId) return;
+    setFocusPadId(view.padId);
+    setSelectedStep({ padId: view.padId, index: Math.min(track.steps - 1, view.step) });
+    setStepPage(Math.floor(Math.min(track.steps - 1, view.step) / pageSize));
+    if (phoneView !== "steps") return;
+    const id = requestAnimationFrame(() => rowRefs.current.get(view.padId ?? "")?.scrollIntoView({ block: "nearest" }));
+    return () => cancelAnimationFrame(id);
+  }, [phoneView, ready, isMobile, track.id, pageSize]);
 
   const clonePads = (source: DrumPad[]) => structuredClone(source) as DrumPad[];
   const switchPattern = (next: number) => {
@@ -269,7 +281,7 @@ export function DrumMachine({ track }: { track: Track }) {
       )}
       <div aria-label="Drum pattern steps" className="drum-steps max-h-48 space-y-1 overflow-auto">
         {pads.map((pad) => (
-          <div key={pad.id} className="space-y-1">
+          <div key={pad.id} className="space-y-1" ref={(el) => { if (el) rowRefs.current.set(pad.id, el); else rowRefs.current.delete(pad.id); }}>
             <div className="flex items-center gap-2">
               <Button variant="ghost"
                 className={cn(
@@ -289,9 +301,11 @@ export function DrumMachine({ track }: { track: Track }) {
                   return <Button variant="ghost"
                     key={i}
                     aria-label={`${pad.name} step ${i + 1}`}
+                    aria-pressed={selectedStep?.padId === pad.id && selectedStep.index === i}
                      onClick={() => {
                        cycleStep(pad.id, pad.steps, i);
                        setSelectedStep({ padId: pad.id, index: i });
+                       updateView({ padId: pad.id, step: i, start: stepStart });
                      }}
                     title={v > 0 ? `velocity ${Math.round(v * 100)}%` : "empty"}
                     className="h-6 min-w-0 flex-1 rounded-[3px] border p-0 transition-all"

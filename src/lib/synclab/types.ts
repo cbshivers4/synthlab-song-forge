@@ -479,6 +479,8 @@ export interface Transport {
   countIn: boolean;
   /** bars of count-in before recording starts (1, 2 or 4) */
   countInBars?: number;
+  /** Audible count-in, independent of the playback metronome; defaults to on. */
+  countInClick?: boolean;
   /** clicks remaining while the count-in runs; null when not counting */
   countInLeft?: number | null;
   loop: boolean;

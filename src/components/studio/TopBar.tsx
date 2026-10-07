@@ -42,6 +42,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { SkinControls, skinBackground, useImageDrop } from "@/components/studio/SkinControls";
 import { useSkin } from "@/lib/synclab/skins";
@@ -348,6 +349,10 @@ export function TopBar() {
                   {[1, 2, 4].map((bars) => <Button key={bars} variant={transport.countIn && (transport.countInBars ?? 1) === bars ? "default" : "outline"} className="h-12 px-1" aria-label={`Count-in ${bars} ${bars === 1 ? "bar" : "bars"}`} aria-pressed={transport.countIn && (transport.countInBars ?? 1) === bars} onClick={() => setTransport({ countIn: true, countInBars: bars })}>{bars} {bars === 1 ? "bar" : "bars"}</Button>)}
                 </div>
               </div>
+              <label className="grid min-h-12 w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 text-sm">
+                <span className="min-w-0">Count-in click</span>
+                <Switch aria-label="Count-in click" checked={transport.countInClick !== false} onCheckedChange={(countInClick) => setTransport({ countInClick })} />
+              </label>
               <FeatBtn label="OVERDUB" icon={<Layers className="size-3.5" />} active={transport.overdub} onClick={() => setTransport({ overdub: !transport.overdub })} />
               <FeatBtn label="REPLACE" icon={<Layers className="size-3.5" />} active={!!transport.replace} onClick={() => setTransport({ replace: !transport.replace })} />
               <FeatBtn label="INPUT MON" icon={<Headphones className="size-3.5" />} active={transport.monitor} onClick={() => setTransport({ monitor: !transport.monitor })} />
