@@ -15,6 +15,8 @@ import { MidiLearnButton } from "./MidiLearn";
 import { SkinControls, skinBackground, useImageDrop } from "@/components/studio/SkinControls";
 import { useSkin } from "@/lib/synclab/skins";
 import { getPadBank, setPadBank, type SavedPad } from "@/lib/synclab/pad-session";
+import { detectSampleChops } from "@/lib/synclab/sample-chops";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 const noteName = (m: number) => `${NOTE_NAMES[((m % 12) + 12) % 12]}${Math.floor(m / 12) - 1}`;
@@ -36,11 +38,12 @@ function Row({ label, value, children, midiId, midiParam }: { label: string; val
 }
 
 /** Waveform with draggable trim handles and chop markers. */
-function Waveform({ track, onSlice }: { track: Track; onSlice: (i: number) => void }) {
+function Waveform({ track, onSlice, drawSlice = false }: { track: Track; onSlice: (i: number) => void; drawSlice?: boolean }) {
   const { updateSampler } = useStudio();
-  const s = track.sampler!;
+  const s = track.sampler;
   const ref = useRef<HTMLDivElement | null>(null);
   const [drag, setDrag] = useState<"start" | "end" | number | null>(null);
+  if (!s) return null;
   const chops = s.slices ?? [];
 
   const fracAt = (clientX: number) => {
@@ -65,6 +68,12 @@ function Waveform({ track, onSlice }: { track: Track; onSlice: (i: number) => vo
     <div
       ref={ref}
       className="relative h-40 w-full touch-none overflow-hidden rounded-lg border border-border bg-surface-2/60"
+      onPointerDown={(e) => {
+        if (!drawSlice || (e.target as HTMLElement).closest('[role="slider"]')) return;
+        const at = Math.min(s.end - 0.002, Math.max(s.start, fracAt(e.clientX)));
+        if (chops.some((c) => Math.abs(c - at) < 0.002)) return;
+        updateSampler(track.id, { slices: Array.from(new Set([s.start, ...chops, at])).sort((a, b) => a - b) });
+      }}
       onPointerMove={move}
       onPointerUp={() => setDrag(null)}
       onPointerLeave={() => setDrag(null)}
@@ -87,7 +96,14 @@ function Waveform({ track, onSlice }: { track: Track; onSlice: (i: number) => vo
           aria-valuemax={100}
           onPointerDown={(e) => {
             e.preventDefault();
+            e.currentTarget.setPointerCapture(e.pointerId);
             setDrag(i);
+          }}
+          onKeyDown={(e) => {
+            const delta = e.key === "ArrowLeft" ? -0.001 : e.key === "ArrowRight" ? 0.001 : 0;
+            if (!delta) return;
+            e.preventDefault();
+            updateSampler(track.id, { slices: chops.map((value, index) => index === i ? Math.min(s.end - 0.002, Math.max(s.start, value + delta)) : value).sort((a, b) => a - b) });
           }}
           onDoubleClick={() => onSlice(i)}
           className="absolute inset-y-0 z-20 w-3 -translate-x-1/2 cursor-col-resize"
@@ -284,6 +300,25 @@ export function Sampler() {
   const [pickChop, setPickChop] = useState(0);
   const [padTarget, setPadTarget] = useState(0);
   const chopFileRef = useRef<HTMLInputElement>(null);
+  const [drawSlice, setDrawSlice] = useState(false);
+  const [sensitivity, setSensitivity] = useState(0.5);
+  const [chopBusy, setChopBusy] = useState(false);
+  const autoChop = async () => {
+    if (!track || !s) return;
+    setChopBusy(true);
+    try {
+      const buffer = await getEngine().init().decodeAudioData(await (await fetch(s.url)).arrayBuffer());
+      const channels = Array.from({ length: buffer.numberOfChannels }, (_, i) => buffer.getChannelData(i));
+      const slices = detectSampleChops(channels, buffer.sampleRate, s.start, s.end, sensitivity);
+      updateSampler(track.id, { slices });
+      toast.success(slices.length > 1 ? `${slices.length} transient chops` : "No additional attacks found");
+    } catch (error) { toast.error("Could not auto-chop", { description: error instanceof Error ? error.message : undefined }); }
+    finally { setChopBusy(false); }
+  };
+  const releaseChop = (index: number) => {
+    setHeld(null);
+    if (track && s && !s.oneShot) getEngine().stopVoiceKey(track.id, s.chopChoke ? `chop-choke-${s.chopChoke}` : `chop-${index}`);
+  };
 
   /** Cuts the trimmed region into n equal chops. */
   const chopInto = (n: number) => {
@@ -345,8 +380,8 @@ export function Sampler() {
 
   const makePad = (name: string, url: string, duration: number, peaks: number[]): SavedPad => ({
     name, url, duration, peaks,
-    start: 0, end: 1, gain: 1, pitch: 0, reverse: false, loop: false, oneShot: true,
-    attack: 0.002, release: 0.08, choke: 0, steps: Array.from({ length: 16 }, () => 0),
+    start: 0, end: 1, gain: 1, pitch: 0, reverse: false, loop: false, oneShot: s?.oneShot ?? true,
+    attack: 0.002, release: 0.08, choke: s?.chopChoke ?? 0, steps: Array.from({ length: 16 }, () => 0),
   });
 
   const sendChopsToPads = async (only?: number) => {
@@ -354,15 +389,23 @@ export function Sampler() {
       const all = await renderChops();
       const out = only === undefined ? all.slice(0, 16) : all.slice(only, only + 1);
       const bank = getPadBank();
+      const firstPad = padTarget;
+      if (only === undefined && firstPad + out.length > 16) {
+        toast.error("Choose an earlier starting pad so every chop fits");
+        return;
+      }
+      const targets = out.map((_, i) => only === undefined ? firstPad + i : padTarget);
+      if (targets.some((target) => bank[target]?.url) && !window.confirm("Replace the existing sounds on these sample pads?")) return;
       const engine = getEngine();
       for (let i = 0; i < out.length; i++) {
-        const c = out[i]!;
+        const c = out[i];
+        if (!c) continue;
         // Decode into the engine now so the pad sounds on the very first hit.
         const loaded = await engine.loadSampleFile(c.blob, c.name);
-        bank[only === undefined ? i : padTarget] = makePad(c.name, loaded.url, c.duration, c.peaks);
+        bank[only === undefined ? firstPad + i : padTarget] = makePad(c.name, loaded.url, c.duration, c.peaks);
       }
       setPadBank(bank);
-      toast.success(only === undefined ? `${out.length} chops sent to sample pads 1–${out.length}` : `Chop ${only + 1} sent to pad ${padTarget + 1}`, {
+      toast.success(only === undefined ? `${out.length} chops sent to sample pads ${firstPad + 1}–${firstPad + out.length}` : `Chop ${only + 1} sent to pad ${padTarget + 1}`, {
         description: "Those pads' old sounds were replaced.",
         action: { label: "Open pads", onClick: () => setPanel("pads") },
       });

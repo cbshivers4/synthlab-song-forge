@@ -185,7 +185,7 @@ function triggerNote(
       // each key from the root upwards plays one chop at its original pitch
       const start = chops[idx] as number;
       const end = (chops[idx + 1] ?? s.end) as number;
-      engine.playSample(t.id, { ...s, start, end, loop: false, oneShot: true }, s.rootNote, dur, vel, when);
+      engine.playSample(t.id, { ...s, start, end, loop: false }, s.rootNote, s.oneShot ? dur : Math.max(dur, s.duration), vel, when, s.chopChoke ? `chop-choke-${s.chopChoke}` : `chop-${idx}`);
       return;
     }
     engine.playSample(t.id, s, shifted, dur, vel, when);
