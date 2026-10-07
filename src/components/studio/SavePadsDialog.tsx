@@ -31,13 +31,16 @@ async function savePads(list: { index: number; pad: SavedPad }[]) {
       if (e instanceof Error && e.name === "AbortError") return;
     }
   }
-  files.forEach((f, i) => setTimeout(() => {
-    const el = document.createElement("a");
-    el.href = URL.createObjectURL(f);
-    el.download = f.name;
-    el.click();
-  }, i * 250));
-  toast.success(`Saved ${files.length} pad sample${files.length === 1 ? "" : "s"} as MP3`);
+  // Desktop: one MP3 downloads directly; several pads are bundled into a single ZIP
+  // so the browser doesn't block a burst of downloads.
+  if (files.length === 1) {
+    downloadBlob(files[0], files[0].name);
+    toast.success("Saved pad sample as MP3");
+  } else {
+    const zip = buildZip(files.map((f) => ({ name: f.name, data: new Uint8Array(await f.arrayBuffer()) })));
+    downloadBlob(zip, "synclab-pads.zip");
+    toast.success(`Saved ${files.length} pad samples in synclab-pads.zip`);
+  }
 }
 
 export function SavePadsDialog({ pads, selected }: { pads: Record<number, SavedPad>; selected: number }) {
