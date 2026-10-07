@@ -2238,13 +2238,14 @@ function EditToolbar() {
   return (
     <div className="timeline-edit-toolbar flex min-h-11 shrink-0 flex-wrap items-center gap-1 border-b border-border bg-surface-2/60 px-2 py-1">
       <ToolBtn tool="select" icon={<MousePointer2 className="size-3" />} label="Select" keys="V" />
+      <Button size="sm" variant="ghost" className="h-6 gap-1 px-2 text-[10px]" title="Select all channels (⌘A / Ctrl+A)" onClick={selectAll}>
+        <ListChecks className="size-3" /> Select All
+      </Button>
+      <div className="mx-1 h-4 w-px bg-border" />
       <ToolBtn tool="draw" icon={<Pencil className="size-3" />} label="Draw" keys="B" />
       <ToolBtn tool="split" icon={<ScissorsLineDashed className="size-3" />} label="Split" keys="C" />
       <ToolBtn tool="razor" icon={<RazorIcon className="size-3" />} label="Razor" keys="R" />
       <div className="mx-1 h-4 w-px bg-border" />
-      <Button size="sm" variant="ghost" className="h-6 gap-1 px-2 text-[10px]" title="Select all channels (⌘A / Ctrl+A)" onClick={selectAll}>
-        <ListChecks className="size-3" /> Select All
-      </Button>
       <Button
         size="sm"
         variant="ghost"
