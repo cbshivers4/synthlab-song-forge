@@ -312,52 +312,74 @@ export function Sampler() {
     });
   };
 
-  const saveChops = async () => {
+  const saveChops = async (only?: number) => {
     try {
-      const out = await renderChops();
+      const all = await renderChops();
+      const out = only === undefined ? all : all.slice(only, only + 1);
       const files = out.map((c) => new File([encodeMp3(c.cap, 192)], `${c.name.replace(/[^\w-]+/g, "_")}.mp3`, { type: "audio/mpeg" }));
       // Phones: use the system share sheet so chops can be saved to Files / Drive / etc.
       const nav = navigator as Navigator & { canShare?: (d: { files: File[] }) => boolean; share?: (d: { files: File[]; title?: string }) => Promise<void> };
       if (nav.canShare?.({ files }) && nav.share) {
         try {
           await nav.share({ files, title: `${s?.name ?? "Sample"} chops` });
-          toast.success(`Shared ${out.length} chops as MP3 — choose Save to Files on your phone`);
+          toast.success(`Shared ${out.length === 1 ? "the chop" : `${out.length} chops`} as MP3 — choose Save to Files on your phone`);
           return;
         } catch (e) {
           if (e instanceof Error && e.name === "AbortError") return; // user cancelled the share sheet
         }
       }
-      out.forEach((c, i) => setTimeout(() => {
+      files.forEach((f, i) => setTimeout(() => {
         const a = document.createElement("a");
-        a.href = URL.createObjectURL(c.blob);
-        a.download = `${c.name.replace(/[^\w-]+/g, "_")}.mp3`;
+        a.href = URL.createObjectURL(f);
+        a.download = f.name;
         a.click();
       }, i * 250));
-      toast.success(`Saved ${out.length} chops as MP3 files`);
+      toast.success(out.length === 1 ? `Saved ${files[0]?.name}` : `Saved ${out.length} chops as MP3 files`);
     } catch (e) {
       toast.error("Could not save the chops", { description: e instanceof Error ? e.message : undefined });
     }
   };
 
-  const sendChopsToPads = async () => {
+  const makePad = (name: string, url: string, duration: number, peaks: number[]): SavedPad => ({
+    name, url, duration, peaks,
+    start: 0, end: 1, gain: 1, pitch: 0, reverse: false, loop: false, oneShot: true,
+    attack: 0.002, release: 0.08, choke: 0, steps: Array.from({ length: 16 }, () => 0),
+  });
+
+  const sendChopsToPads = async (only?: number) => {
     try {
-      const out = (await renderChops()).slice(0, 16);
+      const all = await renderChops();
+      const out = only === undefined ? all.slice(0, 16) : all.slice(only, only + 1);
       const bank = getPadBank();
-      out.forEach((c, i) => {
-        const pad: SavedPad = {
-          name: c.name, url: URL.createObjectURL(c.blob), duration: c.duration, peaks: c.peaks,
-          start: 0, end: 1, gain: 1, pitch: 0, reverse: false, loop: false, oneShot: true,
-          attack: 0.002, release: 0.08, choke: 0, steps: Array.from({ length: 16 }, () => 0),
-        };
-        bank[i] = pad;
-      });
+      const engine = getEngine();
+      for (let i = 0; i < out.length; i++) {
+        const c = out[i]!;
+        // Decode into the engine now so the pad sounds on the very first hit.
+        const loaded = await engine.loadSampleFile(c.blob, c.name);
+        bank[only === undefined ? i : padTarget] = makePad(c.name, loaded.url, c.duration, c.peaks);
+      }
       setPadBank(bank);
-      toast.success(`${out.length} chops sent to sample pads 1–${out.length}`, {
-        description: "Open Sample Pads to play them. Those pads' old sounds were replaced.",
+      toast.success(only === undefined ? `${out.length} chops sent to sample pads 1–${out.length}` : `Chop ${only + 1} sent to pad ${padTarget + 1}`, {
+        description: "Those pads' old sounds were replaced.",
         action: { label: "Open pads", onClick: () => setPanel("pads") },
       });
     } catch (e) {
       toast.error("Could not send the chops", { description: e instanceof Error ? e.message : undefined });
+    }
+  };
+
+  /** Loads one chop (or any audio file) from the phone or computer onto the chosen pad. */
+  const loadChopFile = async (file: File) => {
+    try {
+      const loaded = await getEngine().loadSampleFile(file, file.name);
+      const bank = getPadBank();
+      const name = file.name.replace(/\.[^.]+$/, "").slice(0, 18);
+      const peaks = loaded.peaks.filter((_, i) => i % 3 === 0);
+      bank[padTarget] = makePad(name, loaded.url, loaded.duration, peaks);
+      setPadBank(bank);
+      toast.success(`${name} loaded on pad ${padTarget + 1}`, { action: { label: "Open pads", onClick: () => setPanel("pads") } });
+    } catch (e) {
+      toast.error("Could not load that file", { description: e instanceof Error ? e.message : undefined });
     }
   };
 
