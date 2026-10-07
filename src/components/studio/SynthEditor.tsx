@@ -165,7 +165,30 @@ export function SynthEditor({ track }: { track: Track }) {
           <TabsTrigger value="fx">Effects</TabsTrigger>
           <TabsTrigger value="arp">Arpeggiator</TabsTrigger>
           <TabsTrigger value="chords">Chords / Scale</TabsTrigger>
+          <TabsTrigger value="xy">X-Y Pad</TabsTrigger>
         </TabsList>
+        <TabsContent value="xy" className="space-y-3 pt-3">
+          <div className="flex flex-wrap items-start gap-4">
+            <XYPad
+              cutoff={patch.cutoff}
+              resonance={patch.resonance}
+              onChange={(cutoff, resonance) => set({ cutoff, resonance })}
+            />
+            <div className="space-y-2">
+              <p className="label-xs">DRAG THE PAD — X: CUTOFF · Y: RESONANCE</p>
+              <p className="font-mono text-xs text-muted-foreground">
+                CUTOFF {Math.round(patch.cutoff)} Hz · RES {patch.resonance.toFixed(1)}
+              </p>
+              <p className="max-w-52 text-xs text-muted-foreground">
+                Left is dark, right is bright; down is smooth, up is peaky. Drag while notes play to perform the sound live.
+              </p>
+              <div className="flex gap-2">
+                <Knob label="CUTOFF" midiTarget={{ id: track.id, param: "synth:cutoff" }} min={40} max={16000} step={10} value={patch.cutoff} onChange={(v) => set({ cutoff: v })} />
+                <Knob label="RES" midiTarget={{ id: track.id, param: "synth:resonance" }} min={0} max={28} step={0.5} value={patch.resonance} onChange={(v) => set({ resonance: v })} />
+              </div>
+            </div>
+          </div>
+        </TabsContent>
         <TabsContent value="oscillators" className="pt-3">
         {/* Oscillators + noise */}
         <div className="grid min-w-0 gap-3 lg:grid-cols-2">
