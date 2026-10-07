@@ -16,6 +16,8 @@ import type { DrumPad, Track } from "@/lib/synclab/types";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useIsMobile, useIsLandscapePhone } from "@/hooks/use-mobile";
+import { DrumRoll } from "./DrumRoll";
+import { markLiveHit, neighbourLiveHits } from "@/lib/synclab/live-take";
 
 const PRESET_KEY = "synclab.drumPresets.v1";
 type DrumPreset = { name: string; pads: Partial<DrumPad>[] };
@@ -77,7 +79,8 @@ function Section({ title, active, children }: { title: string; active?: boolean;
 export function DrumMachine({ track }: { track: Track }) {
   const isMobile = useIsMobile();
   const landscape = useIsLandscapePhone();
-  const [phoneView, setPhoneView] = useState("pads");
+  const [phoneView, setPhoneView] = useState("roll");
+  const [tapRec, setTapRec] = useState(false);
   const { view, updateView, ready } = useDrumEditorView(track.id);
   const rowRefs = useRef(new Map<string, HTMLDivElement>());
   const [stepPage, setStepPage] = useState(0);
@@ -89,12 +92,23 @@ export function DrumMachine({ track }: { track: Track }) {
     query.addEventListener("change", read);
     return () => query.removeEventListener("change", read);
   }, []);
-  const { updatePad, updateTrack, setStepCount, addPad, generateBeat, transport } = useStudio();
+  const { updatePad, updateTrack, setStepCount, addPad, generateBeat, transport, togglePlay, stop } = useStudio();
   const [genre, setGenre] = useState("Detroit Techno");
   const [energy, setEnergy] = useState(6);
   const [focusPadId, setFocusPadId] = useState<string | null>(null);
   const [selectedStep, setSelectedStep] = useState<{ padId: string; index: number } | null>(null);
   const pads = track.pads ?? [];
+  const hitPad = (pad: DrumPad) => {
+    getEngine().playDrum(track.id, pad, 1);
+    setFocusPadId(pad.id);
+    if (!isMobile || !transport.playing || (!tapRec && !transport.recording)) return;
+    const total = pad.steps.length || track.steps || 16;
+    const at = transport.step % total;
+    const stale = transport.recording ? neighbourLiveHits(track.id, pad.id, at, total) : [];
+    if (transport.recording) markLiveHit(track.id, pad.id, at);
+    updatePad(track.id, pad.id, { steps: Array.from({ length: total }, (_, i) => i === at ? 1 : stale.includes(i) ? 0 : pad.steps[i] ?? 0) });
+    updateView({ padId: pad.id, step: at });
+  };
   const pageSize = widePhone ? 4 : 3;
   const stepPages = Math.max(1, Math.ceil(track.steps / pageSize));
   const currentStepPage = Math.min(stepPage, stepPages - 1);
@@ -246,7 +260,7 @@ export function DrumMachine({ track }: { track: Track }) {
   return (
     <div className="drum-machine studio-wallpaper space-y-3 rounded-md p-3" data-phone-view={isMobile ? phoneView : undefined} data-sideways={isMobile && landscape ? "true" : undefined} data-studio-panel="drums" style={skinBackground(skin)} {...drop}>
       {isMobile && <div className="grid grid-cols-4 gap-1" role="tablist" aria-label="Drum machine views">
-        {([['pads', 'Pads'], ['steps', 'Pattern'], ['sound', 'Sound'], ['kit', 'Kit']] as const).map(([id, label]) => <Button key={id} role="tab" aria-selected={phoneView === id} variant={phoneView === id ? "default" : "secondary"} className="h-12 min-w-0 px-1" onClick={() => setPhoneView(id)}>{label}</Button>)}
+        {([['roll', 'Drum roll'], ['pads', 'Play pads'], ['sound', 'Sound'], ['kit', 'Kit']] as const).map(([id, label]) => <Button key={id} role="tab" aria-selected={phoneView === id} variant={phoneView === id ? "default" : "secondary"} className="h-12 min-w-0 px-1" onClick={() => setPhoneView(id)}>{label}</Button>)}
       </div>}
       <div className="drum-skin"><SkinControls skinKey="drums" image /></div>
 
@@ -272,6 +286,11 @@ export function DrumMachine({ track }: { track: Track }) {
       </div>
 
       {/* Step sequencer */}
+      {isMobile && (phoneView === "roll" || phoneView === "pads") && <div className="grid grid-cols-2 gap-2" aria-label="Drum playback">
+        <Button variant="secondary" className="h-12" onClick={transport.playing ? stop : togglePlay}>{transport.playing ? "Stop beat" : "Play beat"}</Button>
+        <Button variant={tapRec ? "destructive" : "outline"} className="h-12" aria-pressed={tapRec} onClick={() => { setTapRec(!tapRec); if (!tapRec && !transport.playing) togglePlay(); }}>{tapRec ? "Stop tap REC" : "Tap REC"}</Button>
+      </div>}
+      {isMobile && phoneView === "roll" && <DrumRoll track={track} initialFull />}
       {isMobile && phoneView === "steps" && (
         <div className="grid grid-cols-[48px_minmax(0,1fr)_48px] items-center gap-2" aria-label="Drum pattern step pages">
           <Button variant="outline" size="icon" className="size-12" aria-label="Previous pattern steps" disabled={currentStepPage === 0} onClick={() => setStepPage(Math.max(0, currentStepPage - 1))}><ChevronLeft /></Button>
@@ -512,14 +531,12 @@ export function DrumMachine({ track }: { track: Track }) {
                   tabIndex={0}
                   aria-pressed={focused}
                   onClick={() => {
-                    getEngine().playDrum(track.id, pad, 1);
-                    setFocusPadId(pad.id);
+                    hitPad(pad);
                   }}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
                       e.preventDefault();
-                      getEngine().playDrum(track.id, pad, 1);
-                      setFocusPadId(pad.id);
+                      hitPad(pad);
                     }
                   }}
                   className={cn(

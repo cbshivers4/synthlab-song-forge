@@ -21,7 +21,7 @@ import { useDrumEditorView } from "@/lib/synclab/drum-editor-view";
 
 const VELOCITIES = [0, 0.35, 0.7, 1] as const;
 
-export function DrumRoll({ track }: { track: Track }) {
+export function DrumRoll({ track, initialFull = false }: { track: Track; initialFull?: boolean }) {
   const isMobile = useIsMobile();
   const { updatePad, setStepCount, transport, setTransport } = useStudio();
   const pads = track.pads ?? [];
@@ -36,7 +36,7 @@ export function DrumRoll({ track }: { track: Track }) {
   const rowRefs = useRef(new Map<string, HTMLDivElement>());
   const [visibleRows, setVisibleRows] = useState([1, rows.length]);
   const [widePhone, setWidePhone] = useState(false);
-  const [full, setFull] = useState(false);
+  const [full, setFull] = useState(initialFull);
   useEffect(() => { const query = window.matchMedia("(min-width: 480px)"); const read = () => setWidePhone(query.matches); read(); query.addEventListener("change", read); return () => query.removeEventListener("change", read); }, []);
   const baseSize = widePhone ? 4 : 3;
   const pageSize = isMobile && !full ? Math.max(1, Math.floor(baseSize / view.zoom)) : total;

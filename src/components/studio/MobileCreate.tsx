@@ -1,4 +1,4 @@
-import { Disc3, FolderOpen, Grid2x2, Mic, Piano, Radio, Scissors, Waves, AudioLines, Music, MoreHorizontal } from "lucide-react";
+import { Disc3, FolderOpen, Grid2x2, Radio, Scissors, Waves, AudioLines, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStudio, type PanelId } from "@/lib/synclab/store";
 
@@ -9,15 +9,12 @@ type Tile = { label: string; hint: string; icon: React.ReactNode; panel?: PanelI
  * (same project and engine as desktop) so a beat can start within seconds.
  */
 export function MobileCreate({ onBeatMode, onMore }: { onBeatMode: () => void; onMore: () => void }) {
-  const { setPanel, addTrack, toggleRecord, transport, tracks } = useStudio();
+  const { setPanel, transport, tracks } = useStudio();
   const armed = tracks.filter((t) => t.armed).map((t) => t.name);
 
   const tiles: Tile[] = [
     { label: "Drum Machine", hint: "Pads & patterns", icon: <Disc3 />, panel: "drums", big: true },
-    { label: "Beat Maker", hint: "Quick beat", icon: <Grid2x2 />, run: onBeatMode, big: true },
-    { label: "Piano", hint: "Play keys", icon: <Piano />, panel: "keys" },
     { label: "Synth", hint: "Sound design", icon: <Waves />, panel: "synth" },
-    { label: "Bass", hint: "New bass track", icon: <Music />, run: () => { addTrack("instrument", "Bass", undefined, { keepPanel: true }); setPanel("keys"); } },
     { label: "Pads", hint: "Sample pads", icon: <Grid2x2 />, panel: "pads" },
     { label: "Sampler", hint: "Trim & chop", icon: <Scissors />, panel: "sampler" },
     { label: "Looper", hint: "Live loops", icon: <Disc3 />, panel: "looper" },
@@ -28,16 +25,6 @@ export function MobileCreate({ onBeatMode, onMore }: { onBeatMode: () => void; o
 
   return (
     <section aria-label="Create" className="absolute inset-0 z-30 overflow-y-auto bg-background p-3 pb-6">
-      <Button
-        type="button"
-        onClick={toggleRecord}
-        aria-pressed={!!transport.recording}
-        className={`mb-3 h-20 w-full gap-3 rounded-lg border-2 text-lg font-black tracking-widest [&_svg]:size-8 ${
-          transport.recording ? "border-destructive bg-destructive text-destructive-foreground" : "border-destructive/70 bg-surface-2 text-destructive hover:bg-surface-1"
-        }`}
-      >
-        <Mic /> {transport.recording ? "STOP RECORDING" : "● RECORD"}
-      </Button>
       <p className="mb-3 flex items-center gap-2 rounded-md border border-border bg-surface-1 px-3 py-2 text-sm text-muted-foreground">
         <AudioLines className="size-4 shrink-0 text-primary" />
         <span className="min-w-0 truncate">
