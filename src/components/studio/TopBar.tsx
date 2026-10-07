@@ -143,7 +143,7 @@ export function TopBar() {
             </span>
           </TBtn>
         </div>
-
+        {!isMobile && <MasterMeter />}
         </div>
         <div className="contents sm:flex sm:flex-wrap sm:items-center sm:gap-2">
         {/* LCD position display */}
@@ -198,13 +198,13 @@ export function TopBar() {
           )}
         </div>
 
-        <div className="hidden items-center gap-3 rounded-[3px] border border-border bg-background/70 px-3 py-1 sm:flex">
+        <div className="hidden min-w-0 flex-1 items-center gap-3 rounded-[3px] border border-border bg-background/70 px-3 py-1 sm:flex">
           <div>
             <span className="label-xs">BPM</span>
             <div className="font-mono text-base leading-none text-primary">{transport.bpm}</div>
           </div>
           <Slider
-            className="w-16 sm:w-24"
+            className="w-16 sm:min-w-16 sm:flex-1"
             value={[transport.bpm]}
             min={60}
             max={190}
@@ -237,7 +237,6 @@ export function TopBar() {
           </div>
         </div>
 
-        {!isMobile && <MasterMeter />}
         </div>
         <div className="contents sm:flex sm:flex-wrap sm:items-center sm:gap-2">
         {!isMobile && (
