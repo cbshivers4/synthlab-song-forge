@@ -640,6 +640,18 @@
 .transport-glass-display { background: var(--transport-glass-display); box-shadow: var(--transport-glass-shadow); border-color: var(--transport-glass-edge); }
 .transport-glass .transport-playback [aria-pressed="true"]:not(.text-destructive) { background: color-mix(in oklab, var(--primary) 15%, transparent); }
 .transport-glass-menu { background: color-mix(in oklab, var(--popover) 94%, transparent); }
+/* Desktop flows at existing control sizes; phone layout remains unchanged. */
+.transport-glass[data-desktop-transport="true"] .transport-layout {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px 8px;
+}
+.transport-glass[data-desktop-transport="true"] .transport-row { display: contents; }
+.transport-glass[data-desktop-transport="true"] .transport-layout > .transport-row > * { flex-shrink: 0; }
+.transport-glass[data-desktop-transport="true"] .transport-playback { margin-left: 0; }
+.transport-glass[data-desktop-transport="true"] .transport-glass-tools { flex-shrink: 0; max-width: 100%; }
 .landscape-prod:not(.landscape-tools) .timeline-edit-toolbar {
   display: none;
 }
