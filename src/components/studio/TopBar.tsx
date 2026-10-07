@@ -111,9 +111,9 @@ export function TopBar() {
           />
         </div>
 
-        <div className="hidden min-w-0 sm:block sm:flex-1"><StudioSearch /></div>
+        <div className="hidden min-w-0 sm:block sm:w-[420px]"><StudioSearch /></div>
 
-        <div className="flex shrink-0 items-center gap-0.5 rounded-[3px] border border-border bg-background/70 p-0.5 shadow-[inset_0_1px_0_oklch(1_0_0/0.04)]">
+        <div className="flex shrink-0 items-center gap-0.5 rounded-[3px] border border-border bg-background/70 p-0.5 shadow-[inset_0_1px_0_oklch(1_0_0/0.04)] sm:ml-auto">
           <TBtn label="RTZ" onClick={() => setTransport({ step: transport.loop ? (transport.loopStart ?? 0) : 0 })}>
             <SkipBack className="size-4" />
           </TBtn>
@@ -198,13 +198,13 @@ export function TopBar() {
           )}
         </div>
 
-        <div className="hidden min-w-0 flex-1 items-center gap-3 rounded-[3px] border border-border bg-background/70 px-3 py-1 sm:flex">
+        <div className="hidden min-w-0 items-center gap-3 rounded-[3px] border border-border bg-background/70 px-3 py-1 sm:flex">
           <div>
             <span className="label-xs">BPM</span>
             <div className="font-mono text-base leading-none text-primary">{transport.bpm}</div>
           </div>
           <Slider
-            className="w-16 sm:min-w-16 sm:flex-1"
+            className="w-40"
             value={[transport.bpm]}
             min={60}
             max={190}

@@ -606,9 +606,6 @@ export function Sampler() {
               <select aria-label="Target pad" value={padTarget} onChange={(e) => setPadTarget(Number(e.target.value))} className="h-9 rounded border border-border bg-background px-2 sm:h-7">
                 {Array.from({ length: 16 }, (_, i) => <option key={i} value={i}>Pad {i + 1}</option>)}
               </select>
-              {chops.length > 0 && (
-                <Button size="sm" className="h-9 text-[10px] sm:h-7" onClick={() => sendChopsToPads(Math.min(pickChop, chops.length - 1))}>Send this chop to pad</Button>
-              )}
               <Button size="sm" variant="outline" className="h-9 text-[10px] sm:h-7" onClick={() => chopFileRef.current?.click()}>
                 <Upload className="mr-1 h-3 w-3" /> Load a chop onto pad
               </Button>
