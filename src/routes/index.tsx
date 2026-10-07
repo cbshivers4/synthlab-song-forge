@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { TrackSettingsDialog, openTrackSettings } from "@/components/studio/TrackSettingsDialog";
 import { QWERTY_MAP, qwertyEnabled, qwertyOctave, setQwertyOctave } from "@/lib/synclab/qwerty";
 import { barBeat, songSteps } from "@/lib/synclab/timebase";
 import { createFileRoute } from "@tanstack/react-router";
@@ -327,7 +328,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
           <Button size="sm" variant="ghost" className="h-6 text-[11px]" onClick={() => setPanel("piano")}>
             Piano roll
           </Button>
-          <Button size="sm" variant="ghost" className="h-6 text-[11px]" onClick={() => select(selected.id)}>
+          <Button size="sm" variant="ghost" className="h-6 text-[11px]" onClick={() => { select(selected.id); openTrackSettings(selected.id); }}>
             Track settings
           </Button>
         </div>
@@ -607,6 +608,7 @@ function StudioWorkspace() {
           {(!isMobile || !panel) && <DeviceBar />}
         </main>
       </div>
+      <TrackSettingsDialog />
       {landscape ? null : isMobile ? <MobileNav onBeatMode={() => setBeatMode(true)} view={mobileView} setView={setMobileView} moreSignal={moreSignal} /> : <StatusBar />}
       <FloatingDevices float={float} setFloat={setFloat} />
       <DeviceSetup />

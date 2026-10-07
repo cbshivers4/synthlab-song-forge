@@ -74,6 +74,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { clipFromLocalFile } from "@/lib/synclab/local-files";
+import { openTrackSettings } from "@/components/studio/TrackSettingsDialog";
 import { SectionLane } from "./SectionLane";
 import { useStudio } from "@/lib/synclab/store";
 import { useApp } from "@/lib/synclab/app-state";
@@ -1065,7 +1066,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
               <DropdownMenuItem onClick={() => moveTrack(track.id, -1)}><ChevronUp className="size-4" /> Move up</DropdownMenuItem>
               <DropdownMenuItem onClick={() => moveTrack(track.id, 1)}><ChevronDown className="size-4" /> Move down</DropdownMenuItem>
               </DropdownMenuSubContent></DropdownMenuSub>
-              <DropdownMenuItem onClick={openEditor}>
+              <DropdownMenuItem onClick={() => { select(track.id); openTrackSettings(track.id); }}>
                 <Settings2 className="size-4" /> Track settings
               </DropdownMenuItem>
               <DropdownMenuSeparator />
