@@ -7,9 +7,9 @@
 - [x] Add a playable bass generator that creates editable MIDI patterns
 
 # Roadmap
-- [ ] Add mobile drum-roll row/step indicators and pinch/button zoom
-- [ ] Remember selected drum row/step across tabs and editor return
-- [ ] Add optional count-in click in phone Edit Recording and verify dispatch
+- [x] Add mobile drum-roll row/step indicators and pinch/button zoom; browser two-touch gesture changed zoom and row indicators followed scrolling
+- [x] Remember selected drum row/step across tabs and editor return; verified FX step 16 retained and visible
+- [x] Add optional count-in click in phone Edit Recording; verified 0 engine clicks when off and 4 when on, both automatically recording after the countdown
 - [x] Group phone Edit menu into Playback, Recording, Loop, Tempo & rhythm, and Meters & MIDI; expose count-in Off/1/2/4 bars. Signed-in phone preview verified countdown before automatic recording, desktop unchanged.
 - [x] Restore access to every phone drum-roll row and step: touch-sized pattern pages, swipe-safe drum roll, and unobstructed portrait/sideways scrolling; signed-in checks reached first/last steps and the final drum row.
 - [x] Move phone transport from Home to Edit with uncluttered menu controls; preserve desktop

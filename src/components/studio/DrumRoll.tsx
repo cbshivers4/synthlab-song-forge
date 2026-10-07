@@ -52,7 +52,12 @@ export function DrumRoll({ track }: { track: Track }) {
   useEffect(() => {
     if (!isMobile || !ready || !view.padId) return;
     updateView({ start: Math.floor(Math.min(total - 1, view.step) / pageSize) * pageSize });
-    const id = requestAnimationFrame(() => rowRefs.current.get(view.padId ?? "")?.scrollIntoView({ block: "nearest" }));
+    const id = requestAnimationFrame(() => {
+      const grid = gridRef.current, row = rowRefs.current.get(view.padId ?? "");
+      if (!grid || !row) return;
+      const offset = row.getBoundingClientRect().top - grid.getBoundingClientRect().top;
+      if (offset < 24 || offset + 56 > grid.clientHeight) grid.scrollTop += offset - Math.max(24, grid.clientHeight - 64);
+    });
     return () => cancelAnimationFrame(id);
   }, [ready, track.id, isMobile, widePhone]);
   useEffect(() => {
