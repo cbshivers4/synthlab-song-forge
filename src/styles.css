@@ -699,13 +699,15 @@
 .drum-machine[data-phone-view] .drum-display > * { flex-shrink: 0; }
 .drum-machine[data-phone-view] .drum-pad-grid > [role="button"] { min-height: 112px; }
 .drum-machine[data-phone-view] .drum-pad-grid button { min-width: 32px; }
-.drum-machine[data-phone-view] .drum-steps > div > div:first-child { min-width: max-content; }
+.drum-machine[data-phone-view] .drum-steps > div > div:first-child { min-width: 0; }
 .drum-machine[data-phone-view] .drum-steps button { min-width: 48px; }
 .drum-machine[data-phone-view] .drum-steps button.w-24 { width: 96px; }
 .drum-machine[data-sideways="true"] .drum-pad-grid { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 112px; grid-template-rows: 112px; overflow-x: auto; scroll-snap-type: x proximity; padding-bottom: 6px; }
 .drum-machine[data-sideways="true"] .drum-pad-grid > [role="button"] { scroll-snap-align: start; }
 .mobile-studio .phone-tool-panel:has(.drum-machine) .editor-track-actions { flex-shrink: 0; }
-.landscape-prod .phone-tool-panel { inset: 0 5rem 0 0; padding-bottom: 0; }
+.landscape-prod .phone-tool-panel { inset: 0 5.25rem 0 0; padding-bottom: 0; }
+.mobile-studio .phone-tool-panel:has(.drum-machine, .phone-drum-roll) > div:first-of-type { flex-shrink: 0; }
+.mobile-studio .phone-tool-panel:has(.drum-machine, .phone-drum-roll) > .flex-1 { overscroll-behavior-y: contain; }
 .mobile-studio .phone-tool-panel > div:last-child { padding-bottom: 1rem; }
 .mobile-studio .phone-tool-panel .editor-track-actions { padding-bottom: 4px; min-height: 52px; }
 .mobile-studio .editor-track-actions button { min-height: 48px; }
@@ -727,7 +729,7 @@
 .phone-drum-roll .drum-row-mute { width: 48px; height: 48px; font-size: 14px; }
 .phone-drum-roll .drum-step { height: 48px; }
 .phone-drum-roll button, .phone-drum-roll [role="combobox"] { min-height: 48px; }
-.phone-drum-roll > div:nth-last-of-type(1) > div > div:first-child > div:first-child { width: 148px; }
+.phone-drum-roll .drum-roll-label-header { width: 152px; }
 .phone-drum-roll p { display: none; }
 @media (orientation: landscape) and (max-height: 550px) {
   .mx-phone .phone-mix-channel > div:nth-child(3) { height: 160px; }

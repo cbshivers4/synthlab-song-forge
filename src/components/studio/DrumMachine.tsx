@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { stepsPerBar, getBeatsPerBar } from "@/lib/synclab/timebase";
 import { SkinControls, skinBackground, useImageDrop } from "@/components/studio/SkinControls";
 import { useSkin } from "@/lib/synclab/skins";
-import { Copy, Plus, RotateCcw, Save, Sparkles, Trash2, Upload } from "lucide-react";
+import { ChevronLeft, ChevronRight, Copy, Plus, RotateCcw, Save, Sparkles, Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -77,12 +77,26 @@ export function DrumMachine({ track }: { track: Track }) {
   const isMobile = useIsMobile();
   const landscape = useIsLandscapePhone();
   const [phoneView, setPhoneView] = useState("pads");
+  const [stepPage, setStepPage] = useState(0);
+  const [widePhone, setWidePhone] = useState(false);
+  useEffect(() => {
+    const query = window.matchMedia("(min-width: 480px)");
+    const read = () => setWidePhone(query.matches);
+    read();
+    query.addEventListener("change", read);
+    return () => query.removeEventListener("change", read);
+  }, []);
   const { updatePad, updateTrack, setStepCount, addPad, generateBeat, transport } = useStudio();
   const [genre, setGenre] = useState("Detroit Techno");
   const [energy, setEnergy] = useState(6);
   const [focusPadId, setFocusPadId] = useState<string | null>(null);
   const [selectedStep, setSelectedStep] = useState<{ padId: string; index: number } | null>(null);
   const pads = track.pads ?? [];
+  const pageSize = widePhone ? 4 : 3;
+  const stepPages = Math.max(1, Math.ceil(track.steps / pageSize));
+  const currentStepPage = Math.min(stepPage, stepPages - 1);
+  const stepStart = currentStepPage * pageSize;
+  const visibleSteps = Array.from({ length: isMobile ? Math.min(pageSize, track.steps - stepStart) : track.steps }, (_, i) => i + (isMobile ? stepStart : 0));
   const activePattern = Math.max(0, Math.min(7, track.activeDrumPattern ?? 0));
   const focusPad = pads.find((p) => p.id === focusPadId) ?? pads[0];
 
@@ -246,11 +260,18 @@ export function DrumMachine({ track }: { track: Track }) {
       </div>
 
       {/* Step sequencer */}
+      {isMobile && phoneView === "steps" && (
+        <div className="grid grid-cols-[48px_minmax(0,1fr)_48px] items-center gap-2" aria-label="Drum pattern step pages">
+          <Button variant="outline" size="icon" className="size-12" aria-label="Previous pattern steps" disabled={currentStepPage === 0} onClick={() => setStepPage(Math.max(0, currentStepPage - 1))}><ChevronLeft /></Button>
+          <span className="min-w-0 whitespace-nowrap text-center font-mono text-sm">Steps {stepStart + 1}–{Math.min(track.steps, stepStart + pageSize)} / {track.steps}</span>
+          <Button variant="outline" size="icon" className="size-12" aria-label="Next pattern steps" disabled={currentStepPage === stepPages - 1} onClick={() => setStepPage(Math.min(stepPages - 1, currentStepPage + 1))}><ChevronRight /></Button>
+        </div>
+      )}
       <div aria-label="Drum pattern steps" className="drum-steps max-h-48 space-y-1 overflow-auto">
         {pads.map((pad) => (
           <div key={pad.id} className="space-y-1">
             <div className="flex items-center gap-2">
-              <button
+              <Button variant="ghost"
                 className={cn(
                   "w-24 shrink-0 rounded-md border px-2 py-1 text-left font-mono text-[10px] tracking-wider hover:glow",
                   focusPad?.id === pad.id ? "border-primary bg-primary/10" : "border-border bg-surface-2",
@@ -261,10 +282,11 @@ export function DrumMachine({ track }: { track: Track }) {
                 }}
               >
                 {pad.name}
-              </button>
-              <div className="flex flex-1 gap-[3px]">
-                {pad.steps.map((v, i) => (
-                  <button
+              </Button>
+              <div className="flex min-w-0 flex-1 gap-[3px]">
+                {visibleSteps.map((i) => {
+                  const v = pad.steps[i] ?? 0;
+                  return <Button variant="ghost"
                     key={i}
                     aria-label={`${pad.name} step ${i + 1}`}
                      onClick={() => {
@@ -272,9 +294,9 @@ export function DrumMachine({ track }: { track: Track }) {
                        setSelectedStep({ padId: pad.id, index: i });
                      }}
                     title={v > 0 ? `velocity ${Math.round(v * 100)}%` : "empty"}
-                    className="h-6 flex-1 rounded-[3px] border transition-all"
+                    className="h-6 min-w-0 flex-1 rounded-[3px] border p-0 transition-all"
                     style={{
-                      minWidth: 12,
+                      minWidth: isMobile ? undefined : 12,
                       borderColor:
                         transport.playing && transport.step % Math.max(1, pad.steps.length) === i ? "var(--neon)" : "var(--color-border)",
                       opacity: v > 0 ? 0.35 + v * 0.65 : 1,
@@ -287,12 +309,12 @@ export function DrumMachine({ track }: { track: Track }) {
                               : "color-mix(in oklab, var(--surface-2) 90%, transparent)"
                             : "color-mix(in oklab, var(--surface) 80%, transparent)",
                     }}
-                  />
-                ))}
+                  >{isMobile ? i + 1 : null}</Button>;
+                })}
               </div>
             </div>
              {selectedStep?.padId === pad.id && (
-               <div className="panel flex flex-wrap items-end gap-3 p-3 sm:ml-24">
+                <div className={cn("flex items-end gap-3 p-3 sm:ml-24", isMobile ? "flex-nowrap overflow-x-auto [&>*]:shrink-0" : "panel flex-wrap")}>
                  <div className="min-w-20"><span className="label-xs">STEP</span><div className="font-mono text-sm text-primary">{selectedStep.index + 1}</div></div>
                  <Knob label="VELOCITY" value={pad.steps[selectedStep.index] ?? 0} onChange={(v) => updateStepValue(pad, "steps", selectedStep.index, v)} />
                  <Knob label="PITCH" min={-12} max={12} step={1} value={pad.stepPitch?.[selectedStep.index] ?? 0} onChange={(v) => updateStepValue(pad, "stepPitch", selectedStep.index, v)} />

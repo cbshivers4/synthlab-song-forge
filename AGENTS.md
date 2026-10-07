@@ -38,4 +38,4 @@ Embedded keyboards reuse Keyboard with a track or sample callback and shared typ
 Paste content at the playhead onto the selected or explicit channel, preserving its settings; Duplicate track separately clones channels.
 Synth/MIDI selection opens piano roll; explicit instrument actions open synth. Sampler editors show Sampler with Stretch before chops.
 Transport stays scoped: desktop wraps intrinsic groups; phone Edit uses shared transport handlers with secondary controls in menus, keeping Home clear.
-Phone mixer essentials reuse track/bus actions; full strips remain in dialogs. Drum-roll step pages keep touch cells large without changing patterns.
+Phone mixer reuses track/bus actions. Both drum editors page touch-sized steps; swipes scroll without painting to keep all rows reachable.
