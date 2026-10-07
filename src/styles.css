@@ -683,6 +683,7 @@
 .drum-machine[data-phone-view] .drum-sound-controls { display: none; }
 .drum-machine[data-phone-view="steps"] .drum-steps { display: block; max-height: none; }
 .drum-machine[data-phone-view="steps"] .drum-surface,
+.drum-machine[data-phone-view="roll"] .drum-surface,
 .drum-machine[data-phone-view="kit"] .drum-surface { display: none; }
 .drum-machine[data-phone-view="kit"] .drum-kit-tools,
 .drum-machine[data-phone-view="kit"] .drum-presets { display: flex; }

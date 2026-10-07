@@ -33,7 +33,7 @@ function ThemePresets() {
   const presets = usePresets();
   const [sel, setSel] = useState<string>("");
   return (
-    <div className="flex items-center gap-1">
+    <div className="grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-1 sm:flex sm:w-auto sm:flex-wrap">
       <Select
         value={sel}
         onValueChange={(v) => {
@@ -41,7 +41,7 @@ function ThemePresets() {
           safe(() => applyPreset(v));
         }}
       >
-        <SelectTrigger className="h-8 w-36" aria-label="Saved themes">
+        <SelectTrigger className="h-8 w-full min-w-0 sm:w-36 [&>span]:truncate" aria-label="Saved themes">
           <SelectValue placeholder={presets.length ? "Themes" : "No themes yet"} />
         </SelectTrigger>
         <SelectContent>
@@ -176,7 +176,7 @@ export function SkinControls({ skinKey, image, padColor, colorLabel = "Backgroun
   const fileRef = useRef<HTMLInputElement>(null);
   useEffect(() => startSkinSync(), []);
   return (
-    <div className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-surface-2/40 px-2 py-1.5">
+    <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2 rounded-md border border-border bg-surface-2/40 px-2 py-1.5 [&>label]:shrink-0 [&>button]:shrink-0">
       <Palette className="size-4 text-primary" />
       <label className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
         {colorLabel}

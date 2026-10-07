@@ -21,7 +21,7 @@ import { useDrumEditorView } from "@/lib/synclab/drum-editor-view";
 
 const VELOCITIES = [0, 0.35, 0.7, 1] as const;
 
-export function DrumRoll({ track }: { track: Track }) {
+export function DrumRoll({ track, initialFull = false }: { track: Track; initialFull?: boolean }) {
   const isMobile = useIsMobile();
   const { updatePad, setStepCount, transport, setTransport } = useStudio();
   const pads = track.pads ?? [];
@@ -36,7 +36,7 @@ export function DrumRoll({ track }: { track: Track }) {
   const rowRefs = useRef(new Map<string, HTMLDivElement>());
   const [visibleRows, setVisibleRows] = useState([1, rows.length]);
   const [widePhone, setWidePhone] = useState(false);
-  const [full, setFull] = useState(false);
+  const [full, setFull] = useState(initialFull);
   useEffect(() => { const query = window.matchMedia("(min-width: 480px)"); const read = () => setWidePhone(query.matches); read(); query.addEventListener("change", read); return () => query.removeEventListener("change", read); }, []);
   const baseSize = widePhone ? 4 : 3;
   const pageSize = isMobile && !full ? Math.max(1, Math.floor(baseSize / view.zoom)) : total;
@@ -232,7 +232,7 @@ export function DrumRoll({ track }: { track: Track }) {
         </Button>
       </div>
 
-      {isMobile && !full && <div className="space-y-1.5">
+      {isMobile && <div className="space-y-1.5">
         <div className="flex items-center justify-between gap-2">
           <span className="whitespace-nowrap font-mono text-xs">STEP SNAP</span>
           <Select value={String(view.snap)} onValueChange={(value) => updateView({ snap: Number(value) })}>
@@ -244,7 +244,7 @@ export function DrumRoll({ track }: { track: Track }) {
             </SelectContent>
           </Select>
         </div>
-        <div className="grid grid-cols-[48px_minmax(0,1fr)_48px] items-center gap-2"><Button variant="outline" size="icon" className="size-12" aria-label="Previous drum steps" disabled={start === 0} onClick={() => updateView({ start: Math.max(0, start - pageSize) })}><ChevronLeft /></Button><span className="min-w-0 text-center font-mono text-sm whitespace-nowrap">Steps {start + 1}–{Math.min(total, start + pageSize)} / {total}</span><Button variant="outline" size="icon" className="size-12" aria-label="Next drum steps" disabled={start + pageSize >= total} onClick={() => updateView({ start: Math.min(total - 1, start + pageSize) })}><ChevronRight /></Button></div>
+        {!full && <div className="grid grid-cols-[48px_minmax(0,1fr)_48px] items-center gap-2"><Button variant="outline" size="icon" className="size-12" aria-label="Previous drum steps" disabled={start === 0} onClick={() => updateView({ start: Math.max(0, start - pageSize) })}><ChevronLeft /></Button><span className="min-w-0 text-center font-mono text-sm whitespace-nowrap">Steps {start + 1}–{Math.min(total, start + pageSize)} / {total}</span><Button variant="outline" size="icon" className="size-12" aria-label="Next drum steps" disabled={start + pageSize >= total} onClick={() => updateView({ start: Math.min(total - 1, start + pageSize) })}><ChevronRight /></Button></div>}
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
           <span className="min-w-0 whitespace-nowrap font-mono text-xs" aria-label="Visible drum rows">Rows {visibleRows[0]}–{visibleRows[1]} / {rows.length}</span>
           <div className="flex shrink-0 items-center gap-1"><Button variant="outline" size="icon" className="size-12" aria-label="Zoom out drum roll" title="Zoom out" disabled={view.zoom <= 1} onClick={() => zoomTo(view.zoom - 0.5)}><Minus /></Button><span className="w-12 text-center font-mono text-xs" aria-label="Drum roll zoom">{Math.round(view.zoom * 100)}%</span><Button variant="outline" size="icon" className="size-12" aria-label="Zoom in drum roll" title="Zoom in" disabled={view.zoom >= 3} onClick={() => zoomTo(view.zoom + 0.5)}><Plus /></Button></div>
@@ -253,7 +253,7 @@ export function DrumRoll({ track }: { track: Track }) {
       </div>}
 
       <div ref={gridRef} onScroll={readRows} aria-label="Drum roll grid" className={`overflow-auto rounded-[2px] border border-border bg-background ${full ? "max-h-[78dvh]" : isMobile ? "max-h-[45dvh] touch-pan-y" : ""}`}>
-        <div className={isMobile && !full ? "w-full" : isMobile ? "" : "min-w-[640px]"} style={isMobile && full ? { minWidth: 152 + 28 + total * 30 } : undefined}>
+        <div className={isMobile && !full ? "w-full" : isMobile ? "" : "min-w-[640px]"} style={isMobile && full ? { minWidth: 212 + total * (50 * view.zoom) } : undefined}>
           {/* bar numbers */}
           <div className="sticky top-0 z-10 flex border-b border-border bg-surface-2">
             <div className="drum-roll-label-header w-32 shrink-0 border-r border-border px-2 py-0.5 font-mono text-[8px] uppercase tracking-widest text-muted-foreground">
