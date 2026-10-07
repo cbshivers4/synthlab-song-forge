@@ -640,6 +640,22 @@
 .transport-glass-display { background: var(--transport-glass-display); box-shadow: var(--transport-glass-shadow); border-color: var(--transport-glass-edge); }
 .transport-glass .transport-playback [aria-pressed="true"]:not(.text-destructive) { background: color-mix(in oklab, var(--primary) 15%, transparent); }
 .transport-glass-menu { background: color-mix(in oklab, var(--popover) 94%, transparent); }
+.transport-glass[data-phone-transport="true"] .transport-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+}
+.transport-glass[data-phone-transport="true"] .transport-row { display: contents; }
+.transport-glass[data-phone-transport="true"] .transport-logo,
+.transport-glass[data-phone-transport="true"] .transport-search,
+.transport-glass[data-phone-transport="true"] .transport-tempo,
+.transport-glass[data-phone-transport="true"] .transport-glass-display > .hidden { display: none; }
+.transport-glass[data-phone-transport="true"] .transport-playback { order: 1; margin-left: 0; }
+.transport-glass[data-phone-transport="true"] .transport-glass-display { order: 3; grid-column: 1 / -1; padding: 4px 8px; gap: 8px; }
+.landscape-prod .transport-glass[data-phone-transport="true"] .transport-layout { grid-template-columns: auto minmax(0, 1fr) auto; }
+.landscape-prod .transport-glass[data-phone-transport="true"] .transport-glass-display { order: 1; grid-column: auto; }
 /* Desktop flows at existing control sizes; phone layout remains unchanged. */
 .transport-glass[data-desktop-transport="true"] .transport-layout {
   flex-direction: row;
