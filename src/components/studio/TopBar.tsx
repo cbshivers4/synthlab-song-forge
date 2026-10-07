@@ -30,7 +30,6 @@ import {
   Menu,
 } from "lucide-react";
 
-import { qwertyEnabled, setQwertyEnabled } from "@/lib/synclab/qwerty";
 import { requestBluetoothSettings } from "./Settings";
 import { stepsPerBar, STEPS_PER_BEAT, METERS, getBeatsPerBar, songSteps, stepSeconds } from "@/lib/synclab/timebase";
 import { Button } from "@/components/ui/button";
@@ -60,7 +59,7 @@ import { openHelp } from "@/components/studio/HelpCenter";
 import { MasterMeter } from "@/components/studio/MasterMeter";
 import { IdeaRecorder } from "@/components/studio/IdeaRecorder";
 import { useEffect, useState } from "react";
-import { Keyboard, SkipBack } from "lucide-react";
+import { SkipBack } from "lucide-react";
 import synclabLogoAsset from "@/assets/synclab-logo-neon.jpg.asset.json";
 const synclabLogo = synclabLogoAsset.url;
 
@@ -100,7 +99,8 @@ export function TopBar() {
           </div>
         </div>
       )}
-      <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2 px-2 py-2 sm:flex sm:flex-wrap sm:px-3">
+      <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2 px-2 py-2 sm:flex sm:flex-col sm:items-stretch sm:gap-1.5 sm:px-3">
+        <div className="contents sm:flex sm:items-center sm:gap-2">
         <div className="hidden items-center pr-1 sm:flex">
           <img
             src={synclabLogo}
@@ -111,7 +111,7 @@ export function TopBar() {
           />
         </div>
 
-        <div className="hidden sm:block"><StudioSearch /></div>
+        <div className="hidden min-w-0 sm:block sm:flex-1"><StudioSearch /></div>
 
         <div className="flex shrink-0 items-center gap-0.5 rounded-[3px] border border-border bg-background/70 p-0.5 shadow-[inset_0_1px_0_oklch(1_0_0/0.04)]">
           <TBtn label="RTZ" onClick={() => setTransport({ step: transport.loop ? (transport.loopStart ?? 0) : 0 })}>
@@ -144,6 +144,8 @@ export function TopBar() {
           </TBtn>
         </div>
 
+        </div>
+        <div className="contents sm:flex sm:flex-wrap sm:items-center sm:gap-2">
         {/* LCD position display */}
         <div className="flex min-w-0 items-stretch gap-2 rounded-[3px] border border-border bg-background px-2 py-1 font-mono shadow-[inset_0_1px_3px_oklch(0_0_0/0.6)] sm:gap-3 sm:px-3">
           {transport.countInLeft != null ? (
@@ -235,6 +237,9 @@ export function TopBar() {
           </div>
         </div>
 
+        {!isMobile && <MasterMeter />}
+        </div>
+        <div className="contents sm:flex sm:flex-wrap sm:items-center sm:gap-2">
         {!isMobile && (
           <div className="flex flex-wrap items-center gap-1 rounded-[3px] border border-border bg-background/70 p-1">
             <FeatBtn
@@ -321,9 +326,9 @@ export function TopBar() {
         )}
 
         {!isMobile && <MidiControl />}
-        {!isMobile && <MasterMeter />}
+        </div>
 
-        <div className="ml-auto flex shrink-0 items-center gap-1">
+        <div className="contents sm:flex sm:flex-wrap sm:items-center sm:gap-1">
           <IdeaRecorder compact={isMobile} />
           <Popover>
             <PopoverTrigger asChild>
@@ -363,9 +368,6 @@ export function TopBar() {
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setPanel("synth")}>
                   <Music2 className="mr-2 size-4" /> Instruments
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setPanel("keys")}>
-                  <KeyboardMusic className="mr-2 size-4" /> Keys
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setPanel("mixer")}>
                   <SlidersHorizontal className="mr-2 size-4" /> Mixer
@@ -428,13 +430,6 @@ export function TopBar() {
                 onClick={() => setPanel(panel === "synth" ? null : "synth")}
               >
                 <Music2 className="size-4" /> INSTRUMENTS
-              </Button>
-              <Button
-                variant={panel === "keys" ? "secondary" : "ghost"}
-                size="sm"
-                onClick={() => setPanel(panel === "keys" ? null : "keys")}
-              >
-                <KeyboardMusic className="size-4" /> KEYS
               </Button>
               <Button
                 variant={panel === "mixer" ? "secondary" : "ghost"}
@@ -526,28 +521,6 @@ function FeatBtn({
       <span className={`size-1.5 rounded-full ${active ? "bg-primary" : "bg-border"}`} />
       {icon}
       {label}
-    </Button>
-  );
-}
-
-function TypingKeysToggle() {
-  const [on, setOn] = useState(true);
-  useEffect(() => {
-    const sync = () => setOn(qwertyEnabled());
-    sync();
-    window.addEventListener("synclab:qwerty", sync);
-    return () => window.removeEventListener("synclab:qwerty", sync);
-  }, []);
-  return (
-    <Button
-      size="sm"
-      variant="ghost"
-      aria-pressed={on}
-      onClick={() => setQwertyEnabled(!on)}
-      title="Play the armed or selected instrument with your computer keys: A W S E D F T G Y H U J K (Z / X change octave). Press record to capture."
-      className={`h-7 gap-1 px-2 font-mono text-[10px] tracking-wider ${on ? "bg-primary/15 text-primary shadow-[inset_0_0_0_1px_var(--primary)]" : "text-muted-foreground"}`}
-    >
-      <Keyboard className="size-3.5" /> KEYS
     </Button>
   );
 }

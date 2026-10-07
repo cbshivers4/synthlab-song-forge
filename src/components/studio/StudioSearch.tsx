@@ -55,7 +55,7 @@ export function StudioSearch() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="flex h-9 min-w-[300px] items-center gap-2 rounded-md border border-border bg-surface-2/60 px-3 text-xs text-muted-foreground transition hover:border-primary hover:text-foreground lg:min-w-[460px] xl:min-w-[560px]"
+        className="flex h-9 w-full min-w-0 items-center gap-2 rounded-md border border-border bg-surface-2/60 px-3 text-xs text-muted-foreground transition hover:border-primary hover:text-foreground"
       >
         <Search className="size-4" />
         <span>Search studio…</span>
