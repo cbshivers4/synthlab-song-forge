@@ -207,6 +207,8 @@ export interface DrumPad {
   /** 0..1 bit-crush */
   crush?: number | undefined;
   sample?: string | undefined;
+  /** session audio URL of a loaded sample; when its buffer is loaded the pad plays it instead of the synthesized voice */
+  sampleUrl?: string | undefined;
   muted: boolean;
   solo: boolean;
   steps: number[]; // velocity 0..1 per step, 0 = off
