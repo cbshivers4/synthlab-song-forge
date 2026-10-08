@@ -1636,6 +1636,16 @@ export function Mixer({ phonePage = 0, phoneChannels, phoneControlPage = "levels
     >
       {/* console toolbar */}
       <div className="mx-console-toolbar flex min-h-10 items-center gap-3 overflow-x-auto border-b border-border px-3 py-2">
+        {isMobile ? (
+          <>
+            <span className="font-display text-xs font-bold uppercase tracking-widest text-primary">Mixer</span>
+            <div className="ml-auto flex shrink-0 items-center gap-2">
+              <PhoneFxMenu />
+              <PhoneEqButton />
+            </div>
+          </>
+        ) : (
+          <>
         <span className="font-display text-xs font-bold uppercase tracking-widest text-primary">Mix Console</span>
 
         <span className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
