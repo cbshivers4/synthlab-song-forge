@@ -181,7 +181,7 @@ function ClipLed({ id, compact }: { id: string; compact?: boolean }) {
   );
 }
 
-function InsertRack({
+export function InsertRack({
   title,
   midiId,
   midiPrefix = "plugin",
