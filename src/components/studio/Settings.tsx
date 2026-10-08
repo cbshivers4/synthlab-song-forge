@@ -117,6 +117,12 @@ const DEFAULTS: Prefs = {
 
 const KEY = "synclab.prefs";
 
+function punchLabel(step: number | null | undefined) {
+  if (step == null) return "Off";
+  const spb = stepsPerBar();
+  return `Bar ${Math.floor(step / spb) + 1}, beat ${Math.floor((step % spb) / 4) + 1}`;
+}
+
 function Row({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
     <div className="settings-row grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 border-b border-border/60 py-2.5 last:border-0">
@@ -194,6 +200,8 @@ export function Settings() {
   const [outputs, setOutputs] = useState<{ id: string; label: string }[]>([]);
   const [scanning, setScanning] = useState(false);
   const mobilePrefs = useMobileAccessibility();
+  const [hapticsAvailable, setHapticsAvailable] = useState(false);
+  useEffect(() => { setHapticsAvailable(typeof navigator !== "undefined" && typeof navigator.vibrate === "function"); }, []);
   const midiRef = useRef(midiInputs);
   midiRef.current = midiInputs;
   useEffect(() => { if (isMobile) setActiveTab("mobile"); }, [isMobile]);
