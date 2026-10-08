@@ -480,6 +480,20 @@ export function Settings() {
         <Row label="Overdub">
           <Switch checked={Boolean(transport.overdub)} onCheckedChange={(v) => setTransport({ overdub: v })} />
         </Row>
+        <Row label="Punch in" hint="Recording starts at this position">
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-xs text-primary">{punchLabel(transport.punchIn)}</span>
+            <Button size="sm" variant="secondary" onClick={() => setTransport({ punchIn: transport.step })}>Set at playhead</Button>
+            <Button size="sm" variant="ghost" disabled={transport.punchIn == null} onClick={() => setTransport({ punchIn: null, punchOut: null })}>Clear</Button>
+          </div>
+        </Row>
+        <Row label="Punch out" hint="Recording stops at this position">
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-xs text-primary">{punchLabel(transport.punchOut)}</span>
+            <Button size="sm" variant="secondary" onClick={() => setTransport({ punchOut: transport.step })}>Set at playhead</Button>
+            <Button size="sm" variant="ghost" disabled={transport.punchOut == null} onClick={() => setTransport({ punchOut: null })}>Clear</Button>
+          </div>
+        </Row>
       </TabsContent>
 
       <TabsContent value="metronome" className="mt-4">
@@ -499,6 +513,12 @@ export function Settings() {
             }}
             width="w-24"
           />
+        </Row>
+        <Row label="Count-in click" hint="Metronome click during the count-in">
+          <Switch checked={transport.countInClick !== false} onCheckedChange={(countInClick) => setTransport({ countInClick })} />
+        </Row>
+        <Row label="Count-in vibration" hint={hapticsAvailable ? "Haptic pulse on each count-in beat" : "Vibration unavailable in this browser"}>
+          <Switch disabled={!hapticsAvailable} checked={hapticsAvailable && !!transport.countInHaptics} onCheckedChange={(countInHaptics) => setTransport({ countInHaptics })} />
         </Row>
         <Row label="Click sound">
           <Pick value={p.clickSound} options={["Detroit Rim", "Click", "Cowbell", "Sidestick", "Beep"]} onChange={(v) => set("clickSound", v)} />
