@@ -828,6 +828,7 @@
 .phone-console.phone-entry .phone-page-viewport > div > .mx-auto.grid > div:first-child img { width: 128px; height: 128px; }
 .phone-console.phone-entry .phone-page-viewport #recent-projects { min-height: 200px; }
 .phone-transport-menu .phone-pages { min-height: 0; }
+.phone-transport-menu, .phone-edit-menu { max-height: var(--radix-popover-content-available-height); }
 .phone-transport-menu .phone-page-controls { background: var(--surface); }
 .phone-transport-menu button { min-height: 48px; }
 .phone-console-active [role="dialog"], .phone-console-active .phone-transport-menu {
