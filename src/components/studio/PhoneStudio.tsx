@@ -29,7 +29,8 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
   const { setStage } = useApp();
   const [room, setRoom] = useState<"edit" | "sounds" | "tools">("edit");
   const [upright, setUpright] = useState(false);
-  const [allowPortrait, setAllowPortrait] = useState(false);
+  // Mobile studio opens automatically — no rotate gate.
+  const [allowPortrait, setAllowPortrait] = useState(true);
   const [menuPage, setMenuPage] = useState(0);
   const consoleRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
