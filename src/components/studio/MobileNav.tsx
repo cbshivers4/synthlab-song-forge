@@ -76,6 +76,7 @@ export function MobileNav({ onBeatMode, view, setView, moreSignal = 0, landscape
     },
     { label: "MIX", icon: <SlidersHorizontal />, active: panel === "mixer", onClick: () => setPanel("mixer") },
     { label: "SOUNDS", icon: <FolderOpen />, active: panel === "browser", onClick: () => setPanel("browser") },
+    { label: "TOOLS", icon: <Wand2 />, active: sheet === "more", onClick: () => setSheet("more") },
   ];
 
   const prodTabs = [
@@ -97,7 +98,7 @@ export function MobileNav({ onBeatMode, view, setView, moreSignal = 0, landscape
         aria-label="Studio navigation"
         className={landscape
           ? "relative z-50 order-last flex w-20 shrink-0 flex-col justify-start gap-0.5 overflow-y-auto border-l-2 border-border bg-surface-1 px-1 py-1 pr-[max(0.25rem,env(safe-area-inset-right))]"
-          : "mobile-nav relative z-50 grid shrink-0 grid-cols-5 gap-1 border-t-2 border-border bg-surface-1 px-1.5 pt-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))]"}
+          : "mobile-nav relative z-50 grid shrink-0 grid-cols-6 gap-1 border-t-2 border-border bg-surface-1 px-1.5 pt-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))]"}
       >
         {shown.map((t) => (
           <Button
