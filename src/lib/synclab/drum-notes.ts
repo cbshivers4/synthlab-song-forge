@@ -40,18 +40,18 @@ export const DRUM_KIND_LABEL: Record<DrumKind, string> = {
   fx: "FX",
 };
 
-/** The order drum rows are shown in, kick at the bottom like a real drum map. */
+/** Shared display order, independent of each pad's MIDI assignment. */
 export const DRUM_KIND_ORDER: DrumKind[] = [
-  "crash",
-  "ride",
-  "openhat",
+  "kick",
+  "snare",
   "hat",
-  "perc",
-  "tom",
+  "openhat",
   "clap",
   "rim",
-  "snare",
-  "kick",
+  "tom",
+  "perc",
+  "ride",
+  "crash",
   "fx",
 ];
 
@@ -72,7 +72,7 @@ export function padNote(pad: DrumPad, pads: DrumPad[]): number {
   return Math.min(127, base + dup);
 }
 
-/** Pads in drum-map order, each with its resolved note. Kick sits at the bottom. */
+/** Display rows retain their resolved MIDI note and original index. */
 export function drumRows(pads: DrumPad[]) {
   return pads
     .map((pad, index) => ({ pad, index, note: padNote(pad, pads) }))

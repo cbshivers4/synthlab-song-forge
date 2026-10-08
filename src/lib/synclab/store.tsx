@@ -1938,7 +1938,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           setSelectedId(t.id);
           // keepPanel: the pad sampler and phone beat maker create their channel while the
           // user is playing — never navigate them away from what they are doing.
-          if (!opts?.keepPanel) setPanel(kind === "drum" ? "drums" : kind === "ai-vocal" || kind === "audio" ? null : "synth");
+          if (!opts?.keepPanel) setPanel(kind === "drum" ? "drums" : kind === "sampler" ? "sampler" : kind === "ai-vocal" || kind === "audio" ? null : "synth");
           return [...ts, t];
         });
         return id;

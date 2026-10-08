@@ -389,11 +389,6 @@ export function TopBar() {
               <MidiLearnButton id="transport" param="swing" label="Swing" />
             </div>
             </PhoneTransportSection>
-            <PhoneTransportSection title="Meters & MIDI">
-            <div className="w-full overflow-x-auto"><MasterMeter /></div>
-            <AudioStatus />
-            <MidiControl />
-            </PhoneTransportSection>
           </>}
           {isMobile && <h2 className="w-full border-t border-border pt-3 text-sm font-semibold">Studio tools</h2>}
           <IdeaRecorder compact={isMobile} />
@@ -521,6 +516,10 @@ export function TopBar() {
             </>
           )}
         </TransportExtras>
+        {isMobile && <section aria-label="Meters & MIDI" className="phone-transport-signals order-4 col-span-full flex min-w-0 flex-wrap items-center gap-2 border-t border-border pt-2">
+          <div className="phone-master-display min-w-0 max-w-full overflow-x-auto"><MasterMeter /></div>
+          <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2"><AudioStatus /><MidiControl /></div>
+        </section>}
       </div>
     </header>
   );
