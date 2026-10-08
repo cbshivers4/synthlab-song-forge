@@ -265,7 +265,7 @@ export function StartScreen() {
                 const fav = favs.includes(`cloud:${item.id}`);
                 return (
                   <div key={item.id} className={`group flex min-h-14 items-center gap-1 px-2 transition-colors ${selectedCloud?.id === item.id ? "bg-primary/10" : "hover:bg-surface-2"}`}>
-                    <Button variant="ghost" className="h-auto min-w-0 flex-1 justify-start gap-2 px-1 py-2 text-left hover:bg-transparent" onClick={() => setSelectedCloudId(item.id)} onDoubleClick={() => void openCloud(item)} disabled={cloudBusy !== null}>
+                    <Button variant="ghost" className="h-auto min-w-0 flex-1 justify-start gap-2 px-1 py-2 text-left hover:bg-transparent" onPointerUp={(e) => { if (e.pointerType === "touch" || e.pointerType === "pen") { e.preventDefault(); setSelectedCloudId(item.id); void openCloud(item); } }} onClick={(e) => { setSelectedCloudId(item.id); if (window.matchMedia("(pointer: coarse)").matches && e.detail === 0) void openCloud(item); }} onDoubleClick={() => void openCloud(item)} disabled={cloudBusy !== null}>
                       <span className="flex size-7 shrink-0 items-center justify-center text-primary"><FileMusic className="size-4" /></span>
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 truncate font-display text-xs font-semibold">
