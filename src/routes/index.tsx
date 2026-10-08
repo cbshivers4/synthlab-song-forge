@@ -111,6 +111,7 @@ function DetachedPanels() {
   const ids = useDetached();
   const { selected, tracks } = useStudio();
   const drumTrack = selected?.kind === "drum" ? selected : tracks.find((t) => t.kind === "drum");
+  const pianoTrack = selected?.patch ? selected : tracks.find((t) => t.patch);
   const synthTrack = selected?.patch && selected.kind !== "sampler" ? selected : tracks.find((t) => t.patch && t.kind !== "sampler");
   const meta: Record<DetachId, { title: string; icon: React.ReactNode; body: React.ReactNode }> = {
     mixer: { title: "MIXER", icon: <SlidersHorizontal className="size-4" />, body: <Mixer /> },
@@ -274,7 +275,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
         {panel === "mixer" && <Mixer />}
         {panel === "synth" && (synthTrack ? <SynthEditor track={synthTrack} /> : <p>Select an instrument track.</p>)}
         {panel === "drums" && (drumTrack ? <DrumMachine track={drumTrack} /> : <p>Add a drum track.</p>)}
-        {panel === "piano" && (selected?.kind === "drum" ? <DrumRoll track={selected} /> : synthTrack ? <PianoRoll track={synthTrack} /> : drumTrack ? <DrumRoll track={drumTrack} /> : <p>Select an instrument, MIDI or drum track.</p>)}
+        {panel === "piano" && (selected?.kind === "drum" ? <DrumRoll track={selected} /> : pianoTrack ? <PianoRoll track={pianoTrack} /> : drumTrack ? <DrumRoll track={drumTrack} /> : <p>Select an instrument, MIDI or drum track.</p>)}
         {panel === "settings" && <Settings />}{panel === "keys" && <Keyboard />}{panel === "browser" && <Browser />}
         {panel === "plugins" && <PluginRack />}{panel === "appearance" && <Appearance />}{panel === "sampler" && <Sampler />}
         {panel === "pads" && <PadSampler />}{panel === "mastering" && <Mastering />}{panel === "notes" && <NotesPanel />}
@@ -298,7 +299,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
         ))}
       {panel === "piano" &&
         // a drum track has no melodic notes, so it opens the drum roll instead
-        (selected?.kind === "drum" || (!synthTrack && drumTrack) ? (
+        (selected?.kind === "drum" || (!pianoTrack && drumTrack) ? (
           <div className="space-y-2">
             <DrumRoll track={(selected?.kind === "drum" ? selected : drumTrack)!} />
             <MidiLearnStrip
@@ -306,10 +307,10 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
               label={(selected?.kind === "drum" ? selected : drumTrack)!.name}
             />
           </div>
-        ) : synthTrack ? (
+        ) : pianoTrack ? (
           <div className="space-y-2">
-            <PianoRoll track={synthTrack} />
-            <MidiLearnStrip id={synthTrack.id} label={synthTrack.name} />
+            <PianoRoll track={pianoTrack} />
+            <MidiLearnStrip id={pianoTrack.id} label={pianoTrack.name} />
           </div>
         ) : (
           <p className="text-sm text-muted-foreground">Select an instrument, MIDI or drum track to edit its notes.</p>
