@@ -20,6 +20,7 @@ import { useApp } from "@/lib/synclab/app-state";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import synclabLogoAsset from "@/assets/synclab-logo-neon.jpg.asset.json";
+import studioPhoto from "@/assets/hw-synth.jpg";
 import { toast } from "sonner";
 import { LegalFooter } from "@/components/legal/LegalPage";
 import { openHelp } from "@/components/studio/HelpCenter";
@@ -123,26 +124,28 @@ export function WelcomeScreen() {
   };
 
   return (
-    <div className="min-h-[100dvh] overflow-y-auto bg-background text-foreground">
-      <div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-start gap-8 px-4 py-6 sm:px-6 sm:py-10 md:grid-cols-2 md:items-center lg:grid-cols-12 lg:gap-16">
+    <div className="login-screen min-h-[100dvh] overflow-y-auto bg-background text-foreground">
+      <img src={studioPhoto} alt="" className="login-photo" />
+      <div className="login-inner mx-auto grid w-full grid-cols-1 items-center gap-8 px-5 py-8 sm:px-8 sm:py-12 md:grid-cols-2 lg:gap-16">
         {/* Brand & features side */}
-        <div className="flex flex-col items-center text-center sm:col-span-2 sm:items-start sm:text-left md:col-span-1 lg:col-span-7">
-          <img src={synclabLogoAsset.url} alt="SYNCLAB" className="mb-6 h-36 w-36 rounded-xl border border-border object-cover shadow-xl sm:mb-10 sm:h-56 sm:w-56" />
+        <div className="flex min-w-0 flex-col items-start text-left">
+          <img src={synclabLogoAsset.url} alt="SYNCLAB" className="mb-6 size-28 rounded-lg border border-border object-cover sm:size-36" />
 
-          <div className="mb-7 space-y-3 sm:mb-10 sm:space-y-5">
-            <h1 className="font-display text-4xl font-extrabold leading-[1.02] sm:text-5xl md:text-7xl">
+          <div className="login-brand-copy mb-7 space-y-4">
+            <h1 className="font-display text-4xl font-extrabold leading-tight sm:text-5xl">SYNCLAB</h1>
+            <p className="font-display text-lg font-semibold leading-relaxed sm:text-xl">
               CREATE. RECORD.
               <br />
               PRODUCE.{" "}
               <span className="text-primary">FINISH.</span>
-            </h1>
-            <p className="max-w-md text-lg font-medium tracking-tight text-muted-foreground">
-              The all-in-one workstation for the next generation of electronic sound design.
+            </p>
+            <p className="max-w-md text-sm text-muted-foreground">
+              Detroit Electronic Sound Design
             </p>
           </div>
 
-          <ul className="hidden w-full grid-cols-1 gap-y-3 sm:grid lg:grid-cols-2 lg:gap-x-10">
-            {FEATURES.map((f) => (
+          <ul className="hidden w-full grid-cols-2 gap-4 md:grid">
+            {FEATURES.slice(0, 4).map((f) => (
               <li key={f.title} className="group flex items-start gap-3">
                 <span
                   aria-hidden
@@ -162,8 +165,10 @@ export function WelcomeScreen() {
         </div>
 
         {/* Auth side */}
-        <div className="md:col-span-1 lg:col-span-5">
-          <div className="overflow-hidden rounded-md border border-border bg-card p-5 shadow-xl sm:p-8">
+        <div className="min-w-0">
+          <div className="login-auth overflow-hidden rounded-lg border border-border p-5 sm:p-7">
+            <h2 className="mb-1 font-display text-2xl font-semibold">Your studio awaits.</h2>
+            <p className="mb-6 text-sm text-muted-foreground">Sign in to SYNCLAB</p>
             <div className="space-y-6">
               <div className="space-y-4">
                 <Button className="min-h-14 w-full text-base font-bold" onClick={() => setMode("signup")}>
@@ -251,13 +256,13 @@ export function WelcomeScreen() {
               Free for 7 days, then $19.95/month or $149/year.
             </p>
             <LegalFooter className="mt-3" />
-            <button
+            <Button variant="link"
               type="button"
               onClick={() => openHelp("help")}
               className="mt-2 text-[11px] text-muted-foreground underline underline-offset-2 hover:text-foreground"
             >
               SYNCLAB Help Center
-            </button>
+            </Button>
           </div>
         </div>
       </div>

@@ -31,7 +31,7 @@ Timeline names stay single-line; phone actions prioritize REC/AUTO with isolated
 Playhead stays within track rows; headers, ruler and song lane share its width variable, including large phone controls, to avoid covering buttons.
 Synth sections share wrapping tabs; X-Y pads dispatch through updatePatch to stay synchronized with knobs and saved presets without removing controls.
 Editors shrink below saved height to preserve the timeline minimum and avoid toolbar clipping.
-Drum artwork uses semantic inline SVG within unchanged pads to preserve controls and audio.
+Drum artwork uses semantic SVG; sort display copies and bank slices by stable IDs/indices to preserve audio and MIDI.
 
 Phone drum tabs reuse DrumRoll and instrument pads for edits/tap recording; sound/kit tabs preserve controls without duplication.
 Embedded keyboards reuse Keyboard with a track or sample callback and shared typing toggle; claim events once and yield pad shortcuts to prevent doubled notes.

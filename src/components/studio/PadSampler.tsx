@@ -750,7 +750,7 @@ export function PadSampler() {
                   <Trash2 className="size-4" />
                 </span>
               )}
-            </button>
+            </Button>
           );
         })}
       </div>
