@@ -851,10 +851,6 @@
 .phone-console-rail { overflow-y: auto; touch-action: pan-y; }
 @media (max-height: 430px) {
   .phone-console .phone-mix-control-page { display: flex; }
-  .phone-console .mx-phone[data-phone-controls="levels"] .phone-mix-channel > div:nth-child(4),
-  .phone-console .mx-phone[data-phone-controls="levels"] .phone-mix-channel > div:nth-child(5),
-  .phone-console .mx-phone[data-phone-controls="performance"] .phone-mix-channel > div:nth-child(2),
-  .phone-console .mx-phone[data-phone-controls="performance"] .phone-mix-channel > div:nth-child(3) { display: flex; }
   .phone-console .mx-phone .mx-console-toolbar { min-height: 32px; height: 32px; }
   .phone-console .mobile-timeline > .shrink-0:nth-child(2) { max-height: 80px; }
   .phone-console .mobile-timeline > .shrink-0:nth-child(2) > div > div:nth-child(2) { height: 40px; min-height: 40px; }

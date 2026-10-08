@@ -166,16 +166,6 @@ function DetachedPanels() {
 function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: FloatState) => FloatState) => void }) {
   const isMobile = useIsMobile();
   const { selected, tracks, panel, setPanel, select } = useStudio();
-  const [mixPage, setMixPage] = useState(0);
-  const [mixControlPage, setMixControlPage] = useState<"levels" | "performance">("levels");
-  const [mixChannels, setMixChannels] = useState(3);
-  useEffect(() => {
-    const update = () => setMixChannels(Math.max(1, Math.min(3, Math.floor((window.innerWidth - 80) / 200) - 1)));
-    update(); window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
-  }, []);
-  const maxMixPage = Math.max(0, Math.ceil(tracks.length / mixChannels) - 1);
-  const currentMixPage = Math.min(mixPage, maxMixPage);
   // Resizable editor height, remembered between sessions.
   const [rackH, setRackH] = useState(() => {
     if (typeof window === "undefined") return 380;
