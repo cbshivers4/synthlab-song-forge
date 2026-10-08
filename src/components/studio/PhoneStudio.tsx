@@ -32,9 +32,6 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
   const [menuPage, setMenuPage] = useState(0);
   const consoleRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    const query = matchMedia("(orientation: portrait)");
-    const update = () => setUpright(query.matches);
-    update(); query.addEventListener("change", update);
     document.documentElement.classList.add("phone-console-active");
     const size = () => {
       const el = consoleRef.current;
