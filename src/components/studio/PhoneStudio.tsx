@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { AudioLines, FolderOpen, Home, Music2, Scissors, SlidersHorizontal, Wand2, Settings2, Radio, Disc3, Grid2x2, Piano, Gauge, FileSearch, Cpu, Palette, NotebookPen, LifeBuoy, RotateCw } from "lucide-react";
+import { AudioLines, FolderOpen, Home, Music2, Scissors, SlidersHorizontal, Wand2, Settings2, Radio, Disc3, Grid2x2, Piano, Gauge, FileSearch, Cpu, Palette, NotebookPen, LifeBuoy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStudio, type PanelId } from "@/lib/synclab/store";
 import { useApp } from "@/lib/synclab/app-state";
@@ -28,14 +28,10 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
   const { panel, setPanel } = useStudio();
   const { setStage } = useApp();
   const [room, setRoom] = useState<"edit" | "sounds" | "tools">("edit");
-  const [upright, setUpright] = useState(false);
-  const [allowPortrait, setAllowPortrait] = useState(false);
+  // Mobile studio opens automatically — no rotate gate.
   const [menuPage, setMenuPage] = useState(0);
   const consoleRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    const query = matchMedia("(orientation: portrait)");
-    const update = () => setUpright(query.matches);
-    update(); query.addEventListener("change", update);
     document.documentElement.classList.add("phone-console-active");
     const size = () => {
       const el = consoleRef.current;
@@ -44,7 +40,7 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
     size(); window.addEventListener("resize", size);
     const observer = new ResizeObserver(size);
     observer.observe(document.body);
-    return () => { observer.disconnect(); query.removeEventListener("change", update); window.removeEventListener("resize", size); document.documentElement.classList.remove("phone-console-active"); };
+    return () => { observer.disconnect(); window.removeEventListener("resize", size); document.documentElement.classList.remove("phone-console-active"); };
   }, []);
   const enter = (next: typeof room) => { setPanel(null); setRoom(next); setMenuPage(0); };
   const list = room === "sounds" ? sounds : tools;
@@ -66,6 +62,5 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
         <footer className="grid h-14 shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-t border-border px-4"><Button variant="ghost" className="h-12 justify-start" onClick={() => { requestBluetoothSettings(); setPanel("settings"); }}><Radio />Bluetooth & audio</Button><div className="flex gap-1"><Button variant="outline" className="h-12" onClick={() => openExport()}>Export</Button><Button variant="outline" size="icon" className="size-12" aria-label="Help" onClick={() => openHelp("help")}><LifeBuoy /></Button></div></footer>
       </div>}
     </main>
-    {upright && !allowPortrait && <div className="phone-rotate fixed inset-0 z-[90] flex flex-col items-center justify-center gap-5 bg-background px-6 text-center"><img src={logo.url} alt="SYNCLAB" className="size-24 rounded-lg" /><RotateCw className="size-12 text-primary" /><h2 className="text-xl font-semibold">Turn your phone sideways</h2><p className="max-w-xs text-sm text-muted-foreground">Landscape studio</p><Button className="h-12" variant="outline" onClick={() => setAllowPortrait(true)}>Continue upright</Button><Button className="h-12" variant="ghost" onClick={() => setStage("start")}>Projects</Button></div>}
   </div>;
 }
