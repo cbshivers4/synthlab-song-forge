@@ -3021,7 +3021,7 @@ export function Timeline({ phonePaged = false }: { phonePaged?: boolean }) {
   }, [phonePaged]);
   const maxTrackPage = Math.max(0, Math.ceil(tracks.length / trackCount) - 1);
   const page = Math.min(trackPage, maxTrackPage);
-  const shownTracks = phonePaged ? tracks.slice(page * trackCount, (page + 1) * trackCount) : tracks;
+  const shownTracks = tracks;
 
   // The ruler and song parts live above the vertically scrolling tracks, but
   // must share their horizontal coordinate system when the overview pans.

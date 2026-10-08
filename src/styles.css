@@ -782,9 +782,7 @@
 .phone-console .phone-tool-panel > div:first-of-type button { height: 48px; }
 .phone-console .phone-tool-panel > .absolute, .phone-console .editor-track-actions { display: none; }
 .phone-console .phone-tool-panel .phone-pages { padding-bottom: 0; }
-.phone-console .phone-page-viewport { touch-action: none; scrollbar-width: none; }
-.phone-console .phone-page-viewport * { scrollbar-width: none; }
-.phone-console .phone-page-viewport *::-webkit-scrollbar { display: none; }
+.phone-console .phone-page-viewport { overflow: auto; touch-action: pan-x pan-y; scrollbar-width: thin; }
 .phone-console .phone-page-viewport button, .phone-console .phone-page-viewport [role="combobox"] { min-height: 48px; touch-action: manipulation; }
 .phone-console .phone-editor-content:has(> .mx-phone) { height: 100%; padding: 0; }
 .phone-console .mx-phone { height: 100%; --primary: var(--accent) !important; --primary-foreground: var(--background) !important; background: var(--background); }
@@ -799,7 +797,7 @@
 .phone-console .mx-phone .phone-mix-channel > div.h-\[120px\] { height: 48px; }
 .phone-console .mobile-timeline { min-height: 0; --timeline-header-width: 294px; }
 .phone-console .mobile-timeline > .shrink-0 { flex-shrink: 0; }
-.phone-console #timeline-scroll { overflow: hidden; touch-action: none; }
+.phone-console #timeline-scroll { overflow: auto; touch-action: pan-x pan-y; }
 .phone-console [data-timeline-track-rows] > div > .relative.flex { min-height: 140px; }
 .phone-console .phone-page-viewport > .mobile-timeline { height: 100%; }
 .phone-console .mobile-timeline > .shrink-0 > div > .sticky { height: 40px; }
@@ -843,12 +841,20 @@
 .phone-console .phone-page-controls { height: 48px; padding-inline: 8px; }
 .phone-console .phone-tool-panel .phone-page-controls { min-height: 48px; }
 .phone-console .phone-page-viewport > .mobile-timeline .track-touch-header { overflow: hidden; }
+.phone-console .phone-editor-content:has(> .mx-phone) { height: auto; }
+.phone-console .mx-phone { height: auto; overflow: visible; }
+.phone-console .mx-phone .mobile-mixer-strips { flex: none; overflow: auto; touch-action: pan-x pan-y; }
+.phone-console .mx-phone .phone-mix-channel { height: 480px; }
+.phone-console .mx-phone .mobile-mixer-strips > .bg-surface { height: 480px; }
+.phone-console .phone-timeline-heading button[aria-label="Previous tracks"],
+.phone-console .phone-timeline-heading button[aria-label="Next tracks"] { display: none; }
+.phone-console-rail { overflow-y: auto; touch-action: pan-y; }
 @media (max-height: 430px) {
   .phone-console .phone-mix-control-page { display: flex; }
   .phone-console .mx-phone[data-phone-controls="levels"] .phone-mix-channel > div:nth-child(4),
   .phone-console .mx-phone[data-phone-controls="levels"] .phone-mix-channel > div:nth-child(5),
   .phone-console .mx-phone[data-phone-controls="performance"] .phone-mix-channel > div:nth-child(2),
-  .phone-console .mx-phone[data-phone-controls="performance"] .phone-mix-channel > div:nth-child(3) { display: none; }
+  .phone-console .mx-phone[data-phone-controls="performance"] .phone-mix-channel > div:nth-child(3) { display: flex; }
   .phone-console .mx-phone .mx-console-toolbar { min-height: 32px; height: 32px; }
   .phone-console .mobile-timeline > .shrink-0:nth-child(2) { max-height: 80px; }
   .phone-console .mobile-timeline > .shrink-0:nth-child(2) > div > div:nth-child(2) { height: 40px; min-height: 40px; }

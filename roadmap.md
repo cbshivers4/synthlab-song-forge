@@ -146,6 +146,7 @@
 - [x] My Library (cloud/computer folders for samples, synth, drums, notes) + distinct effect window looks
 
 ## Current request
+- [ ] Restore native phone scrolling across editors, menus, all timeline tracks and mixer channels; preserve landscape styling
 - [x] Apply selected left-rail landscape phone shell, graphite/teal tokens and orientation handling; desktop workspace retained
 - [x] Replace phone viewport scrolling with overlapping timeline, mixer and instrument/tool pages; short-screen mixer uses levels/performance pages
 - [x] Verify signed-in navigation, mixer mute changes, channel/track pages, count-in selection, drum/settings access and desktop return at 942×508, 844×390 and 667×375; physical phone rotation remains hardware-dependent
