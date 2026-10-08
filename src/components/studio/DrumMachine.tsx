@@ -635,16 +635,19 @@ export function DrumMachine({ track }: { track: Track }) {
                 <Knob label="CRUSH" midiTarget={{ id: track.id, param: `drum:${focusPad.id}:crush` }} value={focusPad.crush ?? 0} onChange={(v) => updatePad(track.id, focusPad.id, { crush: v })} />
                 <Knob label="MUTATE" midiTarget={{ id: track.id, param: `drum:${focusPad.id}:mutation` }} value={focusPad.mutation ?? 0.2} onChange={(v) => updatePad(track.id, focusPad.id, { mutation: v })} />
               </Section>
-              <div className="flex items-center gap-2">
-                <span className="label-xs text-[9px]">CHOKE</span>
-                <div className="flex gap-0.5">
+              <div className="rounded-md border border-border bg-surface/80 p-2.5">
+                <div className="mb-2 flex items-center gap-1.5">
+                  <span className={cn("size-1.5 rounded-full", (focusPad.choke ?? 0) > 0 ? "bg-primary" : "bg-muted-foreground/40")} />
+                  <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-foreground/90">Choke</span>
+                </div>
+                <div className="flex gap-1.5">
                   {[0, 1, 2, 3, 4].map((g) => (
                     <button
                       key={g}
                       title={g === 0 ? "No choke group" : `Choke group ${g} — pads in the same group cut each other off`}
                       onClick={() => updatePad(track.id, focusPad.id, { choke: g })}
                       className={cn(
-                        "h-6 w-6 rounded-[3px] border font-mono text-[10px]",
+                        "h-10 flex-1 rounded-md border font-mono text-sm font-semibold transition-colors",
                         (focusPad.choke ?? 0) === g
                           ? "border-primary bg-primary/20 text-primary"
                           : "border-border bg-surface-2 text-muted-foreground hover:text-foreground",
@@ -654,6 +657,9 @@ export function DrumMachine({ track }: { track: Track }) {
                     </button>
                   ))}
                 </div>
+                <p className="mt-1.5 font-mono text-[9px] leading-snug text-muted-foreground">
+                  Pads in the same group cut each other off — like closed and open hats.
+                </p>
               </div>
               <div className="flex flex-wrap gap-1">
                 <Button size="sm" variant="ghost" className="h-6 px-1.5 text-[10px]" onClick={() => flam(focusPad.id, focusPad.steps)}>Flam</Button>
