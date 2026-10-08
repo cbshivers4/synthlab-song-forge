@@ -18,7 +18,7 @@ const sounds = [
   { label: "Live View", icon: Radio, panel: "live" }, { label: "Live Looper", icon: Disc3, panel: "looper" },
 ] as const;
 const tools = [
-  { label: "Piano Roll", icon: Piano, panel: "piano" }, { label: "Effects & Plugins", icon: Cpu, panel: "plugins" },
+  { label: "Effects & Plugins", icon: Cpu, panel: "plugins" },
   { label: "Mastering", icon: Gauge, panel: "mastering" }, { label: "Reference", icon: FileSearch, panel: "reference" },
   { label: "Phone settings", icon: Settings2, panel: "settings" }, { label: "Appearance", icon: Palette, panel: "appearance" },
   { label: "Track notes", icon: NotebookPen, panel: "notes" }, { label: "Other apps", icon: AudioLines, panel: "apps" },
@@ -62,7 +62,7 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
       {panel && children}
       {!panel && room !== "edit" && <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <header className="grid h-14 shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center border-b border-border px-5"><h2 className="truncate text-base font-semibold">{room === "sounds" ? "Sounds & instruments" : "Effects & tools"}</h2><span className="text-xs text-muted-foreground">SYNCLAB</span></header>
-        <div className="phone-room-grid grid min-h-0 flex-1 grid-cols-4 grid-rows-2 gap-3 p-4">{list.slice(menuPage * 8, menuPage * 8 + 8).map(({ label, icon: Icon, panel: next }) => <Button key={label} variant="outline" className="h-full min-h-12 min-w-0 flex-col gap-2 whitespace-normal bg-surface text-center text-xs" onClick={() => setPanel(next as PanelId)}><Icon className="size-7 text-primary" /><span>{label}</span></Button>)}</div>
+        <div className="phone-room-grid grid min-h-0 flex-1 grid-cols-4 grid-rows-2 gap-3 overflow-auto p-4">{list.slice(menuPage * 8, menuPage * 8 + 8).map(({ label, icon: Icon, panel: next }, index) => <Button key={label} variant="outline" data-sound-family={index % 4} className="phone-sound-tile h-full min-h-20 min-w-0 flex-col gap-2 whitespace-normal text-center text-xs" onClick={() => setPanel(next as PanelId)}><span className="phone-sound-icon flex size-12 shrink-0 items-center justify-center rounded-lg"><Icon className="size-8" /></span><span className="font-semibold">{label}</span></Button>)}</div>
         <footer className="grid h-14 shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-t border-border px-4"><Button variant="ghost" className="h-12 justify-start" onClick={() => { requestBluetoothSettings(); setPanel("settings"); }}><Radio />Bluetooth & audio</Button><div className="flex gap-1"><Button variant="outline" className="h-12" onClick={() => openExport()}>Export</Button><Button variant="outline" size="icon" className="size-12" aria-label="Help" onClick={() => openHelp("help")}><LifeBuoy /></Button></div></footer>
       </div>}
     </main>

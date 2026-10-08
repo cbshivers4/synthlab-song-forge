@@ -109,8 +109,8 @@ function Waveform({ track, onSlice, drawSlice = false }: { track: Track; onSlice
           className="absolute inset-y-0 z-20 w-3 -translate-x-1/2 cursor-col-resize"
           style={{ left: `${c * 100}%` }}
         >
-          <span className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-accent" />
-          <span className="absolute bottom-1 left-1/2 -translate-x-1/2 rounded-sm bg-accent px-1 font-mono text-[9px] text-accent-foreground">
+          <span className="absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 bg-destructive" />
+          <span className="absolute bottom-1 left-1/2 -translate-x-1/2 rounded-sm bg-destructive px-1 font-mono text-[9px] text-destructive-foreground">
             {i + 1}
           </span>
         </div>
@@ -155,6 +155,7 @@ export function Sampler() {
   const [over, setOver] = useState(false);
   /** chop pad currently held down */
   const [held, setHeld] = useState<number | null>(null);
+  const [chopBank, setChopBank] = useState(0);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
   const samplerTracks = tracks.filter((t) => t.kind === "sampler");
@@ -695,8 +696,13 @@ export function Sampler() {
 
             {chops.length > 0 ? (
               <>
-                <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 xl:grid-cols-8 xl:gap-3">
-                  {chops.map((c, i) => {
+                <div className="flex items-center gap-2" role="group" aria-label="Chop banks">
+                  <span className="label-xs">BANK</span>
+                  {["A", "B", "C", "D"].map((label, bank) => <Button key={label} variant={Math.min(chopBank, Math.floor((chops.length - 1) / 16)) === bank ? "default" : "outline"} className="size-12 p-0" aria-label={`Chop bank ${label}`} aria-pressed={Math.min(chopBank, Math.floor((chops.length - 1) / 16)) === bank} disabled={bank * 16 >= chops.length} onClick={() => setChopBank(bank)}>{label}</Button>)}
+                </div>
+                <div className="sampler-chop-grid grid grid-cols-5 gap-2">
+                  {chops.slice(Math.min(chopBank, Math.floor((chops.length - 1) / 16)) * 16, (Math.min(chopBank, Math.floor((chops.length - 1) / 16)) + 1) * 16).map((c, localIndex) => {
+                    const i = Math.min(chopBank, Math.floor((chops.length - 1) / 16)) * 16 + localIndex;
                     const color = chopColor(i);
                     const next = chops[i + 1] ?? s.end;
                     const slice = s.peaks.slice(
@@ -732,7 +738,7 @@ export function Sampler() {
                             : `linear-gradient(145deg, color-mix(in hsl, ${color} 28%, transparent), color-mix(in hsl, ${color} 8%, transparent))`,
                           boxShadow: live ? `0 0 18px ${color}` : undefined,
                         }}
-                        className="relative flex h-auto aspect-square min-w-0 touch-none flex-col items-center justify-between rounded-lg border-2 p-4 font-mono text-xs transition-all select-none active:scale-[0.97]"
+                        className="relative flex h-24 min-w-0 touch-none flex-col items-center justify-between rounded-md border-2 p-2 font-mono text-xs transition-all select-none active:scale-[0.97]"
                       >
                         <span className="relative z-10 text-sm text-foreground">{i + 1}</span>
                         <span className="pointer-events-none absolute inset-x-1 top-5 bottom-4">

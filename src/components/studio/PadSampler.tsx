@@ -604,7 +604,7 @@ export function PadSampler() {
         </span>
       </div>
 
-      <div className={`grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-3 ${skinBackground(skin) ? "rounded-xl p-3" : ""}`} style={{ ...skinBackground(skin), cursor: skin.image ? "move" : undefined }} {...imageDrag}>
+      <div className={`performance-pad-grid grid grid-cols-4 gap-2 ${skinBackground(skin) ? "rounded-lg p-2" : ""}`} style={{ ...skinBackground(skin), cursor: skin.image ? "move" : undefined }} {...imageDrag}>
         {Array.from({ length: PADS_PER_BANK }, (_, i) => {
           const id = index(i);
           const pad = pads[id];
@@ -622,7 +622,7 @@ export function PadSampler() {
             }
           };
           return (
-            <button
+            <Button variant="ghost"
               key={id}
               type="button"
               data-loaded={Boolean(pad)}
@@ -697,7 +697,7 @@ export function PadSampler() {
                         ? { borderColor: `color-mix(in hsl, ${c} 60%, transparent)` }
                         : undefined
               }
-              className={`sample-pad-wallpaper relative flex aspect-square min-w-0 touch-none flex-col items-start justify-between rounded-lg border-2 p-4 text-left transition-all select-none active:scale-[0.97] ${
+              className={`sample-pad-wallpaper relative flex h-28 min-w-0 touch-none flex-col items-start justify-between whitespace-normal rounded-md border-2 p-2 text-left transition-all select-none active:scale-[0.97] ${
                 pad || recording ? "" : "border-dashed border-border bg-surface-2/40 hover:border-muted-foreground/60"
               } ${recording ? "animate-pulse" : ""}`}
             >

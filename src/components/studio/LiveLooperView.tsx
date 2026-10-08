@@ -79,7 +79,7 @@ function LoopDonut({ slot, send }: { slot: LoopSlot; send: (i: number) => void }
     <div className="flex min-w-0 flex-col items-center gap-2 border-b border-border pb-4">
       <Button
         type="button" variant="ghost"
-        className="relative aspect-square h-auto w-full max-w-72 rounded-full p-0 text-foreground hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-primary"
+        className="relative aspect-square h-auto w-full max-w-36 rounded-full p-0 text-foreground hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-primary"
         aria-label={`Loop ${slot.index + 1}: ${slot.state === "recording" && slot.recEnd === null ? "close recording" : labels[slot.state]}`}
         onClick={() => void looper.tap(slot.index).catch((error) => toast.error("Couldn't start the looper", { description: error instanceof Error ? error.message : undefined }))}
       >
@@ -226,7 +226,7 @@ export function LiveLooperView() {
         </div>
         <span className="ml-auto font-mono text-xs text-muted-foreground">{looper.mode === "sync" ? `${looper.bars} ${looper.bars === 1 ? "BAR" : "BARS"} · ${transport.bpm} BPM` : "FREE LENGTH"}</span>
       </div>
-      <div className="grid grid-cols-1 gap-x-4 gap-y-6 min-[560px]:grid-cols-2 2xl:grid-cols-4">
+      <div className="looper-pad-grid grid grid-cols-4 gap-x-2 gap-y-4">
         {looper.slots.map((slot) => <LoopDonut key={slot.index} slot={slot} send={send} />)}
       </div>
       <div className="flex flex-wrap gap-2 border-t border-border pt-4">
