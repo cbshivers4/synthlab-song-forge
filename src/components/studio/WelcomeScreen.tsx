@@ -133,8 +133,9 @@ export function WelcomeScreen() {
 
 
           <div className="login-brand-copy mb-7 space-y-4">
-            <h1 className="font-display text-4xl font-extrabold leading-tight sm:text-5xl">SYNCLAB</h1>
-            <p className="font-display text-lg font-semibold leading-relaxed sm:text-xl">
+            <h1 className="sr-only">SYNCLAB — CREATE. RECORD. PRODUCE. FINISH.</h1>
+            <p className="font-display text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl">
+
               CREATE. RECORD.
               <br />
               PRODUCE.{" "}

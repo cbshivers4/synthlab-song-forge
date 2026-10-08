@@ -880,10 +880,11 @@
 
 /* Phone portrait: stack the mark above the sign-in card, centred, so it is never stranded. */
 @media (orientation: portrait) {
-  .phone-console.phone-entry .phone-page-viewport .login-screen .login-inner { grid-template-columns: minmax(0, 1fr); gap: 20px; }
-  .phone-console.phone-entry .phone-page-viewport .login-screen .login-brand { align-items: center; text-align: center; }
+  .phone-console.phone-entry .phone-page-viewport > div > .mx-auto.grid.login-inner { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .phone-console.phone-entry .phone-page-viewport > div > .mx-auto.grid > div:first-child.login-brand { align-items: center; text-align: center; }
   .phone-console.phone-entry .phone-page-viewport > div > .mx-auto.grid > div:first-child > img.login-logo { width: 184px; height: 184px; margin-bottom: 16px; }
 }
+
 
 @media (max-height: 430px) {
   .phone-console .phone-mix-control-page { display: flex; }
