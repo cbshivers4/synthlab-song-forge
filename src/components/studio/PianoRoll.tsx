@@ -563,6 +563,21 @@ export function PianoRoll({ track }: { track: Track }) {
                     onPointerDown={(e) => onNoteDown(e, n, true)}
                      className="absolute inset-y-0 right-0 w-1.5 cursor-ew-resize touch-none bg-clip-midi-dark/35"
                   />
+                  {selected && (
+                    <button
+                      type="button"
+                      aria-label="Delete note"
+                      title="Delete this note"
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        del(n.id);
+                      }}
+                      className="absolute -top-2 -right-2 z-10 flex size-5 items-center justify-center rounded-full bg-destructive font-mono text-[10px] leading-none text-destructive-foreground shadow-sm"
+                    >
+                      ×
+                    </button>
+                  )}
                 </div>
               );
             })}
@@ -656,7 +671,7 @@ export function PianoRoll({ track }: { track: Track }) {
 
       <p className="label-xs">
         DOUBLE-CLICK TO DRAW · DRAG A NOTE TO MOVE · DRAG EMPTY SPACE TO SELECT A GROUP · OCT +/− MOVES THE SELECTION AN OCTAVE ·
-        RIGHT-CLICK TO DELETE · SHIFT-CLICK TO MULTI-SELECT · DRAG BARS IN VELOCITY LANE
+        RIGHT-CLICK OR TAP A NOTE'S × TO DELETE · SHIFT-CLICK TO MULTI-SELECT · DRAG BARS IN VELOCITY LANE
       </p>
     </div>
   );

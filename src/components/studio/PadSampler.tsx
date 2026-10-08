@@ -745,9 +745,9 @@ export function PadSampler() {
                       clearPad(id);
                     }
                   }}
-                  className="absolute bottom-1 right-1 flex size-5 items-center justify-center rounded-sm bg-black/45 text-white/80 opacity-70 transition-opacity hover:bg-destructive hover:text-white hover:opacity-100"
+                  className="absolute bottom-1 right-1 flex size-8 items-center justify-center rounded-sm bg-black/45 text-white/80 opacity-80 transition-opacity hover:bg-destructive hover:text-white hover:opacity-100"
                 >
-                  <Trash2 className="size-3" />
+                  <Trash2 className="size-4" />
                 </span>
               )}
             </button>
