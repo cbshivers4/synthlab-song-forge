@@ -318,7 +318,7 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
                               v > 0
                                 ? "var(--gradient-neon)"
                                 : i % 4 === 0
-                                  ? "color-mix(in oklab, var(--surface-2) 90%, transparent)"
+                                  ? "color-mix(in oklab, var(--drum-pad-dark) 78%, var(--surface-2))"
                                   : "color-mix(in oklab, var(--surface) 80%, transparent)",
                           }}
                           onPointerDown={(e) => {
