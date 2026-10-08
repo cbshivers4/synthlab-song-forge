@@ -3012,9 +3012,11 @@ export function Timeline({ phonePaged = false }: { phonePaged?: boolean }) {
   const [trackCount, setTrackCount] = useState(3);
   useEffect(() => {
     if (!phonePaged) return;
-    const update = () => setTrackCount(Math.max(1, Math.min(3, Math.floor((window.innerHeight - 280) / 110))));
+    const update = () => setTrackCount(Math.max(1, Math.min(3, Math.floor((scrollRef.current?.clientHeight ?? 140) / 141))));
+    const observer = new ResizeObserver(update);
+    if (scrollRef.current) observer.observe(scrollRef.current);
     update(); window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
+    return () => { observer.disconnect(); window.removeEventListener("resize", update); };
   }, [phonePaged]);
   const maxTrackPage = Math.max(0, Math.ceil(tracks.length / trackCount) - 1);
   const page = Math.min(trackPage, maxTrackPage);
@@ -3059,7 +3061,7 @@ export function Timeline({ phonePaged = false }: { phonePaged?: boolean }) {
       <div className="shrink-0 overflow-hidden">
         <div ref={timelineHeaderRef} className="min-w-[720px] sm:min-w-0">
           <Ruler />
-          <SectionLane />
+          {!phonePaged && <SectionLane />}
         </div>
       </div>
       <div id="timeline-scroll" ref={scrollRef} aria-label="Horizontal timeline" className="relative min-h-0 flex-1 overflow-auto overscroll-x-contain">
