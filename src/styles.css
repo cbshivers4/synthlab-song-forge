@@ -718,7 +718,10 @@
 .mx-phone .mx-console-toolbar { white-space: nowrap; }
 .mx-phone .mx-console-toolbar > * { flex-shrink: 0; }
 .mx-phone .mx-console-toolbar button { min-height: 48px; min-width: 48px; }
-.mx-phone .mobile-mixer-strips { scroll-snap-type: x proximity; touch-action: pan-x; }
+.mx-phone .mobile-mixer-strips { scroll-snap-type: x proximity; touch-action: pan-x pan-y; }
+.mobile-studio .phone-tool-panel:has(.mx-phone) > .flex-1 { overscroll-behavior-y: contain; }
+.mobile-studio .phone-tool-panel:has(.mx-phone) > div:first-of-type { flex-shrink: 0; }
+.mx-phone > * { flex-shrink: 0; }
 .mx-phone .phone-mix-channel { width: 224px; }
 .phone-mix-channel .mx-fader[data-orientation="vertical"] { flex-direction: column; width: 48px; }
 .phone-mix-channel .mx-fader[data-orientation="vertical"] > span:first-child { width: 8px; height: 100%; }
