@@ -57,22 +57,24 @@ function DrumInstrumentIcon({ kind, className }: { kind: DrumPad["kind"]; classN
 
 /** Small vertical fader used for the A / H / D envelope sliders, Impact-style. */
 function VSlider({ label, value, min = 0, max = 1, onChange }: { label: string; value: number; min?: number; max?: number; onChange: (v: number) => void }) {
+  const pct = Math.round(((value - min) / (max - min || 1)) * 100);
   return (
-    <label className="flex w-7 flex-col items-center gap-1">
-      <Slider orientation="vertical" className="h-14" min={min} max={max} step={0.01} value={[value]} onValueChange={([v = 0]) => onChange(v)} />
+    <label className="flex w-9 flex-col items-center gap-1">
+      <Slider orientation="vertical" className="h-20" min={min} max={max} step={0.01} value={[value]} onValueChange={([v = 0]) => onChange(v)} />
       <span className="font-mono text-[9px] text-muted-foreground">{label}</span>
+      <span className="font-mono text-[8px] text-foreground/60">{pct}</span>
     </label>
   );
 }
 
 function Section({ title, active, children }: { title: string; active?: boolean; children: React.ReactNode }) {
   return (
-    <div className="rounded-[3px] border border-border bg-surface/80">
-      <div className="flex items-center gap-1.5 border-b border-border px-2 py-1">
+    <div className="overflow-hidden rounded-md border border-border bg-surface/80">
+      <div className="flex items-center gap-1.5 border-b border-border bg-surface-2/50 px-2.5 py-1.5">
         <span className={cn("size-1.5 rounded-full", active ? "bg-primary" : "bg-muted-foreground/40")} />
-        <span className="font-mono text-[10px] font-semibold uppercase tracking-widest">{title}</span>
+        <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-foreground/90">{title}</span>
       </div>
-      <div className="flex flex-wrap items-end gap-2 p-2">{children}</div>
+      <div className="flex flex-wrap items-start gap-x-2.5 gap-y-2 p-2.5">{children}</div>
     </div>
   );
 }
