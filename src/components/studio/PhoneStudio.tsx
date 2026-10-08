@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { AudioLines, FolderOpen, Home, Music2, Scissors, SlidersHorizontal, Wand2, Settings2, Radio, Disc3, Grid2x2, Piano, Gauge, FileSearch, Cpu, Palette, NotebookPen, LifeBuoy, RotateCw } from "lucide-react";
+import { AudioLines, FolderOpen, Home, Music2, Scissors, SlidersHorizontal, Wand2, Settings2, Radio, Disc3, Grid2x2, Piano, Gauge, FileSearch, Cpu, Palette, NotebookPen, LifeBuoy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStudio, type PanelId } from "@/lib/synclab/store";
 import { useApp } from "@/lib/synclab/app-state";
@@ -28,9 +28,7 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
   const { panel, setPanel } = useStudio();
   const { setStage } = useApp();
   const [room, setRoom] = useState<"edit" | "sounds" | "tools">("edit");
-  const [upright, setUpright] = useState(false);
   // Mobile studio opens automatically — no rotate gate.
-  const [allowPortrait, setAllowPortrait] = useState(true);
   const [menuPage, setMenuPage] = useState(0);
   const consoleRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
