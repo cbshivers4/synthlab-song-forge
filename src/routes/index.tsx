@@ -111,7 +111,7 @@ function DetachedPanels() {
   const ids = useDetached();
   const { selected, tracks } = useStudio();
   const drumTrack = selected?.kind === "drum" ? selected : tracks.find((t) => t.kind === "drum");
-  const synthTrack = selected?.patch ? selected : tracks.find((t) => t.patch);
+  const synthTrack = selected?.patch && selected.kind !== "sampler" ? selected : tracks.find((t) => t.patch && t.kind !== "sampler");
   const meta: Record<DetachId, { title: string; icon: React.ReactNode; body: React.ReactNode }> = {
     mixer: { title: "MIXER", icon: <SlidersHorizontal className="size-4" />, body: <Mixer /> },
     keys: { title: "KEYBOARD", icon: <KeyboardMusic className="size-4" />, body: <Keyboard /> },
@@ -198,7 +198,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
 
   const config: Record<Exclude<PanelId, null>, { title: string; icon: React.ReactNode }> = {
     mixer: { title: "MIXER", icon: <SlidersHorizontal className="size-4" /> },
-    synth: { title: selected?.kind === "sampler" ? "SAMPLER" : "SYNTH", icon: <Music2 className="size-4" /> },
+    synth: { title: "SYNTH", icon: <Music2 className="size-4" /> },
     drums: { title: "DRUM MACHINE", icon: <Disc3 className="size-4" /> },
     piano: { title: "PIANO ROLL", icon: <Piano className="size-4" /> },
     settings: { title: "SETTINGS", icon: <Settings2 className="size-4" /> },
@@ -272,7 +272,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
       </div>
       {isMobile ? <PhonePages name={current.title}><div className="phone-editor-content min-h-0 space-y-3 p-3">
         {panel === "mixer" && <Mixer />}
-        {panel === "synth" && (selected?.kind === "sampler" ? <Sampler /> : synthTrack ? <SynthEditor track={synthTrack} /> : <p>Select an instrument track.</p>)}
+        {panel === "synth" && (synthTrack ? <SynthEditor track={synthTrack} /> : <p>Select an instrument track.</p>)}
         {panel === "drums" && (drumTrack ? <DrumMachine track={drumTrack} /> : <p>Add a drum track.</p>)}
         {panel === "piano" && (selected?.kind === "drum" ? <DrumRoll track={selected} /> : synthTrack ? <PianoRoll track={synthTrack} /> : drumTrack ? <DrumRoll track={drumTrack} /> : <p>Select an instrument, MIDI or drum track.</p>)}
         {panel === "settings" && <Settings />}{panel === "keys" && <Keyboard />}{panel === "browser" && <Browser />}
@@ -282,7 +282,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
       </div></PhonePages> : <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3 pb-24 sm:pb-3">
       {panel === "mixer" && <Mixer />}
       {panel === "synth" &&
-        (selected?.kind === "sampler" ? <Sampler /> : synthTrack ? (
+        (synthTrack ? (
           <>
             <p className="label-xs mb-3">Editing {synthTrack.name}</p>
             <SynthEditor track={synthTrack} />
@@ -333,7 +333,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
       {selected && (
         <div className="editor-track-actions flex flex-nowrap items-center gap-1 overflow-x-auto whitespace-nowrap border-t border-border bg-surface/60 px-3 py-1 [&>*]:shrink-0">
           <span className="label-xs self-center">Selected: {selected.name}</span>
-          <Button size="sm" variant="ghost" className="h-6 text-[11px]" onClick={() => setPanel(selected.kind === "drum" ? "drums" : "synth")}>
+          <Button size="sm" variant="ghost" className="h-6 text-[11px]" onClick={() => setPanel(selected.kind === "drum" ? "drums" : selected.kind === "sampler" ? "sampler" : "synth")}>
             Open editor
           </Button>
           <Button size="sm" variant="ghost" className="h-6 text-[11px]" onClick={() => setPanel("piano")}>

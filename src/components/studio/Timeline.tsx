@@ -832,7 +832,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
 
   const openEditor = () => {
     select(track.id);
-    setPanel(track.kind === "drum" ? "drums" : track.kind === "audio" ? "mixer" : "synth");
+    setPanel(track.kind === "drum" ? "drums" : track.kind === "audio" ? "mixer" : track.kind === "sampler" ? "sampler" : "synth");
   };
 
   const startPhoneGesture = (e: React.PointerEvent<HTMLDivElement>) => {
