@@ -28,7 +28,7 @@ Bottom device displays read post-device or track analyser taps at 20 fps; never 
 - GRANT EXECUTE on RLS security-definer helpers to anon/authenticated/service_role; missing grants break policy reads.
 Studio panel wallpaper uses one bundled JPEG with a dark semantic overlay and per-panel skin overrides; this keeps controls legible while letting users customize each panel without external image dependencies.
 Timeline names stay single-line; phone actions scroll with REC/AUTO first, content-sized rows and isolated menu clicks to prevent clipping and unwanted editor opening.
-The arrangement playhead is scoped to the rendered track-row wrapper, never the empty workspace, so it stops after the last visible track.
+Playhead stays within track rows; headers, ruler and song lane share its width variable, including large phone controls, to avoid covering buttons.
 Synth sections share wrapping tabs; X-Y pads dispatch through updatePatch to stay synchronized with knobs and saved presets without removing controls.
 Editors shrink below saved height to preserve the timeline minimum and avoid toolbar clipping.
 Drum artwork uses semantic inline SVG within unchanged pads to preserve controls and audio.
