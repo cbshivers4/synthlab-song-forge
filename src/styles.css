@@ -771,7 +771,7 @@
 }
 .phone-console-active { overflow: hidden; }
 .phone-console h1, .phone-console h2, .phone-console h3 { font-family: "Sora", sans-serif; letter-spacing: 0; }
-.phone-console-stage > .studio-topbar { background-image: none; background-color: var(--surface); }
+.phone-console-stage > .studio-topbar, .phone-console-stage > .studio-topbar > div { background-image: none !important; background-color: var(--surface); }
 .phone-console .transport-layout { min-height: 64px; padding: 4px 12px !important; }
 .phone-console .transport-glass-group { background: var(--background); box-shadow: none; }
 .phone-console .transport-playback button { height: 48px; min-width: 48px; }
@@ -835,7 +835,19 @@
 }
 .phone-console .mobile-timeline #timeline-scroll > div > .flex.items-center,
 .phone-console .mobile-timeline #timeline-scroll > div > .m-2 { display: none; }
+.phone-console .phone-mix-control-page { display: none; }
+.phone-console .mx-phone .mobile-mixer-strips > .bg-surface { height: 100%; }
+.phone-console .phone-page-viewport > .mobile-timeline .lane-grid { height: 110px; }
+.phone-console .phone-page-viewport > .mobile-timeline .track-touch-header { overflow: hidden; }
 @media (max-height: 430px) {
+  .phone-console .phone-mix-control-page { display: flex; }
+  .phone-console .mx-phone[data-phone-controls="levels"] .phone-mix-channel > div:nth-child(4),
+  .phone-console .mx-phone[data-phone-controls="levels"] .phone-mix-channel > div:nth-child(5),
+  .phone-console .mx-phone[data-phone-controls="performance"] .phone-mix-channel > div:nth-child(2),
+  .phone-console .mx-phone[data-phone-controls="performance"] .phone-mix-channel > div:nth-child(3) { display: none; }
+  .phone-console .mx-phone .mx-console-toolbar { min-height: 32px; height: 32px; }
+  .phone-console .mobile-timeline > .shrink-0:nth-child(2) { max-height: 80px; }
+  .phone-console .mobile-timeline > .shrink-0:nth-child(2) > div > div:nth-child(2) { height: 40px; min-height: 40px; }
   .phone-console-rail { padding-block: 4px; gap: 0; }
   .phone-console-rail > .flex-1 { gap: 2px; }
   .phone-console .phone-room-button { height: 56px; }

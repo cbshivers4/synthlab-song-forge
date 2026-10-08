@@ -1561,7 +1561,7 @@ function MasterStrip({ level: peak }: { level: number }) {
   );
 }
 
-export function Mixer({ phonePage = 0, phoneChannels = 3 }: { phonePage?: number; phoneChannels?: number }) {
+export function Mixer({ phonePage = 0, phoneChannels = 3, phoneControlPage = "levels" }: { phonePage?: number; phoneChannels?: number; phoneControlPage?: "levels" | "performance" }) {
   const isMobile = useIsMobile();
   const { tracks, selectedId, select, buses, setBus, vcas, setVca, auxReturns, setAuxReturn, updateTrack, addTrack } = useStudio();
   const levels = useMeters(tracks);
@@ -1619,6 +1619,7 @@ export function Mixer({ phonePage = 0, phoneChannels = 3 }: { phonePage?: number
     <div
       className={cn("mx-console flex flex-col overflow-hidden border border-border bg-surface shadow-panel", isMobile && "mx-phone")}
       data-console={desk.id}
+      data-phone-controls={phoneControlPage}
       style={
         {
           "--mx-a": deskColors.a,

@@ -42,7 +42,9 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
       if (el) el.style.height = `${Math.max(240, window.innerHeight - el.getBoundingClientRect().top)}px`;
     };
     size(); window.addEventListener("resize", size);
-    return () => { query.removeEventListener("change", update); window.removeEventListener("resize", size); document.documentElement.classList.remove("phone-console-active"); };
+    const observer = new ResizeObserver(size);
+    observer.observe(document.body);
+    return () => { observer.disconnect(); query.removeEventListener("change", update); window.removeEventListener("resize", size); document.documentElement.classList.remove("phone-console-active"); };
   }, []);
   const enter = (next: typeof room) => { setPanel(null); setRoom(next); setMenuPage(0); };
   const list = room === "sounds" ? sounds : tools;
