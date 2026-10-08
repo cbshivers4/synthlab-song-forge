@@ -14,7 +14,7 @@ import logo from "@/assets/synclab-logo-neon.jpg.asset.json";
 const sounds = [
   { label: "Drum Machine", icon: Disc3, panel: "drums" }, { label: "Synth", icon: Piano, panel: "synth" },
   { label: "Sampler", icon: Scissors, panel: "sampler" }, { label: "Sample pads", icon: Grid2x2, panel: "pads" },
-  { label: "Sound library", icon: FolderOpen, panel: "browser" }, { label: "Keyboard", icon: Music2, panel: "keys" },
+  { label: "Sound library", icon: FolderOpen, panel: "browser" },
   { label: "Live View", icon: Radio, panel: "live" }, { label: "Live Looper", icon: Disc3, panel: "looper" },
 ] as const;
 const tools = [
