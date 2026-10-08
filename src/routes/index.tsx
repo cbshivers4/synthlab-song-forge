@@ -111,7 +111,6 @@ function DetachedPanels() {
   const ids = useDetached();
   const { selected, tracks } = useStudio();
   const drumTrack = selected?.kind === "drum" ? selected : tracks.find((t) => t.kind === "drum");
-  const pianoTrack = selected?.patch ? selected : tracks.find((t) => t.patch);
   const synthTrack = selected?.patch && selected.kind !== "sampler" ? selected : tracks.find((t) => t.patch && t.kind !== "sampler");
   const meta: Record<DetachId, { title: string; icon: React.ReactNode; body: React.ReactNode }> = {
     mixer: { title: "MIXER", icon: <SlidersHorizontal className="size-4" />, body: <Mixer /> },
@@ -194,7 +193,8 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
   const rackHRef = useRef(rackH);
   rackHRef.current = rackH;
   const drumTrack = selected?.kind === "drum" ? selected : tracks.find((t) => t.kind === "drum");
-  const synthTrack = selected?.patch ? selected : tracks.find((t) => t.patch);
+  const pianoTrack = selected?.patch ? selected : tracks.find((t) => t.patch);
+  const synthTrack = selected?.patch && selected.kind !== "sampler" ? selected : tracks.find((t) => t.patch && t.kind !== "sampler");
   if (!panel) return null;
 
   const config: Record<Exclude<PanelId, null>, { title: string; icon: React.ReactNode }> = {
