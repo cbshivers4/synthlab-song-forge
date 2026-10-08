@@ -57,22 +57,24 @@ function DrumInstrumentIcon({ kind, className }: { kind: DrumPad["kind"]; classN
 
 /** Small vertical fader used for the A / H / D envelope sliders, Impact-style. */
 function VSlider({ label, value, min = 0, max = 1, onChange }: { label: string; value: number; min?: number; max?: number; onChange: (v: number) => void }) {
+  const pct = Math.round(((value - min) / (max - min || 1)) * 100);
   return (
-    <label className="flex w-7 flex-col items-center gap-1">
-      <Slider orientation="vertical" className="h-14" min={min} max={max} step={0.01} value={[value]} onValueChange={([v = 0]) => onChange(v)} />
+    <label className="flex w-9 flex-col items-center gap-1">
+      <Slider orientation="vertical" className="h-20" min={min} max={max} step={0.01} value={[value]} onValueChange={([v = 0]) => onChange(v)} />
       <span className="font-mono text-[9px] text-muted-foreground">{label}</span>
+      <span className="font-mono text-[8px] text-foreground/60">{pct}</span>
     </label>
   );
 }
 
 function Section({ title, active, children }: { title: string; active?: boolean; children: React.ReactNode }) {
   return (
-    <div className="rounded-[3px] border border-border bg-surface/80">
-      <div className="flex items-center gap-1.5 border-b border-border px-2 py-1">
+    <div className="overflow-hidden rounded-md border border-border bg-surface/80">
+      <div className="flex items-center gap-1.5 border-b border-border bg-surface-2/50 px-2.5 py-1.5">
         <span className={cn("size-1.5 rounded-full", active ? "bg-primary" : "bg-muted-foreground/40")} />
-        <span className="font-mono text-[10px] font-semibold uppercase tracking-widest">{title}</span>
+        <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-foreground/90">{title}</span>
       </div>
-      <div className="flex flex-wrap items-end gap-2 p-2">{children}</div>
+      <div className="flex flex-wrap items-start gap-x-2.5 gap-y-2 p-2.5">{children}</div>
     </div>
   );
 }
@@ -585,11 +587,13 @@ export function DrumMachine({ track }: { track: Track }) {
             <div className="drum-sound-controls flex w-64 shrink-0 flex-col gap-2">
               <Section title="Pitch" active>
                 <Knob label="TRANSP" midiTarget={{ id: track.id, param: `drum:${focusPad.id}:pitch` }} min={-12} max={12} step={1} value={focusPad.pitch} onChange={(v) => updatePad(track.id, focusPad.id, { pitch: v })} />
-                <VSlider label="A" value={focusPad.attack ?? 0} onChange={(v) => updatePad(track.id, focusPad.id, { attack: v })} />
-                <VSlider label="H" value={focusPad.sustain ?? 0} onChange={(v) => updatePad(track.id, focusPad.id, { sustain: v })} />
-                <VSlider label="D" value={focusPad.decay} onChange={(v) => updatePad(track.id, focusPad.id, { decay: v })} />
                 <Knob label="ENV" midiTarget={{ id: track.id, param: `drum:${focusPad.id}:filterEnv` }} min={-1} max={1} value={focusPad.filterEnv ?? 0} onChange={(v) => updatePad(track.id, focusPad.id, { filterEnv: v })} />
                 <Knob label="VEL" value={focusPad.volume} onChange={(v) => updatePad(track.id, focusPad.id, { volume: v })} />
+                <div className="ml-0.5 flex items-end gap-1.5 border-l border-border pl-2.5">
+                  <VSlider label="A" value={focusPad.attack ?? 0} onChange={(v) => updatePad(track.id, focusPad.id, { attack: v })} />
+                  <VSlider label="H" value={focusPad.sustain ?? 0} onChange={(v) => updatePad(track.id, focusPad.id, { sustain: v })} />
+                  <VSlider label="D" value={focusPad.decay} onChange={(v) => updatePad(track.id, focusPad.id, { decay: v })} />
+                </div>
               </Section>
               <Section title="Filter" active={(focusPad.filterType ?? "off") !== "off"}>
                 <div className="flex w-full gap-1">
@@ -613,9 +617,11 @@ export function DrumMachine({ track }: { track: Track }) {
               <Section title="Amp" active>
                 <Knob label="GAIN" midiTarget={{ id: track.id, param: `drum:${focusPad.id}:volume` }} value={focusPad.volume} onChange={(v) => updatePad(track.id, focusPad.id, { volume: v })} />
                 <Knob label="PAN" midiTarget={{ id: track.id, param: `drum:${focusPad.id}:pan` }} min={-1} max={1} value={focusPad.pan} onChange={(v) => updatePad(track.id, focusPad.id, { pan: v })} />
-                <VSlider label="A" value={focusPad.attack ?? 0} onChange={(v) => updatePad(track.id, focusPad.id, { attack: v })} />
-                <VSlider label="D" value={focusPad.decay} onChange={(v) => updatePad(track.id, focusPad.id, { decay: v })} />
-                <VSlider label="R" value={focusPad.release ?? 0.2} onChange={(v) => updatePad(track.id, focusPad.id, { release: v })} />
+                <div className="ml-0.5 flex items-end gap-1.5 border-l border-border pl-2.5">
+                  <VSlider label="A" value={focusPad.attack ?? 0} onChange={(v) => updatePad(track.id, focusPad.id, { attack: v })} />
+                  <VSlider label="D" value={focusPad.decay} onChange={(v) => updatePad(track.id, focusPad.id, { decay: v })} />
+                  <VSlider label="R" value={focusPad.release ?? 0.2} onChange={(v) => updatePad(track.id, focusPad.id, { release: v })} />
+                </div>
               </Section>
               <Section title="Sample" active={Boolean(focusPad.sample)}>
                 <Knob label="START" midiTarget={{ id: track.id, param: `drum:${focusPad.id}:start` }} value={focusPad.start ?? 0} onChange={(v) => updatePad(track.id, focusPad.id, { start: Math.min(v, (focusPad.end ?? 1) - 0.01) })} />
@@ -629,16 +635,19 @@ export function DrumMachine({ track }: { track: Track }) {
                 <Knob label="CRUSH" midiTarget={{ id: track.id, param: `drum:${focusPad.id}:crush` }} value={focusPad.crush ?? 0} onChange={(v) => updatePad(track.id, focusPad.id, { crush: v })} />
                 <Knob label="MUTATE" midiTarget={{ id: track.id, param: `drum:${focusPad.id}:mutation` }} value={focusPad.mutation ?? 0.2} onChange={(v) => updatePad(track.id, focusPad.id, { mutation: v })} />
               </Section>
-              <div className="flex items-center gap-2">
-                <span className="label-xs text-[9px]">CHOKE</span>
-                <div className="flex gap-0.5">
+              <div className="rounded-md border border-border bg-surface/80 p-2.5">
+                <div className="mb-2 flex items-center gap-1.5">
+                  <span className={cn("size-1.5 rounded-full", (focusPad.choke ?? 0) > 0 ? "bg-primary" : "bg-muted-foreground/40")} />
+                  <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-foreground/90">Choke</span>
+                </div>
+                <div className="flex gap-1.5">
                   {[0, 1, 2, 3, 4].map((g) => (
                     <button
                       key={g}
                       title={g === 0 ? "No choke group" : `Choke group ${g} — pads in the same group cut each other off`}
                       onClick={() => updatePad(track.id, focusPad.id, { choke: g })}
                       className={cn(
-                        "h-6 w-6 rounded-[3px] border font-mono text-[10px]",
+                        "h-10 flex-1 rounded-md border font-mono text-sm font-semibold transition-colors",
                         (focusPad.choke ?? 0) === g
                           ? "border-primary bg-primary/20 text-primary"
                           : "border-border bg-surface-2 text-muted-foreground hover:text-foreground",
@@ -648,6 +657,9 @@ export function DrumMachine({ track }: { track: Track }) {
                     </button>
                   ))}
                 </div>
+                <p className="mt-1.5 font-mono text-[9px] leading-snug text-muted-foreground">
+                  Pads in the same group cut each other off — like closed and open hats.
+                </p>
               </div>
               <div className="flex flex-wrap gap-1">
                 <Button size="sm" variant="ghost" className="h-6 px-1.5 text-[10px]" onClick={() => flam(focusPad.id, focusPad.steps)}>Flam</Button>
