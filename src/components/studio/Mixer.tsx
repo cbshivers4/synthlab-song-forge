@@ -1948,3 +1948,60 @@ function PhoneChannel({ track, level, selected, index }: { track?: Track; level:
     </> : <div className="flex h-[120px] items-center justify-center"><Button variant="outline" className="h-12" onClick={() => clearClip("master")}>Reset clip</Button></div>}
   </section>;
 }
+
+/** Phone mixer channel header: effects & EQ menu for one track (no desktop strip). */
+function PhoneChannelFxMenu({ track }: { track: Track }) {
+  const { addPlugin, removePlugin, togglePluginBypass, setPluginParam, installedPlugins } = useStudio();
+  const eq = track.plugins?.find((p) => p.kind === "eq");
+  const count = track.plugins?.length ?? 0;
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-label={`Effects and EQ for ${track.name}`}
+          title={`Effects and EQ for ${track.name}`}
+          className={cn("flex size-12 flex-col items-center justify-center gap-0.5 rounded-sm font-mono text-[9px] uppercase tracking-wider", count > 0 ? "text-primary" : "text-foreground")}
+        >
+          <Settings2 className="size-5" />
+          <span>{count > 0 ? `FX ${count}` : "FX"}</span>
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        align="end"
+        className="max-h-[70vh] w-[min(92vw,360px)] overflow-y-auto p-3"
+        onInteractOutside={(e) => { if ((e.target as HTMLElement | null)?.closest?.("[role=dialog]")) e.preventDefault(); }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <span className="truncate font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+            {track.name} — effects & EQ
+          </span>
+          <button
+            type="button"
+            disabled={!!eq}
+            title={eq ? `${track.name} already has a Channel EQ` : `Add a 3-band EQ to ${track.name}`}
+            onClick={() => {
+              const def = installedPlugins.find((d) => d.kind === "eq") ?? BUILT_IN_PLUGINS.find((d) => d.kind === "eq");
+              if (def) addPlugin(track.id, def);
+            }}
+            className={`shrink-0 rounded-sm border px-2 py-1 font-mono text-[9px] uppercase tracking-wider disabled:opacity-70 ${
+              eq ? "border-primary/60 text-primary" : "border-border text-foreground hover:text-primary"
+            }`}
+          >
+            {eq ? "EQ on" : "+ EQ"}
+          </button>
+        </div>
+        <InsertRack
+          title={`${track.name} — inserts`}
+          midiId={track.id}
+          list={track.plugins ?? []}
+          onAdd={(def) => addPlugin(track.id, def)}
+          onRemove={(id) => removePlugin(track.id, id)}
+          onBypass={(id) => togglePluginBypass(track.id, id)}
+          onParam={(id, p, v) => setPluginParam(track.id, id, p, v)}
+        />
+      </PopoverContent>
+    </Popover>
+  );
+}
