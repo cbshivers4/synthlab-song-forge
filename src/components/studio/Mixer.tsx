@@ -1636,6 +1636,16 @@ export function Mixer({ phonePage = 0, phoneChannels, phoneControlPage = "levels
     >
       {/* console toolbar */}
       <div className="mx-console-toolbar flex min-h-10 items-center gap-3 overflow-x-auto border-b border-border px-3 py-2">
+        {isMobile ? (
+          <>
+            <span className="font-display text-xs font-bold uppercase tracking-widest text-primary">Mixer</span>
+            <div className="ml-auto flex shrink-0 items-center gap-2">
+              <PhoneFxMenu />
+              <PhoneEqButton />
+            </div>
+          </>
+        ) : (
+          <>
         <span className="font-display text-xs font-bold uppercase tracking-widest text-primary">Mix Console</span>
 
         <span className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
@@ -1788,6 +1798,8 @@ export function Mixer({ phonePage = 0, phoneChannels, phoneControlPage = "levels
             <Palette className="size-3" /> Out {fracToDb(levels.master).toFixed(0)} dB
           </span>
         </div>
+          </>
+        )}
       </div>
 
       {tracks.length === 0 ? (
@@ -1850,6 +1862,71 @@ export function Mixer({ phonePage = 0, phoneChannels, phoneControlPage = "levels
         </div>
       )}
     </div>
+  );
+}
+
+/** Phone mixer: add effects to the selected channel from one menu. */
+function PhoneFxMenu() {
+  const { tracks, selectedId, addPlugin, removePlugin, togglePluginBypass, setPluginParam } = useStudio();
+  const track = tracks.find((t) => t.id === selectedId);
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          disabled={!track}
+          title={track ? `Add effects to ${track.name}` : "Select a channel first"}
+          className="flex h-9 items-center gap-1.5 rounded-sm border border-border bg-surface px-3 font-mono text-[10px] uppercase tracking-wider text-foreground hover:text-primary disabled:opacity-40"
+        >
+          <Settings2 className="size-4" /> Add effects
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        align="end"
+        className="max-h-[70vh] w-[min(92vw,360px)] overflow-y-auto p-3"
+        onInteractOutside={(e) => { if ((e.target as HTMLElement | null)?.closest?.("[role=dialog]")) e.preventDefault(); }}
+      >
+        {track ? (
+          <InsertRack
+            title={`${track.name} — inserts`}
+            midiId={track.id}
+            list={track.plugins ?? []}
+            onAdd={(def) => addPlugin(track.id, def)}
+            onRemove={(id) => removePlugin(track.id, id)}
+            onBypass={(id) => togglePluginBypass(track.id, id)}
+            onParam={(id, p, v) => setPluginParam(track.id, id, p, v)}
+          />
+        ) : (
+          <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Tap a channel first, then add effects here.</p>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+/** Phone mixer: one-tap 3-band EQ on the selected channel. */
+function PhoneEqButton() {
+  const { tracks, selectedId, addPlugin, installedPlugins } = useStudio();
+  const track = tracks.find((t) => t.id === selectedId);
+  const eq = track?.plugins?.find((p) => p.kind === "eq");
+  const addEq = () => {
+    if (!track) return;
+    const def = installedPlugins.find((d) => d.kind === "eq") ?? BUILT_IN_PLUGINS.find((d) => d.kind === "eq");
+    if (def) addPlugin(track.id, def);
+  };
+  return (
+    <button
+      type="button"
+      onClick={addEq}
+      disabled={!track || !!eq}
+      title={!track ? "Select a channel first" : eq ? `${track.name} already has a Channel EQ` : `Add a 3-band EQ to ${track.name}`}
+      className={cn(
+        "flex h-9 items-center gap-1.5 rounded-sm border px-3 font-mono text-[10px] uppercase tracking-wider disabled:opacity-40",
+        eq ? "border-primary/60 bg-primary/15 text-primary" : "border-border bg-surface text-foreground hover:text-primary"
+      )}
+    >
+      {eq ? "EQ on" : "+ EQ"}
+    </button>
   );
 }
 
