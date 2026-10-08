@@ -3183,3 +3183,63 @@ export function Timeline({ phonePaged = false }: { phonePaged?: boolean }) {
     </section>
   );
 }
+
+/** Phone timeline: add effects and EQ to this channel from the track header. */
+function TrackFxMenu({ track }: { track: Track }) {
+  const { addPlugin, removePlugin, togglePluginBypass, setPluginParam, installedPlugins } = useStudio();
+  const eq = track.plugins?.find((p) => p.kind === "eq");
+  const count = track.plugins?.length ?? 0;
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          title={`Effects and EQ for ${track.name}`}
+          className={`flex h-12 shrink-0 items-center gap-1 rounded-sm border px-3 font-mono text-[10px] uppercase tracking-wider ${
+            count > 0 ? "border-primary/60 bg-primary/15 text-primary" : "border-border bg-surface text-foreground"
+          }`}
+        >
+          FX
+          {count > 0 && (
+            <span className="min-w-3 rounded-sm bg-primary px-0.5 text-center text-[8px] text-primary-foreground">{count}</span>
+          )}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        align="start"
+        className="max-h-[70vh] w-[min(92vw,360px)] overflow-y-auto p-3"
+        onInteractOutside={(e) => { if ((e.target as HTMLElement | null)?.closest?.("[role=dialog]")) e.preventDefault(); }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <span className="truncate font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+            {track.name} — effects & EQ
+          </span>
+          <button
+            type="button"
+            disabled={!!eq}
+            title={eq ? `${track.name} already has a Channel EQ` : `Add a 3-band EQ to ${track.name}`}
+            onClick={() => {
+              const def = installedPlugins.find((d) => d.kind === "eq") ?? BUILT_IN_PLUGINS.find((d) => d.kind === "eq");
+              if (def) addPlugin(track.id, def);
+            }}
+            className={`shrink-0 rounded-sm border px-2 py-1 font-mono text-[9px] uppercase tracking-wider disabled:opacity-70 ${
+              eq ? "border-primary/60 text-primary" : "border-border text-foreground hover:text-primary"
+            }`}
+          >
+            {eq ? "EQ on" : "+ EQ"}
+          </button>
+        </div>
+        <InsertRack
+          title={`${track.name} — inserts`}
+          midiId={track.id}
+          list={track.plugins ?? []}
+          onAdd={(def) => addPlugin(track.id, def)}
+          onRemove={(id) => removePlugin(track.id, id)}
+          onBypass={(id) => togglePluginBypass(track.id, id)}
+          onParam={(id, p, v) => setPluginParam(track.id, id, p, v)}
+        />
+      </PopoverContent>
+    </Popover>
+  );
+}
