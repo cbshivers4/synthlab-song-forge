@@ -1938,7 +1938,7 @@ function PhoneChannel({ track, level, selected, index }: { track?: Track; level:
   return <section aria-label={`${name} mixer channel`} className={cn("phone-mix-channel flex w-[216px] shrink-0 snap-start flex-col border-r border-border bg-surface", selected && "bg-primary/10")}>
     <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center border-b border-border px-2">
       <Button variant="ghost" className="h-12 min-w-0 justify-start px-1" onClick={choose} title={name}><span className="truncate">{track ? `${index + 1}. ${name}` : name}</span></Button>
-      <Dialog><DialogTrigger asChild><Button variant="ghost" size="icon" className="size-12" aria-label={`${name} channel controls`} title="Channel controls"><Settings2 className="size-5" /></Button></DialogTrigger><DialogContent className="phone-channel-details max-h-[88dvh] w-[min(94vw,420px)] overflow-y-auto"><DialogHeader><DialogTitle className="truncate">{name}</DialogTitle></DialogHeader><div className="flex justify-center">{track ? <Strip t={track} index={index} selected={selected} narrow={false} level={level} onSelect={choose} /> : <MasterStrip level={level} />}</div></DialogContent></Dialog>
+      {track ? <PhoneChannelFxMenu track={track} /> : <Dialog><DialogTrigger asChild><Button variant="ghost" size="icon" className="size-12" aria-label={`${name} channel controls`} title="Channel controls"><Settings2 className="size-5" /></Button></DialogTrigger><DialogContent className="phone-channel-details max-h-[88dvh] w-[min(94vw,420px)] overflow-y-auto"><DialogHeader><DialogTitle className="truncate">{name}</DialogTitle></DialogHeader><div className="flex justify-center"><MasterStrip level={level} /></div></DialogContent></Dialog>}
     </div>
     <div className="flex items-center justify-between px-3 py-2"><span className="font-mono text-sm">{toDb(volume).toFixed(1)} dB</span><ClipLed id={track?.id ?? "master"} /></div>
     <div className="flex h-48 items-stretch justify-center gap-6 px-3 py-2"><Slider aria-label={`${name} volume`} orientation="vertical" className={cn("mx-fader h-full w-12", FADER_CAP)} value={[volume]} min={0} max={track ? 1 : 1.5} step={0.01} onValueChange={([v = 0]) => track ? updateTrack(track.id, { volume: v }) : setBus("master", { volume: v })} /><Meter id={track?.id ?? "master"} level={level} tall /></div>
@@ -1947,4 +1947,61 @@ function PhoneChannel({ track, level, selected, index }: { track?: Track; level:
       <div className="grid grid-cols-4 gap-1 p-2"><Button variant={track.muted ? "secondary" : "outline"} className="h-12 p-0" aria-label={`Mute ${name}`} aria-pressed={track.muted} onClick={() => updateTrack(track.id, { muted: !track.muted })}>M</Button><Button variant={track.solo ? "secondary" : "outline"} className="h-12 p-0" aria-label={`Solo ${name}`} aria-pressed={track.solo} onClick={() => updateTrack(track.id, { solo: !track.solo })}>S</Button><Button variant={track.armed ? "destructive" : "outline"} className="h-12 p-0" aria-label={`Record arm ${name}`} aria-pressed={track.armed} onClick={() => updateTrack(track.id, { armed: !track.armed })}><span className="size-4 rounded-full bg-destructive" /></Button><Button variant={transport.monitor ? "secondary" : "outline"} className="h-12 p-0" aria-label={`Monitor ${name}`} aria-pressed={transport.monitor} onClick={() => setTransport({ monitor: !transport.monitor })}><Waves className="size-5" /></Button></div>
     </> : <div className="flex h-[120px] items-center justify-center"><Button variant="outline" className="h-12" onClick={() => clearClip("master")}>Reset clip</Button></div>}
   </section>;
+}
+
+/** Phone mixer channel header: effects & EQ menu for one track (no desktop strip). */
+function PhoneChannelFxMenu({ track }: { track: Track }) {
+  const { addPlugin, removePlugin, togglePluginBypass, setPluginParam, installedPlugins } = useStudio();
+  const eq = track.plugins?.find((p) => p.kind === "eq");
+  const count = track.plugins?.length ?? 0;
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-label={`Effects and EQ for ${track.name}`}
+          title={`Effects and EQ for ${track.name}`}
+          className={cn("flex size-12 flex-col items-center justify-center gap-0.5 rounded-sm font-mono text-[9px] uppercase tracking-wider", count > 0 ? "text-primary" : "text-foreground")}
+        >
+          <Settings2 className="size-5" />
+          <span>{count > 0 ? `FX ${count}` : "FX"}</span>
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        align="end"
+        className="max-h-[min(55dvh,420px)] w-[min(92vw,360px)] overflow-y-auto p-3"
+        onInteractOutside={(e) => { if ((e.target as HTMLElement | null)?.closest?.("[role=dialog]")) e.preventDefault(); }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="sticky top-0 z-10 mb-2 flex items-center justify-between gap-2 bg-popover pb-2">
+          <span className="truncate font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+            {track.name} — effects & EQ
+          </span>
+          <button
+            type="button"
+            disabled={!!eq}
+            title={eq ? `${track.name} already has a Channel EQ` : `Add a 3-band EQ to ${track.name}`}
+            onClick={() => {
+              const def = installedPlugins.find((d) => d.kind === "eq") ?? BUILT_IN_PLUGINS.find((d) => d.kind === "eq");
+              if (def) addPlugin(track.id, def);
+            }}
+            className={`shrink-0 rounded-sm border px-2 py-1 font-mono text-[9px] uppercase tracking-wider disabled:opacity-70 ${
+              eq ? "border-primary/60 text-primary" : "border-border text-foreground hover:text-primary"
+            }`}
+          >
+            {eq ? "EQ on" : "+ EQ"}
+          </button>
+        </div>
+        <InsertRack
+          title={`${track.name} — inserts`}
+          midiId={track.id}
+          list={track.plugins ?? []}
+          onAdd={(def) => addPlugin(track.id, def)}
+          onRemove={(id) => removePlugin(track.id, id)}
+          onBypass={(id) => togglePluginBypass(track.id, id)}
+          onParam={(id, p, v) => setPluginParam(track.id, id, p, v)}
+        />
+      </PopoverContent>
+    </Popover>
+  );
 }
