@@ -1969,7 +1969,7 @@ function PhoneChannelFxMenu({ track }: { track: Track }) {
       </PopoverTrigger>
       <PopoverContent
         align="end"
-        className="max-h-[70vh] w-[min(92vw,360px)] overflow-y-auto p-3"
+        className="max-h-[min(55dvh,420px)] w-[min(92vw,360px)] overflow-y-auto p-3"
         onInteractOutside={(e) => { if ((e.target as HTMLElement | null)?.closest?.("[role=dialog]")) e.preventDefault(); }}
         onClick={(e) => e.stopPropagation()}
       >
