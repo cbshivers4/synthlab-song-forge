@@ -1561,7 +1561,7 @@ function MasterStrip({ level: peak }: { level: number }) {
   );
 }
 
-export function Mixer() {
+export function Mixer({ phonePage = 0, phoneChannels = 3, phoneControlPage = "levels" }: { phonePage?: number; phoneChannels?: number; phoneControlPage?: "levels" | "performance" }) {
   const isMobile = useIsMobile();
   const { tracks, selectedId, select, buses, setBus, vcas, setVca, auxReturns, setAuxReturn, updateTrack, addTrack } = useStudio();
   const levels = useMeters(tracks);
@@ -1619,6 +1619,7 @@ export function Mixer() {
     <div
       className={cn("mx-console flex flex-col overflow-hidden border border-border bg-surface shadow-panel", isMobile && "mx-phone")}
       data-console={desk.id}
+      data-phone-controls={phoneControlPage}
       style={
         {
           "--mx-a": deskColors.a,
@@ -1822,7 +1823,7 @@ export function Mixer() {
       ) : (
         <div className="mobile-mixer-strips flex overflow-x-auto">
           {!isMobile && <LabelRail />}
-          {tracks.map((t) => (
+          {(isMobile ? tracks.slice(phonePage * phoneChannels, (phonePage + 1) * phoneChannels) : tracks).map((t) => (
             isMobile ? <PhoneChannel key={t.id} track={t} level={levels.tracks[t.id] ?? 0} selected={t.id === selectedId} index={tracks.indexOf(t)} /> : <Strip
               key={t.id}
               t={t}

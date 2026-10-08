@@ -39,6 +39,8 @@ import { MobileBeat } from "@/components/studio/MobileBeat";
 import { MobileNav } from "@/components/studio/MobileNav";
 import { MobileCreate } from "@/components/studio/MobileCreate";
 import { MobileOnboarding } from "@/components/studio/MobileOnboarding";
+import { PhoneStudio } from "@/components/studio/PhoneStudio";
+import { PhonePages } from "@/components/studio/PhonePages";
 import { DesktopUpdateBanner } from "@/components/studio/DesktopUpdateBanner";
 import { DesktopWebsiteStatus } from "@/components/studio/DesktopWebsiteStatus";
 import { ReferenceAnalyzer } from "@/components/studio/ReferenceAnalyzer";
@@ -164,6 +166,16 @@ function DetachedPanels() {
 function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: FloatState) => FloatState) => void }) {
   const isMobile = useIsMobile();
   const { selected, tracks, panel, setPanel, select } = useStudio();
+  const [mixPage, setMixPage] = useState(0);
+  const [mixControlPage, setMixControlPage] = useState<"levels" | "performance">("levels");
+  const [mixChannels, setMixChannels] = useState(3);
+  useEffect(() => {
+    const update = () => setMixChannels(Math.max(1, Math.min(3, Math.floor((window.innerWidth - 80) / 200) - 1)));
+    update(); window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+  const maxMixPage = Math.max(0, Math.ceil(tracks.length / mixChannels) - 1);
+  const currentMixPage = Math.min(mixPage, maxMixPage);
   // Resizable editor height, remembered between sessions.
   const [rackH, setRackH] = useState(() => {
     if (typeof window === "undefined") return 380;
@@ -233,7 +245,8 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
           {selected && <span className="ml-2 hidden label-xs sm:inline">· {selected.name}</span>}
         </h2>
         <div className="ml-auto flex shrink-0 items-center gap-1">
-          {((panel === "synth" && selected?.kind !== "sampler") || panel === "drums") && (
+          {isMobile && panel === "mixer" && <><Button variant="outline" className="phone-mix-control-page h-12" aria-label="Switch mixer control page" onClick={() => setMixControlPage(mixControlPage === "levels" ? "performance" : "levels")}>{mixControlPage === "levels" ? "Mute & pan" : "Levels"}</Button><span className="text-xs">{currentMixPage + 1}/{maxMixPage + 1}</span><Button size="icon" variant="outline" className="size-12" aria-label="Previous mixer channels" disabled={currentMixPage === 0} onClick={() => setMixPage(currentMixPage - 1)}><ArrowDownToLine className="rotate-90" /></Button><Button size="icon" variant="outline" className="size-12" aria-label="Next mixer channels" disabled={currentMixPage === maxMixPage} onClick={() => setMixPage(currentMixPage + 1)}><ArrowUpFromLine className="rotate-90" /></Button></>}
+          {!isMobile && ((panel === "synth" && selected?.kind !== "sampler") || panel === "drums") && (
             <Button
               size="sm"
               variant="ghost"
@@ -268,7 +281,16 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
           </Button>
         </div>
       </div>
-      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3 pb-24 sm:pb-3">
+      {isMobile ? <PhonePages name={current.title}><div className="phone-editor-content min-h-0 space-y-3 p-3">
+        {panel === "mixer" && <Mixer phonePage={currentMixPage} phoneChannels={mixChannels} phoneControlPage={mixControlPage} />}
+        {panel === "synth" && (selected?.kind === "sampler" ? <Sampler /> : synthTrack ? <SynthEditor track={synthTrack} /> : <p>Select an instrument track.</p>)}
+        {panel === "drums" && (drumTrack ? <DrumMachine track={drumTrack} /> : <p>Add a drum track.</p>)}
+        {panel === "piano" && (selected?.kind === "drum" ? <DrumRoll track={selected} /> : synthTrack ? <PianoRoll track={synthTrack} /> : drumTrack ? <DrumRoll track={drumTrack} /> : <p>Select an instrument, MIDI or drum track.</p>)}
+        {panel === "settings" && <Settings />}{panel === "keys" && <Keyboard />}{panel === "browser" && <Browser />}
+        {panel === "plugins" && <PluginRack />}{panel === "appearance" && <Appearance />}{panel === "sampler" && <Sampler />}
+        {panel === "pads" && <PadSampler />}{panel === "mastering" && <Mastering />}{panel === "notes" && <NotesPanel />}
+        {panel === "reference" && <ReferenceAnalyzer />}{panel === "live" && <LiveView />}{panel === "looper" && <LiveLooperView />}{panel === "apps" && <ExternalApps />}
+      </div></PhonePages> : <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3 pb-24 sm:pb-3">
       {panel === "mixer" && <Mixer />}
       {panel === "synth" &&
         (selected?.kind === "sampler" ? <Sampler /> : synthTrack ? (
@@ -317,7 +339,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
       {panel === "looper" && <LiveLooperView />}
       {panel === "apps" && <ExternalApps />}
 
-      </div>
+      </div>}
 
       {selected && (
         <div className="editor-track-actions flex flex-nowrap items-center gap-1 overflow-x-auto whitespace-nowrap border-t border-border bg-surface/60 px-3 py-1 [&>*]:shrink-0">
@@ -580,17 +602,10 @@ function StudioWorkspace() {
     root.classList.toggle("mobile-high-contrast", isMobile && mobileAccessibility.highContrast);
     return () => root.classList.remove("mobile-controls-xl", "mobile-text-xl", "mobile-high-contrast");
   }, [isMobile, mobileAccessibility]);
-  // Phones open straight into the big-button beat maker the first time.
-  useEffect(() => {
-    if (!isMobile) return;
-    try {
-      if (window.localStorage.getItem("synclab.beatmode.seen")) return;
-      window.localStorage.setItem("synclab.beatmode.seen", "1");
-      setBeatMode(true);
-    } catch {
-      /* storage unavailable */
-    }
-  }, [isMobile]);
+  if (isMobile) return <>
+    <PhoneStudio><Panels float={float} setFloat={setFloat} /></PhoneStudio>
+    <TrackSettingsDialog /><DeviceSetup /><ExportDialog />
+  </>;
   return (
     <div className={`flex h-[100dvh] flex-col overflow-hidden ${landscape ? "landscape-prod" : ""} ${landscape && landscapeTools ? "landscape-tools" : ""} ${isMobile ? "mobile-studio" : ""} ${isMobile && mobileAccessibility.extraLargeControls ? "mobile-controls-xl" : ""} ${isMobile && mobileAccessibility.increasedText ? "mobile-text-xl" : ""} ${isMobile && mobileAccessibility.highContrast ? "mobile-high-contrast" : ""}`}>
       {!isMobile && <MenuBar />}
@@ -623,12 +638,13 @@ function StudioWorkspace() {
 
 function Stages() {
   const { stage } = useApp();
+  const isMobile = useIsMobile();
   return (
     <PlanProvider>
       <SplashScreen />
       <HelpCenter />
-      {stage === "welcome" && <WelcomeScreen />}
-      {stage === "start" && <StartScreen />}
+      {stage === "welcome" && (isMobile ? <div className="phone-console phone-entry flex h-[100dvh] flex-col overflow-hidden"><PhonePages name="Sign in"><WelcomeScreen /></PhonePages></div> : <WelcomeScreen />)}
+      {stage === "start" && (isMobile ? <div className="phone-console phone-entry flex h-[100dvh] flex-col overflow-hidden"><PhonePages name="Projects"><StartScreen /></PhonePages></div> : <StartScreen />)}
       {stage === "studio" && <StudioWorkspace />}
     </PlanProvider>
   );

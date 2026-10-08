@@ -59,6 +59,7 @@ import { PlanBadge } from "@/lib/synclab/plan";
 import { openHelp } from "@/components/studio/HelpCenter";
 import { MasterMeter } from "@/components/studio/MasterMeter";
 import { IdeaRecorder } from "@/components/studio/IdeaRecorder";
+import { PhonePages } from "./PhonePages";
 import { useEffect, useState } from "react";
 import { SkipBack } from "lucide-react";
 import synclabLogoAsset from "@/assets/synclab-logo-neon.jpg.asset.json";
@@ -527,7 +528,7 @@ export function TopBar() {
 
 function TransportExtras({ mobile, children }: { mobile: boolean; children: React.ReactNode }) {
   if (!mobile) return <div className="transport-glass-tools flex flex-wrap items-center gap-1">{children}</div>;
-  return <div className="order-2 justify-self-end"><Popover><PopoverTrigger asChild><Button variant="outline" size="icon" className="transport-glass-group size-11" aria-label="Transport menu" title="Transport menu"><SlidersHorizontal className="size-5" /></Button></PopoverTrigger><PopoverContent align="end" className="transport-glass-menu max-h-[75dvh] w-[min(92vw,420px)] overflow-y-auto"><div className="mb-3 border-b border-border pb-2 font-semibold">Transport</div><div className="flex flex-wrap items-center gap-2">{children}</div></PopoverContent></Popover></div>;
+   return <div className="order-2 justify-self-end"><Popover><PopoverTrigger asChild><Button variant="outline" size="icon" className="transport-glass-group size-11" aria-label="Transport menu" title="Transport menu"><SlidersHorizontal className="size-5" /></Button></PopoverTrigger><PopoverContent align="end" className="phone-transport-menu transport-glass-menu flex h-[min(85dvh,600px)] w-[min(92vw,520px)] flex-col overflow-hidden p-0"><div className="shrink-0 border-b border-border p-3 font-semibold">Transport</div><PhonePages name="Transport"><div className="flex flex-wrap items-center gap-2 p-3">{children}</div></PhonePages></PopoverContent></Popover></div>;
 }
 
 function PhoneTransportSection({ title, children }: { title: string; children: React.ReactNode }) {

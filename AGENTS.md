@@ -27,7 +27,7 @@ Bottom device displays read post-device or track analyser taps at 20 fps; never 
 - The post-login menu presents cloud projects, device recents, saved templates, and starter templates in one responsive workspace; retain their existing storage and open actions when changing its layout.
 - GRANT EXECUTE on RLS security-definer helpers to anon/authenticated/service_role; missing grants break policy reads.
 Studio panel wallpaper uses one bundled JPEG with a dark semantic overlay and per-panel skin overrides; this keeps controls legible while letting users customize each panel without external image dependencies.
-Timeline names stay single-line; phone actions scroll with REC/AUTO first, content-sized rows and isolated menu clicks to prevent clipping and unwanted editor opening.
+Timeline names stay single-line; phone actions prioritize REC/AUTO with isolated menu clicks to avoid opening instruments.
 Playhead stays within track rows; headers, ruler and song lane share its width variable, including large phone controls, to avoid covering buttons.
 Synth sections share wrapping tabs; X-Y pads dispatch through updatePatch to stay synchronized with knobs and saved presets without removing controls.
 Editors shrink below saved height to preserve the timeline minimum and avoid toolbar clipping.
@@ -38,7 +38,7 @@ Embedded keyboards reuse Keyboard with a track or sample callback and shared typ
 Paste content at the playhead onto the selected or explicit channel, preserving its settings; Duplicate track separately clones channels.
 Synth selection opens piano roll; explicit actions open synth. Sampler shows Stretch before chops; PCM slicing reuses keyed previewNote voices for gate/choke.
 Transport stays scoped: desktop wraps intrinsic groups; phone Edit groups menu controls by purpose and uses shared recording/count-in handlers; Home stays clear.
-Phone mixer reuses track/bus actions with two-axis touch scrolling; drum editors keep session navigation, touch pages and one-finger scroll during pinch.
+Phone studio uses a finite landscape left-rail shell with explicit pages; reuse shared controls and audio state to preserve projects and playback.
 Drum snap is session-only and affects step writes, not existing hits, preserving patterns.
 Count-in haptics use the shared beat timer and guarded vibration support, independent of audio.
 Cloud deletion reads raw sessions, confirms row deletion, then cleans owned project files; missing playback assets cannot block removal.
