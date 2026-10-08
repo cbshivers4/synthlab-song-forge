@@ -128,8 +128,9 @@ export function WelcomeScreen() {
       <img src={studioPhoto} alt="" className="login-photo" />
       <div className="login-inner mx-auto grid w-full grid-cols-1 items-center gap-8 px-5 py-8 sm:px-8 sm:py-12 md:grid-cols-2 lg:gap-16">
         {/* Brand & features side */}
-        <div className="flex min-w-0 flex-col items-start text-left">
-          <img src={synclabLogoAsset.url} alt="SYNCLAB" className="mb-6 size-28 rounded-lg border border-border object-cover sm:size-36" />
+        <div className="login-brand flex min-w-0 flex-col items-start text-left">
+          <img src={synclabLogoAsset.url} alt="SYNCLAB" className="login-logo rounded-xl border border-border object-cover" />
+
 
           <div className="login-brand-copy mb-7 space-y-4">
             <h1 className="font-display text-4xl font-extrabold leading-tight sm:text-5xl">SYNCLAB</h1>
