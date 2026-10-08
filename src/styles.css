@@ -851,7 +851,10 @@
 .phone-console .phone-timeline-heading button[aria-label="Previous tracks"],
 .phone-console .phone-timeline-heading button[aria-label="Next tracks"] { display: none; }
 .phone-console-rail { overflow-y: auto; touch-action: pan-y; }
-.drum-pad-dark { background: var(--drum-pad-dark); }
+.drum-pad-grid > [role="button"].drum-pad-dark { background-color: var(--drum-pad-dark); background-image: none; }
+.phone-console .phone-transport-signals { grid-column: 1 / -1; order: 4; }
+.phone-master-display > div { width: max-content; }
+.phone-transport-signals button { min-height: 48px; }
 .drum-pad-grid > [role="button"] { min-height: 140px; }
 .drum-machine[data-phone-view] .drum-pad-grid > [role="button"] { min-height: 140px; }
 .drum-side-banks { min-width: 48px; }

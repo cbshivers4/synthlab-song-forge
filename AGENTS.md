@@ -37,7 +37,7 @@ Phone drum tabs reuse DrumRoll and instrument pads for edits/tap recording; soun
 Embedded keyboards reuse Keyboard with a track or sample callback and shared typing toggle; claim events once and yield pad shortcuts to prevent doubled notes.
 Paste content at the playhead onto the selected or explicit channel, preserving its settings; Duplicate track separately clones channels.
 Synth selection opens piano roll; explicit actions open synth. Sampler shows Stretch before chops; PCM slicing reuses keyed previewNote voices for gate/choke.
-Transport stays scoped: desktop wraps intrinsic groups; phone Edit groups menu controls by purpose and uses shared recording/count-in handlers; Home stays clear.
+Transport: desktop wraps intrinsic groups; phone meters/MIDI sit below playback outside menus using shared signal components; recording handlers stay shared.
 Phone uses a landscape left rail with shared audio/state and native vertical/horizontal scroll regions; render all mixer channels and tracks so no controls are lost to paging.
 Drum snap is session-only and affects step writes, not existing hits, preserving patterns.
 Count-in haptics use the shared beat timer and guarded vibration support, independent of audio.
