@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { AudioLines, FolderOpen, Home, Music2, Scissors, SlidersHorizontal, Wand2, Settings2, Radio, Disc3, Grid2x2, Piano, Gauge, FileSearch, Cpu, Palette, NotebookPen, LifeBuoy, RotateCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStudio, type PanelId } from "@/lib/synclab/store";
@@ -31,16 +31,22 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
   const [upright, setUpright] = useState(false);
   const [allowPortrait, setAllowPortrait] = useState(false);
   const [menuPage, setMenuPage] = useState(0);
+  const consoleRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const query = matchMedia("(orientation: portrait)");
     const update = () => setUpright(query.matches);
     update(); query.addEventListener("change", update);
     document.documentElement.classList.add("phone-console-active");
-    return () => { query.removeEventListener("change", update); document.documentElement.classList.remove("phone-console-active"); };
+    const size = () => {
+      const el = consoleRef.current;
+      if (el) el.style.height = `${Math.max(240, window.innerHeight - el.getBoundingClientRect().top)}px`;
+    };
+    size(); window.addEventListener("resize", size);
+    return () => { query.removeEventListener("change", update); window.removeEventListener("resize", size); document.documentElement.classList.remove("phone-console-active"); };
   }, []);
   const enter = (next: typeof room) => { setPanel(null); setRoom(next); setMenuPage(0); };
   const list = room === "sounds" ? sounds : tools;
-  return <div className="phone-console mobile-studio landscape-prod flex h-[100dvh] min-w-0 overflow-hidden bg-background text-foreground">
+  return <div ref={consoleRef} className="phone-console mobile-studio landscape-prod flex h-[100dvh] min-w-0 overflow-hidden bg-background text-foreground">
     <nav aria-label="Studio navigation" className="phone-console-rail flex w-20 shrink-0 flex-col items-center gap-2 border-r border-border bg-surface px-2 py-3">
       <Button variant="ghost" className="size-12 shrink-0 p-0" aria-label="Projects" onClick={() => setStage("start")}><img src={logo.url} alt="SYNCLAB" className="size-12 rounded-md object-cover" /></Button>
       <div className="flex min-h-0 flex-1 flex-col justify-center gap-3">
@@ -50,7 +56,7 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
     </nav>
     <main className="phone-console-stage flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
       <TopBar />
-      {!panel && room === "edit" && <Timeline phonePaged />}
+      {!panel && room === "edit" && <PhonePages name="Timeline"><Timeline phonePaged /></PhonePages>}
       {panel && children}
       {!panel && room !== "edit" && <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <header className="grid h-14 shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center border-b border-border px-5"><h2 className="truncate text-base font-semibold">{room === "sounds" ? "Sounds & instruments" : "Effects & tools"}</h2><span className="text-xs text-muted-foreground">SYNCLAB</span></header>

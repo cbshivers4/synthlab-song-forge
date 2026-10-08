@@ -800,7 +800,13 @@
 .phone-console .mobile-timeline { min-height: 0; --timeline-header-width: 294px; }
 .phone-console .mobile-timeline > .shrink-0 { flex-shrink: 0; }
 .phone-console #timeline-scroll { overflow: hidden; touch-action: none; }
-.phone-console [data-timeline-track-rows] > div > .relative.flex { min-height: 140px; }
+.phone-console [data-timeline-track-rows] > div > .relative.flex { min-height: 110px; }
+.phone-console .phone-page-viewport > .mobile-timeline { height: 100%; }
+.phone-console .mobile-timeline > .shrink-0 > div > .sticky { height: 40px; }
+.phone-console .mobile-timeline > .shrink-0 > div > .sticky > div:first-child { flex-direction: row; align-items: center; }
+.phone-console .mobile-timeline > .shrink-0 > div > .sticky > div:first-child > div:first-child { display: none; }
+.phone-edit-menu .timeline-edit-toolbar { display: flex !important; }
+.phone-edit-menu button { min-height: 48px; }
 .phone-console .timeline-track-actions { gap: 0; padding-bottom: 0; }
 .phone-console .timeline-track-actions > button { padding-inline: 6px; font-size: 10px; }
 .phone-console .track-touch-header { padding-block: 3px; }

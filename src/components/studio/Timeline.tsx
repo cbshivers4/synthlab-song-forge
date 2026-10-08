@@ -3012,7 +3012,7 @@ export function Timeline({ phonePaged = false }: { phonePaged?: boolean }) {
   const [trackCount, setTrackCount] = useState(3);
   useEffect(() => {
     if (!phonePaged) return;
-    const update = () => setTrackCount(Math.max(1, Math.min(3, Math.floor((window.innerHeight - 200) / 140))));
+    const update = () => setTrackCount(Math.max(1, Math.min(3, Math.floor((window.innerHeight - 280) / 110))));
     update(); window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
   }, [phonePaged]);
@@ -3055,7 +3055,7 @@ export function Timeline({ phonePaged = false }: { phonePaged?: boolean }) {
   }, [transport.follow, transport.playing, transport.step, totalSteps]);
   return (
     <section className="mobile-timeline relative flex min-h-[210px] min-w-0 flex-1 flex-col overflow-hidden border-x border-b border-border bg-background/60 [--timeline-header-width:172px] sm:[--timeline-header-width:294px]">
-      {phonePaged ? <div className="phone-timeline-heading grid h-14 shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-border bg-surface/50 px-3"><span className="truncate font-display text-xs font-semibold">TIMELINE · Tracks {tracks.length ? page * trackCount + 1 : 0}–{Math.min((page + 1) * trackCount, tracks.length)} / {tracks.length}</span><div className="flex gap-1"><AddTrackMenu size="sm" /><Button variant="outline" className="h-12" aria-label="Previous tracks" disabled={page === 0} onClick={() => setTrackPage(page - 1)}><ChevronUp /></Button><Button variant="outline" className="h-12" aria-label="Next tracks" disabled={page === maxTrackPage} onClick={() => setTrackPage(page + 1)}><ChevronDown /></Button></div></div> : <EditToolbar />}
+      {phonePaged ? <div className="phone-timeline-heading grid h-14 shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-border bg-surface/50 px-3"><span className="truncate font-display text-xs font-semibold">TIMELINE · Tracks {tracks.length ? page * trackCount + 1 : 0}–{Math.min((page + 1) * trackCount, tracks.length)} / {tracks.length}</span><div className="flex gap-1"><Popover><PopoverTrigger asChild><Button variant="outline" className="h-12" aria-label="Timeline quick tools"><Settings2 /></Button></PopoverTrigger><PopoverContent className="phone-edit-menu w-[min(90vw,720px)]"><EditToolbar /></PopoverContent></Popover><AddTrackMenu size="sm" /><Button variant="outline" className="h-12" aria-label="Previous tracks" disabled={page === 0} onClick={() => setTrackPage(page - 1)}><ChevronUp /></Button><Button variant="outline" className="h-12" aria-label="Next tracks" disabled={page === maxTrackPage} onClick={() => setTrackPage(page + 1)}><ChevronDown /></Button></div></div> : <EditToolbar />}
       <div className="shrink-0 overflow-hidden">
         <div ref={timelineHeaderRef} className="min-w-[720px] sm:min-w-0">
           <Ruler />
@@ -3163,7 +3163,7 @@ export function Timeline({ phonePaged = false }: { phonePaged?: boolean }) {
         )}
         </div>
       </div>
-      <TimelineOverview scrollRef={scrollRef} zoom={zoom} setZoom={setZoom} />
+      {!phonePaged && <TimelineOverview scrollRef={scrollRef} zoom={zoom} setZoom={setZoom} />}
     </section>
   );
 }

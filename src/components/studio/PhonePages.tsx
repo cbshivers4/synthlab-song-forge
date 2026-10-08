@@ -22,14 +22,14 @@ export function PhonePages({ children, name }: { children: ReactNode; name: stri
         const targets = [root, ...Array.from(root.querySelectorAll<HTMLElement>("*"))].filter((el) => {
           if (!el.clientWidth || !el.clientHeight || el.closest('[role="slider"],canvas,svg')) return false;
           const style = getComputedStyle(el);
-          return el === root || /auto|scroll/.test(style.overflowX + style.overflowY) || el.dataset.phonePaged === "true";
+          return el === root || /auto|scroll/.test(style.overflowX + style.overflowY) || el.dataset['phonePaged'] === "true" || el.matches('.mobile-mixer-strips,#timeline-scroll,.timeline-track-actions,.mx-console-toolbar');
         });
         const next: PageArea[] = [];
         for (const el of targets) {
           const horizontal = el.scrollWidth > el.clientWidth + 4;
           const vertical = el.scrollHeight > el.clientHeight + 4;
           if (!horizontal && !vertical) continue;
-          el.dataset.phonePaged = "true";
+          el.dataset['phonePaged'] = "true";
           el.style.overflow = "hidden";
           const label = el.getAttribute("aria-label") || (el.id === "timeline-scroll" ? "Tracks & bars" : el.classList.contains("mobile-mixer-strips") ? "Channels" : el.classList.contains("timeline-track-actions") ? "Track actions" : el.classList.contains("mx-console-toolbar") ? "Mixer options" : el.classList.contains("drum-pad-grid") ? "Drum pads" : el === root ? name : `Controls ${next.length + 1}`);
           next.push({ el, label, horizontal, vertical });
