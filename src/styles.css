@@ -115,6 +115,8 @@
   --editor-grid-strong: oklch(0.39 0.012 255);
   --sampler-pad-face: oklch(0.38 0.025 235);
   --sampler-pad-border: oklch(0.62 0.055 210);
+  --drum-pad-dark: oklch(0.135 0.008 240);
+  --login-overlay: oklch(0.105 0.008 240 / 0.88);
 
   --gradient-neon: linear-gradient(135deg, var(--neon), var(--magenta));
   --gradient-panel: linear-gradient(180deg, oklch(0.205 0.011 256), oklch(0.175 0.009 255));
@@ -697,7 +699,7 @@
 .drum-machine[data-phone-view] .drum-patterns > *,
 .drum-machine[data-phone-view] .drum-patterns > div > * { flex-shrink: 0; white-space: nowrap; }
 .drum-machine[data-phone-view] .drum-patterns > div { flex-wrap: nowrap; }
-.drum-machine[data-phone-view] .drum-patterns .label-xs { display: none; }
+.drum-machine[data-phone-view] .drum-patterns .label-xs { display: block; }
 .drum-machine[data-phone-view] .drum-patterns button { min-width: 48px; }
 .drum-machine[data-phone-view] .drum-display { gap: 8px; overflow-x: auto; white-space: nowrap; }
 .drum-machine[data-phone-view] .drum-display > * { flex-shrink: 0; }
@@ -706,7 +708,7 @@
 .drum-machine[data-phone-view] .drum-steps > div > div:first-child { min-width: 0; }
 .drum-machine[data-phone-view] .drum-steps button { min-width: 48px; }
 .drum-machine[data-phone-view] .drum-steps button.w-24 { width: 96px; }
-.drum-machine[data-sideways="true"] .drum-pad-grid { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 112px; grid-template-rows: 112px; overflow-x: auto; scroll-snap-type: x proximity; padding-bottom: 6px; }
+.drum-machine[data-sideways="true"] .drum-pad-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); grid-auto-flow: row; grid-auto-rows: minmax(140px, auto); padding-bottom: 6px; }
 .drum-machine[data-sideways="true"] .drum-pad-grid > [role="button"] { scroll-snap-align: start; }
 .mobile-studio .phone-tool-panel:has(.drum-machine) .editor-track-actions { flex-shrink: 0; }
 .landscape-prod .phone-tool-panel { inset: 0 5.25rem 0 0; padding-bottom: 0; }
@@ -849,6 +851,24 @@
 .phone-console .phone-timeline-heading button[aria-label="Previous tracks"],
 .phone-console .phone-timeline-heading button[aria-label="Next tracks"] { display: none; }
 .phone-console-rail { overflow-y: auto; touch-action: pan-y; }
+.drum-pad-dark { background: var(--drum-pad-dark); }
+.drum-pad-grid > [role="button"] { min-height: 140px; }
+.drum-machine[data-phone-view] .drum-pad-grid > [role="button"] { min-height: 140px; }
+.drum-side-banks { min-width: 48px; }
+.drum-side-banks > button { width: 100%; }
+.phone-sound-tile { --tile-accent: var(--primary); background: var(--surface); border-color: color-mix(in oklab, var(--tile-accent) 25%, var(--border)); }
+.phone-sound-tile[data-sound-family="1"] { --tile-accent: var(--magenta); }
+.phone-sound-tile[data-sound-family="2"] { --tile-accent: var(--amber); }
+.phone-sound-tile[data-sound-family="3"] { --tile-accent: var(--chart-5); }
+.phone-sound-icon { color: var(--tile-accent); background: color-mix(in oklab, var(--tile-accent) 12%, var(--background)); }
+.login-screen { isolation: isolate; position: relative; }
+.login-screen::after { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--login-overlay); }
+.login-photo { position: absolute; inset: 0; z-index: -2; height: 100%; width: 100%; object-fit: cover; }
+.login-screen .login-inner { max-width: 1000px; }
+.login-screen .login-auth { background: color-mix(in oklab, var(--background) 90%, transparent); border-color: var(--border); backdrop-filter: blur(20px); }
+.phone-console.phone-entry .phone-page-viewport .login-screen .login-brand-copy { display: block; }
+.phone-console.phone-entry .phone-page-viewport .login-screen .login-photo { width: 100%; height: 100%; }
+.phone-console.phone-entry .phone-page-viewport .login-screen .login-inner { padding: 16px; }
 @media (max-height: 430px) {
   .phone-console .phone-mix-control-page { display: flex; }
   .phone-console .mx-phone .mx-console-toolbar { min-height: 32px; height: 32px; }

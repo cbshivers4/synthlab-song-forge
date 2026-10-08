@@ -31,6 +31,7 @@ function readPresets(): DrumPreset[] {
 }
 
 const BANKS = ["1", "2", "3", "4", "5", "6", "7", "8"];
+const PAD_ORDER: DrumPad["kind"][] = ["kick", "snare", "hat", "openhat", "clap", "rim", "tom", "perc", "ride", "crash", "fx"];
 
 /** Instrument drawings, not abstract symbols; they fit inside the original pad layout. */
 const INSTRUMENT_COLOR: Record<DrumPad["kind"], string> = {
@@ -97,7 +98,7 @@ export function DrumMachine({ track }: { track: Track }) {
   const [energy, setEnergy] = useState(6);
   const [focusPadId, setFocusPadId] = useState<string | null>(null);
   const [selectedStep, setSelectedStep] = useState<{ padId: string; index: number } | null>(null);
-  const pads = track.pads ?? [];
+  const pads = [...(track.pads ?? [])].sort((a, b) => PAD_ORDER.indexOf(a.kind) - PAD_ORDER.indexOf(b.kind));
   const hitPad = (pad: DrumPad) => {
     getEngine().playDrum(track.id, pad, 1);
     setFocusPadId(pad.id);
@@ -502,8 +503,9 @@ export function DrumMachine({ track }: { track: Track }) {
         <div className="flex gap-2">
           {/* 1–8 → the 8 patterns */}
           <div className="drum-side-banks flex flex-col gap-1">
+            <span className="font-mono text-[9px] text-muted-foreground">PATTERN</span>
             {BANKS.map((number, index) => (
-              <button
+              <Button variant="ghost"
                 key={number}
                 aria-label={`Pattern ${number}`}
                 onClick={() => switchPattern(index)}
@@ -515,13 +517,13 @@ export function DrumMachine({ track }: { track: Track }) {
                 )}
               >
                 {number}
-              </button>
+              </Button>
             ))}
           </div>
 
           {/* Original pad proportions, with instrument artwork beside the labels. */}
-          <div className="drum-pad-grid grid min-w-0 flex-1 grid-cols-4 gap-1.5">
-            {pads.map((pad) => {
+          <div className="drum-pad-grid grid min-w-0 flex-1 grid-cols-5 gap-2">
+            {pads.map((pad, padIndex) => {
               const focused = focusPad?.id === pad.id;
               const hasSteps = pad.steps.some((v) => v > 0);
               return (
@@ -541,14 +543,15 @@ export function DrumMachine({ track }: { track: Track }) {
                   }}
                   className={cn(
                     "relative flex min-h-16 cursor-pointer flex-col justify-between rounded-[3px] border p-1.5 text-left outline-none transition-colors focus-visible:ring-1 focus-visible:ring-ring",
-                    focused ? "border-primary bg-primary/10" : "border-border bg-surface-2 hover:border-primary/50",
+                    focused ? "border-primary" : "border-border hover:border-primary/50",
+                    [0, 4, 8, 12].includes(padIndex) ? "drum-pad-dark" : "bg-surface-2",
                   )}
                 >
                   <span aria-hidden className="pointer-events-none absolute inset-0 flex items-center justify-center">
                     <DrumInstrumentIcon kind={pad.kind} className="size-[52%]" />
                   </span>
                   <span className="relative min-w-0">
-                    <span className="block truncate font-mono text-[10px] font-semibold tracking-wider">{pad.name}</span>
+                    <span className="block truncate font-mono text-[10px] font-semibold tracking-wider">{padIndex + 1}. {pad.name}</span>
                     <span className="block font-mono text-[8px] text-muted-foreground">
                       {pad.sample ? "SMP" : pad.kit?.toUpperCase() ?? "909"}{hasSteps ? " ·" : ""}
                     </span>

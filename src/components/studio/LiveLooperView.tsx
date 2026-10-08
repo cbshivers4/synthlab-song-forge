@@ -79,7 +79,7 @@ function LoopDonut({ slot, send }: { slot: LoopSlot; send: (i: number) => void }
     <div className="flex min-w-0 flex-col items-center gap-2 border-b border-border pb-4">
       <Button
         type="button" variant="ghost"
-        className="relative aspect-square h-auto w-full max-w-72 rounded-full p-0 text-foreground hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-primary"
+        className="relative aspect-square h-auto w-full max-w-36 rounded-full p-0 text-foreground hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-primary"
         aria-label={`Loop ${slot.index + 1}: ${slot.state === "recording" && slot.recEnd === null ? "close recording" : labels[slot.state]}`}
         onClick={() => void looper.tap(slot.index).catch((error) => toast.error("Couldn't start the looper", { description: error instanceof Error ? error.message : undefined }))}
       >
@@ -108,7 +108,7 @@ function LoopDonut({ slot, send }: { slot: LoopSlot; send: (i: number) => void }
           <span className={cn("font-mono text-[10px] uppercase", slot.state === "recording" ? "text-destructive" : "text-muted-foreground")}>{slot.overdubbing ? "DUB" : slot.state === "armed" && looper.isWaitingForSignal ? "PLAY TO START" : labels[slot.state]}</span>
         </span>
       </Button>
-      <div className="flex w-full max-w-72 items-center justify-center gap-1" aria-label={`Loop ${slot.index + 1} color`}>
+      <div className="flex w-full max-w-72 flex-wrap items-center justify-center gap-1" aria-label={`Loop ${slot.index + 1} color`}>
         {TRACK_PALETTE.slice(slot.index % 3, slot.index % 3 + 6).map((color) => (
           <Button
             key={color.id}
@@ -133,7 +133,7 @@ function LoopDonut({ slot, send }: { slot: LoopSlot; send: (i: number) => void }
         <Slider value={[slot.volume]} min={0} max={1.2} step={0.01} onValueChange={(v) => looper.setVolume(slot.index, v[0] ?? 0)} aria-label={`Loop ${slot.index + 1} volume`} />
         <MidiLearnButton id={`looper:${slot.index}`} param="volume" label={`Loop ${slot.index + 1} volume`} />
       </div>
-      <div className="flex w-full max-w-72 items-center justify-center gap-1">
+      <div className="grid w-full max-w-72 grid-cols-3 items-center justify-center gap-1 [&>button]:w-full [&>button]:min-w-0 [&>button]:px-1">
         <Button size="sm" variant={slot.state === "armed" ? "default" : "secondary"} className="h-10 px-2 font-mono text-[10px]" disabled={slot.state !== "empty" && slot.state !== "armed"} aria-label={`${slot.state === "armed" ? "Disarm" : "Arm"} loop ${slot.index + 1}`} title="Arm: uses the pre-count / start-on-sound / next cycle" onClick={() => void looper.tap(slot.index).catch((error) => toast.error("Couldn't start the looper", { description: error instanceof Error ? error.message : undefined }))}>ARM</Button>
         <Button size="sm" variant={slot.state === "recording" ? "destructive" : "secondary"} className="h-10 px-2 font-mono text-[10px]" disabled={slot.state !== "empty" && !(slot.state === "recording" && slot.recEnd === null)} aria-label={`Record loop ${slot.index + 1}`} title="Record with the pre-count (1 bar if pre-count is Off). In Free mode tap again to close the loop." onClick={() => void (slot.state === "recording" ? looper.tap(slot.index) : looper.recordCounted(slot.index)).catch((error) => toast.error("Couldn't start the looper", { description: error instanceof Error ? error.message : undefined }))}><Circle className="size-3 fill-current text-destructive" /> REC</Button>
         <Button size="icon" variant="secondary" className="size-10" disabled={!slot.buffer} aria-label={`Loop ${slot.index + 1} ${slot.state === "playing" ? "stop" : "play"}`} title="Play / stop" onClick={() => slot.state === "playing" ? looper.stop(slot.index) : looper.play(slot.index)}>{slot.state === "playing" ? <Square className="size-4" /> : <Play className="size-4" />}</Button>
@@ -226,7 +226,7 @@ export function LiveLooperView() {
         </div>
         <span className="ml-auto font-mono text-xs text-muted-foreground">{looper.mode === "sync" ? `${looper.bars} ${looper.bars === 1 ? "BAR" : "BARS"} · ${transport.bpm} BPM` : "FREE LENGTH"}</span>
       </div>
-      <div className="grid grid-cols-1 gap-x-4 gap-y-6 min-[560px]:grid-cols-2 2xl:grid-cols-4">
+      <div className="looper-pad-grid grid grid-cols-4 gap-x-2 gap-y-4">
         {looper.slots.map((slot) => <LoopDonut key={slot.index} slot={slot} send={send} />)}
       </div>
       <div className="flex flex-wrap gap-2 border-t border-border pt-4">

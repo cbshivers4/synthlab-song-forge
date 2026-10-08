@@ -7,6 +7,7 @@
 - [x] Add a playable bass generator that creates editable MIDI patterns
 
 # Roadmap
+- [ ] Refresh login and Sounds; update drum order/faces/pattern label/five-column icons, sampler chop banks/red markers, four-column pad sampler/looper, Tools and Edit labels; verify desktop and phone.
 - [x] Simplify phone Home, add drum-roll/tap-record views and contain theme controls; signed-in phone checks verified quick fills, recorded hits, theme containment and no portrait/sideways page overflow. Physical-phone/audio checks remain hardware-dependent.
 - [x] Repair Recent files deletion without restoring sample URLs; signed-in test deleted a newly saved project with missing audio via its trash button and verified it stayed deleted after reload
 - [x] Add optional count-in haptic pulses and phone Recording toggle; browser tests verified 0/4 pulses, automatic recording, STOP cancellation and unsupported-browser status; physical vibration remains hardware-dependent
