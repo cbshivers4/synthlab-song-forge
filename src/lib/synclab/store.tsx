@@ -2079,7 +2079,11 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           toast("Clipboard is empty", { description: "Copy a track first with ⌘C / Ctrl+C." });
           return;
         }
-        const target = tracksRef.current.find((t) => t.id === (targetId ?? selectedIdRef.current ?? src.id));
+        // Paste onto the explicitly chosen or selected channel — but never back
+        // onto the track it was copied from (that would stack notes on themselves);
+        // in that case fall through and create a new COPY track.
+        const wantedId = targetId ?? selectedIdRef.current;
+        const target = wantedId && wantedId !== src.id ? tracksRef.current.find((t) => t.id === wantedId) : undefined;
         if (target) {
           const at = Math.max(0, transportRef.current.step);
           const origin = Math.min(...(src.clips ?? []).map((c) => c.start ?? 0), ...(src.notes ?? []).map((n) => n.step), ...(src.pads?.some((p) => p.steps.some((v) => v > 0)) ? [0] : []));
