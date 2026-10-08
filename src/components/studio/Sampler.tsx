@@ -329,6 +329,18 @@ export function Sampler() {
     toast.success(`Chopped into ${n}`, { description: "Each chop plays from the root note upwards." });
   };
 
+  /** Cuts the trimmed region on a musical grid (1/div note) using the sample's BPM. */
+  const chopByNote = (div: number) => {
+    if (!track || !s || !s.duration) return;
+    const bpm = s.sampleBpm ?? getEngine().tempo ?? 120;
+    const step = ((60 / bpm) * (4 / div)) / s.duration;
+    const next: number[] = [];
+    for (let at = s.start; at < s.end - step * 0.25 && next.length < 64; at += step) next.push(at);
+    updateSampler(track.id, { slices: next });
+    toast.success(`Chopped in 1/${div} notes`, { description: `${next.length} chops at ${bpm} BPM${next.length >= 64 ? " (max 64)" : ""}. Set Sample BPM to match the audio.` });
+  };
+
+
 
   /** Cuts each chop out of the real sample as its own WAV (respects reverse off; uses the source file audio). */
   const renderChops = async () => {
@@ -604,6 +616,12 @@ export function Sampler() {
                   onClick={() => chopInto(n)}
                 >
                   {n}
+                </Button>
+              ))}
+              <span className="label-xs">Note grid</span>
+              {[1, 2, 4, 8, 16, 32].map((d) => (
+                <Button key={`n${d}`} size="sm" variant="outline" className="h-9 font-mono text-[10px] tracking-widest sm:h-7" aria-label={`Chop in 1/${d} notes`} onClick={() => chopByNote(d)}>
+                  1/{d}
                 </Button>
               ))}
               <Button
