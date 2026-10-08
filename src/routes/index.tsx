@@ -166,16 +166,6 @@ function DetachedPanels() {
 function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: FloatState) => FloatState) => void }) {
   const isMobile = useIsMobile();
   const { selected, tracks, panel, setPanel, select } = useStudio();
-  const [mixPage, setMixPage] = useState(0);
-  const [mixControlPage, setMixControlPage] = useState<"levels" | "performance">("levels");
-  const [mixChannels, setMixChannels] = useState(3);
-  useEffect(() => {
-    const update = () => setMixChannels(Math.max(1, Math.min(3, Math.floor((window.innerWidth - 80) / 200) - 1)));
-    update(); window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
-  }, []);
-  const maxMixPage = Math.max(0, Math.ceil(tracks.length / mixChannels) - 1);
-  const currentMixPage = Math.min(mixPage, maxMixPage);
   // Resizable editor height, remembered between sessions.
   const [rackH, setRackH] = useState(() => {
     if (typeof window === "undefined") return 380;
@@ -245,7 +235,6 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
           {selected && <span className="ml-2 hidden label-xs sm:inline">· {selected.name}</span>}
         </h2>
         <div className="ml-auto flex shrink-0 items-center gap-1">
-          {isMobile && panel === "mixer" && <><Button variant="outline" className="phone-mix-control-page h-12" aria-label="Switch mixer control page" onClick={() => setMixControlPage(mixControlPage === "levels" ? "performance" : "levels")}>{mixControlPage === "levels" ? "Mute & pan" : "Levels"}</Button><span className="text-xs">{currentMixPage + 1}/{maxMixPage + 1}</span><Button size="icon" variant="outline" className="size-12" aria-label="Previous mixer channels" disabled={currentMixPage === 0} onClick={() => setMixPage(currentMixPage - 1)}><ArrowDownToLine className="rotate-90" /></Button><Button size="icon" variant="outline" className="size-12" aria-label="Next mixer channels" disabled={currentMixPage === maxMixPage} onClick={() => setMixPage(currentMixPage + 1)}><ArrowUpFromLine className="rotate-90" /></Button></>}
           {!isMobile && ((panel === "synth" && selected?.kind !== "sampler") || panel === "drums") && (
             <Button
               size="sm"
@@ -282,7 +271,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
         </div>
       </div>
       {isMobile ? <PhonePages name={current.title}><div className="phone-editor-content min-h-0 space-y-3 p-3">
-        {panel === "mixer" && <Mixer phonePage={currentMixPage} phoneChannels={mixChannels} phoneControlPage={mixControlPage} />}
+        {panel === "mixer" && <Mixer />}
         {panel === "synth" && (selected?.kind === "sampler" ? <Sampler /> : synthTrack ? <SynthEditor track={synthTrack} /> : <p>Select an instrument track.</p>)}
         {panel === "drums" && (drumTrack ? <DrumMachine track={drumTrack} /> : <p>Add a drum track.</p>)}
         {panel === "piano" && (selected?.kind === "drum" ? <DrumRoll track={selected} /> : synthTrack ? <PianoRoll track={synthTrack} /> : drumTrack ? <DrumRoll track={drumTrack} /> : <p>Select an instrument, MIDI or drum track.</p>)}
