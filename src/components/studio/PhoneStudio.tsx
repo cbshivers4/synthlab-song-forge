@@ -67,6 +67,5 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
         <footer className="grid h-14 shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-t border-border px-4"><Button variant="ghost" className="h-12 justify-start" onClick={() => { requestBluetoothSettings(); setPanel("settings"); }}><Radio />Bluetooth & audio</Button><div className="flex gap-1"><Button variant="outline" className="h-12" onClick={() => openExport()}>Export</Button><Button variant="outline" size="icon" className="size-12" aria-label="Help" onClick={() => openHelp("help")}><LifeBuoy /></Button></div></footer>
       </div>}
     </main>
-    {upright && !allowPortrait && <div className="phone-rotate fixed inset-0 z-[90] flex flex-col items-center justify-center gap-5 bg-background px-6 text-center"><img src={logo.url} alt="SYNCLAB" className="size-24 rounded-lg" /><RotateCw className="size-12 text-primary" /><h2 className="text-xl font-semibold">Turn your phone sideways</h2><p className="max-w-xs text-sm text-muted-foreground">Landscape studio</p><Button className="h-12" variant="outline" onClick={() => setAllowPortrait(true)}>Continue upright</Button><Button className="h-12" variant="ghost" onClick={() => setStage("start")}>Projects</Button></div>}
   </div>;
 }
