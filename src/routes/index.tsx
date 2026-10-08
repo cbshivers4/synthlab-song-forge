@@ -233,7 +233,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
         <span className="shrink-0 text-primary">{current.icon}</span>
         <h2 className="min-w-0 flex-1 truncate font-display text-sm font-semibold tracking-[0.12em] sm:text-[11px] sm:tracking-[0.2em]">
           {current.title}
-          {selected && <span className="ml-2 hidden label-xs sm:inline">· {selected.name}</span>}
+          {(panel === "synth" ? synthTrack : selected) && <span className="ml-2 hidden label-xs sm:inline">· {(panel === "synth" ? synthTrack : selected)?.name}</span>}
         </h2>
         <div className="ml-auto flex shrink-0 items-center gap-1">
           {!isMobile && ((panel === "synth" && selected?.kind !== "sampler") || panel === "drums") && (
