@@ -1973,7 +1973,7 @@ function PhoneChannelFxMenu({ track }: { track: Track }) {
         onInteractOutside={(e) => { if ((e.target as HTMLElement | null)?.closest?.("[role=dialog]")) e.preventDefault(); }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mb-2 flex items-center justify-between gap-2">
+        <div className="sticky top-0 z-10 mb-2 flex items-center justify-between gap-2 bg-popover pb-2">
           <span className="truncate font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
             {track.name} — effects & EQ
           </span>
