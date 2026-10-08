@@ -117,6 +117,12 @@ const DEFAULTS: Prefs = {
 
 const KEY = "synclab.prefs";
 
+function punchLabel(step: number | null | undefined) {
+  if (step == null) return "Off";
+  const spb = stepsPerBar();
+  return `Bar ${Math.floor(step / spb) + 1}, beat ${Math.floor((step % spb) / 4) + 1}`;
+}
+
 function Row({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
     <div className="settings-row grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 border-b border-border/60 py-2.5 last:border-0">
@@ -194,6 +200,8 @@ export function Settings() {
   const [outputs, setOutputs] = useState<{ id: string; label: string }[]>([]);
   const [scanning, setScanning] = useState(false);
   const mobilePrefs = useMobileAccessibility();
+  const [hapticsAvailable, setHapticsAvailable] = useState(false);
+  useEffect(() => { setHapticsAvailable(typeof navigator !== "undefined" && typeof navigator.vibrate === "function"); }, []);
   const midiRef = useRef(midiInputs);
   midiRef.current = midiInputs;
   useEffect(() => { if (isMobile) setActiveTab("mobile"); }, [isMobile]);
@@ -472,6 +480,20 @@ export function Settings() {
         <Row label="Overdub">
           <Switch checked={Boolean(transport.overdub)} onCheckedChange={(v) => setTransport({ overdub: v })} />
         </Row>
+        <Row label="Punch in" hint="Recording starts at this position">
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-xs text-primary">{punchLabel(transport.punchIn)}</span>
+            <Button size="sm" variant="secondary" onClick={() => setTransport({ punchIn: transport.step })}>Set at playhead</Button>
+            <Button size="sm" variant="ghost" disabled={transport.punchIn == null} onClick={() => setTransport({ punchIn: null, punchOut: null })}>Clear</Button>
+          </div>
+        </Row>
+        <Row label="Punch out" hint="Recording stops at this position">
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-xs text-primary">{punchLabel(transport.punchOut)}</span>
+            <Button size="sm" variant="secondary" onClick={() => setTransport({ punchOut: transport.step })}>Set at playhead</Button>
+            <Button size="sm" variant="ghost" disabled={transport.punchOut == null} onClick={() => setTransport({ punchOut: null })}>Clear</Button>
+          </div>
+        </Row>
       </TabsContent>
 
       <TabsContent value="metronome" className="mt-4">
@@ -491,6 +513,12 @@ export function Settings() {
             }}
             width="w-24"
           />
+        </Row>
+        <Row label="Count-in click" hint="Metronome click during the count-in">
+          <Switch checked={transport.countInClick !== false} onCheckedChange={(countInClick) => setTransport({ countInClick })} />
+        </Row>
+        <Row label="Count-in vibration" hint={hapticsAvailable ? "Haptic pulse on each count-in beat" : "Vibration unavailable in this browser"}>
+          <Switch disabled={!hapticsAvailable} checked={hapticsAvailable && !!transport.countInHaptics} onCheckedChange={(countInHaptics) => setTransport({ countInHaptics })} />
         </Row>
         <Row label="Click sound">
           <Pick value={p.clickSound} options={["Detroit Rim", "Click", "Cowbell", "Sidestick", "Beep"]} onChange={(v) => set("clickSound", v)} />

@@ -76,8 +76,6 @@ export function TopBar() {
   const ciElapsed = transport.countInLeft != null ? ciTotal - transport.countInLeft : 0;
   const ciBeat = (ciElapsed % bpb) + 1;
   const ciBar = Math.floor(ciElapsed / bpb) + 1;
-  const [hapticsAvailable, setHapticsAvailable] = useState(false);
-  useEffect(() => { setHapticsAvailable(typeof navigator.vibrate === "function"); }, []);
 
   return (
     <header className="studio-topbar transport-glass studio-wallpaper rack sticky top-0 z-30 shrink-0" data-studio-panel="transport" data-desktop-transport={!isMobile ? "true" : undefined} data-phone-transport={isMobile ? "true" : undefined} style={skinBackground(transportSkin)} {...transportDrop}>
@@ -342,38 +340,6 @@ export function TopBar() {
 
         <TransportExtras mobile={isMobile}>
           {isMobile && <>
-            <PhoneTransportSection title="Playback">
-            <div className="flex w-full items-center gap-1">
-              <TBtn label="RTZ" onClick={() => setTransport({ step: transport.loop ? (transport.loopStart ?? 0) : 0 })}><SkipBack className="size-4" /></TBtn>
-              <TBtn label={transport.playing ? "PAUSE" : "PLAY"} active={transport.playing} onClick={togglePlay}>{transport.playing ? <Pause className="size-4" /> : <Play className="size-4" />}</TBtn>
-              <TBtn label="STOP" onClick={stop}><Square className="size-4" /></TBtn>
-            </div>
-            <PositionDisplay step={transport.step} bpm={transport.bpm} playing={transport.playing} />
-            <FeatBtn label="METRONOME" icon={<Timer className="size-3.5" />} active={transport.metronome} onClick={() => setTransport({ metronome: !transport.metronome })} />
-            </PhoneTransportSection>
-            <PhoneTransportSection title="Recording">
-              <TBtn label="REC" danger active={transport.recording || transport.countInLeft != null} onClick={toggleRecord}><Mic className="size-4" /></TBtn>
-              <div className="w-full space-y-2" role="group" aria-label="Recording count-in">
-                <h3 className="text-sm font-medium">Count-in before recording</h3>
-                <div className="grid grid-cols-4 gap-1">
-                  <Button variant={transport.countIn ? "outline" : "default"} className="h-12 px-1" aria-label="Count-in off" aria-pressed={!transport.countIn} onClick={() => setTransport({ countIn: false })}>Off</Button>
-                  {[1, 2, 4].map((bars) => <Button key={bars} variant={transport.countIn && (transport.countInBars ?? 1) === bars ? "default" : "outline"} className="h-12 px-1" aria-label={`Count-in ${bars} ${bars === 1 ? "bar" : "bars"}`} aria-pressed={transport.countIn && (transport.countInBars ?? 1) === bars} onClick={() => setTransport({ countIn: true, countInBars: bars })}>{bars} {bars === 1 ? "bar" : "bars"}</Button>)}
-                </div>
-              </div>
-              <label className="grid min-h-12 w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 text-sm">
-                <span className="min-w-0">Count-in click</span>
-                <Switch aria-label="Count-in click" checked={transport.countInClick !== false} onCheckedChange={(countInClick) => setTransport({ countInClick })} />
-              </label>
-              <label className="grid min-h-12 w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 text-sm">
-                <span className="min-w-0">Count-in vibration</span>
-                <Switch aria-label="Count-in vibration" disabled={!hapticsAvailable} checked={hapticsAvailable && !!transport.countInHaptics} onCheckedChange={(countInHaptics) => setTransport({ countInHaptics })} />
-              </label>
-              {!hapticsAvailable && <p className="text-xs text-muted-foreground">Vibration unavailable in this browser.</p>}
-              <FeatBtn label="OVERDUB" icon={<Layers className="size-3.5" />} active={transport.overdub} onClick={() => setTransport({ overdub: !transport.overdub })} />
-              <FeatBtn label="REPLACE" icon={<Layers className="size-3.5" />} active={!!transport.replace} onClick={() => setTransport({ replace: !transport.replace })} />
-              <FeatBtn label="INPUT MON" icon={<Headphones className="size-3.5" />} active={transport.monitor} onClick={() => setTransport({ monitor: !transport.monitor })} />
-              <FeatBtn label={transport.punchIn == null ? "PUNCH IN" : `PUNCH OUT @${transport.punchIn + 1}`} icon={<Scissors className="size-3.5" />} active={transport.punchIn != null} onClick={() => setTransport(transport.punchIn == null ? { punchIn: transport.step } : { punchOut: transport.step })} />
-            </PhoneTransportSection>
             <PhoneTransportSection title="Loop">
               <FeatBtn label="LOOP" icon={<Repeat className="size-3.5" />} active={transport.loop} onClick={() => setTransport({ loop: !transport.loop })} />
               <div className="w-full overflow-x-auto"><LoopRange /></div>
