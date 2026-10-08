@@ -38,7 +38,7 @@ Embedded keyboards reuse Keyboard with a track or sample callback and shared typ
 Paste content at the playhead onto the selected or explicit channel, preserving its settings; Duplicate track separately clones channels.
 Synth selection opens piano roll; explicit actions open synth. Sampler shows Stretch before chops; PCM slicing reuses keyed previewNote voices for gate/choke.
 Transport stays scoped: desktop wraps intrinsic groups; phone Edit groups menu controls by purpose and uses shared recording/count-in handlers; Home stays clear.
-Phone mixer reuses track/bus actions; drum editors share session-only navigation, page touch-sized steps and preserve one-finger scrolling during pinch zoom.
+Phone mixer reuses track/bus actions with two-axis touch scrolling; drum editors keep session navigation, touch pages and one-finger scroll during pinch.
 Drum snap is session-only and affects step writes, not existing hits, preserving patterns.
 Count-in haptics use the shared beat timer and guarded vibration support, independent of audio.
 Cloud deletion reads raw sessions, confirms row deletion, then cleans owned project files; missing playback assets cannot block removal.
