@@ -132,7 +132,7 @@ export function WelcomeScreen() {
           <img src={synclabLogoAsset.url} alt="SYNCLAB" className="login-logo rounded-xl border border-border object-cover" />
 
 
-          <div className="login-brand-copy mb-7 space-y-4">
+          <div className="login-brand-copy mb-5 space-y-4">
             <h1 className="sr-only">SYNCLAB — CREATE. RECORD. PRODUCE. FINISH.</h1>
             <p className="font-display text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl">
 
@@ -161,7 +161,7 @@ export function WelcomeScreen() {
             ))}
           </ul>
 
-          <footer className="mt-8 hidden w-full border-t border-border pt-6 font-mono text-[10px] uppercase text-muted-foreground/50 sm:block">
+          <footer className="mt-6 hidden w-full border-t border-border pt-6 font-mono text-[10px] uppercase text-muted-foreground/50 sm:block">
             SYNCLAB · Detroit Electronic Sound Design
           </footer>
         </div>

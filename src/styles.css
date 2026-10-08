@@ -871,8 +871,9 @@
 .phone-console.phone-entry .phone-page-viewport .login-screen .login-inner { padding: 16px; }
 
 /* Login brand mark — the neon square leads every layout, sized deliberately per form factor. */
-.login-logo { width: 208px; height: 208px; margin-bottom: 28px; }
-@media (max-width: 1023px) { .login-logo { width: 176px; height: 176px; margin-bottom: 22px; } }
+.login-logo { width: 208px; height: 208px; margin-bottom: 20px; }
+@media (max-width: 1023px) { .login-logo { width: 176px; height: 176px; margin-bottom: 18px; } }
+
 
 /* Phone: the mark fills its column instead of floating, and the brand line stays with it. */
 .phone-console.phone-entry .phone-page-viewport > div > .mx-auto.grid > div:first-child > img.login-logo { width: 168px; height: 168px; margin-bottom: 18px; }
