@@ -1798,6 +1798,8 @@ export function Mixer({ phonePage = 0, phoneChannels, phoneControlPage = "levels
             <Palette className="size-3" /> Out {fracToDb(levels.master).toFixed(0)} dB
           </span>
         </div>
+          </>
+        )}
       </div>
 
       {tracks.length === 0 ? (
