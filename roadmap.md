@@ -146,9 +146,9 @@
 - [x] My Library (cloud/computer folders for samples, synth, drums, notes) + distinct effect window looks
 
 ## Current request
-- [ ] Apply selected left-rail landscape phone shell, graphite/teal tokens and orientation handling; desktop unchanged
-- [ ] Replace phone viewport scrolling with explicit timeline, mixer and instrument/tool page navigation while retaining controls
-- [ ] Verify signed-in phone navigation, paging, recording menus and desktop preservation
+- [x] Apply selected left-rail landscape phone shell, graphite/teal tokens and orientation handling; desktop workspace retained
+- [x] Replace phone viewport scrolling with overlapping timeline, mixer and instrument/tool pages; short-screen mixer uses levels/performance pages
+- [x] Verify signed-in navigation, mixer mute changes, channel/track pages, count-in selection, drum/settings access and desktop return at 942×508, 844×390 and 667×375; physical phone rotation remains hardware-dependent
 - [x] Make phone mixer bottom controls reachable by vertical touch scrolling without shrinking them; signed-in touch checks reached Mute/Solo/Arm/Monitor and Master on small portrait, tall portrait and sideways screens. Build OK.
 - [x] Align phone playhead with the grid including extra-large controls; signed-in portrait, sideways and desktop checks confirmed cursor/ruler/grid positions match before and after scrolling, with Mute and track menus unobstructed.
 - [x] Phone Home retains transport and its complete menu; Edit removes the top transport in portrait/landscape, including when TOOLS is open. Verified menu Play/Stop, tempo/metronome changes, horizontal timeline scrolling, sideways Home return and no page overflow; aligned song header/playhead/export overlays with track widths, build OK.
