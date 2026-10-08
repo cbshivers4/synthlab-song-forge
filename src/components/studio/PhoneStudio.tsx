@@ -40,7 +40,7 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
     size(); window.addEventListener("resize", size);
     const observer = new ResizeObserver(size);
     observer.observe(document.body);
-    return () => { observer.disconnect(); query.removeEventListener("change", update); window.removeEventListener("resize", size); document.documentElement.classList.remove("phone-console-active"); };
+    return () => { observer.disconnect(); window.removeEventListener("resize", size); document.documentElement.classList.remove("phone-console-active"); };
   }, []);
   const enter = (next: typeof room) => { setPanel(null); setRoom(next); setMenuPage(0); };
   const list = room === "sounds" ? sounds : tools;
