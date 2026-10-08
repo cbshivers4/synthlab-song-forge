@@ -638,12 +638,13 @@ function StudioWorkspace() {
 
 function Stages() {
   const { stage } = useApp();
+  const isMobile = useIsMobile();
   return (
     <PlanProvider>
       <SplashScreen />
       <HelpCenter />
-      {stage === "welcome" && <WelcomeScreen />}
-      {stage === "start" && <StartScreen />}
+      {stage === "welcome" && (isMobile ? <div className="phone-console phone-entry flex h-[100dvh] flex-col overflow-hidden"><PhonePages name="Sign in"><WelcomeScreen /></PhonePages></div> : <WelcomeScreen />)}
+      {stage === "start" && (isMobile ? <div className="phone-console phone-entry flex h-[100dvh] flex-col overflow-hidden"><PhonePages name="Projects"><StartScreen /></PhonePages></div> : <StartScreen />)}
       {stage === "studio" && <StudioWorkspace />}
     </PlanProvider>
   );

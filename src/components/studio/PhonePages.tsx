@@ -55,8 +55,8 @@ export function PhonePages({ children, name }: { children: ReactNode; name: stri
     else el.scrollTop += direction * Math.max(48, el.clientHeight - 56);
     refresh((n) => n + 1);
   };
-  const xPage = area ? Math.floor(area.el.scrollLeft / Math.max(48, area.el.clientWidth - 56)) + 1 : 1;
-  const yPage = area ? Math.floor(area.el.scrollTop / Math.max(48, area.el.clientHeight - 56)) + 1 : 1;
+  const xPage = area ? Math.ceil(area.el.scrollLeft / Math.max(48, area.el.clientWidth - 56)) + 1 : 1;
+  const yPage = area ? Math.ceil(area.el.scrollTop / Math.max(48, area.el.clientHeight - 56)) + 1 : 1;
   return <div className="phone-pages flex min-h-0 flex-1 flex-col overflow-hidden">
     <div ref={viewport} className="phone-page-viewport relative min-h-0 flex-1 overflow-hidden" aria-label={`${name} pages`}>{children}</div>
     <footer className="phone-page-controls grid h-14 shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-t border-border bg-surface px-3">

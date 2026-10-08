@@ -810,6 +810,29 @@
 .phone-console .timeline-track-actions { gap: 0; padding-bottom: 0; }
 .phone-console .timeline-track-actions > button { padding-inline: 6px; font-size: 10px; }
 .phone-console .track-touch-header { padding-block: 3px; }
+.phone-console [data-timeline-track-rows] > div > .relative.flex { height: 110px; }
+.phone-console .track-touch-header > div:first-child { height: 32px; }
+.phone-console .track-touch-header > div:first-child button { min-height: 28px; height: 28px; }
+.phone-console .track-touch-header .timeline-track-actions { height: 48px; }
+.phone-console .track-touch-header > div:nth-child(3) { height: 16px; }
+.phone-console .track-touch-header > div:last-child { height: 4px; min-height: 0; }
+.phone-console .mobile-timeline .lane-grid { min-height: 110px; }
+.phone-console .phone-tool-panel .phone-page-controls, .phone-console .phone-page-controls { padding-bottom: 0; }
+.phone-console .phone-tool-panel .phone-page-controls { min-height: 56px; }
+.phone-console .phone-entry { padding: 0; }
+.phone-console.phone-entry .min-h-screen { min-height: 0; }
+.phone-console.phone-entry .phone-page-viewport > div { padding: 8px; }
+.phone-console.phone-entry .phone-page-viewport > div > .mx-auto.grid { grid-template-columns: minmax(0,1fr) minmax(0,1fr); }
+.phone-console.phone-entry .phone-page-viewport > div > .mx-auto.grid > div:first-child > ul { display: none; }
+.phone-console.phone-entry .phone-page-viewport > div > .mx-auto.grid > div:first-child > div { display: none; }
+.phone-console.phone-entry .phone-page-viewport > div > .mx-auto.grid > div:first-child img { width: 128px; height: 128px; }
+.phone-console.phone-entry .phone-page-viewport #recent-projects { min-height: 200px; }
+.phone-transport-menu .phone-pages { min-height: 0; }
+.phone-transport-menu .phone-page-controls { background: var(--surface); }
+.phone-transport-menu button { min-height: 48px; }
+.phone-console-active [role="dialog"], .phone-console-active .phone-transport-menu {
+  --background: #15191c; --surface: #30383b; --surface-2: #30383b; --foreground: #f2f5f4; --primary: #45c8b5;
+}
 .phone-console .mobile-timeline #timeline-scroll > div > .flex.items-center,
 .phone-console .mobile-timeline #timeline-scroll > div > .m-2 { display: none; }
 @media (max-height: 430px) {
