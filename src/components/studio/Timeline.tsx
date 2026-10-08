@@ -76,6 +76,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { clipFromLocalFile } from "@/lib/synclab/local-files";
 import { openTrackSettings } from "@/components/studio/TrackSettingsDialog";
+import { InsertRack } from "./Mixer";
+import { BUILT_IN_PLUGINS } from "@/lib/synclab/plugins";
 import { SectionLane } from "./SectionLane";
 import { useStudio } from "@/lib/synclab/store";
 import { useApp } from "@/lib/synclab/app-state";
@@ -1383,6 +1385,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
               )}
             </DropdownMenuContent>
           </DropdownMenu>}
+          {isMobile && <TrackFxMenu track={track} />}
           {track.vca && <span className="ml-auto rounded-sm border border-primary/60 px-1 font-mono text-[9px] text-primary" title={`Volume also controlled by VCA ${track.vca} in the mixer`}>VCA {track.vca}</span>}
         </div>
 
