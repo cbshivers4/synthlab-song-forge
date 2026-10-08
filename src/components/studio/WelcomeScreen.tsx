@@ -128,12 +128,14 @@ export function WelcomeScreen() {
       <img src={studioPhoto} alt="" className="login-photo" />
       <div className="login-inner mx-auto grid w-full grid-cols-1 items-center gap-8 px-5 py-8 sm:px-8 sm:py-12 md:grid-cols-2 lg:gap-16">
         {/* Brand & features side */}
-        <div className="flex min-w-0 flex-col items-start text-left">
-          <img src={synclabLogoAsset.url} alt="SYNCLAB" className="mb-6 size-28 rounded-lg border border-border object-cover sm:size-36" />
+        <div className="login-brand flex min-w-0 flex-col items-start text-left">
+          <img src={synclabLogoAsset.url} alt="SYNCLAB" className="login-logo rounded-xl border border-border object-cover" />
 
-          <div className="login-brand-copy mb-7 space-y-4">
-            <h1 className="font-display text-4xl font-extrabold leading-tight sm:text-5xl">SYNCLAB</h1>
-            <p className="font-display text-lg font-semibold leading-relaxed sm:text-xl">
+
+          <div className="login-brand-copy mb-5 space-y-4">
+            <h1 className="sr-only">SYNCLAB — CREATE. RECORD. PRODUCE. FINISH.</h1>
+            <p className="font-display text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl">
+
               CREATE. RECORD.
               <br />
               PRODUCE.{" "}
@@ -159,7 +161,7 @@ export function WelcomeScreen() {
             ))}
           </ul>
 
-          <footer className="mt-8 hidden w-full border-t border-border pt-6 font-mono text-[10px] uppercase text-muted-foreground/50 sm:block">
+          <footer className="mt-6 hidden w-full border-t border-border pt-6 font-mono text-[10px] uppercase text-muted-foreground/50 sm:block">
             SYNCLAB · Detroit Electronic Sound Design
           </footer>
         </div>
