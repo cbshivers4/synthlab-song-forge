@@ -940,7 +940,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
     >
       <div className="w-1 shrink-0" style={{ background: track.color, opacity: isSelected ? 1 : 0.65 }} />
       <div
-        className="track-touch-header w-[168px] shrink-0 space-y-1 border-r border-border bg-surface px-2 py-1.5 sm:w-[290px]"
+        className="track-touch-header w-[calc(var(--timeline-header-width)_-_4px)] shrink-0 space-y-1 border-r border-border bg-surface px-2 py-1.5"
         onPointerDown={startPhoneGesture}
         onPointerMove={movePhoneGesture}
         onPointerUp={endPhoneGesture}
@@ -2623,7 +2623,7 @@ function Ruler() {
 
   return (
     <div className="sticky top-0 z-10 flex border-b border-border bg-surface-2/70 backdrop-blur">
-      <div className="relative z-20 flex w-[172px] shrink-0 flex-col justify-center gap-1 border-r border-border bg-surface-2 px-2 py-1 sm:w-[294px] sm:px-3" style={{ transform: "translateX(var(--timeline-scroll-x, 0px))" }}>
+      <div className="relative z-20 flex w-[var(--timeline-header-width)] shrink-0 flex-col justify-center gap-1 border-r border-border bg-surface-2 px-2 py-1 sm:px-3" style={{ transform: "translateX(var(--timeline-scroll-x, 0px))" }}>
         <div className="flex items-center gap-2">
           <span className="font-display text-[11px] font-semibold tracking-[0.2em]">TIMELINE</span>
           <span className="label-xs ml-auto">
@@ -2940,7 +2940,7 @@ function FolderRow({
   return (
     <div className="flex border-b border-border bg-surface-2/60">
       <div
-        className="relative z-20 flex w-[172px] shrink-0 items-center gap-1.5 border-r border-border px-2 py-1 sm:w-[294px] sm:px-3"
+        className="relative z-20 flex w-[var(--timeline-header-width)] shrink-0 items-center gap-1.5 border-r border-border px-2 py-1 sm:px-3"
         style={{ transform: "translateX(var(--timeline-scroll-x, 0px))" }}
       >
         <button

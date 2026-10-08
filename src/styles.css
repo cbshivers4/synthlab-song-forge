@@ -411,8 +411,11 @@
     min-height: 3.5rem;
   }
 
+  .mobile-controls-xl .mobile-timeline {
+    --timeline-header-width: calc(12rem + 4px);
+  }
+
   .mobile-controls-xl .track-touch-header {
-    width: 12rem;
     padding-block: 0.75rem;
   }
 

@@ -146,6 +146,7 @@
 - [x] My Library (cloud/computer folders for samples, synth, drums, notes) + distinct effect window looks
 
 ## Current request
+- [x] Align phone playhead with the grid including extra-large controls; signed-in portrait, sideways and desktop checks confirmed cursor/ruler/grid positions match before and after scrolling, with Mute and track menus unobstructed.
 - [x] Phone Home retains transport and its complete menu; Edit removes the top transport in portrait/landscape, including when TOOLS is open. Verified menu Play/Stop, tempo/metronome changes, horizontal timeline scrolling, sideways Home return and no page overflow; aligned song header/playhead/export overlays with track widths, build OK.
 - [x] Add phone Settings → Enable microphone shortcut that requests permission and opens Audio; browser test confirmed granted permission, three simulated inputs, and no phone overflow. Physical-phone capture remains unverified.
 - [x] Add Space (delay/reverb) and Texture (distortion/chorus) synth X-Y pads; signed-in desktop/phone-sized checks verified dragging and synchronized Effects knobs, no page overflow, build OK. Real-device listening remains unverified.
