@@ -7,8 +7,8 @@
 - [x] Add a playable bass generator that creates editable MIDI patterns
 
 # Roadmap
-- [ ] Move phone meters/MIDI below playback, retain Add track, correct shared drum-roll order and dark pad faces, and restore distinct Synth/Sampler opening; verify in the signed-in studio.
-- [ ] Refresh login and Sounds; update drum order/faces/pattern label/five-column icons, sampler chop banks/red markers, four-column pad sampler/looper, Tools and Edit labels; verify desktop and phone.
+- [x] Move phone meters/MIDI below playback, retain Add track, correct shared drum-roll order and dark pad faces, and restore distinct Synth/Sampler opening; signed-in phone/desktop checks and drum identity/MIDI unit test passed.
+- [x] Refresh login and Sounds; update drum order/faces/pattern label/five-column icons, sampler chop banks/red markers, four-column pad sampler/looper, Tools and Edit labels; desktop and phone browser checks passed, physical-phone testing remains hardware-dependent.
 - [x] Simplify phone Home, add drum-roll/tap-record views and contain theme controls; signed-in phone checks verified quick fills, recorded hits, theme containment and no portrait/sideways page overflow. Physical-phone/audio checks remain hardware-dependent.
 - [x] Repair Recent files deletion without restoring sample URLs; signed-in test deleted a newly saved project with missing audio via its trash button and verified it stayed deleted after reload
 - [x] Add optional count-in haptic pulses and phone Recording toggle; browser tests verified 0/4 pulses, automatic recording, STOP cancellation and unsupported-browser status; physical vibration remains hardware-dependent
@@ -37,7 +37,7 @@
 - [ ] Verify Live Looper input timing and playback on real audio-interface hardware (requires a physical device)
 
 - [x] Make the original SYNCLAB logo clearly visible on the welcome/login screen
-- [ ] Restyle the welcome/login screen after the user chooses a visual direction
+- [x] Restyle the welcome/login screen in the chosen direction and verify the enlarged logo on desktop and phones
 - [x] Color the main record button
 - [x] Add playable chords, scales, note highlighting, and scale lock to the keyboard
 
