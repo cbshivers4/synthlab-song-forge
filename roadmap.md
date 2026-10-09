@@ -7,6 +7,7 @@
 - [x] Add a playable bass generator that creates editable MIDI patterns
 
 # Roadmap
+- [x] Fix reel recorder timeline meters on desktop and phone: read live stereo master taps without enabling microphone or capture; reflect transport playback status and preserve tape metering.
 - [x] Reel-to-reel recorder on phone and desktop: AudioWorklet recording, live stereo VU meters, moving reels, playback/seek/loop, gain/tone/saturation/speed knobs, WAV/MP3/FLAC/AIFF export and timeline transfer. Signed-in browser checks verified PCM capture, meters, reel motion, WAV/MP3 contents and phone controls; physical-device listening remains unverified.
 - [x] Move phone meters/MIDI below playback, retain Add track, correct shared drum-roll order and dark pad faces, and restore distinct Synth/Sampler opening; signed-in phone/desktop checks and drum identity/MIDI unit test passed.
 - [x] Refresh login and Sounds; update drum order/faces/pattern label/five-column icons, sampler chop banks/red markers, four-column pad sampler/looper, Tools and Edit labels; desktop and phone browser checks passed, physical-phone testing remains hardware-dependent.
