@@ -138,8 +138,8 @@ export function VideoSampler() {
   const slice = (from: number, to: number) => {
     if (!buffer) return null;
     const s = Math.floor(from * buffer.sampleRate), e = Math.floor(to * buffer.sampleRate);
-    let left = buffer.getChannelData(0).slice(s, e);
-    let right = (buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : buffer.getChannelData(0)).slice(s, e);
+    let left: Float32Array = buffer.getChannelData(0).slice(s, e);
+    let right: Float32Array = (buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : buffer.getChannelData(0)).slice(s, e);
     if (speed !== 1 && left.length > 4096) { left = wsolaStretch(left, speed); right = wsolaStretch(right, speed); }
     return { left, right, sampleRate: buffer.sampleRate };
   };
@@ -175,14 +175,14 @@ export function VideoSampler() {
         <div className="pointer-events-none absolute inset-y-0 w-px bg-destructive" style={{ left: `${Math.min(100, position / buffer.duration * 100)}%` }} aria-hidden="true" />
       </div>
       <div className="flex justify-between font-mono text-[10px] text-muted-foreground">{[0, 0.25, 0.5, 0.75, 1].map((fraction) => <span key={fraction}>{(buffer.duration * fraction).toFixed(2)}s</span>)}</div>
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground" aria-label="Video time stretch">
+    </div>}
+    {buffer && <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground rounded border border-border p-2" aria-label="Video time stretch">
         <Button variant={stretchOn ? "default" : "outline"} className="h-9" aria-pressed={stretchOn} onClick={() => setStretchOn((v) => !v)}>Time stretch {stretchOn ? "on" : "off"}</Button>
         <label className="flex items-center gap-1">Video BPM<input type="number" min={40} max={240} value={sourceBpm} aria-label="Video source BPM" className="h-9 w-16 rounded border border-border bg-surface-2 px-1 font-mono text-foreground" onChange={(e) => setSourceBpm(Math.max(40, Math.min(240, Number(e.target.value) || 120)))} /></label>
         <label className="flex items-center gap-1">Target<input type="number" min={40} max={240} value={targetBpm} aria-label="Video target BPM" className="h-9 w-16 rounded border border-border bg-surface-2 px-1 font-mono text-foreground" onChange={(e) => setTargetBpm(Math.max(40, Math.min(240, Number(e.target.value) || 120)))} /></label>
         <Button variant="ghost" className="h-9 px-2" onClick={() => setTargetBpm(Math.round(getEngine().tempo || 120))}>Song tempo</Button>
         <span className="font-mono">{Math.round(speed * 100)}% · {(buffer.duration / speed).toFixed(2)}s, pitch kept</span>
-      </div>
-    </div>}
+      </div>}
     <div className="flex flex-wrap gap-2">
       <Button variant="outline" className="h-11" disabled={filming} onClick={() => file.current?.click()}><Upload />Load video</Button>
       <input ref={file} hidden type="file" accept="video/*" aria-label="Load video sample" onChange={(e) => { const f = e.target.files?.[0]; if (f) void loadBlob(f); e.target.value = ""; }} />
