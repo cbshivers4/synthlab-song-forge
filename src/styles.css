@@ -902,5 +902,8 @@
   .phone-console-rail { padding-block: 4px; gap: 0; }
   .phone-console-rail > .flex-1 { gap: 2px; }
   .phone-console .phone-room-button { height: 56px; }
-  .phone-console .phone-room-grid { gap: 8px; padding: 8px; }
+  .phone-console .phone-room-grid { gap: 8px; padding: 8px; grid-auto-rows: minmax(5.5rem, 1fr); }
+  .phone-console .phone-sound-tile { min-height: 5.5rem; font-size: 0.75rem; }
+  .phone-console .phone-sound-icon { width: 3rem; height: 3rem; }
+  .phone-console .phone-sound-tile svg { width: 1.75rem; height: 1.75rem; }
 }
