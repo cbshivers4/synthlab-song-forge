@@ -111,7 +111,7 @@ export function LibraryPanel() {
         const blob = await libraryAudio(item);
         if (!blob) throw new Error("This sample has no audio.");
         if ((item.data as { mediaType?: string } | null)?.mediaType === "video") {
-          selectLibraryVideo(blob, item.name);
+          selectLibraryVideo(blob, item.name, (item.data as { videoKit?: import("@/lib/synclab/media-library").VideoKit } | null)?.videoKit);
           setPanel("video-sampler");
           return;
         }

@@ -28,6 +28,7 @@ export function retainMediaInBackground(blob: Blob, filename: string, folder?: s
   }));
 }
 
-let videoSelection: { blob: Blob; name: string } | null = null;
-export function selectLibraryVideo(blob: Blob, name: string) { videoSelection = { blob, name }; }
+let videoSelection: { blob: Blob; name: string; kit?: VideoKit } | null = null;
+export interface VideoKit { chops: number[]; sourceBpm: number; targetBpm: number; stretchOn: boolean }
+export function selectLibraryVideo(blob: Blob, name: string, kit?: VideoKit) { videoSelection = { blob, name, ...(kit ? { kit } : {}) }; }
 export function takeLibraryVideo() { const value = videoSelection; videoSelection = null; return value; }

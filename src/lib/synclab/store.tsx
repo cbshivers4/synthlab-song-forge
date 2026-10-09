@@ -1661,7 +1661,6 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       const s = JSON.parse(raw) as CloudSession;
       if (!s?.tracks?.length) return;
       const blobUrls = s.tracks.flatMap((t) => [...(t.clips ?? []).map((c) => c.url ?? ""), t.sampler?.url ?? ""]).filter((u) => u.startsWith("blob:"));
-      const lostAudio = false;
       /** Re-creates audio from the autosave media store; anything missing is cleared so it can be loaded again. */
       const restoreAudio = async () => {
         const map = new Map<string, string>();
@@ -1685,9 +1684,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         return missing;
       };
       toast("Recover previous session?", {
-        description: `${s.tracks.length} track${s.tracks.length === 1 ? "" : "s"} from your last session were saved automatically.${
-          lostAudio ? " Imported audio files will need loading again." : ""
-        }`,
+        description: `${s.tracks.length} track${s.tracks.length === 1 ? "" : "s"} from your last session were saved automatically${blobUrls.length ? ", with their audio" : ""}.`,
         duration: Infinity,
         action: {
           label: "Recover",
