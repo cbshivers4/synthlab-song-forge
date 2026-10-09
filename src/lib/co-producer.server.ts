@@ -26,7 +26,7 @@ When they ask for musical material (chords, melody, bassline, drum pattern), als
 Respect the song's key and tempo when given.`;
 
 export async function askCoProducer(question: string, song: string): Promise<CoProducerResult> {
-  const apiKey = process.env.LOVABLE_API_KEY;
+  const apiKey = process.env["LOVABLE_API_KEY"];
   if (!apiKey) throw new Error("AI is not configured for this app.");
   const runIdFetch = createLovableAiGatewayRunIdFetch();
   const provider = createOpenAI({

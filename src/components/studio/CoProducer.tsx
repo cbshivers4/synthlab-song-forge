@@ -5,7 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { useStudio } from "@/lib/synclab/store";
 import { askCoProducerFn } from "@/utils/co-producer.functions";
-import type { CoProducerResult } from "@/lib/co-producer.server";
+type CoProducerResult = Extract<Awaited<ReturnType<typeof askCoProducerFn>>, { ok: true }>["result"];
 import { getBeatsPerBar } from "@/lib/synclab/timebase";
 
 type Msg = { role: "user" | "ai"; text: string; result?: CoProducerResult; added?: boolean };
