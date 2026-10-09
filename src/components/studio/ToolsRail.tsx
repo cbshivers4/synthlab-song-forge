@@ -22,6 +22,7 @@ import {
   Plus,
   Square,
 } from "lucide-react";
+import { Film } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { addLocalFolder, getLocalFile, getLocalFolders, getPreviewAnalyser, onFoldersChange, onPreviewChange, pickFolder, playPreview, stopPreview } from "@/lib/synclab/local-files";
 import { useStudio, type PanelId } from "@/lib/synclab/store";
@@ -45,6 +46,7 @@ interface Tool {
 
 const TOOLS: Tool[] = [
   { id: "reel-recorder", label: "Reel-to-Reel Recorder", icon: <Disc3 className="size-4" />, panel: "reel-recorder" },
+  { id: "video-sampler", label: "Video Sampler", icon: <Film className="size-4" />, panel: "video-sampler" },
   { id: "files", label: "My Computer / Browser", icon: <FolderOpen className="size-4" />, panel: "browser" },
   { id: "synth", label: "Synthesizers", icon: <Music2 className="size-4" />, panel: "synth", drag: { kind: "instrument", name: "Synth" } },
   { id: "drums", label: "Drum Machine", icon: <Disc3 className="size-4" />, panel: "drums", drag: { kind: "drum", name: "Drums" } },
@@ -78,7 +80,7 @@ interface Section {
 
 const SECTIONS: Section[] = [
   { id: "files", label: "Files", tools: ["files"].map(tool) },
-  { id: "perform", label: "Perform", tools: ["reel-recorder", "live", "looper", "humbeat"].map(tool) },
+  { id: "perform", label: "Perform", tools: ["reel-recorder", "video-sampler", "live", "looper", "humbeat"].map(tool) },
   { id: "instruments", label: "Instruments", tools: ["coproducer", "genstem", "bassgen", "synth", "drums", "beat", "chop", "sampler"].map(tool) },
   { id: "mix", label: "Mix & Master", tools: ["mixer", "master", "stems", "voice", "reference", "notes"].map(tool) },
   { id: "plugins", label: "Plugins", tools: ["plugins", "apps"].map(tool) },

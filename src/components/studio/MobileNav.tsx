@@ -25,6 +25,7 @@ import {
   Pause,
   Square,
 } from "lucide-react";
+import { Film } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { useStudio, type PanelId } from "@/lib/synclab/store";
@@ -43,6 +44,7 @@ export function MobileNav({ onBeatMode, view, setView, moreSignal = 0, landscape
 
   const create: Item[] = [
     { label: "Reel-to-Reel Recorder", icon: <Disc3 />, panel: "reel-recorder" },
+    { label: "Video Sampler", icon: <Film />, panel: "video-sampler" },
     { label: "Sounds", icon: <FolderOpen />, panel: "browser" },
     { label: "Beat Maker", icon: <Grid2x2 />, run: () => { setPanel(null); onBeatMode(); } },
     { label: "Drum Machine", icon: <Disc3 />, panel: "drums" },
@@ -60,6 +62,7 @@ export function MobileNav({ onBeatMode, view, setView, moreSignal = 0, landscape
   ];
   const more: Item[] = [
     { label: "Reel-to-Reel Recorder", icon: <Disc3 />, panel: "reel-recorder" },
+    { label: "Video Sampler", icon: <Film />, panel: "video-sampler" },
     { label: "Separate Stems", icon: <Scissors />, panel: "stems" },
     { label: "Hum to Beat", icon: <Mic />, panel: "humbeat" },
     { label: "AI Co-Producer", icon: <Bot />, panel: "coproducer" },
