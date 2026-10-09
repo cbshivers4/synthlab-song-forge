@@ -45,4 +45,4 @@ MP3/MP4 imports/exports retain originals in the private library with content has
 Cloud deletion reads raw sessions, confirms row deletion, then cleans owned project files; missing playback assets cannot block removal.
 Reel recorder: singleton AudioWorklet capture; tape bypasses master to avoid feedback. Timeline meters read live post-master taps without input activation; exit releases input, retaining tape.
 
-Video Sampler pins wave+stretch; video seconds anchor cuts; stretch=playbackRate+WSOLA prints.
+Video Sampler: video seconds anchor cuts; full sampler features via Open in Sampler. Autosave mirrors blob media to IndexedDB.
