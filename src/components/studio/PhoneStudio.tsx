@@ -52,7 +52,7 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
   const list = room === "sounds" ? sounds : tools;
   return <div ref={consoleRef} className="phone-console mobile-studio landscape-prod flex h-[100dvh] min-w-0 overflow-hidden bg-background text-foreground">
     <nav aria-label="Studio navigation" data-rail-open={railOpen} className={`phone-console-rail relative flex shrink-0 flex-col items-center gap-2 border-r border-border bg-surface px-2 py-3 transition-[width] duration-200 ease-out ${railOpen ? "w-20" : "w-12"}`}>
-      <Button variant="outline" size="icon" className="phone-rail-toggle absolute -right-4 top-1/2 z-40 size-8 -translate-y-1/2 rounded-full border border-border bg-surface" aria-label={railOpen ? "Hide navigation bar" : "Show navigation bar"} aria-expanded={railOpen} onClick={() => setRailOpen((open) => !open)}>{railOpen ? <ChevronLeft className="size-4" /> : <ChevronRight className="size-4" />}</Button>
+      <Button variant="outline" size="icon" className="phone-rail-toggle absolute right-1 top-1/2 z-40 size-8 -translate-y-1/2 rounded-full border border-border bg-surface" aria-label={railOpen ? "Hide navigation bar" : "Show navigation bar"} aria-expanded={railOpen} onClick={() => setRailOpen((open) => !open)}>{railOpen ? <ChevronLeft className="size-4" /> : <ChevronRight className="size-4" />}</Button>
       {railOpen && <>
       <Button variant="ghost" className="size-16 shrink-0 p-0" aria-label="Projects" onClick={() => setStage("start")}><img src={logo.url} alt="SYNCLAB" className="size-16 rounded-md object-cover" /></Button>
       <div className="flex min-h-0 flex-1 flex-col justify-center gap-3">
