@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Circle, Plus, Scissors, Square, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,8 @@ import { encodeWav } from "@/lib/synclab/bounce";
 import { useStudio } from "@/lib/synclab/store";
 import { uid } from "@/lib/synclab/presets";
 import { retainMediaInBackground, takeLibraryVideo } from "@/lib/synclab/media-library";
+
+import { WaveformView } from "./WaveformView";
 
 const PAD_KEYS = "1234qwerasdfzxcv";
 
@@ -27,6 +29,34 @@ export function VideoSampler() {
   const [active, setActive] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const [position, setPosition] = useState(0);
+  const [manualSlice, setManualSlice] = useState(false);
+  const peaks = useMemo(() => {
+    if (!buffer) return [];
+    const channels = Array.from({ length: buffer.numberOfChannels }, (_, i) => buffer.getChannelData(i));
+    const bins = Math.min(1024, buffer.length);
+    return Array.from({ length: bins }, (_, i) => {
+      let peak = 0;
+      const start = Math.floor(i * buffer.length / bins);
+      const end = Math.floor((i + 1) * buffer.length / bins);
+      for (const channel of channels) for (let j = start; j < end; j++) peak = Math.max(peak, Math.abs(channel[j]));
+      return peak;
+    });
+  }, [buffer]);
+  const addChop = (time: number) => {
+    if (!buffer) return;
+    const at = Math.max(0, Math.min(buffer.duration - 0.01, time));
+    if (chops.some((c) => Math.abs(c - at) < 0.01)) return;
+    if (chops.length >= 16) { toast.info("All 16 chop pads are filled"); return; }
+    setChops((current) => [...current, at].sort((a, b) => a - b));
+  };
+  const seek = (time: number) => {
+    window.clearTimeout(stopTimer.current);
+    video.current?.pause();
+    if (video.current) video.current.currentTime = time;
+    setActive(null); setPosition(time);
+  };
+
   const release = () => { stream.current?.getTracks().forEach((t) => t.stop()); stream.current = null; };
   useEffect(() => () => { release(); window.clearTimeout(stopTimer.current); }, []);
 
@@ -38,6 +68,9 @@ export function VideoSampler() {
   const loadBlob = async (blob: Blob) => {
     if (blob instanceof File) retainMediaInBackground(blob, blob.name);
     setError(null);
+    window.clearTimeout(stopTimer.current);
+    video.current?.pause();
+    setBuffer(null); setChops([]); setPosition(0); setActive(null);
     const next = URL.createObjectURL(blob);
     setUrl((old) => { if (old) URL.revokeObjectURL(old); return next; });
     try {
@@ -111,18 +144,35 @@ export function VideoSampler() {
 
   return <section className="space-y-3" aria-label="Video sampler">
     <div className="overflow-hidden rounded border border-border bg-background">
-      <video ref={video} src={url ?? undefined} playsInline className="aspect-video w-full bg-background" controls={!filming && !!url} aria-label="Video sample" />
+      <video ref={video} src={url ?? undefined} playsInline className="aspect-video max-h-48 w-full bg-background object-contain sm:max-h-64" controls={!filming && !!url} aria-label="Video sample" onTimeUpdate={(e) => setPosition(e.currentTarget.currentTime)} onSeeked={(e) => setPosition(e.currentTarget.currentTime)} onEnded={() => setActive(null)} />
     </div>
+    {buffer && <div className="sticky top-0 z-30 space-y-1 border-b border-border bg-background py-2" aria-label="Video audio waveform editor">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="text-xs font-mono text-muted-foreground">Video audio · {position.toFixed(2)} / {buffer.duration.toFixed(2)}s</span>
+        <Button variant={manualSlice ? "default" : "outline"} className="h-9" aria-pressed={manualSlice} onClick={() => setManualSlice((value) => !value)}><Scissors />Manual slice</Button>
+      </div>
+      <div className="relative h-28 min-h-28 w-full overflow-hidden rounded border border-border bg-surface-2 touch-pan-y" aria-label="Video chop waveform" onPointerDown={(e) => {
+        if ((e.target as HTMLElement).closest("button")) return;
+        const bounds = e.currentTarget.getBoundingClientRect();
+        const time = Math.max(0, Math.min(1, (e.clientX - bounds.left) / bounds.width)) * buffer.duration;
+        seek(time); if (manualSlice) addChop(time);
+      }}>
+        <WaveformView peaks={peaks} label="Video audio waveform" />
+        {chops.map((time, i) => <Button key={`${time}-${i}`} variant="ghost" className="absolute inset-y-0 h-full w-6 -translate-x-1/2 rounded-none border-l-2 border-primary p-0 text-primary" style={{ left: `${time / buffer.duration * 100}%` }} aria-label={`Seek to video chop ${i + 1}`} title={`Chop ${i + 1} · ${time.toFixed(2)}s`} onClick={() => seek(time)}><span className="absolute top-0 bg-background px-1 font-mono text-[10px]">{i + 1}</span></Button>)}
+        <div className="pointer-events-none absolute inset-y-0 w-px bg-destructive" style={{ left: `${Math.min(100, position / buffer.duration * 100)}%` }} aria-hidden="true" />
+      </div>
+      <div className="flex justify-between font-mono text-[10px] text-muted-foreground">{[0, 0.25, 0.5, 0.75, 1].map((fraction) => <span key={fraction}>{(buffer.duration * fraction).toFixed(2)}s</span>)}</div>
+    </div>}
     <div className="flex flex-wrap gap-2">
       <Button variant="outline" className="h-11" disabled={filming} onClick={() => file.current?.click()}><Upload />Load video</Button>
-      <input ref={file} hidden type="file" accept="video/*" onChange={(e) => { const f = e.target.files?.[0]; if (f) void loadBlob(f); e.target.value = ""; }} />
+      <input ref={file} hidden type="file" accept="video/*" aria-label="Load video sample" onChange={(e) => { const f = e.target.files?.[0]; if (f) void loadBlob(f); e.target.value = ""; }} />
       <Button variant={filming ? "destructive" : "outline"} className="h-11" onClick={() => void film()}>{filming ? <Square /> : <Circle className="text-destructive" />}{filming ? "Stop filming" : "Record video"}</Button>
       <Button variant="outline" className="h-11" disabled={!buffer} onClick={() => void toProject()}><Plus />Audio to project</Button>
     </div>
     {buffer && <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
       <label className="flex items-center gap-2">Chop sensitivity<input type="range" min={0} max={1} step={0.05} value={sensitivity} className="accent-primary" onChange={(e) => setSensitivity(Number(e.target.value))} /></label>
       <Button variant="secondary" className="h-9" onClick={() => chopAll(buffer, sensitivity)}><Scissors />Auto-chop</Button>
-      <Button variant="outline" className="h-9" onClick={() => { const t = video.current?.currentTime ?? 0; setChops((c) => [...new Set([...c, t])].sort((x, y) => x - y).slice(0, 16)); }}>Chop at video position</Button>
+      <Button variant="outline" className="h-9" onClick={() => addChop(video.current?.currentTime ?? 0)}>Chop at video position</Button>
       <span>{chops.length} chops · {buffer.duration.toFixed(1)}s</span>
     </div>}
     {chops.length > 0 && <div className="grid grid-cols-4 gap-2">
