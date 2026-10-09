@@ -19,7 +19,7 @@ import {
   type SkinKey,
 } from "@/lib/synclab/skins";
 
-type Props = { skinKey: SkinKey; image?: boolean; padColor?: boolean; colorLabel?: string };
+type Props = { skinKey: SkinKey; image?: boolean; padColor?: boolean; keyboard?: boolean; colorLabel?: string };
 
 const safe = (fn: () => void) => {
   try {
@@ -171,7 +171,7 @@ function ImageFraming({ skinKey, skin }: { skinKey: SkinKey; skin: Skin }) {
   );
 }
 
-export function SkinControls({ skinKey, image, padColor, colorLabel = "Background" }: Props) {
+export function SkinControls({ skinKey, image, padColor, keyboard, colorLabel = "Background" }: Props) {
   const skin = useSkin(skinKey);
   const fileRef = useRef<HTMLInputElement>(null);
   useEffect(() => startSkinSync(), []);
@@ -200,6 +200,11 @@ export function SkinControls({ skinKey, image, padColor, colorLabel = "Backgroun
           />
         </label>
       )}
+      {keyboard && ([
+        { key: "naturalKeyColor", label: "Natural keys", fallback: "#f2f5f4" },
+        { key: "sharpKeyColor", label: "Sharp keys", fallback: "#15191c" },
+        { key: "activeKeyColor", label: "Played keys", fallback: "#45c8b5" },
+      ] as const).map(({ key, label, fallback }) => <label key={key} className="flex items-center gap-1.5 font-mono text-[10px] text-muted-foreground">{label}<input type="color" aria-label={`${label} color`} value={skin[key] ?? fallback} onChange={(e) => safe(() => setSkin(skinKey, { [key]: e.target.value }))} className="h-8 w-10 cursor-pointer rounded border border-border bg-transparent" /></label>)}
       {image && (
         <>
           <input
@@ -235,7 +240,7 @@ export function SkinControls({ skinKey, image, padColor, colorLabel = "Backgroun
         title="Remove this panel's picture and colors"
         onClick={() =>
           safe(() => {
-            setSkin(skinKey, { color: undefined, padColor: undefined });
+            setSkin(skinKey, { color: undefined, padColor: undefined, ...(keyboard ? { naturalKeyColor: undefined, sharpKeyColor: undefined, activeKeyColor: undefined } : {}) });
             clearPanelWallpaper(skinKey);
           })
         }

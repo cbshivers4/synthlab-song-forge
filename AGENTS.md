@@ -34,7 +34,7 @@ Editors shrink below saved height to preserve the timeline minimum and avoid too
 Drum artwork uses semantic SVG; sort display copies and bank slices by stable IDs/indices to preserve audio and MIDI.
 
 Phone drum tabs reuse DrumRoll and instrument pads for edits/tap recording; sound/kit tabs preserve controls without duplication.
-Embedded keyboards reuse Keyboard with a track or sample callback and shared typing toggle; claim events once and yield pad shortcuts to prevent doubled notes.
+Keyboards reuse Keyboard and one note path; independent skin slots color opaque keys and wallpaper only the surround, preventing doubled notes.
 Paste content at the playhead onto the selected or explicit channel, preserving its settings; Duplicate track separately clones channels.
 Synth selection opens piano roll; explicit actions open synth. Sampler shows Stretch before chops; PCM slicing reuses keyed previewNote voices for gate/choke.
 Transport: desktop wraps; phone uses shallow scrolling rows to preserve timeline height, shared Loop/rhythm setters, wide meters and a tools menu.

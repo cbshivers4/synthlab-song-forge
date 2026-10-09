@@ -148,6 +148,7 @@
 - [x] My Library (cloud/computer folders for samples, synth, drums, notes) + distinct effect window looks
 
 ## Current request
+- [x] Show sampler keyboard by default and add independent natural/sharp/played key colors and surround-only wallpaper to sampler, synth and sample-pad keyboards; signed-in desktop and phone checks verified all three, opaque keys and actual loaded-sample audio signal. Build OK; physical-device listening remains hardware-dependent.
 - [x] Compact phone transport into shallow scrolling rows without removing controls; signed-in checks at 534×942, 390×844, 942×508 and 667×375 verified Play/Stop, BPM, Loop, bar steppers, meter/swing, tools menu and rail toggle. Transport measures 201px upright/148px sideways, meter/scope remain 192/240px, no page overflow; desktop checked at 1280×1800. Physical-phone testing remains hardware-dependent.
 - [x] Rebalance the sideways phone layout so the SOUNDS/TOOLS tiles are usable and add a collapsible left nav with a bigger logo; signed-in checks at 942×508 verified one full row of big tiles, the rail collapsing to 48px and reopening, and the arrow click (a stale press animation rule that shifted the button on tap was fixed). Build OK, typecheck clean.
 - [x] Move phone Loop and Tempo & rhythm onto the transport; signed-in checks verified steppers, loop toggle, BPM, meter, swing and tools menu with no overflow upright/sideways; desktop unchanged.

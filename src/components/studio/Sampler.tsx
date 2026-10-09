@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
-import { AudioLines, Play, RotateCcw, Scissors, Square, Trash2, Upload } from "lucide-react";
+import { AudioLines, Piano, Play, RotateCcw, Scissors, Square, Trash2, Upload } from "lucide-react";
+import { Keyboard } from "./Keyboard";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
@@ -153,6 +154,7 @@ export function Sampler() {
   const { tracks, selected, select, addTrack, addClip, loadSample, updateSampler, clearSample, stopSamples, previewNote, setPanel } =
     useStudio();
   const [over, setOver] = useState(false);
+  const [showKeyboard, setShowKeyboard] = useState(true);
   /** chop pad currently held down */
   const [held, setHeld] = useState<number | null>(null);
   const [chopBank, setChopBank] = useState(0);
@@ -865,6 +867,8 @@ export function Sampler() {
           </p>
         </>
       )}
+      <Button variant={showKeyboard ? "secondary" : "outline"} aria-pressed={showKeyboard} onClick={() => setShowKeyboard((value) => !value)}><Piano className="size-4" />{showKeyboard ? "Hide keyboard" : "Show keyboard"}</Button>
+      {showKeyboard && <section aria-label="Sampler keyboard" className="min-w-0 border-t border-border pt-3"><Keyboard {...(track ? { track } : {})} skinKey="sampler-keyboard" disabled={!s} onPlay={(midi) => { if (track && s) previewNote(track.id, midi, s.duration); }} /></section>}
     </div>
   );
 }

@@ -617,7 +617,7 @@ export function SynthEditor({ track }: { track: Track }) {
           <ChordScale trackId={track.id} onPlay={(midi) => previewNote(track.id, midi)} />
         </TabsContent>
       </Tabs>
-      {showKeyboard && <div className="min-w-0 border-t border-border pt-3" aria-label="Synth keyboard"><Keyboard track={track} /></div>}
+      {showKeyboard && <div className="min-w-0 border-t border-border pt-3" aria-label="Synth keyboard"><Keyboard track={track} skinKey="synth-keyboard" /></div>}
     </div>
   );
 }
