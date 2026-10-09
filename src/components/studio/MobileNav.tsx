@@ -42,6 +42,7 @@ export function MobileNav({ onBeatMode, view, setView, moreSignal = 0, landscape
   useEffect(() => { if (moreSignal) setSheet("more"); }, [moreSignal]);
 
   const create: Item[] = [
+    { label: "Reel-to-Reel Recorder", icon: <Disc3 />, panel: "reel-recorder" },
     { label: "Sounds", icon: <FolderOpen />, panel: "browser" },
     { label: "Beat Maker", icon: <Grid2x2 />, run: () => { setPanel(null); onBeatMode(); } },
     { label: "Drum Machine", icon: <Disc3 />, panel: "drums" },
@@ -58,6 +59,7 @@ export function MobileNav({ onBeatMode, view, setView, moreSignal = 0, landscape
     { label: "Bass Generator", icon: <Music />, panel: "bassgen" },
   ];
   const more: Item[] = [
+    { label: "Reel-to-Reel Recorder", icon: <Disc3 />, panel: "reel-recorder" },
     { label: "Separate Stems", icon: <Scissors />, panel: "stems" },
     { label: "Hum to Beat", icon: <Mic />, panel: "humbeat" },
     { label: "AI Co-Producer", icon: <Bot />, panel: "coproducer" },
