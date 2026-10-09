@@ -59,6 +59,7 @@ const TOOLS: Tool[] = [
   { id: "stems", label: "Separate Stems", icon: <Scissors className="size-4" />, panel: "stems" },
   { id: "coproducer", label: "AI Co-Producer", icon: <Waves className="size-4" />, panel: "coproducer" },
   { id: "voice", label: "Convert Voice", icon: <Waves className="size-4" />, panel: "voice" },
+  { id: "genstem", label: "Generate Stem", icon: <Music2 className="size-4" />, panel: "genstem" },
   { id: "apps", label: "Other Apps", icon: <AppWindow className="size-4" />, panel: "apps" },
   { id: "reference", label: "Reference Analyzer", icon: <FileSearch className="size-4" />, panel: "reference" },
 
@@ -75,7 +76,7 @@ interface Section {
 const SECTIONS: Section[] = [
   { id: "files", label: "Files", tools: ["files"].map(tool) },
   { id: "perform", label: "Perform", tools: ["live", "looper", "humbeat"].map(tool) },
-  { id: "instruments", label: "Instruments", tools: ["coproducer", "synth", "drums", "beat", "chop", "sampler"].map(tool) },
+  { id: "instruments", label: "Instruments", tools: ["coproducer", "genstem", "synth", "drums", "beat", "chop", "sampler"].map(tool) },
   { id: "mix", label: "Mix & Master", tools: ["mixer", "master", "stems", "voice", "reference", "notes"].map(tool) },
   { id: "plugins", label: "Plugins", tools: ["plugins", "apps"].map(tool) },
 ];

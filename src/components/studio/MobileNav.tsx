@@ -54,6 +54,7 @@ export function MobileNav({ onBeatMode, view, setView, moreSignal = 0, landscape
     { label: "Separate Stems", icon: <Scissors />, panel: "stems" },
     { label: "AI Co-Producer", icon: <Bot />, panel: "coproducer" },
     { label: "Convert Voice", icon: <Mic />, panel: "voice" },
+    { label: "Generate Stem", icon: <Sparkles />, panel: "genstem" },
   ];
   const more: Item[] = [
     { label: "Piano Roll", icon: <Music />, panel: "piano" },
