@@ -168,7 +168,20 @@ export function TopBar() {
           ) : (
             <PositionDisplay step={transport.step} bpm={transport.bpm} playing={transport.playing} />
           )}
-          {isMobile && <div className="ml-auto flex items-center gap-3 border-l border-border pl-3"><div><span className="label-xs">BPM</span><div className="text-base leading-none tabular-nums text-primary">{transport.bpm}</div></div><div><span className="label-xs">METER</span><div className="text-base leading-none text-primary">{transport.beatsPerBar ?? 4}/4</div></div></div>}
+          {isMobile && <>
+            <label className="ml-auto"><span className="label-xs">BPM</span><input aria-label="BPM" type="number" min={60} max={190} value={transport.bpm} className="phone-bpm-input w-16 bg-transparent text-base tabular-nums text-primary" onChange={(e) => { const bpm = Number(e.target.value); if (bpm >= 60 && bpm <= 190) setTransport({ bpm }); }} /></label>
+            <Button variant="ghost" size="icon" className="size-12 shrink-0" aria-label="Loop" title="Loop" aria-pressed={transport.loop} onClick={() => setTransport({ loop: !transport.loop })}><Repeat className={`size-5 ${transport.loop ? "text-primary" : "text-muted-foreground"}`} /></Button>
+            <div aria-label="Loop range" className="phone-loop-controls flex w-full min-w-0 flex-wrap items-center gap-1 border-t border-border pt-1">
+              <LoopRange mobile />
+              <div className="flex shrink-0 items-center gap-1"><Button variant="ghost" size="icon" className="size-12" aria-label="Fewer bars" disabled={transport.bars <= 1} onClick={() => setTransport({ bars: Math.max(1, transport.bars - 1) })}><Minus className="size-3" /></Button><span className="font-mono text-sm">{transport.bars} bars</span><Button variant="ghost" size="icon" className="size-12" aria-label="More bars" disabled={transport.bars >= 512} onClick={() => setTransport({ bars: Math.min(512, transport.bars + 1) })}><Plus className="size-3" /></Button></div>
+            </div>
+            <div aria-label="Tempo & rhythm" className="phone-rhythm-controls flex w-full min-w-0 flex-wrap items-center gap-2 border-t border-border pt-1">
+              <div className="flex items-center gap-2"><Slider aria-label="Tempo" className="w-40" value={[transport.bpm]} min={60} max={190} step={1} onValueChange={([bpm = 120]) => setTransport({ bpm })} /><MidiLearnButton id="transport" param="bpm" label="Tempo" /></div>
+              <label><span className="label-xs">METER</span><select aria-label="Time signature" className="block bg-transparent font-mono text-base text-primary" value={transport.beatsPerBar ?? 4} onChange={(e) => setTransport({ beatsPerBar: Number(e.target.value) })}>{METERS.map((m) => <option key={m} value={m} className="bg-background">{m}/4</option>)}</select></label>
+              <div><span className="label-xs">Swing</span><Slider aria-label="Swing" className="w-20" value={[transport.swing]} min={0} max={0.6} step={0.01} onValueChange={([swing = 0]) => setTransport({ swing })} /></div>
+              <MidiLearnButton id="transport" param="swing" label="Swing" />
+            </div>
+          </>}
           <span className="hidden w-px bg-border sm:block" />
           <div className="hidden sm:block" title="Timeline length — click + to add bars (Shift = +16), up to 512">
             <span className="label-xs">BARS</span>
@@ -339,24 +352,6 @@ export function TopBar() {
         </div>
 
         <TransportExtras mobile={isMobile}>
-          {isMobile && <>
-            <PhoneTransportSection title="Loop">
-              <FeatBtn label="LOOP" icon={<Repeat className="size-3.5" />} active={transport.loop} onClick={() => setTransport({ loop: !transport.loop })} />
-              <div className="w-full overflow-x-auto"><LoopRange /></div>
-              <div className="flex items-center gap-1"><Button variant="ghost" size="icon" aria-label="Fewer bars" disabled={transport.bars <= 1} onClick={() => setTransport({ bars: Math.max(1, transport.bars - 1) })}><Minus className="size-3" /></Button><span className="font-mono text-sm">{transport.bars} bars</span><Button variant="ghost" size="icon" aria-label="More bars" disabled={transport.bars >= 512} onClick={() => setTransport({ bars: Math.min(512, transport.bars + 1) })}><Plus className="size-3" /></Button></div>
-            </PhoneTransportSection>
-            <PhoneTransportSection title="Tempo & rhythm">
-            <div className="flex flex-wrap items-center gap-3">
-              <div><span className="label-xs">BPM</span><div className="font-mono text-base text-primary">{transport.bpm}</div></div>
-              <Slider aria-label="Tempo" className="w-40" value={[transport.bpm]} min={60} max={190} step={1} onValueChange={([bpm = 120]) => setTransport({ bpm })} />
-              <MidiLearnButton id="transport" param="bpm" label="Tempo" />
-              <label><span className="label-xs">METER</span><select aria-label="Time signature" className="block bg-transparent font-mono text-base text-primary" value={transport.beatsPerBar ?? 4} onChange={(e) => setTransport({ beatsPerBar: Number(e.target.value) })}>{METERS.map((m) => <option key={m} value={m} className="bg-background">{m}/4</option>)}</select></label>
-              <div><span className="label-xs">Swing</span><Slider aria-label="Swing" className="w-20" value={[transport.swing]} min={0} max={0.6} step={0.01} onValueChange={([swing = 0]) => setTransport({ swing })} /></div>
-              <MidiLearnButton id="transport" param="swing" label="Swing" />
-            </div>
-            </PhoneTransportSection>
-          </>}
-          {isMobile && <h2 className="w-full border-t border-border pt-3 text-sm font-semibold">Studio tools</h2>}
           <IdeaRecorder compact={isMobile} />
           <Popover>
             <PopoverTrigger asChild>
@@ -493,11 +488,7 @@ export function TopBar() {
 
 function TransportExtras({ mobile, children }: { mobile: boolean; children: React.ReactNode }) {
   if (!mobile) return <div className="transport-glass-tools flex flex-wrap items-center gap-1">{children}</div>;
-   return <div className="order-2 justify-self-end"><Popover><PopoverTrigger asChild><Button variant="outline" size="icon" className="transport-glass-group size-11" aria-label="Transport menu" title="Transport menu"><SlidersHorizontal className="size-5" /></Button></PopoverTrigger><PopoverContent align="end" className="phone-transport-menu transport-glass-menu flex h-[min(85dvh,600px)] w-[min(92vw,520px)] flex-col overflow-hidden p-0"><div className="shrink-0 border-b border-border p-3 font-semibold">Transport</div><PhonePages name="Transport"><div className="flex flex-wrap items-center gap-2 p-3">{children}</div></PhonePages></PopoverContent></Popover></div>;
-}
-
-function PhoneTransportSection({ title, children }: { title: string; children: React.ReactNode }) {
-  return <section className="w-full min-w-0 space-y-2 border-b border-border pb-3" aria-label={title}><h2 className="text-sm font-semibold text-foreground">{title}</h2><div className="flex min-w-0 flex-wrap items-center gap-2">{children}</div></section>;
+   return <div className="order-2 justify-self-end"><Popover><PopoverTrigger asChild><Button variant="outline" size="icon" className="transport-glass-group size-11" aria-label="Transport menu" title="Studio tools"><SlidersHorizontal className="size-5" /></Button></PopoverTrigger><PopoverContent align="end" className="phone-transport-menu transport-glass-menu flex h-[min(85dvh,600px)] w-[min(92vw,520px)] flex-col overflow-hidden p-0"><div className="shrink-0 border-b border-border p-3 font-semibold">Studio tools</div><PhonePages name="Studio tools"><div className="flex flex-wrap items-center gap-2 p-3">{children}</div></PhonePages></PopoverContent></Popover></div>;
 }
 
 function TBtn({
@@ -658,7 +649,7 @@ function PositionDisplay({ step: beatStep, bpm, playing }: { step: number; bpm: 
   );
 }
 
-function LoopRange() {
+function LoopRange({ mobile = false }: { mobile?: boolean }) {
   const { transport, setTransport } = useStudio();
   const total = songSteps(transport.bars);
   const lo = transport.loopStart ?? 0;
@@ -667,6 +658,9 @@ function LoopRange() {
     if (which === "loopStart") setTransport({ loopStart: Math.max(0, Math.min(hi - stepsPerBar(), lo + d)) });
     else setTransport({ loopEnd: Math.min(total, Math.max(lo + stepsPerBar(), hi + d)) });
   };
+  if (mobile) return <div className="flex flex-wrap items-center gap-1 text-sm text-primary">
+    {([{ key: "loopStart", value: Math.floor(lo / stepsPerBar()) + 1, earlier: "Loop start earlier", later: "Loop start later", down: lo <= 0, up: lo + stepsPerBar() >= hi }, { key: "loopEnd", value: Math.ceil(hi / stepsPerBar()), earlier: "Loop end earlier", later: "Loop end later", down: hi - stepsPerBar() <= lo, up: hi >= total }] as const).map(({ key, value, earlier, later, down, up }) => <div key={key} className="flex shrink-0 items-center"><Button variant="ghost" size="icon" className="size-12" aria-label={earlier} title={earlier} disabled={down} onClick={() => nudge(key, -stepsPerBar())}><Minus className="size-4" /></Button><span className="min-w-5 text-center tabular-nums" title={key === "loopStart" ? "Loop start bar" : "Loop last bar"}>{value}</span><Button variant="ghost" size="icon" className="size-12" aria-label={later} title={later} disabled={up} onClick={() => nudge(key, stepsPerBar())}><Plus className="size-4" /></Button></div>)}
+  </div>;
   const Btn = ({ k, d, l }: { k: "loopStart" | "loopEnd"; d: number; l: string }) => (
     <button type="button" aria-label={l} onClick={() => nudge(k, d)}
       className="rounded-[2px] px-0.5 text-muted-foreground hover:bg-accent hover:text-foreground">

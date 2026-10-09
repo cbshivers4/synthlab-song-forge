@@ -148,6 +148,7 @@
 - [x] My Library (cloud/computer folders for samples, synth, drums, notes) + distinct effect window looks
 
 ## Current request
+- [x] Move phone Loop and Tempo & rhythm onto the transport; signed-in checks verified steppers, loop toggle, BPM, meter, swing and tools menu with no overflow upright/sideways; desktop unchanged.
 - [x] Restore native phone scrolling across editors, menus, all timeline tracks and mixer channels; signed-in preview reached the last track, Master, sampler bottom and menu bottom, and a simulated finger swipe scrolled the mixer
 - [x] Apply selected left-rail landscape phone shell, graphite/teal tokens and orientation handling; desktop workspace retained
 - [x] Replace phone viewport scrolling with overlapping timeline, mixer and instrument/tool pages; short-screen mixer uses levels/performance pages
