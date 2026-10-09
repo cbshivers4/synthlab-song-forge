@@ -83,12 +83,17 @@ export async function saveBytes(
   filters?: { name: string; extensions: string[] }[],
 ): Promise<{ saved: boolean; path: string | null; canceled: boolean }> {
   const buffer = data instanceof Blob ? await data.arrayBuffer() : data;
+  const retain = () => {
+    if (/\.(mp3|mp4)$/i.test(name)) void import("./media-library").then(({ retainMediaInBackground }) => retainMediaInBackground(data instanceof Blob ? data : new Blob([buffer]), name, "Exports"));
+  };
   const api = desktopApi();
   if (api) {
     const res = await api.saveFile(name, buffer, filters);
+    if (res.ok) retain();
     return { saved: Boolean(res.ok), path: res.path ?? null, canceled: Boolean(res.canceled) };
   }
   const blob = data instanceof Blob ? data : new Blob([buffer]);
+  retain();
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;

@@ -1732,6 +1732,9 @@ export class SyncLabEngine {
 
   /** Decodes a dropped audio file, keeps the buffer and returns its display data. */
   async loadSampleFile(file: File | Blob, name: string) {
+    if (file instanceof File && /\.(mp3|mp4)$/i.test(file.name)) {
+      void import("./media-library").then(({ retainMediaInBackground }) => retainMediaInBackground(file, file.name));
+    }
     const ctx = this.init();
     const raw = await (file as File).arrayBuffer();
     const buf = await ctx.decodeAudioData(raw.slice(0));

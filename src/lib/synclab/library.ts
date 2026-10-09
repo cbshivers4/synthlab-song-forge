@@ -90,7 +90,10 @@ export async function saveToLibrary(input: { kind: LibraryKind; folder: string; 
     if (error) throw error;
   }
   const { error } = await supabase.from("library_items").insert({ user_id: uid, kind: input.kind, folder, name, data: (input.data ?? {}) as Json, audio_path: audioPath });
-  if (error) throw error;
+  if (error) {
+    if (audioPath) await supabase.storage.from(BUCKET).remove([audioPath]);
+    throw error;
+  }
   emit();
 }
 
@@ -120,7 +123,8 @@ export async function downloadLibraryItem(item: LibraryItem) {
   const ext = audio ? (audio.type.includes("wav") ? "wav" : audio.type.includes("mpeg") ? "mp3" : "webm") : "synclab.json";
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = `${safe(item.folder)}-${safe(item.name)}.${ext}`;
+  const metadata = item.data as { filename?: string; mimeType?: string } | null;
+  a.download = metadata?.filename ?? `${safe(item.folder)}-${safe(item.name)}.${ext}`;
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 5000);
 }

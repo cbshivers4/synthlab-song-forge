@@ -1,4 +1,5 @@
 # Cloud storage
+- [ ] Retain MP3/MP4 uploads and app exports in the private account library, with reload, video sampler opening and cross-device reuse.
 - [x] Save and reopen full projects in the signed-in account
 - [x] Upload recordings, samples, pad sounds, and exports privately
 - [x] Add cloud project browsing and deletion
