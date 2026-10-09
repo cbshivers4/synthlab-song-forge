@@ -55,6 +55,7 @@ const TOOLS: Tool[] = [
   { id: "master", label: "Mastering", icon: <Gauge className="size-4" />, panel: "mastering" },
   { id: "live", label: "Live View", icon: <Radio className="size-4" />, panel: "live" },
   { id: "looper", label: "Live Looper", icon: <Disc3 className="size-4" />, panel: "looper" },
+  { id: "humbeat", label: "Hum to Beat", icon: <AudioLines className="size-4" />, panel: "humbeat" },
   { id: "apps", label: "Other Apps", icon: <AppWindow className="size-4" />, panel: "apps" },
   { id: "reference", label: "Reference Analyzer", icon: <FileSearch className="size-4" />, panel: "reference" },
 
@@ -70,7 +71,7 @@ interface Section {
 
 const SECTIONS: Section[] = [
   { id: "files", label: "Files", tools: ["files"].map(tool) },
-  { id: "perform", label: "Perform", tools: ["live", "looper"].map(tool) },
+  { id: "perform", label: "Perform", tools: ["live", "looper", "humbeat"].map(tool) },
   { id: "instruments", label: "Instruments", tools: ["synth", "drums", "beat", "chop", "sampler"].map(tool) },
   { id: "mix", label: "Mix & Master", tools: ["mixer", "master", "reference", "notes"].map(tool) },
   { id: "plugins", label: "Plugins", tools: ["plugins", "apps"].map(tool) },

@@ -29,6 +29,7 @@ const PANELS: { id: Exclude<PanelId, null>; label: string }[] = [
   { id: "reference", label: "Reference Analyzer" },
   { id: "live", label: "Live View" },
   { id: "looper", label: "Live Looper" },
+  { id: "humbeat", label: "Hum to Beat" },
 ];
 
 export function StudioSearch() {
