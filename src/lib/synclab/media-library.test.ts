@@ -19,7 +19,9 @@ describe("account media retention", () => {
   it("does not duplicate retained content", async () => {
     const blob = new Blob(["audio"]);
     await retainMedia(blob, "mix.mp3");
-    const saved = mocks.save.mock.calls[0][0];
+    const call = mocks.save.mock.calls[0];
+    if (!call) throw new Error("Expected a saved media item");
+    const saved = call[0];
     mocks.list.mockResolvedValue([{ data: saved.data }]);
     await retainMedia(blob, "mix.mp3");
     expect(mocks.save).toHaveBeenCalledTimes(1);
