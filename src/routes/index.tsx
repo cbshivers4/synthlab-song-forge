@@ -216,6 +216,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
     live: { title: "LIVE VIEW", icon: <Radio className="size-4" /> },
     looper: { title: "LIVE LOOPER", icon: <Disc3 className="size-4" /> },
     apps: { title: "OTHER APPS", icon: <Cpu className="size-4" /> },
+    humbeat: { title: "HUM TO BEAT", icon: <Radio className="size-4" /> },
   };
   const current = config[panel];
 
