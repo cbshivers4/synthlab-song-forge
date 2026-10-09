@@ -48,6 +48,7 @@ import type {
 import { clipRate, clipSeconds, laneValueAt, SECTION_COLORS } from "./types";
 import { wsolaStretch } from "./stretch";
 import { encodeWav } from "./bounce";
+import { getBlobForUrl, persistBlobUrls } from "./autosave-media";
 
 /** A persistent hardware CC destination. Namespaced parameters identify device controls. */
 /** A recorded instrument/drum take normally plays back as printed audio, which
@@ -1630,12 +1631,26 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       try {
         window.localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(next));
         setSavedAt(Date.now());
+        void persistBlobUrls(next.tracks.flatMap((t) => [...(t.clips ?? []).map((c) => c.url ?? ""), t.sampler?.url ?? ""]));
       } catch {
         /* storage full or unavailable — cloud save still works */
       }
     }, 600);
     return () => window.clearTimeout(id);
   }, [tracks, buses, vcas, auxReturns, fxChains, installedPlugins, userPresets, sections, folders, buildSnapshot]);
+
+  // Flush immediately when the tab/app is closed or hidden, so the last edits survive an accidental close.
+  useEffect(() => {
+    const flush = () => {
+      if (lastSnapRef.current === null) return;
+      try { window.localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(buildSnapshot())); } catch { /* storage full */ }
+    };
+    const hidden = () => { if (document.visibilityState === "hidden") flush(); };
+    window.addEventListener("pagehide", flush);
+    window.addEventListener("beforeunload", flush);
+    document.addEventListener("visibilitychange", hidden);
+    return () => { window.removeEventListener("pagehide", flush); window.removeEventListener("beforeunload", flush); document.removeEventListener("visibilitychange", hidden); };
+  }, [buildSnapshot]);
 
   // Bring the last session back after a refresh or a crash.
   useEffect(() => {
@@ -1645,33 +1660,41 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     try {
       const s = JSON.parse(raw) as CloudSession;
       if (!s?.tracks?.length) return;
-      let lostAudio = false;
-      for (const t of s.tracks) {
-        if (t.clips) {
-          t.clips = t.clips.map((c) => {
-            if (c.url?.startsWith("blob:")) {
-              lostAudio = true;
-              return { ...c, url: undefined };
-            }
-            return c;
+      const blobUrls = s.tracks.flatMap((t) => [...(t.clips ?? []).map((c) => c.url ?? ""), t.sampler?.url ?? ""]).filter((u) => u.startsWith("blob:"));
+      /** Re-creates audio from the autosave media store; anything missing is cleared so it can be loaded again. */
+      const restoreAudio = async () => {
+        const map = new Map<string, string>();
+        for (const url of new Set(blobUrls)) {
+          const blob = await getBlobForUrl(url);
+          if (!blob) continue;
+          try { map.set(url, (await getEngine().loadSampleFile(blob, "restored")).url); } catch { /* undecodable */ }
+        }
+        let missing = 0;
+        for (const t of s.tracks) {
+          if (t.clips) t.clips = t.clips.map((c) => {
+            if (!c.url?.startsWith("blob:")) return c;
+            const next = map.get(c.url); if (!next) missing++;
+            return { ...c, url: next };
           });
+          if (t.sampler?.url?.startsWith("blob:")) {
+            const next = map.get(t.sampler.url); if (!next) missing++;
+            t.sampler = { ...t.sampler, url: next ?? "" };
+          }
         }
-        if (t.sampler?.url?.startsWith("blob:")) {
-          lostAudio = true;
-          t.sampler = { ...t.sampler, url: "" };
-        }
-      }
+        return missing;
+      };
       toast("Recover previous session?", {
-        description: `${s.tracks.length} track${s.tracks.length === 1 ? "" : "s"} from your last session were saved automatically.${
-          lostAudio ? " Imported audio files will need loading again." : ""
-        }`,
+        description: `${s.tracks.length} track${s.tracks.length === 1 ? "" : "s"} from your last session were saved automatically${blobUrls.length ? ", with their audio" : ""}.`,
         duration: Infinity,
         action: {
           label: "Recover",
           onClick: () => {
-            applyingRef.current = true;
-            applySession(s);
-            lastSnapRef.current = s;
+            void restoreAudio().then((missing) => {
+              applyingRef.current = true;
+              applySession(s);
+              lastSnapRef.current = s;
+              toast.success("Session recovered", { description: missing ? `${missing} audio item${missing === 1 ? "" : "s"} could not be restored and need loading again.` : "Tracks and audio are back." });
+            });
           },
         },
         cancel: {

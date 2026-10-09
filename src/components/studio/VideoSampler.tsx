@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Circle, Plus, Scissors, Square, Upload } from "lucide-react";
+import { Circle, Grid3x3, Plus, Save, Scissors, Square, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { getEngine } from "@/lib/synclab/audio-engine";
@@ -8,7 +8,9 @@ import { encodeWav } from "@/lib/synclab/bounce";
 import { useStudio } from "@/lib/synclab/store";
 import { uid } from "@/lib/synclab/presets";
 import { wsolaStretch } from "@/lib/synclab/stretch";
-import { retainMediaInBackground, takeLibraryVideo } from "@/lib/synclab/media-library";
+import { retainMediaInBackground, takeLibraryVideo, type VideoKit } from "@/lib/synclab/media-library";
+import { saveToLibrary } from "@/lib/synclab/library";
+import { loadVideoSession, saveVideoSession } from "@/lib/synclab/autosave-media";
 
 import { WaveformView } from "./WaveformView";
 
@@ -16,7 +18,9 @@ const PAD_KEYS = "1234qwerasdfzxcv";
 
 /** Video sampler: load or film a clip, chop its audio at real attacks, trigger chops as pads (video + sound), and print chops to the timeline. */
 export function VideoSampler() {
-  const { addTrack, addClip, transport } = useStudio();
+  const { addTrack, addClip, transport, loadSample, updateSampler, select, setPanel } = useStudio();
+  const blobRef = useRef<{ blob: Blob; name: string } | null>(null);
+  const [saving, setSaving] = useState(false);
   const video = useRef<HTMLVideoElement>(null);
   const file = useRef<HTMLInputElement>(null);
   const recorder = useRef<MediaRecorder | null>(null);
@@ -75,8 +79,9 @@ export function VideoSampler() {
     setChops(fractions.map((f) => f * buf.duration));
   };
 
-  const loadBlob = async (blob: Blob) => {
+  const loadBlob = async (blob: Blob, name = blob instanceof File ? blob.name : "Video", kit?: VideoKit) => {
     if (blob instanceof File) retainMediaInBackground(blob, blob.name);
+    blobRef.current = { blob, name };
     setError(null);
     window.clearTimeout(stopTimer.current);
     video.current?.pause();
@@ -86,7 +91,9 @@ export function VideoSampler() {
     try {
       const ctx = getEngine().init();
       const buf = await ctx.decodeAudioData((await blob.arrayBuffer()).slice(0));
-      setBuffer(buf); chopAll(buf, sensitivity);
+      setBuffer(buf);
+      if (kit) { setChops(kit.chops.filter((c) => c < buf.duration)); setSourceBpm(kit.sourceBpm); setTargetBpm(kit.targetBpm); setStretchOn(kit.stretchOn); }
+      else chopAll(buf, sensitivity);
     } catch {
       setBuffer(null); setChops([]);
       setError("This video has no audio this browser can decode. Try an MP4 or WebM with sound.");
@@ -95,8 +102,39 @@ export function VideoSampler() {
 
   useEffect(() => {
     const saved = takeLibraryVideo();
-    if (saved) void loadBlob(saved.blob);
+    if (saved) { void loadBlob(saved.blob, saved.name, saved.kit); return; }
+    void loadVideoSession().then((v) => { if (v && !blobRef.current) { void loadBlob(v.blob, v.name, v); toast.info(`Restored ${v.name} and its chops`); } });
   }, []);
+  // Auto save the open video and chops so an accidental close keeps them.
+  useEffect(() => {
+    const cur = blobRef.current; if (!cur || !buffer) return;
+    const id = window.setTimeout(() => void saveVideoSession({ ...cur, chops, sourceBpm, targetBpm, stretchOn }), 500);
+    return () => window.clearTimeout(id);
+  }, [buffer, chops, sourceBpm, targetBpm, stretchOn]);
+
+  const kitName = () => (blobRef.current?.name ?? "Video").replace(/\.[^.]+$/, "");
+  const saveKit = async () => {
+    const cur = blobRef.current; if (!cur) return;
+    setSaving(true);
+    try {
+      await saveToLibrary({ kind: "sample", location: "cloud", folder: "Video kits", name: `${kitName()} · ${chops.length} chops`, audio: cur.blob,
+        data: { mediaType: "video", mimeType: cur.blob.type || "video/mp4", filename: cur.name, videoKit: { chops, sourceBpm, targetBpm, stretchOn } } });
+      toast.success("Video and chops saved to your library", { description: "My Library › Video kits — opens on phone and desktop" });
+    } catch (e) { toast.error("Could not save the video", { description: e instanceof Error ? e.message : "Sign in and try again." }); }
+    finally { setSaving(false); }
+  };
+  /** Hands the video's audio and chops to a Sampler track so every sampler control (trim, ADSR, filter, banks, choke, keyboard, stretch) applies. */
+  const openInSampler = async () => {
+    if (!buffer) return;
+    const cap = slice(0, buffer.duration); if (!cap) return;
+    const name = kitName().toUpperCase().slice(0, 16) || "VIDEO";
+    const id = addTrack("sampler", name, undefined, { keepPanel: true });
+    await loadSample(id, new File([encodeWav(cap)], `${name}.wav`, { type: "audio/wav" }));
+    updateSampler(id, { slices: chops.map((c) => c / buffer.duration), sampleBpm: stretchOn ? targetBpm : sourceBpm });
+    select(id); setPanel("sampler");
+  };
+  const evenChops = (n: number) => { if (buffer) setChops(Array.from({ length: n }, (_, i) => i * buffer.duration / n)); };
+  const removeChop = (i: number) => setChops((c) => c.filter((_, j) => j !== i));
 
   const film = async () => {
     if (filming) { recorder.current?.stop(); return; }
@@ -188,11 +226,15 @@ export function VideoSampler() {
       <input ref={file} hidden type="file" accept="video/*" aria-label="Load video sample" onChange={(e) => { const f = e.target.files?.[0]; if (f) void loadBlob(f); e.target.value = ""; }} />
       <Button variant={filming ? "destructive" : "outline"} className="h-11" onClick={() => void film()}>{filming ? <Square /> : <Circle className="text-destructive" />}{filming ? "Stop filming" : "Record video"}</Button>
       <Button variant="outline" className="h-11" disabled={!buffer} onClick={() => void toProject()}><Plus />Audio to project</Button>
+      <Button variant="outline" className="h-11" disabled={!buffer || saving} onClick={() => void saveKit()}><Save />{saving ? "Saving…" : "Save video & chops"}</Button>
+      <Button variant="secondary" className="h-11" disabled={!buffer} onClick={() => void openInSampler()} title="Opens the audio and chops in the full Sampler: trim, envelope, filter, chop banks, choke, keyboard and stretch">Open in Sampler</Button>
     </div>
     {buffer && <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
       <label className="flex items-center gap-2">Chop sensitivity<input type="range" min={0} max={1} step={0.05} value={sensitivity} className="accent-primary" onChange={(e) => setSensitivity(Number(e.target.value))} /></label>
       <Button variant="secondary" className="h-9" onClick={() => chopAll(buffer, sensitivity)}><Scissors />Auto-chop</Button>
       <Button variant="outline" className="h-9" onClick={() => addChop(video.current?.currentTime ?? 0)}>Chop at video position</Button>
+      <label className="flex items-center gap-1"><Grid3x3 className="size-4" /><select aria-label="Even chops" className="h-9 rounded border border-border bg-background px-2 text-foreground" value="" onChange={(e) => { if (e.target.value) evenChops(Number(e.target.value)); }}><option value="">Even chops</option>{[2, 4, 8, 16].map((n) => <option key={n} value={n}>{n} equal</option>)}</select></label>
+      <Button variant="ghost" className="h-9" disabled={!chops.length} onClick={() => setChops([])}>Clear chops</Button>
       <span>{chops.length} chops · {buffer.duration.toFixed(1)}s</span>
     </div>}
     {chops.length > 0 && <div className="grid grid-cols-4 gap-2">
@@ -200,10 +242,10 @@ export function VideoSampler() {
         <Button variant={active === i ? "default" : "secondary"} className="h-16 flex-col text-xs" onPointerDown={() => trigger(i)} aria-label={`Play video chop ${i + 1}`}>
           <span className="font-mono text-sm">{i + 1}</span><span className="font-mono text-[10px] opacity-70">{t.toFixed(2)}s · {PAD_KEYS[i]?.toUpperCase()}</span>
         </Button>
-        <Button variant="ghost" className="h-7 text-[10px]" onClick={() => void toProject(i)}><Plus className="size-3" />To track</Button>
+        <div className="flex"><Button variant="ghost" className="h-7 flex-1 px-1 text-[10px]" onClick={() => void toProject(i)}><Plus className="size-3" />To track</Button><Button variant="ghost" className="h-7 w-7 p-0" aria-label={`Delete video chop ${i + 1}`} onClick={() => removeChop(i)}><Trash2 className="size-3" /></Button></div>
       </div>)}
     </div>}
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-    <p className="text-[11px] text-muted-foreground">Chops are found from the video's real audio attacks. Pads play the video and its sound together; "To track" prints the chop's audio to the timeline. Time stretch keeps pitch, plays pads at the new speed and prints stretched audio (50%–200%). Video itself is not exported with the song.</p>
+    <p className="text-[11px] text-muted-foreground">Chops are found from the video's real audio attacks. Pads play the video and its sound together; "To track" prints the chop's audio to the timeline. Time stretch keeps pitch, plays pads at the new speed and prints stretched audio (50%–200%). Video itself is not exported with the song. "Save video & chops" keeps both in My Library; "Open in Sampler" gives the audio every Sampler control (the picture stays here). Your open video and chops also auto save.</p>
   </section>;
 }
