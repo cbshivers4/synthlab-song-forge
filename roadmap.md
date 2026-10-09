@@ -151,7 +151,7 @@
 - [x] My Library (cloud/computer folders for samples, synth, drums, notes) + distinct effect window looks
 
 ## Current request
-- [ ] Show real video audio waveform and manual cuts on desktop and phone; verify seek, pads and timeline transfer.
+- [x] Show real video audio waveform and manual cuts on desktop and phone; signed-in desktop, portrait and sideways checks verified decoding, waveform seeks/cuts, pad playback and timeline transfer. Chop tests passed; build OK. Physical-device listening remains unverified.
 - [x] Keep sampler waveform visible during chopping and stretching on desktop and phone; signed-in checks verified real WAV waveform, manual cuts on both layouts, and 120→60 BPM stretch changing 6s to 12s. Chop tests and build passed; physical-device listening remains unverified.
 - [x] Show sampler keyboard by default and add independent natural/sharp/played key colors and surround-only wallpaper to sampler, synth and sample-pad keyboards; signed-in desktop and phone checks verified all three, opaque keys and actual loaded-sample audio signal. Build OK; physical-device listening remains hardware-dependent.
 - [x] Compact phone transport into shallow scrolling rows without removing controls; signed-in checks at 534×942, 390×844, 942×508 and 667×375 verified Play/Stop, BPM, Loop, bar steppers, meter/swing, tools menu and rail toggle. Transport measures 201px upright/148px sideways, meter/scope remain 192/240px, no page overflow; desktop checked at 1280×1800. Physical-phone testing remains hardware-dependent.
