@@ -3,6 +3,7 @@ import { FileAudio, Pause, Play, Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { analyzeReferenceBuffer, type ReferenceAnalysisResult } from "@/lib/synclab/reference-analysis";
 import { toast } from "sonner";
+import { retainMediaInBackground } from "@/lib/synclab/media-library";
 
 function formatTime(seconds: number) {
   const minutes = Math.floor(seconds / 60);
@@ -39,6 +40,7 @@ export function ReferenceAnalyzer() {
       return;
     }
     setBusy(true);
+    retainMediaInBackground(file, file.name);
     try {
       const context = new AudioContext();
       const buffer = await context.decodeAudioData(await file.arrayBuffer());

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useStudio } from "@/lib/synclab/store";
 import { encodeWav } from "@/lib/synclab/bounce";
 import { isStereo, peaksOf, separateStem, STEMS, type StemId } from "@/lib/synclab/stems";
+import { retainMediaInBackground } from "@/lib/synclab/media-library";
 
 type Source = { name: string; buffer: AudioBuffer; start: number };
 
@@ -27,6 +28,7 @@ export function StemSplitter() {
 
   const loadFile = async (file?: File) => {
     if (!file) return;
+    retainMediaInBackground(file, file.name);
     setBusy("Reading file…");
     try {
       setSource({ name: file.name.replace(/\.[^.]+$/, ""), buffer: await decode(await file.arrayBuffer()), start: 0 });
