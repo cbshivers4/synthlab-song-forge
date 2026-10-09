@@ -54,7 +54,8 @@ import { VoiceConverter } from "@/components/studio/VoiceConverter";
 import { StemGenerator } from "@/components/studio/StemGenerator";
 import { BassGenerator } from "@/components/studio/BassGenerator";
 import { ReelRecorder } from "@/components/studio/ReelRecorder";
-import { Bot } from "lucide-react";
+import { Bot, Film } from "lucide-react";
+import { VideoSampler } from "@/components/studio/VideoSampler";
 import { AppProvider, useApp, useMaybeApp } from "@/lib/synclab/app-state";
 import { PlanProvider } from "@/lib/synclab/plan";
 import { useIsMobile, useIsLandscapePhone } from "@/hooks/use-mobile";
@@ -229,6 +230,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
     genstem: { title: "GENERATE STEM", icon: <Sparkles className="size-4" /> },
     bassgen: { title: "BASS GENERATOR", icon: <AudioLines className="size-4" /> },
     "reel-recorder": { title: "REEL-TO-REEL RECORDER", icon: <Disc3 className="size-4" /> },
+    "video-sampler": { title: "VIDEO SAMPLER", icon: <Film className="size-4" /> },
   };
   const current = config[panel];
 
@@ -286,7 +288,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
         </div>
       </div>
       {isMobile ? <PhonePages name={current.title}><div className="phone-editor-content min-h-0 space-y-3 p-3">
-        {panel === "reel-recorder" && <ReelRecorder />}
+        {panel === "reel-recorder" && <ReelRecorder />}{panel === "video-sampler" && <VideoSampler />}
         {panel === "mixer" && <Mixer />}
         {panel === "synth" && (synthTrack ? <SynthEditor track={synthTrack} /> : <p>Select an instrument track.</p>)}
         {panel === "drums" && (drumTrack ? <DrumMachine track={drumTrack} /> : <p>Add a drum track.</p>)}
@@ -296,7 +298,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
         {panel === "pads" && <PadSampler />}{panel === "mastering" && <Mastering />}{panel === "notes" && <NotesPanel />}
         {panel === "reference" && <ReferenceAnalyzer />}{panel === "live" && <LiveView />}{panel === "looper" && <LiveLooperView />}{panel === "apps" && <ExternalApps />}{panel === "humbeat" && <HumToBeat />}{panel === "stems" && <StemSplitter />}{panel === "coproducer" && <CoProducer />}{panel === "voice" && <VoiceConverter />}{panel === "genstem" && <StemGenerator />}{panel === "bassgen" && <BassGenerator />}
       </div></PhonePages> : <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3 pb-24 sm:pb-3">
-      {panel === "reel-recorder" && <ReelRecorder />}
+      {panel === "reel-recorder" && <ReelRecorder />}{panel === "video-sampler" && <VideoSampler />}
       {panel === "mixer" && <Mixer />}
       {panel === "synth" &&
         (synthTrack ? (
