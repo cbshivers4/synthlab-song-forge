@@ -40,6 +40,7 @@ export function LevelBar({
       smooth = raw > smooth ? raw : smooth * 0.86;
       reportLevel(id, raw);
       const node = fill.current;
+      if (node) node.style.background = levelColor(smooth);
       if (node) node.style.width = `${dbToFrac(toDb(Math.max(smooth, 0.0005))) * 100}%`;
       raf = requestAnimationFrame(loop);
     };
@@ -56,7 +57,7 @@ export function LevelBar({
           className="h-full origin-left transition-none"
           style={{
             width: "0%",
-            background: `linear-gradient(90deg, ${LEVEL_GREEN} 0%, ${LEVEL_GREEN} 81%, ${LEVEL_ORANGE} 82%, ${LEVEL_ORANGE} 89%, ${LEVEL_RED} 90%, ${LEVEL_RED} 100%)`, backgroundSize: "var(--meter-track, 100%) 100%",
+            background: LEVEL_GREEN,
           }}
         />
 
