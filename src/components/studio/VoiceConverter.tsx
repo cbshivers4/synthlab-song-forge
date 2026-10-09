@@ -9,6 +9,7 @@ import { encodeWav } from "@/lib/synclab/bounce";
 import { peaksOf } from "@/lib/synclab/stems";
 import { openMic, preferredRecordingMime, releaseMic } from "@/lib/synclab/mic";
 import { convertVoice, VOICE_PRESETS, type VoicePreset } from "@/lib/synclab/voice-convert";
+import { retainMediaInBackground } from "@/lib/synclab/media-library";
 
 type Source = { name: string; buffer: AudioBuffer; start: number };
 
@@ -114,7 +115,7 @@ export function VoiceConverter() {
         <Button variant="secondary" className="min-h-12" onClick={() => inputRef.current?.click()} disabled={!!busy || recording}>
           <Upload className="size-4" /> Load a file
         </Button>
-        <input ref={inputRef} type="file" accept="audio/*" hidden onChange={async (e) => { const f = e.target.files?.[0]; if (f) await take(f.name.replace(/\.[^.]+$/, ""), await f.arrayBuffer()); }} />
+        <input ref={inputRef} type="file" accept="audio/*" hidden onChange={async (e) => { const f = e.target.files?.[0]; if (f) { retainMediaInBackground(f, f.name); await take(f.name.replace(/\.[^.]+$/, ""), await f.arrayBuffer()); } }} />
         {clips.length > 0 && (
           <select className="min-h-12 max-w-full rounded-md border border-border bg-surface-2 px-3 text-sm" defaultValue="" disabled={!!busy || recording}
             aria-label="Use a clip from the timeline"

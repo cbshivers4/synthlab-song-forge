@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, ChevronRight, Cloud, Download, FolderOpen, HardDrive, Play, Plus, Save, Square, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronRight, Cloud, Download, FolderOpen, HardDrive, Play, Plus, Save, Square, Trash2, Upload, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { retainMedia, selectLibraryVideo } from "@/lib/synclab/media-library";
 import { toast } from "sonner";
 import { useStudio } from "@/lib/synclab/store";
 import { getEngine } from "@/lib/synclab/audio-engine";
@@ -17,7 +19,7 @@ let previewAudio: HTMLAudioElement | null = null;
 
 /** My Library: save samples, synth sounds, drum kits and notes into named folders, on the cloud or this computer. */
 export function LibraryPanel() {
-  const { tracks, selectedId, addTrack, updateTrack, setNotes, addClip, transport } = useStudio();
+  const { tracks, selectedId, addTrack, updateTrack, setNotes, addClip, transport, setPanel } = useStudio();
   const selected = tracks.find((t) => t.id === selectedId) ?? null;
   const [location, setLocation] = useState<LibraryLocation>("cloud");
   const [kind, setKind] = useState<LibraryKind>("sample");
@@ -108,6 +110,11 @@ export function LibraryPanel() {
       if (item.kind === "sample") {
         const blob = await libraryAudio(item);
         if (!blob) throw new Error("This sample has no audio.");
+        if ((item.data as { mediaType?: string } | null)?.mediaType === "video") {
+          selectLibraryVideo(blob, item.name);
+          setPanel("video-sampler");
+          return;
+        }
         const engine = getEngine();
         await engine.init();
         const nm = item.name.toUpperCase().slice(0, 18);
@@ -152,6 +159,19 @@ export function LibraryPanel() {
 
   return (
     <div className="space-y-2 px-2 py-1.5">
+      <div className="flex flex-wrap items-center gap-2">
+        <Button asChild variant="outline" className="h-10 text-xs" disabled={busy}>
+          <label><Upload className="size-4" />{busy ? "Saving…" : "Upload MP3 / MP4"}
+            <input type="file" accept=".mp3,.mp4,audio/mpeg,video/mp4" multiple className="sr-only" disabled={busy} aria-label="Upload account media" onChange={async (e) => {
+              const files = Array.from(e.target.files ?? []); e.target.value = ""; setBusy(true);
+              try { for (const file of files) await retainMedia(file, file.name, folder || "Uploads"); setLocation("cloud"); setKind("sample"); setOpen((o) => ({ ...o, [folder || "Uploads"]: true })); refresh(); }
+              catch (err) { toast.error("Could not save file", { description: err instanceof Error ? err.message : "Try again." }); }
+              finally { setBusy(false); }
+            }} />
+          </label>
+        </Button>
+        <Button variant="ghost" size="icon" aria-label="Refresh account library" onClick={refresh}><RefreshCw className="size-4" /></Button>
+      </div>
       <div className="grid grid-cols-2 gap-1">
         {(["cloud", "device"] as const).map((l) => (
           <button key={l} type="button" onClick={() => setLocation(l)} className={`flex items-center justify-center gap-1 rounded-sm border px-2 py-1 font-mono text-[10px] ${location === l ? "border-primary bg-primary/15 text-primary" : "border-border text-muted-foreground"}`}>
@@ -196,7 +216,7 @@ export function LibraryPanel() {
             <div className="ml-3 border-l border-border/70">
               {list.map((i) => (
                 <div key={i.id} className="group flex items-center gap-1 px-2 py-1 hover:bg-primary/10">
-                  {i.kind === "sample" && (
+                  {i.kind === "sample" && (i.data as { mediaType?: string } | null)?.mediaType !== "video" && (
                     <button type="button" aria-label={`Preview ${i.name}`} onClick={() => void preview(i)} className="grid size-5 place-items-center rounded-sm border border-border text-primary">
                       {playing === i.id ? <Square className="size-2.5 fill-current" /> : <Play className="size-2.5 fill-current" />}
                     </button>

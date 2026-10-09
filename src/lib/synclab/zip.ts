@@ -72,6 +72,7 @@ export function buildZip(entries: { name: string; data: Uint8Array }[]): Blob {
 
 /** Trigger a browser download for a blob. */
 export function downloadBlob(blob: Blob, filename: string) {
+  if (/\.(mp3|mp4)$/i.test(filename)) void import("./media-library").then(({ retainMediaInBackground }) => retainMediaInBackground(blob, filename, "Exports"));
   const el = document.createElement("a");
   el.href = URL.createObjectURL(blob);
   el.download = filename;

@@ -1,4 +1,5 @@
 import { Mp3Encoder } from "@breezystack/lamejs";
+import { retainMediaInBackground } from "./media-library";
 
 export interface Capture {
   left: Float32Array;
@@ -88,6 +89,7 @@ export function encodeMp3(cap: Capture, kbps = 320): Blob {
 }
 
 export function downloadBlob(blob: Blob, filename: string) {
+  retainMediaInBackground(blob, filename, "Exports");
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
