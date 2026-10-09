@@ -1,5 +1,5 @@
 import { getEngine } from "./audio-engine";
-import { openMic, releaseMic, getInputChannel, getInputGainDb } from "./mic";
+import { openMic, releaseMic, getInputChannel } from "./mic";
 import type { Capture } from "./bounce";
 import { clampTapePosition, joinTapeChunks, tapeCurve } from "./reel-audio";
 
@@ -36,6 +36,7 @@ class ReelRecorder {
   private ctx: AudioContext | null = null;
   private stream: MediaStream | null = null;
   private sourceNode: AudioNode | null = null;
+  private inputRouting: AudioNode[] = [];
   private input: GainNode | null = null;
   private tone: BiquadFilterNode | null = null;
   private drive: WaveShaperNode | null = null;
@@ -91,6 +92,8 @@ class ReelRecorder {
   private disconnectInput() {
     if (this.sourceNode && this.input) { try { this.sourceNode.disconnect(this.input); } catch { /* already detached */ } }
     for (const node of [this.input, this.tone, this.drive, this.monitor, this.worklet, this.silent]) node?.disconnect();
+    for (const node of this.inputRouting) node.disconnect();
+    this.inputRouting = [];
     if (this.worklet) this.worklet.port.onmessage = null;
     releaseMic(this.stream); this.stream = null; this.sourceNode = null;
     this.input = null; this.tone = null; this.drive = null; this.monitor = null; this.worklet = null; this.silent = null;
@@ -120,6 +123,7 @@ class ReelRecorder {
           const splitter = ctx.createChannelSplitter(2); source.connect(splitter);
           const selected = ctx.createGain(); selected.channelCount = 2; selected.channelCountMode = "explicit";
           splitter.connect(selected, channel === "in2" ? 1 : 0); this.sourceNode = selected;
+          this.inputRouting = [source, splitter, selected];
         } else this.sourceNode = source;
         result.stream.getAudioTracks()[0]?.addEventListener("ended", () => { void this.release().then(() => this.update({ error: "Audio input disconnected. Enable the input again." })); }, { once: true });
       } else this.sourceNode = getEngine().outputNode;
@@ -167,14 +171,18 @@ class ReelRecorder {
     if (this.state.busy) return;
     if (this.state.mode === "recording" && this.worklet && this.ctx) {
       this.update({ busy: true });
-      await new Promise<void>((resolve) => { this.finish = resolve; this.worklet?.port.postMessage("stop"); });
+      await new Promise<void>((resolve) => {
+        const timeout = setTimeout(() => { this.finish = null; resolve(); }, 2000);
+        this.finish = () => { clearTimeout(timeout); resolve(); };
+        this.worklet?.port.postMessage("stop");
+      });
       const left = joinTapeChunks(this.chunks.left), right = joinTapeChunks(this.chunks.right);
       if (left.length) this.capture = { left, right, sampleRate: this.ctx.sampleRate };
       this.chunks = { left: [], right: [], frames: 0 };
       this.update({ busy: false, mode: "stopped", position: 0, duration: (this.capture?.left.length ?? 0) / this.ctx.sampleRate, hasTape: !!this.capture });
     } else { this.stopPlayer(); this.update({ mode: "stopped", position: 0 }); }
   };
-  private stopPlayer() { const player = this.player; this.player = null; if (player) { player.onended = null; try { player.stop(); } catch { /* ended */ } player.disconnect(); } }
+  private stopPlayer() { const player = this.player; this.player = null; if (player) { player.onended = null; try { player.stop(); } catch { /* ended */ } player.disconnect(); } if (this.split) this.drive?.connect(this.split); }
   play = async () => {
     if (!this.capture || this.state.busy || this.state.mode === "recording") return;
     if (this.state.mode === "playing") { this.tick(); this.stopPlayer(); this.update({ mode: "paused" }); return; }
