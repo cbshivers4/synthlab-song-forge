@@ -226,7 +226,7 @@
 ## AI / creative tools (Oct 2026)
 - [x] Hum to Beat (beatbox → drums, hum → melody; on-device analysis)
 - [x] Separate stems (simple honest version: vocal remove/isolate, low/mid/high bands)
-- [ ] Convert voice (simple honest version: pitch/formant/robot effects)
+- [x] Convert voice (simple honest version: pitch/formant/robot effects)
 - [x] AI co-producer
 - [ ] Bass generator
 - [ ] Generate stem (AI audio clip)

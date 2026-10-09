@@ -215,6 +215,7 @@ export type PanelId =
   | "humbeat"
   | "stems"
   | "coproducer"
+  | "voice"
   | null;
 
 export type EditTool = "select" | "draw" | "split" | "razor";

@@ -50,6 +50,7 @@ import { ExternalApps } from "@/components/studio/ExternalApps";
 import { HumToBeat } from "@/components/studio/HumToBeat";
 import { StemSplitter } from "@/components/studio/StemSplitter";
 import { CoProducer } from "@/components/studio/CoProducer";
+import { VoiceConverter } from "@/components/studio/VoiceConverter";
 import { Bot } from "lucide-react";
 import { AppProvider, useApp, useMaybeApp } from "@/lib/synclab/app-state";
 import { PlanProvider } from "@/lib/synclab/plan";
@@ -221,6 +222,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
     humbeat: { title: "HUM TO BEAT", icon: <Radio className="size-4" /> },
     stems: { title: "SEPARATE STEMS", icon: <Split className="size-4" /> },
     coproducer: { title: "AI CO-PRODUCER", icon: <Sparkles className="size-4" /> },
+    voice: { title: "CONVERT VOICE", icon: <AudioWaveform className="size-4" /> },
   };
   const current = config[panel];
 
@@ -285,7 +287,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
         {panel === "settings" && <Settings />}{panel === "keys" && <Keyboard />}{panel === "browser" && <Browser />}
         {panel === "plugins" && <PluginRack />}{panel === "appearance" && <Appearance />}{panel === "sampler" && <Sampler />}
         {panel === "pads" && <PadSampler />}{panel === "mastering" && <Mastering />}{panel === "notes" && <NotesPanel />}
-        {panel === "reference" && <ReferenceAnalyzer />}{panel === "live" && <LiveView />}{panel === "looper" && <LiveLooperView />}{panel === "apps" && <ExternalApps />}{panel === "humbeat" && <HumToBeat />}{panel === "stems" && <StemSplitter />}{panel === "coproducer" && <CoProducer />}
+        {panel === "reference" && <ReferenceAnalyzer />}{panel === "live" && <LiveView />}{panel === "looper" && <LiveLooperView />}{panel === "apps" && <ExternalApps />}{panel === "humbeat" && <HumToBeat />}{panel === "stems" && <StemSplitter />}{panel === "coproducer" && <CoProducer />}{panel === "voice" && <VoiceConverter />}
       </div></PhonePages> : <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3 pb-24 sm:pb-3">
       {panel === "mixer" && <Mixer />}
       {panel === "synth" &&
@@ -333,7 +335,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
       {panel === "reference" && <ReferenceAnalyzer />}
       {panel === "live" && <LiveView />}
       {panel === "looper" && <LiveLooperView />}
-      {panel === "apps" && <ExternalApps />}{panel === "humbeat" && <HumToBeat />}{panel === "stems" && <StemSplitter />}{panel === "coproducer" && <CoProducer />}
+      {panel === "apps" && <ExternalApps />}{panel === "humbeat" && <HumToBeat />}{panel === "stems" && <StemSplitter />}{panel === "coproducer" && <CoProducer />}{panel === "voice" && <VoiceConverter />}
 
       </div>}
 
