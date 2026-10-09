@@ -488,7 +488,7 @@ export function TopBar() {
 
 function TransportExtras({ mobile, children }: { mobile: boolean; children: React.ReactNode }) {
   if (!mobile) return <div className="transport-glass-tools flex flex-wrap items-center gap-1">{children}</div>;
-   return <div className="order-2 justify-self-end"><Popover><PopoverTrigger asChild><Button variant="outline" size="icon" className="transport-glass-group size-11" aria-label="Transport menu" title="Studio tools"><SlidersHorizontal className="size-5" /></Button></PopoverTrigger><PopoverContent align="end" className="phone-transport-menu transport-glass-menu flex h-[min(85dvh,600px)] w-[min(92vw,520px)] flex-col overflow-hidden p-0"><div className="shrink-0 border-b border-border p-3 font-semibold">Studio tools</div><PhonePages name="Studio tools"><div className="flex flex-wrap items-center gap-2 p-3">{children}</div></PhonePages></PopoverContent></Popover></div>;
+   return <div className="order-2 justify-self-end"><Popover><PopoverTrigger asChild><Button variant="outline" size="icon" className="transport-glass-group size-11" aria-label="Transport menu" title="Studio tools"><SlidersHorizontal className="size-5" /></Button></PopoverTrigger><PopoverContent align="end" className="phone-transport-menu transport-glass-menu flex max-h-[min(70dvh,440px)] w-[min(78vw,360px)] flex-col overflow-hidden p-0"><div className="shrink-0 border-b border-border px-3 py-2 font-display text-sm font-semibold">Studio tools</div><PhonePages name="Studio tools"><div className="flex flex-wrap items-center gap-2 p-2.5">{children}</div></PhonePages></PopoverContent></Popover></div>;
 }
 
 function TBtn({
