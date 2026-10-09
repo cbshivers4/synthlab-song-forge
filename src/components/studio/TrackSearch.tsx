@@ -19,7 +19,7 @@ export function TrackSearch() {
     setQ("");
     requestAnimationFrame(() => {
       const el = Array.from(document.querySelectorAll<HTMLElement>("[data-track-row], [data-lane-track]")).find(
-        (n) => n.dataset.trackRow === id || n.dataset.laneTrack === id
+        (n) => n.dataset["trackRow"] === id || n.dataset["laneTrack"] === id
       );
       el?.scrollIntoView({ block: "nearest", behavior: "smooth" });
     });
