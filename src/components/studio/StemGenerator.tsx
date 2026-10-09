@@ -3,6 +3,8 @@ import { Play, Sparkles, Square } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
+import { usePreviewTrack } from "@/lib/synclab/use-preview-track";
+import { PreviewButtons } from "./PreviewButtons";
 import { useStudio } from "@/lib/synclab/store";
 import { peaksOf } from "@/lib/synclab/stems";
 import { generateStemFn } from "@/utils/generate-stem.functions";
