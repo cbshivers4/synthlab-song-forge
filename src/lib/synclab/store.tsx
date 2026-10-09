@@ -218,6 +218,7 @@ export type PanelId =
   | "voice"
   | "genstem"
   | "bassgen"
+  | "reel-recorder"
   | null;
 
 export type EditTool = "select" | "draw" | "split" | "razor";

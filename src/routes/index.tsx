@@ -53,6 +53,7 @@ import { CoProducer } from "@/components/studio/CoProducer";
 import { VoiceConverter } from "@/components/studio/VoiceConverter";
 import { StemGenerator } from "@/components/studio/StemGenerator";
 import { BassGenerator } from "@/components/studio/BassGenerator";
+import { ReelRecorder } from "@/components/studio/ReelRecorder";
 import { Bot } from "lucide-react";
 import { AppProvider, useApp, useMaybeApp } from "@/lib/synclab/app-state";
 import { PlanProvider } from "@/lib/synclab/plan";
@@ -227,6 +228,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
     voice: { title: "CONVERT VOICE", icon: <AudioWaveform className="size-4" /> },
     genstem: { title: "GENERATE STEM", icon: <Sparkles className="size-4" /> },
     bassgen: { title: "BASS GENERATOR", icon: <AudioLines className="size-4" /> },
+    "reel-recorder": { title: "REEL-TO-REEL RECORDER", icon: <Disc3 className="size-4" /> },
   };
   const current = config[panel];
 
@@ -234,7 +236,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
   return (
     <section
       className="phone-tool-panel rack fixed inset-0 z-40 flex min-w-0 flex-col overflow-x-hidden border-t-2 border-border sm:relative sm:inset-auto sm:z-auto sm:min-h-[240px]"
-       style={{ height: isMobile ? "100dvh" : panel === "looper" ? Math.max(600, rackH) : rackH }}
+       style={{ height: isMobile ? "100dvh" : panel === "looper" || panel === "reel-recorder" ? Math.max(600, rackH) : rackH }}
     >
       <div
         onPointerDown={startResize}
@@ -284,6 +286,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
         </div>
       </div>
       {isMobile ? <PhonePages name={current.title}><div className="phone-editor-content min-h-0 space-y-3 p-3">
+        {panel === "reel-recorder" && <ReelRecorder />}
         {panel === "mixer" && <Mixer />}
         {panel === "synth" && (synthTrack ? <SynthEditor track={synthTrack} /> : <p>Select an instrument track.</p>)}
         {panel === "drums" && (drumTrack ? <DrumMachine track={drumTrack} /> : <p>Add a drum track.</p>)}
@@ -293,6 +296,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
         {panel === "pads" && <PadSampler />}{panel === "mastering" && <Mastering />}{panel === "notes" && <NotesPanel />}
         {panel === "reference" && <ReferenceAnalyzer />}{panel === "live" && <LiveView />}{panel === "looper" && <LiveLooperView />}{panel === "apps" && <ExternalApps />}{panel === "humbeat" && <HumToBeat />}{panel === "stems" && <StemSplitter />}{panel === "coproducer" && <CoProducer />}{panel === "voice" && <VoiceConverter />}{panel === "genstem" && <StemGenerator />}{panel === "bassgen" && <BassGenerator />}
       </div></PhonePages> : <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3 pb-24 sm:pb-3">
+      {panel === "reel-recorder" && <ReelRecorder />}
       {panel === "mixer" && <Mixer />}
       {panel === "synth" &&
         (synthTrack ? (

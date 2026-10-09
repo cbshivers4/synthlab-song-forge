@@ -18,6 +18,7 @@ const sounds = [
   { label: "Live View", icon: Radio, panel: "live" }, { label: "Live Looper", icon: Disc3, panel: "looper" },
 ] as const;
 const tools = [
+  { label: "Reel-to-Reel Recorder", icon: Disc3, panel: "reel-recorder" },
   { label: "Separate Stems", icon: Scissors, panel: "stems" },
   { label: "Hum to Beat", icon: Mic, panel: "humbeat" },
   { label: "AI Co-Producer", icon: Bot, panel: "coproducer" },
