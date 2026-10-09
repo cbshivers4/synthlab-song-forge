@@ -56,6 +56,9 @@ class ReelRecorder {
   private finish: (() => void) | null = null;
   private opening: Promise<void> | null = null;
   private timer: ReturnType<typeof setInterval> | null = null;
+  private masterMetering = false;
+  /** Timeline mode reads the existing post-master taps, without opening a recording input. */
+  setMasterMetering = (enabled: boolean) => { this.masterMetering = enabled; this.tick(); };
   subscribe = (fn: () => void) => {
     this.listeners.add(fn);
     if (!this.timer) this.timer = setInterval(() => this.tick(), 50);
@@ -82,9 +85,13 @@ class ReelRecorder {
       if (this.state.loop && this.state.duration) position %= this.state.duration;
       position = clampTapePosition(position, this.state.duration);
     }
-    const levels = this.meters.map((meter) => {
-      meter.getFloatTimeDomainData(this.meterData); let peak = 0;
-      for (const sample of this.meterData) peak = Math.max(peak, Math.abs(sample));
+    const readMaster = this.masterMetering && this.state.mode !== "recording" && this.state.mode !== "playing";
+    const levels = [0, 1].map((channel) => {
+      let data: Float32Array | null = null;
+      if (readMaster) data = getEngine().getMasterChannel(channel === 0 ? 0 : 1, "wave");
+      else if (this.meters[channel]) { this.meters[channel].getFloatTimeDomainData(this.meterData); data = this.meterData; }
+      let peak = 0;
+      if (data) for (const sample of data) peak = Math.max(peak, Math.abs(sample));
       return peak;
     });
     this.update({ position, ...(this.state.mode === "recording" ? { duration: position } : {}), levelL: levels[0] ?? 0, levelR: levels[1] ?? 0, clipped: this.state.clipped || levels.some((peak) => peak >= 0.985) });
