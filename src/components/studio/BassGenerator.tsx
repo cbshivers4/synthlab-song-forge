@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import { usePreviewTrack } from "@/lib/synclab/use-preview-track";
+import { PreviewButtons } from "./PreviewButtons";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useStudio } from "@/lib/synclab/store";
@@ -29,11 +31,18 @@ export function BassGenerator() {
     return detected.map((r) => (r === null ? last : (last = r)));
   }, [useSong, detected, tonic, minor, prog, bars]);
 
-  const create = () => {
+  const pv = usePreviewTrack();
+  const label = BASS_STYLES.find((s) => s.id === style)!.label.toUpperCase();
+  const build = (name: string) => {
     const notes = generateBass(roots, style, barSteps, octave);
-    const label = BASS_STYLES.find((s) => s.id === style)!.label.toUpperCase();
-    const id = addTrack("instrument", `BASS · ${label}`, sound, { keepPanel: true });
+    const id = addTrack("instrument", name, sound, { keepPanel: true });
     updateTrack(id, { steps: bars * barSteps, notes });
+    return { id, notes };
+  };
+  const preview = () => pv.start((n) => build(n(`BASS · ${label}`)).id);
+  const create = () => {
+    if (pv.keep(`BASS · ${label}`)) { toast.success("Bassline added"); return; }
+    const { notes } = build(`BASS · ${label}`);
     toast.success("Bassline added", { description: `${notes.length} notes — edit them in the piano roll.` });
   };
 
@@ -84,7 +93,7 @@ export function BassGenerator() {
 
       <p className="font-mono text-xs text-primary">Roots: {roots.map((r) => NOTE_NAMES[r]).join(" → ")}</p>
 
-      <Button size="lg" className="min-h-12" onClick={create}>Add bassline to timeline</Button>
+      <PreviewButtons pv={pv} onPreview={preview} onAdd={create} addLabel="Add bassline to timeline" />
     </section>
   );
 }

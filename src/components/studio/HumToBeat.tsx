@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { Disc3, Mic, Music2, Square } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { usePreviewTrack } from "@/lib/synclab/use-preview-track";
+import { PreviewButtons } from "./PreviewButtons";
 import { useStudio } from "@/lib/synclab/store";
 import { openMic, preferredRecordingMime, releaseMic } from "@/lib/synclab/mic";
 import { alignToStart, analyseBeatbox, analyseMelody, type BeatHit, type HumNote } from "@/lib/synclab/hum-to-beat";
@@ -98,22 +100,28 @@ export function HumToBeat() {
     return Math.max(bar, Math.ceil((last + 1) / bar) * bar);
   };
 
-  const create = () => {
-    if (!result) return;
+  const pv = usePreviewTrack();
+  const finalName = () => (result?.mode === "beat" ? "HUM BEAT" : "HUM MELODY");
+  const build = (name: string) => {
+    if (!result) return "";
     if (result.mode === "beat") {
       const steps = lengthSteps(Math.max(...result.hits.map((h) => h.step)));
-      const id = addTrack("drum", "HUM BEAT");
+      const id = addTrack("drum", name, undefined, { keepPanel: true });
       pending.current = { id, hits: result.hits, steps };
-      toast.success("Beat track added", { description: `${result.hits.length} hits on kick, snare and hat.` });
-    } else {
-      const steps = lengthSteps(Math.max(...result.notes.map((n) => n.step + n.length - 1)));
-      const id = addTrack("instrument", "HUM MELODY", undefined, { keepPanel: true });
-      updateTrack(id, {
-        steps,
-        notes: result.notes.map((n, i) => ({ id: `hum-${Date.now()}-${i}`, ...n })),
-      });
-      toast.success("Melody track added", { description: `${result.notes.length} notes — edit them in the piano roll.` });
+      return id;
     }
+    const steps = lengthSteps(Math.max(...result.notes.map((n) => n.step + n.length - 1)));
+    const id = addTrack("instrument", name, undefined, { keepPanel: true });
+    updateTrack(id, { steps, notes: result.notes.map((n, i) => ({ id: `hum-${Date.now()}-${i}`, ...n })) });
+    return id;
+  };
+  const preview = () => pv.start((n) => build(n(finalName())));
+  const create = () => {
+    if (!result) return;
+    if (!pv.keep(finalName())) build(finalName());
+    toast.success(result.mode === "beat" ? "Beat track added" : "Melody track added", {
+      description: result.mode === "beat" ? `${result.hits.length} hits on kick, snare and hat.` : `${result.notes.length} notes — edit them in the piano roll.`,
+    });
     setResult(null);
   };
 
@@ -161,9 +169,7 @@ export function HumToBeat() {
           </Button>
         )}
         {result && (result.hits.length > 0 || result.notes.length > 0) && (
-          <Button size="lg" variant="secondary" onClick={create} className="min-h-12">
-            Add to timeline
-          </Button>
+          <PreviewButtons pv={pv} onPreview={preview} onAdd={create} />
         )}
       </div>
 
