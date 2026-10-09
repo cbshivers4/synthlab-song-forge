@@ -216,6 +216,7 @@ export type PanelId =
   | "stems"
   | "coproducer"
   | "voice"
+  | "genstem"
   | null;
 
 export type EditTool = "select" | "draw" | "split" | "razor";

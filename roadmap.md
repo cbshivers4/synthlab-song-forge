@@ -229,4 +229,4 @@
 - [x] Convert voice (simple honest version: pitch/formant/robot effects)
 - [x] AI co-producer
 - [ ] Bass generator
-- [ ] Generate stem (AI audio clip)
+- [x] Generate stem (AI audio clip)
