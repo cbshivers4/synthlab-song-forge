@@ -27,17 +27,17 @@ import { openHelp } from "@/components/studio/HelpCenter";
 
 
 const FEATURES: { icon: React.ReactNode; title: string; body: string }[] = [
+  { icon: <Sparkles className="size-4" />, title: "AI Co-Producer", body: "Writes chords, basslines, drum patterns and lyrics — preview with your song, then add to the timeline." },
+  { icon: <Wand2 className="size-4" />, title: "Generate Stem", body: "Describe a part — drums, bass, keys — and get a playable audio stem in your key and tempo." },
+  { icon: <AudioLines className="size-4" />, title: "Separate Stems", body: "Split any song into vocal focus, vocal-removed, bass, mids and highs, each on its own track." },
+  { icon: <Mic className="size-4" />, title: "Hum to Beat", body: "Beatbox a rhythm or hum a melody — SYNCLAB turns it into drums or notes." },
   { icon: <Music2 className="size-4" />, title: "Synth", body: "4 oscillators, dual filters, FM, mod matrix, 67 presets." },
   { icon: <Disc3 className="size-4" />, title: "Drum Machine", body: "24 kits — 909, 808, LinnDrum and more — with a step sequencer." },
   { icon: <Grid2x2 className="size-4" />, title: "Pad Sampler", body: "64 performance pads, live mic sampling, slice-to-pads, patterns." },
-  { icon: <Scissors className="size-4" />, title: "Sample Chopper", body: "Drop any MP3/WAV, trim, chop and map slices to keys." },
+  { icon: <Scissors className="size-4" />, title: "Sample Chopper", body: "Drop any MP3/WAV, trim, chop by note grid and map slices to keys or pads." },
   { icon: <Mic className="size-4" />, title: "Multi-Track Recording", body: "Every take on its own channel, with count-in, loop-bounded takes and monitoring." },
-  { icon: <AudioLines className="size-4" />, title: "Live Looper", body: "Layer loops hands-free with a bar count-in, then send them to the timeline." },
-  { icon: <Piano className="size-4" />, title: "MIDI Recording", body: "Play your controller straight into the piano roll — hardware knobs can drive the mixer too." },
+  { icon: <Piano className="size-4" />, title: "Bass Generator & Voice Convert", body: "Build basslines from your chords; pitch and restyle recorded vocals." },
   { icon: <SlidersHorizontal className="size-4" />, title: "Pro Mixer", body: "Console styles, buses, sends, VCA groups, aux returns and live meters." },
-  { icon: <Waves className="size-4" />, title: "VX-16 Vocoder", body: "Vintage 8–24 band talkbox with five classic presets." },
-  { icon: <Scissors className="size-4" />, title: "Razor Editing", body: "Split, razor and fade clips right on the timeline, in any time signature." },
-  { icon: <Users className="size-4" />, title: "Mastering & Export", body: "Limiters on the master, export WAV/MP3 between your own flags." },
   { icon: <Cpu className="size-4" />, title: "Cloud Projects", body: "Sessions, samples and exports saved to your cloud, anywhere." },
 ];
 
