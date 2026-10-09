@@ -170,7 +170,7 @@ export function HumToBeat() {
       {result && (
         <div className="rounded-md border border-border bg-surface-2 p-3 font-mono text-xs">
           {result.mode === "beat"
-            ? `Heard ${result.hits.length} hits — kick ${counts?.kick ?? 0}, snare ${counts?.snare ?? 0}, hat ${counts?.hat ?? 0}`
+            ? `Heard ${result.hits.length} hits — kick ${counts?.['kick'] ?? 0}, snare ${counts?.['snare'] ?? 0}, hat ${counts?.['hat'] ?? 0}`
             : `Heard ${result.notes.length} notes`}
         </div>
       )}
