@@ -212,6 +212,7 @@ export type PanelId =
   | "live"
   | "looper"
   | "apps"
+  | "humbeat"
   | null;
 
 export type EditTool = "select" | "draw" | "split" | "razor";
