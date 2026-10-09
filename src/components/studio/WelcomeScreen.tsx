@@ -9,8 +9,8 @@ import {
   Piano,
   Scissors,
   SlidersHorizontal,
-  Users,
-  Waves,
+  Sparkles,
+  Wand2,
   Cpu,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -147,7 +147,7 @@ export function WelcomeScreen() {
           </div>
 
           <ul className="hidden w-full grid-cols-2 gap-4 md:grid">
-            {FEATURES.slice(0, 4).map((f) => (
+            {FEATURES.slice(0, 6).map((f) => (
               <li key={f.title} className="group flex items-start gap-3">
                 <span
                   aria-hidden
