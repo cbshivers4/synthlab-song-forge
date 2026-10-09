@@ -994,7 +994,7 @@
 .phone-console .phone-master-display > div { padding: 2px 6px; }
 .phone-console .phone-master-display button { min-height: 24px; height: 24px; }
 .phone-console .phone-signal-controls button { min-height: 44px; }
-@container (min-width: 680px) {
+@container (min-width: 480px) {
   .phone-console .transport-glass[data-phone-transport="true"] .transport-layout {
     grid-template-columns: auto minmax(0, 1fr) auto;
   }
