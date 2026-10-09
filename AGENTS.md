@@ -36,7 +36,7 @@ Drum artwork uses semantic SVG; sort display copies and bank slices by stable ID
 Phone drum tabs reuse DrumRoll and instrument pads for edits/tap recording; sound/kit tabs preserve controls without duplication.
 Keyboards reuse Keyboard and one note path; independent skin slots color opaque keys and wallpaper only the surround, preventing doubled notes.
 Paste content at the playhead onto the selected or explicit channel, preserving its settings; Duplicate track separately clones channels.
-Synth selection opens piano roll; explicit actions open synth. Sampler shows Stretch before chops; PCM slicing reuses keyed previewNote voices for gate/choke.
+Synth selection opens piano roll; explicit actions open synth. Pin sampler waveform above Stretch/chops to keep cuts visible; PCM slices use previewNote for gate/choke.
 Transport: desktop wraps; phone uses shallow scrolling rows to preserve timeline height, shared Loop/rhythm setters, wide meters and a tools menu.
 Phone shares audio/state with desktop; render all channels, tracks and creative tools in both phone menus with native scrolling, never an unpaged slice that hides entries.
 Drum snap is session-only and affects step writes, not existing hits, preserving patterns.

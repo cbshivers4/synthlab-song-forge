@@ -68,7 +68,8 @@ function Waveform({ track, onSlice, drawSlice = false }: { track: Track; onSlice
   return (
     <div
       ref={ref}
-      className="relative h-40 w-full touch-none overflow-hidden rounded-lg border border-border bg-surface-2/60"
+      className={`relative h-32 min-h-32 w-full overflow-hidden rounded border border-border bg-surface-2 sm:h-36 sm:min-h-36 ${drawSlice ? "touch-none" : "touch-pan-y"}`}
+      aria-label="Sample chop waveform"
       onPointerDown={(e) => {
         if (!drawSlice || (e.target as HTMLElement).closest('[role="slider"]')) return;
         const at = Math.min(s.end - 0.002, Math.max(s.start, fracAt(e.clientX)));
@@ -128,6 +129,7 @@ function Waveform({ track, onSlice, drawSlice = false }: { track: Track; onSlice
           aria-valuemax={100}
           onPointerDown={(e) => {
             e.preventDefault();
+            e.currentTarget.setPointerCapture(e.pointerId);
             setDrag(h);
           }}
           onKeyDown={(e) => {
@@ -451,7 +453,10 @@ export function Sampler() {
 
   return (
     <div className="studio-wallpaper space-y-3 rounded-md p-3" data-studio-panel="sample" style={skinBackground(skin)} {...drop}>
-      <SkinControls skinKey="sample" image />
+      <details className="text-xs text-muted-foreground">
+        <summary className="cursor-pointer py-2">Sampler colors & wallpaper</summary>
+        <SkinControls skinKey="sample" image />
+      </details>
       <div
         onDragOver={(e) => {
           e.preventDefault();
@@ -464,7 +469,7 @@ export function Sampler() {
           void take(e.dataTransfer.files[0]);
         }}
         onClick={() => fileRef.current?.click()}
-        className={`flex cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-dashed px-4 py-5 text-center transition-colors ${
+        className={`flex cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-dashed px-4 ${s ? "py-2" : "py-5"} text-center transition-colors ${
           over ? "border-primary bg-primary/10" : "border-border hover:border-primary/50"
         }`}
       >
@@ -475,6 +480,7 @@ export function Sampler() {
         <input
           ref={fileRef}
           type="file"
+          aria-label="Load sampler audio"
           accept="audio/*,.mp3,.wav,.aiff,.aif,.m4a,.ogg,.flac"
           className="hidden"
           onChange={(e) => {
@@ -562,7 +568,16 @@ export function Sampler() {
             </div>
           </div>
 
-          <Waveform track={track} onSlice={removeChop} drawSlice={drawSlice} />
+          <div className="sticky top-0 z-30 space-y-1 border-b border-border bg-background pb-2" aria-label="Sample waveform editor">
+            <div className="flex items-center justify-between gap-2 py-1">
+              <span className="truncate font-mono text-xs text-primary">{s.name}</span>
+              <Button size="sm" variant={drawSlice ? "default" : "outline"} aria-pressed={drawSlice} onClick={() => setDrawSlice(!drawSlice)} className="h-9 shrink-0"><Scissors className="size-4" /> Manual slice</Button>
+            </div>
+            <Waveform track={track} onSlice={removeChop} drawSlice={drawSlice} />
+            <div className="flex justify-between font-mono text-[10px] text-muted-foreground" aria-label="Sample time ruler">
+              {[0, 0.25, 0.5, 0.75, 1].map((fraction) => <span key={fraction}>{(s.duration * fraction).toFixed(2)}s</span>)}
+            </div>
+          </div>
 
             <div className="space-y-3 border-y border-border py-3">
               <p className="label-xs">TIME STRETCH & PITCH</p>
@@ -609,7 +624,6 @@ export function Sampler() {
               <Scissors className="size-4 text-primary" />
               <span className="label-xs">Chop sample</span>
               <Button size="sm" variant="secondary" disabled={chopBusy} onClick={() => void autoChop()} className="h-12 sm:h-8">{chopBusy ? "Analyzing…" : "Auto-chop attacks"}</Button>
-              <Button size="sm" variant={drawSlice ? "default" : "outline"} aria-pressed={drawSlice} onClick={() => setDrawSlice(!drawSlice)} className="h-12 sm:h-8"><Scissors className="size-4" /> Manual slice</Button>
               {[4, 8, 12, 16].map((n) => (
                 <Button
                   key={n}
