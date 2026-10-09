@@ -89,8 +89,8 @@ export function analyseBeatbox(d: Float32Array, rate: number, bpm: number): Beat
   const peak = Math.max(1e-6, ...env);
   const hits: BeatHit[] = [];
   let lastHit = -999;
-  for (let i = 1; i < env.length; i++) {
-    const rise = env[i]! - env[i - 1]!;
+  for (let i = 0; i < env.length; i++) {
+    const rise = env[i]! - (env[i - 1] ?? 0);
     if (env[i]! > peak * 0.18 && rise > peak * 0.08 && i - lastHit > 8) {
       lastHit = i;
       const s0 = i * hop;
