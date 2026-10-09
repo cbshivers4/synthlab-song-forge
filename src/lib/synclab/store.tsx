@@ -217,6 +217,7 @@ export type PanelId =
   | "coproducer"
   | "voice"
   | "genstem"
+  | "bassgen"
   | null;
 
 export type EditTool = "select" | "draw" | "split" | "razor";

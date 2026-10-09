@@ -228,5 +228,5 @@
 - [x] Separate stems (simple honest version: vocal remove/isolate, low/mid/high bands)
 - [x] Convert voice (simple honest version: pitch/formant/robot effects)
 - [x] AI co-producer
-- [ ] Bass generator
+- [x] Bass generator
 - [x] Generate stem (AI audio clip)
