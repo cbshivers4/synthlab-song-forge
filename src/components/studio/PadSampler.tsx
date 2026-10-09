@@ -934,7 +934,7 @@ export function PadSampler() {
         </>
       )}
 
-      {showKeyboard && <div className="min-w-0 border-t border-border pt-3" aria-label="Sample pads keyboard"><Keyboard disabled={!selPad} onPlay={(midi, velocity) => trigger(sel, velocity, undefined, midi)} /></div>}
+      {showKeyboard && <div className="min-w-0 border-t border-border pt-3" aria-label="Sample pads keyboard"><Keyboard skinKey="pads-keyboard" disabled={!selPad} onPlay={(midi, velocity) => trigger(sel, velocity, undefined, midi)} /></div>}
 
       <p className="text-xs text-muted-foreground">
         Pads play through their own mixer channel, so you can fade them, send them to reverb and add effects like any

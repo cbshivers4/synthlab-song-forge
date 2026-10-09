@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export type Skin = {
+  naturalKeyColor?: string;
+  sharpKeyColor?: string;
+  activeKeyColor?: string;
   color?: string | undefined;
   padColor?: string | undefined;
   image?: string | undefined;
@@ -23,6 +26,10 @@ export type SkinKey =
   | "live"
   | "looper"
   | "sample"
+  | "sampler-keyboard"
+  | "synth-keyboard"
+  | "pads-keyboard"
+  | "keyboard"
   | "shared";
 
 /** Panels that can show a wallpaper, in the order the Appearance screen lists them. */
@@ -34,6 +41,9 @@ export const WALLPANEL_PANELS: { key: SkinKey; label: string }[] = [
   { key: "looper", label: "Live Looper" },
   { key: "sample", label: "Sampler" },
   { key: "sampler", label: "Sample pads" },
+  { key: "sampler-keyboard", label: "Sampler keyboard" },
+  { key: "synth-keyboard", label: "Synth keyboard" },
+  { key: "pads-keyboard", label: "Sample pads keyboard" },
 ];
 export type Skins = Partial<Record<SkinKey, Skin>>;
 export type SkinPreset = { id: string; name: string; skins: Skins };
