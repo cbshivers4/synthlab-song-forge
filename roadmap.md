@@ -148,6 +148,7 @@
 - [x] My Library (cloud/computer folders for samples, synth, drums, notes) + distinct effect window looks
 
 ## Current request
+- [ ] Compact the phone transport without removing controls; verify timeline space, scrolling, transport actions and unchanged desktop layout.
 - [x] Rebalance the sideways phone layout so the SOUNDS/TOOLS tiles are usable and add a collapsible left nav with a bigger logo; signed-in checks at 942×508 verified one full row of big tiles, the rail collapsing to 48px and reopening, and the arrow click (a stale press animation rule that shifted the button on tap was fixed). Build OK, typecheck clean.
 - [x] Move phone Loop and Tempo & rhythm onto the transport; signed-in checks verified steppers, loop toggle, BPM, meter, swing and tools menu with no overflow upright/sideways; desktop unchanged.
 - [x] Restore native phone scrolling across editors, menus, all timeline tracks and mixer channels; signed-in preview reached the last track, Master, sampler bottom and menu bottom, and a simulated finger swipe scrolled the mixer
