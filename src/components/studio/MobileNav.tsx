@@ -51,6 +51,7 @@ export function MobileNav({ onBeatMode, view, setView, moreSignal = 0, landscape
     { label: "Live View", icon: <Radio />, panel: "live" },
     { label: "Live Looper", icon: <Disc3 />, panel: "looper" },
     { label: "Hum to Beat", icon: <Mic />, panel: "humbeat" },
+    { label: "Separate Stems", icon: <Scissors />, panel: "stems" },
   ];
   const more: Item[] = [
     { label: "Piano Roll", icon: <Music />, panel: "piano" },

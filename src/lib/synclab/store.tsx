@@ -213,6 +213,7 @@ export type PanelId =
   | "looper"
   | "apps"
   | "humbeat"
+  | "stems"
   | null;
 
 export type EditTool = "select" | "draw" | "split" | "razor";
