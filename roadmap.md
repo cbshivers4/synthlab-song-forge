@@ -241,3 +241,4 @@
 - [x] AI co-producer
 - [x] Bass generator
 - [x] Generate stem (AI audio clip)
+- [x] Video Sampler: time stretch (video BPM → target/song tempo, pitch kept) beside the pinned waveform on desktop and phone; verified signed-in
