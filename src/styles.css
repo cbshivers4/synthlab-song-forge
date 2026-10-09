@@ -910,7 +910,7 @@
 
 /* Phone left rail: arrow tab slides the logo/room bar in and out. */
 .phone-console .phone-rail-toggle { color: var(--foreground); }
-.phone-console .phone-rail-toggle:active { transform: translateY(-50%) scale(0.94); }
+.phone-console .phone-rail-toggle:active { transform: scale(0.94); }
 @media (prefers-reduced-motion: reduce) {
   .phone-console-rail { transition: none; }
 }
