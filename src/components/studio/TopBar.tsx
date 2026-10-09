@@ -170,14 +170,13 @@ export function TopBar() {
           )}
           {isMobile && <>
             <label className="ml-auto"><span className="label-xs">BPM</span><input aria-label="BPM" type="number" min={60} max={190} value={transport.bpm} className="phone-bpm-input w-16 bg-transparent text-base tabular-nums text-primary" onChange={(e) => { const bpm = Number(e.target.value); if (bpm >= 60 && bpm <= 190) setTransport({ bpm }); }} /></label>
-            <div aria-label="Loop" className="phone-loop-controls flex w-full min-w-0 flex-wrap items-center gap-1 border-t border-border pt-1">
-              <Button variant="ghost" size="icon" className="size-12 shrink-0" aria-label="Loop" title="Loop" aria-pressed={transport.loop} onClick={() => setTransport({ loop: !transport.loop })}><Repeat className={`size-5 ${transport.loop ? "text-primary" : "text-muted-foreground"}`} /></Button>
+            <Button variant="ghost" size="icon" className="size-12 shrink-0" aria-label="Loop" title="Loop" aria-pressed={transport.loop} onClick={() => setTransport({ loop: !transport.loop })}><Repeat className={`size-5 ${transport.loop ? "text-primary" : "text-muted-foreground"}`} /></Button>
+            <div aria-label="Loop range" className="phone-loop-controls flex w-full min-w-0 flex-wrap items-center gap-1 border-t border-border pt-1">
               <LoopRange mobile />
               <div className="flex shrink-0 items-center gap-1"><Button variant="ghost" size="icon" className="size-12" aria-label="Fewer bars" disabled={transport.bars <= 1} onClick={() => setTransport({ bars: Math.max(1, transport.bars - 1) })}><Minus className="size-3" /></Button><span className="font-mono text-sm">{transport.bars} bars</span><Button variant="ghost" size="icon" className="size-12" aria-label="More bars" disabled={transport.bars >= 512} onClick={() => setTransport({ bars: Math.min(512, transport.bars + 1) })}><Plus className="size-3" /></Button></div>
             </div>
             <div aria-label="Tempo & rhythm" className="phone-rhythm-controls flex w-full min-w-0 flex-wrap items-center gap-2 border-t border-border pt-1">
-              <Slider aria-label="Tempo" className="w-40" value={[transport.bpm]} min={60} max={190} step={1} onValueChange={([bpm = 120]) => setTransport({ bpm })} />
-              <MidiLearnButton id="transport" param="bpm" label="Tempo" />
+              <div className="flex items-center gap-2"><Slider aria-label="Tempo" className="w-40" value={[transport.bpm]} min={60} max={190} step={1} onValueChange={([bpm = 120]) => setTransport({ bpm })} /><MidiLearnButton id="transport" param="bpm" label="Tempo" /></div>
               <label><span className="label-xs">METER</span><select aria-label="Time signature" className="block bg-transparent font-mono text-base text-primary" value={transport.beatsPerBar ?? 4} onChange={(e) => setTransport({ beatsPerBar: Number(e.target.value) })}>{METERS.map((m) => <option key={m} value={m} className="bg-background">{m}/4</option>)}</select></label>
               <div><span className="label-xs">Swing</span><Slider aria-label="Swing" className="w-20" value={[transport.swing]} min={0} max={0.6} step={0.01} onValueChange={([swing = 0]) => setTransport({ swing })} /></div>
               <MidiLearnButton id="transport" param="swing" label="Swing" />
