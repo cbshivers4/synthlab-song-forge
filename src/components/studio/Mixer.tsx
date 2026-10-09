@@ -1,3 +1,4 @@
+import { levelColor, peakOf, spectrumColor, dbColor, LEVEL_GREEN, LEVEL_ORANGE, LEVEL_RED } from "@/lib/synclab/level-colors";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 // Console fader thumb sizing is provided by FADER_CAP below.
 import {
@@ -148,9 +149,9 @@ function Meter({ id, level, tall }: { id: string; level: number; tall?: boolean 
             className={cn(
               "flex-1 rounded-[1px] transition-colors duration-75",
               !on && !isHold && "bg-surface-2/70",
-              on && (clipped ? "bg-red-500" : "bg-emerald-500"),
-              isHold && !on && (clipped ? "bg-red-400" : "bg-emerald-300")
+              isHold && !on && "opacity-70"
             )}
+            style={on || isHold ? { background: clipped && i >= segs - 2 ? LEVEL_RED : dbColor(-60 + ((i + 1) / segs) * 60) } : undefined}
           />
         );
       })}
@@ -744,6 +745,7 @@ function EqCurve({
             wavePath += `${wavePath ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)} `;
           }
           node.setAttribute("d", wavePath);
+          node.setAttribute("stroke", levelColor(peakOf(wave)));
         }
       }
       raf = requestAnimationFrame(draw);

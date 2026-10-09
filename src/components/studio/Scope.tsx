@@ -1,3 +1,4 @@
+import { levelColor, peakOf, spectrumColor, dbColor, LEVEL_GREEN, LEVEL_ORANGE, LEVEL_RED } from "@/lib/synclab/level-colors";
 import { useEffect, useRef, useState } from "react";
 import { getEngine } from "@/lib/synclab/audio-engine";
 
@@ -50,10 +51,9 @@ export function Scope({
       }
 
       const engine = getEngine();
-      const accent = colorRef.current ?? getComputedStyle(cv).color;
       if (modeRef.current === "wave") {
         const data = engine.getScopeWave(scopeId);
-        ctx.strokeStyle = accent;
+        ctx.strokeStyle = levelColor(peakOf(data));
         ctx.lineWidth = 1.4;
         ctx.beginPath();
         if (data) {
@@ -72,7 +72,8 @@ export function Scope({
         const data = engine.getScopeSpectrum(scopeId);
         if (data) {
           const grad = ctx.createLinearGradient(0, 0, 0, h);
-          grad.addColorStop(0, accent);
+          let top = -120; for (let i = 0; i < data.length; i++) if ((data[i] ?? -120) > top) top = data[i] ?? -120;
+          grad.addColorStop(0, spectrumColor(top));
           grad.addColorStop(1, "transparent");
           ctx.fillStyle = grad;
           ctx.beginPath();

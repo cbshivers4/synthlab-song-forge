@@ -1,3 +1,4 @@
+import { levelColor, peakOf, spectrumColor, dbColor, LEVEL_GREEN, LEVEL_ORANGE, LEVEL_RED } from "@/lib/synclab/level-colors";
 import { useEffect, useRef } from "react";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { clearClip, reportLevel, useClipped } from "@/lib/synclab/clip-monitor";
@@ -55,7 +56,7 @@ export function LevelBar({
           className="h-full origin-left transition-none"
           style={{
             width: "0%",
-            background: `linear-gradient(90deg, ${color ?? "var(--meter, oklch(0.78 0.18 145))"} 0%, ${color ?? "var(--meter, oklch(0.78 0.18 145))"} 72%, oklch(0.82 0.17 85) 88%, oklch(0.63 0.24 27) 100%)`,
+            background: `linear-gradient(90deg, ${LEVEL_GREEN} 0%, ${LEVEL_GREEN} 81%, ${LEVEL_ORANGE} 82%, ${LEVEL_ORANGE} 89%, ${LEVEL_RED} 90%, ${LEVEL_RED} 100%)`, backgroundSize: "var(--meter-track, 100%) 100%",
           }}
         />
 
