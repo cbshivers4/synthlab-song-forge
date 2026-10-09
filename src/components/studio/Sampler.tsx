@@ -68,7 +68,7 @@ function Waveform({ track, onSlice, drawSlice = false }: { track: Track; onSlice
   return (
     <div
       ref={ref}
-      className={`relative h-32 min-h-32 w-full overflow-hidden rounded border border-border bg-surface-2 sm:h-36 sm:min-h-36 ${drawSlice ? "touch-none" : "touch-pan-y"}`}
+      className={`relative h-32 min-h-32 w-full overflow-hidden rounded border border-border bg-surface-2 sm:h-20 sm:min-h-20 ${drawSlice ? "touch-none" : "touch-pan-y"}`}
       aria-label="Sample chop waveform"
       onPointerDown={(e) => {
         if (!drawSlice || (e.target as HTMLElement).closest('[role="slider"]')) return;
@@ -595,6 +595,7 @@ export function Sampler() {
                   </Button>
                 ))}
               </div>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3">
               <Row label="Sample BPM" value={`${s.sampleBpm ?? 120} BPM`}>
                 <Slider aria-label="Time stretch sample BPM" value={[s.sampleBpm ?? 120]} min={60} max={200} step={1} onValueChange={([v]) => { stopPreview(); updateSampler(track.id, { sampleBpm: v ?? 120 }); }} />
               </Row>
@@ -604,6 +605,7 @@ export function Sampler() {
               <Row label="Pitch" value={`${wPitch > 0 ? "+" : ""}${wPitch} st`}>
                 <Slider value={[wPitch]} min={-12} max={12} step={1} onValueChange={([v]) => { stopPreview(); setWPitch(v ?? 0); }} />
               </Row>
+              </div>
               <div className="flex gap-1.5">
                 <Button size="sm" variant="secondary" className="h-8 flex-1 gap-1.5" disabled={wBusy} onClick={() => void previewWarp(track)}>
                   {wPlaying ? <Square className="size-3.5" /> : <Play className="size-3.5" />} {wPlaying ? "Stop" : wBusy ? "Rendering…" : "Preview"}
