@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { AudioLines, FolderOpen, Home, Music2, Scissors, SlidersHorizontal, Wand2, Settings2, Radio, Disc3, Grid2x2, Piano, Gauge, FileSearch, Cpu, Palette, NotebookPen, LifeBuoy } from "lucide-react";
+import { AudioLines, FolderOpen, Home, Music2, Scissors, SlidersHorizontal, Wand2, Settings2, Radio, Disc3, Grid2x2, Piano, Gauge, FileSearch, Cpu, Palette, NotebookPen, LifeBuoy, Mic, Bot, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStudio, type PanelId } from "@/lib/synclab/store";
 import { useApp } from "@/lib/synclab/app-state";
@@ -18,6 +18,12 @@ const sounds = [
   { label: "Live View", icon: Radio, panel: "live" }, { label: "Live Looper", icon: Disc3, panel: "looper" },
 ] as const;
 const tools = [
+  { label: "Separate Stems", icon: Scissors, panel: "stems" },
+  { label: "Hum to Beat", icon: Mic, panel: "humbeat" },
+  { label: "AI Co-Producer", icon: Bot, panel: "coproducer" },
+  { label: "Bass Generator", icon: Music2, panel: "bassgen" },
+  { label: "Convert Voice", icon: Mic, panel: "voice" },
+  { label: "Generate Stem", icon: Sparkles, panel: "genstem" },
   { label: "Effects & Plugins", icon: Cpu, panel: "plugins" },
   { label: "Mastering", icon: Gauge, panel: "mastering" }, { label: "Reference", icon: FileSearch, panel: "reference" },
   { label: "Phone settings", icon: Settings2, panel: "settings" }, { label: "Appearance", icon: Palette, panel: "appearance" },
@@ -29,7 +35,6 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
   const { setStage } = useApp();
   const [room, setRoom] = useState<"edit" | "sounds" | "tools">("edit");
   // Mobile studio opens automatically — no rotate gate.
-  const [menuPage, setMenuPage] = useState(0);
   const consoleRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     document.documentElement.classList.add("phone-console-active");
@@ -42,7 +47,7 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
     observer.observe(document.body);
     return () => { observer.disconnect(); window.removeEventListener("resize", size); document.documentElement.classList.remove("phone-console-active"); };
   }, []);
-  const enter = (next: typeof room) => { setPanel(null); setRoom(next); setMenuPage(0); };
+  const enter = (next: typeof room) => { setPanel(null); setRoom(next); };
   const list = room === "sounds" ? sounds : tools;
   return <div ref={consoleRef} className="phone-console mobile-studio landscape-prod flex h-[100dvh] min-w-0 overflow-hidden bg-background text-foreground">
     <nav aria-label="Studio navigation" className="phone-console-rail flex w-20 shrink-0 flex-col items-center gap-2 border-r border-border bg-surface px-2 py-3">
@@ -58,7 +63,7 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
       {panel && children}
       {!panel && room !== "edit" && <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <header className="grid h-14 shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center border-b border-border px-5"><h2 className="truncate text-base font-semibold">{room === "sounds" ? "Sounds & instruments" : "Effects & tools"}</h2><span className="text-xs text-muted-foreground">SYNCLAB</span></header>
-        <div className="phone-room-grid grid min-h-0 flex-1 grid-cols-4 grid-rows-2 gap-3 overflow-auto p-4">{list.slice(menuPage * 8, menuPage * 8 + 8).map(({ label, icon: Icon, panel: next }, index) => <Button key={label} variant="outline" data-sound-family={index % 4} className="phone-sound-tile h-full min-h-20 min-w-0 flex-col gap-2 whitespace-normal text-center text-xs" onClick={() => setPanel(next as PanelId)}><span className="phone-sound-icon flex size-12 shrink-0 items-center justify-center rounded-lg"><Icon className="size-8" /></span><span className="font-semibold">{label}</span></Button>)}</div>
+        <div className="phone-room-grid grid min-h-0 flex-1 auto-rows-[minmax(7rem,1fr)] grid-cols-4 gap-3 overflow-auto p-4">{list.map(({ label, icon: Icon, panel: next }, index) => <Button key={label} variant="outline" data-sound-family={index % 4} className="phone-sound-tile h-full min-h-20 min-w-0 flex-col gap-2 whitespace-normal text-center text-xs" onClick={() => setPanel(next as PanelId)}><span className="phone-sound-icon flex size-12 shrink-0 items-center justify-center rounded-lg"><Icon className="size-8" /></span><span className="font-semibold">{label}</span></Button>)}</div>
         <footer className="grid h-14 shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-t border-border px-4"><Button variant="ghost" className="h-12 justify-start" onClick={() => { requestBluetoothSettings(); setPanel("settings"); }}><Radio />Bluetooth & audio</Button><div className="flex gap-1"><Button variant="outline" className="h-12" onClick={() => openExport()}>Export</Button><Button variant="outline" size="icon" className="size-12" aria-label="Help" onClick={() => openHelp("help")}><LifeBuoy /></Button></div></footer>
       </div>}
     </main>

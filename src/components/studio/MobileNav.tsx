@@ -58,6 +58,12 @@ export function MobileNav({ onBeatMode, view, setView, moreSignal = 0, landscape
     { label: "Bass Generator", icon: <Music />, panel: "bassgen" },
   ];
   const more: Item[] = [
+    { label: "Separate Stems", icon: <Scissors />, panel: "stems" },
+    { label: "Hum to Beat", icon: <Mic />, panel: "humbeat" },
+    { label: "AI Co-Producer", icon: <Bot />, panel: "coproducer" },
+    { label: "Bass Generator", icon: <Music />, panel: "bassgen" },
+    { label: "Convert Voice", icon: <Mic />, panel: "voice" },
+    { label: "Generate Stem", icon: <Sparkles />, panel: "genstem" },
     { label: "Piano Roll", icon: <Music />, panel: "piano" },
     { label: "Mastering", icon: <Wand2 />, panel: "mastering" },
     { label: "Reference Analyzer", icon: <FileSearch />, panel: "reference" },
