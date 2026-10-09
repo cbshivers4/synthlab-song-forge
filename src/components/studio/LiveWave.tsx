@@ -1,3 +1,4 @@
+import { levelColor, peakOf, spectrumColor, dbColor, LEVEL_GREEN, LEVEL_ORANGE, LEVEL_RED } from "@/lib/synclab/level-colors";
 import { useEffect, useRef } from "react";
 import { getEngine } from "@/lib/synclab/audio-engine";
 
@@ -26,7 +27,7 @@ export function LiveWave({ stream, color = "hsl(0 85% 62%)", label = "Live input
       analyser.getFloatTimeDomainData(data);
       g.clearRect(0, 0, w, h);
       g.lineWidth = 2;
-      g.strokeStyle = color;
+      g.strokeStyle = levelColor(peakOf(data));
       g.beginPath();
       for (let x = 0; x < w; x++) {
         const v = data[Math.floor((x / w) * data.length)] ?? 0;

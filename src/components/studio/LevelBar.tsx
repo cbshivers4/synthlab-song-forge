@@ -1,3 +1,4 @@
+import { levelColor, peakOf, spectrumColor, dbColor, LEVEL_GREEN, LEVEL_ORANGE, LEVEL_RED } from "@/lib/synclab/level-colors";
 import { useEffect, useRef } from "react";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { clearClip, reportLevel, useClipped } from "@/lib/synclab/clip-monitor";
@@ -39,6 +40,7 @@ export function LevelBar({
       smooth = raw > smooth ? raw : smooth * 0.86;
       reportLevel(id, raw);
       const node = fill.current;
+      if (node) node.style.background = levelColor(smooth);
       if (node) node.style.width = `${dbToFrac(toDb(Math.max(smooth, 0.0005))) * 100}%`;
       raf = requestAnimationFrame(loop);
     };
@@ -55,7 +57,7 @@ export function LevelBar({
           className="h-full origin-left transition-none"
           style={{
             width: "0%",
-            background: `linear-gradient(90deg, ${color ?? "var(--meter, oklch(0.78 0.18 145))"} 0%, ${color ?? "var(--meter, oklch(0.78 0.18 145))"} 72%, oklch(0.82 0.17 85) 88%, oklch(0.63 0.24 27) 100%)`,
+            background: LEVEL_GREEN,
           }}
         />
 

@@ -1,3 +1,4 @@
+import { levelColor, peakOf, spectrumColor, dbColor, LEVEL_GREEN, LEVEL_ORANGE, LEVEL_RED } from "@/lib/synclab/level-colors";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Knob } from "./Knob";
 import { getEngine } from "@/lib/synclab/audio-engine";
@@ -363,8 +364,9 @@ export function EffectDisplay({
           if (!band) continue;
           const bar = Math.max(1, mag * h);
           const grad = ctx.createLinearGradient(0, h - bar, 0, h);
-          grad.addColorStop(0, `${band.color}d9`);
-          grad.addColorStop(1, `${band.color}2f`);
+          const sc = spectrumColor(db);
+          grad.addColorStop(0, sc);
+          grad.addColorStop(1, "transparent");
           ctx.fillStyle = grad;
           ctx.fillRect(x, h - bar, 1.5, bar);
         }
@@ -383,8 +385,8 @@ export function EffectDisplay({
         ctx.moveTo(0, h / 2);
         ctx.lineTo(w, h / 2);
       }
-      ctx.strokeStyle = "rgba(255,255,255,0.78)";
-      ctx.lineWidth = 1.1;
+      ctx.strokeStyle = levelColor(peakOf(wave));
+      ctx.lineWidth = 1.3;
       ctx.stroke();
     };
     raf = requestAnimationFrame(draw);

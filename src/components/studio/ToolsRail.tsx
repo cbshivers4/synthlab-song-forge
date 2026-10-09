@@ -1,3 +1,4 @@
+import { levelColor, peakOf, spectrumColor, dbColor, LEVEL_GREEN, LEVEL_ORANGE, LEVEL_RED } from "@/lib/synclab/level-colors";
 import {
   AudioLines,
   AppWindow,
@@ -104,8 +105,7 @@ function PreviewScope({ playingFile }: { playingFile: string }) {
       const h = (canvas.height = canvas.clientHeight * (window.devicePixelRatio || 1));
       an.getFloatTimeDomainData(data);
       ctx.clearRect(0, 0, w, h);
-      const color = getComputedStyle(canvas).color || "#7ef0c8";
-      ctx.strokeStyle = color;
+      ctx.strokeStyle = levelColor(peakOf(data));
       ctx.lineWidth = Math.max(1, h / 24);
       ctx.beginPath();
       for (let i = 0; i < data.length; i++) {

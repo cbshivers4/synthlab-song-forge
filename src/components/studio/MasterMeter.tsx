@@ -1,3 +1,4 @@
+import { levelColor, peakOf, spectrumColor, dbColor, LEVEL_GREEN, LEVEL_ORANGE, LEVEL_RED } from "@/lib/synclab/level-colors";
 import { useEffect, useRef, useState } from "react";
 import { getEngine } from "@/lib/synclab/audio-engine";
 
@@ -98,15 +99,15 @@ export function MasterMeter() {
           c.fillStyle = muted; c.globalAlpha = 0.35; c.fillRect(0, y, w, barH); c.globalAlpha = 1;
           const pw = dbPos(toDb(peak)) * w;
           const g = c.createLinearGradient(0, 0, w, 0);
-          g.addColorStop(0, green);
-          g.addColorStop(dbPos(-12), green);
-          g.addColorStop(dbPos(-6), yellow);
-          g.addColorStop(dbPos(-3), orange);
-          g.addColorStop(dbPos(0.5), danger);
+          g.addColorStop(0, LEVEL_GREEN);
+          g.addColorStop(dbPos(-6.5), LEVEL_GREEN);
+          g.addColorStop(dbPos(-6), LEVEL_ORANGE);
+          g.addColorStop(dbPos(-1.5), LEVEL_ORANGE);
+          g.addColorStop(dbPos(-1), LEVEL_RED);
           c.fillStyle = g; c.globalAlpha = 0.9; c.fillRect(0, y, pw, barH); c.globalAlpha = 1;
           c.fillStyle = g; c.globalAlpha = 0.6; c.fillRect(0, y + barH * 0.25, dbPos(toDb(rms)) * w, barH * 0.5); c.globalAlpha = 1;
           const hx = dbPos(toDb(hd.v)) * w;
-          c.fillStyle = hd.v >= CLIP ? danger : yellow; c.fillRect(Math.max(0, hx - 2), y, 2, barH);
+          c.fillStyle = hd.v >= CLIP ? LEVEL_RED : dbColor(toDb(hd.v)); c.fillRect(Math.max(0, hx - 2), y, 2, barH);
         }
         // 0 dB and -12 marks
         c.fillStyle = muted;
@@ -127,7 +128,7 @@ export function MasterMeter() {
         const chans = ch === "stereo" ? [0, 1] : ch === "left" ? [0] : [1];
         c.lineWidth = 1.2;
         for (const i of chans) {
-          c.strokeStyle = i === 0 ? green : accent2;
+          c.strokeStyle = levelColor(peakOf(wav[i]));
           c.globalAlpha = chans.length > 1 ? 0.8 : 1;
           c.beginPath();
           if (m === "osc") {
