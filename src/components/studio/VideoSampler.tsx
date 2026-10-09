@@ -7,6 +7,7 @@ import { detectSampleChops } from "@/lib/synclab/sample-chops";
 import { encodeWav } from "@/lib/synclab/bounce";
 import { useStudio } from "@/lib/synclab/store";
 import { uid } from "@/lib/synclab/presets";
+import { retainMediaInBackground, takeLibraryVideo } from "@/lib/synclab/media-library";
 
 const PAD_KEYS = "1234qwerasdfzxcv";
 
@@ -35,6 +36,7 @@ export function VideoSampler() {
   };
 
   const loadBlob = async (blob: Blob) => {
+    if (blob instanceof File) retainMediaInBackground(blob, blob.name);
     setError(null);
     const next = URL.createObjectURL(blob);
     setUrl((old) => { if (old) URL.revokeObjectURL(old); return next; });
@@ -47,6 +49,11 @@ export function VideoSampler() {
       setError("This video has no audio this browser can decode. Try an MP4 or WebM with sound.");
     }
   };
+
+  useEffect(() => {
+    const saved = takeLibraryVideo();
+    if (saved) void loadBlob(saved.blob);
+  }, []);
 
   const film = async () => {
     if (filming) { recorder.current?.stop(); return; }
