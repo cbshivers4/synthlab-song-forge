@@ -222,3 +222,11 @@
 - [x] Keep phone timeline REC and AUTO visible first, preserve other actions through horizontal scrolling, and prevent automation menu clicks from opening an instrument.
 
 - [x] Sampler phone/desktop chopping: PCM attacks, manual cuts, gate/one-shot, choke, pad spreading; unit tests and signed-in portrait/sideways/desktop preview passed, including gate release and offset pad transfer. Physical-device listening remains unverified.
+
+## AI / creative tools (Oct 2026)
+- [x] Hum to Beat (beatbox → drums, hum → melody; on-device analysis)
+- [ ] Separate stems (simple honest version: vocal remove/isolate, low/mid/high bands)
+- [ ] Convert voice (simple honest version: pitch/formant/robot effects)
+- [ ] AI co-producer
+- [ ] Bass generator
+- [ ] Generate stem (AI audio clip)
