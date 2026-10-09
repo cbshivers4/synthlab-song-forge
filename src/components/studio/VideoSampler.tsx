@@ -39,7 +39,7 @@ export function VideoSampler() {
       let peak = 0;
       const start = Math.floor(i * buffer.length / bins);
       const end = Math.floor((i + 1) * buffer.length / bins);
-      for (const channel of channels) for (let j = start; j < end; j++) peak = Math.max(peak, Math.abs(channel[j]));
+      for (const channel of channels) for (let j = start; j < end; j++) peak = Math.max(peak, Math.abs(channel[j] ?? 0));
       return peak;
     });
   }, [buffer]);
