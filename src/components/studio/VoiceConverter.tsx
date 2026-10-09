@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Mic, Play, Square, Upload, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { usePreviewTrack } from "@/lib/synclab/use-preview-track";
+import { PreviewButtons } from "./PreviewButtons";
 import { useStudio } from "@/lib/synclab/store";
 import { encodeWav } from "@/lib/synclab/bounce";
 import { peaksOf } from "@/lib/synclab/stems";
@@ -78,12 +80,20 @@ export function VoiceConverter() {
     void a.play();
   };
 
+  const pv = usePreviewTrack();
+  const presetLabel = VOICE_PRESETS.find((p) => p.id === preset)!.label;
+  const build = (name: string) => {
+    if (!preview || !source) return "";
+    const duration = preview.data.length / preview.sr;
+    const id = addTrack("audio", name, undefined, { keepPanel: true });
+    addClip(id, { id: `voice-${Date.now()}`, name: `${source.name} (${presetLabel})`, url: preview.url, peaks: peaksOf(preview.data), duration, start: source.start, offset: 0, length: duration });
+    return id;
+  };
+  const previewWithSong = () => { if (!preview || !source) return; audioRef.current?.pause(); pv.start((n) => build(n(`VOICE · ${presetLabel.toUpperCase()}`))); };
   const addToTimeline = () => {
     if (!preview || !source) return;
-    const label = VOICE_PRESETS.find((p) => p.id === preset)!.label;
-    const duration = preview.data.length / preview.sr;
-    const id = addTrack("audio", `VOICE · ${label.toUpperCase()}`, undefined, { keepPanel: true });
-    addClip(id, { id: `voice-${Date.now()}`, name: `${source.name} (${label})`, url: preview.url, peaks: peaksOf(preview.data), duration, start: source.start, offset: 0, length: duration });
+    const name = `VOICE · ${presetLabel.toUpperCase()}`;
+    if (!pv.keep(name)) build(name);
     toast.success("Converted voice added to a new track");
     setPreview(null);
   };
@@ -139,8 +149,8 @@ export function VoiceConverter() {
           <Wand2 className="size-4" /> {busy ?? "Convert"}
         </Button>
         {preview && <>
-          <Button size="lg" variant="secondary" className="min-h-12" onClick={listen}><Play className="size-4" /> Listen</Button>
-          <Button size="lg" variant="secondary" className="min-h-12" onClick={addToTimeline}>Add to timeline</Button>
+          <Button size="lg" variant="secondary" className="min-h-12" onClick={listen}><Play className="size-4" /> Listen alone</Button>
+          <PreviewButtons pv={pv} onPreview={previewWithSong} onAdd={addToTimeline} />
         </>}
       </div>
     </section>

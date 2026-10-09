@@ -3,6 +3,8 @@ import { Bot, Copy, Send } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
+import { usePreviewTrack } from "@/lib/synclab/use-preview-track";
+import { PreviewButtons } from "./PreviewButtons";
 import { useStudio } from "@/lib/synclab/store";
 import { askCoProducerFn } from "@/utils/co-producer.functions";
 type CoProducerResult = Extract<Awaited<ReturnType<typeof askCoProducerFn>>, { ok: true }>["result"];
@@ -63,25 +65,41 @@ export function CoProducer() {
     } finally { setBusy(false); }
   };
 
-  const add = (i: number) => {
-    const r = msgs[i]?.result;
-    if (!r) return;
+  const pv = usePreviewTrack();
+  const [pvIndex, setPvIndex] = useState<number | null>(null);
+  const build = (r: CoProducerResult, name: string) => {
     const bar = getBeatsPerBar() * 4;
     const last = r.kind === "drums" ? Math.max(0, ...r.drumHits.map((h) => h.step)) : Math.max(0, ...r.notes.map((n) => n.step + n.length - 1));
     const steps = Math.min(bar * 8, Math.max(bar, Math.ceil((last + 1) / bar) * bar));
-    const name = (r.trackName || "CO-PRODUCER").slice(0, 24);
     if (r.kind === "drums") {
-      pending.current = { id: addTrack("drum", name, undefined, { keepPanel: true }), r, steps };
-    } else {
-      const id = addTrack("instrument", name, undefined, { keepPanel: true });
-      updateTrack(id, {
-        steps,
-        notes: r.notes.filter((n) => n.step >= 0 && n.step < steps).map((n, k) => ({
-          id: `cp-${Date.now()}-${k}`, step: Math.round(n.step), length: Math.max(1, Math.round(n.length)),
-          pitch: Math.max(0, Math.min(127, Math.round(n.pitch))), velocity: Math.max(0.1, Math.min(1, n.velocity)),
-        })),
-      });
+      const id = addTrack("drum", name, undefined, { keepPanel: true });
+      pending.current = { id, r, steps };
+      return id;
     }
+    const id = addTrack("instrument", name, undefined, { keepPanel: true });
+    updateTrack(id, {
+      steps,
+      notes: r.notes.filter((n) => n.step >= 0 && n.step < steps).map((n, k) => ({
+        id: `cp-${Date.now()}-${k}`, step: Math.round(n.step), length: Math.max(1, Math.round(n.length)),
+        pitch: Math.max(0, Math.min(127, Math.round(n.pitch))), velocity: Math.max(0.1, Math.min(1, n.velocity)),
+      })),
+    });
+    return id;
+  };
+  const nameOf = (r: CoProducerResult) => (r.trackName || "CO-PRODUCER").slice(0, 24);
+  const preview = (i: number) => {
+    const r = msgs[i]?.result;
+    if (!r) return;
+    pv.start((n) => build(r, n(nameOf(r))));
+    setPvIndex(i);
+  };
+  const add = (i: number) => {
+    const r = msgs[i]?.result;
+    if (!r) return;
+    const name = nameOf(r);
+    if (!(pvIndex === i && pv.keep(name))) build(r, name);
+    if (pvIndex !== i) pv.stop();
+    setPvIndex(null);
     setMsgs((m) => m.map((x, k) => (k === i ? { ...x, added: true } : x)));
     toast.success(`${name} added to the timeline`);
   };
@@ -121,7 +139,7 @@ export function CoProducer() {
             {m.result && m.result.kind !== "none" && (m.result.notes.length > 0 || m.result.drumHits.length > 0) && (
               <div className="mt-2 flex items-center gap-2 rounded-md border border-border bg-surface-2 p-2 font-mono text-xs">
                 <span className="flex-1">{m.result.trackName} · {m.result.kind === "drums" ? `${m.result.drumHits.length} hits` : `${m.result.notes.length} notes`}</span>
-                <Button size="sm" disabled={m.added} onClick={() => add(i)}>{m.added ? "Added" : "Add to timeline"}</Button>
+                {m.added ? <Button size="sm" disabled>Added</Button> : <PreviewButtons size="sm" pv={{ ...pv, stop: () => { pv.stop(); setPvIndex(null); } }} active={pv.previewing && pvIndex === i} onPreview={() => preview(i)} onAdd={() => add(i)} addLabel="Add to project" />}
               </div>
             )}
           </div>

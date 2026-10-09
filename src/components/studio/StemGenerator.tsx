@@ -32,6 +32,7 @@ export function StemGenerator() {
     setError(null);
     audioRef.current?.pause();
     setPlaying(false);
+    pv.stop();
     try {
       const res = await gen({ data: { prompt: prompt.trim() || `${instrument} groove`, instrument, bpm: transport.bpm || 120, key } });
       if (!res.ok) { setError(res.error); return; }
@@ -58,13 +59,20 @@ export function StemGenerator() {
     setPlaying(true);
   };
 
+  const pv = usePreviewTrack();
+  const build = (name: string) => {
+    if (!result) return "";
+    const d = result.buf.duration;
+    const id = addTrack("audio", name, undefined, { keepPanel: true });
+    addClip(id, { id: `gen-${Date.now()}`, name: result.name, url: result.url, peaks: peaksOf(result.buf.getChannelData(0)), duration: d, start: 0, offset: 0, length: d });
+    return id;
+  };
+  const preview = () => { if (!result) return; audioRef.current?.pause(); setPlaying(false); pv.start((n) => build(n(result.name))); };
   const add = () => {
     if (!result) return;
     audioRef.current?.pause();
     setPlaying(false);
-    const d = result.buf.duration;
-    const id = addTrack("audio", result.name, undefined, { keepPanel: true });
-    addClip(id, { id: `gen-${Date.now()}`, name: result.name, url: result.url, peaks: peaksOf(result.buf.getChannelData(0)), duration: d, start: 0, offset: 0, length: d });
+    if (!pv.keep(result.name)) build(result.name);
     toast.success("Generated stem added to a new track");
     setResult(null);
   };
@@ -99,9 +107,9 @@ export function StemGenerator() {
         </Button>
         {result && <>
           <Button size="lg" variant="secondary" className="min-h-12" onClick={toggle}>
-            {playing ? <Square className="size-4 fill-current" /> : <Play className="size-4" />} {playing ? "Stop" : "Listen"}
+            {playing ? <Square className="size-4 fill-current" /> : <Play className="size-4" />} {playing ? "Stop" : "Listen alone"}
           </Button>
-          <Button size="lg" variant="secondary" className="min-h-12" onClick={add}>Add to timeline</Button>
+          <PreviewButtons pv={pv} onPreview={preview} onAdd={add} />
         </>}
       </div>
 
