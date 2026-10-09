@@ -214,6 +214,7 @@ export type PanelId =
   | "apps"
   | "humbeat"
   | "stems"
+  | "coproducer"
   | null;
 
 export type EditTool = "select" | "draw" | "split" | "razor";

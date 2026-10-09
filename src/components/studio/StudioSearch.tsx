@@ -31,6 +31,7 @@ const PANELS: { id: Exclude<PanelId, null>; label: string }[] = [
   { id: "looper", label: "Live Looper" },
   { id: "humbeat", label: "Hum to Beat" },
   { id: "stems", label: "Separate Stems" },
+  { id: "coproducer", label: "AI Co-Producer" },
 ];
 
 export function StudioSearch() {
