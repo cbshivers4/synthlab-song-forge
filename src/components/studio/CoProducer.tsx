@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Bot, Send } from "lucide-react";
+import { Bot, Copy, Send } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import { getBeatsPerBar } from "@/lib/synclab/timebase";
 
 type Msg = { role: "user" | "ai"; text: string; result?: CoProducerResult; added?: boolean };
 const NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-const IDEAS = ["Give me a 4-bar chord progression", "Write a bassline for my song", "Make a trap drum pattern", "How can I make my mix sound bigger?"];
+const IDEAS = ["Write me a verse and a hook", "Write lyrics about my city", "Give me a 4-bar chord progression", "Write a bassline for my song", "Make a trap drum pattern", "How can I make my mix sound bigger?"];
 
 export function CoProducer() {
   const { tracks, transport, addTrack, updateTrack } = useStudio();
@@ -107,6 +107,17 @@ export function CoProducer() {
         {msgs.map((m, i) => (
           <div key={i} className={m.role === "user" ? "ml-auto max-w-[85%] rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground" : "max-w-[95%] text-sm"}>
             <p className="whitespace-pre-wrap">{m.text}</p>
+            {m.result?.lyrics && (
+              <div className="mt-2 rounded-md border border-border bg-surface-2 p-3">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <span className="font-mono text-xs font-bold tracking-widest text-muted-foreground">LYRICS</span>
+                  <Button size="sm" variant="outline" onClick={() => { void navigator.clipboard?.writeText(m.result!.lyrics).then(() => toast.success("Lyrics copied")); }}>
+                    <Copy className="size-3.5" /> Copy
+                  </Button>
+                </div>
+                <p className="whitespace-pre-wrap text-sm leading-relaxed">{m.result.lyrics}</p>
+              </div>
+            )}
             {m.result && m.result.kind !== "none" && (m.result.notes.length > 0 || m.result.drumHits.length > 0) && (
               <div className="mt-2 flex items-center gap-2 rounded-md border border-border bg-surface-2 p-2 font-mono text-xs">
                 <span className="flex-1">{m.result.trackName} · {m.result.kind === "drums" ? `${m.result.drumHits.length} hits` : `${m.result.notes.length} notes`}</span>
