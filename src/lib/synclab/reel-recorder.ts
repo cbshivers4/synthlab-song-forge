@@ -215,6 +215,7 @@ class ReelRecorder {
   };
   load = async (file: File) => {
     if (this.state.busy || this.state.mode === "recording") return;
+    void import("./media-library").then(({ retainMediaInBackground }) => retainMediaInBackground(file, file.name));
     this.update({ busy: true, error: null }); this.stopPlayer();
     try { const buffer = await this.context().decodeAudioData(await file.arrayBuffer()); this.capture = { left: buffer.getChannelData(0).slice(), right: buffer.getChannelData(buffer.numberOfChannels > 1 ? 1 : 0).slice(), sampleRate: buffer.sampleRate }; this.update({ name: file.name.replace(/\.[^.]+$/, ""), mode: "stopped", position: 0, duration: buffer.duration, hasTape: true, clipped: false }); }
     catch { this.update({ mode: "stopped", error: "This audio file cannot be decoded in your browser. Try WAV or MP3." }); }

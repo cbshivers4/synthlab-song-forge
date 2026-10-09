@@ -113,7 +113,8 @@ export async function libraryAudio(item: LibraryItem): Promise<Blob | null> {
   if (!item.audioPath) return null;
   const { data, error } = await supabase.storage.from(BUCKET).download(item.audioPath);
   if (error) throw error;
-  return data;
+  const mime = (item.data as { mimeType?: string } | null)?.mimeType;
+  return mime && data ? new Blob([data], { type: mime }) : data;
 }
 
 /** Downloads the item as a real file to the computer's Downloads folder. */

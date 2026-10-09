@@ -16,6 +16,9 @@ const folderListeners = new Set<() => void>();
 const emitFolders = () => folderListeners.forEach((l) => l());
 export const getLocalFolders = () => folders;
 export function addLocalFolder(f: LocalFolder) {
+  void import("./media-library").then(({ retainMediaInBackground }) => {
+    for (const item of f.files) if (/\.mp3$/i.test(item.name)) retainMediaInBackground(item.file, item.name);
+  });
   folders = [f, ...folders];
   emitFolders();
 }
