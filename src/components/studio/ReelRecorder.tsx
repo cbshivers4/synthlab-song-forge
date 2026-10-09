@@ -9,6 +9,7 @@ import { encodeAiff, encodeFlac, encodeWavDepth } from "@/lib/synclab/export-for
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { uid } from "@/lib/synclab/presets";
 import { Knob } from "./Knob";
+import { stepsPerBar } from "@/lib/synclab/timebase";
 
 const clock = (s: number) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(Math.floor(s % 60)).padStart(2, "0")}.${Math.floor((s % 1) * 10)}`;
 function Reel({ moving, right }: { moving: boolean; right?: boolean }) {
@@ -81,7 +82,7 @@ export function ReelRecorder() {
         <Button variant="outline" className="h-14 flex-col gap-1 text-[10px]" disabled={transport.playing} onClick={() => setTransportStart()} aria-label="Return timeline to start"><SkipBack />REW</Button>
         <Button variant="outline" className="h-14 flex-col gap-1 text-[10px]" onClick={() => void masterStop()} aria-label="Stop timeline"><Square className="fill-current" />STOP</Button>
         <Button variant={transport.playing ? "default" : "outline"} className="h-14 flex-col gap-1 text-[10px]" onClick={masterPlay} aria-label={transport.playing ? "Pause timeline" : "Play timeline"}>{transport.playing ? <Pause /> : <Play />}{transport.playing ? "PAUSE" : "PLAY"}</Button>
-        <Button variant="outline" className="h-14 flex-col gap-1 text-[10px]" disabled={transport.playing} onClick={() => setTransport({ step: transport.step + 16 })} aria-label="Forward one bar"><SkipForward />FWD</Button>
+        <Button variant="outline" className="h-14 flex-col gap-1 text-[10px]" disabled={transport.playing} onClick={() => setTransport({ step: transport.step + stepsPerBar() })} aria-label="Forward one bar"><SkipForward />FWD</Button>
         <Button variant={recording || transport.recording ? "destructive" : "outline"} className={`h-14 flex-col gap-1 border-destructive/50 text-[10px] ${recording || transport.recording ? "text-destructive-foreground" : "text-destructive"}`} disabled={locked || recording} onClick={() => void masterRecord()} aria-label="Record timeline to tape"><Circle className="fill-current" />REC</Button>
       </div> : <div className="tape-buttons mt-3 grid grid-cols-5 gap-2">
         <Button variant="outline" className="h-14 flex-col gap-1 text-[10px]" disabled={locked || recording || !state.hasTape} onClick={() => void recorder.seek(0)} title="Rewind to start" aria-label="Rewind tape"><SkipBack />REW</Button>
