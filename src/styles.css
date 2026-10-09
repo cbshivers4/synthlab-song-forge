@@ -64,6 +64,12 @@
 }
 
 :root {
+  --keyboard-natural: oklch(0.96 0.005 90);
+  --keyboard-sharp: oklch(0.14 0.008 255);
+  --keyboard-active: var(--primary);
+  --keyboard-natural-ink: oklch(0.18 0.008 255);
+  --keyboard-sharp-ink: oklch(0.96 0.005 90);
+  --keyboard-key-shadow: 0 3px 6px oklch(0 0 0 / 0.6);
   --radius: 0.25rem;
   --background: oklch(0.145 0.008 255);
   --foreground: oklch(0.93 0.008 230);
@@ -1005,3 +1011,12 @@
   }
   .phone-console .transport-layout > .order-2 { order: 3; grid-column: 3; grid-row: 1; }
 }
+
+.instrument-keyboard .keyboard-key { background-image: none; letter-spacing: 0; }
+.instrument-keyboard .keyboard-natural { background-color: var(--keyboard-natural); color: var(--keyboard-natural-ink); }
+.instrument-keyboard .keyboard-sharp { background-color: var(--keyboard-sharp); color: var(--keyboard-sharp-ink); box-shadow: var(--keyboard-key-shadow); }
+.instrument-keyboard .keyboard-key[data-in-scale="true"] { box-shadow: inset 0 -4px 0 var(--keyboard-active); }
+.instrument-keyboard .keyboard-key:hover { background-color: color-mix(in oklab, var(--keyboard-active) 20%, var(--keyboard-natural)); }
+.instrument-keyboard .keyboard-sharp:hover { background-color: color-mix(in oklab, var(--keyboard-active) 20%, var(--keyboard-sharp)); }
+.instrument-keyboard .keyboard-key[data-active="true"] { background-color: var(--keyboard-active); }
+.instrument-keyboard .keyboard-key-label { color: inherit; }
