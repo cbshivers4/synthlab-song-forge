@@ -159,7 +159,7 @@ export function VideoSampler() {
     <div className="overflow-hidden rounded border border-border bg-background">
       <video ref={video} src={url ?? undefined} playsInline className="aspect-video max-h-48 w-full bg-background object-contain sm:max-h-64" controls={!filming && !!url} aria-label="Video sample" onTimeUpdate={(e) => setPosition(e.currentTarget.currentTime)} onSeeked={(e) => setPosition(e.currentTarget.currentTime)} onEnded={() => setActive(null)} />
     </div>
-    {buffer && <div className="sticky top-0 z-30 space-y-1 border-b border-border bg-background py-2" aria-label="Video audio waveform editor">
+    {buffer && <div className="sticky top-0 z-30 space-y-1 [@media(max-height:600px)]:static border-b border-border bg-background py-2" aria-label="Video audio waveform editor">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="text-xs font-mono text-muted-foreground">Video audio · {position.toFixed(2)} / {buffer.duration.toFixed(2)}s</span>
         <Button variant={manualSlice ? "default" : "outline"} className="h-9" aria-pressed={manualSlice} onClick={() => setManualSlice((value) => !value)}><Scissors />Manual slice</Button>
@@ -175,14 +175,14 @@ export function VideoSampler() {
         <div className="pointer-events-none absolute inset-y-0 w-px bg-destructive" style={{ left: `${Math.min(100, position / buffer.duration * 100)}%` }} aria-hidden="true" />
       </div>
       <div className="flex justify-between font-mono text-[10px] text-muted-foreground">{[0, 0.25, 0.5, 0.75, 1].map((fraction) => <span key={fraction}>{(buffer.duration * fraction).toFixed(2)}s</span>)}</div>
-    </div>}
-    {buffer && <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground rounded border border-border p-2" aria-label="Video time stretch">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground pt-1" aria-label="Video time stretch">
         <Button variant={stretchOn ? "default" : "outline"} className="h-9" aria-pressed={stretchOn} onClick={() => setStretchOn((v) => !v)}>Time stretch {stretchOn ? "on" : "off"}</Button>
         <label className="flex items-center gap-1">Video BPM<input type="number" min={40} max={240} value={sourceBpm} aria-label="Video source BPM" className="h-9 w-16 rounded border border-border bg-surface-2 px-1 font-mono text-foreground" onChange={(e) => setSourceBpm(Math.max(40, Math.min(240, Number(e.target.value) || 120)))} /></label>
         <label className="flex items-center gap-1">Target<input type="number" min={40} max={240} value={targetBpm} aria-label="Video target BPM" className="h-9 w-16 rounded border border-border bg-surface-2 px-1 font-mono text-foreground" onChange={(e) => setTargetBpm(Math.max(40, Math.min(240, Number(e.target.value) || 120)))} /></label>
         <Button variant="ghost" className="h-9 px-2" onClick={() => setTargetBpm(Math.round(getEngine().tempo || 120))}>Song tempo</Button>
         <span className="font-mono">{Math.round(speed * 100)}% · {(buffer.duration / speed).toFixed(2)}s, pitch kept</span>
-      </div>}
+      </div>
+    </div>}
     <div className="flex flex-wrap gap-2">
       <Button variant="outline" className="h-11" disabled={filming} onClick={() => file.current?.click()}><Upload />Load video</Button>
       <input ref={file} hidden type="file" accept="video/*" aria-label="Load video sample" onChange={(e) => { const f = e.target.files?.[0]; if (f) void loadBlob(f); e.target.value = ""; }} />
