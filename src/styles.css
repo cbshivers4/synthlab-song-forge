@@ -923,9 +923,7 @@
   .phone-console .phone-loop-controls, .phone-console .phone-rhythm-controls { width: auto; border-top: 0; padding-top: 0; }
   .phone-console .phone-loop-controls button, .phone-console .phone-rhythm-controls button { height: 40px; width: 40px; }
   .phone-console .phone-transport-signals { gap: 6px; padding-top: 4px; }
-  /* Meters keep their real levels; the decorative scale ruler yields space sideways. */
-  .phone-console .phone-transport-signals .relative.h-3 { display: none; }
-  .phone-console .phone-transport-signals canvas[aria-label="Master oscilloscope and spectrum"] { height: 24px; }
+  /* Keep the full meter scale and scope visible while tightening surrounding space. */
   .phone-console .phone-transport-signals .phone-master-display { overflow-x: auto; }
   .phone-console .phone-room-button { height: 52px; }
   .phone-console .phone-room-grid { grid-auto-rows: minmax(7rem, 1fr); gap: 6px; padding: 6px; }
@@ -935,4 +933,75 @@
   .phone-console .phone-room-header, .phone-console .phone-room-footer { height: 40px; min-height: 40px; }
   .phone-console .phone-room-header button, .phone-console .phone-room-footer button { height: 34px; min-height: 34px; }
   .phone-console .phone-room-footer button svg { width: 1.1rem; height: 1.1rem; }
+}
+
+/* Phone transport uses shallow scrollable rows, not a tall wrapping control stack. */
+.transport-glass[data-phone-transport="true"] { container-type: inline-size; }
+.phone-console .transport-glass[data-phone-transport="true"] .transport-layout {
+  padding: 3px 6px !important;
+  gap: 3px 6px;
+  min-height: 0;
+}
+.phone-console .transport-glass[data-phone-transport="true"] .transport-playback button {
+  height: 44px;
+  min-height: 44px;
+  min-width: 44px;
+}
+.phone-console .transport-glass[data-phone-transport="true"] .transport-glass-display {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  touch-action: pan-x;
+  scrollbar-width: thin;
+  height: 56px;
+  padding: 2px 4px;
+  gap: 6px;
+}
+.phone-console .transport-glass-display > :not(.hidden) { flex-shrink: 0; }
+.phone-console .transport-glass[data-phone-transport="true"] .phone-bpm-input {
+  min-height: 28px;
+  height: 28px;
+}
+.phone-console .transport-glass[data-phone-transport="true"] .phone-loop-controls,
+.phone-console .transport-glass[data-phone-transport="true"] .phone-loop-controls > div,
+.phone-console .transport-glass[data-phone-transport="true"] .phone-rhythm-controls {
+  width: auto;
+  flex-wrap: nowrap;
+  border-top: 0;
+  padding-top: 0;
+  min-height: 44px;
+}
+.phone-console .transport-glass[data-phone-transport="true"] .phone-loop-controls button,
+.phone-console .transport-glass[data-phone-transport="true"] .phone-rhythm-controls button,
+.phone-console .transport-glass-display > button {
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  min-width: 44px;
+}
+.phone-console .transport-glass-display > button:first-child { width: auto; min-width: 116px; }
+.phone-console .phone-rhythm-controls label { flex-shrink: 0; }
+.phone-console .phone-rhythm-controls select { min-height: 28px; }
+.phone-console .phone-rhythm-controls [role="slider"] { touch-action: none; }
+.phone-console .phone-transport-signals {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  touch-action: pan-x;
+  scrollbar-width: thin;
+  padding-top: 2px;
+  gap: 6px;
+}
+.phone-console .phone-master-display { flex-shrink: 0; max-width: none; overflow: visible; }
+.phone-console .phone-master-display > div { padding: 2px 6px; }
+.phone-console .phone-master-display button { min-height: 24px; height: 24px; }
+.phone-console .phone-signal-controls button { min-height: 44px; }
+@container (min-width: 480px) {
+  .phone-console .transport-glass[data-phone-transport="true"] .transport-layout {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+  .phone-console .transport-glass[data-phone-transport="true"] .transport-glass-display {
+    order: 2;
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .phone-console .transport-layout > .order-2 { order: 3; grid-column: 3; grid-row: 1; }
 }
