@@ -7,6 +7,7 @@ import { detectSampleChops } from "@/lib/synclab/sample-chops";
 import { encodeWav } from "@/lib/synclab/bounce";
 import { useStudio } from "@/lib/synclab/store";
 import { uid } from "@/lib/synclab/presets";
+import { wsolaStretch } from "@/lib/synclab/stretch";
 import { retainMediaInBackground, takeLibraryVideo } from "@/lib/synclab/media-library";
 
 import { WaveformView } from "./WaveformView";
@@ -31,6 +32,15 @@ export function VideoSampler() {
 
   const [position, setPosition] = useState(0);
   const [manualSlice, setManualSlice] = useState(false);
+  const [stretchOn, setStretchOn] = useState(false);
+  const [sourceBpm, setSourceBpm] = useState(120);
+  const [targetBpm, setTargetBpm] = useState(() => Math.round(getEngine().tempo || 120));
+  /** Playback speed for pads and printed chops; video seconds stay the reference for seeks and cuts. */
+  const speed = stretchOn ? Math.max(0.5, Math.min(2, targetBpm / sourceBpm)) : 1;
+  useEffect(() => {
+    const v = video.current; if (!v) return;
+    v.preservesPitch = true; v.playbackRate = speed;
+  }, [speed, url]);
   const peaks = useMemo(() => {
     if (!buffer) return [];
     const channels = Array.from({ length: buffer.numberOfChannels }, (_, i) => buffer.getChannelData(i));
@@ -110,8 +120,9 @@ export function VideoSampler() {
     const v = video.current; if (!v || !url) return;
     const [a, b] = range(i);
     window.clearTimeout(stopTimer.current);
+    v.preservesPitch = true; v.playbackRate = speed;
     v.currentTime = a; void v.play(); setActive(i);
-    stopTimer.current = window.setTimeout(() => { v.pause(); setActive(null); }, Math.max(50, (b - a) * 1000));
+    stopTimer.current = window.setTimeout(() => { v.pause(); setActive(null); }, Math.max(50, (b - a) / speed * 1000));
   };
 
   useEffect(() => {
@@ -127,15 +138,17 @@ export function VideoSampler() {
   const slice = (from: number, to: number) => {
     if (!buffer) return null;
     const s = Math.floor(from * buffer.sampleRate), e = Math.floor(to * buffer.sampleRate);
-    const left = buffer.getChannelData(0).slice(s, e);
-    const right = (buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : buffer.getChannelData(0)).slice(s, e);
+    let left = buffer.getChannelData(0).slice(s, e);
+    let right = (buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : buffer.getChannelData(0)).slice(s, e);
+    if (speed !== 1 && left.length > 4096) { left = wsolaStretch(left, speed); right = wsolaStretch(right, speed); }
     return { left, right, sampleRate: buffer.sampleRate };
   };
   const toProject = async (i?: number) => {
     if (!buffer) return;
     const [a, b] = i == null ? [0, buffer.duration] : range(i);
     const cap = slice(a, b); if (!cap) return;
-    const name = i == null ? "Video audio" : `Video chop ${i + 1}`;
+    const base = i == null ? "Video audio" : `Video chop ${i + 1}`;
+    const name = speed !== 1 ? `${base} ${targetBpm} BPM` : base;
     const audio = await getEngine().loadSampleFile(encodeWav(cap), name);
     const id = addTrack("audio", name, undefined, { keepPanel: true });
     addClip(id, { ...audio, id: uid(), name, start: transport.step, offset: 0, length: audio.duration });
@@ -162,6 +175,13 @@ export function VideoSampler() {
         <div className="pointer-events-none absolute inset-y-0 w-px bg-destructive" style={{ left: `${Math.min(100, position / buffer.duration * 100)}%` }} aria-hidden="true" />
       </div>
       <div className="flex justify-between font-mono text-[10px] text-muted-foreground">{[0, 0.25, 0.5, 0.75, 1].map((fraction) => <span key={fraction}>{(buffer.duration * fraction).toFixed(2)}s</span>)}</div>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground" aria-label="Video time stretch">
+        <Button variant={stretchOn ? "default" : "outline"} className="h-9" aria-pressed={stretchOn} onClick={() => setStretchOn((v) => !v)}>Time stretch {stretchOn ? "on" : "off"}</Button>
+        <label className="flex items-center gap-1">Video BPM<input type="number" min={40} max={240} value={sourceBpm} aria-label="Video source BPM" className="h-9 w-16 rounded border border-border bg-surface-2 px-1 font-mono text-foreground" onChange={(e) => setSourceBpm(Math.max(40, Math.min(240, Number(e.target.value) || 120)))} /></label>
+        <label className="flex items-center gap-1">Target<input type="number" min={40} max={240} value={targetBpm} aria-label="Video target BPM" className="h-9 w-16 rounded border border-border bg-surface-2 px-1 font-mono text-foreground" onChange={(e) => setTargetBpm(Math.max(40, Math.min(240, Number(e.target.value) || 120)))} /></label>
+        <Button variant="ghost" className="h-9 px-2" onClick={() => setTargetBpm(Math.round(getEngine().tempo || 120))}>Song tempo</Button>
+        <span className="font-mono">{Math.round(speed * 100)}% · {(buffer.duration / speed).toFixed(2)}s, pitch kept</span>
+      </div>
     </div>}
     <div className="flex flex-wrap gap-2">
       <Button variant="outline" className="h-11" disabled={filming} onClick={() => file.current?.click()}><Upload />Load video</Button>
@@ -184,6 +204,6 @@ export function VideoSampler() {
       </div>)}
     </div>}
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-    <p className="text-[11px] text-muted-foreground">Chops are found from the video's real audio attacks. Pads play the video and its sound together; "To track" prints the chop's audio to the timeline. Video itself is not exported with the song.</p>
+    <p className="text-[11px] text-muted-foreground">Chops are found from the video's real audio attacks. Pads play the video and its sound together; "To track" prints the chop's audio to the timeline. Time stretch keeps pitch, plays pads at the new speed and prints stretched audio (50%–200%). Video itself is not exported with the song.</p>
   </section>;
 }
