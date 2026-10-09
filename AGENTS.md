@@ -15,7 +15,7 @@ Meter and looper visuals refresh at 20 fps from shared timers; keep high-frequen
 Phone settings open Phone features from More and the beat maker; Bluetooth shortcuts open Audio explicitly, keeping both accessible.
 Mixer VCAs scale assigned channel gains without changing individual faders, while aux returns control post-effect levels before the master; this avoids routing returns back into their own sends.
 Mixer meters read analyser taps from the actual bus, aux return, and VCA member signals; master gain controls the summed mix, while subgroup changes also scale their tracks' pre-bus sends.
-The timeline overview scrolls one fixed-width arrangement; synchronize its ruler and song-part header with track scrolling while pinning header controls, so bar positions stay aligned at every zoom and viewport width.
+Timeline overview, ruler and song lane share arrangement width and scrolling; pin header controls to align bars.
 MIDI Learn uses stable track/device IDs; expose only implemented dispatch paths.
 Ableton handoff uses stems and standard MIDI, never proprietary decoding.
 - Time signature is transport.beatsPerBar over a quarter-note beat; bar math goes through timebase helpers (stepsPerBar/getBeatsPerBar), synced by the store each render, so ruler, metronome, count-ins and looper agree.
@@ -44,3 +44,5 @@ Count-in haptics use the shared beat timer and guarded vibration support, indepe
 MP3/MP4 imports/exports retain originals in the private library with content hashes to avoid duplicates; saved videos open Video Sampler.
 Cloud deletion reads raw sessions, confirms row deletion, then cleans owned project files; missing playback assets cannot block removal.
 Reel recorder: singleton AudioWorklet capture; tape bypasses master to avoid feedback. Timeline meters read live post-master taps without input activation; exit releases input, retaining tape.
+
+Video Sampler pins decoded WaveformView; video seconds align seeks, cuts and pads.
