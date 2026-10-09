@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export type Skin = {
-  naturalKeyColor?: string;
-  sharpKeyColor?: string;
-  activeKeyColor?: string;
+  naturalKeyColor?: string | undefined;
+  sharpKeyColor?: string | undefined;
+  activeKeyColor?: string | undefined;
   color?: string | undefined;
   padColor?: string | undefined;
   image?: string | undefined;

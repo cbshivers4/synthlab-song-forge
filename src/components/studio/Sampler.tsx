@@ -868,7 +868,7 @@ export function Sampler() {
         </>
       )}
       <Button variant={showKeyboard ? "secondary" : "outline"} aria-pressed={showKeyboard} onClick={() => setShowKeyboard((value) => !value)}><Piano className="size-4" />{showKeyboard ? "Hide keyboard" : "Show keyboard"}</Button>
-      {showKeyboard && <section aria-label="Sampler keyboard" className="min-w-0 border-t border-border pt-3"><Keyboard track={track ?? undefined} skinKey="sampler-keyboard" disabled={!s} onPlay={(midi) => { if (track && s) previewNote(track.id, midi, s.duration); }} /></section>}
+      {showKeyboard && <section aria-label="Sampler keyboard" className="min-w-0 border-t border-border pt-3"><Keyboard {...(track ? { track } : {})} skinKey="sampler-keyboard" disabled={!s} onPlay={(midi) => { if (track && s) previewNote(track.id, midi, s.duration); }} /></section>}
     </div>
   );
 }
