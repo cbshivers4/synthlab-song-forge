@@ -40,6 +40,10 @@ export function ReelRecorder() {
   const [quality, setQuality] = useState(320);
   const [saving, setSaving] = useState(false);
   useEffect(() => () => { void recorder.release(); }, [recorder]);
+  useEffect(() => {
+    recorder.setMasterMetering(master);
+    return () => recorder.setMasterMetering(false);
+  }, [recorder, master]);
   const active = state.mode === "recording" || state.mode === "playing" || (master && (transport.playing || transport.recording));
   const locked = state.busy || saving;
   const recording = state.mode === "recording";
@@ -71,10 +75,10 @@ export function ReelRecorder() {
     if (!transport.playing) togglePlay();
   };
   return <section className="reel-recorder mx-auto w-full max-w-[900px]" aria-label="Reel-to-reel recorder">
-    <header className="tape-brand flex flex-wrap items-center justify-between gap-2 px-4 py-3"><div><h2 className="font-display text-lg font-semibold">SYNCLAB <span className="text-primary">R2R</span></h2><p className="font-mono text-[10px] text-muted-foreground">STEREO TAPE RECORDER · DETROIT</p></div><span role="status" className={`font-mono text-xs ${recording ? "text-destructive" : "text-primary"}`}>{state.busy ? "PREPARING" : saving ? "SAVING" : state.mode.toUpperCase()}</span></header>
+    <header className="tape-brand flex flex-wrap items-center justify-between gap-2 px-4 py-3"><div><h2 className="font-display text-lg font-semibold">SYNCLAB <span className="text-primary">R2R</span></h2><p className="font-mono text-[10px] text-muted-foreground">STEREO TAPE RECORDER · DETROIT</p></div><span role="status" className={`font-mono text-xs ${recording ? "text-destructive" : "text-primary"}`}>{state.busy ? "PREPARING" : saving ? "SAVING" : recording ? "RECORDING" : master ? transport.playing ? "PLAYING" : "STOPPED" : state.mode.toUpperCase()}</span></header>
     <div className="tape-deck" data-moving={active} style={{ "--reel-time": `${3 / state.speed}s` } as CSSProperties}><div className="tape-reels"><Reel moving={active} /><Reel moving={active} right /></div>
       <svg className="tape-path" viewBox="0 0 600 80" aria-hidden="true"><path d="M88 5L176 60H424L512 5" /><circle cx="176" cy="60" r="13" /><circle cx="424" cy="60" r="13" /><rect x="267" y="41" width="66" height="24" rx="3" /><path d="M286 45V60M302 45V60M318 45V60" /></svg>
-      <div className="tape-display flex flex-wrap items-center justify-between gap-3"><span className="font-mono text-xs">{state.source === "song" ? "SONG MASTER" : "MIC / LINE"}</span><output aria-label="Tape counter" className="font-mono text-2xl text-primary">{clock(state.position)}</output><span className="font-mono text-xs text-muted-foreground">{clock(state.duration)}</span></div>
+      <div className="tape-display flex flex-wrap items-center justify-between gap-3"><span className="font-mono text-xs">{master || state.source === "song" ? "SONG MASTER" : "MIC / LINE"}</span><output aria-label="Tape counter" className="font-mono text-2xl text-primary">{clock(state.position)}</output><span className="font-mono text-xs text-muted-foreground">{clock(state.duration)}</span></div>
     </div>
     <div className="tape-console"><div className="grid grid-cols-2 gap-3"><TapeMeter channel="L" level={state.levelL} clipped={state.clipped} reset={recorder.resetClip} /><TapeMeter channel="R" level={state.levelR} clipped={state.clipped} reset={recorder.resetClip} /></div>
       <div className="mt-3 flex gap-2" role="group" aria-label="Deck controls"><Button variant={master ? "default" : "outline"} className="h-10 flex-1 text-xs" aria-pressed={master} onClick={() => setDeck("timeline")}>Timeline master</Button><Button variant={!master ? "default" : "outline"} className="h-10 flex-1 text-xs" aria-pressed={!master} onClick={() => setDeck("tape")}>Tape only</Button></div>
