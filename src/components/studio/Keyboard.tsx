@@ -1,4 +1,4 @@
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore, type CSSProperties } from "react";
 import { Keyboard as ComputerKeyboard, Lock, Minus, Music2, Plus, Unlock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -7,6 +7,11 @@ import { useStudio } from "@/lib/synclab/store";
 import { keysSnapshot, subscribeKeys } from "@/lib/synclab/active-keys";
 import type { Track } from "@/lib/synclab/types";
 import { QWERTY_MAP, qwertyEnabled, qwertyOctave, setQwertyEnabled, setQwertyOctave } from "@/lib/synclab/qwerty";
+
+import { SkinControls, skinBackground, useImageDrop } from "./SkinControls";
+import { useSkin, type SkinKey } from "@/lib/synclab/skins";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Palette } from "lucide-react";
 
 const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 const BLACK = new Set([1, 3, 6, 8, 10]);
@@ -32,7 +37,15 @@ const CHORDS = [
   { name: "DIM", intervals: [0, 3, 6] },
 ] as const;
 
-export function Keyboard({ track, onPlay, disabled = false }: { track?: Track; onPlay?: (midi: number, velocity: number) => void; disabled?: boolean } = {}) {
+export function Keyboard({ track, onPlay, disabled = false, skinKey = "keyboard" }: { track?: Track; onPlay?: (midi: number, velocity: number) => void; disabled?: boolean; skinKey?: SkinKey } = {}) {
+  const skin = useSkin(skinKey);
+  const imageDrop = useImageDrop(skinKey);
+  const keyboardStyle = {
+    ...skinBackground(skin),
+    ...(skin.naturalKeyColor ? { "--keyboard-natural": skin.naturalKeyColor } : {}),
+    ...(skin.sharpKeyColor ? { "--keyboard-sharp": skin.sharpKeyColor } : {}),
+    ...(skin.activeKeyColor ? { "--keyboard-active": skin.activeKeyColor } : {}),
+  } as CSSProperties;
   const { selected: studioSelected, previewNote } = useStudio();
   const selected = track ?? studioSelected;
   const [octave, setOctave] = useState(4); // C4 base
@@ -141,8 +154,9 @@ export function Keyboard({ track, onPlay, disabled = false }: { track?: Track; o
     );
 
   return (
-    <div className="space-y-2">
+    <div className="instrument-keyboard space-y-2 rounded-md border border-border bg-surface p-3" data-keyboard-skin={skinKey} style={keyboardStyle} {...imageDrop}>
       <div className="flex flex-wrap items-center gap-2">
+        <Popover><PopoverTrigger asChild><Button variant="outline" size="sm" aria-label="Keyboard appearance"><Palette className="size-4" /> Keyboard colors & wallpaper</Button></PopoverTrigger><PopoverContent className="max-h-[80dvh] w-[min(92vw,480px)] overflow-y-auto"><SkinControls skinKey={skinKey} keyboard image colorLabel="Keyboard surround" /></PopoverContent></Popover>
         <Button size="sm" variant={typing ? "secondary" : "outline"} aria-pressed={typing} disabled={disabled}
           title="A W S E D F T G Y H U J K O L play notes; Z / X change octave"
           onClick={() => { setQwertyEnabled(!typing); if (!typing) setQwertyOctave(octave); }}>
@@ -297,74 +311,53 @@ export function Keyboard({ track, onPlay, disabled = false }: { track?: Track; o
         onWheel={(e) => slideTo(octave + (e.deltaY > 0 ? -1 : 1))}
          className="relative h-36 w-full min-w-0 select-none overflow-hidden rounded-[3px] border border-border bg-background"
         style={{ touchAction: "none" }}
+        data-keyboard-keys
       >
         <div
           className="absolute inset-y-0 left-0 transition-transform duration-300 ease-out"
           style={{ width: `${(whiteCount / visibleWhite) * 100}%`, transform: `translateX(-${shiftPct}%)` }}
         >
         {/* white keys */}
-        <div className="flex h-full gap-px bg-black">
+        <div className="flex h-full gap-px bg-border">
           {whiteKeys.map((midi) => (
-            <button
+            <Button
               key={midi}
                disabled={disabled}
               onPointerDown={() => play(midi)}
-              className={`relative flex-1 rounded-b-[3px] transition-colors ${
-                litKeys.has(midi)
-                  ? "bg-[oklch(0.75_0.12_250)]"
-                  : inScale(midi)
-                    ? "bg-[oklch(0.94_0.035_195)] hover:bg-[oklch(0.88_0.06_195)]"
-                    : "bg-[oklch(0.96_0.005_90)] hover:bg-[oklch(0.9_0.005_90)]"
-              }`}
-              style={{
-                backgroundImage: litKeys.has(midi)
-                  ? "linear-gradient(180deg, var(--primary) 0%, color-mix(in oklab, var(--primary) 55%, white) 100%)"
-                  : inScale(midi)
-                  ? "linear-gradient(180deg, color-mix(in oklab, var(--primary) 32%, oklch(0.9 0.005 90)) 0%, color-mix(in oklab, var(--primary) 12%, oklch(0.98 0.003 90)) 16%, oklch(0.95 0.02 195) 100%)"
-                  : "linear-gradient(180deg, oklch(0.9 0.005 90) 0%, oklch(0.98 0.003 90) 12%, oklch(0.96 0.005 90) 100%)",
-              }}
+              variant="ghost"
+              data-in-scale={inScale(midi)}
+              data-active={litKeys.has(midi)}
+              className="keyboard-key keyboard-natural relative h-full min-w-0 flex-1 rounded-b-[3px] p-0 transition-colors"
               aria-label={label(midi)}
             >
-              {typing && Object.entries(QWERTY_MAP).map(([key, offset]) => (typingOctave + 1) * 12 + offset === midi ? <span key={key} className="absolute bottom-5 left-1/2 -translate-x-1/2 font-mono text-xs text-background">{key.toUpperCase()}</span> : null)}
+              {typing && Object.entries(QWERTY_MAP).map(([key, offset]) => (typingOctave + 1) * 12 + offset === midi ? <span key={key} className="absolute bottom-5 left-1/2 -translate-x-1/2 font-mono text-xs keyboard-key-label">{key.toUpperCase()}</span> : null)}
               {midi % 12 === 0 && (
-                <span className="absolute bottom-1 left-1/2 -translate-x-1/2 font-mono text-[9px] font-medium text-neutral-500">
+                <span className="absolute bottom-1 left-1/2 -translate-x-1/2 font-mono text-[9px] font-medium keyboard-key-label">
                   {label(midi)}
                 </span>
               )}
-            </button>
+            </Button>
           ))}
         </div>
         {/* black keys */}
         {blackKeys.map(({ midi, pos }) => (
-          <button
+          <Button
             key={midi}
              disabled={disabled}
             onPointerDown={() => play(midi)}
-            className={`absolute top-0 z-10 h-[58%] rounded-b-[3px] transition-colors ${
-               litKeys.has(midi)
-                 ? "bg-[oklch(0.5_0.12_250)]"
-                 : inScale(midi)
-                   ? "bg-[oklch(0.24_0.055_195)] hover:bg-[oklch(0.3_0.07_195)]"
-                   : "bg-[oklch(0.12_0.005_255)] hover:bg-[oklch(0.2_0.005_255)]"
-            }`}
-            style={{
-              left: `calc(${(pos / whiteCount) * 100}% + ${100 / whiteCount * 0.72}%)`,
-              width: `${(100 / whiteCount) * 0.62}%`,
-               backgroundImage: litKeys.has(midi)
-                 ? "linear-gradient(180deg, color-mix(in oklab, var(--primary) 70%, black) 0%, var(--primary) 100%)"
-                 : inScale(midi)
-                 ? "linear-gradient(180deg, color-mix(in oklab, var(--primary) 45%, oklch(0.25 0.005 255)) 0%, oklch(0.12 0.03 195) 80%)"
-                 : "linear-gradient(180deg, oklch(0.25 0.005 255) 0%, oklch(0.08 0.005 255) 80%)",
-              boxShadow: "0 3px 6px oklch(0 0 0 / 0.6)",
-            }}
+            variant="ghost"
+            data-in-scale={inScale(midi)}
+            data-active={litKeys.has(midi)}
+            className="keyboard-key keyboard-sharp absolute top-0 z-10 h-[58%] min-w-0 rounded-b-[3px] p-0 transition-colors"
+            style={{ left: `calc(${(pos / whiteCount) * 100}% + ${100 / whiteCount * 0.72}%)`, width: `${(100 / whiteCount) * 0.62}%` }}
             aria-label={label(midi)}
           >
-            {typing && Object.entries(QWERTY_MAP).map(([key, offset]) => (typingOctave + 1) * 12 + offset === midi ? <span key={key} className="absolute bottom-2 left-1/2 -translate-x-1/2 font-mono text-xs text-primary">{key.toUpperCase()}</span> : null)}
-          </button>
+            {typing && Object.entries(QWERTY_MAP).map(([key, offset]) => (typingOctave + 1) * 12 + offset === midi ? <span key={key} className="absolute bottom-2 left-1/2 -translate-x-1/2 font-mono text-xs keyboard-key-label">{key.toUpperCase()}</span> : null)}
+          </Button>
         ))}
         </div>
       </div>
-      <p className="label-xs">Highlighted keys are in {NOTE_NAMES[root]} {scaleName} · click a chord to play it</p>
+
     </div>
   );
 }
