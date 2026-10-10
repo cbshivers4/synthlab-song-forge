@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { usePreviewTrack } from "@/lib/synclab/use-preview-track";
 import { PreviewButtons } from "./PreviewButtons";
+import { PatternWaveform } from "./PatternWaveform";
 import { useStudio } from "@/lib/synclab/store";
 import { askCoProducerFn } from "@/utils/co-producer.functions";
 type CoProducerResult = Extract<Awaited<ReturnType<typeof askCoProducerFn>>, { ok: true }>["result"];
@@ -139,7 +140,8 @@ export function CoProducer() {
               </div>
             )}
             {m.result && m.result.kind !== "none" && (m.result.notes.length > 0 || m.result.drumHits.length > 0) && (
-              <div className="mt-2 flex items-center gap-2 rounded-md border border-border bg-surface-2 p-2 font-mono text-xs">
+              <div className="mt-2 flex flex-wrap items-center gap-2 rounded-md border border-border bg-surface-2 p-2 font-mono text-xs">
+                <PatternWaveform bpm={transport.bpm} label="Co-producer pattern waveform" pattern={{ notes: m.result.kind === "drums" ? undefined : m.result.notes, hits: m.result.kind === "drums" ? m.result.drumHits : undefined, steps: Math.min(getBeatsPerBar() * 32, Math.max(getBeatsPerBar() * 4, Math.ceil((Math.max(0, ...m.result.notes.map((n) => n.step + n.length - 1), ...m.result.drumHits.map((h) => h.step)) + 1) / (getBeatsPerBar() * 4)) * getBeatsPerBar() * 4)) }} />
                 <span className="flex-1">{m.result.trackName} · {m.result.kind === "drums" ? `${m.result.drumHits.length} hits` : `${m.result.notes.length} notes`}</span>
                 {m.added ? <Button size="sm" disabled>Added</Button> : <PreviewButtons size="sm" pv={{ ...pv, stop: () => { pv.stop(); setPvIndex(null); } }} active={pv.previewing && pvIndex === i} onPreview={() => preview(i)} onAdd={() => add(i)} addLabel="Add to project" />}
               </div>

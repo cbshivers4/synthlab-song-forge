@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { usePreviewTrack } from "@/lib/synclab/use-preview-track";
 import { PreviewButtons } from "./PreviewButtons";
+import { PatternWaveform } from "./PatternWaveform";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useStudio } from "@/lib/synclab/store";
@@ -8,7 +9,7 @@ import { getBeatsPerBar } from "@/lib/synclab/timebase";
 import { BASS_STYLES, generateBass, NOTE_NAMES, PROGRESSIONS, rootsFromKey, rootsFromTracks, type BassStyle } from "@/lib/synclab/bass-gen";
 
 export function BassGenerator() {
-  const { tracks, addTrack, updateTrack } = useStudio();
+  const { tracks, transport, addTrack, updateTrack } = useStudio();
   const barSteps = getBeatsPerBar() * 4;
   const [style, setStyle] = useState<BassStyle>("roots");
   const [bars, setBars] = useState(4);
@@ -104,6 +105,7 @@ export function BassGenerator() {
         <Button size="lg" className="min-h-12" onClick={generate}>Generate bassline</Button>
         {generated && <span className="font-mono text-xs text-muted-foreground">{generated.length} notes ready</span>}
       </div>
+      {generated && <PatternWaveform pattern={{ notes: generated, instrument: sound, steps: bars * barSteps }} bpm={transport.bpm} label="Generated bassline waveform" />}
       <PreviewButtons pv={pv} onPreview={preview} onAdd={create} addLabel="Add bassline to timeline" />
     </section>
   );
