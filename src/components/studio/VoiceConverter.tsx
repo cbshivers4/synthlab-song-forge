@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { usePreviewTrack } from "@/lib/synclab/use-preview-track";
 import { PreviewButtons } from "./PreviewButtons";
+import { GeneratedWaveform } from "./GeneratedWaveform";
 import { useStudio } from "@/lib/synclab/store";
 import { encodeWav } from "@/lib/synclab/bounce";
 import { peaksOf } from "@/lib/synclab/stems";
@@ -145,6 +146,7 @@ export function VoiceConverter() {
         </label>
       )}
 
+      {preview && <GeneratedWaveform data={preview.data} label="Converted voice waveform" />}
       <div className="flex flex-wrap gap-2">
         <Button size="lg" className="min-h-12" disabled={!source || !!busy || recording} onClick={() => void convert()}>
           <Wand2 className="size-4" /> {busy ?? "Convert"}

@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { usePreviewTrack } from "@/lib/synclab/use-preview-track";
 import { PreviewButtons } from "./PreviewButtons";
+import { GeneratedWaveform } from "./GeneratedWaveform";
 import { useStudio } from "@/lib/synclab/store";
 import { peaksOf } from "@/lib/synclab/stems";
 import { generateStemFn } from "@/utils/generate-stem.functions";
@@ -113,6 +114,7 @@ export function StemGenerator() {
         </>}
       </div>
 
+      {result && <GeneratedWaveform buffer={result.buf} label="Generated stem waveform" />}
       {error && <p className="rounded-md border border-destructive/50 bg-destructive/10 p-2 text-sm text-destructive">{error}</p>}
     </section>
   );

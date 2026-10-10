@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { usePreviewTrack } from "@/lib/synclab/use-preview-track";
 import { PreviewButtons } from "./PreviewButtons";
+import { GeneratedWaveform } from "./GeneratedWaveform";
 import { useStudio } from "@/lib/synclab/store";
 import { openMic, preferredRecordingMime, releaseMic } from "@/lib/synclab/mic";
 import { alignToStart, analyseBeatbox, analyseMelody, type BeatHit, type HumNote } from "@/lib/synclab/hum-to-beat";
@@ -19,6 +20,7 @@ export function HumToBeat() {
   const [busy, setBusy] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [result, setResult] = useState<{ mode: Mode; hits: BeatHit[]; notes: HumNote[] } | null>(null);
+  const [recordedBuffer, setRecordedBuffer] = useState<AudioBuffer | null>(null);
   const recRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const timerRef = useRef<number | null>(null);
@@ -64,6 +66,7 @@ export function HumToBeat() {
         const buf = await ctx.decodeAudioData(await new Blob(chunks, { type: rec.mimeType }).arrayBuffer());
         void ctx.close();
         const data = buf.getChannelData(0);
+        setRecordedBuffer(buf);
         const bpm = transport.bpm || 120;
         if (mode === "beat") {
           const hits = alignToStart(analyseBeatbox(data, buf.sampleRate, bpm));
@@ -84,6 +87,7 @@ export function HumToBeat() {
     rec.start();
     setRecording(true);
     setResult(null);
+    setRecordedBuffer(null);
     setSeconds(0);
     const t0 = Date.now();
     timerRef.current = window.setInterval(() => {
@@ -173,6 +177,7 @@ export function HumToBeat() {
         )}
       </div>
 
+      {recordedBuffer && <GeneratedWaveform buffer={recordedBuffer} label="Recorded hum / beatbox waveform" />}
       {result && (
         <div className="rounded-md border border-border bg-surface-2 p-3 font-mono text-xs">
           {result.mode === "beat"
