@@ -37,7 +37,7 @@ const CHORDS = [
   { name: "DIM", intervals: [0, 3, 6] },
 ] as const;
 
-export function Keyboard({ track, onPlay, disabled = false, skinKey = "keyboard" }: { track?: Track; onPlay?: (midi: number, velocity: number) => void; disabled?: boolean; skinKey?: SkinKey } = {}) {
+export function Keyboard({ track, onPlay, disabled = false, skinKey = "keyboard", mappedPads }: { track?: Track; onPlay?: (midi: number, velocity: number) => void; disabled?: boolean; skinKey?: SkinKey; mappedPads?: { count: number; active: number | null; keys: string } } = {}) {
   const skin = useSkin(skinKey);
   const imageDrop = useImageDrop(skinKey);
   const keyboardStyle = {
@@ -125,7 +125,7 @@ export function Keyboard({ track, onPlay, disabled = false, skinKey = "keyboard"
 
   // Embedded keyboards claim typing once; never add a second global note path.
   useEffect(() => {
-    if (!track && !onPlay) return;
+    if (mappedPads || (!track && !onPlay)) return;
     const down = (event: KeyboardEvent) => {
       const el = event.target as HTMLElement | null;
       if (disabled || !qwertyEnabled() || event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey || el?.isContentEditable || (el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
@@ -145,6 +145,34 @@ export function Keyboard({ track, onPlay, disabled = false, skinKey = "keyboard"
   });
 
   const label = (midi: number) => `${NOTE_NAMES[midi % 12]}${Math.floor(midi / 12) - 1}`;
+
+  if (mappedPads) {
+    const notes = Array.from({ length: 16 }, (_, i) => 60 + i);
+    const naturals = notes.filter((note) => !BLACK.has(note % 12));
+    return <div className="instrument-keyboard space-y-2 border-t border-border bg-surface p-3" aria-label="Video chop keyboard" data-keyboard-skin={skinKey} style={keyboardStyle} {...imageDrop}>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="text-xs font-mono text-muted-foreground">CHOP KEYS · C4–D♯5</span>
+        <Popover><PopoverTrigger asChild><Button variant="outline" size="sm" aria-label="Video keyboard appearance"><Palette className="size-4" />Keyboard colors & wallpaper</Button></PopoverTrigger><PopoverContent className="max-h-[80dvh] w-[min(92vw,480px)] overflow-y-auto"><SkinControls skinKey={skinKey} keyboard image colorLabel="Keyboard surround" /></PopoverContent></Popover>
+      </div>
+      <div className="overflow-x-auto">
+        <div className="relative h-36 min-w-[360px] select-none overflow-hidden rounded border border-border" data-keyboard-keys>
+          <div className="flex h-full gap-px bg-border">{naturals.map((note) => {
+            const index = note - 60;
+            return <Button key={note} variant="ghost" disabled={disabled || index >= mappedPads.count} onClick={() => onPlay?.(note, 1)} aria-label={`${label(note)} · Video chop ${index + 1}`} aria-pressed={mappedPads.active === index} data-active={mappedPads.active === index} data-pad-color={index % 4} className="keyboard-key keyboard-natural video-chop-key relative h-full min-w-0 flex-1 rounded-none p-0">
+              <span className="absolute bottom-2 flex flex-col items-center font-mono text-[10px]"><span>{index + 1} · {mappedPads.keys[index]?.toUpperCase()}</span><span>{label(note)}</span></span>
+            </Button>;
+          })}</div>
+          {notes.filter((note) => BLACK.has(note % 12)).map((note) => {
+            const index = note - 60;
+            const pos = naturals.filter((natural) => natural < note).length;
+            return <Button key={note} variant="ghost" disabled={disabled || index >= mappedPads.count} onClick={() => onPlay?.(note, 1)} aria-label={`${label(note)} · Video chop ${index + 1}`} aria-pressed={mappedPads.active === index} data-active={mappedPads.active === index} data-pad-color={index % 4} className="keyboard-key keyboard-sharp video-chop-key absolute top-0 z-10 h-[58%] min-w-0 rounded-b p-0" style={{ left: `${(pos - 0.31) / naturals.length * 100}%`, width: `${0.62 / naturals.length * 100}%` }}>
+              <span className="absolute bottom-2 flex flex-col items-center font-mono text-[10px]"><span>{index + 1}</span><span>{mappedPads.keys[index]?.toUpperCase()}</span></span>
+            </Button>;
+          })}
+        </div>
+      </div>
+    </div>;
+  }
 
   if (!onPlay && (!selected || !selected.patch))
     return (

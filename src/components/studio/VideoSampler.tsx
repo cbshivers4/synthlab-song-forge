@@ -12,10 +12,12 @@ import { retainMediaInBackground, takeLibraryVideo, type VideoKit } from "@/lib/
 import { saveToLibrary } from "@/lib/synclab/library";
 import { loadVideoSession, saveVideoSession } from "@/lib/synclab/autosave-media";
 import { moveVideoChop, snapVideoTime } from "@/lib/synclab/video-chops";
+import { VIDEO_PAD_KEYS, videoPadForNote } from "@/lib/synclab/video-pad-map";
 
 import { WaveformView } from "./WaveformView";
+import { Keyboard } from "./Keyboard";
 
-const PAD_KEYS = "1234qwerasdfzxcv";
+const PAD_KEYS = VIDEO_PAD_KEYS;
 
 /** Video sampler: load or film a clip, chop its audio at real attacks, trigger chops as pads (video + sound), and print chops to the timeline. */
 export function VideoSampler() {
@@ -200,7 +202,7 @@ export function VideoSampler() {
 
   const range = (i: number) => [chops[i] ?? 0, chops[i + 1] ?? buffer?.duration ?? 0] as const;
   const trigger = (i: number) => {
-    const v = video.current; if (!v || !url) return;
+    const v = video.current; if (!v || !url || filming || i < 0 || i >= chops.length) return;
     const [a, b] = range(i);
     window.clearTimeout(stopTimer.current);
     v.preservesPitch = true; v.playbackRate = speed;
@@ -210,12 +212,15 @@ export function VideoSampler() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.target as HTMLElement)?.closest("input,textarea,select")) return;
+      if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey || (e.target as HTMLElement)?.isContentEditable || (e.target as HTMLElement)?.closest("input,textarea,select")) return;
       const i = PAD_KEYS.indexOf(e.key.toLowerCase());
-      if (i >= 0 && i < chops.length) trigger(i);
+      if (i >= 0 && i < chops.length && !filming) {
+        e.preventDefault(); e.stopImmediatePropagation();
+        if (!e.repeat) trigger(i);
+      }
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
   });
 
   const slice = (from: number, to: number) => {
@@ -299,8 +304,8 @@ export function VideoSampler() {
     </div>}
     {chops.length > 0 && <div className="grid grid-cols-2 gap-3 sm:grid-cols-4" aria-label="Video chop pads">
       {chops.map((t, i) => <div key={i} className="flex min-w-0 flex-col gap-1">
-        <Button variant={active === i ? "default" : "secondary"} className="h-36 min-w-0 flex-col gap-2 px-3 py-2 text-xs" onClick={() => trigger(i)} aria-label={`Play video chop ${i + 1}`}>
-          <span className="flex w-full justify-between font-mono text-sm"><span>{i + 1}</span><span>{PAD_KEYS[i]?.toUpperCase()}</span></span>
+        <Button variant="secondary" data-active={active === i} data-pad-color={i % 4} aria-pressed={active === i} disabled={filming} className="video-chop-pad h-36 min-w-0 flex-col gap-2 border px-3 py-2 text-xs" onClick={() => trigger(i)} aria-label={`Play video chop ${i + 1}`}>
+          <span className="flex w-full justify-between font-mono text-sm"><span>{i + 1}</span><span>{PAD_KEYS[i]?.toUpperCase()} · {['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B','C','C♯','D','D♯'][i]}{i < 12 ? '4' : '5'}</span></span>
           <span className="pointer-events-none block h-16 w-full overflow-hidden rounded border border-border bg-background"><WaveformView className="!h-full !w-full" peaks={padPeaks[i] ?? []} label={`Video chop ${i + 1} waveform`} /></span>
           <span className="font-mono text-[10px]">{t.toFixed(2)}–{(chops[i + 1] ?? buffer?.duration ?? 0).toFixed(2)}s</span>
         </Button>
@@ -308,6 +313,7 @@ export function VideoSampler() {
         <div className="flex"><Button variant="ghost" className="h-10 flex-1 px-1 text-xs" onClick={() => void toProject(i)}><Plus className="size-3" />To track</Button><Button variant="ghost" className="h-10 w-10 p-0" aria-label={`Delete video chop ${i + 1}`} onClick={() => removeChop(i)}><Trash2 className="size-4" /></Button></div>
       </div>)}
     </div>}
+    {chops.length > 0 && <Keyboard skinKey="video-keyboard" disabled={filming} mappedPads={{ count: chops.length, active, keys: PAD_KEYS }} onPlay={(note) => { const index = videoPadForNote(note, chops.length); if (index !== null) trigger(index); }} />}
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
     <p className="text-[11px] text-muted-foreground">Video itself is not exported with the song. Audio decoding and pitch-preserving video playback depend on browser codec support. Account saving requires sign-in.</p>
   </section>;

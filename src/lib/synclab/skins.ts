@@ -29,6 +29,7 @@ export type SkinKey =
   | "sampler-keyboard"
   | "synth-keyboard"
   | "pads-keyboard"
+  | "video-keyboard"
   | "keyboard"
   | "shared";
 
@@ -44,6 +45,7 @@ export const WALLPANEL_PANELS: { key: SkinKey; label: string }[] = [
   { key: "sampler-keyboard", label: "Sampler keyboard" },
   { key: "synth-keyboard", label: "Synth keyboard" },
   { key: "pads-keyboard", label: "Sample pads keyboard" },
+  { key: "video-keyboard", label: "Video Sampler keyboard" },
 ];
 export type Skins = Partial<Record<SkinKey, Skin>>;
 export type SkinPreset = { id: string; name: string; skins: Skins };
