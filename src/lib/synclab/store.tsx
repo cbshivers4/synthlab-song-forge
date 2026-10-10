@@ -1427,7 +1427,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         return {
           ...t, notes, steps, recording: false,
           clips: [...(replace ? replaceTakeRegion(t.clips ?? [], clip.start ?? 0, newEnd, stepDur) : (t.clips ?? [])), alts.length ? { ...clip, alts } : clip],
-          activeClipId: clip.id, printedAudio: true,
+          // When notes were played, the editable notes stay what you hear (piano roll
+          // edits change the sound); the audio take is kept under WAVE.
+          activeClipId: clip.id, printedAudio: !(t.kind !== "drum" && notes.some((n) => capturedIds.has(n.id))),
         };
       }));
       landed = true;
@@ -2329,7 +2331,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
               : t,
           ),
         ),
-      setNotes: (trackId, notes) => updateTrack(trackId, { notes }),
+      setNotes: (trackId, notes) => updateTrack(trackId, { notes, printedAudio: false }),
       setTransport: (t) => setTransportState((s) => ({ ...s, ...t })),
       togglePlay: () => {
         getEngine().init();
