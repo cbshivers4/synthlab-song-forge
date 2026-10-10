@@ -60,8 +60,10 @@ export function CoProducer() {
       const res = await ask({ data: { question, song: songSummary() } });
       if (res.ok) setMsgs((m) => [...m, { role: "ai", text: res.result.reply, result: res.result }]);
       else { setMsgs((m) => [...m, { role: "ai", text: res.error }]); }
-    } catch {
-      setMsgs((m) => [...m, { role: "ai", text: "Sign in to use the co-producer, then try again." }]);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "";
+      const auth = /unauthor|401|sign in|jwt|session/i.test(msg);
+      setMsgs((m) => [...m, { role: "ai", text: auth ? "Sign in to use the co-producer, then try again." : `The co-producer couldn't answer${msg ? `: ${msg}` : ""}. Check your connection and try again.` }]);
     } finally { setBusy(false); }
   };
 
