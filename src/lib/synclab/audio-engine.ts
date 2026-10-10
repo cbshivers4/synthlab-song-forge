@@ -2719,7 +2719,7 @@ export class SyncLabEngine {
       return;
     }
 
-    const noiseBurst = (dur: number, freq: number, type: BiquadFilterType, q = 1, level = 1, spread = 0) => {
+    const noiseBurst = (dur: number, freq: number, type: BiquadFilterType, q = 1, level = 1, spread = 0, offset = 0) => {
       const len = Math.ceil(ctx.sampleRate * dur);
       const buf = ctx.createBuffer(1, len, ctx.sampleRate);
       const d = buf.getChannelData(0);
@@ -2742,7 +2742,7 @@ export class SyncLabEngine {
       } else {
         g.connect(out);
       }
-      src.start(t);
+      src.start(t + offset);
     };
 
     const tone = (start: number, end: number, dur: number, type: OscillatorType = "sine", level = 1) => {
@@ -2771,9 +2771,7 @@ export class SyncLabEngine {
         noiseBurst(0.22 * dec * 2 * K.snare[2], K.snare[1], "highpass");
         break;
       case "clap":
-        [0, 0.012, 0.024].forEach((o) =>
-          setTimeoutBurst(() => noiseBurst(0.16 * K.snare[2], K.clap, "bandpass", 1.6), o),
-        );
+        [0, 0.012, 0.024].forEach((o) => noiseBurst(0.16 * K.snare[2], K.clap, "bandpass", 1.6, 1, 0, o));
         break;
       case "hat":
         noiseBurst(0.06 * dec * 2 * K.hatD, K.hatF, "highpass");
