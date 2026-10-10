@@ -11,6 +11,7 @@ import { wsolaStretch } from "@/lib/synclab/stretch";
 import { retainMediaInBackground, takeLibraryVideo, type VideoKit } from "@/lib/synclab/media-library";
 import { saveToLibrary } from "@/lib/synclab/library";
 import { loadVideoSession, saveVideoSession } from "@/lib/synclab/autosave-media";
+import { moveVideoChop, snapVideoTime } from "@/lib/synclab/video-chops";
 
 import { WaveformView } from "./WaveformView";
 
@@ -36,6 +37,10 @@ export function VideoSampler() {
 
   const [position, setPosition] = useState(0);
   const [manualSlice, setManualSlice] = useState(false);
+  const [noteGrid, setNoteGrid] = useState(0);
+  const [chopCount, setChopCount] = useState(4);
+  const waveform = useRef<HTMLDivElement>(null);
+  const dragChop = useRef<{ index: number; pointer: number } | null>(null);
   const [stretchOn, setStretchOn] = useState(false);
   const [sourceBpm, setSourceBpm] = useState(120);
   const [targetBpm, setTargetBpm] = useState(() => Math.round(getEngine().tempo || 120));
@@ -57,9 +62,41 @@ export function VideoSampler() {
       return peak;
     });
   }, [buffer]);
+  const padPeaks = useMemo(() => {
+    if (!buffer) return [];
+    const channels = Array.from({ length: buffer.numberOfChannels }, (_, i) => buffer.getChannelData(i));
+    return chops.map((time, i) => {
+      const start = Math.floor(time * buffer.sampleRate);
+      const end = Math.floor((chops[i + 1] ?? buffer.duration) * buffer.sampleRate);
+      return Array.from({ length: 96 }, (_, bin) => {
+        let peak = 0;
+        const a = start + Math.floor(bin * (end - start) / 96);
+        const b = start + Math.floor((bin + 1) * (end - start) / 96);
+        for (const channel of channels) for (let j = a; j < b; j++) peak = Math.max(peak, Math.abs(channel[j] ?? 0));
+        return peak;
+      });
+    });
+  }, [buffer, chops]);
+  const gridLines = useMemo(() => {
+    if (!buffer || !noteGrid) return [];
+    const interval = 240 / sourceBpm / noteGrid;
+    // Bound drawing density for long videos while keeping the real snapping interval.
+    const stride = Math.max(1, Math.ceil(buffer.duration / interval / 128));
+    return Array.from({ length: Math.ceil(buffer.duration / interval / stride) }, (_, i) => i * stride * interval);
+  }, [buffer, sourceBpm, noteGrid]);
+  const waveformTime = (clientX: number) => {
+    const bounds = waveform.current?.getBoundingClientRect();
+    if (!bounds || !buffer) return 0;
+    return Math.max(0, Math.min(buffer.duration - 0.01, snapVideoTime((clientX - bounds.left) / bounds.width * buffer.duration, sourceBpm, noteGrid)));
+  };
+  const editChop = (i: number, time: number) => {
+    if (!buffer) return;
+    seek(time);
+    setChops((current) => moveVideoChop(current, i, time, buffer.duration));
+  };
   const addChop = (time: number) => {
     if (!buffer) return;
-    const at = Math.max(0, Math.min(buffer.duration - 0.01, time));
+    const at = Math.max(0, Math.min(buffer.duration - 0.01, snapVideoTime(time, sourceBpm, noteGrid)));
     if (chops.some((c) => Math.abs(c - at) < 0.01)) return;
     if (chops.length >= 16) { toast.info("All 16 chop pads are filled"); return; }
     setChops((current) => [...current, at].sort((a, b) => a - b));
@@ -92,8 +129,12 @@ export function VideoSampler() {
       const ctx = getEngine().init();
       const buf = await ctx.decodeAudioData((await blob.arrayBuffer()).slice(0));
       setBuffer(buf);
-      if (kit) { setChops(kit.chops.filter((c) => c < buf.duration)); setSourceBpm(kit.sourceBpm); setTargetBpm(kit.targetBpm); setStretchOn(kit.stretchOn); }
-      else chopAll(buf, sensitivity);
+      if (kit) {
+        setChops(kit.chops.filter((c) => Number.isFinite(c) && c >= 0 && c < buf.duration).sort((a, b) => a - b).slice(0, 16));
+        setSourceBpm(kit.sourceBpm); setTargetBpm(kit.targetBpm); setStretchOn(kit.stretchOn);
+        setNoteGrid(kit.noteGrid ?? 0); setChopCount(kit.chopCount ?? 4);
+        setSensitivity(kit.sensitivity ?? 0.5); setManualSlice(kit.manualSlice ?? false);
+      } else { setNoteGrid(0); chopAll(buf, sensitivity); }
     } catch {
       setBuffer(null); setChops([]);
       setError("This video has no audio this browser can decode. Try an MP4 or WebM with sound.");
@@ -108,9 +149,13 @@ export function VideoSampler() {
   // Auto save the open video and chops so an accidental close keeps them.
   useEffect(() => {
     const cur = blobRef.current; if (!cur || !buffer) return;
-    const id = window.setTimeout(() => void saveVideoSession({ ...cur, chops, sourceBpm, targetBpm, stretchOn }), 500);
-    return () => window.clearTimeout(id);
-  }, [buffer, chops, sourceBpm, targetBpm, stretchOn]);
+    const persist = () => void saveVideoSession({ ...cur, chops, sourceBpm, targetBpm, stretchOn, noteGrid, chopCount, sensitivity, manualSlice });
+    const id = window.setTimeout(persist, 500);
+    const onHide = () => { if (document.visibilityState === "hidden") persist(); };
+    window.addEventListener("pagehide", persist);
+    document.addEventListener("visibilitychange", onHide);
+    return () => { window.clearTimeout(id); persist(); window.removeEventListener("pagehide", persist); document.removeEventListener("visibilitychange", onHide); };
+  }, [buffer, chops, sourceBpm, targetBpm, stretchOn, noteGrid, chopCount, sensitivity, manualSlice]);
 
   const kitName = () => (blobRef.current?.name ?? "Video").replace(/\.[^.]+$/, "");
   const saveKit = async () => {
@@ -118,7 +163,7 @@ export function VideoSampler() {
     setSaving(true);
     try {
       await saveToLibrary({ kind: "sample", location: "cloud", folder: "Video kits", name: `${kitName()} · ${chops.length} chops`, audio: cur.blob,
-        data: { mediaType: "video", mimeType: cur.blob.type || "video/mp4", filename: cur.name, videoKit: { chops, sourceBpm, targetBpm, stretchOn } } });
+        data: { mediaType: "video", mimeType: cur.blob.type || "video/mp4", filename: cur.name, videoKit: { chops, sourceBpm, targetBpm, stretchOn, noteGrid, chopCount, sensitivity, manualSlice } } });
       toast.success("Video and chops saved to your library", { description: "My Library › Video kits — opens on phone and desktop" });
     } catch (e) { toast.error("Could not save the video", { description: e instanceof Error ? e.message : "Sign in and try again." }); }
     finally { setSaving(false); }
@@ -133,8 +178,8 @@ export function VideoSampler() {
     updateSampler(id, { slices: chops.map((c) => c / buffer.duration), sampleBpm: stretchOn ? targetBpm : sourceBpm });
     select(id); setPanel("sampler");
   };
-  const evenChops = (n: number) => { if (buffer) setChops(Array.from({ length: n }, (_, i) => i * buffer.duration / n)); };
-  const removeChop = (i: number) => setChops((c) => c.filter((_, j) => j !== i));
+  const evenChops = (n: number) => { if (buffer) { seek(0); setChopCount(n); setChops(Array.from({ length: n }, (_, i) => i * buffer.duration / n)); } };
+  const removeChop = (i: number) => { seek(position); setChops((c) => c.filter((_, j) => j !== i)); };
 
   const film = async () => {
     if (filming) { recorder.current?.stop(); return; }
@@ -197,22 +242,37 @@ export function VideoSampler() {
     <div className="overflow-hidden rounded border border-border bg-background">
       <video ref={video} src={url ?? undefined} playsInline className="aspect-video max-h-48 w-full bg-background object-contain sm:max-h-64" controls={!filming && !!url} aria-label="Video sample" onTimeUpdate={(e) => setPosition(e.currentTarget.currentTime)} onSeeked={(e) => setPosition(e.currentTarget.currentTime)} onEnded={() => setActive(null)} />
     </div>
-    {buffer && <div className="sticky top-0 z-30 space-y-1 [@media(max-height:600px)]:static border-b border-border bg-background py-2" aria-label="Video audio waveform editor">
+    {buffer && <div className="space-y-1 border-b border-border bg-background py-2" aria-label="Video audio waveform editor">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="text-xs font-mono text-muted-foreground">Video audio · {position.toFixed(2)} / {buffer.duration.toFixed(2)}s</span>
         <Button variant={manualSlice ? "default" : "outline"} className="h-9" aria-pressed={manualSlice} onClick={() => setManualSlice((value) => !value)}><Scissors />Manual slice</Button>
       </div>
-      <div className="relative h-28 min-h-28 w-full overflow-hidden rounded border border-border bg-surface-2 touch-pan-y" aria-label="Video chop waveform" onPointerDown={(e) => {
+      <div ref={waveform} className="relative h-36 min-h-36 w-full overflow-hidden rounded border border-border bg-surface-2 touch-pan-y" aria-label="Video chop waveform" onPointerDown={(e) => {
         if ((e.target as HTMLElement).closest("button")) return;
-        const bounds = e.currentTarget.getBoundingClientRect();
-        const time = Math.max(0, Math.min(1, (e.clientX - bounds.left) / bounds.width)) * buffer.duration;
+        const time = waveformTime(e.clientX);
         seek(time); if (manualSlice) addChop(time);
       }}>
         <WaveformView peaks={peaks} label="Video audio waveform" />
-        {chops.map((time, i) => <Button key={`${time}-${i}`} variant="ghost" className="absolute inset-y-0 h-full w-6 -translate-x-1/2 rounded-none border-l-2 border-primary p-0 text-primary" style={{ left: `${time / buffer.duration * 100}%` }} aria-label={`Seek to video chop ${i + 1}`} title={`Chop ${i + 1} · ${time.toFixed(2)}s`} onClick={() => seek(time)}><span className="absolute top-0 bg-background px-1 font-mono text-[10px]">{i + 1}</span></Button>)}
-        <div className="pointer-events-none absolute inset-y-0 w-px bg-destructive" style={{ left: `${Math.min(100, position / buffer.duration * 100)}%` }} aria-hidden="true" />
+        {gridLines.map((time) => <div key={time} className="pointer-events-none absolute inset-y-0 border-l border-border" style={{ left: `${time / buffer.duration * 100}%` }} aria-hidden="true" />)}
+        {chops.map((time, i) => <Button key={i} variant="ghost" className="absolute inset-y-0 z-10 h-full w-9 -translate-x-1/2 touch-none rounded-none p-0 text-destructive hover:bg-transparent" style={{ left: `${time / buffer.duration * 100}%` }} aria-label={`Edit video chop ${i + 1}`} title={`Chop ${i + 1} · ${time.toFixed(2)}s`} onPointerDown={(e) => {
+          e.stopPropagation(); e.preventDefault();
+          dragChop.current = { index: i, pointer: e.pointerId };
+          e.currentTarget.setPointerCapture(e.pointerId); seek(time);
+        }} onPointerMove={(e) => {
+          if (dragChop.current?.pointer === e.pointerId && dragChop.current.index === i) editChop(i, waveformTime(e.clientX));
+        }} onPointerUp={() => { dragChop.current = null; }} onPointerCancel={() => { dragChop.current = null; }} onLostPointerCapture={() => { dragChop.current = null; }} onKeyDown={(e) => {
+          if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+          e.preventDefault(); const delta = noteGrid ? 240 / sourceBpm / noteGrid : 0.01;
+          editChop(i, time + (e.key === "ArrowLeft" ? -delta : delta));
+        }} onClick={() => seek(time)}><span className="pointer-events-none absolute inset-y-0 left-1/2 w-0.5 bg-destructive" /><span className="pointer-events-none absolute top-0 bg-destructive px-1 font-mono text-xs text-destructive-foreground">{i + 1}</span></Button>)}
+        <div className="pointer-events-none absolute inset-y-0 w-px bg-foreground" style={{ left: `${Math.min(100, position / buffer.duration * 100)}%` }} aria-hidden="true" />
       </div>
       <div className="flex justify-between font-mono text-[10px] text-muted-foreground">{[0, 0.25, 0.5, 0.75, 1].map((fraction) => <span key={fraction}>{(buffer.duration * fraction).toFixed(2)}s</span>)}</div>
+      <div className="flex flex-wrap items-center gap-2 py-1">
+        <label className="flex items-center gap-2 text-xs text-muted-foreground">Note grid<select aria-label="Video note grid" value={noteGrid} className="h-10 rounded border border-border bg-surface-2 px-2 text-foreground" onChange={(e) => setNoteGrid(Number(e.target.value))}><option value={0}>Off</option>{[1, 2, 4, 8, 16, 32, 64].map((n) => <option key={n} value={n}>1/{n}</option>)}</select></label>
+        <span className="text-xs text-muted-foreground">Chops</span>
+        <div className="flex gap-1" role="group" aria-label="Video chop counts">{[4, 8, 12, 16].map((n) => <Button key={n} variant={chopCount === n ? "secondary" : "outline"} className="h-10 min-w-10 px-2 font-mono" aria-label={`Make ${n} video chops`} onClick={() => evenChops(n)}>{n}</Button>)}</div>
+      </div>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground pt-1" aria-label="Video time stretch">
         <Button variant={stretchOn ? "default" : "outline"} className="h-9" aria-pressed={stretchOn} onClick={() => setStretchOn((v) => !v)}>Time stretch {stretchOn ? "on" : "off"}</Button>
         <label className="flex items-center gap-1">Video BPM<input type="number" min={40} max={240} value={sourceBpm} aria-label="Video source BPM" className="h-9 w-16 rounded border border-border bg-surface-2 px-1 font-mono text-foreground" onChange={(e) => setSourceBpm(Math.max(40, Math.min(240, Number(e.target.value) || 120)))} /></label>
@@ -233,19 +293,22 @@ export function VideoSampler() {
       <label className="flex items-center gap-2">Chop sensitivity<input type="range" min={0} max={1} step={0.05} value={sensitivity} className="accent-primary" onChange={(e) => setSensitivity(Number(e.target.value))} /></label>
       <Button variant="secondary" className="h-9" onClick={() => chopAll(buffer, sensitivity)}><Scissors />Auto-chop</Button>
       <Button variant="outline" className="h-9" onClick={() => addChop(video.current?.currentTime ?? 0)}>Chop at video position</Button>
-      <label className="flex items-center gap-1"><Grid3x3 className="size-4" /><select aria-label="Even chops" className="h-9 rounded border border-border bg-background px-2 text-foreground" value="" onChange={(e) => { if (e.target.value) evenChops(Number(e.target.value)); }}><option value="">Even chops</option>{[2, 4, 8, 16].map((n) => <option key={n} value={n}>{n} equal</option>)}</select></label>
+      <label className="flex items-center gap-1"><Grid3x3 className="size-4" /><select aria-label="Even chops" className="h-9 rounded border border-border bg-background px-2 text-foreground" value="" onChange={(e) => { if (e.target.value) evenChops(Number(e.target.value)); }}><option value="">Even chops</option>{[2, 4, 8, 12, 16].map((n) => <option key={n} value={n}>{n} equal</option>)}</select></label>
       <Button variant="ghost" className="h-9" disabled={!chops.length} onClick={() => setChops([])}>Clear chops</Button>
       <span>{chops.length} chops · {buffer.duration.toFixed(1)}s</span>
     </div>}
-    {chops.length > 0 && <div className="grid grid-cols-4 gap-2">
-      {chops.map((t, i) => <div key={`${t}-${i}`} className="flex flex-col gap-1">
-        <Button variant={active === i ? "default" : "secondary"} className="h-16 flex-col text-xs" onPointerDown={() => trigger(i)} aria-label={`Play video chop ${i + 1}`}>
-          <span className="font-mono text-sm">{i + 1}</span><span className="font-mono text-[10px] opacity-70">{t.toFixed(2)}s · {PAD_KEYS[i]?.toUpperCase()}</span>
+    {chops.length > 0 && <div className="grid grid-cols-2 gap-3 sm:grid-cols-4" aria-label="Video chop pads">
+      {chops.map((t, i) => <div key={i} className="flex min-w-0 flex-col gap-1">
+        <Button variant={active === i ? "default" : "secondary"} className="h-36 min-w-0 flex-col gap-2 px-3 py-2 text-xs" onClick={() => trigger(i)} aria-label={`Play video chop ${i + 1}`}>
+          <span className="flex w-full justify-between font-mono text-sm"><span>{i + 1}</span><span>{PAD_KEYS[i]?.toUpperCase()}</span></span>
+          <span className="pointer-events-none block h-16 w-full overflow-hidden rounded border border-border bg-background"><WaveformView className="!h-full !w-full" peaks={padPeaks[i] ?? []} label={`Video chop ${i + 1} waveform`} /></span>
+          <span className="font-mono text-[10px]">{t.toFixed(2)}–{(chops[i + 1] ?? buffer?.duration ?? 0).toFixed(2)}s</span>
         </Button>
-        <div className="flex"><Button variant="ghost" className="h-7 flex-1 px-1 text-[10px]" onClick={() => void toProject(i)}><Plus className="size-3" />To track</Button><Button variant="ghost" className="h-7 w-7 p-0" aria-label={`Delete video chop ${i + 1}`} onClick={() => removeChop(i)}><Trash2 className="size-3" /></Button></div>
+        <label className="flex items-center justify-between gap-1 text-xs text-muted-foreground">Start<input type="number" min={chops[i - 1] == null ? 0 : (chops[i - 1] ?? 0) + 0.01} max={(chops[i + 1] ?? buffer?.duration ?? 0) - 0.01} step={0.01} value={Number(t.toFixed(3))} aria-label={`Video chop ${i + 1} start seconds`} className="h-9 w-20 rounded border border-border bg-surface-2 px-1 font-mono text-foreground" onChange={(e) => { const value = e.currentTarget.valueAsNumber; if (Number.isFinite(value)) editChop(i, snapVideoTime(value, sourceBpm, noteGrid)); }} /></label>
+        <div className="flex"><Button variant="ghost" className="h-10 flex-1 px-1 text-xs" onClick={() => void toProject(i)}><Plus className="size-3" />To track</Button><Button variant="ghost" className="h-10 w-10 p-0" aria-label={`Delete video chop ${i + 1}`} onClick={() => removeChop(i)}><Trash2 className="size-4" /></Button></div>
       </div>)}
     </div>}
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-    <p className="text-[11px] text-muted-foreground">Chops are found from the video's real audio attacks. Pads play the video and its sound together; "To track" prints the chop's audio to the timeline. Time stretch keeps pitch, plays pads at the new speed and prints stretched audio (50%–200%). Video itself is not exported with the song. "Save video & chops" keeps both in My Library; "Open in Sampler" gives the audio every Sampler control (the picture stays here). Your open video and chops also auto save.</p>
+    <p className="text-[11px] text-muted-foreground">Video itself is not exported with the song. Audio decoding and pitch-preserving video playback depend on browser codec support. Account saving requires sign-in.</p>
   </section>;
 }

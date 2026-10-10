@@ -48,6 +48,6 @@ export async function persistBlobUrls(urls: string[]) {
 
 export const getBlobForUrl = (url: string) => getAutosaveItem<Blob>(`url:${url}`).catch(() => undefined);
 
-export interface VideoSession { blob: Blob; name: string; chops: number[]; sourceBpm: number; targetBpm: number; stretchOn: boolean }
+export interface VideoSession { blob: Blob; name: string; chops: number[]; sourceBpm: number; targetBpm: number; stretchOn: boolean; noteGrid?: number; chopCount?: number; sensitivity?: number; manualSlice?: boolean }
 export const saveVideoSession = (v: VideoSession) => putAutosaveItem("video-sampler", v).catch(() => undefined);
 export const loadVideoSession = () => getAutosaveItem<VideoSession>("video-sampler").catch(() => undefined);
