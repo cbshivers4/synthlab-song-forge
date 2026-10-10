@@ -31,6 +31,18 @@ export function LibraryPanel() {
   const [source, setSource] = useState("");
   const [busy, setBusy] = useState(false);
   const [playing, setPlaying] = useState<string | null>(null);
+  /** Two-tap delete: window.confirm is unsupported in the desktop app, so the first tap arms and the second deletes. */
+  const [armingDelete, setArmingDelete] = useState<string | null>(null);
+  const askDelete = (item: LibraryItem) => {
+    if (armingDelete === item.id) {
+      setArmingDelete(null);
+      void deleteFromLibrary(item).then(() => toast.success(`Deleted "${item.name}"`)).catch(() => toast.error("Could not delete"));
+      return;
+    }
+    setArmingDelete(item.id);
+    toast.info(`Tap the trash again to delete "${item.name}"`);
+    window.setTimeout(() => setArmingDelete((cur) => (cur === item.id ? null : cur)), 4000);
+  };
 
   const refresh = () => {
     listLibrary(location).then((l) => { setItems(l); setError(null); }).catch((e) => { setItems([]); setError(e instanceof Error ? e.message : "Could not load the library."); });
