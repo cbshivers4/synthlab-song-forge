@@ -58,8 +58,6 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { PlanBadge } from "@/lib/synclab/plan";
 import { openHelp } from "@/components/studio/HelpCenter";
 import { MasterMeter } from "@/components/studio/MasterMeter";
-import { useState } from "react";
-
 /** Phone BPM field: lets you type freely, then applies the tempo when it's a valid 60–190 or when you leave the field. */
 function BpmInput({ bpm, onChange }: { bpm: number; onChange: (bpm: number) => void }) {
   const [draft, setDraft] = useState<string | null>(null);
