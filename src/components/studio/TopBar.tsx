@@ -169,7 +169,7 @@ export function TopBar() {
             <PositionDisplay step={transport.step} bpm={transport.bpm} playing={transport.playing} />
           )}
           {isMobile && <>
-            <label className="phone-tempo-value shrink-0"><span className="label-xs">BPM</span><input aria-label="BPM" type="number" min={60} max={190} value={transport.bpm} className="phone-bpm-input w-16 bg-transparent text-base tabular-nums text-primary" onChange={(e) => { const bpm = Number(e.target.value); if (bpm >= 60 && bpm <= 190) setTransport({ bpm }); }} /></label>
+            <label className="phone-tempo-value shrink-0"><span className="label-xs">BPM</span><BpmInput bpm={transport.bpm} onChange={(bpm) => setTransport({ bpm })} /></label>
             <Button variant="ghost" size="icon" className="size-12 shrink-0" aria-label="Loop" title="Loop" aria-pressed={transport.loop} onClick={() => setTransport({ loop: !transport.loop })}><Repeat className={`size-5 ${transport.loop ? "text-primary" : "text-muted-foreground"}`} /></Button>
             <div aria-label="Loop range" className="phone-loop-controls flex w-full min-w-0 flex-wrap items-center gap-1 border-t border-border pt-1">
               <LoopRange mobile />
