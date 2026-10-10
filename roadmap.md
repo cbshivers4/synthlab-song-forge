@@ -245,3 +245,4 @@
 - [x] Video Sampler: save video+chops to library, even/delete chops, Open in Sampler, auto save restore
 - [x] App auto save: flush on close, keep audio in browser storage for recovery
 - [x] Account autosave: open project saves to the account ~20s after edits and on close/hide, so work follows between desktop and phone (verified: edit on desktop viewport updated the cloud project row).
+- [x] Library delete on desktop app: window.confirm is unsupported in Electron, so My Library delete and Sampler pad-replace are now tap-twice actions (verified signed in: file deleted, no error).
