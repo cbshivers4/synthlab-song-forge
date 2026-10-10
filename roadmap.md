@@ -234,7 +234,7 @@
 - [x] Sampler phone/desktop chopping: PCM attacks, manual cuts, gate/one-shot, choke, pad spreading; unit tests and signed-in portrait/sideways/desktop preview passed, including gate release and offset pad transfer. Physical-device listening remains unverified.
 
 ## AI / creative tools (Oct 2026)
-- [ ] Video Sampler: red editable cuts, large waveform pads, chop counts/note grid and saved settings; verify desktop/phone.
+- [x] Video Sampler: red draggable cuts, large PCM waveform pads, 4/8/12/16 counts and 1/1–1/64 grid; signed-in desktop edit/save and phone cloud reopen/touch drag verified, including stretch settings. Physical-device listening remains unverified.
 - [x] Expose all six creative tools in the active phone Tools room and alternate phone menu; signed-in checks opened each tool upright, sideways and on desktop.
 - [x] Hum to Beat (beatbox → drums, hum → melody; on-device analysis)
 - [x] Separate stems (simple honest version: vocal remove/isolate, low/mid/high bands)
