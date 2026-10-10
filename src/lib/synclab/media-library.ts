@@ -29,6 +29,6 @@ export function retainMediaInBackground(blob: Blob, filename: string, folder?: s
 }
 
 let videoSelection: { blob: Blob; name: string; kit?: VideoKit } | null = null;
-export interface VideoKit { chops: number[]; sourceBpm: number; targetBpm: number; stretchOn: boolean; noteGrid?: number; chopCount?: number; sensitivity?: number; manualSlice?: boolean }
+export interface VideoKit { chops: number[]; sourceBpm: number; targetBpm: number; stretchOn: boolean; noteGrid?: number; chopCount?: number; sensitivity?: number; manualSlice?: boolean; midiNotes?: import("./video-pad-map").VideoPadMidiNote[] }
 export function selectLibraryVideo(blob: Blob, name: string, kit?: VideoKit) { videoSelection = { blob, name, ...(kit ? { kit } : {}) }; }
 export function takeLibraryVideo() { const value = videoSelection; videoSelection = null; return value; }
