@@ -26,6 +26,7 @@ import { PadSampler } from "@/components/studio/PadSampler";
 import { SplashScreen } from "@/components/studio/SplashScreen";
 import { PluginRack } from "@/components/studio/PluginRack";
 import { DeviceBar } from "@/components/studio/DeviceBar";
+import { QuickNotes } from "@/components/studio/QuickNotes";
 import { FloatingDevice } from "@/components/studio/FloatingDevice";
 import { MenuBar } from "@/components/studio/MenuBar";
 import { ToolsRail } from "@/components/studio/ToolsRail";
@@ -282,6 +283,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
               Pop out
             </Button>
           )}
+          {panel !== "mixer" && <QuickNotes label={!isMobile} className="h-11 sm:h-7" />}
           <Button size="icon" variant="secondary" className="size-12 sm:size-7" onClick={() => setPanel(null)} aria-label="Close editor">
             <X className="size-6 sm:size-4" />
           </Button>
