@@ -161,6 +161,7 @@ export function Sampler() {
   const [held, setHeld] = useState<number | null>(null);
   const [chopBank, setChopBank] = useState(0);
   const fileRef = useRef<HTMLInputElement | null>(null);
+  const armReplaceRef = useRef(0);
 
   const samplerTracks = tracks.filter((t) => t.kind === "sampler");
   const track =
