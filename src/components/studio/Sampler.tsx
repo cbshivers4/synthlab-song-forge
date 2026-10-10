@@ -412,7 +412,13 @@ export function Sampler() {
         return;
       }
       const targets = out.map((_, i) => only === undefined ? firstPad + i : padTarget);
-      if (targets.some((target) => bank[target]?.url) && !window.confirm("Replace the existing sounds on these sample pads?")) return;
+      // window.confirm is unsupported in the desktop app, so replacing armed pads is a two-tap action.
+      if (targets.some((target) => bank[target]?.url) && Date.now() - armReplaceRef.current > 4000) {
+        armReplaceRef.current = Date.now();
+        toast.info("Those pads already have sounds — tap again to replace them");
+        return;
+      }
+      armReplaceRef.current = 0;
       const engine = getEngine();
       for (let i = 0; i < out.length; i++) {
         const c = out[i];
