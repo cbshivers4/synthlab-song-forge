@@ -6,6 +6,7 @@ import { useStudio } from "@/lib/synclab/store";
 import { encodeWav } from "@/lib/synclab/bounce";
 import { isStereo, peaksOf, separateStem, STEMS, type StemId } from "@/lib/synclab/stems";
 import { retainMediaInBackground } from "@/lib/synclab/media-library";
+import { GeneratedWaveform } from "./GeneratedWaveform";
 
 type Source = { name: string; buffer: AudioBuffer; start: number };
 
@@ -154,6 +155,7 @@ export function StemSplitter() {
         <div className="space-y-2" aria-label="Separated stems">
           {results.map((r) => (
             <div key={r.id} className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-surface-2 p-2">
+              <GeneratedWaveform peaks={r.peaks} label={`${r.label} waveform`} />
               <span className="min-w-24 flex-1 text-sm font-medium">{r.label} <span className="font-mono text-xs text-muted-foreground">{r.duration.toFixed(1)}s</span></span>
               <Button variant="secondary" className="min-h-11" onClick={() => togglePlay(r)} aria-label={`${playingId === r.id ? "Stop" : "Play"} ${r.label}`}>
                 {playingId === r.id ? <Square className="size-4 fill-current" /> : <Play className="size-4" />} {playingId === r.id ? "Stop" : "Play"}
