@@ -18,6 +18,8 @@ export interface CloudSession {
   padBank: Record<number, SavedPad>;
   sections?: SongSection[];
   folders?: TrackFolder[];
+  /** Project-wide notes (ideas, lyrics, mix and mastering reminders). */
+  projectNotes?: string;
 }
 
 export interface CloudProject {

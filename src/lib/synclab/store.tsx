@@ -431,6 +431,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const loopStopRef = useRef<(() => void) | null>(null);
 
   const [sections, setSections] = useState<SongSection[]>([]);
+  const [projectNotes, setProjectNotes] = useState("");
+  const projectNotesRef = useRef("");
+  projectNotesRef.current = projectNotes;
   const sectionsRef = useRef<SongSection[]>([]);
   sectionsRef.current = sections;
   const [folders, setFolders] = useState<TrackFolder[]>([]);
@@ -1581,6 +1584,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       padBank: getPadBank(),
       sections: structuredClone(sectionsRef.current),
       folders: structuredClone(foldersRef.current),
+      projectNotes: projectNotesRef.current,
     }),
     [buses, vcas, auxReturns, fxChains, installedPlugins, userPresets],
   );
@@ -1604,6 +1608,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     setPadBank(session.padBank ?? {});
     setSections(structuredClone(session.sections ?? []));
     setFolders(structuredClone(session.folders ?? []));
+    setProjectNotes(session.projectNotes ?? "");
     setSelectedId(session.tracks[0]?.id ?? null);
     setSelectedIds(session.tracks[0] ? [session.tracks[0].id] : []);
     setPanel(null);
@@ -1639,7 +1644,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       }
     }, 600);
     return () => window.clearTimeout(id);
-  }, [tracks, buses, vcas, auxReturns, fxChains, installedPlugins, userPresets, sections, folders, buildSnapshot]);
+  }, [tracks, buses, vcas, auxReturns, fxChains, installedPlugins, userPresets, sections, folders, projectNotes, buildSnapshot]);
 
   // Flush immediately when the tab/app is closed or hidden, so the last edits survive an accidental close.
   useEffect(() => {
