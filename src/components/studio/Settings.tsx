@@ -23,7 +23,7 @@ import {
   setPreferredInput,
   onDeviceChange,
 } from "@/lib/synclab/mic";
-import { midiSupported } from "@/lib/synclab/midi";
+import { midiSupported, midiUnsupportedMessage } from "@/lib/synclab/midi";
 import { getInputChannel, getInputGainDb, setInputChannel, setInputGainDb, setOutputDevice, type InputChannel } from "@/lib/synclab/mic";
 import { openExport } from "@/components/studio/ExportDialog";
 import { DesktopPanel } from "@/components/studio/DesktopPanel";

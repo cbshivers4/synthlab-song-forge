@@ -14,7 +14,7 @@ import { stepsPerBar, setBeatsPerBar, getBeatsPerBar, STEPS_PER_BEAT, songSteps,
 import { openInOwnTab } from "./mic";
 import { TRACK_COLORS, applyPreset, defaultPads, defaultPatch, uid } from "./presets";
 import { BUILT_IN_PLUGINS, instantiate, processMidiThroughPlugins } from "./plugins";
-import { getMidiAccess, listInputs, midiSupported, subscribe, type MidiPortInfo } from "./midi";
+import { getMidiAccess, listInputs, midiSupported, midiUnsupportedMessage, subscribe, type MidiPortInfo } from "./midi";
 import { getPadBank, setPadBank } from "./pad-session";
 import { getLooper } from "./live-looper";
 import { padNote } from "./drum-notes";

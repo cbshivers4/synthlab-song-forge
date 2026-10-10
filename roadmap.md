@@ -254,3 +254,4 @@
 
 - [x] Shared project Notes panel (transport bar + mixer), autosaving with project
 - [ ] Master upgrade prompt: remaining sections (transport extras, mixer audit, tools 6-32) — awaiting user priority
+- [x] Notes on every tool, clear-track stays on edit, R2R song counter, video resize, Separate/Add buttons, Generate bass, mobile mic/MIDI help
