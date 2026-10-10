@@ -28,6 +28,9 @@ export function VideoSampler() {
   const consumedNotes = useRef(new Set<string>());
   const blobRef = useRef<{ blob: Blob; name: string } | null>(null);
   const [saving, setSaving] = useState(false);
+  const [videoHeight, setVideoHeight] = useState(220);
+  useEffect(() => { const v = Number(localStorage.getItem("synclab.videoHeight")); if (v >= 120 && v <= 720) setVideoHeight(v); }, []);
+  const setVideoSize = (h: number) => { setVideoHeight(h); localStorage.setItem("synclab.videoHeight", String(h)); };
   const video = useRef<HTMLVideoElement>(null);
   const file = useRef<HTMLInputElement>(null);
   const recorder = useRef<MediaRecorder | null>(null);
@@ -268,7 +271,13 @@ export function VideoSampler() {
 
   return <section className="space-y-3" aria-label="Video sampler">
     <div className="overflow-hidden rounded border border-border bg-background">
-      <video ref={video} src={url ?? undefined} playsInline className="aspect-video max-h-48 w-full bg-background object-contain sm:max-h-64" controls={!filming && !!url} aria-label="Video sample" onTimeUpdate={(e) => setPosition(e.currentTarget.currentTime)} onSeeked={(e) => setPosition(e.currentTarget.currentTime)} onEnded={() => setActive(null)} />
+      <div className="flex flex-wrap items-center gap-1" role="group" aria-label="Video size">
+        <span className="font-mono text-[10px] text-muted-foreground">VIDEO SIZE</span>
+        {([["S", 160], ["M", 260], ["L", 380], ["XL", 520]] as const).map(([l, h]) => <Button key={l} size="sm" variant={videoHeight === h ? "default" : "outline"} className="h-9 min-w-10" aria-label={`Video size ${l}`} onClick={() => setVideoSize(h)}>{l}</Button>)}
+        <input type="range" min={120} max={720} step={10} value={videoHeight} onChange={(e) => setVideoSize(Number(e.target.value))} aria-label="Video height" className="min-w-24 flex-1" />
+        <Button size="sm" variant="outline" className="h-9" onClick={() => void video.current?.requestFullscreen?.().catch(() => toast.error("Full screen isn't available here"))}>Full screen</Button>
+      </div>
+      <video ref={video} src={url ?? undefined} playsInline style={{ height: `${videoHeight}px` }} className="w-full bg-background object-contain" controls={!filming && !!url} aria-label="Video sample" onTimeUpdate={(e) => setPosition(e.currentTarget.currentTime)} onSeeked={(e) => setPosition(e.currentTarget.currentTime)} onEnded={() => setActive(null)} />
     </div>
     {buffer && <div className="space-y-1 border-b border-border bg-background py-2" aria-label="Video audio waveform editor">
       <div className="flex flex-wrap items-center justify-between gap-2">

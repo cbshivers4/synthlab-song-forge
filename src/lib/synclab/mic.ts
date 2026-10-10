@@ -62,6 +62,10 @@ function describe(err: unknown): string {
   switch (e?.name) {
     case "NotAllowedError":
     case "SecurityError":
+      if (typeof navigator !== "undefined" && /iPhone|iPad|iPod/.test(navigator.userAgent))
+        return "Microphone blocked. On iPhone: Settings › Safari (or Chrome) › Microphone › Allow, or tap aA in Safari's address bar › Website Settings › Microphone › Allow. Then reload and tap Enable microphone.";
+      if (typeof navigator !== "undefined" && /Android/.test(navigator.userAgent))
+        return "Microphone blocked. On Android Chrome: tap the icon left of the address › Permissions › Microphone › Allow (also check Android Settings › Apps › Chrome › Permissions). Then reload and tap Enable microphone.";
       return inFrame()
         ? "Microphone access was blocked. Open the app in its own browser tab, then choose Allow when asked."
         : "Microphone access was blocked. Click the padlock in the address bar and allow the microphone for this site.";

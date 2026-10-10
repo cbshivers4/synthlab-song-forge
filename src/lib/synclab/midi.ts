@@ -89,3 +89,13 @@ export function subscribe(a: AnyAccess | null, id: string, handler: MidiHandler)
     for (const p of ports) if (p.onmidimessage === onMsg) p.onmidimessage = null;
   };
 }
+
+
+/** Plain explanation of why this device's browser can't reach MIDI hardware, with options that do work. */
+export function midiUnsupportedMessage(): string {
+  const ua = typeof navigator === "undefined" ? "" : navigator.userAgent;
+  const ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && typeof navigator !== "undefined" && navigator.maxTouchPoints > 1);
+  if (ios) return "iPhone and iPad browsers don't support MIDI keyboards. Use the on-screen keyboard or pads, or open SYNCLAB in Chrome on Android or a computer for MIDI.";
+  if (/Android/.test(ua)) return "This Android browser can't see MIDI. Open SYNCLAB in Chrome and connect the keyboard by USB (OTG adapter) or Bluetooth MIDI.";
+  return "This browser cannot see MIDI hardware — use Chrome or Edge.";
+}

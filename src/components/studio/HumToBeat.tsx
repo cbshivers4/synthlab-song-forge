@@ -169,7 +169,7 @@ export function HumToBeat() {
           </Button>
         )}
         {result && (result.hits.length > 0 || result.notes.length > 0) && (
-          <PreviewButtons pv={pv} onPreview={preview} onAdd={create} />
+          <PreviewButtons pv={pv} onPreview={preview} onAdd={create} addLabel="Add to timeline" />
         )}
       </div>
 

@@ -107,9 +107,9 @@ export function StemGenerator() {
         </Button>
         {result && <>
           <Button size="lg" variant="secondary" className="min-h-12" onClick={toggle}>
-            {playing ? <Square className="size-4 fill-current" /> : <Play className="size-4" />} {playing ? "Stop" : "Listen alone"}
+            {playing ? <Square className="size-4 fill-current" /> : <Play className="size-4" />} {playing ? "Stop" : "Play"}
           </Button>
-          <PreviewButtons pv={pv} onPreview={preview} onAdd={add} />
+          <PreviewButtons pv={pv} onPreview={preview} onAdd={add} addLabel="Add to timeline" />
         </>}
       </div>
 

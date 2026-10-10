@@ -1,5 +1,5 @@
-import { useMemo, useRef, useState } from "react";
-import { Split, Upload } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Play, Plus, Split, Square, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useStudio } from "@/lib/synclab/store";
@@ -49,6 +49,13 @@ export function StemSplitter() {
     } finally { setBusy(null); }
   };
 
+  type Result = { id: StemId; label: string; url: string; peaks: number[]; duration: number; added: boolean };
+  const [results, setResults] = useState<Result[]>([]);
+  const [playingId, setPlayingId] = useState<StemId | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const stopAudio = () => { audioRef.current?.pause(); audioRef.current = null; setPlayingId(null); };
+  useEffect(() => () => stopAudio(), []);
+
   const run = async () => {
     if (!source) return;
     const ids = STEMS.filter((s) => picked[s.id]).map((s) => s.id);
@@ -56,23 +63,40 @@ export function StemSplitter() {
     if (ids.includes("instrumental") && !isStereo(source.buffer)) {
       toast("Vocal remove skipped", { description: "This audio is mono, so there's no centre to cancel." });
     }
+    stopAudio();
+    const out: Result[] = [];
     for (const id of ids) {
       if (id === "instrumental" && !isStereo(source.buffer)) continue;
       const label = STEMS.find((s) => s.id === id)!.label;
-      setBusy(`Making ${label}…`);
+      setBusy(`Separating ${label}…`);
       try {
         const { left, right } = await separateStem(source.buffer, id);
         const sr = source.buffer.sampleRate;
-        const url = URL.createObjectURL(encodeWav({ left, right, sampleRate: sr }));
-        const duration = left.length / sr;
-        const trackId = addTrack("audio", `${label.toUpperCase()} · ${source.name}`.slice(0, 40), undefined, { keepPanel: true });
-        addClip(trackId, { id: `stem-${id}-${Date.now()}`, name: `${source.name} (${label})`, url, peaks: peaksOf(left), duration, start: source.start, offset: 0, length: duration });
+        out.push({ id, label, url: URL.createObjectURL(encodeWav({ left, right, sampleRate: sr })), peaks: peaksOf(left), duration: left.length / sr, added: false });
       } catch {
         toast.error(`Couldn't make ${label}`);
       }
     }
+    setResults(out);
     setBusy(null);
-    toast.success("Stems added to the timeline", { description: "Each stem is on its own new audio track." });
+    if (out.length) toast.success("Stems separated", { description: "Play each one, then add the ones you want to the timeline." });
+  };
+
+  const togglePlay = (r: Result) => {
+    if (playingId === r.id) { stopAudio(); return; }
+    stopAudio();
+    const a = new Audio(r.url);
+    a.onended = () => setPlayingId(null);
+    audioRef.current = a; setPlayingId(r.id);
+    void a.play().catch(() => { setPlayingId(null); toast.error("Couldn't play this stem"); });
+  };
+
+  const addToTimeline = (r: Result) => {
+    if (!source || r.added) return;
+    const trackId = addTrack("audio", `${r.label.toUpperCase()} · ${source.name}`.slice(0, 40), undefined, { keepPanel: true });
+    addClip(trackId, { id: `stem-${r.id}-${Date.now()}`, name: `${source.name} (${r.label})`, url: r.url, peaks: r.peaks, duration: r.duration, start: source.start, offset: 0, length: r.duration });
+    setResults((rs) => rs.map((x) => (x.id === r.id ? { ...x, added: true } : x)));
+    toast.success(`${r.label} added to the timeline`);
   };
 
   return (
@@ -123,8 +147,25 @@ export function StemSplitter() {
       </div>
 
       <Button size="lg" className="min-h-12" disabled={!source || !!busy} onClick={() => void run()}>
-        <Split className="size-4" /> {busy ?? "Separate to new tracks"}
+        <Split className="size-4" /> {busy ?? "Separate"}
       </Button>
+
+      {results.length > 0 && (
+        <div className="space-y-2" aria-label="Separated stems">
+          {results.map((r) => (
+            <div key={r.id} className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-surface-2 p-2">
+              <span className="min-w-24 flex-1 text-sm font-medium">{r.label} <span className="font-mono text-xs text-muted-foreground">{r.duration.toFixed(1)}s</span></span>
+              <Button variant="secondary" className="min-h-11" onClick={() => togglePlay(r)} aria-label={`${playingId === r.id ? "Stop" : "Play"} ${r.label}`}>
+                {playingId === r.id ? <Square className="size-4 fill-current" /> : <Play className="size-4" />} {playingId === r.id ? "Stop" : "Play"}
+              </Button>
+              <Button className="min-h-11" disabled={r.added} onClick={() => addToTimeline(r)} aria-label={`Add ${r.label} to timeline`}>
+                <Plus className="size-4" /> {r.added ? "Added" : "Add to timeline"}
+              </Button>
+            </div>
+          ))}
+          <Button variant="outline" className="min-h-11" disabled={results.every((r) => r.added)} onClick={() => results.forEach(addToTimeline)}>Add all to timeline</Button>
+        </div>
+      )}
     </section>
   );
 }

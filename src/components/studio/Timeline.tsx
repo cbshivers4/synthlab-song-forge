@@ -1273,7 +1273,8 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 disabled={(track.clips?.length ?? 0) === 0 && (track.notes?.length ?? 0) === 0 && !track.pads?.some((p) => p.steps.some((s) => s > 0))}
-                onClick={() => clearTrackContent(track.id)}
+                onClick={(e) => { e.stopPropagation(); clearTrackContent(track.id); }}
+                onSelect={(e) => e.stopPropagation()}
               >
                 <Eraser className="size-4" /> Clear track contents
               </DropdownMenuItem>
@@ -2311,7 +2312,7 @@ function EditToolbar() {
         className="h-6 gap-1 px-2 text-[10px] text-destructive"
         disabled={targets.length === 0}
         title="Clear the clips and notes on the selected channels — the channels themselves stay"
-        onClick={() => targets.forEach((id) => clearTrackContent(id))}
+        onClick={(e) => { e.stopPropagation(); targets.forEach((id) => clearTrackContent(id)); }}
       >
         <Trash2 className="size-3" /> Clear{targets.length > 1 ? ` ${targets.length}` : ""}
       </Button>

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useStudio } from "@/lib/synclab/store";
-import { midiSupported } from "@/lib/synclab/midi";
+import { midiSupported, midiUnsupportedMessage } from "@/lib/synclab/midi";
 import { openMic, openInOwnTab, listAudioDevices, getPreferredInput, setPreferredInput, onDeviceChange } from "@/lib/synclab/mic";
 
 const KEY = "synclab.devicesetup.done";
@@ -166,7 +166,7 @@ export function DeviceSetup() {
                 <div className="text-muted-foreground">
                   {midiSupported()
                     ? "None found. Connect the controller, then press Connect again."
-                    : "This browser cannot see MIDI hardware — use Chrome or Edge."}
+                    : midiUnsupportedMessage()}
                 </div>
               )}
             </div>

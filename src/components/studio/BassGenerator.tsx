@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePreviewTrack } from "@/lib/synclab/use-preview-track";
 import { PreviewButtons } from "./PreviewButtons";
 import { toast } from "sonner";
@@ -33,8 +33,15 @@ export function BassGenerator() {
 
   const pv = usePreviewTrack();
   const label = BASS_STYLES.find((s) => s.id === style)!.label.toUpperCase();
-  const build = (name: string) => {
+  const [generated, setGenerated] = useState<ReturnType<typeof generateBass> | null>(null);
+  useEffect(() => setGenerated(null), [roots, style, octave, barSteps]);
+  const generate = () => {
     const notes = generateBass(roots, style, barSteps, octave);
+    setGenerated(notes);
+    toast.success("Bassline generated", { description: `${notes.length} notes over ${bars} bars — preview it or add it to the timeline.` });
+  };
+  const build = (name: string) => {
+    const notes = generated ?? generateBass(roots, style, barSteps, octave);
     const id = addTrack("instrument", name, sound, { keepPanel: true });
     updateTrack(id, { steps: bars * barSteps, notes });
     return { id, notes };
@@ -93,6 +100,10 @@ export function BassGenerator() {
 
       <p className="font-mono text-xs text-primary">Roots: {roots.map((r) => NOTE_NAMES[r]).join(" → ")}</p>
 
+      <div className="flex flex-wrap items-center gap-2">
+        <Button size="lg" className="min-h-12" onClick={generate}>Generate bassline</Button>
+        {generated && <span className="font-mono text-xs text-muted-foreground">{generated.length} notes ready</span>}
+      </div>
       <PreviewButtons pv={pv} onPreview={preview} onAdd={create} addLabel="Add bassline to timeline" />
     </section>
   );
