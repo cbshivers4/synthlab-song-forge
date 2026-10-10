@@ -552,7 +552,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     if (!midiSupported()) {
       if (!quiet)
         toast.error("MIDI not available", {
-          description: "This browser can't see MIDI controllers. Chrome or Edge support them.",
+          description: midiUnsupportedMessage(),
         });
       return;
     }

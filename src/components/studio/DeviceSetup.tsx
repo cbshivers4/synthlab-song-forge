@@ -166,7 +166,7 @@ export function DeviceSetup() {
                 <div className="text-muted-foreground">
                   {midiSupported()
                     ? "None found. Connect the controller, then press Connect again."
-                    : "This browser cannot see MIDI hardware — use Chrome or Edge."}
+                    : midiUnsupportedMessage()}
                 </div>
               )}
             </div>

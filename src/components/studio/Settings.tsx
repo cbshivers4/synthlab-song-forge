@@ -271,7 +271,7 @@ export function Settings() {
   const scanMidi = () => {
     if (!midiSupported()) {
       toast.error("This browser cannot see MIDI hardware", {
-        description: "Use Chrome or Edge on a computer to connect MIDI controllers.",
+        description: midiUnsupportedMessage(),
       });
       return;
     }
