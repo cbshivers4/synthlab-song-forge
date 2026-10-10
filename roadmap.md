@@ -255,3 +255,5 @@
 - [x] Shared project Notes panel (transport bar + mixer), autosaving with project
 - [ ] Master upgrade prompt: remaining sections (transport extras, mixer audit, tools 6-32) — awaiting user priority
 - [x] Notes on every tool, clear-track stays on edit, R2R song counter, video resize, Separate/Add buttons, Generate bass, mobile mic/MIDI help
+
+- [x] Show PCM waveforms for generated stems, converted voice, separated stems, bass/co-producer patterns and recorded Hum to Beat. Browser verified actual note/drum PCM and generated bass waveform on desktop/phone; hum/voice tests passed. Physical-device listening remains unverified.
