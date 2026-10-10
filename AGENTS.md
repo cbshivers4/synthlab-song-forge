@@ -11,7 +11,7 @@
 
 Live Looper and Live View stay separate; singleton loops survive switching.
 Looper playback bypasses the song master to avoid recapture feedback; send loops to the timeline for export/master processing.
-Meter and looper visuals refresh at 20 fps from shared timers; keep high-frequency React updates off the audio path to reduce recording and playback stutters.
+Meter/looper visuals use shared 20 fps timers; keep rapid React updates off audio paths to prevent stutters.
 Phone settings open Phone features from More and the beat maker; Bluetooth shortcuts open Audio explicitly, keeping both accessible.
 Mixer VCAs scale assigned channel gains without changing individual faders, while aux returns control post-effect levels before the master; this avoids routing returns back into their own sends.
 Mixer meters read analyser taps from the actual bus, aux return, and VCA member signals; master gain controls the summed mix, while subgroup changes also scale their tracks' pre-bus sends.
