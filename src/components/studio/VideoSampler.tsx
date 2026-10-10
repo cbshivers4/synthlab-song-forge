@@ -242,7 +242,7 @@ export function VideoSampler() {
     <div className="overflow-hidden rounded border border-border bg-background">
       <video ref={video} src={url ?? undefined} playsInline className="aspect-video max-h-48 w-full bg-background object-contain sm:max-h-64" controls={!filming && !!url} aria-label="Video sample" onTimeUpdate={(e) => setPosition(e.currentTarget.currentTime)} onSeeked={(e) => setPosition(e.currentTarget.currentTime)} onEnded={() => setActive(null)} />
     </div>
-    {buffer && <div className="sticky top-0 z-30 space-y-1 [@media(max-height:600px)]:static border-b border-border bg-background py-2" aria-label="Video audio waveform editor">
+    {buffer && <div className="space-y-1 border-b border-border bg-background py-2" aria-label="Video audio waveform editor">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="text-xs font-mono text-muted-foreground">Video audio · {position.toFixed(2)} / {buffer.duration.toFixed(2)}s</span>
         <Button variant={manualSlice ? "default" : "outline"} className="h-9" aria-pressed={manualSlice} onClick={() => setManualSlice((value) => !value)}><Scissors />Manual slice</Button>
@@ -301,7 +301,7 @@ export function VideoSampler() {
       {chops.map((t, i) => <div key={i} className="flex min-w-0 flex-col gap-1">
         <Button variant={active === i ? "default" : "secondary"} className="h-36 min-w-0 flex-col gap-2 px-3 py-2 text-xs" onClick={() => trigger(i)} aria-label={`Play video chop ${i + 1}`}>
           <span className="flex w-full justify-between font-mono text-sm"><span>{i + 1}</span><span>{PAD_KEYS[i]?.toUpperCase()}</span></span>
-          <span className="pointer-events-none block h-16 w-full overflow-hidden rounded border border-border bg-background"><WaveformView peaks={padPeaks[i] ?? []} label={`Video chop ${i + 1} waveform`} /></span>
+          <span className="pointer-events-none block h-16 w-full overflow-hidden rounded border border-border bg-background"><WaveformView className="!h-full !w-full" peaks={padPeaks[i] ?? []} label={`Video chop ${i + 1} waveform`} /></span>
           <span className="font-mono text-[10px]">{t.toFixed(2)}–{(chops[i + 1] ?? buffer?.duration ?? 0).toFixed(2)}s</span>
         </Button>
         <label className="flex items-center justify-between gap-1 text-xs text-muted-foreground">Start<input type="number" min={chops[i - 1] == null ? 0 : (chops[i - 1] ?? 0) + 0.01} max={(chops[i + 1] ?? buffer?.duration ?? 0) - 0.01} step={0.01} value={Number(t.toFixed(3))} aria-label={`Video chop ${i + 1} start seconds`} className="h-9 w-20 rounded border border-border bg-surface-2 px-1 font-mono text-foreground" onChange={(e) => { const value = e.currentTarget.valueAsNumber; if (Number.isFinite(value)) editChop(i, snapVideoTime(value, sourceBpm, noteGrid)); }} /></label>
