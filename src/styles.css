@@ -1021,6 +1021,20 @@
 .instrument-keyboard .keyboard-key[data-active="true"] { background-color: var(--keyboard-active); }
 .instrument-keyboard .keyboard-key-label { color: inherit; }
 
+[data-pad-color="0"] { --video-pad-accent: var(--chart-1); }
+[data-pad-color="1"] { --video-pad-accent: var(--chart-3); }
+[data-pad-color="2"] { --video-pad-accent: var(--chart-2); }
+[data-pad-color="3"] { --video-pad-accent: var(--chart-5); }
+.video-chop-pad {
+  background: color-mix(in oklab, var(--video-pad-accent) 32%, var(--surface));
+  border-color: color-mix(in oklab, var(--video-pad-accent) 65%, var(--border));
+  color: var(--foreground);
+}
+.video-chop-pad:hover { background: color-mix(in oklab, var(--video-pad-accent) 48%, var(--surface)); }
+.video-chop-pad[data-active="true"] { background: var(--video-pad-accent); color: var(--primary-foreground); }
+.instrument-keyboard .video-chop-key { box-shadow: inset 0 -5px 0 var(--video-pad-accent); }
+.instrument-keyboard .video-chop-key[data-active="true"] { background-color: var(--keyboard-active); }
+
 :root {
   --tape-metal: oklch(0.78 0.009 230);
   --tape-metal-edge: oklch(0.94 0.005 230);
