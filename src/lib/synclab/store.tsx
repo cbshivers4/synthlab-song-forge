@@ -239,6 +239,8 @@ interface StudioState {
   vcas: Record<VcaId, BusState>;
   auxReturns: Record<AuxId, BusState>;
   sections: SongSection[];
+  projectNotes: string;
+  setProjectNotes: (notes: string) => void;
 }
 
 /** Shaped value of an automation curve at a step, held flat outside the drawn range. */
@@ -431,6 +433,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const loopStopRef = useRef<(() => void) | null>(null);
 
   const [sections, setSections] = useState<SongSection[]>([]);
+  const [projectNotes, setProjectNotes] = useState("");
+  const projectNotesRef = useRef("");
+  projectNotesRef.current = projectNotes;
   const sectionsRef = useRef<SongSection[]>([]);
   sectionsRef.current = sections;
   const [folders, setFolders] = useState<TrackFolder[]>([]);
@@ -1581,6 +1586,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       padBank: getPadBank(),
       sections: structuredClone(sectionsRef.current),
       folders: structuredClone(foldersRef.current),
+      projectNotes: projectNotesRef.current,
     }),
     [buses, vcas, auxReturns, fxChains, installedPlugins, userPresets],
   );
@@ -1604,6 +1610,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     setPadBank(session.padBank ?? {});
     setSections(structuredClone(session.sections ?? []));
     setFolders(structuredClone(session.folders ?? []));
+    setProjectNotes(session.projectNotes ?? "");
     setSelectedId(session.tracks[0]?.id ?? null);
     setSelectedIds(session.tracks[0] ? [session.tracks[0].id] : []);
     setPanel(null);
@@ -1639,7 +1646,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       }
     }, 600);
     return () => window.clearTimeout(id);
-  }, [tracks, buses, vcas, auxReturns, fxChains, installedPlugins, userPresets, sections, folders, buildSnapshot]);
+  }, [tracks, buses, vcas, auxReturns, fxChains, installedPlugins, userPresets, sections, folders, projectNotes, buildSnapshot]);
 
   // Flush immediately when the tab/app is closed or hidden, so the last edits survive an accidental close.
   useEffect(() => {
@@ -1796,6 +1803,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       vcas,
       auxReturns,
       sections,
+      projectNotes,
+      setProjectNotes,
       snapshot: buildSnapshot,
       restore: (session) => {
         applyingRef.current = true;
@@ -2852,7 +2861,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           ),
         })),
     };
-  }, [tracks, transport, selectedId, selectedIds, editTool, panel, userPresets, buses, vcas, auxReturns, sections, folders, installedPlugins, fxChains, midiInputs, midiInputId, midiLearning, midiMap, midiLearn, clipboardName, enableMidi, setMidiInputPersist, updateTrack, finishRecording, finishTrackRecording, splitClipAtImpl, razorAtImpl, buildSnapshot, applySession, historyTick, automationHistoryTick, savedAt]);
+  }, [tracks, transport, selectedId, selectedIds, editTool, panel, userPresets, buses, vcas, auxReturns, sections, projectNotes, folders, installedPlugins, fxChains, midiInputs, midiInputId, midiLearning, midiMap, midiLearn, clipboardName, enableMidi, setMidiInputPersist, updateTrack, finishRecording, finishTrackRecording, splitClipAtImpl, razorAtImpl, buildSnapshot, applySession, historyTick, automationHistoryTick, savedAt]);
 
 
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>;

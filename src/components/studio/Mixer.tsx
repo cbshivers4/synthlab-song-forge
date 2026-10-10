@@ -28,6 +28,7 @@ import { useApp } from "@/lib/synclab/app-state";
 
 import { MidiLearnBlock, MidiLearnButton } from "./MidiLearn";
 import { TrackNotes } from "@/components/studio/TrackNotes";
+import { QuickNotes } from "@/components/studio/QuickNotes";
 import { TrackIcon, TrackStylePicker } from "@/components/studio/TrackStyle";
 import { BUILT_IN_PLUGINS } from "@/lib/synclab/plugins";
 import type { AuxId, BusId, BusState, PluginInstance, Track, VcaId } from "@/lib/synclab/types";
@@ -1642,6 +1643,7 @@ export function Mixer({ phonePage = 0, phoneChannels, phoneControlPage = "levels
           <>
             <span className="font-display text-xs font-bold uppercase tracking-widest text-primary">Mixer</span>
             <div className="ml-auto flex shrink-0 items-center gap-2">
+              <QuickNotes label />
               <PhoneFxMenu />
               <PhoneEqButton />
             </div>
@@ -1654,6 +1656,7 @@ export function Mixer({ phonePage = 0, phoneChannels, phoneControlPage = "levels
           {tracks.length} ch · {activeBuses.length} buses
         </span>
         <div className="ml-auto flex shrink-0 items-center gap-1">
+          <QuickNotes label />
           <Popover>
             <PopoverTrigger asChild>
               <button title="Choose how many bus, VCA and aux channels to show" className="flex h-6 items-center gap-1 rounded-sm bg-surface px-2 font-mono text-[9px] uppercase tracking-wider text-muted-foreground hover:text-foreground">

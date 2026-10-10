@@ -58,6 +58,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { PlanBadge } from "@/lib/synclab/plan";
 import { openHelp } from "@/components/studio/HelpCenter";
 import { MasterMeter } from "@/components/studio/MasterMeter";
+import { QuickNotes } from "@/components/studio/QuickNotes";
 /** Phone BPM field: lets you type freely, then applies the tempo when it's a valid 60–190 or when you leave the field. */
 function BpmInput({ bpm, onChange }: { bpm: number; onChange: (bpm: number) => void }) {
   const [draft, setDraft] = useState<string | null>(null);
@@ -387,6 +388,7 @@ export function TopBar() {
             </PopoverTrigger>
             <PopoverContent align="end" className="w-[min(92vw,420px)]"><SkinControls skinKey="transport" image /></PopoverContent>
           </Popover>
+          <QuickNotes />
           <PlanBadge />
           <Button
             variant="outline"

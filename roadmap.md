@@ -251,3 +251,6 @@
 - [x] Color Video Sampler pads and map them to the shared keyboard; signed-in desktop/phone tests confirmed four colors, screen/typing/pad playback, linked active states, disabled empty keys and no page errors. Physical-device listening remains unverified.
 
 - [x] Remove Video Sampler waveform boxes; per-pad MIDI Learn, clear, input selection and saved assignments. Signed-in desktop/phone checks passed with injected MIDI input; real hardware remains unverified.
+
+- [x] Shared project Notes panel (transport bar + mixer), autosaving with project
+- [ ] Master upgrade prompt: remaining sections (transport extras, mixer audit, tools 6-32) — awaiting user priority
