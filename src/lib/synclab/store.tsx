@@ -22,6 +22,8 @@ import { markLiveHit, isLiveHit, clearLiveHits, neighbourLiveHits } from "./live
 import { keyDown, keyUp } from "./active-keys";
 import { controllerAutoMap } from "./controller-profiles";
 import type { CloudSession } from "./cloud";
+import { saveCloudProject } from "./cloud";
+import { useApp } from "./app-state";
 import type {
   AudioClip,
   AutomationLane,
