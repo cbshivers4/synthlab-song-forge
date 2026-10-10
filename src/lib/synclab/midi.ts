@@ -49,6 +49,13 @@ export type MidiMessage =
 
 export type MidiHandler = (msg: MidiMessage) => void;
 
+// Focused tools may consume notes before the ordinary track input path.
+const noteConsumers = new Set<(msg: MidiMessage) => boolean>();
+export function claimMidiNotes(consumer: (msg: MidiMessage) => boolean): () => void {
+  noteConsumers.add(consumer);
+  return () => { noteConsumers.delete(consumer); };
+}
+
 /** Subscribe to one input id, or all inputs when id is "all". Returns an unsubscribe fn. */
 export function subscribe(a: AnyAccess | null, id: string, handler: MidiHandler): () => void {
   const ports = Array.from(a?.inputs.values() ?? []).filter((p) => id === "all" || p.id === id);
@@ -66,8 +73,11 @@ export function subscribe(a: AnyAccess | null, id: string, handler: MidiHandler)
       lastNote.set(key, now);
       if (prev != null && now - prev < 25) return;
     }
-    if (cmd === 0x90 && d2 > 0) handler({ type: "on", pitch: d1, velocity: d2 / 127, channel });
-    else if (cmd === 0x80 || (cmd === 0x90 && d2 === 0)) handler({ type: "off", pitch: d1, velocity: 0, channel });
+    if (cmd === 0x90 || cmd === 0x80) {
+      const msg: MidiMessage = { type: cmd === 0x90 && d2 > 0 ? "on" : "off", pitch: d1, velocity: d2 / 127, channel };
+      for (const consumer of Array.from(noteConsumers).reverse()) if (consumer(msg)) return;
+      handler(msg);
+    }
     else if (cmd === 0xb0) handler({ type: "cc", cc: d1, value: d2 / 127, channel });
     else if (cmd === 0xe0) handler({ type: "pitchbend", value: ((d2 << 7) | d1) / 16383, channel });
   };

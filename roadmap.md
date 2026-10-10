@@ -249,3 +249,5 @@
 - [x] Library delete on desktop app: window.confirm is unsupported in Electron, so My Library delete and Sampler pad-replace are now tap-twice actions (verified signed in: file deleted, no error).
 
 - [x] Color Video Sampler pads and map them to the shared keyboard; signed-in desktop/phone tests confirmed four colors, screen/typing/pad playback, linked active states, disabled empty keys and no page errors. Physical-device listening remains unverified.
+
+- [x] Remove Video Sampler waveform boxes; per-pad MIDI Learn, clear, input selection and saved assignments. Signed-in desktop/phone checks passed with injected MIDI input; real hardware remains unverified.

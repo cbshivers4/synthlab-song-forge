@@ -45,4 +45,4 @@ MP3/MP4 imports/exports retain originals in the private library with content has
 Cloud deletion reads raw sessions, confirms row deletion, then cleans owned project files; missing playback assets cannot block removal.
 Reel recorder: singleton AudioWorklet capture; tape bypasses master to avoid feedback. Timeline meters read live post-master taps without input activation; exit releases input, retaining tape.
 
-Video cuts: source seconds, grid/clamp; saved kits. Video keys reuse Keyboard and trigger pads once, avoiding instrument shortcuts.
+Video cuts use source seconds/grid/clamp; kits save MIDI notes. Keyboard/learned MIDI share pad triggers; MIDI consumers prevent doubled track notes.

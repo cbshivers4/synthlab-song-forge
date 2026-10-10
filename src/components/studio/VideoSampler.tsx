@@ -12,7 +12,8 @@ import { retainMediaInBackground, takeLibraryVideo, type VideoKit } from "@/lib/
 import { saveToLibrary } from "@/lib/synclab/library";
 import { loadVideoSession, saveVideoSession } from "@/lib/synclab/autosave-media";
 import { moveVideoChop, snapVideoTime } from "@/lib/synclab/video-chops";
-import { VIDEO_PAD_KEYS, videoPadForNote } from "@/lib/synclab/video-pad-map";
+import { VIDEO_PAD_KEYS, videoPadForNote, assignVideoPadNote, type VideoPadMidiNote } from "@/lib/synclab/video-pad-map";
+import { claimMidiNotes, midiSupported } from "@/lib/synclab/midi";
 
 import { WaveformView } from "./WaveformView";
 import { Keyboard } from "./Keyboard";
@@ -21,7 +22,10 @@ const PAD_KEYS = VIDEO_PAD_KEYS;
 
 /** Video sampler: load or film a clip, chop its audio at real attacks, trigger chops as pads (video + sound), and print chops to the timeline. */
 export function VideoSampler() {
-  const { addTrack, addClip, transport, loadSample, updateSampler, select, setPanel } = useStudio();
+  const { addTrack, addClip, transport, loadSample, updateSampler, select, setPanel, midiInputId, midiInputs, enableMidi, setMidiInput } = useStudio();
+  const [midiNotes, setMidiNotes] = useState<VideoPadMidiNote[]>([]);
+  const [learnPad, setLearnPad] = useState<number | null>(null);
+  const consumedNotes = useRef(new Set<string>());
   const blobRef = useRef<{ blob: Blob; name: string } | null>(null);
   const [saving, setSaving] = useState(false);
   const video = useRef<HTMLVideoElement>(null);
@@ -136,7 +140,8 @@ export function VideoSampler() {
         setSourceBpm(kit.sourceBpm); setTargetBpm(kit.targetBpm); setStretchOn(kit.stretchOn);
         setNoteGrid(kit.noteGrid ?? 0); setChopCount(kit.chopCount ?? 4);
         setSensitivity(kit.sensitivity ?? 0.5); setManualSlice(kit.manualSlice ?? false);
-      } else { setNoteGrid(0); chopAll(buf, sensitivity); }
+        setMidiNotes(kit.midiNotes ?? []); setLearnPad(null);
+      } else { setNoteGrid(0); setMidiNotes([]); setLearnPad(null); chopAll(buf, sensitivity); }
     } catch {
       setBuffer(null); setChops([]);
       setError("This video has no audio this browser can decode. Try an MP4 or WebM with sound.");
@@ -151,13 +156,13 @@ export function VideoSampler() {
   // Auto save the open video and chops so an accidental close keeps them.
   useEffect(() => {
     const cur = blobRef.current; if (!cur || !buffer) return;
-    const persist = () => void saveVideoSession({ ...cur, chops, sourceBpm, targetBpm, stretchOn, noteGrid, chopCount, sensitivity, manualSlice });
+    const persist = () => void saveVideoSession({ ...cur, chops, sourceBpm, targetBpm, stretchOn, noteGrid, chopCount, sensitivity, manualSlice, midiNotes });
     const id = window.setTimeout(persist, 500);
     const onHide = () => { if (document.visibilityState === "hidden") persist(); };
     window.addEventListener("pagehide", persist);
     document.addEventListener("visibilitychange", onHide);
     return () => { window.clearTimeout(id); persist(); window.removeEventListener("pagehide", persist); document.removeEventListener("visibilitychange", onHide); };
-  }, [buffer, chops, sourceBpm, targetBpm, stretchOn, noteGrid, chopCount, sensitivity, manualSlice]);
+  }, [buffer, chops, sourceBpm, targetBpm, stretchOn, noteGrid, chopCount, sensitivity, manualSlice, midiNotes]);
 
   const kitName = () => (blobRef.current?.name ?? "Video").replace(/\.[^.]+$/, "");
   const saveKit = async () => {
@@ -165,7 +170,7 @@ export function VideoSampler() {
     setSaving(true);
     try {
       await saveToLibrary({ kind: "sample", location: "cloud", folder: "Video kits", name: `${kitName()} · ${chops.length} chops`, audio: cur.blob,
-        data: { mediaType: "video", mimeType: cur.blob.type || "video/mp4", filename: cur.name, videoKit: { chops, sourceBpm, targetBpm, stretchOn, noteGrid, chopCount, sensitivity, manualSlice } } });
+        data: { mediaType: "video", mimeType: cur.blob.type || "video/mp4", filename: cur.name, videoKit: { chops, sourceBpm, targetBpm, stretchOn, noteGrid, chopCount, sensitivity, manualSlice, midiNotes } } });
       toast.success("Video and chops saved to your library", { description: "My Library › Video kits — opens on phone and desktop" });
     } catch (e) { toast.error("Could not save the video", { description: e instanceof Error ? e.message : "Sign in and try again." }); }
     finally { setSaving(false); }
@@ -181,7 +186,7 @@ export function VideoSampler() {
     select(id); setPanel("sampler");
   };
   const evenChops = (n: number) => { if (buffer) { seek(0); setChopCount(n); setChops(Array.from({ length: n }, (_, i) => i * buffer.duration / n)); } };
-  const removeChop = (i: number) => { seek(position); setChops((c) => c.filter((_, j) => j !== i)); };
+  const removeChop = (i: number) => { seek(position); setChops((c) => c.filter((_, j) => j !== i)); setMidiNotes((notes) => notes.filter((_, j) => j !== i)); setLearnPad(null); };
 
   const film = async () => {
     if (filming) { recorder.current?.stop(); return; }
@@ -209,6 +214,24 @@ export function VideoSampler() {
     v.currentTime = a; void v.play(); setActive(i);
     stopTimer.current = window.setTimeout(() => { v.pause(); setActive(null); }, Math.max(50, (b - a) / speed * 1000));
   };
+
+  const learnNote = (index: number, pitch: number, channel: number) => {
+    setMidiNotes((notes) => assignVideoPadNote(notes, index, { pitch, channel }));
+    setLearnPad(null);
+    toast.success(`Pad ${index + 1} · MIDI note ${pitch}, channel ${channel + 1}`);
+  };
+  useEffect(() => claimMidiNotes((msg) => {
+    if (msg.type !== "on" && msg.type !== "off") return false;
+    const key = `${msg.channel}:${msg.pitch}`;
+    if (msg.type === "off") return consumedNotes.current.delete(key);
+    if (filming || !chops.length) return false;
+    if (learnPad !== null && learnPad < chops.length) {
+      consumedNotes.current.add(key); learnNote(learnPad, msg.pitch, msg.channel); return true;
+    }
+    const index = midiNotes.findIndex((note, i) => i < chops.length && note?.pitch === msg.pitch && note.channel === msg.channel);
+    if (index < 0) return false;
+    consumedNotes.current.add(key); trigger(index); return true;
+  }));
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -306,14 +329,26 @@ export function VideoSampler() {
       {chops.map((t, i) => <div key={i} className="flex min-w-0 flex-col gap-1">
         <Button variant="secondary" data-active={active === i} data-pad-color={i % 4} aria-pressed={active === i} disabled={filming} className="video-chop-pad h-36 min-w-0 flex-col gap-2 border px-3 py-2 text-xs" onClick={() => trigger(i)} aria-label={`Play video chop ${i + 1}`}>
           <span className="flex w-full justify-between font-mono text-sm"><span>{i + 1}</span><span>{PAD_KEYS[i]?.toUpperCase()} · {['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B','C','C♯','D','D♯'][i]}{i < 12 ? '4' : '5'}</span></span>
-          <span className="pointer-events-none block h-16 w-full overflow-hidden rounded border border-border bg-background"><WaveformView className="!h-full !w-full" peaks={padPeaks[i] ?? []} label={`Video chop ${i + 1} waveform`} /></span>
+          <span className="pointer-events-none block h-16 w-full overflow-hidden"><WaveformView color="currentColor" grid={false} className="!h-full !w-full" peaks={padPeaks[i] ?? []} label={`Video chop ${i + 1} waveform`} /></span>
           <span className="font-mono text-[10px]">{t.toFixed(2)}–{(chops[i + 1] ?? buffer?.duration ?? 0).toFixed(2)}s</span>
         </Button>
+        <div className="flex items-center gap-1">
+          <Button variant={learnPad === i ? "default" : "outline"} className="h-10 min-w-0 flex-1 px-1 text-xs" aria-label={`MIDI Learn video pad ${i + 1}`} aria-pressed={learnPad === i} disabled={filming} onClick={() => {
+            if (learnPad === i) { setLearnPad(null); return; }
+            setLearnPad(i); if (!midiInputId) enableMidi();
+          }}>{learnPad === i ? "Press a key…" : midiNotes[i] ? `MIDI ${midiNotes[i]?.pitch} · CH ${(midiNotes[i]?.channel ?? 0) + 1}` : "MIDI Learn"}</Button>
+          {midiNotes[i] && <Button variant="ghost" size="icon" className="size-10" aria-label={`Clear video pad ${i + 1} MIDI mapping`} onClick={() => setMidiNotes((notes) => notes.map((note, j) => j === i ? null : note))}><Trash2 className="size-3" /></Button>}
+        </div>
         <label className="flex items-center justify-between gap-1 text-xs text-muted-foreground">Start<input type="number" min={chops[i - 1] == null ? 0 : (chops[i - 1] ?? 0) + 0.01} max={(chops[i + 1] ?? buffer?.duration ?? 0) - 0.01} step={0.01} value={Number(t.toFixed(3))} aria-label={`Video chop ${i + 1} start seconds`} className="h-9 w-20 rounded border border-border bg-surface-2 px-1 font-mono text-foreground" onChange={(e) => { const value = e.currentTarget.valueAsNumber; if (Number.isFinite(value)) editChop(i, snapVideoTime(value, sourceBpm, noteGrid)); }} /></label>
         <div className="flex"><Button variant="ghost" className="h-10 flex-1 px-1 text-xs" onClick={() => void toProject(i)}><Plus className="size-3" />To track</Button><Button variant="ghost" className="h-10 w-10 p-0" aria-label={`Delete video chop ${i + 1}`} onClick={() => removeChop(i)}><Trash2 className="size-4" /></Button></div>
       </div>)}
     </div>}
-    {chops.length > 0 && <Keyboard skinKey="video-keyboard" disabled={filming} mappedPads={{ count: chops.length, active, keys: PAD_KEYS }} onPlay={(note) => { const index = videoPadForNote(note, chops.length); if (index !== null) trigger(index); }} />}
+    {chops.length > 0 && <div className="flex flex-wrap items-center gap-2">
+      <Button variant="outline" className="h-10" onClick={() => enableMidi()}>Connect MIDI keyboard</Button>
+      <select aria-label="Video MIDI input" className="h-10 max-w-full rounded border border-border bg-surface px-2 text-xs text-foreground" value={midiInputId ?? ""} onChange={(e) => setMidiInput(e.target.value || null)}><option value="">None</option><option value="all">All devices</option>{midiInputs.map((input) => <option key={input.id} value={input.id}>{input.name}</option>)}</select>
+      {!midiSupported() && <span className="text-xs text-muted-foreground">Hardware MIDI needs a supported browser, such as Chrome or Edge.</span>}
+    </div>}
+    {chops.length > 0 && <Keyboard skinKey="video-keyboard" disabled={filming} mappedPads={{ count: chops.length, active, keys: PAD_KEYS }} onPlay={(note) => { if (learnPad !== null) { learnNote(learnPad, note, 0); return; } const index = videoPadForNote(note, chops.length); if (index !== null) trigger(index); }} />}
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
     <p className="text-[11px] text-muted-foreground">Video itself is not exported with the song. Audio decoding and pitch-preserving video playback depend on browser codec support. Account saving requires sign-in.</p>
   </section>;
