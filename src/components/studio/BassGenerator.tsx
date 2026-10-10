@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePreviewTrack } from "@/lib/synclab/use-preview-track";
 import { PreviewButtons } from "./PreviewButtons";
 import { toast } from "sonner";
@@ -34,6 +34,7 @@ export function BassGenerator() {
   const pv = usePreviewTrack();
   const label = BASS_STYLES.find((s) => s.id === style)!.label.toUpperCase();
   const [generated, setGenerated] = useState<ReturnType<typeof generateBass> | null>(null);
+  useEffect(() => setGenerated(null), [roots, style, octave, barSteps]);
   const generate = () => {
     const notes = generateBass(roots, style, barSteps, octave);
     setGenerated(notes);
