@@ -1,3 +1,4 @@
+import { encodeWav } from "./bounce";
 import { sendExternalNote } from "./external-midi";
 import { keysSnapshot, subscribeKeys } from "./active-keys";
 import type { DrumKitId, DrumPad, PluginInstance, SynthPatch, Track } from "./types";
@@ -1694,6 +1695,16 @@ export class SyncLabEngine {
       throw new Error("This browser recorded the take in a format it can't play back. Try Chrome or Safari.");
     }
     duration = buf.duration;
+    // Microphone takes often arrive very quiet (browser input, no preamp gain).
+    // Auto-level each take so its loudest peak sits at -1 dBFS (max +30 dB boost).
+    let loud = 0;
+    for (let c = 0; c < buf.numberOfChannels; c++) { const ch = buf.getChannelData(c); for (let i = 0; i < ch.length; i++) loud = Math.max(loud, Math.abs(ch[i] ?? 0)); }
+    let outBlob = blob;
+    if (loud > 0.0005 && loud < 0.89) {
+      const g = Math.min(31.6, 0.89 / loud);
+      for (let c = 0; c < buf.numberOfChannels; c++) { const ch = buf.getChannelData(c); for (let i = 0; i < ch.length; i++) ch[i] = (ch[i] ?? 0) * g; }
+      outBlob = encodeWav({ left: buf.getChannelData(0), right: buf.getChannelData(Math.min(1, buf.numberOfChannels - 1)), sampleRate: buf.sampleRate });
+    }
     const data = buf.getChannelData(0);
     const buckets = Math.min(1600, Math.max(160, Math.ceil(duration * 80)));
     const size = Math.max(1, Math.ceil(data.length / buckets));
@@ -1702,7 +1713,7 @@ export class SyncLabEngine {
       for (let i = b * size; i < Math.min(data.length, (b + 1) * size); i++) peak = Math.max(peak, Math.abs(data[i] ?? 0));
       peaks.push(peak);
     }
-    const url = URL.createObjectURL(blob);
+    const url = URL.createObjectURL(outBlob);
     this.sampleBuffers.set(url, buf);
     return { peaks, duration, url };
   }
