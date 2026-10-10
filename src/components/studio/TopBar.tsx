@@ -58,6 +58,36 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { PlanBadge } from "@/lib/synclab/plan";
 import { openHelp } from "@/components/studio/HelpCenter";
 import { MasterMeter } from "@/components/studio/MasterMeter";
+import { useState } from "react";
+
+/** Phone BPM field: lets you type freely, then applies the tempo when it's a valid 60–190 or when you leave the field. */
+function BpmInput({ bpm, onChange }: { bpm: number; onChange: (bpm: number) => void }) {
+  const [draft, setDraft] = useState<string | null>(null);
+  const commit = (raw: string) => {
+    const next = Math.round(Number(raw));
+    if (Number.isFinite(next) && next >= 60 && next <= 190) onChange(next);
+    setDraft(null);
+  };
+  return (
+    <input
+      aria-label="BPM"
+      type="number"
+      inputMode="numeric"
+      min={60}
+      max={190}
+      value={draft ?? bpm}
+      className="phone-bpm-input w-16 bg-transparent text-base tabular-nums text-primary"
+      onFocus={(e) => { setDraft(String(bpm)); e.target.select(); }}
+      onChange={(e) => {
+        setDraft(e.target.value);
+        const next = Number(e.target.value);
+        if (e.target.value.length >= 2 && Number.isFinite(next) && next >= 60 && next <= 190) onChange(next);
+      }}
+      onBlur={(e) => commit(e.target.value)}
+      onKeyDown={(e) => { if (e.key === "Enter") { commit((e.target as HTMLInputElement).value); (e.target as HTMLInputElement).blur(); } }}
+    />
+  );
+}
 import { IdeaRecorder } from "@/components/studio/IdeaRecorder";
 import { PhonePages } from "./PhonePages";
 import { useEffect, useState } from "react";
