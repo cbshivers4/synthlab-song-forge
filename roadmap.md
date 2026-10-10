@@ -244,3 +244,4 @@
 - [x] Video Sampler: time stretch (video BPM → target/song tempo, pitch kept) beside the pinned waveform on desktop and phone; verified signed-in
 - [x] Video Sampler: save video+chops to library, even/delete chops, Open in Sampler, auto save restore
 - [x] App auto save: flush on close, keep audio in browser storage for recovery
+- [x] Account autosave: open project saves to the account ~20s after edits and on close/hide, so work follows between desktop and phone (verified: edit on desktop viewport updated the cloud project row).

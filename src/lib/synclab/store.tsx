@@ -22,6 +22,8 @@ import { markLiveHit, isLiveHit, clearLiveHits, neighbourLiveHits } from "./live
 import { keyDown, keyUp } from "./active-keys";
 import { controllerAutoMap } from "./controller-profiles";
 import type { CloudSession } from "./cloud";
+import { saveCloudProject } from "./cloud";
+import { useApp } from "./app-state";
 import type {
   AudioClip,
   AutomationLane,
@@ -1651,6 +1653,45 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     document.addEventListener("visibilitychange", hidden);
     return () => { window.removeEventListener("pagehide", flush); window.removeEventListener("beforeunload", flush); document.removeEventListener("visibilitychange", hidden); };
   }, [buildSnapshot]);
+
+  // ---- Account autosave: keep the open project synced so work follows you between desktop and phone ----
+  const app = useApp();
+  const projectRef = useRef(app.project);
+  projectRef.current = app.project;
+  const cloudSaveRef = useRef<{ running: boolean; again: boolean; failedAt: number }>({ running: false, again: false, failedAt: 0 });
+  const cloudAutosave = useCallback(async () => {
+    const project = projectRef.current;
+    const state = cloudSaveRef.current;
+    if (!project) return;
+    if (state.running) { state.again = true; return; }
+    state.running = true;
+    try {
+      const saved = await saveCloudProject({ ...project, id: project.id ?? "" }, buildSnapshot());
+      if (!project.id) app.setProject({ ...project, id: saved.id, openedAt: Date.now() });
+    } catch {
+      state.failedAt = Date.now();
+    } finally {
+      state.running = false;
+      if (state.again) { state.again = false; void cloudAutosave(); }
+    }
+  }, [app, buildSnapshot]);
+
+  // Save to the account shortly after the last edit (already-uploaded audio is not re-uploaded).
+  useEffect(() => {
+    if (!app.signedIn || !app.project) return;
+    if (Date.now() - cloudSaveRef.current.failedAt < 60000) return;
+    const id = window.setTimeout(() => void cloudAutosave(), 20000);
+    return () => window.clearTimeout(id);
+  }, [app.signedIn, app.project, tracks, buses, vcas, auxReturns, fxChains, sections, folders, cloudAutosave]);
+
+  // Best-effort account save when the app is closed or hidden; the local autosave above is the guaranteed copy.
+  useEffect(() => {
+    const flush = () => { if (app.signedIn && projectRef.current) void cloudAutosave(); };
+    const hidden = () => { if (document.visibilityState === "hidden") flush(); };
+    window.addEventListener("pagehide", flush);
+    document.addEventListener("visibilitychange", hidden);
+    return () => { window.removeEventListener("pagehide", flush); document.removeEventListener("visibilitychange", hidden); };
+  }, [app.signedIn, cloudAutosave]);
 
   // Bring the last session back after a refresh or a crash.
   useEffect(() => {
