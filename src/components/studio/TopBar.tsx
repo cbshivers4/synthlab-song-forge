@@ -28,6 +28,8 @@ import {
   Timer,
   Waves,
   Menu,
+  Undo2,
+  Redo2,
 } from "lucide-react";
 
 import { requestBluetoothSettings } from "./Settings";
@@ -388,6 +390,7 @@ export function TopBar() {
             </PopoverTrigger>
             <PopoverContent align="end" className="w-[min(92vw,420px)]"><SkinControls skinKey="transport" image /></PopoverContent>
           </Popover>
+          <TransportUndo mobile={isMobile} />
           <QuickNotes />
           <PlanBadge />
           <Button
@@ -739,3 +742,15 @@ function AudioStatus() {
   );
 }
 
+
+/** Undo/redo on the transport, sharing the project history used by Edit menu and shortcuts. */
+function TransportUndo({ mobile }: { mobile: boolean }) {
+  const { undo, redo, canUndo, canRedo } = useStudio();
+  const cls = mobile ? "size-11" : "size-8";
+  return (
+    <>
+      <Button variant="outline" size="icon" className={cls} aria-label="Undo" title="Undo (Ctrl/Cmd+Z)" disabled={!canUndo} onClick={undo}><Undo2 className="size-4" /></Button>
+      <Button variant="outline" size="icon" className={cls} aria-label="Redo" title="Redo (Ctrl/Cmd+Shift+Z)" disabled={!canRedo} onClick={redo}><Redo2 className="size-4" /></Button>
+    </>
+  );
+}
