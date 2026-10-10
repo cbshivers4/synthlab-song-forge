@@ -3,9 +3,9 @@ import { applyPreset, defaultPads } from "./presets";
 import type { MidiNote } from "./types";
 
 export interface GeneratedPattern {
-  notes?: Pick<MidiNote, "step" | "length" | "pitch" | "velocity">[];
-  hits?: { step: number; kind: string; velocity: number }[];
-  instrument?: string;
+  notes?: Pick<MidiNote, "step" | "length" | "pitch" | "velocity">[] | undefined;
+  hits?: { step: number; kind: string; velocity: number }[] | undefined;
+  instrument?: string | undefined;
   steps: number;
 }
 
