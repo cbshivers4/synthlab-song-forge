@@ -236,7 +236,7 @@ export function LibraryPanel() {
                   <span className="flex-1 truncate font-mono text-[11px]">{i.name}</span>
                   <button type="button" aria-label={`Load ${i.name}`} title="Load into the studio" onClick={() => void load(i)} className="text-muted-foreground hover:text-primary"><Plus className="size-3" /></button>
                   <button type="button" aria-label={`Download ${i.name}`} title="Download a copy to this computer" onClick={() => void downloadLibraryItem(i)} className="text-muted-foreground hover:text-primary"><Download className="size-3" /></button>
-                  <button type="button" aria-label={`Delete ${i.name}`} onClick={() => { if (confirm(`Delete "${i.name}"?`)) void deleteFromLibrary(i).catch(() => toast.error("Could not delete")); }} className="text-muted-foreground hover:text-destructive"><Trash2 className="size-3" /></button>
+                  <button type="button" aria-label={`Delete ${i.name}`} title={armingDelete === i.id ? "Tap again to delete" : "Delete"} onClick={() => askDelete(i)} className={armingDelete === i.id ? "text-destructive" : "text-muted-foreground hover:text-destructive"}><Trash2 className={`size-3 ${armingDelete === i.id ? "fill-current" : ""}`} /></button>
                 </div>
               ))}
             </div>
