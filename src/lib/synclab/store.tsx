@@ -239,6 +239,8 @@ interface StudioState {
   vcas: Record<VcaId, BusState>;
   auxReturns: Record<AuxId, BusState>;
   sections: SongSection[];
+  projectNotes: string;
+  setProjectNotes: (notes: string) => void;
 }
 
 /** Shaped value of an automation curve at a step, held flat outside the drawn range. */
@@ -1801,6 +1803,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       vcas,
       auxReturns,
       sections,
+      projectNotes,
+      setProjectNotes,
       snapshot: buildSnapshot,
       restore: (session) => {
         applyingRef.current = true;
