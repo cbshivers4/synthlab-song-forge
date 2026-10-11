@@ -326,6 +326,11 @@ export function Sampler() {
     setHeld(null);
     if (track && s && !s.oneShot) getEngine().stopVoiceKey(track.id, s.chopChoke ? `chop-choke-${s.chopChoke}` : `chop-${index}`);
   };
+  const chopPads = useMidiPads(`sampler:${track?.id ?? "none"}`, Math.min(64, chops.length), (i, velocity) => {
+    if (!track || !s) return;
+    setHeld(i);
+    previewNote(track.id, s.rootNote + i, s.duration, velocity);
+  }, releaseChop);
 
   /** Cuts the trimmed region into n equal chops. */
   const chopInto = (n: number) => {
