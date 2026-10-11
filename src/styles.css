@@ -674,7 +674,7 @@
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--color-muted-foreground);
-  padding-inline: 0.5rem;
+  padding-inline: 0.75rem 0.5rem;
   white-space: nowrap;
 }
 .transport-glass[data-phone-transport="true"] .phone-rhythm-controls { min-height: 48px; }
