@@ -8,7 +8,7 @@
 - [x] Add a playable bass generator that creates editable MIDI patterns
 
 # Roadmap
-- [ ] Give all phone studio pages full height with an accessible transport overlay; verify timeline, mixer, Sounds and Tools while signed in.
+- [x] Give phone pages full height with a hidden-by-default transport overlay and rail toggle; signed-in portrait/landscape checks verified timeline, mixer, all 7 Sounds and 15 Tools pages, plus transport access with collapsed navigation.
 - [x] Fix reel recorder timeline meters on desktop and phone: read live stereo master taps without enabling microphone or capture; reflect transport playback status and preserve tape metering.
 - [x] Reel-to-reel recorder on phone and desktop: AudioWorklet recording, live stereo VU meters, moving reels, playback/seek/loop, gain/tone/saturation/speed knobs, WAV/MP3/FLAC/AIFF export and timeline transfer. Signed-in browser checks verified PCM capture, meters, reel motion, WAV/MP3 contents and phone controls; physical-device listening remains unverified.
 - [x] Move phone meters/MIDI below playback, retain Add track, correct shared drum-roll order and dark pad faces, and restore distinct Synth/Sampler opening; signed-in phone/desktop checks and drum identity/MIDI unit test passed.
