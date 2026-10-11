@@ -37,7 +37,7 @@ Phone drum tabs reuse DrumRoll and instrument pads for edits/tap recording; soun
 Keyboards reuse Keyboard and one note path; independent skin slots color opaque keys and wallpaper only the surround, preventing doubled notes.
 Paste content at the playhead onto the selected or explicit channel, preserving its settings; Duplicate track separately clones channels.
 Synth selection opens piano roll. Pin sampler waveform above Stretch/chops to keep cuts visible; PCM slices use previewNote for gate/choke.
-Transport: desktop wraps; phone uses shallow scrolling rows to preserve timeline height, shared Loop/rhythm setters, wide meters and a tools menu.
+PhoneStudio keeps transport mounted in a hidden-by-default overlay with a rail toggle so pages use full height; desktop transport is unchanged.
 Phone shares audio/state with desktop; render all channels, tracks and creative tools in both phone menus with native scrolling, never an unpaged slice that hides entries.
 Drum snap is session-only and affects step writes, not existing hits, preserving patterns.
 Count-in haptics use the shared beat timer and guarded vibration support, independent of audio.

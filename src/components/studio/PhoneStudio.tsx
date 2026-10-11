@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { AudioLines, ChevronLeft, ChevronRight, FolderOpen, Home, Music2, Scissors, SlidersHorizontal, Wand2, Settings2, Radio, Disc3, Grid2x2, Piano, Gauge, FileSearch, Cpu, Palette, NotebookPen, LifeBuoy, Mic, Bot, Sparkles, Film } from "lucide-react";
+import { AudioLines, ChevronLeft, ChevronRight, FolderOpen, Home, Music2, Scissors, SlidersHorizontal, Wand2, Settings2, Radio, Disc3, Grid2x2, Piano, Gauge, FileSearch, Cpu, Palette, NotebookPen, LifeBuoy, Mic, Bot, Sparkles, Film, PanelTop, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStudio, type PanelId } from "@/lib/synclab/store";
 import { useApp } from "@/lib/synclab/app-state";
@@ -33,10 +33,12 @@ const tools = [
 ] as const;
 
 export function PhoneStudio({ children }: { children: ReactNode }) {
-  const { panel, setPanel } = useStudio();
+  const { panel, setPanel, transport } = useStudio();
   const { setStage } = useApp();
   const [room, setRoom] = useState<"edit" | "sounds" | "tools">("edit");
   const [railOpen, setRailOpen] = useState(true);
+  const [transportOpen, setTransportOpen] = useState(false);
+  useEffect(() => { setTransportOpen(false); }, [panel]);
   // Mobile studio opens automatically — no rotate gate.
   const consoleRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -50,7 +52,7 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
     observer.observe(document.body);
     return () => { observer.disconnect(); window.removeEventListener("resize", size); document.documentElement.classList.remove("phone-console-active"); };
   }, []);
-  const enter = (next: typeof room) => { setPanel(null); setRoom(next); };
+  const enter = (next: typeof room) => { setTransportOpen(false); setPanel(null); setRoom(next); };
   const list = room === "sounds" ? sounds : tools;
   return <div ref={consoleRef} className="phone-console mobile-studio landscape-prod flex h-[100dvh] min-w-0 overflow-hidden bg-background text-foreground">
     <div className="relative shrink-0 transition-[width] duration-200 ease-out" style={{ width: railOpen ? "5rem" : "3rem" }}>
@@ -62,11 +64,15 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
       </div>
       <Button variant="ghost" size="icon" className="size-12 shrink-0" aria-label="Home and projects" onClick={() => setStage("start")}><Home /></Button>
       </>}
+      <Button variant="ghost" className={`h-12 w-full shrink-0 flex-col gap-0.5 px-0 text-[9px] font-semibold ${transport.recording ? "text-destructive" : transportOpen || transport.playing ? "text-primary" : "text-muted-foreground"}`} aria-label={transportOpen ? "Hide transport" : "Show transport"} title={transportOpen ? "Hide transport" : "Show transport"} aria-expanded={transportOpen} aria-controls="phone-transport-overlay" onClick={() => setTransportOpen((open) => !open)}><PanelTop className="size-5" />{railOpen ? "TRANSPORT" : transport.recording ? "REC" : transport.playing ? "PLAY" : ""}</Button>
       <Button variant="outline" size="icon" className="phone-rail-toggle mt-auto shrink-0 self-center" aria-label={railOpen ? "Hide navigation bar" : "Show navigation bar"} aria-expanded={railOpen} onClick={() => setRailOpen((open) => !open)}>{railOpen ? <ChevronLeft className="size-4" /> : <ChevronRight className="size-4" />}</Button>
     </nav>
     </div>
-    <main className="phone-console-stage flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-      <TopBar />
+    <main className="phone-console-stage relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+      <div id="phone-transport-overlay" hidden={!transportOpen} className="absolute inset-x-0 top-0 z-50 max-h-full overflow-auto border-b border-border bg-background shadow-lg">
+        <div className="flex h-12 items-center justify-between border-b border-border bg-surface px-3"><span className="text-sm font-semibold">Transport</span><Button variant="ghost" size="icon" className="size-12" aria-label="Close transport" onClick={() => setTransportOpen(false)}><X /></Button></div>
+        <TopBar />
+      </div>
       {!panel && room === "edit" && <PhonePages name="Timeline"><Timeline phonePaged /></PhonePages>}
       {panel && children}
       {!panel && room !== "edit" && <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
