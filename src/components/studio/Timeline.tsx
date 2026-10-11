@@ -2533,16 +2533,17 @@ function BarNumbering({ gridRef, bars }: { gridRef: React.RefObject<HTMLDivEleme
   );
 }
 
-function Ruler() {
+/**
+ * Song length + export range. Shared by the desktop ruler menu and the phone
+ * timeline tools menu, so the same controls exist on both layouts.
+ */
+function TimelineOptionsPanel() {
   const { transport, setTransport } = useStudio();
-  const gridRef = useRef<HTMLDivElement>(null);
   const bars = Math.max(1, transport.bars ?? 4);
-  const total = bars * stepsPerBar();
+  const total = songSteps(bars);
   const lo = transport.loopStart ?? 0;
   const hi = Math.max(lo + 1, transport.loopEnd ?? total);
   const exportOn = transport.exportStart != null && transport.exportEnd != null;
-  const exLo = exportOn ? Math.min(transport.exportStart!, transport.exportEnd! - 1) : 0;
-  const exHi = exportOn ? Math.max(transport.exportEnd!, exLo + 1) : total;
 
   const setBars = (next: number) => {
     const b = Math.min(512, Math.max(1, next));
@@ -2554,6 +2555,68 @@ function Ruler() {
       step: transport.step % steps,
     });
   };
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <div className="mb-1 font-mono text-[9px] uppercase tracking-wider text-muted-foreground">Song length</div>
+        <div className="flex items-center gap-0.5 rounded-[3px] border border-border bg-background/70 px-0.5" title="Timeline length in bars">
+          <button
+            type="button"
+            aria-label="Fewer bars"
+            className="min-w-12 px-3 py-2 font-mono text-[15px] text-muted-foreground hover:text-foreground disabled:opacity-30"
+            disabled={bars <= 1}
+            onClick={() => setBars(bars - 1)}
+          >
+            −
+          </button>
+          <span className="min-w-16 flex-1 text-center font-mono text-[13px] text-primary">{bars} {bars === 1 ? "BAR" : "BARS"}</span>
+          <button
+            type="button"
+            aria-label="More bars"
+            className="min-w-12 px-3 py-2 font-mono text-[15px] text-muted-foreground hover:text-foreground disabled:opacity-30"
+            disabled={bars >= 512}
+            onClick={() => setBars(bars + 1)}
+          >
+            +
+          </button>
+        </div>
+      </div>
+      <div>
+        <div className="mb-1 font-mono text-[9px] uppercase tracking-wider text-muted-foreground">Export range</div>
+        <button
+          type="button"
+          aria-pressed={exportOn}
+          title="Show export start/end flags — drag them on the ruler to choose what gets exported"
+          onClick={() =>
+            setTransport(exportOn ? { exportStart: null, exportEnd: null } : { exportStart: 0, exportEnd: total })
+          }
+          className={`flex w-full items-center gap-1.5 rounded-[3px] border px-2 py-2 font-mono text-[11px] uppercase tracking-wider ${
+            exportOn
+              ? "border-amber-400/70 bg-amber-400/15 text-amber-300"
+              : "border-border bg-background/70 text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Flag className="size-3.5" /> {exportOn ? "Hide export flags" : "Show export flags"}
+        </button>
+        <p className="mt-1 font-mono text-[9px] leading-tight text-muted-foreground">Drag the amber flags on the ruler to choose what gets exported.</p>
+      </div>
+    </div>
+  );
+}
+
+function Ruler() {
+  const { transport, setTransport } = useStudio();
+  const isMobile = useIsMobile();
+  const gridRef = useRef<HTMLDivElement>(null);
+  const bars = Math.max(1, transport.bars ?? 4);
+  const total = bars * stepsPerBar();
+  const lo = transport.loopStart ?? 0;
+  const hi = Math.max(lo + 1, transport.loopEnd ?? total);
+  const exportOn = transport.exportStart != null && transport.exportEnd != null;
+  const exLo = exportOn ? Math.min(transport.exportStart!, transport.exportEnd! - 1) : 0;
+  const exHi = exportOn ? Math.max(transport.exportEnd!, exLo + 1) : total;
+
 
   const stepFromX = (clientX: number) => {
     const el = gridRef.current;
@@ -2639,66 +2702,27 @@ function Ruler() {
           </span>
         </div>
         <div className="flex items-center gap-1.5">
-        {/* timeline options: song length + export flags live in one menu */}
-        <Popover>
-          <PopoverTrigger asChild>
-            <button
-              type="button"
-              aria-label="Timeline options"
-              title="Song length and export range"
-              className="flex items-center gap-1 rounded-[3px] border border-border bg-background/70 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-muted-foreground hover:text-foreground"
-            >
-              <Settings2 className="size-3" /> {bars} {bars === 1 ? "bar" : "bars"}
-              {exportOn && <Flag className="size-3 text-amber-300" />}
-            </button>
-          </PopoverTrigger>
-          <PopoverContent align="start" className="w-60 space-y-3 p-3">
-            <div className="label-xs">Timeline options</div>
-            <div>
-              <div className="mb-1 font-mono text-[9px] uppercase tracking-wider text-muted-foreground">Song length</div>
-              <div className="flex items-center gap-0.5 rounded-[3px] border border-border bg-background/70 px-0.5" title="Timeline length in bars">
-                <button
-                  type="button"
-                  aria-label="Fewer bars"
-                  className="px-2 py-1 font-mono text-[13px] text-muted-foreground hover:text-foreground disabled:opacity-30"
-                  disabled={bars <= 1}
-                  onClick={() => setBars(bars - 1)}
-                >
-                  −
-                </button>
-                <span className="min-w-14 flex-1 text-center font-mono text-[11px] text-primary">{bars} {bars === 1 ? "BAR" : "BARS"}</span>
-                <button
-                  type="button"
-                  aria-label="More bars"
-                  className="px-2 py-1 font-mono text-[13px] text-muted-foreground hover:text-foreground disabled:opacity-30"
-                  disabled={bars >= 512}
-                  onClick={() => setBars(bars + 1)}
-                >
-                  +
-                </button>
-              </div>
-            </div>
-            <div>
-              <div className="mb-1 font-mono text-[9px] uppercase tracking-wider text-muted-foreground">Export range</div>
+        {/* song length + export flags: menu on desktop, timeline tools menu on phones */}
+        {!isMobile && (
+          <Popover>
+            <PopoverTrigger asChild>
               <button
                 type="button"
-                aria-pressed={exportOn}
-                title="Show export start/end flags — drag them on the ruler to choose what gets exported"
-                onClick={() =>
-                  setTransport(exportOn ? { exportStart: null, exportEnd: null } : { exportStart: 0, exportEnd: total })
-                }
-                className={`flex w-full items-center gap-1.5 rounded-[3px] border px-2 py-1.5 font-mono text-[10px] uppercase tracking-wider ${
-                  exportOn
-                    ? "border-amber-400/70 bg-amber-400/15 text-amber-300"
-                    : "border-border bg-background/70 text-muted-foreground hover:text-foreground"
-                }`}
+                aria-label="Timeline options"
+                title="Song length and export range"
+                className="flex items-center gap-1 rounded-[3px] border border-border bg-background/70 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-muted-foreground hover:text-foreground"
               >
-                <Flag className="size-3.5" /> {exportOn ? "Hide export flags" : "Show export flags"}
+                <Settings2 className="size-3" /> {bars} {bars === 1 ? "bar" : "bars"}
+                {exportOn && <Flag className="size-3 text-amber-300" />}
               </button>
-              <p className="mt-1 font-mono text-[8px] leading-tight text-muted-foreground">Drag the amber flags on the ruler to choose what gets exported.</p>
-            </div>
-          </PopoverContent>
-        </Popover>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-60 space-y-3 p-3">
+              <div className="label-xs">Timeline options</div>
+              <TimelineOptionsPanel />
+            </PopoverContent>
+          </Popover>
+        )}
+
         </div>
       </div>
       <div
@@ -3073,7 +3097,7 @@ export function Timeline({ phonePaged = false }: { phonePaged?: boolean }) {
   }, [transport.follow, transport.playing, transport.step, totalSteps]);
   return (
     <section className="mobile-timeline relative flex min-h-[210px] min-w-0 flex-1 flex-col overflow-hidden border-x border-b border-border bg-background/60 [--timeline-header-width:172px] sm:[--timeline-header-width:294px]">
-      {phonePaged ? <div className="phone-timeline-heading grid h-14 shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-border bg-surface/50 px-3"><TrackSearch /><div className="flex gap-1"><Popover><PopoverTrigger asChild><Button variant="outline" className="h-12 gap-1.5 px-3 font-display text-xs font-semibold tracking-wide" aria-label="Timeline quick tools"><Settings2 className="size-4" /> TOOLS</Button></PopoverTrigger><PopoverContent className="phone-edit-menu flex h-[min(80dvh,440px)] w-[min(90vw,720px)] flex-col overflow-hidden p-0"><div className="shrink-0 border-b border-border px-3 py-2.5 font-display text-sm font-semibold">Timeline tools</div><PhonePages name="Timeline tools"><div className="p-1"><h3 className="px-2 pb-1 pt-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Edit &amp; arrange</h3><EditToolbar /><h3 className="border-t border-border px-2 pb-1 pt-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Song parts</h3><SectionLane /></div></PhonePages></PopoverContent></Popover><AddTrackMenu size="sm" /></div></div> : <EditToolbar />}
+      {phonePaged ? <div className="phone-timeline-heading grid h-14 shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-border bg-surface/50 px-3"><TrackSearch /><div className="flex gap-1"><Popover><PopoverTrigger asChild><Button variant="outline" className="h-12 gap-1.5 px-3 font-display text-xs font-semibold tracking-wide" aria-label="Timeline quick tools"><Settings2 className="size-4" /> TOOLS</Button></PopoverTrigger><PopoverContent className="phone-edit-menu flex h-[min(80dvh,440px)] w-[min(90vw,720px)] flex-col overflow-hidden p-0"><div className="shrink-0 border-b border-border px-3 py-2.5 font-display text-sm font-semibold">Timeline tools</div><PhonePages name="Timeline tools"><div className="p-1"><h3 className="px-2 pb-1 pt-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Song length &amp; export</h3><div className="px-2 pb-2"><TimelineOptionsPanel /></div><h3 className="px-2 pb-1 pt-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Edit &amp; arrange</h3><EditToolbar /><h3 className="border-t border-border px-2 pb-1 pt-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Song parts</h3><SectionLane /></div></PhonePages></PopoverContent></Popover><AddTrackMenu size="sm" /></div></div> : <EditToolbar />}
       <div className="shrink-0 overflow-hidden">
         <div ref={timelineHeaderRef} className="min-w-[720px] sm:min-w-0">
           <Ruler />
