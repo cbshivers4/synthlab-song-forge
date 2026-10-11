@@ -16,6 +16,7 @@ import { SYNTH_PRESETS, defaultPatch } from "@/lib/synclab/presets";
 import type { EnvelopeParams, LfoWave, ModDest, ModSource, OscWave, SynthPatch, Track } from "@/lib/synclab/types";
 import { uid } from "@/lib/synclab/presets";
 import { toast } from "sonner";
+import { MidiLearnStrip } from "./MidiLearn";
 
 const WAVES: OscWave[] = ["sine", "triangle", "sawtooth", "square", "pulse", "noise", "wavetable"];
 
@@ -102,6 +103,7 @@ export function SynthEditor({ track }: { track: Track }) {
   return (
     <div className="studio-wallpaper space-y-4 rounded-md p-3" data-studio-panel="synth" style={skinBackground(skin)} {...drop}>
       <SkinControls skinKey="synth" image />
+      <MidiLearnStrip id={track.id} label={`${track.name} — every knob below also has its own MIDI button`} />
       <div className="flex flex-wrap items-center gap-2">
         <Select value={patch.name} onValueChange={(v) => loadPreset(track.id, v)}>
           <SelectTrigger className="w-64">

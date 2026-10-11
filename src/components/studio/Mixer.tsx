@@ -26,7 +26,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useStudio } from "@/lib/synclab/store";
 import { useApp } from "@/lib/synclab/app-state";
 
-import { MidiLearnBlock, MidiLearnButton } from "./MidiLearn";
+import { MidiLearnBlock, MidiLearnButton, MidiLearnStrip } from "./MidiLearn";
 import { TrackNotes } from "@/components/studio/TrackNotes";
 import { QuickNotes } from "@/components/studio/QuickNotes";
 import { TrackIcon, TrackStylePicker } from "@/components/studio/TrackStyle";
@@ -1803,6 +1803,7 @@ export function Mixer({ phonePage = 0, phoneChannels, phoneControlPage = "levels
         )}
       </div>
 
+      {(() => { const st = tracks.find((x) => x.id === selectedId); return st ? <div className="px-2 py-1"><MidiLearnStrip id={st.id} label={`${st.name} channel — move a knob/fader after tapping`} /></div> : null; })()}
       {tracks.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 px-6 py-14 text-center">
           <Sliders className="size-7 text-muted-foreground/60" />

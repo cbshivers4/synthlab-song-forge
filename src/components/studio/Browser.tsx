@@ -195,7 +195,7 @@ const loadFavs = (): Fav[] => {
 
 export function Browser() {
   const [q, setQ] = useState("");
-  const [open, setOpen] = useState<Record<string, boolean>>({ computer: true });
+  const [open, setOpen] = useState<Record<string, boolean>>({ computer: true, library: true });
   const [favs, setFavs] = useState<Fav[]>(loadFavs);
   const [cloud, setCloud] = useState<CloudProject[]>([]);
   const [userTemplates, setUserTemplates] = useState<UserTemplate[]>([]);
@@ -521,6 +521,7 @@ export function Browser() {
       {!searching && (
         <div className="grid grid-cols-2 gap-1.5">
           {[
+            { id: "library", label: "My Library", sub: "Saved & uploaded files", icon: <Save className="size-4" /> },
             { id: "instruments", label: "Instruments", sub: "Synths and sounds", icon: <Music2 className="size-4" /> },
             { id: "plugins", label: "Effects", sub: "Built-in effects", icon: <Waves className="size-4" /> },
             { id: "samples", label: "Loops & samples", sub: "Sample packs", icon: <AudioLines className="size-4" /> },
@@ -549,6 +550,11 @@ export function Browser() {
         </div>
       )}
 
+      {/* MY LIBRARY — saved samples, synth sounds, drum kits and notes in custom folders */}
+      <div>
+        <FolderHeader id="library" icon={<Save className="size-3 text-primary" />} label="MY LIBRARY" count={0} hasMatch={false} />
+        {isOpen("library", false) && <div className="ml-3 border-l-2 border-border"><LibraryPanel /></div>}
+      </div>
       {/* POOL — every audio clip in this session */}
       {(() => {
         const pool = tracks.flatMap((t) => (t.clips ?? []).map((c) => ({ t, c }))).filter(({ c }) => match(c.name));
@@ -600,11 +606,6 @@ export function Browser() {
         </div>
       )}
 
-      {/* MY LIBRARY — saved samples, synth sounds, drum kits and notes in custom folders */}
-      <div>
-        <FolderHeader id="library" icon={<Save className="size-3 text-primary" />} label="MY LIBRARY" count={0} hasMatch={false} />
-        {isOpen("library", false) && <div className="ml-3 border-l-2 border-border"><LibraryPanel /></div>}
-      </div>
       {/* COMPUTER — real audio files from a folder the user picks */}
       <div>
         <FolderHeader id="computer" icon={<FolderOpen className="size-3 text-primary" />} label="COMPUTER" count={folders.reduce((n, f) => n + f.files.length, 0)} hasMatch={folders.some((f) => f.files.some((x) => match(x.name)))} />
