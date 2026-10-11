@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Circle, Grid3x3, Plus, Save, Scissors, Square, Trash2, Upload } from "lucide-react";
+import { Circle, Grid3x3, Piano, Plus, Save, Scissors, Square, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { getEngine } from "@/lib/synclab/audio-engine";
@@ -53,6 +53,7 @@ export function VideoSampler() {
   const [stretchOn, setStretchOn] = useState(false);
   const [sourceBpm, setSourceBpm] = useState(120);
   const [targetBpm, setTargetBpm] = useState(() => Math.round(getEngine().tempo || 120));
+  const [showKeyboard, setShowKeyboard] = useState(true);
   /** Playback speed for pads and printed chops; video seconds stay the reference for seeks and cuts. */
   const speed = stretchOn ? Math.max(0.5, Math.min(2, targetBpm / sourceBpm)) : 1;
   useEffect(() => {
@@ -357,7 +358,8 @@ export function VideoSampler() {
       <select aria-label="Video MIDI input" className="h-10 max-w-full rounded border border-border bg-surface px-2 text-xs text-foreground" value={midiInputId ?? ""} onChange={(e) => setMidiInput(e.target.value || null)}><option value="">None</option><option value="all">All devices</option>{midiInputs.map((input) => <option key={input.id} value={input.id}>{input.name}</option>)}</select>
       {!midiSupported() && <span className="text-xs text-muted-foreground">Hardware MIDI needs a supported browser, such as Chrome or Edge.</span>}
     </div>}
-    {chops.length > 0 && <Keyboard skinKey="video-keyboard" disabled={filming} mappedPads={{ count: chops.length, active, keys: PAD_KEYS }} onPlay={(note) => { if (learnPad !== null) { learnNote(learnPad, note, 0); return; } const index = videoPadForNote(note, chops.length); if (index !== null) trigger(index); }} />}
+    {chops.length > 0 && <Button variant={showKeyboard ? "secondary" : "outline"} aria-pressed={showKeyboard} onClick={() => setShowKeyboard((value) => !value)}><Piano className="size-4" />{showKeyboard ? "Hide keyboard" : "Show keyboard"}</Button>}
+    {chops.length > 0 && showKeyboard && <section aria-label="Video sampler keyboard" className="min-w-0 border-t border-border pt-3"><Keyboard skinKey="video-keyboard" disabled={filming} mappedPads={{ count: chops.length, active, keys: PAD_KEYS }} onPlay={(note) => { if (learnPad !== null) { learnNote(learnPad, note, 0); return; } const index = videoPadForNote(note, chops.length); if (index !== null) trigger(index); }} /></section>}
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
     <p className="text-[11px] text-muted-foreground">Video itself is not exported with the song. Audio decoding and pitch-preserving video playback depend on browser codec support. Account saving requires sign-in.</p>
   </section>;
