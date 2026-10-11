@@ -263,3 +263,4 @@
 - [x] Bass Generator genre templates: Detroit Techno, Electro, House, Trance, Ghetto Tech (pattern, sound, key, tempo).
 - [x] Convert Voice: 21 grouped templates (gender/age, effects, harmony & space).
 - [x] AI tool panels isolated by an error boundary; Co-Producer reproduced working on preview and published sites. Published site needs republishing to show the new waveforms.
+- [x] Remove the phone timeline bar-count menu and place song length plus export range in the timeline Tools menu beside Add Track; signed-in phone checks verified the stepper and export flags, desktop ruler menu unchanged.
