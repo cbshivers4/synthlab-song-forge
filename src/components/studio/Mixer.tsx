@@ -244,8 +244,8 @@ export function InsertRack({
                 </DialogHeader>
                 <div className="grid gap-4 md:grid-cols-[1.4fr_1fr]">
                   <div className="space-y-3">
-                    <EffectDisplay plugin={p} height={220} onParam={(paramId, v) => onParam(p.id, paramId, v)} />
-                    <Scope scopeId={p.id} height={130} />
+                    <EffectDisplay plugin={p} height={280} onParam={(paramId, v) => onParam(p.id, paramId, v)} />
+                    <Scope scopeId={p.id} height={170} />
                   </div>
                   <div className="space-y-3">
                     <XYPad plugin={p} onParam={(paramId, v) => onParam(p.id, paramId, v)} />
