@@ -5,6 +5,9 @@ import { Button } from "@/components/ui/button";
 import { usePreviewTrack } from "@/lib/synclab/use-preview-track";
 import { PreviewButtons } from "./PreviewButtons";
 import { GeneratedWaveform } from "./GeneratedWaveform";
+import { PatternWaveform } from "./PatternWaveform";
+
+const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 import { useStudio } from "@/lib/synclab/store";
 import { openMic, preferredRecordingMime, releaseMic } from "@/lib/synclab/mic";
 import { alignToStart, analyseBeatbox, analyseMelody, type BeatHit, type HumNote } from "@/lib/synclab/hum-to-beat";
@@ -184,8 +187,17 @@ export function HumToBeat() {
         <div className="rounded-md border border-border bg-surface-2 p-3 font-mono text-xs">
           {result.mode === "beat"
             ? `Heard ${result.hits.length} hits — kick ${counts?.['kick'] ?? 0}, snare ${counts?.['snare'] ?? 0}, hat ${counts?.['hat'] ?? 0}`
-            : `Heard ${result.notes.length} notes`}
+            : `Heard ${result.notes.length} notes${result.notes.length ? ` — ${result.notes.slice(0, 16).map((n) => NOTE_NAMES[n.pitch % 12]! + (Math.floor(n.pitch / 12) - 1)).join(" ")}${result.notes.length > 16 ? " …" : ""}` : ""}`}
         </div>
+      )}
+      {result && (result.hits.length > 0 || result.notes.length > 0) && (
+        <PatternWaveform
+          bpm={transport.bpm}
+          label={result.mode === "beat" ? "Generated drum beat waveform" : "Generated melody waveform"}
+          pattern={result.mode === "beat"
+            ? { hits: result.hits, steps: lengthSteps(Math.max(...result.hits.map((h) => h.step))) }
+            : { notes: result.notes, instrument: "Metro Pluck", steps: lengthSteps(Math.max(...result.notes.map((n) => n.step + n.length - 1))) }}
+        />
       )}
     </section>
   );
