@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import { useApp } from "@/lib/synclab/app-state";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
-import synclabLogoAsset from "@/assets/synclab-logo-neon.jpg.asset.json";
+import synclabLogoUrl from "@/assets/synclab-logo-neon.jpg";
 import studioPhoto from "@/assets/hw-synth.jpg";
 import { toast } from "sonner";
 import { LegalFooter } from "@/components/legal/LegalPage";
@@ -55,6 +55,13 @@ const APPLE_ICON = (
     <path d="M17.05 20.28c-.98.95-2.05 1.79-3.72 1.79-1.63 0-2.21-1.02-4.14-1.02-1.97 0-2.64 1-4.04 1-1.59 0-2.73-1.58-3.72-3.01-2.02-2.92-3.57-8.25-1.5-11.83.99-1.77 2.81-2.89 4.81-2.89 1.54 0 2.62.91 3.73.91 1.05 0 2.51-1.09 4.38-1.09 1.29 0 3.16.48 4.39 2.09-3.48 1.94-2.92 6.51.59 7.94-.91 2.29-2.29 4.67-3.78 6.11zM13 1c0 2.1-1.63 4.2-3.75 4.2-.2 0-.41-.02-.6-.05.15-2.31 1.87-4.15 3.55-5.15.35-.2.57-.28.8-.28V1z" />
   </svg>
 );
+
+const LOVABLE_HOST_ZONES = ["lovable.app", "lovableproject.com", "lovableproject-dev.com", "lovable.dev"];
+
+function isLovableHost() {
+  const host = window.location.hostname;
+  return LOVABLE_HOST_ZONES.some((zone) => host === zone || host.endsWith(`.${zone}`));
+}
 
 export function WelcomeScreen() {
   const { setStage, setSignedIn } = useApp();
@@ -112,6 +119,16 @@ export function WelcomeScreen() {
 
   const oauth = async (provider: "google" | "apple") => {
     try {
+      // The /~oauth broker only exists on Lovable hosting; elsewhere (e.g. Netlify)
+      // go straight to Supabase, which redirects back with the session in the URL.
+      if (!isLovableHost()) {
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider,
+          options: { redirectTo: window.location.origin },
+        });
+        if (error) toast.error(error.message ?? "Sign-in failed");
+        return;
+      }
       const result = await lovable.auth.signInWithOAuth(provider, {
         redirect_uri: window.location.origin,
       });
@@ -129,7 +146,7 @@ export function WelcomeScreen() {
       <div className="login-inner mx-auto grid w-full grid-cols-1 items-center gap-8 px-5 py-8 sm:px-8 sm:py-12 md:grid-cols-2 lg:gap-16">
         {/* Brand & features side */}
         <div className="login-brand flex min-w-0 flex-col items-start text-left">
-          <img src={synclabLogoAsset.url} alt="SYNCLAB" className="login-logo rounded-xl border border-border object-cover" />
+          <img src={synclabLogoUrl} alt="SYNCLAB" className="login-logo rounded-xl border border-border object-cover" />
 
 
           <div className="login-brand-copy mb-5 space-y-4">

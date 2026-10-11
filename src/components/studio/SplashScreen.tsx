@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import synclabLogoAsset from "@/assets/synclab-logo-neon.jpg.asset.json";
+import synclabLogoUrl from "@/assets/synclab-logo-neon.jpg";
 
 const MAX_MS = 60_000; // hard ceiling — never longer than this
 const MIN_MS = 4200; // let the slow spin read before fading out
@@ -46,7 +46,7 @@ export function SplashScreen() {
     >
       <div className="spin-stage">
         <img
-          src={synclabLogoAsset.url}
+          src={synclabLogoUrl}
           alt="SYNCLAB"
           className="spin-logo w-[min(38vw,290px)] rounded-2xl shadow-[0_0_60px_color-mix(in_oklab,var(--primary)_35%,transparent)]"
         />
