@@ -1,4 +1,5 @@
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import { listLibrary, saveToLibrary } from "./library";
 
 export const isSharedMedia = (name: string) => /\.(mp3|mp4)$/i.test(name);
@@ -23,7 +24,13 @@ export async function retainMedia(blob: Blob, filename: string, folder = "Upload
 }
 
 export function retainMediaInBackground(blob: Blob, filename: string, folder?: string) {
-  void retainMedia(blob, filename, folder).catch((e) => toast.error("File not saved to your account library", {
+  void (async () => {
+    // Skip silently when signed out — background retention is a convenience,
+    // not something to nag guests about on every import/export.
+    const { data } = await supabase.auth.getSession();
+    if (!data.session) return;
+    await retainMedia(blob, filename, folder);
+  })().catch((e) => toast.error("File not saved to your account library", {
     description: e instanceof Error ? e.message : "Check your connection and sign in, then upload it in My Library.",
   }));
 }
