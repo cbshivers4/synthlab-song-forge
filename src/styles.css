@@ -763,32 +763,39 @@
 }
 
 /* Selected phone console: exact graphite/teal tokens, scoped away from desktop. */
-.phone-console, .phone-console-active [data-slot="popover-content"], .phone-console-active [data-slot="dialog-content"] {
-  --background: #15191c;
-  --foreground: #f2f5f4;
-  --surface: #30383b;
-  --border: var(--surface);
-  --surface-2: #30383b;
-  --card: var(--surface);
-  --card-foreground: var(--foreground);
-  --popover: var(--background);
-  --popover-foreground: var(--foreground);
-  --primary: #45c8b5;
-  --primary-foreground: var(--background);
-  --secondary: var(--surface);
-  --secondary-foreground: var(--foreground);
-  --muted: var(--surface);
-  --muted-foreground: color-mix(in oklab, var(--foreground) 70%, var(--background));
-  --accent: var(--primary);
-  --accent-foreground: var(--background);
-  --input: var(--surface);
-  --ring: var(--primary);
-  --gradient-panel: none;
-  --gradient-rack: none;
+.phone-console, html.phone-theme-active {
+  --background: #15191c !important;
+  --foreground: #f2f5f4 !important;
+  --surface: #30383b !important;
+  --border: var(--surface) !important;
+  --surface-2: #30383b !important;
+  --card: var(--surface) !important;
+  --card-foreground: var(--foreground) !important;
+  --popover: var(--surface) !important;
+  --popover-foreground: var(--foreground) !important;
+  --primary: #45c8b5 !important;
+  --primary-foreground: var(--background) !important;
+  --secondary: var(--surface) !important;
+  --secondary-foreground: var(--foreground) !important;
+  --muted: var(--surface) !important;
+  --muted-foreground: color-mix(in oklab, var(--foreground) 70%, var(--background)) !important;
+  --accent: var(--primary) !important;
+  --accent-foreground: var(--background) !important;
+  --input: var(--surface) !important;
+  --ring: var(--primary) !important;
+  --gradient-panel: none !important;
+  --gradient-rack: none !important;
   font-family: "Manrope", sans-serif;
   letter-spacing: 0;
 }
 .phone-console-active { overflow: hidden; }
+/* Default finishes follow the phone palette; custom wallpaper stays available. */
+.phone-console .studio-wallpaper:not([style*="background-image"]),
+.phone-console .creative-tool { background: var(--surface); }
+.phone-console .creative-tool .panel { background-image: none; background-color: var(--surface); }
+.phone-console .login-photo { display: none; }
+.phone-console .login-screen::after { background: var(--background); }
+.phone-console .login-screen .login-auth { background: var(--surface); }
 .phone-console h1, .phone-console h2, .phone-console h3 { font-family: "Sora", sans-serif; letter-spacing: 0; }
 .phone-console-stage > .studio-topbar, .phone-console-stage > .studio-topbar > div { background-image: none !important; background-color: var(--surface); }
 .phone-console .transport-layout { min-height: 64px; padding: 4px 12px !important; }
