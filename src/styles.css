@@ -764,10 +764,11 @@
 
 /* Selected phone console: exact graphite/teal tokens, scoped away from desktop. */
 .phone-console, .phone-console-active [data-slot="popover-content"], .phone-console-active [data-slot="dialog-content"] {
-  --background: #15191c;
+  --background: #050607;
   --foreground: #f2f5f4;
-  --surface: #30383b;
-  --surface-2: #30383b;
+  --surface: #14181a;
+  --border: #262c2f;
+  --surface-2: #1c2124;
   --card: var(--surface);
   --card-foreground: var(--foreground);
   --popover: var(--background);
@@ -780,7 +781,6 @@
   --muted-foreground: color-mix(in oklab, var(--foreground) 70%, var(--background));
   --accent: var(--primary);
   --accent-foreground: var(--background);
-  --border: var(--surface);
   --input: var(--surface);
   --ring: var(--primary);
   --gradient-panel: none;
@@ -849,7 +849,7 @@
 .phone-transport-menu .phone-page-controls { background: var(--surface); }
 .phone-transport-menu button { min-height: 44px; }
 .phone-console-active [role="dialog"], .phone-console-active .phone-transport-menu {
-  --background: #15191c; --surface: #30383b; --surface-2: #30383b; --foreground: #f2f5f4; --primary: #45c8b5;
+  --background: #050607; --surface: #14181a; --surface-2: #1c2124; --foreground: #f2f5f4; --primary: #45c8b5;
 }
 .phone-console .mobile-timeline #timeline-scroll > div > .flex.items-center,
 .phone-console .mobile-timeline #timeline-scroll > div > .m-2 { display: none; }
