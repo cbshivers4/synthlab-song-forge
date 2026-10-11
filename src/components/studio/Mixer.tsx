@@ -219,17 +219,17 @@ export function InsertRack({
       <div className="space-y-1">
         {list.length === 0 && <div className="font-mono text-[9px] text-muted-foreground">No effects</div>}
         {list.map((p) => (
-          <div key={p.id} className="rounded-sm border border-border bg-surface-2/50 px-1.5 py-1">
-            <div className="flex items-center gap-1">
-              <button onClick={() => onBypass(p.id)} title="Bypass">
-                <Power className={cn("size-3", p.bypass ? "text-muted-foreground" : "text-primary")} />
+          <div key={p.id} className="rounded-md border border-border bg-surface-2/50 px-2 py-1.5">
+            <div className="flex items-center gap-1.5">
+              <button onClick={() => onBypass(p.id)} title="Bypass" className="p-0.5">
+                <Power className={cn("size-4", p.bypass ? "text-muted-foreground" : "text-primary")} />
               </button>
-              <button className="flex-1 truncate text-left font-mono text-[9px] uppercase" onClick={() => setOpen(open === p.id ? null : p.id)}>
+              <button className="flex-1 truncate text-left font-mono text-[11px] uppercase" onClick={() => setOpen(open === p.id ? null : p.id)}>
                 {p.name}
                 <span className="ml-1 text-muted-foreground">{p.format}</span>
               </button>
-              <button onClick={() => onRemove(p.id)} title="Remove">
-                <Trash2 className="size-3 text-muted-foreground hover:text-destructive" />
+              <button onClick={() => onRemove(p.id)} title="Remove" className="p-0.5">
+                <Trash2 className="size-4 text-muted-foreground hover:text-destructive" />
               </button>
             </div>
             <Dialog open={open === p.id} onOpenChange={(o) => setOpen(o ? p.id : null)}>
