@@ -1375,11 +1375,11 @@ function FxMenu({ target, label }: { target: string; label: string }) {
             list.length > 0 ? "bg-primary/20 text-primary" : "bg-surface text-muted-foreground hover:text-foreground"
           )}
         >
-          <Settings2 className="size-2.5" /> {label}
+          <Settings2 className="size-3.5" /> {label}
           {list.length > 0 ? ` ${list.length}` : ""}
         </button>
       </PopoverTrigger>
-      <PopoverContent onInteractOutside={(e) => { if ((e.target as HTMLElement | null)?.closest?.("[role=dialog]")) e.preventDefault(); }} align="start" className="w-64 p-3">
+      <PopoverContent onInteractOutside={(e) => { if ((e.target as HTMLElement | null)?.closest?.("[role=dialog]")) e.preventDefault(); }} align="start" className="w-80 p-3">
         <InsertRack
           title={`${target.split(":")[1]?.toUpperCase()} effects`}
             midiId={target}
