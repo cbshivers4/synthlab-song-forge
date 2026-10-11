@@ -606,6 +606,7 @@ export function PadSampler() {
         </span>
       </div>
 
+      <MidiPadLearnBar pads={padMidi} label="pads" names={(i) => `pad ${i + 1} (current bank)`} />
       <div className={`performance-pad-grid grid grid-cols-4 gap-2 ${skinBackground(skin) ? "rounded-lg p-2" : ""}`} style={{ ...skinBackground(skin), cursor: skin.image ? "move" : undefined }} {...imageDrag}>
         {Array.from({ length: PADS_PER_BANK }, (_, i) => {
           const id = index(i);
