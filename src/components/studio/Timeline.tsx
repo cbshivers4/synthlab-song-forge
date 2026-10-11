@@ -45,8 +45,8 @@ import {
   Folder,
   FolderOpen,
 } from "lucide-react";
-import synclabLogoAsset from "@/assets/synclab-logo-neon.jpg.asset.json";
-const synclabLogo = synclabLogoAsset.url;
+import synclabLogoUrl from "@/assets/synclab-logo-neon.jpg";
+const synclabLogo = synclabLogoUrl;
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";

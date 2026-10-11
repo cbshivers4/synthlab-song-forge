@@ -12,7 +12,7 @@ import { useApp } from "@/lib/synclab/app-state";
 import { KEYS, TEMPLATES, TIME_SIGS, templateById } from "@/lib/synclab/templates";
 import { useStudio } from "@/lib/synclab/store";
 import { toast } from "sonner";
-import synclabLogoAsset from "@/assets/synclab-logo-neon.jpg.asset.json";
+import synclabLogoUrl from "@/assets/synclab-logo-neon.jpg";
 import { listUserTemplates, removeUserTemplate, type UserTemplate } from "@/lib/synclab/user-templates";
 import { deleteCloudProject, listCloudProjects, loadCloudProject, renameCloudProject, saveCloudProject, type CloudProject } from "@/lib/synclab/cloud";
 import { supabase } from "@/integrations/supabase/client";
@@ -223,7 +223,7 @@ export function StartScreen() {
       <div className="mx-auto w-full max-w-7xl overflow-hidden rounded-md border border-border bg-surface shadow-xl shadow-background">
         <header className="flex flex-wrap items-center justify-between gap-4 border-b border-border bg-surface-2 px-4 py-4 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
-            <img src={synclabLogoAsset.url} alt="SYNCLAB logo" className="size-11 shrink-0 rounded-sm object-cover" />
+            <img src={synclabLogoUrl} alt="SYNCLAB logo" className="size-11 shrink-0 rounded-sm object-cover" />
             <div className="min-w-0">
               <h1 className="font-display text-lg font-semibold text-foreground sm:text-xl">SYNCLAB</h1>
               <p className="font-mono text-[10px] text-muted-foreground">CREATE. RECORD. PRODUCE. FINISH.</p>

@@ -93,8 +93,8 @@ import { IdeaRecorder } from "@/components/studio/IdeaRecorder";
 import { PhonePages } from "./PhonePages";
 import { useEffect, useState } from "react";
 import { SkipBack } from "lucide-react";
-import synclabLogoAsset from "@/assets/synclab-logo-neon.jpg.asset.json";
-const synclabLogo = synclabLogoAsset.url;
+import synclabLogoUrl from "@/assets/synclab-logo-neon.jpg";
+const synclabLogo = synclabLogoUrl;
 
 export function TopBar() {
   const isMobile = useIsMobile();
