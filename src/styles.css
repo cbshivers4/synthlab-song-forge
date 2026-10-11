@@ -965,13 +965,15 @@
   min-width: 44px;
 }
 .phone-console .transport-glass[data-phone-transport="true"] .transport-glass-display {
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   overflow-x: auto;
-  touch-action: pan-x;
+  touch-action: pan-x pan-y;
   scrollbar-width: thin;
-  height: 56px;
+  min-height: 56px;
+  height: auto;
   padding: 2px 4px;
-  gap: 6px;
+  gap: 4px 6px;
+  align-items: center;
 }
 .phone-console .transport-glass-display > :not(.hidden) { flex-shrink: 0; }
 .phone-console .transport-glass[data-phone-transport="true"] .phone-bpm-input {
@@ -981,11 +983,21 @@
 .phone-console .transport-glass[data-phone-transport="true"] .phone-loop-controls,
 .phone-console .transport-glass[data-phone-transport="true"] .phone-loop-controls > div,
 .phone-console .transport-glass[data-phone-transport="true"] .phone-rhythm-controls {
-  width: auto;
-  flex-wrap: nowrap;
+  min-height: 44px;
   border-top: 0;
   padding-top: 0;
-  min-height: 44px;
+}
+/* Loop range gets its own full-width line so start, end and song length are all in view. */
+.phone-console .transport-glass[data-phone-transport="true"] .phone-loop-controls {
+  width: 100%;
+  flex-basis: 100%;
+  order: 2;
+}
+.phone-console .transport-glass[data-phone-transport="true"] .phone-loop-controls > div { width: 100%; }
+.phone-console .transport-glass[data-phone-transport="true"] .phone-rhythm-controls {
+  width: auto;
+  flex-wrap: nowrap;
+  order: 1;
 }
 .phone-console .transport-glass[data-phone-transport="true"] .phone-loop-controls button,
 .phone-console .transport-glass[data-phone-transport="true"] .phone-rhythm-controls button,
