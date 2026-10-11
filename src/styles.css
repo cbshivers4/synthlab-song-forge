@@ -938,6 +938,7 @@
   .phone-console .transport-glass[data-phone-transport="true"] .phone-bpm-input { min-height: 40px; }
   .phone-console .phone-loop-controls, .phone-console .phone-rhythm-controls { width: auto; border-top: 0; padding-top: 0; }
   .phone-console .phone-loop-controls button, .phone-console .phone-rhythm-controls button { height: 40px; width: 40px; }
+  .phone-console .phone-loop-label { font-size: 0.5625rem; letter-spacing: 0.08em; padding-inline: 0.3rem; }
   .phone-console .phone-transport-signals { gap: 6px; padding-top: 4px; }
   /* Keep the full meter scale and scope visible while tightening surrounding space. */
   .phone-console .phone-transport-signals .phone-master-display { overflow-x: auto; }
