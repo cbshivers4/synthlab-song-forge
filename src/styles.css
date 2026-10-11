@@ -781,7 +781,6 @@
   --muted-foreground: color-mix(in oklab, var(--foreground) 70%, var(--background));
   --accent: var(--primary);
   --accent-foreground: var(--background);
-  --border: var(--surface);
   --input: var(--surface);
   --ring: var(--primary);
   --gradient-panel: none;
