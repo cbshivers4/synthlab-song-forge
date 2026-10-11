@@ -271,7 +271,7 @@ export function PadSampler() {
     },
     [captureNote, ensureTrack],
   );
-  const padMidi = useMidiPads("pad-sampler", 16, (i, velocity) => trigger(i, velocity));
+  const padMidi = useMidiPads("pad-sampler", 16, (i, velocity) => trigger(index(i), velocity));
 
   /* pad step sequencer */
   useEffect(() => {
