@@ -258,7 +258,7 @@ export function InsertRack({
                           min={x.min}
                           max={x.max}
                           step={(x.max - x.min) / 200}
-                          size={52}
+                          size={60}
                           onChange={(v) => onParam(p.id, x.id, v)}
                           midiTarget={{ id: midiId, param: `${midiPrefix}:${p.id}:${x.id}` }}
                         />
