@@ -667,6 +667,16 @@
 .transport-glass[data-phone-transport="true"] .transport-glass-display { order: 3; grid-column: 1 / -1; padding: 4px 8px; gap: 4px 8px; flex-wrap: wrap; align-items: center; }
 .transport-glass[data-phone-transport="true"] .phone-bpm-input { min-height: 32px; padding: 0; }
 .transport-glass[data-phone-transport="true"] .phone-loop-controls button { min-width: 48px; min-height: 48px; padding: 0; }
+.transport-glass[data-phone-transport="true"] .phone-loop-group { column-gap: 0; }
+.transport-glass[data-phone-transport="true"] .phone-loop-label {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-muted-foreground);
+  padding-inline: 0.5rem;
+  white-space: nowrap;
+}
 .transport-glass[data-phone-transport="true"] .phone-rhythm-controls { min-height: 48px; }
 /* Desktop flows at existing control sizes; phone layout remains unchanged. */
 .transport-glass[data-desktop-transport="true"] .transport-layout {

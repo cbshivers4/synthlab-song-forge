@@ -691,9 +691,18 @@ function LoopRange({ mobile = false }: { mobile?: boolean }) {
     if (which === "loopStart") setTransport({ loopStart: Math.max(0, Math.min(hi - stepsPerBar(), lo + d)) });
     else setTransport({ loopEnd: Math.min(total, Math.max(lo + stepsPerBar(), hi + d)) });
   };
-  if (mobile) return <div className="flex flex-wrap items-center gap-1 text-sm text-primary">
-    {([{ key: "loopStart", value: Math.floor(lo / stepsPerBar()) + 1, earlier: "Loop start earlier", later: "Loop start later", down: lo <= 0, up: lo + stepsPerBar() >= hi }, { key: "loopEnd", value: Math.ceil(hi / stepsPerBar()), earlier: "Loop end earlier", later: "Loop end later", down: hi - stepsPerBar() <= lo, up: hi >= total }] as const).map(({ key, value, earlier, later, down, up }) => <div key={key} className="flex shrink-0 items-center"><Button variant="ghost" size="icon" className="size-12" aria-label={earlier} title={earlier} disabled={down} onClick={() => nudge(key, -stepsPerBar())}><Minus className="size-4" /></Button><span className="min-w-5 text-center tabular-nums" title={key === "loopStart" ? "Loop start bar" : "Loop last bar"}>{value}</span><Button variant="ghost" size="icon" className="size-12" aria-label={later} title={later} disabled={up} onClick={() => nudge(key, stepsPerBar())}><Plus className="size-4" /></Button></div>)}
-  </div>;
+  if (mobile) return (
+    <div className="flex flex-wrap items-center gap-1.5 text-sm text-primary">
+      {([{ key: "loopStart", name: "start", value: Math.floor(lo / stepsPerBar()) + 1, earlier: "Loop start earlier", later: "Loop start later", down: lo <= 0, up: lo + stepsPerBar() >= hi }, { key: "loopEnd", name: "end", value: Math.ceil(hi / stepsPerBar()), earlier: "Loop end earlier", later: "Loop end later", down: hi - stepsPerBar() <= lo, up: hi >= total }] as const).map(({ key, name, value, earlier, later, down, up }) => (
+        <div key={key} className="phone-loop-group flex shrink-0 items-center rounded-md border border-border/70">
+          <span className="phone-loop-label">{name}</span>
+          <Button variant="ghost" size="icon" className="size-12" aria-label={earlier} title={earlier} disabled={down} onClick={() => nudge(key, -stepsPerBar())}><Minus className="size-4" /></Button>
+          <span className="min-w-5 text-center tabular-nums" title={key === "loopStart" ? "Loop start bar" : "Loop last bar"}>{value}</span>
+          <Button variant="ghost" size="icon" className="size-12" aria-label={later} title={later} disabled={up} onClick={() => nudge(key, stepsPerBar())}><Plus className="size-4" /></Button>
+        </div>
+      ))}
+    </div>
+  );
   const Btn = ({ k, d, l }: { k: "loopStart" | "loopEnd"; d: number; l: string }) => (
     <button type="button" aria-label={l} onClick={() => nudge(k, d)}
       className="rounded-[2px] px-0.5 text-muted-foreground hover:bg-accent hover:text-foreground">
