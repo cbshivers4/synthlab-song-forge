@@ -2702,66 +2702,27 @@ function Ruler() {
           </span>
         </div>
         <div className="flex items-center gap-1.5">
-        {/* timeline options: song length + export flags live in one menu */}
-        <Popover>
-          <PopoverTrigger asChild>
-            <button
-              type="button"
-              aria-label="Timeline options"
-              title="Song length and export range"
-              className="flex items-center gap-1 rounded-[3px] border border-border bg-background/70 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-muted-foreground hover:text-foreground"
-            >
-              <Settings2 className="size-3" /> {bars} {bars === 1 ? "bar" : "bars"}
-              {exportOn && <Flag className="size-3 text-amber-300" />}
-            </button>
-          </PopoverTrigger>
-          <PopoverContent align="start" className="w-60 space-y-3 p-3">
-            <div className="label-xs">Timeline options</div>
-            <div>
-              <div className="mb-1 font-mono text-[9px] uppercase tracking-wider text-muted-foreground">Song length</div>
-              <div className="flex items-center gap-0.5 rounded-[3px] border border-border bg-background/70 px-0.5" title="Timeline length in bars">
-                <button
-                  type="button"
-                  aria-label="Fewer bars"
-                  className="px-2 py-1 font-mono text-[13px] text-muted-foreground hover:text-foreground disabled:opacity-30"
-                  disabled={bars <= 1}
-                  onClick={() => setBars(bars - 1)}
-                >
-                  −
-                </button>
-                <span className="min-w-14 flex-1 text-center font-mono text-[11px] text-primary">{bars} {bars === 1 ? "BAR" : "BARS"}</span>
-                <button
-                  type="button"
-                  aria-label="More bars"
-                  className="px-2 py-1 font-mono text-[13px] text-muted-foreground hover:text-foreground disabled:opacity-30"
-                  disabled={bars >= 512}
-                  onClick={() => setBars(bars + 1)}
-                >
-                  +
-                </button>
-              </div>
-            </div>
-            <div>
-              <div className="mb-1 font-mono text-[9px] uppercase tracking-wider text-muted-foreground">Export range</div>
+        {/* song length + export flags: menu on desktop, timeline tools menu on phones */}
+        {!isMobile && (
+          <Popover>
+            <PopoverTrigger asChild>
               <button
                 type="button"
-                aria-pressed={exportOn}
-                title="Show export start/end flags — drag them on the ruler to choose what gets exported"
-                onClick={() =>
-                  setTransport(exportOn ? { exportStart: null, exportEnd: null } : { exportStart: 0, exportEnd: total })
-                }
-                className={`flex w-full items-center gap-1.5 rounded-[3px] border px-2 py-1.5 font-mono text-[10px] uppercase tracking-wider ${
-                  exportOn
-                    ? "border-amber-400/70 bg-amber-400/15 text-amber-300"
-                    : "border-border bg-background/70 text-muted-foreground hover:text-foreground"
-                }`}
+                aria-label="Timeline options"
+                title="Song length and export range"
+                className="flex items-center gap-1 rounded-[3px] border border-border bg-background/70 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-muted-foreground hover:text-foreground"
               >
-                <Flag className="size-3.5" /> {exportOn ? "Hide export flags" : "Show export flags"}
+                <Settings2 className="size-3" /> {bars} {bars === 1 ? "bar" : "bars"}
+                {exportOn && <Flag className="size-3 text-amber-300" />}
               </button>
-              <p className="mt-1 font-mono text-[8px] leading-tight text-muted-foreground">Drag the amber flags on the ruler to choose what gets exported.</p>
-            </div>
-          </PopoverContent>
-        </Popover>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-60 space-y-3 p-3">
+              <div className="label-xs">Timeline options</div>
+              <TimelineOptionsPanel />
+            </PopoverContent>
+          </Popover>
+        )}
+
         </div>
       </div>
       <div
