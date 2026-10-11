@@ -1498,13 +1498,9 @@ function MasterStrip({ level: peak }: { level: number }) {
           <VuMeter level={peak} label="L" />
           <VuMeter level={peak} label="R" />
         </div>
-        {!advanced && <FxMenu target="bus:master" label="Master FX" />}
+        <FxMenu target="bus:master" label="Master FX" />
       </div>
-      {advanced && (
-        <div className={cn(ROW.sends, "border-b border-border/60 px-1 py-[2px]")}>
-          <FxMenu target="bus:master" label="Master FX" />
-        </div>
-      )}
+      {advanced && <div className={cn(ROW.sends, "border-b border-border/60")} />}
       {advanced && <div className={cn(ROW.sendBars, "border-b border-border/60")} />}
 
       <div className={cn(ROW.io, "flex items-center justify-center border-b border-border/60 font-mono text-[8px] uppercase tracking-widest text-muted-foreground")}>
