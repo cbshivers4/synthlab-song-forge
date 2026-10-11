@@ -65,7 +65,8 @@ export function HumToBeat() {
         const ctx = new AudioContext();
         const buf = await ctx.decodeAudioData(await new Blob(chunks, { type: rec.mimeType }).arrayBuffer());
         void ctx.close();
-        const data = buf.getChannelData(0);
+        const data = new Float32Array(buf.length);
+        for (let c = 0; c < buf.numberOfChannels; c++) { const ch = buf.getChannelData(c); for (let i = 0; i < data.length; i++) data[i] = data[i]! + ch[i]! / buf.numberOfChannels; }
         setRecordedBuffer(buf);
         const bpm = transport.bpm || 120;
         if (mode === "beat") {
@@ -75,7 +76,8 @@ export function HumToBeat() {
         } else {
           const notes = alignToStart(analyseMelody(data, buf.sampleRate, bpm));
           setResult({ mode, hits: [], notes });
-          if (!notes.length) toast("No notes heard", { description: "Hum steady notes, a little louder." });
+          if (notes.length) toast.success(`Heard ${notes.length} notes`, { description: "Check the waveform and notes, then preview or add them to the timeline." });
+          if (!notes.length) toast("No notes heard", { description: "Hum steady \"ooo\" or \"mmm\" notes for at least a quarter second each, with short gaps between them." });
         }
       } catch {
         toast.error("Couldn't read that recording");
