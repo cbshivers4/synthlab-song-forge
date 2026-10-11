@@ -1371,7 +1371,7 @@ function FxMenu({ target, label }: { target: string; label: string }) {
       <PopoverTrigger asChild>
         <button
           className={cn(
-            "flex h-5 w-full items-center justify-center gap-1 rounded-sm font-mono text-[8px] uppercase tracking-wider transition-colors",
+            "flex h-7 w-full items-center justify-center gap-1.5 rounded-md font-mono text-[10px] uppercase tracking-wider transition-colors",
             list.length > 0 ? "bg-primary/20 text-primary" : "bg-surface text-muted-foreground hover:text-foreground"
           )}
         >
