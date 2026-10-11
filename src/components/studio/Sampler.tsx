@@ -13,6 +13,7 @@ import { uid } from "@/lib/synclab/presets";
 import { wsolaStretch } from "@/lib/synclab/stretch";
 import { WaveformView } from "@/components/studio/WaveformView";
 import { MidiLearnButton } from "./MidiLearn";
+import { MidiPadLearnBar, useMidiPads } from "./MidiPadLearn";
 import { SkinControls, skinBackground, useImageDrop } from "@/components/studio/SkinControls";
 import { useSkin } from "@/lib/synclab/skins";
 import { getPadBank, setPadBank, type SavedPad } from "@/lib/synclab/pad-session";
@@ -721,6 +722,7 @@ export function Sampler() {
 
             {chops.length > 0 ? (
               <>
+                <MidiPadLearnBar pads={chopPads} label="chops" names={(i) => `chop ${i + 1}`} />
                 <div className="flex items-center gap-2" role="group" aria-label="Chop banks">
                   <span className="label-xs">BANK</span>
                   {["A", "B", "C", "D"].map((label, bank) => <Button key={label} variant={Math.min(chopBank, Math.floor((chops.length - 1) / 16)) === bank ? "default" : "outline"} className="size-12 p-0" aria-label={`Chop bank ${label}`} aria-pressed={Math.min(chopBank, Math.floor((chops.length - 1) / 16)) === bank} disabled={bank * 16 >= chops.length} onClick={() => setChopBank(bank)}>{label}</Button>)}
