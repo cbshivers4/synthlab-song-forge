@@ -1,13 +1,27 @@
 /** Rule-based bassline generator (music theory, not AI). Steps are sixteenth notes. */
 import type { MidiNote, Track } from "./types";
 
-export type BassStyle = "roots" | "octave" | "walking" | "808" | "funk";
+export type BassStyle = "roots" | "octave" | "walking" | "808" | "funk" | "detroit" | "electro" | "house" | "trance" | "ghettotech";
 export const BASS_STYLES: { id: BassStyle; label: string; hint: string }[] = [
   { id: "roots", label: "Roots", hint: "One long root note per chord." },
   { id: "octave", label: "Octave bounce", hint: "Disco/house root–octave eighths." },
   { id: "walking", label: "Walking", hint: "Quarter notes stepping toward the next chord." },
   { id: "808", label: "808 trap", hint: "Long subs with syncopated re-hits." },
   { id: "funk", label: "Funk", hint: "Syncopated sixteenths with fifths and octaves." },
+  { id: "detroit", label: "Detroit techno", hint: "Rolling off-beat sixteenths that sit between the kicks." },
+  { id: "electro", label: "Electro", hint: "Syncopated 808-style line with octave and seventh jumps." },
+  { id: "house", label: "House", hint: "Off-beat bass on the 'and' of every beat with a fifth pickup." },
+  { id: "trance", label: "Trance", hint: "Galloping 16ths on the three off-steps of each beat." },
+  { id: "ghettotech", label: "Ghetto tech", hint: "Fast booty-bass bounce with long subs and quick re-hits." },
+];
+
+/** Genre starting points: pattern, sound, key, progression and the usual tempo. */
+export const BASS_TEMPLATES: { id: string; label: string; style: BassStyle; sound: string; octave: number; tonic: number; minor: boolean; prog: string; bpm: number }[] = [
+  { id: "detroit-techno", label: "Detroit Techno", style: "detroit", sound: "Techno Drone Bass", octave: 1, tonic: 5, minor: true, prog: "1-1-1-1", bpm: 132 },
+  { id: "electro", label: "Electro", style: "electro", sound: "Sub Bass", octave: 1, tonic: 0, minor: true, prog: "1-6-4-5", bpm: 126 },
+  { id: "house", label: "House", style: "house", sound: "Acid Rubber", octave: 1, tonic: 9, minor: true, prog: "1-6-4-5", bpm: 124 },
+  { id: "trance", label: "Trance", style: "trance", sound: "Reese Bass", octave: 1, tonic: 9, minor: true, prog: "6-4-1-5", bpm: 138 },
+  { id: "ghetto-tech", label: "Ghetto Tech", style: "ghettotech", sound: "Ghetto Tech Bass", octave: 1, tonic: 7, minor: true, prog: "1-1-1-1", bpm: 150 },
 ];
 
 export const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
@@ -68,6 +82,21 @@ export function generateBass(roots: number[], style: BassStyle, barSteps: number
       add(s0 + 7, 3, r, 0.8);
       if (barSteps >= 16) { add(s0 + 10, 6, b % 2 ? r + 12 : r, 0.9); }
     }
+    const groove = (pat: [number, number, number, number?][]) =>
+      pat.filter(([s]) => s < barSteps).forEach(([s, l, iv, v]) => add(s0 + s, Math.min(l, barSteps - s), r + iv, v ?? 0.8));
+    if (style === "detroit") {
+      const pat: [number, number, number, number?][] = [];
+      for (let beat = 0; beat * 4 < barSteps; beat++) pat.push([beat * 4 + 2, 1, 0, 0.9], [beat * 4 + 3, 1, beat === 3 ? 12 : 0, 0.7]);
+      groove(pat);
+    }
+    if (style === "electro") groove([[0, 2, 0, 1], [3, 1, 0, 0.75], [6, 1, 12, 0.85], [8, 2, 0, 0.9], [10, 1, 10, 0.75], [12, 1, 7, 0.8], [14, 2, 12, 0.85]]);
+    if (style === "house") groove([[2, 2, 0, 0.9], [6, 2, 0, 0.85], [10, 2, 0, 0.9], [13, 1, 12, 0.7], [14, 2, 7, 0.8]]);
+    if (style === "trance") {
+      const pat: [number, number, number, number?][] = [];
+      for (let beat = 0; beat * 4 < barSteps; beat++) pat.push([beat * 4 + 1, 1, 0, 0.75], [beat * 4 + 2, 1, 0, 0.9], [beat * 4 + 3, 1, 0, 0.75]);
+      groove(pat);
+    }
+    if (style === "ghettotech") groove([[0, 3, 0, 1], [3, 1, 0, 0.8], [6, 2, 0, 0.9], [10, 1, 12, 0.8], [11, 1, 0, 0.85], [14, 2, 10, 0.8]]);
     if (style === "funk") {
       const pat: [number, number, number][] = [[0, 2, 0], [3, 1, 12], [6, 2, 7], [8, 1, 0], [10, 1, 0], [11, 2, 12], [14, 2, 10]];
       pat.filter(([s]) => s < barSteps).forEach(([s, l, iv], i) => add(s0 + s, l, r + iv, i === 0 ? 0.95 : 0.75));
