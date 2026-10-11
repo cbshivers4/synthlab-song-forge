@@ -84,7 +84,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 
   useEffect(() => {
-    applyThemeVars(activeTheme.vars);
+    // Phones always use a dark theme — light themes are hard to read on small screens.
+    const phone = typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches;
+    const theme = phone && activeTheme.id === "light-studio" ? themeById("synclab-dark") ?? activeTheme : activeTheme;
+    applyThemeVars(theme.vars);
   }, [activeTheme]);
 
   useEffect(() => {
