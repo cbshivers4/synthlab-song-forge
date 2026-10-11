@@ -2533,16 +2533,17 @@ function BarNumbering({ gridRef, bars }: { gridRef: React.RefObject<HTMLDivEleme
   );
 }
 
-function Ruler() {
+/**
+ * Song length + export range. Shared by the desktop ruler menu and the phone
+ * timeline tools menu, so the same controls exist on both layouts.
+ */
+function TimelineOptionsPanel() {
   const { transport, setTransport } = useStudio();
-  const gridRef = useRef<HTMLDivElement>(null);
   const bars = Math.max(1, transport.bars ?? 4);
-  const total = bars * stepsPerBar();
+  const total = songSteps(bars);
   const lo = transport.loopStart ?? 0;
   const hi = Math.max(lo + 1, transport.loopEnd ?? total);
   const exportOn = transport.exportStart != null && transport.exportEnd != null;
-  const exLo = exportOn ? Math.min(transport.exportStart!, transport.exportEnd! - 1) : 0;
-  const exHi = exportOn ? Math.max(transport.exportEnd!, exLo + 1) : total;
 
   const setBars = (next: number) => {
     const b = Math.min(512, Math.max(1, next));
@@ -2554,6 +2555,68 @@ function Ruler() {
       step: transport.step % steps,
     });
   };
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <div className="mb-1 font-mono text-[9px] uppercase tracking-wider text-muted-foreground">Song length</div>
+        <div className="flex items-center gap-0.5 rounded-[3px] border border-border bg-background/70 px-0.5" title="Timeline length in bars">
+          <button
+            type="button"
+            aria-label="Fewer bars"
+            className="min-w-12 px-3 py-2 font-mono text-[15px] text-muted-foreground hover:text-foreground disabled:opacity-30"
+            disabled={bars <= 1}
+            onClick={() => setBars(bars - 1)}
+          >
+            −
+          </button>
+          <span className="min-w-16 flex-1 text-center font-mono text-[13px] text-primary">{bars} {bars === 1 ? "BAR" : "BARS"}</span>
+          <button
+            type="button"
+            aria-label="More bars"
+            className="min-w-12 px-3 py-2 font-mono text-[15px] text-muted-foreground hover:text-foreground disabled:opacity-30"
+            disabled={bars >= 512}
+            onClick={() => setBars(bars + 1)}
+          >
+            +
+          </button>
+        </div>
+      </div>
+      <div>
+        <div className="mb-1 font-mono text-[9px] uppercase tracking-wider text-muted-foreground">Export range</div>
+        <button
+          type="button"
+          aria-pressed={exportOn}
+          title="Show export start/end flags — drag them on the ruler to choose what gets exported"
+          onClick={() =>
+            setTransport(exportOn ? { exportStart: null, exportEnd: null } : { exportStart: 0, exportEnd: total })
+          }
+          className={`flex w-full items-center gap-1.5 rounded-[3px] border px-2 py-2 font-mono text-[11px] uppercase tracking-wider ${
+            exportOn
+              ? "border-amber-400/70 bg-amber-400/15 text-amber-300"
+              : "border-border bg-background/70 text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Flag className="size-3.5" /> {exportOn ? "Hide export flags" : "Show export flags"}
+        </button>
+        <p className="mt-1 font-mono text-[9px] leading-tight text-muted-foreground">Drag the amber flags on the ruler to choose what gets exported.</p>
+      </div>
+    </div>
+  );
+}
+
+function Ruler() {
+  const { transport, setTransport } = useStudio();
+  const isMobile = useIsMobile();
+  const gridRef = useRef<HTMLDivElement>(null);
+  const bars = Math.max(1, transport.bars ?? 4);
+  const total = bars * stepsPerBar();
+  const lo = transport.loopStart ?? 0;
+  const hi = Math.max(lo + 1, transport.loopEnd ?? total);
+  const exportOn = transport.exportStart != null && transport.exportEnd != null;
+  const exLo = exportOn ? Math.min(transport.exportStart!, transport.exportEnd! - 1) : 0;
+  const exHi = exportOn ? Math.max(transport.exportEnd!, exLo + 1) : total;
+
 
   const stepFromX = (clientX: number) => {
     const el = gridRef.current;
