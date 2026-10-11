@@ -551,7 +551,7 @@ export function Browser() {
       )}
 
       {/* MY LIBRARY — saved samples, synth sounds, drum kits and notes in custom folders */}
-      <div data-folder="library">
+      <div>
         <FolderHeader id="library" icon={<Save className="size-3 text-primary" />} label="MY LIBRARY" count={0} hasMatch={false} />
         {isOpen("library", false) && <div className="ml-3 border-l-2 border-border"><LibraryPanel /></div>}
       </div>
