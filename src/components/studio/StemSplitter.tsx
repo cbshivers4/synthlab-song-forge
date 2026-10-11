@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useStudio } from "@/lib/synclab/store";
 import { encodeWav } from "@/lib/synclab/bounce";
-import { isStereo, peaksOf, separateStem, STEMS, type StemId } from "@/lib/synclab/stems";
+import { isStereo, MAX_STEM_SECONDS, peaksOf, separateStems, STEMS, type StemId } from "@/lib/synclab/stems";
 import { retainMediaInBackground } from "@/lib/synclab/media-library";
 import { GeneratedWaveform } from "./GeneratedWaveform";
 
@@ -14,8 +14,9 @@ export function StemSplitter() {
   const { tracks, addTrack, addClip } = useStudio();
   const inputRef = useRef<HTMLInputElement>(null);
   const [source, setSource] = useState<Source | null>(null);
-  const [picked, setPicked] = useState<Record<StemId, boolean>>({ vocal: true, instrumental: true, bass: true, mids: false, highs: false });
+  const [picked, setPicked] = useState<Record<StemId, boolean>>({ vocals: true, drums: true, bass: true, music: true, instrumental: false });
   const [busy, setBusy] = useState<string | null>(null);
+  const [progress, setProgress] = useState<number | null>(null);
 
   const clips = useMemo(
     () => tracks.flatMap((t) => (t.clips ?? []).filter((c) => c.url).map((c) => ({ track: t.name, clip: c }))),
@@ -61,26 +62,35 @@ export function StemSplitter() {
     if (!source) return;
     const ids = STEMS.filter((s) => picked[s.id]).map((s) => s.id);
     if (!ids.length) { toast("Pick at least one stem"); return; }
-    if (ids.includes("instrumental") && !isStereo(source.buffer)) {
-      toast("Vocal remove skipped", { description: "This audio is mono, so there's no centre to cancel." });
+    if (source.buffer.duration > MAX_STEM_SECONDS) { toast("Song too long", { description: "Separate up to 6 minutes at a time." }); return; }
+    if (!isStereo(source.buffer) && (picked.vocals || picked.instrumental)) {
+      toast("This audio is mono", { description: "Vocals are found by their centre position in a stereo mix, so a mono file will leave them mixed with other sounds." });
     }
     stopAudio();
-    const out: Result[] = [];
-    for (const id of ids) {
-      if (id === "instrumental" && !isStereo(source.buffer)) continue;
-      const label = STEMS.find((s) => s.id === id)!.label;
-      setBusy(`Separating ${label}…`);
-      try {
-        const { left, right } = await separateStem(source.buffer, id);
-        const sr = source.buffer.sampleRate;
-        out.push({ id, label, url: URL.createObjectURL(encodeWav({ left, right, sampleRate: sr })), peaks: peaksOf(left), duration: left.length / sr, added: false });
-      } catch {
-        toast.error(`Couldn't make ${label}`);
+    results.forEach((r) => { if (!r.added) URL.revokeObjectURL(r.url); });
+    setResults([]);
+    setBusy("Separating…");
+    setProgress(0);
+    try {
+      const parts = await separateStems(source.buffer, ids, (p) => setProgress(p));
+      const sr = source.buffer.sampleRate;
+      const out: Result[] = [];
+      for (const id of ids) {
+        const part = parts[id];
+        if (!part) continue;
+        const label = STEMS.find((s) => s.id === id)!.label;
+        const { left, right } = part;
+        const peaks = peaksOf(left, 512).map((v, i) => Math.max(v, Math.abs(right[Math.floor((i * right.length) / 512)] ?? 0)));
+        out.push({ id, label, url: URL.createObjectURL(encodeWav({ left, right, sampleRate: sr })), peaks, duration: left.length / sr, added: false });
       }
+      setResults(out);
+      if (out.length) toast.success("Stems separated", { description: "Play each one, then add the ones you want to the timeline." });
+    } catch (e) {
+      toast.error("Couldn't separate this song", { description: e instanceof Error ? e.message : undefined });
+    } finally {
+      setBusy(null);
+      setProgress(null);
     }
-    setResults(out);
-    setBusy(null);
-    if (out.length) toast.success("Stems separated", { description: "Play each one, then add the ones you want to the timeline." });
   };
 
   const togglePlay = (r: Result) => {
@@ -105,8 +115,9 @@ export function StemSplitter() {
       <header>
         <h2 className="font-mono text-sm font-bold tracking-[0.18em]">SEPARATE STEMS</h2>
         <p className="text-xs text-muted-foreground">
-          Splits a song into simple parts using stereo and frequency filters on your device. This is not AI separation — expect
-          some bleed between parts. Centre-panned vocals in a stereo mix give the best vocal remove.
+          Splits a song into Vocals, Drums, Bass and Music on your device by analysing its sound spectrum: hits go to Drums, sustained
+          centre sounds in the voice range go to Vocals, low notes go to Bass. This is signal processing, not AI — expect some bleed,
+          and stereo files with centre vocals separate best. A 3-minute song takes about 20–60 seconds.
         </p>
       </header>
 
@@ -148,8 +159,13 @@ export function StemSplitter() {
       </div>
 
       <Button size="lg" className="min-h-12" disabled={!source || !!busy} onClick={() => void run()}>
-        <Split className="size-4" /> {busy ?? "Separate"}
+        <Split className="size-4" /> {busy ? `${busy}${progress !== null ? ` ${Math.round(progress * 100)}%` : ""}` : "Separate"}
       </Button>
+      {progress !== null && (
+        <div className="h-2 w-full overflow-hidden rounded-full bg-surface-2" role="progressbar" aria-label="Separation progress" aria-valuenow={Math.round(progress * 100)} aria-valuemin={0} aria-valuemax={100}>
+          <div className="h-full bg-primary transition-[width]" style={{ width: `${Math.round(progress * 100)}%` }} />
+        </div>
+      )}
 
       {results.length > 0 && (
         <div className="space-y-2" aria-label="Separated stems">

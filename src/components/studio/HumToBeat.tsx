@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { usePreviewTrack } from "@/lib/synclab/use-preview-track";
 import { PreviewButtons } from "./PreviewButtons";
 import { GeneratedWaveform } from "./GeneratedWaveform";
+import { PatternWaveform } from "./PatternWaveform";
 import { useStudio } from "@/lib/synclab/store";
 import { openMic, preferredRecordingMime, releaseMic } from "@/lib/synclab/mic";
 import { alignToStart, analyseBeatbox, analyseMelody, type BeatHit, type HumNote } from "@/lib/synclab/hum-to-beat";
@@ -12,6 +13,7 @@ import { stepsPerBar } from "@/lib/synclab/timebase";
 
 type Mode = "beat" | "melody";
 const MAX_SEC = 30;
+const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 
 export function HumToBeat() {
   const { tracks, transport, addTrack, updateTrack } = useStudio();
@@ -65,7 +67,8 @@ export function HumToBeat() {
         const ctx = new AudioContext();
         const buf = await ctx.decodeAudioData(await new Blob(chunks, { type: rec.mimeType }).arrayBuffer());
         void ctx.close();
-        const data = buf.getChannelData(0);
+        const data = new Float32Array(buf.length);
+        for (let c = 0; c < buf.numberOfChannels; c++) { const ch = buf.getChannelData(c); for (let i = 0; i < data.length; i++) data[i] = data[i]! + ch[i]! / buf.numberOfChannels; }
         setRecordedBuffer(buf);
         const bpm = transport.bpm || 120;
         if (mode === "beat") {
@@ -75,7 +78,8 @@ export function HumToBeat() {
         } else {
           const notes = alignToStart(analyseMelody(data, buf.sampleRate, bpm));
           setResult({ mode, hits: [], notes });
-          if (!notes.length) toast("No notes heard", { description: "Hum steady notes, a little louder." });
+          if (notes.length) toast.success(`Heard ${notes.length} notes`, { description: "Check the waveform and notes, then preview or add them to the timeline." });
+          if (!notes.length) toast("No notes heard", { description: "Hum steady \"ooo\" or \"mmm\" notes for at least a quarter second each, with short gaps between them." });
         }
       } catch {
         toast.error("Couldn't read that recording");
@@ -182,8 +186,17 @@ export function HumToBeat() {
         <div className="rounded-md border border-border bg-surface-2 p-3 font-mono text-xs">
           {result.mode === "beat"
             ? `Heard ${result.hits.length} hits — kick ${counts?.['kick'] ?? 0}, snare ${counts?.['snare'] ?? 0}, hat ${counts?.['hat'] ?? 0}`
-            : `Heard ${result.notes.length} notes`}
+            : `Heard ${result.notes.length} notes${result.notes.length ? ` — ${result.notes.slice(0, 16).map((n) => NOTE_NAMES[n.pitch % 12]! + (Math.floor(n.pitch / 12) - 1)).join(" ")}${result.notes.length > 16 ? " …" : ""}` : ""}`}
         </div>
+      )}
+      {result && (result.hits.length > 0 || result.notes.length > 0) && (
+        <PatternWaveform
+          bpm={transport.bpm}
+          label={result.mode === "beat" ? "Generated drum beat waveform" : "Generated melody waveform"}
+          pattern={result.mode === "beat"
+            ? { hits: result.hits, steps: lengthSteps(Math.max(...result.hits.map((h) => h.step))) }
+            : { notes: result.notes, instrument: "Metro Pluck", steps: lengthSteps(Math.max(...result.notes.map((n) => n.step + n.length - 1))) }}
+        />
       )}
     </section>
   );

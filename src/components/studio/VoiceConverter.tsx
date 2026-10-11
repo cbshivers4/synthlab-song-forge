@@ -83,7 +83,7 @@ export function VoiceConverter() {
   };
 
   const pv = usePreviewTrack();
-  const presetLabel = VOICE_PRESETS.find((p) => p.id === preset)!.label;
+  const presetLabel = VOICE_PRESETS.find((p) => p.id === preset)?.label ?? "Voice";
   const build = (name: string) => {
     if (!preview || !source) return "";
     const duration = preview.data.length / preview.sr;
@@ -129,13 +129,20 @@ export function VoiceConverter() {
 
       {source && <p className="font-mono text-xs text-primary">{source.name} · {source.buffer.duration.toFixed(1)}s</p>}
 
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {VOICE_PRESETS.map((p) => (
-          <button key={p.id} type="button" onClick={() => { setPreset(p.id); setPreview(null); }} title={p.hint}
-            className={`min-h-12 rounded-md border p-2 text-left ${preset === p.id ? "border-primary bg-primary/10" : "border-border"}`}>
-            <span className="block text-sm font-medium">{p.label}</span>
-            <span className="block text-[10px] leading-tight text-muted-foreground">{p.hint}</span>
-          </button>
+      <div className="space-y-3">
+        {(["Character", "Gender & age", "Effects", "Harmony & space", "Custom"] as const).map((group) => (
+          <div key={group} className="space-y-1.5">
+            <p className="font-mono text-[10px] font-bold tracking-widest text-muted-foreground">{group.toUpperCase()}</p>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {VOICE_PRESETS.filter((p) => p.group === group).map((p) => (
+                <button key={p.id} type="button" onClick={() => { setPreset(p.id); setPreview(null); }} title={p.hint} aria-pressed={preset === p.id}
+                  className={`min-h-12 rounded-md border p-2 text-left ${preset === p.id ? "border-primary bg-primary/10" : "border-border"}`}>
+                  <span className="block text-sm font-medium">{p.label}</span>
+                  <span className="block text-[10px] leading-tight text-muted-foreground">{p.hint}</span>
+                </button>
+              ))}
+            </div>
+          </div>
         ))}
       </div>
 

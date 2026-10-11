@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { usePreviewTrack } from "@/lib/synclab/use-preview-track";
 import { PreviewButtons } from "./PreviewButtons";
 import { PatternWaveform } from "./PatternWaveform";
@@ -6,10 +6,10 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useStudio } from "@/lib/synclab/store";
 import { getBeatsPerBar } from "@/lib/synclab/timebase";
-import { BASS_STYLES, generateBass, NOTE_NAMES, PROGRESSIONS, rootsFromKey, rootsFromTracks, type BassStyle } from "@/lib/synclab/bass-gen";
+import { BASS_STYLES, BASS_TEMPLATES, generateBass, NOTE_NAMES, PROGRESSIONS, rootsFromKey, rootsFromTracks, type BassStyle } from "@/lib/synclab/bass-gen";
 
 export function BassGenerator() {
-  const { tracks, transport, addTrack, updateTrack } = useStudio();
+  const { tracks, transport, addTrack, updateTrack, setTransport } = useStudio();
   const barSteps = getBeatsPerBar() * 4;
   const [style, setStyle] = useState<BassStyle>("roots");
   const [bars, setBars] = useState(4);
@@ -34,13 +34,28 @@ export function BassGenerator() {
 
   const pv = usePreviewTrack();
   const label = BASS_STYLES.find((s) => s.id === style)!.label.toUpperCase();
-  const [generated, setGenerated] = useState<ReturnType<typeof generateBass> | null>(null);
-  useEffect(() => setGenerated(null), [roots, style, octave, barSteps]);
+  const [template, setTemplate] = useState<string | null>(null);
+  const signature = `${roots.join(",")}|${style}|${octave}|${barSteps}`;
+  const [made, setMade] = useState<{ notes: ReturnType<typeof generateBass>; signature: string } | null>(null);
+  const generated = made && made.signature === signature ? made.notes : null;
   const generate = () => {
     const notes = generateBass(roots, style, barSteps, octave);
-    setGenerated(notes);
+    setMade({ notes, signature });
     toast.success("Bassline generated", { description: `${notes.length} notes over ${bars} bars — preview it or add it to the timeline.` });
   };
+  const applyTemplate = (id: string) => {
+    const t = BASS_TEMPLATES.find((x) => x.id === id);
+    if (!t) return;
+    setTemplate(id);
+    setStyle(t.style); setSound(t.sound); setOctave(t.octave);
+    setTonic(t.tonic); setMinor(t.minor); setProg(t.prog); setFollow(false);
+    const degrees = PROGRESSIONS.find((p) => p.id === t.prog)!.degrees;
+    const r = rootsFromKey(t.tonic, t.minor, degrees, bars);
+    const notes = generateBass(r, t.style, barSteps, t.octave);
+    setMade({ notes, signature: `${r.join(",")}|${t.style}|${t.octave}|${barSteps}` });
+    toast.success(`${t.label} bassline generated`, { description: `${notes.length} notes in ${NOTE_NAMES[t.tonic]} ${t.minor ? "minor" : "major"} — check the waveform, then preview or add it.` });
+  };
+  const activeTemplate = BASS_TEMPLATES.find((t) => t.id === template);
   const build = (name: string) => {
     const notes = generated ?? generateBass(roots, style, barSteps, octave);
     const id = addTrack("instrument", name, sound, { keepPanel: true });
@@ -62,6 +77,25 @@ export function BassGenerator() {
         <h2 className="font-mono text-sm font-bold tracking-[0.18em]">BASS GENERATOR</h2>
         <p className="text-xs text-muted-foreground">Writes a bassline from music theory — following the chords already in your song, or a key and progression you pick. No AI credits used.</p>
       </header>
+
+      <div className="space-y-2">
+        <p className="font-mono text-xs font-bold tracking-widest text-muted-foreground">GENRE TEMPLATES</p>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+          {BASS_TEMPLATES.map((t) => (
+            <button key={t.id} type="button" onClick={() => applyTemplate(t.id)} aria-pressed={template === t.id}
+              className={`min-h-14 rounded-md border p-2 text-left ${template === t.id ? "border-primary bg-primary/15" : "border-border hover:border-primary/60"}`}>
+              <span className="block text-sm font-medium">{t.label}</span>
+              <span className="block font-mono text-[10px] text-muted-foreground">{t.bpm} BPM · {t.sound}</span>
+            </button>
+          ))}
+        </div>
+        {activeTemplate && transport.bpm !== activeTemplate.bpm && (
+          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+            {activeTemplate.label} usually runs at {activeTemplate.bpm} BPM (your song is {transport.bpm}).
+            <Button size="sm" variant="outline" onClick={() => setTransport({ bpm: activeTemplate.bpm })}>Use {activeTemplate.bpm} BPM</Button>
+          </div>
+        )}
+      </div>
 
       <div className="flex flex-wrap gap-2">
         {BASS_STYLES.map((s) => <button key={s.id} type="button" title={s.hint} onClick={() => setStyle(s.id)} className={chip(style === s.id)}>{s.label}</button>)}
@@ -92,7 +126,7 @@ export function BassGenerator() {
           {[2, 4, 8].map((b) => <option key={b} value={b}>{b} bars</option>)}
         </select>
         <select value={sound} onChange={(e) => setSound(e.target.value)} aria-label="Bass sound" className="min-h-12 rounded-md border border-border bg-surface-2 px-3 text-sm">
-          {["Sub Bass", "Reese Bass", "Ghetto Tech Bass"].map((s) => <option key={s}>{s}</option>)}
+          {["Sub Bass", "Reese Bass", "Ghetto Tech Bass", "Techno Drone Bass", "303 Acid", "Acid Rubber", "Wobble Bass", "Slap Bass", "Upright Bass", "8-Bit Bass"].map((s) => <option key={s}>{s}</option>)}
         </select>
         <select value={octave} onChange={(e) => setOctave(Number(e.target.value))} aria-label="Octave" className="min-h-12 rounded-md border border-border bg-surface-2 px-3 text-sm">
           <option value={0}>Very low (C0)</option><option value={1}>Low (C1)</option><option value={2}>Mid (C2)</option>
