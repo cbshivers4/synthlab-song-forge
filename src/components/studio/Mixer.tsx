@@ -219,21 +219,21 @@ export function InsertRack({
       <div className="space-y-1">
         {list.length === 0 && <div className="font-mono text-[9px] text-muted-foreground">No effects</div>}
         {list.map((p) => (
-          <div key={p.id} className="rounded-sm border border-border bg-surface-2/50 px-1.5 py-1">
-            <div className="flex items-center gap-1">
-              <button onClick={() => onBypass(p.id)} title="Bypass">
-                <Power className={cn("size-3", p.bypass ? "text-muted-foreground" : "text-primary")} />
+          <div key={p.id} className="rounded-md border border-border bg-surface-2/50 px-2 py-1.5">
+            <div className="flex items-center gap-1.5">
+              <button onClick={() => onBypass(p.id)} title="Bypass" className="p-0.5">
+                <Power className={cn("size-4", p.bypass ? "text-muted-foreground" : "text-primary")} />
               </button>
-              <button className="flex-1 truncate text-left font-mono text-[9px] uppercase" onClick={() => setOpen(open === p.id ? null : p.id)}>
+              <button className="flex-1 truncate text-left font-mono text-[11px] uppercase" onClick={() => setOpen(open === p.id ? null : p.id)}>
                 {p.name}
                 <span className="ml-1 text-muted-foreground">{p.format}</span>
               </button>
-              <button onClick={() => onRemove(p.id)} title="Remove">
-                <Trash2 className="size-3 text-muted-foreground hover:text-destructive" />
+              <button onClick={() => onRemove(p.id)} title="Remove" className="p-0.5">
+                <Trash2 className="size-4 text-muted-foreground hover:text-destructive" />
               </button>
             </div>
             <Dialog open={open === p.id} onOpenChange={(o) => setOpen(o ? p.id : null)}>
-              <DialogContent data-fx-skin={p.kind} className="max-h-[90vh] w-[min(96vw,56rem)] max-w-none overflow-y-auto">
+              <DialogContent data-fx-skin={p.kind} className="max-h-[92vh] w-[min(97vw,72rem)] max-w-none overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2 font-mono uppercase tracking-wider">
                     <button type="button" onClick={() => onBypass(p.id)} title={p.bypass ? "Turn on" : "Bypass"} aria-label="Bypass effect">
@@ -244,8 +244,8 @@ export function InsertRack({
                 </DialogHeader>
                 <div className="grid gap-4 md:grid-cols-[1.4fr_1fr]">
                   <div className="space-y-3">
-                    <EffectDisplay plugin={p} height={220} onParam={(paramId, v) => onParam(p.id, paramId, v)} />
-                    <Scope scopeId={p.id} height={130} />
+                    <EffectDisplay plugin={p} height={280} onParam={(paramId, v) => onParam(p.id, paramId, v)} />
+                    <Scope scopeId={p.id} height={170} />
                   </div>
                   <div className="space-y-3">
                     <XYPad plugin={p} onParam={(paramId, v) => onParam(p.id, paramId, v)} />
@@ -258,7 +258,7 @@ export function InsertRack({
                           min={x.min}
                           max={x.max}
                           step={(x.max - x.min) / 200}
-                          size={52}
+                          size={60}
                           onChange={(v) => onParam(p.id, x.id, v)}
                           midiTarget={{ id: midiId, param: `${midiPrefix}:${p.id}:${x.id}` }}
                         />
@@ -271,12 +271,12 @@ export function InsertRack({
           </div>
         ))}
       </div>
-      <div className="mt-1.5 grid grid-cols-2 gap-1">
+      <div className="mt-1.5 grid grid-cols-2 gap-1.5">
         {installedPlugins.map((d) => (
           <button
             key={d.id}
             onClick={() => onAdd(d)}
-            className="truncate rounded-sm border border-border bg-surface px-1 py-1 text-left font-mono text-[8px] uppercase text-muted-foreground hover:text-foreground"
+            className="truncate rounded-md border border-border bg-surface px-2 py-1.5 text-left font-mono text-[10px] uppercase text-muted-foreground hover:text-foreground"
             title={`${d.vendor} · ${d.format}`}
           >
             + {d.name}
@@ -1371,15 +1371,15 @@ function FxMenu({ target, label }: { target: string; label: string }) {
       <PopoverTrigger asChild>
         <button
           className={cn(
-            "flex h-5 w-full items-center justify-center gap-1 rounded-sm font-mono text-[8px] uppercase tracking-wider transition-colors",
+            "flex h-7 w-full items-center justify-center gap-1.5 rounded-md font-mono text-[10px] uppercase tracking-wider transition-colors",
             list.length > 0 ? "bg-primary/20 text-primary" : "bg-surface text-muted-foreground hover:text-foreground"
           )}
         >
-          <Settings2 className="size-2.5" /> {label}
+          <Settings2 className="size-3.5" /> {label}
           {list.length > 0 ? ` ${list.length}` : ""}
         </button>
       </PopoverTrigger>
-      <PopoverContent onInteractOutside={(e) => { if ((e.target as HTMLElement | null)?.closest?.("[role=dialog]")) e.preventDefault(); }} align="start" className="w-64 p-3">
+      <PopoverContent onInteractOutside={(e) => { if ((e.target as HTMLElement | null)?.closest?.("[role=dialog]")) e.preventDefault(); }} align="start" className="w-80 p-3">
         <InsertRack
           title={`${target.split(":")[1]?.toUpperCase()} effects`}
             midiId={target}
@@ -1498,13 +1498,9 @@ function MasterStrip({ level: peak }: { level: number }) {
           <VuMeter level={peak} label="L" />
           <VuMeter level={peak} label="R" />
         </div>
-        {!advanced && <FxMenu target="bus:master" label="Master FX" />}
+        <FxMenu target="bus:master" label="Master FX" />
       </div>
-      {advanced && (
-        <div className={cn(ROW.sends, "border-b border-border/60 px-1 py-[2px]")}>
-          <FxMenu target="bus:master" label="Master FX" />
-        </div>
-      )}
+      {advanced && <div className={cn(ROW.sends, "border-b border-border/60")} />}
       {advanced && <div className={cn(ROW.sendBars, "border-b border-border/60")} />}
 
       <div className={cn(ROW.io, "flex items-center justify-center border-b border-border/60 font-mono text-[8px] uppercase tracking-widest text-muted-foreground")}>
