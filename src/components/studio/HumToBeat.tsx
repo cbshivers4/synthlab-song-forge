@@ -6,8 +6,6 @@ import { usePreviewTrack } from "@/lib/synclab/use-preview-track";
 import { PreviewButtons } from "./PreviewButtons";
 import { GeneratedWaveform } from "./GeneratedWaveform";
 import { PatternWaveform } from "./PatternWaveform";
-
-const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 import { useStudio } from "@/lib/synclab/store";
 import { openMic, preferredRecordingMime, releaseMic } from "@/lib/synclab/mic";
 import { alignToStart, analyseBeatbox, analyseMelody, type BeatHit, type HumNote } from "@/lib/synclab/hum-to-beat";
@@ -15,6 +13,7 @@ import { stepsPerBar } from "@/lib/synclab/timebase";
 
 type Mode = "beat" | "melody";
 const MAX_SEC = 30;
+const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 
 export function HumToBeat() {
   const { tracks, transport, addTrack, updateTrack } = useStudio();
