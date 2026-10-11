@@ -27,6 +27,7 @@ import { LiveWave } from "@/components/studio/LiveWave";
 import { getPadBank, setPadBank, subscribePadBank, type SavedPad } from "@/lib/synclab/pad-session";
 import { renderStarterSamples } from "@/lib/synclab/starter-samples";
 import { MidiLearnButton } from "./MidiLearn";
+import { MidiPadLearnBar, useMidiPads } from "./MidiPadLearn";
 import { Keyboard } from "./Keyboard";
 import { qwertyEnabled } from "@/lib/synclab/qwerty";
 import { SavePadsDialog } from "./SavePadsDialog";
@@ -270,6 +271,7 @@ export function PadSampler() {
     },
     [captureNote, ensureTrack],
   );
+  const padMidi = useMidiPads("pad-sampler", 16, (i, velocity) => trigger(i, velocity));
 
   /* pad step sequencer */
   useEffect(() => {

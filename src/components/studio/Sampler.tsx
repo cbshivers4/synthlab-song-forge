@@ -329,7 +329,7 @@ export function Sampler() {
   const chopPads = useMidiPads(`sampler:${track?.id ?? "none"}`, Math.min(64, chops.length), (i, velocity) => {
     if (!track || !s) return;
     setHeld(i);
-    previewNote(track.id, s.rootNote + i, s.duration, velocity);
+    previewNote(track.id, s.rootNote + i, s.duration); void velocity;
   }, releaseChop);
 
   /** Cuts the trimmed region into n equal chops. */
