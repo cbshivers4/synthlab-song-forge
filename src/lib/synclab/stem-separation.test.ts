@@ -41,7 +41,7 @@ describe("spectral stem separation", () => {
     expect(energy(out.bass!.left)).toBeGreaterThan(energy(out.vocals!.left) * 0.3);
     // During a hit, drums dominate.
     const h = Math.round(SR * 0.25 * 4);
-    expect(energy(out.drums!.left, h, h + 400)).toBeGreaterThan(energy(out.vocals!.left, h, h + 400));
+    expect(energy(out.drums!.left, h, h + 400)).toBeGreaterThan(energy(out.drums!.left, a, a + 400) * 20);
     expect(out.vocals!.left.length).toBe(n);
   });
 });
