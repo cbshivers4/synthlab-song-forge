@@ -978,8 +978,6 @@
   min-height: 28px;
   height: 28px;
 }
-.phone-console .transport-glass[data-phone-transport="true"] .phone-loop-controls,
-.phone-console .transport-glass[data-phone-transport="true"] .phone-loop-controls > div,
 .phone-console .transport-glass[data-phone-transport="true"] .phone-rhythm-controls {
   width: auto;
   flex-wrap: nowrap;
@@ -987,6 +985,17 @@
   padding-top: 0;
   min-height: 44px;
 }
+/* Loop range reads as its own full-width line under the scrolling strip. */
+.phone-console .transport-glass[data-phone-transport="true"] .phone-loop-controls {
+  grid-column: 1 / -1;
+  order: 4;
+  width: 100%;
+  min-height: 44px;
+  border-top: 0;
+  padding-top: 2px;
+  gap: 4px;
+}
+.phone-console .transport-glass[data-phone-transport="true"] .phone-loop-controls > div { min-height: 44px; }
 .phone-console .transport-glass[data-phone-transport="true"] .phone-loop-controls button,
 .phone-console .transport-glass[data-phone-transport="true"] .phone-rhythm-controls button,
 .phone-console .transport-glass-display > button {
