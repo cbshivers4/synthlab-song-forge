@@ -670,11 +670,11 @@
 .transport-glass[data-phone-transport="true"] .phone-loop-group { column-gap: 0; }
 .transport-glass[data-phone-transport="true"] .phone-loop-label {
   font-family: var(--font-mono);
-  font-size: 0.625rem;
-  letter-spacing: 0.14em;
+  font-size: 0.5625rem;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--color-muted-foreground);
-  padding-inline: 0.75rem 0.5rem;
+  padding-inline: 0.5rem 0.3125rem;
   white-space: nowrap;
 }
 .transport-glass[data-phone-transport="true"] .phone-rhythm-controls { min-height: 48px; }
