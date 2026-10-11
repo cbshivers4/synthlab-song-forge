@@ -15,6 +15,22 @@ describe("hum-to-beat", () => {
     expect(notes[0]!.step).toBe(0);
   });
 
+  it("hears a quiet hum with harmonics, vibrato and gaps", () => {
+    const d = new Float32Array(RATE * 2);
+    const segs = [[0, 0.5, 220], [0.6, 1.1, 246.94], [1.2, 1.8, 196]] as const;
+    let ph = 0;
+    for (let i = 0; i < d.length; i++) {
+      const t = i / RATE;
+      const seg = segs.find(([a, b]) => t >= a && t < b);
+      if (!seg) { d[i] = 0.0005 * Math.sin(i); continue; }
+      const hz = seg[2] * (1 + 0.006 * Math.sin(2 * Math.PI * 5 * t));
+      ph += (2 * Math.PI * hz) / RATE;
+      d[i] = 0.02 * (Math.sin(ph) + 0.6 * Math.sin(2 * ph) + 0.3 * Math.sin(3 * ph));
+    }
+    const notes = alignToStart(analyseMelody(d, RATE, 120));
+    expect(notes.map((n) => n.pitch)).toEqual([57, 59, 55]);
+  });
+
   it("classifies a low thump as kick and noise burst as hat", () => {
     const d = new Float32Array(RATE);
     const stepSamples = Math.round(RATE * 0.125); // 1/16 at 120 BPM
