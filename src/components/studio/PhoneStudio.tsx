@@ -59,7 +59,7 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
     <nav aria-label="Studio navigation" data-rail-open={railOpen} className="phone-console-rail flex h-full w-full flex-col items-center gap-2 border-r border-border bg-surface px-2 py-3">
       {railOpen && <>
       <Button variant="ghost" className="size-16 shrink-0 p-0" aria-label="Projects" onClick={() => setStage("start")}><img src={logo.url} alt="SYNCLAB" className="size-16 rounded-md object-cover" /></Button>
-      <div className="flex min-h-0 flex-1 flex-col justify-center gap-3">
+      <div className="flex min-h-max flex-1 shrink-0 flex-col justify-center gap-3">
         {[{ label: "EDIT", icon: AudioLines, active: !panel && room === "edit", run: () => enter("edit") }, { label: "MIX", icon: SlidersHorizontal, active: panel === "mixer", run: () => setPanel("mixer") }, { label: "SOUNDS", icon: Music2, active: room === "sounds" || ["synth", "sampler", "pads", "drums", "browser", "keys", "live", "looper"].includes(panel ?? ""), run: () => enter("sounds") }, { label: "TOOLS", icon: Wand2, active: room === "tools", run: () => enter("tools") }].map(({ label, icon: Icon, active, run }) => <Button key={label} variant="ghost" aria-pressed={active} className={`phone-room-button h-16 w-16 shrink-0 flex-col gap-1 px-0 text-[10px] font-bold ${active ? "bg-primary/15 text-primary" : "text-muted-foreground"}`} onClick={run}><Icon className="size-6" />{label}</Button>)}
       </div>
       <Button variant="ghost" size="icon" className="size-12 shrink-0" aria-label="Home and projects" onClick={() => setStage("start")}><Home /></Button>
