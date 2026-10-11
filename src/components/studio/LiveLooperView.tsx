@@ -203,6 +203,7 @@ export function LiveLooperView() {
   return (
     <div className="studio-wallpaper space-y-5 rounded-md p-3" data-studio-panel="looper" style={skinBackground(skin)} {...drop}>
       <SkinControls skinKey="looper" image />
+      <MidiPadLearnBar pads={loopPads} label="loops" names={(i) => `loop ${i + 1}`} />
       <div className="flex flex-wrap items-end gap-4 border-b border-border pb-4">
         <div>
           <div className="mb-1 font-mono text-[10px] uppercase text-muted-foreground">Timing</div>
