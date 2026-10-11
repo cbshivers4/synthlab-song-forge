@@ -152,6 +152,7 @@
 - [x] My Library (cloud/computer folders for samples, synth, drums, notes) + distinct effect window looks
 
 ## Current request
+- [ ] Restore consistent graphite grey phone theming across entry screens, studio tools and menus; preserve desktop styling.
 - [x] Show real video audio waveform and manual cuts on desktop and phone; signed-in desktop, portrait and sideways checks verified decoding, waveform seeks/cuts, pad playback and timeline transfer. Chop tests passed; build OK. Physical-device listening remains unverified.
 - [x] Keep sampler waveform visible during chopping and stretching on desktop and phone; signed-in checks verified real WAV waveform, manual cuts on both layouts, and 120→60 BPM stretch changing 6s to 12s. Chop tests and build passed; physical-device listening remains unverified.
 - [x] Show sampler keyboard by default and add independent natural/sharp/played key colors and surround-only wallpaper to sampler, synth and sample-pad keyboards; signed-in desktop and phone checks verified all three, opaque keys and actual loaded-sample audio signal. Build OK; physical-device listening remains hardware-dependent.
