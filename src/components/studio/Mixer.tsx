@@ -271,12 +271,12 @@ export function InsertRack({
           </div>
         ))}
       </div>
-      <div className="mt-1.5 grid grid-cols-2 gap-1">
+      <div className="mt-1.5 grid grid-cols-2 gap-1.5">
         {installedPlugins.map((d) => (
           <button
             key={d.id}
             onClick={() => onAdd(d)}
-            className="truncate rounded-sm border border-border bg-surface px-1 py-1 text-left font-mono text-[8px] uppercase text-muted-foreground hover:text-foreground"
+            className="truncate rounded-md border border-border bg-surface px-2 py-1.5 text-left font-mono text-[10px] uppercase text-muted-foreground hover:text-foreground"
             title={`${d.vendor} · ${d.format}`}
           >
             + {d.name}
