@@ -764,11 +764,11 @@
 
 /* Selected phone console: exact graphite/teal tokens, scoped away from desktop. */
 .phone-console, .phone-console-active [data-slot="popover-content"], .phone-console-active [data-slot="dialog-content"] {
-  --background: #050607;
+  --background: #15191c;
   --foreground: #f2f5f4;
-  --surface: #14181a;
-  --border: #262c2f;
-  --surface-2: #1c2124;
+  --surface: #30383b;
+  --border: var(--surface);
+  --surface-2: #30383b;
   --card: var(--surface);
   --card-foreground: var(--foreground);
   --popover: var(--background);
@@ -849,7 +849,7 @@
 .phone-transport-menu .phone-page-controls { background: var(--surface); }
 .phone-transport-menu button { min-height: 44px; }
 .phone-console-active [role="dialog"], .phone-console-active .phone-transport-menu {
-  --background: #050607; --surface: #14181a; --surface-2: #1c2124; --foreground: #f2f5f4; --primary: #45c8b5;
+  --background: #15191c; --surface: #30383b; --surface-2: #30383b; --foreground: #f2f5f4; --primary: #45c8b5;
 }
 .phone-console .mobile-timeline #timeline-scroll > div > .flex.items-center,
 .phone-console .mobile-timeline #timeline-scroll > div > .m-2 { display: none; }
