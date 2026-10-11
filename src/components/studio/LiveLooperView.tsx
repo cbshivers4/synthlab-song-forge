@@ -10,6 +10,7 @@ import { getBeatsPerBar } from "@/lib/synclab/timebase";
 import { cn } from "@/lib/utils";
 import { TRACK_PALETTE } from "./TrackStyle";
 import { MidiLearnButton } from "./MidiLearn";
+import { MidiPadLearnBar, useMidiPads } from "./MidiPadLearn";
 import { SkinControls, skinBackground, useImageDrop } from "@/components/studio/SkinControls";
 import { useSkin } from "@/lib/synclab/skins";
 
@@ -173,6 +174,16 @@ export function LiveLooperView() {
   const drop = useImageDrop("looper");
   const { transport, addTrack, addClip } = useStudio();
   const looper = getLooper();
+  // Controller pads start/stop loops: empty records, recording closes, playing stops, stopped plays.
+  const loopPads = useMidiPads("looper", 8, (i) => {
+    const slot = looper.slots[i];
+    if (!slot) return;
+    const fail = (error: unknown) => toast.error("Couldn't start the looper", { description: error instanceof Error ? error.message : undefined });
+    if (slot.state === "playing") looper.stop(i);
+    else if (slot.state === "recording" || slot.state === "armed") void looper.tap(i).catch(fail);
+    else if (slot.buffer) looper.play(i);
+    else void looper.recordCounted(i).catch(fail);
+  });
   const [, rerender] = useReducer((n: number) => n + 1, 0);
   useEffect(() => looper.subscribe(rerender), [looper]);
   useEffect(() => { looper.bpm = transport.bpm; }, [looper, transport.bpm]);
@@ -192,6 +203,7 @@ export function LiveLooperView() {
   return (
     <div className="studio-wallpaper space-y-5 rounded-md p-3" data-studio-panel="looper" style={skinBackground(skin)} {...drop}>
       <SkinControls skinKey="looper" image />
+      <MidiPadLearnBar pads={loopPads} label="loops" names={(i) => `loop ${i + 1}`} />
       <div className="flex flex-wrap items-end gap-4 border-b border-border pb-4">
         <div>
           <div className="mb-1 font-mono text-[10px] uppercase text-muted-foreground">Timing</div>

@@ -4,6 +4,8 @@ import { LIVE_FX, getLiveFx, type LiveFxInfo } from "@/lib/synclab/live-fx";
 import { cn } from "@/lib/utils";
 import { SkinControls, skinBackground, useImageDrop } from "@/components/studio/SkinControls";
 import { useSkin } from "@/lib/synclab/skins";
+import { registerCcAction } from "@/lib/synclab/midi-actions";
+import { MidiLearnButton } from "./MidiLearn";
 
 function FxPad({ fx }: { fx: LiveFxInfo }) {
   const box = useRef<HTMLDivElement | null>(null);
@@ -35,6 +37,30 @@ function FxPad({ fx }: { fx: LiveFxInfo }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hold]);
 
+  // Learned controller knobs move X / Y; the effect lets go 1.5 s after the last move unless Hold is on.
+  const posRef = useRef(pos);
+  posRef.current = pos;
+  useEffect(() => {
+    let idle = 0;
+    const move = (axis: "x" | "y") => (v: number) => {
+      const prev = posRef.current;
+      const next = { x: prev?.x ?? 0.5, y: prev?.y ?? 0.5, [axis]: v };
+      if (prev) getLiveFx().move(fx.id, next.x, next.y); else getLiveFx().engage(fx.id, next.x, next.y);
+      posRef.current = next;
+      setPos(next);
+      window.clearTimeout(idle);
+      idle = window.setTimeout(() => {
+        if (holdRef.current || down.current) return;
+        getLiveFx().release(fx.id);
+        posRef.current = null;
+        setPos(null);
+      }, 1500);
+    };
+    const offX = registerCcAction(`livefx:${fx.id}`, "x", move("x"));
+    const offY = registerCcAction(`livefx:${fx.id}`, "y", move("y"));
+    return () => { offX(); offY(); window.clearTimeout(idle); };
+  }, [fx.id]);
+
   const active = pos !== null;
   return (
     <div
@@ -55,6 +81,10 @@ function FxPad({ fx }: { fx: LiveFxInfo }) {
         >
           Hold
         </button>
+      </div>
+      <div className="flex flex-wrap items-center gap-1 font-mono text-[9px] uppercase text-muted-foreground">
+        X <MidiLearnButton id={`livefx:${fx.id}`} param="x" label={`${fx.name} X`} />
+        Y <MidiLearnButton id={`livefx:${fx.id}`} param="y" label={`${fx.name} Y`} />
       </div>
       <div
         ref={box}

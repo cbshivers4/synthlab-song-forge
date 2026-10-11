@@ -13,6 +13,7 @@ import { uid } from "@/lib/synclab/presets";
 import { wsolaStretch } from "@/lib/synclab/stretch";
 import { WaveformView } from "@/components/studio/WaveformView";
 import { MidiLearnButton } from "./MidiLearn";
+import { MidiPadLearnBar, useMidiPads } from "./MidiPadLearn";
 import { SkinControls, skinBackground, useImageDrop } from "@/components/studio/SkinControls";
 import { useSkin } from "@/lib/synclab/skins";
 import { getPadBank, setPadBank, type SavedPad } from "@/lib/synclab/pad-session";
@@ -325,6 +326,11 @@ export function Sampler() {
     setHeld(null);
     if (track && s && !s.oneShot) getEngine().stopVoiceKey(track.id, s.chopChoke ? `chop-choke-${s.chopChoke}` : `chop-${index}`);
   };
+  const chopPads = useMidiPads(`sampler:${track?.id ?? "none"}`, Math.min(64, chops.length), (i, velocity) => {
+    if (!track || !s) return;
+    setHeld(i);
+    previewNote(track.id, s.rootNote + i, s.duration); void velocity;
+  }, releaseChop);
 
   /** Cuts the trimmed region into n equal chops. */
   const chopInto = (n: number) => {
@@ -721,6 +727,7 @@ export function Sampler() {
 
             {chops.length > 0 ? (
               <>
+                <MidiPadLearnBar pads={chopPads} label="chops" names={(i) => `chop ${i + 1}`} />
                 <div className="flex items-center gap-2" role="group" aria-label="Chop banks">
                   <span className="label-xs">BANK</span>
                   {["A", "B", "C", "D"].map((label, bank) => <Button key={label} variant={Math.min(chopBank, Math.floor((chops.length - 1) / 16)) === bank ? "default" : "outline"} className="size-12 p-0" aria-label={`Chop bank ${label}`} aria-pressed={Math.min(chopBank, Math.floor((chops.length - 1) / 16)) === bank} disabled={bank * 16 >= chops.length} onClick={() => setChopBank(bank)}>{label}</Button>)}

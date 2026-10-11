@@ -8,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { ccAction } from "./midi-actions";
 import { toast } from "sonner";
 import { getEngine } from "./audio-engine";
 import { stepsPerBar, setBeatsPerBar, getBeatsPerBar, STEPS_PER_BEAT, songSteps, stepSeconds, barsForSteps } from "./timebase";
@@ -691,6 +692,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             return;
           }
           const v = msg.value;
+          const live = ccAction(target.id, target.param);
+          if (live) { live(v); return; }
            if (target.id === "transport") {
              if (target.param === "bpm") setTransportState((s) => ({ ...s, bpm: ccRange(v, 60, 190, 1) }));
              else if (target.param === "swing") setTransportState((s) => ({ ...s, swing: ccRange(v, 0, 0.6, 0.01) }));
