@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { applyThemeVars, THEMES, themeById, type Theme, type ThemeVars } from "./themes";
 
 export type Stage = "welcome" | "start" | "studio";
@@ -59,6 +60,7 @@ function read(): Persisted {
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
+  const isMobile = useIsMobile();
   const [stage, setStage] = useState<Stage>("welcome");
   const [mode, setMode] = useState<UiMode>("simple");
   const [themeId, setThemeId] = useState("synclab-dark");
@@ -84,11 +86,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 
   useEffect(() => {
-    // Phones always use a dark theme — light themes are hard to read on small screens.
-    const phone = typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches;
-    const theme = phone && activeTheme.id === "light-studio" ? themeById("synclab-dark") ?? activeTheme : activeTheme;
-    applyThemeVars(theme.vars);
+    applyThemeVars(activeTheme.vars);
   }, [activeTheme]);
+
+  // Entry screens and portalled controls share the phone studio palette.
+  useEffect(() => {
+    document.documentElement.classList.toggle("phone-theme-active", isMobile);
+    return () => document.documentElement.classList.remove("phone-theme-active");
+  }, [isMobile]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;

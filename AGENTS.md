@@ -30,7 +30,7 @@ Studio panel wallpaper uses one bundled JPEG with a dark semantic overlay and pe
 Timeline names stay single-line; phone actions prioritize REC/AUTO with isolated menu clicks to avoid opening instruments.
 Playhead stays within track rows; headers, ruler and song lane share its width variable, including large phone controls, to avoid covering buttons.
 Synth sections share wrapping tabs; X-Y pads dispatch through updatePatch to stay synchronized with knobs and saved presets without removing controls.
-Editors shrink below saved height to preserve the timeline minimum and avoid toolbar clipping.
+Editors shrink to preserve timeline space and avoid toolbar clipping.
 Drum artwork uses semantic SVG; sort display copies and bank slices by stable IDs/indices to preserve audio and MIDI.
 
 Phone drum tabs reuse DrumRoll and instrument pads for edits/tap recording; sound/kit tabs preserve controls without duplication.
@@ -38,11 +38,12 @@ Keyboards reuse Keyboard and one note path; independent skin slots color opaque 
 Paste content at the playhead onto the selected or explicit channel, preserving its settings; Duplicate track separately clones channels.
 Synth selection opens piano roll. Pin sampler waveform above Stretch/chops to keep cuts visible; PCM slices use previewNote for gate/choke.
 PhoneStudio keeps transport mounted in a hidden-by-default overlay with a rail toggle so pages use full height; desktop transport is unchanged.
-Phone shares audio/state with desktop; render all channels, tracks and creative tools in both phone menus with native scrolling, never an unpaged slice that hides entries.
-Drum snap is session-only and affects step writes, not existing hits, preserving patterns.
-Count-in haptics use the shared beat timer and guarded vibration support, independent of audio.
+Phone shares desktop audio/state; keep all tracks/tools accessible with native scrolling.
+AppProvider scopes phone tokens to the document via shared mobile detection so entry screens and portals match; desktop preferences stay separate.
+Drum snap is session-only for new step writes, never existing hits.
+Count-in haptics use the shared beat timer and guarded vibration, independent of audio.
 MP3/MP4 imports/exports retain originals in the private library with content hashes to avoid duplicates; saved videos open Video Sampler.
-Cloud deletion reads raw sessions, confirms row deletion, then cleans owned project files; missing playback assets cannot block removal.
+Cloud deletion reads raw sessions, confirms deletion, then cleans owned files; missing assets cannot block removal.
 Reel recorder: singleton AudioWorklet capture; tape bypasses master to avoid feedback. Timeline meters read live post-master taps without input activation; exit releases input, retaining tape.
 
 Video cuts use source seconds/grid/clamp; kits save MIDI notes. Keyboard/learned MIDI share pad triggers; MIDI consumers prevent doubled track notes.
