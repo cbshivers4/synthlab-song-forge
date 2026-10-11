@@ -21,16 +21,6 @@ const polar = (angle: number, radius: number) => ({ x: 100 + Math.cos(angle) * r
 
 function LoopDonut({ slot, send }: { slot: LoopSlot; send: (i: number) => void }) {
   const looper = getLooper();
-  // Controller pads start/stop loops: empty records, recording closes, playing stops, stopped plays.
-  const loopPads = useMidiPads("looper", 8, (i) => {
-    const slot = looper.slots[i];
-    if (!slot) return;
-    const fail = (error: unknown) => toast.error("Couldn't start the looper", { description: error instanceof Error ? error.message : undefined });
-    if (slot.state === "playing") looper.stop(i);
-    else if (slot.state === "recording" || slot.state === "armed") void looper.tap(i).catch(fail);
-    else if (slot.buffer) looper.play(i);
-    else void looper.recordCounted(i).catch(fail);
-  });
   const [, tick] = useReducer((n: number) => n + 1, 0);
   useEffect(() => {
     if (!["armed", "recording", "playing"].includes(slot.state)) return;
@@ -184,6 +174,16 @@ export function LiveLooperView() {
   const drop = useImageDrop("looper");
   const { transport, addTrack, addClip } = useStudio();
   const looper = getLooper();
+  // Controller pads start/stop loops: empty records, recording closes, playing stops, stopped plays.
+  const loopPads = useMidiPads("looper", 8, (i) => {
+    const slot = looper.slots[i];
+    if (!slot) return;
+    const fail = (error: unknown) => toast.error("Couldn't start the looper", { description: error instanceof Error ? error.message : undefined });
+    if (slot.state === "playing") looper.stop(i);
+    else if (slot.state === "recording" || slot.state === "armed") void looper.tap(i).catch(fail);
+    else if (slot.buffer) looper.play(i);
+    else void looper.recordCounted(i).catch(fail);
+  });
   const [, rerender] = useReducer((n: number) => n + 1, 0);
   useEffect(() => looper.subscribe(rerender), [looper]);
   useEffect(() => { looper.bpm = transport.bpm; }, [looper, transport.bpm]);
