@@ -1,42 +1,20 @@
 /**
- * Simple stem separation using stereo mid/side maths and filters — not AI.
- * Results are approximations; centre-panned vocals and wide mixes work best.
+ * Stem separation on the device using spectral masking (see stem-separation.ts) — not AI.
+ * Expect some bleed; stereo mixes with centre-panned vocals separate best.
  */
-export type StemId = "vocal" | "instrumental" | "bass" | "mids" | "highs";
+import { separateSpectral, type SpectralStem, type StereoPcm } from "./stem-separation";
+
+export type StemId = SpectralStem;
 
 export const STEMS: { id: StemId; label: string; hint: string }[] = [
-  { id: "vocal", label: "Vocal focus", hint: "Centre of the mix, 150 Hz–7 kHz. Keeps other centred parts too." },
-  { id: "instrumental", label: "Vocal remove", hint: "Cancels the centre (karaoke style), keeps the bass. Needs a stereo file." },
-  { id: "bass", label: "Bass", hint: "Everything below about 160 Hz — kick and bass." },
-  { id: "mids", label: "Mids", hint: "160 Hz–5 kHz — chords, guitars, keys, vocals." },
-  { id: "highs", label: "Highs", hint: "Above 5 kHz — hi-hats, cymbals, air." },
+  { id: "vocals", label: "Vocals", hint: "Sustained, centre-panned sound in the voice range. Needs a stereo file." },
+  { id: "drums", label: "Drums", hint: "Hits and transients — kick, snare, hats, percussion." },
+  { id: "bass", label: "Bass", hint: "Sustained low notes below about 200 Hz (kick goes to Drums)." },
+  { id: "music", label: "Music", hint: "Everything else — chords, keys, guitars, synths, pads." },
+  { id: "instrumental", label: "Instrumental (no vocals)", hint: "The whole song with the Vocals part taken out." },
 ];
 
-type F = { type: BiquadFilterType; freq: number }[];
-
-async function filtered(left: Float32Array, right: Float32Array, sr: number, filters: F) {
-  const ctx = new OfflineAudioContext(2, left.length, sr);
-  const b = ctx.createBuffer(2, left.length, sr);
-  b.copyToChannel(left as Float32Array<ArrayBuffer>, 0);
-  b.copyToChannel(right as Float32Array<ArrayBuffer>, 1);
-  const src = ctx.createBufferSource();
-  src.buffer = b;
-  let node: AudioNode = src;
-  for (const f of filters) {
-    // two cascaded biquads give a steeper 24 dB/oct slope
-    for (let k = 0; k < 2; k++) {
-      const q = ctx.createBiquadFilter();
-      q.type = f.type;
-      q.frequency.value = f.freq;
-      node.connect(q);
-      node = q;
-    }
-  }
-  node.connect(ctx.destination);
-  src.start();
-  const out = await ctx.startRendering();
-  return { left: out.getChannelData(0), right: out.getChannelData(1) };
-}
+export const MAX_STEM_SECONDS = 6 * 60;
 
 export function isStereo(buf: AudioBuffer) {
   if (buf.numberOfChannels < 2) return false;
@@ -48,27 +26,28 @@ export function isStereo(buf: AudioBuffer) {
   return diff > sum * 0.02;
 }
 
-export async function separateStem(buf: AudioBuffer, id: StemId) {
-  const sr = buf.sampleRate;
-  const L = buf.getChannelData(0);
-  const R = buf.numberOfChannels > 1 ? buf.getChannelData(1) : L;
-  const n = L.length;
-  if (id === "bass") return filtered(L, R, sr, [{ type: "lowpass", freq: 160 }]);
-  if (id === "mids") return filtered(L, R, sr, [{ type: "highpass", freq: 160 }, { type: "lowpass", freq: 5000 }]);
-  if (id === "highs") return filtered(L, R, sr, [{ type: "highpass", freq: 5000 }]);
-  const mid = new Float32Array(n);
-  const side = new Float32Array(n);
-  for (let i = 0; i < n; i++) { mid[i] = (L[i]! + R[i]!) / 2; side[i] = (L[i]! - R[i]!) / 2; }
-  if (id === "vocal") {
-    const v = await filtered(mid, mid, sr, [{ type: "highpass", freq: 150 }, { type: "lowpass", freq: 7000 }]);
-    return v;
+/** Runs the separation in a background worker so the studio keeps playing. */
+export function separateStems(buf: AudioBuffer, ids: StemId[], onProgress?: (fraction: number) => void): Promise<Partial<Record<StemId, StereoPcm>>> {
+  const left = buf.getChannelData(0).slice();
+  const right = (buf.numberOfChannels > 1 ? buf.getChannelData(1) : buf.getChannelData(0)).slice();
+  const sampleRate = buf.sampleRate;
+  let worker: Worker | null = null;
+  try {
+    worker = new Worker(new URL("./stem-separation.worker.ts", import.meta.url), { type: "module" });
+  } catch {
+    worker = null;
   }
-  // instrumental: side signal (centre cancelled) + mono bass from the mid
-  const low = await filtered(mid, mid, sr, [{ type: "lowpass", freq: 140 }]);
-  const left = new Float32Array(n);
-  const right = new Float32Array(n);
-  for (let i = 0; i < n; i++) { left[i] = side[i]! + low.left[i]!; right[i] = -side[i]! + low.left[i]!; }
-  return { left, right };
+  if (!worker) return new Promise((resolve) => setTimeout(() => resolve(separateSpectral(left, right, sampleRate, ids, onProgress)), 20));
+  const w = worker;
+  return new Promise((resolve, reject) => {
+    w.onmessage = (e: MessageEvent<{ type: string; p?: number; out?: Partial<Record<StemId, StereoPcm>>; message?: string }>) => {
+      if (e.data.type === "progress") onProgress?.(e.data.p ?? 0);
+      else if (e.data.type === "done") { w.terminate(); resolve(e.data.out ?? {}); }
+      else { w.terminate(); reject(new Error(e.data.message ?? "Separation failed")); }
+    };
+    w.onerror = (e) => { w.terminate(); reject(new Error(e.message || "Separation failed")); };
+    w.postMessage({ left, right, sampleRate, ids }, [left.buffer, right.buffer]);
+  });
 }
 
 export function peaksOf(data: Float32Array, points = 160) {
