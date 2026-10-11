@@ -257,3 +257,9 @@
 - [x] Notes on every tool, clear-track stays on edit, R2R song counter, video resize, Separate/Add buttons, Generate bass, mobile mic/MIDI help
 
 - [x] Show PCM waveforms for generated stems, converted voice, separated stems, bass/co-producer patterns and recorded Hum to Beat. Browser verified actual note/drum PCM and generated bass waveform on desktop/phone; hum/voice tests passed. Physical-device listening remains unverified.
+
+- [x] Spectral Vocals/Drums/Bass/Music/Instrumental separation in a worker (unit-tested sum + isolation; browser separated a 20s mix with waveforms).
+- [x] Hum to Beat YIN pitch tracking on level-normalised audio (quiet hum unit test; browser hum heard A3 C4 D4 A3).
+- [x] Bass Generator genre templates: Detroit Techno, Electro, House, Trance, Ghetto Tech (pattern, sound, key, tempo).
+- [x] Convert Voice: 21 grouped templates (gender/age, effects, harmony & space).
+- [x] AI tool panels isolated by an error boundary; Co-Producer reproduced working on preview and published sites. Published site needs republishing to show the new waveforms.
