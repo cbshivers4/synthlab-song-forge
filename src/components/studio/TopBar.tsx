@@ -253,6 +253,13 @@ export function TopBar() {
           )}
         </div>
 
+        {isMobile && (
+          <div aria-label="Loop range" className="phone-loop-controls flex w-full min-w-0 flex-wrap items-center gap-1">
+            <LoopRange mobile />
+            <div className="phone-loop-group flex shrink-0 items-center rounded-md border border-border/70"><Button variant="ghost" size="icon" className="size-12" aria-label="Fewer bars" disabled={transport.bars <= 1} onClick={() => setTransport({ bars: Math.max(1, transport.bars - 1) })}><Minus className="size-3" /></Button><span className="font-mono text-sm">{transport.bars} bars</span><Button variant="ghost" size="icon" className="size-12" aria-label="More bars" disabled={transport.bars >= 512} onClick={() => setTransport({ bars: Math.min(512, transport.bars + 1) })}><Plus className="size-3" /></Button></div>
+          </div>
+        )}
+
         <div className="transport-tempo transport-glass-group hidden min-w-0 items-center gap-3 rounded-[3px] border border-border bg-background/70 px-3 py-1 sm:flex">
           <div>
             <span className="label-xs">BPM</span>
