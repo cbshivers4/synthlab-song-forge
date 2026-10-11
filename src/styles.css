@@ -764,11 +764,11 @@
 
 /* Selected phone console: exact graphite/teal tokens, scoped away from desktop. */
 .phone-console, .phone-console-active [data-slot="popover-content"], .phone-console-active [data-slot="dialog-content"] {
-  --background: #050607;
+  --background: #15191c;
   --foreground: #f2f5f4;
-  --surface: #14181a;
-  --border: #262c2f;
-  --surface-2: #1c2124;
+  --surface: #30383b;
+  --border: var(--surface);
+  --surface-2: #30383b;
   --card: var(--surface);
   --card-foreground: var(--foreground);
   --popover: var(--background);
