@@ -1240,3 +1240,37 @@
 [data-fx-kind="vocoder"], [data-fx-kind="resonator"], [data-fx-kind="scalechord"] { --fx-hue: 345; }
 [data-fx-kind="limiter"] { --fx-hue: 15; }
 [data-fx-kind="gate"] { --fx-hue: 120; }
+
+/* Modular Tech Synth: black Eurorack case, brushed panels, real patch-cable jacks. */
+.studio-wallpaper[data-synth-style="modular"] {
+  --primary: oklch(0.82 0.17 130); --neon: oklch(0.82 0.17 130); --studio-accent: oklch(0.82 0.17 130);
+  --primary-foreground: oklch(0.15 0.02 130);
+}
+.modular-case { background: oklch(0.13 0.005 250); border: 6px solid oklch(0.22 0.005 250); border-radius: 6px; }
+.modular-rail { height: 8px; background: repeating-linear-gradient(90deg, oklch(0.55 0.005 250) 0 18px, oklch(0.35 0.005 250) 18px 20px); }
+.modular-module {
+  display: flex; flex-direction: column; align-items: center; gap: 0.4rem; padding: 0.5rem 0.35rem;
+  background: linear-gradient(180deg, oklch(0.8 0.005 250), oklch(0.68 0.005 250));
+  color: oklch(0.16 0.01 250); border-radius: 3px; box-shadow: inset 0 0 0 1px oklch(0.5 0.005 250);
+  --surface: oklch(0.3 0.01 250); --surface-2: oklch(0.25 0.01 250); --border: oklch(0.45 0.01 250); --foreground: oklch(0.16 0.01 250);
+}
+.modular-module h4 { font-family: var(--font-mono, monospace); font-size: 11px; font-weight: 800; letter-spacing: 0.18em; }
+.modular-module .label-xs { color: oklch(0.2 0.01 250); }
+.modular-jacks { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem; margin-top: auto; padding-top: 0.3rem; border-top: 1px solid oklch(0.55 0.005 250); width: 100%; }
+.modular-jack-label { font-family: var(--font-mono, monospace); font-size: 8px; font-weight: 700; }
+.modular-jack {
+  width: 22px; height: 22px; border-radius: 9999px;
+  background: radial-gradient(circle, oklch(0.08 0 0) 0 30%, oklch(0.75 0.005 250) 32% 55%, oklch(0.45 0.005 250) 58%);
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+.modular-jack.is-out { box-shadow: 0 0 0 2px oklch(0.25 0.01 250); }
+.modular-jack.is-pending { box-shadow: 0 0 0 3px var(--primary), 0 0 12px var(--primary); transform: scale(1.1); }
+.modular-jack.is-target { box-shadow: 0 0 0 2px var(--primary); animation: modular-pulse 1s ease-in-out infinite; }
+@keyframes modular-pulse { 50% { box-shadow: 0 0 0 4px color-mix(in oklab, var(--primary) 40%, transparent); } }
+.modular-switch {
+  padding: 0.1rem 0.3rem; border-radius: 2px; font-family: var(--font-mono, monospace); font-size: 9px; font-weight: 700;
+  background: oklch(0.3 0.01 250); color: oklch(0.85 0.005 250); border: 1px solid oklch(0.2 0.01 250);
+}
+.modular-switch.is-on { background: var(--primary); color: var(--primary-foreground); }
+.modular-cable { fill: none; stroke: oklch(0.7 0.18 var(--cable-hue, 30)); stroke-width: 4; stroke-linecap: round; opacity: 0.9; }
+.modular-cable-shadow { fill: none; stroke: oklch(0 0 0 / 0.45); stroke-width: 7; stroke-linecap: round; transform: translateY(2px); }

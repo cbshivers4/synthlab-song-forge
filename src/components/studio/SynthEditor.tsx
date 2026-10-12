@@ -18,6 +18,7 @@ import { uid } from "@/lib/synclab/presets";
 import { toast } from "sonner";
 import { MidiLearnStrip } from "./MidiLearn";
 import { PitchWheels } from "./PitchWheels";
+import { ModularSynth } from "./ModularSynth";
 import { AcidSequencer } from "./AcidSequencer";
 
 const WAVES: OscWave[] = ["sine", "triangle", "sawtooth", "square", "pulse", "noise", "wavetable"];
@@ -103,8 +104,8 @@ export function SynthEditor({ track }: { track: Track }) {
   const skin = useSkin("synth");
   const drop = useImageDrop("synth");
   return (
-    <div className="studio-wallpaper space-y-4 rounded-md p-3" data-studio-panel="synth" data-synth-style={patch.name.startsWith("TD-3") || /ACID/i.test(track.name) ? "acid" : patch.name.startsWith("Poly Synth") || /POLY/i.test(track.name) ? "poly" : "spec4"} style={skinBackground(skin)} {...drop}>
-      <div className="synth-badge" aria-hidden>{patch.name.startsWith("TD-3") || /ACID/i.test(track.name) ? "ACID BASS · TD-3 STYLE" : patch.name.startsWith("Poly Synth") || /POLY/i.test(track.name) ? "POLY SYNTH · 8 VOICE" : "SPEC 4 SYNTH"}</div>
+    <div className="studio-wallpaper space-y-4 rounded-md p-3" data-studio-panel="synth" data-synth-style={patch.modular ? "modular" : patch.name.startsWith("TD-3") || /ACID/i.test(track.name) ? "acid" : patch.name.startsWith("Poly Synth") || /POLY/i.test(track.name) ? "poly" : "spec4"} style={skinBackground(skin)} {...drop}>
+      <div className="synth-badge" aria-hidden>{patch.modular ? "MODULAR TECH SYNTH" : patch.name.startsWith("TD-3") || /ACID/i.test(track.name) ? "ACID BASS · TD-3 STYLE" : patch.name.startsWith("Poly Synth") || /POLY/i.test(track.name) ? "POLY SYNTH · 8 VOICE" : "SPEC 4 SYNTH"}</div>
       <SkinControls skinKey="synth" image />
       <MidiLearnStrip id={track.id} label={`${track.name} — every knob below also has its own MIDI button`} />
       <div className="flex flex-wrap items-center gap-2">
@@ -152,7 +153,7 @@ export function SynthEditor({ track }: { track: Track }) {
         <Button
           variant="outline"
           onClick={() => {
-            updatePatch(track.id, defaultPatch("Init Saw"));
+            updatePatch(track.id, { ...defaultPatch("Init Saw"), modular: undefined });
             toast.success("Synth initialized", { description: "Blank starting patch — shape it into your own sound, then SAVE PRESET." });
           }}
         >
@@ -162,6 +163,7 @@ export function SynthEditor({ track }: { track: Track }) {
 
       <PitchWheels trackId={track.id} />
       {(patch.name.startsWith("TD-3") || /ACID/i.test(track.name)) && <AcidSequencer track={track} />}
+      {patch.modular ? <ModularSynth track={track} /> : (
       <Tabs defaultValue="oscillators" className="min-w-0">
         <TabsList aria-label="Synth features" className="flex h-auto w-full flex-wrap justify-start gap-1">
           <TabsTrigger value="oscillators">Oscillators</TabsTrigger>
@@ -624,6 +626,7 @@ export function SynthEditor({ track }: { track: Track }) {
           <ChordScale trackId={track.id} onPlay={(midi) => previewNote(track.id, midi)} />
         </TabsContent>
       </Tabs>
+      )}
       {showKeyboard && <div className="min-w-0 border-t border-border pt-3" aria-label="Synth keyboard"><Keyboard track={track} skinKey="synth-keyboard" /></div>}
     </div>
   );
