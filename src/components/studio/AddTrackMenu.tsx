@@ -34,7 +34,7 @@ export function AddTrackMenu({ size = "default" }: { size?: "default" | "sm" }) 
         <DropdownMenuItem onClick={() => addTrack("instrument", "POLY SYNTH", "Poly Synth Brass")}>
           <Piano className="size-4" /> Poly synth — chords, with notes
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => addTrack("instrument", "MODULAR TECH", "Modular Tech Init")}>
+        <DropdownMenuItem onClick={() => addTrack("instrument", "MODULAR TECH", "Modular Tech Empty Rack")}>
           <Waves className="size-4" /> Modular Tech Synth — patch cables
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => addTrack("drum", "DRUM MACHINE")}>

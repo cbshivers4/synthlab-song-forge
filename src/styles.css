@@ -1274,3 +1274,14 @@
 .modular-switch.is-on { background: var(--primary); color: var(--primary-foreground); }
 .modular-cable { fill: none; stroke: oklch(0.7 0.18 var(--cable-hue, 30)); stroke-width: 4; stroke-linecap: round; opacity: 0.9; }
 .modular-cable-shadow { fill: none; stroke: oklch(0 0 0 / 0.45); stroke-width: 7; stroke-linecap: round; transform: translateY(2px); }
+.modular-module { width: 132px; }
+.modular-add { display: inline-flex; align-items: center; gap: 0.2rem; padding: 0.2rem 0.45rem; border-radius: 3px; font-family: var(--font-mono, monospace); font-size: 10px; font-weight: 700; border: 1px solid var(--border); background: var(--surface-2); color: var(--foreground); }
+.modular-add:hover { border-color: var(--primary); color: var(--primary); }
+.modular-screw { display: grid; place-items: center; width: 18px; height: 18px; border-radius: 9999px; background: oklch(0.55 0.005 250); color: oklch(0.15 0 0); }
+.modular-screw:disabled { opacity: 0.35; }
+.modular-swatch { width: 22px; height: 22px; border-radius: 9999px; background: var(--cable); border: 2px solid oklch(0.2 0 0); }
+.modular-swatch.small { width: 12px; height: 12px; border-width: 1px; }
+.modular-swatch.is-on { box-shadow: 0 0 0 2px var(--foreground); transform: scale(1.1); }
+.cable-red { --cable: oklch(0.62 0.22 25); } .cable-orange { --cable: oklch(0.74 0.18 55); } .cable-yellow { --cable: oklch(0.88 0.17 95); }
+.cable-green { --cable: oklch(0.72 0.19 145); } .cable-blue { --cable: oklch(0.65 0.17 245); } .cable-purple { --cable: oklch(0.62 0.2 300); } .cable-white { --cable: oklch(0.94 0 0); }
+.modular-cable { stroke: var(--cable); }
