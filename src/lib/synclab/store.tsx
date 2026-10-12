@@ -1492,90 +1492,52 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     };
   }, [finishRecording, finishTrackRecording, updateTrack]);
 
-  const splitClipAtImpl = useCallback(
-    (trackId: string, frac: number) => {
-      const t = tracksRef.current.find((x) => x.id === trackId);
-      const clips = t?.clips ?? [];
-      const active = clips.find((c) => c.id === t?.activeClipId) ?? clips[clips.length - 1];
-      if (!t || !active) {
-        toast("Nothing to split", { description: "That channel has no recorded clip. Record audio first." });
-        return;
-      }
-      const f = Math.min(0.95, Math.max(0.05, frac));
-      const cut = Math.max(1, Math.min(active.peaks.length - 1, Math.round(active.peaks.length * f)));
-      const stamp = Date.now();
-      const a: AudioClip = {
-        ...active,
-        id: `${active.id}-a${stamp}`,
-        name: `${active.name} A`,
-        peaks: active.peaks.slice(0, cut),
-        duration: active.duration * f,
-      };
-      const b: AudioClip = {
-        ...active,
-        id: `${active.id}-b${stamp}`,
-        name: `${active.name} B`,
-        peaks: active.peaks.slice(cut),
-        duration: active.duration * (1 - f),
-      };
-      updateTrack(trackId, {
-        clips: clips.flatMap((c) => (c.id === active.id ? [a, b] : [c])),
-        activeClipId: a.id,
-      });
-      toast.success("Clip split", { description: `${active.name} → ${a.name} + ${b.name}` });
-    },
-    [updateTrack],
-  );
-
-  /** Razor tool: slice every clip under the pointer at the exact clicked position. */
+  /** Cut clips under a timeline position (steps). Each half keeps the right audio via offset/length and its own start. */
   const razorAtImpl = useCallback(
-    (trackId: string, posSteps: number) => {
+    (trackId: string, posSteps: number, quiet = false) => {
       const t = tracksRef.current.find((x) => x.id === trackId);
       const clips = t?.clips ?? [];
       if (!t || clips.length === 0) {
-        toast("Nothing to slice", { description: "That channel has no clip. Record audio first." });
-        return;
+        toast("Nothing to cut", { description: "That channel has no audio clip. Record or import audio first." });
+        return false;
       }
       const stepDur = stepSeconds(transportRef.current.bpm);
       const stamp = Date.now();
       let sliced = 0;
+      let newActive = t.activeClipId;
       const next = clips.flatMap((c) => {
         const start = c.start ?? 0;
         const lenSteps = clipSeconds(c) / stepDur;
         const posIn = posSteps - start;
         if (posIn <= 0.05 || posIn >= lenSteps - 0.05) return [c];
         sliced += 1;
-        const f = Math.min(0.95, Math.max(0.05, posIn / lenSteps));
+        const rate = clipRate(c);
+        const offset = c.offset ?? 0;
+        const fileLen = c.length ?? Math.max(0, c.duration - offset);
+        const cutFile = Math.min(fileLen, posIn * stepDur * rate);
+        const f = cutFile / Math.max(1e-6, fileLen);
         const cut = Math.max(1, Math.min(c.peaks.length - 1, Math.round(c.peaks.length * f)));
-        const a: AudioClip = {
-          ...c,
-          id: `${c.id}-a${stamp}`,
-          name: `${c.name} A`,
-          peaks: c.peaks.slice(0, cut),
-          duration: c.duration * f,
-        };
-        const b: AudioClip = {
-          ...c,
-          id: `${c.id}-b${stamp}`,
-          name: `${c.name} B`,
-          peaks: c.peaks.slice(cut),
-          duration: c.duration * (1 - f),
-        };
-        return [a, b];
+        const first = { ...c, id: `${c.id}-a${stamp}`, name: `${c.name} A`, peaks: c.peaks.slice(0, cut), length: cutFile, fadeOut: 0 } as AudioClip;
+        const second = { ...c, id: `${c.id}-b${stamp}`, name: `${c.name} B`, peaks: c.peaks.slice(cut), start: start + posIn, offset: offset + cutFile, length: fileLen - cutFile, fadeIn: 0 } as AudioClip;
+        const [a, b2] = c.reverse ? [{ ...first, offset: offset + (fileLen - cutFile) }, { ...second, offset }] : [first, second];
+        if (c.id === t.activeClipId) newActive = a.id;
+        return [a, b2];
       });
       if (sliced === 0) {
-        toast("Razor missed", { description: "Click inside a clip to slice it exactly there." });
-        return;
+        if (!quiet) toast("Missed the clip", { description: "Tap inside a clip to cut it exactly there." });
+        return false;
       }
-      const activeId = t.activeClipId;
-      const activeSliced = sliced > 0 && activeId && clips.some((c) => c.id === activeId && posSteps - (c.start ?? 0) > 0.05 && posSteps - (c.start ?? 0) < clipSeconds(c) / stepDur - 0.05);
-      updateTrack(trackId, {
-        clips: next,
-        activeClipId: activeSliced && activeId ? `${activeId}-a${stamp}` : activeId,
-      });
-      toast.success(`Sliced ${sliced} clip${sliced > 1 ? "s" : ""}`, { description: "The razor cut at the exact click position." });
+      updateTrack(trackId, { clips: next, activeClipId: newActive });
+      toast.success(`Cut ${sliced} clip${sliced > 1 ? "s" : ""}`, { description: "Split at the exact position." });
+      return true;
     },
     [updateTrack],
+  );
+
+  /** Split tool: frac is the position across the whole song lane. */
+  const splitClipAtImpl = useCallback(
+    (trackId: string, frac: number) => { razorAtImpl(trackId, frac * songSteps(transportRef.current.bars)); },
+    [razorAtImpl],
   );
 
   const buildSnapshot = useCallback(
@@ -2016,7 +1978,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           toast.success(`Split ${crossing.length} note${crossing.length > 1 ? "s" : ""} at the playhead`);
           return;
         }
-        splitClipAtImpl(id, frac);
+        razorAtImpl(id, step);
       },
       addTrack: (kind, name, preset, opts) => {
         const id = uid();
