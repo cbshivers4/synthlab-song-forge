@@ -1062,7 +1062,7 @@ export const STARTER_NOTES: Record<string, Omit<import("./types").MidiNote, "id"
   poly: [[60, 63, 67], [58, 62, 65], [56, 60, 63], [55, 58, 62]].flatMap((chord, i) => chord.map((pitch) => ({ step: i * 4, length: 4, pitch, velocity: 0.8 }))),
 };
 export const starterNotesFor = (preset?: string) => {
-  const set = preset?.startsWith("TD-3") ? STARTER_NOTES.acid : preset?.startsWith("Poly Synth") ? STARTER_NOTES.poly : undefined;
+  const set = preset?.startsWith("TD-3") ? STARTER_NOTES["acid"] : preset?.startsWith("Poly Synth") ? STARTER_NOTES["poly"] : undefined;
   return set?.map((n) => ({ ...n, id: uid() }));
 };
 
