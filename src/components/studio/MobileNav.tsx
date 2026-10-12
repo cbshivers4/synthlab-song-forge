@@ -70,6 +70,7 @@ export function MobileNav({ onBeatMode, view, setView, moreSignal = 0, landscape
     { label: "Convert Voice", icon: <Mic />, panel: "voice" },
     { label: "Generate Stem", icon: <Sparkles />, panel: "genstem" },
     { label: "Piano Roll", icon: <Music />, panel: "piano" },
+    { label: "Effects Rack", icon: <SlidersHorizontal />, panel: "plugins" },
     { label: "Mastering", icon: <Wand2 />, panel: "mastering" },
     { label: "Reference Analyzer", icon: <FileSearch />, panel: "reference" },
     { label: "Help", icon: <LifeBuoy />, run: () => openHelp("help") },

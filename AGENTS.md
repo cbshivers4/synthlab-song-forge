@@ -47,3 +47,5 @@ Cloud deletion reads raw sessions, confirms deletion, then cleans owned files; m
 Reel recorder: singleton AudioWorklet capture; tape bypasses master to avoid feedback. Timeline meters read live post-master taps without input activation; exit releases input, retaining tape.
 
 Video cuts use source seconds/grid/clamp; kits save MIDI notes. Keyboard/learned MIDI share pad triggers; MIDI consumers prevent doubled track notes.
+
+Effects Rack reuses track plugin instances and store actions with inline RackEffect modules; post-insert analyser scopes and shared 20 fps meter callbacks keep the rack tied to real audio without changing routing.
