@@ -17,6 +17,8 @@ import type { EnvelopeParams, LfoWave, ModDest, ModSource, OscWave, SynthPatch, 
 import { uid } from "@/lib/synclab/presets";
 import { toast } from "sonner";
 import { MidiLearnStrip } from "./MidiLearn";
+import { PitchWheels } from "./PitchWheels";
+import { AcidSequencer } from "./AcidSequencer";
 
 const WAVES: OscWave[] = ["sine", "triangle", "sawtooth", "square", "pulse", "noise", "wavetable"];
 
@@ -157,6 +159,8 @@ export function SynthEditor({ track }: { track: Track }) {
         </Button>
       </div>
 
+      <PitchWheels trackId={track.id} />
+      {(patch.name.startsWith("TD-3") || /ACID/i.test(track.name)) && <AcidSequencer track={track} />}
       <Tabs defaultValue="oscillators" className="min-w-0">
         <TabsList aria-label="Synth features" className="flex h-auto w-full flex-wrap justify-start gap-1">
           <TabsTrigger value="oscillators">Oscillators</TabsTrigger>

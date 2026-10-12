@@ -49,7 +49,9 @@ const TOOLS: Tool[] = [
   { id: "reel-recorder", label: "Reel-to-Reel Recorder", icon: <Disc3 className="size-4" />, panel: "reel-recorder" },
   { id: "video-sampler", label: "Video Sampler", icon: <Film className="size-4" />, panel: "video-sampler" },
   { id: "files", label: "My Computer / Browser", icon: <FolderOpen className="size-4" />, panel: "browser" },
-  { id: "synth", label: "Synthesizers", icon: <Music2 className="size-4" />, panel: "synth", drag: { kind: "instrument", name: "Synth" } },
+  { id: "synth", label: "Spec 4 Synth", icon: <Music2 className="size-4" />, panel: "synth", drag: { kind: "instrument", name: "Spec 4 Synth", preset: "Cybotron Lead" } },
+  { id: "acid", label: "Acid Bass (TD-3)", icon: <Waves className="size-4" />, panel: "synth", drag: { kind: "instrument", name: "Acid Bass", preset: "TD-3 Acid Saw" } },
+  { id: "poly", label: "Poly Synth", icon: <Music2 className="size-4" />, panel: "synth", drag: { kind: "instrument", name: "Poly Synth", preset: "Poly Synth Brass" } },
   { id: "drums", label: "Drum Machine", icon: <Disc3 className="size-4" />, panel: "drums", drag: { kind: "drum", name: "Drums" } },
   { id: "beat", label: "Pad Sampler", icon: <Grid2x2 className="size-4" />, panel: "pads", drag: { kind: "sampler", name: "Pad Sampler" } },
   { id: "chop", label: "Sample Chopper", icon: <Scissors className="size-4" />, panel: "pads", advanced: true },
@@ -82,7 +84,8 @@ interface Section {
 const SECTIONS: Section[] = [
   { id: "files", label: "Files", tools: ["files"].map(tool) },
   { id: "perform", label: "Perform", tools: ["studio-view", "reel-recorder", "video-sampler", "live", "looper", "humbeat"].map(tool) },
-  { id: "instruments", label: "Instruments", tools: ["coproducer", "genstem", "bassgen", "synth", "drums", "beat", "chop", "sampler"].map(tool) },
+  { id: "synths", label: "Synthesizers", tools: ["synth", "acid", "poly"].map(tool) },
+  { id: "instruments", label: "Instruments", tools: ["coproducer", "genstem", "bassgen", "drums", "beat", "chop", "sampler"].map(tool) },
   { id: "mix", label: "Mix & Master", tools: ["mixer", "master", "stems", "voice", "reference", "notes"].map(tool) },
   { id: "plugins", label: "Plugins", tools: ["plugins", "apps"].map(tool) },
 ];
@@ -143,7 +146,7 @@ function PreviewScope({ playingFile }: { playingFile: string }) {
 }
 
 export function ToolsRail() {
-  const { panel, setPanel, installedPlugins, installPlugin } = useStudio();
+  const { panel, setPanel, installedPlugins, installPlugin, tracks, select, addTrack } = useStudio();
   const { mode, setMode } = useApp();
   const advanced = mode === "advanced";
   const [open, setOpen] = useState(true);
@@ -234,7 +237,16 @@ export function ToolsRail() {
           e.dataTransfer.setData("text/plain", payload);
           e.dataTransfer.effectAllowed = "copy";
         }}
-        onClick={() => (t.panel ? setPanel(t.panel) : toast(t.label, { description: t.soon }))}
+        onClick={() => {
+          if ((t.id === "acid" || t.id === "poly" || t.id === "synth") && t.drag) {
+            const prefix = t.id === "acid" ? "TD-3" : t.id === "poly" ? "Poly Synth" : null;
+            const found = tracks.find((x) => x.kind === "instrument" && (prefix ? x.patch?.name.startsWith(prefix) : !x.patch?.name.startsWith("TD-3") && !x.patch?.name.startsWith("Poly Synth")));
+            if (found) select(found.id);
+            else if (prefix) addTrack("instrument", t.drag.name.toUpperCase(), t.drag.preset);
+          }
+          if (t.panel) setPanel(t.panel);
+          else toast(t.label, { description: t.soon });
+        }}
         className={`${rowBase} relative ${
           t.drag ? "cursor-grab active:cursor-grabbing" : ""
         } ${t.id === "plugins" && pluginDrop ? "bg-primary/15 ring-1 ring-primary" : ""} ${
