@@ -111,7 +111,7 @@ export function ModularSynth({ track }: { track: Track }) {
         )}
         <div className="flex flex-wrap justify-center gap-1">
           {def.params.filter((p) => !p.options).map((p) => (
-            <Knob key={p.id} label={p.label} size={34} min={p.min} max={p.max} step={p.step} unit={p.unit ?? ""} value={Number(mod.params[p.id] ?? p.def)} onChange={(v) => setParam(mod.id, p.id, v)} />
+            <Knob key={p.id} label={p.label} size={34} min={p.min ?? 0} max={p.max ?? 1} step={p.step ?? 0.01} unit={p.unit ?? ""} value={Number(mod.params[p.id] ?? p.def)} onChange={(v) => setParam(mod.id, p.id, v)} />
           ))}
         </div>
         <div className="modular-jacks">
