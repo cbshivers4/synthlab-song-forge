@@ -51,6 +51,7 @@ const TOOLS: Tool[] = [
   { id: "files", label: "My Computer / Browser", icon: <FolderOpen className="size-4" />, panel: "browser" },
   { id: "synth", label: "Spec 4 Synth", icon: <Music2 className="size-4" />, panel: "synth", drag: { kind: "instrument", name: "Spec 4 Synth", preset: "Cybotron Lead" } },
   { id: "acid", label: "Acid Bass (TD-3)", icon: <Waves className="size-4" />, panel: "synth", drag: { kind: "instrument", name: "Acid Bass", preset: "TD-3 Acid Saw" } },
+  { id: "modular", label: "Modular Tech Synth", icon: <Cpu className="size-4" />, panel: "synth", drag: { kind: "instrument", name: "Modular Tech", preset: "Modular Tech Init" } },
   { id: "poly", label: "Poly Synth", icon: <Music2 className="size-4" />, panel: "synth", drag: { kind: "instrument", name: "Poly Synth", preset: "Poly Synth Brass" } },
   { id: "drums", label: "Drum Machine", icon: <Disc3 className="size-4" />, panel: "drums", drag: { kind: "drum", name: "Drums" } },
   { id: "beat", label: "Pad Sampler", icon: <Grid2x2 className="size-4" />, panel: "pads", drag: { kind: "sampler", name: "Pad Sampler" } },
@@ -84,7 +85,7 @@ interface Section {
 const SECTIONS: Section[] = [
   { id: "files", label: "Files", tools: ["files"].map(tool) },
   { id: "perform", label: "Perform", tools: ["studio-view", "reel-recorder", "video-sampler", "live", "looper", "humbeat"].map(tool) },
-  { id: "synths", label: "Synthesizers", tools: ["synth", "acid", "poly"].map(tool) },
+  { id: "synths", label: "Synthesizers", tools: ["synth", "acid", "poly", "modular"].map(tool) },
   { id: "instruments", label: "Instruments", tools: ["coproducer", "genstem", "bassgen", "drums", "beat", "chop", "sampler"].map(tool) },
   { id: "mix", label: "Mix & Master", tools: ["mixer", "master", "stems", "voice", "reference", "notes"].map(tool) },
   { id: "plugins", label: "Plugins", tools: ["plugins", "apps"].map(tool) },
@@ -238,9 +239,9 @@ export function ToolsRail() {
           e.dataTransfer.effectAllowed = "copy";
         }}
         onClick={() => {
-          if ((t.id === "acid" || t.id === "poly" || t.id === "synth") && t.drag) {
-            const prefix = t.id === "acid" ? "TD-3" : t.id === "poly" ? "Poly Synth" : null;
-            const found = tracks.find((x) => x.kind === "instrument" && (prefix ? x.patch?.name.startsWith(prefix) : !x.patch?.name.startsWith("TD-3") && !x.patch?.name.startsWith("Poly Synth")));
+          if ((t.id === "acid" || t.id === "poly" || t.id === "synth" || t.id === "modular") && t.drag) {
+            const prefix = t.id === "acid" ? "TD-3" : t.id === "poly" ? "Poly Synth" : t.id === "modular" ? "Modular Tech" : null;
+            const found = tracks.find((x) => x.kind === "instrument" && (prefix ? x.patch?.name.startsWith(prefix) : !x.patch?.name.startsWith("TD-3") && !x.patch?.name.startsWith("Poly Synth") && !x.patch?.modular));
             if (found) select(found.id);
             else if (prefix) addTrack("instrument", t.drag.name.toUpperCase(), t.drag.preset);
           }
