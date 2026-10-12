@@ -50,7 +50,7 @@ function StudioMeters() {
         const level = id ? engine.getTrackLevel(id) : 0;
         const fraction = Math.max(0, Math.min(1, (20 * Math.log10(Math.max(0.001, level)) + 60) / 60));
         node.style.transform = `scaleY(${fraction})`;
-        node.dataset.peak = level >= 0.999 ? "clip" : level > 0.7 ? "hot" : "normal";
+        node.dataset["peak"] = level >= 0.999 ? "clip" : level > 0.7 ? "hot" : "normal";
       });
     };
     draw();
