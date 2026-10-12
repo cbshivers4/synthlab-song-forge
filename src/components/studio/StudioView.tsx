@@ -10,6 +10,13 @@ import roomImage from "@/assets/studio-room.jpg";
 function InstrumentDrawing({ track }: { track: Track }) {
   const pads = track.kind === "drum" || track.kind === "sampler";
   const audio = track.kind === "audio" || track.kind === "ai-vocal";
+  if (audio) return <svg viewBox="0 0 280 195" aria-hidden="true" className="studio-instrument-art" data-studio-microphone>
+    <path d="M140 78v96m0-42-62 55m62-55 62 55m-62-13v17" className="studio-stand" />
+    <path d="M121 58v9q0 20 19 20t19-20v-9" className="studio-stand" />
+    <rect x="128" y="14" width="24" height="59" rx="12" className="studio-hardware-face" />
+    {[24, 32, 40, 48, 56].map(y => <path key={y} d={`M132 ${y}h16`} className="studio-knob-mark" />)}
+    <path d="M158 74q22 30 13 61t23 47h35" className="studio-mic-cable" />
+  </svg>;
   return <svg viewBox="0 0 280 195" aria-hidden="true" className="studio-instrument-art">
     <path d="M60 108 213 188M220 108 67 188" className="studio-stand" />
     <path d="M43 190h51m102 0h51" className="studio-stand" />
@@ -21,6 +28,34 @@ function InstrumentDrawing({ track }: { track: Track }) {
     {pads ? Array.from({ length: 16 }, (_, i) => <rect key={i} x={27 + (i % 8) * 29} y={69 + Math.floor(i / 8) * 23} width="22" height="17" rx="2" className={i % 3 === 0 ? "studio-pad-lit" : "studio-pad"} />)
       : audio ? <g><rect x="25" y="72" width="227" height="30" className="studio-screen" /><text x="138" y="92" textAnchor="middle" className="studio-device-type">AUDIO CHANNEL</text></g>
       : <g>{Array.from({ length: 24 }, (_, i) => <rect key={i} x={22 + i * 10} y="69" width="9" height="39" className="studio-white-key" />)}{Array.from({ length: 23 }, (_, i) => [0, 1, 3, 4, 5].includes(i % 7) ? <rect key={i} x={28 + i * 10} y="69" width="6" height="23" className="studio-black-key" /> : null)}</g>}
+  </svg>;
+}
+
+function EmptyStand() {
+  return <svg viewBox="0 0 280 195" aria-hidden="true" className="studio-instrument-art" data-studio-empty-stand>
+    <path d="M60 64 213 185M220 64 67 185M38 61h52m103 0h52M43 190h51m102 0h51" className="studio-stand" />
+    <circle cx="140" cy="127" r="8" className="studio-hardware-face" />
+  </svg>;
+}
+
+function ChairDrawing() {
+  return <svg viewBox="0 0 180 195" role="img" aria-label="Studio chair" className="studio-chair" data-studio-chair>
+    <path d="M90 124v40m0 0-54 20m54-20 54 20m-54-20-20 24m20-24 20 24" className="studio-stand" />
+    <rect x="54" y="12" width="72" height="78" rx="16" className="studio-chair-cushion" />
+    <path d="M64 49h52M67 63h46" className="studio-knob-mark" />
+    <path d="M90 90v19M42 83v30m96-30v30" className="studio-stand" />
+    <path d="M45 101h90l12 23H33z" className="studio-chair-cushion" />
+    {[36, 70, 110, 144].map(x => <circle key={x} cx={x} cy="186" r="5" className="studio-speaker-cone" />)}
+  </svg>;
+}
+
+function RecorderDrawing() {
+  return <svg viewBox="0 0 240 195" aria-hidden="true" className="studio-instrument-art" data-studio-recorder>
+    <path d="M37 154v32m166-32v32" className="studio-stand" />
+    <rect x="18" y="18" width="204" height="145" rx="5" className="studio-hardware-face" />
+    {[70, 170].map(x => <g key={x}><circle cx={x} cy="63" r="39" className="studio-speaker-cone" /><circle cx={x} cy="63" r="34" className="reel-rim" />{[0, 120, 240].map(angle => <ellipse key={angle} cx={x} cy="42" rx="9" ry="12" transform={`rotate(${angle} ${x} 63)`} className="reel-cutout" />)}<circle cx={x} cy="63" r="7" className="reel-center" /></g>)}
+    <path d="M70 102 100 116h40l30-14" className="studio-mic-cable" />
+    {[49, 137].map(x => <g key={x}><rect x={x} y="127" width="54" height="22" rx="2" className="studio-recorder-meter" /><path d={`M${x + 27} 147l-12-14`} className="studio-recorder-needle" /></g>)}
   </svg>;
 }
 
@@ -86,23 +121,28 @@ export function StudioView() {
           <Button variant="ghost" className="studio-monitor" aria-label="Left studio monitor — open mastering" onClick={() => open("mastering")}><MonitorDrawing /><span>MONITOR L</span></Button>
           <div className="studio-desk-center">
             <div className="studio-console"><Button variant="ghost" className="h-8 w-full justify-between px-2 text-xs" onClick={() => open("mixer")}><SlidersHorizontal className="size-4" /> MIXING DESK <span>{tracks.length} CH</span></Button><StudioMeters /></div>
+            <div className="studio-table-top" role="img" aria-label="Mixer table" />
             <div className="studio-desk-legs" aria-hidden="true" />
           </div>
           <Button variant="ghost" className="studio-monitor" aria-label="Right studio monitor — open mastering" onClick={() => open("mastering")}><MonitorDrawing /><span>MONITOR R</span></Button>
+        </div>
+        <div className="studio-default-equipment">
+          <Button variant="ghost" className="studio-recorder studio-instrument" aria-label="Open reel-to-reel recorder" onClick={() => open("reel-recorder")}><RecorderDrawing /><span className="studio-instrument-preset">REEL TO REEL</span></Button>
+          <ChairDrawing />
         </div>
         <div className="studio-equipment-floor">
           <div className="studio-instruments">{tracks.map(track => <Button key={track.id} variant="ghost" aria-label={`Open ${track.name} ${track.kind === "audio" || track.kind === "ai-vocal" ? "channel" : "instrument"}`} aria-pressed={selectedId === track.id} className="studio-instrument" onClick={() => open(instrumentPanel(track), track.id)}>
             <span className="studio-instrument-label"><Music2 className="size-3" /><span>{track.name}</span></span>
             <InstrumentDrawing track={track} />
-            <span className="studio-instrument-preset">{track.kind === "drum" ? "Drum Machine" : track.kind === "sampler" ? track.sampler?.name ?? "Sampler" : track.instrument ?? track.patch?.name ?? (track.kind === "audio" || track.kind === "ai-vocal" ? "Audio" : "Synth")}</span>
-          </Button>)}{tracks.length === 0 && <div className="flex min-h-40 items-center justify-center text-sm text-foreground">No channels in this project</div>}</div>
-          <div className="studio-rack-cabinet">
+            <span className="studio-instrument-preset">{track.kind === "audio" || track.kind === "ai-vocal" ? "Microphone" : track.kind === "drum" ? "Drum Machine" : track.kind === "sampler" ? track.sampler?.name ?? "Sampler" : track.instrument ?? track.patch?.name ?? "Synth"}</span>
+          </Button>)}{!tracks.some(track => track.kind !== "audio" && track.kind !== "ai-vocal") && <div className="studio-instrument" role="img" aria-label="Empty keyboard stand"><EmptyStand /><span className="studio-instrument-preset">KEYBOARD STAND</span></div>}</div>
+          {inserts.length + buses.length > 0 && <div className="studio-rack-cabinet">
             <Button variant="ghost" className="h-9 w-full justify-start gap-2 text-xs" onClick={() => open("plugins")}><Cpu className="size-4" />EFFECTS RACK</Button>
             {inserts.map(({ track, plugin }) => <div key={plugin.id} className="studio-rack-unit"><Button variant="ghost" className="h-auto min-h-11 w-full flex-col items-start gap-1 whitespace-normal px-3 py-2 text-left" onClick={() => open("plugins", track.id)}><span className="text-[10px] text-muted-foreground">{track.name}</span><span className="text-xs font-semibold">{plugin.name}{plugin.bypass ? " · BYPASS" : ""}</span></Button><Scope scopeId={plugin.bypass ? `bypassed:${plugin.id}` : plugin.id} height={34} compact /></div>)}
             {buses.map(({ bus, plugin }) => <Button key={`${bus}:${plugin.id}`} variant="ghost" className="studio-rack-unit h-auto min-h-12 w-full flex-col items-start gap-1 whitespace-normal text-left" onClick={() => open("mixer")}><span className="text-[10px] text-muted-foreground">{bus.toUpperCase()}</span><span className="text-xs">{plugin.name}</span></Button>)}
             {inserts.length + buses.length === 0 && <div className="studio-rack-empty">EMPTY RACK</div>}
             <div className="studio-rack-vent" aria-hidden="true" />
-          </div>
+          </div>}
         </div>
       </div>
     </div>
