@@ -1196,3 +1196,47 @@
   .studio-recorder { width: 160px; }
   .studio-rack-cabinet { width: min(100%, 360px); justify-self: center; }
 }
+
+/* Each synth has its own faceplate: tokens are re-scoped so knobs, tabs and buttons follow. */
+[data-synth-style] .synth-badge {
+  display: inline-block; padding: 0.2rem 0.6rem; border-radius: 3px;
+  font-family: var(--font-mono, monospace); font-size: 11px; font-weight: 700; letter-spacing: 0.2em;
+  background: var(--primary); color: var(--primary-foreground);
+}
+.studio-wallpaper[data-synth-style="spec4"] {
+  --primary: oklch(0.78 0.14 200); --neon: oklch(0.78 0.14 200); --studio-accent: oklch(0.78 0.14 200);
+  --surface: oklch(0.24 0.02 230); --surface-2: oklch(0.3 0.025 230); --border: oklch(0.4 0.03 220);
+  --primary-foreground: oklch(0.16 0.02 230);
+}
+.studio-wallpaper[data-synth-style="acid"] {
+  --primary: oklch(0.66 0.21 32); --neon: oklch(0.66 0.21 32); --studio-accent: oklch(0.66 0.21 32);
+  --surface: oklch(0.72 0.01 250); --surface-2: oklch(0.8 0.008 250); --border: oklch(0.55 0.01 250);
+  --foreground: oklch(0.18 0.01 250); --muted-foreground: oklch(0.35 0.01 250); --background: oklch(0.86 0.005 250);
+  --primary-foreground: oklch(0.98 0 0);
+  background-image: linear-gradient(180deg, oklch(0.84 0.006 250), oklch(0.7 0.01 250));
+  color: var(--foreground);
+}
+.studio-wallpaper[data-synth-style="poly"] {
+  --primary: oklch(0.8 0.13 80); --neon: oklch(0.8 0.13 80); --studio-accent: oklch(0.8 0.13 80);
+  --surface: oklch(0.2 0.01 60); --surface-2: oklch(0.27 0.015 60); --border: oklch(0.42 0.04 60);
+  --primary-foreground: oklch(0.18 0.02 60);
+  border-left: 14px solid oklch(0.42 0.08 50); border-right: 14px solid oklch(0.42 0.08 50);
+}
+
+/* Each effect type gets its own rack faceplate colour. */
+.fx-face { --fx-hue: 200; --primary: oklch(0.76 0.15 var(--fx-hue)); --neon: var(--primary);
+  background: linear-gradient(180deg, oklch(0.27 0.035 var(--fx-hue)), oklch(0.2 0.025 var(--fx-hue)));
+  border-top: 2px solid var(--primary); }
+.fx-face h3 { color: var(--primary); letter-spacing: 0.06em; }
+[data-fx-kind="eq"], [data-fx-kind="paraeq"] { --fx-hue: 150; }
+[data-fx-kind="filter"], [data-fx-kind="stepfilter"] { --fx-hue: 95; }
+[data-fx-kind="drive"], [data-fx-kind="bitcrusher"] { --fx-hue: 30; }
+[data-fx-kind="compressor"], [data-fx-kind="limiter"], [data-fx-kind="transient"], [data-fx-kind="gate"] { --fx-hue: 60; }
+[data-fx-kind="delay"] { --fx-hue: 230; }
+[data-fx-kind="reverb"] { --fx-hue: 270; }
+[data-fx-kind="chorus"], [data-fx-kind="flanger"], [data-fx-kind="phaser"] { --fx-hue: 320; }
+[data-fx-kind="tremolo"], [data-fx-kind="autopan"], [data-fx-kind="width"] { --fx-hue: 180; }
+[data-fx-kind="gain"] { --fx-hue: 250; }
+[data-fx-kind="vocoder"], [data-fx-kind="resonator"], [data-fx-kind="scalechord"] { --fx-hue: 345; }
+[data-fx-kind="limiter"] { --fx-hue: 15; }
+[data-fx-kind="gate"] { --fx-hue: 120; }

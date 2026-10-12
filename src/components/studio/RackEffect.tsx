@@ -61,7 +61,7 @@ function RackMeter({ plugin }: { plugin: PluginInstance }) {
 export function RackEffect({ trackId, plugin: p, index, count }: { trackId: string; plugin: PluginInstance; index: number; count: number }) {
   const { togglePluginBypass, movePlugin, removePlugin, setPluginParam } = useStudio();
   const [expanded, setExpanded] = useState(true);
-  return <section aria-label={`${p.name} rack module`} className="relative border-y border-border bg-surface">
+  return <section aria-label={`${p.name} rack module`} data-fx-kind={p.kind} className="fx-face relative border-y border-border bg-surface">
     <div className="pointer-events-none absolute inset-y-0 left-0 flex w-3 flex-col justify-between border-r border-border bg-surface-2 py-3 sm:w-5">
       {[0, 1].map((s) => <span key={s} className="mx-auto size-1.5 rounded-full border border-muted-foreground/60 bg-background" />)}
     </div>

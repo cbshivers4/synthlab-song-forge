@@ -103,7 +103,8 @@ export function SynthEditor({ track }: { track: Track }) {
   const skin = useSkin("synth");
   const drop = useImageDrop("synth");
   return (
-    <div className="studio-wallpaper space-y-4 rounded-md p-3" data-studio-panel="synth" style={skinBackground(skin)} {...drop}>
+    <div className="studio-wallpaper space-y-4 rounded-md p-3" data-studio-panel="synth" data-synth-style={patch.name.startsWith("TD-3") || /ACID/i.test(track.name) ? "acid" : patch.name.startsWith("Poly Synth") || /POLY/i.test(track.name) ? "poly" : "spec4"} style={skinBackground(skin)} {...drop}>
+      <div className="synth-badge" aria-hidden>{patch.name.startsWith("TD-3") || /ACID/i.test(track.name) ? "ACID BASS · TD-3 STYLE" : patch.name.startsWith("Poly Synth") || /POLY/i.test(track.name) ? "POLY SYNTH · 8 VOICE" : "SPEC 4 SYNTH"}</div>
       <SkinControls skinKey="synth" image />
       <MidiLearnStrip id={track.id} label={`${track.name} — every knob below also has its own MIDI button`} />
       <div className="flex flex-wrap items-center gap-2">
