@@ -146,7 +146,7 @@ function PreviewScope({ playingFile }: { playingFile: string }) {
 }
 
 export function ToolsRail() {
-  const { panel, setPanel, installedPlugins, installPlugin } = useStudio();
+  const { panel, setPanel, installedPlugins, installPlugin, tracks, select, addTrack } = useStudio();
   const { mode, setMode } = useApp();
   const advanced = mode === "advanced";
   const [open, setOpen] = useState(true);
@@ -237,7 +237,16 @@ export function ToolsRail() {
           e.dataTransfer.setData("text/plain", payload);
           e.dataTransfer.effectAllowed = "copy";
         }}
-        onClick={() => (t.panel ? setPanel(t.panel) : toast(t.label, { description: t.soon }))}
+        onClick={() => {
+          if ((t.id === "acid" || t.id === "poly" || t.id === "synth") && t.drag) {
+            const prefix = t.id === "acid" ? "TD-3" : t.id === "poly" ? "Poly Synth" : null;
+            const found = tracks.find((x) => x.kind === "instrument" && (prefix ? x.patch?.name.startsWith(prefix) : !x.patch?.name.startsWith("TD-3") && !x.patch?.name.startsWith("Poly Synth")));
+            if (found) select(found.id);
+            else if (prefix) addTrack("instrument", t.drag.name.toUpperCase(), t.drag.preset);
+          }
+          if (t.panel) setPanel(t.panel);
+          else toast(t.label, { description: t.soon });
+        }}
         className={`${rowBase} relative ${
           t.drag ? "cursor-grab active:cursor-grabbing" : ""
         } ${t.id === "plugins" && pluginDrop ? "bg-primary/15 ring-1 ring-primary" : ""} ${
