@@ -117,6 +117,42 @@ import { TrackNotes } from "@/components/studio/TrackNotes";
 
 const INPUTS = ["Microphone", "Guitar / Line 1", "Keyboard / Line 2", "External Instrument", "MIDI Keyboard", "Internal", "Stereo File"];
 
+/** Cutting overlay owns pointer targeting so clip drag handles cannot mask the tool. */
+function TimelineCutGuide({ tool, position, selected }: { tool: "split" | "razor"; position: number; selected: boolean }) {
+  const lineRef = useRef<HTMLDivElement>(null);
+  const iconRef = useRef<HTMLDivElement>(null);
+  const showAtPointer = (e: React.PointerEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
+    const y = Math.max(4, Math.min(rect.height - 32, e.clientY - rect.top + 10));
+    const line = lineRef.current;
+    const icon = iconRef.current;
+    if (line) { line.style.left = `${x}px`; line.style.opacity = "1"; }
+    if (icon) {
+      icon.style.left = `${Math.max(0, Math.min(rect.width - 32, x + 10))}px`;
+      icon.style.top = `${y}px`;
+      icon.style.opacity = "1";
+    }
+  };
+  return <div
+    data-cut-tool={tool}
+    className="absolute inset-0 z-20 cursor-none"
+    onPointerEnter={showAtPointer}
+    onPointerMove={showAtPointer}
+    onPointerDown={showAtPointer}
+    onPointerLeave={(e) => {
+      if (e.pointerType === "touch") return;
+      if (lineRef.current) lineRef.current.style.opacity = "0";
+      if (iconRef.current) iconRef.current.style.opacity = "0";
+    }}
+  >
+    <div ref={lineRef} data-cut-line className="pointer-events-none absolute inset-y-0 border-l-2 border-dashed border-primary" style={{ left: `${position * 100}%`, opacity: selected ? 1 : 0 }} />
+    <div ref={iconRef} data-cut-icon className="pointer-events-none absolute top-2 flex size-8 items-center justify-center rounded-sm border border-primary bg-background text-foreground shadow-sm" style={{ left: `clamp(0px, ${position * 100}%, calc(100% - 32px))`, opacity: selected ? 1 : 0 }}>
+      {tool === "split" ? <Scissors className="size-5" /> : <RazorIcon className="size-5" />}
+    </div>
+  </div>;
+}
+
 /** Audio lane: every clip sits at its own bar position and can be moved, trimmed and dragged between tracks. */
 function Waveform({ track }: { track: Track }) {
   const { setActiveClip, removeClip, updateTrack, transport, tracks } = useStudio();
@@ -1436,9 +1472,9 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
           editTool === "draw"
             ? "cursor-crosshair"
             : editTool === "split"
-              ? "cursor-col-resize"
+              ? "cursor-none"
               : editTool === "razor"
-                ? "cursor-crosshair"
+                ? "cursor-none"
                 : ""
         }`}
         style={{
@@ -1458,6 +1494,10 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
         }
         onClick={(e) => {
           if (editTool === "select") return;
+          if (editTool === "split" || editTool === "razor") {
+            e.stopPropagation();
+            select(track.id);
+          }
           const r = e.currentTarget.getBoundingClientRect();
           const frac = Math.min(0.99, Math.max(0, (e.clientX - r.left) / r.width));
           const step = Math.floor(frac * 16);
@@ -1510,6 +1550,11 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
           );
         })()}
         <Lane track={track} />
+        {(editTool === "split" || editTool === "razor") && <TimelineCutGuide
+          tool={editTool}
+          position={Math.min(0.99, Math.max(0, (transport.step ?? 0) / songSteps(transport.bars)))}
+          selected={isSelected}
+        />}
       </div>
 
 
