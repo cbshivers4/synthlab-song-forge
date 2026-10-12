@@ -49,7 +49,9 @@ const TOOLS: Tool[] = [
   { id: "reel-recorder", label: "Reel-to-Reel Recorder", icon: <Disc3 className="size-4" />, panel: "reel-recorder" },
   { id: "video-sampler", label: "Video Sampler", icon: <Film className="size-4" />, panel: "video-sampler" },
   { id: "files", label: "My Computer / Browser", icon: <FolderOpen className="size-4" />, panel: "browser" },
-  { id: "synth", label: "Synthesizers", icon: <Music2 className="size-4" />, panel: "synth", drag: { kind: "instrument", name: "Synth" } },
+  { id: "synth", label: "Spec 4 Synth", icon: <Music2 className="size-4" />, panel: "synth", drag: { kind: "instrument", name: "Spec 4 Synth", preset: "Cybotron Lead" } },
+  { id: "acid", label: "Acid Bass (TD-3)", icon: <Waves className="size-4" />, panel: "synth", drag: { kind: "instrument", name: "Acid Bass", preset: "TD-3 Acid Saw" } },
+  { id: "poly", label: "Poly Synth", icon: <Music2 className="size-4" />, panel: "synth", drag: { kind: "instrument", name: "Poly Synth", preset: "Poly Synth Brass" } },
   { id: "drums", label: "Drum Machine", icon: <Disc3 className="size-4" />, panel: "drums", drag: { kind: "drum", name: "Drums" } },
   { id: "beat", label: "Pad Sampler", icon: <Grid2x2 className="size-4" />, panel: "pads", drag: { kind: "sampler", name: "Pad Sampler" } },
   { id: "chop", label: "Sample Chopper", icon: <Scissors className="size-4" />, panel: "pads", advanced: true },
@@ -82,7 +84,8 @@ interface Section {
 const SECTIONS: Section[] = [
   { id: "files", label: "Files", tools: ["files"].map(tool) },
   { id: "perform", label: "Perform", tools: ["studio-view", "reel-recorder", "video-sampler", "live", "looper", "humbeat"].map(tool) },
-  { id: "instruments", label: "Instruments", tools: ["coproducer", "genstem", "bassgen", "synth", "drums", "beat", "chop", "sampler"].map(tool) },
+  { id: "synths", label: "Synthesizers", tools: ["synth", "acid", "poly"].map(tool) },
+  { id: "instruments", label: "Instruments", tools: ["coproducer", "genstem", "bassgen", "drums", "beat", "chop", "sampler"].map(tool) },
   { id: "mix", label: "Mix & Master", tools: ["mixer", "master", "stems", "voice", "reference", "notes"].map(tool) },
   { id: "plugins", label: "Plugins", tools: ["plugins", "apps"].map(tool) },
 ];
