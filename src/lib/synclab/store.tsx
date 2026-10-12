@@ -1954,7 +1954,6 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           return;
         }
         const step = transportRef.current.step ?? 0;
-        const frac = Math.min(0.98, Math.max(0.02, (step % 16) / 16));
         const t = tracksRef.current.find((x) => x.id === id);
         if (t && (t.kind === "instrument" || t.kind === "midi" || t.kind === "sampler")) {
           const cutStep = step % 16;
