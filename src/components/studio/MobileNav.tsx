@@ -61,6 +61,7 @@ export function MobileNav({ onBeatMode, view, setView, moreSignal = 0, landscape
     { label: "Bass Generator", icon: <Music />, panel: "bassgen" },
   ];
   const more: Item[] = [
+    { label: "Studio View", icon: <Home />, panel: "studio-view" },
     { label: "Reel-to-Reel Recorder", icon: <Disc3 />, panel: "reel-recorder" },
     { label: "Video Sampler", icon: <Film />, panel: "video-sampler" },
     { label: "Separate Stems", icon: <Scissors />, panel: "stems" },
