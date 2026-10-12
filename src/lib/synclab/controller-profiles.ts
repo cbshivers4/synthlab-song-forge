@@ -35,6 +35,26 @@ const seq = (from: number, n = 8) => Array.from({ length: n }, (_, i) => from + 
 
 export const CONTROLLERS: ControllerProfile[] = [
   {
+    id: "korg-nanokontrol-studio", maker: "Korg", model: "nanoKONTROL Studio",
+    port: /nano\s*kontrol\s*studio/i,
+    look: { faders: 8, knobs: 8, pads: 0, keys: 0, buttons: 32, body: "#1b1c1f", accent: "#e8e8e8" },
+    map: {
+      ...range([2, 3, 4, 5, 6, 8, 9, 12], "volume"),
+      ...range(seq(13), "pan"),
+      ...range(seq(21), "mute"),
+      ...range([29, 30, 31, 33, 34, 35, 36, 37], "solo"),
+      ...range(seq(38), "arm"),
+    },
+    summary: "Factory scene: faders = volume, knobs = pan, M / S / R = mute, solo, arm for tracks 1–8. Any other knob, fader or button can be assigned with MIDI Learn.",
+  },
+  {
+    id: "korg-nanokey-studio", maker: "Korg", model: "nanoKEY Studio",
+    port: /nano\s*key\s*studio/i,
+    look: { faders: 0, knobs: 8, pads: 8, keys: 25, buttons: 6, body: "#1b1c1f", accent: "#ff4fa0" },
+    map: null,
+    summary: "Keys play the armed instrument. Knobs, X-Y pad and buttons: use MIDI Learn on any synth knob, mixer control or Live View X-Y. Pads: use pad MIDI Learn in Sampler, Pad Sampler, Video Sampler or Live Looper.",
+  },
+  {
     id: "korg-nanokontrol2", maker: "Korg", model: "nanoKONTROL2",
     port: /nano\s*kontrol\s*2/i,
     look: { faders: 8, knobs: 8, pads: 0, keys: 0, buttons: 24, body: "#1b1c1f", accent: "#e8e8e8" },
