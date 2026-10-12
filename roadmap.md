@@ -8,6 +8,7 @@
 - [x] Add a playable bass generator that creates editable MIDI patterns
 
 # Roadmap
+- [ ] Add a project-synced Studio View with instruments on stands, mixer, effects rack and monitors; desktop and phone Tools access.
 - [x] Give phone pages full height with a hidden-by-default transport overlay and rail toggle; signed-in portrait/landscape checks verified timeline, mixer, all 7 Sounds and 15 Tools pages, plus transport access with collapsed navigation.
 - [x] Fix reel recorder timeline meters on desktop and phone: read live stereo master taps without enabling microphone or capture; reflect transport playback status and preserve tape metering.
 - [x] Reel-to-reel recorder on phone and desktop: AudioWorklet recording, live stereo VU meters, moving reels, playback/seek/loop, gain/tone/saturation/speed knobs, WAV/MP3/FLAC/AIFF export and timeline transfer. Signed-in browser checks verified PCM capture, meters, reel motion, WAV/MP3 contents and phone controls; physical-device listening remains unverified.
