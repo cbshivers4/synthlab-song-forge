@@ -53,7 +53,7 @@ export function ModularSynth({ track }: { track: Track }) {
     return () => ro.disconnect();
   }, [m.cables]);
 
-  const Jack = ({ id, out }: { id: string; out?: boolean }) => (
+  const Jack = ({ id, out }: { id: string; out?: boolean | undefined }) => (
     <button
       type="button"
       data-jack={id}
