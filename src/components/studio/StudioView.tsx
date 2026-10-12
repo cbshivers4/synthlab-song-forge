@@ -134,7 +134,7 @@ export function StudioView() {
           <div className="studio-instruments">{tracks.map(track => <Button key={track.id} variant="ghost" aria-label={`Open ${track.name} ${track.kind === "audio" || track.kind === "ai-vocal" ? "channel" : "instrument"}`} aria-pressed={selectedId === track.id} className="studio-instrument" onClick={() => open(instrumentPanel(track), track.id)}>
             <span className="studio-instrument-label"><Music2 className="size-3" /><span>{track.name}</span></span>
             <InstrumentDrawing track={track} />
-            <span className="studio-instrument-preset">{track.kind === "drum" ? "Drum Machine" : track.kind === "sampler" ? track.sampler?.name ?? "Sampler" : track.instrument ?? track.patch?.name ?? (track.kind === "audio" || track.kind === "ai-vocal" ? "Audio" : "Synth")}</span>
+            <span className="studio-instrument-preset">{track.kind === "audio" || track.kind === "ai-vocal" ? "Microphone" : track.kind === "drum" ? "Drum Machine" : track.kind === "sampler" ? track.sampler?.name ?? "Sampler" : track.instrument ?? track.patch?.name ?? "Synth"}</span>
           </Button>)}{!tracks.some(track => track.kind !== "audio" && track.kind !== "ai-vocal") && <div className="studio-instrument" role="img" aria-label="Empty keyboard stand"><EmptyStand /><span className="studio-instrument-preset">KEYBOARD STAND</span></div>}</div>
           {inserts.length + buses.length > 0 && <div className="studio-rack-cabinet">
             <Button variant="ghost" className="h-9 w-full justify-start gap-2 text-xs" onClick={() => open("plugins")}><Cpu className="size-4" />EFFECTS RACK</Button>
