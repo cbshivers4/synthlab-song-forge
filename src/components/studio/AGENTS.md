@@ -4,4 +4,4 @@ Effects Rack reuses track plugin instances and store actions with inline RackEff
 
 Timeline cutting uses a pointer overlay with a visible tool icon and exact-position guide; update pointer visuals through DOM refs to avoid rapid React/audio updates and keep clip drag handles from intercepting cuts.
 
-Studio View derives visual equipment from project tracks and insert chains, opens existing editors, and reads real channel levels through one 20 fps DOM timer; it owns no duplicate project or audio state.
+Studio View keeps base furnishings independent of project tracks, derives instruments/microphones and racks from tracks/inserts, opens existing editors, and reads real levels through one 20 fps DOM timer; no duplicate project/audio state keeps it synchronized.
