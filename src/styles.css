@@ -64,6 +64,11 @@
 }
 
 :root {
+  --studio-metal: oklch(0.69 0.008 255);
+  --studio-metal-dark: oklch(0.25 0.008 255);
+  --studio-speaker: oklch(0.12 0.005 255);
+  --studio-speaker-inner: oklch(0.28 0.008 255);
+  --studio-room-overlay: color-mix(in oklab, var(--background) 28%, transparent);
   --keyboard-natural: oklch(0.96 0.005 90);
   --keyboard-sharp: oklch(0.14 0.008 255);
   --keyboard-active: var(--primary);
@@ -1113,3 +1118,69 @@
   .tape-buttons { gap: 4px; }
 }
 @media (prefers-reduced-motion: reduce) { .tape-reel { animation: none; } }
+
+/* Project-derived studio equipment, with native scrolling on small screens. */
+.studio-room::after { content: ""; position: absolute; inset: 0; background: var(--studio-room-overlay); pointer-events: none; }
+.studio-room-content { z-index: 1; padding: 18px 18px 32px; min-height: 540px; }
+.studio-room-brand { text-align: center; font-size: 24px; font-weight: 800; color: var(--foreground); text-shadow: var(--shadow-panel); }
+.studio-room-brand span { display: block; font-size: 9px; font-weight: 500; margin-top: 4px; color: var(--foreground); }
+.studio-control-desk { display: grid; grid-template-columns: 90px minmax(0, 1fr) 90px; gap: 14px; align-items: start; max-width: 760px; margin: 24px auto 0; }
+.studio-monitor { height: 220px; width: 90px; display: flex; flex-direction: column; gap: 0; padding: 0; }
+.studio-monitor span { font-size: 8px; color: var(--foreground); }
+.studio-monitor svg { max-height: 195px; }
+.studio-desk-center { padding-top: 35px; min-width: 0; }
+.studio-console { border: 5px solid var(--studio-metal-dark); background: var(--surface); border-radius: 5px; box-shadow: var(--shadow-panel); }
+.studio-console-channels { display: flex; gap: 3px; padding: 6px; overflow-x: auto; min-height: 136px; }
+.studio-console-channel { display: flex; flex: 1 0 32px; min-width: 0; max-width: 66px; flex-direction: column; align-items: center; gap: 5px; background: var(--background); padding: 5px 2px; font-size: 7px; }
+.studio-console-channel > span:last-child { width: 100%; text-align: center; }
+.studio-console-knob { width: 13px; height: 13px; border: 3px solid var(--studio-metal); border-radius: 50%; background: var(--studio-metal-dark); }
+.studio-console-meter { width: 5px; height: 22px; background: var(--studio-metal-dark); position: relative; }
+.studio-console-meter i { position: absolute; inset: 0; background: var(--chart-5); transform: scaleY(0); transform-origin: bottom; }
+.studio-console-meter i[data-peak="hot"] { background: var(--meter-clip-orange); }
+.studio-console-meter i[data-peak="clip"] { background: var(--destructive); }
+.studio-console-fader { height: 43px; width: 3px; background: var(--studio-metal); position: relative; }
+.studio-console-fader i { position: absolute; width: 18px; height: 9px; left: -7px; border: 1px solid var(--studio-metal-dark); background: var(--studio-metal); }
+.studio-console-fader i::after { content: ""; position: absolute; top: 3px; left: 1px; right: 1px; height: 1px; background: var(--studio-metal-dark); }
+.studio-desk-legs { height: 22px; margin: 0 18px; border-left: 8px solid var(--studio-metal-dark); border-right: 8px solid var(--studio-metal-dark); }
+.studio-equipment-floor { display: grid; grid-template-columns: minmax(0, 1fr) 200px; gap: 18px; max-width: 1100px; margin: 8px auto 0; align-items: start; }
+.studio-instruments { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 8px; min-width: 0; }
+.studio-instrument { height: auto; min-width: 0; display: flex; flex-direction: column; gap: 0; padding: 8px; white-space: normal; border: 1px solid transparent; }
+.studio-instrument[aria-pressed="true"] { border-color: var(--primary); background: color-mix(in oklab, var(--background) 45%, transparent); }
+.studio-instrument-art { width: 100%; height: auto; max-height: 180px; }
+.studio-instrument-label { display: flex; align-items: center; gap: 6px; max-width: 100%; font-size: 11px; color: var(--foreground); }
+.studio-instrument-label span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.studio-instrument-preset { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; color: var(--foreground); }
+.studio-stand { fill: none; stroke: var(--studio-metal); stroke-width: 7; stroke-linecap: round; }
+.studio-hardware-face { fill: var(--surface-2); stroke: var(--studio-metal); stroke-width: 2; }
+.studio-hardware-edge { fill: var(--studio-metal-dark); stroke: var(--studio-metal); }
+.studio-screen { fill: var(--background); stroke: var(--primary); stroke-width: 1; }
+.studio-screen-line { fill: none; stroke: var(--primary); stroke-width: 1.5; }
+.studio-knob { fill: var(--studio-metal-dark); stroke: var(--studio-metal); stroke-width: 2; }
+.studio-knob-mark { stroke: var(--foreground); stroke-width: 1.5; }
+.studio-white-key { fill: var(--keyboard-natural); stroke: var(--studio-metal-dark); stroke-width: 0.5; }
+.studio-black-key { fill: var(--keyboard-sharp); }
+.studio-pad { fill: var(--sampler-pad-face); stroke: var(--studio-metal); }
+.studio-pad-lit { fill: var(--primary); stroke: var(--primary); }
+.studio-device-type { fill: var(--primary); font-family: var(--font-mono); font-size: 10px; }
+.studio-speaker-cone { fill: var(--studio-speaker); stroke: var(--studio-metal); stroke-width: 2; }
+.studio-speaker-inner { fill: var(--studio-speaker-inner); stroke: var(--studio-metal-dark); stroke-width: 3; }
+.studio-rack-cabinet { background: var(--background); border: 7px solid var(--studio-metal-dark); border-radius: 4px; min-height: 220px; padding: 3px; box-shadow: var(--shadow-panel); }
+.studio-rack-unit { background: var(--surface); border: 1px solid var(--studio-metal); border-left-width: 5px; border-right-width: 5px; margin-bottom: 5px; min-width: 0; }
+.studio-rack-unit canvas { max-width: 100%; }
+.studio-rack-empty { display: flex; min-height: 120px; align-items: center; justify-content: center; font-size: 10px; color: var(--muted-foreground); }
+.studio-rack-vent { height: 25px; margin: 10px; border-top: 3px double var(--studio-metal); border-bottom: 3px double var(--studio-metal); }
+@media (max-width: 767px) {
+  .studio-room-content { padding: 14px 10px 24px; }
+  .studio-control-desk { grid-template-columns: 55px minmax(0, 1fr) 55px; gap: 5px; margin-top: 15px; }
+  .studio-monitor { width: 55px; height: 165px; }
+  .studio-monitor svg { max-height: 140px; }
+  .studio-desk-center { padding-top: 15px; }
+  .studio-console { border-width: 3px; }
+  .studio-console-channels { min-height: 115px; padding: 3px; gap: 2px; }
+  .studio-console-channel { flex-basis: 24px; }
+  .studio-equipment-floor { grid-template-columns: minmax(0, 1fr); }
+  .studio-instruments { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; }
+  .studio-instrument { padding: 4px; }
+  .studio-instrument-art { min-height: 100px; }
+  .studio-rack-cabinet { width: min(100%, 360px); justify-self: center; }
+}

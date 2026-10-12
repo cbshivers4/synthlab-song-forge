@@ -45,6 +45,7 @@ interface Tool {
 
 
 const TOOLS: Tool[] = [
+  { id: "studio-view", label: "Studio View", icon: <AppWindow className="size-4" />, panel: "studio-view" },
   { id: "reel-recorder", label: "Reel-to-Reel Recorder", icon: <Disc3 className="size-4" />, panel: "reel-recorder" },
   { id: "video-sampler", label: "Video Sampler", icon: <Film className="size-4" />, panel: "video-sampler" },
   { id: "files", label: "My Computer / Browser", icon: <FolderOpen className="size-4" />, panel: "browser" },
@@ -80,7 +81,7 @@ interface Section {
 
 const SECTIONS: Section[] = [
   { id: "files", label: "Files", tools: ["files"].map(tool) },
-  { id: "perform", label: "Perform", tools: ["reel-recorder", "video-sampler", "live", "looper", "humbeat"].map(tool) },
+  { id: "perform", label: "Perform", tools: ["studio-view", "reel-recorder", "video-sampler", "live", "looper", "humbeat"].map(tool) },
   { id: "instruments", label: "Instruments", tools: ["coproducer", "genstem", "bassgen", "synth", "drums", "beat", "chop", "sampler"].map(tool) },
   { id: "mix", label: "Mix & Master", tools: ["mixer", "master", "stems", "voice", "reference", "notes"].map(tool) },
   { id: "plugins", label: "Plugins", tools: ["plugins", "apps"].map(tool) },

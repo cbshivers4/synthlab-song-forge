@@ -224,6 +224,7 @@ export type PanelId =
   | "bassgen"
   | "reel-recorder"
   | "video-sampler"
+  | "studio-view"
   | null;
 
 export type EditTool = "select" | "draw" | "split" | "razor";

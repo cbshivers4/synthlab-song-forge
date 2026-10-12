@@ -58,6 +58,7 @@ import { BassGenerator } from "@/components/studio/BassGenerator";
 import { ReelRecorder } from "@/components/studio/ReelRecorder";
 import { Bot, Film } from "lucide-react";
 import { VideoSampler } from "@/components/studio/VideoSampler";
+import { StudioView } from "@/components/studio/StudioView";
 import { AppProvider, useApp, useMaybeApp } from "@/lib/synclab/app-state";
 import { PlanProvider } from "@/lib/synclab/plan";
 import { useIsMobile, useIsLandscapePhone } from "@/hooks/use-mobile";
@@ -233,6 +234,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
     bassgen: { title: "BASS GENERATOR", icon: <AudioLines className="size-4" /> },
     "reel-recorder": { title: "REEL-TO-REEL RECORDER", icon: <Disc3 className="size-4" /> },
     "video-sampler": { title: "VIDEO SAMPLER", icon: <Film className="size-4" /> },
+    "studio-view": { title: "STUDIO VIEW", icon: <Music2 className="size-4" /> },
   };
   const current = config[panel];
 
@@ -240,7 +242,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
   return (
     <section
       className="phone-tool-panel rack fixed inset-0 z-40 flex min-w-0 flex-col overflow-x-hidden border-t-2 border-border sm:relative sm:inset-auto sm:z-auto sm:min-h-[240px]"
-       style={{ height: isMobile ? "100dvh" : panel === "looper" || panel === "reel-recorder" ? Math.max(600, rackH) : rackH }}
+       style={{ height: isMobile ? "100dvh" : panel === "looper" || panel === "reel-recorder" || panel === "studio-view" ? Math.max(600, rackH) : rackH }}
     >
       <div
         onPointerDown={startResize}
@@ -290,7 +292,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
           </Button>
         </div>
       </div>
-      {isMobile ? <PhonePages name={current.title}><div className="phone-editor-content min-h-0 space-y-3 p-3">
+      {panel === "studio-view" ? <StudioView /> : isMobile ? <PhonePages name={current.title}><div className="phone-editor-content min-h-0 space-y-3 p-3">
         {panel === "reel-recorder" && <ReelRecorder />}{panel === "video-sampler" && <VideoSampler />}
         {panel === "mixer" && <Mixer />}
         {panel === "synth" && (synthTrack ? <SynthEditor track={synthTrack} /> : <p>Select an instrument track.</p>)}
