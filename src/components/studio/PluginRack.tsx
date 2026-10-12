@@ -1,9 +1,7 @@
 import { useRef, useState } from "react";
-import { ChevronDown, ChevronUp, Cpu, FolderSearch, Plus, Power, Trash2, Upload } from "lucide-react";
+import { Cpu, FolderSearch, Plus, Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Knob } from "./Knob";
 import {
   Select,
   SelectContent,
@@ -13,12 +11,8 @@ import {
 } from "@/components/ui/select";
 import { useStudio } from "@/lib/synclab/store";
 import { PLUGIN_KINDS, makeDef, defsFromFiles } from "@/lib/synclab/plugins";
-import type { PluginDef, PluginInstance, PluginKind } from "@/lib/synclab/types";
-import { ProEq } from "./ProEq";
-import { VocoderPanel } from "./VocoderPanel";
-import { Scope } from "./Scope";
-import { XYPad } from "./XYPad";
-import { EffectDisplay } from "./EffectDisplay";
+import type { PluginDef, PluginKind } from "@/lib/synclab/types";
+import { RackEffect } from "./RackEffect";
 import { PluginBridge } from "./PluginBridge";
 import { toast } from "sonner";
 
@@ -58,58 +52,16 @@ function guessKind(fileName: string): PluginKind {
   return "eq";
 }
 
-function ParamRow({
-  trackId,
-  plugin,
-  paramId,
-  name,
-  value,
-  min,
-  max,
-  unit,
-}: {
-  trackId: string;
-  plugin: PluginInstance;
-  paramId: string;
-  name: string;
-  value: number;
-  min: number;
-  max: number;
-  unit?: string | undefined;
-}) {
-  const { setPluginParam } = useStudio();
-  const step = max - min > 40 ? 1 : (max - min) / 200;
-  return (
-    <div className="inline-flex flex-col items-center">
-      <Knob
-        label={name}
-        value={value}
-        min={min}
-        max={max}
-        step={step}
-        unit={unit ? ` ${unit}` : ""}
-        size={52}
-        onChange={(v) => setPluginParam(trackId, plugin.id, paramId, v)}
-        midiTarget={{ id: trackId, param: `plugin:${plugin.id}:${paramId}` }}
-      />
-    </div>
-  );
-}
-
 export function PluginRack() {
   const {
     selected,
+    select,
     tracks,
     installedPlugins,
     installPlugin,
     uninstallPlugin,
     addPlugin,
-    removePlugin,
-    togglePluginBypass,
-    movePlugin,
-    setPluginParam,
   } = useStudio();
-  const [open, setOpen] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [vendor, setVendor] = useState("");
   const [format, setFormat] = useState<PluginDef["format"]>("VST3");
@@ -140,8 +92,6 @@ export function PluginRack() {
       </div>
     );
   const chain = track.plugins ?? [];
-  /** First effect opens by default so the scope + X-Y pad are always visible. */
-  const openId = open ?? chain[0]?.id ?? null;
 
   const scan = () => {
     if (!name.trim()) {
@@ -189,96 +139,22 @@ export function PluginRack() {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2">
-        <Cpu className="size-4 text-primary" />
-        <span className="font-display text-[11px] tracking-[0.2em]">INSERTS · {track.name}</span>
-        <span className="label-xs ml-auto">{chain.length} plugin{chain.length === 1 ? "" : "s"}</span>
-      </div>
-
-      {/* Real VST/AU plugins from this computer, hosted by the desktop bridge. */}
-      <PluginBridge />
-
-
-      {/* chain */}
-      <div className="space-y-1.5">
-        {chain.length === 0 && (
-          <p className="panel px-3 py-4 text-center text-[11px] text-muted-foreground">
-            No plugins on this channel — add one from the rack below.
-          </p>
-        )}
-        {chain.map((p, i) => (
-          <div key={p.id} className="panel overflow-hidden">
-            <div className="flex items-center gap-2 border-b border-border bg-surface-2/60 px-2 py-1">
-              <button
-                className={`grid size-5 place-items-center rounded-[3px] ${p.bypass ? "text-muted-foreground" : "bg-primary/20 text-primary"}`}
-                onClick={() => togglePluginBypass(track.id, p.id)}
-                aria-label="Bypass plugin"
-              >
-                <Power className="size-3" />
-              </button>
-              <button className="min-w-0 flex-1 text-left" onClick={() => setOpen(openId === p.id ? "" : p.id)}>
-                <span className={`block truncate text-[11px] font-medium ${p.bypass ? "text-muted-foreground line-through" : ""}`}>
-                  {p.name}
-                </span>
-                <span className="block truncate font-mono text-[9px] tracking-wider text-muted-foreground uppercase">
-                  {p.vendor} · {p.format} · {p.kind}
-                </span>
-              </button>
-              <Button size="icon" variant="ghost" className="size-6" onClick={() => movePlugin(track.id, p.id, -1)} disabled={i === 0} aria-label="Move up">
-                <ChevronUp className="size-3.5" />
-              </Button>
-              <Button
-                size="icon"
-                variant="ghost"
-                className="size-6"
-                onClick={() => movePlugin(track.id, p.id, 1)}
-                disabled={i === chain.length - 1}
-                aria-label="Move down"
-              >
-                <ChevronDown className="size-3.5" />
-              </Button>
-              <Button size="icon" variant="ghost" className="size-6" onClick={() => removePlugin(track.id, p.id)} aria-label="Remove plugin">
-                <Trash2 className="size-3.5" />
-              </Button>
-            </div>
-            <Dialog open={openId === p.id} onOpenChange={(o) => setOpen(o ? p.id : "")}>
-              <DialogContent data-fx-skin={p.kind} className="max-h-[90vh] w-[min(96vw,60rem)] max-w-none overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle className="font-mono uppercase tracking-wider">{p.name} <span className="text-xs text-muted-foreground">{track.name} · {p.vendor}</span></DialogTitle>
-                </DialogHeader>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-3">
-                <EffectDisplay plugin={p} height={220} onParam={(paramId, v) => setPluginParam(track.id, p.id, paramId, v)} />
-                <Scope scopeId={p.id} height={130} />
-                <XYPad trackId={track.id} plugin={p} />
-                </div>
-                <div className="space-y-3">
-                {p.kind === "paraeq" && <ProEq trackId={track.id} plugin={p} />}
-                {p.kind === "vocoder" && <VocoderPanel trackId={track.id} plugin={p} />}
-                {p.kind !== "paraeq" && p.kind !== "vocoder" && <div className="flex flex-wrap justify-center gap-2">{p.params.map((prm) => (
-                  <ParamRow
-                    key={prm.id}
-                    trackId={track.id}
-                    plugin={p}
-                    paramId={prm.id}
-                    name={prm.name}
-                    value={prm.value}
-                    min={prm.min}
-                    max={prm.max}
-                    unit={prm.unit}
-                  />
-                ))}</div>}
-                </div>
-              </div>
-              </DialogContent>
-            </Dialog>
-          </div>
-        ))}
+      <header className="flex flex-wrap items-center gap-3 border-b border-border pb-3">
+        <div className="flex items-center gap-2"><Cpu className="size-5 text-primary" /><h2 className="text-base font-semibold">Effects Rack</h2></div>
+        <Select value={track.id} onValueChange={select}>
+          <SelectTrigger aria-label="Effects rack track" className="h-11 w-full min-w-0 sm:w-64"><SelectValue /></SelectTrigger>
+          <SelectContent>{tracks.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent>
+        </Select>
+        <span className="text-xs text-muted-foreground">{chain.length} insert{chain.length === 1 ? "" : "s"}</span>
+      </header>
+      <div className="space-y-2" aria-label={`${track.name} effects chain`}>
+        {chain.length === 0 && <p className="border-y border-dashed border-border px-3 py-6 text-center text-sm text-muted-foreground">No effects on {track.name}.</p>}
+        {chain.map((p, i) => <RackEffect key={p.id} trackId={track.id} plugin={p} index={i} count={chain.length} />)}
       </div>
 
       {/* installed rack */}
       <div>
-        <p className="label-xs mb-1.5">SYNCLAB EFFECT RACK — click to insert on {track.name}</p>
+        <p className="label-xs mb-1.5">ADD EFFECT · {track.name}</p>
         <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-4">
           {installedPlugins.map((d) => (
             <div
@@ -292,12 +168,12 @@ export function PluginRack() {
               }}
               className="panel flex cursor-grab items-center gap-2 px-2 py-1.5 active:cursor-grabbing"
             >
-              <button className="min-w-0 flex-1 text-left" onClick={() => addPlugin(track.id, d)}>
+              <Button variant="ghost" aria-label={`Add ${d.name}`} className="h-auto min-h-11 min-w-0 flex-1 flex-col items-start gap-0 text-left" onClick={() => addPlugin(track.id, d)}>
                 <span className="block truncate text-[11px] font-medium">{d.name}</span>
                 <span className="block truncate font-mono text-[9px] tracking-wider text-muted-foreground uppercase">
                   {d.vendor} · {d.format}
                 </span>
-              </button>
+              </Button>
               {d.format !== "Built-in" && (
                 <Button size="icon" variant="ghost" className="size-6" onClick={() => uninstallPlugin(d.id)} aria-label="Uninstall">
                   <Trash2 className="size-3.5" />
@@ -309,6 +185,8 @@ export function PluginRack() {
         </div>
       </div>
 
+      <details className="border-t border-border pt-3"><summary className="cursor-pointer py-3 text-sm font-semibold">Plugin files & desktop bridge</summary>
+      <PluginBridge />
       {/* drag and drop plugin files straight from the computer */}
       <div
         onDragOver={(e) => {
@@ -405,6 +283,7 @@ export function PluginRack() {
           its own editable parameter set.
         </p>
       </div>
+      </details>
     </div>
   );
 }
