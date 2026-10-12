@@ -236,6 +236,6 @@ export const MODULAR_PRESETS: { name: string; modular: ModularPatch }[] = [
     mods: [["v1", "vco", { wave: "sine", octave: -2 }], ["e1", "env", { attack: 0.001, decay: 0.35, sustain: 0, release: 0.15 }], ["e2", "env", { attack: 0.001, decay: 0.06, sustain: 0, release: 0.05 }], ["a", "vca"], ["dr", "drive", { amount: 0.3 }], ["o", "output"]],
     cables: [["v1", "out", "a", "in", 1, "red"], ["e1", "out", "a", "cv", 1, "yellow"], ["e2", "out", "v1", "pitch", 2, "orange"], ["a", "out", "dr", "in", 1, "green"], ["dr", "out", "o", "in", 1, "white"]] }) },
   { name: "Modular Tech Dub Chord", modular: build({
-    mods: [["v1", "vco", { wave: "square" }], ["v2", "vco", { wave: "sawtooth", fine: 700 > 100 ? 100 : 0 }], ["m", "mixer"], ["f", "vcf", { cutoff: 1200, resonance: 4 }], ["e1", "env", { attack: 0.002, decay: 0.2, sustain: 0, release: 0.2 }], ["a", "vca"], ["d", "delay", { time: 0.33, feedback: 0.6, mix: 0.5 }], ["o", "output"]],
+    mods: [["v1", "vco", { wave: "square" }], ["v2", "vco", { wave: "sawtooth", fine: 100 }], ["m", "mixer"], ["f", "vcf", { cutoff: 1200, resonance: 4 }], ["e1", "env", { attack: 0.002, decay: 0.2, sustain: 0, release: 0.2 }], ["a", "vca"], ["d", "delay", { time: 0.33, feedback: 0.6, mix: 0.5 }], ["o", "output"]],
     cables: [["v1", "out", "m", "in1", 0.6, "red"], ["v2", "out", "m", "in2", 0.5, "orange"], ["m", "out", "f", "in", 1, "white"], ["f", "out", "a", "in", 1, "green"], ["e1", "out", "a", "cv", 1, "yellow"], ["a", "out", "d", "in", 1, "blue"], ["d", "out", "o", "in", 1, "white"]] }) },
 ];
