@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { getEngine } from "./audio-engine";
 import { stepsPerBar, setBeatsPerBar, getBeatsPerBar, STEPS_PER_BEAT, songSteps, stepSeconds, barsForSteps } from "./timebase";
 import { openInOwnTab } from "./mic";
-import { TRACK_COLORS, applyPreset, defaultPads, defaultPatch, uid } from "./presets";
+import { TRACK_COLORS, applyPreset, defaultPads, defaultPatch, uid, starterNotesFor } from "./presets";
 import { BUILT_IN_PLUGINS, instantiate, processMidiThroughPlugins } from "./plugins";
 import { getMidiAccess, listInputs, midiSupported, midiUnsupportedMessage, subscribe, type MidiPortInfo } from "./midi";
 import { getPadBank, setPadBank } from "./pad-session";
