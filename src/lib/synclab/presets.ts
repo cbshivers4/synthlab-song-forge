@@ -1047,6 +1047,25 @@ SYNTH_PRESETS.push(
   mk("Motown Bass", "Detroit Classics", { wave: "triangle", wave2: "square", oct: -1, level2: 0.3, cutoff: 1100, attack: 0.004, decay: 0.3, sustain: 0.4, release: 0.2 }),
 );
 
+// TD-3-style acid bass (one oscillator, resonant 24 dB-style lowpass, envelope sweep, glide) and a
+// classic analogue poly synth. Original SYNCLAB patches running on the built-in synth engine.
+SYNTH_PRESETS.push(
+  { name: "TD-3 Acid Saw", category: "Acid Bass", mutate: (p) => { O(p,0).wave = "sawtooth"; O(p,0).octave = -1; O(p,1).on = false; p.unison.voices = 1; p.voiceMode = "legato"; p.glide = 0.06; p.glideMode = "legato"; p.cutoff = 520; p.resonance = 18; p.drive = 0.35; p.amp = { attack: 0.002, decay: 0.25, sustain: 0.7, release: 0.08 }; p.filterEnv = { attack: 0.001, decay: 0.18, sustain: 0, release: 0.1, amount: 3200 }; p.fx = { ...p.fx, chorus: 0, reverb: 0.05, delay: 0.12, distortion: 0.2 }; } },
+  { name: "TD-3 Acid Square", category: "Acid Bass", mutate: (p) => { O(p,0).wave = "square"; O(p,0).octave = -1; O(p,1).on = false; p.unison.voices = 1; p.voiceMode = "legato"; p.glide = 0.06; p.glideMode = "legato"; p.cutoff = 600; p.resonance = 16; p.drive = 0.4; p.amp = { attack: 0.002, decay: 0.25, sustain: 0.7, release: 0.08 }; p.filterEnv = { attack: 0.001, decay: 0.22, sustain: 0, release: 0.1, amount: 2800 }; p.fx = { ...p.fx, chorus: 0, reverb: 0.05, delay: 0.1, distortion: 0.3 }; } },
+  { name: "Poly Synth Brass", category: "Poly Synth", mutate: (p) => { O(p,0).wave = "sawtooth"; p.oscillators[1] = { ...O(p,1), on: true, wave: "sawtooth", octave: 0, detune: 9, level: 0.7 }; p.voiceMode = "poly"; p.unison = { voices: 2, detune: 10, width: 0.6 }; p.cutoff = 1600; p.resonance = 3; p.amp = { attack: 0.04, decay: 0.4, sustain: 0.75, release: 0.5 }; p.filterEnv = { attack: 0.06, decay: 0.5, sustain: 0.3, release: 0.4, amount: 2200 }; p.fx = { ...p.fx, chorus: 0.4, reverb: 0.3 }; } },
+  { name: "Poly Synth Pad", category: "Poly Synth", mutate: (p) => { O(p,0).wave = "sawtooth"; p.oscillators[1] = { ...O(p,1), on: true, wave: "pulse", octave: 0, detune: -7, level: 0.55 }; p.voiceMode = "poly"; p.unison = { voices: 3, detune: 14, width: 0.8 }; p.cutoff = 1200; p.resonance = 2; p.amp = { attack: 0.6, decay: 0.8, sustain: 0.85, release: 1.6 }; p.filterEnv.amount = 900; p.fx = { ...p.fx, chorus: 0.5, reverb: 0.55, delay: 0.2 }; } },
+);
+
+/** Starter notes so a new acid bass or poly synth channel plays straight away; fully editable in the piano roll. */
+export const STARTER_NOTES: Record<string, Omit<import("./types").MidiNote, "id">[]> = {
+  acid: [36, 36, 48, 36, 39, 36, 43, 46, 36, 36, 48, 41, 36, 39, 36, 34].map((pitch, step) => ({ step, length: step % 4 === 3 ? 2 : 1, pitch, velocity: step % 4 === 0 ? 1 : 0.7 })),
+  poly: [[60, 63, 67], [58, 62, 65], [56, 60, 63], [55, 58, 62]].flatMap((chord, i) => chord.map((pitch) => ({ step: i * 4, length: 4, pitch, velocity: 0.8 }))),
+};
+export const starterNotesFor = (preset?: string) => {
+  const set = preset?.startsWith("TD-3") ? STARTER_NOTES.acid : preset?.startsWith("Poly Synth") ? STARTER_NOTES.poly : undefined;
+  return set?.map((n) => ({ ...n, id: uid() }));
+};
+
 export const applyPreset = (name: string): SynthPatch => {
   const base = defaultPatch(name);
   const def = SYNTH_PRESETS.find((p) => p.name === name);
@@ -1129,6 +1148,8 @@ export const KIND_LABEL: Record<TrackKind, string> = {
 
 export const INSTRUMENTS: { category: string; items: string[] }[] = [
   { category: "SYNTH", items: ["Cybotron Lead", "Night Arp", "Metro Pluck", "Supersaw Anthem", "Hoover Rave", "Detroit Stab"] },
+  { category: "ACID BASS", items: ["TD-3 Acid Saw", "TD-3 Acid Square"] },
+  { category: "POLY SYNTH", items: ["Poly Synth Brass", "Poly Synth Pad"] },
   { category: "BASS", items: ["Sub Bass", "Ghetto Tech Bass", "303 Acid", "Reese Bass", "Moog Mono", "808 Sub Glide", "Neuro Growl"] },
   { category: "KEYS", items: ["Deep Keys", "Belleville Strings", "Rhodes Soul", "FM Bell", "Trap Bell", "Brass Stab"] },
   { category: "PAD", items: ["Warehouse Pad", "Void Ambient", "Glass Pad", "Choir Air", "Dub Chord"] },

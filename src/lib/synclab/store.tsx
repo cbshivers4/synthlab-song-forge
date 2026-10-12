@@ -164,7 +164,7 @@ export const newTrack = (kind: TrackKind, name: string, index: number, preset?: 
   sends: { reverb: 0, delay: 0, chorus: 0 },
   steps: 16,
   patch: kind === "drum" ? undefined : preset ? applyPreset(preset) : defaultPatch(),
-  notes: kind === "drum" ? undefined : [],
+  notes: kind === "drum" ? undefined : starterNotesFor(preset) ?? [],
   pads: kind === "drum" ? defaultPads(16) : undefined,
   clips: [],
 });
