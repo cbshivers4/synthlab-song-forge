@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { getEngine } from "./audio-engine";
 import { stepsPerBar, setBeatsPerBar, getBeatsPerBar, STEPS_PER_BEAT, songSteps, stepSeconds, barsForSteps } from "./timebase";
 import { openInOwnTab } from "./mic";
-import { TRACK_COLORS, applyPreset, defaultPads, defaultPatch, uid } from "./presets";
+import { TRACK_COLORS, applyPreset, defaultPads, defaultPatch, uid, starterNotesFor } from "./presets";
 import { BUILT_IN_PLUGINS, instantiate, processMidiThroughPlugins } from "./plugins";
 import { getMidiAccess, listInputs, midiSupported, midiUnsupportedMessage, subscribe, type MidiPortInfo } from "./midi";
 import { getPadBank, setPadBank } from "./pad-session";
@@ -164,7 +164,7 @@ export const newTrack = (kind: TrackKind, name: string, index: number, preset?: 
   sends: { reverb: 0, delay: 0, chorus: 0 },
   steps: 16,
   patch: kind === "drum" ? undefined : preset ? applyPreset(preset) : defaultPatch(),
-  notes: kind === "drum" ? undefined : [],
+  notes: kind === "drum" ? undefined : starterNotesFor(preset) ?? [],
   pads: kind === "drum" ? defaultPads(16) : undefined,
   clips: [],
 });

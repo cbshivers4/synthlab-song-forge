@@ -28,6 +28,12 @@ export function AddTrackMenu({ size = "default" }: { size?: "default" | "sm" }) 
         <DropdownMenuItem onClick={() => addTrack("instrument", "INSTRUMENT", "Cybotron Lead")}>
           <Music2 className="size-4" /> Instrument — software synth
         </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => addTrack("instrument", "ACID BASS", "TD-3 Acid Saw")}>
+          <Waves className="size-4" /> Acid bass — TD-3 style, with notes
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => addTrack("instrument", "POLY SYNTH", "Poly Synth Brass")}>
+          <Piano className="size-4" /> Poly synth — chords, with notes
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={() => addTrack("drum", "DRUM MACHINE")}>
           <Disc3 className="size-4" /> Drum machine
         </DropdownMenuItem>
