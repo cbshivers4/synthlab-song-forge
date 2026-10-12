@@ -16,7 +16,7 @@ function InstrumentDrawing({ track }: { track: Track }) {
     <path d="M18 29h244l10 85H8z" className="studio-hardware-face" />
     <path d="M8 114h264v12H8z" className="studio-hardware-edge" />
     <rect x="25" y="39" width="67" height="21" rx="2" className="studio-screen" />
-    <path d="M30 50h8l3-6 5 13 5-9 5 4h29" className="studio-screen-line" />
+    <text x="58" y="53" textAnchor="middle" className="studio-device-type">{pads ? "PADS" : audio ? "AUDIO" : "SYNTH"}</text>
     {Array.from({ length: 7 }, (_, i) => <g key={i}><circle cx={111 + i * 21} cy="48" r="6" className="studio-knob" /><path d={`M${111 + i * 21} 43v4`} className="studio-knob-mark" /></g>)}
     {pads ? Array.from({ length: 16 }, (_, i) => <rect key={i} x={27 + (i % 8) * 29} y={69 + Math.floor(i / 8) * 23} width="22" height="17" rx="2" className={i % 3 === 0 ? "studio-pad-lit" : "studio-pad"} />)
       : audio ? <g><rect x="25" y="72" width="227" height="30" className="studio-screen" /><text x="138" y="92" textAnchor="middle" className="studio-device-type">AUDIO CHANNEL</text></g>
@@ -25,7 +25,7 @@ function InstrumentDrawing({ track }: { track: Track }) {
 }
 
 function MonitorDrawing() {
-  return <svg viewBox="0 0 120 240" aria-hidden="true" className="h-full w-full">
+  return <svg viewBox="0 0 120 240" aria-hidden="true" className="!size-full shrink-0">
     <rect x="18" y="5" width="84" height="127" rx="5" className="studio-hardware-face" />
     <circle cx="60" cy="35" r="13" className="studio-speaker-cone" />
     <circle cx="60" cy="85" r="33" className="studio-speaker-cone" />
@@ -94,7 +94,7 @@ export function StudioView() {
           <div className="studio-instruments">{tracks.map(track => <Button key={track.id} variant="ghost" aria-label={`Open ${track.name} ${track.kind === "audio" || track.kind === "ai-vocal" ? "channel" : "instrument"}`} aria-pressed={selectedId === track.id} className="studio-instrument" onClick={() => open(instrumentPanel(track), track.id)}>
             <span className="studio-instrument-label"><Music2 className="size-3" /><span>{track.name}</span></span>
             <InstrumentDrawing track={track} />
-            <span className="studio-instrument-preset">{track.kind === "drum" ? "Drum Machine" : track.kind === "sampler" ? track.sampler?.name ?? "Sampler" : track.instrument ?? (track.kind === "audio" || track.kind === "ai-vocal" ? "Audio" : "Synth")}</span>
+            <span className="studio-instrument-preset">{track.kind === "drum" ? "Drum Machine" : track.kind === "sampler" ? track.sampler?.name ?? "Sampler" : track.instrument ?? track.patch?.name ?? (track.kind === "audio" || track.kind === "ai-vocal" ? "Audio" : "Synth")}</span>
           </Button>)}{tracks.length === 0 && <div className="flex min-h-40 items-center justify-center text-sm text-foreground">No channels in this project</div>}</div>
           <div className="studio-rack-cabinet">
             <Button variant="ghost" className="h-9 w-full justify-start gap-2 text-xs" onClick={() => open("plugins")}><Cpu className="size-4" />EFFECTS RACK</Button>
