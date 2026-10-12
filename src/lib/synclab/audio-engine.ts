@@ -1,3 +1,4 @@
+import { playModularVoice } from "./modular";
 import { encodeWav } from "./bounce";
 import { sendExternalNote } from "./external-midi";
 import { keysSnapshot, subscribeKeys } from "./active-keys";
@@ -2174,6 +2175,10 @@ export class SyncLabEngine {
     const t0 = when ?? ctx.currentTime;
     if (sendExternalNote(trackId, midi, duration, velocity, t0 - ctx.currentTime)) return;
     const ch = this.channel(trackId);
+    if (patch.modular) {
+      playModularVoice(ctx, ch.input, patch.modular, midi, duration, velocity, t0, this.pitchMod(trackId).sum);
+      return;
+    }
     const life = duration + patch.amp.release + 0.25;
 
     /* ---- modulation matrix ---- */

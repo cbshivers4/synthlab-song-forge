@@ -1,3 +1,4 @@
+import { MODULAR_PRESETS } from "./modular";
 import type { DrumKitId, DrumPad, OscillatorParams, SynthPatch, TrackKind } from "./types";
 
 export const uid = () => Math.random().toString(36).slice(2, 10);
@@ -1078,6 +1079,10 @@ export const starterNotesFor = (preset?: string) => {
   const set = preset?.startsWith("TD-3") ? STARTER_NOTES["acid"] : preset?.startsWith("Poly Synth") ? STARTER_NOTES["poly"] : undefined;
   return set?.map((n) => ({ ...n, id: uid() }));
 };
+
+SYNTH_PRESETS.push(
+  ...MODULAR_PRESETS.map((m) => ({ name: m.name, category: "Modular Tech", mutate: (p: SynthPatch) => { p.modular = structuredClone(m.modular); p.voiceMode = "poly"; } })),
+);
 
 export const applyPreset = (name: string): SynthPatch => {
   const base = defaultPatch(name);
