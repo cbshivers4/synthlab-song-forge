@@ -75,23 +75,6 @@ function makeBitcrushCurve(bits: number) {
   return curve;
 }
 
-function makeGateCurve(threshold: number) {
-  const n = 4096;
-  const curve = new Float32Array(n);
-  for (let i = 0; i < n; i++) {
-    const x = (i / (n - 1)) * 2 - 1;
-    const a = Math.abs(x);
-    const sign = x < 0 ? -1 : 1;
-    if (a >= threshold) {
-      curve[i] = x;
-    } else {
-      // soft attenuation below threshold (12 dB/oct-ish expansion feel)
-      const r = a / threshold;
-      curve[i] = sign * a * r * r;
-    }
-  }
-  return curve;
-}
 
 function makeDistortionCurve(amount: number) {
   const k = amount * 100;
@@ -693,7 +676,7 @@ export class SyncLabEngine {
         drive: 3,
         compressor: 2,
         delay: 5,
-        width: 1,
+        width: 2,
         gain: 1,
         reverb: 5,
         chorus: 4,
@@ -704,7 +687,7 @@ export class SyncLabEngine {
         limiter: 1,
         bitcrusher: 5,
         vocoder: 2,
-        gate: 1,
+        gate: 2,
         stepfilter: 5,
         resonator: 12,
         scalechord: 1,
