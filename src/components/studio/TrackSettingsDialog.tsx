@@ -50,6 +50,16 @@ export function TrackSettingsDialog() {
                   <button key={c} type="button" aria-label={`Colour ${c}`} onClick={() => set({ color: c })}
                     className={`size-8 rounded-full border-2 ${track.color === c ? "border-foreground" : "border-transparent"}`} style={{ background: c }} />
                 ))}
+                <label className="flex cursor-pointer items-center gap-2 rounded-full border border-border px-2 py-1" title="Custom colour">
+                  <input
+                    type="color"
+                    aria-label="Custom track colour"
+                    value={oklchToHex(track.color)}
+                    onChange={(e) => set({ color: hexToOklch(e.target.value) })}
+                    className="size-6 cursor-pointer rounded border-0 bg-transparent p-0"
+                  />
+                  <span className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">Custom</span>
+                </label>
               </div>
             </div>
             <div className="space-y-1">
