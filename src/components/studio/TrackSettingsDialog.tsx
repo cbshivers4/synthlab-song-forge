@@ -10,6 +10,7 @@ import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useStudio } from "@/lib/synclab/store";
+import { hexToOklch, oklchToHex } from "@/components/studio/TrackStyle";
 
 const EVENT = "synclab:track-settings";
 const COLORS = ["#f0a03c", "#ef4444", "#22c55e", "#3b82f6", "#a855f7", "#ec4899", "#14b8a6", "#eab308"];
