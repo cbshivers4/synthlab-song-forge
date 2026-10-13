@@ -1,3 +1,4 @@
+import { ReelInputChannels } from "./ReelInputChannels";
 import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 import { Circle, Download, Headphones, Pause, Play, Plus, RotateCcw, SkipBack, SkipForward, Square, Upload } from "lucide-react";
 import { toast } from "sonner";
@@ -112,6 +113,7 @@ export function ReelRecorder() {
       </div>
       {state.monitor && <p className="mt-2 text-xs text-amber">Use headphones to avoid microphone feedback.</p>}
       <p className="mt-2 text-[11px] text-muted-foreground">Digital recording. Tape speed changes pitch and duration. Tone and saturation are printed into new recordings.</p>
+      <ReelInputChannels />
       {state.error && <p role="alert" className="mt-2 text-sm text-destructive">{state.error}</p>}
     </div>
     <footer className="flex flex-wrap items-end gap-2 border-t border-border px-4 py-4">

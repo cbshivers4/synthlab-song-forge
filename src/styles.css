@@ -1285,3 +1285,17 @@
 .cable-red { --cable: oklch(0.62 0.22 25); } .cable-orange { --cable: oklch(0.74 0.18 55); } .cable-yellow { --cable: oklch(0.88 0.17 95); }
 .cable-green { --cable: oklch(0.72 0.19 145); } .cable-blue { --cable: oklch(0.65 0.17 245); } .cable-purple { --cable: oklch(0.62 0.2 300); } .cable-white { --cable: oklch(0.94 0 0); }
 .modular-cable { stroke: var(--cable); }
+
+/* Reel recorder: 16 input strips with analog needles */
+.reel-channels { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 6px; }
+@container (max-width: 560px) { .reel-channels { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.reel-channel { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 4px; border: 1px solid var(--border); border-radius: 4px; background: var(--surface-2); }
+.reel-channel[data-active="false"] { opacity: 0.55; }
+.reel-mini-vu { width: 100%; background: var(--tape-meter-face, oklch(0.9 0.05 85)); border-radius: 3px; }
+.reel-mini-needle { stroke: var(--tape-green); }
+[data-zone="orange"] .reel-mini-needle { stroke: var(--tape-orange); }
+[data-zone="red"] .reel-mini-needle { stroke: var(--tape-red); }
+.reel-ch-btn { flex: 1; height: 28px; border-radius: 3px; border: 1px solid var(--border); font: 700 11px var(--font-mono); background: var(--surface); color: var(--muted-foreground); }
+.reel-ch-btn:disabled { opacity: 0.4; }
+.reel-ch-btn.is-mute { background: var(--destructive); color: var(--destructive-foreground); }
+.reel-ch-btn.is-solo { background: var(--amber, var(--primary)); color: var(--background); }
