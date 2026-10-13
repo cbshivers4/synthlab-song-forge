@@ -62,6 +62,45 @@ export const TRACK_PALETTE: { id: string; name: string; value: string }[] = [
   { id: "silver", name: "Silver", value: "oklch(0.86 0.01 250)" },
 ];
 
+/** Convert a #rrggbb hex colour to the oklch() string tracks store. */
+export function hexToOklch(hex: string): string {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!m) return hex;
+  const n = parseInt(m[1]!, 16);
+  const r = ((n >> 16) & 255) / 255, g = ((n >> 8) & 255) / 255, b = (n & 255) / 255;
+  const lin = (c: number) => (c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+  const R = lin(r), G = lin(g), B = lin(b);
+  const l = 0.4122214708 * R + 0.5363325363 * G + 0.0514459929 * B;
+  const m2 = 0.2119034982 * R + 0.6806995451 * G + 0.1073969566 * B;
+  const s = 0.0883024619 * R + 0.2817188376 * G + 0.6299787005 * B;
+  const l3 = Math.cbrt(l), m3 = Math.cbrt(m2), s3 = Math.cbrt(s);
+  const L = 0.2104542553 * l3 + 0.793617785 * m3 - 0.0040720468 * s3;
+  const a = 1.9779984951 * l3 - 2.428592205 * m3 + 0.4505937099 * s3;
+  const b2 = 0.0259040371 * l3 + 0.7827717662 * m3 - 0.808675766 * s3;
+  const C = Math.sqrt(a * a + b2 * b2);
+  let H = (Math.atan2(b2, a) * 180) / Math.PI;
+  if (H < 0) H += 360;
+  return `oklch(${L.toFixed(3)} ${C.toFixed(3)} ${H.toFixed(1)})`;
+}
+
+/** Best-effort hex for the native colour input from a stored track colour. */
+export function oklchToHex(color: string): string {
+  const m = /oklch\(\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)/.exec(color);
+  if (!m) return "#22c1c3";
+  const L = parseFloat(m[1]!), C = parseFloat(m[2]!), H = (parseFloat(m[3]!) * Math.PI) / 180;
+  const a = C * Math.cos(H), b2 = C * Math.sin(H);
+  const l3 = L + 0.3963377774 * a + 0.2158037573 * b2;
+  const m3 = L - 0.1055613458 * a - 0.0638541728 * b2;
+  const s3 = L - 0.0894841775 * a - 1.291485548 * b2;
+  const l = l3 ** 3, mm = m3 ** 3, s = s3 ** 3;
+  const R = 4.0767416621 * l - 3.3077115913 * mm + 0.2309699292 * s;
+  const G = -1.2684380046 * l + 2.6097574011 * mm - 0.3413193965 * s;
+  const B = -0.0041960863 * l - 0.7034186147 * mm + 1.707614701 * s;
+  const gam = (c: number) => (c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - 0.055);
+  const to = (c: number) => Math.round(Math.min(1, Math.max(0, gam(c))) * 255).toString(16).padStart(2, "0");
+  return `#${to(R)}${to(G)}${to(B)}`;
+}
+
 /** Musical icons a track can be badged with. */
 export const TRACK_ICONS: { id: string; label: string; Icon: ComponentType<{ className?: string | undefined }> }[] = [
   { id: "note", label: "Note", Icon: Music2 },
@@ -278,6 +317,18 @@ export function TrackStylePicker({
               />
             ))}
           </div>
+          <label className="flex items-center gap-2 rounded-md border border-border px-2 py-1.5">
+            <input
+              type="color"
+              aria-label="Custom track colour"
+              value={oklchToHex(track.color)}
+              onChange={(e) => updateTrack(track.id, { color: hexToOklch(e.target.value) })}
+              className="size-6 cursor-pointer rounded border-0 bg-transparent p-0"
+            />
+            <span className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
+              Custom colour — pick any shade
+            </span>
+          </label>
         </div>
         <div className="space-y-1.5">
           <p className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">Track icon</p>
