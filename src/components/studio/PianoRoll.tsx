@@ -522,12 +522,10 @@ export function PianoRoll({ track }: { track: Track }) {
                 }}
               />
             ))}
-            {transport.playing && (
-              <div
-                className="pointer-events-none absolute top-0 bottom-0 w-px bg-[var(--neon)]"
-                style={{ left: `${((transport.step % steps) / steps) * 100}%` }}
-              />
-            )}
+            <div
+              className="playhead-line pointer-events-none absolute top-0 bottom-0 w-[2px]"
+              style={{ left: `${((transport.step % steps) / steps) * 100}%` }}
+            />
             {marquee && (
               <div
                 className="pointer-events-none absolute z-10 border border-primary bg-primary/15"
