@@ -75,23 +75,6 @@ function makeBitcrushCurve(bits: number) {
   return curve;
 }
 
-function makeGateCurve(threshold: number) {
-  const n = 4096;
-  const curve = new Float32Array(n);
-  for (let i = 0; i < n; i++) {
-    const x = (i / (n - 1)) * 2 - 1;
-    const a = Math.abs(x);
-    const sign = x < 0 ? -1 : 1;
-    if (a >= threshold) {
-      curve[i] = x;
-    } else {
-      // soft attenuation below threshold (12 dB/oct-ish expansion feel)
-      const r = a / threshold;
-      curve[i] = sign * a * r * r;
-    }
-  }
-  return curve;
-}
 
 function makeDistortionCurve(amount: number) {
   const k = amount * 100;
@@ -693,7 +676,7 @@ export class SyncLabEngine {
         drive: 3,
         compressor: 2,
         delay: 5,
-        width: 1,
+        width: 2,
         gain: 1,
         reverb: 5,
         chorus: 4,
@@ -704,7 +687,7 @@ export class SyncLabEngine {
         limiter: 1,
         bitcrusher: 5,
         vocoder: 2,
-        gate: 1,
+        gate: 2,
         stepfilter: 5,
         resonator: 12,
         scalechord: 1,
@@ -867,10 +850,32 @@ export class SyncLabEngine {
           break;
         }
         case "width": {
+          // Mid/side width: L' = M + S*w, R' = M - S*w.
+          const input = ctx.createGain();
+          input.channelCount = 2; input.channelCountMode = "explicit";
+          const split = ctx.createChannelSplitter(2);
+          const merge = ctx.createChannelMerger(2);
+          const mid = ctx.createGain(); mid.gain.value = 0.5;
+          const sideL = ctx.createGain(); sideL.gain.value = 0.5;
+          const sideR = ctx.createGain(); sideR.gain.value = -0.5;
+          const side = ctx.createGain();
+          const sideOutL = ctx.createGain();
+          const sideOutR = ctx.createGain(); sideOutR.gain.value = -1;
           const w = ctx.createGain();
+          const setW = (v: number, t?: number) => { const g = clamp(v, 0, 2); if (t === undefined) side.gain.value = g; else glide(side.gain, g, t); };
+          setW(val(pl, "width", 1));
+          input.connect(split);
+          split.connect(mid, 0); split.connect(mid, 1);
+          split.connect(sideL, 0); split.connect(sideR, 1);
+          sideL.connect(side); sideR.connect(side);
+          side.connect(sideOutL); side.connect(sideOutR);
+          mid.connect(merge, 0, 0); mid.connect(merge, 0, 1);
+          sideOutL.connect(merge, 0, 0); sideOutR.connect(merge, 0, 1);
+          merge.connect(w);
           w.gain.value = dbToGain(val(pl, "output", 0));
+          live(pl, "width", (v, t) => setW(v, t));
           live(pl, "output", (v, t) => glide(w.gain, dbToGain(v), t));
-          nodes.push(w);
+          nodes.push(input, w);
           break;
         }
         case "gain": {
@@ -1216,10 +1221,30 @@ export class SyncLabEngine {
           // Downward expander approximation: compressor below-threshold attenuation
           // via inverted ratio is unavailable in DynamicsCompressor, so use a
           // waveshaper soft-knee expansion curve around the threshold.
+          // Envelope-follower gate: rectify -> attack/release smoothing -> threshold curve -> VCA.
           const thr = Math.pow(10, clamp(val(pl, "threshold", -45), -80, 0) / 20);
-          const ws = ctx.createWaveShaper();
-          ws.curve = makeGateCurve(thr);
-          nodes.push(ws);
+          const input = ctx.createGain();
+          const vca = ctx.createGain(); vca.gain.value = 0;
+          const rect = ctx.createWaveShaper();
+          const rc = new Float32Array(1025);
+          for (let i = 0; i < rc.length; i++) rc[i] = Math.abs((i / 512) - 1);
+          rect.curve = rc;
+          const smooth = ctx.createBiquadFilter(); smooth.type = "lowpass"; smooth.Q.value = 0.5;
+          const setSmooth = (t?: number) => {
+            const ms = (val(pl, "attack", 2) + val(pl, "release", 80)) / 2;
+            const f = clamp(1000 / (2 * Math.PI * Math.max(0.1, ms)), 1, 2000);
+            if (t === undefined) smooth.frequency.value = f; else glide(smooth.frequency, f, t);
+          };
+          setSmooth();
+          const open = ctx.createWaveShaper();
+          const oc = new Float32Array(2049);
+          for (let i = 0; i < oc.length; i++) { const x = Math.abs((i / 1024) - 1) * 1.6; oc[i] = x >= thr ? 1 : Math.pow(x / thr, 4); }
+          open.curve = oc;
+          input.connect(vca);
+          input.connect(rect); rect.connect(smooth); smooth.connect(open); open.connect(vca.gain);
+          live(pl, "attack", (_v, t) => setSmooth(t));
+          live(pl, "release", (_v, t) => setSmooth(t));
+          nodes.push(input, vca);
           break;
         }
         case "stepfilter": {
@@ -1248,7 +1273,8 @@ export class SyncLabEngine {
           const imag = new Float32Array(harmonics + 1);
           for (let h = 1; h <= harmonics; h++) {
             for (let i = 0; i < count; i++) {
-              const phase = (2 * Math.PI * h * (i + 0.5)) / count;
+              const swing = i % 2 === 1 ? clamp(val(pl, "swing", 0), 0, 0.6) : 0;
+              const phase = (2 * Math.PI * h * (i + 0.5 + swing)) / count;
               real[h] = (real[h] ?? 0) + ((stepValues[i] ?? 0.5) * Math.cos(phase) * 2) / count;
               imag[h] = (imag[h] ?? 0) - ((stepValues[i] ?? 0.5) * Math.sin(phase) * 2) / count;
             }
@@ -1258,10 +1284,14 @@ export class SyncLabEngine {
           sequencer.frequency.value = clamp(val(pl, "rate", 8), 0.5, 32) / count;
           const depth = ctx.createGain();
           depth.gain.value = cutoff * clamp(val(pl, "depth", 0.85), 0, 1);
-          sequencer.connect(depth);
+          const smoothing = ctx.createBiquadFilter(); smoothing.type = "lowpass";
+          const smoothSec = clamp(val(pl, "smooth", 0.03), 0, 0.24);
+          smoothing.frequency.value = smoothSec <= 0.001 ? 20000 : clamp(1 / (2 * Math.PI * smoothSec), 0.5, 20000);
+          sequencer.connect(smoothing);
+          smoothing.connect(depth);
           depth.connect(filter.frequency);
           sequencer.start();
-          (out as unknown as { _keep?: AudioNode[] })._keep = [sequencer, depth];
+          (out as unknown as { _keep?: AudioNode[] })._keep = [sequencer, smoothing, depth];
           bind(pl, "cutoff", filter.frequency, 80, 18000, true);
           bind(pl, "resonance", filter.Q, 0.1, 20);
           bind(pl, "mix", wet.gain, 0, 1);
@@ -1324,7 +1354,13 @@ export class SyncLabEngine {
           dry.connect(out);
           input.connect(compressor);
           compressor.connect(wet);
-          wet.connect(out);
+          if (val(pl, "protect", 1) >= 0.5) {
+            const clip = ctx.createWaveShaper();
+            const cc = new Float32Array(2049);
+            for (let i = 0; i < cc.length; i++) cc[i] = Math.tanh(((i / 1024) - 1) * 1.2) / Math.tanh(1.2);
+            clip.curve = cc;
+            wet.connect(clip); clip.connect(out);
+          } else wet.connect(out);
           bind(pl, "attack", compressor.ratio, 1, 20);
           bind(pl, "sustain", compressor.release, 0.05, 0.7);
           bind(pl, "mix", wet.gain, 0, 1.5);

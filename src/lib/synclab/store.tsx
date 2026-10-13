@@ -1132,11 +1132,19 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             const dur = (note.length * stepDur) / (t.patch.arp.on ? 2 : 1);
             const octShift = (t.octave ?? 0) * 12;
             if (t.patch.arp.on) {
-              const oct = t.patch.arp.octaves;
-              for (let i = 0; i < note.length; i++) {
-                const shift = (i % Math.max(1, oct)) * 12;
-                const dir = t.patch.arp.direction === "down" ? -shift : shift;
-                engine.playNote(t.id, t.patch, note.pitch + octShift + dir, stepDur * t.patch.arp.gate, note.velocity, swung + i * stepDur);
+              const arp = t.patch.arp;
+              const oct = Math.max(1, Math.round(arp.octaves));
+              const rate = Math.max(0.25, arp.rate || 1);
+              const arpStep = stepDur / rate;
+              const hits = Math.max(1, Math.round(note.length * rate));
+              const up = Array.from({ length: oct }, (_, k) => k);
+              const seq = arp.direction === "down" ? [...up].reverse()
+                : arp.direction === "updown" ? (oct > 1 ? [...up, ...up.slice(1, -1).reverse()] : up)
+                : arp.direction === "alternate" ? up.flatMap((k) => (k === 0 ? [0] : [k, 0]))
+                : up;
+              for (let i = 0; i < hits; i++) {
+                const k = arp.direction === "random" ? Math.floor(Math.random() * oct) : seq[i % seq.length] ?? 0;
+                engine.playNote(t.id, t.patch, note.pitch + octShift + k * 12, arpStep * arp.gate, note.velocity, swung + i * arpStep);
               }
             } else {
               engine.playNote(t.id, t.patch, note.pitch + octShift, dur, note.velocity, swung + (note.step - step0) * stepDur);
