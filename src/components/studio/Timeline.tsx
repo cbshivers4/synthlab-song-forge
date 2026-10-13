@@ -2860,14 +2860,25 @@ function Ruler() {
         )}
 
         <div
-          className="pointer-events-none absolute top-0 z-20 h-full"
+          className="pointer-events-none absolute top-0 z-30 h-full"
           style={{ left: `${(transport.step / total) * 100}%` }}
         >
-          {/* arrow cursor — drag it to move the playhead */}
+          {/* grab the line anywhere along the ruler to move the playhead */}
           <div
-            className="pointer-events-auto absolute left-1/2 top-0 h-4 w-5 -translate-x-1/2 cursor-ew-resize touch-none"
+            role="slider"
+            aria-label="Playhead — drag to move"
+            aria-valuemin={0}
+            aria-valuemax={total - 1}
+            aria-valuenow={transport.step}
+            tabIndex={0}
+            className="playhead-grip pointer-events-auto absolute left-1/2 top-0 h-full w-6 -translate-x-1/2"
             title="Drag to move the playhead"
-            aria-label="Playhead"
+            onKeyDown={(e) => {
+              const d = e.key === "ArrowLeft" ? -1 : e.key === "ArrowRight" ? 1 : 0;
+              if (!d) return;
+              e.preventDefault();
+              setTransport({ step: Math.max(0, Math.min(total - 1, transport.step + d)) });
+            }}
             onPointerDown={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -2881,12 +2892,10 @@ function Ruler() {
             }}
           />
           <div
-            className={`pointer-events-none absolute left-1/2 top-0 h-0 w-0 -translate-x-1/2 border-x-[6px] border-x-transparent ${transport.playing ? "border-t-primary" : "border-t-primary/50"}`}
-            style={{ borderTopWidth: 9 }}
+            className="playhead-head pointer-events-none absolute left-1/2 top-0 h-0 w-0 -translate-x-1/2 border-x-[7px] border-x-transparent"
+            style={{ borderTopWidth: 10 }}
           />
-          <div
-            className={`absolute bottom-0 left-1/2 top-2 w-[2px] -translate-x-1/2 ${transport.playing ? "bg-primary" : "bg-primary/50"}`}
-          />
+          <div className="playhead-line pointer-events-none absolute bottom-0 left-1/2 top-2 w-[2px] -translate-x-1/2" />
         </div>
       </div>
     </div>
@@ -2986,7 +2995,7 @@ function TimelineOverview({
         )}
         {/* playhead */}
         <span
-          className="absolute inset-y-0 w-px bg-primary"
+          className="playhead-line absolute inset-y-0 w-[2px]"
           style={{ left: `${((transport.step % total) / total) * 100}%` }}
         />
         {/* viewport */}
@@ -3099,13 +3108,37 @@ function FolderRow({
 }
 
 export function Timeline({ phonePaged = false }: { phonePaged?: boolean }) {
-  const { tracks, transport, addTrack, addClip, setPanel, loadSample, folders, renameFolder, removeFolder, toggleFolderCollapsed } = useStudio();
+  const { tracks, transport, addTrack, addClip, setPanel, loadSample, folders, renameFolder, removeFolder, toggleFolderCollapsed, setTransport } = useStudio();
   const totalSteps = songSteps(transport.bars);
   const [over, setOver] = useState(false);
   const [zoom, setZoom] = useState(1);
   const scrollRef = useRef<HTMLDivElement>(null);
   const timelineHeaderRef = useRef<HTMLDivElement>(null);
+  const rowsRef = useRef<HTMLDivElement>(null);
   const shownTracks = tracks;
+
+  // Grabbing the white playhead line inside the track lanes moves song position.
+  const stepFromRowsX = (clientX: number) => {
+    const el = rowsRef.current;
+    if (!el) return transport.step;
+    const r = el.getBoundingClientRect();
+    const headerW = parseFloat(getComputedStyle(el).getPropertyValue("--timeline-header-width")) || 0;
+    const lane = Math.max(1, r.width - headerW);
+    return Math.min(totalSteps - 1, Math.max(0, Math.round(((clientX - r.left - headerW) / lane) * totalSteps)));
+  };
+  const dragSongPlayhead = (e: React.PointerEvent) => {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+    setTransport({ step: stepFromRowsX(e.clientX) });
+    const move = (ev: PointerEvent) => setTransport({ step: stepFromRowsX(ev.clientX) });
+    const up = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+  };
 
   // The ruler and song parts live above the vertically scrolling tracks, but
   // must share their horizontal coordinate system when the overview pans.
@@ -3159,7 +3192,7 @@ export function Timeline({ phonePaged = false }: { phonePaged?: boolean }) {
             className="absolute left-1/2 top-0 w-[min(360px,38%)] -translate-x-[calc(50%-147px)] -translate-y-1/2 select-none opacity-[0.06]"
           />
         </div>
-        <div className="relative" data-timeline-track-rows>
+        <div ref={rowsRef} className="relative" data-timeline-track-rows>
         {shownTracks.map((t) => {
           const i = tracks.indexOf(t);
           const folder = t.folderId ? folders.find((f) => f.id === t.folderId) : undefined;
@@ -3180,12 +3213,34 @@ export function Timeline({ phonePaged = false }: { phonePaged?: boolean }) {
             </Fragment>
           );
         })}
-        {tracks.length > 0 && <div
-          data-timeline-playhead
-          className={`pointer-events-none absolute inset-y-0 z-10 w-[2px] -translate-x-1/2 ${transport.playing ? "bg-primary" : "bg-primary/80"}`}
+        <div
+          className="pointer-events-none absolute inset-y-0 z-30 -translate-x-1/2"
           style={{ left: `calc(var(--timeline-header-width) + (100% - var(--timeline-header-width)) * ${(transport.step % totalSteps) / totalSteps})` }}
-          aria-hidden="true"
-        />}
+        >
+          <div
+            data-timeline-playhead
+            className="playhead-line absolute inset-y-0 left-1/2 w-[2px] -translate-x-1/2"
+            aria-hidden="true"
+          />
+          <div
+            data-playhead-drag
+            role="slider"
+            aria-label="Playhead — drag to move"
+            aria-valuemin={0}
+            aria-valuemax={totalSteps - 1}
+            aria-valuenow={transport.step % totalSteps}
+            tabIndex={0}
+            title="Drag to move the playhead"
+            className="playhead-grip pointer-events-auto absolute inset-y-0 left-1/2 w-5 -translate-x-1/2"
+            onPointerDown={dragSongPlayhead}
+            onKeyDown={(e) => {
+              const d = e.key === "ArrowLeft" ? -1 : e.key === "ArrowRight" ? 1 : 0;
+              if (!d) return;
+              e.preventDefault();
+              setTransport({ step: Math.max(0, Math.min(totalSteps - 1, (transport.step % totalSteps) + d)) });
+            }}
+          />
+        </div>
         </div>
         <div className="flex items-center gap-3 px-2 pt-2">
           <AddTrackMenu size="sm" />
