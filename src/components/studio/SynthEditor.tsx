@@ -74,6 +74,27 @@ function EnvelopeGraph({ env }: { env: EnvelopeParams }) {
 }
 
 export function SynthEditor({ track }: { track: Track }) {
+  const { tracks, select } = useStudio();
+  const synthTracks = tracks.filter((item) => (item.kind === "instrument" || item.kind === "midi") && item.patch);
+
+  return (
+    <Tabs value={track.id} onValueChange={select} className="min-w-0">
+      <TabsList aria-label="Timeline synths" className="flex h-auto w-full flex-wrap justify-start gap-1 rounded-md">
+        {synthTracks.map((item) => (
+          <TabsTrigger key={item.id} value={item.id} title={item.name} className="min-h-10 min-w-0 max-w-full gap-2">
+            <Piano className="size-4 shrink-0" aria-hidden="true" />
+            <span className="truncate">{item.name}</span>
+          </TabsTrigger>
+        ))}
+      </TabsList>
+      <TabsContent value={track.id} className="min-w-0">
+        <SynthTrackEditor key={track.id} track={track} />
+      </TabsContent>
+    </Tabs>
+  );
+}
+
+function SynthTrackEditor({ track }: { track: Track }) {
   const { updatePatch, savePreset, loadPreset, userPresets, previewNote } = useStudio();
   const [presetName, setPresetName] = useState("");
   const [showKeyboard, setShowKeyboard] = useState(false);
