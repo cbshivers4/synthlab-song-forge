@@ -15,7 +15,6 @@ Meter/looper visuals use shared 20 fps timers; keep rapid React updates off audi
 Phone settings open Phone features from More and the beat maker; Bluetooth shortcuts open Audio explicitly, keeping both accessible.
 Mixer VCAs scale assigned channel gains without changing individual faders, while aux returns control post-effect levels before the master; this avoids routing returns back into their own sends.
 Mixer meters read analyser taps from the actual bus, aux return, and VCA member signals; master gain controls the summed mix, while subgroup changes also scale their tracks' pre-bus sends.
-Timeline overview, ruler and song lane share arrangement width and scrolling; pin header controls to align bars.
 MIDI Learn uses stable track/device IDs; expose only implemented dispatch paths.
 Ableton handoff uses stems and standard MIDI, never proprietary decoding.
 - Time signature is transport.beatsPerBar over a quarter-note beat; bar math goes through timebase helpers (stepsPerBar/getBeatsPerBar), synced by the store each render, so ruler, metronome, count-ins and looper agree.
