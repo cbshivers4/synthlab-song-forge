@@ -317,6 +317,18 @@ export function TrackStylePicker({
               />
             ))}
           </div>
+          <label className="flex items-center gap-2 rounded-md border border-border px-2 py-1.5">
+            <input
+              type="color"
+              aria-label="Custom track colour"
+              value={oklchToHex(track.color)}
+              onChange={(e) => updateTrack(track.id, { color: hexToOklch(e.target.value) })}
+              className="size-6 cursor-pointer rounded border-0 bg-transparent p-0"
+            />
+            <span className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
+              Custom colour — pick any shade
+            </span>
+          </label>
         </div>
         <div className="space-y-1.5">
           <p className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">Track icon</p>
