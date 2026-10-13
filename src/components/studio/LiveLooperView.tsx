@@ -174,16 +174,23 @@ export function LiveLooperView() {
   const drop = useImageDrop("looper");
   const { transport, addTrack, addClip } = useStudio();
   const looper = getLooper();
-  // Controller pads start/stop loops: empty records, recording closes, playing stops, stopped plays.
-  const loopPads = useMidiPads("looper", 8, (i) => {
+  // Controller pads: 0-7 toggle, 8-15 start, 16-23 stop, 24-31 record (per loop slot).
+  const loopPads = useMidiPads("looper", 32, (p) => {
+    const i = p % 8;
+    const action = Math.floor(p / 8);
     const slot = looper.slots[i];
     if (!slot) return;
     const fail = (error: unknown) => toast.error("Couldn't start the looper", { description: error instanceof Error ? error.message : undefined });
-    if (slot.state === "playing") looper.stop(i);
-    else if (slot.state === "recording" || slot.state === "armed") void looper.tap(i).catch(fail);
+    const busy = slot.state === "recording" || slot.state === "armed";
+    if (action === 1) { if (busy) void looper.tap(i).catch(fail); else if (slot.buffer && slot.state !== "playing") looper.play(i); }
+    else if (action === 2) { if (busy) void looper.tap(i).catch(fail); else if (slot.state === "playing") looper.stop(i); }
+    else if (action === 3) { if (busy) void looper.tap(i).catch(fail); else void looper.recordCounted(i).catch(fail); }
+    else if (slot.state === "playing") looper.stop(i);
+    else if (busy) void looper.tap(i).catch(fail);
     else if (slot.buffer) looper.play(i);
     else void looper.recordCounted(i).catch(fail);
   });
+  const LOOP_ACTIONS = ["Toggle", "Start", "Stop", "Record"];
   const [, rerender] = useReducer((n: number) => n + 1, 0);
   useEffect(() => looper.subscribe(rerender), [looper]);
   useEffect(() => { looper.bpm = transport.bpm; }, [looper, transport.bpm]);
@@ -203,7 +210,8 @@ export function LiveLooperView() {
   return (
     <div className="studio-wallpaper space-y-5 rounded-md p-3" data-studio-panel="looper" style={skinBackground(skin)} {...drop}>
       <SkinControls skinKey="looper" image />
-      <MidiPadLearnBar pads={loopPads} label="loops" names={(i) => `loop ${i + 1}`} />
+      <MidiPadLearnBar pads={loopPads} label="loops" groupSize={8} groupLabels={LOOP_ACTIONS}
+        names={(i) => `loop ${(i % 8) + 1} ${(LOOP_ACTIONS[Math.floor(i / 8)] ?? "").toLowerCase()}`} />
       <div className="flex flex-wrap items-end gap-4 border-b border-border pb-4">
         <div>
           <div className="mb-1 font-mono text-[10px] uppercase text-muted-foreground">Timing</div>

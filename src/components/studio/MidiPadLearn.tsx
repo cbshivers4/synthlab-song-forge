@@ -62,7 +62,7 @@ export function useMidiPads(scope: string, count: number, onPress: (i: number, v
   };
 }
 
-export function MidiPadLearnBar({ pads, label = "pads", names }: { pads: ReturnType<typeof useMidiPads>; label?: string; names?: (i: number) => string }) {
+export function MidiPadLearnBar({ pads, label = "pads", names, groupSize, groupLabels }: { pads: ReturnType<typeof useMidiPads>; label?: string; names?: (i: number) => string; groupSize?: number; groupLabels?: string[] }) {
   const { midiInputId, enableMidi } = useStudio();
   const mapped = pads.notes.slice(0, pads.count).filter(Boolean).length;
   return (
@@ -81,20 +81,26 @@ export function MidiPadLearnBar({ pads, label = "pads", names }: { pads: ReturnT
         {pads.learnMode && mapped > 0 && <Button type="button" size="sm" variant="ghost" className="min-h-9 text-xs" onClick={pads.clearAll}>Clear all</Button>}
       </div>
       {pads.learnMode && (
-        <div className="flex flex-wrap gap-1">
-          {Array.from({ length: pads.count }, (_, i) => {
+        <div className="space-y-1">
+        {Array.from({ length: groupSize ? Math.ceil(pads.count / groupSize) : 1 }, (_, g) => (
+        <div key={g} className="flex flex-wrap items-center gap-1">
+          {groupSize && <span className="w-16 font-mono text-[10px] uppercase text-muted-foreground">{groupLabels?.[g] ?? `Row ${g + 1}`}</span>}
+          {Array.from({ length: groupSize ? Math.min(groupSize, pads.count - g * groupSize) : pads.count }, (_, k) => {
+            const i = groupSize ? g * groupSize + k : k;
             const n = pads.notes[i] ?? null;
             return (
               <span key={i} className="inline-flex items-center">
                 <Button type="button" size="sm" variant={pads.target === i ? "default" : n ? "secondary" : "outline"}
                   className={cn("min-h-9 min-w-12 px-2 font-mono text-[10px]", pads.target === i && "animate-pulse")}
                   aria-label={`Learn ${names?.(i) ?? `pad ${i + 1}`}`} aria-pressed={pads.target === i} onClick={() => pads.arm(i)}>
-                  {i + 1}{n ? ` · ${padNoteLabel(n).split(" ·")[0]}` : ""}
+                  {(groupSize ? k : i) + 1}{n ? ` · ${padNoteLabel(n).split(" ·")[0]}` : ""}
                 </Button>
                 {n && <Button type="button" size="sm" variant="ghost" className="min-h-9 px-1 text-xs" aria-label={`Clear ${names?.(i) ?? `pad ${i + 1}`} mapping`} onClick={() => pads.clear(i)}>×</Button>}
               </span>
             );
           })}
+        </div>
+        ))}
         </div>
       )}
     </div>
