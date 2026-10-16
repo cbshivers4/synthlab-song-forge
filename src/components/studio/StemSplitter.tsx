@@ -7,8 +7,26 @@ import { encodeWav } from "@/lib/synclab/bounce";
 import { isStereo, MAX_STEM_SECONDS, peaksOf, separateStems, STEMS, type StemId } from "@/lib/synclab/stems";
 import { retainMediaInBackground } from "@/lib/synclab/media-library";
 import { GeneratedWaveform } from "./GeneratedWaveform";
+import { useServerFn } from "@tanstack/react-start";
+import { checkStemSplitFn, fetchStemFn, startStemSplitFn } from "@/utils/stem-split.functions";
 
-type Source = { name: string; buffer: AudioBuffer; start: number };
+const MAX_AI_BYTES = 40 * 1024 * 1024;
+const toBase64 = async (blob: Blob) => {
+  const bytes = new Uint8Array(await blob.arrayBuffer());
+  let bin = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
+};
+const fromBase64 = (b64: string, type: string) => {
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return new Blob([out], { type });
+};
+/** Demucs stem names for each SYNCLAB stem; instrumental is drums + bass + other summed. */
+const AI_PARTS: Record<StemId, string[]> = { vocals: ["vocals"], drums: ["drums"], bass: ["bass"], music: ["other"], instrumental: ["drums", "bass", "other"] };
+
+type Source = { name: string; buffer: AudioBuffer; start: number; blob: Blob };
 
 export function StemSplitter() {
   const { tracks, addTrack, addClip } = useStudio();
@@ -17,6 +35,11 @@ export function StemSplitter() {
   const [picked, setPicked] = useState<Record<StemId, boolean>>({ vocals: true, drums: true, bass: true, music: true, instrumental: false });
   const [busy, setBusy] = useState<string | null>(null);
   const [progress, setProgress] = useState<number | null>(null);
+  const [mode, setMode] = useState<"ai" | "device">("ai");
+  const startAi = useServerFn(startStemSplitFn);
+  const checkAi = useServerFn(checkStemSplitFn);
+  const fetchAi = useServerFn(fetchStemFn);
+  const cancelRef = useRef(false);
 
   const clips = useMemo(
     () => tracks.flatMap((t) => (t.clips ?? []).filter((c) => c.url).map((c) => ({ track: t.name, clip: c }))),
@@ -33,7 +56,7 @@ export function StemSplitter() {
     retainMediaInBackground(file, file.name);
     setBusy("Reading file…");
     try {
-      setSource({ name: file.name.replace(/\.[^.]+$/, ""), buffer: await decode(await file.arrayBuffer()), start: 0 });
+      setSource({ name: file.name.replace(/\.[^.]+$/, ""), buffer: await decode(await file.arrayBuffer()), start: 0, blob: file });
     } catch {
       toast.error("Couldn't read that audio file");
     } finally { setBusy(null); }
@@ -44,8 +67,9 @@ export function StemSplitter() {
     if (!item?.clip.url) return;
     setBusy("Reading clip…");
     try {
-      const buf = await decode(await (await fetch(item.clip.url)).arrayBuffer());
-      setSource({ name: item.clip.name, buffer: buf, start: item.clip.start ?? 0 });
+      const blob = await (await fetch(item.clip.url)).blob();
+      const buf = await decode(await blob.arrayBuffer());
+      setSource({ name: item.clip.name, buffer: buf, start: item.clip.start ?? 0, blob });
     } catch {
       toast.error("Couldn't read that clip");
     } finally { setBusy(null); }
@@ -63,6 +87,7 @@ export function StemSplitter() {
     const ids = STEMS.filter((s) => picked[s.id]).map((s) => s.id);
     if (!ids.length) { toast("Pick at least one stem"); return; }
     if (source.buffer.duration > MAX_STEM_SECONDS) { toast("Song too long", { description: "Separate up to 6 minutes at a time." }); return; }
+    if (mode === "ai") { await runAi(ids); return; }
     if (!isStereo(source.buffer) && (picked.vocals || picked.instrumental)) {
       toast("This audio is mono", { description: "Vocals are found by their centre position in a stereo mix, so a mono file will leave them mixed with other sounds." });
     }
@@ -93,6 +118,67 @@ export function StemSplitter() {
     }
   };
 
+  const runAi = async (ids: StemId[]) => {
+    if (!source) return;
+    if (source.blob.size > MAX_AI_BYTES) { toast("File too large for AI separation", { description: "Use a file under 40 MB (an MP3 works best), or switch to On-device." }); return; }
+    stopAudio();
+    results.forEach((r) => { if (!r.added) URL.revokeObjectURL(r.url); });
+    setResults([]);
+    cancelRef.current = false;
+    setProgress(null);
+    try {
+      setBusy("Uploading…");
+      const started = await startAi({ data: { audio: await toBase64(source.blob), name: `${source.name}.${source.blob.type.includes("wav") ? "wav" : "mp3"}`, mime: source.blob.type || "audio/mpeg" } });
+      if (!started.ok) throw new Error(started.error);
+      setBusy("Separating with AI…");
+      let stems: Record<string, string> | null = null;
+      while (!stems) {
+        await new Promise((r) => setTimeout(r, 4000));
+        if (cancelRef.current) { toast("Separation stopped"); return; }
+        const res = await checkAi({ data: { id: started.id } });
+        if (!res.ok) throw new Error(res.error);
+        if (res.status.state === "failed") throw new Error(res.status.error);
+        if (res.status.state === "done") stems = res.status.stems;
+      }
+      setBusy("Downloading stems…");
+      const need = [...new Set(ids.flatMap((id) => AI_PARTS[id]))];
+      const parts: Record<string, { blob: Blob; buffer: AudioBuffer }> = {};
+      for (const name of need) {
+        const url = stems[name];
+        if (!url) continue;
+        const got = await fetchAi({ data: { url } });
+        if (!got.ok) throw new Error(got.error);
+        const blob = fromBase64(got.mp3, "audio/mpeg");
+        parts[name] = { blob, buffer: await decode(await blob.arrayBuffer()) };
+      }
+      const out: Result[] = [];
+      for (const id of ids) {
+        const label = STEMS.find((s) => s.id === id)!.label;
+        const use = AI_PARTS[id].map((n) => parts[n]).filter((p): p is { blob: Blob; buffer: AudioBuffer } => !!p);
+        if (!use.length) continue;
+        const sr = use[0]!.buffer.sampleRate;
+        const len = Math.max(...use.map((p) => p.buffer.length));
+        const left = new Float32Array(len), right = new Float32Array(len);
+        for (const p of use) {
+          const l = p.buffer.getChannelData(0), r = p.buffer.numberOfChannels > 1 ? p.buffer.getChannelData(1) : l;
+          for (let i = 0; i < l.length; i++) { left[i] = left[i]! + l[i]!; right[i] = right[i]! + r[i]!; }
+        }
+        const peaks = peaksOf(left, 512).map((v, i) => Math.max(v, Math.abs(right[Math.floor((i * right.length) / 512)] ?? 0)));
+        const blob = use.length === 1 ? use[0]!.blob : encodeWav({ left, right, sampleRate: sr });
+        out.push({ id, label, url: URL.createObjectURL(blob), peaks, duration: len / sr, added: false });
+      }
+      setResults(out);
+      if (out.length) toast.success("Stems separated with AI", { description: "Play each one, then add the ones you want to the timeline." });
+      else toast.error("The separator returned no stems");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "";
+      toast.error("Couldn't separate this song", { description: /unauthor|401|jwt|session/i.test(msg) ? "Sign in to use AI stem separation." : msg || undefined });
+    } finally {
+      setBusy(null);
+      setProgress(null);
+    }
+  };
+
   const togglePlay = (r: Result) => {
     if (playingId === r.id) { stopAudio(); return; }
     stopAudio();
@@ -115,11 +201,17 @@ export function StemSplitter() {
       <header>
         <h2 className="font-mono text-sm font-bold tracking-[0.18em]">SEPARATE STEMS</h2>
         <p className="text-xs text-muted-foreground">
-          Splits a song into Vocals, Drums, Bass and Music on your device by analysing its sound spectrum: hits go to Drums, sustained
-          centre sounds in the voice range go to Vocals, low notes go to Bass. This is signal processing, not AI — expect some bleed,
-          and stereo files with centre vocals separate best. A 3-minute song takes about 20–60 seconds.
+          {mode === "ai"
+            ? "AI separation (Demucs) splits a song into clean Vocals, Drums, Bass and Music. Your song is uploaded to Replicate for processing, which costs a few cents per song on the connected Replicate account. A 3-minute song takes about 1–2 minutes."
+            : "On-device separation analyses the sound spectrum: hits go to Drums, centre sounds in the voice range go to Vocals, low notes go to Bass. Free and private, but expect bleed between parts."}
         </p>
       </header>
+
+      <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Separation method">
+        {([["ai", "AI — clean stems"], ["device", "On-device — free"]] as const).map(([id, label]) => (
+          <Button key={id} role="radio" aria-checked={mode === id} variant={mode === id ? "default" : "outline"} className="min-h-11" disabled={!!busy} onClick={() => setMode(id)}>{label}</Button>
+        ))}
+      </div>
 
       <div className="flex flex-wrap gap-2">
         <Button variant="secondary" className="min-h-12" onClick={() => inputRef.current?.click()} disabled={!!busy}>
@@ -161,6 +253,9 @@ export function StemSplitter() {
       <Button size="lg" className="min-h-12" disabled={!source || !!busy} onClick={() => void run()}>
         <Split className="size-4" /> {busy ? `${busy}${progress !== null ? ` ${Math.round(progress * 100)}%` : ""}` : "Separate"}
       </Button>
+      {busy?.startsWith("Separating with AI") && (
+        <Button variant="outline" className="ml-2 min-h-12" onClick={() => { cancelRef.current = true; }}>Stop</Button>
+      )}
       {progress !== null && (
         <div className="h-2 w-full overflow-hidden rounded-full bg-surface-2" role="progressbar" aria-label="Separation progress" aria-valuenow={Math.round(progress * 100)} aria-valuemin={0} aria-valuemax={100}>
           <div className="h-full bg-primary transition-[width]" style={{ width: `${Math.round(progress * 100)}%` }} />
