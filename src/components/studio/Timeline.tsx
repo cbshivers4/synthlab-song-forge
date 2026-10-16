@@ -1032,9 +1032,11 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
           return;
         }
         // Click highlights the track (Ctrl/Cmd+C, X, V or the toolbar act on it); the ⋮ menu or right-click opens actions.
+        // Clicks from the track menu arrive through a portal; they act on their own and never jump to the piano roll.
+        if (!e.currentTarget.contains(e.target as Node)) return;
         select(track.id);
         const target = e.target as HTMLElement;
-        if ((track.kind === "instrument" || track.kind === "midi") && !target.closest("button,input,textarea,select,[role='slider'],[role='combobox'],[role='menuitem']")) {
+        if ((track.kind === "instrument" || track.kind === "midi") && !target.closest("button,input,textarea,select,[role='slider'],[role='combobox'],[role='menuitem'],[role='menu'],[data-cut-tool]")) {
           setPanel("piano");
         }
       }}
@@ -1065,8 +1067,10 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
         onClick={(e) => {
           // Synth channels select the note editor; their instrument opens only by an explicit action.
           if (e.metaKey || e.ctrlKey) return;
+          // Menu clicks bubble here through React portals (Clear track, Open instrument…) — they must never open the piano roll.
+          if (!e.currentTarget.contains(e.target as Node)) return;
           const el = e.target as HTMLElement;
-          if (el.closest("button,input,[role='slider'],[role='combobox']")) return;
+          if (el.closest("button,input,[role='slider'],[role='combobox'],[role='menuitem'],[role='menu']")) return;
           select(track.id);
           if (track.kind === "instrument" || track.kind === "midi") setPanel("piano");
           else if (editorPanel) setPanel(editorPanel);
@@ -1601,13 +1605,11 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
             }
             return;
           }
-          // razor tool — slice any clip under the pointer at the exact position
-          if (editTool === "razor") {
-            razorAt(track.id, frac * songSteps(transport.bars));
-            return;
-          }
-          // split tool — audio clips, recorded waves and written notes all cut at the click
-          splitClipAt(track.id, frac);
+          // Split and razor cut audio clips, recorded waves and written notes where the guide line sits —
+          // exactly at the pointer when FREE (off grid), or on the snap grid when GRID is on (Alt flips it).
+          const total = songSteps(transport.bars);
+          const exact = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+          razorAt(track.id, cutPosition(exact, total, transport.snap ?? 1, e.altKey));
           return;
         }}
       >
@@ -1627,6 +1629,8 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
           tool={editTool}
           position={Math.min(0.99, Math.max(0, (transport.step ?? 0) / songSteps(transport.bars)))}
           selected={isSelected}
+          total={songSteps(transport.bars)}
+          grid={transport.snap ?? 1}
         />}
       </div>
 
