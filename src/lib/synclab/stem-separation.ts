@@ -16,8 +16,8 @@ export type StereoPcm = { left: Float32Array; right: Float32Array };
 const N = 2048;
 const HOP = N / 4;
 const BINS = N / 2 + 1;
-const TK = 17; // time kernel (frames) for the harmonic median
-const FK = 13; // frequency kernel (bins) for the percussive median
+const TK = 31; // time kernel (frames) for the harmonic median
+const FK = 17; // frequency kernel (bins) for the percussive median
 const NORM = 1.5; // sum of hann² at 75% overlap
 
 function makeFft(n: number) {
@@ -149,13 +149,15 @@ export function separateSpectral(
       c = 0;
       for (let j = Math.max(0, b - (FK >> 1)); j <= Math.min(BINS - 1, b + (FK >> 1)); j++) scratch[c++] = slot.mag[j]!;
       const p = median(scratch, c);
-      const h2 = h * h, p2 = p * p;
+      // Power 4 instead of 2 sharpens the soft masks, so sustained and percussive
+      // energy bleed far less into each other.
+      const h2 = h * h * h * h, p2 = p * p * p * p;
       const perc = p2 / (h2 + p2 + 1e-12);
       const harm = 1 - perc;
       const dr = slot.lr[b]! - slot.rr[b]!, di = slot.li[b]! - slot.ri[b]!;
       const sum = Math.hypot(slot.lr[b]!, slot.li[b]!) + Math.hypot(slot.rr[b]!, slot.ri[b]!);
       const centre = sum > 1e-9 ? Math.max(0, 1 - Math.hypot(dr, di) / sum) : 0;
-      const cv = centre ** 8 * band[b]!;
+      const cv = centre ** 12 * band[b]!;
       mV[b] = harm * cv;
       mB[b] = harm * (1 - cv) * low[b]!;
       mD[b] = perc;
