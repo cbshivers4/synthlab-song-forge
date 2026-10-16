@@ -800,9 +800,11 @@
 .phone-console .studio-wallpaper:not([style*="background-image"]),
 .phone-console .creative-tool { background: var(--surface); }
 .phone-console .creative-tool .panel { background-image: none; background-color: var(--surface); }
-.phone-console .login-photo { display: none; }
-.phone-console .login-screen::after { background: var(--background); }
-.phone-console .login-screen .login-auth { background: var(--surface); }
+/* The phone login keeps the same studio photo as desktop, under a dark graphite veil. */
+.phone-console .login-photo { display: block; }
+.phone-console .login-screen { background: transparent; }
+.phone-console .login-screen::after { background: color-mix(in oklab, #15191c 86%, transparent); }
+.phone-console .login-screen .login-auth { background: color-mix(in oklab, #15191c 88%, transparent); backdrop-filter: blur(18px); }
 .phone-console h1, .phone-console h2, .phone-console h3 { font-family: "Sora", sans-serif; letter-spacing: 0; }
 .phone-console-stage > .studio-topbar, .phone-console-stage > .studio-topbar > div { background-image: none !important; background-color: var(--surface); }
 .phone-console .transport-layout { min-height: 64px; padding: 4px 12px !important; }
@@ -1312,3 +1314,8 @@
   filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.75)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.55));
 }
 .playhead-grip { cursor: ew-resize; touch-action: none; }
+
+/* Selected timeline channel: a bright white outline that reads on every track colour. */
+.track-selected {
+  box-shadow: inset 0 0 0 2px var(--playhead), inset 0 0 0 3px rgba(0, 0, 0, 0.55);
+}

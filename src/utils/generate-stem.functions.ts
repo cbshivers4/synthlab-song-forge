@@ -10,9 +10,15 @@ export const generateStemFn = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const apiKey = process.env["LOVABLE_API_KEY"];
     if (!apiKey) return { ok: false as const, error: "AI is not configured for this app." };
+    const inst = data.instrument || "instrument";
+    const drumWords = /drum|percussion/i.test(inst)
+      ? "No melodic or harmonic instruments at all."
+      : "Absolutely no drums, no percussion, no kick, no snare, no hi-hats, no drum machine, no beat.";
+    const vocalWords = /vocal|voice/i.test(inst) ? "" : " No vocals, no singing, no spoken word, no vocal samples.";
     const text = [
-      `Isolated ${data.instrument || "instrument"} stem for a music production, solo, no other instruments, no vocals unless the instrument is vocals.`,
-      `Tempo ${data.bpm} BPM.${data.key ? ` Key ${data.key}.` : ""} Loop-friendly, clean, dry mix.`,
+      `SOLO ${inst} stem only — a single unaccompanied ${inst} recorded on its own, as an isolated multitrack stem.`,
+      `Only the ${inst} is audible for the entire clip. ${drumWords}${vocalWords} No backing track, no accompaniment, no other instruments, no bass unless the instrument is bass, no pads, no atmosphere or background music.`,
+      `Tempo ${data.bpm} BPM.${data.key ? ` Key ${data.key}.` : ""} Loop-friendly, clean, dry mono-to-stereo studio recording with no reverb tail and no mix bus processing.`,
       data.prompt,
     ].join(" ");
     const res = await fetch("https://ai.gateway.lovable.dev/v1/music", {

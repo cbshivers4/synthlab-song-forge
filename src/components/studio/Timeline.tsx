@@ -7,6 +7,7 @@ import {
   ArrowRightToLine,
   ClipboardPaste,
   Grid3x3,
+  Sliders,
   ListChecks,
   MousePointer2,
   Pencil,
@@ -948,7 +949,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
   return (
     <div className="border-b border-border/80">
     <div
-      className={`relative flex items-stretch transition-colors ${isSelected ? "bg-foreground/10 ring-2 ring-inset ring-foreground" : "hover:bg-surface/50"} ${track.hidden ? "opacity-40" : ""} ${dropping ? "ring-1 ring-primary ring-inset" : ""}`}
+      className={`relative flex items-stretch transition-colors ${isSelected ? "track-selected bg-foreground/10" : "hover:bg-surface/50"} ${track.hidden ? "opacity-40" : ""} ${dropping ? "ring-1 ring-primary ring-inset" : ""}`}
       style={{ height: isMobile ? undefined : track.height ?? undefined }}
       onClick={(e) => {
         if (suppressClickRef.current) {
@@ -1063,9 +1064,9 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
               className="size-6 shrink-0 touch-manipulation"
               aria-label={editorLabel}
               title={editorLabel}
-              onClick={openTrackEditor}
+              onClick={(e) => { e.stopPropagation(); openTrackEditor(); }}
             >
-              {track.kind === "drum" ? <Disc3 className="size-3.5" /> : track.kind === "sampler" ? <Music2 className="size-3.5" /> : track.kind === "ai-vocal" ? <Mic className="size-3.5" /> : <Piano className="size-3.5" />}
+              {track.kind === "drum" ? <Disc3 className="size-3.5" /> : track.kind === "sampler" ? <Music2 className="size-3.5" /> : track.kind === "ai-vocal" ? <Mic className="size-3.5" /> : <Sliders className="size-3.5" />}
             </Button>
           )}
           <TrackNotes track={track} className="ml-auto" />
@@ -1487,9 +1488,9 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
           editTool === "draw"
             ? "Draw tool — click to write a note or drum hit"
             : editTool === "split"
-              ? "Split tool — click a clip to cut it there"
+              ? "Split tool — click a clip, wave or note to cut it there"
               : editTool === "razor"
-                ? "Razor tool — click inside a clip to slice it exactly where you click"
+                ? "Razor tool — click inside a clip, wave or note to slice it exactly where you click"
                 : undefined
         }
         onClick={(e) => {
@@ -1525,16 +1526,8 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
             razorAt(track.id, frac * songSteps(transport.bars));
             return;
           }
-          // split tool
-          if (track.kind === "audio" || track.kind === "ai-vocal") {
-            if ((track.clips?.length ?? 0) === 0) {
-              toast("Nothing to split", { description: "Record audio on this channel first." });
-              return;
-            }
-            splitClipAt(track.id, frac);
-          } else {
-            toast("Split audio clips with a click", { description: "For note channels, park the playhead and press S." });
-          }
+          // split tool — audio clips, recorded waves and written notes all cut at the click
+          splitClipAt(track.id, frac);
           return;
         }}
       >

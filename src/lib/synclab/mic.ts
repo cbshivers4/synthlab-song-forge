@@ -161,7 +161,8 @@ export async function openMic(constraints?: MediaTrackConstraints, owner = "shar
   const wanted = getPreferredInput();
   if (activeStream?.active) {
     if (activeOwner === owner) return { stream: activeStream };
-    return { error: "The audio input is already in use by another SYNCLAB recording tool. Stop it first, then try again.", canOpenTab: false };
+    // Another tool left the input open. Hand it over instead of blocking this one.
+    releaseMic(activeStream);
   }
   const generation = ++requestGeneration;
   try {

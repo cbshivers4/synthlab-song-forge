@@ -239,6 +239,15 @@ export function PianoRoll({ track }: { track: Track }) {
 
 
       <div className="flex items-center overflow-x-auto whitespace-nowrap scrollbar-hide gap-1.5 rounded-sm border border-border bg-surface/60 p-1.5">
+        <Tool
+          onClick={() => {
+            if (!notes.length) return;
+            setNotes(track.id, []);
+            setSel([]);
+          }}
+        >
+          CLEAR ALL NOTES
+        </Tool>
         <Tool onClick={() => apply((n) => ({ ...n, step: Math.round(n.step / grid) * grid }))}>QUANTIZE</Tool>
         <Tool onClick={() => apply((n) => ({ ...n, step: n.step + (Math.round(n.step / grid) * grid - n.step) * 0.5 }))}>
           QUANT 50%

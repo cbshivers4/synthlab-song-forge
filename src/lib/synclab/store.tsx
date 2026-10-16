@@ -1505,8 +1505,33 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     (trackId: string, posSteps: number, quiet = false) => {
       const t = tracksRef.current.find((x) => x.id === trackId);
       const clips = t?.clips ?? [];
-      if (!t || clips.length === 0) {
-        toast("Nothing to cut", { description: "That channel has no audio clip. Record or import audio first." });
+      const trackNotes = t?.notes ?? [];
+      if (!t) return false;
+
+      // Note channels (synth, MIDI, drums played as notes) cut their notes at the same position.
+      if (clips.length === 0 && trackNotes.length > 0) {
+        let cutNotes = 0;
+        const nextNotes = trackNotes.flatMap((n) => {
+          const len = Math.max(1, n.length);
+          if (posSteps <= n.step + 0.05 || posSteps >= n.step + len - 0.05) return [n];
+          cutNotes += 1;
+          const firstLen = posSteps - n.step;
+          return [
+            { ...n, id: `${n.id}-a${Date.now()}`, length: firstLen },
+            { ...n, id: `${n.id}-b${Date.now()}`, step: posSteps, length: len - firstLen },
+          ];
+        });
+        if (cutNotes === 0) {
+          if (!quiet) toast("Missed the note", { description: "Put the cut line over a note, then tap to split it." });
+          return false;
+        }
+        updateTrack(trackId, { notes: nextNotes });
+        toast.success(`Cut ${cutNotes} note${cutNotes > 1 ? "s" : ""}`, { description: "Split at the exact position." });
+        return true;
+      }
+
+      if (clips.length === 0) {
+        toast("Nothing to cut", { description: "That channel has no audio or notes yet. Record, import or write something first." });
         return false;
       }
       const stepDur = stepSeconds(transportRef.current.bpm);
