@@ -216,7 +216,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
     settings: { title: "SETTINGS", icon: <Settings2 className="size-4" /> },
     keys: { title: "KEYBOARD", icon: <KeyboardMusic className="size-4" /> },
     browser: { title: "BROWSER", icon: <FolderOpen className="size-4" /> },
-    plugins: { title: "EFFECTS RACK", icon: <Cpu className="size-4" /> },
+    plugins: { title: "PLUGINS", icon: <Cpu className="size-4" /> },
     appearance: { title: "APPEARANCE & THEMES", icon: <Palette className="size-4" /> },
     sampler: { title: "SAMPLER", icon: <AudioLines className="size-4" /> },
     pads: { title: "PAD SAMPLER", icon: <Grid2x2 className="size-4" /> },

@@ -57,7 +57,7 @@ const TOOLS: Tool[] = [
   { id: "beat", label: "Pad Sampler", icon: <Grid2x2 className="size-4" />, panel: "pads", drag: { kind: "sampler", name: "Pad Sampler" } },
   { id: "chop", label: "Sample Chopper", icon: <Scissors className="size-4" />, panel: "pads", advanced: true },
   { id: "sampler", label: "Sampler", icon: <AudioLines className="size-4" />, panel: "sampler", drag: { kind: "sampler", name: "Sampler" } },
-  { id: "plugins", label: "Effects Rack", icon: <Cpu className="size-4" />, panel: "plugins" },
+  { id: "plugins", label: "Plugins", icon: <Cpu className="size-4" />, panel: "plugins" },
   { id: "mixer", label: "Mixer", icon: <SlidersHorizontal className="size-4" />, panel: "mixer" },
   { id: "notes", label: "Track Notes", icon: <NotebookPen className="size-4" />, panel: "notes", advanced: true },
   { id: "master", label: "Mastering", icon: <Gauge className="size-4" />, panel: "mastering" },
@@ -403,7 +403,7 @@ export function ToolsRail() {
                         </div>
                         {installedPlugins.length === 0 ? (
                           <p className="px-2 text-[10px] leading-snug text-muted-foreground/80">
-                            None yet — drop your VST3 / AU / CLAP files on "Plugins (VST)" above or open it to scan a folder.
+                            None yet — drop your VST3 / AU / CLAP files on "Plugins" above or open it to scan a folder.
                           </p>
                         ) : (
                           installedPlugins.map((d) => (
