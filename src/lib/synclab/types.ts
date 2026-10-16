@@ -451,6 +451,10 @@ export interface Track {
   modLane?: { step: number; value: number }[] | undefined;
   patch?: SynthPatch | undefined;
   notes?: MidiNote[] | undefined;
+  /** song-step positions where the razor/split cut this note channel into separate regions */
+  cuts?: number[] | undefined;
+  /** start step of the selected note region (outlined; Delete removes it) */
+  activeRegion?: number | undefined;
   pads?: DrumPad[] | undefined;
   /** eight recallable drum sequencer snapshots */
   drumPatterns?: DrumPad[][] | undefined;

@@ -1,5 +1,6 @@
-import { Fragment, memo, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { Fragment, memo, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 import { stepsPerBar, getBeatsPerBar, STEPS_PER_BEAT, songSteps, stepSeconds, positionLabel } from "@/lib/synclab/timebase";
+import { notesInRegion, regionsOf, snapCut, deleteRegion } from "@/lib/synclab/note-cuts";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { PhonePages } from "./PhonePages";
 import {
@@ -119,12 +120,52 @@ import { TrackNotes } from "@/components/studio/TrackNotes";
 const INPUTS = ["Microphone", "Guitar / Line 1", "Keyboard / Line 2", "External Instrument", "MIDI Keyboard", "Internal", "Stereo File"];
 
 /** Cutting overlay owns pointer targeting so clip drag handles cannot mask the tool. */
-function TimelineCutGuide({ tool, position, selected }: { tool: "split" | "razor"; position: number; selected: boolean }) {
+/** Free (off-grid) cutting toggle, shared by the toolbar and every lane; remembered on this device. */
+const CUT_FREE_KEY = "synclab.cutFree";
+let cutFreeValue = true;
+const cutFreeListeners = new Set<() => void>();
+if (typeof window !== "undefined") {
+  try { cutFreeValue = window.localStorage.getItem(CUT_FREE_KEY) !== "0"; } catch { /* storage blocked */ }
+}
+export function setCutFree(v: boolean) {
+  cutFreeValue = v;
+  try { window.localStorage.setItem(CUT_FREE_KEY, v ? "1" : "0"); } catch { /* storage blocked */ }
+  cutFreeListeners.forEach((l) => l());
+}
+export function useCutFree() {
+  return useSyncExternalStore(
+    (l) => { cutFreeListeners.add(l); return () => cutFreeListeners.delete(l); },
+    () => cutFreeValue,
+    () => true,
+  );
+}
+/** The four synths a note track can load; the style test matches SynthEditor's panel styling. */
+const SYNTH_CHOICES = [
+  { style: "spec4", label: "Spec 4 Synth", preset: "Cybotron Lead" },
+  { style: "acid", label: "Acid Bass (TD-3)", preset: "TD-3 Acid Saw" },
+  { style: "poly", label: "Poly Synth", preset: "Poly Synth Brass" },
+  { style: "modular", label: "Modular Tech Synth", preset: "Modular Tech Empty Rack" },
+] as const;
+const synthStyleOf = (t: Track) =>
+  t.patch?.modular ? "modular"
+  : t.patch?.name.startsWith("TD-3") || /ACID/i.test(t.name) ? "acid"
+  : t.patch?.name.startsWith("Poly Synth") || /POLY/i.test(t.name) ? "poly"
+  : "spec4";
+
+/** Cut position in song steps: exact where you click when free (or Alt held on grid), otherwise on the snap grid. */
+export function cutPosition(frac: number, total: number, grid: number, altKey: boolean) {
+  const free = cutFreeValue !== altKey;
+  return Math.max(0, Math.min(total, snapCut(frac * total, grid > 0 ? grid : 1, free)));
+}
+
+function TimelineCutGuide({ tool, position, selected, total, grid }: { tool: "split" | "razor"; position: number; selected: boolean; total: number; grid: number }) {
   const lineRef = useRef<HTMLDivElement>(null);
   const iconRef = useRef<HTMLDivElement>(null);
   const showAtPointer = (e: React.PointerEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    const x = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
+    const rawX = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
+    // The guide shows exactly where the cut will land — snapped or free.
+    const x = (cutPosition(rawX / Math.max(1, rect.width), total, grid, e.altKey) / Math.max(1, total)) * rect.width;
     const y = Math.max(4, Math.min(rect.height - 32, e.clientY - rect.top + 10));
     const line = lineRef.current;
     const icon = iconRef.current;
@@ -156,7 +197,8 @@ function TimelineCutGuide({ tool, position, selected }: { tool: "split" | "razor
 
 /** Audio lane: every clip sits at its own bar position and can be moved, trimmed and dragged between tracks. */
 function Waveform({ track }: { track: Track }) {
-  const { setActiveClip, removeClip, updateTrack, transport, tracks } = useStudio();
+  const { setActiveClip, removeClip, updateTrack, transport, tracks, editTool } = useStudio();
+  const cutting = editTool === "split" || editTool === "razor";
   const [editingId, setEditingId] = useState<string | null>(null);
   const clips = track.clips ?? [];
   const total = songSteps(transport.bars);
@@ -301,7 +343,7 @@ function Waveform({ track }: { track: Track }) {
                 }}
                 title="Delete clip"
                 aria-label={`Delete ${clip.name}`}
-                className={`shrink-0 hover:text-destructive ${active ? "block text-foreground" : "hidden text-clip-audio/70 group-hover:block"}`}
+                className={`relative z-30 shrink-0 hover:text-destructive ${cutting ? "block rounded-sm bg-background p-0.5 text-foreground" : active ? "block text-foreground" : "hidden text-clip-audio/70 group-hover:block"}`}
               >
                 <Trash2 className="size-3" />
               </button>
@@ -335,6 +377,7 @@ const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", 
 function MidiClip({ track }: { track: Track }) {
   const { setPanel, select, transport, updateTrack } = useStudio();
   const notes = track.notes ?? [];
+  const cuts = track.cuts ?? [];
   /** Drag the pattern to any grid position: every note shifts by the same
    *  snapped step delta, so the whole part lands on a measure/beat line. */
   const beginPatternDrag = (e: React.PointerEvent) => {
@@ -392,7 +435,16 @@ function MidiClip({ track }: { track: Track }) {
   return (
     <div
       className="absolute inset-y-2 left-1 right-1 cursor-grab overflow-hidden rounded-[3px] border border-clip-midi/30 bg-clip-midi/10 shadow-sm transition-colors hover:bg-clip-midi/15 active:cursor-grabbing"
-      onPointerDown={beginPatternDrag}
+      onPointerDown={(e) => {
+        if (cuts.length > 0) {
+          // Tapping a cut part selects it (white outline) so Delete or its bin icon removes it.
+          const r = e.currentTarget.getBoundingClientRect();
+          const pos = ((e.clientX - r.left) / Math.max(1, r.width)) * total;
+          updateTrack(track.id, { activeRegion: pos });
+          select(track.id);
+        }
+        beginPatternDrag(e);
+      }}
       title="Drag to move this part to any grid position — double-click to open the piano roll"
       onDoubleClick={() => {
         select(track.id);
@@ -439,6 +491,35 @@ function MidiClip({ track }: { track: Track }) {
           }),
         )}
       </div>
+      {cuts.length > 0 && regionsOf(cuts, total).map(([a, b]) => {
+        const has = notesInRegion(notes, [a, b]).length > 0;
+        const active = has && track.activeRegion != null && track.activeRegion >= a - 0.001 && track.activeRegion < b - 0.001;
+        return (
+          <div
+            key={a}
+            data-note-region={active ? "active" : has ? "part" : "empty"}
+            className={`pointer-events-none absolute inset-y-0 ${a > 0 ? "border-l-2 border-foreground" : ""} ${active ? "rounded-[3px] ring-2 ring-inset ring-foreground" : ""} ${has ? "" : "bg-background/80"}`}
+            style={{ left: `${(a / total) * 100}%`, width: `${((b - a) / total) * 100}%` }}
+          >
+            {has && (
+              <button
+                type="button"
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  updateTrack(track.id, { notes: deleteRegion(track.notes ?? [], [a, b]), activeRegion: undefined });
+                  toast.success("Part deleted");
+                }}
+                title="Delete this part"
+                aria-label={`Delete part at step ${Math.round(a)}`}
+                className="pointer-events-auto absolute right-0.5 top-0.5 z-30 rounded-sm bg-background p-0.5 text-foreground hover:text-destructive"
+              >
+                <Trash2 className="size-3" />
+              </button>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -964,9 +1045,11 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
           return;
         }
         // Click highlights the track (Ctrl/Cmd+C, X, V or the toolbar act on it); the ⋮ menu or right-click opens actions.
+        // Clicks from the track menu arrive through a portal; they act on their own and never jump to the piano roll.
+        if (!e.currentTarget.contains(e.target as Node)) return;
         select(track.id);
         const target = e.target as HTMLElement;
-        if ((track.kind === "instrument" || track.kind === "midi") && !target.closest("button,input,textarea,select,[role='slider'],[role='combobox'],[role='menuitem']")) {
+        if ((track.kind === "instrument" || track.kind === "midi") && !target.closest("button,input,textarea,select,[role='slider'],[role='combobox'],[role='menuitem'],[role='menu'],[data-cut-tool]")) {
           setPanel("piano");
         }
       }}
@@ -997,8 +1080,10 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
         onClick={(e) => {
           // Synth channels select the note editor; their instrument opens only by an explicit action.
           if (e.metaKey || e.ctrlKey) return;
+          // Menu clicks bubble here through React portals (Clear track, Open instrument…) — they must never open the piano roll.
+          if (!e.currentTarget.contains(e.target as Node)) return;
           const el = e.target as HTMLElement;
-          if (el.closest("button,input,[role='slider'],[role='combobox']")) return;
+          if (el.closest("button,input,[role='slider'],[role='combobox'],[role='menuitem'],[role='menu']")) return;
           select(track.id);
           if (track.kind === "instrument" || track.kind === "midi") setPanel("piano");
           else if (editorPanel) setPanel(editorPanel);
@@ -1082,12 +1167,40 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
             <DropdownMenuContent align="end" className="min-w-56">
               <DropdownMenuItem onClick={() => setRenaming(true)}>Rename</DropdownMenuItem>
               {editorPanel === "synth" && (
-                <DropdownMenuSub><DropdownMenuSubTrigger><Sliders className="size-4" /> Open instrument</DropdownMenuSubTrigger><DropdownMenuSubContent className="min-w-52">
-                  {synthTracks.map((t) => (
-                    <DropdownMenuItem key={t.id} onClick={(e) => { e.stopPropagation(); openTrackEditor(t.id); }}>
-                      <Sliders className="size-4" /> {t.name}{t.id === track.id ? " (this track)" : ""}
-                    </DropdownMenuItem>
-                  ))}
+                <DropdownMenuSub><DropdownMenuSubTrigger><Sliders className="size-4" /> Open instrument</DropdownMenuSubTrigger><DropdownMenuSubContent className="min-w-60">
+                  <DropdownMenuLabel className="text-[10px] tracking-widest text-muted-foreground">CHOOSE A SYNTH FOR THIS TRACK</DropdownMenuLabel>
+                  {SYNTH_CHOICES.map((s) => {
+                    const current = synthStyleOf(track) === s.style;
+                    return (
+                      <DropdownMenuItem
+                        key={s.style}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (!current) {
+                            // Load the chosen synth on this track; its notes stay, only the sound changes.
+                            changeInstrument(track.id, s.preset);
+                            updateTrack(track.id, { name: s.label.replace(/\s*\(.*\)$/, "").toUpperCase() });
+                            toast.success(`${s.label} loaded on ${track.name}`, { description: "Your notes are kept — only the sound changed. Undo brings the old synth back." });
+                          }
+                          openTrackEditor(track.id);
+                        }}
+                      >
+                        <Sliders className="size-4" /> {current ? `Open ${s.label}` : s.label}
+                        {current && <span className="ml-auto font-mono text-[10px] text-primary">CURRENT</span>}
+                      </DropdownMenuItem>
+                    );
+                  })}
+                  {synthTracks.length > 1 && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuLabel className="text-[10px] tracking-widest text-muted-foreground">OTHER SYNTH TRACKS</DropdownMenuLabel>
+                      {synthTracks.filter((t) => t.id !== track.id).map((t) => (
+                        <DropdownMenuItem key={t.id} onClick={(e) => { e.stopPropagation(); openTrackEditor(t.id); }}>
+                          <Sliders className="size-4" /> {t.name} <span className="ml-auto font-mono text-[10px] text-muted-foreground">{SYNTH_CHOICES.find((s) => s.style === synthStyleOf(t))?.label}</span>
+                        </DropdownMenuItem>
+                      ))}
+                    </>
+                  )}
                 </DropdownMenuSubContent></DropdownMenuSub>
               )}
               {editorPanel && editorPanel !== "synth" && (
@@ -1533,13 +1646,11 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
             }
             return;
           }
-          // razor tool — slice any clip under the pointer at the exact position
-          if (editTool === "razor") {
-            razorAt(track.id, frac * songSteps(transport.bars));
-            return;
-          }
-          // split tool — audio clips, recorded waves and written notes all cut at the click
-          splitClipAt(track.id, frac);
+          // Split and razor cut audio clips, recorded waves and written notes where the guide line sits —
+          // exactly at the pointer when FREE (off grid), or on the snap grid when GRID is on (Alt flips it).
+          const total = songSteps(transport.bars);
+          const exact = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+          razorAt(track.id, cutPosition(exact, total, transport.snap ?? 1, e.altKey));
           return;
         }}
       >
@@ -1559,6 +1670,8 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
           tool={editTool}
           position={Math.min(0.99, Math.max(0, (transport.step ?? 0) / songSteps(transport.bars)))}
           selected={isSelected}
+          total={songSteps(transport.bars)}
+          grid={transport.snap ?? 1}
         />}
       </div>
 
@@ -2279,6 +2392,7 @@ function EditToolbar() {
     }
   };
 
+  const cutFree = useCutFree();
   const ToolBtn = ({ tool, icon, label, keys }: { tool: EditTool; icon: React.ReactNode; label: string; keys: string }) => (
     <Button
       size="sm"
@@ -2303,6 +2417,18 @@ function EditToolbar() {
       <ToolBtn tool="draw" icon={<Pencil className="size-3" />} label="Draw" keys="B" />
       <ToolBtn tool="split" icon={<ScissorsLineDashed className="size-3" />} label="Split" keys="C" />
       <ToolBtn tool="razor" icon={<RazorIcon className="size-3" />} label="Razor" keys="R" />
+      {(editTool === "split" || editTool === "razor") && (
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-6 gap-1 px-2 font-mono text-[10px]"
+          aria-pressed={cutFree}
+          title={cutFree ? "Cuts land exactly where you click (off grid). Tap to snap cuts to the grid. Hold Alt to flip once." : "Cuts snap to the grid. Tap to cut anywhere (off grid). Hold Alt to flip once."}
+          onClick={() => setCutFree(!cutFree)}
+        >
+          CUT: {cutFree ? "FREE" : "GRID"}
+        </Button>
+      )}
       <div className="mx-1 h-4 w-px bg-border" />
       <Button size="sm" variant="ghost" className="h-6 gap-1 px-2 text-[10px]" title="Undo (⌘Z / Ctrl+Z)" onClick={undo}>
         <Undo2 className="size-3" /> Undo

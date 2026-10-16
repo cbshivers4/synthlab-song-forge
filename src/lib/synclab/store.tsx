@@ -52,6 +52,7 @@ import { clipRate, clipSeconds, laneValueAt, SECTION_COLORS } from "./types";
 import { wsolaStretch } from "./stretch";
 import { encodeWav } from "./bounce";
 import { getBlobForUrl, persistBlobUrls } from "./autosave-media";
+import { addCut, cutNotesAt, deleteRegion, regionAt, unrollNotes } from "./note-cuts";
 
 /** A persistent hardware CC destination. Namespaced parameters identify device controls. */
 /** A recorded instrument/drum take normally plays back as printed audio, which
@@ -1508,37 +1509,27 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       const trackNotes = t?.notes ?? [];
       if (!t) return false;
 
-      // Note channels (synth, MIDI, drums played as notes) cut their notes at the same position.
+      // Note channels (synth, MIDI, sampler notes) are cut into separate regions like a DAW part.
       if (clips.length === 0 && trackNotes.length > 0) {
-        let cutNotes = 0;
-        const leftIds: string[] = [];
-        const rightIds: string[] = [];
-        const nextNotes = trackNotes.flatMap((n) => {
-          const len = Math.max(1, n.length);
-          if (posSteps <= n.step + 0.05 || posSteps >= n.step + len - 0.05) return [n];
-          cutNotes += 1;
-          const firstLen = posSteps - n.step;
-          const a = { ...n, id: `${n.id}-a${Date.now()}`, length: firstLen };
-          const b = { ...n, id: `${n.id}-b${Date.now()}`, step: posSteps, length: len - firstLen };
-          leftIds.push(a.id); rightIds.push(b.id);
-          return [a, b];
-        });
-        if (cutNotes === 0) {
-          if (!quiet) toast("Missed the note", { description: "Put the cut line over a note, then tap to split it." });
-          return false;
-        }
-        updateTrack(trackId, { notes: nextNotes });
-        const dropNotes = (ids: string[], label: string) => {
+        const total = songSteps(transportRef.current.bars);
+        const len = Math.max(1, t.steps || stepsPerBar());
+        const unrolled = len < total;
+        const base = unrolled ? unrollNotes(trackNotes, len, total) : trackNotes;
+        const { notes: nextNotes, cut: cutNotes } = cutNotesAt(base, posSteps);
+        const cuts = addCut(t.cuts, posSteps, total);
+        updateTrack(trackId, { notes: nextNotes, cuts, activeRegion: posSteps, ...(unrolled ? { steps: total } : {}) });
+        const dropRegion = (side: "left" | "right") => {
           const cur = tracksRef.current.find((x) => x.id === trackId);
           if (!cur) return;
-          updateTrack(trackId, { notes: (cur.notes ?? []).filter((n) => !ids.includes(n.id)) });
-          toast.success(`Deleted the ${label} part`);
+          const region = regionAt(cur.cuts, total, side === "right" ? posSteps : Math.max(0, posSteps - 0.01));
+          updateTrack(trackId, { notes: deleteRegion(cur.notes ?? [], region), activeRegion: undefined });
+          toast.success(`Deleted the ${side} part`);
         };
-        toast.success(`Cut ${cutNotes} note${cutNotes > 1 ? "s" : ""}`, {
-          description: "Delete either side of the cut, or keep both.",
+        if (!quiet) toast.success(cutNotes ? `Cut ${cutNotes} note${cutNotes > 1 ? "s" : ""}` : "Part cut", {
+          description: "The right part is outlined in white. Tap its bin icon or press Delete to remove it.",
           duration: 10000,
-          action: { label: "Delete right", onClick: () => dropNotes(rightIds, "right") },
-          cancel: { label: "Delete left", onClick: () => dropNotes(leftIds, "left") },
+          action: { label: "Delete right", onClick: () => dropRegion("right") },
+          cancel: { label: "Delete left", onClick: () => dropRegion("left") },
         });
         return true;
       }
@@ -2122,6 +2113,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
                   pads: t.pads?.map((p) => ({ ...p, steps: p.steps.map(() => 0) })),
                   drumPatterns: t.drumPatterns?.map((pat) => pat.map((p) => ({ ...p, steps: p.steps.map(() => 0) }))),
                   activeClipId: undefined,
+                  cuts: undefined,
+                  activeRegion: undefined,
                   printedAudio: false,
                   recording: false,
                 },

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { TrackSettingsDialog, openTrackSettings } from "@/components/studio/TrackSettingsDialog";
 import { QWERTY_MAP, qwertyEnabled, qwertyOctave, setQwertyOctave } from "@/lib/synclab/qwerty";
 import { barBeat, songSteps } from "@/lib/synclab/timebase";
+import { deleteRegion, regionAt } from "@/lib/synclab/note-cuts";
 import { createFileRoute } from "@tanstack/react-router";
 import { ArrowDownToLine, ArrowUpFromLine, AudioLines, AudioWaveform, Cpu, Gauge, Disc3, FileSearch, FolderOpen, Grid2x2, KeyboardMusic, Music2, NotebookPen, Palette, Piano, Radio, SlidersHorizontal, Split, Settings2, Sparkles, Waves, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -584,7 +585,16 @@ function useShortcuts() {
         case "Backspace":
           if (selected) {
             e.preventDefault();
-            removeTrack(selected.id);
+            // Like other DAWs: Delete removes the selected clip or cut part first, the track only when nothing inside it is selected.
+            const clips = selected.clips ?? [];
+            if (selected.activeClipId && clips.some((c) => c.id === selected.activeClipId)) {
+              updateTrack(selected.id, { clips: clips.filter((c) => c.id !== selected.activeClipId), activeClipId: undefined });
+              toast.success("Clip deleted");
+            } else if (selected.activeRegion != null && selected.cuts?.length) {
+              const region = regionAt(selected.cuts, songSteps(transport.bars), selected.activeRegion);
+              updateTrack(selected.id, { notes: deleteRegion(selected.notes ?? [], region), activeRegion: undefined });
+              toast.success("Part deleted");
+            } else removeTrack(selected.id);
           }
           break;
         default:

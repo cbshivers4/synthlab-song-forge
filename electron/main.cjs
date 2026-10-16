@@ -129,6 +129,12 @@ app.whenReady().then(async () => {
       /* user can grant later in System Settings → Privacy → Microphone */
     }
   }
+  // Always load the newest published studio instead of an old cached copy.
+  try {
+    await session.defaultSession.clearCache();
+  } catch {
+    /* cache clearing is best-effort */
+  }
   startPluginBridge();
   createWindow();
 });
