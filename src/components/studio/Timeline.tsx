@@ -1488,9 +1488,9 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
           editTool === "draw"
             ? "Draw tool — click to write a note or drum hit"
             : editTool === "split"
-              ? "Split tool — click a clip to cut it there"
+              ? "Split tool — click a clip, wave or note to cut it there"
               : editTool === "razor"
-                ? "Razor tool — click inside a clip to slice it exactly where you click"
+                ? "Razor tool — click inside a clip, wave or note to slice it exactly where you click"
                 : undefined
         }
         onClick={(e) => {
@@ -1526,16 +1526,8 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
             razorAt(track.id, frac * songSteps(transport.bars));
             return;
           }
-          // split tool
-          if (track.kind === "audio" || track.kind === "ai-vocal") {
-            if ((track.clips?.length ?? 0) === 0) {
-              toast("Nothing to split", { description: "Record audio on this channel first." });
-              return;
-            }
-            splitClipAt(track.id, frac);
-          } else {
-            toast("Split audio clips with a click", { description: "For note channels, park the playhead and press S." });
-          }
+          // split tool — audio clips, recorded waves and written notes all cut at the click
+          splitClipAt(track.id, frac);
           return;
         }}
       >
