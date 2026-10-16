@@ -1126,6 +1126,9 @@
 /* Project-derived studio equipment, with native scrolling on small screens. */
 .studio-room::after { content: ""; position: absolute; inset: 0; background: var(--studio-room-overlay); pointer-events: none; }
 .studio-room-content { z-index: 1; padding: 18px 18px 32px; min-height: 540px; }
+.phone-console .studio-visual { min-height: 0; overflow: hidden; }
+.phone-console .studio-room { min-height: 0; flex: 1 1 0; overflow: auto; touch-action: pan-x pan-y; }
+.phone-console .studio-room-content { padding-bottom: max(32px, env(safe-area-inset-bottom)); }
 .studio-room-brand { text-align: center; font-size: 24px; font-weight: 800; color: var(--foreground); text-shadow: var(--shadow-panel); }
 .studio-room-brand span { display: block; font-size: 9px; font-weight: 500; margin-top: 4px; color: var(--foreground); }
 .studio-control-desk { display: grid; grid-template-columns: 90px minmax(0, 1fr) 90px; gap: 14px; align-items: start; max-width: 760px; margin: 24px auto 0; }
