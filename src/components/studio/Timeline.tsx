@@ -301,7 +301,7 @@ function Waveform({ track }: { track: Track }) {
                 }}
                 title="Delete clip"
                 aria-label={`Delete ${clip.name}`}
-                className="hidden shrink-0 text-clip-audio/70 hover:text-destructive group-hover:block"
+                className={`shrink-0 hover:text-destructive ${active ? "block text-foreground" : "hidden text-clip-audio/70 group-hover:block"}`}
               >
                 <Trash2 className="size-3" />
               </button>

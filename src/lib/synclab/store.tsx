@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { getEngine } from "./audio-engine";
 import { stepsPerBar, setBeatsPerBar, getBeatsPerBar, STEPS_PER_BEAT, songSteps, stepSeconds, barsForSteps } from "./timebase";
 import { openInOwnTab } from "./mic";
-import { TRACK_COLORS, applyPreset, defaultPads, defaultPatch, uid, starterNotesFor } from "./presets";
+import { TRACK_COLORS, applyPreset, defaultPads, defaultPatch, uid } from "./presets";
 import { BUILT_IN_PLUGINS, instantiate, processMidiThroughPlugins } from "./plugins";
 import { getMidiAccess, listInputs, midiSupported, midiUnsupportedMessage, subscribe, type MidiPortInfo } from "./midi";
 import { getPadBank, setPadBank } from "./pad-session";
@@ -164,7 +164,7 @@ export const newTrack = (kind: TrackKind, name: string, index: number, preset?: 
   sends: { reverb: 0, delay: 0, chorus: 0 },
   steps: 16,
   patch: kind === "drum" ? undefined : preset ? applyPreset(preset) : defaultPatch(),
-  notes: kind === "drum" ? undefined : starterNotesFor(preset) ?? [],
+  notes: kind === "drum" ? undefined : [],
   pads: kind === "drum" ? defaultPads(16) : undefined,
   clips: [],
 });
@@ -1511,22 +1511,35 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       // Note channels (synth, MIDI, drums played as notes) cut their notes at the same position.
       if (clips.length === 0 && trackNotes.length > 0) {
         let cutNotes = 0;
+        const leftIds: string[] = [];
+        const rightIds: string[] = [];
         const nextNotes = trackNotes.flatMap((n) => {
           const len = Math.max(1, n.length);
           if (posSteps <= n.step + 0.05 || posSteps >= n.step + len - 0.05) return [n];
           cutNotes += 1;
           const firstLen = posSteps - n.step;
-          return [
-            { ...n, id: `${n.id}-a${Date.now()}`, length: firstLen },
-            { ...n, id: `${n.id}-b${Date.now()}`, step: posSteps, length: len - firstLen },
-          ];
+          const a = { ...n, id: `${n.id}-a${Date.now()}`, length: firstLen };
+          const b = { ...n, id: `${n.id}-b${Date.now()}`, step: posSteps, length: len - firstLen };
+          leftIds.push(a.id); rightIds.push(b.id);
+          return [a, b];
         });
         if (cutNotes === 0) {
           if (!quiet) toast("Missed the note", { description: "Put the cut line over a note, then tap to split it." });
           return false;
         }
         updateTrack(trackId, { notes: nextNotes });
-        toast.success(`Cut ${cutNotes} note${cutNotes > 1 ? "s" : ""}`, { description: "Split at the exact position." });
+        const dropNotes = (ids: string[], label: string) => {
+          const cur = tracksRef.current.find((x) => x.id === trackId);
+          if (!cur) return;
+          updateTrack(trackId, { notes: (cur.notes ?? []).filter((n) => !ids.includes(n.id)) });
+          toast.success(`Deleted the ${label} part`);
+        };
+        toast.success(`Cut ${cutNotes} note${cutNotes > 1 ? "s" : ""}`, {
+          description: "Delete either side of the cut, or keep both.",
+          duration: 10000,
+          action: { label: "Delete right", onClick: () => dropNotes(rightIds, "right") },
+          cancel: { label: "Delete left", onClick: () => dropNotes(leftIds, "left") },
+        });
         return true;
       }
 
@@ -1538,6 +1551,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       const stamp = Date.now();
       let sliced = 0;
       let newActive = t.activeClipId;
+      const leftIds: string[] = [];
+      const rightIds: string[] = [];
       const next = clips.flatMap((c) => {
         const start = c.start ?? 0;
         const lenSteps = clipSeconds(c) / stepDur;
@@ -1553,7 +1568,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         const first = { ...c, id: `${c.id}-a${stamp}`, name: `${c.name} A`, peaks: c.peaks.slice(0, cut), length: cutFile, fadeOut: 0 } as AudioClip;
         const second = { ...c, id: `${c.id}-b${stamp}`, name: `${c.name} B`, peaks: c.peaks.slice(cut), start: start + posIn, offset: offset + cutFile, length: fileLen - cutFile, fadeIn: 0 } as AudioClip;
         const [a, b2] = c.reverse ? [{ ...first, offset: offset + (fileLen - cutFile) }, { ...second, offset }] : [first, second];
-        if (c.id === t.activeClipId) newActive = a.id;
+        leftIds.push(a.id); rightIds.push(b2.id);
+        newActive = b2.id;
         return [a, b2];
       });
       if (sliced === 0) {
@@ -1561,7 +1577,18 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         return false;
       }
       updateTrack(trackId, { clips: next, activeClipId: newActive });
-      toast.success(`Cut ${sliced} clip${sliced > 1 ? "s" : ""}`, { description: "Split at the exact position." });
+      const dropClips = (ids: string[], keep: string[], label: string) => {
+        const cur = tracksRef.current.find((x) => x.id === trackId);
+        if (!cur) return;
+        updateTrack(trackId, { clips: (cur.clips ?? []).filter((c) => !ids.includes(c.id)), activeClipId: keep[0] });
+        toast.success(`Deleted the ${label} piece`);
+      };
+      toast.success(`Cut ${sliced} clip${sliced > 1 ? "s" : ""}`, {
+        description: "The right piece is outlined in white. Delete either piece, or keep both.",
+        duration: 10000,
+        action: { label: "Delete right", onClick: () => dropClips(rightIds, leftIds, "right") },
+        cancel: { label: "Delete left", onClick: () => dropClips(leftIds, rightIds, "left") },
+      });
       return true;
     },
     [updateTrack],
