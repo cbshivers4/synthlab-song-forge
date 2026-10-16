@@ -364,6 +364,7 @@ const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", 
 function MidiClip({ track }: { track: Track }) {
   const { setPanel, select, transport, updateTrack } = useStudio();
   const notes = track.notes ?? [];
+  const cuts = track.cuts ?? [];
   /** Drag the pattern to any grid position: every note shifts by the same
    *  snapped step delta, so the whole part lands on a measure/beat line. */
   const beginPatternDrag = (e: React.PointerEvent) => {
@@ -421,7 +422,16 @@ function MidiClip({ track }: { track: Track }) {
   return (
     <div
       className="absolute inset-y-2 left-1 right-1 cursor-grab overflow-hidden rounded-[3px] border border-clip-midi/30 bg-clip-midi/10 shadow-sm transition-colors hover:bg-clip-midi/15 active:cursor-grabbing"
-      onPointerDown={beginPatternDrag}
+      onPointerDown={(e) => {
+        if (cuts.length > 0) {
+          // Tapping a cut part selects it (white outline) so Delete or its bin icon removes it.
+          const r = e.currentTarget.getBoundingClientRect();
+          const pos = ((e.clientX - r.left) / Math.max(1, r.width)) * total;
+          updateTrack(track.id, { activeRegion: pos });
+          select(track.id);
+        }
+        beginPatternDrag(e);
+      }}
       title="Drag to move this part to any grid position — double-click to open the piano roll"
       onDoubleClick={() => {
         select(track.id);
@@ -468,6 +478,35 @@ function MidiClip({ track }: { track: Track }) {
           }),
         )}
       </div>
+      {cuts.length > 0 && regionsOf(cuts, total).map(([a, b]) => {
+        const has = notesInRegion(notes, [a, b]).length > 0;
+        const active = has && track.activeRegion != null && track.activeRegion >= a - 0.001 && track.activeRegion < b - 0.001;
+        return (
+          <div
+            key={a}
+            data-note-region={active ? "active" : has ? "part" : "empty"}
+            className={`pointer-events-none absolute inset-y-0 ${a > 0 ? "border-l-2 border-foreground" : ""} ${active ? "rounded-[3px] ring-2 ring-inset ring-foreground" : ""} ${has ? "" : "bg-background/80"}`}
+            style={{ left: `${(a / total) * 100}%`, width: `${((b - a) / total) * 100}%` }}
+          >
+            {has && (
+              <button
+                type="button"
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  updateTrack(track.id, { notes: deleteRegion(track.notes ?? [], [a, b]), activeRegion: undefined });
+                  toast.success("Part deleted");
+                }}
+                title="Delete this part"
+                aria-label={`Delete part at step ${Math.round(a)}`}
+                className="pointer-events-auto absolute right-0.5 top-0.5 z-30 rounded-sm bg-background p-0.5 text-foreground hover:text-destructive"
+              >
+                <Trash2 className="size-3" />
+              </button>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
