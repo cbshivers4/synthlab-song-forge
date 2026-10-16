@@ -2416,6 +2416,18 @@ function EditToolbar() {
       <ToolBtn tool="draw" icon={<Pencil className="size-3" />} label="Draw" keys="B" />
       <ToolBtn tool="split" icon={<ScissorsLineDashed className="size-3" />} label="Split" keys="C" />
       <ToolBtn tool="razor" icon={<RazorIcon className="size-3" />} label="Razor" keys="R" />
+      {(editTool === "split" || editTool === "razor") && (
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-6 gap-1 px-2 font-mono text-[10px]"
+          aria-pressed={cutFree}
+          title={cutFree ? "Cuts land exactly where you click (off grid). Tap to snap cuts to the grid. Hold Alt to flip once." : "Cuts snap to the grid. Tap to cut anywhere (off grid). Hold Alt to flip once."}
+          onClick={() => setCutFree(!cutFree)}
+        >
+          CUT: {cutFree ? "FREE" : "GRID"}
+        </Button>
+      )}
       <div className="mx-1 h-4 w-px bg-border" />
       <Button size="sm" variant="ghost" className="h-6 gap-1 px-2 text-[10px]" title="Undo (⌘Z / Ctrl+Z)" onClick={undo}>
         <Undo2 className="size-3" /> Undo
