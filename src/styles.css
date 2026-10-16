@@ -1314,3 +1314,8 @@
   filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.75)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.55));
 }
 .playhead-grip { cursor: ew-resize; touch-action: none; }
+
+/* Selected timeline channel: a bright white outline that reads on every track colour. */
+.track-selected {
+  box-shadow: inset 0 0 0 2px var(--playhead), inset 0 0 0 3px rgba(0, 0, 0, 0.55);
+}
