@@ -87,8 +87,10 @@ const SECTIONS: Section[] = [
   { id: "perform", label: "Perform", tools: ["studio-view", "reel-recorder", "video-sampler", "live", "looper", "humbeat"].map(tool) },
   { id: "synths", label: "Synthesizers", tools: ["synth", "acid", "poly", "modular"].map(tool) },
   { id: "instruments", label: "Instruments", tools: ["coproducer", "genstem", "bassgen", "drums", "beat", "chop", "sampler"].map(tool) },
-  { id: "mix", label: "Mix & Master", tools: ["mixer", "master", "stems", "voice", "reference", "notes"].map(tool) },
-  { id: "plugins", label: "Plugins", tools: ["plugins", "apps"].map(tool) },
+  { id: "mix", label: "Mix & Master", tools: ["mixer", "master", "stems", "voice"].map(tool) },
+  { id: "plugins", label: "Plugins", tools: ["plugins"].map(tool) },
+  // Everything that reaches outside the song itself lives under Other Apps.
+  { id: "apps", label: "Other Apps", tools: ["apps", "reference", "notes"].map(tool) },
 ];
 
 /** Pinned to the bottom of the left menu while a file previews: stop button, name, live waveform scope. */
