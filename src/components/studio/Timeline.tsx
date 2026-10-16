@@ -1,5 +1,6 @@
-import { Fragment, memo, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { Fragment, memo, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 import { stepsPerBar, getBeatsPerBar, STEPS_PER_BEAT, songSteps, stepSeconds, positionLabel } from "@/lib/synclab/timebase";
+import { notesInRegion, regionsOf, snapCut, deleteRegion } from "@/lib/synclab/note-cuts";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { PhonePages } from "./PhonePages";
 import {
@@ -119,12 +120,39 @@ import { TrackNotes } from "@/components/studio/TrackNotes";
 const INPUTS = ["Microphone", "Guitar / Line 1", "Keyboard / Line 2", "External Instrument", "MIDI Keyboard", "Internal", "Stereo File"];
 
 /** Cutting overlay owns pointer targeting so clip drag handles cannot mask the tool. */
-function TimelineCutGuide({ tool, position, selected }: { tool: "split" | "razor"; position: number; selected: boolean }) {
+/** Free (off-grid) cutting toggle, shared by the toolbar and every lane; remembered on this device. */
+const CUT_FREE_KEY = "synclab.cutFree";
+let cutFreeValue = true;
+const cutFreeListeners = new Set<() => void>();
+if (typeof window !== "undefined") {
+  try { cutFreeValue = window.localStorage.getItem(CUT_FREE_KEY) !== "0"; } catch { /* storage blocked */ }
+}
+export function setCutFree(v: boolean) {
+  cutFreeValue = v;
+  try { window.localStorage.setItem(CUT_FREE_KEY, v ? "1" : "0"); } catch { /* storage blocked */ }
+  cutFreeListeners.forEach((l) => l());
+}
+export function useCutFree() {
+  return useSyncExternalStore(
+    (l) => { cutFreeListeners.add(l); return () => cutFreeListeners.delete(l); },
+    () => cutFreeValue,
+    () => true,
+  );
+}
+/** Cut position in song steps: exact where you click when free (or Alt held on grid), otherwise on the snap grid. */
+export function cutPosition(frac: number, total: number, grid: number, altKey: boolean) {
+  const free = cutFreeValue !== altKey;
+  return Math.max(0, Math.min(total, snapCut(frac * total, grid > 0 ? grid : 1, free)));
+}
+
+function TimelineCutGuide({ tool, position, selected, total, grid }: { tool: "split" | "razor"; position: number; selected: boolean; total: number; grid: number }) {
   const lineRef = useRef<HTMLDivElement>(null);
   const iconRef = useRef<HTMLDivElement>(null);
   const showAtPointer = (e: React.PointerEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    const x = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
+    const rawX = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
+    // The guide shows exactly where the cut will land — snapped or free.
+    const x = (cutPosition(rawX / Math.max(1, rect.width), total, grid, e.altKey) / Math.max(1, total)) * rect.width;
     const y = Math.max(4, Math.min(rect.height - 32, e.clientY - rect.top + 10));
     const line = lineRef.current;
     const icon = iconRef.current;
