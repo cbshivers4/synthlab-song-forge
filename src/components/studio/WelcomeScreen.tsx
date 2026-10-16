@@ -27,18 +27,18 @@ import { openHelp } from "@/components/studio/HelpCenter";
 
 
 const FEATURES: { icon: React.ReactNode; title: string; body: string }[] = [
-  { icon: <Sparkles className="size-4" />, title: "AI Co-Producer", body: "Writes chords, basslines, drum patterns and lyrics — preview with your song, then add to the timeline." },
-  { icon: <Wand2 className="size-4" />, title: "Generate Stem", body: "Describe a part — drums, bass, keys — and get a playable audio stem in your key and tempo." },
-  { icon: <AudioLines className="size-4" />, title: "Separate Stems", body: "Split any song into vocal focus, vocal-removed, bass, mids and highs, each on its own track." },
-  { icon: <Mic className="size-4" />, title: "Hum to Beat", body: "Beatbox a rhythm or hum a melody — SYNCLAB turns it into drums or notes." },
-  { icon: <Music2 className="size-4" />, title: "Synth", body: "4 oscillators, dual filters, FM, mod matrix, 67 presets." },
-  { icon: <Disc3 className="size-4" />, title: "Drum Machine", body: "24 kits — 909, 808, LinnDrum and more — with a step sequencer." },
-  { icon: <Grid2x2 className="size-4" />, title: "Pad Sampler", body: "64 performance pads, live mic sampling, slice-to-pads, patterns." },
-  { icon: <Scissors className="size-4" />, title: "Sample Chopper", body: "Drop any MP3/WAV, trim, chop by note grid and map slices to keys or pads." },
-  { icon: <Mic className="size-4" />, title: "Multi-Track Recording", body: "Every take on its own channel, with count-in, loop-bounded takes and monitoring." },
-  { icon: <Piano className="size-4" />, title: "Bass Generator & Voice Convert", body: "Build basslines from your chords; pitch and restyle recorded vocals." },
-  { icon: <SlidersHorizontal className="size-4" />, title: "Pro Mixer", body: "Console styles, buses, sends, VCA groups, aux returns and live meters." },
-  { icon: <Cpu className="size-4" />, title: "Cloud Projects", body: "Sessions, samples and exports saved to your cloud, anywhere." },
+  { icon: <Sparkles className="size-4" />, title: "AI Co-Producer", body: "Writes chords, basslines, drum patterns and lyrics — preview against your song, then add it to the timeline." },
+  { icon: <Wand2 className="size-4" />, title: "Generate Stem", body: "Describe a part and get a solo audio stem in your key and tempo, ready to drop on a track." },
+  { icon: <AudioLines className="size-4" />, title: "Separate Stems", body: "Split any song into vocals, drums, bass, music or instrumental, each on its own track." },
+  { icon: <Mic className="size-4" />, title: "Hum to Beat & Convert Voice", body: "Beatbox a rhythm or hum a melody into notes, and restyle recorded vocals with 21 voice templates." },
+  { icon: <Music2 className="size-4" />, title: "Four Synthesizers", body: "Spec 4, Acid Bass (TD-3 style) with step write, Poly Synth and a patchable Modular Tech rack." },
+  { icon: <Cpu className="size-4" />, title: "Modular Tech Synth", body: "Build your own rack — VCOs, filters, envelopes, mixers — and patch it with colour cables." },
+  { icon: <Disc3 className="size-4" />, title: "Drum Machine & Drum Roll", body: "24 kits with step sequencing, per-step pitch, chance, flam and choke groups." },
+  { icon: <Grid2x2 className="size-4" />, title: "Pad Sampler & Chopper", body: "64 pads, live mic sampling, slice any MP3 or WAV to pads and keys." },
+  { icon: <Scissors className="size-4" />, title: "Video Sampler", body: "Chop video to pads, trigger clips from keys or MIDI, and record straight from your camera." },
+  { icon: <Disc3 className="size-4" />, title: "Reel-to-Reel Recorder", body: "16 input channels with analog meters, mute and solo, tape saturation and WAV/MP3 export." },
+  { icon: <SlidersHorizontal className="size-4" />, title: "Pro Mixer & Effects Rack", body: "Buses, sends, VCA groups, aux returns, rack-mounted effects with live scopes and meters." },
+  { icon: <Piano className="size-4" />, title: "Studio View & MIDI Learn", body: "See your gear on stands and racks, and map any knob, fader or pad on your controller." },
 ];
 
 const GOOGLE_ICON = (
