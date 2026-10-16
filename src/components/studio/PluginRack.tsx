@@ -140,7 +140,7 @@ export function PluginRack() {
   return (
     <div className="space-y-3">
       <header className="flex flex-wrap items-center gap-3 border-b border-border pb-3">
-        <div className="flex items-center gap-2"><Cpu className="size-5 text-primary" /><h2 className="text-base font-semibold">Effects Rack</h2></div>
+        <div className="flex items-center gap-2"><Cpu className="size-5 text-primary" /><h2 className="text-base font-semibold">Plugins</h2><span className="text-xs text-muted-foreground">effects rack</span></div>
         <Select value={track.id} onValueChange={select}>
           <SelectTrigger aria-label="Effects rack track" className="h-11 w-full min-w-0 sm:w-64"><SelectValue /></SelectTrigger>
           <SelectContent>{tracks.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent>
