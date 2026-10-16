@@ -271,3 +271,6 @@
 - [x] Per-track rack-mounted effects with live insert scopes/meters; signed-in desktop/phone checks verified synth-note signal, bypass, order, independent track chains, add/remove and Tools access. Physical-controller/audio listening remains hardware-dependent.
 
 - [x] Fixes: solo-instrument stem prompts, sharper stem separation, mic hand-off between tools, white selected-track outline, razor/split cuts notes as well as clips, piano-roll Clear all notes, phone login photo, refreshed login feature list, Other Apps menu grouping.
+
+- [x] DAW-style cutting: free/grid cut toggle, note parts unroll and cut into deletable regions, Delete removes selected clip/part; Open instrument picks a synth; menu actions no longer jump to the piano roll. Verified in browser.
+- [ ] Clean stem separation needs an AI separation service — awaiting user decision.
