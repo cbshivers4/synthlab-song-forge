@@ -19,7 +19,7 @@ export const generateStemFn = createServerFn({ method: "POST" })
       `SOLO ${inst} stem only — a single unaccompanied ${inst} recorded on its own, as an isolated multitrack stem.`,
       `Only the ${inst} is audible for the entire clip. ${drumWords}${vocalWords} No backing track, no accompaniment, no other instruments, no bass unless the instrument is bass, no pads, no atmosphere or background music.`,
       `Tempo ${data.bpm} BPM.${data.key ? ` Key ${data.key}.` : ""} Loop-friendly, clean, dry mono-to-stereo studio recording with no reverb tail and no mix bus processing.`,
-      data.prompt,
+      `Style reference only (do not add the other instruments this style normally has, even if the genre usually has a beat): ${data.prompt}`,
     ].join(" ");
     const res = await fetch("https://ai.gateway.lovable.dev/v1/music", {
       method: "POST",
