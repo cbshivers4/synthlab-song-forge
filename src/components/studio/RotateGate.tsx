@@ -11,14 +11,30 @@ const PORTRAIT_PHONE_QUERY =
 
 export function RotateGate() {
   const [portrait, setPortrait] = React.useState(false);
+  const [dismissed, setDismissed] = React.useState(false);
   const [lockNote, setLockNote] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     const mql = window.matchMedia(PORTRAIT_PHONE_QUERY);
-    const onChange = () => setPortrait(mql.matches);
-    mql.addEventListener("change", onChange);
-    onChange();
-    return () => mql.removeEventListener("change", onChange);
+    // Some phone browsers (iOS Safari, in-app browsers) miss matchMedia change
+    // events on rotation, so re-check from the real window size too.
+    const check = () => {
+      const w = window.visualViewport?.width ?? window.innerWidth;
+      const h = window.visualViewport?.height ?? window.innerHeight;
+      setPortrait(h > w && mql.matches);
+    };
+    const later = () => { check(); window.setTimeout(check, 250); window.setTimeout(check, 700); };
+    mql.addEventListener("change", later);
+    window.addEventListener("resize", later);
+    window.addEventListener("orientationchange", later);
+    window.visualViewport?.addEventListener("resize", later);
+    check();
+    return () => {
+      mql.removeEventListener("change", later);
+      window.removeEventListener("resize", later);
+      window.removeEventListener("orientationchange", later);
+      window.visualViewport?.removeEventListener("resize", later);
+    };
   }, []);
 
   const goFullscreen = React.useCallback(async () => {
