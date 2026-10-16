@@ -176,14 +176,28 @@ function DetachedPanels() {
   );
 }
 
+/** Any crash in an open tool (or its header/notes) shows a message instead of the full-page error. */
+function SafePanels(props: { float: FloatState; setFloat: (f: (p: FloatState) => FloatState) => void }) {
+  const { panel, setPanel } = useStudio();
+  return (
+    <ToolErrorBoundary key={panel ?? "none"} name={panel ? panel.replace(/-/g, " ") : "Tool"} onClose={() => setPanel(null)} className="phone-tool-panel fixed inset-x-2 top-2 z-50 bg-background sm:relative sm:inset-auto sm:m-3">
+      <Panels {...props} />
+    </ToolErrorBoundary>
+  );
+}
+
 function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: FloatState) => FloatState) => void }) {
   const isMobile = useIsMobile();
   const { selected, tracks, panel, setPanel, select } = useStudio();
   // Resizable editor height, remembered between sessions.
   const [rackH, setRackH] = useState(() => {
     if (typeof window === "undefined") return 380;
-    const v = Number(window.localStorage.getItem("synclab.rack.height"));
-    return Number.isFinite(v) && v >= 180 ? v : 380;
+    try {
+      const v = Number(window.localStorage.getItem("synclab.rack.height"));
+      return Number.isFinite(v) && v >= 180 ? v : 380;
+    } catch {
+      return 380;
+    }
   });
   const startResize = (e: React.PointerEvent) => {
     e.preventDefault();
@@ -627,7 +641,7 @@ function StudioWorkspace() {
     return () => root.classList.remove("mobile-controls-xl", "mobile-text-xl", "mobile-high-contrast");
   }, [isMobile, mobileAccessibility]);
   if (isMobile) return <>
-    <PhoneStudio><Panels float={float} setFloat={setFloat} /></PhoneStudio>
+    <PhoneStudio><SafePanels float={float} setFloat={setFloat} /></PhoneStudio>
     <TrackSettingsDialog /><DeviceSetup /><ExportDialog />
   </>;
   return (
@@ -642,7 +656,7 @@ function StudioWorkspace() {
           {isMobile && mobileView === "create" && !panel && !beatMode && <MobileCreate onBeatMode={() => setBeatMode(true)} onMore={() => setMoreSignal((n) => n + 1)} />}
           <h1 className="sr-only">SYNCLAB Studio — browser digital audio workstation</h1>
           <Timeline />
-          <Panels float={float} setFloat={setFloat} />
+          <SafePanels float={float} setFloat={setFloat} />
           <DetachedPanels />
           {(!isMobile || !panel) && <DeviceBar />}
         </main>
