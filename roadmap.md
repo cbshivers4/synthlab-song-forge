@@ -273,4 +273,4 @@
 - [x] Fixes: solo-instrument stem prompts, sharper stem separation, mic hand-off between tools, white selected-track outline, razor/split cuts notes as well as clips, piano-roll Clear all notes, phone login photo, refreshed login feature list, Other Apps menu grouping.
 
 - [x] DAW-style cutting: free/grid cut toggle, note parts unroll and cut into deletable regions, Delete removes selected clip/part; Open instrument picks a synth; menu actions no longer jump to the piano roll. Verified in browser.
-- [ ] Clean stem separation needs an AI separation service — awaiting user decision.
+- [ ] AI stem separation (Demucs on Replicate) built and wired — blocked until the Replicate account has credit; then test a real song.
