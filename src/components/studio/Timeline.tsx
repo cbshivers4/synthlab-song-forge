@@ -711,11 +711,14 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
     track.kind === "drum" ? "Open drum machine"
     : track.kind === "sampler" ? "Open sampler"
     : "Open instrument";
-  const openTrackEditor = () => {
+  const openTrackEditor = (id: string = track.id) => {
     if (!editorPanel) return;
-    select(track.id);
+    select(id);
     setPanel(editorPanel);
+    // Run again after the menu closes so no row click can swap in the piano roll.
+    window.setTimeout(() => { select(id); setPanel(editorPanel); }, 0);
   };
+  const synthTracks = fileStudio.tracks.filter((t) => t.kind === "instrument" || t.kind === "midi");
 
   const writeClips = (next: typeof clips, activeId?: string) =>
     updateTrack(track.id, activeId ? { clips: next, activeClipId: activeId } : { clips: next });
@@ -1078,8 +1081,17 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="min-w-56">
               <DropdownMenuItem onClick={() => setRenaming(true)}>Rename</DropdownMenuItem>
-              {editorPanel && (
-                <DropdownMenuItem onClick={openTrackEditor}>
+              {editorPanel === "synth" && (
+                <DropdownMenuSub><DropdownMenuSubTrigger><Sliders className="size-4" /> Open instrument</DropdownMenuSubTrigger><DropdownMenuSubContent className="min-w-52">
+                  {synthTracks.map((t) => (
+                    <DropdownMenuItem key={t.id} onClick={(e) => { e.stopPropagation(); openTrackEditor(t.id); }}>
+                      <Sliders className="size-4" /> {t.name}{t.id === track.id ? " (this track)" : ""}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuSubContent></DropdownMenuSub>
+              )}
+              {editorPanel && editorPanel !== "synth" && (
+                <DropdownMenuItem onClick={() => openTrackEditor()}>
                   {track.kind === "drum" ? <Disc3 className="size-4" /> : track.kind === "sampler" ? <Music2 className="size-4" /> : track.kind === "ai-vocal" ? <Mic className="size-4" /> : <Piano className="size-4" />}
                   {editorLabel}
                 </DropdownMenuItem>
