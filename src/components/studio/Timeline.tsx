@@ -7,6 +7,7 @@ import {
   ArrowRightToLine,
   ClipboardPaste,
   Grid3x3,
+  Sliders,
   ListChecks,
   MousePointer2,
   Pencil,
