@@ -2113,6 +2113,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
                   pads: t.pads?.map((p) => ({ ...p, steps: p.steps.map(() => 0) })),
                   drumPatterns: t.drumPatterns?.map((pat) => pat.map((p) => ({ ...p, steps: p.steps.map(() => 0) }))),
                   activeClipId: undefined,
+                  cuts: undefined,
+                  activeRegion: undefined,
                   printedAudio: false,
                   recording: false,
                 },
