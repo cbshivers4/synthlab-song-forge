@@ -269,3 +269,5 @@
 - [x] Remove the phone timeline bar-count menu and place song length plus export range in the timeline Tools menu beside Add Track; signed-in phone checks verified the stepper and export flags, desktop ruler menu unchanged.
 
 - [x] Per-track rack-mounted effects with live insert scopes/meters; signed-in desktop/phone checks verified synth-note signal, bypass, order, independent track chains, add/remove and Tools access. Physical-controller/audio listening remains hardware-dependent.
+
+- [x] Fixes: solo-instrument stem prompts, sharper stem separation, mic hand-off between tools, white selected-track outline, razor/split cuts notes as well as clips, piano-roll Clear all notes, phone login photo, refreshed login feature list, Other Apps menu grouping.
