@@ -2392,6 +2392,7 @@ function EditToolbar() {
     }
   };
 
+  const cutFree = useCutFree();
   const ToolBtn = ({ tool, icon, label, keys }: { tool: EditTool; icon: React.ReactNode; label: string; keys: string }) => (
     <Button
       size="sm"
