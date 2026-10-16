@@ -7,7 +7,8 @@ import { usePreviewTrack } from "@/lib/synclab/use-preview-track";
 import { PreviewButtons } from "./PreviewButtons";
 import { GeneratedWaveform } from "./GeneratedWaveform";
 import { useStudio } from "@/lib/synclab/store";
-import { peaksOf } from "@/lib/synclab/stems";
+import { peaksOf, separateStems } from "@/lib/synclab/stems";
+import { encodeWav } from "@/lib/synclab/bounce";
 import { generateStemFn } from "@/utils/generate-stem.functions";
 
 const INSTRUMENTS = ["Drums", "Bass", "Piano", "Synth pad", "Lead synth", "Guitar", "Strings", "Brass", "Vocal chops", "Percussion"];
@@ -20,6 +21,7 @@ export function StemGenerator() {
   const [key, setKey] = useState("");
   const [prompt, setPrompt] = useState("");
   const [busy, setBusy] = useState(false);
+  const [cleaning, setCleaning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ url: string; buf: AudioBuffer; name: string } | null>(null);
   const [playing, setPlaying] = useState(false);
@@ -40,13 +42,31 @@ export function StemGenerator() {
       const bytes = Uint8Array.from(atob(res.mp3), (c) => c.charCodeAt(0));
       const blob = new Blob([bytes], { type: "audio/mpeg" });
       const ctx = new AudioContext();
-      const buf = await ctx.decodeAudioData(await blob.arrayBuffer());
+      const raw = await ctx.decodeAudioData(await blob.arrayBuffer());
+      // The AI sometimes adds drums or other parts, so clean the clip on the device:
+      // drum stems keep only the hits, vocal stems keep only the centre voice, everything else has its drums removed.
+      setCleaning(true);
+      const isDrums = /drum|percussion/i.test(instrument);
+      const isVocal = /vocal|voice/i.test(instrument);
+      const parts = await separateStems(raw, isDrums ? ["drums"] : isVocal ? ["vocals"] : ["drums"]);
+      const L0 = raw.getChannelData(0), R0 = raw.numberOfChannels > 1 ? raw.getChannelData(1) : L0;
+      let left: Float32Array, right: Float32Array;
+      if (isDrums && parts.drums) ({ left, right } = parts.drums);
+      else if (isVocal && parts.vocals) ({ left, right } = parts.vocals);
+      else if (parts.drums) {
+        const d = parts.drums;
+        left = new Float32Array(L0.length); right = new Float32Array(L0.length);
+        for (let i = 0; i < L0.length; i++) { left[i] = L0[i]! - d.left[i]!; right[i] = R0[i]! - d.right[i]!; }
+      } else { left = L0.slice(); right = R0.slice(); }
+      const buf = ctx.createBuffer(2, left.length, raw.sampleRate);
+      buf.copyToChannel(new Float32Array(left), 0); buf.copyToChannel(new Float32Array(right), 1);
       void ctx.close();
+      const wav = encodeWav({ left, right, sampleRate: raw.sampleRate });
       if (result) URL.revokeObjectURL(result.url);
-      setResult({ url: URL.createObjectURL(blob), buf, name: `${instrument.toUpperCase()} · AI` });
+      setResult({ url: URL.createObjectURL(wav), buf, name: `${instrument.toUpperCase()} · AI` });
     } catch {
       setError("Sign in to generate stems, then try again.");
-    } finally { setBusy(false); }
+    } finally { setBusy(false); setCleaning(false); }
   };
 
   const toggle = () => {
@@ -83,7 +103,7 @@ export function StemGenerator() {
       <header>
         <h2 className="font-mono text-sm font-bold tracking-[0.18em]">GENERATE STEM</h2>
         <p className="text-xs text-muted-foreground">
-          Describe a part and AI creates a 30-second audio clip at {transport.bpm} BPM. The AI aims for just that instrument, but some clips may include other sounds. Each generation uses AI credits.
+          Describe a part and AI creates a 30-second audio clip at {transport.bpm} BPM. Afterwards SYNCLAB strips other sounds on your device — drums are removed from non-drum parts, drum parts keep only the hits. Some faint bleed can remain. Each generation uses AI credits.
         </p>
       </header>
 
@@ -104,7 +124,7 @@ export function StemGenerator() {
 
       <div className="flex flex-wrap gap-2">
         <Button size="lg" className="min-h-12" disabled={busy} onClick={() => void generate()}>
-          <Sparkles className="size-4" /> {busy ? "Composing… (up to a minute)" : "Generate"}
+          <Sparkles className="size-4" /> {cleaning ? "Removing other sounds…" : busy ? "Composing… (up to a minute)" : "Generate"}
         </Button>
         {result && <>
           <Button size="lg" variant="secondary" className="min-h-12" onClick={toggle}>
