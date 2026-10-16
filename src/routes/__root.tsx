@@ -53,6 +53,9 @@ function ErrorComponent({ error, reset }: import("@tanstack/react-router").Error
         <p className="mt-2 text-sm text-muted-foreground">
           Something went wrong on our end. You can try refreshing or head back home.
         </p>
+        <p className="mt-3 break-words rounded-md border border-border bg-muted/40 px-3 py-2 font-mono text-xs text-muted-foreground">
+          Details: {error instanceof Error ? error.message || error.name : String(error ?? "Unknown error")}
+        </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
             onClick={() => {
