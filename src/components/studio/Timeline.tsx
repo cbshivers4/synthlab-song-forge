@@ -1154,12 +1154,40 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
             <DropdownMenuContent align="end" className="min-w-56">
               <DropdownMenuItem onClick={() => setRenaming(true)}>Rename</DropdownMenuItem>
               {editorPanel === "synth" && (
-                <DropdownMenuSub><DropdownMenuSubTrigger><Sliders className="size-4" /> Open instrument</DropdownMenuSubTrigger><DropdownMenuSubContent className="min-w-52">
-                  {synthTracks.map((t) => (
-                    <DropdownMenuItem key={t.id} onClick={(e) => { e.stopPropagation(); openTrackEditor(t.id); }}>
-                      <Sliders className="size-4" /> {t.name}{t.id === track.id ? " (this track)" : ""}
-                    </DropdownMenuItem>
-                  ))}
+                <DropdownMenuSub><DropdownMenuSubTrigger><Sliders className="size-4" /> Open instrument</DropdownMenuSubTrigger><DropdownMenuSubContent className="min-w-60">
+                  <DropdownMenuLabel className="text-[10px] tracking-widest text-muted-foreground">CHOOSE A SYNTH FOR THIS TRACK</DropdownMenuLabel>
+                  {SYNTH_CHOICES.map((s) => {
+                    const current = synthStyleOf(track) === s.style;
+                    return (
+                      <DropdownMenuItem
+                        key={s.style}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (!current) {
+                            // Load the chosen synth on this track; its notes stay, only the sound changes.
+                            changeInstrument(track.id, s.preset);
+                            updateTrack(track.id, { name: s.label.replace(/\s*\(.*\)$/, "").toUpperCase() });
+                            toast.success(`${s.label} loaded on ${track.name}`, { description: "Your notes are kept — only the sound changed. Undo brings the old synth back." });
+                          }
+                          openTrackEditor(track.id);
+                        }}
+                      >
+                        <Sliders className="size-4" /> {current ? `Open ${s.label}` : s.label}
+                        {current && <span className="ml-auto font-mono text-[10px] text-primary">CURRENT</span>}
+                      </DropdownMenuItem>
+                    );
+                  })}
+                  {synthTracks.length > 1 && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuLabel className="text-[10px] tracking-widest text-muted-foreground">OTHER SYNTH TRACKS</DropdownMenuLabel>
+                      {synthTracks.filter((t) => t.id !== track.id).map((t) => (
+                        <DropdownMenuItem key={t.id} onClick={(e) => { e.stopPropagation(); openTrackEditor(t.id); }}>
+                          <Sliders className="size-4" /> {t.name} <span className="ml-auto font-mono text-[10px] text-muted-foreground">{SYNTH_CHOICES.find((s) => s.style === synthStyleOf(t))?.label}</span>
+                        </DropdownMenuItem>
+                      ))}
+                    </>
+                  )}
                 </DropdownMenuSubContent></DropdownMenuSub>
               )}
               {editorPanel && editorPanel !== "synth" && (
