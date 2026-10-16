@@ -180,7 +180,7 @@ function DetachedPanels() {
 function SafePanels(props: { float: FloatState; setFloat: (f: (p: FloatState) => FloatState) => void }) {
   const { panel, setPanel } = useStudio();
   return (
-    <ToolErrorBoundary key={panel ?? "none"} name={panel ? panel.replace(/-/g, " ") : "Tool"} onClose={() => setPanel(null)} className="phone-tool-panel fixed inset-x-2 top-2 z-50 bg-background sm:relative sm:inset-auto sm:m-3">
+    <ToolErrorBoundary key={panel ?? "none"} name={panel ? panel.replace(/-/g, " ") : "Tool"} onClose={() => setPanel(null)} className="fixed inset-x-2 top-2 z-50 bg-background sm:relative sm:inset-auto sm:m-3">
       <Panels {...props} />
     </ToolErrorBoundary>
   );
