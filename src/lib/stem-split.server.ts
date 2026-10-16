@@ -28,7 +28,7 @@ async function fail(res: Response, what: string): Promise<never> {
   throw new StemSplitError(`Stem separation ${what} failed (${res.status})${detail ? `: ${detail}` : ""}.`, res.status);
 }
 
-export async function startStemSplit(bytes: Uint8Array, fileName: string, mime: string) {
+export async function startStemSplit(bytes: Uint8Array<ArrayBuffer>, fileName: string, mime: string) {
   const form = new FormData();
   form.append("content", new Blob([bytes], { type: mime || "application/octet-stream" }), fileName || "song");
   const up = await fetch(`${GATEWAY}/files`, { method: "POST", headers: headers(false), body: form });
