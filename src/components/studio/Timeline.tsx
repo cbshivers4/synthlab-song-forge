@@ -948,7 +948,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
   return (
     <div className="border-b border-border/80">
     <div
-      className={`relative flex items-stretch transition-colors ${isSelected ? "bg-foreground/10 ring-2 ring-inset ring-foreground" : "hover:bg-surface/50"} ${track.hidden ? "opacity-40" : ""} ${dropping ? "ring-1 ring-primary ring-inset" : ""}`}
+      className={`relative flex items-stretch transition-colors ${isSelected ? "track-selected bg-foreground/10" : "hover:bg-surface/50"} ${track.hidden ? "opacity-40" : ""} ${dropping ? "ring-1 ring-primary ring-inset" : ""}`}
       style={{ height: isMobile ? undefined : track.height ?? undefined }}
       onClick={(e) => {
         if (suppressClickRef.current) {
@@ -1063,9 +1063,9 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
               className="size-6 shrink-0 touch-manipulation"
               aria-label={editorLabel}
               title={editorLabel}
-              onClick={openTrackEditor}
+              onClick={(e) => { e.stopPropagation(); openTrackEditor(); }}
             >
-              {track.kind === "drum" ? <Disc3 className="size-3.5" /> : track.kind === "sampler" ? <Music2 className="size-3.5" /> : track.kind === "ai-vocal" ? <Mic className="size-3.5" /> : <Piano className="size-3.5" />}
+              {track.kind === "drum" ? <Disc3 className="size-3.5" /> : track.kind === "sampler" ? <Music2 className="size-3.5" /> : track.kind === "ai-vocal" ? <Mic className="size-3.5" /> : <Sliders className="size-3.5" />}
             </Button>
           )}
           <TrackNotes track={track} className="ml-auto" />
