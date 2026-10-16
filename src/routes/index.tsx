@@ -1,4 +1,5 @@
 import { ToolErrorBoundary } from "@/components/studio/ToolErrorBoundary";
+import { RotateGate } from "@/components/studio/RotateGate";
 import { useEffect, useRef, useState } from "react";
 import { TrackSettingsDialog, openTrackSettings } from "@/components/studio/TrackSettingsDialog";
 import { QWERTY_MAP, qwertyEnabled, qwertyOctave, setQwertyOctave } from "@/lib/synclab/qwerty";
@@ -654,6 +655,7 @@ function Stages() {
   const isMobile = useIsMobile();
   return (
     <PlanProvider>
+      <RotateGate />
       <SplashScreen />
       <HelpCenter />
       {stage === "welcome" && (isMobile ? <div className="phone-console phone-entry flex h-[100dvh] flex-col overflow-hidden"><PhonePages name="Sign in"><WelcomeScreen /></PhonePages></div> : <WelcomeScreen />)}
