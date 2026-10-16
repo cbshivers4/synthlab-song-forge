@@ -184,7 +184,8 @@ function TimelineCutGuide({ tool, position, selected, total, grid }: { tool: "sp
 
 /** Audio lane: every clip sits at its own bar position and can be moved, trimmed and dragged between tracks. */
 function Waveform({ track }: { track: Track }) {
-  const { setActiveClip, removeClip, updateTrack, transport, tracks } = useStudio();
+  const { setActiveClip, removeClip, updateTrack, transport, tracks, editTool } = useStudio();
+  const cutting = editTool === "split" || editTool === "razor";
   const [editingId, setEditingId] = useState<string | null>(null);
   const clips = track.clips ?? [];
   const total = songSteps(transport.bars);
@@ -329,7 +330,7 @@ function Waveform({ track }: { track: Track }) {
                 }}
                 title="Delete clip"
                 aria-label={`Delete ${clip.name}`}
-                className={`shrink-0 hover:text-destructive ${active ? "block text-foreground" : "hidden text-clip-audio/70 group-hover:block"}`}
+                className={`relative z-30 shrink-0 hover:text-destructive ${cutting ? "block rounded-sm bg-background p-0.5 text-foreground" : active ? "block text-foreground" : "hidden text-clip-audio/70 group-hover:block"}`}
               >
                 <Trash2 className="size-3" />
               </button>
