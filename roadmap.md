@@ -8,6 +8,7 @@
 - [x] Add a playable bass generator that creates editable MIDI patterns
 
 # Roadmap
+- [ ] AI Co-Producer opening: signed-in desktop and sideways-phone preview checks both opened without errors; awaiting affected device and visible failure to reproduce the user's issue.
 - [x] Add a project-synced Studio View with instruments on stands, mixer, effects rack and monitors; signed-in desktop/phone checks verified editor opening, added sampler visibility, real meter activity, effect insertion and portrait/landscape scrolling.
 - [x] Give phone pages full height with a hidden-by-default transport overlay and rail toggle; signed-in portrait/landscape checks verified timeline, mixer, all 7 Sounds and 15 Tools pages, plus transport access with collapsed navigation.
 - [x] Fix reel recorder timeline meters on desktop and phone: read live stereo master taps without enabling microphone or capture; reflect transport playback status and preserve tape metering.
