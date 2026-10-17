@@ -273,7 +273,7 @@ export function ToolsRail() {
 
   return (
     <aside
-      className={`hidden shrink-0 flex-col border-r border-border bg-sidebar transition-[width] sm:flex ${open ? "w-52" : "w-11"}`}
+      className={`arrangement-tools hidden shrink-0 flex-col border-r border-border bg-sidebar transition-[width] sm:flex ${open ? "w-52" : "w-11"}`}
     >
       <div className="flex items-center gap-1 border-b border-border px-2 py-1.5">
         {open && <span className="label-xs">SYNCLAB TOOLS</span>}

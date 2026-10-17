@@ -302,11 +302,9 @@ function Waveform({ track }: { track: Track }) {
         return (
           <div
             key={clip.id}
-            className={`group absolute inset-y-2 flex flex-col overflow-hidden rounded-[3px] border bg-clip-audio/10 shadow-sm transition-colors hover:bg-clip-audio/15 ${
-              active
-                ? "border-foreground ring-2 ring-inset ring-foreground"
-                : "border-clip-audio/30 hover:border-foreground/40"
-            }`}
+            data-audio-clip={clip.id}
+            data-selected={active}
+            className="arrangement-clip group absolute inset-y-1 flex flex-col overflow-hidden rounded-[2px] border transition-colors"
             style={{ left: `${left}%`, width: `${Math.max(2, width)}%` }}
             onPointerDown={(e) => {
               setActiveClip(track.id, clip.id);
@@ -318,9 +316,9 @@ function Waveform({ track }: { track: Track }) {
             }}
             title={`${clip.name} — drag to move, pull the edges to trim, double-click to edit`}
           >
-            <div className="flex h-[17px] shrink-0 cursor-grab items-center gap-1 bg-clip-audio/10 px-1.5 active:cursor-grabbing">
-              <span className="truncate font-mono text-[9px] font-semibold text-clip-audio/80">{clip.name}</span>
-              <span className="ml-auto shrink-0 font-mono text-[8px] text-clip-audio/55">{length.toFixed(1)}s</span>
+            <div className="arrangement-clip-name flex h-[17px] shrink-0 cursor-grab items-center gap-1 px-1.5 active:cursor-grabbing">
+              <span className="min-w-0 flex-1 truncate font-mono text-[9px] font-semibold">{clip.name}</span>
+              <span className="ml-auto shrink-0 font-mono text-[8px] opacity-70">{length.toFixed(1)}s</span>
               <button
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={(e) => {
@@ -350,18 +348,18 @@ function Waveform({ track }: { track: Track }) {
             </div>
 
             <div className="min-h-0 w-full flex-1 px-1 pb-1">
-              <WaveformView peaks={peaks} color="var(--clip-audio)" label={`${clip.name} waveform`} />
+              <WaveformView peaks={peaks} color="var(--arrangement-wave)" grid={false} label={`${clip.name} waveform`} />
             </div>
 
             <div
               onPointerDown={(e) => beginDrag(e, clip, "trim-left")}
               title="Trim the start"
-              className="absolute inset-y-0 left-0 w-1.5 cursor-ew-resize bg-clip-audio/0 hover:bg-clip-audio/60"
+              className="arrangement-trim arrangement-trim-left absolute inset-y-0 left-0 w-1.5 cursor-ew-resize"
             />
             <div
               onPointerDown={(e) => beginDrag(e, clip, "trim-right")}
               title="Trim the end"
-              className="absolute inset-y-0 right-0 w-1.5 cursor-ew-resize bg-clip-audio/0 hover:bg-clip-audio/60"
+              className="arrangement-trim arrangement-trim-right absolute inset-y-0 right-0 w-1.5 cursor-ew-resize"
             />
           </div>
         );
@@ -2397,21 +2395,23 @@ function EditToolbar() {
     <Button
       size="sm"
       variant={editTool === tool ? "default" : "ghost"}
-      className="h-6 gap-1 px-2 text-[10px]"
+      className="arrangement-tool size-8 shrink-0 p-0"
+      aria-label={label}
+      aria-pressed={editTool === tool}
       title={`${label} (${keys})`}
       onClick={() => setEditTool(tool)}
     >
-      {icon} {label}
+      {icon}
     </Button>
   );
 
   const targets = selectedIds.length > 1 ? selectedIds : selected ? [selected.id] : [];
 
   return (
-    <div className="timeline-edit-toolbar flex min-h-11 shrink-0 flex-wrap items-center gap-1 border-b border-border bg-surface-2/60 px-2 py-1">
+    <div className="timeline-edit-toolbar flex min-h-10 shrink-0 flex-wrap items-center gap-1 border-b border-border bg-surface-2 px-2 py-1">
       <ToolBtn tool="select" icon={<MousePointer2 className="size-3" />} label="Select" keys="V" />
-      <Button size="sm" variant="ghost" className="h-6 gap-1 px-2 text-[10px]" title="Select all channels (⌘A / Ctrl+A)" onClick={selectAll}>
-        <ListChecks className="size-3" /> Select All
+      <Button size="sm" variant="ghost" className="size-8 shrink-0 p-0" aria-label="Select All" title="Select all channels (⌘A / Ctrl+A)" onClick={selectAll}>
+        <ListChecks className="size-3.5" />
       </Button>
       <div className="mx-1 h-4 w-px bg-border" />
       <ToolBtn tool="draw" icon={<Pencil className="size-3" />} label="Draw" keys="B" />
@@ -2430,11 +2430,11 @@ function EditToolbar() {
         </Button>
       )}
       <div className="mx-1 h-4 w-px bg-border" />
-      <Button size="sm" variant="ghost" className="h-6 gap-1 px-2 text-[10px]" title="Undo (⌘Z / Ctrl+Z)" onClick={undo}>
-        <Undo2 className="size-3" /> Undo
+      <Button size="sm" variant="ghost" className="size-8 shrink-0 p-0" aria-label="Undo" title="Undo (⌘Z / Ctrl+Z)" onClick={undo}>
+        <Undo2 className="size-3.5" />
       </Button>
-      <Button size="sm" variant="ghost" className="h-6 gap-1 px-2 text-[10px]" title="Redo (⌘⇧Z / Ctrl+Y)" onClick={redo}>
-        <Redo2 className="size-3" /> Redo
+      <Button size="sm" variant="ghost" className="size-8 shrink-0 p-0" aria-label="Redo" title="Redo (⌘⇧Z / Ctrl+Y)" onClick={redo}>
+        <Redo2 className="size-3.5" />
       </Button>
       <div className="mx-1 h-4 w-px bg-border" />
       <Popover>
@@ -3305,7 +3305,7 @@ export function Timeline({ phonePaged = false }: { phonePaged?: boolean }) {
     }
   }, [transport.follow, transport.playing, transport.step, totalSteps]);
   return (
-    <section className="mobile-timeline relative flex min-h-[210px] min-w-0 flex-1 flex-col overflow-hidden border-x border-b border-border bg-background/60 [--timeline-header-width:172px] sm:[--timeline-header-width:294px]">
+    <section className="arrangement-timeline mobile-timeline relative flex min-h-[210px] min-w-0 flex-1 flex-col overflow-hidden border-x border-b border-border bg-background/60 [--timeline-header-width:172px] sm:[--timeline-header-width:294px]">
       {phonePaged ? <div className="phone-timeline-heading grid h-14 shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-border bg-surface/50 px-3"><TrackSearch /><div className="flex gap-1"><Popover><PopoverTrigger asChild><Button variant="outline" className="h-12 gap-1.5 px-3 font-display text-xs font-semibold tracking-wide" aria-label="Timeline quick tools"><Settings2 className="size-4" /> TOOLS</Button></PopoverTrigger><PopoverContent className="phone-edit-menu flex h-[min(80dvh,440px)] w-[min(90vw,720px)] flex-col overflow-hidden p-0"><div className="shrink-0 border-b border-border px-3 py-2.5 font-display text-sm font-semibold">Timeline tools</div><PhonePages name="Timeline tools"><div className="p-1"><h3 className="px-2 pb-1 pt-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Song length &amp; export</h3><div className="px-2 pb-2"><TimelineOptionsPanel /></div><h3 className="px-2 pb-1 pt-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Edit &amp; arrange</h3><EditToolbar /><h3 className="border-t border-border px-2 pb-1 pt-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Song parts</h3><SectionLane /></div></PhonePages></PopoverContent></Popover><AddTrackMenu size="sm" /></div></div> : <EditToolbar />}
       <div className="shrink-0 overflow-hidden">
         <div ref={timelineHeaderRef} className="min-w-[720px] sm:min-w-0">

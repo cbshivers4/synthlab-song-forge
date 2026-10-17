@@ -645,9 +645,8 @@ function StudioWorkspace() {
     <TrackSettingsDialog /><DeviceSetup /><ExportDialog />
   </>;
   return (
-    <div className={`flex h-[100dvh] flex-col overflow-hidden ${landscape ? "landscape-prod" : ""} ${landscape && landscapeTools ? "landscape-tools" : ""} ${isMobile ? "mobile-studio" : ""} ${isMobile && mobileAccessibility.extraLargeControls ? "mobile-controls-xl" : ""} ${isMobile && mobileAccessibility.increasedText ? "mobile-text-xl" : ""} ${isMobile && mobileAccessibility.highContrast ? "mobile-high-contrast" : ""}`}>
+    <div className={`arrangement-workspace flex h-[100dvh] flex-col overflow-hidden ${landscape ? "landscape-prod" : ""} ${landscape && landscapeTools ? "landscape-tools" : ""} ${isMobile ? "mobile-studio" : ""} ${isMobile && mobileAccessibility.extraLargeControls ? "mobile-controls-xl" : ""} ${isMobile && mobileAccessibility.increasedText ? "mobile-text-xl" : ""} ${isMobile && mobileAccessibility.highContrast ? "mobile-high-contrast" : ""}`}>
       {!isMobile && <MenuBar />}
-      {!isMobile && <TopBar />}
       <div className="flex min-h-0 flex-1">
         {!isMobile && <ToolsRail />}
         {landscape && <MobileNav landscape toolsOpen={landscapeTools} onToggleTools={() => setLandscapeTools((v) => !v)} onBeatMode={() => setBeatMode(true)} view={mobileView} setView={setMobileView} moreSignal={moreSignal} />}
@@ -662,6 +661,7 @@ function StudioWorkspace() {
         </main>
       </div>
       <TrackSettingsDialog />
+      {!isMobile && <TopBar />}
       {landscape ? null : isMobile ? <MobileNav onBeatMode={() => setBeatMode(true)} view={mobileView} setView={setMobileView} moreSignal={moreSignal} /> : <StatusBar />}
       <FloatingDevices float={float} setFloat={setFloat} />
       <DeviceSetup />
