@@ -310,7 +310,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
       </div>
       {panel === "studio-view" ? <StudioView /> : isMobile ? <PhonePages name={current.title}><div className="phone-editor-content min-h-0 space-y-3 p-3">
         {panel === "reel-recorder" && <ReelRecorder />}{panel === "video-sampler" && <VideoSampler />}
-        {panel === "mixer" && <Mixer />}
+        {panel === "mixer" && <Mixer desktopLayout />}
         {panel === "synth" && (synthTrack ? <SynthEditor track={synthTrack} /> : <p>Select an instrument track.</p>)}
         {panel === "drums" && (drumTrack ? <DrumMachine track={drumTrack} /> : <p>Add a drum track.</p>)}
         {panel === "piano" && (selected?.kind === "drum" ? <DrumRoll track={selected} /> : pianoTrack ? <PianoRoll track={pianoTrack} /> : drumTrack ? <DrumRoll track={drumTrack} /> : <p>Select an instrument, MIDI or drum track.</p>)}

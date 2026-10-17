@@ -721,7 +721,7 @@ const TRACK_BUSES: { id: BusId; label: string }[] = [
   { id: "master", label: "Master (direct)" },
 ];
 
-function TrackRow({ track, index }: { track: Track; index: number }) {
+function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track; index: number; headerWidth: number; setHeaderWidth: (width: number) => void }) {
   const isMobile = useIsMobile();
   const { selectedId, selectedIds, select, toggleSelectId, updateTrack, removeTrack, duplicateTrack, moveTrack, setPanel, changeInstrument, installedPlugins, addPlugin, editTool, splitClipAt, razorAt, toggleStep, toggleAutomationLane, copyTrack, cutTrack, pasteTrack, clipboardName, copyClip, cutClip, pasteClip, clipClipboardName, clearTrackContent, folders, addFolder, assignTrackFolder, swapTake, stretchClip } =
     useStudio();
@@ -977,22 +977,44 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
     e.preventDefault();
     e.stopPropagation();
     const y0 = e.clientY;
-    const h0 = track.height ?? 104;
-    const onMove = (ev: PointerEvent) =>
-      updateTrack(track.id, { height: Math.max(64, Math.min(420, h0 + (ev.clientY - y0))) });
+    const row = e.currentTarget.parentElement;
+    if (!row) return;
+    const h0 = row.getBoundingClientRect().height;
+    let height = h0;
+    const onMove = (ev: PointerEvent) => {
+      height = Math.max(132, Math.min(600, h0 + ev.clientY - y0));
+      row.style.height = `${height}px`;
+    };
     const onUp = () => {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
+      updateTrack(track.id, { height });
     };
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
+  };
+  const resizeWidth = (e: React.PointerEvent) => {
+    e.preventDefault(); e.stopPropagation();
+    const x0 = e.clientX;
+    const move = (ev: PointerEvent) => setHeaderWidth(Math.max(220, Math.min(600, headerWidth + ev.clientX - x0)));
+    const up = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", up);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", up);
   };
 
   return (
     <div className="border-b border-border/80">
     <div
       className={`relative flex items-stretch transition-colors ${isSelected ? "track-selected bg-foreground/10" : "hover:bg-surface/50"} ${track.hidden ? "opacity-40" : ""} ${dropping ? "ring-1 ring-primary ring-inset" : ""}`}
-      style={{ height: isMobile ? undefined : track.height ?? undefined }}
+      data-track-row={track.id}
+      style={{ height: Math.max(132, track.height ?? 140) }}
       onClick={(e) => {
         if (suppressClickRef.current) {
           suppressClickRef.current = false;
@@ -1025,7 +1047,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
     >
       <div className="w-1 shrink-0" style={{ background: track.color, opacity: isSelected ? 1 : 0.65 }} />
       <div
-        className="track-touch-header w-[calc(var(--timeline-header-width)_-_4px)] shrink-0 space-y-1 border-r border-border bg-surface px-2 py-1.5"
+        className="track-touch-header relative min-w-0 w-[calc(var(--timeline-header-width)_-_4px)] shrink-0 space-y-1 border-r border-border bg-surface px-2 py-1.5"
         onPointerDown={startPhoneGesture}
         onPointerMove={movePhoneGesture}
         onPointerUp={endPhoneGesture}
@@ -1536,6 +1558,10 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
           {track.vca && <VcaLevel track={track} />}
         </div>
 
+        <div role="separator" aria-label={`Resize ${track.name} channel width`} aria-orientation="vertical" aria-valuemin={220} aria-valuemax={600} aria-valuenow={headerWidth} tabIndex={0}
+          className="timeline-width-handle absolute inset-y-0 right-0 z-30 w-2 cursor-ew-resize touch-none hover:bg-primary/40 focus-visible:bg-primary/40"
+          title="Drag to resize channel width" onPointerDown={resizeWidth} onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => { if (e.key === "ArrowLeft" || e.key === "ArrowRight") { e.preventDefault(); e.stopPropagation(); setHeaderWidth(Math.max(220, Math.min(600, headerWidth + (e.key === "ArrowRight" ? 16 : -16)))); } }} />
         <LevelBar
           id={track.id}
           color={track.color}
@@ -1636,8 +1662,12 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
 
       <div
         onPointerDown={resizeHeight}
+        onClick={(e) => e.stopPropagation()}
+        role="separator" aria-label={`Resize ${track.name} track height`} aria-orientation="horizontal" tabIndex={0}
+        aria-valuemin={132} aria-valuemax={600} aria-valuenow={Math.max(132, track.height ?? 140)}
+        onKeyDown={(e) => { if (e.key === "ArrowUp" || e.key === "ArrowDown") { e.preventDefault(); e.stopPropagation(); updateTrack(track.id, { height: Math.max(132, Math.min(600, (track.height ?? 140) + (e.key === "ArrowDown" ? 16 : -16))) }); } }}
         title="Drag to change this track's height"
-        className="absolute inset-x-0 bottom-0 z-10 h-1.5 cursor-ns-resize hover:bg-primary/40"
+        className="absolute inset-x-0 bottom-0 z-40 h-2 cursor-ns-resize touch-none hover:bg-primary/40 focus-visible:bg-primary/40"
       />
 
       <AlertDialog open={confirm} onOpenChange={setConfirm}>
@@ -1947,7 +1977,7 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
       aria-label={`${label} automation lane. Command or Control Z undoes and Shift Z redoes lane edits, C copies the loop region, V pastes at the playhead, D duplicates, and Delete removes it.`}
     >
       <div className="w-1 shrink-0" style={{ background: track.color, opacity: 0.4 }} />
-      <div className="flex w-[168px] shrink-0 flex-wrap items-center gap-1 border-r border-border bg-surface/60 px-2 py-1 sm:w-[290px]">
+      <div className="flex w-[calc(var(--timeline-header-width)_-_4px)] shrink-0 flex-wrap items-center gap-1 border-r border-border bg-surface/60 px-2 py-1">
         <span className="min-w-0 flex-1 truncate font-mono text-[9px] tracking-[0.15em] text-muted-foreground">AUTO · {label}</span>
         <button
           onClick={() => setAutomationLaneLock(track.id, lane.param, !locked)}
@@ -2844,7 +2874,7 @@ function Ruler() {
         </div>
         <div className="flex items-center gap-1.5">
         {/* song length + export flags: menu on desktop, timeline tools menu on phones */}
-        {!isMobile && (
+        {(
           <Popover>
             <PopoverTrigger asChild>
               <button
@@ -3203,11 +3233,18 @@ function FolderRow({
   );
 }
 
-export function Timeline({ phonePaged = false }: { phonePaged?: boolean }) {
+export function Timeline({ phonePaged = false, desktopStyle = false }: { phonePaged?: boolean; desktopStyle?: boolean }) {
   const { tracks, transport, addTrack, addClip, setPanel, loadSample, folders, renameFolder, removeFolder, toggleFolderCollapsed, setTransport } = useStudio();
   const totalSteps = songSteps(transport.bars);
   const [over, setOver] = useState(false);
   const [zoom, setZoom] = useState(1);
+  const [headerWidth, setHeaderWidth] = useState(294);
+  const widthLoaded = useRef(false);
+  useEffect(() => {
+    try { const saved = Number(localStorage.getItem("synclab.timeline.headerWidth")); if (saved >= 220 && saved <= 600) setHeaderWidth(saved); } catch { /* storage unavailable */ }
+    widthLoaded.current = true;
+  }, []);
+  useEffect(() => { if (widthLoaded.current) { try { localStorage.setItem("synclab.timeline.headerWidth", String(headerWidth)); } catch { /* storage unavailable */ } } }, [headerWidth]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const timelineHeaderRef = useRef<HTMLDivElement>(null);
   const rowsRef = useRef<HTMLDivElement>(null);
@@ -3270,7 +3307,7 @@ export function Timeline({ phonePaged = false }: { phonePaged?: boolean }) {
     }
   }, [transport.follow, transport.playing, transport.step, totalSteps]);
   return (
-    <section className="arrangement-timeline mobile-timeline relative flex min-h-[210px] min-w-0 flex-1 flex-col overflow-hidden border-x border-b border-border bg-background/60 [--timeline-header-width:172px] sm:[--timeline-header-width:294px]">
+    <section data-desktop-style={desktopStyle} style={{ "--timeline-header-width": `${headerWidth}px` } as CSSProperties} className="arrangement-timeline mobile-timeline relative flex min-h-[210px] min-w-0 flex-1 flex-col overflow-hidden border-x border-b border-border bg-background/60">
       {phonePaged ? <div className="phone-timeline-heading grid h-14 shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-border bg-surface/50 px-3"><TrackSearch /><div className="flex gap-1"><Popover><PopoverTrigger asChild><Button variant="outline" className="h-12 gap-1.5 px-3 font-display text-xs font-semibold tracking-wide" aria-label="Timeline quick tools"><Settings2 className="size-4" /> TOOLS</Button></PopoverTrigger><PopoverContent className="phone-edit-menu flex h-[min(80dvh,440px)] w-[min(90vw,720px)] flex-col overflow-hidden p-0"><div className="shrink-0 border-b border-border px-3 py-2.5 font-display text-sm font-semibold">Timeline tools</div><PhonePages name="Timeline tools"><div className="p-1"><h3 className="px-2 pb-1 pt-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Song length &amp; export</h3><div className="px-2 pb-2"><TimelineOptionsPanel /></div><h3 className="px-2 pb-1 pt-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Edit &amp; arrange</h3><EditToolbar /><h3 className="border-t border-border px-2 pb-1 pt-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Song parts</h3><SectionLane /></div></PhonePages></PopoverContent></Popover><AddTrackMenu size="sm" /></div></div> : <EditToolbar />}
       <div className="shrink-0 overflow-hidden">
         <div ref={timelineHeaderRef} className="min-w-[720px] sm:min-w-0">
@@ -3279,7 +3316,7 @@ export function Timeline({ phonePaged = false }: { phonePaged?: boolean }) {
         </div>
       </div>
       <div id="timeline-scroll" ref={scrollRef} aria-label="Horizontal timeline" className="relative min-h-0 flex-1 overflow-auto overscroll-x-contain">
-        <div className="min-w-[720px]" style={{ width: `max(${zoom * 100}%, ${transport.bars * 32 + 294}px)` }}>
+        <div className="min-w-[720px]" style={{ width: `max(${zoom * 100}%, ${transport.bars * 32 + headerWidth}px)` }}>
         {/* SYNCLAB watermark, low and centred in the empty workspace */}
         <div className="pointer-events-none sticky top-[68%] z-0 h-0" aria-hidden="true">
           <img
@@ -3305,7 +3342,7 @@ export function Timeline({ phonePaged = false }: { phonePaged?: boolean }) {
                   onUngroup={() => removeFolder(folder.id)}
                 />
               )}
-              {!folder?.collapsed && <TrackRow track={t} index={i} />}
+              {!folder?.collapsed && <TrackRow track={t} index={i} headerWidth={headerWidth} setHeaderWidth={setHeaderWidth} />}
             </Fragment>
           );
         })}
