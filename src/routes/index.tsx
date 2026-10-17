@@ -258,7 +258,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
   return (
     <section
       className="phone-tool-panel rack fixed inset-0 z-40 flex min-w-0 flex-col overflow-x-hidden border-t-2 border-border sm:relative sm:inset-auto sm:z-auto sm:min-h-[240px]"
-       style={{ height: isMobile ? "100dvh" : panel === "looper" || panel === "reel-recorder" || panel === "studio-view" ? Math.max(600, rackH) : rackH }}
+       style={{ height: isMobile ? "100dvh" : panel === "mixer" ? Math.max(650, rackH) : panel === "looper" || panel === "reel-recorder" || panel === "studio-view" ? Math.max(600, rackH) : rackH }}
     >
       <div
         onPointerDown={startResize}
@@ -657,7 +657,7 @@ function StudioWorkspace() {
           <Timeline />
           <SafePanels float={float} setFloat={setFloat} />
           <DetachedPanels />
-          {(!isMobile || !panel) && <DeviceBar />}
+          {((!isMobile && panel !== "mixer") || (isMobile && !panel)) && <DeviceBar />}
         </main>
       </div>
       <TrackSettingsDialog />
