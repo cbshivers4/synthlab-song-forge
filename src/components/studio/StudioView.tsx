@@ -120,7 +120,7 @@ export function StudioView() {
       const avail = room.clientHeight, natural = content.offsetHeight;
       if (!avail || !natural) return;
       const ratio = avail / natural;
-      const next = ratio >= 0.995 ? 1 : ratio >= 0.6 ? ratio : 1;
+      const next = ratio >= 0.97 ? 1 : ratio >= 0.6 ? ratio : 1;
       setFit((prev) => (Math.abs(prev - next) < 0.004 ? prev : next));
     };
     measure();
