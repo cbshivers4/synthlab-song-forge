@@ -76,7 +76,7 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
         <div className="flex h-12 items-center justify-between border-b border-border bg-surface px-3"><span className="text-sm font-semibold">Transport</span><Button variant="ghost" size="icon" className="size-12" aria-label="Close transport" onClick={() => setTransportOpen(false)}><X /></Button></div>
         <TopBar />
       </div>
-      {panel === "mixer" && <div className="docked-phone-timeline h-[clamp(210px,40dvh,380px)] shrink-0 border-b border-border"><Timeline desktopStyle /></div>}
+      {panel === "mixer" && <div className="docked-phone-timeline h-[clamp(110px,24dvh,190px)] shrink-0 border-b border-border"><Timeline desktopStyle /></div>}
       {!panel && room === "edit" && <Timeline desktopStyle />}
       {panel && children}
       {!panel && room !== "edit" && <div className="flex min-h-0 flex-1 flex-col overflow-hidden">

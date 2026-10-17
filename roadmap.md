@@ -156,6 +156,7 @@
 - [x] My Library (cloud/computer folders for samples, synth, drums, notes) + distinct effect window looks
 
 ## Current request
+- [ ] Improve phone transport grouping and mixer readability/touch controls while preserving desktop styling and every action.
 - [x] Add horizontal channel-header and vertical lane resizing on desktop and phone; shared desktop toolbar/ruler/song/overview and console preserve controls. Signed-in desktop/sideways-phone checks passed for width dragging, height dragging, keyboard resizing and mixer mute; 27 audio tests passed. Physical touch testing remains unverified.
 - [x] Restore document-wide graphite grey phone tokens for entry screens, studio tools and portalled menus; verified signed-in projects, studio, Video Sampler, sideways detection and desktop theme restoration in the browser.
 - [x] Show real video audio waveform and manual cuts on desktop and phone; signed-in desktop, portrait and sideways checks verified decoding, waveform seeks/cuts, pad playback and timeline transfer. Chop tests passed; build OK. Physical-device listening remains unverified.

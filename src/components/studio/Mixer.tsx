@@ -1616,6 +1616,7 @@ export function Mixer({ phonePage = 0, phoneChannels, phoneControlPage = "levels
     <div
       className={cn("mx-console flex flex-col overflow-hidden border border-border bg-surface shadow-panel", isMobile && "mx-phone")}
       data-console={desk.id}
+      data-touch-console={mobileDevice ? "true" : undefined}
       data-phone-controls={phoneControlPage}
       style={
         {
