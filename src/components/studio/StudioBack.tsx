@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState } from "react";
-import { Cable, Unplug } from "lucide-react";
+import { Cable, Unplug, SlidersHorizontal, Cpu, Drum, KeyboardMusic, Mic, Disc3, Speaker, AudioLines } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStudio } from "@/lib/synclab/store";
 import type { PluginInstance, Track } from "@/lib/synclab/types";
@@ -118,7 +118,7 @@ export function StudioBack() {
       if (fromIdx >= 0) {
         const [item] = ordered.splice(fromIdx, 1);
         const anchor = fromFx ? ordered.findIndex((p) => p.id === fromFx) + 1 : 0;
-        ordered.splice(anchor, 0, item!);
+        if (item) ordered.splice(anchor, 0, item);
         updateTrack(track.id, { plugins: ordered });
       }
       toast.success(`${fx.name} re-patched`, { description: `It now sits after ${fromFx ? "the previous effect" : track.name} in the chain.` });
@@ -177,8 +177,9 @@ export function StudioBack() {
     const isPending = !!pending && pkey(pending) === pkey(p);
     return (
       <div className="flex flex-col items-center gap-0.5" key={pkey(p)}>
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="icon"
           data-jack={pkey(p)}
           disabled={disabled}
           aria-label={`${text} ${out ? "output — pick to start a cable" : "input — connect a cable here"}`}
@@ -194,6 +195,7 @@ export function StudioBack() {
   const unit = (id: string, title: string, sub: string, jacks: React.ReactNode, dim = false) => (
     <div key={id} className={`studio-back-unit ${dim ? "opacity-45" : ""}`} data-device={id}>
       <div className="studio-back-unit-face">
+        <span className="studio-back-unit-vent" aria-hidden="true" />
         <span className="studio-back-unit-title">{title}</span>
         <span className="studio-back-unit-sub">{sub}</span>
       </div>
@@ -221,7 +223,7 @@ export function StudioBack() {
             variant="secondary"
             className="ml-auto h-7 gap-1.5"
             onClick={() => {
-              selected.unplug!();
+              selected.unplug?.();
               setSelectedWire(null);
               toast.success(`Unplugged ${selected.label}`);
             }}
@@ -234,60 +236,44 @@ export function StudioBack() {
         )}
       </div>
 
-      <div ref={boxRef} className="studio-back-rack relative min-h-[540px] flex-1 overflow-auto p-3" aria-label="Back of the studio rack — audio cable routing">
-        {/* instruments / channels */}
-        <div className="studio-back-section">
-          <h3 className="label-xs">INSTRUMENTS & MICROPHONES</h3>
-          {tracks.map((track) => (
-            <div key={track.id} className="studio-back-channel">
-              {unit(
-                `track:${track.id}`,
-                track.name,
-                track.kind === "drum" ? "DRUM MACHINE" : track.kind === "sampler" ? "SAMPLER" : track.kind === "audio" || track.kind === "ai-vocal" ? "MICROPHONE" : "SYNTH",
-                jack(trackOut(track), true, "AUDIO OUT"),
-              )}
-              {(track.plugins ?? []).map((fx) =>
-                unit(
-                  `fx:${fx.id}`,
-                  fx.name,
-                  fx.bypass ? "BYPASSED" : "INSERT EFFECT",
-                  <>
-                    {jack(fxIn(fx), false, "IN")}
-                    {jack(fxOut(fx), true, "OUT")}
-                  </>,
-                  fx.bypass,
-                ),
-              )}
+      <div className="studio-back-scroll min-h-0 flex-1 overflow-auto" tabIndex={0} aria-label="Studio device columns">
+      <div ref={boxRef} className="studio-back-rack relative" aria-label="Back of the studio rack — audio cable routing">
+        {([
+          { id: "synths", title: "SYNTHS", icon: KeyboardMusic, items: tracks.filter(t => t.kind !== "drum" && t.kind !== "sampler" && t.kind !== "audio" && t.kind !== "ai-vocal"), kind: "SYNTH" },
+          { id: "drums", title: "DRUM MACHINES", icon: Drum, items: tracks.filter(t => t.kind === "drum"), kind: "DRUM MACHINE" },
+          { id: "samplers", title: "SAMPLERS", icon: AudioLines, items: tracks.filter(t => t.kind === "sampler"), kind: "SAMPLER" },
+          { id: "microphones", title: "MICROPHONES", icon: Mic, items: tracks.filter(t => t.kind === "audio" || t.kind === "ai-vocal"), kind: "AUDIO CHANNEL" },
+        ]).map(({ id, title, icon: Icon, items, kind }) => (
+          <section key={id} className="studio-back-column" data-column={id} aria-label={title}>
+            <header className="studio-back-column-header"><Icon className="size-4 text-primary" /><h3>{title}</h3><span>{items.length}</span></header>
+            <div className="studio-back-column-body">
+              {items.map(track => unit(`track:${track.id}`, track.name, kind, jack(trackOut(track), true, "AUDIO OUT")))}
+              {!items.length && <div className="studio-back-empty">NO {title}</div>}
             </div>
-          ))}
-          {tracks.length === 0 && <p className="p-4 text-xs text-muted-foreground">No channels yet — add a track on the timeline.</p>}
-        </div>
-
-        {/* sends */}
-        <div className="studio-back-section">
-          <h3 className="label-xs">SEND EFFECTS</h3>
-          <div className="studio-back-channel">
-            {SEND_BUSES.map((b) => unit(`bus:${b}`, b.toUpperCase(), "SEND INPUT", jack(busIn(b), false, "IN")))}
+          </section>
+        ))}
+        <section className="studio-back-column studio-back-effects" data-column="effects" aria-label="Effect rack">
+          <header className="studio-back-column-header"><Cpu className="size-4 text-primary" /><h3>EFFECT RACK</h3><span>{tracks.reduce((n, t) => n + (t.plugins?.length ?? 0), 0)}</span></header>
+          <div className="studio-back-column-body">
+            {tracks.filter(t => t.plugins?.length).map(track => <div key={track.id} className="studio-back-effect-chain"><h4>{track.name}</h4>{(track.plugins ?? []).map(fx => unit(`fx:${fx.id}`, fx.name, fx.bypass ? "BYPASSED" : "INSERT EFFECT", <>{jack(fxIn(fx), false, "IN")}{jack(fxOut(fx), true, "OUT")}</>, fx.bypass))}</div>)}
+            <h4 className="studio-back-send-label">SEND EFFECTS</h4>
+            {SEND_BUSES.map(b => unit(`bus:${b}`, b.toUpperCase(), "SEND INPUT", jack(busIn(b), false, "IN")))}
           </div>
-        </div>
-
-        {/* master, monitors, reel */}
-        <div className="studio-back-section">
-          <h3 className="label-xs">MIXER & OUTPUT</h3>
-          <div className="studio-back-channel">
-            {unit(
-              "master",
-              "MIXING DESK",
-              `${tracks.length} CH`,
-              <>
-                {tracks.map((t) => jack(masterIn(t), false, t.name.slice(0, 6).toUpperCase()))}
-                {jack({ device: "master", port: "out" }, true, "MASTER OUT")}
-              </>,
-            )}
-            {unit("monitors", "STUDIO MONITORS", "L / R", jack({ device: "monitors", port: "in" }, false, "IN", true))}
-            {unit("reel", "REEL TO REEL", "RECORDER", jack({ device: "reel", port: "in" }, false, "REC IN", true))}
+        </section>
+        <section className="studio-back-column studio-back-mixing" data-column="mixer" aria-label="Mixing desk">
+          <header className="studio-back-column-header"><SlidersHorizontal className="size-4 text-primary" /><h3>MIXING DESK</h3><span>{tracks.length} CH</span></header>
+          <div className="studio-back-column-body">
+            {unit("master", "MIXING DESK", "CHANNEL INPUTS · MASTER OUTPUT", <>{tracks.map(t => jack(masterIn(t), false, t.name))}{jack({ device: "master", port: "out" }, true, "MASTER OUT")}</>)}
           </div>
-        </div>
+        </section>
+        <section className="studio-back-column studio-back-tape" data-column="reel" aria-label="Reel-to-reel recorder">
+          <header className="studio-back-column-header"><Disc3 className="size-4 text-primary" /><h3>REEL TO REEL</h3><span>REC</span></header>
+          <div className="studio-back-column-body">{unit("reel", "REEL TO REEL", "RECORDER · MASTER FEED", jack({ device: "reel", port: "in" }, false, "REC IN", true))}</div>
+        </section>
+        <section className="studio-back-column studio-back-monitors" data-column="monitors" aria-label="Studio monitors">
+          <header className="studio-back-column-header"><Speaker className="size-4 text-primary" /><h3>STUDIO MONITORS</h3><span>L / R</span></header>
+          <div className="studio-back-column-body">{unit("monitors", "STUDIO MONITORS", "STEREO · MASTER FEED", jack({ device: "monitors", port: "in" }, false, "IN", true))}</div>
+        </section>
 
         <svg className="pointer-events-none absolute inset-0 size-full overflow-visible" aria-hidden>
           {lines.map((l) => (
@@ -298,22 +284,23 @@ export function StudioBack() {
           ))}
         </svg>
       </div>
+      </div>
 
       {/* wire list — tap a wire to select it for unplugging */}
       <div className="max-h-36 shrink-0 overflow-auto border-t border-border bg-surface px-3 py-2" aria-label="Patched cables">
         <h4 className="label-xs mb-1">CABLES ({wires.length})</h4>
         <div className="flex flex-wrap gap-1">
           {wires.map((w) => (
-            <button
+            <Button
+              variant="ghost"
               key={w.id}
-              type="button"
               aria-pressed={selectedWire === w.id}
               onClick={() => setSelectedWire(selectedWire === w.id ? null : w.id)}
               className={`modular-add ${selectedWire === w.id ? "is-on" : ""}`}
             >
               <span className={`modular-swatch small cable-${w.color}`} aria-hidden />
               {w.label}
-            </button>
+            </Button>
           ))}
         </div>
       </div>
