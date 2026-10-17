@@ -42,6 +42,19 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
   const [transportOpen, setTransportOpen] = useState(false);
   const [resizeHandlesVisible, setResizeHandlesVisible] = useState(false);
   const [mixerFull, setMixerFull] = useState(false);
+  const [dockHeight, setDockHeight] = useState(150);
+  const startDockDrag = (event: React.PointerEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    const startY = event.clientY;
+    const startH = dockHeight;
+    const move = (e: PointerEvent) => {
+      const max = Math.max(120, window.innerHeight - 160);
+      setDockHeight(Math.min(max, Math.max(0, startH + e.clientY - startY)));
+    };
+    const up = () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+  };
   useEffect(() => { setTransportOpen(false); }, [panel]);
   // The phone studio always opens on the edit screen (timeline) — never an
   // instrument such as the drum machine, even if one was open last visit.
