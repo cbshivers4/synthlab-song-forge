@@ -108,6 +108,8 @@ export function StudioView() {
   const roomRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const [fit, setFit] = useState(1);
+  const inserts = tracks.flatMap(track => (track.plugins ?? []).map(plugin => ({ track, plugin })));
+  const buses = Object.entries(fxChains).flatMap(([bus, plugins]) => plugins.map(plugin => ({ bus, plugin })));
   // The room must be seen whole: when it is shorter than the equipment layout,
   // scale the whole layout down uniformly instead of hiding stands below a scrollbar.
   useEffect(() => {
@@ -126,8 +128,6 @@ export function StudioView() {
     ro.observe(room); ro.observe(content);
     return () => ro.disconnect();
   }, [back, tracks.length, inserts.length + buses.length]);
-  const inserts = tracks.flatMap(track => (track.plugins ?? []).map(plugin => ({ track, plugin })));
-  const buses = Object.entries(fxChains).flatMap(([bus, plugins]) => plugins.map(plugin => ({ bus, plugin })));
   const open = (panel: PanelId, id?: string) => { if (id) select(id); setPanel(panel); };
   const instrumentPanel = (track: Track): PanelId => track.kind === "drum" ? "drums" : track.kind === "sampler" ? "sampler" : track.kind === "audio" || track.kind === "ai-vocal" ? "mixer" : "synth";
   return <div className="studio-visual flex min-h-0 flex-1 flex-col">
