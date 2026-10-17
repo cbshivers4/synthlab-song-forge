@@ -383,7 +383,7 @@
   background: var(--mixer-desk);
 }
 .mx-console:not(.mx-phone) .mx-console-toolbar { min-height: 32px; gap: 8px; padding: 3px 8px; box-shadow: none; }
-.mx-console:not(.mx-phone) .mobile-mixer-strips { background: var(--mx-a); align-items: stretch; min-height: 0; }
+.mx-console:not(.mx-phone) .mobile-mixer-strips { background: var(--mx-a); align-items: stretch; min-height: 0; overflow-y: auto; }
 .mx-channel-list { width: 150px; background: var(--mx-a); }
 .mx-channel-list-item[aria-pressed="true"] { background: var(--surface-2); box-shadow: inset 2px 0 var(--playhead); }
 .mx-channel-swatch { width: 4px; height: 16px; flex-shrink: 0; background: var(--mixer-channel-color); }
