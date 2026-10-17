@@ -134,7 +134,7 @@ function Meter({ id, level, tall }: { id: string; level: number; tall?: boolean 
     <div className={cn("flex items-stretch gap-0.5", tall ? "h-full min-h-0" : "h-44")}>
       <div className="relative w-5 shrink-0" aria-hidden>
         {DB_TICKS.map((db) => (
-          <div key={db} className="absolute right-0 flex items-center gap-px" style={{ top: `${(db / -60) * 100}%` }}>
+          <div key={db} className="absolute right-0 flex items-center gap-px" style={{ top: `calc(${(db / -60) * 100}% - ${(db / -60) * 7}px)` }}>
             <span className="font-mono text-[6px] leading-none text-muted-foreground/80">{db}</span>
             <span className="inline-block h-px w-1 bg-muted-foreground/60" />
           </div>
