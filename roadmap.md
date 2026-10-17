@@ -156,6 +156,7 @@
 - [x] My Library (cloud/computer folders for samples, synth, drums, notes) + distinct effect window looks
 
 ## Current request
+- [ ] Add horizontal channel-header and vertical lane resizing on desktop and phone; match phone arrangement and console to desktop while preserving controls.
 - [x] Restore document-wide graphite grey phone tokens for entry screens, studio tools and portalled menus; verified signed-in projects, studio, Video Sampler, sideways detection and desktop theme restoration in the browser.
 - [x] Show real video audio waveform and manual cuts on desktop and phone; signed-in desktop, portrait and sideways checks verified decoding, waveform seeks/cuts, pad playback and timeline transfer. Chop tests passed; build OK. Physical-device listening remains unverified.
 - [x] Keep sampler waveform visible during chopping and stretching on desktop and phone; signed-in checks verified real WAV waveform, manual cuts on both layouts, and 120→60 BPM stretch changing 6s to 12s. Chop tests and build passed; physical-device listening remains unverified.
