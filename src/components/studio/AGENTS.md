@@ -18,3 +18,4 @@ Mixer selection retains its panel with portal-safe clicks and labeled channel-na
 Timeline header width uses one inherited variable for ruler, song, folders, automation and lanes; height drags preview in the DOM and commit once to avoid audio churn. Phone arrangement and mixer reuse desktop controls with native scrolling.
 Touch mixer styling is scoped by data-touch-console; keep desktop strips and audio routing shared while sizing phone targets independently.
 Phone studio always opens on the edit screen: entering the studio or resuming the page closes any tool panel, so an instrument like the drum machine never greets the user first.
+Studio View back side (StudioBack.tsx) mirrors the real signal path — track → inserts → mixer channel → master → monitors/reel plus bus sends; re-patching a cable performs the matching store action (insert reorder, bypass, send level), never a visual-only change.

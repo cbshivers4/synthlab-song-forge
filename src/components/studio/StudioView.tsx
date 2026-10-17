@@ -1,10 +1,11 @@
-import { useEffect, useRef } from "react";
-import { Cpu, Music2, SlidersHorizontal, Speaker } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Cpu, FlipHorizontal2, Music2, SlidersHorizontal, Speaker } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStudio, type PanelId } from "@/lib/synclab/store";
 import type { Track } from "@/lib/synclab/types";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { Scope } from "./Scope";
+import { StudioBack } from "./StudioBack";
 import roomImage from "@/assets/studio-room.jpg";
 
 function InstrumentDrawing({ track }: { track: Track }) {
@@ -103,6 +104,7 @@ function StudioMeters() {
 
 export function StudioView() {
   const { tracks, selectedId, select, setPanel, fxChains } = useStudio();
+  const [back, setBack] = useState(false);
   const inserts = tracks.flatMap(track => (track.plugins ?? []).map(plugin => ({ track, plugin })));
   const buses = Object.entries(fxChains).flatMap(([bus, plugins]) => plugins.map(plugin => ({ bus, plugin })));
   const open = (panel: PanelId, id?: string) => { if (id) select(id); setPanel(panel); };
@@ -111,8 +113,13 @@ export function StudioView() {
     <div className="flex shrink-0 flex-wrap items-center gap-3 border-b border-border bg-surface px-3 py-2 text-xs">
       <span className="font-display font-semibold">MY STUDIO</span>
       <span className="text-muted-foreground">{tracks.length} channels · {inserts.length + buses.length} effects</span>
-      <div className="ml-auto flex gap-1"><Button variant="ghost" size="sm" onClick={() => open("mixer")}><SlidersHorizontal className="size-4" />Mixer</Button><Button variant="ghost" size="sm" onClick={() => open("plugins")}><Cpu className="size-4" />Effects</Button></div>
+      <div className="ml-auto flex gap-1">
+        <Button variant={back ? "secondary" : "ghost"} size="sm" aria-pressed={back} onClick={() => setBack(!back)}><FlipHorizontal2 className="size-4" />{back ? "Front" : "Back · Cables"}</Button>
+        <Button variant="ghost" size="sm" onClick={() => open("mixer")}><SlidersHorizontal className="size-4" />Mixer</Button>
+        <Button variant="ghost" size="sm" onClick={() => open("plugins")}><Cpu className="size-4" />Effects</Button>
+      </div>
     </div>
+    {back ? <StudioBack /> : <>
     <div className="studio-room relative min-h-[540px] flex-1 overflow-auto">
       <img src={roomImage} width={1536} height={1024} alt="Graphite music studio with acoustic wall panels" className="pointer-events-none absolute inset-0 h-full w-full object-cover" />
       <div className="studio-room-content relative">
@@ -146,6 +153,7 @@ export function StudioView() {
         </div>
       </div>
     </div>
+    </>}
     <div className="flex shrink-0 items-center gap-2 border-t border-border bg-surface px-3 py-2 text-xs text-muted-foreground"><Speaker className="size-4" /><span>Stereo master output</span><span className="ml-auto">{tracks.filter(t => t.armed).length} armed</span></div>
   </div>;
 }
