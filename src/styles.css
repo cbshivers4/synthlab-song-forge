@@ -66,6 +66,17 @@
 
 :root {
   --studio-metal: oklch(0.69 0.008 255);
+  --mixer-desk: oklch(0.40 0.009 285);
+  --mixer-control: oklch(0.34 0.009 285);
+  --mixer-edge: oklch(0.28 0.008 285);
+  --mixer-text: oklch(0.96 0.003 285);
+  --mixer-muted: oklch(0.80 0.006 285);
+  --mixer-output-accent: oklch(0.70 0.15 230);
+  --mixer-fader-light: oklch(0.91 0.004 285);
+  --mixer-fader-mid: oklch(0.77 0.005 285);
+  --mixer-fader-dark: oklch(0.63 0.008 285);
+  --mixer-fader-line: oklch(0.27 0.005 285);
+  --mixer-fader-shadow: 0 2px 4px oklch(0 0 0 / 0.55), inset 0 1px oklch(1 0 0 / 0.75);
   --studio-metal-dark: oklch(0.25 0.008 255);
   --studio-speaker: oklch(0.12 0.005 255);
   --studio-speaker-inner: oklch(0.28 0.008 255);
@@ -342,9 +353,9 @@
 }
 /* Professional fader cap: light metal body with a centre line — never plain black. */
 .mx-console .mx-fader [role="slider"] {
-  background: linear-gradient(180deg, #e3e4e7, #b6b8bd 45%, #8c8e93);
-  border-color: #52545c;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.75);
+  background: linear-gradient(180deg, var(--mixer-fader-light), var(--mixer-fader-mid) 45%, var(--mixer-fader-dark));
+  border-color: var(--mixer-edge);
+  box-shadow: var(--mixer-fader-shadow);
   position: relative;
 }
 .mx-console .mx-fader [role="slider"]::before {
@@ -355,9 +366,55 @@
   top: calc(50% - 1.5px);
   height: 3px;
   border-radius: 1px;
-  background: #26272b;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
+  background: var(--mixer-fader-line);
+  box-shadow: 0 1px color-mix(in oklab, var(--mixer-text) 40%, transparent);
 }
+
+/* Reference console geometry; phone detail controls retain their full sizing. */
+.mx-console:not(.mx-phone) { box-shadow: none; }
+.mx-console[data-console="studiopro"] {
+  --surface: var(--mixer-desk);
+  --surface-2: var(--mixer-control);
+  --border: var(--mixer-edge);
+  --foreground: var(--mixer-text);
+  --muted-foreground: var(--mixer-muted);
+  background: var(--mixer-desk);
+}
+.mx-console:not(.mx-phone) .mx-console-toolbar { min-height: 32px; gap: 8px; padding: 3px 8px; box-shadow: none; }
+.mx-console:not(.mx-phone) .mobile-mixer-strips { background: var(--mx-a); align-items: stretch; min-height: 410px; }
+.mx-channel-list { width: 150px; background: var(--mx-a); }
+.mx-channel-list-item[aria-pressed="true"] { background: var(--surface-2); box-shadow: inset 2px 0 var(--playhead); }
+.mx-channel-swatch { width: 4px; height: 16px; flex-shrink: 0; background: var(--mixer-channel-color); }
+.mx-inserts-label { display: none; }
+.mx-console:not(.mx-phone) .mx-inserts-label { display: block; }
+.mx-console:not(.mx-phone) .mx-channel { width: 108px; }
+.mx-console:not(.mx-phone) .mx-channel.w-\[92px\] { width: 92px; }
+.mx-console[data-console="studiopro"]:not(.mx-phone) .mx-channel { background: color-mix(in oklab, var(--mixer-channel-color) 48%, var(--mixer-desk)) !important; box-shadow: none !important; }
+.mx-console:not(.mx-phone) .mx-channel[data-selected="true"] { outline: 1px solid var(--playhead); outline-offset: -1px; }
+.mx-console:not(.mx-phone) .mx-row-head { order: 0; height: 32px; flex-wrap: wrap; gap: 2px; align-content: center; }
+.mx-console:not(.mx-phone) .mx-row-inserts { order: 1; height: 78px; }
+.mx-console:not(.mx-phone) .mx-row-eq { order: 2; height: 32px; }
+.mx-console:not(.mx-phone) .mx-row-sends { order: 3; height: 28px; }
+.mx-console:not(.mx-phone) .mx-row-send-bars { order: 4; height: 26px; }
+.mx-console:not(.mx-phone) .mx-row-routing { order: 5; height: 50px; }
+.mx-console:not(.mx-phone) .mx-row-pan { order: 6; height: 32px; }
+.mx-console:not(.mx-phone) .mx-row-buttons { order: 7; height: 44px; padding: 2px 4px; gap: 2px; }
+.mx-console:not(.mx-phone) .mx-row-buttons > button { height: 19px; font-size: 10px; border-radius: 2px; }
+.mx-console:not(.mx-phone) .mx-row-buttons > button > span { width: 9px; height: 9px; }
+.mx-console:not(.mx-phone) .mx-row-readout { order: 8; height: 22px; }
+.mx-console:not(.mx-phone) .mx-row-fader { order: 9; height: 176px; }
+.mx-console:not(.mx-phone) .mx-row-name { order: 10; height: 28px; flex-direction: row; gap: 3px; background: var(--mixer-channel-color) !important; box-shadow: none !important; }
+.mx-console:not(.mx-phone) .mx-row-name > svg { width: 14px; height: 14px; }
+.mx-console:not(.mx-phone) .mx-row-name > span { font-size: 9px; letter-spacing: 0; }
+.mx-console:not(.mx-phone) .mx-row-scope { order: 11; height: 48px; }
+.mx-console:not(.mx-phone) .mx-fader[data-orientation="vertical"] { flex-direction: column; }
+.mx-console:not(.mx-phone) .mx-fader[data-orientation="vertical"] > span:first-child { width: 5px; height: 100%; background: var(--mixer-edge); }
+.mx-console:not(.mx-phone) .mx-fader[data-orientation="vertical"] > span:first-child > span { width: 100%; background: color-mix(in oklab, var(--foreground) 28%, var(--mixer-edge)); }
+.mx-console:not(.mx-phone) .mx-fader [role="slider"] { width: 18px; height: 26px; border-radius: 2px; }
+.mx-console:not(.mx-phone) .mx-output-dock { margin-left: auto; background: var(--mx-a); border-left: 3px solid var(--mixer-edge); box-shadow: none; }
+.mx-console:not(.mx-phone) .mx-master { width: 144px; background: var(--mx-a) !important; box-shadow: none !important; }
+.mx-console:not(.mx-phone) .mx-master .mx-row-name { background: var(--mixer-control) !important; }
+.phone-console .mx-phone .phone-mix-channel { background: color-mix(in oklab, var(--mixer-channel-color) 32%, var(--mixer-desk)) !important; }
 
 /* Theme-driven meter and selection colours (overridden per theme at runtime). */
 :root {
