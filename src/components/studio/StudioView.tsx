@@ -141,9 +141,9 @@ export function StudioView() {
       </div>
     </div>
     {back ? <StudioBack /> : <>
-    <div className="studio-room relative min-h-[540px] flex-1 overflow-auto">
+    <div ref={roomRef} className="studio-room relative min-h-[540px] flex-1 overflow-auto" data-studio-fit={fit < 1 ? "true" : undefined}>
       <img src={roomImage} width={1536} height={1024} alt="Graphite music studio with acoustic wall panels" className="pointer-events-none absolute inset-0 h-full w-full object-cover" />
-      <div className="studio-room-content relative">
+      <div ref={contentRef} className="studio-room-content relative" style={fit < 1 ? { transform: `scale(${fit})`, transformOrigin: "top center" } : undefined}>
         <div className="studio-room-brand font-display">SYNCLAB<span>CREATE. RECORD. PRODUCE. FINISH.</span></div>
         <div className="studio-control-desk">
           <Button variant="ghost" className="studio-monitor" aria-label="Left studio monitor — open mastering" onClick={() => open("mastering")}><MonitorDrawing /><span>MONITOR L</span></Button>
