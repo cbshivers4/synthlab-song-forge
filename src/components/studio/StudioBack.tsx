@@ -21,7 +21,7 @@ type Wire = {
   color: CableColor;
   label: string;
   /** What unplugging this wire does. */
-  unplug?: () => void;
+  unplug?: (() => void) | undefined;
   fixed?: boolean;
 };
 
@@ -101,7 +101,10 @@ export function StudioBack() {
     const fromTrack = from.device.startsWith("track:") ? from.device.slice(6) : null;
     const fromFx = from.device.startsWith("fx:") ? from.device.slice(3) : null;
     const track = tracks.find((t) => t.id === fromTrack) ?? tracks.find((t) => (t.plugins ?? []).some((p) => p.id === fromFx));
-    if (!track) return toast("That connection isn't possible", { description: "Patch within one channel's chain, to the mixer, or to a send." });
+    if (!track) {
+      toast("That connection isn't possible", { description: "Patch within one channel's chain, to the mixer, or to a send." });
+      return;
+    }
 
     if (to.device.startsWith("fx:")) {
       const fxId = to.device.slice(3);
