@@ -12,4 +12,4 @@ Note-channel razor/split unrolls looping patterns to song length and stores cut 
 Arrangement clip presentation consumes per-lane track color variables with shared semantic fill/ink/selection tokens; MIDI cut regions draw separate bounded blocks without changing note playback or cut state.
 AI stem separation runs Demucs on Replicate via server functions (start/poll/fetch); the browser polls so no server call waits on the model, and on-device spectral separation stays as the free fallback.
 
-Mixer uses named shared row classes for compact desktop geometry, a store-backed channel list and an output dock; phone strips retain touch-sized controls and existing routing/actions.
+Mixer uses named shared row classes for compact desktop geometry, a store-backed channel list and an output dock; phone strips retain touch-sized controls and existing routing/actions. The desktop mixer gets extra editor height and excludes DeviceBar so names and faders stay visible.

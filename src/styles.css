@@ -402,7 +402,7 @@
 .mx-console:not(.mx-phone) .mx-row-buttons > button { height: 19px; font-size: 10px; border-radius: 2px; }
 .mx-console:not(.mx-phone) .mx-row-buttons > button > span { width: 9px; height: 9px; }
 .mx-console:not(.mx-phone) .mx-row-readout { order: 8; height: 22px; }
-.mx-console:not(.mx-phone) .mx-row-fader { order: 9; height: 176px; }
+.mx-console:not(.mx-phone) .mx-row-fader { order: 9; height: 144px; }
 .mx-console:not(.mx-phone) .mx-row-name { order: 10; height: 28px; flex-direction: row; gap: 3px; background: var(--mixer-channel-color) !important; box-shadow: none !important; }
 .mx-console:not(.mx-phone) .mx-row-name > svg { width: 14px; height: 14px; }
 .mx-console:not(.mx-phone) .mx-row-name > span { font-size: 9px; letter-spacing: 0; }
