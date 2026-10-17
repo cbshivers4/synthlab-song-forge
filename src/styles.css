@@ -1484,3 +1484,53 @@
   animation: rotate-gate-rock 2.6s ease-in-out infinite;
   transform-origin: center;
 }
+
+/* Touch console keeps the desktop desk, with readable strips and intentional scrolling. */
+.phone-console .phone-editor-content:has(.mx-console[data-touch-console]) { height: 100%; min-height: 0; overflow: hidden; padding: 0; }
+.phone-console .mx-console[data-touch-console] { height: 100%; min-height: 0; border: 0; }
+.phone-console .mx-console[data-touch-console] .mx-console-toolbar { min-height: 44px; flex-shrink: 0; gap: 12px; padding: 4px 8px; }
+.phone-console .mx-console[data-touch-console] .mx-console-toolbar > span { white-space: nowrap; flex-shrink: 0; }
+.phone-console .mx-console[data-touch-console] .mx-console-toolbar button { min-height: 36px; font-size: 11px; letter-spacing: 0; }
+.phone-console .mx-console[data-touch-console] .mobile-mixer-strips { flex: 1; min-height: 0; overflow: auto; align-items: flex-start; scrollbar-width: thin; }
+.phone-console .mx-console[data-touch-console] .mx-channel { width: 168px; }
+.phone-console .mx-console[data-touch-console] .mx-channel.w-\[92px\] { width: 144px; }
+.phone-console .mx-console[data-touch-console] .mx-channel-list { width: 104px; position: static; }
+.phone-console .mx-console[data-touch-console] .mx-channel-list-item { height: 44px; font-size: 11px; }
+.phone-console .mx-console[data-touch-console] .mx-output-dock { position: static; flex-shrink: 0; margin-left: 0; }
+.phone-console .mx-console[data-touch-console] .mx-master { width: 168px; }
+.phone-console .mx-console[data-touch-console] .mx-channel > div,
+.phone-console .mx-console[data-touch-console] .mx-master > div { flex-shrink: 0; }
+.phone-console .mx-console[data-touch-console] .mx-row-head { height: 44px; gap: 4px; flex-wrap: nowrap; }
+.phone-console .mx-console[data-touch-console] .mx-row-head button { min-height: 28px; min-width: 20px; }
+.phone-console .mx-console[data-touch-console] .mx-row-inserts { height: 112px; overflow-y: auto; }
+.phone-console .mx-console[data-touch-console] .mx-row-inserts button { min-height: 28px; font-size: 10px; }
+.phone-console .mx-console[data-touch-console] .mx-row-eq,
+.phone-console .mx-console[data-touch-console] .mx-row-sends { height: 36px; }
+.phone-console .mx-console[data-touch-console] .mx-row-send-bars { height: 36px; }
+.phone-console .mx-console[data-touch-console] .mx-row-routing { height: 76px; }
+.phone-console .mx-console[data-touch-console] .mx-row-routing [role="combobox"] { min-height: 36px; font-size: 11px; }
+.phone-console .mx-console[data-touch-console] .mx-row-pan { height: 48px; }
+.phone-console .mx-console[data-touch-console] .mx-row-buttons { height: 88px; padding: 4px; gap: 4px; }
+.phone-console .mx-console[data-touch-console] .mx-row-buttons > button { height: 38px; font-size: 13px; }
+.phone-console .mx-console[data-touch-console] .mx-row-readout { height: 28px; }
+.phone-console .mx-console[data-touch-console] .mx-row-fader { height: 164px; }
+.phone-console .mx-console[data-touch-console] .mx-fader { min-width: 44px; }
+.phone-console .mx-console[data-touch-console] .mx-fader [role="slider"] { width: 30px; height: 38px; }
+.phone-console .mx-console[data-touch-console] .mx-row-name { order: -1; height: 40px; position: sticky; top: 0; z-index: 2; }
+.phone-console .mx-console[data-touch-console] .mx-row-name button { font-size: 12px; }
+.phone-console .mx-console[data-touch-console] .mx-row-scope { height: 48px; }
+
+/* A clear playback row, rhythm strip, loop range and full-width live displays. */
+.phone-console .transport-glass[data-phone-transport="true"] .transport-layout { display: grid; grid-template-columns: minmax(0,1fr) auto; padding: 8px !important; gap: 8px; }
+.phone-console .transport-glass[data-phone-transport="true"] .transport-row { display: contents; }
+.phone-console .transport-glass[data-phone-transport="true"] .transport-logo,
+.phone-console .transport-glass[data-phone-transport="true"] .transport-search { display: none; }
+.phone-console .transport-glass[data-phone-transport="true"] .transport-playback { grid-column: 1; grid-row: 1; margin: 0; gap: 4px; padding: 3px; }
+.phone-console .transport-glass[data-phone-transport="true"] .transport-playback button { height: 48px; min-width: 48px; }
+.phone-console .transport-glass[data-phone-transport="true"] .transport-layout > .order-2 { grid-column: 2; grid-row: 1; align-self: center; }
+.phone-console .transport-glass[data-phone-transport="true"] .transport-glass-display { grid-column: 1 / -1; grid-row: 2; height: 64px; padding: 6px 10px; gap: 12px; }
+.phone-console .transport-glass[data-phone-transport="true"] .phone-loop-controls { grid-column: 1 / -1; grid-row: 3; border-top: 1px solid var(--border); padding-top: 8px; gap: 8px; overflow-x: auto; flex-wrap: nowrap; }
+.phone-console .transport-glass[data-phone-transport="true"] .phone-loop-controls > * { flex-shrink: 0; }
+.phone-console .transport-glass[data-phone-transport="true"] .phone-transport-signals { grid-column: 1 / -1; grid-row: 4; padding-top: 8px; gap: 12px; }
+.phone-console .transport-glass[data-phone-transport="true"] .phone-bpm-input { height: 32px; font-size: 20px; }
+.phone-console .transport-glass[data-phone-transport="true"] .label-xs { letter-spacing: 0; font-size: 10px; }
