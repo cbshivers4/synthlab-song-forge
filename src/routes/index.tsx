@@ -657,7 +657,8 @@ function StudioWorkspace() {
           <Timeline />
           <SafePanels float={float} setFloat={setFloat} />
           <DetachedPanels />
-          {((!isMobile && panel !== "mixer") || (isMobile && !panel)) && <DeviceBar />}
+          {/* The device strip steps out for tools that own the whole workspace: mixer and studio view. */}
+          {((!isMobile && panel !== "mixer" && panel !== "studio-view") || (isMobile && !panel)) && <DeviceBar />}
         </main>
       </div>
       <TrackSettingsDialog />

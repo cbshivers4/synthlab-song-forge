@@ -105,14 +105,35 @@ function StudioMeters() {
 export function StudioView() {
   const { tracks, selectedId, select, setPanel, fxChains } = useStudio();
   const [back, setBack] = useState(false);
+  const roomRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [fit, setFit] = useState(1);
   const inserts = tracks.flatMap(track => (track.plugins ?? []).map(plugin => ({ track, plugin })));
   const buses = Object.entries(fxChains).flatMap(([bus, plugins]) => plugins.map(plugin => ({ bus, plugin })));
+  // The room must be seen whole: when it is shorter than the equipment layout,
+  // scale the whole layout down uniformly instead of hiding stands below a scrollbar.
+  useEffect(() => {
+    if (back) return;
+    const room = roomRef.current, content = contentRef.current;
+    if (!room || !content) return;
+    const measure = () => {
+      const avail = room.clientHeight, natural = content.offsetHeight;
+      if (!avail || !natural) return;
+      const ratio = avail / natural;
+      const next = ratio >= 0.97 ? 1 : ratio >= 0.6 ? ratio : 1;
+      setFit((prev) => (Math.abs(prev - next) < 0.004 ? prev : next));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(room); ro.observe(content);
+    return () => ro.disconnect();
+  }, [back, tracks.length, inserts.length + buses.length]);
   const open = (panel: PanelId, id?: string) => { if (id) select(id); setPanel(panel); };
   const instrumentPanel = (track: Track): PanelId => track.kind === "drum" ? "drums" : track.kind === "sampler" ? "sampler" : track.kind === "audio" || track.kind === "ai-vocal" ? "mixer" : "synth";
   return <div className="studio-visual flex min-h-0 flex-1 flex-col">
     <div className="flex shrink-0 flex-wrap items-center gap-3 border-b border-border bg-surface px-3 py-2 text-xs">
       <span className="font-display font-semibold">MY STUDIO</span>
-      <span className="text-muted-foreground">{tracks.length} channels · {inserts.length + buses.length} effects</span>
+      <span className="text-muted-foreground"><Speaker className="mr-1 inline size-3 align-[-2px]" />{tracks.length} channels · {inserts.length + buses.length} effects · {tracks.filter(t => t.armed).length} armed · stereo master</span>
       <div className="ml-auto flex gap-1">
         <Button variant={back ? "secondary" : "ghost"} size="sm" aria-pressed={back} onClick={() => setBack(!back)}><FlipHorizontal2 className="size-4" />{back ? "Front" : "Back · Cables"}</Button>
         <Button variant="ghost" size="sm" onClick={() => open("mixer")}><SlidersHorizontal className="size-4" />Mixer</Button>
@@ -120,9 +141,9 @@ export function StudioView() {
       </div>
     </div>
     {back ? <StudioBack /> : <>
-    <div className="studio-room relative min-h-[540px] flex-1 overflow-auto">
+    <div ref={roomRef} className="studio-room relative min-h-[540px] flex-1 overflow-auto" data-studio-fit={fit < 1 ? "true" : undefined}>
       <img src={roomImage} width={1536} height={1024} alt="Graphite music studio with acoustic wall panels" className="pointer-events-none absolute inset-0 h-full w-full object-cover" />
-      <div className="studio-room-content relative">
+      <div ref={contentRef} className="studio-room-content relative" style={fit < 1 ? { transform: `scale(${fit})`, transformOrigin: "top center" } : undefined}>
         <div className="studio-room-brand font-display">SYNCLAB<span>CREATE. RECORD. PRODUCE. FINISH.</span></div>
         <div className="studio-control-desk">
           <Button variant="ghost" className="studio-monitor" aria-label="Left studio monitor — open mastering" onClick={() => open("mastering")}><MonitorDrawing /><span>MONITOR L</span></Button>
@@ -154,6 +175,5 @@ export function StudioView() {
       </div>
     </div>
     </>}
-    <div className="flex shrink-0 items-center gap-2 border-t border-border bg-surface px-3 py-2 text-xs text-muted-foreground"><Speaker className="size-4" /><span>Stereo master output</span><span className="ml-auto">{tracks.filter(t => t.armed).length} armed</span></div>
   </div>;
 }
