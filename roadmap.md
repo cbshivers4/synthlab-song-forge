@@ -293,3 +293,4 @@
 
 - [x] Oct 17: stronger selected-track highlight, drum-beat cutting, single-instrument stem isolation, Just-one stem buttons, visible bass sound picker, more stem templates
 - [ ] Replicate account needs credit for clean AI stems (blocked on owner)
+- [x] Oct 17: Separate Stems and Generate Stem now open a "Coming soon — not available now" screen on desktop and phone (tool implementations left intact for relaunch); verified signed-in on 1440×900 desktop and 942×534 sideways phone, 27 audio tests and typecheck pass. Live site needs republishing.
