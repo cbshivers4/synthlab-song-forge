@@ -153,6 +153,7 @@ export function StudioView() {
         </div>
       </div>
     </div>
+    </>}
     <div className="flex shrink-0 items-center gap-2 border-t border-border bg-surface px-3 py-2 text-xs text-muted-foreground"><Speaker className="size-4" /><span>Stereo master output</span><span className="ml-auto">{tracks.filter(t => t.armed).length} armed</span></div>
   </div>;
 }
