@@ -1620,3 +1620,19 @@
 @media (max-width: 767px) { .studio-back-rack { gap: 12px; padding: 12px 12px 80px; } }
 .modular-cable.is-selected { filter: drop-shadow(0 0 6px var(--primary)); }
 .modular-add.is-on { border-color: var(--primary); color: var(--primary); }
+
+/* Desktop: an open tool (mixer, synths, drums...) fills the workspace; the timeline stays mounted but hidden. */
+main[data-panel-full="true"] > .arrangement-timeline { display: none; }
+main[data-panel-full="true"] > .phone-tool-panel { flex: 1 1 auto; min-height: 0; }
+/* Full-workspace desktop mixer: roomy rows that fit their controls and tall faders */
+main[data-panel-full="true"] .mx-console:not(.mx-phone) { flex: 1 1 auto; min-height: 0; }
+main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-row-head { height: 34px; }
+main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-row-inserts { height: 64px; overflow-y: auto; }
+main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-row-eq { height: 28px; }
+main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-row-sends { height: 28px; }
+main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-row-send-bars { height: 26px; }
+main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-row-routing { height: 50px; }
+main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-row-pan { height: 30px; }
+main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-row-buttons { height: 44px; }
+main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-row-readout { height: 22px; }
+main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-row-fader { height: clamp(140px, calc(100dvh - 640px), 320px); }
