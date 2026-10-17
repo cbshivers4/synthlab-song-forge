@@ -538,7 +538,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const automationLastPushRef = useRef(new Map<string, { label: string; at: number }>());
   const [automationHistoryTick, setAutomationHistoryTick] = useState(0);
 
-  // ---- Undo / redo history + local autosave -------------------------------
+  // ---- Undo / redo history (projects save only via File → Save) ----------
   const pastRef = useRef<CloudSession[]>([]);
   const futureRef = useRef<CloudSession[]>([]);
   const lastSnapRef = useRef<CloudSession | null>(null);
