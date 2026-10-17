@@ -1656,8 +1656,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     setPanel(null);
   }, []);
 
-  // Record a history step and keep a local copy of the session, debounced so a
-  // drag or a knob sweep counts as one edit.
+  // Record a history step, debounced so a drag or a knob sweep counts as one edit.
+  // No automatic saving: the project is saved only when the user chooses File → Save.
   useEffect(() => {
     if (applyingRef.current) {
       applyingRef.current = false;
@@ -1674,32 +1674,19 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         pastRef.current = [...pastRef.current, prev].slice(-60);
         futureRef.current = [];
       }
-      const next = buildSnapshot();
-      lastSnapRef.current = next;
+      lastSnapRef.current = buildSnapshot();
       setHistoryTick((t) => t + 1);
-      try {
-        window.localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(next));
-        setSavedAt(Date.now());
-        void persistBlobUrls(next.tracks.flatMap((t) => [...(t.clips ?? []).map((c) => c.url ?? ""), t.sampler?.url ?? ""]));
-      } catch {
-        /* storage full or unavailable — cloud save still works */
-      }
     }, 600);
     return () => window.clearTimeout(id);
   }, [tracks, buses, vcas, auxReturns, fxChains, installedPlugins, userPresets, sections, folders, projectNotes, buildSnapshot]);
 
-  // Flush immediately when the tab/app is closed or hidden, so the last edits survive an accidental close.
+  // The Saved timestamp in the status bar only moves on a manual save
+  // (File → Save / Save As dispatch "synclab:project-saved" on success).
   useEffect(() => {
-    const flush = () => {
-      if (lastSnapRef.current === null) return;
-      try { window.localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(buildSnapshot())); } catch { /* storage full */ }
-    };
-    const hidden = () => { if (document.visibilityState === "hidden") flush(); };
-    window.addEventListener("pagehide", flush);
-    window.addEventListener("beforeunload", flush);
-    document.addEventListener("visibilitychange", hidden);
-    return () => { window.removeEventListener("pagehide", flush); window.removeEventListener("beforeunload", flush); document.removeEventListener("visibilitychange", hidden); };
-  }, [buildSnapshot]);
+    const onSaved = () => setSavedAt(Date.now());
+    document.addEventListener("synclab:project-saved", onSaved);
+    return () => document.removeEventListener("synclab:project-saved", onSaved);
+  }, []);
 
   // ---- Account autosave: keep the open project synced so work follows you between desktop and phone ----
   const app = useApp();
