@@ -1501,8 +1501,11 @@
 .phone-console .mx-console[data-touch-console] .mx-master { width: 168px; }
 .phone-console .mx-console[data-touch-console] .mx-channel > div,
 .phone-console .mx-console[data-touch-console] .mx-master > div { flex-shrink: 0; }
-.phone-console .mx-console[data-touch-console] .mx-row-head { height: 44px; gap: 2px; flex-wrap: nowrap; padding-inline: 2px; }
+.phone-console .mx-console[data-touch-console] .mx-row-head { min-height: 44px; height: auto; gap: 2px; flex-wrap: wrap; align-content: center; padding-block: 3px; padding-inline: 2px; overflow: hidden; }
 .phone-console .mx-console[data-touch-console] .mx-row-head button { min-height: 28px; min-width: 20px; }
+/* The round colour dot and clip LED stay small — the touch min-height must not inflate them over the channel number */
+.phone-console .mx-console[data-touch-console] .mx-row-head button.rounded-full { min-height: 14px; min-width: 14px; width: 14px; height: 14px; padding: 0; }
+.phone-console .mx-console[data-touch-console] .mx-row-head button.ml-auto { min-height: 12px; min-width: 20px; height: 12px; padding: 0; }
 .phone-console .mx-console[data-touch-console] .mx-row-inserts { height: 112px; overflow-y: auto; }
 .phone-console .mx-console[data-touch-console] .mx-row-inserts button { min-height: 28px; font-size: 10px; }
 .phone-console .mx-console[data-touch-console] .mx-row-eq,
@@ -1521,6 +1524,8 @@
 /* Phone name plate stays a plain row: it must never float over the channel meter while scrolling */
 .phone-console .mx-console[data-touch-console] .mx-row-name { order: -1; height: 34px; position: static; }
 .phone-console .mx-console[data-touch-console] .mx-row-name button { font-size: 12px; min-height: 28px; }
+/* Extra scroll room so the M/S/REC/MON row can scroll fully clear of the transport overlay */
+.phone-console .mx-console[data-touch-console] .mobile-mixer-strips { padding-bottom: 170px; }
 
 /* A clear playback row, rhythm strip, loop range and full-width live displays. */
 .phone-console .transport-glass[data-phone-transport="true"] .transport-layout { display: grid; grid-template-columns: minmax(0,1fr) auto; padding: 8px !important; gap: 8px; }
