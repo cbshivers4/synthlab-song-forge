@@ -601,7 +601,7 @@ function DrumClip({ track }: { track: Track }) {
               title="Delete this part" aria-label={`Delete beat part at step ${Math.round(a)}`}
               className="relative z-30 size-4 shrink-0 p-0 hover:text-destructive"><Trash2 className="size-3" /></Button>
           </div>
-          <div className="relative min-h-0 flex-1"><DrumHitWave pads={part} steps={hi - lo} total={hi - lo} /></div>
+          <div className="relative min-h-0 flex-1 [&_svg]:!text-[var(--arrangement-ink)]"><DrumHitWave pads={part} steps={hi - lo} total={hi - lo} /></div>
         </div>
       );
     })}</>;
