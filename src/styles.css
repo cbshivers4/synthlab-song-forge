@@ -1526,6 +1526,18 @@
 .phone-console .mx-console[data-touch-console] .mx-row-name button { font-size: 12px; min-height: 28px; }
 /* Extra scroll room so the M/S/REC/MON row can scroll fully clear of the transport overlay */
 .phone-console .mx-console[data-touch-console] .mobile-mixer-strips { padding-bottom: 260px; }
+/* Rows grow to fit their controls so nothing in a channel overlaps the row below */
+.phone-console .mx-console[data-touch-console] .mx-row-eq { height: auto; min-height: 44px; }
+.phone-console .mx-console[data-touch-console] .mx-row-sends { height: auto; min-height: 52px; }
+.phone-console .mx-console[data-touch-console] .mx-row-pan { height: auto; min-height: 54px; }
+.phone-console .mx-console[data-touch-console] .mx-row-readout { height: auto; min-height: 38px; }
+.phone-console .mx-console[data-touch-console] .mx-row-buttons { height: auto; min-height: 104px; }
+.phone-console .mx-console[data-touch-console] .mx-channel > div,
+.phone-console .mx-console[data-touch-console] .mx-master > div { overflow: hidden; }
+.phone-console .mx-console[data-touch-console] .mx-row-inserts { overflow-y: auto; }
+/* Full-screen mixer: drop the title bar and the transport spacer so the mixer uses the whole screen */
+.phone-console[data-mixer-full="true"] .phone-tool-panel:has(.mx-console) > .editor-panel-header { display: none; }
+.phone-console[data-mixer-full="true"] .mx-console[data-touch-console] .mobile-mixer-strips { padding-bottom: 8px; }
 
 /* A clear playback row, rhythm strip, loop range and full-width live displays. */
 .phone-console .transport-glass[data-phone-transport="true"] .transport-layout { display: grid; grid-template-columns: minmax(0,1fr) auto; padding: 8px !important; gap: 8px; }
