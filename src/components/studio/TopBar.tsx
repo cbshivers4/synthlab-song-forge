@@ -298,7 +298,7 @@ export function TopBar() {
         </div>
         <div className="transport-row contents sm:flex sm:flex-wrap sm:items-center sm:gap-2">
         {!isMobile && (
-          <div className="transport-glass-group flex flex-wrap items-center gap-1 rounded-[3px] border border-border bg-background/70 p-1">
+          <Popover><PopoverTrigger asChild><Button variant="outline" size="icon" className="order-4 size-10 shrink-0" aria-label="Recording options" title="Recording options"><Timer className="size-4" /></Button></PopoverTrigger><PopoverContent align="end" className="w-[min(92vw,520px)]"><div className="transport-glass-group flex flex-wrap items-center gap-1 rounded-[3px] border border-border bg-background/70 p-1">
             <FeatBtn
               label="METRONOME"
               icon={<Timer className="size-3.5" />}
@@ -379,10 +379,10 @@ export function TopBar() {
                 )
               }
             />
-          </div>
+          </div></PopoverContent></Popover>
         )}
 
-        {!isMobile && <MidiControl />}
+        {!isMobile && <div className="order-4 shrink-0"><MidiControl /></div>}
         </div>
 
         <TransportExtras mobile={isMobile}>
@@ -523,7 +523,7 @@ export function TopBar() {
 }
 
 function TransportExtras({ mobile, children }: { mobile: boolean; children: React.ReactNode }) {
-  if (!mobile) return <div className="transport-glass-tools flex flex-wrap items-center gap-1">{children}</div>;
+  if (!mobile) return <Popover><PopoverTrigger asChild><Button variant="outline" size="icon" className="order-4 size-10 shrink-0" aria-label="Studio tools" title="Studio tools"><Menu className="size-4" /></Button></PopoverTrigger><PopoverContent align="end" className="w-[min(92vw,560px)]"><div className="flex flex-wrap items-center gap-2">{children}</div></PopoverContent></Popover>;
    return <div className="order-2 justify-self-end"><Popover><PopoverTrigger asChild><Button variant="outline" size="icon" className="transport-glass-group size-11" aria-label="Transport menu" title="Studio tools"><SlidersHorizontal className="size-5" /></Button></PopoverTrigger><PopoverContent align="end" className="phone-transport-menu transport-glass-menu flex max-h-[min(70dvh,440px)] w-[min(78vw,360px)] flex-col overflow-hidden p-0"><div className="shrink-0 border-b border-border px-3 py-2 font-display text-sm font-semibold">Studio tools</div><PhonePages name="Studio tools"><div className="flex flex-wrap items-center gap-2 p-2.5">{children}</div></PhonePages></PopoverContent></Popover></div>;
 }
 

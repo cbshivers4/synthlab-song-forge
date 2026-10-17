@@ -142,6 +142,19 @@
   --transport-glass-display: linear-gradient(180deg, color-mix(in oklab, var(--primary) 5%, var(--background)), var(--background));
   --grid-line: oklch(1 0 0 / 0.045);
   --grid-line-strong: oklch(1 0 0 / 0.11);
+  --arrangement-background: oklch(0.39 0.009 285);
+  --arrangement-surface: oklch(0.43 0.009 285);
+  --arrangement-header: oklch(0.46 0.009 285);
+  --arrangement-edge: oklch(0.30 0.008 285);
+  --arrangement-text: oklch(0.96 0.003 285);
+  --arrangement-ink: oklch(0.18 0.015 285);
+  --arrangement-tool-active: oklch(0.61 0.19 250);
+  --arrangement-wave: color-mix(in oklab, var(--clip-audio) 35%, var(--arrangement-ink));
+  --arrangement-clip-face: var(--clip-audio);
+  --arrangement-clip-selected: color-mix(in oklab, var(--clip-audio) 48%, var(--playhead));
+  --arrangement-clip-edge: color-mix(in oklab, var(--clip-audio) 65%, var(--arrangement-ink));
+  --arrangement-clip-label: color-mix(in oklab, var(--clip-audio) 68%, var(--arrangement-ink));
+  --arrangement-selection-shadow: inset 0 0 0 1px var(--playhead);
 }
 
 @layer base {
@@ -1320,8 +1333,43 @@
 
 /* Selected timeline channel: a bright white outline that reads on every track colour. */
 .track-selected {
-  box-shadow: inset 0 0 0 2px var(--playhead), inset 0 0 0 3px rgba(0, 0, 0, 0.55);
+  box-shadow: inset 0 0 0 1px var(--playhead);
 }
+
+/* Reference arrangement uses track colors, without changing audio paths. */
+.arrangement-timeline { background: var(--arrangement-background); --grid-line: color-mix(in oklab, var(--playhead) 7%, transparent); --grid-line-strong: color-mix(in oklab, var(--playhead) 19%, transparent); }
+.arrangement-timeline [data-lane] { background-color: transparent; }
+.arrangement-timeline .track-touch-header { background: var(--arrangement-surface); }
+.arrangement-timeline .track-selected .track-touch-header { background: var(--arrangement-header); }
+.arrangement-timeline .track-selected { background: color-mix(in oklab, var(--playhead) 6%, transparent); }
+.arrangement-timeline .track-touch-header .text-muted-foreground { color: color-mix(in oklab, var(--arrangement-text) 76%, var(--arrangement-surface)); }
+.arrangement-clip { background: var(--arrangement-clip-face); border-color: var(--arrangement-clip-edge); color: var(--arrangement-wave); }
+.arrangement-clip[data-selected="true"] { background: var(--arrangement-clip-selected); border-color: var(--playhead); box-shadow: var(--arrangement-selection-shadow); z-index: 2; }
+.arrangement-clip-name { background: var(--arrangement-clip-label); color: var(--arrangement-text); }
+.arrangement-clip[data-selected="true"] .arrangement-clip-name { background: color-mix(in oklab, var(--arrangement-clip-label) 70%, var(--playhead)); color: var(--arrangement-ink); }
+.arrangement-clip-name button { color: inherit; }
+.arrangement-clip-name button:hover { color: var(--destructive); }
+.arrangement-trim::after, .arrangement-region-handle { position: absolute; top: 50%; width: 4px; height: 9px; transform: translateY(-50%); background: var(--playhead); border: 1px solid var(--arrangement-ink); border-radius: 1px; }
+.arrangement-clip[data-selected="true"] .arrangement-trim::after { content: ""; }
+.arrangement-trim-left::after { left: 0; }
+.arrangement-trim-right::after { right: 0; }
+.arrangement-region-handle { pointer-events: none; }
+.arrangement-note { background: var(--arrangement-wave); }
+.arrangement-note-grid { border-color: color-mix(in oklab, var(--arrangement-wave) 8%, transparent); }
+.arrangement-timeline .timeline-edit-toolbar { background: var(--arrangement-surface); color: var(--arrangement-text); gap: 3px; }
+.arrangement-tool[aria-pressed="true"] { background: var(--arrangement-tool-active); color: var(--arrangement-text); }
+.arrangement-tools { background: var(--surface); }
+.arrangement-tools nav { padding: 6px; }
+.arrangement-tools nav button, .arrangement-tools nav button span { border-radius: 2px; letter-spacing: 0; }
+.arrangement-workspace .transport-glass[data-desktop-transport="true"] { background-image: none; background-color: var(--arrangement-surface); border-top: 1px solid var(--arrangement-edge); border-bottom: 0; }
+.transport-glass[data-desktop-transport="true"] .transport-logo { display: none; }
+.transport-glass[data-desktop-transport="true"] .transport-search { width: 190px; order: 5; }
+.transport-glass[data-desktop-transport="true"] .transport-layout { flex-wrap: nowrap; overflow-x: auto; padding: 6px 10px; gap: 8px; }
+.transport-glass[data-desktop-transport="true"] .transport-playback { order: 1; }
+.transport-glass[data-desktop-transport="true"] .transport-glass-display { order: 2; flex-shrink: 0; }
+.transport-glass[data-desktop-transport="true"] .transport-tempo { order: 3; }
+.transport-glass[data-desktop-transport="true"] .transport-glass-group, .transport-glass[data-desktop-transport="true"] .transport-glass-display { box-shadow: none; backdrop-filter: none; }
+.phone-edit-menu .timeline-edit-toolbar .arrangement-tool { width: 44px; height: 44px; }
 
 /* Phone rotate gate: gentle rocking phone icon while held upright. */
 @keyframes rotate-gate-rock {
