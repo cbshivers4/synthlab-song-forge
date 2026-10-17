@@ -341,18 +341,18 @@ function SendsMenu({ t }: { t: Track }) {
 
 /* ---- Console section geometry: every column shares these row heights ---- */
 const ROW = {
-  head: "h-7",
-  scope: "h-[48px]",
-  eq: "h-[74px]",
-  devices: "h-[92px]",
-  sends: "h-7",
-  sendBars: "h-[26px]",
-  io: "h-[52px]",
-  pan: "h-[38px]",
-  fader: "h-[300px]",
-  readout: "h-5",
-  buttons: "h-[68px]",
-  name: "h-12",
+  head: "mx-row-head h-7",
+  scope: "mx-row-scope h-[48px]",
+  eq: "mx-row-eq h-[74px]",
+  devices: "mx-row-inserts h-[92px]",
+  sends: "mx-row-sends h-7",
+  sendBars: "mx-row-send-bars h-[26px]",
+  io: "mx-row-routing h-[52px]",
+  pan: "mx-row-pan h-[38px]",
+  fader: "mx-row-fader h-[300px]",
+  readout: "mx-row-readout h-5",
+  buttons: "mx-row-buttons h-[68px]",
+  name: "mx-row-name h-12",
 } as const;
 
 /** Console desk finishes the user can pick between. */
@@ -374,10 +374,10 @@ const CONSOLE_STYLES: ConsoleStyle[] = [
   {
     id: "studiopro",
     name: "Studio Pro",
-    desc: "One solid charcoal with amber accent — the default desk",
-    a: "oklch(0.290 0.005 286)",
-    b: "oklch(0.290 0.005 286)",
-    c: "oklch(0.290 0.005 286)",
+    desc: "Flat grey desk with track-colored channels",
+    a: "var(--mixer-desk)",
+    b: "var(--mixer-desk)",
+    c: "var(--mixer-desk)",
     accent: "oklch(0.768 0.146 68)",
     screws: false,
   },
@@ -537,25 +537,16 @@ function SectionLabel({ children, className }: { children?: ReactNode; className
 
 /** Left-hand label rail, mirrors the strip row heights. */
 function LabelRail() {
-  const advanced = useApp().mode === "advanced";
-  return (
-    <div className="sticky left-0 z-10 flex w-[76px] shrink-0 flex-col border-r border-border bg-surface-2/85 backdrop-blur">
-      <SectionLabel className={cn(ROW.head, "bg-surface-2")}>Ch</SectionLabel>
-      {advanced && <SectionLabel className={ROW.scope}>Scope</SectionLabel>}
-      <SectionLabel className={ROW.eq}>EQ</SectionLabel>
-      <SectionLabel className={ROW.devices}>Devices</SectionLabel>
-      {advanced && <SectionLabel className={ROW.sends}>Sends</SectionLabel>}
-      {advanced && <SectionLabel className={ROW.sendBars}>R / D / C</SectionLabel>}
-      <SectionLabel className={ROW.io}>Audio to</SectionLabel>
-      <SectionLabel className={ROW.pan}>Pan</SectionLabel>
-      <SectionLabel className={cn(ROW.fader, "items-start pt-2")}>Vol</SectionLabel>
-      <SectionLabel className={ROW.readout}>Peak</SectionLabel>
-      <SectionLabel className={ROW.name}>Track</SectionLabel>
-      <SectionLabel className={cn(ROW.buttons, "border-b-0 items-start pt-1")}>Mute / Solo</SectionLabel>
-    </div>
-  );
+  const { tracks, selectedId, select, setPanel } = useStudio();
+  return <aside className="mx-channel-list sticky left-0 z-10 flex shrink-0 flex-col border-r border-border" aria-label="Mixer channel list">
+    <div className="border-b border-border px-2 py-2 text-[10px] font-semibold">Channels</div>
+    {tracks.map((track, index) => <Button key={track.id} variant="ghost" aria-pressed={track.id === selectedId} className="mx-channel-list-item h-7 w-full min-w-0 justify-start gap-2 rounded-none px-2 text-[10px]" onClick={() => { select(track.id); setPanel("mixer"); }} title={track.name}>
+      <span className="w-4 shrink-0 font-mono text-muted-foreground">{index + 1}</span>
+      <span className="mx-channel-swatch" style={{ "--mixer-channel-color": track.color } as CSSProperties} />
+      <span className="truncate">{track.name}</span>
+    </Button>)}
+  </aside>;
 }
-
 
 /** Compact device chain shown directly on the strip. */
 function DeviceSlots({ t, narrow }: { t: Track; narrow: boolean }) {
@@ -569,7 +560,7 @@ function DeviceSlots({ t, narrow }: { t: Track; narrow: boolean }) {
     setEditorOpen(true);
   };
   return (
-    <div className={cn(ROW.devices, "w-full space-y-0.5 overflow-hidden border-b border-border/60 px-1 py-1")}>
+    <div className={cn(ROW.devices, "w-full space-y-0.5 overflow-hidden border-b border-border/60 px-1 py-1")}><div className="mx-inserts-label font-mono text-[8px] text-muted-foreground">Inserts</div>
       {list.slice(0, max).map((p) => (
         <div
           key={p.id}
@@ -948,15 +939,18 @@ function Strip({
     <div
       onClick={onSelect}
       className={cn(
-        "flex shrink-0 cursor-pointer flex-col border-r border-black/50 transition-colors",
+        "mx-channel flex shrink-0 cursor-pointer flex-col border-r border-border transition-colors",
         narrow ? "w-[92px]" : "w-[132px]"
       )}
+      data-selected={selected}
+      aria-label={`${t.name} mixer channel`}
       style={{
+        "--mixer-channel-color": t.color,
         background: selected
           ? `linear-gradient(${tint(16)}, ${tint(16)}), ${PANEL}`
           : `linear-gradient(${tint(8)}, ${tint(8)}), ${PANEL}`,
         boxShadow: `inset 4px 0 0 0 ${t.color}, inset 0 1px 0 0 rgba(255,255,255,0.08)${selected ? `, inset 0 0 0 1px ${tint(45)}` : ""}`,
-      }}
+      } as CSSProperties}
     >
       {/* channel header: number, colour, clip LED */}
       <div
@@ -1070,6 +1064,7 @@ function Strip({
         onClick={(e) => e.stopPropagation()}
       >
         <Slider
+          aria-label={`${t.name} pan`}
           value={[t.pan]}
           min={-1}
           max={1}
@@ -1104,6 +1099,7 @@ function Strip({
           </div>
         )}
         <Slider
+          aria-label={`${t.name} volume`}
           orientation="vertical"
           className={cn("h-full w-8", FADER_CAP)}
           value={[t.volume]}
@@ -1463,7 +1459,7 @@ function MasterStrip({ level: peak }: { level: number }) {
   const color = BUS_COLOR["master"] as string;
   return (
     <div
-      className="flex w-[210px] shrink-0 flex-col border-l-2 border-black/60"
+      className="mx-master flex w-[210px] shrink-0 flex-col border-l-2 border-border"
       style={{
         background: `linear-gradient(color-mix(in oklab, ${color} 12%, transparent), color-mix(in oklab, ${color} 12%, transparent)), ${PANEL}`,
         boxShadow: `inset 4px 0 0 0 ${color}, inset 0 1px 0 0 rgba(255,255,255,0.08)`,
@@ -1858,7 +1854,7 @@ export function Mixer({ phonePage = 0, phoneChannels, phoneControlPage = "levels
           {showAux && AUX_IDS.slice(0, counts.aux).map((id) => (
             <ControlStrip key={`aux-${id}`} kind="AUX" name={id} state={auxReturns[id]} level={levels.aux[id] ?? 0} onChange={(patch) => setAuxReturn(id, patch)} />
           ))}
-          <div className={cn("bg-surface", !isMobile && "sticky right-0 z-10 shadow-[-12px_0_18px_-12px_rgba(0,0,0,0.8)]")}>
+          <div className={cn("mx-output-dock bg-surface", !isMobile && "sticky right-0 z-10")}>
             {isMobile ? <PhoneChannel level={levels.master} selected={false} index={tracks.length} /> : <MasterStrip level={levels.master} />}
           </div>
         </div>
@@ -1938,7 +1934,7 @@ function PhoneChannel({ track, level, selected, index }: { track?: Track; level:
   const volume = track?.volume ?? buses.master.volume;
   const choose = () => { if (track) { select(track.id); setPanel("mixer"); } };
   const channelColor = track?.color;
-  return <section aria-label={`${name} mixer channel`} className={cn("phone-mix-channel flex w-[216px] shrink-0 snap-start flex-col border-r border-border bg-surface", selected && "ring-2 ring-inset ring-primary")}>
+  return <section aria-label={`${name} mixer channel`} style={{ "--mixer-channel-color": channelColor ?? "var(--mixer-output-accent)" } as CSSProperties} className={cn("phone-mix-channel flex w-[216px] shrink-0 snap-start flex-col border-r border-border bg-surface", selected && "ring-2 ring-inset ring-primary")}>
     <div
       className="grid grid-cols-[minmax(0,1fr)_auto] items-center border-b border-border px-2"
       style={channelColor ? { background: channelColor } : undefined}
