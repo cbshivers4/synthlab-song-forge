@@ -422,6 +422,8 @@
 .mx-console:not(.mx-phone) .mx-row-name > span { font-size: 9px; letter-spacing: 0; }
 .mx-console:not(.mx-phone) .mx-row-scope { height: 26px; }
 .mx-console:not(.mx-phone) .mx-row-scope { order: 11; height: 26px; }
+/* With the mixer docked, the selected-track bar must not steal the console's last rows (phone already hides it) */
+.phone-tool-panel:has(.mx-console) > .editor-track-actions { display: none; }
 .mx-console:not(.mx-phone) .mx-fader[data-orientation="vertical"] { flex-direction: column; }
 .mx-console:not(.mx-phone) .mx-fader[data-orientation="vertical"] > span:first-child { width: 5px; height: 100%; background: var(--mixer-edge); }
 .mx-console:not(.mx-phone) .mx-fader[data-orientation="vertical"] > span:first-child > span { width: 100%; background: color-mix(in oklab, var(--foreground) 28%, var(--mixer-edge)); }
