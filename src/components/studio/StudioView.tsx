@@ -133,7 +133,7 @@ export function StudioView() {
   return <div className="studio-visual flex min-h-0 flex-1 flex-col">
     <div className="flex shrink-0 flex-wrap items-center gap-3 border-b border-border bg-surface px-3 py-2 text-xs">
       <span className="font-display font-semibold">MY STUDIO</span>
-      <span className="text-muted-foreground">{tracks.length} channels · {inserts.length + buses.length} effects</span>
+      <span className="text-muted-foreground"><Speaker className="mr-1 inline size-3 align-[-2px]" />{tracks.length} channels · {inserts.length + buses.length} effects · {tracks.filter(t => t.armed).length} armed · stereo master</span>
       <div className="ml-auto flex gap-1">
         <Button variant={back ? "secondary" : "ghost"} size="sm" aria-pressed={back} onClick={() => setBack(!back)}><FlipHorizontal2 className="size-4" />{back ? "Front" : "Back · Cables"}</Button>
         <Button variant="ghost" size="sm" onClick={() => open("mixer")}><SlidersHorizontal className="size-4" />Mixer</Button>
@@ -175,6 +175,5 @@ export function StudioView() {
       </div>
     </div>
     </>}
-    <div className="flex shrink-0 items-center gap-2 border-t border-border bg-surface px-3 py-2 text-xs text-muted-foreground"><Speaker className="size-4" /><span>Stereo master output</span><span className="ml-auto">{tracks.filter(t => t.armed).length} armed</span></div>
   </div>;
 }
