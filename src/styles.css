@@ -393,7 +393,7 @@
 .mx-console:not(.mx-phone) .mx-channel.w-\[92px\] { width: 92px; }
 .mx-console[data-console="studiopro"]:not(.mx-phone) .mx-channel { background: color-mix(in oklab, var(--mixer-channel-color) 48%, var(--mixer-desk)) !important; box-shadow: none !important; }
 .mx-console:not(.mx-phone) .mx-channel[data-selected="true"] { outline: 1px solid var(--playhead); outline-offset: -1px; }
-.mx-console:not(.mx-phone) .mx-row-head { order: 0; height: 32px; flex-wrap: wrap; gap: 2px; align-content: center; }
+.mx-console:not(.mx-phone) .mx-row-head { order: 0; height: 32px; flex-wrap: wrap; gap: 2px; align-content: center; overflow: hidden; }
 .mx-console:not(.mx-phone) .mx-row-inserts { order: 1; height: 78px; }
 .mx-console:not(.mx-phone) .mx-row-eq { order: 2; height: 32px; }
 .mx-console:not(.mx-phone) .mx-row-sends { order: 3; height: 28px; }

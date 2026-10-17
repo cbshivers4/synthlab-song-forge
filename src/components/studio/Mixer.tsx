@@ -131,7 +131,7 @@ function Meter({ id, level, tall }: { id: string; level: number; tall?: boolean 
   // dB scale: level is a 0..1 linear fraction, so dB = 20·log10(level); show -60..0 dB.
   const DB_TICKS = [0, -6, -12, -24, -36, -48, -60];
   return (
-    <div className={cn("flex items-stretch gap-0.5", tall ? "h-full min-h-40" : "h-44")}>
+    <div className={cn("flex items-stretch gap-0.5", tall ? "h-full min-h-0" : "h-44")}>
       <div className="relative w-5 shrink-0" aria-hidden>
         {DB_TICKS.map((db) => (
           <div key={db} className="absolute right-0 flex items-center gap-px" style={{ top: `${(db / -60) * 100}%` }}>
