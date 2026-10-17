@@ -1525,7 +1525,7 @@
 .phone-console .mx-console[data-touch-console] .mx-row-name { order: -1; height: 34px; position: static; }
 .phone-console .mx-console[data-touch-console] .mx-row-name button { font-size: 12px; min-height: 28px; }
 /* Extra scroll room so the M/S/REC/MON row can scroll fully clear of the transport overlay */
-.phone-console .mx-console[data-touch-console] .mobile-mixer-strips { padding-bottom: 170px; }
+.phone-console .mx-console[data-touch-console] .mobile-mixer-strips { padding-bottom: 260px; }
 
 /* A clear playback row, rhythm strip, loop range and full-width live displays. */
 .phone-console .transport-glass[data-phone-transport="true"] .transport-layout { display: grid; grid-template-columns: minmax(0,1fr) auto; padding: 8px !important; gap: 8px; }
