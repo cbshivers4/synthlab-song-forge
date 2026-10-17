@@ -8,6 +8,7 @@
 - [x] Add a playable bass generator that creates editable MIDI patterns
 
 # Roadmap
+- [ ] Match supplied timeline/transport/tools references; highlight selected clips and independently selectable cut pieces; verify desktop and phone.
 - [ ] AI Co-Producer reported failure on phone/desktop: signed-in preview checks opened and returned real chord answers on both sizes without errors; awaiting a screenshot of the user's failure to reproduce it.
 - [x] Add a project-synced Studio View with instruments on stands, mixer, effects rack and monitors; signed-in desktop/phone checks verified editor opening, added sampler visibility, real meter activity, effect insertion and portrait/landscape scrolling.
 - [x] Give phone pages full height with a hidden-by-default transport overlay and rail toggle; signed-in portrait/landscape checks verified timeline, mixer, all 7 Sounds and 15 Tools pages, plus transport access with collapsed navigation.
