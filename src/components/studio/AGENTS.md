@@ -9,4 +9,5 @@ Timeline cutting uses a pointer overlay with a visible tool icon and exact-posit
 Studio View keeps base furnishings independent of project tracks, derives instruments/microphones and racks from tracks/inserts, opens existing editors, and reads real levels through one 20 fps DOM timer; no duplicate project/audio state keeps it synchronized.
 
 Note-channel razor/split unrolls looping patterns to song length and stores cut regions (track.cuts/activeRegion via lib/synclab/note-cuts); track-menu clicks bubble through portals, so row/header handlers ignore targets outside currentTarget to avoid opening the piano roll.
+Arrangement clip presentation consumes per-lane track color variables with shared semantic fill/ink/selection tokens; MIDI cut regions draw separate bounded blocks without changing note playback or cut state.
 AI stem separation runs Demucs on Replicate via server functions (start/poll/fetch); the browser polls so no server call waits on the model, and on-device spectral separation stays as the free fallback.

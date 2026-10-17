@@ -302,11 +302,9 @@ function Waveform({ track }: { track: Track }) {
         return (
           <div
             key={clip.id}
-            className={`group absolute inset-y-2 flex flex-col overflow-hidden rounded-[3px] border bg-clip-audio/10 shadow-sm transition-colors hover:bg-clip-audio/15 ${
-              active
-                ? "border-foreground ring-2 ring-inset ring-foreground"
-                : "border-clip-audio/30 hover:border-foreground/40"
-            }`}
+            data-audio-clip={clip.id}
+            data-selected={active}
+            className="arrangement-clip group absolute inset-y-1 flex flex-col overflow-hidden rounded-[2px] border transition-colors"
             style={{ left: `${left}%`, width: `${Math.max(2, width)}%` }}
             onPointerDown={(e) => {
               setActiveClip(track.id, clip.id);
@@ -318,9 +316,9 @@ function Waveform({ track }: { track: Track }) {
             }}
             title={`${clip.name} — drag to move, pull the edges to trim, double-click to edit`}
           >
-            <div className="flex h-[17px] shrink-0 cursor-grab items-center gap-1 bg-clip-audio/10 px-1.5 active:cursor-grabbing">
-              <span className="truncate font-mono text-[9px] font-semibold text-clip-audio/80">{clip.name}</span>
-              <span className="ml-auto shrink-0 font-mono text-[8px] text-clip-audio/55">{length.toFixed(1)}s</span>
+            <div className="arrangement-clip-name flex h-[17px] shrink-0 cursor-grab items-center gap-1 px-1.5 active:cursor-grabbing">
+              <span className="min-w-0 flex-1 truncate font-mono text-[9px] font-semibold">{clip.name}</span>
+              <span className="ml-auto shrink-0 font-mono text-[8px] opacity-70">{length.toFixed(1)}s</span>
               <button
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={(e) => {
@@ -350,18 +348,18 @@ function Waveform({ track }: { track: Track }) {
             </div>
 
             <div className="min-h-0 w-full flex-1 px-1 pb-1">
-              <WaveformView peaks={peaks} color="var(--clip-audio)" label={`${clip.name} waveform`} />
+              <WaveformView peaks={peaks} color="var(--arrangement-wave)" grid={false} label={`${clip.name} waveform`} />
             </div>
 
             <div
               onPointerDown={(e) => beginDrag(e, clip, "trim-left")}
               title="Trim the start"
-              className="absolute inset-y-0 left-0 w-1.5 cursor-ew-resize bg-clip-audio/0 hover:bg-clip-audio/60"
+              className="arrangement-trim arrangement-trim-left absolute inset-y-0 left-0 w-1.5 cursor-ew-resize"
             />
             <div
               onPointerDown={(e) => beginDrag(e, clip, "trim-right")}
               title="Trim the end"
-              className="absolute inset-y-0 right-0 w-1.5 cursor-ew-resize bg-clip-audio/0 hover:bg-clip-audio/60"
+              className="arrangement-trim arrangement-trim-right absolute inset-y-0 right-0 w-1.5 cursor-ew-resize"
             />
           </div>
         );
@@ -432,96 +430,56 @@ function MidiClip({ track }: { track: Track }) {
   const hi = Math.max(...pitches) + 2;
   const span = Math.max(6, hi - lo);
   const rows = 12;
-  return (
-    <div
-      className="absolute inset-y-2 left-1 right-1 cursor-grab overflow-hidden rounded-[3px] border border-clip-midi/30 bg-clip-midi/10 shadow-sm transition-colors hover:bg-clip-midi/15 active:cursor-grabbing"
+  return <>{regionsOf(cuts, total).map(([a, b]) => {
+    const regionNotes = cuts.length > 0 ? notesInRegion(notes, [a, b]) : notes;
+    if (regionNotes.length === 0) return null;
+    const active = track.activeRegion != null && track.activeRegion >= a - 0.001 && track.activeRegion < b - 0.001;
+    return <div key={a}
+      data-note-region={active ? "active" : "part"}
+      data-selected={active}
+      className="arrangement-clip arrangement-midi absolute inset-y-1 flex cursor-grab flex-col overflow-hidden rounded-[2px] border active:cursor-grabbing"
+      style={{ left: `${a / total * 100}%`, width: `calc(${(b - a) / total * 100}% - 1px)` }}
       onPointerDown={(e) => {
-        if (cuts.length > 0) {
-          // Tapping a cut part selects it (white outline) so Delete or its bin icon removes it.
-          const r = e.currentTarget.getBoundingClientRect();
-          const pos = ((e.clientX - r.left) / Math.max(1, r.width)) * total;
-          updateTrack(track.id, { activeRegion: pos });
-          select(track.id);
-        }
+        updateTrack(track.id, { activeRegion: a });
+        select(track.id);
         beginPatternDrag(e);
       }}
-      title="Drag to move this part to any grid position — double-click to open the piano roll"
-      onDoubleClick={() => {
-        select(track.id);
-        setPanel("piano");
-      }}
+      onClick={(e) => e.stopPropagation()}
+      onDoubleClick={() => { select(track.id); setPanel("piano"); }}
+      title={`${track.name} — double-click to edit notes`}
     >
-      <div
-        className="flex h-[17px] items-center gap-1 bg-clip-midi/10 px-1.5"
-      >
-        <Piano className="size-2.5" />
-        <span className="truncate font-mono text-[9px] font-semibold text-clip-midi/75">
-          {track.instrument ?? "MIDI"} · {notes.length} NOTES ·{" "}
-          {NOTE_NAMES[Math.min(...pitches) % 12]}
-          {Math.floor(Math.min(...pitches) / 12) - 1}
-        </span>
+      <div className="arrangement-clip-name flex h-[17px] shrink-0 items-center gap-1 px-1.5">
+        <Piano className="size-2.5 shrink-0" />
+        <span className="min-w-0 flex-1 truncate font-mono text-[9px] font-semibold">{track.name}</span>
+        {(active || cuts.length > 0) && <Button type="button" variant="ghost" size="icon"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+            updateTrack(track.id, { notes: deleteRegion(track.notes ?? [], [a, b]), activeRegion: undefined });
+            toast.success("Part deleted");
+          }}
+          title="Delete this part" aria-label={`Delete part at step ${Math.round(a)}`}
+          className="relative z-30 size-4 shrink-0 p-0 hover:text-destructive"
+        ><Trash2 className="size-3" /></Button>}
       </div>
-      <div className="relative flex-1" style={{ height: "calc(100% - 17px)" }}>
-        {Array.from({ length: rows }).map((_, r) => (
-          <div
-            key={r}
-            className="absolute left-0 right-0 border-t border-clip-midi/5"
-            style={{ top: `${(r / rows) * 100}%` }}
-          />
-        ))}
-        {Array.from({ length: reps }).flatMap((_, rep) =>
-          notes.map((n) => {
-            if (n.recordedEnd != null && rep > 0) return null;
-            const at = n.recordedEnd != null ? n.step : rep * patLen + (n.step % patLen);
-            if (at >= total) return null;
-            return (
-          <div
-            key={`${n.id}-${rep}`}
-            className="absolute rounded-full bg-clip-midi/55"
+      <div className="relative min-h-0 flex-1">
+        {Array.from({ length: rows }).map((_, r) => <div key={r} className="arrangement-note-grid absolute inset-x-0 border-t" style={{ top: `${r / rows * 100}%` }} />)}
+        {Array.from({ length: reps }).flatMap((_, rep) => regionNotes.map((n) => {
+          if (n.recordedEnd != null && rep > 0) return null;
+          const at = n.recordedEnd != null ? n.step : rep * patLen + (n.step % patLen);
+          const end = at + Math.min(n.length, n.recordedEnd != null ? n.recordedEnd - at : patLen - (n.step % patLen), total - at);
+          if (at >= b || end <= a) return null;
+          const from = Math.max(a, at);
+          const to = Math.min(b, end);
+          return <div key={`${n.id}-${rep}`} className="arrangement-note absolute rounded-[1px]"
             title={`${NOTE_NAMES[n.pitch % 12]}${Math.floor(n.pitch / 12) - 1}`}
-            style={{
-              left: `${(at / total) * 100}%`,
-              width: `${Math.max(0.3, (Math.min(n.length, n.recordedEnd != null ? n.recordedEnd - at : patLen - (n.step % patLen), total - at) / total) * 100 - 0.1)}%`,
-              top: `${(1 - (n.pitch - lo) / span) * 82 + 4}%`,
-              height: "6%",
-              opacity: 0.5 + (n.velocity ?? 0.8) * 0.35,
-            }}
-          />
-            );
-          }),
-        )}
+            style={{ left: `${(from - a) / (b - a) * 100}%`, width: `${Math.max(0.3, (to - from) / (b - a) * 100 - 0.1)}%`, top: `${(1 - (n.pitch - lo) / span) * 82 + 4}%`, height: "6%", opacity: 0.5 + (n.velocity ?? 0.8) * 0.35 }} />;
+        }))}
       </div>
-      {cuts.length > 0 && regionsOf(cuts, total).map(([a, b]) => {
-        const has = notesInRegion(notes, [a, b]).length > 0;
-        const active = has && track.activeRegion != null && track.activeRegion >= a - 0.001 && track.activeRegion < b - 0.001;
-        return (
-          <div
-            key={a}
-            data-note-region={active ? "active" : has ? "part" : "empty"}
-            className={`pointer-events-none absolute inset-y-0 ${a > 0 ? "border-l-2 border-foreground" : ""} ${active ? "rounded-[3px] ring-2 ring-inset ring-foreground" : ""} ${has ? "" : "bg-background/80"}`}
-            style={{ left: `${(a / total) * 100}%`, width: `${((b - a) / total) * 100}%` }}
-          >
-            {has && (
-              <button
-                type="button"
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  updateTrack(track.id, { notes: deleteRegion(track.notes ?? [], [a, b]), activeRegion: undefined });
-                  toast.success("Part deleted");
-                }}
-                title="Delete this part"
-                aria-label={`Delete part at step ${Math.round(a)}`}
-                className="pointer-events-auto absolute right-0.5 top-0.5 z-30 rounded-sm bg-background p-0.5 text-foreground hover:text-destructive"
-              >
-                <Trash2 className="size-3" />
-              </button>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
+      {active && <><span aria-hidden="true" className="arrangement-region-handle left-0" /><span aria-hidden="true" className="arrangement-region-handle right-0" /></>}
+    </div>;
+  })}</>;
+
 }
 
 /** Hit-envelope view of a drum pattern: every programmed hit draws a decaying
@@ -2397,21 +2355,23 @@ function EditToolbar() {
     <Button
       size="sm"
       variant={editTool === tool ? "default" : "ghost"}
-      className="h-6 gap-1 px-2 text-[10px]"
+      className="arrangement-tool size-8 shrink-0 p-0"
+      aria-label={label}
+      aria-pressed={editTool === tool}
       title={`${label} (${keys})`}
       onClick={() => setEditTool(tool)}
     >
-      {icon} {label}
+      {icon}
     </Button>
   );
 
   const targets = selectedIds.length > 1 ? selectedIds : selected ? [selected.id] : [];
 
   return (
-    <div className="timeline-edit-toolbar flex min-h-11 shrink-0 flex-wrap items-center gap-1 border-b border-border bg-surface-2/60 px-2 py-1">
+    <div className="timeline-edit-toolbar flex min-h-10 shrink-0 flex-wrap items-center gap-1 border-b border-border bg-surface-2 px-2 py-1">
       <ToolBtn tool="select" icon={<MousePointer2 className="size-3" />} label="Select" keys="V" />
-      <Button size="sm" variant="ghost" className="h-6 gap-1 px-2 text-[10px]" title="Select all channels (⌘A / Ctrl+A)" onClick={selectAll}>
-        <ListChecks className="size-3" /> Select All
+      <Button size="sm" variant="ghost" className="size-8 shrink-0 p-0" aria-label="Select All" title="Select all channels (⌘A / Ctrl+A)" onClick={selectAll}>
+        <ListChecks className="size-3.5" />
       </Button>
       <div className="mx-1 h-4 w-px bg-border" />
       <ToolBtn tool="draw" icon={<Pencil className="size-3" />} label="Draw" keys="B" />
@@ -2430,11 +2390,11 @@ function EditToolbar() {
         </Button>
       )}
       <div className="mx-1 h-4 w-px bg-border" />
-      <Button size="sm" variant="ghost" className="h-6 gap-1 px-2 text-[10px]" title="Undo (⌘Z / Ctrl+Z)" onClick={undo}>
-        <Undo2 className="size-3" /> Undo
+      <Button size="sm" variant="ghost" className="size-8 shrink-0 p-0" aria-label="Undo" title="Undo (⌘Z / Ctrl+Z)" onClick={undo}>
+        <Undo2 className="size-3.5" />
       </Button>
-      <Button size="sm" variant="ghost" className="h-6 gap-1 px-2 text-[10px]" title="Redo (⌘⇧Z / Ctrl+Y)" onClick={redo}>
-        <Redo2 className="size-3" /> Redo
+      <Button size="sm" variant="ghost" className="size-8 shrink-0 p-0" aria-label="Redo" title="Redo (⌘⇧Z / Ctrl+Y)" onClick={redo}>
+        <Redo2 className="size-3.5" />
       </Button>
       <div className="mx-1 h-4 w-px bg-border" />
       <Popover>
@@ -3305,7 +3265,7 @@ export function Timeline({ phonePaged = false }: { phonePaged?: boolean }) {
     }
   }, [transport.follow, transport.playing, transport.step, totalSteps]);
   return (
-    <section className="mobile-timeline relative flex min-h-[210px] min-w-0 flex-1 flex-col overflow-hidden border-x border-b border-border bg-background/60 [--timeline-header-width:172px] sm:[--timeline-header-width:294px]">
+    <section className="arrangement-timeline mobile-timeline relative flex min-h-[210px] min-w-0 flex-1 flex-col overflow-hidden border-x border-b border-border bg-background/60 [--timeline-header-width:172px] sm:[--timeline-header-width:294px]">
       {phonePaged ? <div className="phone-timeline-heading grid h-14 shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-border bg-surface/50 px-3"><TrackSearch /><div className="flex gap-1"><Popover><PopoverTrigger asChild><Button variant="outline" className="h-12 gap-1.5 px-3 font-display text-xs font-semibold tracking-wide" aria-label="Timeline quick tools"><Settings2 className="size-4" /> TOOLS</Button></PopoverTrigger><PopoverContent className="phone-edit-menu flex h-[min(80dvh,440px)] w-[min(90vw,720px)] flex-col overflow-hidden p-0"><div className="shrink-0 border-b border-border px-3 py-2.5 font-display text-sm font-semibold">Timeline tools</div><PhonePages name="Timeline tools"><div className="p-1"><h3 className="px-2 pb-1 pt-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Song length &amp; export</h3><div className="px-2 pb-2"><TimelineOptionsPanel /></div><h3 className="px-2 pb-1 pt-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Edit &amp; arrange</h3><EditToolbar /><h3 className="border-t border-border px-2 pb-1 pt-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Song parts</h3><SectionLane /></div></PhonePages></PopoverContent></Popover><AddTrackMenu size="sm" /></div></div> : <EditToolbar />}
       <div className="shrink-0 overflow-hidden">
         <div ref={timelineHeaderRef} className="min-w-[720px] sm:min-w-0">
