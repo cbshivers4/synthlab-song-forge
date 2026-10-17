@@ -597,7 +597,7 @@ export function PadSampler() {
             <span className="absolute inset-y-0 right-0 bg-background/70" style={{ width: `${(1 - monitorPad.pad.end) * 100}%` }} />
           </>
         ) : (
-          <span className="absolute inset-0 flex items-center justify-center font-mono text-[10px] tracking-widest text-muted-foreground">
+          <span className="absolute inset-x-0 bottom-0 top-5 flex items-center justify-center px-2 text-center font-mono text-[10px] tracking-widest text-muted-foreground">
             HOLD A PAD TO PLAY · HOLD TO RECORD TO SAMPLE
           </span>
         )}

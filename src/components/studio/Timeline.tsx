@@ -2684,7 +2684,7 @@ function BarNumbering({ gridRef, bars }: { gridRef: React.RefObject<HTMLDivEleme
         return (
           <div
             key={i}
-            className={`border-l py-1 pl-1 font-mono leading-none ${labeled ? "text-[10px]" : "text-[9px]"} ${
+            className={`border-l py-1 pl-[14px] font-mono leading-none ${labeled ? "text-[10px]" : "text-[9px]"} ${
               isBar ? "border-border" : "border-border/30"
             }`}
           >
