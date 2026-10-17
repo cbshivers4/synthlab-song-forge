@@ -285,4 +285,4 @@
 - [ ] Co-Producer full-page error on user's Samsung phone via synclabsapp.com — not reproducible; error screen now shows details, tool crashes contained. Waiting on user's new screenshot after publish.
 - [x] Phone studio opens on the edit screen instead of an instrument: entering the studio or resuming the page closes any tool panel and restores EDIT. Signed-in phone checks passed (first screen timeline, drum machine opens on request, re-entry returns to timeline).
 
-- [ ] Refine Studio back view into independent device columns, preserving cable routing; verify desktop and sideways phone.
+- [x] Refine Studio back view into independent device columns with detailed rear panels; signed-in desktop and sideways-phone checks verified all eight columns, horizontal scrolling and re-patching with no runtime errors.
