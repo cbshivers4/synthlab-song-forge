@@ -109,18 +109,7 @@ export function StudioBack() {
       const fx = list.find((p) => p.id === fxId);
       if (!fx) return;
       if (fx.bypass) togglePluginBypass(track.id, fx.id);
-      // Move the effect to sit right after the source node in the chain.
-      const fromFxIndex = fromFx ? list.findIndex((p) => p.id === fromFx) : -1;
-      const target = fromFxIndex + 1;
-      let guard = 0;
-      while (guard++ < 24) {
-        const cur = (track.plugins ?? []).findIndex((p) => p.id === fxId);
-        if (cur === target || cur < 0) break;
-        movePlugin(track.id, fxId, cur > target ? -1 : 1);
-        // movePlugin is stateful; re-read happens on next render, so do it stepwise.
-        break;
-      }
-      // Repeat moves across renders are unreliable — do the full reorder in one update.
+      // Move the effect to sit right after the source node in the chain, in one update.
       const ordered = [...list];
       const fromIdx = ordered.findIndex((p) => p.id === fxId);
       if (fromIdx >= 0) {
