@@ -1540,7 +1540,11 @@
 .phone-console .timeline-width-handle::after { content: "↔"; position: absolute; top: 50%; left: 0; right: 0; text-align: center; transform: translateY(-50%); font-size: 20px; color: var(--foreground); }
 .phone-console .timeline-height-handle { height: 24px; background: color-mix(in oklab, var(--primary) 12%, var(--surface)); border-top: 1px solid var(--primary); }
 .phone-console .timeline-height-handle::after { content: "↕"; position: absolute; left: 50%; top: 0; width: 48px; height: 24px; text-align: center; font-size: 19px; line-height: 24px; background: var(--surface-2); color: var(--foreground); border-inline: 1px solid var(--primary); border-radius: 3px; }
-.phone-console .arrangement-timeline .track-touch-header { padding-right: 30px; padding-bottom: 26px; }
+.phone-console .arrangement-timeline[data-resize-handles="true"] .track-touch-header { padding-right: 30px; padding-bottom: 26px; }
+.phone-console .arrangement-timeline[data-resize-handles="false"] :is(.timeline-width-handle, .timeline-height-handle) { display: none; }
+/* Track geometry is contained below the independent transport overlay. */
+.phone-console .arrangement-timeline { isolation: isolate; contain: layout paint; }
+.phone-console #phone-transport-overlay { isolation: isolate; contain: inline-size layout; }
 
 /* Bottom transport console: one playback/position row, a distinct range row, rhythm and live signal. */
 .phone-console #phone-transport-overlay > div:first-child { height: 32px; min-height: 32px; }

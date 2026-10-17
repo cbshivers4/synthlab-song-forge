@@ -36,7 +36,7 @@ Phone drum tabs reuse DrumRoll and instrument pads for edits/tap recording; soun
 Keyboards reuse Keyboard and one note path; independent skin slots color opaque keys and wallpaper only the surround, preventing doubled notes.
 Paste content at the playhead onto the selected or explicit channel, preserving its settings; Duplicate track separately clones channels.
 Synth selection opens piano roll. Pin sampler waveform above Stretch/chops to keep cuts visible; PCM slices use previewNote for gate/choke.
-Transport stays mounted: phone uses a hidden overlay; desktop sits below the workspace with secondary popovers, preserving edit space.
+Transport stays mounted: phone overlay and timeline use separate layout/paint containment with shared resize visibility; desktop transport stays below the workspace.
 Phone shares desktop audio/state; keep all tracks/tools accessible with native scrolling.
 AppProvider scopes phone tokens to the document via shared mobile detection so entry screens and portals match; desktop preferences stay separate.
 Drum snap is session-only for new step writes, never existing hits.

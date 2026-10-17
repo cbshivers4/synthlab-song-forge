@@ -156,6 +156,7 @@
 - [x] My Library (cloud/computer folders for samples, synth, drums, notes) + distinct effect window looks
 
 ## Current request
+- [ ] Add a phone resize-handle show/hide switch and isolate timeline resizing from the transport; verify both sizes and playback.
 - [x] Make phone track resize grips clearly visible and redesign the transport as a compact bottom console. Signed-in sideways phone checks passed for dragging/keyboard resizing, playback/tempo and mixer controls; screenshots reviewed, build OK. Physical touch testing remains unverified.
 - [x] Improve phone transport grouping and mixer readability/touch controls; preserve desktop styling and every action. Signed-in sideways phone playback/tempo/mute/fader checks passed without runtime errors; physical touch testing remains unverified.
 - [x] Add horizontal channel-header and vertical lane resizing on desktop and phone; shared desktop toolbar/ruler/song/overview and console preserve controls. Signed-in desktop/sideways-phone checks passed for width dragging, height dragging, keyboard resizing and mixer mute; 27 audio tests passed. Physical touch testing remains unverified.

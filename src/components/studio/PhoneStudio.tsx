@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { AudioLines, ChevronLeft, ChevronRight, FolderOpen, Home, Music2, Scissors, SlidersHorizontal, Wand2, Settings2, Radio, Disc3, Grid2x2, Piano, Gauge, FileSearch, Cpu, Palette, NotebookPen, LifeBuoy, Mic, Bot, Sparkles, Film, PanelTop, X } from "lucide-react";
+import { AudioLines, ChevronLeft, ChevronRight, FolderOpen, Home, Music2, Scissors, SlidersHorizontal, Wand2, Settings2, Radio, Disc3, Grid2x2, Piano, Gauge, FileSearch, Cpu, Palette, NotebookPen, LifeBuoy, Mic, Bot, Sparkles, Film, PanelTop, Move, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStudio, type PanelId } from "@/lib/synclab/store";
 import { useApp } from "@/lib/synclab/app-state";
@@ -40,6 +40,7 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
   const [room, setRoom] = useState<"edit" | "sounds" | "tools">("edit");
   const [railOpen, setRailOpen] = useState(true);
   const [transportOpen, setTransportOpen] = useState(false);
+  const [resizeHandlesVisible, setResizeHandlesVisible] = useState(false);
   useEffect(() => { setTransportOpen(false); }, [panel]);
   // Mobile studio opens automatically — no rotate gate.
   const consoleRef = useRef<HTMLDivElement>(null);
@@ -50,9 +51,7 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
       if (el) el.style.height = `${Math.max(240, window.innerHeight - el.getBoundingClientRect().top)}px`;
     };
     size(); window.addEventListener("resize", size);
-    const observer = new ResizeObserver(size);
-    observer.observe(document.body);
-    return () => { observer.disconnect(); window.removeEventListener("resize", size); document.documentElement.classList.remove("phone-console-active"); };
+    return () => { window.removeEventListener("resize", size); document.documentElement.classList.remove("phone-console-active"); };
   }, []);
   const enter = (next: typeof room) => { setTransportOpen(false); setPanel(null); setRoom(next); };
   const list = room === "sounds" ? sounds : tools;
@@ -67,6 +66,7 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
       <Button variant="ghost" size="icon" className="size-12 shrink-0" aria-label="Home and projects" onClick={() => setStage("start")}><Home /></Button>
       </>}
       {!railOpen && <Button variant={panel === "mixer" ? "secondary" : "ghost"} size="icon" className="size-11 shrink-0" aria-label="Open mixer" aria-pressed={panel === "mixer"} title="Mixer" onClick={() => setPanel("mixer")}><SlidersHorizontal className="size-5" /></Button>}
+      {(panel === "mixer" || (!panel && room === "edit")) && <Button variant={resizeHandlesVisible ? "secondary" : "ghost"} className="h-11 w-full shrink-0 flex-col gap-0.5 px-0 text-[9px] font-semibold" aria-label={resizeHandlesVisible ? "Hide resize handles" : "Show resize handles"} title={resizeHandlesVisible ? "Hide resize handles" : "Show resize handles"} aria-pressed={resizeHandlesVisible} onClick={() => setResizeHandlesVisible((visible) => !visible)}><Move className="size-5" />{railOpen ? "RESIZE" : ""}</Button>}
       <Button variant="ghost" className={`h-12 w-full shrink-0 flex-col gap-0.5 px-0 text-[9px] font-semibold ${transport.recording ? "text-destructive" : transportOpen || transport.playing ? "text-primary" : "text-muted-foreground"}`} aria-label={transportOpen ? "Hide transport" : "Show transport"} title={transportOpen ? "Hide transport" : "Show transport"} aria-expanded={transportOpen} aria-controls="phone-transport-overlay" onClick={() => setTransportOpen((open) => !open)}><PanelTop className="size-5" />{railOpen ? "TRANSPORT" : transport.recording ? "REC" : transport.playing ? "PLAY" : ""}</Button>
       <Button variant="outline" size="icon" className="phone-rail-toggle mt-auto shrink-0 self-center" aria-label={railOpen ? "Hide navigation bar" : "Show navigation bar"} aria-expanded={railOpen} onClick={() => setRailOpen((open) => !open)}>{railOpen ? <ChevronLeft className="size-4" /> : <ChevronRight className="size-4" />}</Button>
     </nav>
@@ -76,8 +76,8 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
         <div className="flex h-12 items-center justify-between border-b border-border bg-surface px-3"><span className="text-sm font-semibold">Transport</span><Button variant="ghost" size="icon" className="size-12" aria-label="Close transport" onClick={() => setTransportOpen(false)}><X /></Button></div>
         <TopBar />
       </div>
-      {panel === "mixer" && <div className="docked-phone-timeline h-[clamp(110px,24dvh,190px)] shrink-0 border-b border-border"><Timeline desktopStyle /></div>}
-      {!panel && room === "edit" && <Timeline desktopStyle />}
+      {panel === "mixer" && <div className="docked-phone-timeline h-[clamp(110px,24dvh,190px)] shrink-0 border-b border-border"><Timeline desktopStyle resizeHandlesVisible={resizeHandlesVisible} /></div>}
+      {!panel && room === "edit" && <Timeline desktopStyle resizeHandlesVisible={resizeHandlesVisible} />}
       {panel && children}
       {!panel && room !== "edit" && <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <header className="phone-room-header grid h-14 shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center border-b border-border px-5"><h2 className="truncate text-base font-semibold">{room === "sounds" ? "Sounds & instruments" : "Effects & tools"}</h2><span className="text-xs text-muted-foreground">SYNCLAB</span></header>
