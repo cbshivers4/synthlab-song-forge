@@ -86,7 +86,7 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
     </nav>
     </div>
     <main className="phone-console-stage relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-      {panel === "mixer" && <div className="docked-phone-timeline h-[clamp(110px,24dvh,190px)] shrink-0 border-b border-border"><Timeline desktopStyle resizeHandlesVisible={resizeHandlesVisible} /></div>}
+      {panel === "mixer" && !mixerFull && <div className="docked-phone-timeline h-[clamp(110px,24dvh,190px)] shrink-0 border-b border-border"><Timeline desktopStyle resizeHandlesVisible={resizeHandlesVisible} /></div>}
       {!panel && room === "edit" && <Timeline desktopStyle resizeHandlesVisible={resizeHandlesVisible} />}
       {panel && children}
       {!panel && room !== "edit" && <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
