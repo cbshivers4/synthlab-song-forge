@@ -1430,7 +1430,7 @@
 .arrangement-timeline [data-track-row] { min-height: 132px !important; }
 .arrangement-timeline [data-lane] { min-height: 0 !important; height: auto !important; min-width: 0; }
 .arrangement-timeline .track-touch-header { overflow-y: auto; overflow-x: hidden; }
-.phone-console .arrangement-timeline[data-desktop-style="true"] .timeline-edit-toolbar { flex-wrap: nowrap; overflow-x: auto; min-height: 44px; }
+.phone-console .arrangement-timeline[data-desktop-style="true"] .timeline-edit-toolbar { display: flex !important; flex-wrap: nowrap; overflow-x: auto; min-height: 44px; }
 .phone-console .arrangement-timeline[data-desktop-style="true"] .timeline-edit-toolbar > * { flex-shrink: 0; }
 .phone-console .arrangement-timeline[data-desktop-style="true"] .track-touch-header { padding-block: 6px; overflow-y: auto; }
 .phone-console .arrangement-timeline[data-desktop-style="true"] .track-touch-header > div { height: auto; min-height: 0; }
