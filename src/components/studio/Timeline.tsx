@@ -1667,7 +1667,7 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
         aria-valuemin={132} aria-valuemax={600} aria-valuenow={Math.max(132, track.height ?? 140)}
         onKeyDown={(e) => { if (e.key === "ArrowUp" || e.key === "ArrowDown") { e.preventDefault(); e.stopPropagation(); updateTrack(track.id, { height: Math.max(132, Math.min(600, (track.height ?? 140) + (e.key === "ArrowDown" ? 16 : -16))) }); } }}
         title="Drag to change this track's height"
-        className="absolute inset-x-0 bottom-0 z-40 h-2 cursor-ns-resize touch-none hover:bg-primary/40 focus-visible:bg-primary/40"
+        className="timeline-height-handle absolute inset-x-0 bottom-0 z-40 h-2 cursor-ns-resize touch-none hover:bg-primary/40 focus-visible:bg-primary/40"
       />
 
       <AlertDialog open={confirm} onOpenChange={setConfirm}>

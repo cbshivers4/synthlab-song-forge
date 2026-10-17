@@ -202,12 +202,6 @@ export function TopBar() {
           {isMobile && <>
             <label className="phone-tempo-value shrink-0"><span className="label-xs">BPM</span><BpmInput bpm={transport.bpm} onChange={(bpm) => setTransport({ bpm })} /></label>
             <Button variant="ghost" size="icon" className="size-12 shrink-0" aria-label="Loop" title="Loop" aria-pressed={transport.loop} onClick={() => setTransport({ loop: !transport.loop })}><Repeat className={`size-5 ${transport.loop ? "text-primary" : "text-muted-foreground"}`} /></Button>
-            <div aria-label="Tempo & rhythm" className="phone-rhythm-controls flex w-full min-w-0 flex-wrap items-center gap-2 border-t border-border pt-1">
-              <div className="flex shrink-0 items-center gap-2"><div><span className="label-xs">Tempo</span><Slider aria-label="Tempo" className="w-28" value={[transport.bpm]} min={60} max={190} step={1} onValueChange={([bpm = 120]) => setTransport({ bpm })} /></div><MidiLearnButton id="transport" param="bpm" label="Tempo" /></div>
-              <label><span className="label-xs">METER</span><select aria-label="Time signature" className="block bg-transparent font-mono text-base text-primary" value={transport.beatsPerBar ?? 4} onChange={(e) => setTransport({ beatsPerBar: Number(e.target.value) })}>{METERS.map((m) => <option key={m} value={m} className="bg-background">{m}/4</option>)}</select></label>
-              <div><span className="label-xs">Swing</span><Slider aria-label="Swing" className="w-20" value={[transport.swing]} min={0} max={0.6} step={0.01} onValueChange={([swing = 0]) => setTransport({ swing })} /></div>
-              <MidiLearnButton id="transport" param="swing" label="Swing" />
-            </div>
           </>}
           <span className="hidden w-px bg-border sm:block" />
           <div className="hidden sm:block" title="Timeline length — click + to add bars (Shift = +16), up to 512">
@@ -255,6 +249,12 @@ export function TopBar() {
             <div className="phone-loop-group flex shrink-0 items-center rounded-md border border-border/70"><Button variant="ghost" size="icon" className="size-12" aria-label="Fewer bars" disabled={transport.bars <= 1} onClick={() => setTransport({ bars: Math.max(1, transport.bars - 1) })}><Minus className="size-3" /></Button><span className="font-mono text-sm">{transport.bars} bars</span><Button variant="ghost" size="icon" className="size-12" aria-label="More bars" disabled={transport.bars >= 512} onClick={() => setTransport({ bars: Math.min(512, transport.bars + 1) })}><Plus className="size-3" /></Button></div>
           </div>
         )}
+
+        {isMobile && <div aria-label="Tempo & rhythm" className="phone-rhythm-controls flex min-w-0 items-center gap-3">
+          <div className="flex shrink-0 items-center gap-2"><span className="label-xs">Tempo</span><Slider aria-label="Tempo" className="w-24" value={[transport.bpm]} min={60} max={190} step={1} onValueChange={([bpm = 120]) => setTransport({ bpm })} /><MidiLearnButton id="transport" param="bpm" label="Tempo" /></div>
+          <label className="flex shrink-0 items-center gap-2"><span className="label-xs">METER</span><select aria-label="Time signature" className="bg-transparent font-mono text-base text-primary" value={transport.beatsPerBar ?? 4} onChange={(e) => setTransport({ beatsPerBar: Number(e.target.value) })}>{METERS.map((m) => <option key={m} value={m} className="bg-background">{m}/4</option>)}</select></label>
+          <div className="flex shrink-0 items-center gap-2"><span className="label-xs">Swing</span><Slider aria-label="Swing" className="w-20" value={[transport.swing]} min={0} max={0.6} step={0.01} onValueChange={([swing = 0]) => setTransport({ swing })} /><MidiLearnButton id="transport" param="swing" label="Swing" /></div>
+        </div>}
 
         <div className="transport-tempo transport-glass-group hidden min-w-0 items-center gap-3 rounded-[3px] border border-border bg-background/70 px-3 py-1 sm:flex">
           <div>
