@@ -2492,7 +2492,7 @@ function EditToolbar() {
           <div className="grid grid-cols-[auto_auto] items-center gap-1 [&_button]:justify-start">
       <span className="label-xs shrink-0">QUANTIZE</span>
       <Select value={String(transport.quantize ?? 1)} onValueChange={(v) => setTransport({ quantize: Number(v) })}>
-        <SelectTrigger className="h-6 w-[72px] shrink-0 font-mono text-[10px]" title="Grid that Quantize snaps notes to">
+        <SelectTrigger aria-label="Quantize grid" className="h-6 w-[72px] shrink-0 font-mono text-[10px]" title="Grid that Quantize snaps notes to">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -2504,7 +2504,7 @@ function EditToolbar() {
         </SelectContent>
       </Select>
       <Select value={String(qStrength)} onValueChange={(v) => setQStrength(Number(v))}>
-        <SelectTrigger className="h-6 w-[62px] shrink-0 font-mono text-[10px]" title="How far notes move toward the grid">
+        <SelectTrigger aria-label="Quantize strength" className="h-6 w-[62px] shrink-0 font-mono text-[10px]" title="How far notes move toward the grid">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -2533,7 +2533,7 @@ function EditToolbar() {
           <div className="grid grid-cols-[auto_auto] items-center gap-1 [&_button]:justify-start">
       <span className="label-xs shrink-0">TIMEBASE</span>
       <Select value={transport.timebase ?? "bars"} onValueChange={(v) => setTransport({ timebase: v as "bars" | "seconds" })}>
-        <SelectTrigger className="h-6 w-[78px] shrink-0 font-mono text-[10px]" title="Show the playhead position in bars or in minutes and seconds">
+        <SelectTrigger aria-label="Timeline timebase" className="h-6 w-[78px] shrink-0 font-mono text-[10px]" title="Show the playhead position in bars or in minutes and seconds">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -2543,7 +2543,7 @@ function EditToolbar() {
       </Select>
       <span className="label-xs shrink-0">SNAP</span>
       <Select value={String(snap)} onValueChange={(v) => setTransport({ snap: Number(v) })}>
-        <SelectTrigger className="h-6 w-[72px] shrink-0 font-mono text-[10px]" title="Snap grid for moving and trimming clips">
+        <SelectTrigger aria-label="Timeline snap grid" className="h-6 w-[72px] shrink-0 font-mono text-[10px]" title="Snap grid for moving and trimming clips">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>

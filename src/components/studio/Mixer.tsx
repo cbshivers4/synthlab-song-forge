@@ -1004,11 +1004,9 @@ function Strip({
       <DeviceSlots t={t} narrow={narrow} />
 
       {/* sends */}
-      {advanced && (
-        <div className={cn(ROW.sends, "border-b border-border/60 px-1 py-[2px]")}>
-          <SendsMenu t={t} />
-        </div>
-      )}
+      <div className={cn(ROW.sends, "border-b border-border/60 px-1 py-[2px]")}>
+        <SendsMenu t={t} />
+      </div>
 
       {/* send amount bars */}
       {advanced && (
