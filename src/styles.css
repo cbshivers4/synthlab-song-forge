@@ -383,7 +383,14 @@
   background: var(--mixer-desk);
 }
 .mx-console:not(.mx-phone) .mx-console-toolbar { min-height: 32px; gap: 8px; padding: 3px 8px; box-shadow: none; }
-.mx-console:not(.mx-phone) .mobile-mixer-strips { background: var(--mx-a); align-items: stretch; min-height: 410px; }
+.mx-console:not(.mx-phone) .mobile-mixer-strips { background: var(--mx-a); align-items: stretch; min-height: 0; }
+/* Docked-at-bottom console (Studio Pro reference): tighter rows so the timeline keeps the upper half */
+.mx-console:not(.mx-phone) .mx-row-inserts { height: 56px; }
+.mx-console:not(.mx-phone) .mx-row-routing { height: 34px; }
+.mx-console:not(.mx-phone) .mx-row-buttons { height: 34px; }
+.mx-console:not(.mx-phone) .mx-row-fader { height: 120px; }
+.mx-console:not(.mx-phone) .mx-row-scope { height: 32px; }
+.mx-console:not(.mx-phone) .mx-row-send-bars { height: 22px; }
 .mx-channel-list { width: 150px; background: var(--mx-a); }
 .mx-channel-list-item[aria-pressed="true"] { background: var(--surface-2); box-shadow: inset 2px 0 var(--playhead); }
 .mx-channel-swatch { width: 4px; height: 16px; flex-shrink: 0; background: var(--mixer-channel-color); }
@@ -948,6 +955,10 @@
 .phone-console .phone-page-controls { height: 48px; padding-inline: 8px; }
 .phone-console .phone-tool-panel .phone-page-controls { min-height: 48px; }
 .phone-console .phone-page-viewport > .mobile-timeline .track-touch-header { overflow: hidden; }
+/* Phone console: mixer docks at the bottom with a compact live timeline above it */
+.phone-console .docked-phone-timeline { overflow: hidden; }
+.phone-console .docked-phone-timeline .mobile-timeline { min-height: 0 !important; height: 100%; border-x: 0; border-b: 0; }
+.phone-console .docked-phone-timeline .phone-timeline-heading { display: none; }
 .phone-console .phone-editor-content:has(> .mx-phone) { height: auto; }
 .phone-console .mx-phone { height: auto; overflow: visible; }
 .phone-console .mx-phone .mobile-mixer-strips { flex: none; overflow: auto; touch-action: pan-x pan-y; }
