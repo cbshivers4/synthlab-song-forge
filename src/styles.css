@@ -1226,6 +1226,9 @@
 .phone-console .studio-visual { min-height: 0; overflow: hidden; }
 .phone-console .studio-room { min-height: 0; flex: 1 1 0; overflow: auto; touch-action: pan-x pan-y; }
 .phone-console .studio-room-content { padding-bottom: max(32px, env(safe-area-inset-bottom)); }
+/* Fitted room: the whole layout is scaled into the space, so no scrollbar is needed. */
+.studio-room[data-studio-fit="true"] { overflow: hidden; }
+.studio-room[data-studio-fit="true"] .studio-room-content { padding-bottom: 6px; }
 .studio-room-brand { text-align: center; font-size: 24px; font-weight: 800; color: var(--foreground); text-shadow: var(--shadow-panel); }
 .studio-room-brand span { display: block; font-size: 9px; font-weight: 500; margin-top: 4px; color: var(--foreground); }
 .studio-control-desk { display: grid; grid-template-columns: 90px minmax(0, 1fr) 90px; gap: 14px; align-items: start; max-width: 760px; margin: 24px auto 0; }
