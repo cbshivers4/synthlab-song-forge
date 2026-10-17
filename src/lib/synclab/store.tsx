@@ -23,8 +23,6 @@ import { markLiveHit, isLiveHit, clearLiveHits, neighbourLiveHits } from "./live
 import { keyDown, keyUp } from "./active-keys";
 import { controllerAutoMap } from "./controller-profiles";
 import type { CloudSession } from "./cloud";
-import { saveCloudProject } from "./cloud";
-import { useApp } from "./app-state";
 import type {
   AudioClip,
   AutomationLane,
@@ -51,7 +49,6 @@ import type {
 import { clipRate, clipSeconds, laneValueAt, SECTION_COLORS } from "./types";
 import { wsolaStretch } from "./stretch";
 import { encodeWav } from "./bounce";
-import { getBlobForUrl, persistBlobUrls } from "./autosave-media";
 import { addCut, cutNotesAt, deleteRegion, regionAt, unrollNotes } from "./note-cuts";
 
 /** A persistent hardware CC destination. Namespaced parameters identify device controls. */
@@ -74,7 +71,6 @@ export interface MidiTarget {
 export const midiTargetKey = (t: MidiTarget) => `${t.id}:${t.param}`;
 const MIDI_MAP_KEY = "synclab.midimap";
 const MIDI_INPUT_KEY = "synclab.midi.input";
-const AUTOSAVE_KEY = "synclab.autosave.v1";
 
 /** Preserve the untouched portions of an older take when a new recording covers only part of it. */
 /** Snaps where a finished take lands to the edit grid (defaults to the nearest step). */
