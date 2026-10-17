@@ -29,7 +29,7 @@ import { useApp } from "@/lib/synclab/app-state";
 import { MidiLearnBlock, MidiLearnButton, MidiLearnStrip } from "./MidiLearn";
 import { TrackNotes } from "@/components/studio/TrackNotes";
 import { QuickNotes } from "@/components/studio/QuickNotes";
-import { TrackStylePicker } from "@/components/studio/TrackStyle";
+import { TrackIcon, TrackStylePicker } from "@/components/studio/TrackStyle";
 import { BUILT_IN_PLUGINS } from "@/lib/synclab/plugins";
 import type { AuxId, BusId, BusState, PluginInstance, Track, VcaId } from "@/lib/synclab/types";
 import { cn } from "@/lib/utils";
@@ -131,10 +131,10 @@ function Meter({ id, level, tall }: { id: string; level: number; tall?: boolean 
   // dB scale: level is a 0..1 linear fraction, so dB = 20·log10(level); show -60..0 dB.
   const DB_TICKS = [0, -6, -12, -24, -36, -48, -60];
   return (
-    <div className={cn("flex items-stretch gap-0.5", tall ? "h-full min-h-40" : "h-44")}>
+    <div className={cn("flex items-stretch gap-0.5", tall ? "h-full min-h-0" : "h-44")}>
       <div className="relative w-5 shrink-0" aria-hidden>
         {DB_TICKS.map((db) => (
-          <div key={db} className="absolute right-0 flex items-center gap-px" style={{ top: `${(db / -60) * 100}%` }}>
+          <div key={db} className="absolute right-0 flex items-center gap-px" style={{ top: `calc(${(db / -60) * 100}% - ${(db / -60) * 7}px)` }}>
             <span className="font-mono text-[6px] leading-none text-muted-foreground/80">{db}</span>
             <span className="inline-block h-px w-1 bg-muted-foreground/60" />
           </div>
@@ -349,6 +349,7 @@ const ROW = {
   fader: "mx-row-fader h-[300px]",
   readout: "mx-row-readout h-5",
   buttons: "mx-row-buttons h-[68px]",
+  name: "mx-row-name h-12",
 } as const;
 
 /** Console desk finishes the user can pick between. */
@@ -615,6 +616,11 @@ function DeviceSlots({ t, narrow }: { t: Track; narrow: boolean }) {
       </Popover>
     </div>
   );
+}
+
+/** Instrument drawing shown on a channel's name plate. */
+function KindIcon({ t, className }: { t: Track; className?: string }) {
+  return <TrackIcon track={t} className={className} tinted={false} />;
 }
 
 /** Colour + icon picker so every channel can be restyled from the console. */
@@ -948,6 +954,27 @@ function Strip({
         boxShadow: `inset 4px 0 0 0 ${t.color}, inset 0 1px 0 0 rgba(255,255,255,0.08)${selected ? `, inset 0 0 0 1px ${tint(45)}` : ""}`,
       } as CSSProperties}
     >
+      {/* channel name plate — sits above the controls and never floats over the level meter */}
+      <div
+        className={cn(ROW.name, "flex items-center gap-1.5 border-b border-black/40 px-1.5")}
+        style={{
+          background: `linear-gradient(90deg, color-mix(in oklab, ${t.color} 70%, transparent), color-mix(in oklab, ${t.color} 40%, transparent))`,
+          boxShadow: `inset 0 2px 0 0 ${t.color}`,
+        }}
+        title={t.name}
+      >
+        <KindIcon t={t} className="size-3.5 shrink-0" />
+        <Button
+          variant="ghost"
+          aria-label={`Select ${t.name} mixer channel`}
+          aria-pressed={selected}
+          onClick={(e) => { e.stopPropagation(); onSelect(); }}
+          className="h-full min-w-0 flex-1 truncate rounded-none p-0 text-left font-mono text-[9px] font-semibold uppercase text-foreground"
+        >
+          {t.name}
+        </Button>
+      </div>
+
       {/* channel header: number, colour, clip LED */}
       <div
         className={cn(ROW.head, "flex items-center gap-1 border-b border-black/50 px-1.5")}
