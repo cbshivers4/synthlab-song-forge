@@ -409,12 +409,18 @@
 .mx-console:not(.mx-phone) .mx-row-name > svg { width: 14px; height: 14px; }
 .mx-console:not(.mx-phone) .mx-row-name > span { font-size: 9px; letter-spacing: 0; }
 /* Docked-at-bottom console (Studio Pro reference): tighter rows so the timeline keeps the upper half */
-.mx-console:not(.mx-phone) .mx-row-inserts { height: 56px; }
-.mx-console:not(.mx-phone) .mx-row-routing { height: 34px; }
-.mx-console:not(.mx-phone) .mx-row-buttons { height: 34px; }
-.mx-console:not(.mx-phone) .mx-row-fader { height: 120px; }
-.mx-console:not(.mx-phone) .mx-row-scope { height: 32px; }
-.mx-console:not(.mx-phone) .mx-row-send-bars { height: 22px; }
+.mx-console:not(.mx-phone) .mx-row-head { height: 28px; }
+.mx-console:not(.mx-phone) .mx-row-inserts { height: 48px; }
+.mx-console:not(.mx-phone) .mx-row-eq { height: 26px; }
+.mx-console:not(.mx-phone) .mx-row-sends { height: 24px; }
+.mx-console:not(.mx-phone) .mx-row-send-bars { height: 20px; }
+.mx-console:not(.mx-phone) .mx-row-routing { height: 30px; }
+.mx-console:not(.mx-phone) .mx-row-pan { height: 28px; }
+.mx-console:not(.mx-phone) .mx-row-buttons { height: 30px; }
+.mx-console:not(.mx-phone) .mx-row-readout { height: 18px; }
+.mx-console:not(.mx-phone) .mx-row-fader { height: 104px; }
+.mx-console:not(.mx-phone) .mx-row-name { height: 24px; }
+.mx-console:not(.mx-phone) .mx-row-scope { height: 26px; }
 .mx-console:not(.mx-phone) .mx-row-scope { order: 11; height: 48px; }
 .mx-console:not(.mx-phone) .mx-fader[data-orientation="vertical"] { flex-direction: column; }
 .mx-console:not(.mx-phone) .mx-fader[data-orientation="vertical"] > span:first-child { width: 5px; height: 100%; background: var(--mixer-edge); }
