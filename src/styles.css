@@ -1426,6 +1426,19 @@
 .arrangement-timeline .track-selected .track-touch-header { background: var(--arrangement-header); }
 .arrangement-timeline .track-selected { background: color-mix(in oklab, var(--playhead) 6%, transparent); }
 .arrangement-timeline .track-touch-header .text-muted-foreground { color: color-mix(in oklab, var(--arrangement-text) 76%, var(--arrangement-surface)); }
+/* Shared desktop-style arrangement with adjustable channel geometry. */
+.arrangement-timeline [data-track-row] { min-height: 132px !important; }
+.arrangement-timeline [data-lane] { min-height: 0 !important; height: auto !important; min-width: 0; }
+.arrangement-timeline .track-touch-header { overflow-y: auto; overflow-x: hidden; }
+.phone-console .arrangement-timeline[data-desktop-style="true"] .timeline-edit-toolbar { display: flex !important; flex-wrap: nowrap; overflow-x: auto; min-height: 44px; }
+.phone-console .arrangement-timeline[data-desktop-style="true"] .timeline-edit-toolbar > * { flex-shrink: 0; }
+.phone-console .arrangement-timeline[data-desktop-style="true"] .track-touch-header { padding-block: 6px; overflow-y: auto; }
+.phone-console .arrangement-timeline[data-desktop-style="true"] .track-touch-header > div { height: auto; min-height: 0; }
+.phone-console .arrangement-timeline[data-desktop-style="true"] .timeline-track-actions { height: 32px; }
+.phone-console .arrangement-timeline[data-desktop-style="true"] .timeline-track-actions > button { height: 32px; }
+.phone-console .arrangement-timeline[data-desktop-style="true"] > .shrink-0:nth-child(2) { max-height: none; }
+.phone-console .docked-phone-timeline ~ .phone-tool-panel .mx-console:not(.mx-phone) { height: 100%; min-height: 0; }
+.phone-console .mx-console:not(.mx-phone) .mobile-mixer-strips { overflow: auto; touch-action: pan-x pan-y; }
 .arrangement-clip {
   --arrangement-wave: color-mix(in oklab, var(--clip-audio) 35%, var(--arrangement-ink));
   --arrangement-clip-face: var(--clip-audio);

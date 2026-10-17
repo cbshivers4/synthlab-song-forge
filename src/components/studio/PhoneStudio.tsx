@@ -76,8 +76,8 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
         <div className="flex h-12 items-center justify-between border-b border-border bg-surface px-3"><span className="text-sm font-semibold">Transport</span><Button variant="ghost" size="icon" className="size-12" aria-label="Close transport" onClick={() => setTransportOpen(false)}><X /></Button></div>
         <TopBar />
       </div>
-      {panel === "mixer" && <div className="docked-phone-timeline h-[clamp(110px,26dvh,170px)] shrink-0 border-b border-border"><Timeline phonePaged /></div>}
-      {!panel && room === "edit" && <PhonePages name="Timeline"><Timeline phonePaged /></PhonePages>}
+      {panel === "mixer" && <div className="docked-phone-timeline h-[clamp(210px,40dvh,380px)] shrink-0 border-b border-border"><Timeline desktopStyle /></div>}
+      {!panel && room === "edit" && <Timeline desktopStyle />}
       {panel && children}
       {!panel && room !== "edit" && <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <header className="phone-room-header grid h-14 shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center border-b border-border px-5"><h2 className="truncate text-base font-semibold">{room === "sounds" ? "Sounds & instruments" : "Effects & tools"}</h2><span className="text-xs text-muted-foreground">SYNCLAB</span></header>

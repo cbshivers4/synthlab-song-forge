@@ -1557,8 +1557,9 @@ function MasterStrip({ level: peak }: { level: number }) {
   );
 }
 
-export function Mixer({ phonePage = 0, phoneChannels, phoneControlPage = "levels" }: { phonePage?: number; phoneChannels?: number; phoneControlPage?: "levels" | "performance" }) {
-  const isMobile = useIsMobile();
+export function Mixer({ phonePage = 0, phoneChannels, phoneControlPage = "levels", desktopLayout = false }: { phonePage?: number; phoneChannels?: number; phoneControlPage?: "levels" | "performance"; desktopLayout?: boolean }) {
+  const mobileDevice = useIsMobile();
+  const isMobile = mobileDevice && !desktopLayout;
   const { tracks, selectedId, select, setPanel, buses, setBus, vcas, setVca, auxReturns, setAuxReturn, updateTrack, addTrack } = useStudio();
   const levels = useMeters(tracks);
   const [narrow, setNarrow] = useState(false);
