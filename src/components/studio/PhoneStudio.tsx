@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { AudioLines, ChevronLeft, ChevronRight, FolderOpen, Home, Music2, Scissors, SlidersHorizontal, Wand2, Settings2, Radio, Disc3, Grid2x2, Piano, Gauge, FileSearch, Cpu, Palette, NotebookPen, LifeBuoy, Mic, Bot, Sparkles, Film, PanelTop, Move, X, Maximize2, Minimize2 } from "lucide-react";
+import { AudioLines, ChevronLeft, ChevronRight, FolderOpen, Home, Music2, Scissors, SlidersHorizontal, Wand2, Settings2, Radio, Disc3, Grid2x2, Piano, Gauge, FileSearch, Cpu, Palette, NotebookPen, LifeBuoy, Mic, Bot, Sparkles, Film, PanelTop, Move, X, Maximize2, Minimize2, GripHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStudio, type PanelId } from "@/lib/synclab/store";
 import { useApp } from "@/lib/synclab/app-state";
@@ -42,6 +42,19 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
   const [transportOpen, setTransportOpen] = useState(false);
   const [resizeHandlesVisible, setResizeHandlesVisible] = useState(false);
   const [mixerFull, setMixerFull] = useState(false);
+  const [dockHeight, setDockHeight] = useState(150);
+  const startDockDrag = (event: React.PointerEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    const startY = event.clientY;
+    const startH = dockHeight;
+    const move = (e: PointerEvent) => {
+      const max = Math.max(120, window.innerHeight - 160);
+      setDockHeight(Math.min(max, Math.max(0, startH + e.clientY - startY)));
+    };
+    const up = () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+  };
   useEffect(() => { setTransportOpen(false); }, [panel]);
   // The phone studio always opens on the edit screen (timeline) — never an
   // instrument such as the drum machine, even if one was open last visit.
@@ -89,7 +102,10 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
     </nav>
     </div>
     <main className="phone-console-stage relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-      {panel === "mixer" && !mixerFull && <div className="docked-phone-timeline h-[clamp(110px,24dvh,190px)] shrink-0 border-b border-border"><Timeline desktopStyle resizeHandlesVisible={resizeHandlesVisible} /></div>}
+      {panel === "mixer" && !mixerFull && <>
+        {dockHeight > 0 && <div className="docked-phone-timeline shrink-0 overflow-hidden" style={{ height: dockHeight }}><Timeline desktopStyle resizeHandlesVisible={resizeHandlesVisible} /></div>}
+        <div role="separator" aria-orientation="horizontal" aria-label="Resize timeline and mixer" title="Drag to resize timeline and mixer" onPointerDown={startDockDrag} className="dock-splitter flex h-4 shrink-0 cursor-row-resize touch-none items-center justify-center border-y border-border bg-surface"><GripHorizontal className="size-4 text-muted-foreground" /></div>
+      </>}
       {!panel && room === "edit" && <Timeline desktopStyle resizeHandlesVisible={resizeHandlesVisible} />}
       {panel && children}
       {!panel && room !== "edit" && <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
