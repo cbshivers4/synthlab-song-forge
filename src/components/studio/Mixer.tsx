@@ -1634,6 +1634,7 @@ export function Mixer({ phonePage = 0, phoneChannels, phoneControlPage = "levels
     >
       {/* console toolbar */}
       <div className="mx-console-toolbar flex min-h-10 items-center gap-3 overflow-x-auto border-b border-border px-3 py-2">
+        {mobileDevice && (() => { const st = tracks.find((x) => x.id === selectedId); return st ? <Popover><PopoverTrigger asChild><Button variant="outline" size="sm" className="shrink-0" aria-label="Mixer MIDI Learn">MIDI Learn</Button></PopoverTrigger><PopoverContent className="w-[min(88vw,520px)]"><MidiLearnStrip id={st.id} label={`${st.name} channel — move a knob/fader after tapping`} /></PopoverContent></Popover> : null; })()}
         {isMobile ? (
           <>
             <span className="font-display text-xs font-bold uppercase tracking-widest text-primary">Mixer</span>
@@ -1802,7 +1803,7 @@ export function Mixer({ phonePage = 0, phoneChannels, phoneControlPage = "levels
         )}
       </div>
 
-      {(() => { const st = tracks.find((x) => x.id === selectedId); return st ? <div className="px-2 py-1"><MidiLearnStrip id={st.id} label={`${st.name} channel — move a knob/fader after tapping`} /></div> : null; })()}
+      {!mobileDevice && (() => { const st = tracks.find((x) => x.id === selectedId); return st ? <div className="px-2 py-1"><MidiLearnStrip id={st.id} label={`${st.name} channel — move a knob/fader after tapping`} /></div> : null; })()}
       {tracks.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 px-6 py-14 text-center">
           <Sliders className="size-7 text-muted-foreground/60" />
