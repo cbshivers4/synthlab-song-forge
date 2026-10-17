@@ -42,6 +42,19 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
   const [transportOpen, setTransportOpen] = useState(false);
   const [resizeHandlesVisible, setResizeHandlesVisible] = useState(false);
   useEffect(() => { setTransportOpen(false); }, [panel]);
+  // The phone studio always opens on the edit screen (timeline) — never an
+  // instrument such as the drum machine, even if one was open last visit.
+  useEffect(() => {
+    setPanel(null);
+    setRoom("edit");
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (!event.persisted) return;
+      setPanel(null);
+      setRoom("edit");
+    };
+    window.addEventListener("pageshow", onPageShow);
+    return () => window.removeEventListener("pageshow", onPageShow);
+  }, [setPanel]);
   // Mobile studio opens automatically — no rotate gate.
   const consoleRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
