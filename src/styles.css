@@ -959,6 +959,13 @@
 .phone-console .docked-phone-timeline { overflow: hidden; }
 .phone-console .docked-phone-timeline .mobile-timeline { min-height: 0 !important; height: 100%; }
 .phone-console .docked-phone-timeline .phone-timeline-heading { display: none; }
+.phone-console .docked-phone-timeline ~ .phone-tool-panel .phone-pages,
+.phone-console .docked-phone-timeline ~ .phone-tool-panel .phone-page-viewport,
+.phone-console .docked-phone-timeline ~ .phone-tool-panel .phone-editor-content { height: 100%; min-height: 0; padding: 0; }
+.phone-console .docked-phone-timeline ~ .phone-tool-panel .mx-phone { height: 100%; min-height: 0; overflow: hidden; }
+.phone-console .docked-phone-timeline ~ .phone-tool-panel .mx-phone .mobile-mixer-strips { flex: 1; min-height: 0; overflow: auto; touch-action: pan-x pan-y; }
+.phone-console .docked-phone-timeline ~ .phone-tool-panel .mx-phone .mobile-mixer-strips > .bg-surface { height: 100%; }
+.phone-console .docked-phone-timeline ~ .phone-tool-panel .mx-phone .phone-mix-channel { height: 100%; min-height: 0; }
 .phone-console .phone-editor-content:has(> .mx-phone) { height: auto; }
 .phone-console .mx-phone { height: auto; overflow: visible; }
 .phone-console .mx-phone .mobile-mixer-strips { flex: none; overflow: auto; touch-action: pan-x pan-y; }
