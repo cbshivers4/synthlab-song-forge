@@ -29,7 +29,7 @@ import { useApp } from "@/lib/synclab/app-state";
 import { MidiLearnBlock, MidiLearnButton, MidiLearnStrip } from "./MidiLearn";
 import { TrackNotes } from "@/components/studio/TrackNotes";
 import { QuickNotes } from "@/components/studio/QuickNotes";
-import { TrackIcon, TrackStylePicker } from "@/components/studio/TrackStyle";
+import { TrackStylePicker } from "@/components/studio/TrackStyle";
 import { BUILT_IN_PLUGINS } from "@/lib/synclab/plugins";
 import type { AuxId, BusId, BusState, PluginInstance, Track, VcaId } from "@/lib/synclab/types";
 import { cn } from "@/lib/utils";
@@ -290,9 +290,6 @@ export function InsertRack({
   );
 }
 
-function KindIcon({ t, className }: { t: Track; className?: string }) {
-  return <TrackIcon track={t} className={className} tinted={false} />;
-}
 
 /** Per-channel send menu: reverb / delay / chorus amounts plus each return's FX chain. */
 function SendsMenu({ t }: { t: Track }) {
@@ -352,7 +349,6 @@ const ROW = {
   fader: "mx-row-fader h-[300px]",
   readout: "mx-row-readout h-5",
   buttons: "mx-row-buttons h-[68px]",
-  name: "mx-row-name h-12",
 } as const;
 
 /** Console desk finishes the user can pick between. */
@@ -1125,21 +1121,6 @@ function Strip({
         <ClipLed id={t.id} compact />
       </div>
 
-      {/* coloured name plate */}
-      <div
-        className={cn(ROW.name, "flex flex-col items-center justify-center gap-0.5 border-b border-black/40 px-1.5 text-center")}
-        style={{
-          background: `linear-gradient(90deg, color-mix(in oklab, ${t.color} 70%, transparent), color-mix(in oklab, ${t.color} 40%, transparent))`,
-          boxShadow: `inset 0 2px 0 0 ${t.color}`,
-        }}
-        title={t.name}
-      >
-        <KindIcon t={t} className="size-9 shrink-0" />
-        <Button variant="ghost" aria-label={`Select ${t.name} mixer channel`} aria-pressed={selected} onClick={(e) => { e.stopPropagation(); onSelect(); }} className="h-full min-w-0 flex-1 truncate rounded-none p-0 font-mono text-[9px] font-semibold uppercase text-foreground">
-          {t.name}
-        </Button>
-      </div>
-
       {/* M / S / REC / MON — Studio Pro style letter buttons at the bottom (2x2 so they stay big and tappable) */}
       <div className={cn(ROW.buttons, "grid grid-cols-2 gap-1 px-1")}>
         <button
@@ -1231,7 +1212,7 @@ function BusStrip({
     >
       <div className={cn(ROW.head, "flex items-center justify-between border-b border-black/50 px-1.5 font-mono text-[8px] uppercase tracking-widest text-muted-foreground")} style={{ background: tint(16) }}>
         <Screw />
-        Bus
+        <span className="truncate font-bold text-foreground">{id}</span>
         <Screw />
       </div>
       {advanced && (
@@ -1272,12 +1253,6 @@ function BusStrip({
       <div className={cn(ROW.readout, "flex items-center justify-center gap-1 border-b border-border/60")}>
         <span className="font-mono text-[9px] text-muted-foreground">{toDb(state.volume).toFixed(1)} dB</span>
         <ClipLed id={`bus:${id}`} compact />
-      </div>
-      <div
-        className={cn(ROW.name, "flex items-center justify-center border-b border-black/40")}
-        style={{ background: tint(45), boxShadow: `inset 0 2px 0 0 ${color}` }}
-      >
-        <span className="truncate font-mono text-[9px] font-bold uppercase tracking-wider text-foreground">{id}</span>
       </div>
        <div className={cn(ROW.buttons, "flex items-start px-1 pt-1")}>
          <MidiLearnButton id={`bus:${id}`} param="mute" label={`${id} bus mute`} />
@@ -1335,7 +1310,7 @@ function ControlStrip({ kind, name, state, onChange, memberCount, level }: {
   const aux = kind === "AUX";
   return (
     <div className="flex w-[116px] shrink-0 flex-col border-r border-border bg-surface-2/70">
-      <div className={cn(ROW.head, "flex items-center justify-center border-b border-border font-mono text-[9px] font-bold tracking-wider", aux ? "text-primary" : "text-accent-foreground")}>{kind}</div>
+      <div className={cn(ROW.head, "flex items-center justify-center border-b border-border font-mono text-[9px] font-bold tracking-wider", aux ? "text-primary" : "text-accent-foreground")}>{kind} {name}</div>
        <div className={cn(ROW.eq, "flex items-center justify-center gap-1 border-b border-border/60")}><MidiLearnButton id={`${aux ? "aux" : "vca"}:${name}`} param="volume" label={`${kind} ${name} level`} /><MidiLearnButton id={`${aux ? "aux" : "vca"}:${name}`} param="mute" label={`${kind} ${name} mute`} /></div>
       {advanced && <div className={cn(ROW.scope, "flex items-center justify-center border-b border-border/60 font-mono text-[9px] text-muted-foreground")}>{aux ? "FX RETURN" : `${memberCount ?? 0} CHANNELS`}</div>}
       <div className={cn(ROW.devices, "flex items-center border-b border-border/60 p-2")}>
@@ -1350,7 +1325,6 @@ function ControlStrip({ kind, name, state, onChange, memberCount, level }: {
         <Meter id={`${aux ? "aux" : "vca"}:${name}`} level={level} tall />
       </div>
       <div className={cn(ROW.readout, "flex items-center justify-between gap-1 border-b border-border/60 px-1 font-mono text-[9px] text-muted-foreground")}><span>{toDb(state.volume).toFixed(1)}</span><span>{fracToDb(level).toFixed(0)}</span><ClipLed id={`${aux ? "aux" : "vca"}:${name}`} compact /></div>
-      <div className={cn(ROW.name, "flex items-center justify-center border-b border-border/60 px-2 text-center font-mono text-[10px] font-bold uppercase text-foreground")}>{aux ? name : `VCA ${name}`}</div>
       <div className={cn(ROW.buttons, "px-2 pt-1")}>
         <Button variant={state.muted ? "destructive" : "outline"} size="sm" className="h-8 w-full text-[10px]" onClick={() => onChange({ muted: !state.muted })} aria-label={`${state.muted ? "Unmute" : "Mute"} ${kind} ${name}`}>{state.muted ? "MUTED" : "MUTE"}</Button>
       </div>
@@ -1469,7 +1443,7 @@ function MasterStrip({ level: peak }: { level: number }) {
         style={{ background: `color-mix(in oklab, ${color} 22%, transparent)` }}
       >
         <Screw />
-        Main
+        Master
         <Popover>
           <PopoverTrigger asChild>
             <button aria-label="Master MIDI controls" title="Master hardware control" className="text-muted-foreground hover:text-foreground">
@@ -1535,12 +1509,6 @@ function MasterStrip({ level: peak }: { level: number }) {
         <span className={cn("font-mono text-[9px]", peak > 0.98 ? "text-red-400" : "text-muted-foreground")}>
           {fracToDb(peak).toFixed(1)} dB
         </span>
-      </div>
-      <div
-        className={cn(ROW.name, "flex items-center justify-center border-b border-border/60")}
-        style={{ background: `color-mix(in oklab, ${color} 55%, transparent)`, boxShadow: `inset 0 2px 0 0 ${color}` }}
-      >
-        <span className="font-display text-[10px] font-bold uppercase tracking-widest text-foreground">Master</span>
       </div>
       <div className={cn(ROW.buttons, "flex items-start justify-center px-1 pt-1")}>
         <button

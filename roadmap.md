@@ -8,6 +8,7 @@
 - [x] Add a playable bass generator that creates editable MIDI patterns
 
 # Roadmap
+- [x] Remove the mixer channel name/instrument bar from every strip (desktop, bus, VCA/aux and master); names stay in the left channel list and bus/VCA/aux/master identity moved into each strip's top row. Signed-in desktop and sideways-phone checks passed, 27 audio tests passed, build OK.
 - [x] Match supplied mixer reference: flat grey console, compact colored strips, silver faders, left channel list and separate master output. Signed-in desktop selection/mute/fader and sideways phone mute/last-channel access passed; all 27 audio tests passed, preview build OK. Physical-device testing remains open.
 - [x] Match supplied timeline/transport/tools references: grey lanes, compact icon tools and bottom desktop transport, solid color clips with white selection/handles. Signed-in browser verified imported audio off-grid cut, selected-piece deletion, MIDI cut pieces, recording/export menus and sideways phone full-height timeline/transport access; cut tests passed. Real-device testing remains open.
 - [ ] AI Co-Producer reported failure on phone/desktop: signed-in preview checks opened and returned real chord answers on both sizes without errors; awaiting a screenshot of the user's failure to reproduce it.
