@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { AudioLines, ChevronLeft, ChevronRight, FolderOpen, Home, Music2, Scissors, SlidersHorizontal, Wand2, Settings2, Radio, Disc3, Grid2x2, Piano, Gauge, FileSearch, Cpu, Palette, NotebookPen, LifeBuoy, Mic, Bot, Sparkles, Film, PanelTop, Move, X } from "lucide-react";
+import { AudioLines, ChevronLeft, ChevronRight, FolderOpen, Home, Music2, Scissors, SlidersHorizontal, Wand2, Settings2, Radio, Disc3, Grid2x2, Piano, Gauge, FileSearch, Cpu, Palette, NotebookPen, LifeBuoy, Mic, Bot, Sparkles, Film, PanelTop, Move, X, Maximize2, Minimize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStudio, type PanelId } from "@/lib/synclab/store";
 import { useApp } from "@/lib/synclab/app-state";
@@ -41,6 +41,7 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
   const [railOpen, setRailOpen] = useState(true);
   const [transportOpen, setTransportOpen] = useState(false);
   const [resizeHandlesVisible, setResizeHandlesVisible] = useState(false);
+  const [mixerFull, setMixerFull] = useState(false);
   useEffect(() => { setTransportOpen(false); }, [panel]);
   // The phone studio always opens on the edit screen (timeline) — never an
   // instrument such as the drum machine, even if one was open last visit.
