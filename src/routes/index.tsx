@@ -265,7 +265,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
         title="Drag to resize this editor"
         className="absolute inset-x-0 -top-1 z-20 h-2 cursor-ns-resize hover:bg-primary/40"
       />
-      <div className="flex min-h-14 items-center gap-2 border-b border-border bg-surface-2/60 px-3 py-1.5">
+      <div className="editor-panel-header flex min-h-14 items-center gap-2 border-b border-border bg-surface-2/60 px-3 py-1.5">
         <span className="shrink-0 text-primary">{current.icon}</span>
         <h2 className="min-w-0 flex-1 truncate font-display text-sm font-semibold tracking-[0.12em] sm:text-[11px] sm:tracking-[0.2em]">
           {current.title}
