@@ -290,3 +290,6 @@
 - [x] Refine Studio back view into independent device columns with detailed rear panels; signed-in desktop and sideways-phone checks verified all eight columns, horizontal scrolling and re-patching with no runtime errors.
 - [x] Mixer overlap fixes: phone head-row colour dot/clip LED no longer inflated over the channel number (wrap + small-control exemptions), transport docked in-flow below the workspace so it never covers the mixer record button; signed-in sideways phone verified REC fully visible with transport open, 27 audio tests pass, build OK.
 - [x] Make desktop Studio View open fully: the bottom device strip steps out for Studio View like it already does for the mixer, the room scales its equipment into the available space so nothing hides below a scrollbar, and the duplicated master-output footer bar was folded into the header. Signed-in 1440×900 check measured the panel filling the workspace with every instrument, monitor, desk and reel fully in view and no overlaps; 27 audio tests and typecheck passed. Sideways phone still scrolls inside the room by design. Live site needs republishing.
+
+- [x] Oct 17: stronger selected-track highlight, drum-beat cutting, single-instrument stem isolation, Just-one stem buttons, visible bass sound picker, more stem templates
+- [ ] Replicate account needs credit for clean AI stems (blocked on owner)
