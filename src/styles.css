@@ -372,6 +372,8 @@
 
 /* Reference console geometry; phone detail controls retain their full sizing. */
 .mx-console:not(.mx-phone) { box-shadow: none; }
+.mx-console button:focus-visible, .mx-console input:focus-visible, .mx-console [role="slider"]:focus-visible, .mx-console [role="region"]:focus-visible { outline: 2px solid var(--playhead); outline-offset: 2px; }
+.mx-console .mx-channel-list { overflow-y: auto; }
 .mx-console[data-console="studiopro"] {
   --surface: var(--mixer-desk);
   --surface-2: var(--mixer-control);

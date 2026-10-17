@@ -2189,6 +2189,7 @@ function RazorIcon({ className }: { className?: string }) {
 
 function EditToolbar() {
   const {
+    setPanel,
     editTool,
     setEditTool,
     selectAll,
@@ -2377,6 +2378,7 @@ function EditToolbar() {
       <ToolBtn tool="draw" icon={<Pencil className="size-3" />} label="Draw" keys="B" />
       <ToolBtn tool="split" icon={<ScissorsLineDashed className="size-3" />} label="Split" keys="C" />
       <ToolBtn tool="razor" icon={<RazorIcon className="size-3" />} label="Razor" keys="R" />
+      <Button size="sm" variant="ghost" className="arrangement-tool size-8 shrink-0 p-0" aria-label="Mute selected channels" aria-pressed={targets.length > 0 && targets.every((id) => tracks.find((t) => t.id === id)?.muted)} disabled={!targets.length} title="Mute selected channels" onClick={() => { const muted = targets.every((id) => tracks.find((t) => t.id === id)?.muted); targets.forEach((id) => updateTrack(id, { muted: !muted })); }}><Volume2 className="size-3.5" /></Button>
       {(editTool === "split" || editTool === "razor") && (
         <Button
           size="sm"
@@ -2396,6 +2398,9 @@ function EditToolbar() {
       <Button size="sm" variant="ghost" className="size-8 shrink-0 p-0" aria-label="Redo" title="Redo (⌘⇧Z / Ctrl+Y)" onClick={redo}>
         <Redo2 className="size-3.5" />
       </Button>
+      <Button size="sm" variant="outline" className="h-8 shrink-0 gap-1 px-2 text-[10px]" aria-label="Open mixer" title="Mixer" onClick={() => setPanel("mixer")}><Settings2 className="size-3.5" />Mixer</Button>
+      <Button size="sm" variant="ghost" className="arrangement-tool size-8 shrink-0 p-0" aria-label="Open sound library" title="Sound library" onClick={() => setPanel("browser")}><FolderOpen className="size-3.5" /></Button>
+      <Button size="sm" variant="ghost" className="arrangement-tool size-8 shrink-0 p-0" aria-label="Open effects rack" title="Effects rack" onClick={() => setPanel("plugins")}><Settings2 className="size-3.5" /></Button>
       <div className="mx-1 h-4 w-px bg-border" />
       <Popover>
         <PopoverTrigger asChild>
@@ -2487,7 +2492,7 @@ function EditToolbar() {
           <div className="grid grid-cols-[auto_auto] items-center gap-1 [&_button]:justify-start">
       <span className="label-xs shrink-0">QUANTIZE</span>
       <Select value={String(transport.quantize ?? 1)} onValueChange={(v) => setTransport({ quantize: Number(v) })}>
-        <SelectTrigger className="h-6 w-[72px] shrink-0 font-mono text-[10px]" title="Grid that Quantize snaps notes to">
+        <SelectTrigger aria-label="Quantize grid" className="h-6 w-[72px] shrink-0 font-mono text-[10px]" title="Grid that Quantize snaps notes to">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -2499,7 +2504,7 @@ function EditToolbar() {
         </SelectContent>
       </Select>
       <Select value={String(qStrength)} onValueChange={(v) => setQStrength(Number(v))}>
-        <SelectTrigger className="h-6 w-[62px] shrink-0 font-mono text-[10px]" title="How far notes move toward the grid">
+        <SelectTrigger aria-label="Quantize strength" className="h-6 w-[62px] shrink-0 font-mono text-[10px]" title="How far notes move toward the grid">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -2528,7 +2533,7 @@ function EditToolbar() {
           <div className="grid grid-cols-[auto_auto] items-center gap-1 [&_button]:justify-start">
       <span className="label-xs shrink-0">TIMEBASE</span>
       <Select value={transport.timebase ?? "bars"} onValueChange={(v) => setTransport({ timebase: v as "bars" | "seconds" })}>
-        <SelectTrigger className="h-6 w-[78px] shrink-0 font-mono text-[10px]" title="Show the playhead position in bars or in minutes and seconds">
+        <SelectTrigger aria-label="Timeline timebase" className="h-6 w-[78px] shrink-0 font-mono text-[10px]" title="Show the playhead position in bars or in minutes and seconds">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -2538,7 +2543,7 @@ function EditToolbar() {
       </Select>
       <span className="label-xs shrink-0">SNAP</span>
       <Select value={String(snap)} onValueChange={(v) => setTransport({ snap: Number(v) })}>
-        <SelectTrigger className="h-6 w-[72px] shrink-0 font-mono text-[10px]" title="Snap grid for moving and trimming clips">
+        <SelectTrigger aria-label="Timeline snap grid" className="h-6 w-[72px] shrink-0 font-mono text-[10px]" title="Snap grid for moving and trimming clips">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
