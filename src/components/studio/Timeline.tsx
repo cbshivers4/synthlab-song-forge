@@ -2377,6 +2377,7 @@ function EditToolbar() {
       <ToolBtn tool="draw" icon={<Pencil className="size-3" />} label="Draw" keys="B" />
       <ToolBtn tool="split" icon={<ScissorsLineDashed className="size-3" />} label="Split" keys="C" />
       <ToolBtn tool="razor" icon={<RazorIcon className="size-3" />} label="Razor" keys="R" />
+      <Button size="sm" variant="ghost" className="arrangement-tool size-8 shrink-0 p-0" aria-label="Mute selected channels" aria-pressed={targets.length > 0 && targets.every((id) => tracks.find((t) => t.id === id)?.muted)} disabled={!targets.length} title="Mute selected channels" onClick={() => { const muted = targets.every((id) => tracks.find((t) => t.id === id)?.muted); targets.forEach((id) => updateTrack(id, { muted: !muted })); }}><Volume2 className="size-3.5" /></Button>
       {(editTool === "split" || editTool === "razor") && (
         <Button
           size="sm"
@@ -2396,6 +2397,9 @@ function EditToolbar() {
       <Button size="sm" variant="ghost" className="size-8 shrink-0 p-0" aria-label="Redo" title="Redo (⌘⇧Z / Ctrl+Y)" onClick={redo}>
         <Redo2 className="size-3.5" />
       </Button>
+      <Button size="sm" variant="outline" className="h-8 shrink-0 gap-1 px-2 text-[10px]" aria-label="Open mixer" title="Mixer" onClick={() => setPanel("mixer")}><Settings2 className="size-3.5" />Mixer</Button>
+      <Button size="sm" variant="ghost" className="arrangement-tool size-8 shrink-0 p-0" aria-label="Open sound library" title="Sound library" onClick={() => setPanel("browser")}><FolderOpen className="size-3.5" /></Button>
+      <Button size="sm" variant="ghost" className="arrangement-tool size-8 shrink-0 p-0" aria-label="Open effects rack" title="Effects rack" onClick={() => setPanel("plugins")}><Settings2 className="size-3.5" /></Button>
       <div className="mx-1 h-4 w-px bg-border" />
       <Popover>
         <PopoverTrigger asChild>

@@ -276,5 +276,6 @@
 - [x] Fixes: solo-instrument stem prompts, sharper stem separation, mic hand-off between tools, white selected-track outline, razor/split cuts notes as well as clips, piano-roll Clear all notes, phone login photo, refreshed login feature list, Other Apps menu grouping.
 
 - [x] DAW-style cutting: free/grid cut toggle, note parts unroll and cut into deletable regions, Delete removes selected clip/part; Open instrument picks a synth; menu actions no longer jump to the piano roll. Verified in browser.
+- [ ] Make the mixer directly accessible, improve labeled keyboard controls, and expose the existing reference-picture tools on desktop and phone.
 - [ ] AI stem separation (Demucs on Replicate) built and wired — blocked until the Replicate account has credit; then test a real song.
 - [ ] Co-Producer full-page error on user's Samsung phone via synclabsapp.com — not reproducible; error screen now shows details, tool crashes contained. Waiting on user's new screenshot after publish.

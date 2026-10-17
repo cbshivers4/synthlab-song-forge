@@ -18,6 +18,7 @@ const sounds = [
   { label: "Live View", icon: Radio, panel: "live" }, { label: "Live Looper", icon: Disc3, panel: "looper" },
 ] as const;
 const tools = [
+  { label: "Mixer", icon: SlidersHorizontal, panel: "mixer" },
   { label: "Studio View", icon: Home, panel: "studio-view" },
   { label: "Reel-to-Reel Recorder", icon: Disc3, panel: "reel-recorder" },
   { label: "Video Sampler", icon: Film, panel: "video-sampler" },
@@ -65,6 +66,7 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
       </div>
       <Button variant="ghost" size="icon" className="size-12 shrink-0" aria-label="Home and projects" onClick={() => setStage("start")}><Home /></Button>
       </>}
+      {!railOpen && <Button variant={panel === "mixer" ? "secondary" : "ghost"} size="icon" className="size-11 shrink-0" aria-label="Open mixer" aria-pressed={panel === "mixer"} title="Mixer" onClick={() => setPanel("mixer")}><SlidersHorizontal className="size-5" /></Button>}
       <Button variant="ghost" className={`h-12 w-full shrink-0 flex-col gap-0.5 px-0 text-[9px] font-semibold ${transport.recording ? "text-destructive" : transportOpen || transport.playing ? "text-primary" : "text-muted-foreground"}`} aria-label={transportOpen ? "Hide transport" : "Show transport"} title={transportOpen ? "Hide transport" : "Show transport"} aria-expanded={transportOpen} aria-controls="phone-transport-overlay" onClick={() => setTransportOpen((open) => !open)}><PanelTop className="size-5" />{railOpen ? "TRANSPORT" : transport.recording ? "REC" : transport.playing ? "PLAY" : ""}</Button>
       <Button variant="outline" size="icon" className="phone-rail-toggle mt-auto shrink-0 self-center" aria-label={railOpen ? "Hide navigation bar" : "Show navigation bar"} aria-expanded={railOpen} onClick={() => setRailOpen((open) => !open)}>{railOpen ? <ChevronLeft className="size-4" /> : <ChevronRight className="size-4" />}</Button>
     </nav>
