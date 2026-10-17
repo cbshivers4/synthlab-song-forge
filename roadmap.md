@@ -284,3 +284,5 @@
 - [ ] AI stem separation (Demucs on Replicate) built and wired — blocked until the Replicate account has credit; then test a real song.
 - [ ] Co-Producer full-page error on user's Samsung phone via synclabsapp.com — not reproducible; error screen now shows details, tool crashes contained. Waiting on user's new screenshot after publish.
 - [x] Phone studio opens on the edit screen instead of an instrument: entering the studio or resuming the page closes any tool panel and restores EDIT. Signed-in phone checks passed (first screen timeline, drum machine opens on request, re-entry returns to timeline).
+
+- [x] Refine Studio back view into independent device columns with detailed rear panels; signed-in desktop and sideways-phone checks verified all eight columns, horizontal scrolling and re-patching with no runtime errors.
