@@ -10,8 +10,16 @@ import { useStudio } from "@/lib/synclab/store";
 import { peaksOf, separateStems } from "@/lib/synclab/stems";
 import { encodeWav } from "@/lib/synclab/bounce";
 import { generateStemFn } from "@/utils/generate-stem.functions";
+import { isolatePart, partForInstrument } from "@/lib/synclab/ai-isolate";
 
-const INSTRUMENTS = ["Drums", "Bass", "Piano", "Synth pad", "Lead synth", "Guitar", "Strings", "Brass", "Vocal chops", "Percussion"];
+const TEMPLATES: { group: string; items: string[] }[] = [
+  { group: "Drums", items: ["Drums", "Percussion", "Trap hi-hats", "House drums"] },
+  { group: "Bass", items: ["Bass", "808 bass", "Synth bass", "Electric bass", "Upright bass"] },
+  { group: "Synth", items: ["Synth", "Synth pad", "Lead synth", "Arp synth", "Pluck synth", "Detroit strings synth"] },
+  { group: "Voice", items: ["Voice", "Lead vocal", "Vocal chops", "Choir", "Humming", "Vocal ad-libs"] },
+  { group: "Keys", items: ["Piano", "Electric piano", "Organ", "Rhodes"] },
+  { group: "Band", items: ["Guitar", "Acoustic guitar", "Strings", "Brass", "Saxophone", "Flute"] },
+];
 const KEYS = ["", "C major", "A minor", "G major", "E minor", "D major", "B minor", "F major", "D minor", "C minor", "F minor"];
 
 export function StemGenerator() {
@@ -23,6 +31,7 @@ export function StemGenerator() {
   const [busy, setBusy] = useState(false);
   const [cleaning, setCleaning] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [note, setNote] = useState<string | null>(null);
   const [result, setResult] = useState<{ url: string; buf: AudioBuffer; name: string } | null>(null);
   const [playing, setPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -43,25 +52,33 @@ export function StemGenerator() {
       const blob = new Blob([bytes], { type: "audio/mpeg" });
       const ctx = new AudioContext();
       const raw = await ctx.decodeAudioData(await blob.arrayBuffer());
-      // The AI sometimes adds drums or other parts, so clean the clip on the device:
-      // drum stems keep only the hits, vocal stems keep only the centre voice, everything else has its drums removed.
+      // The AI music model sometimes adds other parts, so isolate only the requested instrument.
+      // First choice: AI separation (Demucs) keeps just that part. Fallback: on-device spectral cleaning.
       setCleaning(true);
-      const isDrums = /drum|percussion/i.test(instrument);
-      const isVocal = /vocal|voice/i.test(instrument);
-      const parts = await separateStems(raw, isDrums ? ["drums"] : isVocal ? ["vocals"] : ["drums"]);
-      const L0 = raw.getChannelData(0), R0 = raw.numberOfChannels > 1 ? raw.getChannelData(1) : L0;
-      let left: Float32Array, right: Float32Array;
-      if (isDrums && parts.drums) ({ left, right } = parts.drums);
-      else if (isVocal && parts.vocals) ({ left, right } = parts.vocals);
-      else if (parts.drums) {
-        const d = parts.drums;
-        left = new Float32Array(L0.length); right = new Float32Array(L0.length);
-        for (let i = 0; i < L0.length; i++) { left[i] = L0[i]! - d.left[i]!; right[i] = R0[i]! - d.right[i]!; }
-      } else { left = L0.slice(); right = R0.slice(); }
-      const buf = ctx.createBuffer(2, left.length, raw.sampleRate);
+      const part = partForInstrument(instrument);
+      let left: Float32Array, right: Float32Array, sr = raw.sampleRate, how = "";
+      try {
+        const iso = await ctx.decodeAudioData(await (await isolatePart(blob, part)).arrayBuffer());
+        left = iso.getChannelData(0).slice(); right = (iso.numberOfChannels > 1 ? iso.getChannelData(1) : iso.getChannelData(0)).slice(); sr = iso.sampleRate;
+        how = "AI kept only the " + instrument.toLowerCase() + ".";
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "";
+        const want = part === "drums" ? ["drums"] : part === "vocals" ? ["vocals"] : part === "bass" ? ["bass"] : ["drums", "bass", "vocals"];
+        const parts = await separateStems(raw, want as Parameters<typeof separateStems>[1]);
+        const L0 = raw.getChannelData(0), R0 = raw.numberOfChannels > 1 ? raw.getChannelData(1) : L0;
+        const keep = part === "drums" ? parts.drums : part === "vocals" ? parts.vocals : part === "bass" ? parts.bass : null;
+        if (keep) ({ left, right } = keep);
+        else {
+          left = L0.slice(); right = R0.slice();
+          for (const k of ["drums", "bass", "vocals"] as const) { const d = parts[k]; if (d) for (let i = 0; i < left.length; i++) { left[i] = left[i]! - d.left[i]!; right[i] = right[i]! - d.right[i]!; } }
+        }
+        how = "Cleaned on your device (some bleed can remain). Clean AI isolation unavailable" + (msg ? ": " + msg : ".");
+      }
+      setNote(how);
+      const buf = ctx.createBuffer(2, left.length, sr);
       buf.copyToChannel(new Float32Array(left), 0); buf.copyToChannel(new Float32Array(right), 1);
       void ctx.close();
-      const wav = encodeWav({ left, right, sampleRate: raw.sampleRate });
+      const wav = encodeWav({ left, right, sampleRate: sr });
       if (result) URL.revokeObjectURL(result.url);
       setResult({ url: URL.createObjectURL(wav), buf, name: `${instrument.toUpperCase()} · AI` });
     } catch {
@@ -103,14 +120,19 @@ export function StemGenerator() {
       <header>
         <h2 className="font-mono text-sm font-bold tracking-[0.18em]">GENERATE STEM</h2>
         <p className="text-xs text-muted-foreground">
-          Describe a part and AI creates a 30-second audio clip at {transport.bpm} BPM. Afterwards SYNCLAB strips other sounds on your device — drums are removed from non-drum parts, drum parts keep only the hits. Some faint bleed can remain. Each generation uses AI credits.
+          Describe a part and AI creates a 30-second audio clip at {transport.bpm} BPM. Afterwards AI separation keeps only the instrument you picked and removes everything else. If that service is unavailable, SYNCLAB cleans it on your device instead, where faint bleed can remain. Each generation uses AI credits.
         </p>
       </header>
 
       <div className="flex flex-wrap gap-2">
-        {INSTRUMENTS.map((i) => (
-          <button key={i} type="button" onClick={() => setInstrument(i)} disabled={busy}
-            className={`min-h-11 rounded-md border px-3 text-sm ${instrument === i ? "border-primary bg-primary/15 text-primary" : "border-border text-muted-foreground hover:text-foreground"}`}>{i}</button>
+        {TEMPLATES.map((g) => (
+          <div key={g.group} className="flex w-full flex-wrap items-center gap-2">
+            <span className="w-14 shrink-0 font-mono text-[10px] font-bold tracking-widest text-muted-foreground">{g.group.toUpperCase()}</span>
+            {g.items.map((i) => (
+              <button key={i} type="button" onClick={() => setInstrument(i)} disabled={busy} aria-pressed={instrument === i}
+                className={`min-h-11 rounded-md border px-3 text-sm ${instrument === i ? "border-primary bg-primary/15 text-primary" : "border-border text-muted-foreground hover:text-foreground"}`}>{i}</button>
+            ))}
+          </div>
         ))}
       </div>
 
@@ -124,7 +146,7 @@ export function StemGenerator() {
 
       <div className="flex flex-wrap gap-2">
         <Button size="lg" className="min-h-12" disabled={busy} onClick={() => void generate()}>
-          <Sparkles className="size-4" /> {cleaning ? "Removing other sounds…" : busy ? "Composing… (up to a minute)" : "Generate"}
+          <Sparkles className="size-4" /> {cleaning ? "Keeping only your instrument… (about a minute)" : busy ? "Composing… (up to a minute)" : "Generate"}
         </Button>
         {result && <>
           <Button size="lg" variant="secondary" className="min-h-12" onClick={toggle}>
@@ -135,6 +157,7 @@ export function StemGenerator() {
       </div>
 
       {result && <GeneratedWaveform buffer={result.buf} label="Generated stem waveform" />}
+      {note && result && <p className="text-xs text-muted-foreground">{note}</p>}
       {error && <p className="rounded-md border border-destructive/50 bg-destructive/10 p-2 text-sm text-destructive">{error}</p>}
     </section>
   );

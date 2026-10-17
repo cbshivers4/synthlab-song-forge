@@ -1420,15 +1420,16 @@
 
 /* Selected timeline channel: a bright white outline that reads on every track colour. */
 .track-selected {
-  box-shadow: inset 0 0 0 1px var(--playhead);
+  box-shadow: inset 0 0 0 2px var(--playhead), 0 0 0 1px var(--playhead);
+  z-index: 3;
 }
 
 /* Reference arrangement uses track colors, without changing audio paths. */
 .arrangement-timeline { background: var(--arrangement-background); --grid-line: color-mix(in oklab, var(--playhead) 7%, transparent); --grid-line-strong: color-mix(in oklab, var(--playhead) 19%, transparent); }
 .arrangement-timeline [data-lane] { background-color: transparent; }
 .arrangement-timeline .track-touch-header { background: var(--arrangement-surface); }
-.arrangement-timeline .track-selected .track-touch-header { background: var(--arrangement-header); }
-.arrangement-timeline .track-selected { background: color-mix(in oklab, var(--playhead) 6%, transparent); }
+.arrangement-timeline .track-selected .track-touch-header { background: color-mix(in oklab, var(--playhead) 22%, var(--arrangement-header)); }
+.arrangement-timeline .track-selected { background: color-mix(in oklab, var(--playhead) 16%, transparent); }
 .arrangement-timeline .track-touch-header .text-muted-foreground { color: color-mix(in oklab, var(--arrangement-text) 76%, var(--arrangement-surface)); }
 /* Shared desktop-style arrangement with adjustable channel geometry. */
 .arrangement-timeline [data-track-row] { min-height: 132px !important; }

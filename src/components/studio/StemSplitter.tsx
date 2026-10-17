@@ -32,7 +32,7 @@ export function StemSplitter() {
   const { tracks, addTrack, addClip } = useStudio();
   const inputRef = useRef<HTMLInputElement>(null);
   const [source, setSource] = useState<Source | null>(null);
-  const [picked, setPicked] = useState<Record<StemId, boolean>>({ vocals: true, drums: true, bass: true, music: true, instrumental: false });
+  const [picked, setPicked] = useState<Record<StemId, boolean>>({ vocals: true, drums: false, bass: false, music: false, instrumental: false });
   const [busy, setBusy] = useState<string | null>(null);
   const [progress, setProgress] = useState<number | null>(null);
   const [mode, setMode] = useState<"ai" | "device">("ai");
@@ -237,6 +237,19 @@ export function StemSplitter() {
           {source.name} · {source.buffer.duration.toFixed(1)}s · {isStereo(source.buffer) ? "stereo" : "mono"}
         </p>
       )}
+
+      <div className="flex flex-wrap items-center gap-2" aria-label="Get just one part">
+        <span className="font-mono text-xs font-bold tracking-widest text-muted-foreground">JUST ONE:</span>
+        {STEMS.map((s) => {
+          const only = STEMS.every((o) => picked[o.id] === (o.id === s.id));
+          return (
+            <Button key={s.id} size="sm" className="min-h-11" variant={only ? "default" : "outline"} aria-pressed={only} disabled={!!busy}
+              onClick={() => setPicked({ vocals: false, drums: false, bass: false, music: false, instrumental: false, [s.id]: true })}>
+              Just {s.id === "instrumental" ? "the instrumental" : s.label.toLowerCase()}
+            </Button>
+          );
+        })}
+      </div>
 
       <div className="grid gap-2 sm:grid-cols-2">
         {STEMS.map((s) => (

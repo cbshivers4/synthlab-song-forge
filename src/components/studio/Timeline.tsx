@@ -571,6 +571,41 @@ function DrumClip({ track }: { track: Track }) {
     );
   const shown = pads.slice(0, 8);
   const steps = track.pads?.[0]?.steps.length ?? 16;
+  const cuts = track.cuts ?? [];
+  if (cuts.length > 0) {
+    // Cut beat: each part is its own block that can be selected and deleted, like a DAW part.
+    return <>{regionsOf(cuts, total).map(([a, b]) => {
+      const lo = Math.floor(a), hi = Math.ceil(b);
+      const part = pads.map((p) => ({ steps: Array.from({ length: hi - lo }, (_, i) => p.steps[(lo + i) % Math.max(1, steps)] ?? 0) }));
+      const hits = part.reduce((n, p) => n + p.steps.filter((v) => v > 0).length, 0);
+      if (hits === 0) return null;
+      const active = track.activeRegion != null && track.activeRegion >= a - 0.001 && track.activeRegion < b - 0.001;
+      return (
+        <div key={a} data-selected={active} data-note-region={active ? "active" : "part"}
+          className="arrangement-clip absolute inset-y-1 flex flex-col overflow-hidden rounded-[2px] border"
+          style={{ left: `${a / total * 100}%`, width: `calc(${(b - a) / total * 100}% - 1px)` }}
+          onPointerDown={(e) => { e.stopPropagation(); updateTrack(track.id, { activeRegion: a }); select(track.id); }}
+          onClick={(e) => e.stopPropagation()}
+          onDoubleClick={() => { select(track.id); setPanel("drums"); }}
+          title={`${track.name} beat part — double-click to open the drum machine`}>
+          <div className="arrangement-clip-name flex h-[17px] shrink-0 items-center gap-1 px-1.5">
+            <Disc3 className="size-2.5 shrink-0" />
+            <span className="min-w-0 flex-1 truncate font-mono text-[9px] font-semibold">{track.name} · {hits} HITS</span>
+            <Button type="button" variant="ghost" size="icon"
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                updateTrack(track.id, { pads: (track.pads ?? []).map((p) => ({ ...p, steps: p.steps.map((v, i) => (i >= a && i < b ? 0 : v)) })), activeRegion: undefined });
+                toast.success("Beat part deleted");
+              }}
+              title="Delete this part" aria-label={`Delete beat part at step ${Math.round(a)}`}
+              className="relative z-30 size-4 shrink-0 p-0 hover:text-destructive"><Trash2 className="size-3" /></Button>
+          </div>
+          <div className="relative min-h-0 flex-1"><DrumHitWave pads={part} steps={hi - lo} total={hi - lo} /></div>
+        </div>
+      );
+    })}</>;
+  }
   const hits = pads.reduce((n, p) => n + p.steps.filter((s) => s > 0).length, 0);
   return (
     <div

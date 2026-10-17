@@ -6,6 +6,9 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useStudio } from "@/lib/synclab/store";
 import { getBeatsPerBar } from "@/lib/synclab/timebase";
+import { SYNTH_PRESETS } from "@/lib/synclab/presets";
+
+const BASS_SOUNDS = SYNTH_PRESETS.filter((p) => p.category === "Bass").map((p) => p.name);
 import { BASS_STYLES, BASS_TEMPLATES, generateBass, NOTE_NAMES, PROGRESSIONS, rootsFromKey, rootsFromTracks, type BassStyle } from "@/lib/synclab/bass-gen";
 
 export function BassGenerator() {
@@ -56,13 +59,13 @@ export function BassGenerator() {
     toast.success(`${t.label} bassline generated`, { description: `${notes.length} notes in ${NOTE_NAMES[t.tonic]} ${t.minor ? "minor" : "major"} — check the waveform, then preview or add it.` });
   };
   const activeTemplate = BASS_TEMPLATES.find((t) => t.id === template);
-  const build = (name: string) => {
+  const build = (name: string, withSound = sound) => {
     const notes = generated ?? generateBass(roots, style, barSteps, octave);
-    const id = addTrack("instrument", name, sound, { keepPanel: true });
+    const id = addTrack("instrument", name, withSound, { keepPanel: true });
     updateTrack(id, { steps: bars * barSteps, notes });
     return { id, notes };
   };
-  const preview = () => pv.start((n) => build(n(`BASS · ${label}`)).id);
+  const preview = (withSound?: string) => pv.start((n) => build(n(`BASS · ${label}`), withSound ?? sound).id);
   const create = () => {
     if (pv.keep(`BASS · ${label}`)) { toast.success("Bassline added"); return; }
     const { notes } = build(`BASS · ${label}`);
@@ -125,12 +128,21 @@ export function BassGenerator() {
         <select value={bars} onChange={(e) => setBars(Number(e.target.value))} aria-label="Bars" className="min-h-12 rounded-md border border-border bg-surface-2 px-3 text-sm">
           {[2, 4, 8].map((b) => <option key={b} value={b}>{b} bars</option>)}
         </select>
-        <select value={sound} onChange={(e) => setSound(e.target.value)} aria-label="Bass sound" className="min-h-12 rounded-md border border-border bg-surface-2 px-3 text-sm">
-          {["Sub Bass", "Reese Bass", "Ghetto Tech Bass", "Techno Drone Bass", "303 Acid", "Acid Rubber", "Wobble Bass", "Slap Bass", "Upright Bass", "8-Bit Bass"].map((s) => <option key={s}>{s}</option>)}
-        </select>
         <select value={octave} onChange={(e) => setOctave(Number(e.target.value))} aria-label="Octave" className="min-h-12 rounded-md border border-border bg-surface-2 px-3 text-sm">
           <option value={0}>Very low (C0)</option><option value={1}>Low (C1)</option><option value={2}>Mid (C2)</option>
         </select>
+      </div>
+
+      <div className="space-y-2">
+        <p className="font-mono text-xs font-bold tracking-widest text-muted-foreground">BASS SOUND · {BASS_SOUNDS.length} TO PICK FROM</p>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-6" role="radiogroup" aria-label="Bass sound">
+          {BASS_SOUNDS.map((s) => (
+            <button key={s} type="button" role="radio" aria-checked={sound === s}
+              onClick={() => { setSound(s); if (pv.previewing) { pv.stop(); setTimeout(() => preview(s), 60); } }}
+              className={`min-h-11 rounded-md border px-2 text-left text-sm ${sound === s ? "border-primary bg-primary/15 text-primary" : "border-border text-muted-foreground hover:text-foreground"}`}>{s}</button>
+          ))}
+        </div>
+        <p className="text-xs text-muted-foreground">Pick a sound, then press Preview to hear your bassline with it. Changing the sound while previewing switches it right away.</p>
       </div>
 
       <p className="font-mono text-xs text-primary">Roots: {roots.map((r) => NOTE_NAMES[r]).join(" → ")}</p>
@@ -140,7 +152,7 @@ export function BassGenerator() {
         {generated && <span className="font-mono text-xs text-muted-foreground">{generated.length} notes ready</span>}
       </div>
       {generated && <PatternWaveform pattern={{ notes: generated, instrument: sound, steps: bars * barSteps }} bpm={transport.bpm} label="Generated bassline waveform" />}
-      <PreviewButtons pv={pv} onPreview={preview} onAdd={create} addLabel="Add bassline to timeline" />
+      <PreviewButtons pv={pv} onPreview={() => preview()} onAdd={create} addLabel="Add bassline to timeline" />
     </section>
   );
 }
