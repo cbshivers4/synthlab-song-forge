@@ -1495,7 +1495,7 @@
 .phone-console .mx-console[data-touch-console] .mx-master { width: 168px; }
 .phone-console .mx-console[data-touch-console] .mx-channel > div,
 .phone-console .mx-console[data-touch-console] .mx-master > div { flex-shrink: 0; }
-.phone-console .mx-console[data-touch-console] .mx-row-head { height: 44px; gap: 4px; flex-wrap: nowrap; }
+.phone-console .mx-console[data-touch-console] .mx-row-head { height: 44px; gap: 2px; flex-wrap: nowrap; padding-inline: 2px; }
 .phone-console .mx-console[data-touch-console] .mx-row-head button { min-height: 28px; min-width: 20px; }
 .phone-console .mx-console[data-touch-console] .mx-row-inserts { height: 112px; overflow-y: auto; }
 .phone-console .mx-console[data-touch-console] .mx-row-inserts button { min-height: 28px; font-size: 10px; }
