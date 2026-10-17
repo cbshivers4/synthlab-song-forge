@@ -957,7 +957,7 @@
 .phone-console .phone-page-viewport > .mobile-timeline .track-touch-header { overflow: hidden; }
 /* Phone console: mixer docks at the bottom with a compact live timeline above it */
 .phone-console .docked-phone-timeline { overflow: hidden; }
-.phone-console .docked-phone-timeline .mobile-timeline { min-height: 0 !important; height: 100%; border-x: 0; border-b: 0; }
+.phone-console .docked-phone-timeline .mobile-timeline { min-height: 0 !important; height: 100%; }
 .phone-console .docked-phone-timeline .phone-timeline-heading { display: none; }
 .phone-console .phone-editor-content:has(> .mx-phone) { height: auto; }
 .phone-console .mx-phone { height: auto; overflow: visible; }
