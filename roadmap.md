@@ -8,6 +8,7 @@
 - [x] Add a playable bass generator that creates editable MIDI patterns
 
 # Roadmap
+- [ ] Match supplied mixer reference with a flat grey console, colored compact strips, silver faders, channel list and separate master output; preserve every audio control and touch access.
 - [x] Match supplied timeline/transport/tools references: grey lanes, compact icon tools and bottom desktop transport, solid color clips with white selection/handles. Signed-in browser verified imported audio off-grid cut, selected-piece deletion, MIDI cut pieces, recording/export menus and sideways phone full-height timeline/transport access; cut tests passed. Real-device testing remains open.
 - [ ] AI Co-Producer reported failure on phone/desktop: signed-in preview checks opened and returned real chord answers on both sizes without errors; awaiting a screenshot of the user's failure to reproduce it.
 - [x] Add a project-synced Studio View with instruments on stands, mixer, effects rack and monitors; signed-in desktop/phone checks verified editor opening, added sampler visibility, real meter activity, effect insertion and portrait/landscape scrolling.
