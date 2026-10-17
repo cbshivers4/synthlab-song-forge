@@ -35,7 +35,7 @@ const masterIn = (t: Track): JackRef => ({ device: "master", port: `in:${t.id}` 
 const busIn = (b: string): JackRef => ({ device: `bus:${b}`, port: "in" });
 
 export function StudioBack() {
-  const { tracks, movePlugin, togglePluginBypass, updateTrack } = useStudio();
+  const { tracks, togglePluginBypass, updateTrack } = useStudio();
   const [pending, setPending] = useState<JackRef | null>(null);
   const [selectedWire, setSelectedWire] = useState<string | null>(null);
   const boxRef = useRef<HTMLDivElement>(null);
