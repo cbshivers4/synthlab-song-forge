@@ -13,3 +13,5 @@ Arrangement clip presentation consumes per-lane track color variables with share
 AI stem separation runs Demucs on Replicate via server functions (start/poll/fetch); the browser polls so no server call waits on the model, and on-device spectral separation stays as the free fallback.
 
 Mixer uses named shared row classes for compact desktop geometry, a store-backed channel list and an output dock; phone strips retain touch-sized controls and existing routing/actions. The desktop mixer gets extra editor height and excludes DeviceBar so names and faders stay visible.
+
+Mixer selection retains its panel with portal-safe clicks and labeled channel-name buttons. Shared sliders forward labels to focusable thumbs; toolbar shortcuts reuse store actions.

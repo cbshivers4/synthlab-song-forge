@@ -221,14 +221,14 @@ export function InsertRack({
         {list.map((p) => (
           <div key={p.id} className="rounded-md border border-border bg-surface-2/50 px-2 py-1.5">
             <div className="flex items-center gap-1.5">
-              <button onClick={() => onBypass(p.id)} title="Bypass" className="p-0.5">
+              <button aria-label={`${p.bypass ? "Enable" : "Bypass"} ${p.name}`} aria-pressed={p.bypass} onClick={() => onBypass(p.id)} title="Bypass" className="p-0.5">
                 <Power className={cn("size-4", p.bypass ? "text-muted-foreground" : "text-primary")} />
               </button>
               <button className="flex-1 truncate text-left font-mono text-[11px] uppercase" onClick={() => setOpen(open === p.id ? null : p.id)}>
                 {p.name}
                 <span className="ml-1 text-muted-foreground">{p.format}</span>
               </button>
-              <button onClick={() => onRemove(p.id)} title="Remove" className="p-0.5">
+              <button aria-label={`Remove ${p.name}`} onClick={() => onRemove(p.id)} title="Remove" className="p-0.5">
                 <Trash2 className="size-4 text-muted-foreground hover:text-destructive" />
               </button>
             </div>
@@ -567,7 +567,7 @@ function DeviceSlots({ t, narrow }: { t: Track; narrow: boolean }) {
           className="flex items-center gap-1 rounded-sm px-1 py-[3px]"
           style={{ background: `color-mix(in oklab, ${t.color} 18%, var(--surface-2, transparent))` }}
         >
-          <button onClick={(e) => { e.stopPropagation(); togglePluginBypass(t.id, p.id); }} title="Bypass">
+          <button aria-label={`${p.bypass ? "Enable" : "Bypass"} ${p.name} on ${t.name}`} aria-pressed={p.bypass} onClick={(e) => { e.stopPropagation(); togglePluginBypass(t.id, p.id); }} title="Bypass">
             <Power className="size-2.5" style={{ color: p.bypass ? "var(--muted-foreground)" : t.color }} />
           </button>
           <button
@@ -578,7 +578,7 @@ function DeviceSlots({ t, narrow }: { t: Track; narrow: boolean }) {
             {p.name}
           </button>
           <button
-            onClick={(e) => { e.stopPropagation(); removePlugin(t.id, p.id); }}
+            aria-label={`Remove ${p.name} from ${t.name}`} onClick={(e) => { e.stopPropagation(); removePlugin(t.id, p.id); }}
             title={`Remove ${p.name}`}
             className="text-muted-foreground hover:text-destructive"
           >
@@ -857,7 +857,7 @@ function ChannelMenu({ t }: { t: Track }) {
       <PopoverTrigger asChild>
         <button
           onClick={(e) => e.stopPropagation()}
-          title="Channel menu"
+          aria-label={`${t.name} channel menu`} title="Channel menu"
           className="shrink-0 text-muted-foreground hover:text-foreground"
         >
           <MoreVertical className="size-3" />
@@ -866,7 +866,7 @@ function ChannelMenu({ t }: { t: Track }) {
       <PopoverContent align="start" className="w-56 space-y-2 p-3" onClick={(e) => e.stopPropagation()}>
         <div className="label-xs">Channel</div>
         <input
-          value={t.name}
+          aria-label={`${t.name} channel name`} value={t.name}
           onChange={(e) => updateTrack(t.id, { name: e.target.value })}
           className="h-7 w-full rounded-sm border border-border bg-surface-2 px-2 font-mono text-[10px] uppercase"
         />
@@ -937,7 +937,7 @@ function Strip({
   const tint = (pct: number) => `color-mix(in oklab, ${t.color} ${pct}%, transparent)`;
   return (
     <div
-      onClick={onSelect}
+      role="group" onClick={(e) => { if (e.currentTarget.contains(e.target as Node)) onSelect(); }}
       className={cn(
         "mx-channel flex shrink-0 cursor-pointer flex-col border-r border-border transition-colors",
         narrow ? "w-[92px]" : "w-[132px]"
@@ -1031,7 +1031,7 @@ function Strip({
       {/* audio-to routing */}
       <div className={cn(ROW.io, "flex flex-col justify-center gap-0.5 border-b border-border/60 px-1")}>
         <Select value={t.bus} onValueChange={(v) => updateTrack(t.id, { bus: v as BusId })}>
-          <SelectTrigger
+          <SelectTrigger aria-label={`${t.name} output bus`}
             onClick={(e) => e.stopPropagation()}
             className="h-6 w-full rounded-sm border-border px-1 font-mono text-[8px] uppercase"
             style={{ background: `color-mix(in oklab, ${BUS_COLOR[t.bus] ?? t.color} 22%, var(--surface-2, transparent))` }}
@@ -1099,7 +1099,7 @@ function Strip({
           </div>
         )}
         <Slider
-          aria-label={`${t.name} volume`}
+          aria-label={`${t.name} volume`} aria-valuetext={t.volume === 0 ? "Silent" : `${toDb(t.volume).toFixed(1)} decibels`}
           orientation="vertical"
           className={cn("h-full w-8", FADER_CAP)}
           value={[t.volume]}
@@ -1137,9 +1137,9 @@ function Strip({
         title={t.name}
       >
         <KindIcon t={t} className="size-9 shrink-0" />
-        <span className="w-full truncate font-mono text-[9px] font-semibold uppercase tracking-wider text-foreground">
+        <Button variant="ghost" aria-label={`Select ${t.name} mixer channel`} aria-pressed={selected} onClick={(e) => { e.stopPropagation(); onSelect(); }} className="h-full min-w-0 flex-1 truncate rounded-none p-0 font-mono text-[9px] font-semibold uppercase text-foreground">
           {t.name}
-        </span>
+        </Button>
       </div>
 
       {/* M / S / REC / MON — Studio Pro style letter buttons at the bottom (2x2 so they stay big and tappable) */}
@@ -1259,6 +1259,7 @@ function BusStrip({
         style={{ "--primary": color } as CSSProperties}
       >
         <Slider
+          aria-label={`${id} bus volume`}
           orientation="vertical"
           className={cn("h-full w-8", FADER_CAP)}
           value={[state.volume]}
@@ -1418,12 +1419,12 @@ function MasterChain({ color }: { color: string }) {
           className="flex items-center gap-1 rounded-sm px-1 py-[2px]"
           style={{ background: `color-mix(in oklab, ${color} 18%, var(--surface-2, transparent))` }}
         >
-          <button onClick={() => toggleFxBypass("bus:master", p.id)} title="Bypass">
+          <button aria-label={`${p.bypass ? "Enable" : "Bypass"} ${p.name} on master`} aria-pressed={p.bypass} onClick={() => toggleFxBypass("bus:master", p.id)} title="Bypass">
             <Power className="size-2.5" style={{ color: p.bypass ? "var(--muted-foreground)" : color }} />
           </button>
           <span className="flex-1 truncate font-mono text-[8px] uppercase">{p.name}</span>
           <button
-            onClick={() => removeFxPlugin("bus:master", p.id)}
+            aria-label={`Remove ${p.name} from master`} onClick={() => removeFxPlugin("bus:master", p.id)}
             title={`Remove ${p.name}`}
             className="text-muted-foreground hover:text-destructive"
           >
@@ -1473,7 +1474,7 @@ function MasterStrip({ level: peak }: { level: number }) {
         Main
         <Popover>
           <PopoverTrigger asChild>
-            <button title="Master hardware control" className="text-muted-foreground hover:text-foreground">
+            <button aria-label="Master MIDI controls" title="Master hardware control" className="text-muted-foreground hover:text-foreground">
               <Sliders className="size-3" />
             </button>
           </PopoverTrigger>
@@ -1518,6 +1519,8 @@ function MasterStrip({ level: peak }: { level: number }) {
           ))}
         </div>
         <Slider
+          aria-label="Master volume"
+          aria-valuetext={master.volume === 0 ? "Silent" : `${toDb(master.volume).toFixed(1)} decibels`}
           orientation="vertical"
           className={cn("h-full w-8", FADER_CAP)}
           value={[master.volume]}
@@ -1558,7 +1561,7 @@ function MasterStrip({ level: peak }: { level: number }) {
 
 export function Mixer({ phonePage = 0, phoneChannels, phoneControlPage = "levels" }: { phonePage?: number; phoneChannels?: number; phoneControlPage?: "levels" | "performance" }) {
   const isMobile = useIsMobile();
-  const { tracks, selectedId, select, buses, setBus, vcas, setVca, auxReturns, setAuxReturn, updateTrack, addTrack } = useStudio();
+  const { tracks, selectedId, select, setPanel, buses, setBus, vcas, setVca, auxReturns, setAuxReturn, updateTrack, addTrack } = useStudio();
   const levels = useMeters(tracks);
   const [narrow, setNarrow] = useState(false);
   // Timeline tracks are always mirrored in the mixer. Extra routing strips open on request.
@@ -1831,7 +1834,7 @@ export function Mixer({ phonePage = 0, phoneChannels, phoneControlPage = "levels
           </div>
         </div>
       ) : (
-        <div className="mobile-mixer-strips flex overflow-x-auto">
+        <div className="mobile-mixer-strips flex overflow-x-auto" role="region" aria-label="Mixer channels" tabIndex={0}>
           {!isMobile && <LabelRail />}
           {(isMobile && phoneChannels != null ? tracks.slice(phonePage * phoneChannels, (phonePage + 1) * phoneChannels) : tracks).map((t) => (
             isMobile ? <PhoneChannel key={t.id} track={t} level={levels.tracks[t.id] ?? 0} selected={t.id === selectedId} index={tracks.indexOf(t)} /> : <Strip
@@ -1841,7 +1844,7 @@ export function Mixer({ phonePage = 0, phoneChannels, phoneControlPage = "levels
               narrow={narrow}
               level={t.muted ? 0 : (levels.tracks[t.id] ?? 0)}
               selected={t.id === selectedId}
-              onSelect={() => select(t.id)}
+              onSelect={() => { select(t.id); setPanel("mixer"); }}
             />
           ))}
           {showBuses &&

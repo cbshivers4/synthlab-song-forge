@@ -29,7 +29,7 @@ Studio panel wallpaper uses one bundled JPEG with a dark semantic overlay and pe
 Timeline names stay single-line; phone actions prioritize REC/AUTO with isolated menu clicks to avoid opening instruments.
 Playhead stays within track rows; headers, ruler and song lane share its width variable, including large phone controls. It renders through the --playhead token (white, never dimmed) and stays draggable from ruler and track lanes.
 Synth sections share wrapping tabs; X-Y pads dispatch through updatePatch to stay synchronized with knobs and saved presets without removing controls.
-Read studio subdirectory AGENTS.md rules before edits; editors shrink to preserve timeline space.
+Read studio AGENTS.md for editor and mixer accessibility rules before edits.
 Drum artwork uses semantic SVG; sort display copies and bank slices by stable IDs/indices to preserve audio and MIDI.
 
 Phone drum tabs reuse DrumRoll and instrument pads for edits/tap recording; sound/kit tabs preserve controls without duplication.

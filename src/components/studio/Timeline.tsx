@@ -2189,6 +2189,7 @@ function RazorIcon({ className }: { className?: string }) {
 
 function EditToolbar() {
   const {
+    setPanel,
     editTool,
     setEditTool,
     selectAll,
