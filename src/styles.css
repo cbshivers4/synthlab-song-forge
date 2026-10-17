@@ -384,13 +384,6 @@
 }
 .mx-console:not(.mx-phone) .mx-console-toolbar { min-height: 32px; gap: 8px; padding: 3px 8px; box-shadow: none; }
 .mx-console:not(.mx-phone) .mobile-mixer-strips { background: var(--mx-a); align-items: stretch; min-height: 0; }
-/* Docked-at-bottom console (Studio Pro reference): tighter rows so the timeline keeps the upper half */
-.mx-console:not(.mx-phone) .mx-row-inserts { height: 56px; }
-.mx-console:not(.mx-phone) .mx-row-routing { height: 34px; }
-.mx-console:not(.mx-phone) .mx-row-buttons { height: 34px; }
-.mx-console:not(.mx-phone) .mx-row-fader { height: 120px; }
-.mx-console:not(.mx-phone) .mx-row-scope { height: 32px; }
-.mx-console:not(.mx-phone) .mx-row-send-bars { height: 22px; }
 .mx-channel-list { width: 150px; background: var(--mx-a); }
 .mx-channel-list-item[aria-pressed="true"] { background: var(--surface-2); box-shadow: inset 2px 0 var(--playhead); }
 .mx-channel-swatch { width: 4px; height: 16px; flex-shrink: 0; background: var(--mixer-channel-color); }
@@ -415,6 +408,13 @@
 .mx-console:not(.mx-phone) .mx-row-name { order: 10; height: 28px; flex-direction: row; gap: 3px; background: var(--mixer-channel-color) !important; box-shadow: none !important; }
 .mx-console:not(.mx-phone) .mx-row-name > svg { width: 14px; height: 14px; }
 .mx-console:not(.mx-phone) .mx-row-name > span { font-size: 9px; letter-spacing: 0; }
+/* Docked-at-bottom console (Studio Pro reference): tighter rows so the timeline keeps the upper half */
+.mx-console:not(.mx-phone) .mx-row-inserts { height: 56px; }
+.mx-console:not(.mx-phone) .mx-row-routing { height: 34px; }
+.mx-console:not(.mx-phone) .mx-row-buttons { height: 34px; }
+.mx-console:not(.mx-phone) .mx-row-fader { height: 120px; }
+.mx-console:not(.mx-phone) .mx-row-scope { height: 32px; }
+.mx-console:not(.mx-phone) .mx-row-send-bars { height: 22px; }
 .mx-console:not(.mx-phone) .mx-row-scope { order: 11; height: 48px; }
 .mx-console:not(.mx-phone) .mx-fader[data-orientation="vertical"] { flex-direction: column; }
 .mx-console:not(.mx-phone) .mx-fader[data-orientation="vertical"] > span:first-child { width: 5px; height: 100%; background: var(--mixer-edge); }
