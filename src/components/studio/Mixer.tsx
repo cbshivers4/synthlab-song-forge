@@ -1634,6 +1634,7 @@ export function Mixer({ phonePage = 0, phoneChannels, phoneControlPage = "levels
           <>
             <span className="font-display text-xs font-bold uppercase tracking-widest text-primary">Mixer</span>
             <div className="ml-auto flex shrink-0 items-center gap-2">
+              <Button variant="secondary" size="sm" className="shrink-0" aria-label="Toggle full screen mixer" onClick={() => window.dispatchEvent(new CustomEvent("synclab:mixer-full"))}>Full screen</Button>
               <QuickNotes label />
               <PhoneFxMenu />
               <PhoneEqButton />
@@ -1647,6 +1648,7 @@ export function Mixer({ phonePage = 0, phoneChannels, phoneControlPage = "levels
           {tracks.length} ch · {activeBuses.length} buses
         </span>
         <div className="ml-auto flex shrink-0 items-center gap-1">
+          {mobileDevice && <Button variant="secondary" size="sm" className="shrink-0" aria-label="Toggle full screen mixer" onClick={() => window.dispatchEvent(new CustomEvent("synclab:mixer-full"))}>Full screen</Button>}
           <QuickNotes label />
           <Popover>
             <PopoverTrigger asChild>
