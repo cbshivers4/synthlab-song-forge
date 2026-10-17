@@ -1,10 +1,11 @@
-import { useEffect, useRef } from "react";
-import { Cpu, Music2, SlidersHorizontal, Speaker } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Cpu, FlipHorizontal2, Music2, SlidersHorizontal, Speaker } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStudio, type PanelId } from "@/lib/synclab/store";
 import type { Track } from "@/lib/synclab/types";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { Scope } from "./Scope";
+import { StudioBack } from "./StudioBack";
 import roomImage from "@/assets/studio-room.jpg";
 
 function InstrumentDrawing({ track }: { track: Track }) {
