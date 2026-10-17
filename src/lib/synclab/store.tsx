@@ -1534,6 +1534,31 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         return true;
       }
 
+      // Drum channels: write the looping beat out across the song, then cut it into separate parts.
+      const pads = t.pads ?? [];
+      if (clips.length === 0 && t.kind === "drum" && pads.some((p) => p.steps.some((v) => v > 0))) {
+        const total = songSteps(transportRef.current.bars);
+        const len = Math.max(1, pads[0]?.steps.length ?? 16);
+        const unrolled = pads.map((p) => (len >= total ? p : { ...p, steps: Array.from({ length: total }, (_, i) => p.steps[i % len] ?? 0) }));
+        const at = Math.round(posSteps);
+        const cuts = addCut(t.cuts, at, total);
+        updateTrack(trackId, { pads: unrolled, steps: Math.max(len, total), cuts, activeRegion: at });
+        const dropRegion = (side: "left" | "right") => {
+          const cur = tracksRef.current.find((x) => x.id === trackId);
+          if (!cur) return;
+          const [a, b] = regionAt(cur.cuts, total, side === "right" ? at : Math.max(0, at - 0.01));
+          updateTrack(trackId, { pads: (cur.pads ?? []).map((p) => ({ ...p, steps: p.steps.map((v, i) => (i >= a && i < b ? 0 : v)) })), activeRegion: undefined });
+          toast.success(`Deleted the ${side} part`);
+        };
+        if (!quiet) toast.success("Beat cut", {
+          description: "The right part is outlined in white. Tap its bin icon or press Delete to remove it.",
+          duration: 10000,
+          action: { label: "Delete right", onClick: () => dropRegion("right") },
+          cancel: { label: "Delete left", onClick: () => dropRegion("left") },
+        });
+        return true;
+      }
+
       if (clips.length === 0) {
         toast("Nothing to cut", { description: "That channel has no audio or notes yet. Record, import or write something first." });
         return false;
