@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { AudioLines, ChevronLeft, ChevronRight, FolderOpen, Home, Music2, Scissors, SlidersHorizontal, Wand2, Settings2, Radio, Disc3, Grid2x2, Piano, Gauge, FileSearch, Cpu, Palette, NotebookPen, LifeBuoy, Mic, Bot, Sparkles, Film, PanelTop, Move, X } from "lucide-react";
+import { AudioLines, ChevronLeft, ChevronRight, FolderOpen, Home, Music2, Scissors, SlidersHorizontal, Wand2, Settings2, Radio, Disc3, Grid2x2, Piano, Gauge, FileSearch, Cpu, Palette, NotebookPen, LifeBuoy, Mic, Bot, Sparkles, Film, PanelTop, Move, X, Maximize2, Minimize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStudio, type PanelId } from "@/lib/synclab/store";
 import { useApp } from "@/lib/synclab/app-state";
@@ -41,6 +41,7 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
   const [railOpen, setRailOpen] = useState(true);
   const [transportOpen, setTransportOpen] = useState(false);
   const [resizeHandlesVisible, setResizeHandlesVisible] = useState(false);
+  const [mixerFull, setMixerFull] = useState(false);
   useEffect(() => { setTransportOpen(false); }, [panel]);
   // The phone studio always opens on the edit screen (timeline) — never an
   // instrument such as the drum machine, even if one was open last visit.
@@ -80,12 +81,13 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
       </>}
       {!railOpen && <Button variant={panel === "mixer" ? "secondary" : "ghost"} size="icon" className="size-11 shrink-0" aria-label="Open mixer" aria-pressed={panel === "mixer"} title="Mixer" onClick={() => setPanel("mixer")}><SlidersHorizontal className="size-5" /></Button>}
       {(panel === "mixer" || (!panel && room === "edit")) && <Button variant={resizeHandlesVisible ? "secondary" : "ghost"} className="h-11 w-full shrink-0 flex-col gap-0.5 px-0 text-[9px] font-semibold" aria-label={resizeHandlesVisible ? "Hide resize handles" : "Show resize handles"} title={resizeHandlesVisible ? "Hide resize handles" : "Show resize handles"} aria-pressed={resizeHandlesVisible} onClick={() => setResizeHandlesVisible((visible) => !visible)}><Move className="size-5" />{railOpen ? "RESIZE" : ""}</Button>}
+      {panel === "mixer" && <Button variant={mixerFull ? "secondary" : "ghost"} className="h-11 w-full shrink-0 flex-col gap-0.5 px-0 text-[9px] font-semibold" aria-label={mixerFull ? "Exit full mixer" : "Open mixer full screen"} title={mixerFull ? "Exit full mixer" : "Open mixer full screen"} aria-pressed={mixerFull} onClick={() => setMixerFull((full) => { const next = !full; if (next) setTransportOpen(false); return next; })}>{mixerFull ? <Minimize2 className="size-5" /> : <Maximize2 className="size-5" />}{railOpen ? "FULL" : ""}</Button>}
       <Button variant="ghost" className={`h-12 w-full shrink-0 flex-col gap-0.5 px-0 text-[9px] font-semibold ${transport.recording ? "text-destructive" : transportOpen || transport.playing ? "text-primary" : "text-muted-foreground"}`} aria-label={transportOpen ? "Hide transport" : "Show transport"} title={transportOpen ? "Hide transport" : "Show transport"} aria-expanded={transportOpen} aria-controls="phone-transport-overlay" onClick={() => setTransportOpen((open) => !open)}><PanelTop className="size-5" />{railOpen ? "TRANSPORT" : transport.recording ? "REC" : transport.playing ? "PLAY" : ""}</Button>
       <Button variant="outline" size="icon" className="phone-rail-toggle mt-auto shrink-0 self-center" aria-label={railOpen ? "Hide navigation bar" : "Show navigation bar"} aria-expanded={railOpen} onClick={() => setRailOpen((open) => !open)}>{railOpen ? <ChevronLeft className="size-4" /> : <ChevronRight className="size-4" />}</Button>
     </nav>
     </div>
     <main className="phone-console-stage relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-      {panel === "mixer" && <div className="docked-phone-timeline h-[clamp(110px,24dvh,190px)] shrink-0 border-b border-border"><Timeline desktopStyle resizeHandlesVisible={resizeHandlesVisible} /></div>}
+      {panel === "mixer" && !mixerFull && <div className="docked-phone-timeline h-[clamp(110px,24dvh,190px)] shrink-0 border-b border-border"><Timeline desktopStyle resizeHandlesVisible={resizeHandlesVisible} /></div>}
       {!panel && room === "edit" && <Timeline desktopStyle resizeHandlesVisible={resizeHandlesVisible} />}
       {panel && children}
       {!panel && room !== "edit" && <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
