@@ -1532,8 +1532,8 @@
 .phone-console .mx-console[data-touch-console] .mx-row-pan { height: auto; min-height: 54px; }
 .phone-console .mx-console[data-touch-console] .mx-row-readout { height: auto; min-height: 38px; }
 .phone-console .mx-console[data-touch-console] .mx-row-buttons { height: auto; min-height: 104px; }
-.phone-console .mx-console[data-touch-console] .mx-channel > div,
-.phone-console .mx-console[data-touch-console] .mx-master > div { overflow: hidden; }
+.phone-console .mx-console[data-touch-console] .mx-channel > div:not(.mx-row-fader),
+.phone-console .mx-console[data-touch-console] .mx-master > div:not(.mx-row-fader) { overflow: hidden; }
 .phone-console .mx-console[data-touch-console] .mx-row-inserts { overflow-y: auto; }
 /* Full-screen mixer: drop the title bar and the transport spacer so the mixer uses the whole screen */
 .phone-console[data-mixer-full="true"] .phone-tool-panel:has(.mx-console) > .editor-panel-header { display: none; }
