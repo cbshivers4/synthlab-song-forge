@@ -288,3 +288,4 @@
 - [x] Phone studio opens on the edit screen instead of an instrument: entering the studio or resuming the page closes any tool panel and restores EDIT. Signed-in phone checks passed (first screen timeline, drum machine opens on request, re-entry returns to timeline).
 
 - [x] Refine Studio back view into independent device columns with detailed rear panels; signed-in desktop and sideways-phone checks verified all eight columns, horizontal scrolling and re-patching with no runtime errors.
+- [x] Mixer overlap fixes: phone head-row colour dot/clip LED no longer inflated over the channel number (wrap + small-control exemptions), transport docked in-flow below the workspace so it never covers the mixer record button; signed-in sideways phone verified REC fully visible with transport open, 27 audio tests pass, build OK.

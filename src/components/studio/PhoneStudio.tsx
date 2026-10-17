@@ -85,10 +85,6 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
     </nav>
     </div>
     <main className="phone-console-stage relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-      <div id="phone-transport-overlay" hidden={!transportOpen} className="absolute inset-x-0 bottom-0 z-50 max-h-full overflow-auto border-t border-border bg-background shadow-lg">
-        <div className="flex h-12 items-center justify-between border-b border-border bg-surface px-3"><span className="text-sm font-semibold">Transport</span><Button variant="ghost" size="icon" className="size-12" aria-label="Close transport" onClick={() => setTransportOpen(false)}><X /></Button></div>
-        <TopBar />
-      </div>
       {panel === "mixer" && <div className="docked-phone-timeline h-[clamp(110px,24dvh,190px)] shrink-0 border-b border-border"><Timeline desktopStyle resizeHandlesVisible={resizeHandlesVisible} /></div>}
       {!panel && room === "edit" && <Timeline desktopStyle resizeHandlesVisible={resizeHandlesVisible} />}
       {panel && children}
@@ -97,6 +93,11 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
         <div className="phone-room-grid grid min-h-0 flex-1 auto-rows-[minmax(8.75rem,1fr)] grid-cols-4 gap-2 overflow-auto p-2.5">{list.map(({ label, icon: Icon, panel: next }, index) => <Button key={label} variant="outline" data-sound-family={index % 4} className="phone-sound-tile h-full min-h-[8.75rem] min-w-0 flex-col gap-2.5 whitespace-normal text-center text-sm leading-tight" onClick={() => setPanel(next as PanelId)}><span className="phone-sound-icon flex size-16 shrink-0 items-center justify-center rounded-xl"><Icon className="size-10" /></span><span className="font-semibold">{label}</span></Button>)}</div>
         <footer className="phone-room-footer grid h-14 shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-t border-border px-4"><Button variant="ghost" className="h-12 justify-start" onClick={() => { requestBluetoothSettings(); setPanel("settings"); }}><Radio />Bluetooth & audio</Button><div className="flex gap-1"><Button variant="outline" className="h-12" onClick={() => openExport()}>Export</Button><Button variant="outline" size="icon" className="size-12" aria-label="Help" onClick={() => openHelp("help")}><LifeBuoy /></Button></div></footer>
       </div>}
+      {/* Docked transport: sits below the workspace so it never covers the mixer or timeline */}
+      <div id="phone-transport-overlay" hidden={!transportOpen} className="max-h-[45%] shrink-0 overflow-auto border-t border-border bg-background shadow-lg">
+        <div className="flex h-12 items-center justify-between border-b border-border bg-surface px-3"><span className="text-sm font-semibold">Transport</span><Button variant="ghost" size="icon" className="size-12" aria-label="Close transport" onClick={() => setTransportOpen(false)}><X /></Button></div>
+        <TopBar />
+      </div>
     </main>
   </div>;
 }
