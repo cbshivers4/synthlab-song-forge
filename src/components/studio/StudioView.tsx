@@ -104,6 +104,7 @@ function StudioMeters() {
 
 export function StudioView() {
   const { tracks, selectedId, select, setPanel, fxChains } = useStudio();
+  const [back, setBack] = useState(false);
   const inserts = tracks.flatMap(track => (track.plugins ?? []).map(plugin => ({ track, plugin })));
   const buses = Object.entries(fxChains).flatMap(([bus, plugins]) => plugins.map(plugin => ({ bus, plugin })));
   const open = (panel: PanelId, id?: string) => { if (id) select(id); setPanel(panel); };
@@ -112,8 +113,13 @@ export function StudioView() {
     <div className="flex shrink-0 flex-wrap items-center gap-3 border-b border-border bg-surface px-3 py-2 text-xs">
       <span className="font-display font-semibold">MY STUDIO</span>
       <span className="text-muted-foreground">{tracks.length} channels · {inserts.length + buses.length} effects</span>
-      <div className="ml-auto flex gap-1"><Button variant="ghost" size="sm" onClick={() => open("mixer")}><SlidersHorizontal className="size-4" />Mixer</Button><Button variant="ghost" size="sm" onClick={() => open("plugins")}><Cpu className="size-4" />Effects</Button></div>
+      <div className="ml-auto flex gap-1">
+        <Button variant={back ? "secondary" : "ghost"} size="sm" aria-pressed={back} onClick={() => setBack(!back)}><FlipHorizontal2 className="size-4" />{back ? "Front" : "Back · Cables"}</Button>
+        <Button variant="ghost" size="sm" onClick={() => open("mixer")}><SlidersHorizontal className="size-4" />Mixer</Button>
+        <Button variant="ghost" size="sm" onClick={() => open("plugins")}><Cpu className="size-4" />Effects</Button>
+      </div>
     </div>
+    {back ? <StudioBack /> : <>
     <div className="studio-room relative min-h-[540px] flex-1 overflow-auto">
       <img src={roomImage} width={1536} height={1024} alt="Graphite music studio with acoustic wall panels" className="pointer-events-none absolute inset-0 h-full w-full object-cover" />
       <div className="studio-room-content relative">
