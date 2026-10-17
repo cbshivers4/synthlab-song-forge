@@ -406,22 +406,22 @@
 .mx-console:not(.mx-phone) .mx-row-readout { order: 8; height: 22px; }
 .mx-console:not(.mx-phone) .mx-row-fader { order: 9; height: 144px; }
 /* Docked-at-bottom console (Studio Pro reference): tighter rows so the timeline keeps the upper half */
-.mx-console:not(.mx-phone) .mx-row-head { height: 28px; }
-.mx-console:not(.mx-phone) .mx-row-inserts { height: 48px; }
-.mx-console:not(.mx-phone) .mx-row-eq { height: 26px; }
-.mx-console:not(.mx-phone) .mx-row-sends { height: 24px; }
-.mx-console:not(.mx-phone) .mx-row-send-bars { height: 20px; }
-.mx-console:not(.mx-phone) .mx-row-routing { height: 30px; }
-.mx-console:not(.mx-phone) .mx-row-pan { height: 28px; }
-.mx-console:not(.mx-phone) .mx-row-buttons { height: 30px; }
-.mx-console:not(.mx-phone) .mx-row-readout { height: 18px; }
+.mx-console:not(.mx-phone) .mx-row-head { height: 26px; }
+.mx-console:not(.mx-phone) .mx-row-inserts { height: 40px; }
+.mx-console:not(.mx-phone) .mx-row-eq { height: 22px; }
+.mx-console:not(.mx-phone) .mx-row-sends { height: 20px; }
+.mx-console:not(.mx-phone) .mx-row-send-bars { height: 16px; }
+.mx-console:not(.mx-phone) .mx-row-routing { height: 26px; }
+.mx-console:not(.mx-phone) .mx-row-pan { height: 24px; }
+.mx-console:not(.mx-phone) .mx-row-buttons { height: 26px; }
+.mx-console:not(.mx-phone) .mx-row-readout { height: 16px; }
 .mx-console:not(.mx-phone) .mx-row-fader { height: 104px; }
 /* Channel name plate: a normal row above the controls — never floats over the level meter */
-.mx-console:not(.mx-phone) .mx-row-name { order: -1; height: 22px; flex-direction: row; gap: 3px; background: var(--mixer-channel-color) !important; box-shadow: none !important; }
+.mx-console:not(.mx-phone) .mx-row-name { order: -1; height: 20px; flex-direction: row; gap: 3px; background: var(--mixer-channel-color) !important; box-shadow: none !important; }
 .mx-console:not(.mx-phone) .mx-row-name > svg { width: 14px; height: 14px; }
 .mx-console:not(.mx-phone) .mx-row-name > span { font-size: 9px; letter-spacing: 0; }
 .mx-console:not(.mx-phone) .mx-row-scope { height: 26px; }
-.mx-console:not(.mx-phone) .mx-row-scope { order: 11; height: 48px; }
+.mx-console:not(.mx-phone) .mx-row-scope { order: 11; height: 26px; }
 .mx-console:not(.mx-phone) .mx-fader[data-orientation="vertical"] { flex-direction: column; }
 .mx-console:not(.mx-phone) .mx-fader[data-orientation="vertical"] > span:first-child { width: 5px; height: 100%; background: var(--mixer-edge); }
 .mx-console:not(.mx-phone) .mx-fader[data-orientation="vertical"] > span:first-child > span { width: 100%; background: color-mix(in oklab, var(--foreground) 28%, var(--mixer-edge)); }
