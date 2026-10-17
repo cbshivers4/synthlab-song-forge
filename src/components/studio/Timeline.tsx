@@ -1559,7 +1559,7 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
         </div>
 
         <div role="separator" aria-label={`Resize ${track.name} channel width`} aria-orientation="vertical" aria-valuemin={220} aria-valuemax={600} aria-valuenow={headerWidth} tabIndex={0}
-          className="timeline-width-handle absolute inset-y-0 right-0 z-30 w-2 cursor-ew-resize touch-none hover:bg-primary/40 focus-visible:bg-primary/40"
+          className="timeline-width-handle absolute inset-y-0 right-0 z-50 w-2 cursor-ew-resize touch-none hover:bg-primary/40 focus-visible:bg-primary/40"
           title="Drag to resize channel width" onPointerDown={resizeWidth} onClick={(e) => e.stopPropagation()}
           onKeyDown={(e) => { if (e.key === "ArrowLeft" || e.key === "ArrowRight") { e.preventDefault(); e.stopPropagation(); setHeaderWidth(Math.max(220, Math.min(600, headerWidth + (e.key === "ArrowRight" ? 16 : -16)))); } }} />
         <LevelBar
