@@ -416,6 +416,10 @@
 .mx-console:not(.mx-phone) .mx-row-buttons { height: 30px; }
 .mx-console:not(.mx-phone) .mx-row-readout { height: 18px; }
 .mx-console:not(.mx-phone) .mx-row-fader { height: 104px; }
+/* Channel name plate: a normal row above the controls — never floats over the level meter */
+.mx-console:not(.mx-phone) .mx-row-name { order: -1; height: 22px; flex-direction: row; gap: 3px; background: var(--mixer-channel-color) !important; box-shadow: none !important; }
+.mx-console:not(.mx-phone) .mx-row-name > svg { width: 14px; height: 14px; }
+.mx-console:not(.mx-phone) .mx-row-name > span { font-size: 9px; letter-spacing: 0; }
 .mx-console:not(.mx-phone) .mx-row-scope { height: 26px; }
 .mx-console:not(.mx-phone) .mx-row-scope { order: 11; height: 48px; }
 .mx-console:not(.mx-phone) .mx-fader[data-orientation="vertical"] { flex-direction: column; }
@@ -1512,6 +1516,9 @@
 .phone-console .mx-console[data-touch-console] .mx-fader { min-width: 44px; }
 .phone-console .mx-console[data-touch-console] .mx-fader [role="slider"] { width: 30px; height: 38px; }
 .phone-console .mx-console[data-touch-console] .mx-row-scope { height: 48px; }
+/* Phone name plate stays a plain row: it must never float over the channel meter while scrolling */
+.phone-console .mx-console[data-touch-console] .mx-row-name { order: -1; height: 34px; position: static; }
+.phone-console .mx-console[data-touch-console] .mx-row-name button { font-size: 12px; min-height: 28px; }
 
 /* A clear playback row, rhythm strip, loop range and full-width live displays. */
 .phone-console .transport-glass[data-phone-transport="true"] .transport-layout { display: grid; grid-template-columns: minmax(0,1fr) auto; padding: 8px !important; gap: 8px; }
