@@ -23,8 +23,6 @@ import { markLiveHit, isLiveHit, clearLiveHits, neighbourLiveHits } from "./live
 import { keyDown, keyUp } from "./active-keys";
 import { controllerAutoMap } from "./controller-profiles";
 import type { CloudSession } from "./cloud";
-import { saveCloudProject } from "./cloud";
-import { useApp } from "./app-state";
 import type {
   AudioClip,
   AutomationLane,
@@ -51,7 +49,6 @@ import type {
 import { clipRate, clipSeconds, laneValueAt, SECTION_COLORS } from "./types";
 import { wsolaStretch } from "./stretch";
 import { encodeWav } from "./bounce";
-import { getBlobForUrl, persistBlobUrls } from "./autosave-media";
 import { addCut, cutNotesAt, deleteRegion, regionAt, unrollNotes } from "./note-cuts";
 
 /** A persistent hardware CC destination. Namespaced parameters identify device controls. */
@@ -74,7 +71,6 @@ export interface MidiTarget {
 export const midiTargetKey = (t: MidiTarget) => `${t.id}:${t.param}`;
 const MIDI_MAP_KEY = "synclab.midimap";
 const MIDI_INPUT_KEY = "synclab.midi.input";
-const AUTOSAVE_KEY = "synclab.autosave.v1";
 
 /** Preserve the untouched portions of an older take when a new recording covers only part of it. */
 /** Snaps where a finished take lands to the edit grid (defaults to the nearest step). */
@@ -542,7 +538,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const automationLastPushRef = useRef(new Map<string, { label: string; at: number }>());
   const [automationHistoryTick, setAutomationHistoryTick] = useState(0);
 
-  // ---- Undo / redo history + local autosave -------------------------------
+  // ---- Undo / redo history (projects save only via File → Save) ----------
   const pastRef = useRef<CloudSession[]>([]);
   const futureRef = useRef<CloudSession[]>([]);
   const lastSnapRef = useRef<CloudSession | null>(null);
@@ -1660,8 +1656,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     setPanel(null);
   }, []);
 
-  // Record a history step and keep a local copy of the session, debounced so a
-  // drag or a knob sweep counts as one edit.
+  // Record a history step, debounced so a drag or a knob sweep counts as one edit.
+  // No automatic saving: the project is saved only when the user chooses File → Save.
   useEffect(() => {
     if (applyingRef.current) {
       applyingRef.current = false;
@@ -1678,132 +1674,19 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         pastRef.current = [...pastRef.current, prev].slice(-60);
         futureRef.current = [];
       }
-      const next = buildSnapshot();
-      lastSnapRef.current = next;
+      lastSnapRef.current = buildSnapshot();
       setHistoryTick((t) => t + 1);
-      try {
-        window.localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(next));
-        setSavedAt(Date.now());
-        void persistBlobUrls(next.tracks.flatMap((t) => [...(t.clips ?? []).map((c) => c.url ?? ""), t.sampler?.url ?? ""]));
-      } catch {
-        /* storage full or unavailable — cloud save still works */
-      }
     }, 600);
     return () => window.clearTimeout(id);
   }, [tracks, buses, vcas, auxReturns, fxChains, installedPlugins, userPresets, sections, folders, projectNotes, buildSnapshot]);
 
-  // Flush immediately when the tab/app is closed or hidden, so the last edits survive an accidental close.
+  // The Saved timestamp in the status bar only moves on a manual save
+  // (File → Save / Save As dispatch "synclab:project-saved" on success).
   useEffect(() => {
-    const flush = () => {
-      if (lastSnapRef.current === null) return;
-      try { window.localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(buildSnapshot())); } catch { /* storage full */ }
-    };
-    const hidden = () => { if (document.visibilityState === "hidden") flush(); };
-    window.addEventListener("pagehide", flush);
-    window.addEventListener("beforeunload", flush);
-    document.addEventListener("visibilitychange", hidden);
-    return () => { window.removeEventListener("pagehide", flush); window.removeEventListener("beforeunload", flush); document.removeEventListener("visibilitychange", hidden); };
-  }, [buildSnapshot]);
-
-  // ---- Account autosave: keep the open project synced so work follows you between desktop and phone ----
-  const app = useApp();
-  const projectRef = useRef(app.project);
-  projectRef.current = app.project;
-  const cloudSaveRef = useRef<{ running: boolean; again: boolean; failedAt: number }>({ running: false, again: false, failedAt: 0 });
-  const cloudAutosave = useCallback(async () => {
-    const project = projectRef.current;
-    const state = cloudSaveRef.current;
-    if (!project) return;
-    if (state.running) { state.again = true; return; }
-    state.running = true;
-    try {
-      const saved = await saveCloudProject({ ...project, id: project.id ?? "" }, buildSnapshot());
-      if (!project.id) app.setProject({ ...project, id: saved.id, openedAt: Date.now() });
-    } catch {
-      state.failedAt = Date.now();
-    } finally {
-      state.running = false;
-      if (state.again) { state.again = false; void cloudAutosave(); }
-    }
-  }, [app, buildSnapshot]);
-
-  // Save to the account shortly after the last edit (already-uploaded audio is not re-uploaded).
-  useEffect(() => {
-    if (!app.signedIn || !app.project) return;
-    if (Date.now() - cloudSaveRef.current.failedAt < 60000) return;
-    const id = window.setTimeout(() => void cloudAutosave(), 20000);
-    return () => window.clearTimeout(id);
-  }, [app.signedIn, app.project, tracks, buses, vcas, auxReturns, fxChains, sections, folders, cloudAutosave]);
-
-  // Best-effort account save when the app is closed or hidden; the local autosave above is the guaranteed copy.
-  useEffect(() => {
-    const flush = () => { if (app.signedIn && projectRef.current) void cloudAutosave(); };
-    const hidden = () => { if (document.visibilityState === "hidden") flush(); };
-    window.addEventListener("pagehide", flush);
-    document.addEventListener("visibilitychange", hidden);
-    return () => { window.removeEventListener("pagehide", flush); document.removeEventListener("visibilitychange", hidden); };
-  }, [app.signedIn, cloudAutosave]);
-
-  // Bring the last session back after a refresh or a crash.
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const raw = window.localStorage.getItem(AUTOSAVE_KEY);
-    if (!raw) return;
-    try {
-      const s = JSON.parse(raw) as CloudSession;
-      if (!s?.tracks?.length) return;
-      const blobUrls = s.tracks.flatMap((t) => [...(t.clips ?? []).map((c) => c.url ?? ""), t.sampler?.url ?? ""]).filter((u) => u.startsWith("blob:"));
-      /** Re-creates audio from the autosave media store; anything missing is cleared so it can be loaded again. */
-      const restoreAudio = async () => {
-        const map = new Map<string, string>();
-        for (const url of new Set(blobUrls)) {
-          const blob = await getBlobForUrl(url);
-          if (!blob) continue;
-          try { map.set(url, (await getEngine().loadSampleFile(blob, "restored")).url); } catch { /* undecodable */ }
-        }
-        let missing = 0;
-        for (const t of s.tracks) {
-          if (t.clips) t.clips = t.clips.map((c) => {
-            if (!c.url?.startsWith("blob:")) return c;
-            const next = map.get(c.url); if (!next) missing++;
-            return { ...c, url: next };
-          });
-          if (t.sampler?.url?.startsWith("blob:")) {
-            const next = map.get(t.sampler.url); if (!next) missing++;
-            t.sampler = { ...t.sampler, url: next ?? "" };
-          }
-        }
-        return missing;
-      };
-      toast("Recover previous session?", {
-        description: `${s.tracks.length} track${s.tracks.length === 1 ? "" : "s"} from your last session were saved automatically${blobUrls.length ? ", with their audio" : ""}.`,
-        duration: Infinity,
-        action: {
-          label: "Recover",
-          onClick: () => {
-            void restoreAudio().then((missing) => {
-              applyingRef.current = true;
-              applySession(s);
-              lastSnapRef.current = s;
-              toast.success("Session recovered", { description: missing ? `${missing} audio item${missing === 1 ? "" : "s"} could not be restored and need loading again.` : "Tracks and audio are back." });
-            });
-          },
-        },
-        cancel: {
-          label: "Discard",
-          onClick: () => {
-            try {
-              window.localStorage.removeItem(AUTOSAVE_KEY);
-            } catch {
-              /* ignore */
-            }
-          },
-        },
-      });
-    } catch {
-      /* unreadable autosave — start fresh */
-    }
-  }, [applySession]);
+    const onSaved = () => setSavedAt(Date.now());
+    document.addEventListener("synclab:project-saved", onSaved);
+    return () => document.removeEventListener("synclab:project-saved", onSaved);
+  }, []);
 
   const api: StudioApi = useMemo(() => {
     const selected = tracks.find((t) => t.id === selectedId) ?? null;

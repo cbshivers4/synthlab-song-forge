@@ -263,10 +263,9 @@ export const KNOWLEDGE_BASE: Article[] = [
   {
     id: "projects",
     title: "Saving, recovery and account",
-    tags: "save autosave recovery cloud recent rename account billing trial",
+    tags: "save manual save recovery cloud recent rename account billing trial",
     body: [
-      "Projects autosave locally and can be saved to your cloud account. Recent and cloud projects can be renamed or deleted from the start screen.",
-      "After a crash, SYNCLAB offers to recover your previous project.",
+      "Projects are saved only when you choose File → Save (or press Ctrl/Cmd+S); nothing is saved automatically, so save before closing. Saved projects appear in Recent and cloud projects, where they can be renamed or deleted from the start screen.",
       "Billing, invoices and cancellation are handled by Paddle. Open the upgrade panel and choose Manage billing.",
     ],
   },

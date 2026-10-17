@@ -71,7 +71,6 @@ type Prefs = {
   exportRate: string;
   exportTail: number;
   normalizeExport: boolean;
-  autosave: boolean;
   waveformDetail: string;
   showTooltips: boolean;
   reduceMotion: boolean;
@@ -109,7 +108,6 @@ const DEFAULTS: Prefs = {
   exportRate: "48 kHz",
   exportTail: 2,
   normalizeExport: false,
-  autosave: true,
   waveformDetail: "High",
   showTooltips: true,
   reduceMotion: false,
@@ -682,9 +680,6 @@ export function Settings() {
       </TabsContent>
 
       <TabsContent value="general" className="mt-4">
-        <Row label="Auto-save session">
-          <Switch checked={p.autosave} onCheckedChange={(v) => set("autosave", v)} />
-        </Row>
         <Row label="Waveform detail">
           <Pick value={p.waveformDetail} options={["Low", "Medium", "High"]} onChange={(v) => set("waveformDetail", v)} width="w-32" />
         </Row>

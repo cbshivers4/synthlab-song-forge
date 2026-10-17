@@ -126,6 +126,7 @@ export function MenuBar() {
     try {
       const saved = await saveCloudProject({ ...project, id: project.id ?? "" }, snapshot());
       setProject({ ...project, id: saved.id, openedAt: Date.now() });
+      document.dispatchEvent(new CustomEvent("synclab:project-saved"));
       toast.success("Project saved to your cloud", { id: saving });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Cloud save failed", { id: saving });
@@ -161,6 +162,7 @@ export function MenuBar() {
     try {
       const saved = await saveCloudProject({ ...newProject, id: "" }, snapshot());
       setProject({ ...newProject, id: saved.id });
+      document.dispatchEvent(new CustomEvent("synclab:project-saved"));
       toast.success(`Saved “${name}” to your cloud`, {
         id: saving,
         description: "It keeps the original untouched as its own project.",

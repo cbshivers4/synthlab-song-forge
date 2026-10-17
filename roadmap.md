@@ -257,7 +257,7 @@
 - [x] Video Sampler: time stretch (video BPM → target/song tempo, pitch kept) beside the pinned waveform on desktop and phone; verified signed-in
 - [x] Video Sampler: save video+chops to library, even/delete chops, Open in Sampler, auto save restore
 - [x] App auto save: flush on close, keep audio in browser storage for recovery
-- [x] Account autosave: open project saves to the account ~20s after edits and on close/hide, so work follows between desktop and phone (verified: edit on desktop viewport updated the cloud project row).
+- [x] Account autosave removed (user request, Oct 17 2026): projects save only via File → Save / Save As / Ctrl+S (MenuBar dispatches `synclab:project-saved`, store's status-bar Saved time listens to it). Deleted local localStorage autosave + close/hide flush + "Recover previous session?" prompt + 20s cloud autosave + close/hide cloud flush; Settings "Auto-save session" toggle removed; Help text updated. Undo history, cloud library, and QuickNotes note autosave untouched. tsgo clean, 27 audio tests pass.
 - [x] Library delete on desktop app: window.confirm is unsupported in Electron, so My Library delete and Sampler pad-replace are now tap-twice actions (verified signed in: file deleted, no error).
 
 - [x] Color Video Sampler pads and map them to the shared keyboard; signed-in desktop/phone tests confirmed four colors, screen/typing/pad playback, linked active states, disabled empty keys and no page errors. Physical-device listening remains unverified.
