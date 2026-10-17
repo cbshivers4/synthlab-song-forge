@@ -72,7 +72,7 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
     </nav>
     </div>
     <main className="phone-console-stage relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-      <div id="phone-transport-overlay" hidden={!transportOpen} className="absolute inset-x-0 top-0 z-50 max-h-full overflow-auto border-b border-border bg-background shadow-lg">
+      <div id="phone-transport-overlay" hidden={!transportOpen} className="absolute inset-x-0 bottom-0 z-50 max-h-full overflow-auto border-t border-border bg-background shadow-lg">
         <div className="flex h-12 items-center justify-between border-b border-border bg-surface px-3"><span className="text-sm font-semibold">Transport</span><Button variant="ghost" size="icon" className="size-12" aria-label="Close transport" onClick={() => setTransportOpen(false)}><X /></Button></div>
         <TopBar />
       </div>
