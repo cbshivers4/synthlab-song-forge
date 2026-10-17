@@ -105,6 +105,27 @@ function StudioMeters() {
 export function StudioView() {
   const { tracks, selectedId, select, setPanel, fxChains } = useStudio();
   const [back, setBack] = useState(false);
+  const roomRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [fit, setFit] = useState(1);
+  // The room must be seen whole: when it is shorter than the equipment layout,
+  // scale the whole layout down uniformly instead of hiding stands below a scrollbar.
+  useEffect(() => {
+    if (back) return;
+    const room = roomRef.current, content = contentRef.current;
+    if (!room || !content) return;
+    const measure = () => {
+      const avail = room.clientHeight, natural = content.offsetHeight;
+      if (!avail || !natural) return;
+      const ratio = avail / natural;
+      const next = ratio >= 0.995 ? 1 : ratio >= 0.6 ? ratio : 1;
+      setFit((prev) => (Math.abs(prev - next) < 0.004 ? prev : next));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(room); ro.observe(content);
+    return () => ro.disconnect();
+  }, [back, tracks.length, inserts.length + buses.length]);
   const inserts = tracks.flatMap(track => (track.plugins ?? []).map(plugin => ({ track, plugin })));
   const buses = Object.entries(fxChains).flatMap(([bus, plugins]) => plugins.map(plugin => ({ bus, plugin })));
   const open = (panel: PanelId, id?: string) => { if (id) select(id); setPanel(panel); };
