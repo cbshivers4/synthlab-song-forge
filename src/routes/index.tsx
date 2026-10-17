@@ -258,7 +258,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
   return (
     <section
       className="phone-tool-panel rack fixed inset-0 z-40 flex min-w-0 flex-col overflow-x-hidden border-t-2 border-border sm:relative sm:inset-auto sm:z-auto sm:min-h-[240px]"
-       style={{ height: isMobile ? "100dvh" : panel && panel !== "studio-view" ? "auto" : Math.max(600, rackH) }}
+       style={{ height: isMobile ? "100dvh" : panel ? "auto" : rackH }}
     >
       <div
         onPointerDown={startResize}
@@ -650,7 +650,7 @@ function StudioWorkspace() {
       <div className="flex min-h-0 flex-1">
         {!isMobile && <ToolsRail />}
         {landscape && <MobileNav landscape toolsOpen={landscapeTools} onToggleTools={() => setLandscapeTools((v) => !v)} onBeatMode={() => setBeatMode(true)} view={mobileView} setView={setMobileView} moreSignal={moreSignal} />}
-        <main data-panel-full={!isMobile && panel && panel !== "studio-view" ? "true" : undefined} className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+        <main data-panel-full={!isMobile && panel ? "true" : undefined} className="relative flex min-h-0 min-w-0 flex-1 flex-col">
           {isMobile && mobileView === "edit" && !panel && <TopBar />}
           {isMobile && mobileView === "create" && !panel && !beatMode && <MobileCreate onBeatMode={() => setBeatMode(true)} onMore={() => setMoreSignal((n) => n + 1)} />}
           <h1 className="sr-only">SYNCLAB Studio — browser digital audio workstation</h1>
