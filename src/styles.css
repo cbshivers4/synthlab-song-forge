@@ -405,9 +405,6 @@
 .mx-console:not(.mx-phone) .mx-row-buttons > button > span { width: 9px; height: 9px; }
 .mx-console:not(.mx-phone) .mx-row-readout { order: 8; height: 22px; }
 .mx-console:not(.mx-phone) .mx-row-fader { order: 9; height: 144px; }
-.mx-console:not(.mx-phone) .mx-row-name { order: 10; height: 28px; flex-direction: row; gap: 3px; background: var(--mixer-channel-color) !important; box-shadow: none !important; }
-.mx-console:not(.mx-phone) .mx-row-name > svg { width: 14px; height: 14px; }
-.mx-console:not(.mx-phone) .mx-row-name > span { font-size: 9px; letter-spacing: 0; }
 /* Docked-at-bottom console (Studio Pro reference): tighter rows so the timeline keeps the upper half */
 .mx-console:not(.mx-phone) .mx-row-head { height: 28px; }
 .mx-console:not(.mx-phone) .mx-row-inserts { height: 48px; }
@@ -419,7 +416,6 @@
 .mx-console:not(.mx-phone) .mx-row-buttons { height: 30px; }
 .mx-console:not(.mx-phone) .mx-row-readout { height: 18px; }
 .mx-console:not(.mx-phone) .mx-row-fader { height: 104px; }
-.mx-console:not(.mx-phone) .mx-row-name { height: 24px; }
 .mx-console:not(.mx-phone) .mx-row-scope { height: 26px; }
 .mx-console:not(.mx-phone) .mx-row-scope { order: 11; height: 48px; }
 .mx-console:not(.mx-phone) .mx-fader[data-orientation="vertical"] { flex-direction: column; }
@@ -428,7 +424,6 @@
 .mx-console:not(.mx-phone) .mx-fader [role="slider"] { width: 18px; height: 26px; border-radius: 2px; }
 .mx-console:not(.mx-phone) .mx-output-dock { margin-left: auto; background: var(--mx-a); border-left: 3px solid var(--mixer-edge); box-shadow: none; }
 .mx-console:not(.mx-phone) .mx-master { width: 144px; background: var(--mx-a) !important; box-shadow: none !important; }
-.mx-console:not(.mx-phone) .mx-master .mx-row-name { background: var(--mixer-control) !important; }
 .phone-console .mx-phone .phone-mix-channel { background: color-mix(in oklab, var(--mixer-channel-color) 32%, var(--mixer-desk)) !important; }
 
 /* Theme-driven meter and selection colours (overridden per theme at runtime). */
@@ -1516,8 +1511,6 @@
 .phone-console .mx-console[data-touch-console] .mx-row-fader { height: 164px; }
 .phone-console .mx-console[data-touch-console] .mx-fader { min-width: 44px; }
 .phone-console .mx-console[data-touch-console] .mx-fader [role="slider"] { width: 30px; height: 38px; }
-.phone-console .mx-console[data-touch-console] .mx-row-name { order: -1; height: 40px; position: sticky; top: 0; z-index: 2; }
-.phone-console .mx-console[data-touch-console] .mx-row-name button { font-size: 12px; }
 .phone-console .mx-console[data-touch-console] .mx-row-scope { height: 48px; }
 
 /* A clear playback row, rhythm strip, loop range and full-width live displays. */
