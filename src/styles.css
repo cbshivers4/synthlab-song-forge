@@ -1636,3 +1636,7 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-row-pan { height: 30
 main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-row-buttons { height: 44px; }
 main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-row-readout { height: 22px; }
 main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-row-fader { height: clamp(140px, calc(100dvh - 640px), 320px); }
+/* Full desktop mixer master: its gauges and Master FX rows fit their content; the fader gives up the difference so the bottom still lines up */
+main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-inserts { height: auto; min-height: 64px; overflow: visible; }
+main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-eq { height: auto; min-height: 28px; overflow: visible; }
+main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader { height: calc(clamp(140px, calc(100dvh - 640px), 320px) - 24px); }
