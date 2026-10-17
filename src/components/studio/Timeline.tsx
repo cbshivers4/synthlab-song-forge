@@ -485,7 +485,7 @@ function MidiClip({ track }: { track: Track }) {
 /** Hit-envelope view of a drum pattern: every programmed hit draws a decaying
  *  transient sized by its velocity. It reflects the real pattern; recorded audio
  *  (WAVE) shows the true rendered waveform. */
-const DrumHitWave = memo(function DrumHitWave({ pads, steps, total }: { pads: { steps: number[] }[]; steps: number; total: number }) {
+const DrumHitWave = memo(function DrumHitWave({ pads, steps, total, tone = "text-clip-drum" }: { pads: { steps: number[] }[]; steps: number; total: number; tone?: string }) {
   const path = useMemo(() => {
     const res = 6;
     const n = Math.max(2, total * res);
@@ -504,7 +504,7 @@ const DrumHitWave = memo(function DrumHitWave({ pads, steps, total }: { pads: { 
     return `M ${top.join(" L ")} L ${bot.join(" L ")} Z`;
   }, [pads, steps, total]);
   return (
-    <svg viewBox="0 0 1000 100" preserveAspectRatio="none" className="absolute inset-0 h-full w-full text-clip-drum" role="img" aria-label="Drum pattern hit envelope">
+    <svg viewBox="0 0 1000 100" preserveAspectRatio="none" className={`absolute inset-0 h-full w-full ${tone}`} role="img" aria-label="Drum pattern hit envelope">
       <path d={path} fill="currentColor" fillOpacity="0.7" />
       <line x1="0" y1="50" x2="1000" y2="50" stroke="currentColor" strokeOpacity="0.3" strokeWidth="0.5" />
     </svg>
@@ -601,7 +601,7 @@ function DrumClip({ track }: { track: Track }) {
               title="Delete this part" aria-label={`Delete beat part at step ${Math.round(a)}`}
               className="relative z-30 size-4 shrink-0 p-0 hover:text-destructive"><Trash2 className="size-3" /></Button>
           </div>
-          <div className="relative min-h-0 flex-1 [&_svg]:!text-[var(--arrangement-ink)]"><DrumHitWave pads={part} steps={hi - lo} total={hi - lo} /></div>
+          <div className="relative min-h-0 flex-1"><DrumHitWave pads={part} steps={hi - lo} total={hi - lo} tone="text-[var(--arrangement-ink)]" /></div>
         </div>
       );
     })}</>;
