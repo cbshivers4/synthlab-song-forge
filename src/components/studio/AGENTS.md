@@ -15,3 +15,4 @@ AI stem separation runs Demucs on Replicate via server functions (start/poll/fet
 Mixer uses named shared row classes for compact desktop geometry, a store-backed channel list and an output dock; phone strips retain touch-sized controls and existing routing/actions. The desktop mixer gets extra editor height and excludes DeviceBar so names and faders stay visible.
 
 Mixer selection retains its panel with portal-safe clicks and labeled channel-name buttons. Shared sliders forward labels to focusable thumbs; toolbar shortcuts reuse store actions.
+Timeline header width uses one inherited variable for ruler, song, folders, automation and lanes; height drags preview in the DOM and commit once to avoid audio churn. Phone arrangement and mixer reuse desktop controls with native scrolling.
