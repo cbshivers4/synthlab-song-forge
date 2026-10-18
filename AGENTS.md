@@ -9,9 +9,8 @@
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
 
-Live Looper and Live View stay separate; singleton loops survive switching.
-Looper playback bypasses the song master to avoid recapture feedback; send loops to the timeline for export/master processing.
-Meter/looper visuals use shared 20 fps timers; keep rapid React updates off audio paths to prevent stutters.
+Live Looper/View stay separate; singleton loops survive switching, bypass master to prevent recapture; timeline handles export/mastering.
+Meter/looper visuals share 20 fps timers; keep rapid React updates off audio paths to prevent stutters.
 Phone settings open Phone features from More and the beat maker; Bluetooth shortcuts open Audio explicitly, keeping both accessible.
 Mixer VCAs scale assigned channel gains without changing individual faders, while aux returns control post-effect levels before the master; this avoids routing returns back into their own sends.
 Mixer meters read analyser taps from the actual bus, aux return, and VCA member signals; master gain controls the summed mix, while subgroup changes also scale their tracks' pre-bus sends.
@@ -23,7 +22,7 @@ Printed instrument and drum takes replace overlapping clips by default; only exp
 - Computer typing keys (src/lib/synclab/qwerty.ts) play the armed/selected instrument via previewNote, which both sounds and captures notes; keep it the single note path so recording stays consistent.
 Detached studio panels use a synchronous user-click window.open and React portal to preserve shared audio/state; desktop child windows need a draggable header for moving between monitors without reloading the studio.
 Bottom displays read live analyser taps at 20 fps. Generator waves use PCM/offline voices, never decoration; stem masks run in a worker for smooth playback.
-- The post-login menu presents cloud projects, device recents, saved templates, and starter templates in one responsive workspace; retain their existing storage and open actions when changing its layout.
+Post-login workspace retains cloud projects, device recents, saved/starter templates and their storage/open actions.
 - GRANT EXECUTE on RLS security-definer helpers to anon/authenticated/service_role; missing grants break policy reads.
 Studio panel wallpaper uses one bundled JPEG with a dark semantic overlay and per-panel skin overrides; this keeps controls legible while letting users customize each panel without external image dependencies.
 Timeline names stay single-line; phone actions prioritize REC/AUTO with isolated menu clicks to avoid opening instruments.
@@ -37,8 +36,7 @@ Keyboards reuse Keyboard and one note path; independent skin slots color opaque 
 Paste content at the playhead onto the selected or explicit channel, preserving its settings; Duplicate track separately clones channels.
 Synth selection opens piano roll. Pin sampler waveform above Stretch/chops to keep cuts visible; PCM slices use previewNote for gate/choke.
 Transport stays mounted: phone overlay and timeline use separate layout/paint containment with shared resize visibility; desktop transport stays below the workspace.
-Phone shares desktop audio/state; keep all tracks/tools accessible with native scrolling.
-AppProvider scopes phone tokens to the document via shared mobile detection so entry screens and portals match; desktop preferences stay separate.
+Phone shares desktop audio/state with native scrolling for all tracks/tools. AppProvider scopes phone tokens to the document via shared mobile detection so entry screens/portals match; desktop preferences stay separate.
 Drum snap is session-only for new step writes, never existing hits.
 Count-in haptics use the shared beat timer and guarded vibration, independent of audio.
 MP3/MP4 imports/exports retain originals in the private library with content hashes to avoid duplicates; saved videos open Video Sampler.
@@ -47,3 +45,5 @@ Reel recorder: singleton AudioWorklet capture; tape bypasses master to avoid fee
 
 Video cuts use source seconds/grid/clamp; kits save MIDI notes. Keyboard/learned MIDI share pad triggers; MIDI consumers prevent doubled track notes.
 
+
+Device preferences use cached values and change events, never project autosave or per-tick storage reads. Settings reuse panels; unsupported native capabilities stay read-only.
