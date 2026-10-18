@@ -8,6 +8,7 @@
 - [x] Add a playable bass generator that creates editable MIDI patterns
 
 # Roadmap
+- [ ] Add Settings diagnostics: reload persistence verification and explicit microphone, MIDI and audio-device checks; validate desktop/phone and permission failures.
 - [x] Audit reference settings; add User interface/Browsing/Sync/Other controls/Folders/Account sections using existing panels. Connect MIDI thru/velocity/bend, metronome sound/level/playback, export defaults and tooltip/motion preferences; replace inactive mixing/timing controls with real actions or clear limitations. Signed-in desktop and sideways-phone sections/switches passed; real virtual MIDI messages and captured metronome PCM passed; 32 tests passed and preview build OK.
 - [ ] Physical audio-interface/MIDI-controller and native desktop folder-scan verification: requires connected hardware and macOS/Windows desktop runtime unavailable in this browser sandbox. MIDI clock/Link, native buffer/scratch disk and offline authorization remain explicitly unavailable, not claimed implemented.
 - [x] Mixer name plate restored (instrument icon + channel name) as a plain row above the controls — never sticky, so it can't cover the channel meter; the meter now fits inside its fader row and the selected-track bar is hidden while the mixer is docked. Desktop faders/meters fully visible, last channel reachable by scrolling; sideways phone verified by scrolling. 27 audio tests passed, build OK.
