@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { ccAction } from "./midi-actions";
+import { bendCents, playbackPreferences } from "./preferences";
 import { toast } from "sonner";
 import { getEngine } from "./audio-engine";
 import { stepsPerBar, setBeatsPerBar, getBeatsPerBar, STEPS_PER_BEAT, songSteps, stepSeconds, barsForSteps } from "./timebase";
@@ -832,7 +833,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             tracksRef.current.find((t) => t.patch && t.midiChannel === ch0) ??
             tracksRef.current.find((t) => t.patch && t.armed && (t.midiChannel == null || t.midiChannel === ch0)) ??
             tracksRef.current.find((t) => t.patch && t.id === selectedIdRef.current);
-          if (pbTarget) getEngine().setPitchBend(pbTarget.id, (msg.value * 2 - 1) * 200);
+          if (pbTarget) getEngine().setPitchBend(pbTarget.id, bendCents(msg.value, playbackPreferences().pitchBendRange));
           return;
         }
         const { type, pitch, velocity } = msg;
@@ -1149,25 +1150,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           }
         }
       }
-      if (tp.metronome && n % STEPS_PER_BEAT === 0) {
+      if (tp.metronome && (tp.recording || playbackPreferences().clickWhilePlaying) && n % STEPS_PER_BEAT === 0) {
         const downbeat = n % stepsPerBar() === 0;
-        engine.playDrum(
-          "metronome",
-          {
-            id: "m",
-            name: "click",
-            kind: downbeat ? "rim" : "hat",
-            volume: 0.35,
-            pan: 0,
-            pitch: downbeat ? 5 : 0,
-            decay: 0,
-            muted: false,
-            solo: false,
-            steps: [],
-          },
-          1,
-          when,
-        );
+        engine.playClick(downbeat, when);
       }
     };
 

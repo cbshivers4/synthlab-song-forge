@@ -1,4 +1,5 @@
 // Minimal Web MIDI helper — hardware controller input for SYNCLAB.
+import { curvedVelocity, playbackPreferences } from "./preferences";
 
 export interface MidiPortInfo {
   id: string;
@@ -74,7 +75,10 @@ export function subscribe(a: AnyAccess | null, id: string, handler: MidiHandler)
       if (prev != null && now - prev < 25) return;
     }
     if (cmd === 0x90 || cmd === 0x80) {
-      const msg: MidiMessage = { type: cmd === 0x90 && d2 > 0 ? "on" : "off", pitch: d1, velocity: d2 / 127, channel };
+      const prefs = playbackPreferences();
+      // Release held notes even when MIDI thru is off; CC mappings remain active.
+      if (!prefs.midiThru && cmd === 0x90 && d2 > 0) return;
+      const msg: MidiMessage = { type: cmd === 0x90 && d2 > 0 ? "on" : "off", pitch: d1, velocity: curvedVelocity(d2 / 127, prefs.velocityCurve), channel };
       for (const consumer of Array.from(noteConsumers).reverse()) if (consumer(msg)) return;
       handler(msg);
     }

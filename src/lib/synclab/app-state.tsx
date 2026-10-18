@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { refreshPreferences, PREFS_EVENT } from "./preferences";
 import { applyThemeVars, THEMES, themeById, type Theme, type ThemeVars } from "./themes";
 
 export type Stage = "welcome" | "start" | "studio";
@@ -71,12 +72,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // hydrate after mount so SSR markup matches
   useEffect(() => {
+    refreshPreferences();
+    window.addEventListener(PREFS_EVENT, refreshPreferences);
+    window.addEventListener("storage", refreshPreferences);
     const p = read();
     if (p.themeId) setThemeId(p.themeId);
     if (p.mode) setMode(p.mode);
     if (p.customThemes) setCustomThemes(p.customThemes);
     if (p.recents) setRecents(p.recents);
     if (p.signedIn) setSignedIn(true);
+    return () => {
+      window.removeEventListener(PREFS_EVENT, refreshPreferences);
+      window.removeEventListener("storage", refreshPreferences);
+    };
   }, []);
 
   const allThemes = useMemo(() => [...THEMES, ...customThemes], [customThemes]);

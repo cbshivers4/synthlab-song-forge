@@ -1,4 +1,5 @@
 import { playModularVoice } from "./modular";
+import { playbackPreferences } from "./preferences";
 import { encodeWav } from "./bounce";
 import { sendExternalNote } from "./external-midi";
 import { keysSnapshot, subscribeKeys } from "./active-keys";
@@ -2624,21 +2625,28 @@ export class SyncLabEngine {
 
   /* ---------------- drum voices ---------------- */
   /** Loud metronome click straight to the master output (count-in / pre-count). */
-  playClick(accent = false) {
+  playClick(accent = false, when?: number) {
     const ctx = this.init();
     if (!this.master) return;
-    const t = ctx.currentTime + 0.002;
+    const prefs = playbackPreferences();
+    if (prefs.clickLevel <= 0) return;
+    const t = Math.max(when ?? ctx.currentTime, ctx.currentTime + 0.002);
     const osc = ctx.createOscillator();
-    osc.type = "square";
-    osc.frequency.value = accent ? 1760 : 1174.7;
+    const sounds: Record<string, [OscillatorType, number, number]> = {
+      "Detroit Rim": ["triangle", 1200, 0.035], Click: ["square", 1600, 0.018],
+      Cowbell: ["square", 540, 0.08], Sidestick: ["triangle", 850, 0.024], Beep: ["sine", 1000, 0.08],
+    };
+    const [wave, frequency, duration] = sounds[prefs.clickSound] ?? ["square", 1174.7, 0.08];
+    osc.type = wave;
+    osc.frequency.value = frequency * (accent ? 1.5 : 1);
     const g = ctx.createGain();
     g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(0.35, t + 0.003);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.08);
+    g.gain.exponentialRampToValueAtTime(Math.max(0.0001, prefs.clickLevel * 0.5), t + 0.003);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + duration);
     osc.connect(g);
     g.connect(this.master);
     osc.start(t);
-    osc.stop(t + 0.1);
+    osc.stop(t + duration + 0.02);
   }
 
   playDrum(trackId: string, pad: DrumPad, velocity = 1, when?: number) {

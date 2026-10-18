@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { uploadCloudExport } from "@/lib/synclab/cloud";
 import { usePlan } from "@/lib/synclab/plan";
 import { stepsPerBar } from "@/lib/synclab/timebase";
+import { playbackPreferences } from "@/lib/synclab/preferences";
 
 export const EXPORT_EVENT = "synclab:export";
 export const openExport = () => window.dispatchEvent(new CustomEvent(EXPORT_EVENT));
@@ -61,6 +62,7 @@ export function ExportDialog() {
   const [loudPreset, setLoudPreset] = useState("spotify");
   const [peakDb, setPeakDb] = useState(-1);
   const [norm, setNorm] = useState(true);
+  const [tail, setTail] = useState(1);
   const [closeAfter, setCloseAfter] = useState(false);
   const [filename, setFilename] = useState("");
   const [status, setStatus] = useState<Status>("idle");
@@ -89,7 +91,7 @@ export function ExportDialog() {
     if (range === "loop" && loopOk) return { startStep: transport.loopStart!, lenBars: (transport.loopEnd! - transport.loopStart!) / stepsBar };
     return { startStep: 0, lenBars: bars };
   }, [range, flagsOn, loopOk, transport.exportStart, transport.exportEnd, transport.loopStart, transport.loopEnd, stepsBar, bars]);
-  const total = lenBars * barSeconds + 1;
+  const total = lenBars * barSeconds + tail;
 
   const support = useMemo(() => {
     const m: Partial<Record<Fmt, string | null>> = {};
@@ -105,6 +107,14 @@ export function ExportDialog() {
   useEffect(() => {
     const on = () => {
       if (!requirePro("Exporting audio files")) return;
+      const prefs = playbackPreferences();
+      const format = prefs.exportFormat;
+      setFormats([format.startsWith("MP3") ? "mp3" : format === "FLAC" ? "flac" : "wav"]);
+      setDepth(format.includes("16-bit") ? 16 : format.includes("32 float") ? 32 : 24);
+      setKbps(format.startsWith("MP3") ? 320 : 256);
+      setRate(prefs.exportRate === "96 kHz" ? 96000 : prefs.exportRate === "44.1 kHz" ? 44100 : 48000);
+      setNorm(prefs.normalizeExport);
+      setTail(prefs.exportTail);
       setRange(flagsOn ? "flags" : transport.loop && loopOk ? "loop" : "bars");
       setOpen(true);
     };
