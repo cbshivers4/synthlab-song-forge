@@ -20,7 +20,7 @@ Ableton handoff uses stems and standard MIDI, never proprietary decoding.
 Bus and send insert changes crossfade parallel audio paths after the bus scope or send output; never disconnect the active source on each parameter edit, because that cuts live sound and bypasses the actual effect chain.
 Printed instrument and drum takes replace overlapping clips by default; only explicit overdub stacks them, so ordinary re-recording does not double playback.
 - Computer typing keys (src/lib/synclab/qwerty.ts) play the armed/selected instrument via previewNote, which both sounds and captures notes; keep it the single note path so recording stays consistent.
-Detached studio panels use a synchronous user-click window.open and React portal to preserve shared audio/state; desktop child windows need a draggable header for moving between monitors without reloading the studio.
+Detached panels use synchronous user-click window.open + React portals for shared audio/state; child windows need draggable headers for monitor moves without reloads.
 Bottom displays read live analyser taps at 20 fps. Generator waves use PCM/offline voices, never decoration; stem masks run in a worker for smooth playback.
 Post-login workspace retains cloud projects, device recents, saved/starter templates and their storage/open actions.
 - GRANT EXECUTE on RLS security-definer helpers to anon/authenticated/service_role; missing grants break policy reads.
@@ -28,7 +28,7 @@ Studio panel wallpaper uses one bundled JPEG with a dark semantic overlay and pe
 Timeline names stay single-line; phone actions prioritize REC/AUTO with isolated menu clicks to avoid opening instruments.
 Playhead stays within track rows; headers, ruler and song lane share its width variable, including large phone controls. It renders through the --playhead token (white, never dimmed) and stays draggable from ruler and track lanes.
 Synth sections share wrapping tabs; X-Y pads dispatch through updatePatch to stay synchronized with knobs and saved presets without removing controls.
-Read studio AGENTS.md for editor and mixer accessibility rules before edits.
+Read studio AGENTS.md before editor/mixer edits.
 Drum artwork uses semantic SVG; sort display copies and bank slices by stable IDs/indices to preserve audio and MIDI.
 
 Phone drum tabs reuse DrumRoll and instrument pads for edits/tap recording; sound/kit tabs preserve controls without duplication.
@@ -46,4 +46,6 @@ Reel recorder: singleton AudioWorklet capture; tape bypasses master to avoid fee
 Video cuts use source seconds/grid/clamp; kits save MIDI notes. Keyboard/learned MIDI share pad triggers; MIDI consumers prevent doubled track notes.
 
 
-Device prefs use cache/events, not project autosave or tick storage. Diagnostics snapshots prefs only, preserving audio. Reuse panels; unsupported native controls stay read-only.
+Device prefs use cache/events, never autosave/tick storage. Diagnostics snapshot prefs only, preserve audio and reuse panels; unsupported controls stay read-only.
+
+Recording-region helpers bound edits; drum patternRegion aligns playback/display. Live captured notes get absolute bounds to prevent repeated visuals.
