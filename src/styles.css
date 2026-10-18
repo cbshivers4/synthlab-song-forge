@@ -439,6 +439,8 @@ html[data-reduce-motion] *, html[data-reduce-motion] *::before, html[data-reduce
 .mx-console:not(.mx-phone) .mx-output-dock { margin-left: auto; background: var(--mx-a); border-left: 3px solid var(--mixer-edge); box-shadow: none; }
 .mx-console:not(.mx-phone) .mx-master { width: 144px; background: var(--mx-a) !important; box-shadow: none !important; }
 .phone-console .mx-phone .phone-mix-channel { background: color-mix(in oklab, var(--mixer-channel-color) 32%, var(--mixer-desk)) !important; }
+/* Centred channel icon sits in its own row at the foot of every channel. */
+.mx-console:not(.mx-phone) .mx-row-icon { order: 12; height: 34px; flex-shrink: 0; }
 
 /* Theme-driven meter and selection colours (overridden per theme at runtime). */
 :root {
