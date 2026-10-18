@@ -39,13 +39,14 @@ export function Knob({ label, value, min = 0, max = 1, step = 0.01, unit = "", s
   const display = max - min > 40 ? Math.round(value) : Number(value.toFixed(2));
 
   return (
-    <div className="flex w-16 flex-col items-center gap-1 select-none">
+    <div className="hardware-knob flex w-16 flex-col items-center gap-1 select-none">
       <div
         role="slider"
         aria-label={label}
         aria-valuenow={value}
         aria-valuemin={min}
         aria-valuemax={max}
+        aria-valuetext={`${display}${unit}`}
         tabIndex={0}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
@@ -55,24 +56,20 @@ export function Knob({ label, value, min = 0, max = 1, step = 0.01, unit = "", s
           if (e.key === "ArrowUp") onChange(Math.min(max, value + step));
           if (e.key === "ArrowDown") onChange(Math.max(min, value - step));
         }}
-        className="relative cursor-ns-resize touch-none rounded-full border border-border bg-surface-2 transition-shadow hover:glow"
+        className="hardware-knob-dial relative cursor-ns-resize touch-none rounded-full"
         style={{ width: size, height: size }}
       >
-        <div
-          className="absolute inset-[6px] rounded-full"
-          style={{
-            background: `conic-gradient(from 225deg, var(--neon) ${pct * 270}deg, color-mix(in oklab, var(--border) 80%, transparent) ${pct * 270}deg 270deg, transparent 270deg)`,
-          }}
-        />
-        <div className="absolute inset-[10px] rounded-full bg-surface" />
-        <div
-          className="absolute top-1/2 left-1/2 h-[38%] w-[2px] origin-bottom rounded-full bg-primary"
-          style={{ transform: `translate(-50%,-100%) rotate(${angle}deg)` }}
-        />
+        <svg className="hardware-knob-scale absolute inset-0 size-full" viewBox="0 0 100 100" aria-hidden="true">
+          {Array.from({ length: 11 }, (_, i) => <line key={i} x1="50" y1="3" x2="50" y2={i % 5 === 0 ? "12" : "8"} transform={`rotate(${-135 + i * 27} 50 50)`} />)}
+        </svg>
+        <div className="hardware-knob-grip absolute inset-[17%] rounded-full">
+          <div className="hardware-knob-cap absolute inset-[12%] rounded-full" />
+          <div className="hardware-knob-pointer absolute inset-0" style={{ transform: `rotate(${angle}deg)` }}><i /></div>
+        </div>
       </div>
-      <span className="label-xs text-[9px] leading-none">{label}</span>
+      <span className="hardware-knob-label label-xs text-[9px] leading-none">{label}</span>
       {midiTarget && <MidiLearnButton {...midiTarget} label={label} />}
-      <span className="font-mono text-[10px] text-foreground/70">
+      <span className="hardware-knob-value font-mono text-[10px] text-foreground/70">
         {display}
         {unit}
       </span>

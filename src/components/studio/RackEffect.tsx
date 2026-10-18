@@ -61,15 +61,15 @@ function RackMeter({ plugin }: { plugin: PluginInstance }) {
 export function RackEffect({ trackId, plugin: p, index, count }: { trackId: string; plugin: PluginInstance; index: number; count: number }) {
   const { togglePluginBypass, movePlugin, removePlugin, setPluginParam } = useStudio();
   const [expanded, setExpanded] = useState(true);
-  return <section aria-label={`${p.name} rack module`} data-fx-kind={p.kind} className="fx-face relative border-y border-border bg-surface">
-    <div className="pointer-events-none absolute inset-y-0 left-0 flex w-3 flex-col justify-between border-r border-border bg-surface-2 py-3 sm:w-5">
-      {[0, 1].map((s) => <span key={s} className="mx-auto size-1.5 rounded-full border border-muted-foreground/60 bg-background" />)}
+  return <section aria-label={`${p.name} rack module`} data-fx-kind={p.kind} data-bypassed={p.bypass} className="fx-face hardware-device relative border-y border-border bg-surface">
+    <div className="hardware-rack-ear pointer-events-none absolute inset-y-0 left-0 flex w-3 flex-col justify-between border-r border-border py-3 sm:w-5">
+      {[0, 1].map((s) => <span key={s} className="hardware-rack-screw mx-auto size-2 rounded-full" />)}
     </div>
-    <div className="pointer-events-none absolute inset-y-0 right-0 flex w-3 flex-col justify-between border-l border-border bg-surface-2 py-3 sm:w-5">
-      {[0, 1].map((s) => <span key={s} className="mx-auto size-1.5 rounded-full border border-muted-foreground/60 bg-background" />)}
+    <div className="hardware-rack-ear pointer-events-none absolute inset-y-0 right-0 flex w-3 flex-col justify-between border-l border-border py-3 sm:w-5">
+      {[0, 1].map((s) => <span key={s} className="hardware-rack-screw mx-auto size-2 rounded-full" />)}
     </div>
     <div className="mx-3 sm:mx-5">
-      <header className="flex flex-wrap items-center gap-1 border-b border-border px-2 py-2">
+      <header className="hardware-device-header flex flex-wrap items-center gap-1 border-b border-border px-2 py-2">
         <Button size="icon" variant="ghost" className={`size-10 shrink-0 ${p.bypass ? "text-muted-foreground" : "text-primary"}`} aria-label={`${p.bypass ? "Enable" : "Bypass"} ${p.name}`} aria-pressed={!p.bypass} title="Enable / bypass effect" onClick={() => togglePluginBypass(trackId, p.id)}><Power className="size-4" /></Button>
         <div className="min-w-0 flex-1"><h3 className="break-words text-sm font-semibold">{String(index + 1).padStart(2, "0")} · {p.name}</h3><span className="font-mono text-[9px] text-muted-foreground">{p.format} · {p.kind.toUpperCase()}</span></div>
         <div className="ml-auto flex shrink-0">
@@ -79,7 +79,7 @@ export function RackEffect({ trackId, plugin: p, index, count }: { trackId: stri
           <Button size="icon" variant="ghost" className="size-10" title={expanded ? "Fold controls" : "Expand controls"} aria-label={`${expanded ? "Fold" : "Expand"} ${p.name} controls`} aria-expanded={expanded} onClick={() => setExpanded((value) => !value)}>{expanded ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}</Button>
         </div>
       </header>
-      <div className="px-2 pb-2"><RackMeter plugin={p} />
+      <div className="hardware-device-screen mx-2 my-3 p-2"><RackMeter plugin={p} />
         <Scope scopeId={p.bypass ? `bypassed:${p.id}` : p.id} height={88} />
       </div>
       {expanded && <div className="grid min-w-0 gap-4 border-t border-border p-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
