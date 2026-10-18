@@ -1322,7 +1322,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       url: result.url,
       start: snapRecStart(recStartStepRef.current, transportRef.current.snap),
       offset: 0,
-      length: result.duration,
+      length: Math.min(result.duration, Math.max(0, loopRegion(transportRef.current)[1] - snapRecStart(recStartStepRef.current, transportRef.current.snap)) * stepSeconds(transportRef.current.bpm)),
       gain: 1,
     };
     const replace = !!transportRef.current.replace;
@@ -1386,7 +1386,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       const target = tracksRef.current.find((t) => t.id === result.trackId);
       if (!target) return;
       const stepDur = stepSeconds(transportRef.current.bpm);
-      const takeEnd = Math.min(songSteps(transportRef.current.bars), recStartStepRef.current + Math.max(1, Math.ceil(result.duration / stepDur)));
+      const takeEnd = Math.min(loopRegion(transportRef.current)[1], recStartStepRef.current + Math.max(1, Math.ceil(result.duration / stepDur)));
       const capturedIds = recordedNoteIdsRef.current;
       // Replace mode: older notes under the new take are removed, so the part
       // is exactly what was just played (overdub keeps them).
@@ -2183,7 +2183,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         setTracks((ts) =>
           ts.map((t) =>
             t.id === trackId && t.pads
-              ? liveSound({ ...t, pads: t.pads.map((p) => (p.id === padId ? { ...p, ...patch } : p)) })
+              ? liveSound({ ...t, ...(patch.steps ? { patternRegion: loopRegion(transportRef.current) } : {}), pads: t.pads.map((p) => (p.id === padId ? { ...p, ...patch } : p)) })
               : t,
           ),
         ),
@@ -2269,6 +2269,11 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         }
         if (!transportRef.current.recording) {
           const begin = () => {
+            const tp = transportRef.current;
+            const [lo, hi] = loopRegion(tp);
+            const step = tp.step < lo || tp.step >= hi ? lo : tp.step;
+            transportRef.current = { ...tp, loop: true, step };
+            setTransportState((s) => ({ ...s, loop: true, step }));
             const selectedTrack = tracksRef.current.find((t) => t.id === selectedIdRef.current);
             // Auto-arm the selected channel so pressing record always has a target.
             let armedAudio = tracksRef.current.find((t) => t.armed && isAudio(t));

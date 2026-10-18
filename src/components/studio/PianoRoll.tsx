@@ -147,13 +147,13 @@ export function PianoRoll({ track }: { track: Track }) {
     const stepPx = el.getBoundingClientRect().width / steps;
     if (d.mode === "resize") {
       const nl = Math.max(grid, snap(d.length + (e.clientX - d.startX) / stepPx) || grid);
-      setNotes(track.id, notes.map((n) => (n.id === d.id ? { ...n, length: nl } : n)));
+      setNotes(track.id, notes.map((n) => (n.id === d.id ? capturedNote({ ...n, length: nl }, loopRegion(transport)) ?? n : n)));
     } else {
       const ds = snap(d.step + (e.clientX - d.startX) / stepPx);
       const dp = d.pitch - Math.round((e.clientY - d.startY) / ROW_H);
       setNotes(
         track.id,
-        notes.map((n) => (n.id === d.id ? { ...n, step: ds, pitch: Math.max(0, Math.min(120, dp)) } : n)),
+        notes.map((n) => (n.id === d.id ? capturedNote({ ...n, step: ds, pitch: Math.max(0, Math.min(120, dp)) }, loopRegion(transport)) ?? n : n)),
       );
     }
   };
