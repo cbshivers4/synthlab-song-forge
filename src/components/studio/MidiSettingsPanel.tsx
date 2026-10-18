@@ -56,7 +56,7 @@ export function MidiSettingsPanel({ onDetect }: { onDetect: () => void }) {
       <h4 className="mb-2 text-sm font-semibold">Available controller profiles</h4>
       <div className="grid gap-2 sm:grid-cols-2">
         {CONTROLLERS.filter(p => ["korg-nanokontrol-studio", "korg-nanokey-studio"].includes(p.id)).map(p => <Button key={p.id} variant="outline" aria-pressed={profileId === p.id} onClick={() => choose(p.id)} className={`h-auto min-h-24 justify-start gap-3 whitespace-normal p-3 text-left ${profileId === p.id ? "border-primary bg-primary/10" : ""}`}>
-          <DevicePicture look={p.look} className="w-24 shrink-0" /><span className="min-w-0"><span className="block text-sm">{p.maker} {p.model}</span><span className="block text-xs text-muted-foreground">{p.map ? "Factory mixer mapping" : "MIDI Learn"} · Profile only, not a connection</span></span>
+          <DevicePicture look={p.look} className="!h-auto !w-24 shrink-0" /><span className="min-w-0"><span className="block text-sm">{p.maker} {p.model}</span><span className="block text-xs text-muted-foreground">{p.map ? "Factory mixer mapping" : "MIDI Learn"} · Profile only, not a connection</span></span>
         </Button>)}
       </div>
     </div>
