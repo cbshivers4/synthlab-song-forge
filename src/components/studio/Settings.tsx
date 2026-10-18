@@ -32,7 +32,7 @@ import { AudioInterfaceCard } from "@/components/studio/AudioInterfaceCard";
 import { BluetoothDevices } from "@/components/studio/BluetoothDevices";
 import { replayMobileTour, saveMobileAccessibility, useMobileAccessibility } from "@/lib/synclab/mobile-accessibility";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { ControllerLibrary } from "./ControllerLibrary";
+import { MidiSettingsPanel } from "./MidiSettingsPanel";
 import { LibraryPanel } from "./LibraryPanel";
 import { useApp } from "@/lib/synclab/app-state";
 import { usePlan } from "@/lib/synclab/plan";
@@ -330,15 +330,15 @@ export function Settings() {
   };
 
   return (
-    <Tabs value={activeTab} onValueChange={setActiveTab} className="min-w-0 w-full overflow-x-hidden">
-      <div className="mb-2 flex flex-wrap gap-2">
+    <Tabs value={activeTab} onValueChange={setActiveTab} className="grid min-w-0 w-full grid-cols-1 gap-x-4 overflow-x-hidden sm:grid-cols-[148px_minmax(0,1fr)] [&>[role=tabpanel]]:min-w-0 sm:[&>[role=tabpanel]]:col-start-2 sm:[&>[role=tabpanel]]:row-start-2">
+      <div className="col-span-full mb-2 flex flex-wrap gap-2">
         {<Button variant="secondary" className="h-12 gap-2 whitespace-nowrap" disabled={scanning} onClick={() => { setActiveTab("audio"); void scanDevices(true); }}><Mic className="size-4" /> {scanning ? "Connecting…" : "Enable microphone"}</Button>}
         <Button variant="outline" className="gap-2" onClick={() => setActiveTab("audio")}><Bluetooth className="size-4" /> Bluetooth devices</Button>
         <Button variant="outline" onClick={() => setActiveTab("diagnostics")}>Diagnostics</Button>
       </div>
-      <TabsList className="flex h-auto max-w-full flex-nowrap justify-start gap-1 overflow-x-auto bg-surface sm:flex-wrap">
-        {(isMobile ? ["mobile", "audio", "recording", "metronome", "timing", "timeline", "midi", "mixing", "export", "desktop", "general", "browsing", "sync", "controls", "folders", "account"] : ["audio", "recording", "metronome", "timing", "timeline", "midi", "mixing", "export", "desktop", "mobile", "general", "browsing", "sync", "controls", "folders", "account"]).map((t) => (
-          <TabsTrigger key={t} value={t} className="font-mono text-[11px] uppercase tracking-widest">
+      <TabsList className="flex h-auto max-w-full flex-nowrap justify-start gap-1 overflow-x-auto rounded-none bg-surface sm:col-start-1 sm:row-start-2 sm:flex-col sm:items-stretch sm:self-start sm:overflow-x-hidden">
+        {(isMobile ? ["mobile", "general", "browsing", "audio", "midi", "sync", "controls", "folders", "account", "recording", "metronome", "timing", "timeline", "mixing", "export", "desktop", "diagnostics"] : ["general", "browsing", "audio", "midi", "sync", "controls", "folders", "account", "recording", "metronome", "timing", "timeline", "mixing", "export", "desktop", "mobile", "diagnostics"]).map((t) => (
+          <TabsTrigger key={t} value={t} className="min-h-9 justify-start rounded-none px-3 text-xs sm:w-full">
             {t === "mobile" && isMobile ? "Phone features" : t === "general" ? "User interface" : t === "controls" ? "Other controls" : t}
           </TabsTrigger>
         ))}
@@ -588,43 +588,7 @@ export function Settings() {
       </TabsContent>
 
       <TabsContent value="midi" className="mt-4">
-        <Row label="Controller profiles"><ControllerLibrary /></Row>
-        <Row
-          label="MIDI controller"
-          hint={
-            midiInputs.length
-              ? `${midiInputs.length} connected`
-              : "Connect a controller and press Scan — Chrome and Edge support MIDI hardware"
-          }
-        >
-          <Pick
-            value={
-              midiInputId === "all"
-                ? "All devices"
-                : (midiInputs.find((i) => i.id === midiInputId)?.name ?? "None")
-            }
-            options={["None", "All devices", ...midiInputs.map((i) => i.name)]}
-            onChange={(v) => {
-              if (v === "None") setMidiInput(null);
-              else if (v === "All devices") setMidiInput("all");
-              else setMidiInput(midiInputs.find((i) => i.name === v)?.id ?? null);
-              set("midiInput", v);
-            }}
-          />
-          <Button size="sm" variant="secondary" onClick={scanMidi}>
-            Scan
-          </Button>
-        </Row>
-        <Row
-          label="Controllers found"
-          hint={midiSupported() ? "Keyboards, pad controllers and control surfaces" : "MIDI needs Chrome or Edge"}
-        >
-          <div className="max-w-[18rem] text-right font-mono text-xs text-primary">
-            {midiInputs.length ? midiInputs.map((m) => <div key={m.id}>{m.name}</div>) : (
-              <span className="text-muted-foreground">None connected</span>
-            )}
-          </div>
-        </Row>
+        <MidiSettingsPanel onDetect={scanMidi} />
         <Row label="MIDI thru" hint="Pass notes to the armed instrument">
           <Switch checked={p.midiThru} onCheckedChange={(v) => set("midiThru", v)} />
         </Row>
