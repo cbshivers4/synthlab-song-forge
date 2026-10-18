@@ -1,3 +1,4 @@
+import { capturedNote, loopRegion } from "@/lib/synclab/recording-region";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { keysSnapshot, subscribeKeys } from "@/lib/synclab/active-keys";
 
@@ -110,10 +111,11 @@ export function PianoRoll({ track }: { track: Track }) {
     const p = posFromEvent(e);
     if (!p) return;
     if (scaleLock && !inScale(p.pitch)) return;
-    const n: MidiNote = { id: uid(), pitch: p.pitch, step: p.step, length: len, velocity: 0.85 };
+    const n = capturedNote({ id: uid(), pitch: p.pitch, step: p.step, length: len, velocity: 0.85 }, loopRegion(transport));
+    if (!n) return;
     setNotes(track.id, [...notes, n]);
     setSel([n.id]);
-    previewNote(track.id, p.pitch);
+    previewNote(track.id, p.pitch, 0.35, false);
   };
 
   const onNoteDown = (e: React.PointerEvent, n: MidiNote, resize: boolean) => {
@@ -145,13 +147,13 @@ export function PianoRoll({ track }: { track: Track }) {
     const stepPx = el.getBoundingClientRect().width / steps;
     if (d.mode === "resize") {
       const nl = Math.max(grid, snap(d.length + (e.clientX - d.startX) / stepPx) || grid);
-      setNotes(track.id, notes.map((n) => (n.id === d.id ? { ...n, length: nl } : n)));
+      setNotes(track.id, notes.map((n) => (n.id === d.id ? capturedNote({ ...n, length: nl }, loopRegion(transport)) ?? n : n)));
     } else {
       const ds = snap(d.step + (e.clientX - d.startX) / stepPx);
       const dp = d.pitch - Math.round((e.clientY - d.startY) / ROW_H);
       setNotes(
         track.id,
-        notes.map((n) => (n.id === d.id ? { ...n, step: ds, pitch: Math.max(0, Math.min(120, dp)) } : n)),
+        notes.map((n) => (n.id === d.id ? capturedNote({ ...n, step: ds, pitch: Math.max(0, Math.min(120, dp)) }, loopRegion(transport)) ?? n : n)),
       );
     }
   };

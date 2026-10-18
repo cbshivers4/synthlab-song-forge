@@ -8,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { capturedNote, loopRegion } from "./recording-region";
 import { ccAction } from "./midi-actions";
 import { bendCents, playbackPreferences } from "./preferences";
 import { toast } from "sonner";
@@ -352,7 +353,7 @@ interface StudioApi extends StudioState {
   savePreset: (name: string) => void;
   loadPreset: (trackId: string, name: string) => void;
   generateBeat: (trackId: string, genre: string, energy: number) => void;
-  previewNote: (trackId: string, midi: number, duration?: number) => void;
+  previewNote: (trackId: string, midi: number, duration?: number, capture?: boolean) => void;
   /** Writes a note into the live timeline recording without playing it (the caller already sounded it). */
   captureNote: (trackId: string, midi: number, velocity?: number) => void;
   loadSample: (trackId: string, file: File) => Promise<void>;
@@ -862,7 +863,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
               engine.syncMix(tracksRef.current);
               engine.playDrum(drumTarget.id, hit, Math.max(0.15, velocity));
               const tp = transportRef.current;
-              if (tp.recording && tp.playing) {
+              if (tp.recording && tp.playing && drumTarget.recording) {
                 const total = hit.steps.length || drumTarget.steps || 16;
                 const at = tp.step % total;
                 const stale = neighbourLiveHits(drumTarget.id, hit.id, at, total);
@@ -905,16 +906,19 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           setMidiLearning(true);
           engine.syncMix(tracksRef.current);
           triggerNote(engine, target, pitch, 0.6, Math.max(0.15, velocity));
-          if (tp.recording) {
+          if (tp.recording && target.recording) {
             const pitches = processMidiThroughPlugins(pitch, target.plugins);
             const at = heardStepPos();
-            const notes: MidiNote[] = pitches.map((recordedPitch) => ({
+            const notes: MidiNote[] = pitches.flatMap((recordedPitch) => {
+              const note = capturedNote({
               id: uid(),
               step: at,
               length: 1,
               pitch: recordedPitch,
               velocity: Math.max(0.15, velocity),
-            }));
+              }, tp.loop ? loopRegion(tp) : [0, songSteps(tp.bars)]);
+              return note ? [note] : [];
+            });
             notes.forEach((note) => recordedNoteIdsRef.current.add(note.id));
             heldRef.current.set(pitch, { ids: notes.map((note) => note.id), trackId: target.id, t0: performance.now(), startStep: at });
             setTracks((ts) =>
@@ -1085,6 +1089,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         }
         if (t.printedAudio && t.clips?.length && !t.recording) continue;
         if (t.kind === "drum" && t.pads) {
+          if (t.patternRegion && (n < t.patternRegion[0] || n >= t.patternRegion[1])) continue;
           const padSolo = t.pads.some((p) => p.solo);
           for (const pad of t.pads) {
             if (pad.muted || (padSolo && !pad.solo)) continue;
@@ -1317,7 +1322,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       url: result.url,
       start: snapRecStart(recStartStepRef.current, transportRef.current.snap),
       offset: 0,
-      length: result.duration,
+      length: Math.min(result.duration, Math.max(0, loopRegion(transportRef.current)[1] - snapRecStart(recStartStepRef.current, transportRef.current.snap)) * stepSeconds(transportRef.current.bpm)),
       gain: 1,
     };
     const replace = !!transportRef.current.replace;
@@ -1381,7 +1386,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       const target = tracksRef.current.find((t) => t.id === result.trackId);
       if (!target) return;
       const stepDur = stepSeconds(transportRef.current.bpm);
-      const takeEnd = Math.min(songSteps(transportRef.current.bars), recStartStepRef.current + Math.max(1, Math.ceil(result.duration / stepDur)));
+      const takeEnd = Math.min(loopRegion(transportRef.current)[1], recStartStepRef.current + Math.max(1, Math.ceil(result.duration / stepDur)));
       const capturedIds = recordedNoteIdsRef.current;
       // Replace mode: older notes under the new take are removed, so the part
       // is exactly what was just played (overdub keeps them).
@@ -1679,12 +1684,13 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     const capture = (trackId: string, midi: number, velocity: number) => {
       const tp = transportRef.current;
       const t = tracksRef.current.find((x) => x.id === trackId);
-      if (!t || !tp.recording) return;
+      if (!t || !tp.recording || !t.recording) return;
       if (t.kind !== "instrument" && t.kind !== "midi" && t.kind !== "sampler") return;
       // stamp the true sub-step position you heard, so the take keeps the
       // player's timing — quantize then has something real to snap
       const stepPos = heardStepPos();
-      const note: MidiNote = { id: uid(), step: Math.max(0, stepPos), length: 1, pitch: midi, velocity };
+      const note = capturedNote({ id: uid(), step: Math.max(0, stepPos), length: 1, pitch: midi, velocity }, tp.loop ? loopRegion(tp) : [0, songSteps(tp.bars)]);
+      if (!note) return;
       recordedNoteIdsRef.current.add(note.id);
       setTracks((ts) => ts.map((x) => (x.id === t.id ? { ...x, notes: [...(x.notes ?? []), note] } : x)));
     };
@@ -2177,7 +2183,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         setTracks((ts) =>
           ts.map((t) =>
             t.id === trackId && t.pads
-              ? liveSound({ ...t, pads: t.pads.map((p) => (p.id === padId ? { ...p, ...patch } : p)) })
+              ? liveSound({ ...t, ...(patch.steps ? { patternRegion: loopRegion(transportRef.current) } : {}), pads: t.pads.map((p) => (p.id === padId ? { ...p, ...patch } : p)) })
               : t,
           ),
         ),
@@ -2263,6 +2269,11 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         }
         if (!transportRef.current.recording) {
           const begin = () => {
+            const tp = transportRef.current;
+            const [lo, hi] = loopRegion(tp);
+            const step = tp.step < lo || tp.step >= hi ? lo : tp.step;
+            transportRef.current = { ...tp, loop: true, step };
+            setTransportState((s) => ({ ...s, loop: true, step }));
             const selectedTrack = tracksRef.current.find((t) => t.id === selectedIdRef.current);
             // Auto-arm the selected channel so pressing record always has a target.
             let armedAudio = tracksRef.current.find((t) => t.armed && isAudio(t));
@@ -2315,7 +2326,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
                 toast.error("Could not record this channel", { description: err instanceof Error ? err.message : undefined });
                 return;
               }
-              updateTrack(armedNote.id, { recording: true });
+              updateTrack(armedNote.id, { recording: true, ...(armedNote.kind === "drum" ? { patternRegion: loopRegion(transportRef.current) } : {}) });
               toast("Recording notes and audio", {
                 description: `Playing ${armedNote.name} captures an editable pattern and waveform.`,
               });
@@ -2602,7 +2613,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             };
           }),
         ),
-      previewNote: (trackId, midi, duration = 0.35) => {
+      previewNote: (trackId, midi, duration = 0.35, shouldCapture = true) => {
         const t = tracksRef.current.find((x) => x.id === trackId);
         const engine = getEngine();
         engine.init();
@@ -2610,7 +2621,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         if (t) triggerNote(engine, t, midi, duration, 0.9);
         keyDown(midi);
         // Notes played on screen are captured while the transport records.
-        if (t) capture(t.id, midi, 0.9);
+        if (t && shouldCapture) capture(t.id, midi, 0.9);
       },
       captureNote: (trackId, midi, velocity = 0.9) => {
         capture(trackId, midi, velocity);

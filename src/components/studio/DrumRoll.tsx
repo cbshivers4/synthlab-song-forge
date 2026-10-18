@@ -17,13 +17,14 @@ import type { DrumPad, Track } from "@/lib/synclab/types";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ChevronLeft, ChevronRight, Maximize2, Minimize2, Minus, Plus, Upload } from "lucide-react";
 import { toast } from "sonner";
+import { loopRegion } from "@/lib/synclab/recording-region";
 import { useDrumEditorView } from "@/lib/synclab/drum-editor-view";
 
 const VELOCITIES = [0, 0.35, 0.7, 1] as const;
 
 export function DrumRoll({ track, initialFull = false }: { track: Track; initialFull?: boolean }) {
   const isMobile = useIsMobile();
-  const { updatePad, setStepCount, transport, setTransport } = useStudio();
+  const { updatePad, updateTrack, setStepCount, transport, setTransport } = useStudio();
   const pads = track.pads ?? [];
   const rows = drumRows(pads);
   const total = Math.max(1, track.steps || 16);
@@ -112,7 +113,19 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
     return () => { cancelAnimationFrame(id); observer.disconnect(); };
   }, [isMobile, track.id, rows.length, selected]);
 
-  const write = (pad: DrumPad, patch: Partial<DrumPad>) => updatePad(track.id, pad.id, patch);
+  const write = (pad: DrumPad, patch: Partial<DrumPad>) => {
+    if (patch.steps) {
+      const region = loopRegion(transport);
+      updateTrack(track.id, { patternRegion: region });
+      const next = patch.steps;
+      const count = Math.max(1, next.length);
+      patch = { ...patch, steps: next.map((v, i) => {
+        const first = i + Math.max(0, Math.ceil((region[0] - i) / count)) * count;
+        return first < region[1] ? v : (pad.steps[i] ?? 0);
+      }) };
+    }
+    updatePad(track.id, pad.id, patch);
+  };
   const snappedStep = (i: number) => {
     const snap = isMobile ? view.snap : 1;
     return Math.min(Math.floor((total - 1) / snap) * snap, Math.round(i / snap) * snap);

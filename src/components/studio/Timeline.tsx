@@ -1,3 +1,4 @@
+import { boundedRegions, loopRegion } from "@/lib/synclab/recording-region";
 import { Fragment, memo, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 import { stepsPerBar, getBeatsPerBar, STEPS_PER_BEAT, songSteps, stepSeconds, positionLabel } from "@/lib/synclab/timebase";
 import { notesInRegion, regionsOf, snapCut, deleteRegion } from "@/lib/synclab/note-cuts";
@@ -430,7 +431,8 @@ function MidiClip({ track }: { track: Track }) {
   const hi = Math.max(...pitches) + 2;
   const span = Math.max(6, hi - lo);
   const rows = 12;
-  return <>{regionsOf(cuts, total).map(([a, b]) => {
+  const bounds: [number, number] = [Math.min(...notes.map(n => n.recordedEnd != null ? n.step : 0)), Math.max(...notes.map(n => n.recordedEnd ?? total))];
+  return <>{boundedRegions(regionsOf(cuts, total), bounds).map(([a, b]) => {
     const regionNotes = cuts.length > 0 ? notesInRegion(notes, [a, b]) : notes;
     if (regionNotes.length === 0) return null;
     const active = track.activeRegion != null && track.activeRegion >= a - 0.001 && track.activeRegion < b - 0.001;
@@ -572,9 +574,10 @@ function DrumClip({ track }: { track: Track }) {
   const shown = pads.slice(0, 8);
   const steps = track.pads?.[0]?.steps.length ?? 16;
   const cuts = track.cuts ?? [];
-  if (cuts.length > 0) {
+  const bounds = track.patternRegion ?? loopRegion(transport);
+  {
     // Cut beat: each part is its own block that can be selected and deleted, like a DAW part.
-    return <>{regionsOf(cuts, total).map(([a, b]) => {
+    return <>{boundedRegions(regionsOf(cuts, total), bounds).map(([a, b]) => {
       const lo = Math.floor(a), hi = Math.ceil(b);
       const part = pads.map((p) => ({ steps: Array.from({ length: hi - lo }, (_, i) => p.steps[(lo + i) % Math.max(1, steps)] ?? 0) }));
       const hits = part.reduce((n, p) => n + p.steps.filter((v) => v > 0).length, 0);
@@ -595,7 +598,10 @@ function DrumClip({ track }: { track: Track }) {
               onPointerDown={(e) => e.stopPropagation()}
               onClick={(e) => {
                 e.stopPropagation();
-                updateTrack(track.id, { pads: (track.pads ?? []).map((p) => ({ ...p, steps: p.steps.map((v, i) => (i >= a && i < b ? 0 : v)) })), activeRegion: undefined });
+                updateTrack(track.id, { pads: (track.pads ?? []).map((p) => ({ ...p, steps: p.steps.map((v, i) => {
+                  const first = i + Math.max(0, Math.ceil((a - i) / Math.max(1, p.steps.length))) * p.steps.length;
+                  return first < b ? 0 : v;
+                }) })), activeRegion: undefined });
                 toast.success("Beat part deleted");
               }}
               title="Delete this part" aria-label={`Delete beat part at step ${Math.round(a)}`}
