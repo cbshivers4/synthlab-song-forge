@@ -1,6 +1,7 @@
 # Studio components
 
 Settings diagnostics snapshots only device preferences across explicit reloads; independent test capture is released and never takes shared studio mic ownership. Access checks never replace MIDI handlers or audio routing, so live work stays intact.
+MIDI settings uses shared controller profiles and store input selection; illustrations distinguish available profiles from reported inputs, and category navigation remains alongside the panel to match the workstation reference without duplicate MIDI state.
 
 SynthEditor derives instrument tabs from timeline track IDs and selects through the shared store; keep each track's editor keyed by its ID so switching preserves project patches without leaking local controls between synths.
 
