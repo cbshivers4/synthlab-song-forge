@@ -38,6 +38,12 @@ export function feedVirtualInput(id: string, data: Uint8Array) {
   for (const h of virtualHandlers) if (h.id === "all" || h.id === id) h.fn({ data });
 }
 
+export function listOutputs(a: AnyAccess | null): MidiPortInfo[] {
+  if (!a) return [];
+  const outs = (a as unknown as { outputs?: Map<string, { id: string; name?: string | null }> }).outputs;
+  return outs ? Array.from(outs.values()).map((o) => ({ id: o.id, name: o.name || "MIDI OUTPUT" })) : [];
+}
+
 export function listInputs(a: AnyAccess | null): MidiPortInfo[] {
   const real = a ? Array.from(a.inputs.values()).map((i) => ({ id: i.id, name: i.name || "MIDI INPUT" })) : [];
   return [...real, ...Array.from(virtualPorts, ([id, name]) => ({ id, name }))];

@@ -8,7 +8,7 @@ import { midiSupported, midiUnsupportedMessage } from "@/lib/synclab/midi";
 import { ControllerLibrary, DevicePicture } from "./ControllerLibrary";
 
 export function MidiSettingsPanel({ onDetect }: { onDetect: () => void }) {
-  const { midiInputs, midiInputId, setMidiInput } = useStudio();
+  const { midiInputs, midiOutputs, midiInputId, setMidiInput } = useStudio();
   const [profileId, setProfileId] = useState("auto");
   const [supported, setSupported] = useState(false);
   useEffect(() => {
@@ -67,6 +67,20 @@ export function MidiSettingsPanel({ onDetect }: { onDetect: () => void }) {
         {[{ id: "none", name: "None — input off" }, { id: "all", name: "All devices" }, ...midiInputs].map(port => <label key={port.id} className="flex min-h-11 cursor-pointer items-center justify-between gap-3 border-t border-border px-3 py-2 text-sm"><span className="min-w-0 break-words">{port.name}</span><RadioGroupItem value={port.id} aria-label={`Use ${port.name}`} /></label>)}
       </RadioGroup>
       <p className="mt-2 text-xs text-muted-foreground">Standard — notes play the armed / selected instrument. Independent master-keyboard targeting is not available.</p>
+    </div>
+    <div>
+      <h4 className="mb-2 text-sm font-semibold">MIDI outputs</h4>
+      <div className="overflow-hidden border border-border bg-surface">
+        <div className="grid grid-cols-[minmax(0,1fr)_130px] gap-2 bg-surface-2 px-3 py-2 text-xs font-semibold"><span>Output port</span><span className="text-right">Status</span></div>
+        <div className="max-h-48 overflow-y-auto">
+          {midiOutputs.map(port => <div key={port.id} className="grid grid-cols-[minmax(0,1fr)_130px] items-center gap-2 border-t border-border px-3 py-3">
+            <div className="flex min-w-0 items-center gap-3"><Usb className="size-6 shrink-0 text-muted-foreground" /><span className="min-w-0 break-words text-sm font-medium">{port.name}</span></div>
+            <span className="text-right text-xs text-primary">Output reported</span>
+          </div>)}
+          {!midiOutputs.length && <div className="px-3 py-5 text-sm text-muted-foreground">No connected MIDI outputs reported.</div>}
+        </div>
+      </div>
+      <p className="mt-2 text-xs text-muted-foreground">SYNCLAB receives MIDI from controllers but does not send notes or clock out to hardware yet — outputs are listed so you can confirm the device is connected.</p>
     </div>
   </section>;
 }
