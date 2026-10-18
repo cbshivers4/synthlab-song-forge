@@ -46,4 +46,4 @@ Reel recorder: singleton AudioWorklet capture; tape bypasses master to avoid fee
 Video cuts use source seconds/grid/clamp; kits save MIDI notes. Keyboard/learned MIDI share pad triggers; MIDI consumers prevent doubled track notes.
 
 
-Device preferences use cached values and change events, never project autosave or per-tick storage reads. Settings reuse panels; unsupported native capabilities stay read-only.
+Device prefs use cache/events, not project autosave or tick storage. Diagnostics snapshots prefs only, preserving audio. Reuse panels; unsupported native controls stay read-only.
