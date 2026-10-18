@@ -14,7 +14,7 @@ Meter/looper visuals share 20 fps timers; keep rapid React updates off audio pat
 Phone settings open Phone features from More and the beat maker; Bluetooth shortcuts open Audio explicitly, keeping both accessible.
 Mixer VCAs scale assigned channel gains without changing individual faders, while aux returns control post-effect levels before the master; this avoids routing returns back into their own sends.
 Mixer meters read analyser taps from the actual bus, aux return, and VCA member signals; master gain controls the summed mix, while subgroup changes also scale their tracks' pre-bus sends.
-MIDI Learn uses stable track/device IDs; expose only implemented dispatch paths.
+MIDI Learn uses stable track/device IDs; expose implemented paths only.
 Ableton handoff uses stems and standard MIDI, never proprietary decoding.
 - Time signature is transport.beatsPerBar over a quarter-note beat; bar math goes through timebase helpers (stepsPerBar/getBeatsPerBar), synced by the store each render, so ruler, metronome, count-ins and looper agree.
 Bus and send insert changes crossfade parallel audio paths after the bus scope or send output; never disconnect the active source on each parameter edit, because that cuts live sound and bypasses the actual effect chain.
@@ -22,7 +22,7 @@ Printed instrument and drum takes replace overlapping clips by default; only exp
 - Computer typing keys (src/lib/synclab/qwerty.ts) play the armed/selected instrument via previewNote, which both sounds and captures notes; keep it the single note path so recording stays consistent.
 Detached panels use synchronous user-click window.open + React portals for shared audio/state; child windows need draggable headers for monitor moves without reloads.
 Bottom displays read live analyser taps at 20 fps. Generator waves use PCM/offline voices, never decoration; stem masks run in a worker for smooth playback.
-Post-login workspace retains cloud projects, device recents, saved/starter templates and their storage/open actions.
+Workspace retains cloud projects, device recents, saved/starter templates and storage/open actions.
 - GRANT EXECUTE on RLS security-definer helpers to anon/authenticated/service_role; missing grants break policy reads.
 Studio panel wallpaper uses one bundled JPEG with a dark semantic overlay and per-panel skin overrides; this keeps controls legible while letting users customize each panel without external image dependencies.
 Timeline names stay single-line; phone actions prioritize REC/AUTO with isolated menu clicks to avoid opening instruments.
@@ -38,7 +38,7 @@ Synth selection opens piano roll. Pin sampler waveform above Stretch/chops to ke
 Transport stays mounted: phone overlay and timeline use separate layout/paint containment with shared resize visibility; desktop transport stays below the workspace.
 Phone shares desktop audio/state with native scrolling for all tracks/tools. AppProvider scopes phone tokens to the document via shared mobile detection so entry screens/portals match; desktop preferences stay separate.
 Drum snap is session-only for new step writes, never existing hits.
-Count-in haptics use the shared beat timer and guarded vibration, independent of audio.
+Count-in haptics use shared beat timing and guarded vibration, independent of audio.
 MP3/MP4 imports/exports retain originals in the private library with content hashes to avoid duplicates; saved videos open Video Sampler.
 Cloud deletion reads raw sessions, confirms deletion, then cleans owned files; missing assets cannot block removal.
 Reel recorder: singleton AudioWorklet capture; tape bypasses master to avoid feedback. Timeline meters read live post-master taps without input activation; exit releases input, retaining tape.
