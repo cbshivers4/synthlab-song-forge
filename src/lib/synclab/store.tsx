@@ -1903,31 +1903,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           toast("Select a channel first", { description: "Click the channel whose clip or notes you want to split." });
           return;
         }
-        const step = transportRef.current.step ?? 0;
-        const t = tracksRef.current.find((x) => x.id === id);
-        if (t && (t.kind === "instrument" || t.kind === "midi" || t.kind === "sampler")) {
-          const cutStep = step % 16;
-          const notes = t.notes ?? [];
-          const crossing = notes.filter((n) => n.step % 16 < cutStep && (n.step % 16) + n.length > cutStep);
-          if (crossing.length === 0) {
-            toast("No note crosses the playhead", { description: "Move the playhead over a note, or split an audio clip." });
-            return;
-          }
-          const next = notes.flatMap((n) => {
-            const s = n.step % 16;
-            if (s < cutStep && s + n.length > cutStep) {
-              return [
-                { ...n, length: cutStep - s },
-                { ...n, id: uid(), step: n.step + (cutStep - s), length: s + n.length - cutStep },
-              ];
-            }
-            return [n];
-          });
-          updateTrack(id, { notes: next });
-          toast.success(`Split ${crossing.length} note${crossing.length > 1 ? "s" : ""} at the playhead`);
-          return;
-        }
-        razorAtImpl(id, step);
+        razorAtImpl(id, transportRef.current.step ?? 0);
       },
       addTrack: (kind, name, preset, opts) => {
         const id = uid();
@@ -1957,7 +1933,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             const length = Math.max(0.02, Math.min(regionSec * altRate, alt.duration - offset));
             const rest = c.alts.filter((_, i) => i !== altIndex);
             return {
-              ...alt, id: uid(), start, offset, length,
+              ...alt, id: c.id, start, offset, length,
               fadeIn: Math.min(0.01, length / 4), fadeOut: Math.min(0.01, length / 4),
               alts: [{ ...c, alts: undefined }, ...rest],
             };
