@@ -176,6 +176,7 @@ export function StudioView() {
       </div>
     </div>
     {back ? <StudioBack /> : <>
+    <StudioSpeakerDrive root={roomRef} />
     <div ref={roomRef} className="studio-room relative min-h-[540px] flex-1 overflow-auto" data-studio-fit={fit < 1 ? "true" : undefined}>
       <img src={roomImage} width={1536} height={1024} alt="Graphite music studio with acoustic wall panels" className="pointer-events-none absolute inset-0 h-full w-full object-cover" />
       <div ref={contentRef} className="studio-room-content relative" style={fit < 1 ? { transform: `scale(${fit})`, transformOrigin: "top center" } : undefined}>
@@ -192,6 +193,7 @@ export function StudioView() {
         <div className="studio-default-equipment">
           <Button variant="ghost" className="studio-recorder studio-instrument" aria-label="Open reel-to-reel recorder" onClick={() => open("reel-recorder")}><RecorderDrawing /><span className="studio-instrument-preset">REEL TO REEL</span></Button>
           <ChairDrawing />
+          <div className="studio-instrument" role="img" aria-label="Studio headphones"><HeadphonesDrawing /><span className="studio-instrument-preset">HEADPHONES</span></div>
         </div>
         <div className="studio-equipment-floor">
           <div className="studio-instruments">{tracks.map(track => <Button key={track.id} variant="ghost" aria-label={`Open ${track.name} ${track.kind === "audio" || track.kind === "ai-vocal" ? "channel" : "instrument"}`} aria-pressed={selectedId === track.id} className="studio-instrument" onClick={() => open(instrumentPanel(track), track.id)}>
