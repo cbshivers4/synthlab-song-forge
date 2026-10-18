@@ -13,7 +13,7 @@ describe("settings diagnostics", () => {
     expect(comparePreferences({ "synclab.prefs": null }, { "synclab.prefs": null }).status).toBe("attention");
   });
   it("only snapshots preferences, never projects or credentials", () => {
-    const getItem = vi.fn(() => null);
+    const getItem = vi.fn((_key: string) => null);
     capturePreferences({ getItem });
     expect(getItem.mock.calls.map(call => call[0])).toEqual(["synclab.prefs", "synclab.input.device", "synclab.input.channel", "synclab.input.gainDb", "synclab.output.device", "synclab.qwerty", "synclab.qwerty.octave", "synclab.mobile-accessibility.v1"]);
   });

@@ -1,5 +1,7 @@
 # Studio components
 
+Settings diagnostics snapshots only device preferences across explicit reloads; independent test capture is released and never takes shared studio mic ownership. Access checks never replace MIDI handlers or audio routing, so live work stays intact.
+
 SynthEditor derives instrument tabs from timeline track IDs and selects through the shared store; keep each track's editor keyed by its ID so switching preserves project patches without leaking local controls between synths.
 
 Effects Rack reuses track plugin instances and store actions with inline RackEffect modules; post-insert analyser scopes and shared 20 fps meter callbacks keep the rack tied to real audio without changing routing.

@@ -39,6 +39,7 @@ import { usePlan } from "@/lib/synclab/plan";
 import { qwertyEnabled, setQwertyEnabled, qwertyOctave, setQwertyOctave } from "@/lib/synclab/qwerty";
 import { notifyPreferencesChanged } from "@/lib/synclab/preferences";
 import { Bluetooth, Mic } from "lucide-react";
+import { SettingsDiagnostics } from "./SettingsDiagnostics";
 
 export function requestBluetoothSettings() {
   sessionStorage.setItem("synclab.settings.bluetooth", "open");
@@ -333,6 +334,7 @@ export function Settings() {
       <div className="mb-2 flex flex-wrap gap-2">
         {<Button variant="secondary" className="h-12 gap-2 whitespace-nowrap" disabled={scanning} onClick={() => { setActiveTab("audio"); void scanDevices(true); }}><Mic className="size-4" /> {scanning ? "Connecting…" : "Enable microphone"}</Button>}
         <Button variant="outline" className="gap-2" onClick={() => setActiveTab("audio")}><Bluetooth className="size-4" /> Bluetooth devices</Button>
+        <Button variant="outline" onClick={() => setActiveTab("diagnostics")}>Diagnostics</Button>
       </div>
       <TabsList className="flex h-auto max-w-full flex-nowrap justify-start gap-1 overflow-x-auto bg-surface sm:flex-wrap">
         {(isMobile ? ["mobile", "audio", "recording", "metronome", "timing", "timeline", "midi", "mixing", "export", "desktop", "general", "browsing", "sync", "controls", "folders", "account"] : ["audio", "recording", "metronome", "timing", "timeline", "midi", "mixing", "export", "desktop", "mobile", "general", "browsing", "sync", "controls", "folders", "account"]).map((t) => (
@@ -341,6 +343,10 @@ export function Settings() {
           </TabsTrigger>
         ))}
       </TabsList>
+
+      <TabsContent value="diagnostics" className="mt-4">
+        <SettingsDiagnostics />
+      </TabsContent>
 
       <TabsContent value="audio" className="mt-4">
         <BluetoothDevices
