@@ -1742,3 +1742,35 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
 
 /* Studio View speaker/headphone cones scale from the real master signal (StudioSpeakerDrive). */
 [data-studio-woofer], [data-studio-tweeter] { transform-box: fill-box; transform-origin: center; transition: transform 60ms linear; will-change: transform; }
+
+/* Mixer legibility: wider channels, bigger and brighter labels so every control reads clearly. */
+.mx-console:not(.mx-phone) .mx-channel { width: 132px; }
+.mx-console:not(.mx-phone) .mx-channel.w-\[92px\] { width: 116px; }
+.mx-console:not(.mx-phone) .mx-row-name { height: 26px; }
+.mx-console:not(.mx-phone) .mx-row-name > span { font-size: 11px; font-weight: 700; }
+.mx-console:not(.mx-phone) .mx-row-name > svg { width: 16px; height: 16px; }
+.mx-console:not(.mx-phone) .mx-row-head { height: 30px; font-size: 9px; }
+.mx-console:not(.mx-phone) .mx-row-inserts { height: 56px; }
+.mx-console:not(.mx-phone) .mx-row-inserts button, .mx-console:not(.mx-phone) .mx-row-inserts .font-mono { font-size: 9px; }
+.mx-console:not(.mx-phone) .mx-row-eq { height: 28px; font-size: 9px; }
+.mx-console:not(.mx-phone) .mx-row-sends { height: 24px; }
+.mx-console:not(.mx-phone) .mx-row-sends button { font-size: 9px; }
+.mx-console:not(.mx-phone) .mx-row-send-bars { height: 20px; }
+.mx-console:not(.mx-phone) .mx-row-routing { height: 34px; font-size: 9px; }
+.mx-console:not(.mx-phone) .mx-row-routing select, .mx-console:not(.mx-phone) .mx-row-routing button { font-size: 9px; }
+.mx-console:not(.mx-phone) .mx-row-pan { height: 30px; }
+.mx-console:not(.mx-phone) .mx-row-buttons { height: 32px; }
+.mx-console:not(.mx-phone) .mx-row-buttons > button { height: 24px; font-size: 11px; }
+.mx-console:not(.mx-phone) .mx-row-readout { height: 20px; font-size: 10px; }
+.mx-console:not(.mx-phone) .mx-row-readout span { font-size: 10px; }
+.mx-console:not(.mx-phone) .mx-row-fader { height: 128px; }
+.mx-console:not(.mx-phone) .mx-row-scope { height: 30px; }
+/* Brighter label ink inside the console so dim helper text stays readable on every desk finish. */
+.mx-console .text-muted-foreground { color: color-mix(in oklab, var(--foreground) 78%, transparent); }
+.mx-console .text-muted-foreground\/80, .mx-console .text-muted-foreground\/60 { color: color-mix(in oklab, var(--foreground) 85%, transparent); }
+/* Channel list: bigger rows and text. */
+.mx-channel-list { width: 168px; }
+.mx-channel-list-item { height: 32px; font-size: 12px; }
+.mx-channel-swatch { width: 6px; height: 20px; }
+/* Phone: stronger channel colour so each strip is easier to tell apart. */
+.phone-console .mx-phone .phone-mix-channel { background: color-mix(in oklab, var(--mixer-channel-color) 48%, var(--mixer-desk)) !important; }
