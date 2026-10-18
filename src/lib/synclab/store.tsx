@@ -1933,7 +1933,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             const length = Math.max(0.02, Math.min(regionSec * altRate, alt.duration - offset));
             const rest = c.alts.filter((_, i) => i !== altIndex);
             return {
-              ...alt, id: uid(), start, offset, length,
+              ...alt, id: c.id, start, offset, length,
               fadeIn: Math.min(0.01, length / 4), fadeOut: Math.min(0.01, length / 4),
               alts: [{ ...c, alts: undefined }, ...rest],
             };

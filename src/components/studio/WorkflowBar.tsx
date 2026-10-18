@@ -1,11 +1,11 @@
-import { Circle, ClipboardPaste, Copy, Headphones, Layers, Mic, Piano, Repeat, Scissors, Timer, Trash2, X } from 'lucide-react';
+import { Circle, ClipboardPaste, Copy, Headphones, Layers, Mic, Piano, Repeat, Scissors, SquareSplitHorizontal, Timer, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useStudio } from '@/lib/synclab/store';
 import { selectedClip, selectedPartBounds } from '@/lib/synclab/workflow';
 import { deleteRegion } from '@/lib/synclab/note-cuts';
 import { loopRegion } from '@/lib/synclab/recording-region';
-import { positionLabel, songSteps } from '@/lib/synclab/timebase';
+import { barsForSteps, positionLabel } from '@/lib/synclab/timebase';
 
 export function WorkflowBar() {
   const { selected, tracks, transport, setTransport, updateTrack, toggleRecord, setPanel, panel, copyClip, cutClip, pasteClip, clipClipboardName, removeClip, swapTake, razorAt } = useStudio();
@@ -51,12 +51,12 @@ export function WorkflowBar() {
     </div>
     {selected && <div className="flex min-w-0 items-center gap-1 overflow-x-auto border-t border-border px-2 py-1">
       <span className="max-w-40 shrink-0 truncate pr-1 font-mono text-[10px] text-muted-foreground" title={clip?.name ?? selected.name}>{clip?.name ?? (part ? 'Selected part' : selected.name)}</span>
-      <Button size="icon" variant="ghost" className="size-8 shrink-0" aria-label="Split selected part at playhead" title="Split at playhead" onClick={() => razorAt(selected.id, transport.step)}><Scissors className="size-3.5" /></Button>
+      <Button size="icon" variant="ghost" className="size-8 shrink-0" aria-label="Split selected part at playhead" title="Split at playhead" onClick={() => razorAt(selected.id, transport.step)}><SquareSplitHorizontal className="size-3.5" /></Button>
       <Button size="icon" variant="ghost" className="size-8 shrink-0" disabled={!clip} aria-label="Copy selected clip" title="Copy selected clip" onClick={() => { if (clip) copyClip(selected.id, clip.id); }}><Copy className="size-3.5" /></Button>
       <Button size="icon" variant="ghost" className="size-8 shrink-0" disabled={!clip} aria-label="Cut selected clip" title="Cut selected clip; keep channel" onClick={() => { if (clip) cutClip(selected.id, clip.id); }}><Scissors className="size-3.5" /></Button>
       <Button size="icon" variant="ghost" className="size-8 shrink-0" disabled={!clipClipboardName} aria-label="Paste clip at playhead" title="Paste clip at playhead" onClick={() => pasteClip(false, selected.id)}><ClipboardPaste className="size-3.5" /></Button>
       <Button size="icon" variant="ghost" className="size-8 shrink-0 text-destructive" disabled={!part} aria-label="Delete selected part" title="Delete selected part; keep channel" onClick={removePart}><Trash2 className="size-3.5" /></Button>
-      <Button size="sm" variant="outline" className="h-8 shrink-0 gap-1 px-2 text-[11px]" disabled={!part || part[1] <= part[0] || active} onClick={() => { if (part) setTransport({ loop: true, loopStart: part[0], loopEnd: part[1], step: part[0], bars: Math.max(transport.bars, Math.ceil(part[1] / (songSteps(transport.bars) / transport.bars))) }); }}><Repeat className="size-3.5" />Loop selected part</Button>
+      <Button size="sm" variant="outline" className="h-8 shrink-0 gap-1 px-2 text-[11px]" disabled={!part || part[1] <= part[0] || active} onClick={() => { if (part) setTransport({ loop: true, loopStart: part[0], loopEnd: part[1], step: part[0], bars: Math.max(transport.bars, barsForSteps(part[1])) }); }}><Repeat className="size-3.5" />Loop selected part</Button>
       {clip?.alts?.length ? <Select value="current" onValueChange={(value) => { if (value !== 'current') swapTake(selected.id, clip.id, Number(value)); }}><SelectTrigger aria-label="Selected clip takes" className="h-8 w-40 shrink-0 text-[11px]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="current">Current take</SelectItem>{clip.alts.map((take, index) => <SelectItem key={`${take.id}-${index}`} value={String(index)}>Take {index + 1}: {take.name}</SelectItem>)}</SelectContent></Select> : null}
       {(selected.kind === 'drum' || selected.kind === 'instrument' || selected.kind === 'midi' || selected.kind === 'sampler') && <Button size="sm" variant="ghost" className="h-8 shrink-0 gap-1 px-2 text-[11px]" onClick={() => setPanel('piano')}><Piano className="size-3.5" />Edit notes</Button>}
     </div>}
