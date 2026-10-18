@@ -46,6 +46,7 @@ import { MobileOnboarding } from "@/components/studio/MobileOnboarding";
 import { PhoneStudio } from "@/components/studio/PhoneStudio";
 import { PhonePages } from "@/components/studio/PhonePages";
 import { DesktopUpdateBanner } from "@/components/studio/DesktopUpdateBanner";
+import { AppUpdateBanner } from "@/components/studio/AppUpdateBanner";
 import { DesktopWebsiteStatus } from "@/components/studio/DesktopWebsiteStatus";
 import { ReferenceAnalyzer } from "@/components/studio/ReferenceAnalyzer";
 import { LiveView } from "@/components/studio/LiveView";
@@ -669,6 +670,7 @@ function StudioWorkspace() {
       {isMobile && beatMode && !panel && <MobileBeat onClose={() => setBeatMode(false)} />}
       <MobileOnboarding enabled={isMobile && !beatMode} />
       <DesktopUpdateBanner />
+      <AppUpdateBanner />
       <DesktopWebsiteStatus />
     </div>
   );
