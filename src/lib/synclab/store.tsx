@@ -17,7 +17,7 @@ import { stepsPerBar, setBeatsPerBar, getBeatsPerBar, STEPS_PER_BEAT, songSteps,
 import { openInOwnTab } from "./mic";
 import { TRACK_COLORS, applyPreset, defaultPads, defaultPatch, uid } from "./presets";
 import { BUILT_IN_PLUGINS, instantiate, processMidiThroughPlugins } from "./plugins";
-import { getMidiAccess, listInputs, midiSupported, midiUnsupportedMessage, subscribe, type MidiPortInfo } from "./midi";
+import { getMidiAccess, listInputs, listOutputs, midiSupported, midiUnsupportedMessage, subscribe, type MidiPortInfo } from "./midi";
 import { getPadBank, setPadBank } from "./pad-session";
 import { getLooper } from "./live-looper";
 import { padNote } from "./drum-notes";
@@ -369,6 +369,7 @@ interface StudioApi extends StudioState {
   movePlugin: (trackId: string, instanceId: string, dir: -1 | 1) => void;
   setPluginParam: (trackId: string, instanceId: string, paramId: string, value: number) => void;
   midiInputs: MidiPortInfo[];
+  midiOutputs: MidiPortInfo[];
   midiInputId: string | null;
   midiLearning: boolean;
   midiMap: Record<string, MidiTarget>;
@@ -461,6 +462,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const [installedPlugins, setInstalledPlugins] = useState<PluginDef[]>(BUILT_IN_PLUGINS);
   const [fxChains, setFxChains] = useState<Record<string, PluginInstance[]>>({});
   const [midiInputs, setMidiInputs] = useState<MidiPortInfo[]>([]);
+  const [midiOutputs, setMidiOutputs] = useState<MidiPortInfo[]>([]);
   const midiInputsRef = useRef(midiInputs);
   midiInputsRef.current = midiInputs;
   // Chosen controller is remembered so it reconnects on its own next visit.
@@ -560,6 +562,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     void getMidiAccess().then((a) => {
       const list = listInputs(a);
       setMidiInputs(list);
+      setMidiOutputs(listOutputs(a));
       if (!list.length) {
         if (!quiet) toast("No MIDI controller found", { description: "Plug one in, then press MIDI again." });
         return;
@@ -585,6 +588,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           // remembered one as soon as it appears again.
           const now = listInputs(a);
           setMidiInputs(now);
+          setMidiOutputs(listOutputs(a));
           setMidiInputId((cur) => {
             if (cur && now.some((i) => i.id === cur)) return cur;
             let saved: string | null = null;
@@ -2714,6 +2718,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         );
       },
       midiInputs,
+      midiOutputs,
       midiInputId,
       midiLearning,
       midiMap,
@@ -2761,7 +2766,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           ),
         })),
     };
-  }, [tracks, transport, selectedId, selectedIds, editTool, panel, userPresets, buses, vcas, auxReturns, sections, projectNotes, folders, installedPlugins, fxChains, midiInputs, midiInputId, midiLearning, midiMap, midiLearn, clipboardName, enableMidi, setMidiInputPersist, updateTrack, finishRecording, finishTrackRecording, splitClipAtImpl, razorAtImpl, buildSnapshot, applySession, historyTick, automationHistoryTick, savedAt]);
+  }, [tracks, transport, selectedId, selectedIds, editTool, panel, userPresets, buses, vcas, auxReturns, sections, projectNotes, folders, installedPlugins, fxChains, midiInputs, midiOutputs, midiInputId, midiLearning, midiMap, midiLearn, clipboardName, enableMidi, setMidiInputPersist, updateTrack, finishRecording, finishTrackRecording, splitClipAtImpl, razorAtImpl, buildSnapshot, applySession, historyTick, automationHistoryTick, savedAt]);
 
 
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>;
