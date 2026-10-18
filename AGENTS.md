@@ -17,14 +17,14 @@ Mixer meters read analyser taps from the actual bus, aux return, and VCA member 
 MIDI Learn uses stable track/device IDs; expose implemented paths only.
 Ableton handoff uses stems and standard MIDI, never proprietary decoding.
 - Time signature is transport.beatsPerBar over a quarter-note beat; bar math goes through timebase helpers (stepsPerBar/getBeatsPerBar), synced by the store each render, so ruler, metronome, count-ins and looper agree.
-Bus and send insert changes crossfade parallel audio paths after the bus scope or send output; never disconnect the active source on each parameter edit, because that cuts live sound and bypasses the actual effect chain.
+Bus/send insert edits crossfade parallel paths after the bus scope/send output; never disconnect active sources on parameter edits, which cuts live sound and bypasses effects.
 Printed instrument and drum takes replace overlapping clips by default; only explicit overdub stacks them, so ordinary re-recording does not double playback.
 - Computer typing keys (src/lib/synclab/qwerty.ts) play the armed/selected instrument via previewNote, which both sounds and captures notes; keep it the single note path so recording stays consistent.
 Detached panels use synchronous user-click window.open + React portals for shared audio/state; child windows need draggable headers for monitor moves without reloads.
 Bottom displays read live analyser taps at 20 fps. Generator waves use PCM/offline voices, never decoration; stem masks run in a worker for smooth playback.
 Workspace retains cloud projects, device recents, saved/starter templates and storage/open actions.
 - GRANT EXECUTE on RLS security-definer helpers to anon/authenticated/service_role; missing grants break policy reads.
-Studio panel wallpaper uses one bundled JPEG with a dark semantic overlay and per-panel skin overrides; this keeps controls legible while letting users customize each panel without external image dependencies.
+Panel wallpaper uses one bundled JPEG, dark semantic overlay and per-panel skins for legible customization without external images.
 Timeline names stay single-line; phone actions prioritize REC/AUTO with isolated menu clicks to avoid opening instruments.
 Playhead stays within track rows; headers, ruler and song lane share its width variable, including large phone controls. It renders through the --playhead token (white, never dimmed) and stays draggable from ruler and track lanes.
 Synth sections share wrapping tabs; X-Y pads dispatch through updatePatch to stay synchronized with knobs and saved presets without removing controls.
