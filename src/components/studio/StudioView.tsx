@@ -93,7 +93,7 @@ function StudioSpeakerDrive({ root }: { root: React.RefObject<HTMLDivElement | n
     const draw = () => {
       const data = getEngine().getScopeWave("master");
       let peak = 0;
-      if (data) for (let i = 0; i < data.length; i++) { const v = Math.abs(data[i]); if (v > peak) peak = v; }
+      if (data) for (let i = 0; i < data.length; i++) { const v = Math.abs(data[i] ?? 0); if (v > peak) peak = v; }
       smooth = Math.max(peak, smooth * 0.82);
       const woofer = 1 + Math.min(0.22, smooth * 0.28);
       const tweeter = 1 + Math.min(0.1, smooth * 0.14);
