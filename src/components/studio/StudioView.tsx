@@ -63,13 +63,48 @@ function RecorderDrawing() {
 function MonitorDrawing() {
   return <svg viewBox="0 0 120 240" aria-hidden="true" className="!size-full shrink-0">
     <rect x="18" y="5" width="84" height="127" rx="5" className="studio-hardware-face" />
-    <circle cx="60" cy="35" r="13" className="studio-speaker-cone" />
-    <circle cx="60" cy="85" r="33" className="studio-speaker-cone" />
-    <circle cx="60" cy="85" r="21" className="studio-speaker-inner" />
+    <circle cx="60" cy="35" r="13" className="studio-speaker-cone" data-studio-tweeter />
+    <circle cx="60" cy="85" r="33" className="studio-speaker-cone" data-studio-woofer />
+    <circle cx="60" cy="85" r="21" className="studio-speaker-inner" data-studio-woofer />
     <circle cx="60" cy="85" r="10" className="studio-hardware-edge" />
     <circle cx="90" cy="121" r="2" className="studio-pad-lit" />
     <path d="M60 132v95M27 231h66" className="studio-stand" />
   </svg>;
+}
+
+function HeadphonesDrawing() {
+  return <svg viewBox="0 0 200 195" role="img" aria-label="Studio headphones" className="studio-instrument-art" data-studio-headphones>
+    <path d="M40 120v-20q0-60 60-60t60 60v20" fill="none" className="studio-stand" strokeWidth="10" />
+    <path d="M40 120v-20q0-60 60-60t60 60v20" fill="none" className="studio-hardware-edge" strokeWidth="4" />
+    <rect x="22" y="112" width="36" height="56" rx="16" className="studio-hardware-face" />
+    <rect x="142" y="112" width="36" height="56" rx="16" className="studio-hardware-face" />
+    <circle cx="40" cy="140" r="11" className="studio-speaker-cone" data-studio-woofer />
+    <circle cx="160" cy="140" r="11" className="studio-speaker-cone" data-studio-woofer />
+    <circle cx="40" cy="140" r="5" className="studio-speaker-inner" data-studio-tweeter />
+    <circle cx="160" cy="140" r="5" className="studio-speaker-inner" data-studio-tweeter />
+    <path d="M160 168q14 16 8 27h18" className="studio-mic-cable" />
+  </svg>;
+}
+
+/** Drives monitor tweeters/woofers and headphone cups from the real post-master signal. */
+function StudioSpeakerDrive({ root }: { root: React.RefObject<HTMLDivElement | null> }) {
+  useEffect(() => {
+    let smooth = 0;
+    const draw = () => {
+      const data = getEngine().getScopeWave("master");
+      let peak = 0;
+      if (data) for (let i = 0; i < data.length; i++) { const v = Math.abs(data[i]); if (v > peak) peak = v; }
+      smooth = Math.max(peak, smooth * 0.82);
+      const woofer = 1 + Math.min(0.22, smooth * 0.28);
+      const tweeter = 1 + Math.min(0.1, smooth * 0.14);
+      root.current?.querySelectorAll<HTMLElement>("[data-studio-woofer]").forEach((node) => { node.style.transform = `scale(${woofer})`; });
+      root.current?.querySelectorAll<HTMLElement>("[data-studio-tweeter]").forEach((node) => { node.style.transform = `scale(${tweeter})`; });
+    };
+    draw();
+    const timer = window.setInterval(draw, 50);
+    return () => window.clearInterval(timer);
+  }, [root]);
+  return null;
 }
 
 /** One visual timer reads actual engine levels; no animation or simulated signal. */
