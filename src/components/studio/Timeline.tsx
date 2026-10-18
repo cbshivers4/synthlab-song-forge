@@ -575,7 +575,7 @@ function DrumClip({ track }: { track: Track }) {
   const steps = track.pads?.[0]?.steps.length ?? 16;
   const cuts = track.cuts ?? [];
   const bounds = track.patternRegion ?? loopRegion(transport);
-  if (cuts.length > 0 || bounds) {
+  {
     // Cut beat: each part is its own block that can be selected and deleted, like a DAW part.
     return <>{boundedRegions(regionsOf(cuts, total), bounds).map(([a, b]) => {
       const lo = Math.floor(a), hi = Math.ceil(b);
@@ -598,7 +598,10 @@ function DrumClip({ track }: { track: Track }) {
               onPointerDown={(e) => e.stopPropagation()}
               onClick={(e) => {
                 e.stopPropagation();
-                updateTrack(track.id, { pads: (track.pads ?? []).map((p) => ({ ...p, steps: p.steps.map((v, i) => (i >= a && i < b ? 0 : v)) })), activeRegion: undefined });
+                updateTrack(track.id, { pads: (track.pads ?? []).map((p) => ({ ...p, steps: p.steps.map((v, i) => {
+                  const first = i + Math.max(0, Math.ceil((a - i) / Math.max(1, p.steps.length))) * p.steps.length;
+                  return first < b ? 0 : v;
+                }) })), activeRegion: undefined });
                 toast.success("Beat part deleted");
               }}
               title="Delete this part" aria-label={`Delete beat part at step ${Math.round(a)}`}

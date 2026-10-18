@@ -8,7 +8,7 @@
 - [x] Add a playable bass generator that creates editable MIDI patterns
 
 # Roadmap
-- [ ] Fix doubled live recording notes and bound drum edits/manual takes to loop markers; test desktop and phone.
+- [x] Fix doubled live recording visuals and bound drum edits/manual takes to loop markers. Signed-in desktop recording verified one drawn note and one timeline note; drum edit ended at loop marker on desktop and sideways phone. 41 tests passed; physical input testing remains hardware-dependent.
 - [x] Match reference MIDI settings with category sidebar, controller drawings, detection/profile controls, input list and existing master input selection. Signed-in desktop/sideways-phone verified profile selection, mapping on/off, input All/None and library opening; MIDI/preference tests passed, build OK. Connected hardware is not available in this sandbox.
 - [x] Add Settings → Diagnostics: reload persistence check with unsaved-song warning, microphone capture/release, MIDI permission/ports, audio devices and playback access. Signed-in desktop/sideways-phone verified actual reload, simulated microphone access and permission failures; 38 tests passed, build OK. Physical hardware remains unverified.
 - [x] Audit reference settings; add User interface/Browsing/Sync/Other controls/Folders/Account sections using existing panels. Connect MIDI thru/velocity/bend, metronome sound/level/playback, export defaults and tooltip/motion preferences; replace inactive mixing/timing controls with real actions or clear limitations. Signed-in desktop and sideways-phone sections/switches passed; real virtual MIDI messages and captured metronome PCM passed; 32 tests passed and preview build OK.
