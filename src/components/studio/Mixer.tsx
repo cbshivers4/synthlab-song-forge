@@ -350,6 +350,7 @@ const ROW = {
   readout: "mx-row-readout h-5",
   buttons: "mx-row-buttons h-[68px]",
   name: "mx-row-name h-12",
+  icon: "mx-row-icon h-9",
 } as const;
 
 /** Console desk finishes the user can pick between. */
@@ -1213,6 +1214,15 @@ function Strip({
           ⌁
         </button>
       </div>
+
+      {/* channel icon — centred at the foot of the strip, in its own row so nothing overlaps */}
+      <div
+        className={cn(ROW.icon, "flex shrink-0 items-center justify-center border-t border-border/60")}
+        title={t.name}
+        aria-hidden
+      >
+        <TrackIcon track={t} className="size-5" />
+      </div>
     </div>
   );
 }
@@ -1953,6 +1963,7 @@ function PhoneChannel({ track, level, selected, index }: { track?: Track; level:
     {track ? <>
       <div className="grid h-14 grid-cols-[auto_minmax(0,1fr)_48px] items-center gap-2 border-y border-border px-3"><span aria-hidden className="font-mono text-[10px] font-bold text-foreground">PAN</span><Slider aria-label={`${name} pan`} className="h-12" value={[track.pan]} min={-1} max={1} step={0.01} onValueChange={([pan = 0]) => updateTrack(track.id, { pan })} /><Button variant="ghost" className="size-12 px-0 font-mono text-xs font-bold text-foreground" title="Reset pan to centre" onClick={() => updateTrack(track.id, { pan: 0 })}>{track.pan === 0 ? "C" : `${track.pan < 0 ? "L" : "R"}${Math.round(Math.abs(track.pan) * 100)}`}</Button></div>
       <div className="grid grid-cols-4 gap-1 p-2"><Button variant={track.muted ? "secondary" : "outline"} className="h-12 p-0" aria-label={`Mute ${name}`} aria-pressed={track.muted} onClick={() => updateTrack(track.id, { muted: !track.muted })}>M</Button><Button variant={track.solo ? "secondary" : "outline"} className="h-12 p-0" aria-label={`Solo ${name}`} aria-pressed={track.solo} onClick={() => updateTrack(track.id, { solo: !track.solo })}>S</Button><Button variant={track.armed ? "destructive" : "outline"} className="h-12 p-0" aria-label={`Record arm ${name}`} aria-pressed={track.armed} onClick={() => updateTrack(track.id, { armed: !track.armed })}><span className="size-4 rounded-full bg-destructive" /></Button><Button variant={transport.monitor ? "secondary" : "outline"} className="h-12 p-0" aria-label={`Monitor ${name}`} aria-pressed={transport.monitor} onClick={() => setTransport({ monitor: !transport.monitor })}><Waves className="size-5" /></Button></div>
+      <div className="mx-row-icon flex h-14 shrink-0 items-center justify-center border-t border-border" title={name} aria-hidden><TrackIcon track={track} className="size-7" /></div>
     </> : <div className="flex h-[120px] items-center justify-center"><Button variant="outline" className="h-12" onClick={() => clearClip("master")}>Reset clip</Button></div>}
   </section>;
 }
