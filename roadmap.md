@@ -8,7 +8,7 @@
 - [x] Add a playable bass generator that creates editable MIDI patterns
 
 # Roadmap
-- [ ] Give effects and synths distinct hardware faceplates, dimensional knobs and raised controls; preserve audio, skins and touch access.
+- [x] Give effects and synths distinct hardware faceplates, dimensional knobs and raised controls; signed-in synth/effect knob changes, bypass and sideways phone access verified; 44 tests passed. Audio routing and wallpaper controls preserved.
 - [x] Streamline recording/takes, selected-part clip actions, loop editing and shared desktop/phone workspace. Signed-in desktop verified replace/overdub, count-in, arm/start/stop and imported-audio copy/paste/delete retaining the channel; sideways phone controls visible. 44 tests passed. Physical recording and take-switch listening remain hardware-dependent.
 - [x] Fix doubled live recording visuals and bound drum edits/manual takes to loop markers. Signed-in desktop recording verified one drawn note and one timeline note; drum edit ended at loop marker on desktop and sideways phone. 41 tests passed; physical input testing remains hardware-dependent.
 - [x] Match reference MIDI settings with category sidebar, controller drawings, detection/profile controls, input list and existing master input selection. Signed-in desktop/sideways-phone verified profile selection, mapping on/off, input All/None and library opening; MIDI/preference tests passed, build OK. Connected hardware is not available in this sandbox.

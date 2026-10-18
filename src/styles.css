@@ -1702,7 +1702,7 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
 .hardware-device-header { background: color-mix(in oklab, var(--hardware-black) 20%, var(--hardware-face)); }
 .hardware-device-header h3 { font-family: var(--font-display); font-size: 16px; letter-spacing: 0; color: var(--foreground); }
 .hardware-device-screen {
-  --foreground: var(--hardware-ink); --muted-foreground: var(--hardware-silver);
+  --foreground: var(--hardware-ink); --muted-foreground: var(--hardware-silver); --background: var(--hardware-black); --surface: var(--hardware-black); --surface-2: var(--hardware-rubber);
   background: var(--hardware-black); color: var(--hardware-ink);
   border: 2px solid var(--hardware-rubber); border-radius: 3px; box-shadow: var(--hardware-pressed-shadow);
 }
@@ -1717,6 +1717,7 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
   box-shadow: var(--hardware-case-shadow); color: var(--foreground);
 }
 .fx-face.hardware-device { --hardware-scale: var(--muted-foreground); }
+.fx-face.hardware-device .label-xs { color: var(--muted-foreground); letter-spacing: 0; }
 .fx-face.hardware-device[data-bypassed="true"] { --hardware-trim: var(--hardware-silver-dark); }
 :is(.fx-face, [data-fx-skin]):is([data-fx-kind="compressor"], [data-fx-kind="limiter"], [data-fx-kind="gate"], [data-fx-skin="compressor"], [data-fx-skin="limiter"], [data-fx-skin="gate"]) {
   --hardware-face: var(--hardware-silver); --foreground: var(--hardware-dark-ink); --muted-foreground: var(--hardware-rubber-edge);
