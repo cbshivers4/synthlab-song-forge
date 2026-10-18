@@ -1776,3 +1776,15 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
 .mx-channel-swatch { width: 6px; height: 20px; }
 /* Phone: stronger channel colour so each strip is easier to tell apart. */
 .phone-console .mx-phone .phone-mix-channel { background: color-mix(in oklab, var(--mixer-channel-color) 48%, var(--mixer-desk)) !important; }
+/* Track controls finish with buttons, signal scope, then the centered instrument icon. */
+.mx-console:not(.mx-phone) .mx-channel > .mx-row-buttons { order: 10; height: 56px; flex-shrink: 0; }
+.mx-console:not(.mx-phone) .mx-channel > .mx-row-scope { order: 11; flex-shrink: 0; }
+.mx-console .mx-channel-eq { height: auto !important; min-height: 112px !important; flex-shrink: 0; }
+.mx-console .mx-eq-knobs .hardware-knob { width: 100%; min-width: 0; }
+.mx-console .mx-eq-knobs .hardware-knob-label { color: var(--foreground); font-size: 10px; letter-spacing: 0; }
+.mx-console .mx-eq-knobs .hardware-knob-value { font-size: 9px; white-space: nowrap; }
+.mx-phone .phone-mix-channel > .mx-channel-eq { order: -1; }
+.mx-phone .phone-mix-channel > div:first-child { order: -2; }
+.mx-phone .phone-mix-channel > .mx-row-icon { order: 12; }
+.phone-console .mx-console[data-touch-console] .mx-channel > .mx-row-buttons { height: 104px; }
+.mx-console .mx-channel > div { flex-shrink: 0; }
