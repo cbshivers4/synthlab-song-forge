@@ -1739,3 +1739,6 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
 .synth-hardware .modular-module[data-module-type="osc"] { border-top-color: var(--amber); }
 .synth-hardware .modular-module[data-module-type="lfo"] { border-top-color: var(--magenta); }
 .synth-hardware .modular-module .hardware-knob-value { color: var(--hardware-dark-ink); }
+
+/* Studio View speaker/headphone cones scale from the real master signal (StudioSpeakerDrive). */
+[data-studio-woofer], [data-studio-tweeter] { transform-box: fill-box; transform-origin: center; transition: transform 60ms linear; will-change: transform; }
