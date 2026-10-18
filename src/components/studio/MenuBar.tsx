@@ -524,8 +524,12 @@ export function MenuBar() {
         ● Live
       </button>
 
-      <span className="ml-auto hidden min-w-0 truncate pl-2 pr-1 font-mono text-[10px] tracking-widest text-muted-foreground uppercase lg:inline">
-        {project ? `${project.name} · ${project.key} · ${project.timeSig}` : "untitled session"} · {mode} mode
+      <h1 className="mx-auto min-w-0 truncate px-3 text-sm font-semibold tracking-wide" title="Song title">
+        {project?.name ?? "Untitled song"}
+        {project && !project.id && <span className="ml-2 font-mono text-[9px] tracking-widest text-muted-foreground uppercase">not saved yet</span>}
+      </h1>
+      <span className="hidden min-w-0 shrink-0 truncate pl-2 pr-1 font-mono text-[10px] tracking-widest text-muted-foreground uppercase xl:inline">
+        {project ? `${project.key} · ${project.timeSig}` : ""} · {mode} mode
       </span>
 
       <Dialog open={saveAsOpen} onOpenChange={setSaveAsOpen}>
