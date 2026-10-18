@@ -125,6 +125,7 @@ export function ControllerLibrary({ trigger }: { trigger?: ReactNode }) {
   const pick = (id: string) => {
     setChosenControllerId(id);
     setChosen(id);
+    window.dispatchEvent(new Event("synclab:controller-profile"));
   };
   const devices = CONTROLLERS.filter((c) => c.maker === maker);
   return (

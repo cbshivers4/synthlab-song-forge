@@ -8,6 +8,7 @@
 - [x] Add a playable bass generator that creates editable MIDI patterns
 
 # Roadmap
+- [ ] Match the reference MIDI settings layout with category sidebar, visible controller drawings, detection/profile controls, input list and existing keyboard selection; verify desktop and phone.
 - [x] Add Settings → Diagnostics: reload persistence check with unsaved-song warning, microphone capture/release, MIDI permission/ports, audio devices and playback access. Signed-in desktop/sideways-phone verified actual reload, simulated microphone access and permission failures; 38 tests passed, build OK. Physical hardware remains unverified.
 - [x] Audit reference settings; add User interface/Browsing/Sync/Other controls/Folders/Account sections using existing panels. Connect MIDI thru/velocity/bend, metronome sound/level/playback, export defaults and tooltip/motion preferences; replace inactive mixing/timing controls with real actions or clear limitations. Signed-in desktop and sideways-phone sections/switches passed; real virtual MIDI messages and captured metronome PCM passed; 32 tests passed and preview build OK.
 - [ ] Physical audio-interface/MIDI-controller and native desktop folder-scan verification: requires connected hardware and macOS/Windows desktop runtime unavailable in this browser sandbox. MIDI clock/Link, native buffer/scratch disk and offline authorization remain explicitly unavailable, not claimed implemented.
