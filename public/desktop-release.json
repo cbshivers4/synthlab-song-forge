@@ -1,9 +1,9 @@
 {
   "version": "1.0.0",
-  "notes": "",
+  "notes": "First desktop release with the new SYNCLAB logo. Mac builds are unsigned: right-click → Open the first time. Windows shows SmartScreen: More info → Run anyway.",
   "downloads": {
-    "darwin-arm64": "",
-    "darwin-x64": "",
-    "win32-x64": ""
+    "darwin-arm64": "/__l5e/assets-v1/80c115be-901c-4d11-8439-de7b8caf9340/SYNCLAB-1.0.0-macOS-arm64.zip",
+    "darwin-x64": "/__l5e/assets-v1/c1479d4a-9b1b-4c30-8364-6be5c95756db/SYNCLAB-1.0.0-macOS-x64.zip",
+    "win32-x64": "/__l5e/assets-v1/552d5138-0835-48b7-bddf-35205a933d92/SYNCLAB-1.0.0-Windows-x64.zip"
   }
 }
