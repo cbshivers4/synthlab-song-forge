@@ -28,8 +28,8 @@ import { openHelp } from "@/components/studio/HelpCenter";
 
 const FEATURES: { icon: React.ReactNode; title: string; body: string }[] = [
   { icon: <Sparkles className="size-4" />, title: "AI Co-Producer", body: "Writes chords, basslines, drum patterns and lyrics — preview against your song, then add it to the timeline." },
-  { icon: <Wand2 className="size-4" />, title: "Generate Stem", body: "Describe a part and get a solo audio stem in your key and tempo, ready to drop on a track." },
-  { icon: <AudioLines className="size-4" />, title: "Separate Stems", body: "Split any song into vocals, drums, bass, music or instrumental, each on its own track." },
+  { icon: <Wand2 className="size-4" />, title: "Generate Stem — Coming soon", body: "Not available now. Describe a part and get a solo audio stem in your key and tempo." },
+  { icon: <AudioLines className="size-4" />, title: "Separate Stems — Coming soon", body: "Not available now. Split any song into vocals, drums, bass or instrumental." },
   { icon: <Mic className="size-4" />, title: "Hum to Beat & Convert Voice", body: "Beatbox a rhythm or hum a melody into notes, and restyle recorded vocals with 21 voice templates." },
   { icon: <Music2 className="size-4" />, title: "Four Synthesizers", body: "Spec 4, Acid Bass (TD-3 style) with step write, Poly Synth and a patchable Modular Tech rack." },
   { icon: <Cpu className="size-4" />, title: "Modular Tech Synth", body: "Build your own rack — VCOs, filters, envelopes, mixers — and patch it with colour cables." },
@@ -146,8 +146,8 @@ export function WelcomeScreen() {
             </p>
           </div>
 
-          <ul className="hidden w-full grid-cols-2 gap-4 md:grid">
-            {FEATURES.slice(0, 6).map((f) => (
+          <ul className="hidden w-full grid-cols-2 gap-x-4 gap-y-3 md:grid">
+            {FEATURES.map((f) => (
               <li key={f.title} className="group flex items-start gap-3">
                 <span
                   aria-hidden
