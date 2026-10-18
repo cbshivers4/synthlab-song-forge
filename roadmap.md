@@ -8,6 +8,7 @@
 - [x] Add a playable bass generator that creates editable MIDI patterns
 
 # Roadmap
+- [ ] Compare all eight supplied settings references, expose existing working settings, connect inactive controls, and identify native/hardware limitations; verify desktop and phone settings.
 - [x] Mixer name plate restored (instrument icon + channel name) as a plain row above the controls — never sticky, so it can't cover the channel meter; the meter now fits inside its fader row and the selected-track bar is hidden while the mixer is docked. Desktop faders/meters fully visible, last channel reachable by scrolling; sideways phone verified by scrolling. 27 audio tests passed, build OK.
 - [x] Remove the mixer channel name/instrument bar from every strip (desktop, bus, VCA/aux and master); names stay in the left channel list and bus/VCA/aux/master identity moved into each strip's top row. Signed-in desktop and sideways-phone checks passed, 27 audio tests passed, build OK.
 - [x] Match supplied mixer reference: flat grey console, compact colored strips, silver faders, left channel list and separate master output. Signed-in desktop selection/mute/fader and sideways phone mute/last-channel access passed; all 27 audio tests passed, preview build OK. Physical-device testing remains open.
