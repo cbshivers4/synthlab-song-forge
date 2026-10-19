@@ -1,4 +1,4 @@
-import { Circle, ClipboardPaste, Copy, Headphones, Layers, Mic, Piano, Repeat, Scissors, SquareSplitHorizontal, Timer, Trash2, X } from 'lucide-react';
+import { Circle, ClipboardPaste, Copy, Headphones, Layers, Mic, Piano, Play, Repeat, Scissors, Square, SquareSplitHorizontal, Timer, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useStudio } from '@/lib/synclab/store';
@@ -8,7 +8,7 @@ import { loopRegion } from '@/lib/synclab/recording-region';
 import { barsForSteps, positionLabel } from '@/lib/synclab/timebase';
 
 export function WorkflowBar() {
-  const { selected, tracks, transport, setTransport, updateTrack, toggleRecord, setPanel, panel, copyClip, cutClip, pasteClip, clipClipboardName, removeClip, swapTake, razorAt } = useStudio();
+  const { selected, tracks, transport, setTransport, updateTrack, togglePlay, toggleRecord, stop, setPanel, panel, copyClip, cutClip, pasteClip, clipClipboardName, removeClip, swapTake, razorAt } = useStudio();
   const clip = selectedClip(selected);
   const part = selectedPartBounds(selected, transport.bpm, transport.bars);
   const active = transport.recording || transport.countInLeft != null;
@@ -34,6 +34,8 @@ export function WorkflowBar() {
       <span className="max-w-44 shrink-0 truncate font-mono text-[11px] text-foreground" title={targets.map((track) => track.name).join(', ')}>
         {active ? '● ' : ''}{targets.length > 1 ? `${targets.length} armed tracks` : targets[0]?.name ?? 'No track selected'}
       </span>
+      <Button size="icon" variant={transport.playing ? 'default' : 'outline'} className="size-8 shrink-0" aria-label={transport.playing ? 'Pause playback' : 'Play'} title={transport.playing ? 'Pause playback' : 'Play'} aria-pressed={transport.playing} onClick={togglePlay}><Play className="size-3.5 fill-current" /></Button>
+      <Button size="icon" variant="outline" className="size-8 shrink-0" aria-label="Stop playback" title="Stop playback" onClick={() => void stop()}><Square className="size-3.5 fill-current" /></Button>
       <Button size="icon" variant={selected?.armed ? 'default' : 'outline'} className="size-8 shrink-0" disabled={!selected || active} aria-label="Arm selected track" aria-pressed={!!selected?.armed} title="Arm selected track" onClick={() => { if (selected) updateTrack(selected.id, { armed: !selected.armed }); }}><Mic className="size-3.5" /></Button>
       <Button size="icon" variant={active ? 'destructive' : 'outline'} className="size-8 shrink-0" disabled={!selected && !armed.length} aria-label={active ? 'Stop or cancel recording' : 'Record armed tracks'} title={active ? 'Stop or cancel recording' : 'Record armed tracks'} onClick={toggleRecord}><Circle className="size-3.5 fill-current" /></Button>
       <div role="group" aria-label="Recording mode" className="flex shrink-0 gap-0.5 border-l border-border pl-2">
