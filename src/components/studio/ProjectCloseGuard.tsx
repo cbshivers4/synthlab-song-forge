@@ -53,7 +53,7 @@ export function ProjectCloseGuard() {
     try {
       await completeProjectClose(async () => {
         await stop();
-        // Recording completion lands its clip before the next rendered frame.
+        // Let React publish the completed recording into the snapshot refs.
         await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
         const session = latest.current.snapshot();
         const saved = await saveCloudProject({ ...project, id: project.id ?? '' }, session);
