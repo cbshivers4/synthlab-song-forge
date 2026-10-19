@@ -1648,7 +1648,7 @@ function MasterStrip({ level: peak }: { level: number }) {
         </span>
         <ClipLed id="master" compact />
       </div>
-      <div className={cn(ROW.buttons, "grid grid-cols-2 gap-1 px-1")}>
+      <div className={cn(ROW.buttons, "grid grid-rows-2 gap-1 px-1")}>
         <button
           onClick={() => setBus("master", { muted: !master.muted })}
           title={master.muted ? "Muted — click to unmute" : "Mute the main output"}
