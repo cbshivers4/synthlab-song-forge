@@ -30,7 +30,7 @@ import { MidiLearnBlock, MidiLearnButton, MidiLearnStrip } from "./MidiLearn";
 import { TrackNotes } from "@/components/studio/TrackNotes";
 import { QuickNotes } from "@/components/studio/QuickNotes";
 import { TrackIcon, TrackStylePicker } from "@/components/studio/TrackStyle";
-import { BUILT_IN_PLUGINS } from "@/lib/synclab/plugins";
+import { BUILT_IN_PLUGINS, instantiate } from "@/lib/synclab/plugins";
 import type { AuxId, BusId, BusState, PluginInstance, Track, VcaId } from "@/lib/synclab/types";
 import { cn } from "@/lib/utils";
 import { clearClip, reportLevel, useClipped } from "@/lib/synclab/clip-monitor";
@@ -641,39 +641,42 @@ function ColorDot({ t }: { t: Track }) {
 
 /** Always-visible 3-band channel EQ. Creates a real Channel EQ insert on first use. */
 function ChannelEq({ t }: { t: Track }) {
-  const { addPlugin, setPluginParam, installedPlugins } = useStudio();
-  const eq = (t.plugins ?? []).find((p) => p.kind === "eq");
-  const bands: [string, string][] = [
-    ["low", "LO"],
-    ["mid", "MID"],
-    ["high", "HI"],
-  ];
-  const addEq = () => {
+  const { updateTrack, setPluginParam, installedPlugins } = useStudio();
+  const pendingEq = useRef<PluginInstance | null>(null);
+  const eq = (t.plugins ?? []).find((p) => p.kind === "eq") ?? pendingEq.current;
+  useEffect(() => { pendingEq.current = null; }, [t.plugins]);
+  const bands = [["high", "High"], ["mid", "Mid"], ["low", "Low"]] as const;
+  const setBand = (id: string, value: number) => {
+    const current = eq ?? pendingEq.current;
+    if (current) {
+      setPluginParam(t.id, current.id, id, value);
+      return;
+    }
     const def = installedPlugins.find((d) => d.kind === "eq") ?? BUILT_IN_PLUGINS.find((d) => d.kind === "eq");
-    if (def) addPlugin(t.id, def);
+    if (!def) return;
+    const instance = instantiate(def);
+    instance.params = instance.params.map((param) => param.id === id ? { ...param, value } : param);
+    pendingEq.current = instance;
+    updateTrack(t.id, { plugins: [...(t.plugins ?? []), instance] });
   };
   return (
     <div
-      className={cn(ROW.eq, "flex items-center gap-1 border-b border-border/60 px-1.5 py-1")}
+      className={cn(ROW.eq, "mx-channel-eq flex flex-col gap-1 border-b border-border/60 px-1.5 py-1")}
       style={{ "--primary": t.color } as CSSProperties}
       onClick={(e) => e.stopPropagation()}
     >
-      {!eq ? (
-        <button
-          onClick={addEq}
-          className="h-full w-full rounded-sm border border-dashed border-border font-mono text-[8px] uppercase tracking-wider text-muted-foreground hover:text-foreground"
-        >
-          + EQ
-        </button>
-      ) : (
+      <div className="mx-eq-knobs grid w-full grid-cols-3 gap-1">
+        {bands.map(([id, label]) => <Knob key={id} label={label} value={eq?.params.find((param) => param.id === id)?.value ?? 0} min={-18} max={18} step={0.5} unit=" dB" size={32} onChange={(value) => setBand(id, value)} />)}
+      </div>
+      <div className="mx-eq-curve h-10 w-full shrink-0">
         <EqCurve
           scopeId={`ch:${t.id}`}
-          bands={bands.map(([id]) => eq.params.find((p) => p.id === id)?.value ?? 0) as [number, number, number]}
+          bands={["low", "mid", "high"].map((id) => eq?.params.find((p) => p.id === id)?.value ?? 0) as [number, number, number]}
           color={t.color}
-          bypass={!!eq.bypass}
-          onBand={(i, v) => setPluginParam(t.id, eq.id, bands[i]![0], v)}
+          bypass={!!eq?.bypass}
+          onBand={(i, value) => { const id = ["low", "mid", "high"][i]; if (id) setBand(id, value); }}
         />
-      )}
+      </div>
     </div>
   );
 }
@@ -1017,11 +1020,9 @@ function Strip({
         <Screw />
       </div>
 
-      {advanced && (
-        <div className={cn(ROW.scope, "border-b border-border/60 p-[3px]")}>
+      <div className={cn(ROW.scope, "border-b border-border/60 p-[3px]")}>
           <Scope scopeId={`ch:${t.id}`} height={40} compact color={t.color} />
         </div>
-      )}
 
       <ChannelEq t={t} />
 
@@ -1963,8 +1964,10 @@ function PhoneChannel({ track, level, selected, index }: { track?: Track; level:
     {track ? <>
       <div className="grid h-14 grid-cols-[auto_minmax(0,1fr)_48px] items-center gap-2 border-y border-border px-3"><span aria-hidden className="font-mono text-[10px] font-bold text-foreground">PAN</span><Slider aria-label={`${name} pan`} className="h-12" value={[track.pan]} min={-1} max={1} step={0.01} onValueChange={([pan = 0]) => updateTrack(track.id, { pan })} /><Button variant="ghost" className="size-12 px-0 font-mono text-xs font-bold text-foreground" title="Reset pan to centre" onClick={() => updateTrack(track.id, { pan: 0 })}>{track.pan === 0 ? "C" : `${track.pan < 0 ? "L" : "R"}${Math.round(Math.abs(track.pan) * 100)}`}</Button></div>
       <div className="grid grid-cols-4 gap-1 p-2"><Button variant={track.muted ? "secondary" : "outline"} className="h-12 p-0" aria-label={`Mute ${name}`} aria-pressed={track.muted} onClick={() => updateTrack(track.id, { muted: !track.muted })}>M</Button><Button variant={track.solo ? "secondary" : "outline"} className="h-12 p-0" aria-label={`Solo ${name}`} aria-pressed={track.solo} onClick={() => updateTrack(track.id, { solo: !track.solo })}>S</Button><Button variant={track.armed ? "destructive" : "outline"} className="h-12 p-0" aria-label={`Record arm ${name}`} aria-pressed={track.armed} onClick={() => updateTrack(track.id, { armed: !track.armed })}><span className="size-4 rounded-full bg-destructive" /></Button><Button variant={transport.monitor ? "secondary" : "outline"} className="h-12 p-0" aria-label={`Monitor ${name}`} aria-pressed={transport.monitor} onClick={() => setTransport({ monitor: !transport.monitor })}><Waves className="size-5" /></Button></div>
+      <div className="mx-row-scope h-12 shrink-0 border-t border-border p-1"><Scope scopeId={`ch:${track.id}`} height={40} compact color={track.color} /></div>
       <div className="mx-row-icon flex h-14 shrink-0 items-center justify-center border-t border-border" title={name} aria-hidden><TrackIcon track={track} className="size-7" /></div>
     </> : <div className="flex h-[120px] items-center justify-center"><Button variant="outline" className="h-12" onClick={() => clearClip("master")}>Reset clip</Button></div>}
+    {track && <ChannelEq t={track} />}
   </section>;
 }
 
