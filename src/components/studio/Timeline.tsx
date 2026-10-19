@@ -359,19 +359,9 @@ function Waveform({ track }: { track: Track }) {
               >
                 <Copy className="size-3" />
               </button>
-              <button
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  removeClip(track.id, clip.id);
-                }}
-                title="Delete clip"
-                aria-label={`Delete ${clip.name}`}
-                className={`relative z-30 shrink-0 hover:text-destructive ${cutting ? "block rounded-sm bg-background p-0.5 text-foreground" : active ? "block text-foreground" : "hidden text-clip-audio/70 group-hover:block"}`}
-              >
-                <Trash2 className="size-3" />
-              </button>
+
             </div>
+            {active && <PartMenu label={clip.name} onDelete={() => removeClip(track.id, clip.id)} />}
 
             <div className="min-h-0 w-full flex-1 px-1 pb-1">
               <WaveformView peaks={peaks} color="var(--arrangement-wave)" grid={false} label={`${clip.name} waveform`} />
@@ -478,17 +468,9 @@ function MidiClip({ track }: { track: Track }) {
       <div className="arrangement-clip-name flex h-[17px] shrink-0 items-center gap-1 px-1.5">
         <Piano className="size-2.5 shrink-0" />
         <span className="min-w-0 flex-1 truncate font-mono text-[9px] font-semibold">{track.name}</span>
-        {(active || cuts.length > 0) && <Button type="button" variant="ghost" size="icon"
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => {
-            e.stopPropagation();
-            updateTrack(track.id, { notes: deleteRegion(track.notes ?? [], [a, b]), activeRegion: undefined });
-            toast.success("Part deleted");
-          }}
-          title="Delete this part" aria-label={`Delete part at step ${Math.round(a)}`}
-          className="relative z-30 size-4 shrink-0 p-0 hover:text-destructive"
-        ><Trash2 className="size-3" /></Button>}
+
       </div>
+      {active && <PartMenu label={`${track.name} part`} onDelete={() => { updateTrack(track.id, { notes: deleteRegion(track.notes ?? [], [a, b]), activeRegion: undefined }); toast.success("Part deleted"); }} />}
       <div className="relative min-h-0 flex-1">
         {Array.from({ length: rows }).map((_, r) => <div key={r} className="arrangement-note-grid absolute inset-x-0 border-t" style={{ top: `${r / rows * 100}%` }} />)}
         {Array.from({ length: reps }).flatMap((_, rep) => regionNotes.map((n) => {
@@ -619,19 +601,13 @@ function DrumClip({ track }: { track: Track }) {
           <div className="arrangement-clip-name flex h-[17px] shrink-0 items-center gap-1 px-1.5">
             <Disc3 className="size-2.5 shrink-0" />
             <span className="min-w-0 flex-1 truncate font-mono text-[9px] font-semibold">{track.name} · {hits} HITS</span>
-            <Button type="button" variant="ghost" size="icon"
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={(e) => {
-                e.stopPropagation();
-                updateTrack(track.id, { pads: (track.pads ?? []).map((p) => ({ ...p, steps: p.steps.map((v, i) => {
+
+          </div>
+          {active && <PartMenu label={`${track.name} beat part`} onDelete={() => { updateTrack(track.id, { pads: (track.pads ?? []).map((p) => ({ ...p, steps: p.steps.map((v, i) => {
                   const first = i + Math.max(0, Math.ceil((a - i) / Math.max(1, p.steps.length))) * p.steps.length;
                   return first < b ? 0 : v;
                 }) })), activeRegion: undefined });
-                toast.success("Beat part deleted");
-              }}
-              title="Delete this part" aria-label={`Delete beat part at step ${Math.round(a)}`}
-              className="relative z-30 size-4 shrink-0 p-0 hover:text-destructive"><Trash2 className="size-3" /></Button>
-          </div>
+                toast.success("Beat part deleted"); }} />}
           <div className="relative min-h-0 flex-1"><DrumHitWave pads={part} steps={hi - lo} total={hi - lo} tone="text-[var(--arrangement-ink)]" /></div>
         </div>
       );
@@ -3570,5 +3546,19 @@ function TrackFxMenu({ track }: { track: Track }) {
         />
       </PopoverContent>
     </Popover>
+  );
+}
+
+/** Selecting a clip/part pops up this small menu instead of a permanent delete button. */
+function PartMenu({ label, onDelete }: { label: string; onDelete: () => void }) {
+  return (
+    <div role="menu" aria-label={`${label} actions`}
+      className="absolute left-1 top-[19px] z-40 flex flex-col rounded-md border border-border bg-popover p-0.5 text-popover-foreground shadow-lg"
+      onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
+      <button type="button" role="menuitem" onClick={onDelete}
+        className="flex items-center gap-1.5 rounded px-2 py-1 font-mono text-[10px] font-semibold hover:bg-destructive hover:text-destructive-foreground">
+        <Trash2 className="size-3" /> Delete
+      </button>
+    </div>
   );
 }
