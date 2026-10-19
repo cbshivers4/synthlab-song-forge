@@ -3,7 +3,7 @@ import { openMic, releaseMic, getInputChannel } from "./mic";
 import type { Capture } from "./bounce";
 import { clampTapePosition, joinTapeChunks, tapeCurve } from "./reel-audio";
 
-export type TapeMode = "stopped" | "recording" | "playing" | "paused";
+export type TapeMode = "stopped" | "recording" | "playing" | "paused" | "rewinding";
 export interface TapeState {
   mode: TapeMode; busy: boolean; ready: boolean; source: "input" | "song";
   position: number; duration: number; levelL: number; levelR: number; clipped: boolean;
@@ -51,6 +51,8 @@ class ReelRecorder {
   private chunks: { left: Float32Array[]; right: Float32Array[]; frames: number } = { left: [], right: [], frames: 0 };
   private capture: Capture | null = null;
   private player: AudioBufferSourceNode | null = null;
+  private reversed: AudioBuffer | null = null;
+  private rewindRate = 6;
   private playbackStarted = 0;
   private playbackOffset = 0;
   private finish: (() => void) | null = null;
