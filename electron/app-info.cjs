@@ -10,8 +10,8 @@ module.exports = {
   description: "SYNCLAB — record, produce and finish music.",
   publisher: "Christopher Shivers",
   copyright: `Copyright © ${new Date().getFullYear()} Christopher Shivers`,
-  website: "https://synclab.lovable.app/",
-  supportUrl: "https://synclab.lovable.app/",
-  privacyUrl: "https://synclab.lovable.app/privacy",
-  termsUrl: "https://synclab.lovable.app/terms",
+  website: "https://synthlab-song-forge.lovable.app/",
+  supportUrl: "https://synthlab-song-forge.lovable.app/",
+  privacyUrl: "https://synthlab-song-forge.lovable.app/privacy",
+  termsUrl: "https://synthlab-song-forge.lovable.app/terms",
 };
