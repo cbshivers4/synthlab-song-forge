@@ -967,13 +967,13 @@ function Strip({
         }}
         title={t.name}
       >
-        <KindIcon t={t} className="size-3.5 shrink-0" />
+        <KindIcon t={t} className="size-4 shrink-0" />
         <Button
           variant="ghost"
           aria-label={`Select ${t.name} mixer channel`}
           aria-pressed={selected}
           onClick={(e) => { e.stopPropagation(); onSelect(); }}
-          className="h-full min-w-0 flex-1 truncate rounded-none p-0 text-left font-mono text-[9px] font-semibold uppercase text-foreground"
+          className="mx-name-btn h-full min-w-0 flex-1 truncate rounded-none p-0 text-left font-mono text-[12px] font-bold uppercase tracking-wide text-foreground"
         >
           {t.name}
         </Button>
