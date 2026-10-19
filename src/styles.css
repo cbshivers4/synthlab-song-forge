@@ -79,6 +79,11 @@ html[data-reduce-motion] *, html[data-reduce-motion] *::before, html[data-reduce
   --display-cyan: #22d3ee;
   --display-yellow: #facc15;
   --display-pink: #f472b6;
+  --display-orange: #f97316;
+  --display-violet: #a78bfa;
+  --display-green: #34d399;
+  --display-blue: #60a5fa;
+  --display-rose: #fb7185;
   --display-grid: #ffffff18;
   --display-wave-fill: #ff304824;
   --studio-metal: oklch(0.69 0.008 255);

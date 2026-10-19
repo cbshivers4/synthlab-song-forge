@@ -7,14 +7,14 @@ import type { PluginInstance } from "@/lib/synclab/types";
 
 export const EQ_BAND_TYPES = ["Low Shelf", "Low Cut", "Bell", "Notch", "High Shelf", "High Cut"] as const;
 const BAND_COLORS = [
-  "#f97316",
-  "#facc15",
-  "#22d3ee",
-  "#a78bfa",
-  "#34d399",
-  "#f472b6",
-  "#60a5fa",
-  "#fb7185",
+  "var(--display-orange)",
+  "var(--display-yellow)",
+  "var(--display-cyan)",
+  "var(--display-violet)",
+  "var(--display-green)",
+  "var(--display-pink)",
+  "var(--display-blue)",
+  "var(--display-rose)",
 ];
 
 const F_MIN = 20;
@@ -140,9 +140,12 @@ export function ProEq({ trackId, plugin }: { trackId: string; plugin: PluginInst
               if (x === 0) g.moveTo(x, y);
               else g.lineTo(x, y);
             }
-            g.strokeStyle = `${BAND_COLORS[i]}66`;
+            const token = BAND_COLORS[i]?.slice(4, -1);
+            g.strokeStyle = token ? colors.getPropertyValue(token).trim() : colors.getPropertyValue('--display-cyan').trim();
+            g.globalAlpha = 0.4;
             g.lineWidth = 1;
             g.stroke();
+            g.globalAlpha = 1;
           });
 
           // total curve
