@@ -1,7 +1,24 @@
 import { describe, expect, it } from 'vitest';
-import { touchPitch, touchCutoff, loopsToNotes, TOUCH_LANES, TOUCH_LOOP_STEPS, TOUCH_SCALES, TOUCH_SOUNDS } from './touch-synth';
+import { touchPitch, touchCutoff, loopsToNotes, placeLoopNote, eraseLoopNote, TOUCH_LANES, TOUCH_LOOP_STEPS, TOUCH_SCALES, TOUCH_SOUNDS } from './touch-synth';
 import { applyPreset } from './presets';
 describe('touch synth', () => {
+ it('places a note in one lane without changing the other loops', () => {
+   const bass = [{ step: 4, pitch: 36, length: 1, vel: .9 }];
+   const result = placeLoopNote({ bass }, 'melody', { step: 31.8, pitch: 60, length: 4, vel: .9 });
+   expect(result.bass).toEqual(bass);
+   expect(result.melody).toEqual([{ step: 31, pitch: 60, length: 1, vel: .9 }]);
+ });
+ it('erases just one note and keeps all other notes and lanes', () => {
+   const a = { step: 0, pitch: 36, length: 1, vel: .9 };
+   const b = { ...a, step: 4 };
+   const result = eraseLoopNote({ bass: [a, b], melody: [a] }, 'bass', 0);
+   expect(result.bass).toEqual([b]);
+   expect(result.melody).toEqual([a]);
+ });
+ it('exports notes from all five loops together', () => {
+   const loops = Object.fromEntries(TOUCH_LANES.map(l => [l.id, [{ step: 0, pitch: l.drums ? 0 : 60, length: 1, vel: .9 }]]));
+   expect(loopsToNotes(loops, 0, 7).map(n => n.id.split('-')[1])).toEqual(['drums', 'bass', 'poly', 'melody', 'stabs']);
+ });
  it('quantizes gestures to the chosen scale over two octaves', () => {
    expect(touchPitch(0,0,3,'Minor pentatonic')).toBe(48);
    expect(touchPitch(1,0,3,'Minor pentatonic')).toBe(72);
