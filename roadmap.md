@@ -9,6 +9,8 @@
 
 # Roadmap
 
+- [ ] Verify visible timeline cuts on desktop and phone, including recordings and pattern regions.
+
 - [x] Phone mixer master channel now stands out: accent-tinted face, accent edge plate, outer glow, wider strip and pinned to the right edge so it stays visible while scrolling. The phone console runs the desktop-style layout, so the earlier `.mx-phone`-only master styling never applied; added an `mx-phone-master` marker on touch layouts. Signed-in sideways-phone check verified sticky position, accent border/glow and distinct header; desktop console confirmed unchanged (marker absent); build OK.
 - [x] Add shared app keyboard shortcuts and searchable Settings reference; signed-in desktop/phone verified reference/search, text-entry safety, arm toggle, mixer open/close and manual cloud saving. Fixed Ctrl+Shift+K search conflict and phone reference opening; 11 focused tests passed, build OK. Physical keyboard/device checks remain hardware-dependent.
 - [x] Repair live synth oscillator/filter/envelope/LFO/per-voice FX updates, actual oscillator phase, MIDI print-to-live edits, drum sample/vintage gain/pitch/pan/tone/filter changes and in-place rack modulation/limiter/bitcrusher setters. Signed-in desktop/phone knob drag changed audio; held cutoff attenuated signal, level reached silence, drum gain silenced the same hit and seven rack types retained their nodes. 23 focused tests passed. Structural changes and drum attack/decay apply on subsequent notes; Voice Converter requires Convert. Physical hardware and an exhaustive every-control listening audit remain unverified.

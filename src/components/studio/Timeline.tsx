@@ -1,4 +1,5 @@
 import { boundedRegions, loopRegion } from "@/lib/synclab/recording-region";
+import { timelineUsesWaveform } from "@/lib/synclab/timeline-content";
 import { Fragment, memo, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 import { stepsPerBar, getBeatsPerBar, STEPS_PER_BEAT, songSteps, stepSeconds, positionLabel } from "@/lib/synclab/timebase";
 import { notesInRegion, regionsOf, snapCut, deleteRegion } from "@/lib/synclab/note-cuts";
@@ -191,7 +192,7 @@ function TimelineCutGuide({ tool, position, selected, total, grid }: { tool: "sp
   };
   return <div
     data-cut-tool={tool}
-    className="absolute inset-0 z-20 cursor-none"
+    className="absolute inset-0 z-30 cursor-none"
     onPointerEnter={showAtPointer}
     onPointerMove={showAtPointer}
     onPointerDown={showAtPointer}
@@ -340,8 +341,9 @@ function Waveform({ track }: { track: Track }) {
             key={clip.id}
             data-audio-clip={clip.id}
             data-selected={active}
+            data-cutting={cutting}
             className="arrangement-clip group absolute inset-y-1 flex flex-col overflow-hidden rounded-[2px] border transition-colors"
-            style={{ left: `${left}%`, width: `${Math.max(2, width)}%` }}
+            style={{ left: `${left}%`, width: `max(0px, calc(${width}% - 2px))` }}
             onPointerDown={(e) => {
               setActiveClip(track.id, clip.id);
               beginDrag(e, clip, "move");
@@ -680,10 +682,10 @@ function Lane({ track }: { track: Track }) {
   // While recording, the lane shows only the incoming take, never notes.
   if (track.recording && (isMidi || track.kind === "drum"))
     return <>{(track.clips?.length ?? 0) > 0 && <Waveform track={track} />}{live}</>;
-  if ((track.kind === "instrument" || track.kind === "midi" || track.kind === "drum") && (track.clips?.length ?? 0) > 0)
+  if ((track.kind === "instrument" || track.kind === "midi" || track.kind === "sampler" || track.kind === "drum") && (track.clips?.length ?? 0) > 0)
     return (
       <>
-        {track.printedAudio ? <Waveform track={track} /> : track.kind === "drum" ? <DrumClip track={track} /> : <MidiClip track={track} />}
+        {timelineUsesWaveform(track) ? <Waveform track={track} /> : track.kind === "drum" ? <DrumClip track={track} /> : <MidiClip track={track} />}
         {live}
       </>
     );

@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { capturedNote, loopRegion } from "./recording-region";
+import { timelineUsesWaveform } from "./timeline-content";
 import { ccAction } from "./midi-actions";
 import { previewTrack } from "./note-preview";
 import { bendCents, playbackPreferences } from "./preferences";
@@ -1487,7 +1488,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       if (!t) return false;
 
       // Note channels (synth, MIDI, sampler notes) are cut into separate regions like a DAW part.
-      if (clips.length === 0 && trackNotes.length > 0) {
+      if (!timelineUsesWaveform(t) && trackNotes.length > 0) {
         const total = songSteps(transportRef.current.bars);
         const len = Math.max(1, t.steps || stepsPerBar());
         const unrolled = len < total;
@@ -1513,7 +1514,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
 
       // Drum channels: write the looping beat out across the song, then cut it into separate parts.
       const pads = t.pads ?? [];
-      if (clips.length === 0 && t.kind === "drum" && pads.some((p) => p.steps.some((v) => v > 0))) {
+      if (!timelineUsesWaveform(t) && t.kind === "drum" && pads.some((p) => p.steps.some((v) => v > 0))) {
         const total = songSteps(transportRef.current.bars);
         const len = Math.max(1, pads[0]?.steps.length ?? 16);
         const unrolled = pads.map((p) => (len >= total ? p : { ...p, steps: Array.from({ length: total }, (_, i) => p.steps[i % len] ?? 0) }));

@@ -1508,6 +1508,8 @@ html[data-reduce-motion] *, html[data-reduce-motion] *::before, html[data-reduce
   background: var(--arrangement-clip-face); border-color: var(--arrangement-clip-edge); color: var(--arrangement-wave);
 }
 .arrangement-clip[data-selected="true"] { background: var(--arrangement-clip-selected); border-color: var(--playhead); box-shadow: var(--arrangement-selection-shadow); z-index: 2; }
+.arrangement-clip[data-cutting="true"], .arrangement-clip[data-cutting="true"] * { pointer-events: none; }
+.arrangement-clip { border-inline-color: var(--playhead); }
 .arrangement-clip-name { background: var(--arrangement-clip-label); color: var(--arrangement-text); }
 .arrangement-clip[data-selected="true"] .arrangement-clip-name { background: color-mix(in oklab, var(--arrangement-clip-label) 70%, var(--playhead)); color: var(--arrangement-ink); }
 .arrangement-clip-name button { color: inherit; }
