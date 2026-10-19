@@ -981,11 +981,10 @@ function Strip({
 
       {/* channel header: number, colour, clip LED */}
       <div
-        className={cn(ROW.head, "flex items-center gap-1 border-b border-black/50 px-1.5")}
+        className={cn(ROW.head, "flex items-center gap-1.5 border-b border-black/50 px-1.5")}
         style={{ background: tint(18) }}
       >
-        <Screw />
-        <span className="font-mono text-[9px] font-bold text-muted-foreground">{index + 1}</span>
+        <span className="font-mono text-[11px] font-bold text-foreground">{index + 1}</span>
         <ColorDot t={t} />
         <TrackNotes track={t} />
         <ChannelMenu t={t} />
@@ -994,30 +993,29 @@ function Strip({
           disabled={index === 0}
           title="Move channel left"
           aria-label="Move channel left"
-          className="h-3.5 w-3 rounded-[2px] text-muted-foreground hover:text-primary disabled:opacity-30"
+          className="flex h-5 w-4 items-center justify-center rounded-[2px] text-foreground hover:text-primary disabled:opacity-30"
         >
-          <ChevronLeft className="size-3" />
+          <ChevronLeft className="size-3.5" />
         </button>
         <button
           onClick={(e) => { e.stopPropagation(); moveTrack(t.id, 1); }}
           disabled={index >= tracks.length - 1}
           title="Move channel right"
           aria-label="Move channel right"
-          className="h-3.5 w-3 rounded-[2px] text-muted-foreground hover:text-primary disabled:opacity-30"
+          className="flex h-5 w-4 items-center justify-center rounded-[2px] text-foreground hover:text-primary disabled:opacity-30"
         >
-          <ChevronRight className="size-3" />
+          <ChevronRight className="size-3.5" />
         </button>
         <button
           onClick={(e) => { e.stopPropagation(); setClip(false); }}
           title="Clip indicator — click to reset"
           className={cn(
-            "ml-auto h-3 w-5 rounded-[2px] font-mono text-[7px] font-bold leading-3",
+            "ml-auto flex h-4 w-8 items-center justify-center rounded-[2px] font-mono text-[8px] font-bold leading-3",
             clip ? "bg-red-500 text-black" : "bg-black/40 text-muted-foreground"
           )}
         >
           CLIP
         </button>
-        <Screw />
       </div>
 
       <div className={cn(ROW.scope, "border-b border-border/60 p-[3px]")}>
