@@ -1075,6 +1075,12 @@ html[data-reduce-motion] *, html[data-reduce-motion] *::before, html[data-reduce
 .phone-console .mx-phone .mx-master { width: 150px; background: var(--mx-a) !important; }
 .phone-console .mx-phone .mx-master > div:first-child { background: color-mix(in oklab, var(--mixer-output-accent, var(--primary)) 30%, var(--mx-a)) !important; border-bottom: 2px solid var(--mixer-output-accent, var(--primary)); font-size: 10px; }
 .phone-console .mx-phone .mx-master > div:first-child * { color: var(--foreground); font-weight: 800; }
+/* Phone console runs the desktop-style layout (no .mx-phone), so the master needs its own
+   accent treatment here: accent face, accent edge plate, outer glow, pinned to the right edge. */
+.phone-console .mx-console[data-touch-console].mx-phone-master .mx-output-dock { position: sticky; right: 0; z-index: 20; flex-shrink: 0; margin-left: 0; background: var(--mx-a); border-left: 3px solid var(--mixer-output-accent); box-shadow: -8px 0 18px rgb(0 0 0 / 0.5); }
+.phone-console .mx-console[data-touch-console].mx-phone-master .mx-master { width: 180px; border-left: 1px solid color-mix(in oklab, var(--mixer-output-accent) 60%, transparent); background: color-mix(in oklab, var(--mixer-output-accent) 14%, var(--mx-a)) !important; box-shadow: inset 5px 0 0 0 var(--mixer-output-accent), inset 0 0 0 1px color-mix(in oklab, var(--mixer-output-accent) 50%, transparent), 0 0 20px color-mix(in oklab, var(--mixer-output-accent) 30%, transparent) !important; }
+.phone-console .mx-console[data-touch-console].mx-phone-master .mx-master > div:first-child { background: color-mix(in oklab, var(--mixer-output-accent) 34%, var(--mx-a)) !important; border-bottom: 2px solid var(--mixer-output-accent) !important; }
+.phone-console .mx-console[data-touch-console].mx-phone-master .mx-master > div:first-child * { color: var(--foreground); font-weight: 800; }
 
 /* Phone hardware feel: raised buttons, knobs and sliders that read as touchable. */
 .phone-console button, .phone-console [role="button"], .phone-console [role="combobox"] { touch-action: manipulation; }

@@ -1617,7 +1617,7 @@ export function Mixer({ phonePage = 0, phoneChannels, phoneControlPage = "levels
   const activeBuses = BUS_STRIPS.filter((id) => tracks.some((t) => t.bus === id));
   return (
     <div
-      className={cn("mx-console flex flex-col overflow-hidden border border-border bg-surface shadow-panel", isMobile && "mx-phone")}
+      className={cn("mx-console flex flex-col overflow-hidden border border-border bg-surface shadow-panel", isMobile && "mx-phone", mobileDevice && "mx-phone-master")}
       data-console={desk.id}
       data-touch-console={mobileDevice ? "true" : undefined}
       data-phone-controls={phoneControlPage}
