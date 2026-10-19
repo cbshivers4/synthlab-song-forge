@@ -448,10 +448,10 @@ export class SyncLabEngine {
 
   private peakOf(node: AnalyserNode | null | undefined) {
     if (!node) return 0;
-    const data = new Uint8Array(node.fftSize);
-    node.getByteTimeDomainData(data);
+    const data = new Float32Array(node.fftSize);
+    node.getFloatTimeDomainData(data);
     let peak = 0;
-    for (let i = 0; i < data.length; i++) peak = Math.max(peak, Math.abs((data[i] ?? 128) - 128) / 128);
+    for (let i = 0; i < data.length; i++) peak = Math.max(peak, Math.abs(data[i] ?? 0));
     return peak;
   }
 
