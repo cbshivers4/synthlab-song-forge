@@ -1539,7 +1539,6 @@ html[data-reduce-motion] *, html[data-reduce-motion] *::before, html[data-reduce
 .phone-console .mx-console[data-touch-console] .mx-row-name { order: -1; height: 40px; position: static; }
 .phone-console .mx-console[data-touch-console] .mx-row-name button { font-size: 14px; min-height: 32px; }
 .phone-console .mx-console[data-touch-console] .mx-row-name > svg { width: 20px; height: 20px; }
-.phone-console .mx-console[data-touch-console] .mx-row-head button.ml-auto { min-height: 16px; min-width: 30px; height: 16px; padding: 0; font-size: 8px; }
 /* Extra scroll room so the M/S/REC/MON row can scroll fully clear of the transport overlay */
 .phone-console .mx-console[data-touch-console] .mobile-mixer-strips { padding-bottom: 260px; }
 /* Rows grow to fit their controls so nothing in a channel overlaps the row below */

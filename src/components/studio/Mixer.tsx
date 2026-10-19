@@ -988,7 +988,7 @@ function Strip({
         />
       </div>
 
-      {/* channel header: number, colour, clip LED */}
+      {/* channel header: number, colour, notes, menu, ordering */}
       <div
         className={cn(ROW.head, "flex items-center gap-1.5 border-b border-black/50 px-1.5")}
         style={{ background: tint(18) }}
