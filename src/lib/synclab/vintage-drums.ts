@@ -68,11 +68,28 @@ export function renderVintageDrum(kit: DrumKitId, kind: DrumPad['kind'], decay: 
       if (p.room) s += low * p.room * Math.exp(-t / (.3 * d)) * (1 - Math.exp(-t / .012));
     } else if (kind === 'tom') s = modal(p.shell * .67, t, .19 * d) * .85 + hiss * p.snap * .18 * Math.exp(-t / .008);
     else if (kind === 'clap') {
-      for (const offset of [0, .011, .023]) if (t >= offset) s += hiss * .52 * Math.exp(-(t - offset) / (.034 * d));
-      s += low * .6 * Math.exp(-t / (.12 * d));
+      if (p.brush) {
+        // Brush tap: a short soft drag across the head instead of a stick clap.
+        s = low * 1.4 * Math.exp(-t / (.09 * d)) + hiss * .3 * Math.exp(-t / (.05 * d));
+      } else {
+        for (const offset of [0, .011, .023]) if (t >= offset) s += hiss * .52 * Math.exp(-(t - offset) / (.034 * d));
+        s += low * .6 * Math.exp(-t / (.12 * d));
+      }
     } else if (kind === 'rim') s = modal(p.shell * 5.3, t, .019 * d) * .65;
-    else if (kind === 'perc') s = modal(p.shell * 3.1, t, .07 * d) * .8;
-    else if (kind === 'fx') s = sin(420 + 1600 * Math.exp(-t / .06), t) * Math.exp(-t / (.18 * d)) * .5;
+    else if (kind === 'perc') {
+      if (p.brush) {
+        // Brush swirl: a long circular sweep with a slow swell and fall.
+        const swirl = Math.min(1, t / (.12 * d));
+        s = (low * 1.6 + hiss * .5) * swirl * Math.exp(-t / (.55 * d));
+      } else s = modal(p.shell * 3.1, t, .07 * d) * .8;
+    }
+    else if (kind === 'fx') {
+      if (p.brush) {
+        // Brush slide: one long drag with a gentle pitch-less noise sweep.
+        const slide = Math.min(1, t / (.05 * d));
+        s = (low * 1.8 + hiss * .4) * slide * Math.exp(-t / (.8 * d));
+      } else s = sin(420 + 1600 * Math.exp(-t / .06), t) * Math.exp(-t / (.18 * d)) * .5;
+    }
     else {
       // Inharmonic metal partials: analog hats are oscillator metal, shell cymbals are noisy modes.
       const freqs = kit === '808' ? [205, 369, 522, 800, 1169, 1483] : [3421, 4973, 6137, 8231, 10103, 11713];
@@ -81,6 +98,11 @@ export function renderVintageDrum(kit: DrumKitId, kind: DrumPad['kind'], decay: 
       const tail = (kind === 'hat' ? .025 : kind === 'openhat' ? .22 : kind === 'ride' ? .48 : .65) * d;
       s = (metal * (kit === '808' ? .65 : .38) + hiss * (kit === '808' ? .15 : .55)) * Math.exp(-t / tail);
       if (kind === 'ride') s += sin(2700 * p.bright, t) * .26 * Math.exp(-t / (.4 * d));
+      if (p.brush) {
+        // Brushed cymbals: softer metal, more noisy wash, longer swish on hats.
+        const washTail = (kind === 'hat' ? .06 : kind === 'openhat' ? .5 : kind === 'ride' ? .7 : .8) * d;
+        s = s * .35 + (low * 1.5 + hiss * .5) * Math.exp(-t / washTail) * .8;
+      }
     }
     s *= Math.min(1, t * sampleRate / 8); // eliminate discontinuity at onset
     if (i % holdFrames === 0) held = Math.round(Math.tanh(s) * levels) / levels;
