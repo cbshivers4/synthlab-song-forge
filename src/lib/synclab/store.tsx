@@ -719,22 +719,22 @@ export function StudioProvider({ children }: { children: ReactNode }) {
                const patch = t.patch;
                if (path.length === 1 && synthRanges[field]) {
                  const [min, max, step] = synthRanges[field];
-                 return { ...t, patch: { ...patch, [field]: ccRange(v, min, max, step) } };
+                 return liveSound({ ...t, patch: { ...patch, [field]: ccRange(v, min, max, step) } });
                }
                if (field === "macro" && path[1] && /^[0-3]$/.test(path[1])) {
                  const macros = [...(patch.macros ?? [0, 0, 0, 0])];
                  macros[Number(path[1])] = v;
-                 return { ...t, patch: { ...patch, macros } };
+                 return liveSound({ ...t, patch: { ...patch, macros } });
                }
                if (field === "fx" && path[1] && Object.hasOwn(patch.fx, path[1]) && typeof patch.fx[path[1] as keyof typeof patch.fx] === "number")
-                 return { ...t, patch: { ...patch, fx: { ...patch.fx, [path[1]]: v } } };
+                 return liveSound({ ...t, patch: { ...patch, fx: { ...patch.fx, [path[1]]: v } } });
                if (["amp", "filterEnv", "modEnv", "filter2", "unison", "arp"].includes(field) && path[1]) {
                  const group = patch[field as "amp" | "filterEnv" | "modEnv" | "filter2" | "unison" | "arp"];
                  if (!group || typeof group !== "object" || typeof (group as Record<string, unknown>)[path[1]] !== "number") return t;
                  const range = synthRanges[`${field}.${path[1]}`];
                  const max = field === "amp" || field === "filterEnv" || field === "modEnv" ? (path[1] === "sustain" ? 1 : 3) : 1;
                  const value = range ? ccRange(v, ...range) : ccRange(v, 0, max);
-                 return { ...t, patch: { ...patch, [field]: { ...group, [path[1]]: value } } };
+                 return liveSound({ ...t, patch: { ...patch, [field]: { ...group, [path[1]]: value } } });
                }
                if ((field === "osc" || field === "lfo") && path[1] && path[2]) {
                  const index = Number(path[1]);
@@ -744,7 +744,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
                   if (!property || !item || typeof (item as unknown as Record<string, unknown>)[property] !== "number") return t;
                    const range = field === "osc" ? ({ octave: [-3, 3, 1], semitone: [-12, 12, 1], fine: [-50, 50, 1], detune: [-50, 50, 1], pulseWidth: [0.05, 0.95], pan: [-1, 1] } as Record<string, [number, number, number?]>)[property] : property === "rate" ? [0.05, 20, 0.05] as [number, number, number?] : undefined;
                   const updated = list.map((item, i) => i === index ? { ...item, [property]: range ? ccRange(v, ...range) : v } : item);
-                 return { ...t, patch: { ...patch, [field === "osc" ? "oscillators" : "lfos"]: updated } };
+                 return liveSound({ ...t, patch: { ...patch, [field === "osc" ? "oscillators" : "lfos"]: updated } });
                }
                return t;
              }));
@@ -754,7 +754,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
              const [, padId, field] = target.param.split(":");
              const range = field ? drumRanges[field] : undefined;
              if (padId && field && range) setTracks((ts) => ts.map((t) => t.id === target.id && t.pads
-               ? { ...t, pads: t.pads.map((pad) => pad.id === padId ? { ...pad, [field]: ccRange(v, ...range) } : pad) } : t));
+               ? liveSound({ ...t, pads: t.pads.map((pad) => pad.id === padId ? { ...pad, [field]: ccRange(v, ...range) } : pad) }) : t));
              return;
            }
            if (target.param.startsWith("sampler:")) {
