@@ -66,7 +66,7 @@ export function moveClipToNewIn(tracks: Track[], trackId: string, clipId: string
       const first = i + Math.max(0, Math.ceil((sourceStart - i) / length)) * length;
       return first < end ? 0 : value;
     }) })),
-    printedAudio: leftClips.length > 0 ? src.printedAudio : false,
+    printedAudio: leftClips.length > 0 && Boolean(src.printedAudio),
   };
   const moved: Track = {
     ...src, id: uid(), name: clip.name, kind: 'audio', folderId: undefined,
