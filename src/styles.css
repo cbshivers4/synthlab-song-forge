@@ -936,8 +936,6 @@ html[data-reduce-motion] *, html[data-reduce-motion] *::before, html[data-reduce
 .phone-console .mobile-timeline > .shrink-0 > div > .sticky > div:first-child > div:first-child { display: none; }
 .phone-edit-menu .timeline-edit-toolbar { display: flex !important; }
 .phone-edit-menu button { min-height: 48px; }
-.phone-console .timeline-track-actions { gap: 0; padding-bottom: 0; }
-.phone-console .timeline-track-actions > button { padding-inline: 6px; font-size: 10px; }
 .phone-console .track-touch-header { padding-block: 3px; }
 .phone-console [data-timeline-track-rows] > div > .relative.flex { height: 140px; }
 .phone-console .track-touch-header > div:first-child { height: 32px; }
@@ -1618,14 +1616,12 @@ html[data-reduce-motion] *, html[data-reduce-motion] *::before, html[data-reduce
 .phone-console .transport-glass[data-phone-transport="true"] .label-xs { letter-spacing: 0; font-size: 10px; }
 
 /* Always-visible phone grips: horizontal arrows at the header edge, vertical arrows below each lane. */
-.phone-console .timeline-width-handle { width: 24px; background: color-mix(in oklab, var(--primary) 18%, var(--surface)); border-inline: 1px solid var(--primary); }
-.phone-console .timeline-width-handle::after { content: "↔"; position: absolute; top: 50%; left: 0; right: 0; text-align: center; transform: translateY(-50%); font-size: 20px; color: var(--foreground); }
-.phone-console .timeline-height-handle { height: 24px; background: color-mix(in oklab, var(--primary) 12%, var(--surface)); border-top: 1px solid var(--primary); }
-.phone-console .timeline-height-handle::after { content: "↕"; position: absolute; left: 50%; top: 0; width: 48px; height: 24px; text-align: center; font-size: 19px; line-height: 24px; background: var(--surface-2); color: var(--foreground); border-inline: 1px solid var(--primary); border-radius: 3px; }
-.phone-console .arrangement-timeline[data-resize-handles="true"] .track-touch-header { padding-right: 30px; padding-bottom: 26px; }
-.phone-console .arrangement-timeline[data-resize-handles="false"] :is(.timeline-width-handle, .timeline-height-handle) { display: none; }
 /* Track geometry is contained below the independent transport overlay. */
 .phone-console .arrangement-timeline { isolation: isolate; contain: layout paint; }
+.phone-console .timeline-width-handle { width: 14px; }
+.phone-console .timeline-height-handle { height: 14px; }
+.timeline-width-handle::after { content: ""; position: absolute; inset-block: 0; right: 0; width: 1px; background: color-mix(in oklab, var(--foreground) 22%, transparent); }
+.timeline-height-handle::after { content: ""; position: absolute; inset-inline: 0; bottom: 0; height: 1px; background: color-mix(in oklab, var(--foreground) 22%, transparent); }
 .phone-console #phone-transport-overlay { isolation: isolate; contain: inline-size layout; }
 
 /* Bottom transport console: one playback/position row, a distinct range row, rhythm and live signal. */
