@@ -8,6 +8,7 @@
 - [x] Add a playable bass generator that creates editable MIDI patterns
 
 # Roadmap
+- [ ] Add directly visible Touch Synth entries to desktop Synthesizers and phone Sounds, opening its performance pad immediately.
 - [x] Distinct original vintage/genre drum PCM, TR-727 and R-8 kits, sample-override clearing with patterns/MIDI preserved, and gated scale-based Touch Synth in shared synth tabs. Signed-in desktop/phone verified selected sounds, changing pitch/tone, release stopping repeats and real TR-727 pad playback; 66 tests passed, build OK. Machine-inspired synthesis, not factory ROMs; touch plays gated notes, not continuous pitch-glide emulation.
 - [x] Repair Bluetooth MIDI discovery and selected synth auditions: scan BLE devices without advertised service, validate MIDI before registration, preserve enabled inputs, show unclassified audio devices and explicit browser limits; add desktop chooser. Signed-in factory selections reached playback with distinct patches; simulated nearby controller appeared, phone had no overflow/errors, 50 tests passed. Physical Bluetooth and packaged desktop testing require hardware/new desktop build.
 - [x] Enable simultaneous MIDI controllers with per-port checkboxes and All devices; detection preserves choices and hot-plug refresh reattaches inputs. Signed-in simulated-device selection verified; MIDI tests pass. Physical-controller testing remains unavailable here.

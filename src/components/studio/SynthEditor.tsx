@@ -190,7 +190,7 @@ function SynthTrackEditor({ track }: { track: Track }) {
       <PitchWheels trackId={track.id} />
       {(patch.name.startsWith("TD-3") || /ACID/i.test(track.name)) && <AcidSequencer track={track} />}
       {patch.modular ? <ModularSynth track={track} /> : (
-      <Tabs defaultValue="oscillators" className="min-w-0">
+      <Tabs defaultValue={/^touch synth$/i.test(track.name) ? "touch" : "oscillators"} className="min-w-0">
         <TabsList aria-label="Synth features" className="flex h-auto w-full flex-wrap justify-start gap-1">
           <TabsTrigger value="oscillators">Oscillators</TabsTrigger>
           <TabsTrigger value="filters">Filters</TabsTrigger>
