@@ -568,15 +568,10 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         return;
       }
       setMidiInputId((cur) => {
-        // Keep the remembered controller; fall back to the first one only if it is gone.
-        if (cur && list.some((i) => i.id === cur)) return cur;
-        const next = list[0]?.id ?? null;
-        try {
-          if (next) window.localStorage.setItem(MIDI_INPUT_KEY, next);
-        } catch {
-          /* storage unavailable */
-        }
-        return next;
+        // Detection must never collapse All devices or a saved multi-input choice.
+        if (cur !== null) return cur;
+        try { window.localStorage.setItem(MIDI_INPUT_KEY, "all"); } catch { /* storage unavailable */ }
+        return "all";
       });
       if (!quiet)
         toast.success(`${list.length} MIDI input${list.length > 1 ? "s" : ""} connected`, {
@@ -589,17 +584,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           const now = listInputs(a);
           setMidiInputs(now);
           setMidiOutputs(listOutputs(a));
-          setMidiInputId((cur) => {
-            if (cur && now.some((i) => i.id === cur)) return cur;
-            let saved: string | null = null;
-            try {
-              saved = window.localStorage.getItem(MIDI_INPUT_KEY);
-            } catch {
-              /* storage unavailable */
-            }
-            if (saved && now.some((i) => i.id === saved)) return saved;
-            return now[0]?.id ?? cur;
-          });
+          // Preserve enabled ports, including temporarily disconnected devices.
         };
     });
   }, []);
@@ -649,7 +634,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     void getMidiAccess().then((a) => {
       if (cancelled) return;
-      off = subscribe(a, midiInputId, (msg) => {
+      off = subscribe(a, midiInputId, (msg, inputId) => {
         // Hardware mixer: knobs and faders send control-change messages.
         if (msg.type === "cc") {
           const key = `${msg.channel}:${msg.cc}`;
@@ -678,7 +663,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           const target = midiMapRef.current[key];
           if (!target) {
             // Korg 8-channel mixer: faders, knobs and S/M/R buttons follow track order automatically.
-            const portName = midiInputsRef.current.find((p) => p.id === midiInputId)?.name;
+            const portName = midiInputsRef.current.find((p) => p.id === inputId)?.name;
             const hit = controllerAutoMap(portName, msg.cc);
             if (!hit) return;
             const track = tracksRef.current[hit.strip];
@@ -956,7 +941,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       cancelled = true;
       off();
     };
-  }, [midiInputId]);
+  }, [midiInputId, midiInputs]);
 
   useEffect(() => {
     if (typeof window !== "undefined" && getEngine().ctx) {

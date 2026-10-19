@@ -39,6 +39,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuCheckboxItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -49,6 +50,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { SkinControls, skinBackground, useImageDrop } from "@/components/studio/SkinControls";
 import { useSkin } from "@/lib/synclab/skins";
 import { useStudio } from "@/lib/synclab/store";
+import { midiInputEnabled, selectedMidiInputs, toggleMidiInput } from "@/lib/synclab/midi";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { INSTRUMENTS } from "@/lib/synclab/presets";
 import { toast } from "sonner";
@@ -619,7 +621,7 @@ function MidiControl() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button size="sm" variant="ghost" className="h-7 max-w-40 truncate px-2 font-mono text-[10px] tracking-wider">
-              {midiInputs.find((i) => i.id === midiInputId)?.name ?? "SELECT DEVICE"}
+              {midiInputId === "all" ? "ALL DEVICES" : selectedMidiInputs(midiInputId).length > 1 ? `${selectedMidiInputs(midiInputId).length} CONTROLLERS` : midiInputs.find((i) => midiInputEnabled(midiInputId, i.id))?.name ?? "SELECT DEVICES"}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-60">
@@ -628,10 +630,9 @@ function MidiControl() {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             {midiInputs.map((i) => (
-              <DropdownMenuItem key={i.id} onClick={() => setMidiInput(i.id)}>
-                {i.id === midiInputId ? "● " : "○ "}
+              <DropdownMenuCheckboxItem key={i.id} checked={midiInputEnabled(midiInputId, i.id)} onSelect={e => e.preventDefault()} onCheckedChange={checked => setMidiInput(toggleMidiInput(midiInputId, i.id, checked, midiInputs))}>
                 {i.name}
-              </DropdownMenuItem>
+              </DropdownMenuCheckboxItem>
             ))}
             <DropdownMenuItem onClick={() => setMidiInput("all")}>
               {midiInputId === "all" ? "● " : "○ "}ALL DEVICES
