@@ -1843,11 +1843,11 @@ export function Mixer({ phonePage = 0, phoneChannels, phoneControlPage = "levels
         <div className="mobile-mixer-strips flex overflow-x-auto" role="region" aria-label="Mixer channels" tabIndex={0}>
           {!isMobile && <LabelRail />}
           {(isMobile && phoneChannels != null ? tracks.slice(phonePage * phoneChannels, (phonePage + 1) * phoneChannels) : tracks).map((t) => (
-            isMobile ? <PhoneChannel key={t.id} track={t} level={levels.tracks[t.id] ?? 0} selected={t.id === selectedId} index={tracks.indexOf(t)} /> : <Strip
+            <Strip
               key={t.id}
               t={t}
               index={tracks.indexOf(t)}
-              narrow={narrow}
+              narrow={isMobile || narrow}
               level={t.muted ? 0 : (levels.tracks[t.id] ?? 0)}
               selected={t.id === selectedId}
               onSelect={() => { select(t.id); setPanel("mixer"); }}
@@ -1864,7 +1864,7 @@ export function Mixer({ phonePage = 0, phoneChannels, phoneControlPage = "levels
             <ControlStrip key={`aux-${id}`} kind="AUX" name={id} state={auxReturns[id]} level={levels.aux[id] ?? 0} onChange={(patch) => setAuxReturn(id, patch)} />
           ))}
           <div className={cn("mx-output-dock bg-surface", !isMobile && "sticky right-0 z-10")}>
-            {isMobile ? <PhoneChannel level={levels.master} selected={false} index={tracks.length} /> : <MasterStrip level={levels.master} />}
+            <MasterStrip level={levels.master} />
           </div>
         </div>
       )}
