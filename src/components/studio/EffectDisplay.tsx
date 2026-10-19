@@ -488,7 +488,7 @@ export function EffectDisplay({
           if (!p) return null;
           const x = band.id === "mid" ? logX(get("midFreq")) : logX(band.id === "low" ? 120 : 6000);
           return <div key={band.id} className="signal-point-hit" style={{ left: `${x * 100}%`, top: `${(1 - dbToY(p.value)) * 100}%` }}>
-            <Button variant="ghost" className="signal-point" style={{ background: band.color, borderColor: "var(--display-point)" }} aria-label={`${band.label} EQ point`} title={`${band.label}: ${p.value.toFixed(1)} dB`} onPointerDown={() => { eqDrag.current = band.id; }}
+            <Button variant="ghost" className="signal-point" data-band={band.id} style={{ "--band-color": band.color } as React.CSSProperties} aria-label={`${band.label} EQ point`} title={`${band.label}: ${p.value.toFixed(1)} dB`} onPointerDown={() => { eqDrag.current = band.id; }}
               onKeyDown={e => { if (e.key === 'ArrowUp' || e.key === 'ArrowDown') { e.preventDefault(); onParam(p.id, Math.max(p.min, Math.min(p.max, p.value + (e.key === 'ArrowUp' ? 0.5 : -0.5)))); } }} />
           </div>;
         })}
