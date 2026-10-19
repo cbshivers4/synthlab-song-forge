@@ -4,6 +4,7 @@ import { Circle, Download, Headphones, Pause, Play, Plus, RotateCcw, SkipBack, S
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { getReelRecorder } from "@/lib/synclab/reel-recorder";
+import { reelTapeProgress, reelTapeRadius } from "@/lib/synclab/reel-audio";
 import { useStudio } from "@/lib/synclab/store";
 import { encodeMp3, encodeWav, downloadBlob } from "@/lib/synclab/bounce";
 import { encodeAiff, encodeFlac, encodeWavDepth } from "@/lib/synclab/export-formats";
@@ -14,7 +15,7 @@ import { stepsPerBar, stepSeconds, STEPS_PER_BEAT } from "@/lib/synclab/timebase
 
 const clock = (s: number) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(Math.floor(s % 60)).padStart(2, "0")}.${Math.floor((s % 1) * 10)}`;
 function Reel({ moving, right, fill = 0.5 }: { moving: boolean; right?: boolean; fill?: number }) {
-  const radius = 45 + Math.max(0, Math.min(1, fill)) * 45;
+  const radius = reelTapeRadius(fill);
   return <div className="tape-reel" data-moving={moving} aria-label={`${right ? "Take-up" : "Supply"} reel ${moving ? "moving" : "stopped"}`}><svg viewBox="0 0 240 240" role="img" aria-label="Tape reel">
     <circle cx="120" cy="120" r="114" className="reel-rim" /><circle cx="120" cy="120" r={radius} className="reel-tape" />
     {[0, 120, 240].map((angle) => <g key={angle} transform={`rotate(${angle} 120 120)`}><path d="M102 101 L77 33 Q120 11 163 33 L138 101Z" className="reel-spoke" /><path d="M109 73 L99 40 Q120 30 141 40 L131 73Z" className="reel-cutout" /></g>)}
@@ -34,7 +35,7 @@ function TapeMeter({ level, channel, clipped, reset }: { level: number; channel:
 export function ReelRecorder() {
   const recorder = getReelRecorder();
   const state = useSyncExternalStore(recorder.subscribe, recorder.getSnapshot, recorder.getSnapshot);
-  const { addTrack, addClip, tracks, transport, setTransport, togglePlay, stop: stopSong, toggleRecord } = useStudio();
+  const { addTrack, addClip, transport, setTransport, togglePlay, stop: stopSong, toggleRecord } = useStudio();
   const [deck, setDeck] = useState<"timeline" | "tape">("timeline");
   const master = deck === "timeline";
   const fileInput = useRef<HTMLInputElement>(null);
@@ -51,8 +52,7 @@ export function ReelRecorder() {
   const locked = state.busy || saving;
   const recording = state.mode === "recording";
   /** Tape progress 0..1: supply reel starts full and empties as the song/tape plays or records. */
-  const songSteps = Math.max(stepsPerBar() * 4, ...tracks.flatMap((t) => [...(t.clips ?? []).map((c) => (c.start ?? 0) + (c.length ?? 0)), ...(t.notes ?? []).map((n) => n.step + n.length)]));
-  const progress = master ? Math.max(0, Math.min(1, transport.step / songSteps)) : state.duration > 0 ? Math.max(0, Math.min(1, state.position / state.duration)) : 0;
+  const progress = reelTapeProgress({ tapePosition: state.position, tapeDuration: state.duration, timelinePosition: transport.step * stepSeconds(transport.bpm), timelineDuration: transport.bars * stepsPerBar() * stepSeconds(transport.bpm), master, recording, tapeMoving: rewinding || state.mode === "playing" || state.mode === "paused" });
   const save = async (toProject: boolean) => {
     if (locked || recording || !state.hasTape) return;
     setSaving(true);
