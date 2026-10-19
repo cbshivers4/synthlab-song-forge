@@ -289,7 +289,20 @@ function Waveform({ track }: { track: Track }) {
       const moved = src?.clips?.find((c) => c.id === clip.id);
       if (!dest || !src || !moved) return;
       const destIsNotes = dest.kind === "drum" || dest.kind === "instrument" || dest.kind === "midi";
-      updateTrack(src.id, { clips: (src.clips ?? []).filter((c) => c.id !== clip.id), activeClipId: undefined });
+      // The take leaves nothing behind: notes and drum hits recorded under it go too.
+      const a = moved.start ?? 0;
+      const b = a + clipSeconds(moved) / stepDur;
+      const leftClips = (src.clips ?? []).filter((c) => c.id !== clip.id);
+      updateTrack(src.id, {
+        clips: leftClips, activeClipId: undefined,
+        ...(src.notes?.length ? { notes: deleteRegion(src.notes, [a, b]) } : {}),
+        ...(src.kind === "drum" && src.pads ? { pads: src.pads.map((pad) => ({ ...pad, steps: pad.steps.map((v, i) => {
+          const len = Math.max(1, pad.steps.length);
+          const first = i + Math.max(0, Math.ceil((a - i) / len)) * len;
+          return first < b ? 0 : v;
+        }) })) } : {}),
+        ...(leftClips.length ? {} : { printedAudio: false }),
+      });
       // Note tracks switch to WAVE so the moved audio actually plays there.
       updateTrack(dest.id, { clips: [...(dest.clips ?? []), moved], activeClipId: moved.id, ...(destIsNotes ? { printedAudio: true } : {}) });
       setActiveClip(dest.id, moved.id);
@@ -679,6 +692,9 @@ function Lane({ track }: { track: Track }) {
   const { updateTrack } = useStudio();
   const isMidi = track.kind === "instrument" || track.kind === "midi" || track.kind === "sampler";
   const live = track.recording ? <RecordingClip track={track} /> : null;
+  // While recording, the lane shows only the incoming take, never notes.
+  if (track.recording && (isMidi || track.kind === "drum"))
+    return <>{(track.clips?.length ?? 0) > 0 && <Waveform track={track} />}{live}</>;
   if ((track.kind === "instrument" || track.kind === "midi" || track.kind === "drum") && (track.clips?.length ?? 0) > 0)
     return (
       <>
