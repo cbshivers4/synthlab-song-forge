@@ -13,4 +13,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://synthlab-song-forge.lovable.app/sitemap.xml
+Sitemap: https://synclab-app.lovable.app/sitemap.xml
