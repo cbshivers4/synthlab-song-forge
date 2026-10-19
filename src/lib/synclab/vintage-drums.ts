@@ -18,9 +18,10 @@ export const VINTAGE_PROFILES: Partial<Record<DrumKitId, Profile>> = {
 };
 
 export const LATIN_NAMES: Record<DrumPad['kind'], string> = { kick: 'LOW CONGA', snare: 'TIMBALE', clap: 'CABASA', hat: 'SHAKER', openhat: 'TAMBOURINE', tom: 'HIGH CONGA', perc: 'COWBELL', rim: 'CLAVE', crash: 'AGOGO', ride: 'BONGO', fx: 'GUIRO' };
+export const JAZZ_NAMES: Record<DrumPad['kind'], string> = { kick: 'BRUSH KICK', snare: 'BRUSH SNARE', clap: 'BRUSH TAP', hat: 'BRUSH HAT', openhat: 'BRUSH SWISH', tom: 'TOM', perc: 'BRUSH SWIRL', rim: 'RIM CLICK', crash: 'CRASH', ride: 'BRUSH RIDE', fx: 'BRUSH SLIDE' };
 const STANDARD_NAMES: Record<DrumPad['kind'], string> = { kick: 'KICK', snare: 'SNARE', clap: 'CLAP', hat: 'HI-HAT', openhat: 'OPEN HAT', tom: 'TOM', perc: 'PERC', rim: 'RIM', crash: 'CRASH', ride: 'RIDE', fx: 'FX' };
 export function factoryKitPad(pad: DrumPad, kit: DrumKitId, decay: number): DrumPad {
-  return { ...pad, kit, decay, sample: undefined, sampleUrl: undefined, name: (kit === '727' || kit === 'latin' ? LATIN_NAMES : STANDARD_NAMES)[pad.kind] };
+  return { ...pad, kit, decay, sample: undefined, sampleUrl: undefined, name: (kit === '727' || kit === 'latin' ? LATIN_NAMES : kit === 'jazz' ? JAZZ_NAMES : STANDARD_NAMES)[pad.kind] };
 }
 
 /** Deterministic PCM, also used by the live engine inside offline renders. */

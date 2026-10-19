@@ -227,6 +227,7 @@ export function TouchSynth({ track }: { track: Track }) {
           className={`min-w-0 rounded-md border px-1 py-2 font-mono text-[10px] font-bold transition-colors ${selected ? 'border-transparent text-background' : 'border-border text-muted-foreground hover:text-foreground'}`}
           style={selected ? { background: l.color } : { borderColor: `${l.color}66` }}>
           <span className="block truncate">{l.label}</span>
+          <span className="block truncate text-[9px] font-normal">{l.drums ? 'DRUM KIT' : laneSound(l.id)}</span>
           <span className="block text-[9px] font-normal">{count} notes</span>
         </Button>;
       })}
