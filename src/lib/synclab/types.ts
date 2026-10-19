@@ -457,7 +457,7 @@ export interface Track {
   /** song-step positions where the razor/split cut this note channel into separate regions */
   cuts?: number[] | undefined;
   /** Absolute song range occupied by the programmed drum pattern. */
-  patternRegion?: [number, number];
+  patternRegion?: [number, number] | undefined;
   /** start step of the selected note region (outlined; Delete removes it) */
   activeRegion?: number | undefined;
   pads?: DrumPad[] | undefined;
