@@ -1865,7 +1865,8 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
 .phone-console .mx-console[data-touch-console] .mx-channel > .mx-row-buttons { height: 104px; }
 .mx-console .mx-channel > div { flex-shrink: 0; }
 /* The master strip repeats the channel's row order and sizing so the two line up row for row. */
-.mx-console:not(.mx-phone) .mx-master > .mx-row-buttons { order: 10; height: 56px; flex-shrink: 0; }
+.mx-console:not(.mx-phone) .mx-master > .mx-row-buttons { order: 10; height: 56px; flex-shrink: 0; overflow: hidden; align-content: center; padding-block: 2px; gap: 2px; }
+.mx-console:not(.mx-phone) .mx-master > .mx-row-buttons > button { height: 24px; font-size: 11px; }
 .mx-console:not(.mx-phone) .mx-master > .mx-row-scope { order: 11; flex-shrink: 0; }
 .mx-console .mx-master > div { flex-shrink: 0; }
 .phone-console .mx-console[data-touch-console] .mx-master > .mx-row-buttons { height: 104px; }
