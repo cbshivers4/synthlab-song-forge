@@ -1300,6 +1300,9 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
               <DropdownMenuItem onClick={() => duplicateTrack(track.id)}>
                 <Copy className="size-4" /> Duplicate track
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => moveTrackToNew(track.id)}>
+                <ArrowDownToLine className="size-4" /> Move to a new track
+              </DropdownMenuItem>
               <DropdownMenuSub><DropdownMenuSubTrigger>Clipboard &amp; arrange</DropdownMenuSubTrigger><DropdownMenuSubContent>
               <DropdownMenuItem onClick={() => cutTrack(track.id)}>
                 <Scissors className="size-4" /> Cut track
@@ -1319,9 +1322,6 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => moveTrack(track.id, -1)}><ChevronUp className="size-4" /> Move up</DropdownMenuItem>
               <DropdownMenuItem onClick={() => moveTrack(track.id, 1)}><ChevronDown className="size-4" /> Move down</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => moveTrackToNew(track.id)}>
-                <ArrowDownToLine className="size-4" /> Move to a new track
-              </DropdownMenuItem>
               </DropdownMenuSubContent></DropdownMenuSub>
               <DropdownMenuItem onClick={() => { select(track.id); openTrackSettings(track.id); }}>
                 <Settings2 className="size-4" /> Track settings
