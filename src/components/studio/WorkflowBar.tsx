@@ -1,5 +1,7 @@
 import { Circle, ClipboardPaste, Copy, Headphones, Layers, Mic, Piano, Play, Repeat, Scissors, Square, SquareSplitHorizontal, Timer, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useStudio } from '@/lib/synclab/store';
 import { selectedClip, selectedPartBounds } from '@/lib/synclab/workflow';
