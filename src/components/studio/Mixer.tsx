@@ -11,7 +11,9 @@ import {
   Power,
   Settings2,
   Sliders,
+  Speaker,
   Trash2,
+  Volume2,
   VolumeX,
   Waves,
   X,
@@ -489,32 +491,6 @@ function Screw({ className }: { className?: string }) {
 }
 
 
-/** Analog VU meter gauge (0..1 level). */
-function VuMeter({ level, label }: { level: number; label: string }) {
-  // Map dB-ish fraction to needle angle: -46deg .. +42deg
-  const angle = -46 + Math.min(1, Math.max(0, level)) * 88;
-  return (
-    <div className="flex flex-1 flex-col items-center">
-      <svg viewBox="0 0 60 38" className="w-full max-w-[64px]">
-        <path d="M 6 34 A 26 26 0 0 1 54 34" fill="none" stroke="oklch(0.9 0.02 95)" strokeWidth="1" opacity="0.5" />
-        <path d="M 44.6 15.4 A 26 26 0 0 1 54 34" fill="none" stroke="oklch(0.65 0.22 25)" strokeWidth="2.2" />
-        {[-40, -20, -7, -3, 0].map((db, i) => {
-          const a = ((-46 + i * 22) * Math.PI) / 180;
-          const x1 = 30 + Math.sin(a) * 20;
-          const y1 = 34 - Math.cos(a) * 20;
-          const x2 = 30 + Math.sin(a) * 24;
-          const y2 = 34 - Math.cos(a) * 24;
-          return <line key={db} x1={x1} y1={y1} x2={x2} y2={y2} stroke="oklch(0.85 0.02 95)" strokeWidth="1" opacity="0.7" />;
-        })}
-        <g transform={`rotate(${angle} 30 34)`}>
-          <line x1="30" y1="34" x2="30" y2="10" stroke="var(--mx-accent, oklch(0.75 0.19 30))" strokeWidth="1.6" strokeLinecap="round" />
-        </g>
-        <circle cx="30" cy="34" r="2.6" fill="oklch(0.3 0.01 260)" stroke="oklch(0.7 0.02 95)" strokeWidth="0.8" />
-      </svg>
-      <span className="font-mono text-[6px] uppercase tracking-widest text-muted-foreground">{label}</span>
-    </div>
-  );
-}
 
 /** Chunky console fader thumb overrides for the shadcn slider (cap face + centre line live in styles.css). */
 const FADER_CAP =
@@ -1400,7 +1376,7 @@ function FxMenu({ target, label }: { target: string; label: string }) {
 }
 
 /** Master insert chain with one-tap mastering effects (limiter first). */
-function MasterChain({ color }: { color: string }) {
+function MasterChain({ color, className }: { color: string; className?: string }) {
   const { fxChains, addFxPlugin, removeFxPlugin, toggleFxBypass, installedPlugins } = useStudio();
   const list = fxChains["bus:master"] ?? [];
   const quick: [string, string][] = [
@@ -1414,7 +1390,7 @@ function MasterChain({ color }: { color: string }) {
     if (def) addFxPlugin("bus:master", def);
   };
   return (
-    <div className={cn(ROW.eq, "space-y-0.5 overflow-y-auto border-b border-border/60 px-1 py-1")}>
+    <div className={cn(className ?? ROW.eq, "space-y-0.5 overflow-y-auto border-b border-border/60 px-1 py-1")}>
       {list.length === 0 && (
         <div className="text-center font-mono text-[7px] uppercase tracking-widest text-muted-foreground">
           Main bus — no mastering yet
@@ -1455,10 +1431,114 @@ function MasterChain({ color }: { color: string }) {
   );
 }
 
+/** Master 3-band EQ — the same controls and markings every channel strip carries. */
+function MasterEq({ color }: { color: string }) {
+  const { fxChains, addFxPlugin, setFxParam, installedPlugins } = useStudio();
+  const eq = (fxChains["bus:master"] ?? []).find((p) => p.kind === "eq");
+  const pending = useRef<[string, number] | null>(null);
+  // The store builds the instance, so the first knob move lands as soon as it exists.
+  useEffect(() => {
+    const wanted = pending.current;
+    if (!eq || !wanted) return;
+    pending.current = null;
+    setFxParam("bus:master", eq.id, wanted[0], wanted[1]);
+  }, [eq, setFxParam]);
+  const setBand = (id: string, value: number) => {
+    if (eq) {
+      setFxParam("bus:master", eq.id, id, value);
+      return;
+    }
+    const def = installedPlugins.find((d) => d.kind === "eq") ?? BUILT_IN_PLUGINS.find((d) => d.kind === "eq");
+    if (!def) return;
+    pending.current = [id, value];
+    addFxPlugin("bus:master", def);
+  };
+  const bands = [["high", "High"], ["mid", "Mid"], ["low", "Low"]] as const;
+  return (
+    <div
+      className={cn(ROW.eq, "mx-channel-eq mx-master-eq flex flex-col gap-1 border-b border-border/60 px-1.5 py-1")}
+      style={{ "--primary": color } as CSSProperties}
+    >
+      <div className="mx-eq-knobs grid w-full grid-cols-3 gap-1">
+        {bands.map(([id, label]) => (
+          <Knob
+            key={id}
+            label={label}
+            value={eq?.params.find((param) => param.id === id)?.value ?? 0}
+            min={-18}
+            max={18}
+            step={0.5}
+            unit=" dB"
+            size={32}
+            onChange={(value) => setBand(id, value)}
+          />
+        ))}
+      </div>
+      <div className="mx-eq-curve h-10 w-full shrink-0">
+        <EqCurve
+          scopeId="master"
+          bands={["low", "mid", "high"].map((id) => eq?.params.find((param) => param.id === id)?.value ?? 0) as [number, number, number]}
+          color={color}
+          bypass={!!eq?.bypass}
+          onBand={(i, value) => {
+            const id = ["low", "mid", "high"][i];
+            if (id) setBand(id, value);
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
+/** Master stereo width — the row every channel uses for its pan control. */
+function MasterWidth({ color }: { color: string }) {
+  const { fxChains, addFxPlugin, setFxParam, installedPlugins } = useStudio();
+  const width = (fxChains["bus:master"] ?? []).find((p) => p.kind === "width");
+  const pending = useRef<number | null>(null);
+  // The store builds the instance, so the first slider move lands as soon as it exists.
+  useEffect(() => {
+    const wanted = pending.current;
+    if (!width || wanted === null) return;
+    pending.current = null;
+    setFxParam("bus:master", width.id, "width", wanted);
+  }, [width, setFxParam]);
+  const setWidth = (value: number) => {
+    if (width) {
+      setFxParam("bus:master", width.id, "width", value);
+      return;
+    }
+    const def = installedPlugins.find((d) => d.kind === "width") ?? BUILT_IN_PLUGINS.find((d) => d.kind === "width");
+    if (!def) return;
+    pending.current = value;
+    addFxPlugin("bus:master", def);
+  };
+  const v = width?.params.find((p) => p.id === "width")?.value ?? 1;
+  return (
+    <div className={cn(ROW.pan, "flex flex-col justify-center border-b border-border/60 px-1.5")} style={{ "--primary": color } as CSSProperties}>
+      <Slider
+        aria-label="Master stereo width"
+        aria-valuetext={v === 0 ? "Mono" : `${Math.round(v * 100)} percent`}
+        value={[v]}
+        min={0}
+        max={2}
+        step={0.01}
+        className="h-3"
+        onDoubleClick={() => setWidth(1)}
+        onValueChange={([n = 1]) => setWidth(n)}
+      />
+      <button
+        onClick={() => setWidth(1)}
+        title="Reset the main output to its original stereo width"
+        className="mt-0.5 text-center font-mono text-[8px] text-muted-foreground hover:text-foreground"
+      >
+        {v === 0 ? "MONO" : `${Math.round(v * 100)}%`}
+      </button>
+    </div>
+  );
+}
+
 function MasterStrip({ level: peak }: { level: number }) {
   const { buses, setBus } = useStudio();
-  const advanced = useApp().mode === "advanced";
-
   const master = buses["master"] as BusState;
   const clip = useClipped("master");
   const setClip = (on: boolean) => {
@@ -1473,6 +1553,32 @@ function MasterStrip({ level: peak }: { level: number }) {
         boxShadow: `inset 4px 0 0 0 ${color}, inset 0 1px 0 0 rgba(255,255,255,0.08)`,
       }}
     >
+      {/* master name plate — the same row every channel strip carries */}
+      <div
+        className={cn(ROW.name, "flex items-center gap-1.5 border-b border-black/40 px-1.5")}
+        style={
+          {
+            background: `linear-gradient(90deg, color-mix(in oklab, ${color} 70%, transparent), color-mix(in oklab, ${color} 40%, transparent))`,
+            boxShadow: `inset 0 2px 0 0 ${color}`,
+            "--mixer-channel-color": color,
+          } as CSSProperties
+        }
+        title="Master"
+      >
+        <Volume2 className="size-4 shrink-0" />
+        <span className="mx-name-btn min-w-0 flex-1 truncate font-mono text-[12px] font-bold uppercase tracking-wide text-foreground">
+          Master
+        </span>
+        <button
+          onClick={() => setClip(false)}
+          title="Clip indicator — click to reset"
+          aria-label="Clip indicator for master — click to reset"
+          className={cn(
+            "size-2.5 shrink-0 rounded-full border border-black/60 transition-shadow",
+            clip ? "bg-red-500 shadow-[0_0_6px_1px_rgba(239,68,68,0.8)]" : "bg-black/50"
+          )}
+        />
+      </div>
       <div
         className={cn(ROW.head, "flex items-center justify-between border-b border-black/50 px-1.5 font-mono text-[8px] uppercase tracking-widest")}
         style={{ background: `color-mix(in oklab, ${color} 22%, transparent)` }}
@@ -1491,28 +1597,21 @@ function MasterStrip({ level: peak }: { level: number }) {
         </Popover>
         <Screw />
       </div>
-      {advanced && (
-        <div className={cn(ROW.scope, "border-b border-black/50 p-[3px]")}>
-          <Scope scopeId="master" height={40} compact color={color} />
-        </div>
-      )}
-      <MasterChain color={color} />
-      <div className={cn(ROW.devices, "flex flex-col gap-1 border-b border-black/50 px-1.5 py-1")}>
-        <div className="flex flex-1 items-center gap-1">
-          <VuMeter level={peak} label="L" />
-          <VuMeter level={peak} label="R" />
-        </div>
+      {/* live output scope, 3-band EQ and inserts — the same rows, meters and markings as every channel */}
+      <div className={cn(ROW.scope, "border-b border-black/50 p-[3px]")}>
+        <Scope scopeId="master" height={40} compact color={color} />
+      </div>
+      <MasterEq color={color} />
+      <MasterChain color={color} className={ROW.devices} />
+      <div className={cn(ROW.sends, "border-b border-black/50 px-1 py-[2px]")}>
         <FxMenu target="bus:master" label="Master FX" />
       </div>
-      {advanced && <div className={cn(ROW.sends, "border-b border-border/60")} />}
-      {advanced && <div className={cn(ROW.sendBars, "border-b border-border/60")} />}
-
       <div className={cn(ROW.io, "flex items-center justify-center border-b border-border/60 font-mono text-[8px] uppercase tracking-widest text-muted-foreground")}>
         Main out
       </div>
-      <div className={cn(ROW.pan, "border-b border-border/60")} />
+      <MasterWidth color={color} />
       <div
-        className={cn(ROW.fader, "flex items-stretch justify-center gap-1.5 border-b border-border/60 py-1")}
+        className={cn(ROW.fader, "flex items-stretch justify-center gap-1 border-b border-border/60 py-1")}
         style={{ "--primary": color } as CSSProperties}
       >
         <div className="flex flex-col justify-between py-1">
@@ -1540,21 +1639,47 @@ function MasterStrip({ level: peak }: { level: number }) {
         <Meter id="master" level={peak} tall />
         <Meter id="master" level={peak} tall />
       </div>
-      <div className={cn(ROW.readout, "flex items-center justify-center border-b border-border/60")}>
-        <span className={cn("font-mono text-[9px]", peak > 0.98 ? "text-red-400" : "text-muted-foreground")}>
-          {fracToDb(peak).toFixed(1)} dB
+      <div className={cn(ROW.readout, "flex items-center justify-between border-b border-border/60 px-1.5")}>
+        <span className="font-mono text-[9px] text-muted-foreground" title="Fader position">
+          {toDb(master.volume).toFixed(1)}
         </span>
+        <span className={cn("font-mono text-[9px]", peak > 0.98 ? "text-red-400" : "text-foreground/70")} title="Output level">
+          {fracToDb(peak).toFixed(1)}
+        </span>
+        <ClipLed id="master" compact />
       </div>
-      <div className={cn(ROW.buttons, "flex items-start justify-center px-1 pt-1")}>
+      <div className={cn(ROW.buttons, "grid grid-cols-2 gap-1 px-1")}>
         <button
-          onClick={() => setClip(false)}
+          onClick={() => setBus("master", { muted: !master.muted })}
+          title={master.muted ? "Muted — click to unmute" : "Mute the main output"}
+          aria-label="Mute master"
+          aria-pressed={master.muted}
           className={cn(
-            "rounded-sm px-1.5 py-0.5 font-mono text-[8px] uppercase tracking-wider",
-            clip ? "bg-red-500 text-black" : "bg-black/30 text-muted-foreground"
+            "col-span-2 h-8 w-full rounded-[3px] font-mono text-[13px] font-bold leading-none transition-colors",
+            master.muted
+              ? "bg-orange-500 text-black shadow-[0_0_10px_rgba(249,115,22,0.8)]"
+              : "bg-black/30 text-muted-foreground hover:text-foreground"
           )}
         >
-          {clip ? "CLIP — reset" : "OK"}
+          M
         </button>
+        <button
+          onClick={() => setClip(false)}
+          title={clip ? "Clipping — click to reset" : "No clipping"}
+          aria-label="Master clip indicator — click to reset"
+          aria-pressed={clip}
+          className={cn(
+            "col-span-2 h-8 w-full rounded-[3px] font-mono text-[13px] font-bold leading-none transition-colors",
+            clip
+              ? "bg-red-500 text-black shadow-[0_0_10px_rgba(239,68,68,0.8)]"
+              : "bg-black/30 text-muted-foreground hover:text-foreground"
+          )}
+        >
+          CLIP
+        </button>
+      </div>
+      <div className={cn(ROW.icon, "flex shrink-0 items-center justify-center border-t border-border/60")} title="Master" aria-hidden>
+        <Speaker className="size-5" />
       </div>
     </div>
   );
