@@ -19,7 +19,7 @@ describe('touch synth', () => {
   });
   it('has the five loop lanes: drums, bass, poly, melody, stabs', () => {
     expect(TOUCH_LANES.map(l => l.id)).toEqual(['drums','bass','poly','melody','stabs']);
-    expect(TOUCH_LANES[0].drums?.length).toBe(5);
+    expect(TOUCH_LANES[0]?.drums?.length).toBe(5);
   });
   it('flattens recorded lane loops into timeline notes at the playhead', () => {
     const notes = loopsToNotes({ bass: [{ step: 4, pitch: 36, length: 1, vel: .9 }], drums: [{ step: 0, pitch: 0, length: .5, vel: 1 }] }, 64, 1);

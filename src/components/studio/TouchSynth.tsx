@@ -10,7 +10,7 @@ import { laneById, loopsToNotes, touchPitch, touchCutoff, TOUCH_LANES, TOUCH_LOO
 import type { Track } from '@/lib/synclab/types';
 
 const KEYS = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
-const drumPad = (kind: string) => ({ id: `touch-${kind}`, name: kind, kind: kind as 'kick', volume: 1, pan: 0, pitch: 0, decay: .4, steps: [] as number[] });
+const drumPad = (kind: string) => ({ id: `touch-${kind}`, name: kind, kind: kind as 'kick', volume: 1, pan: 0, pitch: 0, decay: .4, muted: false, solo: false, steps: [] as number[] });
 
 export function TouchSynth({ track }: { track: Track }) {
   const { previewNote, updatePatch, loadPreset, transport, updateTrack } = useStudio();
