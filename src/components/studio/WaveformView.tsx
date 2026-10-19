@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
  */
 export const WaveformView = memo(function WaveformView({
   peaks,
-  color = "var(--color-primary)",
+  color = "var(--display-wave)",
   className,
   label,
   grid = true,
@@ -55,7 +55,7 @@ export const WaveformView = memo(function WaveformView({
     <svg
       viewBox="0 0 1000 100"
       preserveAspectRatio="none"
-      className={cn("h-full w-full", className)}
+      className={cn("waveform-view h-full w-full", className)}
       aria-label={label ?? "Audio waveform"}
       role="img"
     >

@@ -73,6 +73,14 @@ html[data-reduce-motion] *, html[data-reduce-motion] *::before, html[data-reduce
 }
 
 :root {
+  --display-black: #000000;
+  --display-wave: #ff3048;
+  --display-point: #ffffff;
+  --display-cyan: #22d3ee;
+  --display-yellow: #facc15;
+  --display-pink: #f472b6;
+  --display-grid: #ffffff18;
+  --display-wave-fill: #ff304824;
   --studio-metal: oklch(0.69 0.008 255);
   --mixer-desk: oklch(0.40 0.009 285);
   --mixer-control: oklch(0.34 0.009 285);
@@ -1753,9 +1761,16 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
 .hardware-device-header h3 { font-family: var(--font-display); font-size: 16px; letter-spacing: 0; color: var(--foreground); }
 .hardware-device-screen {
   --foreground: var(--hardware-ink); --muted-foreground: var(--hardware-silver); --background: var(--hardware-black); --surface: var(--hardware-black); --surface-2: var(--hardware-rubber);
-  background: var(--hardware-black); color: var(--hardware-ink);
+  background: var(--display-black); color: var(--hardware-ink);
   border: 2px solid var(--hardware-rubber); border-radius: 3px; box-shadow: var(--hardware-pressed-shadow);
 }
+.signal-screen { background: var(--display-black) !important; color: var(--display-point); }
+.signal-screen .text-muted-foreground { color: var(--hardware-silver); }
+.signal-screen .waveform-view { background: transparent; }
+.waveform-view { background: var(--display-black); }
+.signal-point { background: var(--display-point) !important; border-color: var(--display-black) !important; border-radius: 50% !important; padding: 0 !important; min-height: 16px !important; box-shadow: none !important; }
+.signal-point-hit { position: absolute; width: 36px; height: 36px; transform: translate(-50%, -50%); }
+.signal-point-hit > .signal-point { width: 16px; height: 16px; margin: 10px; }
 .hardware-rack-ear { background: linear-gradient(90deg, var(--hardware-black), var(--hardware-rubber-edge), var(--hardware-rubber)); border-color: var(--hardware-black); }
 .hardware-rack-screw { position: relative; background: linear-gradient(135deg, var(--hardware-silver-light), var(--hardware-silver-dark)); box-shadow: 0 1px 2px var(--hardware-shade); }
 .hardware-rack-screw::after { content: ""; position: absolute; inset: 45% 15%; background: var(--hardware-black); transform: rotate(-30deg); }

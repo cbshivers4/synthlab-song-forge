@@ -27,7 +27,7 @@ export function LiveWave({ stream, color = "hsl(0 85% 62%)", label = "Live input
       analyser.getFloatTimeDomainData(data);
       g.clearRect(0, 0, w, h);
       g.lineWidth = 2;
-      g.strokeStyle = levelColor(peakOf(data));
+      g.strokeStyle = getComputedStyle(canvas).getPropertyValue("--display-wave").trim();
       g.beginPath();
       for (let x = 0; x < w; x++) {
         const v = data[Math.floor((x / w) * data.length)] ?? 0;
@@ -46,5 +46,5 @@ export function LiveWave({ stream, color = "hsl(0 85% 62%)", label = "Live input
     };
   }, [stream, color]);
 
-  return <canvas ref={ref} aria-label={label} role="img" className="h-full w-full" />;
+  return <canvas ref={ref} aria-label={label} role="img" className="signal-screen h-full w-full" />;
 }

@@ -719,7 +719,7 @@ function EqCurve({
             wavePath += `${wavePath ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)} `;
           }
           node.setAttribute("d", wavePath);
-          node.setAttribute("stroke", levelColor(peakOf(wave)));
+          node.setAttribute("stroke", getComputedStyle(node).getPropertyValue("--display-wave").trim());
         }
       }
       raf = requestAnimationFrame(draw);
@@ -734,7 +734,7 @@ function EqCurve({
     } catch {
       /* synthetic pointers */
     }
-    dragRef.current = { band, startY: e.clientY, startGain: bandGain[band]! };
+    dragRef.current = { band, startY: e.clientY, startGain: (bandGain[band] ?? 0) };
     setActiveBand(band);
   };
   const onPointerMove = (e: React.PointerEvent) => {
@@ -755,7 +755,7 @@ function EqCurve({
         ref={svgRef}
         viewBox={`0 0 ${W} ${H}`}
         preserveAspectRatio="none"
-        className={cn("w-full flex-1 rounded-sm border border-border/60 bg-black/40", bypass && "opacity-40")}
+        className={cn("w-full flex-1 rounded-sm border border-border/60 signal-screen", bypass && "opacity-40")}
         onPointerMove={onPointerMove}
         onPointerUp={endDrag}
         onPointerCancel={endDrag}
@@ -783,10 +783,10 @@ function EqCurve({
           <circle
             key={i}
             cx={bx}
-            cy={xOf(bandGain[i]!)}
+            cy={xOf((bandGain[i] ?? 0))}
             r={activeBand === i ? 3.4 : 2.6}
-            fill={color}
-            stroke="black"
+            fill="var(--display-point)"
+            stroke="var(--display-black)"
             strokeWidth="0.6"
             style={{ cursor: "ns-resize", touchAction: "none" }}
             onPointerDown={onPointerDown(i)}

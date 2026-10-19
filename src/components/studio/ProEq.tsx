@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { Button } from "@/components/ui/button";
 import { Power, RotateCcw } from "lucide-react";
 import { useStudio } from "@/lib/synclab/store";
 import { getEngine } from "@/lib/synclab/audio-engine";
@@ -91,7 +92,7 @@ export function ProEq({ trackId, plugin }: { trackId: string; plugin: PluginInst
 
   // live spectrum + curve drawing
   useEffect(() => {
-    let raf = 0;
+    let timer: ReturnType<typeof setInterval>;
     const draw = () => {
       const canvas = canvasRef.current;
       const box = boxRef.current;
@@ -107,6 +108,7 @@ export function ProEq({ trackId, plugin }: { trackId: string; plugin: PluginInst
         if (g) {
           g.setTransform(dpr, 0, 0, dpr, 0, 0);
           g.clearRect(0, 0, w, h);
+          const colors = getComputedStyle(canvas);
 
           // spectrum
           const spec = getEngine().getEqSpectrum(plugin.id);
@@ -123,7 +125,7 @@ export function ProEq({ trackId, plugin }: { trackId: string; plugin: PluginInst
             }
             g.lineTo(w, h);
             g.closePath();
-            g.fillStyle = "rgba(125, 211, 252, 0.14)";
+            g.fillStyle = colors.getPropertyValue("--display-wave-fill").trim();
             g.fill();
           }
 
@@ -150,20 +152,21 @@ export function ProEq({ trackId, plugin }: { trackId: string; plugin: PluginInst
             if (x === 0) g.moveTo(x, y);
             else g.lineTo(x, y);
           }
-          g.strokeStyle = "#7dd3fc";
+          g.strokeStyle = colors.getPropertyValue("--display-wave").trim();
           g.lineWidth = 2;
           g.stroke();
           g.lineTo(w, h / 2);
           g.lineTo(0, h / 2);
           g.closePath();
-          g.fillStyle = "rgba(125, 211, 252, 0.12)";
+          g.fillStyle = colors.getPropertyValue("--display-wave-fill").trim();
           g.fill();
         }
       }
-      raf = requestAnimationFrame(draw);
+
     };
-    raf = requestAnimationFrame(draw);
-    return () => cancelAnimationFrame(raf);
+    draw();
+    timer = setInterval(draw, 50);
+    return () => clearInterval(timer);
   }, [plugin.id]);
 
   const move = (e: ReactPointerEvent) => {
@@ -191,7 +194,8 @@ export function ProEq({ trackId, plugin }: { trackId: string; plugin: PluginInst
     setActive(free.n);
   };
 
-  const sel = bands.find((b) => b.n === active) ?? bands[2]!;
+  const sel = bands.find((b) => b.n === active) ?? bands[2];
+  if (!sel) return null;
 
   return (
     <div className="space-y-2">
@@ -199,9 +203,9 @@ export function ProEq({ trackId, plugin }: { trackId: string; plugin: PluginInst
         ref={boxRef}
         onPointerMove={move}
         onPointerUp={() => setDrag(null)}
-        onPointerLeave={() => setDrag(null)}
+        onPointerCancel={() => setDrag(null)}
         onDoubleClick={(e) => addAt(e.clientX, e.clientY)}
-        className="relative h-56 w-full touch-none overflow-hidden rounded-lg border border-border bg-surface-2/70"
+        className="signal-screen relative h-56 w-full touch-none overflow-hidden rounded-md border border-border"
       >
         <canvas ref={canvasRef} className="absolute inset-0 size-full" />
 
@@ -230,13 +234,14 @@ export function ProEq({ trackId, plugin }: { trackId: string; plugin: PluginInst
         {/* band handles */}
         {bands.map((b, i) =>
           !b.on ? null : (
-            <button
+            <Button variant="ghost"
               key={b.n}
               type="button"
               aria-label={`Band ${b.n} ${EQ_BAND_TYPES[b.type]}`}
               onPointerDown={(e) => {
                 e.preventDefault();
                 setActive(b.n);
+                boxRef.current?.setPointerCapture(e.pointerId);
                 setDrag(b.n);
               }}
               onDoubleClick={(e) => {
@@ -247,18 +252,17 @@ export function ProEq({ trackId, plugin }: { trackId: string; plugin: PluginInst
                 const next = b.q * (e.deltaY > 0 ? 0.9 : 1.11);
                 set(b.n, "q", Math.max(0.1, Math.min(18, Math.round(next * 100) / 100)));
               }}
-              className="absolute z-10 size-3.5 -translate-x-1/2 -translate-y-1/2 cursor-grab rounded-full border-2 active:cursor-grabbing"
+              className="signal-point absolute z-10 size-4 -translate-x-1/2 -translate-y-1/2 cursor-grab border-2 active:cursor-grabbing"
               style={{
                 left: `${(Math.log(b.freq / F_MIN) / Math.log(F_MAX / F_MIN)) * 100}%`,
                 top: `${50 - ((b.type === 1 || b.type === 5 || b.type === 3 ? 0 : b.gain) / DB_RANGE) * 50}%`,
-                borderColor: BAND_COLORS[i],
-                background: active === b.n ? BAND_COLORS[i] : "transparent",
+                outline: active === b.n ? "2px solid var(--display-cyan)" : undefined,
               }}
             >
               <span className="absolute -top-4 left-1/2 -translate-x-1/2 font-mono text-[8px]" style={{ color: BAND_COLORS[i] }}>
                 {b.n}
               </span>
-            </button>
+            </Button>
           ),
         )}
       </div>

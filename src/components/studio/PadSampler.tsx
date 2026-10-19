@@ -121,7 +121,7 @@ function PadWave({ pad, color, onChange }: { pad: Pad; color: string; onChange: 
       onPointerLeave={() => setDrag(null)}
     >
       <div className="absolute inset-0">
-        <WaveformView peaks={pad.peaks} color={color} label="Pad waveform" />
+        <WaveformView peaks={pad.peaks} color="var(--display-wave)" label="Pad waveform" />
       </div>
       <div className="absolute inset-y-0 left-0 bg-background/70" style={{ width: `${pad.start * 100}%` }} />
       <div className="absolute inset-y-0 right-0 bg-background/70" style={{ width: `${(1 - pad.end) * 100}%` }} />
@@ -587,12 +587,12 @@ export function PadSampler() {
       </div>
 
       {/* live monitor: shows the microphone while recording, or the pad you are playing */}
-      <div className="relative h-24 overflow-hidden rounded-lg border border-border bg-surface-2/50 sm:h-20">
+      <div className="signal-screen relative h-24 overflow-hidden rounded-md border border-border sm:h-20">
         {recStream ? (
           <LiveWave stream={recStream} color="hsl(0 85% 62%)" label="Live microphone waveform" />
         ) : monitorPad ? (
           <>
-            <WaveformView peaks={monitorPad.pad.peaks} color={monitorPad.color} label={`${monitorPad.pad.name} waveform`} />
+            <WaveformView peaks={monitorPad.pad.peaks} color="var(--display-wave)" label={`${monitorPad.pad.name} waveform`} />
             <span className="absolute inset-y-0 left-0 bg-background/70" style={{ width: `${monitorPad.pad.start * 100}%` }} />
             <span className="absolute inset-y-0 right-0 bg-background/70" style={{ width: `${(1 - monitorPad.pad.end) * 100}%` }} />
           </>
@@ -712,7 +712,7 @@ export function PadSampler() {
               </span>
               {pad && !recording && pad.peaks.length > 1 && (
                 <span className="pointer-events-none absolute inset-x-1.5 top-5 bottom-7 opacity-90">
-                  <WaveformView peaks={pad.peaks} color="hsl(0 0% 0%)" grid={false} outline={false} label={`${pad.name} waveform`} />
+                  <WaveformView peaks={pad.peaks} color="var(--display-wave)" grid={false} outline={false} label={`${pad.name} waveform`} />
                 </span>
               )}
               {recording && recStream && (

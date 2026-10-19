@@ -18,7 +18,7 @@ export function GeneratedWaveform({ buffer, data, peaks, label = "Generated audi
   }, [buffer, data, peaks]);
   return <figure className="m-0 min-w-0 w-full space-y-1" aria-label={label}>
     <figcaption className="font-mono text-xs text-muted-foreground">{label}</figcaption>
-    <div className="h-28 w-full overflow-hidden rounded-md border border-border bg-surface-2">
+    <div className="signal-screen h-28 w-full overflow-hidden rounded-md border border-border">
       <WaveformView peaks={values} label={label} />
     </div>
   </figure>;

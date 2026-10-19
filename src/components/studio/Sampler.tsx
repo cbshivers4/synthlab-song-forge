@@ -82,7 +82,7 @@ function Waveform({ track, onSlice, drawSlice = false }: { track: Track; onSlice
       onPointerLeave={() => setDrag(null)}
     >
       <div className="absolute inset-0">
-        <WaveformView peaks={s.peaks} color="var(--color-primary)" label={`${s.name} waveform`} />
+        <WaveformView peaks={s.peaks} color="var(--display-wave)" label={`${s.name} waveform`} />
       </div>
 
       <div className="absolute inset-y-0 left-0 bg-background/70" style={{ width: `${s.start * 100}%` }} />
@@ -774,7 +774,7 @@ export function Sampler() {
                       >
                         <span className="relative z-10 text-sm text-foreground">{i + 1}</span>
                         <span className="pointer-events-none absolute inset-x-1 top-5 bottom-4">
-                          <WaveformView peaks={slice} color={color} grid={false} label={`Chop ${i + 1} waveform`} />
+                          <WaveformView peaks={slice} color="var(--display-wave)" grid={false} label={`Chop ${i + 1} waveform`} />
                         </span>
                         <span className="relative z-10 text-[9px] text-foreground/80">{(c * s.duration).toFixed(2)}s</span>
                       </Button>
