@@ -31,6 +31,7 @@ import { parseMidiFile } from "@/lib/synclab/midi-file";
 import { useDesktopMenu } from "@/lib/synclab/desktop-menu";
 import { SYNCLAB_VERSION } from "@/lib/synclab/support";
 import { AbletonHandoff } from "@/components/studio/AbletonHandoff";
+import { openShortcutSettings } from "./useShortcuts";
 
 import { stepsPerBar } from "@/lib/synclab/timebase";
 export function MenuBar() {
@@ -234,7 +235,7 @@ export function MenuBar() {
     "track:drum": () => addTrack("drum", "DRUM MACHINE"),
     "track:sampler": () => addTrack("sampler", "SAMPLER", "Metro Pluck"),
     "help:center": () => openHelp("help"),
-    "help:shortcuts": () => setPanel("settings"),
+    "help:shortcuts": () => { openShortcutSettings(); setPanel("settings"); },
     "help:problem": () => openHelp("problem"),
     "help:about": () => openHelp("about"),
     "app:check-updates": () =>
@@ -494,13 +495,7 @@ export function MenuBar() {
             <MenubarItem onClick={() => openHelp("about")}>About SYNCLAB</MenubarItem>
             <MenubarSeparator />
             <MenubarItem
-              onClick={() =>
-                toast("Keyboard shortcuts", {
-                  description:
-                    "Space play/stop · R record · L loop · M mute track · ←/→ playhead by bar (⇧ by step) · Home back to start · V select · B draw · S split · T razor · ⌘Z undo · ⇧⌘Z redo · ⌘D duplicate · ⌘A select all · ⌘S save · Delete remove track",
-                  duration: 12000,
-                })
-              }
+              onClick={() => { openShortcutSettings(); setPanel("settings"); }}
             >
               Keyboard Shortcuts
             </MenubarItem>
