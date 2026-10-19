@@ -1,3 +1,4 @@
+import { phasedHarmonics } from "./oscillator-phase";
 import { envelopePoints } from "./live-envelope";
 import { renderVintageDrum } from "./vintage-drums";
 import { playModularVoice } from "./modular";
@@ -83,7 +84,7 @@ function makeBitcrushCurve(bits: number) {
 
 function makeDistortionCurve(amount: number) {
   const k = amount * 100;
-  const n = 1024;
+  const n = 1025; // Odd size maps silence to exactly zero, avoiding a DC floor.
   const curve = new Float32Array(n);
   for (let i = 0; i < n; i++) {
     const x = (i * 2) / n - 1;
@@ -2483,6 +2484,10 @@ export class SyncLabEngine {
         } else {
           o.type = osc.wave;
         }
+        if ((osc.phase ?? 0) !== 0) {
+          const harmonics = phasedHarmonics(osc.wave, osc.phase ?? 0, osc.pulseWidth, osc.morph);
+          o.setPeriodicWave(ctx.createPeriodicWave(harmonics.real, harmonics.imag));
+        }
         const freq = midiToFreq(midi + osc.octave * 12 + osc.semitone);
         if (doGlide) {
           const from = midiToFreq(prevMidi! + osc.octave * 12 + osc.semitone);
@@ -2706,6 +2711,10 @@ export class SyncLabEngine {
           if (osc.wave === "pulse") source.setPeriodicWave(this.pulseWave(ctx, clamp(osc.pulseWidth ?? 0.3, 0.02, 0.98)));
           else if (osc.wave === "wavetable") source.setPeriodicWave(this.wavetableWave(ctx, clamp(osc.morph ?? 0.5, 0, 1)));
           else if (osc.wave !== "noise") source.type = osc.wave;
+          if ((osc.phase ?? 0) !== 0) {
+            const harmonics = phasedHarmonics(osc.wave, osc.phase ?? 0, osc.pulseWidth, osc.morph);
+            source.setPeriodicWave(ctx.createPeriodicWave(harmonics.real, harmonics.imag));
+          }
           glideParam(source.frequency, midiToFreq(midi + osc.octave * 12 + osc.semitone));
           glideParam(source.detune, osc.detune + (osc.fine ?? 0) + control.spread * next.unison.detune + fixedMod("pitch") * 1200 + drift * 12);
         }
@@ -2792,6 +2801,8 @@ export class SyncLabEngine {
     const tune = Math.pow(2, pad.pitch / 12);
     const dec = 0.1 + pad.decay;
 
+    let drumTone: BiquadFilterNode | undefined;
+    let drumFilter: BiquadFilterNode | undefined;
     // ---- shaping chain: out -> distortion -> compressor -> tone -> envelope -> pan -> channel
     const drive = clamp(pad.drive ?? 0, 0, 1);
     let node: AudioNode = out;
@@ -2820,7 +2831,7 @@ export class SyncLabEngine {
     }
 
     const toneAmt = clamp(pad.tone ?? 0.5, 0, 1);
-    if (Math.abs(toneAmt - 0.5) > 0.01) {
+    {
       const f = ctx.createBiquadFilter();
       if (toneAmt < 0.5) {
         f.type = "lowpass";
@@ -2830,6 +2841,7 @@ export class SyncLabEngine {
         f.frequency.value = 30 * Math.pow(120, (toneAmt - 0.5) * 2); // 30Hz .. 3.6kHz
       }
       f.Q.value = 0.8;
+      drumTone = f;
       node.connect(f);
       node = f;
     }
@@ -2837,6 +2849,7 @@ export class SyncLabEngine {
     // resonant sweepable filter (off unless filterType set)
     if (pad.filterType && pad.filterType !== "off") {
       const f = ctx.createBiquadFilter();
+      drumFilter = f;
       f.type = pad.filterType;
       const base = 40 * Math.pow(450, clamp(pad.cutoff ?? 1, 0, 1)); // 40Hz..18kHz
       const q = 0.5 + clamp(pad.resonance ?? 0, 0, 1) * 18;
@@ -2886,6 +2899,17 @@ export class SyncLabEngine {
         out.gain.setTargetAtTime(next.volume, time, 0.015);
         p.pan.setTargetAtTime(clamp(next.pan, -1, 1), time, 0.015);
         source.playbackRate.setTargetAtTime(Math.pow(2, next.pitch / 12), time, 0.015);
+        if (drumTone) {
+          const tone = clamp(next.tone ?? 0.5, 0, 1);
+          drumTone.type = tone < 0.5 ? "lowpass" : "highpass";
+          drumTone.frequency.setTargetAtTime(tone < 0.5 ? 300 * Math.pow(60, tone * 2) : 30 * Math.pow(120, (tone - 0.5) * 2), time, 0.015);
+        }
+        if (drumFilter && next.filterType && next.filterType !== "off") {
+          drumFilter.type = next.filterType;
+          drumFilter.frequency.cancelScheduledValues(time);
+          drumFilter.frequency.setTargetAtTime(40 * Math.pow(450, clamp(next.cutoff ?? 1, 0, 1)), time, 0.015);
+          drumFilter.Q.setTargetAtTime(0.5 + clamp(next.resonance ?? 0, 0, 1) * 18, time, 0.015);
+        }
       } };
       voices.add(voice); this.liveDrums.set(key, voices);
       source.addEventListener("ended", () => { voices.delete(voice); if (!voices.size) this.liveDrums.delete(key); });
