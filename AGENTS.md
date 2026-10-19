@@ -12,9 +12,10 @@
 Live Looper/View stay separate; singleton loops survive switching, bypass master to prevent recapture; timeline handles export/mastering.
 Meter/looper visuals share 20 fps timers; keep rapid React updates off audio paths.
 Mixer VCAs scale assigned channel gains without changing individual faders, while aux returns control post-effect levels before the master; this avoids routing returns back into their own sends.
-Mixer meters read analyser taps from the actual bus, aux return, and VCA member signals; master gain controls the summed mix, while subgroup changes also scale their tracks' pre-bus sends.
+Mixer meters tap real bus/return/VCA signals; master scales the mix and subgroups scale pre-bus sends.
 MIDI: stable IDs, one hot-plug-safe multi-input subscription. Read nested AGENTS.md.
-- Time signature is transport.beatsPerBar over a quarter-note beat; bar math goes through timebase helpers (stepsPerBar/getBeatsPerBar), synced by the store each render, so ruler, metronome, count-ins and looper agree.
+Timebase helpers use transport.beatsPerBar, synced each render, so all bar math agrees.
+Timeline rendering/razor share timelineUsesWaveform to cut visible content, not hidden takes; exact clip widths and seams prevent overlapping pieces.
 Bus/send insert edits crossfade parallel paths after the bus scope/send output; never disconnect active sources on parameter edits, which cuts live sound and bypasses effects.
 Printed instrument and drum takes replace overlapping clips by default; only explicit overdub stacks them, so ordinary re-recording does not double playback.
 - Computer typing keys (src/lib/synclab/qwerty.ts) play the armed/selected instrument via previewNote, which both sounds and captures notes; keep it the single note path so recording stays consistent.
