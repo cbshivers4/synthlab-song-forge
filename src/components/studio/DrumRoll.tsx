@@ -200,6 +200,12 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
       onPointerUp={() => setPaint(null)}
       onPointerLeave={() => setPaint(null)}
     >
+      {track.clips?.length ? (
+        <div className="flex items-center justify-between gap-2 border-b border-border px-2 py-1 text-xs text-muted-foreground">
+          <span>{track.printedAudio ? "Recorded waveform is playing; drum edits remain live here." : "Drum pattern is playing; this track also holds a recorded waveform."}</span>
+          <Button size="sm" variant="secondary" onClick={() => updateTrack(track.id, { printedAudio: !track.printedAudio })}>{track.printedAudio ? "PLAY BEAT" : "PLAY WAVE"}</Button>
+        </div>
+      ) : null}
       <div className="flex flex-nowrap items-center gap-2 overflow-x-auto rounded-sm border border-border bg-surface/60 p-1.5 [&>*]:shrink-0">
         <span className="label-xs whitespace-nowrap px-1" title={track.name}>DRUM ROLL</span>
         <Select value={String(total)} onValueChange={(v) => setStepCount(track.id, Number(v))}>

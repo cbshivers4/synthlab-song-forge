@@ -689,7 +689,6 @@ function RecordingClip({ track }: { track: Track }) {
 }
 
 function Lane({ track }: { track: Track }) {
-  const { updateTrack } = useStudio();
   const isMidi = track.kind === "instrument" || track.kind === "midi" || track.kind === "sampler";
   const live = track.recording ? <RecordingClip track={track} /> : null;
   // While recording, the lane shows only the incoming take, never notes.
@@ -698,10 +697,6 @@ function Lane({ track }: { track: Track }) {
   if ((track.kind === "instrument" || track.kind === "midi" || track.kind === "drum") && (track.clips?.length ?? 0) > 0)
     return (
       <>
-        <div className="absolute right-2 top-2 z-20 flex rounded-sm border border-border bg-background/90 p-0.5 shadow-sm">
-          <Button size="sm" variant={track.printedAudio ? "secondary" : "ghost"} className="h-6 px-2 text-[10px]" onClick={() => updateTrack(track.id, { printedAudio: true })} title="Play and edit recorded audio">WAVE</Button>
-          <Button size="sm" variant={!track.printedAudio ? "secondary" : "ghost"} className="h-6 px-2 text-[10px]" onClick={() => updateTrack(track.id, { printedAudio: false })} title="Play and edit MIDI or drum pattern">NOTES</Button>
-        </div>
         {track.printedAudio ? <Waveform track={track} /> : track.kind === "drum" ? <DrumClip track={track} /> : <MidiClip track={track} />}
         {live}
       </>
