@@ -1646,6 +1646,7 @@ function MasterStrip({ level: peak }: { level: number }) {
         <span className={cn("font-mono text-[9px]", peak > 0.98 ? "text-red-400" : "text-foreground/70")} title="Output level">
           {fracToDb(peak).toFixed(1)}
         </span>
+        <ClipLed id="master" compact />
       </div>
       <div className={cn(ROW.buttons, "grid grid-cols-2 gap-1 px-1")}>
         <button
