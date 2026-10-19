@@ -56,6 +56,24 @@ export type MidiMessage =
 
 export type MidiHandler = (msg: MidiMessage) => void;
 
+/** Keep legacy single-input preferences compatible with multi-input selection. */
+export function selectedMidiInputs(id: string | null): string[] {
+  if (!id || id === "all") return [];
+  try {
+    const value: unknown = JSON.parse(id);
+    if (Array.isArray(value)) return value.filter((item): item is string => typeof item === "string");
+  } catch { /* legacy port ID */ }
+  return [id];
+}
+export function midiInputEnabled(selection: string | null, id: string): boolean {
+  return selection === "all" || selectedMidiInputs(selection).includes(id);
+}
+export function toggleMidiInput(selection: string | null, id: string, enabled: boolean, ports: MidiPortInfo[]): string | null {
+  const ids = new Set(selection === "all" ? ports.map(port => port.id) : selectedMidiInputs(selection));
+  if (enabled) ids.add(id); else ids.delete(id);
+  return ids.size ? JSON.stringify([...ids]) : null;
+}
+
 // Focused tools may consume notes before the ordinary track input path.
 const noteConsumers = new Set<(msg: MidiMessage) => boolean>();
 export function claimMidiNotes(consumer: (msg: MidiMessage) => boolean): () => void {
@@ -64,12 +82,12 @@ export function claimMidiNotes(consumer: (msg: MidiMessage) => boolean): () => v
 }
 
 /** Subscribe to one input id, or all inputs when id is "all". Returns an unsubscribe fn. */
-export function subscribe(a: AnyAccess | null, id: string, handler: MidiHandler): () => void {
-  const ports = Array.from(a?.inputs.values() ?? []).filter((p) => id === "all" || p.id === id);
+export function subscribe(a: AnyAccess | null, id: string, handler: (msg: MidiMessage, inputId?: string) => void): () => void {
+  const ports = Array.from(a?.inputs.values() ?? []).filter((p) => midiInputEnabled(id, p.id));
   // Some controllers expose the same keys on two ports (e.g. "MIDI" + "DAW"),
   // and listening to all inputs would then play and record every note twice.
   const lastNote = new Map<string, number>();
-  const onMsg = (e: { data: Uint8Array }) => {
+  const onMsg = (e: { data: Uint8Array }, inputId: string) => {
     const [status = 0, d1 = 0, d2 = 0] = Array.from(e.data);
     const cmd = status & 0xf0;
     const channel = status & 0x0f;
@@ -86,17 +104,19 @@ export function subscribe(a: AnyAccess | null, id: string, handler: MidiHandler)
       if (!prefs.midiThru && cmd === 0x90 && d2 > 0) return;
       const msg: MidiMessage = { type: cmd === 0x90 && d2 > 0 ? "on" : "off", pitch: d1, velocity: curvedVelocity(d2 / 127, prefs.velocityCurve), channel };
       for (const consumer of Array.from(noteConsumers).reverse()) if (consumer(msg)) return;
-      handler(msg);
+       handler(msg, inputId);
     }
-    else if (cmd === 0xb0) handler({ type: "cc", cc: d1, value: d2 / 127, channel });
-    else if (cmd === 0xe0) handler({ type: "pitchbend", value: ((d2 << 7) | d1) / 16383, channel });
+    else if (cmd === 0xb0) handler({ type: "cc", cc: d1, value: d2 / 127, channel }, inputId);
+    else if (cmd === 0xe0) handler({ type: "pitchbend", value: ((d2 << 7) | d1) / 16383, channel }, inputId);
   };
-  for (const p of ports) p.onmidimessage = onMsg;
-  const vh = { id, fn: onMsg };
-  virtualHandlers.add(vh);
+  const handlers = ports.map(port => ({ port, fn: (e: { data: Uint8Array }) => onMsg(e, port.id) }));
+  for (const { port, fn } of handlers) port.onmidimessage = fn;
+  const virtualIds = id === "all" ? ["all"] : selectedMidiInputs(id);
+  const virtual = virtualIds.map(inputId => ({ id: inputId, fn: (e: { data: Uint8Array }) => onMsg(e, inputId) }));
+  virtual.forEach(handler => virtualHandlers.add(handler));
   return () => {
-    virtualHandlers.delete(vh);
-    for (const p of ports) if (p.onmidimessage === onMsg) p.onmidimessage = null;
+    virtual.forEach(handler => virtualHandlers.delete(handler));
+    for (const { port, fn } of handlers) if (port.onmidimessage === fn) port.onmidimessage = null;
   };
 }
 

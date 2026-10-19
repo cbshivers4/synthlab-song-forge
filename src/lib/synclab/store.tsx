@@ -495,7 +495,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const clipClipboardRef = useRef<AudioClip | null>(null);
   const selectedIdRef = useRef(selectedId);
   selectedIdRef.current = selectedId;
-  const heldRef = useRef(new Map<number, { ids: string[]; trackId: string; t0: number; startStep: number }>());
+  const heldRef = useRef(new Map<string, { ids: string[]; trackId: string; t0: number; startStep: number }>());
   const recordedNoteIdsRef = useRef(new Set<string>());
   /** Older notes inside the region being re-recorded (replace mode): silent while recording, removed when the take lands. */
   const replacedNoteIdsRef = useRef(new Set<string>());
@@ -568,15 +568,10 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         return;
       }
       setMidiInputId((cur) => {
-        // Keep the remembered controller; fall back to the first one only if it is gone.
-        if (cur && list.some((i) => i.id === cur)) return cur;
-        const next = list[0]?.id ?? null;
-        try {
-          if (next) window.localStorage.setItem(MIDI_INPUT_KEY, next);
-        } catch {
-          /* storage unavailable */
-        }
-        return next;
+        // Detection must never collapse All devices or a saved multi-input choice.
+        if (cur !== null) return cur;
+        try { window.localStorage.setItem(MIDI_INPUT_KEY, "all"); } catch { /* storage unavailable */ }
+        return "all";
       });
       if (!quiet)
         toast.success(`${list.length} MIDI input${list.length > 1 ? "s" : ""} connected`, {
@@ -589,17 +584,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           const now = listInputs(a);
           setMidiInputs(now);
           setMidiOutputs(listOutputs(a));
-          setMidiInputId((cur) => {
-            if (cur && now.some((i) => i.id === cur)) return cur;
-            let saved: string | null = null;
-            try {
-              saved = window.localStorage.getItem(MIDI_INPUT_KEY);
-            } catch {
-              /* storage unavailable */
-            }
-            if (saved && now.some((i) => i.id === saved)) return saved;
-            return now[0]?.id ?? cur;
-          });
+          // Preserve enabled ports, including temporarily disconnected devices.
         };
     });
   }, []);
@@ -649,7 +634,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     void getMidiAccess().then((a) => {
       if (cancelled) return;
-      off = subscribe(a, midiInputId, (msg) => {
+      off = subscribe(a, midiInputId, (msg, inputId) => {
         // Hardware mixer: knobs and faders send control-change messages.
         if (msg.type === "cc") {
           const key = `${msg.channel}:${msg.cc}`;
@@ -678,7 +663,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           const target = midiMapRef.current[key];
           if (!target) {
             // Korg 8-channel mixer: faders, knobs and S/M/R buttons follow track order automatically.
-            const portName = midiInputsRef.current.find((p) => p.id === midiInputId)?.name;
+            const portName = midiInputsRef.current.find((p) => p.id === inputId)?.name;
             const hit = controllerAutoMap(portName, msg.cc);
             if (!hit) return;
             const track = tracksRef.current[hit.strip];
@@ -842,6 +827,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           return;
         }
         const { type, pitch, velocity } = msg;
+        const heldKey = `${inputId ?? "midi"}:${msg.channel}:${pitch}`;
         // A track with a MIDI channel set only hears notes on that channel
         // (msg.channel is 0-based; Track.midiChannel is 1-16). Tracks set to
         // "All" hear everything, so a channel-routed instrument wins over them.
@@ -924,7 +910,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
               return note ? [note] : [];
             });
             notes.forEach((note) => recordedNoteIdsRef.current.add(note.id));
-            heldRef.current.set(pitch, { ids: notes.map((note) => note.id), trackId: target.id, t0: performance.now(), startStep: at });
+            heldRef.current.set(heldKey, { ids: notes.map((note) => note.id), trackId: target.id, t0: performance.now(), startStep: at });
             setTracks((ts) =>
               ts.map((t) => (t.id === target.id ? { ...t, notes: [...(t.notes ?? []), ...notes] } : t)),
             );
@@ -932,9 +918,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         } else {
           keyUp(pitch);
           setMidiLearning(false);
-          const held = heldRef.current.get(pitch);
+          const held = heldRef.current.get(heldKey);
           if (!held) return;
-          heldRef.current.delete(pitch);
+          heldRef.current.delete(heldKey);
           const elapsed = Math.round(((performance.now() - held.t0) / 1000 / stepDur) * 4) / 4;
           // A held note may cross bar lines, but never the end of the loop
           // region being recorded.
@@ -956,7 +942,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       cancelled = true;
       off();
     };
-  }, [midiInputId]);
+  }, [midiInputId, midiInputs]);
 
   useEffect(() => {
     if (typeof window !== "undefined" && getEngine().ctx) {

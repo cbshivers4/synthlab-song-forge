@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Usb, RefreshCw } from "lucide-react";
 import { useStudio } from "@/lib/synclab/store";
 import { CONTROLLERS, chosenControllerId, setChosenControllerId } from "@/lib/synclab/controller-profiles";
-import { midiSupported, midiUnsupportedMessage } from "@/lib/synclab/midi";
+import { midiSupported, midiUnsupportedMessage, midiInputEnabled, toggleMidiInput } from "@/lib/synclab/midi";
 import { ControllerLibrary, DevicePicture } from "./ControllerLibrary";
 
 export function MidiSettingsPanel({ onDetect }: { onDetect: () => void }) {
@@ -62,10 +62,12 @@ export function MidiSettingsPanel({ onDetect }: { onDetect: () => void }) {
     </div>
     <div>
       <h4 className="mb-2 text-sm font-semibold">Easy MIDI inputs / Master keyboard input</h4>
-      <RadioGroup value={midiInputId ?? "none"} onValueChange={id => setMidiInput(id === "none" ? null : id)} className="gap-0 border border-border bg-surface">
+      <div className="border border-border bg-surface">
         <div className="grid grid-cols-[minmax(0,1fr)_80px] bg-surface-2 px-3 py-2 text-xs font-semibold"><span>Input port</span><span className="text-right">Enabled</span></div>
-        {[{ id: "none", name: "None — input off" }, { id: "all", name: "All devices" }, ...midiInputs].map(port => <label key={port.id} className="flex min-h-11 cursor-pointer items-center justify-between gap-3 border-t border-border px-3 py-2 text-sm"><span className="min-w-0 break-words">{port.name}</span><RadioGroupItem value={port.id} aria-label={`Use ${port.name}`} /></label>)}
-      </RadioGroup>
+        <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3 border-t border-border px-3 py-2 text-sm"><span>All devices</span><Checkbox aria-label="Use All devices" checked={midiInputId === "all"} onCheckedChange={checked => setMidiInput(checked === true ? "all" : null)} /></label>
+        {midiInputs.map(port => <label key={port.id} className="flex min-h-11 cursor-pointer items-center justify-between gap-3 border-t border-border px-3 py-2 text-sm"><span className="min-w-0 break-words">{port.name}</span><Checkbox checked={midiInputEnabled(midiInputId, port.id)} onCheckedChange={checked => setMidiInput(toggleMidiInput(midiInputId, port.id, checked === true, midiInputs))} aria-label={`Use ${port.name}`} /></label>)}
+        <Button variant="ghost" size="sm" onClick={() => setMidiInput(null)}>Disable all inputs</Button>
+      </div>
       <p className="mt-2 text-xs text-muted-foreground">Standard — notes play the armed / selected instrument. Independent master-keyboard targeting is not available.</p>
     </div>
     <div>
