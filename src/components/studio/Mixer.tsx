@@ -1648,14 +1648,14 @@ function MasterStrip({ level: peak }: { level: number }) {
         </span>
         <ClipLed id="master" compact />
       </div>
-      <div className={cn(ROW.buttons, "grid grid-rows-2 gap-1 px-1")}>
+      <div className={cn(ROW.buttons, "grid grid-cols-2 gap-1 px-1")}>
         <button
           onClick={() => setBus("master", { muted: !master.muted })}
           title={master.muted ? "Muted — click to unmute" : "Mute the main output"}
           aria-label="Mute master"
           aria-pressed={master.muted}
           className={cn(
-            "h-8 w-full rounded-[3px] font-mono text-[13px] font-bold leading-none transition-colors",
+            "col-span-2 h-8 w-full rounded-[3px] font-mono text-[13px] font-bold leading-none transition-colors",
             master.muted
               ? "bg-orange-500 text-black shadow-[0_0_10px_rgba(249,115,22,0.8)]"
               : "bg-black/30 text-muted-foreground hover:text-foreground"
@@ -1669,7 +1669,7 @@ function MasterStrip({ level: peak }: { level: number }) {
           aria-label="Master clip indicator — click to reset"
           aria-pressed={clip}
           className={cn(
-            "h-8 w-full rounded-[3px] font-mono text-[13px] font-bold leading-none transition-colors",
+            "col-span-2 h-8 w-full rounded-[3px] font-mono text-[13px] font-bold leading-none transition-colors",
             clip
               ? "bg-red-500 text-black shadow-[0_0_10px_rgba(239,68,68,0.8)]"
               : "bg-black/30 text-muted-foreground hover:text-foreground"
