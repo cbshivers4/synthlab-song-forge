@@ -9,7 +9,7 @@
 
 # Roadmap
 
-- [ ] Verify visible timeline cuts on desktop and phone, including recordings and pattern regions.
+- [x] Visible timeline cuts: rendering and razor target the same content; small audio pieces retain exact widths with clear seams, and trim handles cannot intercept cuts. Signed-in desktop verified MIDI regions and a real recorded synth waveform splitting into two pieces; sideways phone Split produced three pieces. Screenshots confirmed separate boundaries; 16 focused tests passed and build OK.
 
 - [x] Phone mixer master channel now stands out: accent-tinted face, accent edge plate, outer glow, wider strip and pinned to the right edge so it stays visible while scrolling. The phone console runs the desktop-style layout, so the earlier `.mx-phone`-only master styling never applied; added an `mx-phone-master` marker on touch layouts. Signed-in sideways-phone check verified sticky position, accent border/glow and distinct header; desktop console confirmed unchanged (marker absent); build OK.
 - [x] Add shared app keyboard shortcuts and searchable Settings reference; signed-in desktop/phone verified reference/search, text-entry safety, arm toggle, mixer open/close and manual cloud saving. Fixed Ctrl+Shift+K search conflict and phone reference opening; 11 focused tests passed, build OK. Physical keyboard/device checks remain hardware-dependent.
