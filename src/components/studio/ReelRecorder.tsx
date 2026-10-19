@@ -46,7 +46,8 @@ export function ReelRecorder() {
     recorder.setMasterMetering(master);
     return () => recorder.setMasterMetering(false);
   }, [recorder, master]);
-  const active = state.mode === "recording" || state.mode === "playing" || (master && (transport.playing || transport.recording));
+  const rewinding = state.mode === "rewinding";
+  const active = rewinding || state.mode === "recording" || state.mode === "playing" || (master && (transport.playing || transport.recording));
   const locked = state.busy || saving;
   const recording = state.mode === "recording";
   /** Tape progress 0..1: supply reel starts full and empties as the song/tape plays or records. */
@@ -81,7 +82,7 @@ export function ReelRecorder() {
   };
   return <section className="reel-recorder mx-auto w-full max-w-[900px]" aria-label="Reel-to-reel recorder">
     <header className="tape-brand flex flex-wrap items-center justify-between gap-2 px-4 py-3"><div><h2 className="font-display text-lg font-semibold">SYNCLAB <span className="text-primary">R2R</span></h2><p className="font-mono text-[10px] text-muted-foreground">STEREO TAPE RECORDER · DETROIT</p></div><span role="status" className={`font-mono text-xs ${recording ? "text-destructive" : "text-primary"}`}>{state.busy ? "PREPARING" : saving ? "SAVING" : recording ? "RECORDING" : master ? transport.playing ? "PLAYING" : "STOPPED" : state.mode.toUpperCase()}</span></header>
-    <div className="tape-deck" data-moving={active} style={{ "--reel-time": `${3 / state.speed}s` } as CSSProperties}><div className="tape-reels"><Reel moving={active} fill={1 - progress} /><Reel moving={active} right fill={progress} /></div>
+    <div className="tape-deck" data-moving={active} style={{ "--reel-time": rewinding ? "0.4s" : `${3 / state.speed}s` } as CSSProperties}><div className="tape-reels"><Reel moving={active} fill={1 - progress} /><Reel moving={active} right fill={progress} /></div>
       <svg className="tape-path" viewBox="0 0 600 80" aria-hidden="true"><path d="M88 5L176 60H424L512 5" /><circle cx="176" cy="60" r="13" /><circle cx="424" cy="60" r="13" /><rect x="267" y="41" width="66" height="24" rx="3" /><path d="M286 45V60M302 45V60M318 45V60" /></svg>
       <div className="tape-display flex flex-wrap items-center justify-between gap-3"><span className="font-mono text-xs">{master || state.source === "song" ? "SONG MASTER" : "MIC / LINE"}</span><output aria-label="Tape counter" className="font-mono text-2xl text-primary">{clock(master ? transport.step * stepSeconds(transport.bpm) : state.position)}</output><span aria-label="Song position" className="font-mono text-xs text-muted-foreground">{master ? `BAR ${Math.floor(transport.step / stepsPerBar()) + 1} · BEAT ${Math.floor((transport.step % stepsPerBar()) / STEPS_PER_BEAT) + 1}${recording ? ` · TAPE ${clock(state.position)}` : ""}` : clock(state.duration)}</span></div>
     </div>
@@ -94,7 +95,7 @@ export function ReelRecorder() {
         <Button variant="outline" className="h-14 flex-col gap-1 text-[10px]" disabled={transport.playing} onClick={() => setTransport({ step: transport.step + stepsPerBar() })} aria-label="Forward one bar"><SkipForward />FWD</Button>
         <Button variant={recording || transport.recording ? "destructive" : "outline"} className={`h-14 flex-col gap-1 border-destructive/50 text-[10px] ${recording || transport.recording ? "text-destructive-foreground" : "text-destructive"}`} disabled={locked || recording} onClick={() => void masterRecord()} aria-label="Record timeline to tape"><Circle className="fill-current" />REC</Button>
       </div> : <div className="tape-buttons mt-3 grid grid-cols-5 gap-2">
-        <Button variant="outline" className="h-14 flex-col gap-1 text-[10px]" disabled={locked || recording || !state.hasTape} onClick={() => void recorder.seek(0)} title="Rewind to start" aria-label="Rewind tape"><SkipBack />REW</Button>
+        <Button variant={rewinding ? "default" : "outline"} className="h-14 flex-col gap-1 text-[10px]" disabled={locked || recording || !state.hasTape || state.position <= 0} onClick={() => void recorder.rewind()} title="Rewind tape — plays the tape backward at high speed" aria-label="Rewind tape"><SkipBack />REW</Button>
         <Button variant="outline" className="h-14 flex-col gap-1 text-[10px]" disabled={locked} onClick={() => void recorder.stop()} aria-label="Stop tape"><Square className="fill-current" />STOP</Button>
         <Button variant={state.mode === "playing" ? "default" : "outline"} className="h-14 flex-col gap-1 text-[10px]" disabled={locked || recording || !state.hasTape} onClick={() => void recorder.play()} aria-label={state.mode === "playing" ? "Pause tape" : "Play tape"}>{state.mode === "playing" ? <Pause /> : <Play />}{state.mode === "playing" ? "PAUSE" : "PLAY"}</Button>
         <Button variant="outline" className="h-14 flex-col gap-1 text-[10px]" disabled={locked || recording || !state.hasTape} onClick={() => void recorder.seek(state.position + 10)} title="Forward ten seconds" aria-label="Forward tape ten seconds"><SkipForward />FWD</Button>

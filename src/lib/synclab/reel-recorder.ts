@@ -3,7 +3,7 @@ import { openMic, releaseMic, getInputChannel } from "./mic";
 import type { Capture } from "./bounce";
 import { clampTapePosition, joinTapeChunks, tapeCurve } from "./reel-audio";
 
-export type TapeMode = "stopped" | "recording" | "playing" | "paused";
+export type TapeMode = "stopped" | "recording" | "playing" | "paused" | "rewinding";
 export interface TapeState {
   mode: TapeMode; busy: boolean; ready: boolean; source: "input" | "song";
   position: number; duration: number; levelL: number; levelR: number; clipped: boolean;
@@ -51,6 +51,8 @@ class ReelRecorder {
   private chunks: { left: Float32Array[]; right: Float32Array[]; frames: number } = { left: [], right: [], frames: 0 };
   private capture: Capture | null = null;
   private player: AudioBufferSourceNode | null = null;
+  private reversed: AudioBuffer | null = null;
+  private rewindRate = 6;
   private playbackStarted = 0;
   private playbackOffset = 0;
   private finish: (() => void) | null = null;
@@ -84,6 +86,9 @@ class ReelRecorder {
       position = this.playbackOffset + (this.ctx.currentTime - this.playbackStarted) * this.state.speed;
       if (this.state.loop && this.state.duration) position %= this.state.duration;
       position = clampTapePosition(position, this.state.duration);
+    }
+    if (this.state.mode === "rewinding" && this.ctx) {
+      position = Math.max(0, this.playbackOffset - (this.ctx.currentTime - this.playbackStarted) * this.rewindRate);
     }
     const readMaster = this.masterMetering && this.state.mode !== "recording" && this.state.mode !== "playing";
     const levels = [0, 1].map((channel) => {
@@ -184,10 +189,35 @@ class ReelRecorder {
         this.worklet?.port.postMessage("stop");
       });
       const left = joinTapeChunks(this.chunks.left), right = joinTapeChunks(this.chunks.right);
-      if (left.length) this.capture = { left, right, sampleRate: this.ctx.sampleRate };
+      if (left.length) { this.capture = { left, right, sampleRate: this.ctx.sampleRate }; this.reversed = null; }
       this.chunks = { left: [], right: [], frames: 0 };
       this.update({ busy: false, mode: "stopped", position: 0, duration: (this.capture?.left.length ?? 0) / this.ctx.sampleRate, hasTape: !!this.capture });
-    } else { this.stopPlayer(); this.update({ mode: "stopped", position: 0 }); }
+    } else if (this.state.mode === "rewinding") { this.tick(); this.stopPlayer(); this.update({ mode: "stopped" }); }
+    else { this.stopPlayer(); this.update({ mode: "stopped", position: 0 }); }
+  };
+  /** Audible rewind: plays the tape backward at high speed from the current position down to the start. */
+  rewind = async () => {
+    if (!this.capture || this.state.busy || this.state.mode === "recording" || this.state.mode === "rewinding") return;
+    const position = clampTapePosition(this.state.position, this.state.duration);
+    if (position <= 0) { this.update({ position: 0, mode: "stopped" }); return; }
+    try {
+      const ctx = this.context(); await ctx.resume();
+      this.stopPlayer();
+      if (!this.reversed) {
+        const buffer = ctx.createBuffer(2, this.capture.left.length, this.capture.sampleRate);
+        buffer.copyToChannel(this.capture.left.slice().reverse() as Float32Array<ArrayBuffer>, 0);
+        buffer.copyToChannel(this.capture.right.slice().reverse() as Float32Array<ArrayBuffer>, 1);
+        this.reversed = buffer;
+      }
+      this.rewindRate = 6 * this.state.speed;
+      const player = ctx.createBufferSource(); player.buffer = this.reversed; player.playbackRate.value = this.rewindRate;
+      if (this.split && this.drive) { try { this.drive.disconnect(this.split); } catch { /* not connected */ } }
+      player.connect(this.output ?? ctx.destination);
+      this.playbackOffset = position; this.playbackStarted = ctx.currentTime;
+      this.player = player;
+      player.onended = () => { if (this.player === player) { this.player = null; player.disconnect(); this.update({ mode: "stopped", position: 0 }); if (this.split) this.drive?.connect(this.split); } };
+      player.start(0, Math.max(0, this.state.duration - position)); this.update({ mode: "rewinding", error: null });
+    } catch (error) { this.update({ error: error instanceof Error ? error.message : "Rewind failed." }); }
   };
   private stopPlayer() { const player = this.player; this.player = null; if (player) { player.onended = null; try { player.stop(); } catch { /* ended */ } player.disconnect(); } if (this.split) this.drive?.connect(this.split); }
   play = async () => {
@@ -217,7 +247,7 @@ class ReelRecorder {
     if (this.state.busy || this.state.mode === "recording") return;
     void import("./media-library").then(({ retainMediaInBackground }) => retainMediaInBackground(file, file.name));
     this.update({ busy: true, error: null }); this.stopPlayer();
-    try { const buffer = await this.context().decodeAudioData(await file.arrayBuffer()); this.capture = { left: buffer.getChannelData(0).slice(), right: buffer.getChannelData(buffer.numberOfChannels > 1 ? 1 : 0).slice(), sampleRate: buffer.sampleRate }; this.update({ name: file.name.replace(/\.[^.]+$/, ""), mode: "stopped", position: 0, duration: buffer.duration, hasTape: true, clipped: false }); }
+    try { const buffer = await this.context().decodeAudioData(await file.arrayBuffer()); this.capture = { left: buffer.getChannelData(0).slice(), right: buffer.getChannelData(buffer.numberOfChannels > 1 ? 1 : 0).slice(), sampleRate: buffer.sampleRate }; this.reversed = null; this.update({ name: file.name.replace(/\.[^.]+$/, ""), mode: "stopped", position: 0, duration: buffer.duration, hasTape: true, clipped: false }); }
     catch { this.update({ mode: "stopped", error: "This audio file cannot be decoded in your browser. Try WAV or MP3." }); }
     finally { this.update({ busy: false }); }
   };
