@@ -1108,6 +1108,8 @@ const padDef = (kind: DrumPad["kind"], name: string, steps: number, kit: DrumKit
 export const DRUM_KITS: { id: DrumKitId; name: string; desc: string; decay: number; category: string }[] = [
   { id: "909", name: "TR-909", desc: "Punchy techno classic", decay: 0.5, category: "Classic Machines" },
   { id: "808", name: "TR-808", desc: "Long booming sub kick", decay: 0.9, category: "Classic Machines" },
+  { id: "727", name: "TR-727", desc: "8-bit congas, agogo and cowbell", decay: 0.4, category: "Classic Machines" },
+  { id: "r8", name: "R-8", desc: "Crisp PCM-style shells and cymbals", decay: 0.55, category: "Classic Machines" },
   { id: "707", name: "TR-707", desc: "Dry digital house kit", decay: 0.4, category: "Classic Machines" },
   { id: "606", name: "TR-606", desc: "Thin snappy drumatix", decay: 0.35, category: "Classic Machines" },
   { id: "cr78", name: "CR-78", desc: "Vintage preset rhythm box", decay: 0.3, category: "Classic Machines" },

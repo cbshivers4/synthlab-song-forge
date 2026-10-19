@@ -9,6 +9,7 @@ import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Knob } from "./Knob";
 import { useStudio } from "@/lib/synclab/store";
+import { factoryKitPad } from "@/lib/synclab/vintage-drums";
 import { DRUM_KITS, GENRES } from "@/lib/synclab/presets";
 import type { DrumKitId } from "@/lib/synclab/types";
 import { getEngine } from "@/lib/synclab/audio-engine";
@@ -209,7 +210,7 @@ export function DrumMachine({ track }: { track: Track }) {
   const kit = (pads[0]?.kit ?? "909") as DrumKitId;
   const loadKit = (id: DrumKitId) => {
     const def = DRUM_KITS.find((k) => k.id === id);
-    pads.forEach((p) => updatePad(track.id, p.id, { kit: id, decay: def?.decay ?? p.decay }));
+    pads.forEach((p) => updatePad(track.id, p.id, factoryKitPad(p, id, def?.decay ?? p.decay)));
     toast.success(`${def?.name ?? id} kit loaded`, { description: "Patterns are kept — only the sounds change." });
   };
 
@@ -368,6 +369,7 @@ export function DrumMachine({ track }: { track: Track }) {
 
       {/* Toolbar */}
       <div className="drum-kit-tools flex flex-wrap items-center gap-2">
+        <span className="font-mono text-[10px] text-muted-foreground">ORIGINAL SYNTHESIS · MACHINE-INSPIRED</span>
         <Select value={kit} onValueChange={(v) => loadKit(v as DrumKitId)}>
           <SelectTrigger className="w-56">
             <SelectValue placeholder="Kit" />

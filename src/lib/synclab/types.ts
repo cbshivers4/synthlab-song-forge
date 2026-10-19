@@ -94,6 +94,7 @@ export interface FilterStage {
 }
 
 export interface SynthPatch {
+  touch?: { root: number; octave: number; scale: string; rate: number; gate: number };
   name: string;
   oscillators: OscillatorParams[];
   noise: number;
@@ -148,6 +149,8 @@ export type DrumKitId =
   | "909"
   | "808"
   | "707"
+  | "727"
+  | "r8"
   | "606"
   | "linn"
   | "acoustic"
