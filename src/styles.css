@@ -1073,8 +1073,8 @@ html[data-reduce-motion] *, html[data-reduce-motion] *::before, html[data-reduce
 .phone-console .mx-phone .mx-fader [role="slider"] { width: 30px; height: 34px; min-width: 30px; min-height: 34px; border-radius: 3px; }
 .phone-console .mx-phone .mx-output-dock { position: sticky; right: 0; z-index: 10; flex-shrink: 0; background: var(--mx-a); border-left: 3px solid var(--mixer-output-accent, var(--primary)); box-shadow: -6px 0 14px rgb(0 0 0 / 0.45); }
 .phone-console .mx-phone .mx-master { width: 150px; background: var(--mx-a) !important; }
-.phone-console .mx-phone .mx-master .mx-row-name { background: color-mix(in oklab, var(--mixer-output-accent, var(--primary)) 22%, var(--mx-a)); border-bottom: 2px solid var(--mixer-output-accent, var(--primary)); }
-.phone-console .mx-phone .mx-master .mx-row-name * { color: var(--foreground); font-weight: 800; }
+.phone-console .mx-phone .mx-master > div:first-child { background: color-mix(in oklab, var(--mixer-output-accent, var(--primary)) 30%, var(--mx-a)) !important; border-bottom: 2px solid var(--mixer-output-accent, var(--primary)); font-size: 10px; }
+.phone-console .mx-phone .mx-master > div:first-child * { color: var(--foreground); font-weight: 800; }
 
 /* Phone hardware feel: raised buttons, knobs and sliders that read as touchable. */
 .phone-console button, .phone-console [role="button"], .phone-console [role="combobox"] { touch-action: manipulation; }
