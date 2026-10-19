@@ -88,6 +88,25 @@ function createWindow() {
   // The studio sets its own document title; keep the product name in the window frame.
   win.on("page-title-updated", (e) => e.preventDefault());
 
+  // Electron needs an explicit chooser; never silently select nearby hardware.
+  let choosingBluetooth = false;
+  win.webContents.on("select-bluetooth-device", (event, devices, callback) => {
+    event.preventDefault();
+    if (choosingBluetooth || !devices.length) return;
+    choosingBluetooth = true;
+    dialog.showMessageBox(win, {
+      type: "question",
+      title: "Connect Bluetooth MIDI",
+      message: "Choose your nearby Bluetooth LE MIDI controller",
+      detail: "Pair audio-only headphones and speakers in system Bluetooth settings.",
+      buttons: [...devices.map(device => device.deviceName || "Unnamed Bluetooth device"), "Cancel"],
+      cancelId: devices.length,
+      noLink: true,
+    }).then(({ response }) => callback(devices[response]?.deviceId || ""))
+      .catch(() => callback(""))
+      .finally(() => { choosingBluetooth = false; });
+  });
+
   win.loadURL(APP_URL);
 
   // External links open in the user's browser, not inside the studio window.
@@ -122,6 +141,7 @@ app.whenReady().then(async () => {
   const allowed = new Set(["media", "audioCapture", "midi", "midiSysex", "speaker-selection"]);
   session.defaultSession.setPermissionRequestHandler((_wc, permission, cb) => cb(allowed.has(permission)));
   session.defaultSession.setPermissionCheckHandler((_wc, permission) => allowed.has(permission));
+  session.defaultSession.setBluetoothDevicePermissionHandler(details => details.origin === new URL(APP_URL).origin);
   if (process.platform === "darwin") {
     try {
       await systemPreferences.askForMediaAccess("microphone");

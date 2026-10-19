@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrig
 import { Slider } from "@/components/ui/slider";
 import { Knob } from "./Knob";
 import { useStudio } from "@/lib/synclab/store";
-import { SYNTH_PRESETS, defaultPatch } from "@/lib/synclab/presets";
+import { SYNTH_PRESETS, defaultPatch, applyPreset } from "@/lib/synclab/presets";
 import type { EnvelopeParams, LfoWave, ModDest, ModSource, OscWave, SynthPatch, Track } from "@/lib/synclab/types";
 import { uid } from "@/lib/synclab/presets";
 import { toast } from "sonner";
@@ -130,7 +130,11 @@ function SynthTrackEditor({ track }: { track: Track }) {
       <SkinControls skinKey="synth" image />
       <MidiLearnStrip id={track.id} label={`${track.name} — every knob below also has its own MIDI button`} />
       <div className="flex flex-wrap items-center gap-2">
-        <Select value={patch.name} onValueChange={(v) => loadPreset(track.id, v)}>
+        <Select value={patch.name} onValueChange={(v) => {
+          const selectedPatch = userPresets.find(p => p.name === v) ?? applyPreset(v);
+          loadPreset(track.id, v);
+          previewNote(track.id, 60, 0.75, false, selectedPatch);
+        }}>
           <SelectTrigger className="w-64">
             <SelectValue placeholder="Browse presets" />
           </SelectTrigger>
@@ -165,7 +169,7 @@ function SynthTrackEditor({ track }: { track: Track }) {
         >
           <Save className="size-4" /> SAVE PRESET
         </Button>
-        <Button variant="secondary" onClick={() => previewNote(track.id, 60)}>
+        <Button variant="secondary" onClick={() => previewNote(track.id, 60, 0.75, false, patch)}>
           Audition
         </Button>
         <Button variant={showKeyboard ? "secondary" : "outline"} aria-pressed={showKeyboard} onClick={() => setShowKeyboard((value) => !value)}>
