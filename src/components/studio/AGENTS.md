@@ -1,6 +1,6 @@
 # Studio components
 
-TouchSynth is a 5-lane loop station (drums, bass, poly, melody, stabs/arp from TOUCH_LANES) in shared synth tabs; gated notes use previewNote once per note, drums lane uses engine.playDrum, pointer movement updates patch parameters at 20 fps, and lane/scale/key/rate/gate plus recorded lane loops persist in patch.touch. Loop playback uses one interval timer with a DOM playhead, and Send to timeline flattens loops via loopsToNotes into track notes at the playhead without duplicate capture or audio engines. Desktop and phone shortcuts select/reuse a dedicated Touch Synth track whose editor initially opens the performance tab.
+TouchSynth keeps five lanes in patch.touch and uses shared previewNote/playDrum, one loop timer and a DOM playhead. Force poly preview voices so lanes overlap; align overdubs with that loop clock. Grid edits use placeLoopNote/eraseLoopNote to retain other notes; patch/lane changes preserve touch settings. Send to timeline reuses loopsToNotes without capture or extra engines. Desktop/phone shortcuts reuse a dedicated track and open its performance tab.
 
 Hardware presentation uses shared Knob parts and CSS device tokens scoped by synth style/effect kind; indicators remain parameter/signal-driven and skins stay on the surround to preserve customization without simulated audio or duplicate controls.
 

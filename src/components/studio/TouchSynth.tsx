@@ -153,9 +153,10 @@ export function TouchSynth({ track }: { track: Track }) {
   };
 
   const laneNotes = loops[lane.id] ?? [];
+  const pitchCount = (TOUCH_SCALES[settings.scale]?.length ?? 5) * 2 + 1;
   const pitches = lane.drums
     ? lane.drums.map((_, i) => i).reverse()
-    : Array.from({ length: (TOUCH_SCALES[settings.scale]?.length ?? 5) * 2 + 1 }, (_, i, all) => touchPitch((all.length - 1 - i) / (all.length - 1), settings.root, settings.octave, settings.scale));
+    : Array.from({ length: pitchCount }, (_, i) => touchPitch((pitchCount - 1 - i) / (pitchCount - 1), settings.root, settings.octave, settings.scale));
   const editCell = (step: number, pitch: number) => {
     const s = latest.current;
     const index = (s.loops[s.lane.id] ?? []).findIndex(n => n.step === step && n.pitch === pitch);
