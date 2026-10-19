@@ -689,7 +689,6 @@ function RecordingClip({ track }: { track: Track }) {
 }
 
 function Lane({ track }: { track: Track }) {
-  const { updateTrack } = useStudio();
   const isMidi = track.kind === "instrument" || track.kind === "midi" || track.kind === "sampler";
   const live = track.recording ? <RecordingClip track={track} /> : null;
   // While recording, the lane shows only the incoming take, never notes.
