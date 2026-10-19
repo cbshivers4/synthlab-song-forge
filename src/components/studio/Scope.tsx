@@ -1,6 +1,7 @@
 import { levelColor, peakOf, spectrumColor, dbColor, LEVEL_GREEN, LEVEL_ORANGE, LEVEL_RED } from "@/lib/synclab/level-colors";
 import { useEffect, useRef, useState } from "react";
 import { getEngine } from "@/lib/synclab/audio-engine";
+import { waveformDisplayGain } from "@/lib/synclab/signal-display";
 
 type Mode = "wave" | "spectrum";
 
@@ -53,13 +54,15 @@ export function Scope({
       const engine = getEngine();
       if (modeRef.current === "wave") {
         const data = engine.getScopeWave(scopeId);
-        ctx.strokeStyle = levelColor(peakOf(data));
+        const peak = peakOf(data);
+        const displayGain = waveformDisplayGain(peak);
+        ctx.strokeStyle = levelColor(peak);
         ctx.lineWidth = 1.4;
         ctx.beginPath();
         if (data) {
           for (let i = 0; i < data.length; i++) {
             const x = (i / (data.length - 1)) * w;
-            const y = h / 2 - Math.max(-1, Math.min(1, data[i] ?? 0)) * (h / 2 - 2);
+            const y = h / 2 - Math.max(-1, Math.min(1, (data[i] ?? 0) * displayGain)) * (h / 2 - 2);
             if (i === 0) ctx.moveTo(x, y);
             else ctx.lineTo(x, y);
           }
@@ -110,7 +113,7 @@ export function Scope({
         className="panel relative block w-full overflow-hidden bg-surface-2/50 text-[color:var(--device-accent,var(--primary))]"
         style={{ height }}
       >
-        <canvas ref={ref} className="h-full w-full" />
+        <canvas ref={ref} className="h-full w-full" aria-label="Live channel or effect waveform" role="img" />
         <span className="absolute left-1 top-0.5 font-mono text-[7px] uppercase tracking-widest text-muted-foreground">
           {mode === "wave" ? "SCOPE" : "SPEC"}
         </span>
@@ -120,7 +123,7 @@ export function Scope({
 
   return (
     <div className="panel relative overflow-hidden bg-surface-2/50" style={{ height }}>
-      <canvas ref={ref} className="h-full w-full" />
+      <canvas ref={ref} className="h-full w-full" aria-label="Live channel or effect waveform" role="img" />
       <div className="absolute right-1 top-1 flex gap-1">
         {(["wave", "spectrum"] as Mode[]).map((m) => (
           <button

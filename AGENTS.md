@@ -19,7 +19,7 @@ Bus/send insert edits crossfade parallel paths after the bus scope/send output; 
 Printed instrument and drum takes replace overlapping clips by default; only explicit overdub stacks them, so ordinary re-recording does not double playback.
 - Computer typing keys (src/lib/synclab/qwerty.ts) play the armed/selected instrument via previewNote, which both sounds and captures notes; keep it the single note path so recording stays consistent.
 Detached panels use synchronous user-click window.open + React portals for shared audio/state; child windows need draggable headers for monitor moves without reloads.
-Bottom displays read live analyser taps at 20 fps. Generator waves use PCM/offline voices, never decoration; stem masks run in a worker for smooth playback.
+Bottom displays read live analyser taps at 20 fps; scopes magnify quiet signals only visually, while meters retain true float-sample dB levels. Generator waves use PCM/offline voices, never decoration; stem masks run in a worker for smooth playback.
 Workspace retains cloud projects, device recents, saved/starter templates and storage/open actions.
 - GRANT EXECUTE on RLS security-definer helpers to anon/authenticated/service_role; missing grants break policy reads.
 Panel wallpaper uses one bundled JPEG, dark overlay and per-panel skins without external images.

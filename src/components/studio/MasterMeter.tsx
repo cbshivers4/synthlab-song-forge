@@ -1,6 +1,7 @@
 import { levelColor, peakOf, spectrumColor, dbColor, LEVEL_GREEN, LEVEL_ORANGE, LEVEL_RED } from "@/lib/synclab/level-colors";
 import { useEffect, useRef, useState } from "react";
 import { getEngine } from "@/lib/synclab/audio-engine";
+import { waveformDisplayGain } from "@/lib/synclab/signal-display";
 
 type ScopeMode = "osc" | "spectrum";
 type ScopeChan = "stereo" | "left" | "right";
@@ -126,6 +127,7 @@ export function MasterMeter() {
         const { c, w, h } = size(sc);
         const { mode: m, chan: ch } = opts.current;
         const chans = ch === "stereo" ? [0, 1] : ch === "left" ? [0] : [1];
+        const displayGain = waveformDisplayGain(Math.max(...chans.map(i => peakOf(wav[i]))));
         c.lineWidth = 1.2;
         for (const i of chans) {
           c.strokeStyle = levelColor(peakOf(wav[i]));
@@ -138,7 +140,7 @@ export function MasterMeter() {
               const n = Math.min(d.length, 1024);
               for (let k = 0; k < n; k++) {
                 const x = (k / (n - 1)) * w;
-                const yv = h / 2 - Math.max(-1, Math.min(1, d[k]!)) * (h / 2 - 1);
+                const yv = h / 2 - Math.max(-1, Math.min(1, (d[k] ?? 0) * displayGain)) * (h / 2 - 1);
                 if (k === 0) c.moveTo(x, yv); else c.lineTo(x, yv);
               }
             }
