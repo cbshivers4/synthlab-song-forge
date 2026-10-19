@@ -1,19 +1,19 @@
 import { useEffect, useRef, useState, type PointerEvent } from 'react';
-import { ArrowRightToLine, Circle, Eraser, Hand, Play, Square } from 'lucide-react';
+import { ArrowRightToLine, Circle, Eraser, Hand, Pencil, Play, Square } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Knob } from './Knob';
 import { useStudio } from '@/lib/synclab/store';
 import { applyPreset } from '@/lib/synclab/presets';
 import { getEngine } from '@/lib/synclab/audio-engine';
-import { laneById, loopsToNotes, touchPitch, touchCutoff, TOUCH_LANES, TOUCH_LOOP_STEPS, TOUCH_SCALES, TOUCH_SOUNDS, type TouchLoops } from '@/lib/synclab/touch-synth';
+import { laneById, loopsToNotes, placeLoopNote, eraseLoopNote, touchPitch, touchCutoff, TOUCH_LANES, TOUCH_LOOP_STEPS, TOUCH_SCALES, TOUCH_SOUNDS, type TouchLoops } from '@/lib/synclab/touch-synth';
 import type { Track } from '@/lib/synclab/types';
 
 const KEYS = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
 const drumPad = (kind: string) => ({ id: `touch-${kind}`, name: kind, kind: kind as 'kick', volume: 1, pan: 0, pitch: 0, decay: .4, muted: false, solo: false, steps: [] as number[] });
 
 export function TouchSynth({ track }: { track: Track }) {
-  const { previewNote, updatePatch, loadPreset, transport, updateTrack } = useStudio();
+  const { previewNote, updatePatch, transport, updateTrack } = useStudio();
   const settings = track.patch?.touch ?? { root: 0, octave: 3, scale: 'Minor pentatonic', rate: 2, gate: .65 };
   const lane = laneById(settings.lane ?? 'bass');
   const loops: TouchLoops = settings.loops ?? {};
@@ -23,6 +23,7 @@ export function TouchSynth({ track }: { track: Track }) {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const loopTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const recStart = useRef<number | null>(null);
+  const loopStart = useRef<number | null>(null);
   const pos = useRef({ x: .5, y: .5 });
   const marker = useRef<HTMLDivElement>(null);
   const playhead = useRef<HTMLDivElement>(null);
@@ -31,6 +32,7 @@ export function TouchSynth({ track }: { track: Track }) {
   const [recording, setRecording] = useState(false);
   const [playingLoops, setPlayingLoops] = useState(false);
   const [readout, setReadout] = useState('—');
+  const [editMode, setEditMode] = useState<'draw' | 'erase'>('draw');
   const save = (values: Partial<typeof settings>) => updatePatch(track.id, { touch: { ...settings, ...values } });
 
   const stopPad = () => {
@@ -42,6 +44,9 @@ export function TouchSynth({ track }: { track: Track }) {
   const stopLoops = () => {
     if (loopTimer.current) clearInterval(loopTimer.current);
     loopTimer.current = null;
+    loopStart.current = null;
+    recStart.current = null;
+    setRecording(false);
     setPlayingLoops(false);
     if (playhead.current) playhead.current.style.left = '0%';
   };
@@ -49,9 +54,9 @@ export function TouchSynth({ track }: { track: Track }) {
 
   const recordNote = (step: number, pitch: number, length: number) => {
     const s = latest.current;
-    const laneLoops = [...(s.loops[s.lane.id] ?? [])];
-    laneLoops.push({ step, pitch, length, vel: .9 });
-    s.updatePatch(s.track.id, { touch: { ...s.settings, loops: { ...s.loops, [s.lane.id]: laneLoops } } });
+    const next = placeLoopNote(s.loops, s.lane.id, { step, pitch, length, vel: .9 });
+    latest.current = { ...s, loops: next, settings: { ...s.settings, loops: next } };
+    s.updatePatch(s.track.id, { touch: { ...s.settings, loops: next } });
   };
   const recStep = () => {
     if (recStart.current == null) return null;
@@ -70,7 +75,7 @@ export function TouchSynth({ track }: { track: Track }) {
       return;
     }
     const cutoff = touchCutoff(pos.current.y);
-    const patch = { ...s.track.patch, cutoff, resonance: 1 + pos.current.y * 5, arp: { ...s.track.patch.arp, on: false } };
+    const patch = { ...s.track.patch, voiceMode: 'poly' as const, cutoff, resonance: 1 + pos.current.y * 5, arp: { ...s.track.patch.arp, on: false } };
     s.previewNote(s.track.id, pitch, length, false, patch);
     s.updatePatch(s.track.id, { cutoff, resonance: patch.resonance });
     setReadout(`${KEYS[pitch % 12]}${Math.floor(pitch / 12) - 1} · ${Math.round(cutoff)} Hz`);
@@ -80,8 +85,8 @@ export function TouchSynth({ track }: { track: Track }) {
     const s = latest.current;
     if (!s.track.patch) return;
     const pitch = s.lane.drums
-      ? pos.current.x * (s.lane.drums.length - 1)
-      : touchPitch(pos.current.x, s.settings.root, s.lane.octave, s.settings.scale);
+      ? Math.round(pos.current.x * (s.lane.drums.length - 1))
+      : touchPitch(pos.current.x, s.settings.root, s.settings.octave, s.settings.scale);
     const length = (60 / s.transport.bpm / s.settings.rate) * s.settings.gate;
     playHit(pitch, length);
     const step = recStep();
@@ -94,33 +99,34 @@ export function TouchSynth({ track }: { track: Track }) {
     const s = latest.current;
     const stepDur = 60 / s.transport.bpm / 4;
     let step = 0;
+    loopStart.current = performance.now();
     setPlayingLoops(true);
-    loopTimer.current = setInterval(() => {
+    const tick = () => {
       const cur = latest.current;
       if (playhead.current) playhead.current.style.left = `${(step / TOUCH_LOOP_STEPS) * 100}%`;
       for (const l of TOUCH_LANES) {
         for (const n of cur.loops[l.id] ?? []) {
           if (n.step !== step) continue;
-          const prevLane = cur.lane;
           if (l.drums) {
             const kind = l.drums[Math.max(0, Math.min(l.drums.length - 1, Math.round(n.pitch)))] ?? 'kick';
             getEngine().playDrum(cur.track.id, drumPad(kind), n.vel);
           } else if (cur.track.patch) {
-            const patch = { ...applyPreset(l.sound), arp: { ...cur.track.patch.arp, on: false } };
+            const patch = { ...applyPreset(l.sound), voiceMode: 'poly' as const, arp: { ...cur.track.patch.arp, on: false } };
             cur.previewNote(cur.track.id, n.pitch, n.length * stepDur, false, patch);
           }
-          void prevLane;
         }
       }
       step = (step + 1) % TOUCH_LOOP_STEPS;
-    }, stepDur * 1000);
+    };
+    tick();
+    loopTimer.current = setInterval(tick, stepDur * 1000);
   };
 
   const toggleRecord = () => {
     if (recording) { recStart.current = null; setRecording(false); return; }
-    recStart.current = performance.now();
-    setRecording(true);
     if (!playingLoops) startLoops();
+    recStart.current = loopStart.current ?? performance.now();
+    setRecording(true);
   };
   const clearLane = () => {
     const s = latest.current;
@@ -147,6 +153,18 @@ export function TouchSynth({ track }: { track: Track }) {
   };
 
   const laneNotes = loops[lane.id] ?? [];
+  const pitches = lane.drums
+    ? lane.drums.map((_, i) => i).reverse()
+    : Array.from({ length: (TOUCH_SCALES[settings.scale]?.length ?? 5) * 2 + 1 }, (_, i, all) => touchPitch((all.length - 1 - i) / (all.length - 1), settings.root, settings.octave, settings.scale));
+  const editCell = (step: number, pitch: number) => {
+    const s = latest.current;
+    const index = (s.loops[s.lane.id] ?? []).findIndex(n => n.step === step && n.pitch === pitch);
+    const next = index >= 0 ? eraseLoopNote(s.loops, s.lane.id, index)
+      : editMode === 'draw' ? placeLoopNote(s.loops, s.lane.id, { step, pitch, length: 4 / s.settings.rate * s.settings.gate, vel: .9 }) : s.loops;
+    latest.current = { ...s, loops: next, settings: { ...s.settings, loops: next } };
+    s.updatePatch(s.track.id, { touch: { ...s.settings, loops: next } });
+    if (index < 0 && editMode === 'draw') playHit(pitch, 60 / s.transport.bpm / s.settings.rate * s.settings.gate);
+  };
   const totalNotes = TOUCH_LANES.reduce((n, l) => n + (loops[l.id]?.length ?? 0), 0);
   return <section className="min-w-0 space-y-3" aria-label="Touch synth">
     <header className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-2">
@@ -157,17 +175,17 @@ export function TouchSynth({ track }: { track: Track }) {
       {TOUCH_LANES.map((l) => {
         const count = loops[l.id]?.length ?? 0;
         const selected = l.id === lane.id;
-        return <button key={l.id} role="tab" aria-selected={selected} onClick={() => { stopPad(); save({ lane: l.id, octave: l.octave }); if (!l.drums) { const patch = applyPreset(l.sound); loadPreset(track.id, l.sound); previewNote(track.id, 60 + settings.root, .3, false, patch); } }}
+        return <Button variant="outline" key={l.id} role="tab" aria-selected={selected} onClick={() => { stopPad(); updatePatch(track.id, { ...(!l.drums ? applyPreset(l.sound) : {}), touch: { ...settings, lane: l.id, octave: l.octave } }); }}
           className={`min-w-0 rounded-md border px-1 py-2 font-mono text-[10px] font-bold transition-colors ${selected ? 'border-transparent text-background' : 'border-border text-muted-foreground hover:text-foreground'}`}
           style={selected ? { background: l.color } : { borderColor: `${l.color}66` }}>
           <span className="block truncate">{l.label}</span>
           <span className="block text-[9px] font-normal">{count} notes</span>
-        </button>;
+        </Button>;
       })}
     </div>
     <div className="flex flex-wrap gap-2">
       {!lane.drums && <>
-        <Select value={track.patch?.name ?? ''} onValueChange={name => { stopPad(); const patch = applyPreset(name); loadPreset(track.id, name); updatePatch(track.id, { touch: settings }); previewNote(track.id, 60 + settings.root, .4, false, patch); }}>
+        <Select value={track.patch?.name ?? ''} onValueChange={name => { stopPad(); const patch = applyPreset(name); updatePatch(track.id, { ...patch, touch: settings }); previewNote(track.id, 60 + settings.root, .4, false, patch); }}>
           <SelectTrigger aria-label="Touch sound" className="w-48"><SelectValue placeholder="Sound" /></SelectTrigger>
           <SelectContent>{TOUCH_SOUNDS.map(name => <SelectItem key={name} value={name}>{name}</SelectItem>)}</SelectContent>
         </Select>
@@ -200,9 +218,30 @@ export function TouchSynth({ track }: { track: Track }) {
         <Button variant="outline" onClick={stopPad} aria-label="Stop touch pattern"><Square className="size-4" /> Stop</Button>
       </div>
     </div>
+    <div className="space-y-2 border-t border-border pt-3" aria-label="Touch loop note editor">
+      <div className="flex items-center gap-2">
+        <h4 className="mr-auto font-mono text-xs font-bold text-foreground">{lane.label} · LOOP NOTES</h4>
+        <Button size="icon" variant={editMode === 'draw' ? 'default' : 'outline'} aria-label="Place loop notes" title="Place loop notes" aria-pressed={editMode === 'draw'} onClick={() => setEditMode('draw')}><Pencil className="size-4" /></Button>
+        <Button size="icon" variant={editMode === 'erase' ? 'default' : 'outline'} aria-label="Erase single loop notes" title="Erase single loop notes" aria-pressed={editMode === 'erase'} onClick={() => setEditMode('erase')}><Eraser className="size-4" /></Button>
+      </div>
+      <div className="max-h-80 overflow-auto border border-border rounded-sm">
+        <div className="min-w-[1040px]">
+          <div className="flex h-6"><span className="w-16 shrink-0" />{Array.from({ length: TOUCH_LOOP_STEPS }, (_, step) => <span key={step} className="w-[30px] shrink-0 text-center font-mono text-[10px] text-muted-foreground">{step + 1}</span>)}</div>
+          {pitches.map(pitch => <div key={pitch} className="flex h-[30px]">
+            <span className="flex w-16 shrink-0 items-center px-1 font-mono text-[10px] text-muted-foreground">{lane.drums ? lane.drums[pitch]?.toUpperCase() : `${KEYS[pitch % 12]}${Math.floor(pitch / 12) - 1}`}</span>
+            {Array.from({ length: TOUCH_LOOP_STEPS }, (_, step) => {
+              const filled = laneNotes.some(n => n.step === step && n.pitch === pitch);
+              return <Button key={step} variant="ghost" aria-label={`${filled ? 'Erase' : 'Place'} ${lane.label} note ${pitch} at step ${step + 1}`} aria-pressed={filled} onClick={() => editCell(step, pitch)} className="h-[30px] w-[30px] shrink-0 rounded-none border border-border p-0" style={{ color: lane.color }}>
+                {filled && <span className="size-4 rounded-sm bg-current" />}
+              </Button>;
+            })}
+          </div>)}
+        </div>
+      </div>
+    </div>
     <div className="flex flex-wrap items-center gap-2 border-t border-border pt-2">
       <Button size="sm" variant={recording ? 'destructive' : 'outline'} aria-pressed={recording} onClick={toggleRecord} aria-label="Record touch loop"><Circle className={`size-3.5 ${recording ? 'fill-current' : ''}`} /> {recording ? 'Stop rec' : 'Record loop'}</Button>
-      <Button size="sm" variant={playingLoops ? 'default' : 'outline'} aria-pressed={playingLoops} disabled={!totalNotes && !playingLoops} onClick={() => (playingLoops ? stopLoops() : startLoops())} aria-label="Play recorded loops"><Play className="size-3.5" /> {playingLoops ? 'Stop loops' : 'Play loops'}</Button>
+      <Button size="sm" variant={playingLoops ? 'default' : 'outline'} aria-pressed={playingLoops} disabled={!totalNotes && !playingLoops} onClick={() => (playingLoops ? stopLoops() : startLoops())} aria-label="Play recorded loops"><Play className="size-3.5" /> {playingLoops ? 'Stop all loops' : 'Play all loops'}</Button>
       <Button size="sm" variant="ghost" disabled={!laneNotes.length} onClick={clearLane} aria-label="Clear this lane"><Eraser className="size-3.5" /> Clear {lane.label.toLowerCase()}</Button>
       <Button size="sm" variant="default" disabled={!totalNotes} onClick={sendToTimeline} aria-label="Send loops to timeline"><ArrowRightToLine className="size-3.5" /> Send to timeline</Button>
     </div>
