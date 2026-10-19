@@ -94,7 +94,7 @@ export interface FilterStage {
 }
 
 export interface SynthPatch {
-  touch?: { root: number; octave: number; scale: string; rate: number; gate: number };
+  touch?: { root: number; octave: number; scale: string; rate: number; gate: number; lane?: string; loops?: Record<string, { step: number; pitch: number; length: number; vel: number }[]> };
   name: string;
   oscillators: OscillatorParams[];
   noise: number;
