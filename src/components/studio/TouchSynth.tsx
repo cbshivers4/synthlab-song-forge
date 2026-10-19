@@ -18,6 +18,8 @@ export function TouchSynth({ track }: { track: Track }) {
   const settings = track.patch?.touch ?? { root: 0, octave: 3, scale: 'Minor pentatonic', rate: 2, gate: .65 };
   const lane = laneById(settings.lane ?? 'bass');
   const loops: TouchLoops = settings.loops ?? {};
+  /** Each column keeps its own instrument; falls back to the lane's default sound. */
+  const laneSound = (id: string) => settings.sounds?.[id] ?? laneById(id).sound;
   const latest = useRef({ track, settings, lane, loops, previewNote, updatePatch, updateTrack, transport });
   latest.current = { track, settings, lane, loops, previewNote, updatePatch, updateTrack, transport };
   const pointer = useRef<number | null>(null);
@@ -116,7 +118,7 @@ export function TouchSynth({ track }: { track: Track }) {
             const kind = l.drums[Math.max(0, Math.min(l.drums.length - 1, Math.round(n.pitch)))] ?? 'kick';
             getEngine().playDrum(cur.track.id, drumPad(kind), n.vel);
           } else if (cur.track.patch) {
-            const patch = { ...applyPreset(l.sound), voiceMode: 'poly' as const, arp: { ...cur.track.patch.arp, on: false } };
+            const patch = { ...applyPreset(cur.settings.sounds?.[l.id] ?? l.sound), voiceMode: 'poly' as const, arp: { ...cur.track.patch.arp, on: false } };
             cur.previewNote(cur.track.id, n.pitch, n.length * stepDur, false, patch);
           }
         }
@@ -221,7 +223,7 @@ export function TouchSynth({ track }: { track: Track }) {
       {TOUCH_LANES.map((l) => {
         const count = loops[l.id]?.length ?? 0;
         const selected = l.id === lane.id;
-        return <Button variant="outline" key={l.id} role="tab" aria-selected={selected} onClick={() => { stopPad(); updatePatch(track.id, { ...(!l.drums ? applyPreset(l.sound) : {}), touch: { ...settings, lane: l.id, octave: l.octave } }); }}
+        return <Button variant="outline" key={l.id} role="tab" aria-selected={selected} onClick={() => { stopPad(); updatePatch(track.id, { ...(!l.drums ? applyPreset(laneSound(l.id)) : {}), touch: { ...settings, lane: l.id, octave: l.octave } }); }}
           className={`min-w-0 rounded-md border px-1 py-2 font-mono text-[10px] font-bold transition-colors ${selected ? 'border-transparent text-background' : 'border-border text-muted-foreground hover:text-foreground'}`}
           style={selected ? { background: l.color } : { borderColor: `${l.color}66` }}>
           <span className="block truncate">{l.label}</span>
@@ -231,7 +233,7 @@ export function TouchSynth({ track }: { track: Track }) {
     </div>
     <div className="flex flex-wrap gap-2">
       {!lane.drums && <>
-        <Select value={track.patch?.name ?? ''} onValueChange={name => { stopPad(); const patch = applyPreset(name); updatePatch(track.id, { ...patch, touch: settings }); previewNote(track.id, 60 + settings.root, .4, false, patch); }}>
+        <Select value={laneSound(lane.id)} onValueChange={name => { stopPad(); const patch = applyPreset(name); const touch = { ...settings, sounds: { ...settings.sounds, [lane.id]: name } }; updatePatch(track.id, { ...patch, touch }); previewNote(track.id, 60 + settings.root, .4, false, patch); }}>
           <SelectTrigger aria-label="Touch sound" className="w-48"><SelectValue placeholder="Sound" /></SelectTrigger>
           <SelectContent>{TOUCH_SOUNDS.map(name => <SelectItem key={name} value={name}>{name}</SelectItem>)}</SelectContent>
         </Select>
