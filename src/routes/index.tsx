@@ -88,9 +88,9 @@ export const Route = createFileRoute("/")({
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { property: "og:url", content: "https://synclab.lovable.app/" },
+      { property: "og:url", content: "https://synthlab-song-forge.lovable.app/" },
     ],
-    links: [{ rel: "canonical", href: "https://synclab.lovable.app/" }],
+    links: [{ rel: "canonical", href: "https://synthlab-song-forge.lovable.app/" }],
     scripts: [
       {
         type: "application/ld+json",
@@ -98,7 +98,7 @@ export const Route = createFileRoute("/")({
           "@context": "https://schema.org",
           "@type": "SoftwareApplication",
           name: "SYNCLAB",
-          url: "https://synclab.lovable.app/",
+          url: "https://synthlab-song-forge.lovable.app/",
           applicationCategory: "MultimediaApplication",
           operatingSystem: "Web Browser",
           description:
