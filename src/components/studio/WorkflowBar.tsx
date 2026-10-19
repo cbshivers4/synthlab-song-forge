@@ -11,6 +11,7 @@ import { barsForSteps, positionLabel } from '@/lib/synclab/timebase';
 
 export function WorkflowBar() {
   const { selected, tracks, transport, setTransport, updateTrack, togglePlay, toggleRecord, stop, setPanel, panel, copyClip, cutClip, pasteClip, clipClipboardName, removeClip, swapTake, razorAt } = useStudio();
+  const isPhone = useIsMobile();
   const clip = selectedClip(selected);
   const part = selectedPartBounds(selected, transport.bpm, transport.bars);
   const active = transport.recording || transport.countInLeft != null;
