@@ -124,9 +124,10 @@ export function MenuBar() {
     if (!requirePro("Cloud saving")) return;
     const saving = toast.loading("Saving project and audio…");
     try {
-      const saved = await saveCloudProject({ ...project, id: project.id ?? "" }, snapshot());
+      const session = snapshot();
+      const saved = await saveCloudProject({ ...project, id: project.id ?? "" }, session);
       setProject({ ...project, id: saved.id, openedAt: Date.now() });
-      document.dispatchEvent(new CustomEvent("synclab:project-saved"));
+      document.dispatchEvent(new CustomEvent("synclab:project-saved", { detail: session }));
       toast.success("Project saved to your cloud", { id: saving });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Cloud save failed", { id: saving });
@@ -160,9 +161,10 @@ export function MenuBar() {
     setProject(newProject);
     const saving = toast.loading(`Saving “${name}” and its audio…`);
     try {
-      const saved = await saveCloudProject({ ...newProject, id: "" }, snapshot());
+      const session = snapshot();
+      const saved = await saveCloudProject({ ...newProject, id: "" }, session);
       setProject({ ...newProject, id: saved.id });
-      document.dispatchEvent(new CustomEvent("synclab:project-saved"));
+      document.dispatchEvent(new CustomEvent("synclab:project-saved", { detail: session }));
       toast.success(`Saved “${name}” to your cloud`, {
         id: saving,
         description: "It keeps the original untouched as its own project.",

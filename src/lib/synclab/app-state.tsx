@@ -62,7 +62,17 @@ function read(): Persisted {
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const isMobile = useIsMobile();
-  const [stage, setStage] = useState<Stage>("welcome");
+  const [stage, setStageState] = useState<Stage>("welcome");
+  const setStage = useCallback((next: Stage) => {
+    if (stage === "studio" && next !== "studio") {
+      const event = new CustomEvent("synclab:before-project-close", {
+        cancelable: true,
+        detail: { next, proceed: () => setStageState(next) },
+      });
+      if (!document.dispatchEvent(event)) return;
+    }
+    setStageState(next);
+  }, [stage]);
   const [mode, setMode] = useState<UiMode>("simple");
   const [themeId, setThemeId] = useState("synclab-dark");
   const [customThemes, setCustomThemes] = useState<Theme[]>([]);
@@ -145,7 +155,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       signedIn,
       setSignedIn,
     }),
-    [stage, mode, themeId, customThemes, allThemes, activeTheme, project, setProject, removeRecent, renameRecent, recents, signedIn],
+    [stage, setStage, mode, themeId, customThemes, allThemes, activeTheme, project, setProject, removeRecent, renameRecent, recents, signedIn],
   );
 
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>;

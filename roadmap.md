@@ -309,5 +309,6 @@
 
 - [x] Oct 17: stronger selected-track highlight, drum-beat cutting, single-instrument stem isolation, Just-one stem buttons, visible bass sound picker, more stem templates
 - [ ] Replicate account needs credit for clean AI stems (blocked on owner)
+- [ ] Verify save / don't save / cancel when closing an unsaved project on desktop and phone.
 - [x] Oct 17: Separate Stems and Generate Stem now open a "Coming soon — not available now" screen on desktop and phone (tool implementations left intact for relaunch); verified signed-in on 1440×900 desktop and 942×534 sideways phone, 27 audio tests and typecheck pass. Live site needs republishing.
 - [x] Rebuild Touch Synth as a 5-lane loop station (drums, bass, poly, melody, stabs/arp) with per-lane loop recording, colored note dots, moving playback line and Send to timeline; signed-in desktop/phone verified 3 recorded notes, playback and 3 notes landing on the timeline; 68 tests passed, build OK.

@@ -326,7 +326,7 @@ interface StudioApi extends StudioState {
   setTransport: (t: Partial<Transport>) => void;
   togglePlay: () => void;
   toggleRecord: () => void;
-  stop: () => void;
+  stop: () => Promise<void>;
   pause: () => void;
   changeInstrument: (trackId: string, preset: string) => void;
   setActiveClip: (trackId: string, clipId: string) => void;
@@ -2345,15 +2345,15 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           setTransportState((s) => ({ ...s, recording: false }));
         }
       },
-      stop: () => {
+      stop: async () => {
         if (countInTimerRef.current != null) {
           window.clearInterval(countInTimerRef.current);
           countInTimerRef.current = null;
         }
-        if (transportRef.current.recording) void finishRecording();
-        if (transportRef.current.recording) void finishTrackRecording();
+        const wasRecording = transportRef.current.recording;
         setTracks((ts) => ts.map((t) => (t.recording ? { ...t, recording: false } : t)));
         setTransportState((s) => ({ ...s, playing: false, recording: false, paused: false, step: 0, countInLeft: null }));
+        if (wasRecording) await Promise.all([finishRecording(), finishTrackRecording()]);
       },
       changeInstrument: (trackId, preset) =>
         setTracks((ts) =>
