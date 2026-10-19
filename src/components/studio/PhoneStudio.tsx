@@ -10,9 +10,11 @@ import { requestBluetoothSettings } from "./Settings";
 import { openHelp } from "./HelpCenter";
 import { openExport } from "./ExportDialog";
 import logo from "@/assets/synclab-logo-neon.jpg.asset.json";
+import { Hand } from "lucide-react";
 
 const sounds = [
   { label: "Drum Machine", icon: Disc3, panel: "drums" }, { label: "Synth", icon: Piano, panel: "synth" },
+  { label: "Touch Synth", icon: Hand, panel: "synth" },
   { label: "Sampler", icon: Scissors, panel: "sampler" }, { label: "Sample pads", icon: Grid2x2, panel: "pads" },
   { label: "Sound library", icon: FolderOpen, panel: "browser" },
   { label: "Live View", icon: Radio, panel: "live" }, { label: "Live Looper", icon: Disc3, panel: "looper" },
@@ -35,7 +37,7 @@ const tools = [
 ] as const;
 
 export function PhoneStudio({ children }: { children: ReactNode }) {
-  const { panel, setPanel, transport } = useStudio();
+  const { panel, setPanel, transport, tracks, select, addTrack } = useStudio();
   const { setStage, project } = useApp();
   const [room, setRoom] = useState<"edit" | "sounds" | "tools">("edit");
   const [railOpen, setRailOpen] = useState(true);
@@ -111,7 +113,14 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
       {panel && children}
       {!panel && room !== "edit" && <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <header className="phone-room-header grid h-14 shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center border-b border-border px-5"><h2 className="truncate text-base font-semibold">{room === "sounds" ? "Sounds & instruments" : "Effects & tools"}</h2><span className="text-xs text-muted-foreground">SYNCLAB</span></header>
-        <div className="phone-room-grid grid min-h-0 flex-1 auto-rows-[minmax(8.75rem,1fr)] grid-cols-4 gap-2 overflow-auto p-2.5">{list.map(({ label, icon: Icon, panel: next }, index) => <Button key={label} variant="outline" data-sound-family={index % 4} className="phone-sound-tile h-full min-h-[8.75rem] min-w-0 flex-col gap-2.5 whitespace-normal text-center text-sm leading-tight" onClick={() => setPanel(next as PanelId)}><span className="phone-sound-icon flex size-16 shrink-0 items-center justify-center rounded-xl"><Icon className="size-10" /></span><span className="font-semibold">{label}</span></Button>)}</div>
+        <div className="phone-room-grid grid min-h-0 flex-1 auto-rows-[minmax(8.75rem,1fr)] grid-cols-4 gap-2 overflow-auto p-2.5">{list.map(({ label, icon: Icon, panel: next }, index) => <Button key={label} variant="outline" data-sound-family={index % 4} className="phone-sound-tile h-full min-h-[8.75rem] min-w-0 flex-col gap-2.5 whitespace-normal text-center text-sm leading-tight" onClick={() => {
+          if (label === "Touch Synth") {
+            const found = tracks.find((track) => /^touch synth$/i.test(track.name) && track.patch && !track.patch.modular);
+            if (found) select(found.id);
+            else addTrack("instrument", "TOUCH SYNTH", "Cybotron Lead");
+          }
+          setPanel(next as PanelId);
+        }}><span className="phone-sound-icon flex size-16 shrink-0 items-center justify-center rounded-xl"><Icon className="size-10" /></span><span className="font-semibold">{label}</span></Button>)}</div>
         <footer className="phone-room-footer grid h-14 shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-t border-border px-4"><Button variant="ghost" className="h-12 justify-start" onClick={() => { requestBluetoothSettings(); setPanel("settings"); }}><Radio />Bluetooth & audio</Button><div className="flex gap-1"><Button variant="outline" className="h-12" onClick={() => openExport()}>Export</Button><Button variant="outline" size="icon" className="size-12" aria-label="Help" onClick={() => openHelp("help")}><LifeBuoy /></Button></div></footer>
       </div>}
       {/* Docked transport: sits below the workspace so it never covers the mixer or timeline */}
