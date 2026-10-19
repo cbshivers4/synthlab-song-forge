@@ -1376,7 +1376,7 @@ function FxMenu({ target, label }: { target: string; label: string }) {
 }
 
 /** Master insert chain with one-tap mastering effects (limiter first). */
-function MasterChain({ color }: { color: string }) {
+function MasterChain({ color, className }: { color: string; className?: string }) {
   const { fxChains, addFxPlugin, removeFxPlugin, toggleFxBypass, installedPlugins } = useStudio();
   const list = fxChains["bus:master"] ?? [];
   const quick: [string, string][] = [
@@ -1390,7 +1390,7 @@ function MasterChain({ color }: { color: string }) {
     if (def) addFxPlugin("bus:master", def);
   };
   return (
-    <div className={cn(ROW.eq, "space-y-0.5 overflow-y-auto border-b border-border/60 px-1 py-1")}>
+    <div className={cn(className ?? ROW.eq, "space-y-0.5 overflow-y-auto border-b border-border/60 px-1 py-1")}>
       {list.length === 0 && (
         <div className="text-center font-mono text-[7px] uppercase tracking-widest text-muted-foreground">
           Main bus — no mastering yet
