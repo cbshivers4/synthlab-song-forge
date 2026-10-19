@@ -1,3 +1,4 @@
+import { renderVintageDrum } from "./vintage-drums";
 import { playModularVoice } from "./modular";
 import { playbackPreferences } from "./preferences";
 import { encodeWav } from "./bounce";
@@ -24,6 +25,8 @@ type KitVoice = {
 export const DRUM_KIT_VOICES: Record<DrumKitId, KitVoice> = {
   "909": { kick: [120, 45, 0.38, "sine"], snare: [190, 1800, 1], clap: 1500, hatF: 8200, hatD: 0.9, tom: [180, 85], perc: 620, crash: 5600, ride: 9200, click: 1, body: 1 },
   "808": { kick: [90, 30, 1.1, "sine"], snare: [200, 1200, 0.8], clap: 1100, hatF: 9500, hatD: 0.55, tom: [140, 60], perc: 520, crash: 4800, ride: 8200, click: 0.4, body: 0.8 },
+  "727": { kick: [230, 180, 0.24, "sine"], snare: [620, 2600, 0.5], clap: 5200, hatF: 11000, hatD: 0.5, tom: [290, 200], perc: 540, crash: 880, ride: 380, click: 0.5, body: 0.8 },
+  r8: { kick: [125, 55, 0.38, "sine"], snare: [205, 2200, 1.1], clap: 1700, hatF: 9000, hatD: 0.8, tom: [190, 90], perc: 640, crash: 5300, ride: 9100, click: 1.2, body: 1.2 },
   "707": { kick: [110, 50, 0.3, "triangle"], snare: [230, 2000, 0.7], clap: 1600, hatF: 7800, hatD: 0.7, tom: [190, 95], perc: 700, crash: 5400, ride: 9000, click: 1.2, body: 1 },
   "606": { kick: [105, 48, 0.28, "triangle"], snare: [240, 2600, 0.6], clap: 1800, hatF: 10000, hatD: 0.5, tom: [210, 110], perc: 760, crash: 6200, ride: 9600, click: 1.4, body: 0.9 },
   linn: { kick: [95, 52, 0.42, "sine"], snare: [180, 1500, 1.1], clap: 1300, hatF: 7000, hatD: 0.8, tom: [160, 80], perc: 560, crash: 5000, ride: 8600, click: 0.9, body: 1.15 },
@@ -2649,6 +2652,8 @@ export class SyncLabEngine {
     osc.stop(t + duration + 0.02);
   }
 
+  private vintageDrumBuffers = new Map<string, AudioBuffer>();
+
   playDrum(trackId: string, pad: DrumPad, velocity = 1, when?: number) {
     const ctx = this.init();
     const t = Math.max(when ?? ctx.currentTime, ctx.currentTime + 0.002);
@@ -2808,7 +2813,36 @@ export class SyncLabEngine {
       o.stop(t + dur + 0.02);
     };
 
-    const K = DRUM_KIT_VOICES[pad.kit ?? "909"] ?? DRUM_KIT_VOICES["909"]!;
+    const kit = pad.kit ?? "909";
+    const cacheKey = `${ctx.sampleRate}:${kit}:${pad.kind}:${pad.decay.toFixed(4)}`;
+    let vintage = this.vintageDrumBuffers.get(cacheKey);
+    if (!vintage) {
+      const pcm = renderVintageDrum(kit, pad.kind, pad.decay, ctx.sampleRate);
+      if (pcm) {
+        vintage = ctx.createBuffer(1, pcm.length, ctx.sampleRate);
+        vintage.getChannelData(0).set(pcm);
+        if (this.vintageDrumBuffers.size >= 128) this.vintageDrumBuffers.clear();
+        this.vintageDrumBuffers.set(cacheKey, vintage);
+      }
+    }
+    if (vintage) {
+      const source = ctx.createBufferSource();
+      source.buffer = vintage;
+      source.playbackRate.value = tune;
+      const gain = ctx.createGain();
+      gain.gain.value = vol;
+      source.connect(gain);
+      gain.connect(out);
+      // Keep the original voice tail; attack/release still shape its actual audio.
+      const end = vintage.duration / tune;
+      env.gain.cancelScheduledValues(t);
+      env.gain.setValueAtTime(0.0001, t);
+      env.gain.linearRampToValueAtTime(1, t + Math.min(atk, end / 2));
+      env.gain.setValueAtTime(1, t + Math.max(atk, end - Math.min(rel, end / 3)));
+      env.gain.exponentialRampToValueAtTime(0.0001, t + end);
+      source.start(t);
+    } else {
+    const K = DRUM_KIT_VOICES[pad.kit ?? "909"] ?? DRUM_KIT_VOICES["909"];
 
     switch (pad.kind) {
       case "kick":
@@ -2845,6 +2879,8 @@ export class SyncLabEngine {
         break;
       default:
         noiseBurst(0.4 * dec, 900, "bandpass", 3);
+    }
+
     }
 
     // extra transient click
