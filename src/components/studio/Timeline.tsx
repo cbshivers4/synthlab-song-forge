@@ -8,6 +8,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { PhonePages } from "./PhonePages";
 import { WorkflowBar } from "./WorkflowBar";
 import {
+  ArrowDownToLine,
   ArrowLeftToLine,
   ArrowRightToLine,
   ClipboardPaste,
@@ -795,7 +796,7 @@ const TRACK_BUSES: { id: BusId; label: string }[] = [
 
 function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track; index: number; headerWidth: number; setHeaderWidth: (width: number) => void }) {
   const isMobile = useIsMobile();
-  const { selectedId, selectedIds, select, toggleSelectId, updateTrack, removeTrack, duplicateTrack, moveTrack, setPanel, changeInstrument, installedPlugins, addPlugin, editTool, splitClipAt, razorAt, toggleStep, toggleAutomationLane, copyTrack, cutTrack, pasteTrack, clipboardName, copyClip, cutClip, pasteClip, clipClipboardName, clearTrackContent, folders, addFolder, assignTrackFolder, swapTake, stretchClip } =
+  const { selectedId, selectedIds, select, toggleSelectId, updateTrack, removeTrack, duplicateTrack, moveTrack, moveTrackToIndex, moveTrackToNew, setPanel, changeInstrument, installedPlugins, addPlugin, editTool, splitClipAt, razorAt, toggleStep, toggleAutomationLane, copyTrack, cutTrack, pasteTrack, clipboardName, copyClip, cutClip, pasteClip, clipClipboardName, clearTrackContent, folders, addFolder, assignTrackFolder, swapTake, stretchClip } =
     useStudio();
   const { transport, setNotes, loadSample, fxChains, tracks: allTracks } = useStudio();
   const fileStudio = useStudio();
@@ -1081,6 +1082,40 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
     window.addEventListener("pointercancel", up);
   };
 
+  /** Touch reorder: drag the ⋮⋮ handle over another track and drop it there. */
+  const startReorderDrag = (e: React.PointerEvent) => {
+    if (e.pointerType === "mouse") return; // desktop keeps the HTML5 drag above
+    e.preventDefault();
+    e.stopPropagation();
+    const from = index;
+    const rowAt = (clientY: number) => {
+      const rows = Array.from(document.querySelectorAll<HTMLElement>("[data-track-row]"));
+      return rows.findIndex((row) => {
+        const r = row.getBoundingClientRect();
+        return clientY >= r.top && clientY < r.bottom;
+      });
+    };
+    const move = (ev: PointerEvent) => {
+      const target = rowAt(ev.clientY);
+      document.querySelectorAll<HTMLElement>("[data-track-row]").forEach((row, i) => {
+        row.classList.toggle("track-drop-target", i === target);
+      });
+    };
+    const up = (ev: PointerEvent) => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", up);
+      document.querySelectorAll<HTMLElement>(".track-drop-target").forEach((row) => row.classList.remove("track-drop-target"));
+      const target = rowAt(ev.clientY);
+      if (target < 0 || target === from) return;
+      moveTrackToIndex(track.id, target);
+      toast(`${track.name} moved to position ${target + 1}`);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", up);
+  };
+
   return (
     <div className="border-b border-border/80">
     <div
@@ -1158,8 +1193,9 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
               e.dataTransfer.setData("application/x-synclab-track", track.id);
               e.dataTransfer.effectAllowed = "move";
             }}
+            onPointerDown={startReorderDrag}
             onClick={(e) => e.stopPropagation()}
-            className="cursor-grab select-none px-0.5 text-muted-foreground hover:text-foreground active:cursor-grabbing"
+            className="cursor-grab touch-none select-none px-0.5 text-muted-foreground hover:text-foreground active:cursor-grabbing"
             title="Drag to move this track above or below another track"
             aria-label={`Drag to reorder ${track.name}`}
           >⋮⋮</span>
@@ -1283,6 +1319,9 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => moveTrack(track.id, -1)}><ChevronUp className="size-4" /> Move up</DropdownMenuItem>
               <DropdownMenuItem onClick={() => moveTrack(track.id, 1)}><ChevronDown className="size-4" /> Move down</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => moveTrackToNew(track.id)}>
+                <ArrowDownToLine className="size-4" /> Move to a new track
+              </DropdownMenuItem>
               </DropdownMenuSubContent></DropdownMenuSub>
               <DropdownMenuItem onClick={() => { select(track.id); openTrackSettings(track.id); }}>
                 <Settings2 className="size-4" /> Track settings
@@ -3311,7 +3350,7 @@ function FolderRow({
 }
 
 export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandlesVisible = true }: { phonePaged?: boolean; desktopStyle?: boolean; resizeHandlesVisible?: boolean }) {
-  const { tracks, transport, addTrack, addClip, setPanel, loadSample, folders, renameFolder, removeFolder, toggleFolderCollapsed, setTransport } = useStudio();
+  const { tracks, transport, addTrack, addClip, setPanel, loadSample, folders, renameFolder, removeFolder, toggleFolderCollapsed, setTransport, moveTrackToIndex } = useStudio();
   const totalSteps = songSteps(transport.bars);
   const [over, setOver] = useState(false);
   const [zoom, setZoom] = useState(1);
@@ -3470,6 +3509,13 @@ export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandl
           onDragLeave={() => setOver(false)}
           onDrop={(e) => {
             setOver(false);
+            const movedId = e.dataTransfer.getData("application/x-synclab-track");
+            if (movedId) {
+              e.preventDefault();
+              moveTrackToIndex(movedId, Math.max(0, tracks.length - 1));
+              toast(`Track moved to position ${tracks.length}`);
+              return;
+            }
             const file = e.dataTransfer.files?.[0];
             if (file && (file.type.startsWith("audio") || /\.(mp3|wav|wave|aif|aiff|m4a|aac|ogg|flac|webm)$/i.test(file.name))) {
               e.preventDefault();

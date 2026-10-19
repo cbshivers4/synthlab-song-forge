@@ -18,6 +18,7 @@ import { getEngine } from "./audio-engine";
 import { stepsPerBar, setBeatsPerBar, getBeatsPerBar, STEPS_PER_BEAT, songSteps, stepSeconds, barsForSteps } from "./timebase";
 import { openInOwnTab } from "./mic";
 import { TRACK_COLORS, applyPreset, defaultPads, defaultPatch, uid } from "./presets";
+import { moveTrackToIndexIn, moveTrackToNewIn } from "./track-move";
 import { BUILT_IN_PLUGINS, instantiate, processMidiThroughPlugins } from "./plugins";
 import { getMidiAccess, listInputs, listOutputs, midiSupported, midiUnsupportedMessage, subscribe, type MidiPortInfo } from "./midi";
 import { getPadBank, setPadBank } from "./pad-session";
@@ -310,6 +311,8 @@ interface StudioApi extends StudioState {
   removeTrack: (id: string) => void;
   duplicateTrack: (id: string) => void;
   moveTrack: (id: string, dir: -1 | 1) => void;
+  moveTrackToIndex: (id: string, index: number) => void;
+  moveTrackToNew: (id: string) => void;
   clipboardName: string | null;
   copyTrack: (id: string) => void;
   cutTrack: (id: string) => void;
@@ -2018,6 +2021,13 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           if (i < 0 || j < 0 || j >= ts.length) return ts;
           const next = [...ts];
           [next[i], next[j]] = [next[j] as Track, next[i] as Track];
+          return next;
+        }),
+      moveTrackToIndex: (id, index) => setTracks((ts) => moveTrackToIndexIn(ts, id, index)),
+      moveTrackToNew: (id) =>
+        setTracks((ts) => {
+          const { tracks: next, movedId } = moveTrackToNewIn(ts, id);
+          if (movedId) setSelectedId(movedId);
           return next;
         }),
       clipboardName,

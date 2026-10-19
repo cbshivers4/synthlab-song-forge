@@ -1474,6 +1474,7 @@ html[data-reduce-motion] *, html[data-reduce-motion] *::before, html[data-reduce
 .playhead-grip { cursor: ew-resize; touch-action: none; }
 
 /* Selected timeline channel: a bright white outline that reads on every track colour. */
+[data-track-row].track-drop-target { outline: 2px dashed var(--primary); outline-offset: -2px; }
 .track-selected {
   box-shadow: inset 0 0 0 2px var(--playhead), 0 0 0 1px var(--playhead);
   z-index: 3;
