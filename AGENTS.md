@@ -38,7 +38,7 @@ Phone shares desktop audio/state and native scrolling. AppProvider scopes phone 
 Drum snap is session-only for new step writes, never existing hits.
 MP3/MP4 imports/exports retain originals in the private library with content hashes to avoid duplicates; saved videos open Video Sampler.
 Cloud deletion reads raw sessions, confirms deletion, then cleans owned files; missing assets cannot block removal.
-Reel recorder: singleton AudioWorklet capture; tape bypasses master to avoid feedback. Timeline meters read live post-master taps without input activation; exit releases input, retaining tape.
+Reel recorder: singleton worklet; playback bypasses master. Meters use post-master taps; exit releases input, keeps tape. Shared winding math uses capture duration and conserved tape area to match song length.
 
 Video cuts use source seconds/grid/clamp; kits save MIDI notes. Keyboard/learned MIDI share pad triggers; MIDI consumers prevent doubled track notes.
 
