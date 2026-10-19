@@ -359,11 +359,14 @@ export function EffectDisplay({
           if (!band) continue;
           const bar = Math.max(1, mag * h);
           const grad = ctx.createLinearGradient(0, h - bar, 0, h);
-          const sc = colors.getPropertyValue("--display-wave-fill").trim();
+          // Channel EQ shows each band in its own colour; other effects show white level bars behind the red wave.
+          const sc = colors.getPropertyValue(isChannelEq ? band.color.slice(4, -1) : "--display-point").trim();
           grad.addColorStop(0, sc);
           grad.addColorStop(1, "transparent");
           ctx.fillStyle = grad;
+          ctx.globalAlpha = isChannelEq ? 0.55 : 0.4;
           ctx.fillRect(x, h - bar, 1.5, bar);
+          ctx.globalAlpha = 1;
         }
       }
 
@@ -387,7 +390,7 @@ export function EffectDisplay({
     draw();
     timer = setInterval(draw, 50);
     return () => clearInterval(timer);
-  }, [plugin.id, shape]);
+  }, [plugin.id, shape, isChannelEq]);
 
   if (!shape) return null;
 
@@ -485,7 +488,7 @@ export function EffectDisplay({
           if (!p) return null;
           const x = band.id === "mid" ? logX(get("midFreq")) : logX(band.id === "low" ? 120 : 6000);
           return <div key={band.id} className="signal-point-hit" style={{ left: `${x * 100}%`, top: `${(1 - dbToY(p.value)) * 100}%` }}>
-            <Button variant="ghost" className="signal-point" aria-label={`${band.label} EQ point`} title={`${band.label}: ${p.value.toFixed(1)} dB`} onPointerDown={() => { eqDrag.current = band.id; }}
+            <Button variant="ghost" className="signal-point" style={{ background: band.color, borderColor: "var(--display-point)" }} aria-label={`${band.label} EQ point`} title={`${band.label}: ${p.value.toFixed(1)} dB`} onPointerDown={() => { eqDrag.current = band.id; }}
               onKeyDown={e => { if (e.key === 'ArrowUp' || e.key === 'ArrowDown') { e.preventDefault(); onParam(p.id, Math.max(p.min, Math.min(p.max, p.value + (e.key === 'ArrowUp' ? 0.5 : -0.5)))); } }} />
           </div>;
         })}
