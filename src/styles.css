@@ -1536,8 +1536,10 @@ html[data-reduce-motion] *, html[data-reduce-motion] *::before, html[data-reduce
 .phone-console .mx-console[data-touch-console] .mx-fader [role="slider"] { width: 30px; height: 38px; }
 .phone-console .mx-console[data-touch-console] .mx-row-scope { height: 48px; }
 /* Phone name plate stays a plain row: it must never float over the channel meter while scrolling */
-.phone-console .mx-console[data-touch-console] .mx-row-name { order: -1; height: 34px; position: static; }
-.phone-console .mx-console[data-touch-console] .mx-row-name button { font-size: 12px; min-height: 28px; }
+.phone-console .mx-console[data-touch-console] .mx-row-name { order: -1; height: 40px; position: static; }
+.phone-console .mx-console[data-touch-console] .mx-row-name button { font-size: 14px; min-height: 32px; }
+.phone-console .mx-console[data-touch-console] .mx-row-name > svg { width: 20px; height: 20px; }
+.phone-console .mx-console[data-touch-console] .mx-row-head button.ml-auto { min-height: 16px; min-width: 30px; height: 16px; padding: 0; font-size: 8px; }
 /* Extra scroll room so the M/S/REC/MON row can scroll fully clear of the transport overlay */
 .phone-console .mx-console[data-touch-console] .mobile-mixer-strips { padding-bottom: 260px; }
 /* Rows grow to fit their controls so nothing in a channel overlaps the row below */
@@ -1748,10 +1750,11 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
 /* Mixer legibility: wider channels, bigger and brighter labels so every control reads clearly. */
 .mx-console:not(.mx-phone) .mx-channel { width: 132px; }
 .mx-console:not(.mx-phone) .mx-channel.w-\[92px\] { width: 116px; }
-.mx-console:not(.mx-phone) .mx-row-name { height: 26px; }
-.mx-console:not(.mx-phone) .mx-row-name > span { font-size: 11px; font-weight: 700; }
-.mx-console:not(.mx-phone) .mx-row-name > svg { width: 16px; height: 16px; }
-.mx-console:not(.mx-phone) .mx-row-head { height: 30px; font-size: 9px; }
+.mx-console:not(.mx-phone) .mx-row-name { height: 34px; }
+.mx-console:not(.mx-phone) .mx-row-name > svg { width: 18px; height: 18px; }
+.mx-console:not(.mx-phone) .mx-name-btn { font-size: 13px; letter-spacing: 0.02em; }
+.mx-console:not(.mx-phone) .mx-row-head { height: 34px; font-size: 10px; }
+.mx-console:not(.mx-phone) .mx-row-head > span { font-size: 11px; }
 .mx-console:not(.mx-phone) .mx-row-inserts { height: 56px; }
 .mx-console:not(.mx-phone) .mx-row-inserts button, .mx-console:not(.mx-phone) .mx-row-inserts .font-mono { font-size: 9px; }
 .mx-console:not(.mx-phone) .mx-row-eq { height: 28px; font-size: 9px; }
