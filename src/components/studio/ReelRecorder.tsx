@@ -13,9 +13,10 @@ import { Knob } from "./Knob";
 import { stepsPerBar, stepSeconds, STEPS_PER_BEAT } from "@/lib/synclab/timebase";
 
 const clock = (s: number) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(Math.floor(s % 60)).padStart(2, "0")}.${Math.floor((s % 1) * 10)}`;
-function Reel({ moving, right }: { moving: boolean; right?: boolean }) {
+function Reel({ moving, right, fill = 0.5 }: { moving: boolean; right?: boolean; fill?: number }) {
+  const radius = 45 + Math.max(0, Math.min(1, fill)) * 45;
   return <div className="tape-reel" data-moving={moving} aria-label={`${right ? "Take-up" : "Supply"} reel ${moving ? "moving" : "stopped"}`}><svg viewBox="0 0 240 240" role="img" aria-label="Tape reel">
-    <circle cx="120" cy="120" r="114" className="reel-rim" /><circle cx="120" cy="120" r={right ? 79 : 90} className="reel-tape" />
+    <circle cx="120" cy="120" r="114" className="reel-rim" /><circle cx="120" cy="120" r={radius} className="reel-tape" />
     {[0, 120, 240].map((angle) => <g key={angle} transform={`rotate(${angle} 120 120)`}><path d="M102 101 L77 33 Q120 11 163 33 L138 101Z" className="reel-spoke" /><path d="M109 73 L99 40 Q120 30 141 40 L131 73Z" className="reel-cutout" /></g>)}
     <circle cx="120" cy="120" r="37" className="reel-hub" /><circle cx="120" cy="120" r="21" className="reel-center" /><path d="M120 106V134M106 120H134" className="reel-screw" /><circle cx="120" cy="120" r="110" className="reel-edge" />
   </svg></div>;
