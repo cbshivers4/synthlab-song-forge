@@ -263,14 +263,14 @@ function Waveform({ track }: { track: Track }) {
         const raw = orig.length + dSteps * stepDur;
         const snapped = ev.shiftKey ? raw : Math.max(bar, Math.round(raw / bar) * bar);
         const len = Math.max(0.05, Math.min(clip.duration - orig.offset, snapped));
-        el.dataset["bars"] = `${+(len / bar).toFixed(2)} BARS`;
+        (el.closest(".arrangement-clip") as HTMLElement | null ?? el).dataset["bars"] = `${+(len / bar).toFixed(2)} BARS`;
         writeClip(clip.id, { length: len });
       } else {
         const bar = stepsPerBar() * stepDur;
         const rawDelta = dSteps * stepDur;
         const want = ev.shiftKey ? rawDelta : Math.round(rawDelta / bar) * bar;
         const delta = Math.max(-orig.offset, Math.min(orig.length - 0.05, want));
-        el.dataset["bars"] = `${+((orig.length - delta) / bar).toFixed(2)} BARS`;
+        (el.closest(".arrangement-clip") as HTMLElement | null ?? el).dataset["bars"] = `${+((orig.length - delta) / bar).toFixed(2)} BARS`;
         writeClip(clip.id, {
           offset: orig.offset + delta,
           length: orig.length - delta,
@@ -282,7 +282,7 @@ function Waveform({ track }: { track: Track }) {
     const onUp = (ev: PointerEvent) => {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
-      delete el.dataset["bars"];
+      delete (el.closest(".arrangement-clip") as HTMLElement | null ?? el).dataset["bars"];
       if (mode !== "move") return;
       el.style.transform = "";
       el.style.zIndex = "";
