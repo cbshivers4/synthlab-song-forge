@@ -1222,7 +1222,8 @@ html[data-reduce-motion] *, html[data-reduce-motion] *::before, html[data-reduce
   --tape-metal: oklch(0.78 0.009 230);
   --tape-metal-edge: oklch(0.94 0.005 230);
   --tape-hub: oklch(0.47 0.013 230);
-  --tape-media: oklch(0.24 0.008 40);
+  --tape-media: oklch(0.42 0.06 55);
+  --tape-media-edge: oklch(0.3 0.05 50);
   --tape-meter-face: oklch(0.9 0.025 92);
   --tape-meter-ink: oklch(0.23 0.01 230);
   --tape-green: oklch(0.78 0.18 145);
@@ -1238,7 +1239,7 @@ html[data-reduce-motion] *, html[data-reduce-motion] *::before, html[data-reduce
 .tape-reel[data-moving="true"] { animation-play-state: running; }
 .tape-reel svg { width: 100%; height: 100%; }
 .reel-rim { fill: var(--tape-metal); stroke: var(--tape-hub); stroke-width: 3; }
-.reel-tape { fill: var(--tape-media); }
+.reel-tape { fill: var(--tape-media); stroke: var(--tape-media-edge); stroke-width: 3; }
 .reel-spoke { fill: var(--tape-metal); stroke: var(--tape-metal-edge); stroke-width: 2; }
 .reel-cutout { fill: var(--background); stroke: var(--tape-hub); stroke-width: 2; }
 .reel-hub { fill: var(--tape-metal); stroke: var(--tape-metal-edge); stroke-width: 2; }
