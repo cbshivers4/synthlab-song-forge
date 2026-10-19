@@ -31,7 +31,18 @@ export const TOUCH_LANES: readonly TouchLane[] = [
   { id: 'stabs', label: 'STABS / ARP', color: '#f472b6', sound: 'Metro Pluck', octave: 3 },
 ];
 export const TOUCH_LOOP_STEPS = 32;
-export const laneById = (id: string) => TOUCH_LANES.find((l) => l.id === id) ?? TOUCH_LANES[1]!;
+export const laneById = (id: string) => TOUCH_LANES.find((l) => l.id === id) ?? { id: 'bass', label: 'BASS', color: '#22d3ee', sound: 'Sub Bass', octave: 2 };
+
+/** Grid edits replace only an identical lane/step/pitch, leaving every other note intact. */
+export function placeLoopNote(loops: TouchLoops, laneId: string, note: TouchLoopNote): TouchLoops {
+  const step = Math.max(0, Math.min(TOUCH_LOOP_STEPS - 1, Math.round(note.step)));
+  const next = { ...note, step, length: Math.max(.25, Math.min(note.length, TOUCH_LOOP_STEPS - step)) };
+  return { ...loops, [laneId]: [...(loops[laneId] ?? []).filter(n => n.step !== step || n.pitch !== note.pitch), next] };
+}
+
+export function eraseLoopNote(loops: TouchLoops, laneId: string, index: number): TouchLoops {
+  return { ...loops, [laneId]: (loops[laneId] ?? []).filter((_, i) => i !== index) };
+}
 
 /** Flatten every lane's loop into timeline notes starting at `offset` steps. */
 export function loopsToNotes(loops: TouchLoops, offset: number, stamp: number) {
