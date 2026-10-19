@@ -30,7 +30,7 @@ Playhead stays within track rows; headers, ruler and song lane share its width v
 Synth sections share wrapping tabs; X-Y pads dispatch through updatePatch to stay synchronized with knobs and saved presets without removing controls.
 Read studio AGENTS.md before editor/mixer edits.
 Device materials use CSS tokens and shared controls; audio behavior remains unchanged.
-Drum artwork uses semantic SVG; sort display copies and bank slices by stable IDs/indices to preserve audio and MIDI.
+Drum artwork uses semantic SVG; sort copies/banks by stable IDs. Read lib/synclab/AGENTS.md for shared audio rules.
 
 Phone drum tabs reuse DrumRoll and instrument pads for edits/tap recording; sound/kit tabs preserve controls without duplication.
 Keyboards reuse Keyboard and one note path; independent skin slots color opaque keys and wallpaper only the surround, preventing doubled notes.
