@@ -159,6 +159,17 @@ export function cutPosition(frac: number, total: number, grid: number, altKey: b
   const free = cutFreeValue !== altKey;
   return Math.max(0, Math.min(total, snapCut(frac * total, grid > 0 ? grid : 1, free)));
 }
+/** Lane grid sized to the real song: a strong line on every bar, a medium line on every quarter note, a faint line on every eighth note. */
+export function laneGridBackground(bars: number) {
+  const bar = 100 / Math.max(1, bars);
+  const beat = bar / getBeatsPerBar();
+  const eighth = beat / 2;
+  return [
+    `repeating-linear-gradient(to right, var(--grid-line-strong) 0 1px, transparent 1px ${bar}%)`,
+    `repeating-linear-gradient(to right, var(--grid-line) 0 1px, transparent 1px ${beat}%)`,
+    `repeating-linear-gradient(to right, var(--grid-line-faint, var(--grid-line)) 0 1px, transparent 1px ${eighth}%)`,
+  ].join(", ");
+}
 
 function TimelineCutGuide({ tool, position, selected, total, grid }: { tool: "split" | "razor"; position: number; selected: boolean; total: number; grid: number }) {
   const lineRef = useRef<HTMLDivElement>(null);

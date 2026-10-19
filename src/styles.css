@@ -1476,7 +1476,7 @@ html[data-reduce-motion] *, html[data-reduce-motion] *::before, html[data-reduce
 }
 
 /* Reference arrangement uses track colors, without changing audio paths. */
-.arrangement-timeline { background: var(--arrangement-background); --grid-line: color-mix(in oklab, var(--playhead) 7%, transparent); --grid-line-strong: color-mix(in oklab, var(--playhead) 19%, transparent); }
+.arrangement-timeline { background: var(--arrangement-background); --grid-line-faint: color-mix(in oklab, var(--playhead) 4%, transparent); --grid-line: color-mix(in oklab, var(--playhead) 9%, transparent); --grid-line-strong: color-mix(in oklab, var(--playhead) 22%, transparent); }
 .arrangement-timeline [data-lane] { background-color: transparent; }
 .arrangement-timeline .track-touch-header { background: var(--arrangement-surface); }
 .arrangement-timeline .track-selected .track-touch-header { background: color-mix(in oklab, var(--playhead) 22%, var(--arrangement-header)); }
