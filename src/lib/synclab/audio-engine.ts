@@ -87,7 +87,7 @@ function makeDistortionCurve(amount: number) {
   const n = 1025; // Odd size maps silence to exactly zero, avoiding a DC floor.
   const curve = new Float32Array(n);
   for (let i = 0; i < n; i++) {
-    const x = (i * 2) / n - 1;
+    const x = (i * 2) / (n - 1) - 1;
     curve[i] = ((1 + k) * x) / (1 + k * Math.abs(x));
   }
   return curve;
