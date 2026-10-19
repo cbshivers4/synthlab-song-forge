@@ -1845,4 +1845,5 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
 .mx-phone .phone-mix-channel > .mx-row-scope > button { height: 100% !important; }
 
 .arrangement-clip[data-bars]::before { content: attr(data-bars); position: absolute; right: 14px; bottom: 4px; z-index: 40; padding: 1px 5px; border-radius: 3px; font: 600 10px/1.3 ui-monospace, monospace; background: var(--popover); color: var(--popover-foreground); pointer-events: none; }
+.arrangement-trim { max-width: 25%; }
 .phone-console .arrangement-trim { width: 22px; }

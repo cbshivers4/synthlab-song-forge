@@ -15,7 +15,7 @@ Mixer VCAs scale assigned channel gains without changing individual faders, whil
 Mixer meters tap real bus/return/VCA signals; master scales the mix and subgroups scale pre-bus sends.
 MIDI: stable IDs, one hot-plug-safe multi-input subscription. Read nested AGENTS.md.
 Timebase helpers use transport.beatsPerBar, synced each render, so all bar math agrees.
-Timeline rendering/razor share timelineUsesWaveform to cut visible content, not hidden takes; exact clip widths and seams prevent overlapping pieces.
+Timeline/razor share timelineUsesWaveform; exact widths separate cuts. Portal part menus dismiss on delete; waveform clicks stay in arrangement, and drags hit-test lane bounds, not floating clips.
 Bus/send insert edits crossfade parallel paths after the bus scope/send output; never disconnect active sources on parameter edits, which cuts live sound and bypasses effects.
 Printed instrument and drum takes replace overlapping clips by default; only explicit overdub stacks them, so ordinary re-recording does not double playback.
 - Computer typing keys (src/lib/synclab/qwerty.ts) play the armed/selected instrument via previewNote, which both sounds and captures notes; keep it the single note path so recording stays consistent.

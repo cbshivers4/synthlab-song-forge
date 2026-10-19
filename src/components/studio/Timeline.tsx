@@ -1,6 +1,7 @@
 import { boundedRegions, loopRegion } from "@/lib/synclab/recording-region";
 import { timelineUsesWaveform } from "@/lib/synclab/timeline-content";
 import { Fragment, memo, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
+import { createPortal } from "react-dom";
 import { stepsPerBar, getBeatsPerBar, STEPS_PER_BEAT, songSteps, stepSeconds, positionLabel } from "@/lib/synclab/timebase";
 import { notesInRegion, regionsOf, snapCut, deleteRegion } from "@/lib/synclab/note-cuts";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -246,7 +247,10 @@ function Waveform({ track }: { track: Track }) {
 
     const grid = transport.snap ?? 1;
     const y0 = e.clientY;
+    let dragged = false;
     const onMove = (ev: PointerEvent) => {
+      if (!dragged && Math.hypot(ev.clientX - x0, ev.clientY - y0) < 5) return;
+      dragged = true;
       if (mode === "move") {
         el.style.transform = `translateY(${ev.clientY - y0}px)`;
         el.style.zIndex = "50";
@@ -283,15 +287,21 @@ function Waveform({ track }: { track: Track }) {
     const onUp = (ev: PointerEvent) => {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onCancel);
       delete (el.closest(".arrangement-clip") as HTMLElement | null ?? el).dataset["bars"];
       if (mode !== "move") return;
       el.style.transform = "";
       el.style.zIndex = "";
+      if (!dragged) return;
       let targetId: string | undefined;
-      for (const n of document.elementsFromPoint(ev.clientX, ev.clientY)) {
-        const hit = (n as HTMLElement).closest?.("[data-lane-track], [data-track-row]") as HTMLElement | null;
-        const id = hit?.dataset["laneTrack"] ?? hit?.dataset["trackRow"];
-        if (id) { targetId = id; break; }
+      // The dragged clip floats over the destination. Hit-test lane bounds,
+      // not the floating source element or the captured pointer target.
+      for (const lane of document.querySelectorAll<HTMLElement>("[data-lane-track]")) {
+        const bounds = lane.getBoundingClientRect();
+        if (ev.clientX >= bounds.left && ev.clientX <= bounds.right && ev.clientY >= bounds.top && ev.clientY <= bounds.bottom) {
+          targetId = lane.dataset["laneTrack"];
+          break;
+        }
       }
       if (!targetId || targetId === track.id) return;
       const all = tracksLive.current;
@@ -299,9 +309,9 @@ function Waveform({ track }: { track: Track }) {
       const src = all.find((t) => t.id === track.id);
       const moved = src?.clips?.find((c) => c.id === clip.id);
       if (!dest || !src || !moved) return;
-      const destIsNotes = dest.kind === "drum" || dest.kind === "instrument" || dest.kind === "midi";
+      const destIsNotes = dest.kind === "drum" || dest.kind === "instrument" || dest.kind === "midi" || dest.kind === "sampler";
       // The take leaves nothing behind: notes and drum hits recorded under it go too.
-      const a = moved.start ?? 0;
+      const a = orig.start;
       const b = a + clipSeconds(moved) / stepDur;
       const leftClips = (src.clips ?? []).filter((c) => c.id !== clip.id);
       updateTrack(src.id, {
@@ -320,8 +330,17 @@ function Waveform({ track }: { track: Track }) {
       toast.success(`${moved.name} moved to ${dest.name}`);
     };
 
+    const onCancel = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onCancel);
+      el.style.transform = "";
+      el.style.zIndex = "";
+      delete (el.closest(".arrangement-clip") as HTMLElement | null ?? el).dataset["bars"];
+    };
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onCancel);
   };
 
   if (clips.length === 0) return null;
@@ -342,12 +361,13 @@ function Waveform({ track }: { track: Track }) {
             data-audio-clip={clip.id}
             data-selected={active}
             data-cutting={cutting}
-            className="arrangement-clip group absolute inset-y-1 flex flex-col overflow-hidden rounded-[2px] border transition-colors"
+            className="arrangement-clip group absolute inset-y-1 flex touch-none flex-col overflow-hidden rounded-[2px] border transition-colors"
             style={{ left: `${left}%`, width: `max(0px, calc(${width}% - 2px))` }}
             onPointerDown={(e) => {
               setActiveClip(track.id, clip.id);
               beginDrag(e, clip, "move");
             }}
+            onClick={(e) => e.stopPropagation()}
             onDoubleClick={(e) => {
               e.stopPropagation();
               setEditingId(clip.id);
@@ -3563,14 +3583,37 @@ function TrackFxMenu({ track }: { track: Track }) {
 
 /** Selecting a clip/part pops up this small menu instead of a permanent delete button. */
 function PartMenu({ label, onDelete }: { label: string; onDelete: () => void }) {
-  return (
-    <div role="menu" aria-label={`${label} actions`}
-      className="absolute left-1 top-[19px] z-40 flex flex-col rounded-md border border-border bg-popover p-0.5 text-popover-foreground shadow-lg"
+  const anchor = useRef<HTMLSpanElement>(null);
+  const menu = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState<{ left: number; top: number } | null>(null);
+  useEffect(() => {
+    const clip = anchor.current?.closest(".arrangement-clip");
+    if (!clip) return;
+    const open = () => {
+      const rect = clip.getBoundingClientRect();
+      setPosition({ left: Math.max(4, Math.min(window.innerWidth - 100, rect.left + 4)), top: Math.max(4, Math.min(window.innerHeight - 48, rect.top + 20)) });
+    };
+    open();
+    clip.addEventListener("click", open);
+    const dismiss = (event: PointerEvent) => {
+      if (event.target instanceof Node && menu.current?.contains(event.target)) return;
+      setPosition(null);
+    };
+    const close = () => setPosition(null);
+    window.addEventListener("pointerdown", dismiss, true);
+    window.addEventListener("scroll", close, true);
+    return () => { clip.removeEventListener("click", open); window.removeEventListener("pointerdown", dismiss, true); window.removeEventListener("scroll", close, true); };
+  }, []);
+  return <>
+    <span ref={anchor} />
+    {position && createPortal(<div ref={menu} role="menu" aria-label={`${label} actions`}
+      style={position}
+      className="fixed z-50 flex flex-col rounded-md border border-border bg-popover p-0.5 text-popover-foreground shadow-lg"
       onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
-      <button type="button" role="menuitem" onClick={onDelete}
-        className="flex items-center gap-1.5 rounded px-2 py-1 font-mono text-[10px] font-semibold hover:bg-destructive hover:text-destructive-foreground">
+      <Button type="button" role="menuitem" variant="ghost" size="sm" onClick={() => { setPosition(null); onDelete(); }}
+        className="gap-1.5 font-mono text-[10px] font-semibold hover:bg-destructive hover:text-destructive-foreground">
         <Trash2 className="size-3" /> Delete
-      </button>
-    </div>
-  );
+      </Button>
+    </div>, document.body)}
+  </>;
 }
