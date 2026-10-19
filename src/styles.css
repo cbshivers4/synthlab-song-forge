@@ -1494,7 +1494,9 @@ html[data-reduce-motion] *, html[data-reduce-motion] *::before, html[data-reduce
 }
 
 /* Reference arrangement uses track colors, without changing audio paths. */
-.arrangement-timeline { background: var(--arrangement-background); --grid-line-faint: color-mix(in oklab, var(--playhead) 4%, transparent); --grid-line: color-mix(in oklab, var(--playhead) 9%, transparent); --grid-line-strong: color-mix(in oklab, var(--playhead) 22%, transparent); }
+/* The arrangement never uses the near-black app background: every surface inside it
+   resolves to the grey arrangement palette instead. */
+.arrangement-timeline { background: var(--arrangement-background); --background: var(--arrangement-background); --surface: var(--arrangement-surface); --surface-2: var(--arrangement-header); --grid-line-faint: color-mix(in oklab, var(--playhead) 4%, transparent); --grid-line: color-mix(in oklab, var(--playhead) 9%, transparent); --grid-line-strong: color-mix(in oklab, var(--playhead) 22%, transparent); }
 .arrangement-timeline [data-lane] { background-color: transparent; }
 .arrangement-timeline .track-touch-header { background: var(--arrangement-surface); }
 .arrangement-timeline .track-selected .track-touch-header { background: color-mix(in oklab, var(--playhead) 22%, var(--arrangement-header)); }
@@ -1773,6 +1775,8 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
 .signal-screen .text-muted-foreground { color: var(--hardware-silver); }
 .signal-screen .waveform-view { background: transparent; }
 .waveform-view { background: var(--display-black); }
+/* Timeline clips sit on the grey arrangement, not on a black screen. */
+.arrangement-timeline .waveform-view { background: transparent; }
 .signal-point { background: var(--display-point) !important; border-color: var(--display-black) !important; border-radius: 50% !important; padding: 0 !important; min-height: 16px !important; box-shadow: none !important; }
 .signal-point-hit { position: absolute; width: 36px; height: 36px; transform: translate(-50%, -50%); }
 .signal-point-hit > .signal-point { width: 16px; height: 16px; margin: 10px; }
