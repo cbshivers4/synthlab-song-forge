@@ -32,6 +32,7 @@ import { DeviceBar } from "@/components/studio/DeviceBar";
 import { QuickNotes } from "@/components/studio/QuickNotes";
 import { FloatingDevice } from "@/components/studio/FloatingDevice";
 import { MenuBar } from "@/components/studio/MenuBar";
+import { ProjectCloseGuard } from "@/components/studio/ProjectCloseGuard";
 import { ToolsRail } from "@/components/studio/ToolsRail";
 import { Appearance } from "@/components/studio/Appearance";
 import { WelcomeScreen } from "@/components/studio/WelcomeScreen";
@@ -681,6 +682,7 @@ function Stages() {
   const isMobile = useIsMobile();
   return (
     <PlanProvider>
+      <ProjectCloseGuard />
       <RotateGate />
       <SplashScreen />
       <HelpCenter />

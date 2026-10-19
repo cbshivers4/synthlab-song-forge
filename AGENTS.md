@@ -46,3 +46,4 @@ Device prefs use cache/events, never autosave/tick storage. Diagnostics snapshot
 
 Recording-region helpers bound edits; patternRegion bounds drums. Captured notes are absolute.
 Touch genre loops are pure MIDI compositions in touch-loop-library; load through patch.touch so editing and playback share state.
+Project exits go through AppProvider's cancelable stage transition and the shared ProjectCloseGuard, so desktop and phone cannot bypass manual-save confirmation; compare musical snapshots only and await recording completion before save-and-close.
