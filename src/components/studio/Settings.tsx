@@ -219,7 +219,7 @@ export function Settings() {
   useEffect(() => { setHapticsAvailable(typeof navigator !== "undefined" && typeof navigator.vibrate === "function"); }, []);
   const midiRef = useRef(midiInputs);
   midiRef.current = midiInputs;
-  useEffect(() => { if (isMobile) setActiveTab("mobile"); }, [isMobile]);
+  useEffect(() => { if (isMobile) setActiveTab((tab) => tab === "shortcuts" ? tab : "mobile"); }, [isMobile]);
   useEffect(() => {
     const open = () => setActiveTab("shortcuts");
     if (sessionStorage.getItem("synclab.settings.shortcuts") === "open") {
