@@ -1,5 +1,7 @@
 import { Circle, ClipboardPaste, Copy, Headphones, Layers, Mic, Piano, Play, Repeat, Scissors, Square, SquareSplitHorizontal, Timer, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useStudio } from '@/lib/synclab/store';
 import { selectedClip, selectedPartBounds } from '@/lib/synclab/workflow';
@@ -9,6 +11,7 @@ import { barsForSteps, positionLabel } from '@/lib/synclab/timebase';
 
 export function WorkflowBar() {
   const { selected, tracks, transport, setTransport, updateTrack, togglePlay, toggleRecord, stop, setPanel, panel, copyClip, cutClip, pasteClip, clipClipboardName, removeClip, swapTake, razorAt } = useStudio();
+  const isPhone = useIsMobile();
   const clip = selectedClip(selected);
   const part = selectedPartBounds(selected, transport.bpm, transport.bars);
   const active = transport.recording || transport.countInLeft != null;
@@ -37,7 +40,7 @@ export function WorkflowBar() {
       <Button size="icon" variant={transport.playing ? 'default' : 'outline'} className="size-8 shrink-0" aria-label={transport.playing ? 'Pause playback' : 'Play'} title={transport.playing ? 'Pause playback' : 'Play'} aria-pressed={transport.playing} onClick={togglePlay}><Play className="size-3.5 fill-current" /></Button>
       <Button size="icon" variant="outline" className="size-8 shrink-0" aria-label="Stop playback" title="Stop playback" onClick={() => void stop()}><Square className="size-3.5 fill-current" /></Button>
       <Button size="icon" variant={selected?.armed ? 'default' : 'outline'} className="size-8 shrink-0" disabled={!selected || active} aria-label="Arm selected track" aria-pressed={!!selected?.armed} title="Arm selected track" onClick={() => { if (selected) updateTrack(selected.id, { armed: !selected.armed }); }}><Mic className="size-3.5" /></Button>
-      <Button size="icon" variant={active ? 'destructive' : 'outline'} className="size-8 shrink-0" disabled={!selected && !armed.length} aria-label={active ? 'Stop or cancel recording' : 'Record armed tracks'} title={active ? 'Stop or cancel recording' : 'Record armed tracks'} onClick={toggleRecord}><Circle className="size-3.5 fill-current" /></Button>
+      <Button size="icon" variant={active ? 'destructive' : 'outline'} className="size-8 shrink-0" disabled={!selected && !armed.length} aria-label={active ? 'Stop or cancel recording' : 'Record armed tracks'} title={active ? 'Stop or cancel recording' : 'Record armed tracks'} onClick={toggleRecord}><Circle className={cn('size-3.5 fill-current', isPhone && !active && 'text-destructive')} /></Button>
       <div role="group" aria-label="Recording mode" className="flex shrink-0 gap-0.5 border-l border-border pl-2">
         <Button size="sm" variant={!transport.overdub ? 'default' : 'ghost'} className="h-8 px-2 text-[11px]" disabled={active} aria-pressed={!transport.overdub} onClick={() => setTransport({ overdub: false, replace: true })}>Replace</Button>
         <Button size="sm" variant={transport.overdub ? 'default' : 'ghost'} className="h-8 gap-1 px-2 text-[11px]" disabled={active} aria-pressed={!!transport.overdub} onClick={() => setTransport({ overdub: true, replace: false })}><Layers className="size-3" />Overdub</Button>
