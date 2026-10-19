@@ -164,7 +164,7 @@ export function ClipEditor({ track, clip, onClose }: { track: Track; clip: Audio
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="clip-editor-dialog max-w-3xl">
         <DialogHeader>
           <DialogTitle className="font-display tracking-wide">AUDIO CLIP EDITOR</DialogTitle>
           <DialogDescription>
@@ -588,7 +588,7 @@ function InteractiveWaveform({
     <div className="space-y-1.5">
       <div
         ref={viewportRef}
-        className="overflow-x-auto rounded-[3px] border border-border bg-background"
+        className="overflow-x-auto rounded-[3px] border border-border bg-surface-2"
         onScroll={syncScroll}
         onWheel={onWheel}
       >
@@ -604,9 +604,9 @@ function InteractiveWaveform({
             gain={clip.gain ?? 1}
           />
 
-          <div className="pointer-events-none absolute inset-y-0 left-0 bg-background/75" style={{ width: `${leftPct}%` }} />
+          <div className="pointer-events-none absolute inset-y-0 left-0 bg-surface-2/75" style={{ width: `${leftPct}%` }} />
           <div
-            className="pointer-events-none absolute inset-y-0 bg-background/75"
+            className="pointer-events-none absolute inset-y-0 bg-surface-2/75"
             style={{ left: `${leftPct + widthPct}%`, right: 0 }}
           />
           <div

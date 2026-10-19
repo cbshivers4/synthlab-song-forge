@@ -1777,6 +1777,9 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
 .waveform-view { background: var(--display-black); }
 /* Timeline clips sit on the grey arrangement, not on a black screen. */
 .arrangement-timeline .waveform-view { background: transparent; }
+/* The audio clip editor opened from a clip also shows its wave on the editor
+   panel — never on a black screen. */
+.clip-editor-dialog .waveform-view { background: transparent; }
 .signal-point { background: var(--display-point) !important; border-color: var(--display-black) !important; border-radius: 50% !important; padding: 0 !important; min-height: 16px !important; box-shadow: none !important; }
 .signal-point-hit { position: absolute; width: 36px; height: 36px; transform: translate(-50%, -50%); }
 .signal-point-hit > .signal-point { width: 16px; height: 16px; margin: 10px; }
