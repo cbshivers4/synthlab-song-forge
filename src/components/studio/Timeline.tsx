@@ -1641,6 +1641,7 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
                 : ""
         }`}
         style={{
+          backgroundImage: laneGridBackground(transport.bars),
           // Clips, waveforms and notes take the track's own colour.
           "--clip-audio": track.color, "--color-clip-audio": track.color,
           "--clip-midi": track.color, "--color-clip-midi": track.color,
@@ -2157,6 +2158,7 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
         onClick={addPoint}
         title={locked ? "This lane is locked — click the lock in the lane header to edit" : "Click to add a point, drag a point to shape it, double-click a point to delete"}
         className={`lane-grid relative h-[72px] flex-1 bg-background/70 ${locked ? "cursor-default" : "cursor-crosshair"}`}
+        style={{ backgroundImage: laneGridBackground(transport.bars) }}
       >
         <svg className="pointer-events-none absolute inset-0 size-full" preserveAspectRatio="none" viewBox="0 0 100 100">
           {pts.length > 1 && (
