@@ -1781,6 +1781,7 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
    panel — never on a black screen. */
 .clip-editor-dialog .waveform-view { background: transparent; }
 .signal-point { background: var(--display-point) !important; border-color: var(--display-black) !important; border-radius: 50% !important; padding: 0 !important; min-height: 16px !important; box-shadow: none !important; }
+.signal-point[data-band] { background: var(--band-color) !important; border: 2px solid var(--display-point) !important; }
 .signal-point-hit { position: absolute; width: 36px; height: 36px; transform: translate(-50%, -50%); }
 .signal-point-hit > .signal-point { width: 16px; height: 16px; margin: 10px; }
 .hardware-rack-ear { background: linear-gradient(90deg, var(--hardware-black), var(--hardware-rubber-edge), var(--hardware-rubber)); border-color: var(--hardware-black); }
@@ -1865,7 +1866,8 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
 .phone-console .mx-console[data-touch-console] .mx-channel > .mx-row-buttons { height: 104px; }
 .mx-console .mx-channel > div { flex-shrink: 0; }
 /* The master strip repeats the channel's row order and sizing so the two line up row for row. */
-.mx-console:not(.mx-phone) .mx-master > .mx-row-buttons { order: 10; height: 56px; flex-shrink: 0; }
+.mx-console:not(.mx-phone) .mx-master > .mx-row-buttons { order: 10; height: 56px; flex-shrink: 0; overflow: hidden; align-content: center; padding-block: 2px; gap: 2px; }
+.mx-console:not(.mx-phone) .mx-master > .mx-row-buttons > button { height: 24px; font-size: 11px; }
 .mx-console:not(.mx-phone) .mx-master > .mx-row-scope { order: 11; flex-shrink: 0; }
 .mx-console .mx-master > div { flex-shrink: 0; }
 .phone-console .mx-console[data-touch-console] .mx-master > .mx-row-buttons { height: 104px; }
