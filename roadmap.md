@@ -8,6 +8,7 @@
 - [x] Add a playable bass generator that creates editable MIDI patterns
 
 # Roadmap
+- [ ] Verify sound-control changes reach live synth voices, drums and effects; repair shared audio paths and test actual signal changes without duplicating notes or interrupting routing.
 - [x] Live synth displays: float-sample meters retain quiet signals, scopes magnify waveform display without changing sound or dB readings. Signed-in armed synth verified on desktop; phone master meter/scope captured during live playing, seven focused tests passed and build OK. Physical MIDI hardware remains unverified.
 - [x] Add 32 original editable Touch Synth loop sets across 16 genres, with explicit replacement confirmation and single-lane loading preserving others; desktop/phone verified selection, five-lane playback and timeline transfer; 12 focused tests passed, build OK.
 - [x] Touch Synth: poly voices play all five lanes together; scrollable note grid places and erases individual notes without clearing other loops. Signed-in desktop/phone verified one note per lane, single-note deletion and five notes sent to timeline; focused tests passed.
