@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { moveTrackToIndexIn, moveTrackToNewIn } from "./track-move";
+import { moveClipToNewIn, moveTrackToIndexIn, moveTrackToNewIn } from "./track-move";
 import type { Track } from "./types";
 
 const track = (id: string, extra: Partial<Track> = {}): Track => ({
@@ -72,5 +72,38 @@ describe("moveTrackToNewIn", () => {
     const result = moveTrackToNewIn(tracks, "zzz");
     expect(result.tracks).toBe(tracks);
     expect(result.movedId).toBeNull();
+  });
+});
+
+describe('moveClipToNewIn', () => {
+  it('moves only the dragged recording to a new channel and retains other takes', () => {
+    const clip = { id: 'take', name: 'Synth take', peaks: [0.5], duration: 2, start: 32, url: 'blob:take' };
+    const other = { ...clip, id: 'other', start: 64 };
+    const src = track('synth', { clips: [clip, other], folderId: 'collapsed', printedAudio: true,
+      notes: [{ id: 'under', pitch: 60, step: 0, length: 2, velocity: 1 }, { id: 'later', pitch: 64, step: 64, length: 2, velocity: 1 }] });
+    const result = moveClipToNewIn([src, track('bass')], 'synth', 'take', 0, 0.125);
+    expect(result.tracks).toHaveLength(3);
+    expect(result.tracks[2]?.clips).toEqual([clip]);
+    expect(result.tracks[2]?.kind).toBe('audio');
+    expect(result.tracks[2]?.folderId).toBeUndefined();
+    expect(result.tracks[0]?.clips).toEqual([other]);
+    expect(result.tracks[0]?.notes?.map(note => note.id)).toEqual(['later']);
+    expect(result.tracks[1]?.id).toBe('bass');
+  });
+  it('leaves no notes or repeated drum hits beneath a moved recording', () => {
+    const src = track('drums', { kind: 'drum', printedAudio: true,
+      clips: [{ id: 'take', name: 'Beat', peaks: [1], duration: 4, url: 'blob:beat' }],
+      notes: [{ id: 'n', pitch: 36, step: 0, length: 1, velocity: 1 }],
+      pads: [{ id: 'p', name: 'Kick', kind: 'kick', volume: 1, pan: 0, pitch: 0, decay: 1, muted: false, solo: false, steps: [1, 0, 1, 0] }] });
+    const result = moveClipToNewIn([src], 'drums', 'take', 0, 0.125);
+    expect(result.tracks[0]?.clips).toEqual([]);
+    expect(result.tracks[0]?.notes).toEqual([]);
+    expect(result.tracks[0]?.pads?.[0]?.steps).toEqual([0, 0, 0, 0]);
+    expect(result.tracks[0]?.printedAudio).toBe(false);
+    expect(result.tracks[1]?.clips?.[0]?.duration).toBe(4);
+  });
+  it('does not create a channel when the recording is missing', () => {
+    const tracks = [track('a')];
+    expect(moveClipToNewIn(tracks, 'a', 'missing', 0, 0.125)).toEqual({ tracks, movedId: null });
   });
 });
