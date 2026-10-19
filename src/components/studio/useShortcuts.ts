@@ -14,6 +14,7 @@ import { selectedClip, selectedPartBounds } from '@/lib/synclab/workflow';
 export function openShortcutSettings() {
   sessionStorage.setItem('synclab.settings.shortcuts', 'open');
   window.dispatchEvent(new Event('synclab:shortcuts-settings'));
+  requestAnimationFrame(() => requestAnimationFrame(() => window.dispatchEvent(new Event('synclab:shortcuts-settings'))));
 }
 export function useShortcuts() {
   const studio = useStudio();
