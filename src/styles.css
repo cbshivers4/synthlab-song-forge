@@ -1047,6 +1047,44 @@ html[data-reduce-motion] *, html[data-reduce-motion] *::before, html[data-reduce
   .phone-console .phone-sound-tile svg { width: 1.75rem; height: 1.75rem; }
 }
 
+/* Phone mixer: reuse the desktop console strips, compacted for touch with less scrolling. */
+.phone-console .mx-phone { height: 100%; min-height: 0; overflow: hidden; background: var(--mixer-desk); }
+.phone-console .mx-phone .mobile-mixer-strips { flex: 1; min-height: 0; overflow: auto; touch-action: pan-x pan-y; align-items: stretch; background: var(--mx-a); }
+.phone-console .mx-phone .mx-channel { width: 96px; height: 100%; min-height: 0; box-shadow: inset 3px 0 0 0 var(--mixer-channel-color), inset 0 1px 0 0 rgba(255,255,255,0.08); }
+.phone-console .mx-phone .mx-row-name { order: -1; height: 28px; flex-direction: row; gap: 3px; background: var(--mixer-channel-color) !important; }
+.phone-console .mx-phone .mx-row-name > svg { width: 14px; height: 14px; }
+.phone-console .mx-phone .mx-row-name > span, .phone-console .mx-phone .mx-name-btn { font-size: 10px; letter-spacing: 0; }
+.phone-console .mx-phone .mx-row-head { order: 0; height: 30px; flex-wrap: wrap; gap: 2px; align-content: center; overflow: hidden; }
+.phone-console .mx-phone .mx-row-scope { order: 11; height: 30px; }
+.phone-console .mx-phone .mx-row-eq { order: 2; height: 58px; }
+.phone-console .mx-phone .mx-row-inserts { order: 1; height: 44px; }
+.phone-console .mx-phone .mx-row-sends { order: 3; height: 30px; }
+.phone-console .mx-phone .mx-row-send-bars { order: 4; height: 18px; }
+.phone-console .mx-phone .mx-row-routing { order: 5; height: 32px; }
+.phone-console .mx-phone .mx-row-pan { order: 6; height: 34px; }
+.phone-console .mx-phone .mx-row-fader { order: 9; flex: 1; min-height: 120px; height: auto; }
+.phone-console .mx-phone .mx-row-readout { order: 8; height: 20px; }
+.phone-console .mx-phone .mx-row-buttons { order: 7; height: 58px; padding: 3px; gap: 3px; }
+.phone-console .mx-phone .mx-row-buttons > button { min-height: 24px; border: 1px solid var(--mixer-edge); box-shadow: inset 0 1px rgba(255,255,255,0.18), 0 2px 3px rgba(0,0,0,0.45); }
+.phone-console .mx-phone .mx-row-icon { order: 12; height: 34px; flex-shrink: 0; }
+.phone-console .mx-phone .mx-fader[data-orientation="vertical"] { flex-direction: column; width: 34px; }
+.phone-console .mx-phone .mx-fader[data-orientation="vertical"] > span:first-child { width: 6px; height: 100%; background: var(--mixer-edge); }
+.phone-console .mx-phone .mx-fader[data-orientation="vertical"] > span:first-child > span { width: 100%; }
+.phone-console .mx-phone .mx-fader [role="slider"] { width: 30px; height: 34px; min-width: 30px; min-height: 34px; border-radius: 3px; }
+.phone-console .mx-phone .mx-output-dock { background: var(--mx-a); border-left: 2px solid var(--mixer-edge); }
+.phone-console .mx-phone .mx-master { width: 116px; background: var(--mx-a) !important; }
+
+/* Phone hardware feel: raised buttons, knobs and sliders that read as touchable. */
+.phone-console button, .phone-console [role="button"], .phone-console [role="combobox"] { touch-action: manipulation; }
+.phone-console .phone-tool-panel button:not([disabled]), .phone-console .phone-tool-panel [role="combobox"], .phone-console .mx-phone button:not([disabled]) {
+  box-shadow: inset 0 1px rgba(255,255,255,0.12), 0 2px 4px rgba(0,0,0,0.35);
+}
+.phone-console .hardware-knob-dial { box-shadow: 0 4px 10px rgba(0,0,0,0.55), inset 0 1px rgba(255,255,255,0.22); }
+.phone-console .hardware-knob-grip { box-shadow: inset 0 2px 4px rgba(255,255,255,0.18), inset 0 -3px 6px rgba(0,0,0,0.55); }
+.phone-console [data-slot="slider-thumb"], .phone-console [role="slider"] {
+  box-shadow: 0 2px 5px rgba(0,0,0,0.5), inset 0 1px rgba(255,255,255,0.35);
+}
+
 /* Phone left rail: arrow tab slides the logo/room bar in and out. */
 .phone-console .phone-rail-toggle { color: var(--foreground); }
 .phone-console .phone-rail-toggle:active { transform: scale(0.94); }
