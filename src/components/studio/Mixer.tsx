@@ -1016,16 +1016,6 @@ function Strip({
         >
           <ChevronRight className="size-3.5" />
         </button>
-        <button
-          onClick={(e) => { e.stopPropagation(); setClip(false); }}
-          title="Clip indicator — click to reset"
-          className={cn(
-            "ml-auto flex h-4 w-8 items-center justify-center rounded-[2px] font-mono text-[8px] font-bold leading-3",
-            clip ? "bg-red-500 text-black" : "bg-black/40 text-muted-foreground"
-          )}
-        >
-          CLIP
-        </button>
       </div>
 
       <div className={cn(ROW.scope, "border-b border-border/60 p-[3px]")}>
