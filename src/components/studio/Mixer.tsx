@@ -977,6 +977,16 @@ function Strip({
         >
           {t.name}
         </Button>
+        <button
+          onClick={(e) => { e.stopPropagation(); setClip(false); }}
+          title="Clip indicator — click to reset"
+          className={cn(
+            "flex h-4 w-8 shrink-0 items-center justify-center rounded-[2px] font-mono text-[8px] font-bold leading-3",
+            clip ? "bg-red-500 text-black" : "bg-black/40 text-muted-foreground"
+          )}
+        >
+          CLIP
+        </button>
       </div>
 
       {/* channel header: number, colour, clip LED */}
