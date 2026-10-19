@@ -42,7 +42,6 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
   const [room, setRoom] = useState<"edit" | "sounds" | "tools">("edit");
   const [railOpen, setRailOpen] = useState(true);
   const [transportOpen, setTransportOpen] = useState(false);
-  const [resizeHandlesVisible, setResizeHandlesVisible] = useState(false);
   const [mixerFull, setMixerFull] = useState(true);
   const [dockHeight, setDockHeight] = useState(150);
   const startDockDrag = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -97,7 +96,7 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
       <Button variant="ghost" size="icon" className="size-12 shrink-0" aria-label="Home and projects" onClick={() => setStage("start")}><Home /></Button>
       </>}
       {!railOpen && <Button variant={panel === "mixer" ? "secondary" : "ghost"} size="icon" className="size-11 shrink-0" aria-label="Open mixer" aria-pressed={panel === "mixer"} title="Mixer" onClick={() => setPanel("mixer")}><SlidersHorizontal className="size-5" /></Button>}
-      {(panel === "mixer" || (!panel && room === "edit")) && <Button variant={resizeHandlesVisible ? "secondary" : "ghost"} className="h-11 w-full shrink-0 flex-col gap-0.5 px-0 text-[9px] font-semibold" aria-label={resizeHandlesVisible ? "Hide resize handles" : "Show resize handles"} title={resizeHandlesVisible ? "Hide resize handles" : "Show resize handles"} aria-pressed={resizeHandlesVisible} onClick={() => setResizeHandlesVisible((visible) => !visible)}><Move className="size-5" />{railOpen ? "RESIZE" : ""}</Button>}
+
       {panel === "mixer" && <Button variant={mixerFull ? "secondary" : "ghost"} className="h-11 w-full shrink-0 flex-col gap-0.5 px-0 text-[9px] font-semibold" aria-label={mixerFull ? "Exit full mixer" : "Open mixer full screen"} title={mixerFull ? "Exit full mixer" : "Open mixer full screen"} aria-pressed={mixerFull} onClick={() => setMixerFull((full) => { const next = !full; if (next) setTransportOpen(false); return next; })}>{mixerFull ? <Minimize2 className="size-5" /> : <Maximize2 className="size-5" />}{railOpen ? "FULL" : ""}</Button>}
       <Button variant="ghost" className={`h-12 w-full shrink-0 flex-col gap-0.5 px-0 text-[9px] font-semibold ${transport.recording ? "text-destructive" : transportOpen || transport.playing ? "text-primary" : "text-muted-foreground"}`} aria-label={transportOpen ? "Hide transport" : "Show transport"} title={transportOpen ? "Hide transport" : "Show transport"} aria-expanded={transportOpen} aria-controls="phone-transport-overlay" onClick={() => setTransportOpen((open) => !open)}><PanelTop className="size-5" />{railOpen ? "TRANSPORT" : transport.recording ? "REC" : transport.playing ? "PLAY" : ""}</Button>
       <Button variant="outline" size="icon" className="phone-rail-toggle mt-auto shrink-0 self-center" aria-label={railOpen ? "Hide navigation bar" : "Show navigation bar"} aria-expanded={railOpen} onClick={() => setRailOpen((open) => !open)}>{railOpen ? <ChevronLeft className="size-4" /> : <ChevronRight className="size-4" />}</Button>
@@ -106,10 +105,10 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
     <main className="phone-console-stage relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
       {!panel && room === "edit" && <div className="flex h-7 shrink-0 items-center justify-center border-b border-border bg-surface px-3"><h1 className="truncate text-xs font-semibold tracking-wide">{project?.id ? project.name : project ? `${project.name} · not saved yet` : "Untitled song"}</h1></div>}
       {panel === "mixer" && !mixerFull && <>
-        {dockHeight > 0 && <div className="docked-phone-timeline shrink-0 overflow-hidden" style={{ height: dockHeight }}><Timeline desktopStyle resizeHandlesVisible={resizeHandlesVisible} /></div>}
+        {dockHeight > 0 && <div className="docked-phone-timeline shrink-0 overflow-hidden" style={{ height: dockHeight }}><Timeline desktopStyle /></div>}
         <div role="separator" aria-orientation="horizontal" aria-label="Resize timeline and mixer" title="Drag to resize timeline and mixer" onPointerDown={startDockDrag} className="dock-splitter flex h-8 shrink-0 cursor-row-resize touch-none items-center justify-center gap-2 border-y-2 border-primary/50 bg-surface"><GripHorizontal className="size-5 text-primary" /><span className="text-[10px] font-bold uppercase tracking-widest text-primary">Drag to resize</span></div>
       </>}
-      {!panel && room === "edit" && <Timeline desktopStyle resizeHandlesVisible={resizeHandlesVisible} />}
+      {!panel && room === "edit" && <Timeline desktopStyle />}
       {panel && children}
       {!panel && room !== "edit" && <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <header className="phone-room-header grid h-14 shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center border-b border-border px-5"><h2 className="truncate text-base font-semibold">{room === "sounds" ? "Sounds & instruments" : "Effects & tools"}</h2><span className="text-xs text-muted-foreground">SYNCLAB</span></header>
