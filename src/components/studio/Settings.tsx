@@ -40,6 +40,7 @@ import { qwertyEnabled, setQwertyEnabled, qwertyOctave, setQwertyOctave } from "
 import { notifyPreferencesChanged } from "@/lib/synclab/preferences";
 import { Bluetooth, Mic } from "lucide-react";
 import { SettingsDiagnostics } from "./SettingsDiagnostics";
+import { KeyboardShortcuts } from "./KeyboardShortcuts";
 
 export function requestBluetoothSettings() {
   sessionStorage.setItem("synclab.settings.bluetooth", "open");
@@ -220,6 +221,15 @@ export function Settings() {
   midiRef.current = midiInputs;
   useEffect(() => { if (isMobile) setActiveTab("mobile"); }, [isMobile]);
   useEffect(() => {
+    const open = () => setActiveTab("shortcuts");
+    if (sessionStorage.getItem("synclab.settings.shortcuts") === "open") {
+      sessionStorage.removeItem("synclab.settings.shortcuts");
+      open();
+    }
+    window.addEventListener("synclab:shortcuts-settings", open);
+    return () => window.removeEventListener("synclab:shortcuts-settings", open);
+  }, []);
+  useEffect(() => {
     const open = () => {
       if (sessionStorage.getItem("synclab.settings.bluetooth") !== "open") return;
       sessionStorage.removeItem("synclab.settings.bluetooth");
@@ -335,11 +345,12 @@ export function Settings() {
         {<Button variant="secondary" className="h-12 gap-2 whitespace-nowrap" disabled={scanning} onClick={() => { setActiveTab("audio"); void scanDevices(true); }}><Mic className="size-4" /> {scanning ? "Connecting…" : "Enable microphone"}</Button>}
         <Button variant="outline" className="gap-2" onClick={() => setActiveTab("audio")}><Bluetooth className="size-4" /> Bluetooth devices</Button>
         <Button variant="outline" onClick={() => setActiveTab("diagnostics")}>Diagnostics</Button>
+        <Button variant="outline" onClick={() => setActiveTab("shortcuts")}>Keyboard shortcuts</Button>
       </div>
       <TabsList className="flex h-auto max-w-full flex-nowrap justify-start gap-1 overflow-x-auto rounded-none bg-surface sm:col-start-1 sm:row-start-2 sm:flex-col sm:items-stretch sm:self-start sm:overflow-x-hidden">
-        {(isMobile ? ["mobile", "general", "browsing", "audio", "midi", "sync", "controls", "folders", "account", "recording", "metronome", "timing", "timeline", "mixing", "export", "desktop", "diagnostics"] : ["general", "browsing", "audio", "midi", "sync", "controls", "folders", "account", "recording", "metronome", "timing", "timeline", "mixing", "export", "desktop", "mobile", "diagnostics"]).map((t) => (
+        {(isMobile ? ["mobile", "general", "shortcuts", "browsing", "audio", "midi", "sync", "controls", "folders", "account", "recording", "metronome", "timing", "timeline", "mixing", "export", "desktop", "diagnostics"] : ["general", "shortcuts", "browsing", "audio", "midi", "sync", "controls", "folders", "account", "recording", "metronome", "timing", "timeline", "mixing", "export", "desktop", "mobile", "diagnostics"]).map((t) => (
           <TabsTrigger key={t} value={t} className="min-h-9 justify-start rounded-none px-3 text-xs sm:w-full">
-            {t === "mobile" && isMobile ? "Phone features" : t === "general" ? "User interface" : t === "controls" ? "Other controls" : t}
+            {t === "shortcuts" ? "Keyboard shortcuts" : t === "mobile" && isMobile ? "Phone features" : t === "general" ? "User interface" : t === "controls" ? "Other controls" : t}
           </TabsTrigger>
         ))}
       </TabsList>
@@ -347,6 +358,7 @@ export function Settings() {
       <TabsContent value="diagnostics" className="mt-4">
         <SettingsDiagnostics />
       </TabsContent>
+      <TabsContent value="shortcuts" className="mt-4"><KeyboardShortcuts /></TabsContent>
 
       <TabsContent value="audio" className="mt-4">
         <BluetoothDevices
@@ -683,19 +695,7 @@ export function Settings() {
         <Row label="Reduce motion">
           <Switch checked={p.reduceMotion} onCheckedChange={(v) => set("reduceMotion", v)} />
         </Row>
-        <div className="mt-4 rounded-lg border border-border bg-surface p-3">
-          <div className="label-xs mb-2">Keyboard shortcuts</div>
-          <div className="grid gap-1 font-mono text-[11px] text-muted-foreground sm:grid-cols-2">
-            <span>SPACE — play / pause</span>
-            <span>R — record</span>
-            <span>M — mute selected</span>
-            <span>S — solo selected</span>
-            <span>T — add track</span>
-            <span>Q — quantize notes</span>
-            <span>D — duplicate</span>
-            <span>DEL — delete selection</span>
-          </div>
-        </div>
+        <div className="pt-4"><Button variant="secondary" onClick={() => setActiveTab("shortcuts")}>Keyboard shortcuts</Button></div>
         <div className="flex gap-2 pt-4">
           <Button
             size="sm"
