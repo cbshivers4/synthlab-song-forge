@@ -10,7 +10,7 @@ const BT_NAME = /bluetooth|airpods|beats|buds|bose|jbl|sony wh|sony wf|wh-1000|s
 export const looksBluetooth = (label: string) => BT_NAME.test(label);
 
 export function bluetoothMidiSupported() {
-  return typeof navigator !== "undefined" && "bluetooth" in navigator;
+  return typeof navigator !== "undefined" && typeof (navigator as unknown as { bluetooth?: { requestDevice?: unknown } }).bluetooth?.requestDevice === "function";
 }
 
 type BtChar = { value?: DataView; startNotifications(): Promise<unknown>; addEventListener(t: string, f: (e: Event) => void): void };
@@ -47,12 +47,25 @@ export function parseBleMidi(bytes: Uint8Array): Uint8Array[] {
 const connected = new Map<string, BtDevice>();
 
 export async function connectBluetoothMidi(): Promise<{ id: string; name: string }> {
-  if (!bluetoothMidiSupported()) throw new Error("This browser can't connect Bluetooth MIDI. Use Chrome or Edge on a computer or Android.");
+  if (!bluetoothMidiSupported()) throw new Error("This browser can't scan nearby Bluetooth devices. Use Chrome or Edge on a computer or Android; iPhone and iPad browsers do not support this scan.");
   const bt = (navigator as unknown as { bluetooth: { requestDevice(o: unknown): Promise<BtDevice> } }).bluetooth;
-  const device = await bt.requestDevice({ filters: [{ services: [MIDI_SERVICE] }] });
-  const server = await device.gatt!.connect();
-  const svc = await server.getPrimaryService(MIDI_SERVICE);
-  const ch = await svc.getCharacteristic(MIDI_CHAR);
+  // Some BLE MIDI controllers do not advertise the MIDI service until connected.
+  // Discover all BLE devices, then validate the service rather than hiding them.
+  const device = await bt.requestDevice({ acceptAllDevices: true, optionalServices: [MIDI_SERVICE] });
+  if (!device.gatt) throw new Error("This device does not offer Bluetooth LE MIDI. Pair audio devices in your system Bluetooth settings instead.");
+  let ch: BtChar;
+  try {
+    const server = await device.gatt.connect();
+    const svc = await server.getPrimaryService(MIDI_SERVICE);
+    ch = await svc.getCharacteristic(MIDI_CHAR);
+    await ch.startNotifications();
+  } catch (error) {
+    device.gatt.disconnect();
+    if (error instanceof Error && error.name === "NotFoundError") {
+      throw new Error("The selected device does not provide Bluetooth LE MIDI. For headphones, speakers or audio-only devices, pair them in your system Bluetooth settings first.");
+    }
+    throw error;
+  }
   const id = `ble:${device.id}`;
   const name = `${device.name || "Bluetooth MIDI"} (Bluetooth)`;
   ch.addEventListener("characteristicvaluechanged", () => {
@@ -60,7 +73,6 @@ export async function connectBluetoothMidi(): Promise<{ id: string; name: string
     if (!v) return;
     for (const msg of parseBleMidi(new Uint8Array(v.buffer, v.byteOffset, v.byteLength))) feedVirtualInput(id, msg);
   });
-  await ch.startNotifications();
   addVirtualInput(id, name);
   connected.set(id, device);
   device.addEventListener("gattserverdisconnected", () => {

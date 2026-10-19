@@ -8,6 +8,7 @@
 - [x] Add a playable bass generator that creates editable MIDI patterns
 
 # Roadmap
+- [ ] Repair Bluetooth MIDI discovery and preview selected synth presets; verify discovery failures, multi-input preservation and distinct preset audio.
 - [x] Enable simultaneous MIDI controllers with per-port checkboxes and All devices; detection preserves choices and hot-plug refresh reattaches inputs. Signed-in simulated-device selection verified; MIDI tests pass. Physical-controller testing remains unavailable here.
 - [x] Move mixer channel buttons directly above scope and bottom icon; expose working High/Mid/Low EQ knobs on desktop and phone. Signed-in keyboard adjustments, all nine channels, centered icons and phone bottom-control scrolling verified; 44 tests passed. Physical-device listening remains unverified.
 - [x] Give effects and synths distinct hardware faceplates, dimensional knobs and raised controls; signed-in synth/effect knob changes, bypass and sideways phone access verified; 44 tests passed. Audio routing and wallpaper controls preserved.
