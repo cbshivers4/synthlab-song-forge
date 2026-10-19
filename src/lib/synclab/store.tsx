@@ -2150,7 +2150,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         setTracks((ts) =>
           ts.map((t) =>
             t.id === trackId && t.pads
-              ? liveSound({ ...t, ...(patch.steps ? { patternRegion: loopRegion(transportRef.current) } : {}), pads: t.pads.map((p) => (p.id === padId ? { ...p, ...patch } : p)) })
+              ? liveSound({ ...t, ...(patch.steps ? { patternRegion: transportRef.current.loop ? loopRegion(transportRef.current) : undefined } : {}), pads: t.pads.map((p) => (p.id === padId ? { ...p, ...patch } : p)) })
               : t,
           ),
         ),
@@ -2293,7 +2293,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
                 toast.error("Could not record this channel", { description: err instanceof Error ? err.message : undefined });
                 return;
               }
-              updateTrack(armedNote.id, { recording: true, ...(armedNote.kind === "drum" ? { patternRegion: loopRegion(transportRef.current) } : {}) });
+              updateTrack(armedNote.id, { recording: true, ...(armedNote.kind === "drum" ? { patternRegion: transportRef.current.loop ? loopRegion(transportRef.current) : undefined } : {}) });
               toast("Recording notes and audio", {
                 description: `Playing ${armedNote.name} captures an editable pattern and waveform.`,
               });

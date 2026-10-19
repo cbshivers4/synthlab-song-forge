@@ -114,7 +114,7 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
   }, [isMobile, track.id, rows.length, selected]);
 
   const write = (pad: DrumPad, patch: Partial<DrumPad>) => {
-    if (patch.steps) {
+    if (patch.steps && transport.loop) {
       const region = loopRegion(transport);
       updateTrack(track.id, { patternRegion: region });
       const next = patch.steps;

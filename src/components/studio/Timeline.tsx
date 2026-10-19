@@ -586,7 +586,7 @@ function DrumClip({ track }: { track: Track }) {
   const shown = pads.slice(0, 8);
   const steps = track.pads?.[0]?.steps.length ?? 16;
   const cuts = track.cuts ?? [];
-  const bounds = track.patternRegion ?? loopRegion(transport);
+  const bounds = track.patternRegion ?? (transport.loop ? loopRegion(transport) : [0, total] as [number, number]);
   {
     // Cut beat: each part is its own block that can be selected and deleted, like a DAW part.
     return <>{boundedRegions(regionsOf(cuts, total), bounds).map(([a, b]) => {
