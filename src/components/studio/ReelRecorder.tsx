@@ -50,7 +50,7 @@ export function ReelRecorder() {
   const locked = state.busy || saving;
   const recording = state.mode === "recording";
   /** Tape progress 0..1: supply reel starts full and empties as the song/tape plays or records. */
-  const songSteps = Math.max(stepsPerBar() * 4, ...tracks.flatMap((t) => [...(t.clips ?? []).map((c) => c.start + c.length), ...(t.notes ?? []).map((n) => n.start + n.duration)]));
+  const songSteps = Math.max(stepsPerBar() * 4, ...tracks.flatMap((t) => [...(t.clips ?? []).map((c) => (c.start ?? 0) + (c.length ?? 0)), ...(t.notes ?? []).map((n) => n.step + n.length)]));
   const progress = master ? Math.max(0, Math.min(1, transport.step / songSteps)) : state.duration > 0 ? Math.max(0, Math.min(1, state.position / state.duration)) : 0;
   const save = async (toProject: boolean) => {
     if (locked || recording || !state.hasTape) return;
