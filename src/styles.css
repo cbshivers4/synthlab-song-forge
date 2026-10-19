@@ -1788,3 +1788,5 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
 .mx-phone .phone-mix-channel > .mx-row-icon { order: 12; }
 .phone-console .mx-console[data-touch-console] .mx-channel > .mx-row-buttons { height: 104px; }
 .mx-console .mx-channel > div { flex-shrink: 0; }
+.mx-console .mx-channel > .mx-row-scope > button,
+.mx-phone .phone-mix-channel > .mx-row-scope > button { height: 100% !important; }
