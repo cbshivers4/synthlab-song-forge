@@ -8,6 +8,7 @@ Settings diagnostics snapshots only device preferences across explicit reloads; 
 MIDI settings uses shared controller profiles and store input selection; illustrations distinguish available profiles from reported inputs, and category navigation remains alongside the panel to match the workstation reference without duplicate MIDI state.
 
 SynthEditor derives instrument tabs from timeline track IDs and selects through the shared store; keep each track's editor keyed by its ID so switching preserves project patches without leaking local controls between synths.
+Preset auditions pass the selected patch through previewNote with capture disabled, so immediate factory/user/modular previews never read a stale track patch or record test notes.
 
 Effects Rack reuses track plugin instances and store actions with inline RackEffect modules; post-insert analyser scopes and shared 20 fps meter callbacks keep the rack tied to real audio without changing routing.
 

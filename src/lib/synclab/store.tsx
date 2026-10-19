@@ -10,6 +10,7 @@ import {
 } from "react";
 import { capturedNote, loopRegion } from "./recording-region";
 import { ccAction } from "./midi-actions";
+import { previewTrack } from "./note-preview";
 import { bendCents, playbackPreferences } from "./preferences";
 import { toast } from "sonner";
 import { getEngine } from "./audio-engine";
@@ -353,7 +354,7 @@ interface StudioApi extends StudioState {
   savePreset: (name: string) => void;
   loadPreset: (trackId: string, name: string) => void;
   generateBeat: (trackId: string, genre: string, energy: number) => void;
-  previewNote: (trackId: string, midi: number, duration?: number, capture?: boolean) => void;
+  previewNote: (trackId: string, midi: number, duration?: number, capture?: boolean, patch?: SynthPatch) => void;
   /** Writes a note into the live timeline recording without playing it (the caller already sounded it). */
   captureNote: (trackId: string, midi: number, velocity?: number) => void;
   loadSample: (trackId: string, file: File) => Promise<void>;
@@ -2579,12 +2580,12 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             };
           }),
         ),
-      previewNote: (trackId, midi, duration = 0.35, shouldCapture = true) => {
+      previewNote: (trackId, midi, duration = 0.35, shouldCapture = true, patch) => {
         const t = tracksRef.current.find((x) => x.id === trackId);
         const engine = getEngine();
         engine.init();
         engine.syncMix(tracksRef.current);
-        if (t) triggerNote(engine, t, midi, duration, 0.9);
+        if (t) triggerNote(engine, previewTrack(t, patch), midi, duration, 0.9);
         keyDown(midi);
         // Notes played on screen are captured while the transport records.
         if (t && shouldCapture) capture(t.id, midi, 0.9);

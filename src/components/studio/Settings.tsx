@@ -23,7 +23,7 @@ import {
   setPreferredInput,
   onDeviceChange,
 } from "@/lib/synclab/mic";
-import { midiSupported, midiUnsupportedMessage } from "@/lib/synclab/midi";
+import { midiSupported, midiUnsupportedMessage, toggleMidiInput } from "@/lib/synclab/midi";
 import { getInputChannel, getInputGainDb, setInputChannel, setInputGainDb, setOutputDevice, type InputChannel } from "@/lib/synclab/mic";
 import { openExport } from "@/components/studio/ExportDialog";
 import { DesktopPanel } from "@/components/studio/DesktopPanel";
@@ -356,7 +356,7 @@ export function Settings() {
           onRescan={() => void scanDevices(true)}
           onMidiChanged={(id) => {
             (enableMidi as (o?: { quiet?: boolean }) => void)({ quiet: true });
-            if (id) setMidiInput(id);
+            if (id) setMidiInput(toggleMidiInput(midiInputId, id, true, midiInputs));
           }}
           onUseInput={(label) => {
             const match = inputs.find((d) => d.label === label);

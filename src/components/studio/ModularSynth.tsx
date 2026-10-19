@@ -128,7 +128,12 @@ export function ModularSynth({ track }: { track: Track }) {
       <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Patched rack presets">
         <span className="label-xs mr-1">PRESET RACKS</span>
         {MODULAR_PRESETS.map((p) => (
-          <button key={p.name} type="button" onClick={() => { setPending(null); save(structuredClone(p.modular)); previewNote(track.id, 48); }} className="modular-add">
+          <button key={p.name} type="button" onClick={() => {
+            const modular = structuredClone(p.modular);
+            setPending(null);
+            save(modular);
+            previewNote(track.id, 48, 0.75, false, { ...patch, modular });
+          }} className="modular-add">
             {p.name.replace("Modular Tech ", "")}
           </button>
         ))}
