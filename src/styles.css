@@ -1537,8 +1537,9 @@ html[data-reduce-motion] *, html[data-reduce-motion] *::before, html[data-reduce
 .phone-console .mx-console[data-touch-console] .mx-row-scope { height: 48px; }
 /* Phone name plate stays a plain row: it must never float over the channel meter while scrolling */
 .phone-console .mx-console[data-touch-console] .mx-row-name { order: -1; height: 40px; position: static; }
-.phone-console .mx-console[data-touch-console] .mx-row-name button { font-size: 14px; min-height: 32px; }
+.phone-console .mx-console[data-touch-console] .mx-row-name .mx-name-btn { font-size: 14px; min-height: 32px; }
 .phone-console .mx-console[data-touch-console] .mx-row-name > svg { width: 20px; height: 20px; }
+.phone-console .mx-console[data-touch-console] .mx-row-name button.rounded-full { width: 12px; height: 12px; min-width: 12px; min-height: 12px; }
 /* Extra scroll room so the M/S/REC/MON row can scroll fully clear of the transport overlay */
 .phone-console .mx-console[data-touch-console] .mobile-mixer-strips { padding-bottom: 260px; }
 /* Rows grow to fit their controls so nothing in a channel overlaps the row below */
