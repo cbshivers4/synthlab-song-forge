@@ -22,7 +22,7 @@ Detached panels use synchronous user-click window.open + React portals for share
 Bottom displays read live analyser taps at 20 fps. Generator waves use PCM/offline voices, never decoration; stem masks run in a worker for smooth playback.
 Workspace retains cloud projects, device recents, saved/starter templates and storage/open actions.
 - GRANT EXECUTE on RLS security-definer helpers to anon/authenticated/service_role; missing grants break policy reads.
-Panel wallpaper uses one bundled JPEG, dark semantic overlay and per-panel skins for legible customization without external images.
+Panel wallpaper uses one bundled JPEG, dark overlay and per-panel skins without external images.
 Timeline names stay single-line; phone actions prioritize REC/AUTO with isolated menu clicks to avoid opening instruments.
 Playhead stays within track rows; headers, ruler and song lane share its width variable, including large phone controls. It renders through the --playhead token (white, never dimmed) and stays draggable from ruler and track lanes.
 Synth sections share wrapping tabs; X-Y pads dispatch through updatePatch to stay synchronized with knobs and saved presets without removing controls.
