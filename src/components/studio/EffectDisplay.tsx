@@ -433,8 +433,8 @@ export function EffectDisplay({
       <div className="flex items-center gap-2">
         <span className="label-xs">{shape.title}</span>
         <span className="ml-auto font-mono text-[9px] tracking-wider text-muted-foreground uppercase">
-          {isStepFilter ? "drag steps to draw the filter pattern" : isChannelEq ? "drag color bands · bass / mids / highs" : xP ? `drag ↔ ${xP.name}` : ""}
-          {!isChannelEq && yP ? ` · ↕ ${yP.name}` : ""}
+          {isStepFilter ? "STEP FILTER" : isChannelEq ? "BASS / MIDS / HIGHS" : xP?.name ?? ""}
+          {!isChannelEq && yP ? ` · ${yP.name}` : ""}
         </span>
       </div>
       <div
