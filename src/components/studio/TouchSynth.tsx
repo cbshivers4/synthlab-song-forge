@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type PointerEvent } from 'react';
-import { ArrowRightToLine, Circle, Eraser, Hand, Pencil, Play, Square } from 'lucide-react';
+import { ArrowRightToLine, ChevronLeft, ChevronRight, Circle, Eraser, Hand, ListMusic, Pencil, Play, Square } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Knob } from './Knob';
@@ -8,6 +8,7 @@ import { applyPreset } from '@/lib/synclab/presets';
 import { getEngine } from '@/lib/synclab/audio-engine';
 import { laneById, loopsToNotes, placeLoopNote, eraseLoopNote, touchPitch, touchCutoff, TOUCH_LANES, TOUCH_LOOP_STEPS, TOUCH_SCALES, TOUCH_SOUNDS, type TouchLoops } from '@/lib/synclab/touch-synth';
 import type { Track } from '@/lib/synclab/types';
+import { genreLoops, loadGenreLoops, TOUCH_LOOP_GENRES, TOUCH_LOOP_LIBRARY } from '@/lib/synclab/touch-loop-library';
 
 const KEYS = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
 const drumPad = (kind: string) => ({ id: `touch-${kind}`, name: kind, kind: kind as 'kick', volume: 1, pan: 0, pitch: 0, decay: .4, muted: false, solo: false, steps: [] as number[] });
@@ -33,6 +34,10 @@ export function TouchSynth({ track }: { track: Track }) {
   const [playingLoops, setPlayingLoops] = useState(false);
   const [readout, setReadout] = useState('—');
   const [editMode, setEditMode] = useState<'draw' | 'erase'>('draw');
+  const [genre, setGenre] = useState('Detroit Techno');
+  const [presetId, setPresetId] = useState('0-0');
+  const choices = TOUCH_LOOP_LIBRARY.filter(p => p.genre === genre);
+  const selectedPreset = choices.find(p => p.id === presetId) ?? choices[0];
   const save = (values: Partial<typeof settings>) => updatePatch(track.id, { touch: { ...settings, ...values } });
 
   const stopPad = () => {
@@ -141,6 +146,24 @@ export function TouchSynth({ track }: { track: Track }) {
     s.updateTrack(s.track.id, { notes: [...(s.track.notes ?? []), ...notes] });
     setReadout(`${notes.length} NOTES SENT TO TIMELINE`);
   };
+  const loadPresetLoops = (onlyLane: boolean) => {
+    if (!selectedPreset) return;
+    const s = latest.current;
+    const occupied = onlyLane ? (s.loops[s.lane.id]?.length ?? 0) > 0 : Object.values(s.loops).some(notes => notes.length > 0);
+    if (occupied && !window.confirm(`Replace ${onlyLane ? s.lane.label.toLowerCase() + ' notes' : 'all five loops'} with ${selectedPreset.name}?`)) return;
+    stopPad();
+    stopLoops();
+    const next = loadGenreLoops(s.loops, genreLoops(selectedPreset, s.settings.root, onlyLane ? s.settings.scale : selectedPreset.scale), onlyLane ? s.lane.id : undefined);
+    const nextSettings = { ...s.settings, loops: next, scale: onlyLane ? s.settings.scale : selectedPreset.scale };
+    latest.current = { ...s, settings: nextSettings, loops: next };
+    s.updatePatch(s.track.id, { touch: nextSettings });
+    setReadout(`${selectedPreset.name.toUpperCase()} · ${onlyLane ? s.lane.label : '5 LANES'} LOADED`);
+  };
+  const browsePreset = (direction: number) => {
+    const index = choices.findIndex(p => p.id === selectedPreset?.id);
+    const next = choices[(index + direction + choices.length) % choices.length];
+    if (next) setPresetId(next.id);
+  };
 
   const move = (e: PointerEvent<HTMLDivElement>) => {
     const r = e.currentTarget.getBoundingClientRect();
@@ -172,6 +195,28 @@ export function TouchSynth({ track }: { track: Track }) {
       <h3 className="flex items-center gap-2 font-display text-lg font-bold text-primary"><Hand className="size-5" /> SYNCLAB TOUCH</h3>
       <span className="font-mono text-xs text-muted-foreground">5-LANE LOOP SYNTH · {totalNotes} NOTES RECORDED</span>
     </header>
+    <div className="space-y-2 border-b border-border pb-3" aria-label="Touch genre loop library">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h4 className="flex items-center gap-2 font-mono text-xs font-bold text-foreground"><ListMusic className="size-4 text-primary" /> GENRE LOOPS</h4>
+        <span className="font-mono text-[10px] text-muted-foreground">{TOUCH_LOOP_LIBRARY.length} SETS · {TOUCH_LOOP_GENRES.length} GENRES · 2 BARS</span>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <Select value={genre} onValueChange={value => { setGenre(value); const first = TOUCH_LOOP_LIBRARY.find(p => p.genre === value); if (first) setPresetId(first.id); }}>
+          <SelectTrigger aria-label="Loop genre" className="w-44"><SelectValue /></SelectTrigger>
+          <SelectContent>{TOUCH_LOOP_GENRES.map(value => <SelectItem key={value} value={value}>{value}</SelectItem>)}</SelectContent>
+        </Select>
+        <div className="flex min-w-0 items-center gap-1">
+          <Button size="icon" variant="outline" aria-label="Previous genre loop" title="Previous loop" onClick={() => browsePreset(-1)}><ChevronLeft className="size-4" /></Button>
+          <Select value={selectedPreset?.id ?? ''} onValueChange={setPresetId}>
+            <SelectTrigger aria-label="Genre loop set" className="w-52"><SelectValue /></SelectTrigger>
+            <SelectContent>{choices.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
+          </Select>
+          <Button size="icon" variant="outline" aria-label="Next genre loop" title="Next loop" onClick={() => browsePreset(1)}><ChevronRight className="size-4" /></Button>
+        </div>
+        <Button size="sm" variant="default" onClick={() => loadPresetLoops(false)} aria-label="Load all five genre loops"><ListMusic className="size-4" /> Load all five</Button>
+        <Button size="sm" variant="outline" onClick={() => loadPresetLoops(true)} aria-label="Load genre loop into selected lane"><ArrowRightToLine className="size-4" /> Load {lane.label.toLowerCase()}</Button>
+      </div>
+    </div>
     <div role="tablist" aria-label="Touch lanes" className="grid grid-cols-5 gap-1">
       {TOUCH_LANES.map((l) => {
         const count = loops[l.id]?.length ?? 0;

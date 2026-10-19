@@ -44,4 +44,5 @@ Video cuts use source seconds/grid/clamp; kits save MIDI notes. Keyboard/learned
 
 Device prefs use cache/events, never autosave/tick storage. Diagnostics snapshot prefs only, preserve audio and reuse panels; unsupported controls stay read-only.
 
-Recording-region helpers bound edits; drum patternRegion aligns playback/display. Live captured notes get absolute bounds to prevent repeated visuals.
+Recording-region helpers bound edits; patternRegion bounds drums. Captured notes are absolute.
+Touch genre loops are pure MIDI compositions in touch-loop-library; load through patch.touch so editing and playback share state.
