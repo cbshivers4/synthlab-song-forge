@@ -1490,6 +1490,53 @@ function MasterEq({ color }: { color: string }) {
   );
 }
 
+/** Master stereo width — the row every channel uses for its pan control. */
+function MasterWidth({ color }: { color: string }) {
+  const { fxChains, addFxPlugin, setFxParam, installedPlugins } = useStudio();
+  const width = (fxChains["bus:master"] ?? []).find((p) => p.kind === "width");
+  const pending = useRef<number | null>(null);
+  // The store builds the instance, so the first slider move lands as soon as it exists.
+  useEffect(() => {
+    const wanted = pending.current;
+    if (!width || wanted === null) return;
+    pending.current = null;
+    setFxParam("bus:master", width.id, "width", wanted);
+  }, [width, setFxParam]);
+  const setWidth = (value: number) => {
+    if (width) {
+      setFxParam("bus:master", width.id, "width", value);
+      return;
+    }
+    const def = installedPlugins.find((d) => d.kind === "width") ?? BUILT_IN_PLUGINS.find((d) => d.kind === "width");
+    if (!def) return;
+    pending.current = value;
+    addFxPlugin("bus:master", def);
+  };
+  const v = width?.params.find((p) => p.id === "width")?.value ?? 1;
+  return (
+    <div className={cn(ROW.pan, "flex flex-col justify-center border-b border-border/60 px-1.5")} style={{ "--primary": color } as CSSProperties}>
+      <Slider
+        aria-label="Master stereo width"
+        aria-valuetext={v === 0 ? "Mono" : `${Math.round(v * 100)} percent`}
+        value={[v]}
+        min={0}
+        max={2}
+        step={0.01}
+        className="h-3"
+        onDoubleClick={() => setWidth(1)}
+        onValueChange={([n = 1]) => setWidth(n)}
+      />
+      <button
+        onClick={() => setWidth(1)}
+        title="Reset the main output to its original stereo width"
+        className="mt-0.5 text-center font-mono text-[8px] text-muted-foreground hover:text-foreground"
+      >
+        {v === 0 ? "MONO" : `${Math.round(v * 100)}%`}
+      </button>
+    </div>
+  );
+}
+
 function MasterStrip({ level: peak }: { level: number }) {
   const { buses, setBus } = useStudio();
   const master = buses["master"] as BusState;
@@ -1562,6 +1609,7 @@ function MasterStrip({ level: peak }: { level: number }) {
       <div className={cn(ROW.io, "flex items-center justify-center border-b border-border/60 font-mono text-[8px] uppercase tracking-widest text-muted-foreground")}>
         Main out
       </div>
+      <MasterWidth color={color} />
       <div
         className={cn(ROW.fader, "flex items-stretch justify-center gap-1 border-b border-border/60 py-1")}
         style={{ "--primary": color } as CSSProperties}
