@@ -32,3 +32,5 @@ Studio View back side (StudioBack.tsx) mirrors the real signal path â€” track â†
 
 Studio rear devices use category columns inside one scrollable measured canvas; keep the cable SVG and jack positions in that same coordinate space so horizontal and vertical scrolling preserve connections.
 Drum-channel razor/split unrolls pad steps to song length and reuses track.cuts/activeRegion; deleting a part zeroes those steps. Generate Stem isolates the chosen part with Demucs (lib/synclab/ai-isolate) and falls back to on-device cleaning when the AI service fails.
+
+Timeline recording drags use pointer-based new-channel drop bounds and edge scrolling; transfer single clips atomically through track-move so sibling takes stay put and covered source notes/hits clear.

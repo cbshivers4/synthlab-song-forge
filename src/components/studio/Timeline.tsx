@@ -213,7 +213,7 @@ function TimelineCutGuide({ tool, position, selected, total, grid }: { tool: "sp
 
 /** Audio lane: every clip sits at its own bar position and can be moved, trimmed and dragged between tracks. */
 function Waveform({ track }: { track: Track }) {
-  const { setActiveClip, removeClip, updateTrack, transport, tracks, editTool } = useStudio();
+  const { setActiveClip, removeClip, updateTrack, moveClipToNew, transport, tracks, editTool } = useStudio();
   const cutting = editTool === "split" || editTool === "razor";
   const [editingId, setEditingId] = useState<string | null>(null);
   const clips = track.clips ?? [];
@@ -248,15 +248,48 @@ function Waveform({ track }: { track: Track }) {
 
     const grid = transport.snap ?? 1;
     const y0 = e.clientY;
+    const viewport = lane.closest<HTMLElement>("#timeline-scroll");
+    const newChannel = viewport?.querySelector<HTMLElement>("[data-new-channel-drop]");
+    const initialScrollLeft = viewport?.scrollLeft ?? 0;
+    let pointerX = x0;
+    let pointerY = y0;
     let dragged = false;
+    const overNewChannel = (x: number, y: number) => {
+      if (!newChannel || !viewport) return false;
+      const bounds = newChannel.getBoundingClientRect();
+      const visible = viewport.getBoundingClientRect();
+      return x >= visible.left && x <= visible.right && y >= Math.max(bounds.top, visible.top) && y <= Math.min(bounds.bottom, visible.bottom);
+    };
+    const highlight = () => {
+      const over = dragged && mode === "move" && overNewChannel(pointerX, pointerY);
+      newChannel?.classList.toggle("ring-2", over);
+      newChannel?.classList.toggle("ring-primary", over);
+      newChannel?.classList.toggle("bg-primary/10", over);
+    };
+    const edgeScroll = window.setInterval(() => {
+      if (!dragged || mode !== "move" || !viewport) return;
+      const bounds = viewport.getBoundingClientRect();
+      if (pointerX < bounds.left || pointerX > bounds.right) return;
+      const dy = pointerY > bounds.bottom - 48 ? 18 : pointerY < bounds.top + 48 ? -18 : 0;
+      if (dy) viewport.scrollTop += dy;
+      highlight();
+    }, 50);
+    const clearDrag = () => {
+      window.clearInterval(edgeScroll);
+      newChannel?.classList.remove("ring-2", "ring-primary", "bg-primary/10");
+      if (el.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId);
+    };
     const onMove = (ev: PointerEvent) => {
       if (!dragged && Math.hypot(ev.clientX - x0, ev.clientY - y0) < 5) return;
       dragged = true;
+      pointerX = ev.clientX;
+      pointerY = ev.clientY;
+      highlight();
       if (mode === "move") {
         el.style.transform = `translateY(${ev.clientY - y0}px)`;
         el.style.zIndex = "50";
       }
-      const raw = (ev.clientX - x0) / Math.max(1, perStep);
+      const raw = (ev.clientX - x0 + (viewport?.scrollLeft ?? initialScrollLeft) - initialScrollLeft) / Math.max(1, perStep);
       const dSteps = grid > 0 ? Math.round(raw / grid) * grid : Math.round(raw * 100) / 100;
       if (mode === "move") {
         const next = orig.start + dSteps;
@@ -289,11 +322,18 @@ function Waveform({ track }: { track: Track }) {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
       window.removeEventListener("pointercancel", onCancel);
+      clearDrag();
       delete (el.closest(".arrangement-clip") as HTMLElement | null ?? el).dataset["bars"];
       if (mode !== "move") return;
       el.style.transform = "";
       el.style.zIndex = "";
       if (!dragged) return;
+      if (overNewChannel(ev.clientX, ev.clientY)) {
+        moveClipToNew(track.id, clip.id, orig.start);
+        toast.success(`${clip.name} moved to a new channel`);
+        requestAnimationFrame(() => { if (viewport) viewport.scrollTop = viewport.scrollHeight; });
+        return;
+      }
       let targetId: string | undefined;
       // The dragged clip floats over the destination. Hit-test lane bounds,
       // not the floating source element or the captured pointer target.
@@ -335,6 +375,8 @@ function Waveform({ track }: { track: Track }) {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
       window.removeEventListener("pointercancel", onCancel);
+      clearDrag();
+      if (dragged) writeClip(clip.id, orig);
       el.style.transform = "";
       el.style.zIndex = "";
       delete (el.closest(".arrangement-clip") as HTMLElement | null ?? el).dataset["bars"];
@@ -3492,6 +3534,7 @@ export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandl
           />
         </div>
         </div>
+        <div data-new-channel-drop className="min-h-28 transition-colors">
         <div className="flex items-center gap-3 px-2 pt-2">
           <AddTrackMenu size="sm" />
           <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
@@ -3549,6 +3592,7 @@ export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandl
           }}
         >
           drag a tool or instrument here or press + ADD TRACK
+        </div>
         </div>
 
         {transport.exportStart != null && transport.exportEnd != null && (

@@ -9,6 +9,8 @@
 
 # Roadmap
 
+- [x] Fix recording drag below the last track to create a new channel with edge scrolling; signed-in desktop mouse and sideways-phone finger drags increased channels from 2 to 3 and cleared source audio, with no page errors. 20 focused tests pass; build OK. Portrait retains rotation prompt; preview only, physical touch hardware untested.
+
 - [x] Match shared reel winding to captured song duration, not a minimum four-bar estimate; use actual tape position during playback/rewind/pause and conserve tape area between reels. Signed-in preview recorded 4.55 seconds, verified full supply at start, partial winding during playback, unchanged winding when switching deck views while paused, and empty supply/full take-up at the exact tape end. Nine focused tests passed; build OK. Preview only; physical phone not tested.
 
 - [x] Add shared All sounds / All hits drum controls: pitch, decay, tone, drive, level, hit velocity/pitch/decay/chance/retrigger and one-step timing nudges. Atomic edits retain empty steps and loop boundaries; nudges carry hit metadata. Shared sound displays now use black backgrounds/red waves, white EQ handles and colored effect points. Signed-in desktop/sideways-phone verified new hit creation and bulk velocity readback (0.35→0.07, phone→0.08), pitch adjustment, EQ drag (7.5 dB), delay time (320→258 ms), Pro-EQ frequency/gain (143 Hz/6.2 dB), and phone Plugins access; no page errors, 110 tests pass, build OK. Physical-device listening and exhaustive display-by-display checks remain unverified; preview only.
