@@ -2349,8 +2349,9 @@ export class SyncLabEngine {
 
     // flanger / phaser colouring before the voice output
     let tail: AudioNode = shaper;
+    const voiceFx = new Map<string, (value: number, time: number) => void>();
     const crushAmt = clamp(patch.fx.bitcrush ?? 0, 0, 1);
-    if (crushAmt > 0.01) {
+    {
       // bit-depth reduction: 12 bits down to 2 bits
       const bits = Math.round(12 - crushAmt * 10);
       const levels = 2 ** bits;
@@ -2361,12 +2362,13 @@ export class SyncLabEngine {
         curve[i] = Math.round(x * levels) / levels;
       }
       const crusher = ctx.createWaveShaper();
-      crusher.curve = curve;
+      crusher.curve = crushAmt > 0.01 ? curve : null;
+      voiceFx.set("bitcrush", v => { crusher.curve = v > 0.01 ? makeBitcrushCurve(Math.round(12 - clamp(v, 0, 1) * 10)) : null; });
       shaper.connect(crusher);
       tail = crusher;
     }
     const flanger = patch.fx.flanger ?? 0;
-    if (flanger > 0) {
+    {
       const d = ctx.createDelay(0.02);
       d.delayTime.value = 0.004;
       const lfo = ctx.createOscillator();
@@ -2379,12 +2381,13 @@ export class SyncLabEngine {
       lfo.stop(t0 + life);
       const wet = ctx.createGain();
       wet.gain.value = flanger * 0.7;
+      voiceFx.set("flanger", (v, time) => { wet.gain.setTargetAtTime(v * 0.7, time, 0.015); lg.gain.setTargetAtTime(v * 0.003, time, 0.015); });
       tail.connect(d);
       d.connect(wet);
       wet.connect(voiceOut);
     }
     const phaser = patch.fx.phaser ?? 0;
-    if (phaser > 0) {
+    {
       let node: AudioNode = tail;
       for (let i = 0; i < 4; i++) {
         const ap = ctx.createBiquadFilter();
@@ -2395,33 +2398,38 @@ export class SyncLabEngine {
       }
       const wet = ctx.createGain();
       wet.gain.value = phaser * 0.8;
+      voiceFx.set("phaser", (v, time) => wet.gain.setTargetAtTime(v * 0.8, time, 0.015));
       node.connect(wet);
       wet.connect(voiceOut);
     }
     tail.connect(voiceOut);
 
-    if (patch.fx.delay > 0) {
+    {
       const delay = ctx.createDelay(1.5);
       delay.delayTime.value = 0.28;
       const fb = ctx.createGain();
       fb.gain.value = clamp(patch.fx.delayFeedback, 0, 0.8);
       const wet = ctx.createGain();
       wet.gain.value = patch.fx.delay * 0.6;
+      voiceFx.set("delay", (v, time) => wet.gain.setTargetAtTime(v * 0.6, time, 0.015));
+      voiceFx.set("delayFeedback", (v, time) => fb.gain.setTargetAtTime(clamp(v, 0, 0.8), time, 0.015));
       voicePan.connect(wet);
       wet.connect(delay);
       delay.connect(fb);
       fb.connect(delay);
       delay.connect(ch.input);
     }
-    if ((patch.fx.chorus ?? 0) > 0 && this.chorusSend) {
+    if (this.chorusSend) {
       const wet = ctx.createGain();
       wet.gain.value = patch.fx.chorus * 0.7;
+      voiceFx.set("chorus", (v, time) => wet.gain.setTargetAtTime(v * 0.7, time, 0.015));
       voicePan.connect(wet);
       wet.connect(this.chorusSend);
     }
-    if (patch.fx.reverb > 0 && this.reverbSend) {
+    if (this.reverbSend) {
       const wet = ctx.createGain();
       wet.gain.value = patch.fx.reverb * 0.5;
+      voiceFx.set("reverb", (v, time) => wet.gain.setTargetAtTime(v * 0.5, time, 0.015));
       voicePan.connect(wet);
       wet.connect(this.reverbSend);
     }
@@ -2439,11 +2447,12 @@ export class SyncLabEngine {
     const doGlide = glide > 0 && prevMidi !== undefined && (patch.glideMode !== "legato" || mode !== "poly");
 
     patch.oscillators.forEach((osc, oi) => {
-      if (!osc.on || osc.level <= 0) return;
+      // Keep muted oscillators available for live level/on edits.
+
       for (let u = 0; u < voices; u++) {
         const spread = voices === 1 ? 0 : (u / (voices - 1) - 0.5) * 2;
         const g = ctx.createGain();
-        g.gain.value = ((osc.level * levelMod) / voices) * velocity;
+        g.gain.value = (osc.on ? (osc.level * levelMod) / voices : 0) * velocity;
         const p = ctx.createStereoPanner();
         p.pan.value = clamp(osc.pan + spread * patch.unison.width, -1, 1);
         g.connect(p);
@@ -2531,7 +2540,8 @@ export class SyncLabEngine {
       });
     });
 
-    if (patch.noise > 0) {
+    let noiseGain: GainNode | undefined;
+    {
       const len = Math.ceil(ctx.sampleRate * life);
       const buf = ctx.createBuffer(1, len, ctx.sampleRate);
       const d = buf.getChannelData(0);
@@ -2540,6 +2550,7 @@ export class SyncLabEngine {
       src.buffer = buf;
       const g = ctx.createGain();
       g.gain.value = patch.noise * 0.4 * velocity;
+      noiseGain = g;
       src.connect(g);
       g.connect(filterIn);
       src.start(t0);
@@ -2550,7 +2561,6 @@ export class SyncLabEngine {
     const lfoControls: { index: number; source: OscillatorNode; depth: GainNode; destination: string }[] = [];
     const runningMods: { stop: (t: number) => void }[] = [];
     patch.lfos.forEach((lfo, index) => {
-      if (!lfo.on) return;
       const o = ctx.createOscillator();
       o.type = lfo.wave;
       o.frequency.value = lfo.rate;
@@ -2570,6 +2580,7 @@ export class SyncLabEngine {
           if ("detune" in n && n.detune) g.connect((n as OscillatorNode).detune);
         });
       }
+      if (!lfo.on) g.gain.value = 0;
       o.connect(g);
       lfoControls.push({ index, source: o, depth: g, destination: lfo.destination });
       o.start(t0);
@@ -2670,6 +2681,11 @@ export class SyncLabEngine {
         for (const [age, level] of envelopePoints(next.filterEnv, duration, Math.max(0, time - t0))) {
           filter.frequency.linearRampToValueAtTime(clamp(base + next.filterEnv.amount * level, 40, 18000), Math.max(time, t0 + age) + 0.015);
         }
+      }
+      if (noiseGain) glideParam(noiseGain.gain, next.noise * 0.4 * velocity);
+      for (const [key, setter] of voiceFx) {
+        const value = next.fx[key as keyof SynthPatch["fx"]] ?? 0;
+        if (value !== old.fx[key as keyof SynthPatch["fx"]]) setter(value, time);
       }
       filter.type = next.filterType;
       glideParam(filter.Q, clamp(next.resonance * (1 + fixedMod("resonance")), 0, 30));
@@ -3035,6 +3051,7 @@ export const getEngine = () => {
     "setVcaStates",
     "setAuxReturn",
     "getMasterChannel",
+    "syncSoundControls",
   ];
   if (!current || required.some((m) => typeof current[m] !== "function")) {
     engineGlobal.__synclabEngine = new SyncLabEngine();
