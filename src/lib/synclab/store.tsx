@@ -1419,7 +1419,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           clips: [...(replace ? replaceTakeRegion(t.clips ?? [], clip.start ?? 0, newEnd, stepDur) : (t.clips ?? [])), alts.length ? { ...clip, alts } : clip],
           // When notes were played, the editable notes stay what you hear (piano roll
           // edits change the sound); the audio take is kept under WAVE.
-          activeClipId: clip.id, printedAudio: !(t.kind !== "drum" && notes.some((n) => capturedIds.has(n.id))),
+          activeClipId: clip.id, printedAudio: true,
         };
       }));
       landed = true;
