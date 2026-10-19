@@ -43,7 +43,9 @@ export function StudioSearch() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+      const target = e.target instanceof HTMLElement ? e.target : null;
+      if (e.defaultPrevented || e.repeat || e.isComposing || target?.isContentEditable || target?.closest('input, textarea, select')) return;
+      if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === "k") {
         e.preventDefault();
         setOpen((o) => !o);
       }
