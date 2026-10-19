@@ -187,12 +187,12 @@ export function PianoRoll({ track }: { track: Track }) {
 
   return (
     <div className="space-y-1.5" onPointerUp={endDrag} onPointerLeave={endDrag}>
-      {track.printedAudio && (
+      {track.clips?.length ? (
         <div className="flex items-center justify-between gap-2 border-b border-border px-2 py-1 text-xs text-muted-foreground">
-          <span>Recorded waveform is playing; notes remain editable here.</span>
-          <Button size="sm" variant="secondary" onClick={() => updateTrack(track.id, { printedAudio: false })}>PLAY NOTES</Button>
+          <span>{track.printedAudio ? "Recorded waveform is playing; notes remain editable here." : "Notes are playing; this track also holds a recorded waveform."}</span>
+          <Button size="sm" variant="secondary" onClick={() => updateTrack(track.id, { printedAudio: !track.printedAudio })}>{track.printedAudio ? "PLAY NOTES" : "PLAY WAVE"}</Button>
         </div>
-      )}
+      ) : null}
       {/* toolbar */}
       <div className="flex items-center overflow-x-auto whitespace-nowrap scrollbar-hide gap-1.5 rounded-sm border border-border bg-surface/60 p-1.5">
         <span className="label-xs px-1">GRID</span>
