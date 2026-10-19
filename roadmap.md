@@ -9,6 +9,8 @@
 
 # Roadmap
 
+- [ ] Close the section Delete menu after deletion and verify moving remaining recordings between tracks on desktop and phone.
+
 - [x] Visible timeline cuts: rendering and razor target the same content; small audio pieces retain exact widths with clear seams, and trim handles cannot intercept cuts. Signed-in desktop verified MIDI regions and a real recorded synth waveform splitting into two pieces; sideways phone Split produced three pieces. Screenshots confirmed separate boundaries; 16 focused tests passed and build OK.
 
 - [x] Phone mixer master channel now stands out: accent-tinted face, accent edge plate, outer glow, wider strip and pinned to the right edge so it stays visible while scrolling. The phone console runs the desktop-style layout, so the earlier `.mx-phone`-only master styling never applied; added an `mx-phone-master` marker on touch layouts. Signed-in sideways-phone check verified sticky position, accent border/glow and distinct header; desktop console confirmed unchanged (marker absent); build OK.
