@@ -980,13 +980,12 @@ function Strip({
         <button
           onClick={(e) => { e.stopPropagation(); setClip(false); }}
           title="Clip indicator — click to reset"
+          aria-label={`Clip indicator for ${t.name} — click to reset`}
           className={cn(
-            "flex h-4 w-8 shrink-0 items-center justify-center rounded-[2px] font-mono text-[8px] font-bold leading-3",
-            clip ? "bg-red-500 text-black" : "bg-black/40 text-muted-foreground"
+            "size-2.5 shrink-0 rounded-full border border-black/60 transition-shadow",
+            clip ? "bg-red-500 shadow-[0_0_6px_1px_rgba(239,68,68,0.8)]" : "bg-black/50"
           )}
-        >
-          CLIP
-        </button>
+        />
       </div>
 
       {/* channel header: number, colour, clip LED */}
