@@ -11,7 +11,9 @@ import {
   Power,
   Settings2,
   Sliders,
+  Speaker,
   Trash2,
+  Volume2,
   VolumeX,
   Waves,
   X,
@@ -489,32 +491,6 @@ function Screw({ className }: { className?: string }) {
 }
 
 
-/** Analog VU meter gauge (0..1 level). */
-function VuMeter({ level, label }: { level: number; label: string }) {
-  // Map dB-ish fraction to needle angle: -46deg .. +42deg
-  const angle = -46 + Math.min(1, Math.max(0, level)) * 88;
-  return (
-    <div className="flex flex-1 flex-col items-center">
-      <svg viewBox="0 0 60 38" className="w-full max-w-[64px]">
-        <path d="M 6 34 A 26 26 0 0 1 54 34" fill="none" stroke="oklch(0.9 0.02 95)" strokeWidth="1" opacity="0.5" />
-        <path d="M 44.6 15.4 A 26 26 0 0 1 54 34" fill="none" stroke="oklch(0.65 0.22 25)" strokeWidth="2.2" />
-        {[-40, -20, -7, -3, 0].map((db, i) => {
-          const a = ((-46 + i * 22) * Math.PI) / 180;
-          const x1 = 30 + Math.sin(a) * 20;
-          const y1 = 34 - Math.cos(a) * 20;
-          const x2 = 30 + Math.sin(a) * 24;
-          const y2 = 34 - Math.cos(a) * 24;
-          return <line key={db} x1={x1} y1={y1} x2={x2} y2={y2} stroke="oklch(0.85 0.02 95)" strokeWidth="1" opacity="0.7" />;
-        })}
-        <g transform={`rotate(${angle} 30 34)`}>
-          <line x1="30" y1="34" x2="30" y2="10" stroke="var(--mx-accent, oklch(0.75 0.19 30))" strokeWidth="1.6" strokeLinecap="round" />
-        </g>
-        <circle cx="30" cy="34" r="2.6" fill="oklch(0.3 0.01 260)" stroke="oklch(0.7 0.02 95)" strokeWidth="0.8" />
-      </svg>
-      <span className="font-mono text-[6px] uppercase tracking-widest text-muted-foreground">{label}</span>
-    </div>
-  );
-}
 
 /** Chunky console fader thumb overrides for the shadcn slider (cap face + centre line live in styles.css). */
 const FADER_CAP =
