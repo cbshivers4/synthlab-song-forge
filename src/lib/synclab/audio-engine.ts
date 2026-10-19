@@ -1,3 +1,5 @@
+import { phasedHarmonics } from "./oscillator-phase";
+import { envelopePoints } from "./live-envelope";
 import { renderVintageDrum } from "./vintage-drums";
 import { playModularVoice } from "./modular";
 import { playbackPreferences } from "./preferences";
@@ -82,10 +84,10 @@ function makeBitcrushCurve(bits: number) {
 
 function makeDistortionCurve(amount: number) {
   const k = amount * 100;
-  const n = 1024;
+  const n = 1025; // Odd size maps silence to exactly zero, avoiding a DC floor.
   const curve = new Float32Array(n);
   for (let i = 0; i < n; i++) {
-    const x = (i * 2) / n - 1;
+    const x = (i * 2) / (n - 1) - 1;
     curve[i] = ((1 + k) * x) / (1 + k * Math.abs(x));
   }
   return curve;
@@ -926,6 +928,9 @@ export class SyncLabEngine {
           inNode.connect(d);
           d.connect(wet);
           wet.connect(out);
+          live(pl, "rate", (v, t) => glide(lfo.frequency, clamp(v, 0.05, 8), t));
+          live(pl, "depth", (v, t) => glide(lfoGain.gain, clamp(v, 0, 1) * 0.008, t));
+          live(pl, "mix", (v, t) => glide(wet.gain, clamp(v, 0, 1), t));
           nodes.push(inNode, d, wet, out);
           break;
         }
@@ -951,6 +956,10 @@ export class SyncLabEngine {
           inNode.connect(d);
           d.connect(wet);
           wet.connect(out);
+          live(pl, "rate", (v, t) => glide(lfo.frequency, clamp(v, 0.05, 5), t));
+          live(pl, "depth", (v, t) => glide(lfoGain.gain, clamp(v, 0, 1) * 0.003, t));
+          live(pl, "feedback", (v, t) => glide(fb.gain, clamp(v, 0, 0.95), t));
+          live(pl, "mix", (v, t) => glide(wet.gain, clamp(v, 0, 1), t));
           nodes.push(inNode, d, fb, wet, out);
           break;
         }
@@ -966,6 +975,8 @@ export class SyncLabEngine {
           const lfoGain = ctx.createGain();
           lfoGain.gain.value = center * 0.7 * depth;
           lfo.connect(lfoGain);
+          const stages: BiquadFilterNode[] = [];
+          let liveCenter = center, liveDepth = depth;
           let cur: AudioNode = inNode;
           for (let i = 0; i < 4; i++) {
             const ap = ctx.createBiquadFilter();
@@ -975,13 +986,17 @@ export class SyncLabEngine {
             lfoGain.connect(ap.frequency);
             cur.connect(ap);
             cur = ap;
-            nodes.push(ap);
+            stages.push(ap);
           }
           lfo.start();
           cur.connect(wet);
           inNode.connect(out);
           wet.connect(out);
-          nodes.push(inNode, wet, out);
+          live(pl, "rate", (v, t) => glide(lfo.frequency, clamp(v, 0.05, 8), t));
+          live(pl, "depth", (v, t) => { liveDepth = clamp(v, 0, 1); glide(lfoGain.gain, liveCenter * 0.7 * liveDepth, t); });
+          live(pl, "center", (v, t) => { liveCenter = clamp(v, 200, 4000); stages.forEach((ap, i) => glide(ap.frequency, liveCenter * (1 + i * 0.5), t)); glide(lfoGain.gain, liveCenter * 0.7 * liveDepth, t); });
+          live(pl, "mix", (v, t) => glide(wet.gain, clamp(v, 0, 1), t));
+          nodes.push(inNode, ...stages, wet, out);
           break;
         }
         case "tremolo": {
@@ -995,6 +1010,8 @@ export class SyncLabEngine {
           lfo.connect(lfoGain);
           lfoGain.connect(g.gain);
           lfo.start();
+          live(pl, "rate", (v, t) => glide(lfo.frequency, clamp(v, 0.1, 20), t));
+          live(pl, "depth", (v, t) => { const d = clamp(v, 0, 1); glide(g.gain, 1 - d / 2, t); glide(lfoGain.gain, d / 2, t); });
           nodes.push(g);
           break;
         }
@@ -1007,6 +1024,8 @@ export class SyncLabEngine {
           lfo.connect(lfoGain);
           lfoGain.connect(pan.pan);
           lfo.start();
+          live(pl, "rate", (v, t) => glide(lfo.frequency, clamp(v, 0.05, 10), t));
+          live(pl, "depth", (v, t) => glide(lfoGain.gain, clamp(v, 0, 1), t));
           nodes.push(pan);
           break;
         }
@@ -1017,6 +1036,8 @@ export class SyncLabEngine {
           c.ratio.value = 20;
           c.attack.value = 0.002;
           c.release.value = clamp(val(pl, "release", 60), 5, 500) / 1000;
+          live(pl, "ceiling", (v, t) => glide(c.threshold, clamp(v, -12, 0), t));
+          live(pl, "release", (v, t) => glide(c.release, clamp(v, 5, 500) / 1000, t));
           nodes.push(c);
           break;
         }
@@ -1036,6 +1057,8 @@ export class SyncLabEngine {
           inNode.connect(ws);
           ws.connect(wet);
           wet.connect(out);
+          live(pl, "bits", v => { ws.curve = makeBitcrushCurve(Math.round(clamp(v, 2, 16))); });
+          live(pl, "mix", (v, t) => { const m = clamp(v, 0, 1); glide(wet.gain, m, t); glide(dry.gain, 1 - m, t); });
           nodes.push(inNode, ws, wet, dry, out);
           break;
         }
@@ -1409,6 +1432,7 @@ export class SyncLabEngine {
   syncMix(tracks: Track[]) {
     this.mixTracks = tracks;
     if (!this.ctx) return;
+    this.syncSoundControls(tracks);
     const anySolo = tracks.some((t) => t.solo);
     for (const t of tracks) {
       const ch = this.channel(t.id);
@@ -2173,6 +2197,36 @@ export class SyncLabEngine {
     return wave;
   }
 
+  private liveVoices = new Map<string, Set<{ end: number; patch: SynthPatch; update: (patch: SynthPatch, time: number) => void }>>();
+  private liveDrums = new Map<string, Set<{ end: number; pad: DrumPad; update: (pad: DrumPad, time: number) => void }>>();
+
+  /** Update nodes already sounding, without triggering or capturing another note. */
+  syncSoundControls(tracks: Track[]) {
+    const ctx = this.ctx;
+    if (!ctx) return;
+    const now = ctx.currentTime;
+    for (const [id, voices] of this.liveVoices) {
+      const patch = tracks.find(track => track.id === id)?.patch;
+      for (const voice of voices) {
+        if (voice.end <= now) { voices.delete(voice); continue; }
+        if (!patch || patch === voice.patch || patch.modular) continue;
+        voice.update(patch, now);
+        voice.patch = patch;
+      }
+      if (!voices.size) this.liveVoices.delete(id);
+    }
+    for (const [key, voices] of this.liveDrums) {
+      const [trackId, padId] = JSON.parse(key) as [string, string];
+      const pad = tracks.find(track => track.id === trackId)?.pads?.find(item => item.id === padId);
+      for (const voice of voices) {
+        if (voice.end <= now) { voices.delete(voice); continue; }
+        if (!pad || pad === voice.pad) continue;
+        voice.update(pad, now); voice.pad = pad;
+      }
+      if (!voices.size) this.liveDrums.delete(key);
+    }
+  }
+
   private lastMidi = new Map<string, number>();
   private monoVoice = new Map<string, { out: GainNode; stop: (t: number) => void }>();
 
@@ -2296,8 +2350,9 @@ export class SyncLabEngine {
 
     // flanger / phaser colouring before the voice output
     let tail: AudioNode = shaper;
+    const voiceFx = new Map<string, (value: number, time: number) => void>();
     const crushAmt = clamp(patch.fx.bitcrush ?? 0, 0, 1);
-    if (crushAmt > 0.01) {
+    {
       // bit-depth reduction: 12 bits down to 2 bits
       const bits = Math.round(12 - crushAmt * 10);
       const levels = 2 ** bits;
@@ -2308,12 +2363,13 @@ export class SyncLabEngine {
         curve[i] = Math.round(x * levels) / levels;
       }
       const crusher = ctx.createWaveShaper();
-      crusher.curve = curve;
+      crusher.curve = crushAmt > 0.01 ? curve : null;
+      voiceFx.set("bitcrush", v => { crusher.curve = v > 0.01 ? makeBitcrushCurve(Math.round(12 - clamp(v, 0, 1) * 10)) : null; });
       shaper.connect(crusher);
       tail = crusher;
     }
     const flanger = patch.fx.flanger ?? 0;
-    if (flanger > 0) {
+    {
       const d = ctx.createDelay(0.02);
       d.delayTime.value = 0.004;
       const lfo = ctx.createOscillator();
@@ -2326,12 +2382,13 @@ export class SyncLabEngine {
       lfo.stop(t0 + life);
       const wet = ctx.createGain();
       wet.gain.value = flanger * 0.7;
+      voiceFx.set("flanger", (v, time) => { wet.gain.setTargetAtTime(v * 0.7, time, 0.015); lg.gain.setTargetAtTime(v * 0.003, time, 0.015); });
       tail.connect(d);
       d.connect(wet);
       wet.connect(voiceOut);
     }
     const phaser = patch.fx.phaser ?? 0;
-    if (phaser > 0) {
+    {
       let node: AudioNode = tail;
       for (let i = 0; i < 4; i++) {
         const ap = ctx.createBiquadFilter();
@@ -2342,33 +2399,38 @@ export class SyncLabEngine {
       }
       const wet = ctx.createGain();
       wet.gain.value = phaser * 0.8;
+      voiceFx.set("phaser", (v, time) => wet.gain.setTargetAtTime(v * 0.8, time, 0.015));
       node.connect(wet);
       wet.connect(voiceOut);
     }
     tail.connect(voiceOut);
 
-    if (patch.fx.delay > 0) {
+    {
       const delay = ctx.createDelay(1.5);
       delay.delayTime.value = 0.28;
       const fb = ctx.createGain();
       fb.gain.value = clamp(patch.fx.delayFeedback, 0, 0.8);
       const wet = ctx.createGain();
       wet.gain.value = patch.fx.delay * 0.6;
+      voiceFx.set("delay", (v, time) => wet.gain.setTargetAtTime(v * 0.6, time, 0.015));
+      voiceFx.set("delayFeedback", (v, time) => fb.gain.setTargetAtTime(clamp(v, 0, 0.8), time, 0.015));
       voicePan.connect(wet);
       wet.connect(delay);
       delay.connect(fb);
       fb.connect(delay);
       delay.connect(ch.input);
     }
-    if ((patch.fx.chorus ?? 0) > 0 && this.chorusSend) {
+    if (this.chorusSend) {
       const wet = ctx.createGain();
       wet.gain.value = patch.fx.chorus * 0.7;
+      voiceFx.set("chorus", (v, time) => wet.gain.setTargetAtTime(v * 0.7, time, 0.015));
       voicePan.connect(wet);
       wet.connect(this.chorusSend);
     }
-    if (patch.fx.reverb > 0 && this.reverbSend) {
+    if (this.reverbSend) {
       const wet = ctx.createGain();
       wet.gain.value = patch.fx.reverb * 0.5;
+      voiceFx.set("reverb", (v, time) => wet.gain.setTargetAtTime(v * 0.5, time, 0.015));
       voicePan.connect(wet);
       wet.connect(this.reverbSend);
     }
@@ -2378,6 +2440,7 @@ export class SyncLabEngine {
     const unisonDetune = clamp(patch.unison.detune * (1 + fixedMod("unisonDetune")), 0, 100);
     const levelMod = clamp(1 + fixedMod("level"), 0, 2);
     const nodes: (OscillatorNode | AudioBufferSourceNode)[] = [];
+    const oscControls: { index: number; spread: number; source: OscillatorNode | AudioBufferSourceNode; gain: GainNode; pan: StereoPannerNode }[] = [];
     const oscNodes: (OscillatorNode | null)[][] = patch.oscillators.map(() => []);
     const rootFreq = midiToFreq(midi);
     const prevMidi = this.lastMidi.get(trackId);
@@ -2385,11 +2448,12 @@ export class SyncLabEngine {
     const doGlide = glide > 0 && prevMidi !== undefined && (patch.glideMode !== "legato" || mode !== "poly");
 
     patch.oscillators.forEach((osc, oi) => {
-      if (!osc.on || osc.level <= 0) return;
+      // Keep muted oscillators available for live level/on edits.
+
       for (let u = 0; u < voices; u++) {
         const spread = voices === 1 ? 0 : (u / (voices - 1) - 0.5) * 2;
         const g = ctx.createGain();
-        g.gain.value = ((osc.level * levelMod) / voices) * velocity;
+        g.gain.value = (osc.on ? (osc.level * levelMod) / voices : 0) * velocity;
         const p = ctx.createStereoPanner();
         p.pan.value = clamp(osc.pan + spread * patch.unison.width, -1, 1);
         g.connect(p);
@@ -2405,6 +2469,7 @@ export class SyncLabEngine {
           src.connect(g);
           src.start(t0);
           nodes.push(src);
+          oscControls.push({ index: oi, spread, source: src, gain: g, pan: p });
           oscNodes[oi]!.push(null);
           continue;
         }
@@ -2418,6 +2483,10 @@ export class SyncLabEngine {
           o.setPeriodicWave(this.wavetableWave(ctx, morph));
         } else {
           o.type = osc.wave;
+        }
+        if ((osc.phase ?? 0) !== 0) {
+          const harmonics = phasedHarmonics(osc.wave, osc.phase ?? 0, osc.pulseWidth, osc.morph);
+          o.setPeriodicWave(ctx.createPeriodicWave(harmonics.real, harmonics.imag));
         }
         const freq = midiToFreq(midi + osc.octave * 12 + osc.semitone);
         if (doGlide) {
@@ -2454,6 +2523,7 @@ export class SyncLabEngine {
         o.start(t0);
         o.stop(t0 + life);
         nodes.push(o);
+        oscControls.push({ index: oi, spread, source: o, gain: g, pan: p });
         oscNodes[oi]!.push(o);
       }
     });
@@ -2475,7 +2545,8 @@ export class SyncLabEngine {
       });
     });
 
-    if (patch.noise > 0) {
+    let noiseGain: GainNode | undefined;
+    {
       const len = Math.ceil(ctx.sampleRate * life);
       const buf = ctx.createBuffer(1, len, ctx.sampleRate);
       const d = buf.getChannelData(0);
@@ -2484,6 +2555,7 @@ export class SyncLabEngine {
       src.buffer = buf;
       const g = ctx.createGain();
       g.gain.value = patch.noise * 0.4 * velocity;
+      noiseGain = g;
       src.connect(g);
       g.connect(filterIn);
       src.start(t0);
@@ -2491,9 +2563,9 @@ export class SyncLabEngine {
     }
 
     /* ---- legacy LFO destinations ---- */
+    const lfoControls: { index: number; source: OscillatorNode; depth: GainNode; destination: string }[] = [];
     const runningMods: { stop: (t: number) => void }[] = [];
-    patch.lfos.forEach((lfo) => {
-      if (!lfo.on) return;
+    patch.lfos.forEach((lfo, index) => {
       const o = ctx.createOscillator();
       o.type = lfo.wave;
       o.frequency.value = lfo.rate;
@@ -2513,7 +2585,9 @@ export class SyncLabEngine {
           if ("detune" in n && n.detune) g.connect((n as OscillatorNode).detune);
         });
       }
+      if (!lfo.on) g.gain.value = 0;
       o.connect(g);
+      lfoControls.push({ index, source: o, depth: g, destination: lfo.destination });
       o.start(t0);
       o.stop(t0 + life);
       runningMods.push({ stop: (t) => { try { o.stop(t); } catch { /* done */ } } });
@@ -2602,6 +2676,67 @@ export class SyncLabEngine {
     );
     filter.frequency.setTargetAtTime(base, relStart, Math.max(0.02, fe.release));
 
+    const active = this.liveVoices.get(trackId) ?? new Set();
+    const voice = { end: t0 + life, patch, update: (next: SynthPatch, time: number) => {
+      const old = voice.patch;
+      const glideParam = (param: AudioParam, value: number) => param.setTargetAtTime(value, Math.max(t0, time), 0.015);
+      if (next.cutoff !== old.cutoff || next.keyTracking !== old.keyTracking || next.filterEnv !== old.filterEnv) {
+        filter.frequency.cancelScheduledValues(time);
+        const base = clamp(next.cutoff * Math.pow(2, ((next.keyTracking ?? 0) * (midi - 60)) / 12) * cutoffMod, 40, 18000);
+        for (const [age, level] of envelopePoints(next.filterEnv, duration, Math.max(0, time - t0))) {
+          filter.frequency.linearRampToValueAtTime(clamp(base + next.filterEnv.amount * level, 40, 18000), Math.max(time, t0 + age) + 0.015);
+        }
+      }
+      if (noiseGain) glideParam(noiseGain.gain, next.noise * 0.4 * velocity);
+      for (const [key, setter] of voiceFx) {
+        const value = next.fx[key as keyof SynthPatch["fx"]] ?? 0;
+        if (value !== old.fx[key as keyof SynthPatch["fx"]]) setter(value, time);
+      }
+      filter.type = next.filterType;
+      glideParam(filter.Q, clamp(next.resonance * (1 + fixedMod("resonance")), 0, 30));
+      if (next.drive !== old.drive || next.fx.distortion !== old.fx.distortion || next.fx.saturation !== old.fx.saturation)
+        shaper.curve = this.distortionCurve(Math.min(1.5, 0.05 + next.fx.distortion + (next.fx.saturation ?? 0) * 0.6 + next.drive * 0.8));
+      if (filter2 && next.filter2) {
+        filter2.type = next.filter2.type;
+        glideParam(filter2.frequency, clamp(next.filter2.cutoff, 40, 18000));
+        glideParam(filter2.Q, clamp(next.filter2.resonance, 0, 30));
+      }
+      for (const control of oscControls) {
+        const osc = next.oscillators[control.index];
+        if (!osc) continue;
+        glideParam(control.gain.gain, osc.on ? osc.level * levelMod / voices * velocity : 0);
+        glideParam(control.pan.pan, clamp(osc.pan + control.spread * next.unison.width, -1, 1));
+        if (control.source instanceof OscillatorNode) {
+          const source = control.source;
+          if (osc.wave === "pulse") source.setPeriodicWave(this.pulseWave(ctx, clamp(osc.pulseWidth ?? 0.3, 0.02, 0.98)));
+          else if (osc.wave === "wavetable") source.setPeriodicWave(this.wavetableWave(ctx, clamp(osc.morph ?? 0.5, 0, 1)));
+          else if (osc.wave !== "noise") source.type = osc.wave;
+          if ((osc.phase ?? 0) !== 0) {
+            const harmonics = phasedHarmonics(osc.wave, osc.phase ?? 0, osc.pulseWidth, osc.morph);
+            source.setPeriodicWave(ctx.createPeriodicWave(harmonics.real, harmonics.imag));
+          }
+          glideParam(source.frequency, midiToFreq(midi + osc.octave * 12 + osc.semitone));
+          glideParam(source.detune, osc.detune + (osc.fine ?? 0) + control.spread * next.unison.detune + fixedMod("pitch") * 1200 + drift * 12);
+        }
+      }
+      for (const control of lfoControls) {
+        const lfo = next.lfos[control.index];
+        if (!lfo) continue;
+        control.source.type = lfo.wave; glideParam(control.source.frequency, lfo.rate);
+        const scale = control.destination === "filter" ? 2000 : control.destination === "volume" ? 0.4 : control.destination === "pan" ? 1 : 50;
+        glideParam(control.depth.gain, lfo.on ? lfo.amount * scale : 0);
+      }
+      if (next.amp !== old.amp || next.velocitySens !== old.velocitySens) {
+        voiceOut.gain.cancelScheduledValues(time);
+        const sens = next.velocitySens ?? 1;
+        const peak = 0.35 * (1 - sens + sens * clamp(velocity, 0, 1));
+        for (const [age, level] of envelopePoints(next.amp, duration, Math.max(0, time - t0)))
+          voiceOut.gain.linearRampToValueAtTime(Math.max(0.0001, peak * level), Math.max(time, t0 + age) + 0.015);
+      }
+    } };
+    active.add(voice); this.liveVoices.set(trackId, active);
+    const cleanupSource = nodes[0];
+    cleanupSource?.addEventListener("ended", () => { active.delete(voice); if (!active.size) this.liveVoices.delete(trackId); });
     this.lastMidi.set(trackId, midi);
     if (mode !== "poly") {
       this.monoVoice.set(trackId, {
@@ -2659,12 +2794,15 @@ export class SyncLabEngine {
     const t = Math.max(when ?? ctx.currentTime, ctx.currentTime + 0.002);
     const ch = this.channel(trackId);
     const out = ctx.createGain();
+    out.gain.value = pad.volume;
     const p = ctx.createStereoPanner();
     p.pan.value = clamp(pad.pan, -1, 1);
-    const vol = pad.volume * velocity;
+    const vol = velocity;
     const tune = Math.pow(2, pad.pitch / 12);
     const dec = 0.1 + pad.decay;
 
+    let drumTone: BiquadFilterNode | undefined;
+    let drumFilter: BiquadFilterNode | undefined;
     // ---- shaping chain: out -> distortion -> compressor -> tone -> envelope -> pan -> channel
     const drive = clamp(pad.drive ?? 0, 0, 1);
     let node: AudioNode = out;
@@ -2693,7 +2831,7 @@ export class SyncLabEngine {
     }
 
     const toneAmt = clamp(pad.tone ?? 0.5, 0, 1);
-    if (Math.abs(toneAmt - 0.5) > 0.01) {
+    {
       const f = ctx.createBiquadFilter();
       if (toneAmt < 0.5) {
         f.type = "lowpass";
@@ -2703,6 +2841,7 @@ export class SyncLabEngine {
         f.frequency.value = 30 * Math.pow(120, (toneAmt - 0.5) * 2); // 30Hz .. 3.6kHz
       }
       f.Q.value = 0.8;
+      drumTone = f;
       node.connect(f);
       node = f;
     }
@@ -2710,6 +2849,7 @@ export class SyncLabEngine {
     // resonant sweepable filter (off unless filterType set)
     if (pad.filterType && pad.filterType !== "off") {
       const f = ctx.createBiquadFilter();
+      drumFilter = f;
       f.type = pad.filterType;
       const base = 40 * Math.pow(450, clamp(pad.cutoff ?? 1, 0, 1)); // 40Hz..18kHz
       const q = 0.5 + clamp(pad.resonance ?? 0, 0, 1) * 18;
@@ -2752,6 +2892,28 @@ export class SyncLabEngine {
     p.connect(ch.input);
 
     // user sample on this pad: play the real audio through the same shaping chain
+    const retainDrum = (source: AudioBufferSourceNode, length: number) => {
+      const key = JSON.stringify([trackId, pad.id]);
+      const voices = this.liveDrums.get(key) ?? new Set();
+      const voice = { end: t + length, pad, update: (next: DrumPad, time: number) => {
+        out.gain.setTargetAtTime(next.volume, time, 0.015);
+        p.pan.setTargetAtTime(clamp(next.pan, -1, 1), time, 0.015);
+        source.playbackRate.setTargetAtTime(Math.pow(2, next.pitch / 12), time, 0.015);
+        if (drumTone) {
+          const tone = clamp(next.tone ?? 0.5, 0, 1);
+          drumTone.type = tone < 0.5 ? "lowpass" : "highpass";
+          drumTone.frequency.setTargetAtTime(tone < 0.5 ? 300 * Math.pow(60, tone * 2) : 30 * Math.pow(120, (tone - 0.5) * 2), time, 0.015);
+        }
+        if (drumFilter && next.filterType && next.filterType !== "off") {
+          drumFilter.type = next.filterType;
+          drumFilter.frequency.cancelScheduledValues(time);
+          drumFilter.frequency.setTargetAtTime(40 * Math.pow(450, clamp(next.cutoff ?? 1, 0, 1)), time, 0.015);
+          drumFilter.Q.setTargetAtTime(0.5 + clamp(next.resonance ?? 0, 0, 1) * 18, time, 0.015);
+        }
+      } };
+      voices.add(voice); this.liveDrums.set(key, voices);
+      source.addEventListener("ended", () => { voices.delete(voice); if (!voices.size) this.liveDrums.delete(key); });
+    };
     const sampleBuf = pad.sampleUrl ? (pad.reverse ? this.reversed(pad.sampleUrl) : this.sampleBuffers.get(pad.sampleUrl)) : undefined;
     if (sampleBuf) {
       const src = ctx.createBufferSource();
@@ -2769,6 +2931,7 @@ export class SyncLabEngine {
       env.gain.linearRampToValueAtTime(1, t + atk);
       env.gain.setValueAtTime(1, t + Math.max(atk, len - 0.01));
       env.gain.linearRampToValueAtTime(0.0001, t + len);
+      retainDrum(src, len);
       src.start(t, s0, s1 - s0);
       return;
     }
@@ -2840,6 +3003,7 @@ export class SyncLabEngine {
       env.gain.linearRampToValueAtTime(1, t + Math.min(atk, end / 2));
       env.gain.setValueAtTime(1, t + Math.max(atk, end - Math.min(rel, end / 3)));
       env.gain.exponentialRampToValueAtTime(0.0001, t + end);
+      retainDrum(source, end);
       source.start(t);
     } else {
     const K = DRUM_KIT_VOICES[pad.kit ?? "909"] ?? DRUM_KIT_VOICES["909"];
@@ -2911,6 +3075,7 @@ export const getEngine = () => {
     "setVcaStates",
     "setAuxReturn",
     "getMasterChannel",
+    "syncSoundControls",
   ];
   if (!current || required.some((m) => typeof current[m] !== "function")) {
     engineGlobal.__synclabEngine = new SyncLabEngine();

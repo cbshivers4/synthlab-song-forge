@@ -8,6 +8,7 @@
 - [x] Add a playable bass generator that creates editable MIDI patterns
 
 # Roadmap
+- [x] Repair live synth oscillator/filter/envelope/LFO/per-voice FX updates, actual oscillator phase, MIDI print-to-live edits, drum sample/vintage gain/pitch/pan/tone/filter changes and in-place rack modulation/limiter/bitcrusher setters. Signed-in desktop/phone knob drag changed audio; held cutoff attenuated signal, level reached silence, drum gain silenced the same hit and seven rack types retained their nodes. 23 focused tests passed. Structural changes and drum attack/decay apply on subsequent notes; Voice Converter requires Convert. Physical hardware and an exhaustive every-control listening audit remain unverified.
 - [x] Live synth displays: float-sample meters retain quiet signals, scopes magnify waveform display without changing sound or dB readings. Signed-in armed synth verified on desktop; phone master meter/scope captured during live playing, seven focused tests passed and build OK. Physical MIDI hardware remains unverified.
 - [x] Add 32 original editable Touch Synth loop sets across 16 genres, with explicit replacement confirmation and single-lane loading preserving others; desktop/phone verified selection, five-lane playback and timeline transfer; 12 focused tests passed, build OK.
 - [x] Touch Synth: poly voices play all five lanes together; scrollable note grid places and erases individual notes without clearing other loops. Signed-in desktop/phone verified one note per lane, single-note deletion and five notes sent to timeline; focused tests passed.
