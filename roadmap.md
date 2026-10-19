@@ -9,6 +9,8 @@
 
 # Roadmap
 
+- [x] Add shared All sounds / All hits drum controls: pitch, decay, tone, drive, level, hit velocity/pitch/decay/chance/retrigger and one-step timing nudges. Atomic edits retain empty steps and loop boundaries; nudges carry hit metadata. Shared sound displays now use black backgrounds/red waves, white EQ handles and colored effect points. Signed-in desktop/sideways-phone verified new hit creation and bulk velocity readback (0.35→0.07, phone→0.08), pitch adjustment, EQ drag (7.5 dB), delay time (320→258 ms), Pro-EQ frequency/gain (143 Hz/6.2 dB), and phone Plugins access; no page errors, 110 tests pass, build OK. Physical-device listening and exhaustive display-by-display checks remain unverified; preview only.
+
 - [x] Section Delete menu closes after deletion; portal menu avoids clip/trim interception, waveform clicks stay in arrangement, and short clips retain a draggable center. Signed-in desktop and sideways-phone checks recorded/split a synth take, deleted one section, then moved the remaining waveform to another track with the source empty. 16 focused tests passed; build OK. Physical touch hardware remains unverified.
 
 - [x] Visible timeline cuts: rendering and razor target the same content; small audio pieces retain exact widths with clear seams, and trim handles cannot intercept cuts. Signed-in desktop verified MIDI regions and a real recorded synth waveform splitting into two pieces; sideways phone Split produced three pieces. Screenshots confirmed separate boundaries; 16 focused tests passed and build OK.

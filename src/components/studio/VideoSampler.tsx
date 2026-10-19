@@ -339,7 +339,7 @@ export function VideoSampler() {
       {chops.map((t, i) => <div key={i} className="flex min-w-0 flex-col gap-1">
         <Button variant="secondary" data-active={active === i} data-pad-color={i % 4} aria-pressed={active === i} disabled={filming} className="video-chop-pad h-36 min-w-0 flex-col gap-2 border px-3 py-2 text-xs" onClick={() => trigger(i)} aria-label={`Play video chop ${i + 1}`}>
           <span className="flex w-full justify-between font-mono text-sm"><span>{i + 1}</span><span>{PAD_KEYS[i]?.toUpperCase()} · {['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B','C','C♯','D','D♯'][i]}{i < 12 ? '4' : '5'}</span></span>
-          <span className="pointer-events-none block h-16 w-full overflow-hidden"><WaveformView color="currentColor" grid={false} className="!h-full !w-full" peaks={padPeaks[i] ?? []} label={`Video chop ${i + 1} waveform`} /></span>
+          <span className="pointer-events-none block h-16 w-full overflow-hidden"><WaveformView color="var(--display-wave)" grid={false} className="!h-full !w-full" peaks={padPeaks[i] ?? []} label={`Video chop ${i + 1} waveform`} /></span>
           <span className="font-mono text-[10px]">{t.toFixed(2)}–{(chops[i + 1] ?? buffer?.duration ?? 0).toFixed(2)}s</span>
         </Button>
         <div className="flex items-center gap-1">

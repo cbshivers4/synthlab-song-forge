@@ -1,6 +1,7 @@
 import { levelColor, peakOf, spectrumColor, dbColor, LEVEL_GREEN, LEVEL_ORANGE, LEVEL_RED } from "@/lib/synclab/level-colors";
 import { useEffect, useRef, useState } from "react";
 import { getEngine } from "@/lib/synclab/audio-engine";
+import { Button } from "@/components/ui/button";
 import { waveformDisplayGain } from "@/lib/synclab/signal-display";
 
 type Mode = "wave" | "spectrum";
@@ -56,7 +57,7 @@ export function Scope({
         const data = engine.getScopeWave(scopeId);
         const peak = peakOf(data);
         const displayGain = waveformDisplayGain(peak);
-        ctx.strokeStyle = levelColor(peak);
+        ctx.strokeStyle = getComputedStyle(cv).getPropertyValue("--display-wave").trim();
         ctx.lineWidth = 1.4;
         ctx.beginPath();
         if (data) {
@@ -76,7 +77,7 @@ export function Scope({
         if (data) {
           const grad = ctx.createLinearGradient(0, 0, 0, h);
           let top = -120; for (let i = 0; i < data.length; i++) if ((data[i] ?? -120) > top) top = data[i] ?? -120;
-          grad.addColorStop(0, spectrumColor(top));
+          grad.addColorStop(0, getComputedStyle(cv).getPropertyValue("--display-wave").trim());
           grad.addColorStop(1, "transparent");
           ctx.fillStyle = grad;
           ctx.beginPath();
@@ -103,30 +104,30 @@ export function Scope({
 
   if (compact) {
     return (
-      <button
+      <Button variant="ghost"
         type="button"
         onClick={(e) => {
           e.stopPropagation();
           setMode(mode === "wave" ? "spectrum" : "wave");
         }}
         title={mode === "wave" ? "Scope — click for spectrum" : "Spectrum — click for waveform"}
-        className="panel relative block w-full overflow-hidden bg-surface-2/50 text-[color:var(--device-accent,var(--primary))]"
+        className="signal-screen panel relative block w-full overflow-hidden p-0"
         style={{ height }}
       >
         <canvas ref={ref} className="h-full w-full" aria-label="Live channel or effect waveform" role="img" />
         <span className="absolute left-1 top-0.5 font-mono text-[7px] uppercase tracking-widest text-muted-foreground">
           {mode === "wave" ? "SCOPE" : "SPEC"}
         </span>
-      </button>
+      </Button>
     );
   }
 
   return (
-    <div className="panel relative overflow-hidden bg-surface-2/50" style={{ height }}>
+    <div className="signal-screen panel relative overflow-hidden" style={{ height }}>
       <canvas ref={ref} className="h-full w-full" aria-label="Live channel or effect waveform" role="img" />
       <div className="absolute right-1 top-1 flex gap-1">
         {(["wave", "spectrum"] as Mode[]).map((m) => (
-          <button
+          <Button variant="ghost"
             key={m}
             onClick={() => setMode(m)}
             className={`rounded-[3px] px-1.5 py-0.5 font-mono text-[8px] tracking-wider uppercase ${
@@ -134,7 +135,7 @@ export function Scope({
             }`}
           >
             {m === "wave" ? "SCOPE" : "SPECTRUM"}
-          </button>
+          </Button>
         ))}
       </div>
     </div>

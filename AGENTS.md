@@ -23,7 +23,7 @@ Detached panels use synchronous user-click window.open + React portals for share
 Bottom displays read live analyser taps at 20 fps; scopes magnify quiet signals only visually, while meters retain true float-sample dB levels. Generator waves use PCM/offline voices, never decoration; stem masks run in a worker for smooth playback.
 Workspace retains cloud projects, device recents, saved/starter templates and storage/open actions.
 - GRANT EXECUTE on RLS security-definer helpers to anon/authenticated/service_role; missing grants break policy reads.
-Panel wallpaper uses one bundled JPEG, dark overlay and per-panel skins without external images.
+Panel wallpaper uses bundled JPEG and per-panel skins.
 Timeline names stay single-line; phone actions prioritize REC/AUTO with isolated menu clicks to avoid opening instruments.
 Playhead stays within track rows; headers, ruler and song lane share its width variable, including large phone controls. It renders through the --playhead token (white, never dimmed) and stays draggable from ruler and track lanes.
 Synth sections share wrapping tabs; X-Y pads dispatch through updatePatch to stay synchronized with knobs and saved presets without removing controls.
@@ -34,7 +34,7 @@ Keyboards reuse Keyboard and one note path; independent skin slots color opaque 
 Paste content at the playhead onto the selected or explicit channel, preserving its settings; Duplicate track separately clones channels.
 Synth selection opens piano roll. Pin sampler waveform above Stretch/chops to keep cuts visible; PCM slices use previewNote for gate/choke.
 Transport stays mounted: phone overlay and timeline use separate layout/paint containment with shared resize visibility; desktop transport stays below the workspace.
-Phone shares desktop audio/state with native scrolling for all tracks/tools. AppProvider scopes phone tokens to the document via shared mobile detection so entry screens/portals match; desktop preferences stay separate.
+Phone shares desktop audio/state and native scrolling. AppProvider scopes phone tokens to the document; desktop prefs stay separate.
 Drum snap is session-only for new step writes, never existing hits.
 MP3/MP4 imports/exports retain originals in the private library with content hashes to avoid duplicates; saved videos open Video Sampler.
 Cloud deletion reads raw sessions, confirms deletion, then cleans owned files; missing assets cannot block removal.
@@ -43,9 +43,11 @@ Reel recorder: singleton AudioWorklet capture; tape bypasses master to avoid fee
 Video cuts use source seconds/grid/clamp; kits save MIDI notes. Keyboard/learned MIDI share pad triggers; MIDI consumers prevent doubled track notes.
 
 
-Device prefs use cache/events, never autosave/tick storage. Diagnostics snapshot prefs only, preserve audio and reuse panels; unsupported controls stay read-only.
+Device prefs use cache/events, not autosave/tick storage. Diagnostics preserve audio; unsupported controls stay read-only.
 
 Recording-region helpers bound edits; patternRegion bounds drums. Captured notes are absolute.
 Touch genre loops are pure MIDI compositions in touch-loop-library; load through patch.touch so editing and playback share state.
 Project exits use AppProvider/ProjectCloseGuard on both layouts: compare musical snapshots and await recording before save-and-close to preserve manual saving.
-Shortcuts share lib/synclab/shortcuts with Settings; reuse studio actions, yielding to fields, controls, dialogs, menus and claimed note keys to avoid doubling.
+Shortcuts share studio actions and yield to controls/claimed keys to avoid doubling.
+Bulk drums use atomic store transforms preserving empty steps, loop bounds and hit metadata; shared controls prevent divergent editors.
+Sound screens use shared tokens and real parameter drag points with 20 fps signal drawing, never fake wave activity.

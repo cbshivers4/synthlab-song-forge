@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { capturedNote, loopRegion } from "./recording-region";
+import { editDrumPads, type DrumBulkEdit } from "./drum-bulk";
 import { timelineUsesWaveform } from "./timeline-content";
 import { ccAction } from "./midi-actions";
 import { previewTrack } from "./note-preview";
@@ -323,6 +324,7 @@ interface StudioApi extends StudioState {
   pasteClip: (atEnd?: boolean, targetId?: string) => void;
   updatePatch: (id: string, patch: Partial<SynthPatch>) => void;
   updatePad: (trackId: string, padId: string, patch: Partial<DrumPad>) => void;
+  editAllDrums: (trackId: string, edit: DrumBulkEdit) => void;
   toggleStep: (trackId: string, padId: string, step: number) => void;
   setStepCount: (trackId: string, steps: number) => void;
   addPad: (trackId: string) => void;
@@ -2157,6 +2159,14 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         setTracks((ts) =>
           ts.map((t) => (t.id === id && t.patch ? liveSound({ ...t, patch: { ...t.patch, ...patch } }) : t)),
         ),
+      editAllDrums: (trackId, edit) => setTracks(ts => ts.map(t => {
+        if (t.id !== trackId || !t.pads) return t;
+        const region = transportRef.current.loop ? loopRegion(transportRef.current) : undefined;
+        const pads = editDrumPads(t.pads, edit, region);
+        const patterns = [...(t.drumPatterns ?? [])];
+        patterns[t.activeDrumPattern ?? 0] = structuredClone(pads);
+        return liveSound({ ...t, pads, drumPatterns: patterns, ...(edit.scope !== 'sounds' ? { patternRegion: region } : {}) });
+      })),
       updatePad: (trackId, padId, patch) =>
         setTracks((ts) =>
           ts.map((t) =>

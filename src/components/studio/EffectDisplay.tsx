@@ -1,6 +1,7 @@
 import { levelColor, peakOf, spectrumColor, dbColor, LEVEL_GREEN, LEVEL_ORANGE, LEVEL_RED } from "@/lib/synclab/level-colors";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Knob } from "./Knob";
+import { Button } from "@/components/ui/button";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import type { PluginInstance, PluginKind } from "@/lib/synclab/types";
 
@@ -35,9 +36,9 @@ const sweep = (fn: (t: number) => number): [number, number][] =>
   Array.from({ length: N + 1 }, (_, i) => [i / N, clamp01(fn(i / N))] as [number, number]);
 
 const DISPLAY_BANDS = [
-  { id: "low", label: "Bass", short: "BASS", from: 0, to: 0.33, color: "#22d3ee" },
-  { id: "mid", label: "Mids", short: "MIDS", from: 0.33, to: 0.67, color: "#facc15" },
-  { id: "high", label: "Highs", short: "HIGHS", from: 0.67, to: 1, color: "#f472b6" },
+  { id: "low", label: "Bass", short: "BASS", from: 0, to: 0.33, color: "var(--display-cyan)" },
+  { id: "mid", label: "Mids", short: "MIDS", from: 0.33, to: 0.67, color: "var(--display-yellow)" },
+  { id: "high", label: "Highs", short: "HIGHS", from: 0.67, to: 1, color: "var(--display-pink)" },
 ] as const;
 
 /** magnitude in dB of a peaking/shelf/pass response, rough but visually faithful */
@@ -301,6 +302,7 @@ export function EffectDisplay({
   const boxRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [dragging, setDragging] = useState(false);
+  const eqDrag = useRef<string | null>(null);
   const isChannelEq = plugin.kind === "eq";
 
   const get = useMemo(() => {
@@ -313,9 +315,9 @@ export function EffectDisplay({
 
   useEffect(() => {
     if (!shape) return;
-    let raf = 0;
+    let timer: ReturnType<typeof setInterval>;
     const draw = () => {
-      raf = requestAnimationFrame(draw);
+
       const canvas = canvasRef.current;
       const box = boxRef.current;
       if (!canvas || !box) return;
@@ -331,15 +333,8 @@ export function EffectDisplay({
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, w, h);
 
-      for (const band of DISPLAY_BANDS) {
-        const grad = ctx.createLinearGradient(0, 0, 0, h);
-        grad.addColorStop(0, `${band.color}2f`);
-        grad.addColorStop(1, `${band.color}07`);
-        ctx.fillStyle = grad;
-        ctx.fillRect(band.from * w, 0, (band.to - band.from) * w, h);
-      }
-
-      ctx.strokeStyle = "rgba(255,255,255,0.08)";
+      const colors = getComputedStyle(canvas);
+      ctx.strokeStyle = colors.getPropertyValue("--display-grid").trim();
       ctx.lineWidth = 1;
       for (let i = 1; i < 4; i++) {
         const y = (h * i) / 4;
@@ -364,7 +359,7 @@ export function EffectDisplay({
           if (!band) continue;
           const bar = Math.max(1, mag * h);
           const grad = ctx.createLinearGradient(0, h - bar, 0, h);
-          const sc = spectrumColor(db);
+          const sc = colors.getPropertyValue("--display-wave-fill").trim();
           grad.addColorStop(0, sc);
           grad.addColorStop(1, "transparent");
           ctx.fillStyle = grad;
@@ -385,12 +380,13 @@ export function EffectDisplay({
         ctx.moveTo(0, h / 2);
         ctx.lineTo(w, h / 2);
       }
-      ctx.strokeStyle = levelColor(peakOf(wave));
+      ctx.strokeStyle = colors.getPropertyValue("--display-wave").trim();
       ctx.lineWidth = 1.3;
       ctx.stroke();
     };
-    raf = requestAnimationFrame(draw);
-    return () => cancelAnimationFrame(raf);
+    draw();
+    timer = setInterval(draw, 50);
+    return () => clearInterval(timer);
   }, [plugin.id, shape]);
 
   if (!shape) return null;
@@ -403,7 +399,7 @@ export function EffectDisplay({
   const setEqBandGain = (bandId: (typeof DISPLAY_BANDS)[number]["id"], normalizedY: number) => {
     const p = param(bandId);
     if (!p) return;
-    onParam(p.id, p.min + normalizedY * (p.max - p.min));
+    onParam(p.id, Math.max(p.min, Math.min(p.max, (normalizedY - 0.5) * 48)));
   };
 
   const apply = (clientX: number, clientY: number) => {
@@ -418,8 +414,11 @@ export function EffectDisplay({
       return;
     }
     if (isChannelEq) {
-      const band = DISPLAY_BANDS.find((b) => nx >= b.from && nx <= b.to) ?? DISPLAY_BANDS[1];
-      if (band) setEqBandGain(band.id, ny);
+      const band = DISPLAY_BANDS.find(b => b.id === eqDrag.current) ?? DISPLAY_BANDS.find(b => nx >= b.from && nx <= b.to);
+      if (band) {
+        setEqBandGain(band.id, ny);
+        if (band.id === "mid") { const freq = param("midFreq"); if (freq) onParam(freq.id, Math.max(freq.min, Math.min(freq.max, 20 * Math.pow(1000, nx)))); }
+      }
       return;
     }
     if (xP) onParam(xP.id, xP.min + nx * (xP.max - xP.min));
@@ -434,8 +433,8 @@ export function EffectDisplay({
       <div className="flex items-center gap-2">
         <span className="label-xs">{shape.title}</span>
         <span className="ml-auto font-mono text-[9px] tracking-wider text-muted-foreground uppercase">
-          {isStepFilter ? "drag steps to draw the filter pattern" : isChannelEq ? "drag color bands · bass / mids / highs" : xP ? `drag ↔ ${xP.name}` : ""}
-          {!isChannelEq && yP ? ` · ↕ ${yP.name}` : ""}
+          {isStepFilter ? "STEP FILTER" : isChannelEq ? "BASS / MIDS / HIGHS" : xP?.name ?? ""}
+          {!isChannelEq && yP ? ` · ${yP.name}` : ""}
         </span>
       </div>
       <div
@@ -444,23 +443,35 @@ export function EffectDisplay({
         tabIndex={0}
         aria-label={`${shape.title} display for ${plugin.name}`}
         aria-valuenow={Math.round((xP ? (xP.value - xP.min) / (xP.max - xP.min) : 0) * 100)}
-        className="panel relative touch-none overflow-hidden bg-surface-2/50"
+        className="signal-screen panel relative touch-none overflow-hidden"
         style={{ height, cursor: xP ? "crosshair" : "default" }}
         onPointerDown={(e) => {
           if (!xP && !yP && !isStepFilter) return;
           e.currentTarget.setPointerCapture(e.pointerId);
+          if (isChannelEq && !eqDrag.current) {
+            const rect = e.currentTarget.getBoundingClientRect();
+            const nx = (e.clientX - rect.left) / rect.width;
+            eqDrag.current = DISPLAY_BANDS.reduce((a, b) => Math.abs(nx - (a.id === "mid" ? logX(get("midFreq")) : (a.from + a.to) / 2)) < Math.abs(nx - (b.id === "mid" ? logX(get("midFreq")) : (b.from + b.to) / 2)) ? a : b).id;
+          }
           setDragging(true);
           apply(e.clientX, e.clientY);
         }}
+        onKeyDown={e => {
+          const p = e.key === 'ArrowLeft' || e.key === 'ArrowRight' ? xP : e.key === 'ArrowUp' || e.key === 'ArrowDown' ? yP : undefined;
+          if (!p) return;
+          e.preventDefault();
+          const direction = e.key === 'ArrowRight' || e.key === 'ArrowUp' ? 1 : -1;
+          onParam(p.id, Math.max(p.min, Math.min(p.max, p.value + direction * (p.max - p.min) / 100)));
+        }}
         onPointerMove={(e) => dragging && apply(e.clientX, e.clientY)}
-        onPointerUp={() => setDragging(false)}
-        onPointerCancel={() => setDragging(false)}
+        onPointerUp={() => { setDragging(false); eqDrag.current = null; }}
+        onPointerCancel={() => { setDragging(false); eqDrag.current = null; }}
       >
         <canvas ref={canvasRef} className="pointer-events-none absolute inset-0 size-full" />
-        <div className="pointer-events-none absolute inset-0 opacity-40 [background-image:linear-gradient(to_right,rgba(255,255,255,.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,.06)_1px,transparent_1px)] [background-size:25%_25%]" />
+
         <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="pointer-events-none absolute inset-0 size-full">
-          <path d={fill} fill="hsl(187 85% 55% / 0.16)" />
-          <path d={path} fill="none" stroke="hsl(187 85% 55%)" strokeWidth={1.2} vectorEffect="non-scaling-stroke" />
+          <path d={fill} fill="var(--display-wave-fill)" />
+          <path d={path} fill="none" stroke="var(--display-wave)" strokeWidth={1.2} vectorEffect="non-scaling-stroke" />
         </svg>
         {marks.map((m, i) => (
           <div
@@ -471,19 +482,14 @@ export function EffectDisplay({
         ))}
         {isChannelEq && DISPLAY_BANDS.map((band) => {
           const p = param(band.id);
-          const value = p ? (p.value - p.min) / (p.max - p.min) : 0.5;
-          return (
-            <div key={band.id} className="pointer-events-none absolute inset-y-0 border-l border-white/10" style={{ left: `${band.from * 100}%`, width: `${(band.to - band.from) * 100}%` }}>
-              <span className="absolute left-1 top-1 font-mono text-[8px] font-bold uppercase tracking-wider" style={{ color: band.color }}>
-                {band.short}
-              </span>
-              <span
-                className="absolute left-1/2 size-3 -translate-x-1/2 rounded-full border-2 bg-background shadow-[0_0_10px_currentColor]"
-                style={{ top: `${(1 - clamp01(value)) * 100}%`, borderColor: band.color, color: band.color }}
-              />
-            </div>
-          );
+          if (!p) return null;
+          const x = band.id === "mid" ? logX(get("midFreq")) : logX(band.id === "low" ? 120 : 6000);
+          return <div key={band.id} className="signal-point-hit" style={{ left: `${x * 100}%`, top: `${(1 - dbToY(p.value)) * 100}%` }}>
+            <Button variant="ghost" className="signal-point" aria-label={`${band.label} EQ point`} title={`${band.label}: ${p.value.toFixed(1)} dB`} onPointerDown={() => { eqDrag.current = band.id; }}
+              onKeyDown={e => { if (e.key === 'ArrowUp' || e.key === 'ArrowDown') { e.preventDefault(); onParam(p.id, Math.max(p.min, Math.min(p.max, p.value + (e.key === 'ArrowUp' ? 0.5 : -0.5)))); } }} />
+          </div>;
         })}
+        {!isChannelEq && !isStepFilter && xP && <span className="pointer-events-none absolute size-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2" style={{ left: `${clamp01((xP.value - xP.min) / (xP.max - xP.min)) * 100}%`, top: `${(1 - (yP ? clamp01((yP.value - yP.min) / (yP.max - yP.min)) : 0.5)) * 100}%`, background: 'var(--display-cyan)', borderColor: 'var(--display-point)' }} />}
         <span className="pointer-events-none absolute bottom-1 left-1.5 font-mono text-[9px] tracking-wider text-muted-foreground uppercase">
           {shape.xLabel}
         </span>

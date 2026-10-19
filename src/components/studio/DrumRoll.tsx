@@ -19,6 +19,7 @@ import { ChevronLeft, ChevronRight, Maximize2, Minimize2, Minus, Plus, Upload } 
 import { toast } from "sonner";
 import { loopRegion } from "@/lib/synclab/recording-region";
 import { useDrumEditorView } from "@/lib/synclab/drum-editor-view";
+import { DrumBulkControls } from "./DrumBulkControls";
 
 const VELOCITIES = [0, 0.35, 0.7, 1] as const;
 
@@ -206,6 +207,7 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
           <Button size="sm" variant="secondary" onClick={() => updateTrack(track.id, { printedAudio: !track.printedAudio })}>{track.printedAudio ? "PLAY BEAT" : "PLAY WAVE"}</Button>
         </div>
       ) : null}
+      <DrumBulkControls track={track} />
       <div className="flex flex-nowrap items-center gap-2 overflow-x-auto rounded-sm border border-border bg-surface/60 p-1.5 [&>*]:shrink-0">
         <span className="label-xs whitespace-nowrap px-1" title={track.name}>DRUM ROLL</span>
         <Select value={String(total)} onValueChange={(v) => setStepCount(track.id, Number(v))}>

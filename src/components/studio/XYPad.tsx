@@ -92,7 +92,7 @@ export function XYPad({
         tabIndex={0}
         aria-label={`X-Y pad: ${xP?.name ?? "X"} and ${yP?.name ?? "Y"}`}
         aria-valuenow={Math.round(px * 100)}
-        className="panel relative h-36 cursor-crosshair touch-none overflow-hidden bg-surface-2/50"
+        className="signal-screen panel relative h-36 cursor-crosshair touch-none overflow-hidden"
         onPointerDown={(e) => {
           e.currentTarget.setPointerCapture(e.pointerId);
           setDragging(true);
@@ -112,8 +112,8 @@ export function XYPad({
           <div className="h-px w-full bg-primary/40" />
         </div>
         <div
-          className="pointer-events-none absolute size-4 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary shadow-[0_0_14px_hsl(187_85%_55%/0.8)]"
-          style={{ left: `${px * 100}%`, top: `${(1 - py) * 100}%` }}
+          className="pointer-events-none absolute size-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2"
+          style={{ left: `${px * 100}%`, top: `${(1 - py) * 100}%`, background: 'var(--display-pink)', borderColor: 'var(--display-point)' }}
         />
         <span className="pointer-events-none absolute bottom-1 left-1.5 font-mono text-[9px] tracking-wider text-muted-foreground uppercase">
           {xP?.name ?? "—"} {xP ? xP.value.toFixed(2) : ""}

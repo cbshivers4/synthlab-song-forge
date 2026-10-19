@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useIsMobile, useIsLandscapePhone } from "@/hooks/use-mobile";
 import { DrumRoll } from "./DrumRoll";
+import { DrumBulkControls } from "./DrumBulkControls";
 import { markLiveHit, neighbourLiveHits } from "@/lib/synclab/live-take";
 
 const PRESET_KEY = "synclab.drumPresets.v1";
@@ -290,6 +291,7 @@ export function DrumMachine({ track }: { track: Track }) {
       </div>
 
       {/* Step sequencer */}
+      {(!isMobile || phoneView !== 'roll') && <DrumBulkControls track={track} />}
       {isMobile && (phoneView === "roll" || phoneView === "pads") && <div className="grid grid-cols-2 gap-2" aria-label="Drum playback">
         <Button variant="secondary" className="h-12" onClick={transport.playing ? stop : togglePlay}>{transport.playing ? "Stop beat" : "Play beat"}</Button>
         <Button variant={tapRec ? "destructive" : "outline"} className="h-12" aria-pressed={tapRec} onClick={() => { setTapRec(!tapRec); if (!tapRec && !transport.playing) togglePlay(); }}>{tapRec ? "Stop tap REC" : "Tap REC"}</Button>
