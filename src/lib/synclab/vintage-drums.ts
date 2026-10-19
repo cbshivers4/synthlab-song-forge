@@ -86,6 +86,6 @@ export function renderVintageDrum(kit: DrumKitId, kind: DrumPad['kind'], decay: 
     pcm[i] = held * .85;
   }
   // End taper avoids discontinuity even with very long 808 decay.
-  for (let i = Math.max(0, pcm.length - 128); i < pcm.length; i++) pcm[i] *= (pcm.length - i) / 128;
+  for (let i = Math.max(0, pcm.length - 128); i < pcm.length; i++) pcm[i] = (pcm[i] ?? 0) * (pcm.length - i) / 128;
   return pcm;
 }

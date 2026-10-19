@@ -56,7 +56,7 @@ export function TouchSynth({ track }: { track: Track }) {
       <span className="font-mono text-xs text-muted-foreground">SCALE SYNTH · GATED NOTES</span>
     </header>
     <div className="flex flex-wrap gap-2">
-      <Select value={track.patch?.name} onValueChange={name => { stop(); const patch = applyPreset(name); loadPreset(track.id, name); updatePatch(track.id, { touch: settings }); previewNote(track.id, 60 + settings.root, .4, false, patch); }}>
+      <Select value={track.patch?.name ?? ''} onValueChange={name => { stop(); const patch = applyPreset(name); loadPreset(track.id, name); updatePatch(track.id, { touch: settings }); previewNote(track.id, 60 + settings.root, .4, false, patch); }}>
         <SelectTrigger aria-label="Touch sound" className="w-48"><SelectValue placeholder="Sound" /></SelectTrigger>
         <SelectContent>{TOUCH_SOUNDS.map(name => <SelectItem key={name} value={name}>{name}</SelectItem>)}</SelectContent>
       </Select>
