@@ -34,7 +34,7 @@ function TapeMeter({ level, channel, clipped, reset }: { level: number; channel:
 export function ReelRecorder() {
   const recorder = getReelRecorder();
   const state = useSyncExternalStore(recorder.subscribe, recorder.getSnapshot, recorder.getSnapshot);
-  const { addTrack, addClip, transport, setTransport, togglePlay, stop: stopSong, toggleRecord } = useStudio();
+  const { addTrack, addClip, tracks, transport, setTransport, togglePlay, stop: stopSong, toggleRecord } = useStudio();
   const [deck, setDeck] = useState<"timeline" | "tape">("timeline");
   const master = deck === "timeline";
   const fileInput = useRef<HTMLInputElement>(null);
@@ -49,6 +49,9 @@ export function ReelRecorder() {
   const active = state.mode === "recording" || state.mode === "playing" || (master && (transport.playing || transport.recording));
   const locked = state.busy || saving;
   const recording = state.mode === "recording";
+  /** Tape progress 0..1: supply reel starts full and empties as the song/tape plays or records. */
+  const songSteps = Math.max(stepsPerBar() * 4, ...tracks.flatMap((t) => [...(t.clips ?? []).map((c) => c.start + c.length), ...(t.notes ?? []).map((n) => n.start + n.duration)]));
+  const progress = master ? Math.max(0, Math.min(1, transport.step / songSteps)) : state.duration > 0 ? Math.max(0, Math.min(1, state.position / state.duration)) : 0;
   const save = async (toProject: boolean) => {
     if (locked || recording || !state.hasTape) return;
     setSaving(true);
@@ -78,7 +81,7 @@ export function ReelRecorder() {
   };
   return <section className="reel-recorder mx-auto w-full max-w-[900px]" aria-label="Reel-to-reel recorder">
     <header className="tape-brand flex flex-wrap items-center justify-between gap-2 px-4 py-3"><div><h2 className="font-display text-lg font-semibold">SYNCLAB <span className="text-primary">R2R</span></h2><p className="font-mono text-[10px] text-muted-foreground">STEREO TAPE RECORDER · DETROIT</p></div><span role="status" className={`font-mono text-xs ${recording ? "text-destructive" : "text-primary"}`}>{state.busy ? "PREPARING" : saving ? "SAVING" : recording ? "RECORDING" : master ? transport.playing ? "PLAYING" : "STOPPED" : state.mode.toUpperCase()}</span></header>
-    <div className="tape-deck" data-moving={active} style={{ "--reel-time": `${3 / state.speed}s` } as CSSProperties}><div className="tape-reels"><Reel moving={active} /><Reel moving={active} right /></div>
+    <div className="tape-deck" data-moving={active} style={{ "--reel-time": `${3 / state.speed}s` } as CSSProperties}><div className="tape-reels"><Reel moving={active} fill={1 - progress} /><Reel moving={active} right fill={progress} /></div>
       <svg className="tape-path" viewBox="0 0 600 80" aria-hidden="true"><path d="M88 5L176 60H424L512 5" /><circle cx="176" cy="60" r="13" /><circle cx="424" cy="60" r="13" /><rect x="267" y="41" width="66" height="24" rx="3" /><path d="M286 45V60M302 45V60M318 45V60" /></svg>
       <div className="tape-display flex flex-wrap items-center justify-between gap-3"><span className="font-mono text-xs">{master || state.source === "song" ? "SONG MASTER" : "MIC / LINE"}</span><output aria-label="Tape counter" className="font-mono text-2xl text-primary">{clock(master ? transport.step * stepSeconds(transport.bpm) : state.position)}</output><span aria-label="Song position" className="font-mono text-xs text-muted-foreground">{master ? `BAR ${Math.floor(transport.step / stepsPerBar()) + 1} · BEAT ${Math.floor((transport.step % stepsPerBar()) / STEPS_PER_BEAT) + 1}${recording ? ` · TAPE ${clock(state.position)}` : ""}` : clock(state.duration)}</span></div>
     </div>
