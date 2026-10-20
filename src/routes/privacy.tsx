@@ -26,7 +26,7 @@ function PrivacyRoute() {
         SYNCLAB is operated by <strong>Christopher Shivers</strong> (Detroit, Michigan, USA), trading
         as SYNCLAB. We are the <strong>data controller</strong> for the personal data described
         here, which means we decide why and how it is used. Contact:{" "}
-        <strong>cbshivers@gmail.com</strong>.
+        <strong>christophershivers@synclabsapp.com</strong>.
       </p>
 
       <h2>What we collect and why</h2>

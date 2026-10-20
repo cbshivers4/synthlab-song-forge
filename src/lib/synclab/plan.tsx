@@ -10,7 +10,7 @@ import { changePlan, createPortalLink } from "@/utils/payments.functions";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 
 /** Accounts that get SYNCLAB free forever (the app's founder/owner). */
-const FOUNDER_EMAILS = ["cbshivers@gmail.com"];
+const FOUNDER_EMAILS = ["christophershivers@synclabsapp.com", "cbshivers@gmail.com"];
 
 const TRIAL_DAYS = 7;
 const TRIAL_KEY = "synclab.trialStart";
