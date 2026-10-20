@@ -190,6 +190,43 @@ export function PadSampler() {
   const voiceTrackRef = useRef<string | null>(null);
   const padsRef = useRef(pads);
   padsRef.current = pads;
+  /** Held pads sweep a playhead across their pad waveform: pad id → press time. */
+  const holdsRef = useRef<Map<number, number>>(new Map());
+  const [sweep, setSweep] = useState<Record<number, number>>({});
+  const [sweeping, setSweeping] = useState(false);
+  const startSweep = useCallback((id: number) => {
+    holdsRef.current.set(id, performance.now());
+    setSweeping(true);
+  }, []);
+  const endSweep = useCallback((id: number) => {
+    if (!holdsRef.current.delete(id)) return;
+    setSweep((s) => {
+      if (!(id in s)) return s;
+      const n = { ...s };
+      delete n[id];
+      return n;
+    });
+    if (!holdsRef.current.size) setSweeping(false);
+  }, []);
+  // 20 fps display timer — only while a pad is actually held, never on the audio path.
+  useEffect(() => {
+    if (!sweeping) return;
+    const timer = window.setInterval(() => {
+      const now = performance.now();
+      const next: Record<number, number> = {};
+      for (const [id, t0] of holdsRef.current) {
+        const pad = padsRef.current[id];
+        if (!pad) continue;
+        const span = Math.max(0.02, pad.duration * (pad.end - pad.start));
+        const rate = Math.pow(2, (pad.pitch || 0) / 12);
+        let p = (((now - t0) / 1000) * rate) / span;
+        p = pad.loop ? p - Math.floor(p) : Math.min(1, p);
+        next[id] = p;
+      }
+      setSweep(next);
+    }, 50);
+    return () => window.clearInterval(timer);
+  }, [sweeping]);
   useEffect(() => subscribePadBank((next) => setPadsState(next)), []);
   const stepRef = useRef(0);
   const liveRef = useRef(liveRec);
@@ -614,7 +651,9 @@ export function PadSampler() {
           const active = hit === id || playing === id;
           const c = skin.padColor ?? padColor(bank, i);
           const recording = recPad === id;
+          const sp = sweep[id];
           const release = () => {
+            endSweep(id);
             if (holdRef.current?.pad === id || recRef.current?.pad === id) {
               endHold();
               return;
@@ -650,6 +689,7 @@ export function PadSampler() {
                   }
                   trigger(id);
                   setPlaying(id);
+                  startSweep(id);
                 }
               }}
               onPointerUp={release}
@@ -711,8 +751,23 @@ export function PadSampler() {
                 </span>
               </span>
               {pad && !recording && pad.peaks.length > 1 && (
-                <span className="pointer-events-none absolute inset-x-1.5 top-5 bottom-7 opacity-90">
-                  <WaveformView peaks={pad.peaks} color="var(--display-wave)" grid={false} outline={false} label={`${pad.name} waveform`} />
+                <span
+                  className={`pointer-events-none absolute inset-x-1.5 top-5 bottom-7 rounded-sm ${playing === id ? "bg-black/75" : ""}`}
+                  style={{ opacity: playing === id ? 1 : 0.9 }}
+                >
+                  <WaveformView peaks={pad.peaks} color="var(--display-wave)" grid={false} outline={false} className="!h-full !w-full" label={`${pad.name} waveform`} />
+                  {playing === id && sp !== undefined && (() => {
+                    // Playhead tracks the real playback position: sample time is
+                    // linear, so pitch, reverse and loop only shape the sweep.
+                    const pos = pad.reverse ? 1 - sp : sp;
+                    const played = pad.reverse ? { left: `${pos * 100}%`, right: 0 } : { left: 0, width: `${pos * 100}%` };
+                    return (
+                      <>
+                        <span className="absolute inset-y-0 bg-white/20" style={played as import("react").CSSProperties} />
+                        <span className="absolute inset-y-0 w-0.5 -translate-x-1/2 bg-white" style={{ left: `${pos * 100}%` }} />
+                      </>
+                    );
+                  })()}
                 </span>
               )}
               {recording && recStream && (
