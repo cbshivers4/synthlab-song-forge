@@ -1,4 +1,12 @@
 import type { SavedPad } from './pad-session';
+import { wsolaStretch } from './stretch';
+
+export function stretchPadPcm(input: Float32Array, speed: number): Float32Array {
+  if (!Number.isFinite(speed) || speed < 0.25 || speed > 4) throw new Error('Stretch must be between 25% and 400%');
+  if (input.length < 32) throw new Error('Sample is too short to stretch');
+  const frame = Math.min(2048, 2 ** Math.floor(Math.log2(input.length)));
+  return wsolaStretch(input, speed, frame, Math.min(384, frame / 4));
+}
 
 export function padChopRanges(pad: SavedPad): { start: number; end: number }[] {
   const starts = [...new Set([pad.start, ...(pad.slices ?? []).filter(v => Number.isFinite(v) && v > pad.start && v < pad.end)])].sort((a, b) => a - b);

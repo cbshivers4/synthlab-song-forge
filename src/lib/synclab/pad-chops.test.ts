@@ -1,11 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { cropPadPeaks, distributePadChops, padChopRanges } from './pad-chops';
+import { cropPadPeaks, distributePadChops, padChopRanges, stretchPadPcm } from './pad-chops';
 import { wsolaStretch } from './stretch';
 import type { SavedPad } from './pad-session';
 
 const source: SavedPad = { name: 'Sample', url: 'blob:sample', duration: 8, peaks: [0, 1, 2, 3, 4, 5, 6, 7], start: 0.25, end: 0.75, gain: 0.6, pitch: 3, reverse: true, loop: false, oneShot: false, attack: 0.01, release: 0.2, choke: 2, steps: [1, 0], slices: [0.25, 0.5] };
 
 describe('pad sample chopping', () => {
+  it('short chopped samples retain nonzero audio when stretched', () => {
+    const audio = Float32Array.from({ length: 960 }, (_, i) => Math.sin(i / 8));
+    const result = stretchPadPcm(audio, 0.5);
+    expect(result.length).toBe(1920);
+    expect(result.some(v => Math.abs(v) > 0.5)).toBe(true);
+  });
   it('chops only the trimmed pad region', () => {
     expect(padChopRanges(source)).toEqual([{ start: 0.25, end: 0.5 }, { start: 0.5, end: 0.75 }]);
   });
