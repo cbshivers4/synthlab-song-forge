@@ -39,7 +39,8 @@ function RefundsRoute() {
           paddle.net
         </a>{" "}
         with the email address you used at checkout, or email us at{" "}
-        <strong>cbshivers@gmail.com</strong> and we will arrange it with Paddle for you.
+        <strong>christophershivers@synclabsapp.com</strong> and we will arrange it with Paddle for
+        you.
       </p>
 
       <h2>After a refund</h2>

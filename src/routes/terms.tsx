@@ -28,7 +28,7 @@ function TermsRoute() {
       <p>
         SYNCLAB is operated by <strong>Christopher Shivers</strong> ("SYNCLAB", "we", "us"), a sole
         trader based in Detroit, Michigan, United States. These terms form an agreement between you
-        and Christopher Shivers. Questions: <strong>cbshivers@gmail.com</strong>.
+        and Christopher Shivers. Questions: <strong>christophershivers@synclabsapp.com</strong>.
       </p>
 
       <h2>1. Acceptance</h2>
@@ -73,7 +73,8 @@ function TermsRoute() {
         samples or recordings you bring into SYNCLAB.
       </p>
       <p>
-        Rights holders may report infringing material to <strong>cbshivers@gmail.com</strong>; we
+        Rights holders may report infringing material to{" "}
+        <strong>christophershivers@synclabsapp.com</strong>; we
         will review takedown requests and may remove content or suspend accounts for repeated
         infringement.
       </p>
