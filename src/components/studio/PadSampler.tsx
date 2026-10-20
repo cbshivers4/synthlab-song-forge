@@ -651,6 +651,7 @@ export function PadSampler() {
           const active = hit === id || playing === id;
           const c = skin.padColor ?? padColor(bank, i);
           const recording = recPad === id;
+          const sp = sweep[id];
           const release = () => {
             endSweep(id);
             if (holdRef.current?.pad === id || recRef.current?.pad === id) {
@@ -750,8 +751,23 @@ export function PadSampler() {
                 </span>
               </span>
               {pad && !recording && pad.peaks.length > 1 && (
-                <span className="pointer-events-none absolute inset-x-1.5 top-5 bottom-7 opacity-90">
+                <span
+                  className={`pointer-events-none absolute inset-x-1.5 top-5 bottom-7 rounded-sm ${playing === id ? "bg-black/75" : ""}`}
+                  style={{ opacity: playing === id ? 1 : 0.9 }}
+                >
                   <WaveformView peaks={pad.peaks} color="var(--display-wave)" grid={false} outline={false} label={`${pad.name} waveform`} />
+                  {playing === id && sp !== undefined && (() => {
+                    // Playhead tracks the real playback position: sample time is
+                    // linear, so pitch, reverse and loop only shape the sweep.
+                    const pos = pad.reverse ? 1 - sp : sp;
+                    const played = pad.reverse ? { left: `${pos * 100}%`, right: 0 } : { left: 0, width: `${pos * 100}%` };
+                    return (
+                      <>
+                        <span className="absolute inset-y-0 bg-white/20" style={played as React.CSSProperties} />
+                        <span className="absolute inset-y-0 w-0.5 -translate-x-1/2 bg-white" style={{ left: `${pos * 100}%` }} />
+                      </>
+                    );
+                  })()}
                 </span>
               )}
               {recording && recStream && (
