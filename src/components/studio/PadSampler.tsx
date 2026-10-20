@@ -763,7 +763,7 @@ export function PadSampler() {
                     const played = pad.reverse ? { left: `${pos * 100}%`, right: 0 } : { left: 0, width: `${pos * 100}%` };
                     return (
                       <>
-                        <span className="absolute inset-y-0 bg-white/20" style={played as React.CSSProperties} />
+                        <span className="absolute inset-y-0 bg-white/20" style={played as import("react").CSSProperties} />
                         <span className="absolute inset-y-0 w-0.5 -translate-x-1/2 bg-white" style={{ left: `${pos * 100}%` }} />
                       </>
                     );
