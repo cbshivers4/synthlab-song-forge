@@ -34,3 +34,4 @@ Studio rear devices use category columns inside one scrollable measured canvas; 
 Drum-channel razor/split unrolls pad steps to song length and reuses track.cuts/activeRegion; deleting a part zeroes those steps. Generate Stem isolates the chosen part with Demucs (lib/synclab/ai-isolate) and falls back to on-device cleaning when the AI service fails.
 
 Timeline recording drags use pointer-based new-channel drop bounds and edge scrolling; transfer single clips atomically through track-move so sibling takes stay put and covered source notes/hits clear.
+WaveformView collapses to its intrinsic 16px inside a <button> (pad grids, chop tiles); give it `className="!h-full !w-full"` there, as VideoSampler chop tiles and PadSampler pad strips do.
