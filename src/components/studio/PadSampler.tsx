@@ -755,7 +755,7 @@ export function PadSampler() {
                   className={`pointer-events-none absolute inset-x-1.5 top-5 bottom-7 rounded-sm ${playing === id ? "bg-black/75" : ""}`}
                   style={{ opacity: playing === id ? 1 : 0.9 }}
                 >
-                  <WaveformView peaks={pad.peaks} color="var(--display-wave)" grid={false} outline={false} label={`${pad.name} waveform`} />
+                  <WaveformView peaks={pad.peaks} color="var(--display-wave)" grid={false} outline={false} className="!h-full !w-full" label={`${pad.name} waveform`} />
                   {playing === id && sp !== undefined && (() => {
                     // Playhead tracks the real playback position: sample time is
                     // linear, so pitch, reverse and loop only shape the sweep.
