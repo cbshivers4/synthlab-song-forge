@@ -9,6 +9,8 @@
 
 # Roadmap
 
+- [x] Add Pad Sampler manual/even/attack chops, pitch-preserving stretch and selected-chop transfer across banks; preserve the source and confirm occupied-pad replacement. Signed-in desktop used a real 4s WAV, made four cuts plus a manual cut, transferred five chops to Bank B with source retained, and stretched 4s→8s; sideways phone transferred four chops with replacement confirmation and stretched 8s→16s. Destination pads played through the shared channel; no page errors, eight tests pass and build OK. Preview only; physical-device listening remains unverified.
+
 - [x] Fix recording drag below the last track to create a new channel with edge scrolling; signed-in desktop mouse and sideways-phone finger drags increased channels from 2 to 3 and cleared source audio, with no page errors. 20 focused tests pass; build OK. Portrait retains rotation prompt; preview only, physical touch hardware untested.
 
 - [x] Match shared reel winding to captured song duration, not a minimum four-bar estimate; use actual tape position during playback/rewind/pause and conserve tape area between reels. Signed-in preview recorded 4.55 seconds, verified full supply at start, partial winding during playback, unchanged winding when switching deck views while paused, and empty supply/full take-up at the exact tape end. Nine focused tests passed; build OK. Preview only; physical phone not tested.

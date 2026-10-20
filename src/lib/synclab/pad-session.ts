@@ -1,7 +1,7 @@
 export interface SavedPad {
   name: string;
   url: string;
-  cloudPath?: string;
+  cloudPath?: string | undefined;
   duration: number;
   peaks: number[];
   start: number;
@@ -15,6 +15,8 @@ export interface SavedPad {
   release: number;
   choke: number;
   steps: number[];
+  /** Chop starts as fractions of the source audio; retained with manual project saves. */
+  slices?: number[] | undefined;
 }
 
 let padBank: Record<number, SavedPad> = {};
