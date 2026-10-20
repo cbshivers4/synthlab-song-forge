@@ -688,6 +688,7 @@ export function PadSampler() {
                   }
                   trigger(id);
                   setPlaying(id);
+                  startSweep(id);
                 }
               }}
               onPointerUp={release}
