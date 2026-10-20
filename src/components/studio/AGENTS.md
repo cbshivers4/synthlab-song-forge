@@ -3,6 +3,7 @@
 TouchSynth keeps five lanes in patch.touch and uses shared previewNote/playDrum, one loop timer and a DOM playhead. Force poly preview voices so lanes overlap; align overdubs with that loop clock. Grid edits use placeLoopNote/eraseLoopNote to retain other notes; patch/lane changes preserve touch settings. Send to timeline reuses loopsToNotes without capture or extra engines. Desktop/phone shortcuts reuse a dedicated track and open its performance tab.
 
 Hardware presentation uses shared Knob parts and CSS device tokens scoped by synth style/effect kind; indicators remain parameter/signal-driven and skins stay on the surround to preserve customization without simulated audio or duplicate controls.
+Drum artwork uses semantic SVG; sort copies and banks by stable IDs so pad identity stays consistent.
 
 WorkflowBar reuses shared recording, clipboard, take and routing actions; only explicit active clips/regions are part targets, so deleting a part never removes its channel. Keep the bar shared by phone and desktop without duplicating transport state.
 
