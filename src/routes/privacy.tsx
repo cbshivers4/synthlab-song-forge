@@ -102,8 +102,9 @@ function PrivacyRoute() {
       <p>
         Depending on where you live, you may request access to your data, correction, deletion,
         restriction, portability, or object to processing based on legitimate interests, and withdraw
-        consent at any time. Email <strong>cbshivers@gmail.com</strong> and we will respond within
-        one month. UK/EEA users also have the right to complain to their local data protection
+        consent at any time. Email <strong>christophershivers@synclabsapp.com</strong> and we will
+        respond within one month. UK/EEA users also have the right to complain to their local data
+        protection
         authority.
       </p>
 
