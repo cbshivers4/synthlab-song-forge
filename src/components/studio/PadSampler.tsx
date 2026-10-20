@@ -190,6 +190,43 @@ export function PadSampler() {
   const voiceTrackRef = useRef<string | null>(null);
   const padsRef = useRef(pads);
   padsRef.current = pads;
+  /** Held pads sweep a playhead across their pad waveform: pad id → press time. */
+  const holdsRef = useRef<Map<number, number>>(new Map());
+  const [sweep, setSweep] = useState<Record<number, number>>({});
+  const [sweeping, setSweeping] = useState(false);
+  const startSweep = useCallback((id: number) => {
+    holdsRef.current.set(id, performance.now());
+    setSweeping(true);
+  }, []);
+  const endSweep = useCallback((id: number) => {
+    if (!holdsRef.current.delete(id)) return;
+    setSweep((s) => {
+      if (!(id in s)) return s;
+      const n = { ...s };
+      delete n[id];
+      return n;
+    });
+    if (!holdsRef.current.size) setSweeping(false);
+  }, []);
+  // 20 fps display timer — only while a pad is actually held, never on the audio path.
+  useEffect(() => {
+    if (!sweeping) return;
+    const timer = window.setInterval(() => {
+      const now = performance.now();
+      const next: Record<number, number> = {};
+      for (const [id, t0] of holdsRef.current) {
+        const pad = padsRef.current[id];
+        if (!pad) continue;
+        const span = Math.max(0.02, pad.duration * (pad.end - pad.start));
+        const rate = Math.pow(2, (pad.pitch || 0) / 12);
+        let p = (((now - t0) / 1000) * rate) / span;
+        p = pad.loop ? p - Math.floor(p) : Math.min(1, p);
+        next[id] = p;
+      }
+      setSweep(next);
+    }, 50);
+    return () => window.clearInterval(timer);
+  }, [sweeping]);
   useEffect(() => subscribePadBank((next) => setPadsState(next)), []);
   const stepRef = useRef(0);
   const liveRef = useRef(liveRec);
@@ -615,6 +652,7 @@ export function PadSampler() {
           const c = skin.padColor ?? padColor(bank, i);
           const recording = recPad === id;
           const release = () => {
+            endSweep(id);
             if (holdRef.current?.pad === id || recRef.current?.pad === id) {
               endHold();
               return;
