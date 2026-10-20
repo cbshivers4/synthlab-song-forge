@@ -15,6 +15,8 @@ export interface SavedPad {
   release: number;
   choke: number;
   steps: number[];
+  /** Chop starts as fractions of the source audio; retained with manual project saves. */
+  slices?: number[];
 }
 
 let padBank: Record<number, SavedPad> = {};
