@@ -136,7 +136,10 @@ export function HelpCenter() {
     void supabase.auth.getUser().then(({ data }) => {
       const u = data.user;
       setUserId(u?.id ?? null);
-      setEmail((prev) => prev || (u?.email ?? ""));
+      // The founder signs in with Gmail but handles support from the SYNCLAB address.
+      const account = (u?.email ?? "").toLowerCase();
+      const replyEmail = account === "cbshivers@gmail.com" ? "christophershivers@synclabsapp.com" : (u?.email ?? "");
+      setEmail((prev) => (prev && prev.toLowerCase() !== "cbshivers@gmail.com" ? prev : replyEmail));
       void isSupportAdmin(u?.id).then(setAdmin);
     });
     void loadSupportSettings().then(setSettings);
