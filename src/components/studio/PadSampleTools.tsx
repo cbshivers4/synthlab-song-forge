@@ -13,10 +13,10 @@ import { cropPadPeaks, distributePadChops, padChopRanges } from '@/lib/synclab/p
 import { getPadBank, setPadBank, type SavedPad } from '@/lib/synclab/pad-session';
 import { toast } from 'sonner';
 
-export function PadSampleTools({ id, pad, manual, onManual, onPatch, onPreview, onStop }: {
+export function PadSampleTools({ id, pad, manual, onManual, onPatch, onPreview, onStop, onStopTarget }: {
   id: number; pad: SavedPad; manual: boolean; onManual: () => void;
   onPatch: (patch: Partial<SavedPad>) => void;
-  onPreview: (start: number, end: number) => void; onStop: () => void;
+  onPreview: (start: number, end: number) => void; onStop: () => void; onStopTarget: (id: number) => void;
 }) {
   const [selected, setSelected] = useState<number[]>([]);
   const [destination, setDestination] = useState(Math.floor(id / 16) === 0 ? 16 : 0);
@@ -46,13 +46,12 @@ export function PadSampleTools({ id, pad, manual, onManual, onPatch, onPreview, 
       const bank = getPadBank();
       const next = distributePadChops(bank, id, chosen, destination);
       if (!replace && chosen.some((_, i) => bank[destination + i])) { setConfirm(true); return; }
-      chosen.forEach((_, i) => onStopPad(destination + i));
+      chosen.forEach((_, i) => onStopTarget(destination + i));
       setPadBank(next);
       setConfirm(false);
       toast.success(`${chosen.length} chops added to pads`);
     } catch (error) { toast.error(error instanceof Error ? error.message : 'Could not add chops'); }
   };
-  const onStopPad = (_target: number) => { /* Replacements do not interrupt other live pads. */ };
 
   const stretch = async () => {
     setBusy(true);

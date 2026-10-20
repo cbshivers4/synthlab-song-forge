@@ -31,6 +31,8 @@ import { MidiPadLearnBar, useMidiPads } from "./MidiPadLearn";
 import { Keyboard } from "./Keyboard";
 import { qwertyEnabled } from "@/lib/synclab/qwerty";
 import { SavePadsDialog } from "./SavePadsDialog";
+import { PadSampleTools } from "./PadSampleTools";
+import { cropPadPeaks } from "@/lib/synclab/pad-chops";
 
 const BANKS = ["A", "B", "C", "D"] as const;
 /** Koala-style bank colors — each bank tints its loaded pads. */
@@ -99,16 +101,20 @@ function Row({ label, value, children }: { label: string; value: string; childre
 }
 
 /** Waveform of one pad with draggable trim handles. */
-function PadWave({ pad, color, onChange }: { pad: Pad; color: string; onChange: (p: Partial<Pad>) => void }) {
+function PadWave({ pad, color, onChange, manual }: { pad: Pad; color: string; onChange: (p: Partial<Pad>) => void; manual: boolean }) {
   const ref = useRef<HTMLDivElement | null>(null);
-  const [drag, setDrag] = useState<"start" | "end" | null>(null);
+  const [drag, setDrag] = useState<"start" | "end" | number | null>(null);
 
   const move = (e: ReactPointerEvent) => {
-    if (!drag) return;
+    if (drag === null) return;
     const box = ref.current?.getBoundingClientRect();
     if (!box) return;
     const f = Math.min(1, Math.max(0, (e.clientX - box.left) / box.width));
-    if (drag === "start") onChange({ start: Math.min(f, pad.end - 0.002) });
+    if (typeof drag === "number") {
+      const slices = [...(pad.slices ?? [])];
+      slices[drag] = Math.min((slices[drag + 1] ?? pad.end) - 0.002, Math.max((slices[drag - 1] ?? pad.start) + 0.002, f));
+      onChange({ slices });
+    } else if (drag === "start") onChange({ start: Math.min(f, pad.end - 0.002) });
     else onChange({ end: Math.max(f, pad.start + 0.002) });
   };
 
@@ -116,15 +122,27 @@ function PadWave({ pad, color, onChange }: { pad: Pad; color: string; onChange: 
     <div
       ref={ref}
       className="relative h-28 w-full touch-none overflow-hidden rounded-lg border border-border bg-surface-2/60"
+      aria-label="Pad sample chop waveform"
+      onPointerDown={(e) => {
+        if (!manual || e.target !== e.currentTarget) return;
+        const box = e.currentTarget.getBoundingClientRect();
+        const at = (e.clientX - box.left) / box.width;
+        if (at <= pad.start + 0.002 || at >= pad.end - 0.002) return;
+        onChange({ slices: [...new Set([pad.start, ...(pad.slices ?? []), at])].sort((a, b) => a - b) });
+      }}
       onPointerMove={move}
       onPointerUp={() => setDrag(null)}
       onPointerLeave={() => setDrag(null)}
     >
-      <div className="absolute inset-0">
+      <div className="pointer-events-none absolute inset-0">
         <WaveformView peaks={pad.peaks} color="var(--display-wave)" label="Pad waveform" />
       </div>
-      <div className="absolute inset-y-0 left-0 bg-background/70" style={{ width: `${pad.start * 100}%` }} />
-      <div className="absolute inset-y-0 right-0 bg-background/70" style={{ width: `${(1 - pad.end) * 100}%` }} />
+      <div className="pointer-events-none absolute inset-y-0 left-0 bg-background/70" style={{ width: `${pad.start * 100}%` }} />
+      <div className="pointer-events-none absolute inset-y-0 right-0 bg-background/70" style={{ width: `${(1 - pad.end) * 100}%` }} />
+      {(pad.slices ?? []).map((at, i) => at > pad.start && at < pad.end && <div key={i} role="slider" tabIndex={0} aria-label={`Pad cut ${i + 1}`} aria-valuenow={Math.round(at * 100)} aria-valuemin={0} aria-valuemax={100} className="absolute inset-y-0 z-20 w-5 -translate-x-1/2 cursor-col-resize" style={{ left: `${at * 100}%` }} onPointerDown={e => { e.preventDefault(); e.stopPropagation(); e.currentTarget.setPointerCapture(e.pointerId); setDrag(i); }} onDoubleClick={() => onChange({ slices: pad.slices?.filter((_, index) => index !== i) })} onKeyDown={e => {
+        if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); e.stopPropagation(); onChange({ slices: pad.slices?.filter((_, index) => index !== i) }); }
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); e.stopPropagation(); const slices = [...(pad.slices ?? [])]; slices[i] = Math.max((slices[i - 1] ?? pad.start) + 0.002, Math.min((slices[i + 1] ?? pad.end) - 0.002, at + (e.key === 'ArrowLeft' ? -0.005 : 0.005))); onChange({ slices }); }
+      }}><span className="absolute inset-y-0 left-1/2 w-0.5 bg-destructive" /><span className="absolute bottom-1 left-1/2 size-2 -translate-x-1/2 bg-destructive" /></div>)}
       {(["start", "end"] as const).map((h) => (
         <div
           key={h}
@@ -136,6 +154,7 @@ function PadWave({ pad, color, onChange }: { pad: Pad; color: string; onChange: 
           aria-valuemax={100}
           onPointerDown={(e) => {
             e.preventDefault();
+            e.currentTarget.setPointerCapture(e.pointerId);
             setDrag(h);
           }}
           onKeyDown={(e) => {
@@ -169,6 +188,7 @@ export function PadSampler() {
   const [bank, setBank] = useState(0);
   const [showKeyboard, setShowKeyboard] = useState(false);
   const [sel, setSel] = useState(0);
+  const [manualCuts, setManualCuts] = useState(false);
   const [hit, setHit] = useState<number | null>(null);
   const [seqOn, setSeqOn] = useState(false);
   const [step, setStep] = useState(0);
@@ -262,7 +282,7 @@ export function PadSampler() {
   const selPad = pads[sel];
 
   const trigger = useCallback(
-    (i: number, velocity = 1, when?: number, midi = 60) => {
+    (i: number, velocity = 1, when?: number, midi = 60, region?: { start: number; end: number }) => {
       const pad = padsRef.current[i];
       if (!pad) return;
       const id = ensureTrack();
@@ -271,8 +291,8 @@ export function PadSampler() {
         id,
         {
           url: pad.url,
-          start: pad.start,
-          end: pad.end,
+          start: region?.start ?? pad.start,
+          end: region?.end ?? pad.end,
           gain: pad.gain,
           pitch: pad.pitch,
           rootNote: 60,
@@ -289,13 +309,13 @@ export function PadSampler() {
         pad.choke ? `choke${pad.choke}` : `pad${i}`,
       );
       // While the transport records, drop the hit into the sampler track's take on the timeline.
-      captureNote(id, midi, velocity);
+      if (!region) captureNote(id, midi, velocity);
       const delay = Math.max(0, ((when ?? engine.init().currentTime) - engine.init().currentTime) * 1000);
       window.setTimeout(() => {
         setHit(i);
         window.setTimeout(() => setHit((h) => (h === i ? null : h)), 120);
       }, delay);
-      if (liveRef.current && delay < 10) {
+      if (!region && liveRef.current && delay < 10) {
         const s = stepRef.current;
         setPads((p) => {
           const target = p[i];
@@ -403,26 +423,6 @@ export function PadSampler() {
       delete n[i];
       return n;
     });
-  };
-
-  /** Spreads the selected pad's sample across the bank as equal chops. */
-  const chopToPads = (n: number) => {
-    const src = pads[sel];
-    if (!src) return;
-    const span = src.end - src.start;
-    setPads((p) => {
-      const next = { ...p };
-      for (let i = 0; i < n; i++) {
-        const a = src.start + (span * i) / n;
-        const b = src.start + (span * (i + 1)) / n;
-        next[bank * PADS_PER_BANK + i] = {
-          ...makePad({ url: src.url, name: `${src.name} ${i + 1}`, peaks: src.peaks, duration: src.duration }, a, b),
-        };
-      }
-      return next;
-    });
-    setSel(bank * PADS_PER_BANK);
-    toast.success(`Sliced across ${n} pads`, { description: `Bank ${BANKS[bank]} now holds the chops in order.` });
   };
 
   /* record straight into a pad from the microphone */
@@ -630,8 +630,8 @@ export function PadSampler() {
         ) : monitorPad ? (
           <>
             <WaveformView peaks={monitorPad.pad.peaks} color="var(--display-wave)" label={`${monitorPad.pad.name} waveform`} />
-            <span className="absolute inset-y-0 left-0 bg-background/70" style={{ width: `${monitorPad.pad.start * 100}%` }} />
-            <span className="absolute inset-y-0 right-0 bg-background/70" style={{ width: `${(1 - monitorPad.pad.end) * 100}%` }} />
+            <span className="pointer-events-none absolute inset-y-0 left-0 bg-background/70" style={{ width: `${monitorPad.pad.start * 100}%` }} />
+            <span className="pointer-events-none absolute inset-y-0 right-0 bg-background/70" style={{ width: `${(1 - monitorPad.pad.end) * 100}%` }} />
           </>
         ) : (
           <span className="absolute inset-x-0 bottom-0 top-5 flex items-center justify-center px-2 text-center font-mono text-[10px] tracking-widest text-muted-foreground">
@@ -755,7 +755,7 @@ export function PadSampler() {
                   className={`pointer-events-none absolute inset-x-1.5 top-5 bottom-7 rounded-sm ${playing === id ? "bg-black/75" : ""}`}
                   style={{ opacity: playing === id ? 1 : 0.9 }}
                 >
-                  <WaveformView peaks={pad.peaks} color="var(--display-wave)" grid={false} outline={false} className="!h-full !w-full" label={`${pad.name} waveform`} />
+                  <WaveformView peaks={cropPadPeaks(pad)} color="var(--display-wave)" grid={false} outline={false} className="!h-full !w-full" label={`${pad.name} waveform`} />
                   {playing === id && sp !== undefined && (() => {
                     // Playhead tracks the real playback position: sample time is
                     // linear, so pitch, reverse and loop only shape the sweep.
@@ -932,26 +932,8 @@ export function PadSampler() {
             </div>
           </div>
 
-          <PadWave pad={selPad} color={BANK_COLORS[bank] as string} onChange={(n) => patch(sel, n)} />
-
-          <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface-2/40 p-3">
-            <Scissors className="size-4 text-primary" />
-            <span className="label-xs">Slice this sound across bank {BANKS[bank]}</span>
-            {[4, 8, 16].map((n) => (
-              <Button
-                key={n}
-                size="sm"
-                variant="secondary"
-                className="h-7 font-mono text-[10px] tracking-widest"
-                onClick={() => chopToPads(n)}
-              >
-                {n}
-              </Button>
-            ))}
-            <span className="text-xs text-muted-foreground">
-              Each slice lands on its own pad, in order, keeping the original sound untouched.
-            </span>
-          </div>
+          <PadWave pad={selPad} color={BANK_COLORS[bank] as string} manual={manualCuts} onChange={(n) => patch(sel, n)} />
+          <PadSampleTools key={sel} id={sel} pad={selPad} manual={manualCuts} onManual={() => setManualCuts(value => !value)} onPatch={next => patch(sel, next)} onPreview={(start, end) => { stopPad(sel); trigger(sel, 1, undefined, 60, { start, end }); }} onStop={() => stopPad(sel)} onStopTarget={stopPad} />
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <Row label="Level" value={`${Math.round(selPad.gain * 100)}%`}>

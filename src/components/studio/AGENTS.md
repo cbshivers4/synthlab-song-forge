@@ -35,3 +35,5 @@ Drum-channel razor/split unrolls pad steps to song length and reuses track.cuts/
 
 Timeline recording drags use pointer-based new-channel drop bounds and edge scrolling; transfer single clips atomically through track-move so sibling takes stay put and covered source notes/hits clear.
 WaveformView collapses to its intrinsic 16px inside a <button> (pad grids, chop tiles); give it `className="!h-full !w-full"` there, as VideoSampler chop tiles and PadSampler pad strips do.
+
+Pad Sampler saves source-relative chop ranges; bank transforms preserve the source and require replacement confirmation. Pitch-preserving pad stretch runs shared WSOLA offline in a worker and retains pad shaping and manual-save semantics.

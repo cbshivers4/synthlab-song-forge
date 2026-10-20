@@ -27,7 +27,7 @@ Panel wallpaper uses bundled JPEG and per-panel skins.
 Timeline names stay single-line; phone actions prioritize REC/AUTO with isolated menu clicks to avoid opening instruments.
 Playhead stays within track rows; headers, ruler and song lane share its width variable, including large phone controls. It renders through the --playhead token (white, never dimmed) and stays draggable from ruler and track lanes.
 Synth sections share wrapping tabs; X-Y pads dispatch through updatePatch to stay synchronized with knobs and saved presets without removing controls.
-Drum artwork uses semantic SVG; sort copies/banks by stable IDs. Read lib/synclab/AGENTS.md for shared audio rules.
+Read nested AGENTS.md in studio components and shared audio before changes.
 
 Phone drum tabs reuse DrumRoll and instrument pads for edits/tap recording; sound/kit tabs preserve controls without duplication.
 Keyboards reuse Keyboard and one note path; independent skin slots color opaque keys and wallpaper only the surround, preventing doubled notes.
