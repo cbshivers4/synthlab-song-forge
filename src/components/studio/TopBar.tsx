@@ -1,3 +1,4 @@
+import { DeviceClock } from "./DeviceClock";
 import {
   LifeBuoy,
   Cpu,
