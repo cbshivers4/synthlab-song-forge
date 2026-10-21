@@ -70,8 +70,8 @@ export function isAppleMobile(): boolean {
  * setSinkId symbol exists but every call rejects, so the browser is not the
  * place to look.
  */
-export function outputRoutingHint(): string {
-  return isAppleMobile()
+export function outputRoutingHint(apple: boolean = isAppleMobile()): string {
+  return apple
     ? "iPhone and iPad choose the output themselves: open Control Centre, tap the audio card, then pick your interface for this app."
     : "This browser plays through your computer's selected output — change it in system sound settings.";
 }
