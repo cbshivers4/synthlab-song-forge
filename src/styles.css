@@ -2187,4 +2187,4 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
 @media (max-width: 767px) { .fx-face .fx-nameplate h3 { font-size: 16px; } .fx-parameter-window { min-width: 85px; } .fx-parameter-window strong { font-size: 18px; } .fx-control-deck { padding: 18px 8px; } }
 .synth-hardware[data-synth-style="acid"] [role="tabpanel"] .hardware-knob-label { font-size: 11px !important; font-weight: 800; color: var(--acid-ink) !important; }
 .synth-hardware[data-synth-style="acid"] [role="tabpanel"] .hardware-knob-value { font-size: 12px !important; font-weight: 700; color: var(--acid-ink) !important; }
-.synth-hardware[data-synth-style="acid"] [role="tabpanel"] [data-orientation="horizontal"] > span:first-child { background: oklch(0.45 0.01 260) !important; }
+.synth-hardware[data-synth-style="acid"] [role="tabpanel"] span.grow.overflow-hidden.rounded-full { min-width: 100%;  background: oklch(0.45 0.01 260) !important; }
