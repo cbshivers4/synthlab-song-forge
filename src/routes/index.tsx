@@ -53,7 +53,6 @@ import { LiveView } from "@/components/studio/LiveView";
 import { LiveLooperView } from "@/components/studio/LiveLooperView";
 import { ExternalApps } from "@/components/studio/ExternalApps";
 import { HumToBeat } from "@/components/studio/HumToBeat";
-import { VoiceConverter } from "@/components/studio/VoiceConverter";
 import { BassGenerator } from "@/components/studio/BassGenerator";
 import { ComingSoon } from "@/components/studio/ComingSoon";
 import { ReelRecorder } from "@/components/studio/ReelRecorder";
