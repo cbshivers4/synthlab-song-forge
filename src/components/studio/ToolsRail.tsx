@@ -156,7 +156,7 @@ export function ToolsRail() {
   const advanced = mode === "advanced";
   const [open, setOpen] = useState(true);
   const [pluginDrop, setPluginDrop] = useState(false);
-  const [closedSections, setClosedSections] = useState<Record<string, boolean>>({});
+  const [closedSections, setClosedSections] = useState<Record<string, boolean>>({ plugins: true, apps: true });
   const [folders, setFolders] = useState(getLocalFolders);
   const [playingFile, setPlayingFile] = useState<string | null>(null);
   const [openFolders, setOpenFolders] = useState<Record<string, boolean>>({});

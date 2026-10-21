@@ -825,9 +825,9 @@ export function PadSampler() {
       />
 
       {/* step sequencer for the selected pad */}
-      <div className="space-y-2 rounded-lg border border-border bg-surface-2/40 p-3">
+      <section aria-label="Pad pattern" className="pad-pattern-section space-y-2 rounded-md border-2 border-primary bg-surface-2 p-3">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="label-xs">Pattern · pad {sel % PADS_PER_BANK + 1}</span>
+          <span className="font-mono text-sm font-bold text-primary">PATTERN · PAD {sel % PADS_PER_BANK + 1}</span>
           <span className="font-mono text-[10px] text-muted-foreground">{transport.bpm} BPM · 16 steps</span>
           {selPad && (
             <Button
@@ -844,7 +844,7 @@ export function PadSampler() {
           {Array.from({ length: STEPS }, (_, s) => {
             const on = (selPad?.steps[s] ?? 0) > 0;
             return (
-              <button
+              <Button variant="outline"
                 key={s}
                 type="button"
                 aria-label={`Step ${s + 1}`}
@@ -856,13 +856,13 @@ export function PadSampler() {
                   patch(sel, { steps });
                 }}
                 className={`h-8 rounded-sm border transition-colors ${
-                  on ? "border-primary bg-primary" : "border-border bg-surface-1 hover:bg-primary/20"
+                  on ? "border-primary bg-primary text-primary-foreground" : "border-primary/50 bg-surface-1 text-foreground hover:bg-primary/20"
                 } ${seqOn && step === s ? "ring-2 ring-accent" : ""} ${s % 4 === 0 ? "opacity-100" : "opacity-85"}`}
-              />
+              >{s + 1}</Button>
             );
           })}
         </div>
-      </div>
+      </section>
 
       {!selPad ? (
         <div className="grid grid-cols-2 gap-2 rounded-md border border-border bg-surface-2/40 p-3 sm:flex sm:items-center">

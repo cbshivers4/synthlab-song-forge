@@ -366,7 +366,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
       {panel === "reference" && <ReferenceAnalyzer />}
       {panel === "live" && <LiveView />}
       {panel === "looper" && <LiveLooperView />}
-      {panel === "apps" && <ExternalApps />}{panel === "humbeat" && <ToolErrorBoundary name="Hum to Beat"><HumToBeat /></ToolErrorBoundary>}{panel === "stems" && <ComingSoon title="Separate stems" />}{panel === "coproducer" && <ToolErrorBoundary name="AI Co-Producer"><CoProducer /></ToolErrorBoundary>}{panel === "voice" && <ToolErrorBoundary name="Convert Voice"><VoiceConverter /></ToolErrorBoundary>}{panel === "genstem" && <ComingSoon title="Generate stem" />}{panel === "bassgen" && <ToolErrorBoundary name="Bass Generator"><BassGenerator /></ToolErrorBoundary>}
+      {panel === "apps" && <ExternalApps />}{panel === "humbeat" && <ToolErrorBoundary name="Hum to Beat"><HumToBeat /></ToolErrorBoundary>}{panel === "stems" && <ComingSoon title="Separate stems" />}{panel === "coproducer" && <ComingSoon title="AI Co-Producer — unavailable" />}{panel === "voice" && <ToolErrorBoundary name="Convert Voice"><VoiceConverter /></ToolErrorBoundary>}{panel === "genstem" && <ComingSoon title="Generate stem" />}{panel === "bassgen" && <ToolErrorBoundary name="Bass Generator"><BassGenerator /></ToolErrorBoundary>}
 
       </div>}
 
