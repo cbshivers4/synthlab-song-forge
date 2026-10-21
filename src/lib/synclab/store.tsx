@@ -2759,9 +2759,12 @@ export function StudioProvider({ children }: { children: ReactNode }) {
               p.id === instanceId
                 ? {
                     ...p,
-                    params: p.params.some((x: PluginParam) => x.id === paramId)
-                      ? p.params.map((x: PluginParam) => (x.id === paramId ? { ...x, value } : x))
-                      : [...p.params, { id: paramId, name: paramId, value, min: value, max: value, unit: "" }],
+                    params: (() => {
+                      const all = withDefaultParams(p);
+                      return all.some((x: PluginParam) => x.id === paramId)
+                        ? all.map((x: PluginParam) => (x.id === paramId ? { ...x, value } : x))
+                        : [...all, { id: paramId, name: paramId, value, min: value, max: value, unit: "" }];
+                    })(),
                   }
                 : p,
             );
