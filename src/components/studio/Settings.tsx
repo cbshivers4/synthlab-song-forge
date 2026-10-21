@@ -451,7 +451,7 @@ export function Settings() {
         <Row
           label="Output device"
           hint={
-            !getEngine().canPickOutput
+            !getEngine().canPickOutput || apple
               ? outputRoutingHint(apple)
               : outputs.length
                 ? "Speakers, headphones or interface outputs — all playback moves here"

@@ -1715,11 +1715,12 @@ export class SyncLabEngine {
       this.inputGainNode.gain.setTargetAtTime(10 ** (db / 20), this.ctx.currentTime, 0.02);
   }
 
-  /** True when the browser can route playback to a chosen output device. */
+  /**
+   * True when the browser exposes the output-routing API. iPadOS reports this
+   * as available yet rejects every call, so callers must also treat
+   * isAppleMobile() as "no picker here" — see Settings and setOutputDevice.
+   */
   get canPickOutput() {
-    // iPadOS reports setSinkId as available, yet every call rejects, and iOS
-    // routes audio per app in Control Centre — so never promise a picker there.
-    if (isAppleMobile()) return false;
     return typeof (AudioContext.prototype as unknown as { setSinkId?: unknown }).setSinkId === "function";
   }
 
