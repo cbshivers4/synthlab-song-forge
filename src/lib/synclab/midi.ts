@@ -125,7 +125,8 @@ export function subscribe(a: AnyAccess | null, id: string, handler: (msg: MidiMe
 export function midiUnsupportedMessage(): string {
   const ua = typeof navigator === "undefined" ? "" : navigator.userAgent;
   const ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && typeof navigator !== "undefined" && navigator.maxTouchPoints > 1);
-  if (ios) return "iPhone and iPad browsers don't support MIDI keyboards. Use the on-screen keyboard or pads, or open SYNCLAB in Chrome on Android or a computer for MIDI.";
+  if (ios)
+    return "On iPhone or iPad, update to iOS 18.4 or later and open SYNCLAB in Safari — a USB MIDI controller (Korg nano series and others) works through the Apple USB/Lightning camera adapter, no Apple developer account needed. Bluetooth MIDI is not available to web apps on iOS, so use a cable.";
   if (/Android/.test(ua)) return "This Android browser can't see MIDI. Open SYNCLAB in Chrome and connect the keyboard by USB (OTG adapter) or Bluetooth MIDI.";
   return "This browser cannot see MIDI hardware — use Chrome or Edge.";
 }
