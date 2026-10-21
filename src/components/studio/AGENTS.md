@@ -4,6 +4,8 @@ Every mixer channel and the master strip carry a pre-fader GAIN knob (Track.gain
 
 # Studio components
 
+EQ and Pro EQ share EqGrid and scoped eq-workstation/eq-chart tokens for their frequency-display presentation; keep response paths parameter-derived and analyser drawing at 20 fps, without changing DSP or adding simulated spectra.
+
 TouchSynth keeps five lanes in patch.touch and uses shared previewNote/playDrum, one loop timer and a DOM playhead. Force poly preview voices so lanes overlap; align overdubs with that loop clock. Grid edits use placeLoopNote/eraseLoopNote to retain other notes; patch/lane changes preserve touch settings. Send to timeline reuses loopsToNotes without capture or extra engines. Desktop/phone shortcuts reuse a dedicated track and open its performance tab.
 
 Hardware presentation uses shared Knob parts and CSS device tokens scoped by synth style/effect kind; indicators remain parameter/signal-driven and skins stay on the surround to preserve customization without simulated audio or duplicate controls.
