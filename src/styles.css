@@ -2033,7 +2033,12 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
 .mx-console:not(.mx-phone) :is(.mx-channel, .mx-master, .mx-routing-strip) > .mx-row-head { height: 68px !important; flex-wrap: nowrap; gap: 2px; justify-content: flex-end; overflow: visible; }
 .mx-header-gain { width: 46px; min-width: 46px; }
 .mx-header-gain .hardware-knob { width: 100%; min-width: 0; }
-.mx-header-gain .hardware-knob-label { font-size: 8px; white-space: nowrap; overflow: hidden; }
+.mx-header-gain .hardware-knob-label { font-size: 0; white-space: nowrap; }
+.mx-header-gain .hardware-knob-label::after { content: "GAIN"; font-size: 8px; }
+.mx-header-gain .hardware-knob { gap: 0; }
+.mx-header-gain .hardware-knob-dial { flex-shrink: 0; }
+.mx-header-gain .hardware-knob button { height: 12px !important; min-height: 12px !important; font-size: 7px; padding: 0 2px; }
+.mx-header-gain .hardware-knob-value { min-height: 10px; font-size: 9px; line-height: 10px; }
 .mx-console:not(.mx-phone) .mx-routing-strip > div { flex-shrink: 0; }
 .mx-console:not(.mx-phone) :is(.mx-master, .mx-routing-strip) > .mx-row-eq { height: 112px !important; min-height: 112px !important; }
 .mx-console:not(.mx-phone) .mx-routing-strip > .mx-row-buttons { order: 10; height: 56px; }
@@ -2051,7 +2056,9 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
 .drum-machine:not([data-phone-view]) [data-desktop-view="sound"] .drum-pad-grid,
 .drum-machine:not([data-phone-view]) [data-desktop-view="sound"] .drum-side-banks { display: none; }
 .drum-machine:not([data-phone-view]) [data-desktop-view="sound"] .drum-sound-controls { width: 100%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.mx-console:not(.mx-phone) :is(.mx-channel, .mx-master, .mx-routing-strip) { display: grid; grid-template-rows: 34px 68px 64px 112px 28px 26px 50px 30px 160px 22px 56px 30px 34px; align-content: start; }
+.mx-console:not(.mx-phone) :is(.mx-channel, .mx-master, .mx-routing-strip) { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: 34px 68px 64px 112px 28px 26px 50px 30px 160px 22px 56px 30px 34px; align-content: start; }
+.mx-console:not(.mx-phone) .mx-channel > .mx-row-head { padding-inline: 2px; }
+.mx-console:not(.mx-phone) .mx-channel > .mx-row-head > button { flex-shrink: 1; min-width: 10px; }
 .mx-console:not(.mx-phone) :is(.mx-channel, .mx-master, .mx-routing-strip) > div { height: 100% !important; min-height: 0 !important; margin-top: 0; }
 .mx-console:not(.mx-phone) .mx-row-name { grid-row: 1; }
 .mx-console:not(.mx-phone) .mx-row-head { grid-row: 2; }
