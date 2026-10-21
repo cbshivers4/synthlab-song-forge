@@ -56,6 +56,7 @@ export function ReelRecorder() {
   const state = useSyncExternalStore(recorder.subscribe, recorder.getSnapshot, recorder.getSnapshot);
   const { addTrack, addClip, transport, setTransport, togglePlay, stop: stopSong, toggleRecord } = useStudio();
   const [deck, setDeck] = useState<"timeline" | "tape">("timeline");
+  const [look, setLook] = useState<"reel" | "simple">("reel");
   const master = deck === "timeline";
   const fileInput = useRef<HTMLInputElement>(null);
   const [format, setFormat] = useState("wav24");
@@ -100,7 +101,25 @@ export function ReelRecorder() {
     if (!transport.playing) togglePlay();
   };
   return <section className="reel-recorder mx-auto w-full max-w-[900px]" aria-label="Reel-to-reel recorder">
-    <header className="tape-brand flex flex-wrap items-center justify-between gap-2 px-4 py-3"><div><h2 className="font-display text-lg font-semibold">SYNCLAB <span className="text-primary">R2R</span></h2><p className="font-mono text-[10px] text-muted-foreground">STEREO TAPE RECORDER · DETROIT</p></div><span role="status" className={`font-mono text-xs ${recording ? "text-destructive" : "text-primary"}`}>{state.busy ? "PREPARING" : saving ? "SAVING" : recording ? "RECORDING" : master ? transport.playing ? "PLAYING" : "STOPPED" : state.mode.toUpperCase()}</span></header>
+    <header className="tape-brand flex flex-wrap items-center justify-between gap-2 px-4 py-3"><div><h2 className="font-display text-lg font-semibold">SYNCLAB <span className="text-primary">R2R</span></h2><p className="font-mono text-[10px] text-muted-foreground">STEREO TAPE RECORDER · DETROIT</p></div><span role="status" className={`font-mono text-xs ${recording ? "text-destructive" : "text-primary"}`}>{state.busy ? "PREPARING" : saving ? "SAVING" : recording ? "RECORDING" : master ? transport.playing ? "PLAYING" : "STOPPED" : state.mode.toUpperCase()}</span>
+      <div className="flex gap-1" role="group" aria-label="Recorder look"><Button size="sm" variant={look === "reel" ? "default" : "outline"} aria-pressed={look === "reel"} onClick={() => setLook("reel")}>Reel-to-reel</Button><Button size="sm" variant={look === "simple" ? "default" : "outline"} aria-pressed={look === "simple"} onClick={() => { setLook("simple"); setDeck("tape"); }}>QuickTime style</Button></div></header>
+    {look === "simple" ? <div className="flex flex-col items-center gap-4 border-t border-border bg-card px-4 py-6">
+      <output aria-label="Recording time" className="font-mono text-4xl tabular-nums text-foreground">{clock(state.position)}</output>
+      <div className="flex w-full max-w-md items-center gap-4">
+        <button type="button" disabled={locked} aria-label={recording ? "Stop recording" : "Start recording"} onClick={() => void (recording ? recorder.stop() : recorder.record())} className="grid size-16 shrink-0 place-items-center rounded-full border-4 border-muted-foreground/40 bg-background transition-transform active:scale-95 disabled:opacity-50">
+          {recording ? <span className="size-6 rounded-sm bg-destructive" /> : <span className="size-11 rounded-full bg-destructive" />}
+        </button>
+        <div className="flex-1 space-y-1" aria-label="Input level">
+          {[state.levelL, state.levelR].map((l, i) => <div key={i} className="h-2 overflow-hidden rounded bg-muted"><div className={`h-full ${state.clipped ? "bg-destructive" : "bg-primary"}`} style={{ width: `${Math.min(100, Math.max(0, l * 100))}%` }} /></div>)}
+        </div>
+        <Button variant="outline" size="icon" className="size-11" disabled={locked || recording || !state.hasTape} aria-label={state.mode === "playing" ? "Pause" : "Play"} onClick={() => void recorder.play()}>{state.mode === "playing" ? <Pause /> : <Play />}</Button>
+      </div>
+      <label className="flex w-full max-w-md flex-col gap-1 text-xs text-muted-foreground">Record from<select value={state.source} disabled={locked || recording} onChange={(e) => void recorder.setSource(e.target.value as "input" | "song")} className="h-11 rounded border border-input bg-background px-2 text-foreground"><option value="input">Microphone / interface</option><option value="song">Song master</option></select></label>
+      {!state.ready && <Button className="h-11" disabled={locked} onClick={() => void recorder.enable()}>{state.source === "input" ? "Enable microphone" : "Enable song input"}</Button>}
+      {state.hasTape && !recording && <input className="w-full max-w-md accent-primary" type="range" min={0} max={state.duration || 1} step={0.01} value={state.position} disabled={locked} aria-label="Recording position" onChange={(e) => void recorder.seek(Number(e.target.value))} />}
+      {state.error && <p role="alert" className="text-sm text-destructive">{state.error}</p>}
+    </div> : <>
+
     <div className="tape-deck" data-moving={active} style={{ "--reel-time": rewinding ? "0.4s" : `${3 / state.speed}s` } as CSSProperties}><div className="tape-reels"><Reel moving={active} fill={1 - progress} /><Reel moving={active} right fill={progress} /></div>
       <svg className="tape-path" viewBox="0 0 600 80" aria-hidden="true"><path d="M88 5L176 60H424L512 5" /><circle cx="176" cy="60" r="13" /><circle cx="424" cy="60" r="13" /><rect x="267" y="41" width="66" height="24" rx="3" /><path d="M286 45V60M302 45V60M318 45V60" /></svg>
       <div className="tape-display flex flex-wrap items-center justify-between gap-3"><span className="font-mono text-xs">{master || state.source === "song" ? "SONG MASTER" : "MIC / LINE"}</span><output aria-label="Tape counter" className="font-mono text-2xl text-primary">{clock(master ? transport.step * stepSeconds(transport.bpm) : state.position)}</output><span aria-label="Song position" className="font-mono text-xs text-muted-foreground">{master ? `BAR ${Math.floor(transport.step / stepsPerBar()) + 1} · BEAT ${Math.floor((transport.step % stepsPerBar()) / STEPS_PER_BEAT) + 1}${recording ? ` · TAPE ${clock(state.position)}` : ""}` : clock(state.duration)}</span></div>
@@ -139,7 +158,7 @@ export function ReelRecorder() {
       <p className="mt-2 text-[11px] text-muted-foreground">Digital recording. Tape speed changes pitch and duration. Tone and saturation are printed into new recordings.</p>
       <ReelInputChannels />
       {state.error && <p role="alert" className="mt-2 text-sm text-destructive">{state.error}</p>}
-    </div>
+    </div></>}
     <footer className="flex flex-wrap items-end gap-2 border-t border-border px-4 py-4">
       <label className="flex min-w-[120px] flex-1 flex-col gap-1 text-xs text-muted-foreground">Tape name<input className="h-11 w-full rounded border border-input bg-background px-2 text-foreground" value={state.name} onChange={(e) => recorder.configure({ name: e.target.value })} /></label>
       <label className="flex flex-col gap-1 text-xs text-muted-foreground">Export format<select className="h-11 rounded border border-input bg-background px-2 text-foreground" value={format} onChange={(e) => setFormat(e.target.value)}><option value="wav16">WAV · 16-bit</option><option value="wav24">WAV · 24-bit</option><option value="wav32">WAV · 32-bit float</option><option value="mp3">MP3</option><option value="flac">FLAC · 24-bit</option><option value="aiff">AIFF · 24-bit</option></select></label>
