@@ -58,7 +58,7 @@ const APPLE_ICON = (
 
 export function WelcomeScreen() {
   const { setStage, setSignedIn } = useApp();
-  const [mode, setMode] = useState<"signin" | "signup" | null>(null);
+  const [mode, setMode] = useState<"signin" | "signup" | "forgot" | "magic" | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -83,11 +83,41 @@ export function WelcomeScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const friendlyError = (err: unknown) => {
+    const msg = err instanceof Error ? err.message : "";
+    if (msg.includes("Invalid login credentials")) return "Wrong email or password. Try again, or use Forgot password below.";
+    if (msg.includes("Email not confirmed")) return "Confirm your email first — check your inbox for the confirmation link.";
+    if (msg.includes("rate limit") || msg.includes("too many")) return "Too many emails right now. Wait a minute and try again.";
+    if (msg.includes("at least 6")) return "Password must be at least 6 characters.";
+    if (msg.includes("already registered")) return "That email already has an account — sign in instead.";
+    if (msg.includes("valid email")) return "Enter a valid email address.";
+    return err instanceof Error ? err.message : "Something went wrong. Try again.";
+  };
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (busy) return;
     setBusy(true);
     try {
+      if (mode === "forgot") {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/reset-password`,
+        });
+        if (error) throw error;
+        toast.success("Check your email", { description: "We sent you a password-reset link. Open it on this device to set a new password." });
+        setMode("signin");
+        return;
+      }
+      if (mode === "magic") {
+        const { error } = await supabase.auth.signInWithOtp({
+          email,
+          options: { emailRedirectTo: window.location.origin },
+        });
+        if (error) throw error;
+        toast.success("Check your email", { description: "We sent a sign-in link. Open it on this device — no password needed." });
+        setMode(null);
+        return;
+      }
       if (mode === "signup") {
         const { data, error } = await supabase.auth.signUp({
           email,
@@ -104,7 +134,7 @@ export function WelcomeScreen() {
         if (error) throw error;
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not sign in");
+      toast.error(friendlyError(err));
     } finally {
       setBusy(false);
     }
@@ -204,7 +234,7 @@ export function WelcomeScreen() {
               {mode ? (
                 <form onSubmit={submit} className="space-y-3 pt-2">
                   <h2 className="font-mono text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                    {mode === "signup" ? "Create your account" : "Sign in"}
+                    {mode === "signup" ? "Create your account" : mode === "forgot" ? "Reset your password" : mode === "magic" ? "Sign in with an email link" : "Sign in"}
                   </h2>
                   <Input
                     type="email"
@@ -214,26 +244,60 @@ export function WelcomeScreen() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
-                  <Input
-                    type="password"
-                    required
-                    minLength={6}
-                    autoComplete={mode === "signup" ? "new-password" : "current-password"}
-                    placeholder="Password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
+                  {mode !== "forgot" && mode !== "magic" && (
+                    <Input
+                      type="password"
+                      required
+                      minLength={6}
+                      autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                      placeholder="Password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                    />
+                  )}
                   <Button type="submit" className="w-full" disabled={busy}>
-                    {busy ? "WORKING…" : mode === "signup" ? "CREATE ACCOUNT" : "SIGN IN"}
+                    {busy ? "WORKING…" : mode === "signup" ? "CREATE ACCOUNT" : mode === "forgot" ? "SEND RESET LINK" : mode === "magic" ? "SEND SIGN-IN LINK" : "SIGN IN"}
                   </Button>
+                  {mode === "signin" && (
                     <Button
                       variant="link"
-                    type="button"
-                      className="min-h-11 w-full text-center text-xs text-muted-foreground"
-                    onClick={() => setMode(mode === "signup" ? "signin" : "signup")}
-                  >
-                    {mode === "signup" ? "Already have an account? Sign in" : "New here? Create an account"}
+                      type="button"
+                      className="w-full text-center text-xs text-muted-foreground"
+                      onClick={() => setMode("forgot")}
+                    >
+                      Forgot password?
                     </Button>
+                  )}
+                  {mode === "forgot" && (
+                    <Button
+                      variant="link"
+                      type="button"
+                      className="w-full text-center text-xs text-muted-foreground"
+                      onClick={() => setMode("signin")}
+                    >
+                      Back to sign in
+                    </Button>
+                  )}
+                  {mode === "magic" && (
+                    <Button
+                      variant="link"
+                      type="button"
+                      className="w-full text-center text-xs text-muted-foreground"
+                      onClick={() => setMode("signin")}
+                    >
+                      Back to sign in
+                    </Button>
+                  )}
+                  {mode !== "forgot" && mode !== "magic" && (
+                    <Button
+                      variant="link"
+                      type="button"
+                      className="min-h-11 w-full text-center text-xs text-muted-foreground"
+                      onClick={() => setMode(mode === "signup" ? "signin" : "signup")}
+                    >
+                      {mode === "signup" ? "Already have an account? Sign in" : "New here? Create an account"}
+                    </Button>
+                  )}
                 </form>
               ) : (
                 <div className="flex flex-col gap-4 pt-4">
@@ -250,6 +314,13 @@ export function WelcomeScreen() {
                     onClick={() => setMode("signup")}
                   >
                     CREATE ACCOUNT
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="min-h-11 w-full text-xs font-semibold text-muted-foreground underline underline-offset-2"
+                    onClick={() => setMode("magic")}
+                  >
+                    Email me a sign-in link instead
                   </Button>
                 </div>
               )}
