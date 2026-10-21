@@ -86,6 +86,16 @@ html[data-reduce-motion] *, html[data-reduce-motion] *::before, html[data-reduce
   --display-rose: #fb7185;
   --display-grid: #ffffff18;
   --display-wave-fill: #ff304824;
+  --eq-background: oklch(0.16 0.006 300);
+  --eq-panel: oklch(0.23 0.006 300);
+  --eq-edge: oklch(0.35 0.006 300);
+  --eq-ink: oklch(0.94 0.002 300);
+  --eq-muted: oklch(0.72 0.004 300);
+  --eq-grid: oklch(0.72 0.004 300 / 0.16);
+  --eq-spectrum-fill: oklch(0.66 0.003 300 / 0.25);
+  --eq-spectrum-line: oklch(0.8 0.003 300 / 0.45);
+  --eq-response: var(--display-yellow);
+  --eq-panel-shadow: 0 4px 12px oklch(0 0 0 / 0.4), inset 0 1px oklch(1 0 0 / 0.08);
   --studio-metal: oklch(0.69 0.008 255);
   --mixer-desk: oklch(0.40 0.009 285);
   --mixer-control: oklch(0.34 0.009 285);
@@ -1785,6 +1795,24 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
 .signal-point[data-band] { background: var(--band-color) !important; border: 2px solid var(--display-point) !important; }
 .signal-point-hit { position: absolute; width: 36px; height: 36px; transform: translate(-50%, -50%); }
 .signal-point-hit > .signal-point { width: 16px; height: 16px; margin: 10px; }
+.eq-workstation { --foreground: var(--eq-ink); --muted-foreground: var(--eq-muted); --border: var(--eq-edge); --surface: var(--eq-panel); --surface-2: var(--eq-background); min-width: 0; color: var(--eq-ink); }
+.eq-titlebar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 12px; background: var(--eq-background); border-bottom: 1px solid var(--eq-edge); font-family: var(--font-mono); font-size: 10px; color: var(--eq-muted); }
+.eq-titlebar strong { margin-left: 8px; font-family: var(--font-display); font-size: 18px; color: var(--eq-response); }
+.signal-screen.eq-chart { background: var(--eq-background) !important; border: 1px solid var(--eq-edge); box-shadow: var(--eq-panel-shadow); }
+.eq-chart-pro { height: 340px; }
+.eq-grid-frequency { position: absolute; top: 0; bottom: 0; border-left: 1px solid var(--eq-grid); }
+.eq-grid-frequency span { position: absolute; bottom: 4px; left: 3px; font: 9px var(--font-mono); color: var(--eq-muted); }
+.eq-grid-frequency:last-of-type span { left: auto; right: 4px; }
+.eq-grid-gain { position: absolute; left: 0; right: 0; border-top: 1px solid var(--eq-grid); }
+.eq-grid-gain[data-zero="true"] { border-color: var(--eq-muted); }
+.eq-grid-gain span { position: absolute; right: 5px; top: -12px; font: 9px var(--font-mono); color: var(--eq-response); }
+.signal-point.eq-band-point { background: var(--display-point) !important; border: 3px solid var(--band-color) !important; box-shadow: 0 0 0 1px var(--display-point) !important; }
+.signal-point.eq-band-point[data-selected="true"] { box-shadow: 0 0 0 2px var(--display-point), 0 0 0 5px color-mix(in oklab, var(--band-color) 35%, transparent) !important; }
+.eq-control-dock { max-width: 760px; margin-inline: auto; padding: 12px; border: 1px solid var(--eq-edge); border-radius: 6px; background: var(--eq-panel); box-shadow: var(--eq-panel-shadow); }
+.eq-knob-row { display: flex; justify-content: center; gap: 24px; margin-bottom: 12px; }
+.eq-workstation .hardware-knob { --hardware-scale: var(--eq-muted); --hardware-mark: var(--eq-response); }
+.eq-output { padding: 8px 12px; border-top: 1px solid var(--eq-edge); }
+@media (max-width: 640px) { .eq-chart-pro { height: 260px; } .eq-knob-row { gap: 12px; } }
 .hardware-rack-ear { background: linear-gradient(90deg, var(--hardware-black), var(--hardware-rubber-edge), var(--hardware-rubber)); border-color: var(--hardware-black); }
 .hardware-rack-screw { position: relative; background: linear-gradient(135deg, var(--hardware-silver-light), var(--hardware-silver-dark)); box-shadow: 0 1px 2px var(--hardware-shade); }
 .hardware-rack-screw::after { content: ""; position: absolute; inset: 45% 15%; background: var(--hardware-black); transform: rotate(-30deg); }

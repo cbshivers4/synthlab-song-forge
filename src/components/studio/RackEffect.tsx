@@ -82,12 +82,12 @@ export function RackEffect({ trackId, plugin: p, index, count }: { trackId: stri
       <div className="hardware-device-screen mx-2 my-3 p-2"><RackMeter plugin={p} />
         <Scope scopeId={p.bypass ? `bypassed:${p.id}` : p.id} height={88} />
       </div>
-      {expanded && <div className="grid min-w-0 gap-4 border-t border-border p-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+      {expanded && (p.kind === "paraeq" ? <div className="min-w-0 border-t border-border p-3"><ProEq trackId={trackId} plugin={p} /></div> : p.kind === "eq" ? <div className="min-w-0 space-y-3 border-t border-border p-3"><EffectDisplay plugin={p} height={280} onParam={(id, value) => setPluginParam(trackId, p.id, id, value)} /><div className="flex flex-wrap justify-center gap-3">{p.params.filter(param => param.id !== "low" && param.id !== "mid" && param.id !== "high").map(param => <Knob key={param.id} label={param.name} value={param.value} min={param.min} max={param.max} step={1} unit={param.unit ? ` ${param.unit}` : ""} size={52} onChange={value => setPluginParam(trackId, p.id, param.id, value)} midiTarget={{ id: trackId, param: `plugin:${p.id}:${param.id}` }} />)}</div></div> : <div className="grid min-w-0 gap-4 border-t border-border p-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <div className="min-w-0 space-y-3"><EffectDisplay plugin={p} height={160} onParam={(id, value) => setPluginParam(trackId, p.id, id, value)} /><XYPad trackId={trackId} plugin={p} /></div>
         <div className="min-w-0">
-          {p.kind === "paraeq" ? <ProEq trackId={trackId} plugin={p} /> : p.kind === "vocoder" ? <VocoderPanel trackId={trackId} plugin={p} /> : <div className="flex flex-wrap justify-center gap-3">{p.params.map((param) => <Knob key={param.id} label={param.name} value={param.value} min={param.min} max={param.max} step={param.max - param.min > 40 ? 1 : (param.max - param.min) / 200} unit={param.unit ? ` ${param.unit}` : ""} size={52} onChange={(value) => setPluginParam(trackId, p.id, param.id, value)} midiTarget={{ id: trackId, param: `plugin:${p.id}:${param.id}` }} />)}</div>}
+          {p.kind === "vocoder" ? <VocoderPanel trackId={trackId} plugin={p} /> : <div className="flex flex-wrap justify-center gap-3">{p.params.map((param) => <Knob key={param.id} label={param.name} value={param.value} min={param.min} max={param.max} step={param.max - param.min > 40 ? 1 : (param.max - param.min) / 200} unit={param.unit ? ` ${param.unit}` : ""} size={52} onChange={(value) => setPluginParam(trackId, p.id, param.id, value)} midiTarget={{ id: trackId, param: `plugin:${p.id}:${param.id}` }} />)}</div>}
         </div>
-      </div>}
+      </div>)}
     </div>
   </section>;
 }

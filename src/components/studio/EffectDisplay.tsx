@@ -1,5 +1,6 @@
 import { levelColor, peakOf, spectrumColor, dbColor, LEVEL_GREEN, LEVEL_ORANGE, LEVEL_RED } from "@/lib/synclab/level-colors";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { EqGrid } from "./EqGrid";
 import { Knob } from "./Knob";
 import { Button } from "@/components/ui/button";
 import { getEngine } from "@/lib/synclab/audio-engine";
@@ -346,7 +347,22 @@ export function EffectDisplay({
 
       const engine = getEngine();
       const spectrum = engine.getScopeSpectrum(plugin.id);
-      if (spectrum) {
+      if (spectrum && isChannelEq) {
+        ctx.beginPath();
+        ctx.moveTo(0, h);
+        for (let x = 0; x <= w; x += 2) {
+          const f = 20 * Math.pow(1000, x / Math.max(1, w));
+          const bin = Math.min(spectrum.length - 1, Math.max(0, Math.round(f / (engine.sampleRate / 2) * spectrum.length)));
+          ctx.lineTo(x, h * (1 - clamp01(((spectrum[bin] ?? -120) + 96) / 96)));
+        }
+        ctx.lineTo(w, h);
+        ctx.closePath();
+        ctx.fillStyle = colors.getPropertyValue("--eq-spectrum-fill").trim();
+        ctx.fill();
+        ctx.strokeStyle = colors.getPropertyValue("--eq-spectrum-line").trim();
+        ctx.stroke();
+      }
+      if (spectrum && !isChannelEq) {
         const rate = engine.sampleRate;
         const bins = spectrum.length;
         for (let x = 0; x < w; x += 2) {
@@ -370,6 +386,7 @@ export function EffectDisplay({
         }
       }
 
+      if (isChannelEq) return;
       const wave = engine.getScopeWave(plugin.id);
       ctx.beginPath();
       if (wave) {
@@ -432,7 +449,8 @@ export function EffectDisplay({
   const fill = `${path} L100,100 L0,100 Z`;
 
   return (
-    <div className="space-y-1">
+    <div className={isChannelEq ? "eq-workstation space-y-2" : "space-y-1"}>
+      {isChannelEq && <header className="eq-titlebar"><span>SYNCLAB <strong>EQ</strong></span><span>3 BAND · CHANNEL</span></header>}
       <div className="flex items-center gap-2">
         <span className="label-xs">{shape.title}</span>
         <span className="ml-auto font-mono text-[9px] tracking-wider text-muted-foreground uppercase">
@@ -446,7 +464,7 @@ export function EffectDisplay({
         tabIndex={0}
         aria-label={`${shape.title} display for ${plugin.name}`}
         aria-valuenow={Math.round((xP ? (xP.value - xP.min) / (xP.max - xP.min) : 0) * 100)}
-        className="signal-screen panel relative touch-none overflow-hidden"
+        className={`signal-screen panel relative touch-none overflow-hidden ${isChannelEq ? "eq-chart" : ""}`}
         style={{ height, cursor: xP ? "crosshair" : "default" }}
         onPointerDown={(e) => {
           if (!xP && !yP && !isStepFilter) return;
@@ -472,11 +490,16 @@ export function EffectDisplay({
       >
         <canvas ref={canvasRef} className="pointer-events-none absolute inset-0 size-full" />
 
+        {isChannelEq && <EqGrid range={24} />}
         <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="pointer-events-none absolute inset-0 size-full">
-          <path d={fill} fill="var(--display-wave-fill)" />
-          <path d={path} fill="none" stroke="var(--display-wave)" strokeWidth={1.2} vectorEffect="non-scaling-stroke" />
+          {isChannelEq ? DISPLAY_BANDS.map(band => {
+            const response = freqAxis(f => band.id === "mid" ? peak(f, get("midFreq"), get("mid"), 1) : shelf(f, band.id === "low" ? 120 : 6000, get(band.id), band.id === "high"));
+            const d = response.map(([x, y], i) => `${i ? "L" : "M"}${x * 100},${(1 - y) * 100}`).join(" ");
+            return <g key={band.id}><path d={`${d} L100,50 L0,50 Z`} fill={band.color} opacity={0.23} /><path d={d} fill="none" stroke={band.color} strokeWidth={1.2} vectorEffect="non-scaling-stroke" /></g>;
+          }) : <path d={fill} fill="var(--display-wave-fill)" />}
+          <path d={path} fill="none" stroke={isChannelEq ? "var(--eq-response)" : "var(--display-wave)"} strokeWidth={2} vectorEffect="non-scaling-stroke" />
         </svg>
-        {marks.map((m, i) => (
+        {!isChannelEq && marks.map((m, i) => (
           <div
             key={i}
             className="pointer-events-none absolute inset-y-0 w-px bg-primary/40"
@@ -488,17 +511,17 @@ export function EffectDisplay({
           if (!p) return null;
           const x = band.id === "mid" ? logX(get("midFreq")) : logX(band.id === "low" ? 120 : 6000);
           return <div key={band.id} className="signal-point-hit" style={{ left: `${x * 100}%`, top: `${(1 - dbToY(p.value)) * 100}%` }}>
-            <Button variant="ghost" className="signal-point" data-band={band.id} style={{ "--band-color": band.color } as import("react").CSSProperties} aria-label={`${band.label} EQ point`} title={`${band.label}: ${p.value.toFixed(1)} dB`} onPointerDown={() => { eqDrag.current = band.id; }}
+            <Button variant="ghost" className="signal-point eq-band-point" data-band={band.id} style={{ "--band-color": band.color } as import("react").CSSProperties} aria-label={`${band.label} EQ point`} title={`${band.label}: ${p.value.toFixed(1)} dB`} onPointerDown={() => { eqDrag.current = band.id; }}
               onKeyDown={e => { if (e.key === 'ArrowUp' || e.key === 'ArrowDown') { e.preventDefault(); onParam(p.id, Math.max(p.min, Math.min(p.max, p.value + (e.key === 'ArrowUp' ? 0.5 : -0.5)))); } }} />
           </div>;
         })}
         {!isChannelEq && !isStepFilter && xP && <span className="pointer-events-none absolute size-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2" style={{ left: `${clamp01((xP.value - xP.min) / (xP.max - xP.min)) * 100}%`, top: `${(1 - (yP ? clamp01((yP.value - yP.min) / (yP.max - yP.min)) : 0.5)) * 100}%`, background: 'var(--display-cyan)', borderColor: 'var(--display-point)' }} />}
-        <span className="pointer-events-none absolute bottom-1 left-1.5 font-mono text-[9px] tracking-wider text-muted-foreground uppercase">
+        {!isChannelEq && <span className="pointer-events-none absolute bottom-1 left-1.5 font-mono text-[9px] tracking-wider text-muted-foreground uppercase">
           {shape.xLabel}
-        </span>
-        <span className="pointer-events-none absolute right-1.5 top-1 font-mono text-[9px] tracking-wider text-muted-foreground uppercase">
+        </span>}
+        {!isChannelEq && <span className="pointer-events-none absolute right-1.5 top-1 font-mono text-[9px] tracking-wider text-muted-foreground uppercase">
           {shape.yLabel}
-        </span>
+        </span>}
       </div>
       {isChannelEq && (
         <div className="grid grid-cols-3 gap-1">
