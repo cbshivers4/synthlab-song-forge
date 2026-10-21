@@ -38,19 +38,9 @@ function Reel({ moving, right, fill = 0.5 }: { moving: boolean; right?: boolean;
 }
 function TapeMeter({ level, channel, clipped, reset }: { level: number; channel: string; clipped: boolean; reset: () => void }) {
   const db = level > 0 ? 20 * Math.log10(level) : -60;
-  const angle = -55 + Math.max(0, Math.min(1, (db + 45) / 45)) * 110;
-  const ticks = Array.from({ length: 23 }, (_, i) => -55 + i * 5);
-  return <div className="tape-meter vu-real"><svg viewBox="0 0 220 116" role="meter" aria-label={`${channel} tape level`} aria-valuemin={-60} aria-valuemax={0} aria-valuenow={Math.max(-60, Math.round(db))}>
-    <defs><radialGradient id={`vu-glow-${channel}`} cx="50%" cy="90%" r="90%"><stop offset="0" className="vu-glow-in" /><stop offset="1" className="vu-glow-out" /></radialGradient></defs>
-    <rect width="220" height="116" fill={`url(#vu-glow-${channel})`} />
-    {ticks.map((a, i) => <line key={a} x1="110" y1={i % 2 ? 30 : 26} x2="110" y2="36" transform={`rotate(${a} 110 106)`} className={a > 30 ? "vu-tick hot" : "vu-tick"} />)}
-    <path d="M30 65 Q110 -12 190 65" className="vu-arc" /><path d="M150 24 Q180 36 196 70" className="vu-hot-band" /><path d="M155 29 Q177 39 190 65" className="vu-hot" />
-    {[[-20, 33, 55], [-10, 66, 31], [-7, 97, 23], [-3, 133, 27], [0, 164, 42], [3, 190, 63]].map(([value, x, y]) => <text key={value} x={x} y={y} className="vu-number">{value}</text>)}
-    <text x="110" y="72" className="vu-label">VU</text><text x="110" y="86" className="vu-sub">{channel}</text>
-    <g transform={`rotate(${angle} 110 106)`} className="vu-needle-group"><path d="M112 108V27" className="vu-needle-shadow" /><path d="M110 106V24" className="vu-needle" /></g>
-    <rect x="70" y="96" width="80" height="20" rx="2" className="vu-pivot-cover" /><circle cx="110" cy="106" r="5" className="reel-center" />
-    <path d="M0 0H220V40Q110 20 0 46Z" className="vu-glass" />
-  </svg><div className="flex items-center justify-between gap-2 px-2 pb-1 font-mono text-[10px]"><span>{level > 0 ? `${db.toFixed(1)} dBFS` : "−∞ dBFS"}</span><Button variant="ghost" className={`h-6 px-1 text-[10px] ${clipped ? "text-destructive" : ""}`} onClick={reset} aria-label={`Reset ${channel} tape clipping`}>{clipped ? "● CLIP" : "PEAK"}</Button></div></div>;
+  // 0 dBFS (digital full scale) lands at the +3 end of the red band.
+  return <div className="tape-meter vuf-wrap" role="meter" aria-label={`${channel} tape level`} aria-valuemin={-60} aria-valuemax={0} aria-valuenow={Math.max(-60, Math.round(db))}>
+    <VuFace vuDb={db <= -60 ? -60 : db + 3} sub={channel} ariaLabel={`${channel} VU meter`} /><div className="flex items-center justify-between gap-2 px-2 py-1 font-mono text-[10px] text-muted-foreground"><span>{level > 0 ? `${db.toFixed(1)} dBFS` : "−∞ dBFS"}</span><Button variant="ghost" className={`h-6 px-1 text-[10px] ${clipped ? "text-destructive" : ""}`} onClick={reset} aria-label={`Reset ${channel} tape clipping`}>{clipped ? "● CLIP" : "PEAK"}</Button></div></div>;
 }
 export function ReelRecorder() {
   const recorder = getReelRecorder();
