@@ -121,7 +121,7 @@ export class SyncLabEngine {
   delaySend: GainNode | null = null;
   chorusSend: GainNode | null = null;
   private buses = new Map<string, GainNode>();
-  private busStates: Record<string, { volume: number; muted: boolean }> = {};
+  private busStates: Record<string, { volume: number; muted: boolean; gain?: number }> = {};
   private mixTracks: Track[] = [];
   private busMeters = new Map<string, AnalyserNode>();
   private auxReturns = new Map<string, GainNode>();
@@ -412,7 +412,7 @@ export class SyncLabEngine {
     // The master fader controls the complete mix, including every bus and FX return.
     // The "master" routing bus stays at unity so direct tracks are not attenuated twice.
     if (id === "master") {
-      this.master?.gain.setTargetAtTime(muted ? 0 : 0.85 * clamp(volume, 0, 1.5), this.ctx.currentTime, 0.02);
+      this.master?.gain.setTargetAtTime(muted ? 0 : 0.85 * clamp(volume, 0, 1.5) * clamp(gain, 0, 2), this.ctx.currentTime, 0.02);
       return;
     }
     this.busNode(id).gain.setTargetAtTime(muted ? 0 : clamp(volume, 0, 1.5), this.ctx.currentTime, 0.02);
