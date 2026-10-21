@@ -3055,10 +3055,10 @@ export class SyncLabEngine {
     };
 
     const kit = pad.kit ?? "909";
-    const cacheKey = `${ctx.sampleRate}:${kit}:${pad.kind}:${pad.decay.toFixed(4)}`;
+    const cacheKey = `${ctx.sampleRate}:${kit}:${pad.kind}:${pad.voice ?? ""}:${pad.decay.toFixed(4)}`;
     let vintage = this.vintageDrumBuffers.get(cacheKey);
     if (!vintage) {
-      const pcm = renderVintageDrum(kit, pad.kind, pad.decay, ctx.sampleRate);
+      const pcm = renderVintageDrum(kit, pad.kind, pad.decay, ctx.sampleRate, pad.voice);
       if (pcm) {
         vintage = ctx.createBuffer(1, pcm.length, ctx.sampleRate);
         vintage.getChannelData(0).set(pcm);

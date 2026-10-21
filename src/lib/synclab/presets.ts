@@ -1,3 +1,4 @@
+import { kitExtraPads } from "./vintage-drums";
 import { MODULAR_PRESETS } from "./modular";
 import type { DrumKitId, DrumPad, OscillatorParams, SynthPatch, TrackKind } from "./types";
 
@@ -1146,6 +1147,7 @@ export const defaultPads = (steps = 16, kit: DrumKitId = "909"): DrumPad[] => [
   padDef("crash", "CRASH", steps, kit),
   padDef("ride", "RIDE", steps, kit),
   padDef("fx", "FX", steps, kit),
+  ...kitExtraPads(kit, steps, DRUM_KITS.find((k) => k.id === kit)?.decay ?? 0.5, () => uid()),
 ];
 
 export const TRACK_COLORS = [

@@ -21,11 +21,115 @@ export const LATIN_NAMES: Record<DrumPad['kind'], string> = { kick: 'LOW CONGA',
 export const JAZZ_NAMES: Record<DrumPad['kind'], string> = { kick: 'BRUSH KICK', snare: 'BRUSH SNARE', clap: 'BRUSH TAP', hat: 'BRUSH HAT', openhat: 'BRUSH SWISH', tom: 'TOM', perc: 'BRUSH SWIRL', rim: 'RIM CLICK', crash: 'CRASH', ride: 'BRUSH RIDE', fx: 'BRUSH SLIDE' };
 const STANDARD_NAMES: Record<DrumPad['kind'], string> = { kick: 'KICK', snare: 'SNARE', clap: 'CLAP', hat: 'HI-HAT', openhat: 'OPEN HAT', tom: 'TOM', perc: 'PERC', rim: 'RIM', crash: 'CRASH', ride: 'RIDE', fx: 'FX' };
 export function factoryKitPad(pad: DrumPad, kit: DrumKitId, decay: number): DrumPad {
+  if (pad.voice) return { ...pad, kit, decay, sample: undefined, sampleUrl: undefined, name: VOICE_DEFS[pad.voice]?.name ?? pad.name };
   return { ...pad, kit, decay, sample: undefined, sampleUrl: undefined, name: (kit === '727' || kit === 'latin' ? LATIN_NAMES : kit === 'jazz' ? JAZZ_NAMES : STANDARD_NAMES)[pad.kind] };
 }
 
+/** Extra kit-specific voices: each is its own synthesized sound, not a renamed copy. */
+export const VOICE_DEFS: Record<string, { name: string; kind: DrumPad['kind'] }> = {
+  conga_hi: { name: 'HIGH CONGA OPEN', kind: 'tom' }, conga_lo: { name: 'TUMBA', kind: 'kick' }, quinto: { name: 'QUINTO', kind: 'tom' },
+  conga_slap: { name: 'CONGA SLAP', kind: 'rim' }, conga_mute: { name: 'CONGA MUTE', kind: 'perc' },
+  bongo_hi: { name: 'BONGO HIGH', kind: 'tom' }, bongo_lo: { name: 'BONGO LOW', kind: 'tom' },
+  timbale_hi: { name: 'TIMBALE HIGH', kind: 'snare' }, timbale_lo: { name: 'TIMBALE LOW', kind: 'snare' },
+  maracas: { name: 'MARACAS', kind: 'hat' }, woodblock: { name: 'WOOD BLOCK', kind: 'rim' }, chacha: { name: 'CHA-CHA BELL', kind: 'perc' },
+  cowbell: { name: 'COWBELL', kind: 'perc' }, claves: { name: 'CLAVES', kind: 'rim' }, triangle: { name: 'TRIANGLE', kind: 'perc' },
+  tom_lo: { name: 'LOW TOM', kind: 'tom' }, tom_mid: { name: 'MID TOM', kind: 'tom' }, tom_hi: { name: 'HIGH TOM', kind: 'tom' }, floor_tom: { name: 'FLOOR TOM', kind: 'tom' },
+  brush_tom_lo: { name: 'BRUSH FLOOR TOM', kind: 'tom' }, brush_tom_hi: { name: 'BRUSH RACK TOM', kind: 'tom' }, brush_stir: { name: 'BRUSH STIR', kind: 'perc' },
+  ride_bell: { name: 'RIDE BELL', kind: 'ride' }, sizzle: { name: 'SIZZLE RIDE', kind: 'ride' }, splash: { name: 'SPLASH', kind: 'crash' }, china: { name: 'CHINA', kind: 'crash' },
+  hat_foot: { name: 'FOOT HAT', kind: 'hat' }, cross_stick: { name: 'CROSS STICK', kind: 'rim' }, snap: { name: 'FINGER SNAP', kind: 'clap' },
+  shaker: { name: 'SHAKER', kind: 'hat' }, sub_boom: { name: '808 BOOM', kind: 'kick' }, tambourine: { name: 'TAMBOURINE', kind: 'openhat' },
+  talking_drum: { name: 'TALKING DRUM', kind: 'tom' }, metal_hit: { name: 'METAL HIT', kind: 'fx' }, reverse_cym: { name: 'REVERSE CYMBAL', kind: 'fx' },
+};
+const MACHINE = ['tom_lo', 'tom_mid', 'tom_hi', 'cowbell', 'claves'];
+export const KIT_EXTRA_VOICES: Partial<Record<DrumKitId, string[]>> = {
+  latin: ['conga_hi', 'quinto', 'conga_lo', 'conga_slap', 'conga_mute', 'bongo_hi', 'bongo_lo', 'timbale_hi', 'timbale_lo', 'maracas', 'woodblock', 'chacha'],
+  '727': ['conga_hi', 'conga_lo', 'bongo_hi', 'bongo_lo', 'timbale_hi', 'maracas', 'woodblock', 'chacha'],
+  jazz: ['brush_tom_lo', 'brush_tom_hi', 'brush_stir', 'ride_bell', 'sizzle', 'splash', 'hat_foot', 'cross_stick', 'snap'],
+  acoustic: ['floor_tom', 'tom_mid', 'tom_hi', 'ride_bell', 'splash', 'hat_foot', 'cross_stick', 'tambourine'],
+  rock: ['floor_tom', 'tom_mid', 'tom_hi', 'china', 'splash', 'ride_bell', 'cowbell', 'hat_foot'],
+  afrobeat: ['talking_drum', 'conga_hi', 'conga_lo', 'shaker', 'cowbell', 'woodblock', 'claves'],
+  '808': [...MACHINE, 'conga_hi', 'conga_lo', 'maracas'],
+  '909': [...MACHINE, 'ride_bell'], '707': [...MACHINE, 'tambourine'], '606': ['tom_lo', 'tom_hi', 'cowbell'],
+  cr78: ['bongo_hi', 'bongo_lo', 'conga_lo', 'maracas', 'claves', 'cowbell', 'tambourine'],
+  linn: [...MACHINE, 'tambourine', 'conga_hi', 'conga_lo'], dmx: [...MACHINE, 'tambourine'], simmons: ['floor_tom', 'tom_lo', 'tom_mid', 'tom_hi'],
+  r8: [...MACHINE, 'ride_bell', 'splash', 'tambourine'], mpc60: [...MACHINE, 'snap', 'shaker'],
+  detroit: [...MACHINE, 'shaker', 'metal_hit'], techno: ['tom_lo', 'tom_hi', 'metal_hit', 'shaker', 'reverse_cym'], house: ['tom_lo', 'tom_hi', 'shaker', 'tambourine', 'cowbell', 'snap'],
+  ghettotech: ['cowbell', 'snap', 'tom_lo', 'tom_hi', 'claves'], lofi: ['snap', 'shaker', 'tambourine', 'tom_lo', 'tom_hi'], boombap: ['snap', 'tambourine', 'shaker', 'tom_lo', 'tom_hi'],
+  trap: ['sub_boom', 'snap', 'triangle', 'tom_lo', 'tom_hi', 'reverse_cym'], drill: ['sub_boom', 'snap', 'triangle', 'tom_lo', 'reverse_cym'],
+  jungle: ['tom_lo', 'tom_mid', 'tom_hi', 'ride_bell', 'tambourine', 'shaker'], industrial: ['metal_hit', 'tom_lo', 'tom_hi', 'reverse_cym', 'china'],
+};
+export const kitExtraPads = (kit: DrumKitId, steps: number, decay: number, make: (voice: string) => string): DrumPad[] =>
+  (KIT_EXTRA_VOICES[kit] ?? []).map((voice) => ({ id: make(voice), name: VOICE_DEFS[voice]!.name, kind: VOICE_DEFS[voice]!.kind, voice, kit, volume: 0.8, pan: 0, pitch: 0, decay, muted: false, solo: false, steps: Array(steps).fill(0) }));
+
+const DEFAULT_PROFILE: Profile = { family: 'analog', kick: 50, sweep: 150, tail: .4, snap: .6, shell: 200, bright: 1, bits: 16, rate: 48000 };
+function renderVoice(kit: DrumKitId, voice: string, decay: number, sampleRate: number): Float32Array {
+  const p = VINTAGE_PROFILES[kit] ?? DEFAULT_PROFILE;
+  const d = Math.max(.1, Math.min(2, decay + .1));
+  const long = ['sizzle', 'splash', 'china', 'ride_bell', 'reverse_cym', 'sub_boom', 'triangle', 'brush_stir'].includes(voice);
+  const pcm = new Float32Array(Math.ceil(Math.min(4, (long ? 2.4 : 1) * d) * sampleRate));
+  let seed = 2166136261;
+  for (const c of kit + voice) seed = Math.imul(seed ^ c.charCodeAt(0), 16777619);
+  const random = () => { seed ^= seed << 13; seed ^= seed >>> 17; seed ^= seed << 5; return (seed >>> 0) / 2147483648 - 1; };
+  const sin = (f: number, t: number) => Math.sin(2 * Math.PI * f * t);
+  const env = (t: number, tail: number) => Math.exp(-t / (tail * d));
+  const modal = (f: number, t: number, tail: number) => sin(f, t) * env(t, tail) + .4 * sin(f * 1.593, t) * env(t, tail * .5) + .2 * sin(f * 2.137, t) * env(t, tail * .3);
+  const membrane = (f: number, t: number, tail: number, bend = .08) => sin(f * (1 + bend * Math.exp(-t / .03)), t) * env(t, tail) + .3 * sin(f * 1.505, t) * env(t, tail * .4);
+  const metal = (fs: number[], t: number, tail: number) => fs.reduce((a, f) => a + sin(f * p.bright, t), 0) / fs.length * env(t, tail);
+  let low = 0, held = 0, phase = 0;
+  const holdFrames = Math.max(1, Math.round(sampleRate / p.rate));
+  const levels = 2 ** (p.bits - 1);
+  for (let i = 0; i < pcm.length; i++) {
+    const t = i / sampleRate, n = random();
+    low += (n - low) * .2; const hiss = n - low;
+    let s = 0;
+    switch (voice) {
+      case 'conga_hi': s = membrane(330, t, .22) * .8 + hiss * .3 * env(t, .006); break;
+      case 'quinto': s = membrane(420, t, .17) * .8 + hiss * .35 * env(t, .005); break;
+      case 'conga_lo': s = membrane(210, t, .3) * .85 + hiss * .25 * env(t, .007); break;
+      case 'conga_slap': s = membrane(360, t, .05) * .6 + hiss * .7 * env(t, .025); break;
+      case 'conga_mute': s = membrane(300, t, .045) * .8 + low * .4 * env(t, .02); break;
+      case 'bongo_hi': s = membrane(620, t, .1) * .75 + hiss * .3 * env(t, .004); break;
+      case 'bongo_lo': s = membrane(440, t, .13) * .75 + hiss * .3 * env(t, .004); break;
+      case 'timbale_hi': s = modal(720, t, .28) * .5 + hiss * .45 * env(t, .03); break;
+      case 'timbale_lo': s = modal(520, t, .32) * .5 + hiss * .45 * env(t, .035); break;
+      case 'maracas': s = hiss * (t < .012 ? 1 : env(t - .012, .03)) * .7; break;
+      case 'shaker': s = hiss * Math.min(1, t / .015) * env(t, .07) * .6; break;
+      case 'woodblock': s = modal(1250, t, .03) * .9; break;
+      case 'claves': s = sin(2500, t) * env(t, .035) * .85; break;
+      case 'chacha': s = metal([590, 870, 1410], t, .12) * 1.1; break;
+      case 'cowbell': s = (Math.sign(sin(545, t)) + Math.sign(sin(815, t))) * .28 * env(t, .14); break;
+      case 'triangle': s = metal([4100, 7300, 9900], t, .9) * .7; break;
+      case 'tom_lo': case 'floor_tom': phase += 2 * Math.PI * ((voice === 'floor_tom' ? 82 : 100) * (1 + .5 * Math.exp(-t / .05))) / sampleRate; s = Math.sin(phase) * env(t, .35) * .9 + hiss * .15 * env(t, .008); break;
+      case 'tom_mid': phase += 2 * Math.PI * (140 * (1 + .45 * Math.exp(-t / .045))) / sampleRate; s = Math.sin(phase) * env(t, .3) * .9 + hiss * .15 * env(t, .008); break;
+      case 'tom_hi': phase += 2 * Math.PI * (190 * (1 + .4 * Math.exp(-t / .04))) / sampleRate; s = Math.sin(phase) * env(t, .25) * .9 + hiss * .15 * env(t, .008); break;
+      case 'brush_tom_lo': s = membrane(95, t, .3) * .5 + low * 1.2 * env(t, .12); break;
+      case 'brush_tom_hi': s = membrane(165, t, .25) * .5 + low * 1.2 * env(t, .1); break;
+      case 'brush_stir': s = (low * 1.6 + hiss * .3) * (.6 + .4 * sin(2.2, t)) * Math.min(1, t / .2) * env(t, .9); break;
+      case 'ride_bell': s = metal([2300, 3450, 5100], t, .9) * .8 + hiss * .1 * env(t, .3); break;
+      case 'sizzle': s = metal([3400, 5000, 6200, 8200], t, 1.1) * .35 + hiss * .45 * (.7 + .3 * Math.sign(sin(28, t))) * env(t, 1.1); break;
+      case 'splash': s = metal([4200, 6100, 8800], t, .35) * .3 + hiss * .6 * env(t, .4); break;
+      case 'china': s = Math.tanh((metal([1900, 2700, 3900, 5600], t, .7) * 2 + hiss) * 1.5) * .5 * env(t, .7); break;
+      case 'hat_foot': s = (metal([3400, 5000, 6200], t, .02) * .4 + hiss * .4 * env(t, .015)) + low * .3 * env(t, .01); break;
+      case 'cross_stick': s = modal(1800, t, .02) * .6 + modal(420, t, .04) * .35; break;
+      case 'snap': for (const o of [0, .006]) if (t >= o) s += hiss * .7 * Math.exp(-(t - o) / .018); s += sin(1900, t) * .2 * env(t, .015); break;
+      case 'tambourine': s = (metal([5200, 7400, 9300], t, .2) * .5 + hiss * .5 * env(t, .2)) * (t < .01 ? t / .01 : 1); break;
+      case 'sub_boom': phase += 2 * Math.PI * (45 + 90 * Math.exp(-t / .03)) / sampleRate; s = Math.tanh(Math.sin(phase) * 1.4) * env(t, 1.2) * .9; break;
+      case 'talking_drum': phase += 2 * Math.PI * (180 + 90 * Math.min(1, t / .12)) / sampleRate; s = Math.sin(phase) * env(t, .3) * .85 + hiss * .2 * env(t, .006); break;
+      case 'metal_hit': s = Math.tanh(metal([310, 777, 1290, 2410], t, .35) * 3 + hiss * env(t, .05)) * .55; break;
+      case 'reverse_cym': { const total = pcm.length / sampleRate; s = (metal([3400, 5100, 7700], t, 10) * .4 + hiss * .5) * Math.pow(t / total, 2.2); break; }
+      default: s = hiss * env(t, .1);
+    }
+    s *= Math.min(1, t * sampleRate / 8);
+    if (i % holdFrames === 0) held = Math.round(Math.tanh(s) * levels) / levels;
+    pcm[i] = held * .85;
+  }
+  for (let i = Math.max(0, pcm.length - 128); i < pcm.length; i++) pcm[i] = (pcm[i] ?? 0) * (pcm.length - i) / 128;
+  return pcm;
+}
+
 /** Deterministic PCM, also used by the live engine inside offline renders. */
-export function renderVintageDrum(kit: DrumKitId, kind: DrumPad['kind'], decay: number, sampleRate: number): Float32Array | null {
+export function renderVintageDrum(kit: DrumKitId, kind: DrumPad['kind'], decay: number, sampleRate: number, voice?: string): Float32Array | null {
+  if (voice && VOICE_DEFS[voice]) return renderVoice(kit, voice, decay, sampleRate);
   const p = VINTAGE_PROFILES[kit];
   if (!p) return null;
   const d = Math.max(.1, Math.min(2, decay + .1));

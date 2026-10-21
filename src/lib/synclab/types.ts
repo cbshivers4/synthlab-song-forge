@@ -177,6 +177,8 @@ export interface DrumPad {
   id: string;
   name: string;
   kit?: DrumKitId;
+  /** Kit-specific extra voice (conga, bongo, brush tom...); overrides the kind's sound. */
+  voice?: string;
   kind: "kick" | "snare" | "clap" | "hat" | "openhat" | "tom" | "perc" | "rim" | "crash" | "ride" | "fx";
   volume: number;
   pan: number;
