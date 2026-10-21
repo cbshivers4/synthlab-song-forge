@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Activity, AudioLines, CheckCircle2, Mic, RefreshCw, Usb, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getEngine } from "@/lib/synclab/audio-engine";
-import { borrowActiveMic, getPreferredInput, getOutputDevice, micUnavailableReason } from "@/lib/synclab/mic";
+import { borrowActiveMic, getPreferredInput, getOutputDevice, micUnavailableReason, outputRoutingHint } from "@/lib/synclab/mic";
 import { midiSupported, midiUnsupportedMessage } from "@/lib/synclab/midi";
 import { accessFailure, prepareReloadCheck, probeMicrophone, readReloadCheck, type CheckResult } from "@/lib/synclab/settings-diagnostics";
 
@@ -50,7 +50,7 @@ export function SettingsDiagnostics() {
           const selected = [getPreferredInput(), getOutputDevice()].filter(Boolean);
           const missing = selected.some(id => !devices.some(d => d.deviceId === id));
           const hidden = devices.some(d => !d.label);
-          result = { status: !devices.length || hidden || missing ? "attention" : "passed", detail: `${ins.length} input(s), ${outs.length} output(s) reported. ${devices.map(d => d.label || "Name hidden until permission is allowed").join(", ") || "Allow microphone access, connect a device, and retry."}${missing ? " Saved device not reported; check your Audio selection." : ""} ${getEngine().canPickOutput ? "Output selection supported." : "Output selection is managed by system sound settings."} Listing does not verify audible output or latency.` };
+          result = { status: !devices.length || hidden || missing ? "attention" : "passed", detail: `${ins.length} input(s), ${outs.length} output(s) reported. ${devices.map(d => d.label || "Name hidden until permission is allowed").join(", ") || "Allow microphone access, connect a device, and retry."}${missing ? " Saved device not reported; check your Audio selection." : ""} ${getEngine().canPickOutput ? "Output selection supported." : outputRoutingHint()} Listing does not verify audible output or latency.` };
         }
       } else {
         const engine = getEngine();

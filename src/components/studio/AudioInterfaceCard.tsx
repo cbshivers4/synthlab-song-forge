@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { isAppleMobile } from "@/lib/synclab/mic";
 import voltFace from "@/assets/audio-interface-volt.jpg";
 
 type DeviceOption = { id: string; label: string };
@@ -107,6 +108,12 @@ export function AudioInterfaceCard({ inputs, outputs, inputDevice, channel, samp
               ? "The drawing follows the interface named above when the browser recognizes it."
               : "Press Detect devices below to show your interface here."}
         </div>
+        {/* iPad/iPhone route audio per app in Control Centre, so the picker above cannot move sound there. */}
+        {isAppleMobile() && (
+          <div className="text-[10px] text-muted-foreground">
+            On iPad, iPadOS routes audio itself: open Control Centre, tap the audio card, and pick this interface for SYNCLAB.
+          </div>
+        )}
       </div>
     </div>
   );
