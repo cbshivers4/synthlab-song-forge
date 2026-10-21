@@ -715,9 +715,10 @@ export function StudioProvider({ children }: { children: ReactNode }) {
            }
           if (target.id === "master") {
             if (target.param === "volume") setBuses((b) => ({ ...b, master: { ...b.master, volume: v * 1.2 } }));
-            else if (target.param === "mute") setBuses((b) => ({ ...b, master: { ...b.master, muted: v >= 0.5 } }));
+            else if (target.param === "gain") setBuses((b) => ({ ...b, master: { ...b.master, gain: ccRange(v, 0, 2, 0.01) } }));
+            else if (target.param === "mute" && v >= 0.5) setBuses((b) => ({ ...b, master: { ...b.master, muted: !b.master.muted } }));
             return;
-          }
+           }
            if (target.param.startsWith("synth:")) {
              const path = target.param.slice(6).split(":");
              const field = path[0];
@@ -811,14 +812,17 @@ export function StudioProvider({ children }: { children: ReactNode }) {
            }
           setTracks((ts) =>
             ts.map((t) =>
-               t.id === target.id && ["volume", "pan", "mute", "solo"].includes(target.param)
+               t.id === target.id && ["volume", "pan", "mute", "solo", "gain"].includes(target.param)
                 ? target.param === "volume"
                   ? { ...t, volume: v * 1.2 }
-                  : target.param === "pan"
-                    ? { ...t, pan: v * 2 - 1 }
-                    : target.param === "mute"
-                      ? { ...t, muted: v >= 0.5 }
-                      : { ...t, solo: v >= 0.5 }
+                  : target.param === "gain"
+                    ? { ...t, gain: ccRange(v, 0, 2, 0.01) }
+                    : target.param === "pan"
+                      ? { ...t, pan: v * 2 - 1 }
+                      : target.param === "mute"
+                        // Buttons toggle on press; releasing the button (value 0) does nothing.
+                        ? v >= 0.5 ? { ...t, muted: !t.muted } : t
+                        : v >= 0.5 ? { ...t, solo: !t.solo } : t
                 : t,
             ),
           );
