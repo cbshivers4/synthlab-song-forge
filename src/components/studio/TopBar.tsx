@@ -385,6 +385,7 @@ export function TopBar() {
           </div></PopoverContent></Popover>
         )}
 
+        <div className="order-4 shrink-0"><DeviceClock mobile={isMobile} /></div>
         {!isMobile && <div className="order-4 shrink-0"><MidiControl /></div>}
         </div>
 
@@ -398,7 +399,6 @@ export function TopBar() {
           </Popover>
           <TransportUndo mobile={isMobile} />
           <QuickNotes />
-          <DeviceClock mobile={isMobile} />
           <PlanBadge />
           <Button
             variant="outline"
