@@ -2104,6 +2104,14 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
 .mx-console:not(.mx-phone) .mx-routing-strip > .mx-row-eq,
 .mx-console:not(.mx-phone) .mx-master > .mx-row-eq { height: 100% !important; min-height: 0 !important; }
 .synth-hardware[data-synth-style="acid"] .label-xs { color: var(--foreground); }
+/* Acid Bass tab pages: bright readable panels for Mod Matrix, Effects, Arpeggiator, Chords/Scale. */
+.synth-hardware[data-synth-style="acid"] [role="tabpanel"] { background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px; padding: 10px; color: var(--foreground); }
+.synth-hardware[data-synth-style="acid"] [role="tabpanel"] :is(.text-muted-foreground, p, span, label, h3, h4, th, td) { color: var(--foreground) !important; opacity: 1 !important; }
+.synth-hardware[data-synth-style="acid"] [role="tabpanel"] :is(button, select, input:not([type="range"]), [role="combobox"]) { background-color: var(--surface); color: var(--foreground); border: 1px solid oklch(0.6 0.02 260); opacity: 1; }
+.synth-hardware[data-synth-style="acid"] [role="tabpanel"] :is(button[aria-pressed="true"], button[data-state="on"], button[data-state="checked"], [role="radio"][aria-checked="true"]) { background: var(--primary); color: var(--primary-foreground) !important; border-color: var(--primary); }
+.synth-hardware[data-synth-style="acid"] [role="tabpanel"] :is(button[aria-pressed="true"], [role="radio"][aria-checked="true"]) * { color: var(--primary-foreground) !important; }
+.synth-hardware[data-synth-style="acid"] [role="tabpanel"] :is(.border, .rounded-md, section, fieldset) { border-color: oklch(0.5 0.02 260); }
+.synth-hardware[data-synth-style="acid"] [role="tabpanel"] input[type="range"] { accent-color: var(--primary); }
 
 /* Individual SYNCLAB effects: rack craftsmanship with modern control decks. */
 :root {
