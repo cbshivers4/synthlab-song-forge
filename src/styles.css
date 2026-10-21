@@ -2116,7 +2116,7 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
   --fx-moss: oklch(0.32 0.025 155);
   --fx-ring-shadow: 0 0 0 2px var(--hardware-black), 0 0 0 4px var(--hardware-trim), 0 4px 8px var(--hardware-shade);
 }
-[data-fx-skin] {
+:is(.fx-face, .device-module)[data-fx-skin] {
   --hardware-face: var(--fx-graphite); --hardware-trim: var(--display-cyan);
   --fx-deck: var(--fx-silver); --fx-deck-ink: var(--hardware-dark-ink);
   --foreground: var(--hardware-ink); --muted-foreground: var(--hardware-silver);
@@ -2124,29 +2124,29 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
   --primary: var(--hardware-trim); --ring: var(--hardware-trim); --device-accent: var(--hardware-trim);
   --hardware-mark: var(--hardware-trim); --hardware-scale: var(--hardware-silver);
 }
-[data-fx-skin="eq"] { --hardware-face: var(--fx-charcoal); --hardware-trim: var(--display-yellow); }
-[data-fx-skin="paraeq"] { --hardware-face: var(--fx-graphite); --hardware-trim: var(--display-yellow); }
-[data-fx-skin="delay"] { --hardware-face: var(--fx-petrol); --hardware-trim: var(--display-cyan); --fx-deck: var(--fx-petrol); --fx-deck-ink: var(--hardware-ink); }
-[data-fx-skin="delay"][data-fx-variant="echo"] { --hardware-face: var(--fx-charcoal); --hardware-trim: var(--display-orange); --fx-deck: var(--fx-silver); --fx-deck-ink: var(--hardware-dark-ink); }
-[data-fx-skin="reverb"] { --hardware-face: var(--fx-charcoal); --hardware-trim: var(--display-cyan); --fx-deck: var(--fx-charcoal); --fx-deck-ink: var(--hardware-ink); }
-[data-fx-skin="drive"] { --hardware-face: var(--fx-crimson); --hardware-trim: var(--display-orange); --fx-deck: var(--fx-crimson); --fx-deck-ink: var(--hardware-ink); }
-[data-fx-skin="compressor"] { --hardware-face: var(--fx-silver); --hardware-trim: var(--display-wave); --foreground: var(--hardware-dark-ink); --muted-foreground: var(--hardware-rubber-edge); --fx-deck: var(--fx-pearl); }
-[data-fx-skin="limiter"] { --hardware-face: var(--fx-charcoal); --hardware-trim: var(--display-yellow); --fx-deck: var(--fx-silver); }
-[data-fx-skin="gate"] { --hardware-face: var(--fx-moss); --hardware-trim: var(--display-green); --fx-deck: var(--fx-moss); --fx-deck-ink: var(--hardware-ink); }
-[data-fx-skin="filter"] { --hardware-face: var(--fx-charcoal); --hardware-trim: var(--display-green); --fx-deck: var(--fx-silver); }
-[data-fx-skin="chorus"] { --hardware-face: var(--fx-pearl); --hardware-trim: var(--display-blue); --foreground: var(--hardware-dark-ink); --muted-foreground: var(--hardware-rubber-edge); --fx-deck: var(--fx-pearl); }
-[data-fx-skin="flanger"] { --hardware-face: var(--fx-graphite); --hardware-trim: var(--display-pink); --fx-deck: var(--fx-pearl); }
-[data-fx-skin="phaser"] { --hardware-face: var(--fx-moss); --hardware-trim: var(--display-yellow); --fx-deck: var(--fx-moss); --fx-deck-ink: var(--hardware-ink); }
-[data-fx-skin="tremolo"] { --hardware-face: var(--fx-silver); --hardware-trim: var(--display-orange); --foreground: var(--hardware-dark-ink); --muted-foreground: var(--hardware-rubber-edge); --fx-deck: var(--fx-silver); }
-[data-fx-skin="autopan"] { --hardware-face: var(--fx-charcoal); --hardware-trim: var(--display-cyan); --fx-deck: var(--fx-pearl); }
-[data-fx-skin="bitcrusher"] { --hardware-face: var(--fx-graphite); --hardware-trim: var(--display-pink); --fx-deck: var(--fx-silver); }
-[data-fx-skin="width"] { --hardware-face: var(--fx-pearl); --hardware-trim: var(--display-cyan); --foreground: var(--hardware-dark-ink); --muted-foreground: var(--hardware-rubber-edge); --fx-deck: var(--fx-pearl); }
-[data-fx-skin="gain"] { --hardware-face: var(--fx-silver); --hardware-trim: var(--hardware-ink); --foreground: var(--hardware-dark-ink); --muted-foreground: var(--hardware-rubber-edge); --fx-deck: var(--fx-silver); }
-[data-fx-skin="stepfilter"] { --hardware-face: var(--fx-graphite); --hardware-trim: var(--display-green); --fx-deck: var(--fx-charcoal); --fx-deck-ink: var(--hardware-ink); }
-[data-fx-skin="resonator"] { --hardware-face: var(--fx-petrol); --hardware-trim: var(--display-orange); --fx-deck: var(--fx-pearl); }
-[data-fx-skin="scalechord"] { --hardware-face: var(--fx-pearl); --hardware-trim: var(--display-pink); --foreground: var(--hardware-dark-ink); --muted-foreground: var(--hardware-rubber-edge); --fx-deck: var(--fx-pearl); }
-[data-fx-skin="transient"] { --hardware-face: var(--fx-charcoal); --hardware-trim: var(--display-wave); --fx-deck: var(--fx-silver); }
-[data-fx-skin="vocoder"] { --hardware-face: var(--fx-graphite); --hardware-trim: var(--display-yellow); --fx-deck: var(--fx-charcoal); --fx-deck-ink: var(--hardware-ink); }
+:is(.fx-face, .device-module)[data-fx-skin="eq"] { --hardware-face: var(--fx-charcoal); --hardware-trim: var(--display-yellow); }
+:is(.fx-face, .device-module)[data-fx-skin="paraeq"] { --hardware-face: var(--fx-graphite); --hardware-trim: var(--display-yellow); }
+:is(.fx-face, .device-module)[data-fx-skin="delay"] { --hardware-face: var(--fx-petrol); --hardware-trim: var(--display-cyan); --fx-deck: var(--fx-petrol); --fx-deck-ink: var(--hardware-ink); }
+:is(.fx-face, .device-module)[data-fx-skin="delay"][data-fx-variant="echo"] { --hardware-face: var(--fx-charcoal); --hardware-trim: var(--display-orange); --fx-deck: var(--fx-silver); --fx-deck-ink: var(--hardware-dark-ink); }
+:is(.fx-face, .device-module)[data-fx-skin="reverb"] { --hardware-face: var(--fx-charcoal); --hardware-trim: var(--display-cyan); --fx-deck: var(--fx-charcoal); --fx-deck-ink: var(--hardware-ink); }
+:is(.fx-face, .device-module)[data-fx-skin="drive"] { --hardware-face: var(--fx-crimson); --hardware-trim: var(--display-orange); --fx-deck: var(--fx-crimson); --fx-deck-ink: var(--hardware-ink); }
+:is(.fx-face, .device-module)[data-fx-skin="compressor"] { --hardware-face: var(--fx-silver); --hardware-trim: var(--display-wave); --foreground: var(--hardware-dark-ink); --muted-foreground: var(--hardware-rubber-edge); --fx-deck: var(--fx-pearl); }
+:is(.fx-face, .device-module)[data-fx-skin="limiter"] { --hardware-face: var(--fx-charcoal); --hardware-trim: var(--display-yellow); --fx-deck: var(--fx-silver); }
+:is(.fx-face, .device-module)[data-fx-skin="gate"] { --hardware-face: var(--fx-moss); --hardware-trim: var(--display-green); --fx-deck: var(--fx-moss); --fx-deck-ink: var(--hardware-ink); }
+:is(.fx-face, .device-module)[data-fx-skin="filter"] { --hardware-face: var(--fx-charcoal); --hardware-trim: var(--display-green); --fx-deck: var(--fx-silver); }
+:is(.fx-face, .device-module)[data-fx-skin="chorus"] { --hardware-face: var(--fx-pearl); --hardware-trim: var(--display-blue); --foreground: var(--hardware-dark-ink); --muted-foreground: var(--hardware-rubber-edge); --fx-deck: var(--fx-pearl); }
+:is(.fx-face, .device-module)[data-fx-skin="flanger"] { --hardware-face: var(--fx-graphite); --hardware-trim: var(--display-pink); --fx-deck: var(--fx-pearl); }
+:is(.fx-face, .device-module)[data-fx-skin="phaser"] { --hardware-face: var(--fx-moss); --hardware-trim: var(--display-yellow); --fx-deck: var(--fx-moss); --fx-deck-ink: var(--hardware-ink); }
+:is(.fx-face, .device-module)[data-fx-skin="tremolo"] { --hardware-face: var(--fx-silver); --hardware-trim: var(--display-orange); --foreground: var(--hardware-dark-ink); --muted-foreground: var(--hardware-rubber-edge); --fx-deck: var(--fx-silver); }
+:is(.fx-face, .device-module)[data-fx-skin="autopan"] { --hardware-face: var(--fx-charcoal); --hardware-trim: var(--display-cyan); --fx-deck: var(--fx-pearl); }
+:is(.fx-face, .device-module)[data-fx-skin="bitcrusher"] { --hardware-face: var(--fx-graphite); --hardware-trim: var(--display-pink); --fx-deck: var(--fx-silver); }
+:is(.fx-face, .device-module)[data-fx-skin="width"] { --hardware-face: var(--fx-pearl); --hardware-trim: var(--display-cyan); --foreground: var(--hardware-dark-ink); --muted-foreground: var(--hardware-rubber-edge); --fx-deck: var(--fx-pearl); }
+:is(.fx-face, .device-module)[data-fx-skin="gain"] { --hardware-face: var(--fx-silver); --hardware-trim: var(--hardware-ink); --foreground: var(--hardware-dark-ink); --muted-foreground: var(--hardware-rubber-edge); --fx-deck: var(--fx-silver); }
+:is(.fx-face, .device-module)[data-fx-skin="stepfilter"] { --hardware-face: var(--fx-graphite); --hardware-trim: var(--display-green); --fx-deck: var(--fx-charcoal); --fx-deck-ink: var(--hardware-ink); }
+:is(.fx-face, .device-module)[data-fx-skin="resonator"] { --hardware-face: var(--fx-petrol); --hardware-trim: var(--display-orange); --fx-deck: var(--fx-pearl); }
+:is(.fx-face, .device-module)[data-fx-skin="scalechord"] { --hardware-face: var(--fx-pearl); --hardware-trim: var(--display-pink); --foreground: var(--hardware-dark-ink); --muted-foreground: var(--hardware-rubber-edge); --fx-deck: var(--fx-pearl); }
+:is(.fx-face, .device-module)[data-fx-skin="transient"] { --hardware-face: var(--fx-charcoal); --hardware-trim: var(--display-wave); --fx-deck: var(--fx-silver); }
+:is(.fx-face, .device-module)[data-fx-skin="vocoder"] { --hardware-face: var(--fx-graphite); --hardware-trim: var(--display-yellow); --fx-deck: var(--fx-charcoal); --fx-deck-ink: var(--hardware-ink); }
 .fx-face[data-fx-skin] { border-top-width: 4px; border-bottom: 3px solid var(--hardware-black); background: var(--hardware-brush), var(--hardware-face); }
 .fx-face .fx-nameplate h3 { font-size: 20px; text-transform: uppercase; }
 .fx-face .fx-nameplate { border-left: 3px solid var(--hardware-trim); padding-left: 10px; }
