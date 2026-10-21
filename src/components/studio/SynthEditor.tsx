@@ -136,7 +136,8 @@ function SynthTrackEditor({ track }: { track: Track }) {
           loadPreset(track.id, v);
           previewNote(track.id, 60, 0.75, false, selectedPatch);
         }}>
-          <SelectTrigger className="w-64">
+          <SelectTrigger className="synth-preset-window w-72" aria-label="Preset window">
+            <span className="synth-preset-tag" aria-hidden>PRESET</span>
             <SelectValue placeholder="Browse presets" />
           </SelectTrigger>
           <SelectContent className="max-h-[420px]">
