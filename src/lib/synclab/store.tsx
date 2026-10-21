@@ -20,7 +20,7 @@ import { stepsPerBar, setBeatsPerBar, getBeatsPerBar, STEPS_PER_BEAT, songSteps,
 import { openInOwnTab } from "./mic";
 import { TRACK_COLORS, applyPreset, defaultPads, defaultPatch, uid } from "./presets";
 import { moveClipToNewIn, moveTrackToIndexIn, moveTrackToNewIn } from "./track-move";
-import { BUILT_IN_PLUGINS, instantiate, processMidiThroughPlugins } from "./plugins";
+import { BUILT_IN_PLUGINS, instantiate, processMidiThroughPlugins, withDefaultParams } from "./plugins";
 import { getMidiAccess, listInputs, listOutputs, midiSupported, midiUnsupportedMessage, subscribe, type MidiPortInfo } from "./midi";
 import { getPadBank, setPadBank } from "./pad-session";
 import { getLooper } from "./live-looper";
