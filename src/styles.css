@@ -2016,3 +2016,13 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
 .vuf-inner-edge { fill: none; stroke: oklch(0 0 0 / 0.6); stroke-width: 1.5; }
 .vuf-mini { border-radius: 2px; }
 .vuf-mini .vuf-pct, .vuf-mini .vuf-sub { display: none; }
+
+/* Desktop drum roll: compact rows so every drum fits on screen with less scrolling (phone keeps its own sizes). */
+.drum-roll:not(.phone-drum-roll) { --dr-row: 18px; }
+.drum-roll:not(.phone-drum-roll) > * + * { margin-top: 4px; }
+.drum-roll:not(.phone-drum-roll) .drum-row-name { padding-top: 0; padding-bottom: 0; height: var(--dr-row); min-height: 0; }
+.drum-roll:not(.phone-drum-roll) .drum-row-name span:first-child { font-size: 9px; }
+.drum-roll:not(.phone-drum-roll) .drum-row-mute { height: 14px; width: 14px; font-size: 8px; }
+.drum-roll:not(.phone-drum-roll) .drum-step { height: 14px; }
+.drum-roll:not(.phone-drum-roll) .drum-step + .drum-step, .drum-roll:not(.phone-drum-roll) .drum-step { margin: 0; }
+.drum-roll:not(.phone-drum-roll) div:has(> .drum-step) { padding-top: 2px; padding-bottom: 2px; }
