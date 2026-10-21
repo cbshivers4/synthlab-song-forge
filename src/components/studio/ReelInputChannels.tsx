@@ -30,8 +30,7 @@ export function ReelInputChannels() {
         const id = ids.current[i];
         const level = id ? engine.getTrackLevel(id) : 0;
         const db = level > 0 ? 20 * Math.log10(level) : -60;
-        const frac = Math.max(0, Math.min(1, (db + 40) / 43));
-        g.setAttribute("transform", `rotate(${-50 + frac * 100} 50 52)`);
+        g.setAttribute("transform", vuTransform(db <= -60 ? -60 : db + 3));
         g.dataset["zone"] = db >= -1 ? "red" : db >= -6 ? "orange" : "green";
       });
     }, 50);
@@ -50,13 +49,7 @@ export function ReelInputChannels() {
           return (
             <div key={i} className="reel-channel" data-active={!!t}>
               <span className="font-mono text-[10px] font-bold">CH {i + 1}</span>
-              <svg viewBox="0 0 100 60" className="reel-mini-vu" role="img" aria-label={`Channel ${i + 1} analog meter`}>
-                <path d="M12 46 Q50 4 88 46" className="vu-arc" />
-                <path d="M72 18 Q82 28 88 46" className="vu-hot" />
-                <text x="50" y="42" className="vu-number">VU</text>
-                <g data-reel-needle transform="rotate(-50 50 52)"><path d="M50 52V12" className="vu-needle reel-mini-needle" /></g>
-                <circle cx="50" cy="52" r="4" className="reel-center" />
-              </svg>
+              <VuFace vuDb={-60} className="vuf-mini" needleProps={{ "data-reel-needle": true }} ariaLabel={`Channel ${i + 1} analog meter`} />
               <select
                 aria-label={`Channel ${i + 1} input`}
                 value={id ?? ""}

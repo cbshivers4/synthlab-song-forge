@@ -1,3 +1,4 @@
+import { VuFace } from "./VuFace";
 import { ReelInputChannels } from "./ReelInputChannels";
 import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 import { Circle, Download, Headphones, Pause, Play, Plus, RotateCcw, SkipBack, SkipForward, Square, Upload } from "lucide-react";
