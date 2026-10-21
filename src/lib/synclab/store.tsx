@@ -20,7 +20,7 @@ import { stepsPerBar, setBeatsPerBar, getBeatsPerBar, STEPS_PER_BEAT, songSteps,
 import { openInOwnTab } from "./mic";
 import { TRACK_COLORS, applyPreset, defaultPads, defaultPatch, uid } from "./presets";
 import { moveClipToNewIn, moveTrackToIndexIn, moveTrackToNewIn } from "./track-move";
-import { BUILT_IN_PLUGINS, instantiate, processMidiThroughPlugins } from "./plugins";
+import { BUILT_IN_PLUGINS, instantiate, processMidiThroughPlugins, withDefaultParams } from "./plugins";
 import { getMidiAccess, listInputs, listOutputs, midiSupported, midiUnsupportedMessage, subscribe, type MidiPortInfo } from "./midi";
 import { getPadBank, setPadBank } from "./pad-session";
 import { getLooper } from "./live-looper";
@@ -2759,9 +2759,12 @@ export function StudioProvider({ children }: { children: ReactNode }) {
               p.id === instanceId
                 ? {
                     ...p,
-                    params: p.params.some((x: PluginParam) => x.id === paramId)
-                      ? p.params.map((x: PluginParam) => (x.id === paramId ? { ...x, value } : x))
-                      : [...p.params, { id: paramId, name: paramId, value, min: value, max: value, unit: "" }],
+                    params: (() => {
+                      const all = withDefaultParams(p);
+                      return all.some((x: PluginParam) => x.id === paramId)
+                        ? all.map((x: PluginParam) => (x.id === paramId ? { ...x, value } : x))
+                        : [...all, { id: paramId, name: paramId, value, min: value, max: value, unit: "" }];
+                    })(),
                   }
                 : p,
             );
