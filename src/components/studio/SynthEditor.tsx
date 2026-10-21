@@ -14,6 +14,7 @@ import { Slider } from "@/components/ui/slider";
 import { Knob } from "./Knob";
 import { useStudio } from "@/lib/synclab/store";
 import { SYNTH_PRESETS, defaultPatch, applyPreset } from "@/lib/synclab/presets";
+import { initModularPatch } from "@/lib/synclab/modular";
 import type { EnvelopeParams, LfoWave, ModDest, ModSource, OscWave, SynthPatch, Track } from "@/lib/synclab/types";
 import { uid } from "@/lib/synclab/presets";
 import { toast } from "sonner";
@@ -181,6 +182,7 @@ function SynthTrackEditor({ track }: { track: Track }) {
         <Button
           variant="outline"
           onClick={() => {
+            if (patch.modular) { updatePatch(track.id, { modular: initModularPatch() }); toast.success("Modular patch initialized", { description: "One VCO, filter, envelope and amp patched to the output — build your new patch from here." }); return; }
             updatePatch(track.id, { ...defaultPatch("Init Saw"), modular: undefined });
             toast.success("Synth initialized", { description: "Blank starting patch — shape it into your own sound, then SAVE PRESET." });
           }}

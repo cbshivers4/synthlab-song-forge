@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight, Plus, Trash2, X } from "lucide-react";
 import { Knob } from "./Knob";
 import { useStudio } from "@/lib/synclab/store";
 import {
-  CABLE_COLORS, MODULAR_PRESETS, MODULE_DEFS, cableId, newModule, normalizeModular,
+  CABLE_COLORS, MODULAR_PRESETS, initModularPatch, MODULE_DEFS, cableId, newModule, normalizeModular,
   type CableColor, type ModModule, type ModuleType, type ModularPatch, type PortRef,
 } from "@/lib/synclab/modular";
 import type { SynthPatch, Track } from "@/lib/synclab/types";
@@ -127,6 +127,12 @@ export function ModularSynth({ track }: { track: Track }) {
     <div className="space-y-2">
       <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Patched rack presets">
         <span className="label-xs mr-1">PRESET RACKS</span>
+        <button type="button" aria-label="Initialize modular patch" onClick={() => {
+          const modular = initModularPatch();
+          setPending(null);
+          save(modular);
+          previewNote(track.id, 48, 0.75, false, { ...patch, modular });
+        }} className="modular-add font-bold">INITIALIZE</button>
         {MODULAR_PRESETS.map((p) => (
           <button key={p.name} type="button" onClick={() => {
             const modular = structuredClone(p.modular);

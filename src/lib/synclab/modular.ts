@@ -300,3 +300,7 @@ export const MODULAR_PRESETS: { name: string; modular: ModularPatch }[] = [
     mods: [["v1", "vco", { wave: "square" }], ["v2", "vco", { wave: "sawtooth", fine: 100 }], ["m", "mixer"], ["f", "vcf", { cutoff: 1200, resonance: 4 }], ["e1", "env", { attack: 0.002, decay: 0.2, sustain: 0, release: 0.2 }], ["a", "vca"], ["d", "delay", { time: 0.33, feedback: 0.6, mix: 0.5 }], ["o", "output"]],
     cables: [["v1", "out", "m", "in1", 0.6, "red"], ["v2", "out", "m", "in2", 0.5, "orange"], ["m", "out", "f", "in", 1, "white"], ["f", "out", "a", "in", 1, "green"], ["e1", "out", "a", "cv", 1, "yellow"], ["a", "out", "d", "in", 1, "blue"], ["d", "out", "o", "in", 1, "white"]] }) },
 ];
+
+/** Fresh starting patch: VCO → VCF → VCA (envelope) → output, default knob settings. */
+export const initModularPatch = (): ModularPatch =>
+  structuredClone(MODULAR_PRESETS.find((p) => p.name === "Modular Tech Basic Voice")?.modular ?? emptyModular());
