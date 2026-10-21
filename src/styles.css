@@ -1995,7 +1995,7 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
 .tape-meter.vuf-wrap svg { max-height: 170px; }
 .vuf-bezel-hi { stop-color: var(--vuf-bezel-hi); } .vuf-bezel-mid { stop-color: var(--vuf-bezel-mid); } .vuf-bezel-lo { stop-color: var(--vuf-bezel-lo); }
 .vuf-glow-in { stop-color: var(--vuf-glow); } .vuf-glow-mid { stop-color: var(--vuf-face); } .vuf-glow-out { stop-color: var(--vuf-face-edge); }
-.vuf-shade-top { stop-color: oklch(0 0 0 / 0.28); } .vuf-shade-clear { stop-color: oklch(0 0 0 / 0); }
+.vuf-shade-top { stop-color: oklch(0 0 0 / 0.12); } .vuf-shade-clear { stop-color: oklch(0 0 0 / 0); }
 .vuf-dome-hi { stop-color: oklch(0.32 0 0); } .vuf-dome-lo { stop-color: oklch(0.06 0 0); }
 .vuf-arc { fill: none; stroke: var(--vuf-ink); stroke-width: 2.2; }
 .vuf-arc.thin { stroke-width: 1.6; }

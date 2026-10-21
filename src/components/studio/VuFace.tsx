@@ -2,7 +2,7 @@ import { useId } from "react";
 
 /** Classic VU meter face (black bezel, lit white dial, red +0…+3 band, black pivot dome).
  *  The scale is linear in voltage like a real VU, so 0 VU sits at ~71% of the swing. */
-export const VU_PIVOT = { x: 150, y: 172 } as const;
+export const VU_PIVOT = { x: 150, y: 178 } as const;
 const SWING = 50; // degrees either side of vertical
 const MAX_AMP = 10 ** (3 / 20);
 
