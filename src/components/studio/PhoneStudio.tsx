@@ -1,3 +1,4 @@
+import { DeviceClock } from "./DeviceClock";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { AudioLines, ChevronLeft, ChevronRight, FolderOpen, Home, Music2, Scissors, SlidersHorizontal, Wand2, Settings2, Radio, Disc3, Grid2x2, Piano, Gauge, FileSearch, Cpu, Palette, NotebookPen, LifeBuoy, Mic, Bot, Sparkles, Film, PanelTop, Move, X, Maximize2, Minimize2, GripHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -103,7 +104,7 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
     </nav>
     </div>
     <main className="phone-console-stage relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-      {!panel && room === "edit" && <div className="flex h-7 shrink-0 items-center justify-center border-b border-border bg-surface px-3"><h1 className="truncate text-xs font-semibold tracking-wide">{project?.id ? project.name : project ? `${project.name} · not saved yet` : "Untitled song"}</h1></div>}
+      {!panel && room === "edit" && <div className="flex h-7 shrink-0 items-center justify-between gap-3 border-b border-border bg-surface px-3"><h1 className="truncate text-xs font-semibold tracking-wide">{project?.id ? project.name : project ? `${project.name} · not saved yet` : "Untitled song"}</h1><DeviceClock inline /></div>}
       {panel === "mixer" && !mixerFull && <>
         {dockHeight > 0 && <div className="docked-phone-timeline shrink-0 overflow-hidden" style={{ height: dockHeight }}><Timeline desktopStyle /></div>}
         <div role="separator" aria-orientation="horizontal" aria-label="Resize timeline and mixer" title="Drag to resize timeline and mixer" onPointerDown={startDockDrag} className="dock-splitter flex h-8 shrink-0 cursor-row-resize touch-none items-center justify-center gap-2 border-y-2 border-primary/50 bg-surface"><GripHorizontal className="size-5 text-primary" /><span className="text-[10px] font-bold uppercase tracking-widest text-primary">Drag to resize</span></div>
