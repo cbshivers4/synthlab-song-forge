@@ -1,6 +1,6 @@
 # Individual effect designs
-- [ ] Blend both new references into distinct effect faceplates, knob treatments, parameter windows and contrasting control decks without changing sound processing.
-- [ ] Verify effect identities and working controls on desktop and sideways phone; preserve the EQ design.
+- [x] Blend both new references into distinct effect faceplates, knob treatments, parameter windows and contrasting control decks without changing sound processing; rack and compact modules share per-kind finishes, Tape Echo has its own variant, and EQ graphs retain their reference style.
+- [x] Signed-in desktop opened all 23 built-in effects without errors and checked per-device finishes; screenshots reviewed for delay, reverb, compressor, crusher and Pro EQ. Delay knob read back 320→321 ms with its parameter window synchronized; sideways-phone compressor read back −18→−17 dB, no page overflow. Four existing signal/control tests pass, build OK. Preview only; physical-device listening and exhaustive every-knob testing remain unverified.
 
 # EQ reference restyle
 - [x] Restyle EQ and Pro EQ with a dark frequency chart, colored band areas, yellow combined response, white-centered drag points and clear controls; preserve real signal and processing.
