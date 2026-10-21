@@ -42,7 +42,7 @@ export function MidiLearnBlock({
   const list = params ?? (["gain", "volume", "pan", "mute", "solo"] as MidiTarget["param"][]);
   const ccFor = (p: MidiTarget["param"]) => {
     const hit = Object.entries(midiMap).find(([, v]) => v.id === id && v.param === p);
-    return hit ? `CC ${hit[0].split(":")[1]}` : null;
+    return hit ? mapLabel(hit[0]) : null;
   };
   return (
     <div className="space-y-1">
@@ -98,7 +98,7 @@ export function MidiLearnStrip({ id, label }: { id: string; label?: string }) {
   const params: MidiTarget["param"][] = ["volume", "pan", "mute", "solo"];
   const ccFor = (p: MidiTarget["param"]) => {
     const hit = Object.entries(midiMap).find(([, v]) => v.id === id && v.param === p);
-    return hit ? hit[0].split(":")[1] : null;
+    return hit ? mapLabel(hit[0]) : null;
   };
   return (
     <div className="flex items-center gap-1.5 overflow-x-auto whitespace-nowrap scrollbar-hide rounded-sm border border-border bg-surface/60 p-1.5">
