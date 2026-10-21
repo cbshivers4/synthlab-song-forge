@@ -7,7 +7,7 @@ import { encodeWav } from "./bounce";
 import { sendExternalNote } from "./external-midi";
 import { keysSnapshot, subscribeKeys } from "./active-keys";
 import type { DrumKitId, DrumPad, PluginInstance, SynthPatch, Track } from "./types";
-import { getInputChannel, getInputGainDb, getOutputDevice, openMicOrThrow, preferredRecordingMime, releaseMic } from "./mic";
+import { getInputChannel, getInputGainDb, getOutputDevice, isAppleMobile, openMicOrThrow, outputRoutingHint, preferredRecordingMime, releaseMic } from "./mic";
 
 type KitVoice = {
   kick: [number, number, number, OscillatorType];
@@ -1717,13 +1717,17 @@ export class SyncLabEngine {
 
   /** True when the browser can route playback to a chosen output device. */
   get canPickOutput() {
+    // iPadOS reports setSinkId as available, yet every call rejects, and iOS
+    // routes audio per app in Control Centre — so never promise a picker there.
+    if (isAppleMobile()) return false;
     return typeof (AudioContext.prototype as unknown as { setSinkId?: unknown }).setSinkId === "function";
   }
 
   /** Route all app playback to an output device (null = system default). */
   async setOutputDevice(id: string | null) {
     const ctx = this.init() as AudioContext & { setSinkId?: (id: string) => Promise<void> };
-    if (!ctx.setSinkId) throw new Error("This browser can't choose an output. Change it in your computer's sound settings.");
+    if (!ctx.setSinkId || isAppleMobile())
+      throw new Error(`This browser can't choose an output. ${outputRoutingHint()}`);
     await ctx.setSinkId(id ?? "");
   }
 

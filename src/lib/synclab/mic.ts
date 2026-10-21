@@ -57,13 +57,32 @@ export function micUnavailableReason(): string | null {
   return null;
 }
 
+/** True on iPhone/iPad. iPadOS reports itself as a Mac with a touchscreen. */
+export function isAppleMobile(): boolean {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent;
+  return /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && (navigator.maxTouchPoints ?? 0) > 1);
+}
+
+/**
+ * Where to send SYNCLAB's sound when the browser cannot pick an output.
+ * iOS/iPadOS routes audio per app in Control Centre, and on iPadOS the
+ * setSinkId symbol exists but every call rejects, so the browser is not the
+ * place to look.
+ */
+export function outputRoutingHint(): string {
+  return isAppleMobile()
+    ? "iPhone and iPad choose the output themselves: open Control Centre, tap the audio card, then pick your interface for this app."
+    : "This browser plays through your computer's selected output — change it in system sound settings.";
+}
+
 function describe(err: unknown): string {
   const e = err as { name?: string; message?: string };
   switch (e?.name) {
     case "NotAllowedError":
     case "SecurityError":
-      if (typeof navigator !== "undefined" && /iPhone|iPad|iPod/.test(navigator.userAgent))
-        return "Microphone blocked. On iPhone: Settings › Safari (or Chrome) › Microphone › Allow, or tap aA in Safari's address bar › Website Settings › Microphone › Allow. Then reload and tap Enable microphone.";
+      if (isAppleMobile())
+        return "Microphone blocked. On iPhone or iPad: Settings › Safari (or Chrome) › Microphone › Allow, or tap aA in Safari's address bar › Website Settings › Microphone › Allow. Then reload and tap Enable microphone.";
       if (typeof navigator !== "undefined" && /Android/.test(navigator.userAgent))
         return "Microphone blocked. On Android Chrome: tap the icon left of the address › Permissions › Microphone › Allow (also check Android Settings › Apps › Chrome › Permissions). Then reload and tap Enable microphone.";
       return inFrame()
