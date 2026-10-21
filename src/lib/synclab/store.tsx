@@ -828,6 +828,51 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           );
           return;
         }
+        // Controller buttons that send notes (many nano-series buttons do):
+        // learn them like knobs; a mapped button toggles its target and never plays a sound.
+        if (msg.type === "on" || msg.type === "off") {
+          const nKey = `n:${msg.channel}:${msg.pitch}`;
+          const learning = midiLearnRef.current;
+          if (learning && msg.type === "on") {
+            setMidiMap((m) => {
+              // one control per button, and one button per control
+              const next: Record<string, MidiTarget> = {};
+              for (const [k, v] of Object.entries(m)) {
+                if (k === nKey) continue;
+                if (v.id === learning.id && v.param === learning.param) continue;
+                next[k] = v;
+              }
+              next[nKey] = learning;
+              try {
+                window.localStorage.setItem(MIDI_MAP_KEY, JSON.stringify(next));
+              } catch {
+                /* storage unavailable */
+              }
+              return next;
+            });
+            setMidiLearn(null);
+            toast.success(`Button mapped`, { description: `Controls ${learning.param} on this channel.` });
+            return;
+          }
+          const noteTarget = midiMapRef.current[nKey];
+          if (noteTarget) {
+            if (msg.type !== "on") return; // toggle on press only
+            if (noteTarget.id === "master" && noteTarget.param === "mute") {
+              setBuses((b) => ({ ...b, master: { ...b.master, muted: !b.master.muted } }));
+              return;
+            }
+            setTracks((ts) =>
+              ts.map((t) => {
+                if (t.id !== noteTarget.id) return t;
+                if (noteTarget.param === "mute") return { ...t, muted: !t.muted };
+                if (noteTarget.param === "solo") return { ...t, solo: !t.solo };
+                if (noteTarget.param === "arm") return { ...t, armed: !t.armed };
+                return t;
+              }),
+            );
+            return;
+          }
+        }
         if (msg.type === "pitchbend") {
           // live pitch wheel: ±2 semitones on the track the keyboard is playing
           const ch0 = msg.channel + 1;
