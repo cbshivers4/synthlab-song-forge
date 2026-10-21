@@ -3,6 +3,9 @@ import { cn } from "@/lib/utils";
 import { useStudio, type MidiTarget } from "@/lib/synclab/store";
 import { Button } from "@/components/ui/button";
 
+/** Display label for a mapping key: CC numbers for knobs/faders, BTN for note buttons. */
+const mapLabel = (key: string) => (key.startsWith("n:") ? `BTN ${key.split(":")[2]}` : `CC ${key.split(":")[1]}`);
+
 /** Small assign/clear control beside any continuous parameter. */
 export function MidiLearnButton({ id, param, label }: MidiTarget & { label: string }) {
   const { midiMap, midiLearn, startMidiLearn, cancelMidiLearn, clearMidiMapping, midiInputId, enableMidi } = useStudio();
@@ -13,7 +16,7 @@ export function MidiLearnButton({ id, param, label }: MidiTarget & { label: stri
     <span className="inline-flex items-center gap-0.5">
       <Button type="button" size="sm" variant={learning || assigned ? "secondary" : "ghost"}
         className="h-6 min-w-8 px-1 font-mono text-[9px]" aria-label={`${learning ? "Cancel learning" : "MIDI Learn"} ${label}`}
-        title={learning ? `Move a controller for ${label}` : assigned ? `${label}: CC ${assigned[0].split(":")[1]}` : `MIDI Learn ${label}`}
+        title={learning ? `Move a knob/fader or press a button for ${label}` : assigned ? `${label}: ${mapLabel(assigned[0])}` : `MIDI Learn ${label}`}
         onClick={() => {
           if (learning) cancelMidiLearn();
           else {
@@ -21,7 +24,7 @@ export function MidiLearnButton({ id, param, label }: MidiTarget & { label: stri
             if (!midiInputId) enableMidi();
           }
         }}>
-        {learning ? "MOVE" : assigned ? `CC ${assigned[0].split(":")[1]}` : "MIDI"}
+        {learning ? "MOVE" : assigned ? mapLabel(assigned[0]) : "MIDI"}
       </Button>
       {assigned && <Button type="button" size="icon" variant="ghost" className="size-6" aria-label={`Clear ${label} MIDI mapping`} onClick={() => clearMidiMapping(target)}><X className="size-3" /></Button>}
     </span>
