@@ -406,8 +406,8 @@ export class SyncLabEngine {
     return this.buses.get(id) ?? this.buses.get("master")!;
   }
 
-  setBus(id: string, volume: number, muted: boolean) {
-    this.busStates[id] = { volume, muted };
+  setBus(id: string, volume: number, muted: boolean, gain = 1) {
+    this.busStates[id] = { volume, muted, gain };
     if (!this.ctx) return;
     // The master fader controls the complete mix, including every bus and FX return.
     // The "master" routing bus stays at unity so direct tracks are not attenuated twice.
@@ -1454,6 +1454,7 @@ export class SyncLabEngine {
       if (t.vca) this.trackVcas.set(t.id, t.vca);
       else this.trackVcas.delete(t.id);
       const vca = t.vca ? this.vcaStates[t.vca] : undefined;
+      ch.trim.gain.setTargetAtTime(clamp(t.gain ?? 1, 0, 2), this.ctx.currentTime, 0.02);
       ch.gain.gain.setTargetAtTime(audible && !vca?.muted ? t.volume * (vca?.volume ?? 1) : 0, this.ctx.currentTime, 0.02);
       ch.pan.pan.setTargetAtTime(clamp(t.pan, -1, 1), this.ctx.currentTime, 0.02);
       const bus = t.bus ?? "master";
