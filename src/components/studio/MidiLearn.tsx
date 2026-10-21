@@ -3,6 +3,9 @@ import { cn } from "@/lib/utils";
 import { useStudio, type MidiTarget } from "@/lib/synclab/store";
 import { Button } from "@/components/ui/button";
 
+/** Display label for a mapping key: CC numbers for knobs/faders, BTN for note buttons. */
+const mapLabel = (key: string) => (key.startsWith("n:") ? `BTN ${key.split(":")[2]}` : `CC ${key.split(":")[1]}`);
+
 /** Small assign/clear control beside any continuous parameter. */
 export function MidiLearnButton({ id, param, label }: MidiTarget & { label: string }) {
   const { midiMap, midiLearn, startMidiLearn, cancelMidiLearn, clearMidiMapping, midiInputId, enableMidi } = useStudio();
@@ -13,7 +16,7 @@ export function MidiLearnButton({ id, param, label }: MidiTarget & { label: stri
     <span className="inline-flex items-center gap-0.5">
       <Button type="button" size="sm" variant={learning || assigned ? "secondary" : "ghost"}
         className="h-6 min-w-8 px-1 font-mono text-[9px]" aria-label={`${learning ? "Cancel learning" : "MIDI Learn"} ${label}`}
-        title={learning ? `Move a controller for ${label}` : assigned ? `${label}: CC ${assigned[0].split(":")[1]}` : `MIDI Learn ${label}`}
+        title={learning ? `Move a knob/fader or press a button for ${label}` : assigned ? `${label}: ${mapLabel(assigned[0])}` : `MIDI Learn ${label}`}
         onClick={() => {
           if (learning) cancelMidiLearn();
           else {
@@ -21,7 +24,7 @@ export function MidiLearnButton({ id, param, label }: MidiTarget & { label: stri
             if (!midiInputId) enableMidi();
           }
         }}>
-        {learning ? "MOVE" : assigned ? `CC ${assigned[0].split(":")[1]}` : "MIDI"}
+        {learning ? "MOVE" : assigned ? mapLabel(assigned[0]) : "MIDI"}
       </Button>
       {assigned && <Button type="button" size="icon" variant="ghost" className="size-6" aria-label={`Clear ${label} MIDI mapping`} onClick={() => clearMidiMapping(target)}><X className="size-3" /></Button>}
     </span>
@@ -39,10 +42,10 @@ export function MidiLearnBlock({
   title?: string;
 }) {
   const { midiMap, midiLearn, startMidiLearn, cancelMidiLearn, clearMidiMapping, midiInputId, enableMidi } = useStudio();
-  const list = params ?? (["volume", "pan", "mute", "solo"] as MidiTarget["param"][]);
+  const list = params ?? (["gain", "volume", "pan", "mute", "solo"] as MidiTarget["param"][]);
   const ccFor = (p: MidiTarget["param"]) => {
     const hit = Object.entries(midiMap).find(([, v]) => v.id === id && v.param === p);
-    return hit ? `CC ${hit[0].split(":")[1]}` : null;
+    return hit ? mapLabel(hit[0]) : null;
   };
   return (
     <div className="space-y-1">
@@ -71,9 +74,9 @@ export function MidiLearnBlock({
                       ? "border-primary/40 bg-surface text-primary"
                       : "border-border bg-surface text-muted-foreground hover:text-foreground",
                 )}
-                title={cc ? `${p} follows ${cc}` : `Learn a knob for ${p}`}
+                title={cc ? `${p} follows ${cc}` : `Learn a knob, fader or button for ${p}`}
               >
-                {learning ? "MOVE…" : `${p} ${cc ?? ""}`}
+                {learning ? "MOVE/PRESS…" : `${p} ${cc ?? ""}`}
               </button>
               {cc && (
                 <button
@@ -98,7 +101,7 @@ export function MidiLearnStrip({ id, label }: { id: string; label?: string }) {
   const params: MidiTarget["param"][] = ["volume", "pan", "mute", "solo"];
   const ccFor = (p: MidiTarget["param"]) => {
     const hit = Object.entries(midiMap).find(([, v]) => v.id === id && v.param === p);
-    return hit ? hit[0].split(":")[1] : null;
+    return hit ? mapLabel(hit[0]) : null;
   };
   return (
     <div className="flex items-center gap-1.5 overflow-x-auto whitespace-nowrap scrollbar-hide rounded-sm border border-border bg-surface/60 p-1.5">
@@ -126,9 +129,9 @@ export function MidiLearnStrip({ id, label }: { id: string; label?: string }) {
                     ? "border-primary/40 bg-surface text-primary"
                     : "border-border bg-surface text-muted-foreground hover:text-foreground",
               )}
-              title={cc ? `${p} follows CC ${cc}` : `Press, then move a knob to control ${p}`}
+              title={cc ? `${p} follows CC ${cc}` : `Press, then move a knob or fader — or press a controller button — to control ${p}`}
             >
-              {learning ? "MOVE A KNOB…" : `${p}${cc ? ` · CC ${cc}` : ""}`}
+              {learning ? "MOVE OR PRESS…" : `${p}${cc ? ` · ${cc}` : ""}`}
             </button>
             {cc && (
               <button

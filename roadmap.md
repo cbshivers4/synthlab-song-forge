@@ -1,3 +1,9 @@
+# Oct 21 (later)
+- [x] Pre-fader GAIN knob at the top of every mixer channel and the master strip (real trim GainNode in the engine, MIDI-learnable)
+- [x] Realistic clipping zones: printed red/amber zone on mixer meter ladders, translucent red band on reel-to-reel VU scales
+- [x] MIDI learn for faders and buttons: CC knobs/faders plus note-sending buttons (toggle mute/solo/arm on press, never play notes)
+- [x] Honest iOS MIDI guidance: Safari on iOS 18.4+ supports USB MIDI controllers via adapter; Bluetooth MIDI unavailable to web apps; no Apple developer account needed
+
 # Cloud storage
 - [x] Retain MP3/MP4 uploads and app exports in the private account library; verified signed-in uploads, reopen, MP3 timeline reuse, recorder export retention and phone video loading. Playback depends on browser codec support.
 - [x] Save and reopen full projects in the signed-in account

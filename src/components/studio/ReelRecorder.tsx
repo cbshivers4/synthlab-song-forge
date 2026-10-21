@@ -43,7 +43,7 @@ function TapeMeter({ level, channel, clipped, reset }: { level: number; channel:
     <defs><radialGradient id={`vu-glow-${channel}`} cx="50%" cy="90%" r="90%"><stop offset="0" className="vu-glow-in" /><stop offset="1" className="vu-glow-out" /></radialGradient></defs>
     <rect width="220" height="116" fill={`url(#vu-glow-${channel})`} />
     {ticks.map((a, i) => <line key={a} x1="110" y1={i % 2 ? 30 : 26} x2="110" y2="36" transform={`rotate(${a} 110 106)`} className={a > 30 ? "vu-tick hot" : "vu-tick"} />)}
-    <path d="M30 65 Q110 -12 190 65" className="vu-arc" /><path d="M155 29 Q177 39 190 65" className="vu-hot" />
+    <path d="M30 65 Q110 -12 190 65" className="vu-arc" /><path d="M150 24 Q180 36 196 70" className="vu-hot-band" /><path d="M155 29 Q177 39 190 65" className="vu-hot" />
     {[[-20, 33, 55], [-10, 66, 31], [-7, 97, 23], [-3, 133, 27], [0, 164, 42], [3, 190, 63]].map(([value, x, y]) => <text key={value} x={x} y={y} className="vu-number">{value}</text>)}
     <text x="110" y="72" className="vu-label">VU</text><text x="110" y="86" className="vu-sub">{channel}</text>
     <g transform={`rotate(${angle} 110 106)`} className="vu-needle-group"><path d="M112 108V27" className="vu-needle-shadow" /><path d="M110 106V24" className="vu-needle" /></g>

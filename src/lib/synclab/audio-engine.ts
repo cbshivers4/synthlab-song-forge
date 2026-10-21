@@ -95,6 +95,8 @@ function makeDistortionCurve(amount: number) {
 
 interface ChannelStrip {
   input: GainNode;
+  /** pre-fader trim driven by the mixer channel's GAIN knob */
+  trim: GainNode;
   gain: GainNode;
   pan: StereoPannerNode;
   meter: AnalyserNode;
@@ -119,7 +121,7 @@ export class SyncLabEngine {
   delaySend: GainNode | null = null;
   chorusSend: GainNode | null = null;
   private buses = new Map<string, GainNode>();
-  private busStates: Record<string, { volume: number; muted: boolean }> = {};
+  private busStates: Record<string, { volume: number; muted: boolean; gain?: number }> = {};
   private mixTracks: Track[] = [];
   private busMeters = new Map<string, AnalyserNode>();
   private auxReturns = new Map<string, GainNode>();
@@ -404,13 +406,13 @@ export class SyncLabEngine {
     return this.buses.get(id) ?? this.buses.get("master")!;
   }
 
-  setBus(id: string, volume: number, muted: boolean) {
-    this.busStates[id] = { volume, muted };
+  setBus(id: string, volume: number, muted: boolean, gain = 1) {
+    this.busStates[id] = { volume, muted, gain };
     if (!this.ctx) return;
     // The master fader controls the complete mix, including every bus and FX return.
     // The "master" routing bus stays at unity so direct tracks are not attenuated twice.
     if (id === "master") {
-      this.master?.gain.setTargetAtTime(muted ? 0 : 0.85 * clamp(volume, 0, 1.5), this.ctx.currentTime, 0.02);
+      this.master?.gain.setTargetAtTime(muted ? 0 : 0.85 * clamp(volume, 0, 1.5) * clamp(gain, 0, 2), this.ctx.currentTime, 0.02);
       return;
     }
     this.busNode(id).gain.setTargetAtTime(muted ? 0 : clamp(volume, 0, 1.5), this.ctx.currentTime, 0.02);
@@ -521,6 +523,7 @@ export class SyncLabEngine {
     let ch = this.channels.get(id);
     if (!ch) {
       const input = ctx.createGain();
+      const trim = ctx.createGain();
       const gain = ctx.createGain();
       const pan = ctx.createStereoPanner();
       const meter = ctx.createAnalyser();
@@ -528,7 +531,8 @@ export class SyncLabEngine {
       meter.smoothingTimeConstant = 0.55;
       // channel meter doubles as the strip scope source
       this.pluginScopes.set(`ch:${id}`, meter);
-      input.connect(gain);
+      input.connect(trim);
+      trim.connect(gain);
       const insertOut = ctx.createGain();
       gain.connect(insertOut);
       insertOut.connect(meter);
@@ -546,7 +550,7 @@ export class SyncLabEngine {
       sendReverb.connect(this.reverbSend!);
       sendDelay.connect(this.delaySend!);
       sendChorus.connect(this.chorusSend!);
-      ch = { input, gain, pan, meter, sendReverb, sendDelay, sendChorus, bus: "master", insertNodes: [], insertKey: "", insertOut };
+      ch = { input, trim, gain, pan, meter, sendReverb, sendDelay, sendChorus, bus: "master", insertNodes: [], insertKey: "", insertOut };
       this.channels.set(id, ch);
     }
     return ch;
@@ -1450,6 +1454,7 @@ export class SyncLabEngine {
       if (t.vca) this.trackVcas.set(t.id, t.vca);
       else this.trackVcas.delete(t.id);
       const vca = t.vca ? this.vcaStates[t.vca] : undefined;
+      ch.trim.gain.setTargetAtTime(clamp(t.gain ?? 1, 0, 2), this.ctx.currentTime, 0.02);
       ch.gain.gain.setTargetAtTime(audible && !vca?.muted ? t.volume * (vca?.volume ?? 1) : 0, this.ctx.currentTime, 0.02);
       ch.pan.pan.setTargetAtTime(clamp(t.pan, -1, 1), this.ctx.currentTime, 0.02);
       const bus = t.bus ?? "master";

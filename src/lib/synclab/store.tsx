@@ -715,9 +715,10 @@ export function StudioProvider({ children }: { children: ReactNode }) {
            }
           if (target.id === "master") {
             if (target.param === "volume") setBuses((b) => ({ ...b, master: { ...b.master, volume: v * 1.2 } }));
-            else if (target.param === "mute") setBuses((b) => ({ ...b, master: { ...b.master, muted: v >= 0.5 } }));
+            else if (target.param === "gain") setBuses((b) => ({ ...b, master: { ...b.master, gain: ccRange(v, 0, 2, 0.01) } }));
+            else if (target.param === "mute" && v >= 0.5) setBuses((b) => ({ ...b, master: { ...b.master, muted: !b.master.muted } }));
             return;
-          }
+           }
            if (target.param.startsWith("synth:")) {
              const path = target.param.slice(6).split(":");
              const field = path[0];
@@ -811,18 +812,66 @@ export function StudioProvider({ children }: { children: ReactNode }) {
            }
           setTracks((ts) =>
             ts.map((t) =>
-               t.id === target.id && ["volume", "pan", "mute", "solo"].includes(target.param)
+               t.id === target.id && ["volume", "pan", "mute", "solo", "gain"].includes(target.param)
                 ? target.param === "volume"
                   ? { ...t, volume: v * 1.2 }
-                  : target.param === "pan"
-                    ? { ...t, pan: v * 2 - 1 }
-                    : target.param === "mute"
-                      ? { ...t, muted: v >= 0.5 }
-                      : { ...t, solo: v >= 0.5 }
+                  : target.param === "gain"
+                    ? { ...t, gain: ccRange(v, 0, 2, 0.01) }
+                    : target.param === "pan"
+                      ? { ...t, pan: v * 2 - 1 }
+                      : target.param === "mute"
+                        // Buttons toggle on press; releasing the button (value 0) does nothing.
+                        ? v >= 0.5 ? { ...t, muted: !t.muted } : t
+                        : v >= 0.5 ? { ...t, solo: !t.solo } : t
                 : t,
             ),
           );
           return;
+        }
+        // Controller buttons that send notes (many nano-series buttons do):
+        // learn them like knobs; a mapped button toggles its target and never plays a sound.
+        if (msg.type === "on" || msg.type === "off") {
+          const nKey = `n:${msg.channel}:${msg.pitch}`;
+          const learning = midiLearnRef.current;
+          if (learning && msg.type === "on") {
+            setMidiMap((m) => {
+              // one control per button, and one button per control
+              const next: Record<string, MidiTarget> = {};
+              for (const [k, v] of Object.entries(m)) {
+                if (k === nKey) continue;
+                if (v.id === learning.id && v.param === learning.param) continue;
+                next[k] = v;
+              }
+              next[nKey] = learning;
+              try {
+                window.localStorage.setItem(MIDI_MAP_KEY, JSON.stringify(next));
+              } catch {
+                /* storage unavailable */
+              }
+              return next;
+            });
+            setMidiLearn(null);
+            toast.success(`Button mapped`, { description: `Controls ${learning.param} on this channel.` });
+            return;
+          }
+          const noteTarget = midiMapRef.current[nKey];
+          if (noteTarget) {
+            if (msg.type !== "on") return; // toggle on press only
+            if (noteTarget.id === "master" && noteTarget.param === "mute") {
+              setBuses((b) => ({ ...b, master: { ...b.master, muted: !b.master.muted } }));
+              return;
+            }
+            setTracks((ts) =>
+              ts.map((t) => {
+                if (t.id !== noteTarget.id) return t;
+                if (noteTarget.param === "mute") return { ...t, muted: !t.muted };
+                if (noteTarget.param === "solo") return { ...t, solo: !t.solo };
+                if (noteTarget.param === "arm") return { ...t, armed: !t.armed };
+                return t;
+              }),
+            );
+            return;
+          }
         }
         if (msg.type === "pitchbend") {
           // live pitch wheel: ±2 semitones on the track the keyboard is playing
@@ -974,7 +1023,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    for (const [id, b] of Object.entries(buses)) getEngine().setBus(id, b.volume, b.muted);
+    for (const [id, b] of Object.entries(buses)) getEngine().setBus(id, b.volume, b.muted, b.gain ?? 1);
   }, [buses]);
 
   useEffect(() => {

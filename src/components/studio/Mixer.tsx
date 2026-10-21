@@ -146,19 +146,57 @@ function Meter({ id, level, tall }: { id: string; level: number; tall?: boolean 
       {Array.from({ length: segs }, (_, i) => {
         const on = i < lit;
         const isHold = i === holdSeg;
+        // Printed hot zone like a hardware LED ladder: the top segments are
+        // physically amber/red even when unlit, so the clipping area reads as
+        // a marked danger region instead of a flat recolour.
+        const segDb = -60 + ((i + 1) / segs) * 60;
+        const zone = segDb >= -1 ? "red" : segDb >= -6 ? "amber" : "green";
+        const unlitZone =
+          zone === "red" ? "oklch(0.32 0.09 27 / 0.55)" : zone === "amber" ? "oklch(0.38 0.08 55 / 0.35)" : undefined;
         return (
           <div
             key={i}
             className={cn(
               "flex-1 rounded-[1px] transition-colors duration-75",
-              !on && !isHold && "bg-surface-2/70",
+              !on && !isHold && !unlitZone && "bg-surface-2/70",
               isHold && !on && "opacity-70"
             )}
-            style={on || isHold ? { background: clipped && i >= segs - 2 ? LEVEL_RED : dbColor(-60 + ((i + 1) / segs) * 60) } : undefined}
+            style={
+              on || isHold
+                ? { background: clipped && i >= segs - 2 ? LEVEL_RED : dbColor(segDb) }
+                : unlitZone
+                  ? { background: unlitZone }
+                  : undefined
+            }
           />
         );
       })}
       </div>
+    </div>
+  );
+}
+
+/** Pre-fader GAIN trim at the top of every channel strip — real input gain into the channel. */
+function ChannelGain({ t, narrow }: { t: Track; narrow?: boolean }) {
+  const { updateTrack } = useStudio();
+  const gain = t.gain ?? 1;
+  return (
+    <div
+      className={cn(ROW.gain, "flex items-center justify-center border-b border-border/60 px-0.5")}
+      onClick={(e) => e.stopPropagation()}
+      title={`Input trim ${gain.toFixed(2)}× — before the fader and effects`}
+    >
+      <Knob
+        label={`${t.name} gain`}
+        value={gain}
+        min={0}
+        max={2}
+        step={0.01}
+        unit="×"
+        size={narrow ? 26 : 30}
+        onChange={(v) => updateTrack(t.id, { gain: v })}
+        midiTarget={{ id: t.id, param: "gain" }}
+      />
     </div>
   );
 }
@@ -341,6 +379,7 @@ function SendsMenu({ t }: { t: Track }) {
 /* ---- Console section geometry: every column shares these row heights ---- */
 const ROW = {
   head: "mx-row-head h-7",
+  gain: "mx-row-gain h-[52px]",
   scope: "mx-row-scope h-[48px]",
   eq: "mx-row-eq h-[74px]",
   devices: "mx-row-inserts h-[92px]",
@@ -993,6 +1032,8 @@ function Strip({
         </button>
       </div>
 
+      <ChannelGain t={t} narrow={narrow} />
+
       <div className={cn(ROW.scope, "border-b border-border/60 p-[3px]")}>
           <Scope scopeId={`ch:${t.id}`} height={40} compact color={t.color} />
         </div>
@@ -1596,6 +1637,23 @@ function MasterStrip({ level: peak }: { level: number }) {
           </PopoverContent>
         </Popover>
         <Screw />
+      </div>
+      {/* master input trim — the same GAIN row every channel strip carries */}
+      <div
+        className={cn(ROW.gain, "flex items-center justify-center border-b border-black/50 px-0.5")}
+        title={`Master input trim ${(master.gain ?? 1).toFixed(2)}× — before the master fader`}
+      >
+        <Knob
+          label="Master gain"
+          value={master.gain ?? 1}
+          min={0}
+          max={2}
+          step={0.01}
+          unit="×"
+          size={30}
+          onChange={(v) => setBus("master", { gain: v })}
+          midiTarget={{ id: "master", param: "gain" }}
+        />
       </div>
       {/* live output scope, 3-band EQ and inserts — the same rows, meters and markings as every channel */}
       <div className={cn(ROW.scope, "border-b border-black/50 p-[3px]")}>

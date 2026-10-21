@@ -1,5 +1,7 @@
 Pad grids (`.drum-pad-grid`, `.performance-pad-grid`) size every cell from one square CSS variable (`--drum-pad-size`, `--sampler-pad-size`) set on the grid, with `grid-auto-rows` matching the column width; keep pad markup free of fixed/min heights so drum and sample pads always read as true squares on desktop and sideways phone.
 
+Every mixer channel and the master strip carry a pre-fader GAIN knob (Track.gain / BusState.gain, 0–2, default 1) driving a dedicated trim GainNode between channel input and fader in the audio engine — never fold trim into the fader gain, or automation and VCA math break. MIDI learn accepts CC (knobs/faders) and note buttons (key `n:channel:pitch`, toggles mute/solo/arm on press only); mapped buttons must never play instrument notes. Meter ladders and VU faces keep a printed red/amber overload zone (unlit tinted segments, `vu-hot-band`) so the clipping region reads as hardware artwork, not a flat recolour.
+
 # Studio components
 
 TouchSynth keeps five lanes in patch.touch and uses shared previewNote/playDrum, one loop timer and a DOM playhead. Force poly preview voices so lanes overlap; align overdubs with that loop clock. Grid edits use placeLoopNote/eraseLoopNote to retain other notes; patch/lane changes preserve touch settings. Send to timeline reuses loopsToNotes without capture or extra engines. Desktop/phone shortcuts reuse a dedicated track and open its performance tab.
