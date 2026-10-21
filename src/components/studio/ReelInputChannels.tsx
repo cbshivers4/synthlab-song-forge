@@ -1,3 +1,4 @@
+import { VuFace, vuTransform } from "./VuFace";
 import { useEffect, useRef, useState } from "react";
 import { useStudio } from "@/lib/synclab/store";
 import { getEngine } from "@/lib/synclab/audio-engine";
