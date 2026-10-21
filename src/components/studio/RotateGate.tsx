@@ -70,8 +70,8 @@ export function RotateGate() {
       </div>
       <div>
         <p className="text-lg font-semibold tracking-wide">Rotate your phone</p>
-        <p className="mt-1 text-sm text-muted-foreground">
-          SYNCLAB opens sideways only. Turn your phone to landscape to continue.
+      <p className="mt-1 text-sm text-muted-foreground">
+          SYNCLAB works best sideways. Turn your phone to landscape, or continue upright and scroll.
         </p>
       </div>
       <button
@@ -80,6 +80,13 @@ export function RotateGate() {
         className="rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground active:scale-[0.98]"
       >
         Full screen &amp; lock sideways
+      </button>
+      <button
+        type="button"
+        onClick={() => setDismissed(true)}
+        className="rounded-full border border-border px-6 py-3 text-sm font-semibold text-foreground active:scale-[0.98]"
+      >
+        Continue upright
       </button>
       {lockNote && <p className="text-xs text-muted-foreground">{lockNote}</p>}
       <p className="absolute bottom-6 text-[10px] font-semibold uppercase tracking-[0.3em] text-muted-foreground">
