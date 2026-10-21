@@ -1,3 +1,5 @@
+Pad grids (`.drum-pad-grid`, `.performance-pad-grid`) size every cell from one square CSS variable (`--drum-pad-size`, `--sampler-pad-size`) set on the grid, with `grid-auto-rows` matching the column width; keep pad markup free of fixed/min heights so drum and sample pads always read as true squares on desktop and sideways phone.
+
 # Studio components
 
 TouchSynth keeps five lanes in patch.touch and uses shared previewNote/playDrum, one loop timer and a DOM playhead. Force poly preview voices so lanes overlap; align overdubs with that loop clock. Grid edits use placeLoopNote/eraseLoopNote to retain other notes; patch/lane changes preserve touch settings. Send to timeline reuses loopsToNotes without capture or extra engines. Desktop/phone shortcuts reuse a dedicated track and open its performance tab.
