@@ -58,7 +58,7 @@ const APPLE_ICON = (
 
 export function WelcomeScreen() {
   const { setStage, setSignedIn } = useApp();
-  const [mode, setMode] = useState<"signin" | "signup" | null>(null);
+  const [mode, setMode] = useState<"signin" | "signup" | "forgot" | "magic" | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -83,11 +83,41 @@ export function WelcomeScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const friendlyError = (err: unknown) => {
+    const msg = err instanceof Error ? err.message : "";
+    if (msg.includes("Invalid login credentials")) return "Wrong email or password. Try again, or use Forgot password below.";
+    if (msg.includes("Email not confirmed")) return "Confirm your email first — check your inbox for the confirmation link.";
+    if (msg.includes("rate limit") || msg.includes("too many")) return "Too many emails right now. Wait a minute and try again.";
+    if (msg.includes("at least 6")) return "Password must be at least 6 characters.";
+    if (msg.includes("already registered")) return "That email already has an account — sign in instead.";
+    if (msg.includes("valid email")) return "Enter a valid email address.";
+    return err instanceof Error ? err.message : "Something went wrong. Try again.";
+  };
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (busy) return;
     setBusy(true);
     try {
+      if (mode === "forgot") {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/reset-password`,
+        });
+        if (error) throw error;
+        toast.success("Check your email", { description: "We sent you a password-reset link. Open it on this device to set a new password." });
+        setMode("signin");
+        return;
+      }
+      if (mode === "magic") {
+        const { error } = await supabase.auth.signInWithOtp({
+          email,
+          options: { emailRedirectTo: window.location.origin },
+        });
+        if (error) throw error;
+        toast.success("Check your email", { description: "We sent a sign-in link. Open it on this device — no password needed." });
+        setMode(null);
+        return;
+      }
       if (mode === "signup") {
         const { data, error } = await supabase.auth.signUp({
           email,
@@ -104,7 +134,7 @@ export function WelcomeScreen() {
         if (error) throw error;
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not sign in");
+      toast.error(friendlyError(err));
     } finally {
       setBusy(false);
     }
