@@ -131,7 +131,7 @@ export function MidiLearnStrip({ id, label }: { id: string; label?: string }) {
               )}
               title={cc ? `${p} follows CC ${cc}` : `Press, then move a knob or fader — or press a controller button — to control ${p}`}
             >
-              {learning ? "MOVE OR PRESS…" : `${p}${cc ? ` · CC ${cc}` : ""}`}
+              {learning ? "MOVE OR PRESS…" : `${p}${cc ? ` · ${cc}` : ""}`}
             </button>
             {cc && (
               <button
