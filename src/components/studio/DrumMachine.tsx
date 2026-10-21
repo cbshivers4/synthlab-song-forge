@@ -9,7 +9,7 @@ import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Knob } from "./Knob";
 import { useStudio } from "@/lib/synclab/store";
-import { factoryKitPad } from "@/lib/synclab/vintage-drums";
+import { factoryKitPad, kitExtraPads } from "@/lib/synclab/vintage-drums";
 import { DRUM_KITS, GENRES } from "@/lib/synclab/presets";
 import type { DrumKitId } from "@/lib/synclab/types";
 import { getEngine } from "@/lib/synclab/audio-engine";
@@ -211,8 +211,12 @@ export function DrumMachine({ track }: { track: Track }) {
   const kit = (pads[0]?.kit ?? "909") as DrumKitId;
   const loadKit = (id: DrumKitId) => {
     const def = DRUM_KITS.find((k) => k.id === id);
-    pads.forEach((p) => updatePad(track.id, p.id, factoryKitPad(p, id, def?.decay ?? p.decay)));
-    toast.success(`${def?.name ?? id} kit loaded`, { description: "Patterns are kept — only the sounds change." });
+    const decay = def?.decay ?? 0.5;
+    // Base pads keep their patterns; old kit-only pads stay only if they hold hits.
+    const kept = pads.filter((p) => !p.voice || p.steps.some((v) => v > 0)).map((p) => factoryKitPad(p, id, p.voice ? p.decay : decay));
+    const extras = kitExtraPads(id, pads[0]?.steps.length ?? 16, decay, () => crypto.randomUUID()).filter((x) => !kept.some((p) => p.voice === x.voice));
+    updateTrack(track.id, { pads: [...kept, ...extras] });
+    toast.success(`${def?.name ?? id} kit loaded`, { description: "Patterns are kept, and this kit's extra pads were added." });
   };
 
   const [presets, setPresets] = useState<DrumPreset[]>([]);
