@@ -24,7 +24,8 @@ import {
   onDeviceChange,
 } from "@/lib/synclab/mic";
 import { midiSupported, midiUnsupportedMessage, toggleMidiInput } from "@/lib/synclab/midi";
-import { getInputChannel, getInputGainDb, setInputChannel, setInputGainDb, setOutputDevice, type InputChannel } from "@/lib/synclab/mic";
+import { getInputChannel, getInputGainDb, outputRoutingHint, setInputChannel, setInputGainDb, setOutputDevice, type InputChannel } from "@/lib/synclab/mic";
+import { useIsAppleMobile } from "@/hooks/use-is-apple-mobile";
 import { openExport } from "@/components/studio/ExportDialog";
 import { DesktopPanel } from "@/components/studio/DesktopPanel";
 import { PluginManager } from "@/components/studio/PluginManager";
@@ -208,6 +209,7 @@ export function Settings() {
     return () => window.removeEventListener("synclab:qwerty", sync);
   }, []);
   const [p, setP] = useState<Prefs>(DEFAULTS);
+  const apple = useIsAppleMobile();
   const [inChan, setInChan] = useState<InputChannel>("stereo");
   const [inGain, setInGain] = useState(0);
   useEffect(() => { setInChan(getInputChannel()); setInGain(getInputGainDb()); }, []);
@@ -449,8 +451,8 @@ export function Settings() {
         <Row
           label="Output device"
           hint={
-            !getEngine().canPickOutput
-              ? "This browser plays through your computer's selected output — change it in system sound settings"
+            !getEngine().canPickOutput || apple
+              ? outputRoutingHint(apple)
               : outputs.length
                 ? "Speakers, headphones or interface outputs — all playback moves here"
                 : "Press Detect devices to list outputs"
