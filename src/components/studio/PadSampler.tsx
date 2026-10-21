@@ -740,9 +740,9 @@ export function PadSampler() {
                         ? { borderColor: `color-mix(in hsl, ${c} 60%, transparent)` }
                         : undefined
               }
-              className={`sample-pad-wallpaper relative flex h-28 min-w-0 touch-none flex-col items-start justify-between whitespace-normal rounded-md border-2 p-2 text-left transition-all select-none active:scale-[0.97] ${
-                pad || recording ? "" : "border-dashed border-border bg-surface-2/40 hover:border-muted-foreground/60"
-              } ${recording ? "animate-pulse" : ""}`}
+              className={`sample-pad-wallpaper mpc-pad relative flex h-28 min-w-0 touch-none flex-col items-start justify-between whitespace-normal p-2 text-left select-none ${
+                pad || recording ? "" : "mpc-pad-rubber"
+              } ${active ? "is-lit" : ""} ${recording ? "animate-pulse" : ""}`}
             >
               <span className="relative z-10 font-mono text-[9px]" style={{ color: pad ? "hsl(0 0% 100% / 0.75)" : undefined }}>
                 <span className={pad ? "" : "text-foreground"}>
