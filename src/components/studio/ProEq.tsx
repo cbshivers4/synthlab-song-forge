@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { EqGrid } from "./EqGrid";
+import { Knob } from "./Knob";
 import { Button } from "@/components/ui/button";
 import { Power, RotateCcw } from "lucide-react";
 import { useStudio } from "@/lib/synclab/store";
@@ -125,8 +127,11 @@ export function ProEq({ trackId, plugin }: { trackId: string; plugin: PluginInst
             }
             g.lineTo(w, h);
             g.closePath();
-            g.fillStyle = colors.getPropertyValue("--display-wave-fill").trim();
+            g.fillStyle = colors.getPropertyValue("--eq-spectrum-fill").trim();
             g.fill();
+            g.strokeStyle = colors.getPropertyValue("--eq-spectrum-line").trim();
+            g.lineWidth = 1;
+            g.stroke();
           }
 
           // per-band curves
@@ -142,9 +147,14 @@ export function ProEq({ trackId, plugin }: { trackId: string; plugin: PluginInst
             }
             const token = BAND_COLORS[i]?.slice(4, -1);
             g.strokeStyle = token ? colors.getPropertyValue(token).trim() : colors.getPropertyValue('--display-cyan').trim();
-            g.globalAlpha = 0.4;
-            g.lineWidth = 1;
+            g.lineWidth = 1.4;
             g.stroke();
+            g.lineTo(w, h / 2);
+            g.lineTo(0, h / 2);
+            g.closePath();
+            g.fillStyle = g.strokeStyle;
+            g.globalAlpha = 0.22;
+            g.fill();
             g.globalAlpha = 1;
           });
 
@@ -155,14 +165,10 @@ export function ProEq({ trackId, plugin }: { trackId: string; plugin: PluginInst
             if (x === 0) g.moveTo(x, y);
             else g.lineTo(x, y);
           }
-          g.strokeStyle = colors.getPropertyValue("--display-wave").trim();
+          g.strokeStyle = colors.getPropertyValue("--eq-response").trim();
           g.lineWidth = 2;
           g.stroke();
-          g.lineTo(w, h / 2);
-          g.lineTo(0, h / 2);
-          g.closePath();
-          g.fillStyle = colors.getPropertyValue("--display-wave-fill").trim();
-          g.fill();
+
         }
       }
 
@@ -201,38 +207,19 @@ export function ProEq({ trackId, plugin }: { trackId: string; plugin: PluginInst
   if (!sel) return null;
 
   return (
-    <div className="space-y-2">
+    <div className="eq-workstation space-y-3" aria-label="SYNCLAB Pro EQ">
+      <header className="eq-titlebar"><span>SYNCLAB <strong>PRO EQ</strong></span><span>8 BAND · PARAMETRIC</span></header>
       <div
         ref={boxRef}
         onPointerMove={move}
         onPointerUp={() => setDrag(null)}
         onPointerCancel={() => setDrag(null)}
         onDoubleClick={(e) => addAt(e.clientX, e.clientY)}
-        className="signal-screen relative h-56 w-full touch-none overflow-hidden rounded-md border border-border"
+        className="signal-screen eq-chart eq-chart-pro relative w-full touch-none overflow-hidden rounded-md border border-border"
       >
         <canvas ref={canvasRef} className="absolute inset-0 size-full" />
 
-        {/* grid */}
-        {[50, 100, 200, 500, 1000, 2000, 5000, 10000].map((f) => (
-          <div
-            key={f}
-            className="pointer-events-none absolute inset-y-0 w-px bg-border/50"
-            style={{ left: `${(Math.log(f / F_MIN) / Math.log(F_MAX / F_MIN)) * 100}%` }}
-          >
-            <span className="absolute bottom-0.5 left-1 font-mono text-[8px] text-muted-foreground">
-              {f >= 1000 ? `${f / 1000}k` : f}
-            </span>
-          </div>
-        ))}
-        {[-24, -12, 0, 12, 24].map((db) => (
-          <div
-            key={db}
-            className={`pointer-events-none absolute inset-x-0 h-px ${db === 0 ? "bg-border" : "bg-border/40"}`}
-            style={{ top: `${50 - (db / DB_RANGE) * 50}%` }}
-          >
-            <span className="absolute right-1 -top-2.5 font-mono text-[8px] text-muted-foreground">{db}</span>
-          </div>
-        ))}
+        <EqGrid range={DB_RANGE} />
 
         {/* band handles */}
         {bands.map((b, i) =>
@@ -255,12 +242,13 @@ export function ProEq({ trackId, plugin }: { trackId: string; plugin: PluginInst
                 const next = b.q * (e.deltaY > 0 ? 0.9 : 1.11);
                 set(b.n, "q", Math.max(0.1, Math.min(18, Math.round(next * 100) / 100)));
               }}
-              className="signal-point absolute z-10 size-4 -translate-x-1/2 -translate-y-1/2 cursor-grab border-2 active:cursor-grabbing"
+              data-selected={active === b.n}
+              className="signal-point eq-band-point absolute z-10 size-4 -translate-x-1/2 -translate-y-1/2 cursor-grab border-2 active:cursor-grabbing"
               style={{
                 left: `${(Math.log(b.freq / F_MIN) / Math.log(F_MAX / F_MIN)) * 100}%`,
                 top: `${50 - ((b.type === 1 || b.type === 5 || b.type === 3 ? 0 : b.gain) / DB_RANGE) * 50}%`,
-                outline: active === b.n ? "2px solid var(--display-cyan)" : undefined,
-              }}
+                "--band-color": BAND_COLORS[i],
+              } as import("react").CSSProperties}
             >
               <span className="absolute -top-4 left-1/2 -translate-x-1/2 font-mono text-[8px]" style={{ color: BAND_COLORS[i] }}>
                 {b.n}
@@ -273,7 +261,7 @@ export function ProEq({ trackId, plugin }: { trackId: string; plugin: PluginInst
       {/* band strip */}
       <div className="flex flex-wrap gap-1">
         {bands.map((b, i) => (
-          <button
+          <Button variant="ghost"
             key={b.n}
             type="button"
             onClick={() => {
@@ -286,12 +274,18 @@ export function ProEq({ trackId, plugin }: { trackId: string; plugin: PluginInst
             style={{ boxShadow: b.on ? `inset 3px 0 0 ${BAND_COLORS[i]}` : undefined }}
           >
             {b.n} · {EQ_BAND_TYPES[b.type]}
-          </button>
+          </Button>
         ))}
       </div>
 
       {/* selected band controls */}
-      <div className="grid gap-2 rounded-lg border border-border bg-surface-2/40 p-2 sm:grid-cols-5">
+      <div className="eq-control-dock">
+        <div className="eq-knob-row">
+          <Knob label="Frequency" value={sel.freq} min={20} max={20000} step={1} unit=" Hz" size={64} onChange={v => set(sel.n, "freq", v)} midiTarget={{ id: trackId, param: `plugin:${plugin.id}:b${sel.n}freq` }} />
+          <Knob label="Gain" value={sel.gain} min={-30} max={30} step={0.1} unit=" dB" size={64} onChange={v => set(sel.n, "gain", v)} midiTarget={{ id: trackId, param: `plugin:${plugin.id}:b${sel.n}gain` }} />
+          <Knob label="Q" value={sel.q} min={0.1} max={18} step={0.05} size={64} onChange={v => set(sel.n, "q", v)} midiTarget={{ id: trackId, param: `plugin:${plugin.id}:b${sel.n}q` }} />
+        </div>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
         <label className="space-y-1">
           <span className="label-xs">Type</span>
           <select
@@ -342,7 +336,7 @@ export function ProEq({ trackId, plugin }: { trackId: string; plugin: PluginInst
           />
         </label>
         <div className="flex items-end gap-1">
-          <button
+          <Button variant="ghost"
             type="button"
             onClick={() => set(sel.n, "on", sel.on ? 0 : 1)}
             className={`flex h-7 flex-1 items-center justify-center gap-1 rounded-sm border border-border font-mono text-[9px] uppercase ${
@@ -350,8 +344,8 @@ export function ProEq({ trackId, plugin }: { trackId: string; plugin: PluginInst
             }`}
           >
             <Power className="size-3" /> {sel.on ? "On" : "Off"}
-          </button>
-          <button
+          </Button>
+          <Button variant="ghost"
             type="button"
             onClick={() => {
               set(sel.n, "gain", 0);
@@ -361,11 +355,12 @@ export function ProEq({ trackId, plugin }: { trackId: string; plugin: PluginInst
             className="grid size-7 place-items-center rounded-sm border border-border text-muted-foreground hover:text-foreground"
           >
             <RotateCcw className="size-3" />
-          </button>
+          </Button>
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
+      </div>
+      <div className="eq-output flex items-center gap-2">
         <span className="label-xs">Output</span>
         <input
           type="range"
@@ -379,10 +374,7 @@ export function ProEq({ trackId, plugin }: { trackId: string; plugin: PluginInst
         <span className="w-14 text-right font-mono text-[10px] text-primary">{output.toFixed(1)} dB</span>
       </div>
 
-      <p className="text-[10px] text-muted-foreground">
-        Drag a dot to move a band, scroll on it to tighten or widen it, double click the graph to add a band and double
-        click a dot to switch it off. The shaded shape behind the curve is the live sound coming out of this channel.
-      </p>
+
     </div>
   );
 }
