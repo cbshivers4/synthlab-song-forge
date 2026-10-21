@@ -56,6 +56,7 @@ export function ReelRecorder() {
   const state = useSyncExternalStore(recorder.subscribe, recorder.getSnapshot, recorder.getSnapshot);
   const { addTrack, addClip, transport, setTransport, togglePlay, stop: stopSong, toggleRecord } = useStudio();
   const [deck, setDeck] = useState<"timeline" | "tape">("timeline");
+  const [look, setLook] = useState<"reel" | "simple">("reel");
   const master = deck === "timeline";
   const fileInput = useRef<HTMLInputElement>(null);
   const [format, setFormat] = useState("wav24");
@@ -139,7 +140,7 @@ export function ReelRecorder() {
       <p className="mt-2 text-[11px] text-muted-foreground">Digital recording. Tape speed changes pitch and duration. Tone and saturation are printed into new recordings.</p>
       <ReelInputChannels />
       {state.error && <p role="alert" className="mt-2 text-sm text-destructive">{state.error}</p>}
-    </div>
+    </div></>}
     <footer className="flex flex-wrap items-end gap-2 border-t border-border px-4 py-4">
       <label className="flex min-w-[120px] flex-1 flex-col gap-1 text-xs text-muted-foreground">Tape name<input className="h-11 w-full rounded border border-input bg-background px-2 text-foreground" value={state.name} onChange={(e) => recorder.configure({ name: e.target.value })} /></label>
       <label className="flex flex-col gap-1 text-xs text-muted-foreground">Export format<select className="h-11 rounded border border-input bg-background px-2 text-foreground" value={format} onChange={(e) => setFormat(e.target.value)}><option value="wav16">WAV · 16-bit</option><option value="wav24">WAV · 24-bit</option><option value="wav32">WAV · 32-bit float</option><option value="mp3">MP3</option><option value="flac">FLAC · 24-bit</option><option value="aiff">AIFF · 24-bit</option></select></label>
