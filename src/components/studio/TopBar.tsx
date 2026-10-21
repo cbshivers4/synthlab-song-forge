@@ -397,6 +397,7 @@ export function TopBar() {
           </Popover>
           <TransportUndo mobile={isMobile} />
           <QuickNotes />
+          <DeviceClock mobile={isMobile} />
           <PlanBadge />
           <Button
             variant="outline"
