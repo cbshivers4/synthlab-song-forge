@@ -53,8 +53,6 @@ import { LiveView } from "@/components/studio/LiveView";
 import { LiveLooperView } from "@/components/studio/LiveLooperView";
 import { ExternalApps } from "@/components/studio/ExternalApps";
 import { HumToBeat } from "@/components/studio/HumToBeat";
-import { CoProducer } from "@/components/studio/CoProducer";
-import { VoiceConverter } from "@/components/studio/VoiceConverter";
 import { BassGenerator } from "@/components/studio/BassGenerator";
 import { ComingSoon } from "@/components/studio/ComingSoon";
 import { ReelRecorder } from "@/components/studio/ReelRecorder";
@@ -317,7 +315,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
         {panel === "settings" && <Settings />}{panel === "keys" && <Keyboard />}{panel === "browser" && <Browser />}
         {panel === "plugins" && <PluginRack />}{panel === "appearance" && <Appearance />}{panel === "sampler" && <Sampler />}
         {panel === "pads" && <PadSampler />}{panel === "mastering" && <Mastering />}{panel === "notes" && <NotesPanel />}
-        {panel === "reference" && <ReferenceAnalyzer />}{panel === "live" && <LiveView />}{panel === "looper" && <LiveLooperView />}{panel === "apps" && <ExternalApps />}{panel === "humbeat" && <ToolErrorBoundary name="Hum to Beat"><HumToBeat /></ToolErrorBoundary>}{panel === "stems" && <ComingSoon title="Separate stems" />}{panel === "coproducer" && <ToolErrorBoundary name="AI Co-Producer"><CoProducer /></ToolErrorBoundary>}{panel === "voice" && <ToolErrorBoundary name="Convert Voice"><VoiceConverter /></ToolErrorBoundary>}{panel === "genstem" && <ComingSoon title="Generate stem" />}{panel === "bassgen" && <ToolErrorBoundary name="Bass Generator"><BassGenerator /></ToolErrorBoundary>}
+        {panel === "reference" && <ReferenceAnalyzer />}{panel === "live" && <LiveView />}{panel === "looper" && <LiveLooperView />}{panel === "apps" && <ExternalApps />}{panel === "humbeat" && <ToolErrorBoundary name="Hum to Beat"><HumToBeat /></ToolErrorBoundary>}{panel === "stems" && <ComingSoon title="Separate stems" />}{panel === "coproducer" && <ComingSoon title="AI Co-Producer — unavailable" />}{panel === "voice" && <ToolErrorBoundary name="Convert Voice"><VoiceConverter /></ToolErrorBoundary>}{panel === "genstem" && <ComingSoon title="Generate stem" />}{panel === "bassgen" && <ToolErrorBoundary name="Bass Generator"><BassGenerator /></ToolErrorBoundary>}
       </div></PhonePages> : <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3 pb-24 sm:pb-3">
       {panel === "reel-recorder" && <ReelRecorder />}{panel === "video-sampler" && <VideoSampler />}
       {panel === "mixer" && <Mixer />}
