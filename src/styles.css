@@ -840,7 +840,7 @@ html[data-reduce-motion] *, html[data-reduce-motion] *::before, html[data-reduce
 .drum-machine[data-phone-view] .drum-steps > div > div:first-child { min-width: 0; }
 .drum-machine[data-phone-view] .drum-steps button { min-width: 48px; }
 .drum-machine[data-phone-view] .drum-steps button.w-24 { width: 96px; }
-.drum-machine[data-sideways="true"] .drum-pad-grid { --drum-pad-size: clamp(84px, min(12vw, 21vh), 128px); grid-template-columns: repeat(5, var(--drum-pad-size)) !important; grid-auto-flow: row; grid-auto-rows: var(--drum-pad-size); padding-bottom: 6px; }
+.drum-machine[data-sideways="true"] .drum-pad-grid { --drum-pad-size: clamp(72px, min(13vw, 22vh), 140px); grid-template-columns: repeat(5, var(--drum-pad-size)) !important; grid-auto-flow: row; grid-auto-rows: var(--drum-pad-size); padding-bottom: 6px; }
 .drum-machine[data-sideways="true"] .drum-pad-grid > [role="button"] { scroll-snap-align: start; }
 .mobile-studio .phone-tool-panel:has(.drum-machine) .editor-track-actions { flex-shrink: 0; }
 .landscape-prod .phone-tool-panel { inset: 0 5.25rem 0 0; padding-bottom: 0; }
@@ -1902,15 +1902,14 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
 .mpc-pad-rubber.is-lit { background: radial-gradient(ellipse at 50% 45%, color-mix(in oklab, var(--primary) 55%, oklch(0.4 0 0)), oklch(0.22 0.01 250) 80%) !important; }
 .mpc-pad-rubber.is-lit::after { box-shadow: inset 0 0 18px color-mix(in oklab, var(--primary) 60%, transparent), inset 0 -6px 10px oklch(0 0 0 / 0.4); }
 
-/* ===== Square pads: MPC-style cells keep width and height identical ===== */
+/* ===== Square pads: MPC-style cells fill the grid and stay exactly square ===== */
 .drum-pad-grid {
-  --drum-pad-size: clamp(96px, min(9vw, 15vh), 148px);
-  grid-template-columns: repeat(5, var(--drum-pad-size)) !important;
-  grid-auto-rows: var(--drum-pad-size);
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  grid-auto-rows: auto;
   justify-content: safe center;
   align-content: start;
 }
-.drum-pad-grid > [role="button"] { min-height: 0; height: 100%; }
+.drum-pad-grid > [role="button"] { aspect-ratio: 1 / 1; min-height: 0; height: auto; overflow: hidden; }
 .performance-pad-grid {
   --sampler-pad-size: clamp(96px, min(15vw, 16vh), 168px);
   grid-template-columns: repeat(4, var(--sampler-pad-size)) !important;

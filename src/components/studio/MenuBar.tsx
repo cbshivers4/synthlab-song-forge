@@ -8,6 +8,7 @@ import {
   MenubarTrigger,
 } from "@/components/ui/menubar";
 import { useStudio } from "@/lib/synclab/store";
+import { DeviceClock } from "./DeviceClock";
 import { requestBluetoothSettings } from "./Settings";
 import { useApp } from "@/lib/synclab/app-state";
 import { toast } from "sonner";
@@ -528,6 +529,7 @@ export function MenuBar() {
       <span className="hidden min-w-0 shrink-0 truncate pl-2 pr-1 font-mono text-[10px] tracking-widest text-muted-foreground uppercase xl:inline">
         {project ? `${project.key} · ${project.timeSig}` : ""} · {mode} mode
       </span>
+      <div className="ml-2 shrink-0"><DeviceClock /></div>
 
       <Dialog open={saveAsOpen} onOpenChange={setSaveAsOpen}>
         <DialogContent className="sm:max-w-sm">
