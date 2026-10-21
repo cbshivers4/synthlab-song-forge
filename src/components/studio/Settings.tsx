@@ -24,7 +24,7 @@ import {
   onDeviceChange,
 } from "@/lib/synclab/mic";
 import { midiSupported, midiUnsupportedMessage, toggleMidiInput } from "@/lib/synclab/midi";
-import { getInputChannel, getInputGainDb, setInputChannel, setInputGainDb, setOutputDevice, type InputChannel } from "@/lib/synclab/mic";
+import { getInputChannel, getInputGainDb, outputRoutingHint, setInputChannel, setInputGainDb, setOutputDevice, type InputChannel } from "@/lib/synclab/mic";
 import { openExport } from "@/components/studio/ExportDialog";
 import { DesktopPanel } from "@/components/studio/DesktopPanel";
 import { PluginManager } from "@/components/studio/PluginManager";
@@ -450,7 +450,7 @@ export function Settings() {
           label="Output device"
           hint={
             !getEngine().canPickOutput
-              ? "This browser plays through your computer's selected output — change it in system sound settings"
+              ? outputRoutingHint()
               : outputs.length
                 ? "Speakers, headphones or interface outputs — all playback moves here"
                 : "Press Detect devices to list outputs"
