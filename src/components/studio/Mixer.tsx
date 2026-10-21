@@ -163,6 +163,31 @@ function Meter({ id, level, tall }: { id: string; level: number; tall?: boolean 
   );
 }
 
+/** Pre-fader GAIN trim at the top of every channel strip — real input gain into the channel. */
+function ChannelGain({ t, narrow }: { t: Track; narrow?: boolean }) {
+  const { updateTrack } = useStudio();
+  const gain = t.gain ?? 1;
+  return (
+    <div
+      className={cn(ROW.gain, "flex items-center justify-center border-b border-border/60 px-0.5")}
+      onClick={(e) => e.stopPropagation()}
+      title={`Input trim ${gain.toFixed(2)}× — before the fader and effects`}
+    >
+      <Knob
+        label={`${t.name} gain`}
+        value={gain}
+        min={0}
+        max={2}
+        step={0.01}
+        unit="×"
+        size={narrow ? 26 : 30}
+        onChange={(v) => updateTrack(t.id, { gain: v })}
+        midiTarget={{ id: t.id, param: "gain" }}
+      />
+    </div>
+  );
+}
+
 /** Clip LED — lights red when the channel has peaked; click to reset. */
 function ClipLed({ id, compact }: { id: string; compact?: boolean }) {
   const clipped = useClipped(id);
@@ -341,6 +366,7 @@ function SendsMenu({ t }: { t: Track }) {
 /* ---- Console section geometry: every column shares these row heights ---- */
 const ROW = {
   head: "mx-row-head h-7",
+  gain: "mx-row-gain h-[52px]",
   scope: "mx-row-scope h-[48px]",
   eq: "mx-row-eq h-[74px]",
   devices: "mx-row-inserts h-[92px]",
@@ -992,6 +1018,8 @@ function Strip({
           <ChevronRight className="size-3.5" />
         </button>
       </div>
+
+      <ChannelGain t={t} narrow={narrow} />
 
       <div className={cn(ROW.scope, "border-b border-border/60 p-[3px]")}>
           <Scope scopeId={`ch:${t.id}`} height={40} compact color={t.color} />
