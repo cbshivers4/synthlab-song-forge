@@ -44,11 +44,17 @@ export const PARAMS_BY_KIND: Record<PluginKind, () => PluginParam[]> = {
     p("cutoff", "Cutoff", 8000, 60, 18000, "Hz"),
     p("resonance", "Resonance", 1, 0.1, 20, "Q"),
     p("type", "Mode", 0, 0, 2, ""),
+    p("input", "Input", 0, -18, 18, "dB"),
+    p("mix", "Mix", 1, 0, 1, ""),
+    p("output", "Output", 0, -18, 12, "dB"),
   ],
   drive: () => [
     p("drive", "Drive", 0.3, 0, 1, ""),
     p("tone", "Tone", 6000, 500, 16000, "Hz"),
     p("output", "Output", 0, -18, 6, "dB"),
+    p("input", "Input", 0, -18, 18, "dB"),
+    p("lowcut", "Low Cut", 20, 20, 1000, "Hz"),
+    p("mix", "Mix", 1, 0, 1, ""),
   ],
   compressor: () => [
     p("threshold", "Threshold", -18, -60, 0, "dB"),
@@ -56,51 +62,73 @@ export const PARAMS_BY_KIND: Record<PluginKind, () => PluginParam[]> = {
     p("attack", "Attack", 8, 0.1, 200, "ms"),
     p("release", "Release", 140, 10, 1000, "ms"),
     p("makeup", "Makeup", 0, -6, 18, "dB"),
+    p("knee", "Knee", 6, 0, 40, "dB"),
+    p("input", "Input", 0, -18, 18, "dB"),
   ],
   delay: () => [
     p("time", "Time", 320, 10, 1200, "ms"),
     p("feedback", "Feedback", 0.35, 0, 0.92, ""),
     p("mix", "Mix", 0.25, 0, 1, ""),
+    p("tone", "Tone", 12000, 800, 18000, "Hz"),
+    p("lowcut", "Low Cut", 40, 20, 2000, "Hz"),
+    p("output", "Output", 0, -18, 6, "dB"),
   ],
-  gain: () => [p("gain", "Gain", 0, -24, 12, "dB")],
-  width: () => [p("width", "Width", 1, 0, 2, ""), p("output", "Output", 0, -12, 6, "dB")],
+  gain: () => [p("gain", "Gain", 0, -24, 12, "dB"), p("pan", "Pan", 0, -1, 1, ""), p("phase", "Phase Invert", 0, 0, 1, "")],
+  width: () => [p("width", "Width", 1, 0, 2, ""), p("output", "Output", 0, -12, 6, "dB"), p("pan", "Pan", 0, -1, 1, "")],
   reverb: () => [
     p("decay", "Decay", 1.8, 0.2, 8, "s"),
     p("predelay", "Pre-Delay", 20, 0, 200, "ms"),
     p("mix", "Mix", 0.3, 0, 1, ""),
+    p("tone", "Tone", 9000, 800, 18000, "Hz"),
+    p("lowcut", "Low Cut", 120, 20, 1000, "Hz"),
+    p("output", "Output", 0, -18, 6, "dB"),
   ],
   chorus: () => [
     p("rate", "Rate", 1.2, 0.05, 8, "Hz"),
     p("depth", "Depth", 0.5, 0, 1, ""),
     p("mix", "Mix", 0.5, 0, 1, ""),
+    p("delay", "Delay", 20, 5, 40, "ms"),
+    p("feedback", "Feedback", 0, 0, 0.8, ""),
   ],
   flanger: () => [
     p("rate", "Rate", 0.4, 0.05, 5, "Hz"),
     p("depth", "Depth", 0.7, 0, 1, ""),
     p("feedback", "Feedback", 0.5, 0, 0.95, ""),
     p("mix", "Mix", 0.5, 0, 1, ""),
+    p("manual", "Manual", 4, 1, 15, "ms"),
   ],
   phaser: () => [
     p("rate", "Rate", 0.5, 0.05, 8, "Hz"),
     p("depth", "Depth", 0.7, 0, 1, ""),
     p("center", "Center", 800, 200, 4000, "Hz"),
     p("mix", "Mix", 0.5, 0, 1, ""),
+    p("stages", "Stages", 4, 2, 8, ""),
+    p("resonance", "Resonance", 0.8, 0.2, 8, "Q"),
   ],
   tremolo: () => [
     p("rate", "Rate", 5, 0.1, 20, "Hz"),
     p("depth", "Depth", 0.6, 0, 1, ""),
+    p("shape", "Shape", 0, 0, 2, ""),
+    p("output", "Output", 0, -18, 6, "dB"),
   ],
   autopan: () => [
     p("rate", "Rate", 1, 0.05, 10, "Hz"),
     p("depth", "Depth", 0.8, 0, 1, ""),
+    p("shape", "Shape", 0, 0, 2, ""),
+    p("center", "Center", 0, -1, 1, ""),
   ],
   limiter: () => [
     p("ceiling", "Ceiling", -0.3, -12, 0, "dB"),
     p("release", "Release", 60, 5, 500, "ms"),
+    p("input", "Input", 0, 0, 18, "dB"),
+    p("output", "Output", 0, -18, 0, "dB"),
   ],
   bitcrusher: () => [
     p("bits", "Bits", 8, 2, 16, "bit"),
     p("mix", "Mix", 1, 0, 1, ""),
+    p("input", "Input", 0, -18, 18, "dB"),
+    p("tone", "Tone", 18000, 800, 18000, "Hz"),
+    p("output", "Output", 0, -18, 6, "dB"),
   ],
   // Classic analogue-style vocoder: the channel signal is the modulator (voice)
   // and an internal oscillator bank is the carrier.
@@ -126,6 +154,8 @@ export const PARAMS_BY_KIND: Record<PluginKind, () => PluginParam[]> = {
     p("threshold", "Threshold", -45, -80, 0, "dB"),
     p("attack", "Attack", 2, 0.1, 50, "ms"),
     p("release", "Release", 80, 5, 1000, "ms"),
+    p("range", "Range", -80, -80, 0, "dB"),
+    p("output", "Output", 0, -18, 6, "dB"),
   ],
   stepfilter: () => [
     p("cutoff", "Cutoff", 12000, 80, 18000, "Hz"),
@@ -339,4 +369,11 @@ export function defsFromFiles(files: File[], existingNames: string[] = []): Plug
     out.push(def(pluginName, vendorGuess.toUpperCase(), PLUGIN_EXT[ext] ?? "VST3", guessPluginKind(pluginName)));
   }
   return out;
+}
+
+/** Fills in knobs added after a device was saved, so older projects show every control. */
+export function withDefaultParams<T extends { kind: PluginKind; params: PluginParam[] }>(pl: T): PluginParam[] {
+  const defaults = PARAMS_BY_KIND[pl.kind]?.() ?? [];
+  const missing = defaults.filter((d) => !pl.params.some((x) => x.id === d.id));
+  return missing.length ? [...pl.params, ...missing] : pl.params;
 }
