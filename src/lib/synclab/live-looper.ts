@@ -82,9 +82,14 @@ export class LiveLooper {
     const engine = getEngine();
     this.ctx = engine.init();
     this.bus = this.ctx.createGain();
+    this.bus.gain.value = 0.7;
     // Keep loop playback out of the app-output capture tap: routing it into
     // master would record the existing loops again on every new layer.
-    this.bus.connect(this.ctx.destination);
+    // A transparent safety limiter stops stacked layers clipping the output.
+    const limit = this.ctx.createDynamicsCompressor();
+    limit.threshold.value = -3; limit.knee.value = 2; limit.ratio.value = 20;
+    limit.attack.value = 0.002; limit.release.value = 0.12;
+    this.bus.connect(limit).connect(this.ctx.destination);
     let savedColors: string[] = [];
     try {
       const stored = window.localStorage.getItem("synclab.looper.colors");
@@ -205,7 +210,8 @@ export class LiveLooper {
         stream = shared;
         this.micBorrowed = true;
       } else {
-        const res = await openMic(undefined, "looper");
+        // Music capture: browser voice-call processing (echo cancel, noise gate, auto gain) pumps and distorts loops.
+        const res = await openMic({ echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: 2 }, "looper");
         if ("error" in res) throw new Error(res.error);
         stream = res.stream;
         this.micBorrowed = false;

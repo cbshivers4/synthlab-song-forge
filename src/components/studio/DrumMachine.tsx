@@ -548,9 +548,8 @@ export function DrumMachine({ track }: { track: Track }) {
                     }
                   }}
                   className={cn(
-                    "relative flex min-h-16 cursor-pointer flex-col justify-between rounded-[3px] border p-1.5 text-left outline-none transition-colors focus-visible:ring-1 focus-visible:ring-ring",
-                    focused ? "border-primary" : "border-border hover:border-primary/50",
-                    "bg-surface-2",
+                    "mpc-pad mpc-pad-rubber relative flex min-h-16 cursor-pointer flex-col justify-between p-1.5 text-left outline-none focus-visible:ring-1 focus-visible:ring-ring",
+                    focused && "is-lit",
                   )}
                 >
                   <span aria-hidden className="pointer-events-none absolute inset-0 flex items-center justify-center">

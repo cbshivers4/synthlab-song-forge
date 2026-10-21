@@ -280,6 +280,7 @@ export function StudioBack() {
             <g key={l.id}>
               <path d={l.d} className="modular-cable-shadow" />
               <path d={l.d} className={`modular-cable cable-${l.color} ${l.selected ? "is-selected" : ""}`} style={l.selected ? { strokeWidth: 6 } : undefined} />
+              <path d={l.d} className="modular-cable-sheen" />
             </g>
           ))}
         </svg>

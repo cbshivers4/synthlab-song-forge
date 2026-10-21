@@ -16,21 +16,40 @@ import { stepsPerBar, stepSeconds, STEPS_PER_BEAT } from "@/lib/synclab/timebase
 const clock = (s: number) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(Math.floor(s % 60)).padStart(2, "0")}.${Math.floor((s % 1) * 10)}`;
 function Reel({ moving, right, fill = 0.5 }: { moving: boolean; right?: boolean; fill?: number }) {
   const radius = reelTapeRadius(fill);
+  const id = right ? "r" : "l";
   return <div className="tape-reel" data-moving={moving} aria-label={`${right ? "Take-up" : "Supply"} reel ${moving ? "moving" : "stopped"}`}><svg viewBox="0 0 240 240" role="img" aria-label="Tape reel">
-    <circle cx="120" cy="120" r="114" className="reel-rim" /><circle cx="120" cy="120" r={radius} className="reel-tape" />
-    {[0, 120, 240].map((angle) => <g key={angle} transform={`rotate(${angle} 120 120)`}><path d="M102 101 L77 33 Q120 11 163 33 L138 101Z" className="reel-spoke" /><path d="M109 73 L99 40 Q120 30 141 40 L131 73Z" className="reel-cutout" /></g>)}
-    <circle cx="120" cy="120" r="37" className="reel-hub" /><circle cx="120" cy="120" r="21" className="reel-center" /><path d="M120 106V134M106 120H134" className="reel-screw" /><circle cx="120" cy="120" r="110" className="reel-edge" />
+    <defs>
+      <radialGradient id={`reel-metal-${id}`} cx="40%" cy="35%" r="75%"><stop offset="0" className="reel-stop-hi" /><stop offset="0.55" className="reel-stop-mid" /><stop offset="1" className="reel-stop-lo" /></radialGradient>
+      <radialGradient id={`reel-tape-${id}`} cx="50%" cy="50%" r="50%"><stop offset="0.3" className="tape-stop-in" /><stop offset="1" className="tape-stop-out" /></radialGradient>
+    </defs>
+    <circle cx="120" cy="120" r="116" className="reel-shadow" />
+    <circle cx="120" cy="120" r={radius} fill={`url(#reel-tape-${id})`} className="reel-tape" />
+    {Array.from({ length: Math.max(0, Math.floor((radius - 40) / 5)) }, (_, i) => <circle key={i} cx="120" cy="120" r={40 + i * 5} className="reel-wind" />)}
+    <g className="reel-flange">
+      <path fill={`url(#reel-metal-${id})`} fillRule="evenodd" className="reel-rim" d={`M120 6a114 114 0 1 0 0.01 0Z ${[0, 120, 240].map((a) => { const r1 = 44, r2 = 100, s = 0.62; const p = (rr: number, ang: number) => `${120 + rr * Math.sin(ang)} ${120 - rr * Math.cos(ang)}`; const t = (a * Math.PI) / 180; return `M${p(r1, t - s * 0.9)} L${p(r2, t - s)} A${r2} ${r2} 0 0 1 ${p(r2, t + s)} L${p(r1, t + s * 0.9)} A${r1} ${r1} 0 0 0 ${p(r1, t - s * 0.9)}Z`; }).join(" ")}`} />
+      {[0, 120, 240].map((a) => <circle key={a} cx={120 + 72 * Math.sin(((a + 60) * Math.PI) / 180)} cy={120 - 72 * Math.cos(((a + 60) * Math.PI) / 180)} r="3" className="reel-rivet" />)}
+      <circle cx="120" cy="120" r="110" className="reel-edge" /><circle cx="120" cy="120" r="102" className="reel-edge thin" />
+    </g>
+    <circle cx="120" cy="120" r="37" fill={`url(#reel-metal-${id})`} className="reel-hub" /><circle cx="120" cy="120" r="14" className="reel-center" />
+    {[0, 120, 240].map((a) => <rect key={a} x="117" y="98" width="6" height="10" rx="1" transform={`rotate(${a} 120 120)`} className="reel-key" />)}
+    <path d="M40 60 A95 95 0 0 1 120 25" className="reel-glint" />
   </svg></div>;
 }
 function TapeMeter({ level, channel, clipped, reset }: { level: number; channel: string; clipped: boolean; reset: () => void }) {
   const db = level > 0 ? 20 * Math.log10(level) : -60;
   const angle = -55 + Math.max(0, Math.min(1, (db + 45) / 45)) * 110;
-  const color = db >= -1 ? "var(--tape-red)" : db >= -6 ? "var(--tape-orange)" : "var(--tape-green)";
-  return <div className="tape-meter"><svg viewBox="0 0 220 116" role="meter" aria-label={`${channel} tape level`} aria-valuemin={-60} aria-valuemax={0} aria-valuenow={Math.max(-60, Math.round(db))}>
+  const ticks = Array.from({ length: 23 }, (_, i) => -55 + i * 5);
+  return <div className="tape-meter vu-real"><svg viewBox="0 0 220 116" role="meter" aria-label={`${channel} tape level`} aria-valuemin={-60} aria-valuemax={0} aria-valuenow={Math.max(-60, Math.round(db))}>
+    <defs><radialGradient id={`vu-glow-${channel}`} cx="50%" cy="90%" r="90%"><stop offset="0" className="vu-glow-in" /><stop offset="1" className="vu-glow-out" /></radialGradient></defs>
+    <rect width="220" height="116" fill={`url(#vu-glow-${channel})`} />
+    {ticks.map((a, i) => <line key={a} x1="110" y1={i % 2 ? 30 : 26} x2="110" y2="36" transform={`rotate(${a} 110 106)`} className={a > 30 ? "vu-tick hot" : "vu-tick"} />)}
     <path d="M30 65 Q110 -12 190 65" className="vu-arc" /><path d="M155 29 Q177 39 190 65" className="vu-hot" />
     {[[-20, 33, 55], [-10, 66, 31], [-7, 97, 23], [-3, 133, 27], [0, 164, 42], [3, 190, 63]].map(([value, x, y]) => <text key={value} x={x} y={y} className="vu-number">{value}</text>)}
-    <text x="110" y="72" className="vu-label">VU · {channel}</text><g transform={`rotate(${angle} 110 106)`}><path d="M110 106V25" className="vu-needle" style={{ stroke: color }} /><circle cx="110" cy="106" r="6" className="reel-center" /></g>
-  </svg><div className="flex items-center justify-between gap-2 px-2 pb-1 font-mono text-[10px]"><span>{level > 0 ? `${db.toFixed(1)} dBFS` : "−∞ dBFS"}</span><Button variant="ghost" className="h-6 px-1 text-[10px]" onClick={reset} aria-label={`Reset ${channel} tape clipping`}>{clipped ? "CLIP" : "PEAK"}</Button></div></div>;
+    <text x="110" y="72" className="vu-label">VU</text><text x="110" y="86" className="vu-sub">{channel}</text>
+    <g transform={`rotate(${angle} 110 106)`} className="vu-needle-group"><path d="M112 108V27" className="vu-needle-shadow" /><path d="M110 106V24" className="vu-needle" /></g>
+    <rect x="70" y="96" width="80" height="20" rx="2" className="vu-pivot-cover" /><circle cx="110" cy="106" r="5" className="reel-center" />
+    <path d="M0 0H220V40Q110 20 0 46Z" className="vu-glass" />
+  </svg><div className="flex items-center justify-between gap-2 px-2 pb-1 font-mono text-[10px]"><span>{level > 0 ? `${db.toFixed(1)} dBFS` : "−∞ dBFS"}</span><Button variant="ghost" className={`h-6 px-1 text-[10px] ${clipped ? "text-destructive" : ""}`} onClick={reset} aria-label={`Reset ${channel} tape clipping`}>{clipped ? "● CLIP" : "PEAK"}</Button></div></div>;
 }
 export function ReelRecorder() {
   const recorder = getReelRecorder();

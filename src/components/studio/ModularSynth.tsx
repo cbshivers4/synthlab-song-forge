@@ -19,7 +19,7 @@ export function ModularSynth({ track }: { track: Track }) {
   const [pending, setPending] = useState<PortRef | null>(null);
   const [color, setColor] = useState<CableColor>("red");
   const boxRef = useRef<HTMLDivElement>(null);
-  const [lines, setLines] = useState<{ id: string; d: string; color: CableColor }[]>([]);
+  const [lines, setLines] = useState<{ id: string; d: string; color: CableColor; a: { x: number; y: number }; b: { x: number; y: number } }[]>([]);
 
   const save = (next: ModularPatch) => updatePatch(track.id, { modular: next });
   const label = (p: PortRef) => {
@@ -64,7 +64,7 @@ export function ModularSynth({ track }: { track: Track }) {
         const a = pos(c.from), b = pos(c.to);
         if (!a || !b) return [];
         const sag = 40 + Math.abs(a.x - b.x) * 0.15 + Math.abs(a.y - b.y) * 0.1;
-        return [{ id: c.id, color: c.color, d: `M${a.x},${a.y} C${a.x},${a.y + sag} ${b.x},${b.y + sag} ${b.x},${b.y}` }];
+        return [{ id: c.id, color: c.color, a, b, d: `M${a.x},${a.y} C${a.x},${a.y + sag} ${b.x},${b.y + sag} ${b.x},${b.y}` }];
       }));
     };
     draw();
@@ -172,6 +172,8 @@ export function ModularSynth({ track }: { track: Track }) {
             <g key={l.id}>
               <path d={l.d} className="modular-cable-shadow" />
               <path d={l.d} className={`modular-cable cable-${l.color}`} />
+              <path d={l.d} className="modular-cable-sheen" />
+              {[l.a, l.b].map((p, i) => <g key={i} className={`cable-${l.color}`}><circle cx={p.x} cy={p.y + 6} r="5" className="modular-plug-boot" /><circle cx={p.x} cy={p.y} r="6" className="modular-plug" /></g>)}
             </g>
           ))}
         </svg>

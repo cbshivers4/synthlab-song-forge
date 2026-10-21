@@ -1,6 +1,6 @@
 /** Modular Tech Synth: an empty rack you fill with devices, then wire with coloured patch cables. */
 
-export type ModuleType = "vco" | "noise" | "lfo" | "env" | "vcf" | "vca" | "mixer" | "drive" | "delay" | "output";
+export type ModuleType = "vco" | "noise" | "lfo" | "env" | "vcf" | "vca" | "mixer" | "drive" | "delay" | "output" | "fold" | "ring" | "sh" | "chorus" | "reverb";
 export type CableColor = "red" | "orange" | "yellow" | "green" | "blue" | "purple" | "white";
 export const CABLE_COLORS: CableColor[] = ["red", "orange", "yellow", "green", "blue", "purple", "white"];
 
@@ -53,6 +53,25 @@ export const MODULE_DEFS: Record<ModuleType, ModuleDef> = {
     { id: "feedback", label: "FDBK", min: 0, max: 0.9, step: 0.01, def: 0.4 },
     { id: "mix", label: "MIX", min: 0, max: 1, step: 0.01, def: 0.4 },
   ], inputs: [{ id: "in", label: "IN", kind: "audio" }, { id: "time", label: "TIME CV", kind: "param", scale: 0.05 }], outputs: [{ id: "out", label: "OUT" }] },
+  fold: { type: "fold", label: "WAVEFOLDER", hp: 1, params: [
+    { id: "folds", label: "FOLD", min: 0, max: 1, step: 0.01, def: 0.5 },
+    { id: "gain", label: "INPUT", min: 0.2, max: 4, step: 0.01, def: 1.4 },
+  ], inputs: [{ id: "in", label: "IN", kind: "audio" }, { id: "gain", label: "FOLD CV", kind: "param", scale: 2 }], outputs: [{ id: "out", label: "OUT" }] },
+  ring: { type: "ring", label: "RING MOD", hp: 1, params: [{ id: "mix", label: "MIX", min: 0, max: 1, step: 0.01, def: 1 }],
+    inputs: [{ id: "in", label: "CARRIER", kind: "audio" }, { id: "mod", label: "MOD", kind: "param", scale: 2 }], outputs: [{ id: "out", label: "OUT" }] },
+  sh: { type: "sh", label: "SAMPLE & HOLD", hp: 1, params: [
+    { id: "rate", label: "RATE", min: 0.5, max: 32, step: 0.5, unit: "Hz", def: 8 },
+    { id: "range", label: "RANGE", min: 0, max: 1, step: 0.01, def: 1 },
+  ], inputs: [], outputs: [{ id: "out", label: "OUT" }] },
+  chorus: { type: "chorus", label: "CHORUS", hp: 1, params: [
+    { id: "rate", label: "RATE", min: 0.05, max: 6, step: 0.05, unit: "Hz", def: 0.8 },
+    { id: "depth", label: "DEPTH", min: 0, max: 1, step: 0.01, def: 0.5 },
+    { id: "mix", label: "MIX", min: 0, max: 1, step: 0.01, def: 0.5 },
+  ], inputs: [{ id: "in", label: "IN", kind: "audio" }], outputs: [{ id: "out", label: "OUT" }] },
+  reverb: { type: "reverb", label: "SPRING VERB", hp: 1, params: [
+    { id: "size", label: "SIZE", min: 0.3, max: 4, step: 0.05, unit: "s", def: 1.6 },
+    { id: "mix", label: "MIX", min: 0, max: 1, step: 0.01, def: 0.35 },
+  ], inputs: [{ id: "in", label: "IN", kind: "audio" }], outputs: [{ id: "out", label: "OUT" }] },
   output: { type: "output", label: "OUTPUT", hp: 1, params: [{ id: "level", label: "LEVEL", min: 0, max: 1, step: 0.01, def: 0.7 }],
     inputs: [{ id: "in", label: "IN", kind: "audio" }, { id: "pan", label: "PAN CV", kind: "param", scale: 1 }], outputs: [] },
 };
@@ -102,6 +121,20 @@ function noiseBuffer(ctx: BaseAudioContext, color: string) {
   c[color] = buf;
   return buf;
 }
+const foldCurve = (k: number) => {
+  const c = new Float32Array(2048); const f = 1 + k * 6;
+  for (let i = 0; i < c.length; i++) { const x = (i / 1023.5) - 1; c[i] = Math.sin(x * f * Math.PI / 2); }
+  return c;
+};
+const irCache = new WeakMap<BaseAudioContext, Map<number, AudioBuffer>>();
+function springIR(ctx: BaseAudioContext, secs: number) {
+  const k = Math.round(secs * 20) / 20;
+  let m = irCache.get(ctx); if (!m) irCache.set(ctx, (m = new Map()));
+  const hit = m.get(k); if (hit) return hit;
+  const len = Math.max(1, Math.floor(ctx.sampleRate * k)); const b = ctx.createBuffer(2, len, ctx.sampleRate);
+  for (let ch = 0; ch < 2; ch++) { const d = b.getChannelData(ch); for (let i = 0; i < len; i++) { const t = i / ctx.sampleRate; d[i] = (Math.random() * 2 - 1) * Math.exp(-4 * t / k) * (1 + 0.4 * Math.sin(t * 2 * Math.PI * 38)); } }
+  m.set(k, b); return b;
+}
 const driveCurve = (k: number) => {
   const c = new Float32Array(1024);
   const a = 1 + k * 30;
@@ -115,7 +148,7 @@ export function playModularVoice(ctx: BaseAudioContext, dest: AudioNode, raw: un
   const num = (mod: ModModule, k: string) => Number(mod.params[k] ?? MODULE_DEFS[mod.type].params.find((p) => p.id === k)?.def ?? 0);
   const str = (mod: ModModule, k: string) => String(mod.params[k] ?? MODULE_DEFS[mod.type].params.find((p) => p.id === k)?.def ?? "");
   const maxRel = Math.max(0.1, ...m.modules.filter((x) => x.type === "env").map((x) => num(x, "release")));
-  const hasDelay = m.modules.some((x) => x.type === "delay");
+  const hasDelay = m.modules.some((x) => x.type === "delay" || x.type === "reverb");
   const life = duration + maxRel + (hasDelay ? 1.5 : 0.3);
   const stopAt = t0 + life;
   const freq = 440 * Math.pow(2, (midi - 69) / 12);
@@ -176,6 +209,34 @@ export function playModularVoice(ctx: BaseAudioContext, dest: AudioNode, raw: un
         const dry = ctx.createGain(); dry.gain.value = 1 - num(mod, "mix") * 0.5; const o = ctx.createGain();
         i.connect(dry).connect(o); i.connect(dl); dl.connect(fb).connect(dl); dl.connect(wet).connect(o);
         ins.set(key(mod.id, "in"), i); ins.set(key(mod.id, "time"), dl.delayTime); outs.set(key(mod.id, "out"), o); break;
+      }
+      case "fold": {
+        const i = ctx.createGain(); i.gain.value = num(mod, "gain"); const w = ctx.createWaveShaper(); w.curve = foldCurve(num(mod, "folds")); w.oversample = "4x";
+        const o = ctx.createGain(); o.gain.value = 0.8;
+        i.connect(w).connect(o); ins.set(key(mod.id, "in"), i); ins.set(key(mod.id, "gain"), i.gain); outs.set(key(mod.id, "out"), o); break;
+      }
+      case "ring": {
+        const i = ctx.createGain(); const r = ctx.createGain(); r.gain.value = 1 - num(mod, "mix");
+        i.connect(r); ins.set(key(mod.id, "in"), i); ins.set(key(mod.id, "mod"), r.gain); outs.set(key(mod.id, "out"), r); break;
+      }
+      case "sh": {
+        const s = ctx.createConstantSource(); const rate = Math.max(0.5, num(mod, "rate")), range = num(mod, "range");
+        for (let t = t0; t < stopAt; t += 1 / rate) s.offset.setValueAtTime((Math.random() * 2 - 1) * range, t);
+        sources.push(s); outs.set(key(mod.id, "out"), s); break;
+      }
+      case "chorus": {
+        const i = ctx.createGain(); const dl = ctx.createDelay(0.1); dl.delayTime.value = 0.015;
+        const lfo = ctx.createOscillator(); lfo.frequency.value = num(mod, "rate"); const dep = ctx.createGain(); dep.gain.value = 0.008 * num(mod, "depth");
+        lfo.connect(dep).connect(dl.delayTime); sources.push(lfo);
+        const wet = ctx.createGain(); wet.gain.value = num(mod, "mix"); const dry = ctx.createGain(); dry.gain.value = 1 - num(mod, "mix") * 0.5; const o = ctx.createGain();
+        i.connect(dry).connect(o); i.connect(dl).connect(wet).connect(o);
+        ins.set(key(mod.id, "in"), i); outs.set(key(mod.id, "out"), o); break;
+      }
+      case "reverb": {
+        const i = ctx.createGain(); const cv = ctx.createConvolver(); cv.buffer = springIR(ctx, num(mod, "size"));
+        const wet = ctx.createGain(); wet.gain.value = num(mod, "mix") * 0.6; const dry = ctx.createGain(); dry.gain.value = 1 - num(mod, "mix") * 0.5; const o = ctx.createGain();
+        i.connect(dry).connect(o); i.connect(cv).connect(wet).connect(o);
+        ins.set(key(mod.id, "in"), i); outs.set(key(mod.id, "out"), o); break;
       }
       case "output": {
         const i = ctx.createGain(); const pan = ctx.createStereoPanner(); const o = ctx.createGain();

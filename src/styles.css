@@ -1878,3 +1878,92 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
 .arrangement-clip[data-bars]::before { content: attr(data-bars); position: absolute; right: 14px; bottom: 4px; z-index: 40; padding: 1px 5px; border-radius: 3px; font: 600 10px/1.3 ui-monospace, monospace; background: var(--popover); color: var(--popover-foreground); pointer-events: none; }
 .arrangement-trim { max-width: 25%; }
 .phone-console .arrangement-trim { width: 22px; }
+
+/* ===== MPC-style rubber pads (drum machine + pad sampler) ===== */
+.mpc-pad {
+  border-radius: 7px !important; border: 3px solid oklch(0.13 0.003 250) !important;
+  box-shadow: 0 0 0 1px oklch(0.32 0.004 250), 0 3px 0 oklch(0.06 0 0), 0 5px 8px oklch(0 0 0 / 0.55) !important;
+  transition: transform 70ms ease, box-shadow 70ms ease, filter 120ms ease;
+}
+.mpc-pad::after {
+  content: ""; position: absolute; inset: 0; border-radius: 4px; pointer-events: none; z-index: 1;
+  background:
+    radial-gradient(ellipse 80% 55% at 35% 18%, oklch(1 0 0 / 0.14), transparent 70%),
+    repeating-radial-gradient(circle at 50% 50%, oklch(1 0 0 / 0.025) 0 1px, transparent 1px 3px);
+  box-shadow: inset 0 2px 2px oklch(1 0 0 / 0.12), inset 0 -6px 10px oklch(0 0 0 / 0.5), inset 0 0 0 1px oklch(0 0 0 / 0.45);
+}
+.mpc-pad > * { position: relative; z-index: 2; }
+.mpc-pad > .absolute { position: absolute; }
+.mpc-pad-rubber { background: radial-gradient(ellipse at 50% 40%, oklch(0.36 0.005 250), oklch(0.24 0.004 250) 75%) !important; color: oklch(0.9 0 0); }
+.mpc-pad:active, .mpc-pad.is-lit:active {
+  transform: translateY(2px) scale(0.985);
+  box-shadow: 0 0 0 1px oklch(0.32 0.004 250), 0 1px 0 oklch(0.06 0 0), 0 2px 3px oklch(0 0 0 / 0.5) !important;
+}
+.mpc-pad.is-lit { filter: brightness(1.18) saturate(1.2); }
+.mpc-pad-rubber.is-lit { background: radial-gradient(ellipse at 50% 45%, color-mix(in oklab, var(--primary) 55%, oklch(0.4 0 0)), oklch(0.22 0.01 250) 80%) !important; }
+.mpc-pad-rubber.is-lit::after { box-shadow: inset 0 0 18px color-mix(in oklab, var(--primary) 60%, transparent), inset 0 -6px 10px oklch(0 0 0 / 0.4); }
+
+/* ===== Highlighted synth preset window (per-synth LCD) ===== */
+.synth-preset-window {
+  position: relative; height: 2.6rem !important; padding-left: 4.4rem !important;
+  font-family: var(--font-mono, monospace) !important; font-weight: 700; letter-spacing: 0.06em;
+  background: linear-gradient(180deg, var(--lcd-hi, oklch(0.32 0.08 190)), var(--lcd-lo, oklch(0.2 0.06 195))) !important;
+  color: var(--lcd-ink, oklch(0.92 0.14 175)) !important; text-shadow: 0 0 6px color-mix(in oklab, var(--lcd-ink, oklch(0.92 0.14 175)) 60%, transparent);
+  border: 2px solid oklch(0.08 0 0) !important; border-radius: 4px !important;
+  box-shadow: inset 0 2px 6px oklch(0 0 0 / 0.6), 0 0 0 2px var(--lcd-bezel, oklch(0.45 0.01 250)), 0 0 14px color-mix(in oklab, var(--lcd-ink, oklch(0.92 0.14 175)) 30%, transparent) !important;
+}
+.synth-preset-tag {
+  position: absolute; left: 0.4rem; top: 50%; transform: translateY(-50%);
+  font-size: 9px; letter-spacing: 0.2em; padding: 2px 5px; border-radius: 2px;
+  background: var(--lcd-ink, oklch(0.92 0.14 175)); color: var(--lcd-lo, oklch(0.2 0.06 195)); text-shadow: none;
+}
+[data-synth-style="spec4"] { --lcd-hi: oklch(0.34 0.09 190); --lcd-lo: oklch(0.18 0.06 200); --lcd-ink: oklch(0.9 0.15 180); --lcd-bezel: oklch(0.55 0.01 250); }
+[data-synth-style="acid"] { --lcd-hi: oklch(0.42 0.12 25); --lcd-lo: oklch(0.2 0.08 25); --lcd-ink: oklch(0.82 0.2 35); --lcd-bezel: oklch(0.75 0.01 90); }
+[data-synth-style="poly"] { --lcd-hi: oklch(0.4 0.1 75); --lcd-lo: oklch(0.2 0.06 70); --lcd-ink: oklch(0.88 0.16 85); --lcd-bezel: oklch(0.35 0.04 50); }
+[data-synth-style="modular"] { --lcd-hi: oklch(0.34 0.1 135); --lcd-lo: oklch(0.16 0.06 140); --lcd-ink: oklch(0.88 0.2 130); --lcd-bezel: oklch(0.6 0.005 250); }
+
+/* ===== Realistic reels ===== */
+.reel-stop-hi { stop-color: oklch(0.96 0.003 250); } .reel-stop-mid { stop-color: oklch(0.74 0.005 250); } .reel-stop-lo { stop-color: oklch(0.48 0.006 250); }
+.tape-stop-in { stop-color: oklch(0.3 0.03 50); } .tape-stop-out { stop-color: oklch(0.2 0.025 45); }
+.reel-shadow { fill: oklch(0 0 0 / 0.45); transform: translate(3px, 5px); }
+.tape-reel .reel-rim { stroke: oklch(0.38 0.005 250); stroke-width: 1.5; }
+.tape-reel .reel-tape { stroke: oklch(0.12 0.01 45); stroke-width: 1; }
+.reel-wind { fill: none; stroke: oklch(0.4 0.03 50 / 0.35); stroke-width: 0.6; }
+.tape-reel .reel-edge { stroke: oklch(0.85 0.003 250); stroke-width: 1.5; }
+.tape-reel .reel-edge.thin { stroke: oklch(0.45 0.005 250); stroke-width: 1; }
+.reel-rivet { fill: oklch(0.9 0 0); stroke: oklch(0.35 0 0); stroke-width: 1; }
+.tape-reel .reel-hub { stroke: oklch(0.35 0.005 250); stroke-width: 2; }
+.tape-reel .reel-center { fill: oklch(0.15 0 0); stroke: oklch(0.6 0 0); }
+.reel-key { fill: oklch(0.85 0 0); stroke: oklch(0.3 0 0); }
+.reel-glint { fill: none; stroke: oklch(1 0 0 / 0.35); stroke-width: 3; stroke-linecap: round; }
+
+/* ===== Realistic VU meters ===== */
+.tape-meter.vu-real { border: 6px solid oklch(0.14 0.003 250); border-radius: 6px; box-shadow: inset 0 0 0 1px oklch(0.4 0 0), 0 3px 8px oklch(0 0 0 / 0.5); }
+.vu-glow-in { stop-color: oklch(0.97 0.07 90); } .vu-glow-out { stop-color: oklch(0.8 0.09 75); }
+.vu-tick { stroke: oklch(0.15 0.01 60); stroke-width: 1.2; } .vu-tick.hot { stroke: var(--tape-red); stroke-width: 1.8; }
+.vu-sub { fill: oklch(0.3 0.02 60); font: 7px var(--font-mono); letter-spacing: 0.15em; text-anchor: middle; }
+.vu-real .vu-label { font: 700 14px serif; letter-spacing: 0.1em; }
+.vu-needle-group .vu-needle { stroke: oklch(0.12 0 0) !important; stroke-width: 1.6; stroke-linecap: round; }
+.vu-needle-shadow { stroke: oklch(0 0 0 / 0.25); stroke-width: 2; }
+.vu-needle-group { transition: transform 90ms cubic-bezier(.3,1.4,.6,1); }
+.vu-pivot-cover { fill: oklch(0.15 0.003 250); }
+.vu-glass { fill: oklch(1 0 0 / 0.12); pointer-events: none; }
+.reel-mini-vu { background: radial-gradient(ellipse at 50% 90%, oklch(0.97 0.07 90), oklch(0.8 0.09 75)) !important; border: 3px solid oklch(0.14 0.003 250); box-shadow: inset 0 6px 6px -4px oklch(1 0 0 / 0.4); }
+.reel-mini-needle { stroke: oklch(0.12 0 0) !important; stroke-width: 1.5; }
+[data-zone="red"] .reel-mini-needle { stroke: var(--tape-red) !important; }
+
+/* ===== Realistic patch cords ===== */
+.modular-cable { stroke-width: 5 !important; opacity: 1 !important; filter: drop-shadow(0 3px 2px oklch(0 0 0 / 0.5)); }
+.modular-cable-shadow { stroke: oklch(0 0 0 / 0.35) !important; stroke-width: 8 !important; transform: translateY(4px); filter: blur(1.5px); }
+.modular-cable-sheen { fill: none; stroke: oklch(1 0 0 / 0.38); stroke-width: 1.4; stroke-linecap: round; transform: translate(-0.8px, -1.2px); }
+.modular-plug { fill: oklch(0.2 0 0); stroke: oklch(0.75 0 0); stroke-width: 1.5; }
+.modular-plug-boot { fill: var(--cable); stroke: oklch(0 0 0 / 0.5); stroke-width: 1; }
+
+/* ===== Modular faceplates ===== */
+.modular-module { background: linear-gradient(180deg, oklch(0.84 0.004 250), oklch(0.66 0.006 250)); box-shadow: inset 0 0 0 1px oklch(0.5 0.005 250), inset 0 1px 0 oklch(1 0 0 / 0.6), 0 2px 4px oklch(0 0 0 / 0.5); }
+.modular-module[data-module-type="fold"] { background: linear-gradient(180deg, oklch(0.25 0.02 30), oklch(0.15 0.02 30)); color: oklch(0.9 0.12 60); --foreground: oklch(0.9 0.12 60); }
+.modular-module[data-module-type="ring"] { background: linear-gradient(180deg, oklch(0.35 0.08 250), oklch(0.2 0.06 255)); color: oklch(0.92 0.02 250); --foreground: oklch(0.92 0.02 250); }
+.modular-module[data-module-type="sh"] { background: linear-gradient(180deg, oklch(0.9 0.12 95), oklch(0.72 0.13 85)); }
+.modular-module[data-module-type="chorus"] { background: linear-gradient(180deg, oklch(0.4 0.09 300), oklch(0.22 0.07 300)); color: oklch(0.95 0.02 300); --foreground: oklch(0.95 0.02 300); }
+.modular-module[data-module-type="reverb"] { background: linear-gradient(180deg, oklch(0.2 0.005 250), oklch(0.1 0.005 250)); color: oklch(0.85 0.12 190); --foreground: oklch(0.85 0.12 190); }
+.modular-module:is([data-module-type="fold"],[data-module-type="ring"],[data-module-type="chorus"],[data-module-type="reverb"]) .modular-jack-label { color: inherit; }
