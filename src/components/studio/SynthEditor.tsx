@@ -106,9 +106,10 @@ function SynthTrackEditor({ track }: { track: Track }) {
   const modEnv = patch.modEnv ?? { attack: 0.01, decay: 0.3, sustain: 0.4, release: 0.3 };
   const macros = patch.macros ?? [0, 0, 0, 0];
   const matrix = patch.modMatrix ?? [];
+  const synthStyle = patch.modular ? "modular" : patch.name.startsWith("TD-3") || /ACID/i.test(track.name) ? "acid" : patch.name.startsWith("Poly Synth") || /POLY/i.test(track.name) ? "poly" : "spec4";
   const presetGroups = (() => {
     const all = [
-      ...SYNTH_PRESETS.map((x) => ({ name: x.name, category: x.category })),
+      ...SYNTH_PRESETS.filter((x) => presetMatchesSynth(x.category, synthStyle)).map((x) => ({ name: x.name, category: x.category })),
       ...userPresets.map((x) => ({ name: x.name, category: "My Presets" })),
     ];
     const order: string[] = [];
@@ -126,7 +127,7 @@ function SynthTrackEditor({ track }: { track: Track }) {
   const skin = useSkin("synth");
   const drop = useImageDrop("synth");
   return (
-    <div className="studio-wallpaper hardware-device synth-hardware space-y-4 rounded-md p-3" data-studio-panel="synth" data-synth-style={patch.modular ? "modular" : patch.name.startsWith("TD-3") || /ACID/i.test(track.name) ? "acid" : patch.name.startsWith("Poly Synth") || /POLY/i.test(track.name) ? "poly" : "spec4"} style={skinBackground(skin)} {...drop}>
+    <div className="studio-wallpaper hardware-device synth-hardware space-y-4 rounded-md p-3" data-studio-panel="synth" data-synth-style={synthStyle} style={skinBackground(skin)} {...drop}>
       <div className="synth-badge" aria-hidden>{patch.modular ? "MODULAR TECH SYNTH" : patch.name.startsWith("TD-3") || /ACID/i.test(track.name) ? "ACID BASS · TD-3 STYLE" : patch.name.startsWith("Poly Synth") || /POLY/i.test(track.name) ? "POLY SYNTH · 8 VOICE" : "SPEC 4 SYNTH"}</div>
       <SkinControls skinKey="synth" image />
       <MidiLearnStrip id={track.id} label={`${track.name} — every knob below also has its own MIDI button`} />
@@ -833,3 +834,15 @@ function ChordScale({ trackId, onPlay }: { trackId: string; onPlay: (midi: numbe
   );
 }
 
+
+/** Each synth's preset window lists only presets made for that instrument. */
+export function presetMatchesSynth(category: string, style: string): boolean {
+  const c = category.toLowerCase();
+  const acid = c === "acid bass" || c === "acid";
+  const poly = c === "poly synth";
+  const modular = c === "modular tech";
+  if (style === "acid") return acid;
+  if (style === "poly") return poly;
+  if (style === "modular") return modular;
+  return !acid && !poly && !modular;
+}
