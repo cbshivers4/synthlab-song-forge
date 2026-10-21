@@ -682,22 +682,22 @@ export class SyncLabEngine {
       const size = {
         eq: 4,
         paraeq: 10,
-        filter: 1,
-        drive: 3,
-        compressor: 2,
-        delay: 5,
-        width: 2,
-        gain: 1,
-        reverb: 5,
-        chorus: 4,
+        filter: 5,
+        drive: 7,
+        compressor: 3,
+        delay: 7,
+        width: 3,
+        gain: 3,
+        reverb: 7,
+        chorus: 5,
         flanger: 5,
-        phaser: 7,
-        tremolo: 1,
+        phaser: 3,
+        tremolo: 2,
         autopan: 1,
-        limiter: 1,
-        bitcrusher: 5,
+        limiter: 3,
+        bitcrusher: 6,
         vocoder: 2,
-        gate: 2,
+        gate: 3,
         stepfilter: 5,
         resonator: 12,
         scalechord: 1,
@@ -733,6 +733,17 @@ export class SyncLabEngine {
     const live = (pl: PluginInstance, id: string, fn: (v: number, t: number) => void) =>
       this.liveParams.set(`${targetId}:${pl.id}:${id}`, fn);
     const glide = (param: AudioParam, v: number, t: number) => param.setTargetAtTime(v, t, 0.015);
+    const LFO_SHAPES: OscillatorType[] = ["sine", "triangle", "square"];
+    const lfoShape = (v: number) => LFO_SHAPES[clamp(Math.round(v), 0, 2)] ?? "sine";
+    const dbLive = (pl: PluginInstance, id: string, node: GainNode, fallback = 0) => {
+      node.gain.value = dbToGain(val(pl, id, fallback));
+      live(pl, id, (v, t) => glide(node.gain, dbToGain(v), t));
+    };
+    const mixLive = (pl: PluginInstance, wet: GainNode, dry: GainNode, fallback = 1) => {
+      const m = clamp(val(pl, "mix", fallback), 0, 1);
+      wet.gain.value = m; dry.gain.value = 1 - m;
+      live(pl, "mix", (v, t) => { const x = clamp(v, 0, 1); glide(wet.gain, x, t); glide(dry.gain, 1 - x, t); });
+    };
     for (const k of [...this.liveParams.keys()]) if (k.startsWith(`${targetId}:`)) this.liveParams.delete(k);
 
 
@@ -801,7 +812,10 @@ export class SyncLabEngine {
           live(pl, "cutoff", (v, t) => glide(f.frequency, v, t));
           live(pl, "resonance", (v, t) => glide(f.Q, v, t));
           live(pl, "type", (v) => { const m = Math.round(v); f.type = m === 1 ? "highpass" : m === 2 ? "bandpass" : "lowpass"; });
-          nodes.push(f);
+          const fIn = ctx.createGain(), fWet = ctx.createGain(), fDry = ctx.createGain(), fOut = ctx.createGain();
+          dbLive(pl, "input", fIn); dbLive(pl, "output", fOut); mixLive(pl, fWet, fDry);
+          fIn.connect(f); f.connect(fWet); fWet.connect(fOut); fIn.connect(fDry); fDry.connect(fOut);
+          nodes.push(fIn, f, fWet, fDry, fOut);
           break;
         }
         case "drive": {
@@ -813,12 +827,17 @@ export class SyncLabEngine {
           tone.frequency.value = val(pl, "tone", 6000);
           const out = ctx.createGain();
           out.gain.value = dbToGain(val(pl, "output", 0));
+          const dIn = ctx.createGain(), hp = ctx.createBiquadFilter(), dWet = ctx.createGain(), dDry = ctx.createGain();
+          hp.type = "highpass"; hp.frequency.value = clamp(val(pl, "lowcut", 20), 20, 1000);
+          dbLive(pl, "input", dIn); mixLive(pl, dWet, dDry);
+          dIn.connect(hp); hp.connect(ws);
           ws.connect(tone);
-          tone.connect(out);
+          tone.connect(dWet); dWet.connect(out); dIn.connect(dDry); dDry.connect(out);
           live(pl, "drive", (v) => { ws.curve = makeDistortionCurve(clamp(v, 0, 1)); });
           live(pl, "tone", (v, t) => glide(tone.frequency, v, t));
+          live(pl, "lowcut", (v, t) => glide(hp.frequency, clamp(v, 20, 1000), t));
           live(pl, "output", (v, t) => glide(out.gain, dbToGain(v), t));
-          nodes.push(ws, tone, out);
+          nodes.push(dIn, hp, ws, tone, dWet, dDry, out);
           break;
         }
         case "compressor": {
@@ -835,7 +854,10 @@ export class SyncLabEngine {
           live(pl, "attack", (v, t) => glide(c.attack, v / 1000, t));
           live(pl, "release", (v, t) => glide(c.release, v / 1000, t));
           live(pl, "makeup", (v, t) => glide(out.gain, dbToGain(v), t));
-          nodes.push(c, out);
+          c.knee.value = clamp(val(pl, "knee", 6), 0, 40);
+          live(pl, "knee", (v, t) => glide(c.knee, clamp(v, 0, 40), t));
+          const cIn = ctx.createGain(); dbLive(pl, "input", cIn); cIn.connect(c);
+          nodes.push(cIn, c, out);
           break;
         }
         case "delay": {
@@ -849,14 +871,20 @@ export class SyncLabEngine {
           const out = ctx.createGain();
           inNode.connect(out);
           inNode.connect(d);
-          d.connect(fb);
+          const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = clamp(val(pl, "tone", 12000), 800, 18000);
+          const hp = ctx.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = clamp(val(pl, "lowcut", 40), 20, 2000);
+          d.connect(lp); lp.connect(hp);
+          hp.connect(fb);
           fb.connect(d);
-          d.connect(wet);
+          hp.connect(wet);
           wet.connect(out);
+          dbLive(pl, "output", out);
           live(pl, "time", (v, t) => d.delayTime.setTargetAtTime(clamp(v / 1000, 0.01, 2), t, 0.05));
           live(pl, "feedback", (v, t) => glide(fb.gain, clamp(v, 0, 0.92), t));
           live(pl, "mix", (v, t) => glide(wet.gain, clamp(v, 0, 1), t));
-          nodes.push(inNode, d, fb, wet, out);
+          live(pl, "tone", (v, t) => glide(lp.frequency, clamp(v, 800, 18000), t));
+          live(pl, "lowcut", (v, t) => glide(hp.frequency, clamp(v, 20, 2000), t));
+          nodes.push(inNode, d, lp, hp, fb, wet, out);
           break;
         }
         case "width": {
@@ -885,14 +913,22 @@ export class SyncLabEngine {
           w.gain.value = dbToGain(val(pl, "output", 0));
           live(pl, "width", (v, t) => setW(v, t));
           live(pl, "output", (v, t) => glide(w.gain, dbToGain(v), t));
-          nodes.push(input, w);
+          const wPan = ctx.createStereoPanner(); wPan.pan.value = clamp(val(pl, "pan", 0), -1, 1);
+          live(pl, "pan", (v, t) => glide(wPan.pan, clamp(v, -1, 1), t));
+          w.connect(wPan);
+          nodes.push(input, w, wPan);
           break;
         }
         case "gain": {
           const g2 = ctx.createGain();
           g2.gain.value = dbToGain(val(pl, "gain", 0));
           live(pl, "gain", (v, t) => glide(g2.gain, dbToGain(v), t));
-          nodes.push(g2);
+          const pol = ctx.createGain(); pol.gain.value = val(pl, "phase", 0) >= 0.5 ? -1 : 1;
+          live(pl, "phase", (v, t) => glide(pol.gain, v >= 0.5 ? -1 : 1, t));
+          const gPan = ctx.createStereoPanner(); gPan.pan.value = clamp(val(pl, "pan", 0), -1, 1);
+          live(pl, "pan", (v, t) => glide(gPan.pan, clamp(v, -1, 1), t));
+          g2.connect(pol); pol.connect(gPan);
+          nodes.push(g2, pol, gPan);
           break;
         }
         case "reverb": {
@@ -907,17 +943,26 @@ export class SyncLabEngine {
           inNode.connect(out);
           inNode.connect(pre);
           pre.connect(conv);
-          conv.connect(wet);
+          const rHp = ctx.createBiquadFilter(); rHp.type = "highpass"; rHp.frequency.value = clamp(val(pl, "lowcut", 120), 20, 1000);
+          const rLp = ctx.createBiquadFilter(); rLp.type = "lowpass"; rLp.frequency.value = clamp(val(pl, "tone", 9000), 800, 18000);
+          conv.connect(rHp); rHp.connect(rLp); rLp.connect(wet);
           wet.connect(out);
+          dbLive(pl, "output", out);
           live(pl, "predelay", (v, t) => glide(pre.delayTime, clamp(v / 1000, 0, 0.5), t));
           live(pl, "mix", (v, t) => glide(wet.gain, clamp(v, 0, 1), t));
-          nodes.push(inNode, pre, conv, wet, out);
+          live(pl, "lowcut", (v, t) => glide(rHp.frequency, clamp(v, 20, 1000), t));
+          live(pl, "tone", (v, t) => glide(rLp.frequency, clamp(v, 800, 18000), t));
+          nodes.push(inNode, pre, conv, rHp, rLp, wet, out);
           break;
         }
         case "chorus": {
           const inNode = ctx.createGain();
           const d = ctx.createDelay(0.1);
-          d.delayTime.value = 0.02;
+          d.delayTime.value = clamp(val(pl, "delay", 20), 5, 40) / 1000;
+          const cFb = ctx.createGain(); cFb.gain.value = clamp(val(pl, "feedback", 0), 0, 0.8);
+          d.connect(cFb); cFb.connect(d);
+          live(pl, "delay", (v, t) => glide(d.delayTime, clamp(v, 5, 40) / 1000, t));
+          live(pl, "feedback", (v, t) => glide(cFb.gain, clamp(v, 0, 0.8), t));
           const lfo = ctx.createOscillator();
           lfo.frequency.value = clamp(val(pl, "rate", 1.2), 0.05, 8);
           const lfoGain = ctx.createGain();
@@ -935,13 +980,14 @@ export class SyncLabEngine {
           live(pl, "rate", (v, t) => glide(lfo.frequency, clamp(v, 0.05, 8), t));
           live(pl, "depth", (v, t) => glide(lfoGain.gain, clamp(v, 0, 1) * 0.008, t));
           live(pl, "mix", (v, t) => glide(wet.gain, clamp(v, 0, 1), t));
-          nodes.push(inNode, d, wet, out);
+          nodes.push(inNode, d, cFb, wet, out);
           break;
         }
         case "flanger": {
           const inNode = ctx.createGain();
           const d = ctx.createDelay(0.05);
-          d.delayTime.value = 0.004;
+          d.delayTime.value = clamp(val(pl, "manual", 4), 1, 15) / 1000;
+          live(pl, "manual", (v, t) => glide(d.delayTime, clamp(v, 1, 15) / 1000, t));
           const lfo = ctx.createOscillator();
           lfo.frequency.value = clamp(val(pl, "rate", 0.4), 0.05, 5);
           const lfoGain = ctx.createGain();
@@ -982,11 +1028,13 @@ export class SyncLabEngine {
           const stages: BiquadFilterNode[] = [];
           let liveCenter = center, liveDepth = depth;
           let cur: AudioNode = inNode;
-          for (let i = 0; i < 4; i++) {
+          const stageCount = Math.round(clamp(val(pl, "stages", 4), 2, 8));
+          const q = clamp(val(pl, "resonance", 0.8), 0.2, 8);
+          for (let i = 0; i < stageCount; i++) {
             const ap = ctx.createBiquadFilter();
             ap.type = "allpass";
             ap.frequency.value = center * (1 + i * 0.5);
-            ap.Q.value = 0.8;
+            ap.Q.value = q;
             lfoGain.connect(ap.frequency);
             cur.connect(ap);
             cur = ap;
@@ -1000,7 +1048,8 @@ export class SyncLabEngine {
           live(pl, "depth", (v, t) => { liveDepth = clamp(v, 0, 1); glide(lfoGain.gain, liveCenter * 0.7 * liveDepth, t); });
           live(pl, "center", (v, t) => { liveCenter = clamp(v, 200, 4000); stages.forEach((ap, i) => glide(ap.frequency, liveCenter * (1 + i * 0.5), t)); glide(lfoGain.gain, liveCenter * 0.7 * liveDepth, t); });
           live(pl, "mix", (v, t) => glide(wet.gain, clamp(v, 0, 1), t));
-          nodes.push(inNode, ...stages, wet, out);
+          live(pl, "resonance", (v, t) => stages.forEach((ap) => glide(ap.Q, clamp(v, 0.2, 8), t)));
+          nodes.push(inNode, wet, out);
           break;
         }
         case "tremolo": {
@@ -1009,6 +1058,8 @@ export class SyncLabEngine {
           g.gain.value = 1 - depth / 2;
           const lfo = ctx.createOscillator();
           lfo.frequency.value = clamp(val(pl, "rate", 5), 0.1, 20);
+          lfo.type = lfoShape(val(pl, "shape", 0));
+          live(pl, "shape", (v) => { lfo.type = lfoShape(v); });
           const lfoGain = ctx.createGain();
           lfoGain.gain.value = depth / 2;
           lfo.connect(lfoGain);
@@ -1016,13 +1067,18 @@ export class SyncLabEngine {
           lfo.start();
           live(pl, "rate", (v, t) => glide(lfo.frequency, clamp(v, 0.1, 20), t));
           live(pl, "depth", (v, t) => { const d = clamp(v, 0, 1); glide(g.gain, 1 - d / 2, t); glide(lfoGain.gain, d / 2, t); });
-          nodes.push(g);
+          const tOut = ctx.createGain(); dbLive(pl, "output", tOut); g.connect(tOut);
+          nodes.push(g, tOut);
           break;
         }
         case "autopan": {
           const pan = ctx.createStereoPanner();
           const lfo = ctx.createOscillator();
           lfo.frequency.value = clamp(val(pl, "rate", 1), 0.05, 10);
+          lfo.type = lfoShape(val(pl, "shape", 0));
+          live(pl, "shape", (v) => { lfo.type = lfoShape(v); });
+          pan.pan.value = clamp(val(pl, "center", 0), -1, 1);
+          live(pl, "center", (v, t) => glide(pan.pan, clamp(v, -1, 1), t));
           const lfoGain = ctx.createGain();
           lfoGain.gain.value = clamp(val(pl, "depth", 0.8), 0, 1);
           lfo.connect(lfoGain);
@@ -1042,7 +1098,10 @@ export class SyncLabEngine {
           c.release.value = clamp(val(pl, "release", 60), 5, 500) / 1000;
           live(pl, "ceiling", (v, t) => glide(c.threshold, clamp(v, -12, 0), t));
           live(pl, "release", (v, t) => glide(c.release, clamp(v, 5, 500) / 1000, t));
-          nodes.push(c);
+          const lIn = ctx.createGain(), lOut = ctx.createGain();
+          dbLive(pl, "input", lIn); dbLive(pl, "output", lOut);
+          lIn.connect(c); c.connect(lOut);
+          nodes.push(lIn, c, lOut);
           break;
         }
         case "bitcrusher": {
@@ -1059,11 +1118,14 @@ export class SyncLabEngine {
           inNode.connect(dry);
           dry.connect(out);
           inNode.connect(ws);
-          ws.connect(wet);
+          const bLp = ctx.createBiquadFilter(); bLp.type = "lowpass"; bLp.frequency.value = clamp(val(pl, "tone", 18000), 800, 18000);
+          ws.connect(bLp); bLp.connect(wet);
           wet.connect(out);
+          dbLive(pl, "input", inNode); dbLive(pl, "output", out);
+          live(pl, "tone", (v, t) => glide(bLp.frequency, clamp(v, 800, 18000), t));
           live(pl, "bits", v => { ws.curve = makeBitcrushCurve(Math.round(clamp(v, 2, 16))); });
           live(pl, "mix", (v, t) => { const m = clamp(v, 0, 1); glide(wet.gain, m, t); glide(dry.gain, 1 - m, t); });
-          nodes.push(inNode, ws, wet, dry, out);
+          nodes.push(inNode, ws, bLp, wet, dry, out);
           break;
         }
         case "vocoder": {
@@ -1272,10 +1334,16 @@ export class SyncLabEngine {
           for (let i = 0; i < oc.length; i++) { const x = Math.abs((i / 1024) - 1) * 1.6; oc[i] = x >= thr ? 1 : Math.pow(x / thr, 4); }
           open.curve = oc;
           input.connect(vca);
-          input.connect(rect); rect.connect(smooth); smooth.connect(open); open.connect(vca.gain);
+          const floor = (db: number) => (db <= -79.5 ? 0 : dbToGain(clamp(db, -80, 0)));
+          const span = ctx.createGain();
+          const setRange = (db: number, t?: number) => { const f = floor(db); if (t === undefined) { vca.gain.value = f; span.gain.value = 1 - f; } else { glide(vca.gain, f, t); glide(span.gain, 1 - f, t); } };
+          setRange(val(pl, "range", -80));
+          input.connect(rect); rect.connect(smooth); smooth.connect(open); open.connect(span); span.connect(vca.gain);
+          const gOut = ctx.createGain(); dbLive(pl, "output", gOut); vca.connect(gOut);
           live(pl, "attack", (_v, t) => setSmooth(t));
           live(pl, "release", (_v, t) => setSmooth(t));
-          nodes.push(input, vca);
+          live(pl, "range", (v, t) => setRange(v, t));
+          nodes.push(input, vca, gOut);
           break;
         }
         case "stepfilter": {

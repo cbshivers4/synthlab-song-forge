@@ -5,6 +5,7 @@ import { getEngine } from "@/lib/synclab/audio-engine";
 import { levelColor, peakOf } from "@/lib/synclab/level-colors";
 import { useStudio } from "@/lib/synclab/store";
 import type { PluginInstance } from "@/lib/synclab/types";
+import { withDefaultParams } from "@/lib/synclab/plugins";
 import { EffectDisplay } from "./EffectDisplay";
 import { Scope } from "./Scope";
 import { Knob } from "./Knob";
