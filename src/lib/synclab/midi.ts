@@ -126,7 +126,7 @@ export function midiUnsupportedMessage(): string {
   const ua = typeof navigator === "undefined" ? "" : navigator.userAgent;
   const ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && typeof navigator !== "undefined" && navigator.maxTouchPoints > 1);
   if (ios)
-    return "On iPhone or iPad, update to iOS 18.4 or later and open SYNCLAB in Safari — a USB MIDI controller (Korg nano series and others) works through the Apple USB/Lightning camera adapter, no Apple developer account needed. Bluetooth MIDI is not available to web apps on iOS, so use a cable.";
+    return "On iPhone or iPad, no browser can see MIDI hardware — not Safari at any iOS or iPadOS version, not Chrome or Firefox on iOS either. You still don't need an Apple developer account: install the free MIDIWeb Browser from the App Store (needs iOS/iPadOS 17 or later), open synclabsapp.com inside it, and connect your Korg by USB cable — it adds MIDI to web pages for you. \"Web MIDI Browser\" is another free option (works back to iOS 9). Bluetooth MIDI is not offered there, so use the cable. Or make music with the on-screen Touch Synth and keys, record with the microphone, or use the Mac/Windows desktop app.";
   if (/Android/.test(ua)) return "This Android browser can't see MIDI. Open SYNCLAB in Chrome and connect the keyboard by USB (OTG adapter) or Bluetooth MIDI.";
   return "This browser cannot see MIDI hardware — use Chrome or Edge.";
 }
