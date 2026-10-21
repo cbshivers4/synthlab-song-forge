@@ -56,7 +56,7 @@ export function RotateGate() {
     }
   }, []);
 
-  if (!portrait) return null;
+  if (!portrait || dismissed) return null;
 
   return (
     <div
