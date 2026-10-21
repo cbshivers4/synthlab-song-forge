@@ -2185,6 +2185,5 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
 .device-module[data-fx-skin] .hardware-knob-dial { box-shadow: 0 0 0 1px var(--hardware-trim), var(--hardware-knob-shadow); }
 .fx-face[data-bypassed="true"] { opacity: 0.65; }
 @media (max-width: 767px) { .fx-face .fx-nameplate h3 { font-size: 16px; } .fx-parameter-window { min-width: 85px; } .fx-parameter-window strong { font-size: 18px; } .fx-control-deck { padding: 18px 8px; } }
-.synth-hardware[data-synth-style="acid"] [role="tabpanel"] :is(.hardware-knob, .hardware-knob *) { background-color: revert-layer; }
 .synth-hardware[data-synth-style="acid"] [role="tabpanel"] .hardware-knob-label { font-size: 11px !important; font-weight: 800; color: var(--acid-ink) !important; }
 .synth-hardware[data-synth-style="acid"] [role="tabpanel"] .hardware-knob-value { font-size: 12px !important; font-weight: 700; color: var(--acid-ink) !important; }
