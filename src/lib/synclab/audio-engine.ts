@@ -95,6 +95,8 @@ function makeDistortionCurve(amount: number) {
 
 interface ChannelStrip {
   input: GainNode;
+  /** pre-fader trim driven by the mixer channel's GAIN knob */
+  trim: GainNode;
   gain: GainNode;
   pan: StereoPannerNode;
   meter: AnalyserNode;
@@ -521,6 +523,7 @@ export class SyncLabEngine {
     let ch = this.channels.get(id);
     if (!ch) {
       const input = ctx.createGain();
+      const trim = ctx.createGain();
       const gain = ctx.createGain();
       const pan = ctx.createStereoPanner();
       const meter = ctx.createAnalyser();
@@ -528,7 +531,8 @@ export class SyncLabEngine {
       meter.smoothingTimeConstant = 0.55;
       // channel meter doubles as the strip scope source
       this.pluginScopes.set(`ch:${id}`, meter);
-      input.connect(gain);
+      input.connect(trim);
+      trim.connect(gain);
       const insertOut = ctx.createGain();
       gain.connect(insertOut);
       insertOut.connect(meter);
@@ -546,7 +550,7 @@ export class SyncLabEngine {
       sendReverb.connect(this.reverbSend!);
       sendDelay.connect(this.delaySend!);
       sendChorus.connect(this.chorusSend!);
-      ch = { input, gain, pan, meter, sendReverb, sendDelay, sendChorus, bus: "master", insertNodes: [], insertKey: "", insertOut };
+      ch = { input, trim, gain, pan, meter, sendReverb, sendDelay, sendChorus, bus: "master", insertNodes: [], insertKey: "", insertOut };
       this.channels.set(id, ch);
     }
     return ch;

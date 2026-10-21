@@ -426,6 +426,8 @@ export interface Track {
   /** id from TRACK_ICONS; when unset the icon is picked automatically from the kind */
   icon?: string | undefined;
   volume: number;
+  /** pre-fader input trim (0…2, default 1) — the GAIN knob at the top of the mixer channel */
+  gain?: number | undefined;
   pan: number;
   muted: boolean;
   solo: boolean;
@@ -523,6 +525,8 @@ export interface Transport {
 export interface BusState {
   volume: number;
   muted: boolean;
+  /** pre-fader trim (0…2, default 1) — used on the master strip's GAIN knob */
+  gain?: number | undefined;
 }
 
 /** A folder that groups tracks on the timeline and mixer, like Logic/FL track folders. */
