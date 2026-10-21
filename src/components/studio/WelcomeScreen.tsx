@@ -234,7 +234,7 @@ export function WelcomeScreen() {
               {mode ? (
                 <form onSubmit={submit} className="space-y-3 pt-2">
                   <h2 className="font-mono text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                    {mode === "signup" ? "Create your account" : "Sign in"}
+                    {mode === "signup" ? "Create your account" : mode === "forgot" ? "Reset your password" : mode === "magic" ? "Sign in with an email link" : "Sign in"}
                   </h2>
                   <Input
                     type="email"
@@ -244,26 +244,60 @@ export function WelcomeScreen() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
-                  <Input
-                    type="password"
-                    required
-                    minLength={6}
-                    autoComplete={mode === "signup" ? "new-password" : "current-password"}
-                    placeholder="Password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
+                  {mode !== "forgot" && mode !== "magic" && (
+                    <Input
+                      type="password"
+                      required
+                      minLength={6}
+                      autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                      placeholder="Password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                    />
+                  )}
                   <Button type="submit" className="w-full" disabled={busy}>
-                    {busy ? "WORKING…" : mode === "signup" ? "CREATE ACCOUNT" : "SIGN IN"}
+                    {busy ? "WORKING…" : mode === "signup" ? "CREATE ACCOUNT" : mode === "forgot" ? "SEND RESET LINK" : mode === "magic" ? "SEND SIGN-IN LINK" : "SIGN IN"}
                   </Button>
+                  {mode === "signin" && (
                     <Button
                       variant="link"
-                    type="button"
-                      className="min-h-11 w-full text-center text-xs text-muted-foreground"
-                    onClick={() => setMode(mode === "signup" ? "signin" : "signup")}
-                  >
-                    {mode === "signup" ? "Already have an account? Sign in" : "New here? Create an account"}
+                      type="button"
+                      className="w-full text-center text-xs text-muted-foreground"
+                      onClick={() => setMode("forgot")}
+                    >
+                      Forgot password?
                     </Button>
+                  )}
+                  {mode === "forgot" && (
+                    <Button
+                      variant="link"
+                      type="button"
+                      className="w-full text-center text-xs text-muted-foreground"
+                      onClick={() => setMode("signin")}
+                    >
+                      Back to sign in
+                    </Button>
+                  )}
+                  {mode === "magic" && (
+                    <Button
+                      variant="link"
+                      type="button"
+                      className="w-full text-center text-xs text-muted-foreground"
+                      onClick={() => setMode("signin")}
+                    >
+                      Back to sign in
+                    </Button>
+                  )}
+                  {mode !== "forgot" && mode !== "magic" && (
+                    <Button
+                      variant="link"
+                      type="button"
+                      className="min-h-11 w-full text-center text-xs text-muted-foreground"
+                      onClick={() => setMode(mode === "signup" ? "signin" : "signup")}
+                    >
+                      {mode === "signup" ? "Already have an account? Sign in" : "New here? Create an account"}
+                    </Button>
+                  )}
                 </form>
               ) : (
                 <div className="flex flex-col gap-4 pt-4">
@@ -280,6 +314,13 @@ export function WelcomeScreen() {
                     onClick={() => setMode("signup")}
                   >
                     CREATE ACCOUNT
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="min-h-11 w-full text-xs font-semibold text-muted-foreground underline underline-offset-2"
+                    onClick={() => setMode("magic")}
+                  >
+                    Email me a sign-in link instead
                   </Button>
                 </div>
               )}
