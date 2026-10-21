@@ -1,3 +1,7 @@
+# Individual effect designs
+- [ ] Blend both new references into distinct effect faceplates, knob treatments, parameter windows and contrasting control decks without changing sound processing.
+- [ ] Verify effect identities and working controls on desktop and sideways phone; preserve the EQ design.
+
 # EQ reference restyle
 - [x] Restyle EQ and Pro EQ with a dark frequency chart, colored band areas, yellow combined response, white-centered drag points and clear controls; preserve real signal and processing.
 - [x] Verify both EQs and parameter editing in the signed-in desktop and sideways-phone preview: Channel EQ gain read back 0.36 dB; Pro EQ Bell read back 6 dB with matching curve, phone knob read back 0.1 dB. Screenshots reviewed, no page errors, four existing signal/control tests pass and build OK. Preview only; physical-device listening unverified.

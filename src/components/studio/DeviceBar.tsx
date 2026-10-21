@@ -21,6 +21,8 @@ function EffectModule({ track, plugin }: { track: Track; plugin: PluginInstance 
   return (
     <div
       data-device-kind={plugin.kind}
+      data-fx-skin={plugin.kind}
+      data-fx-variant={plugin.name.toLowerCase().includes("echo") ? "echo" : undefined}
       className={`device-module flex w-[300px] shrink-0 flex-col overflow-hidden rounded-md border ${plugin.bypass ? "opacity-50" : ""}`}
     >
       <button
