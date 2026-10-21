@@ -1265,7 +1265,7 @@ function BusStrip({
       <div className={cn(ROW.head, "flex items-center justify-between border-b border-black/50 px-1.5 font-mono text-[8px] uppercase tracking-widest text-muted-foreground")} style={{ background: tint(16) }}>
         <Screw />
         <ChevronRight className="size-3.5 shrink-0" aria-hidden />
-        <div className="mx-header-gain"><Knob label={`${id} bus gain`} value={state.gain ?? 1} min={0} max={2} step={0.01} size={30} unit="×" onChange={(gain) => onChange({ gain })} midiTarget={{ id: `bus:${id}`, param: "gain" }} /></div>
+        <div className="mx-header-gain"><Knob label={`${id} bus gain`} value={state.volume} min={0} max={1.2} step={0.01} size={30} onChange={(volume) => onChange({ volume })} midiTarget={{ id: `bus:${id}`, param: "volume" }} /></div>
       </div>
       {advanced && (
         <div className={cn(ROW.scope, "border-b border-border/60 p-[3px]")}>

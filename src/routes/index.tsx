@@ -504,7 +504,7 @@ function StudioWorkspace() {
           <SafePanels float={float} setFloat={setFloat} />
           <DetachedPanels />
           {/* The device strip steps out for tools that own the whole workspace: mixer and studio view. */}
-          {((!isMobile && panel !== "mixer" && panel !== "studio-view") || (isMobile && !panel)) && <DeviceBar />}
+          {((!isMobile && panel !== "mixer" && panel !== "studio-view" && panel !== "drums") || (isMobile && !panel)) && <DeviceBar />}
         </main>
       </div>
       <TrackSettingsDialog />
