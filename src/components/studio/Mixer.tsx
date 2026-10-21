@@ -182,7 +182,7 @@ function ChannelGain({ t, narrow }: { t: Track; narrow?: boolean }) {
   const gain = t.gain ?? 1;
   return (
     <div
-      className={cn(ROW.gain, "flex items-center justify-center border-b border-border/60 px-0.5")}
+      className="mx-header-gain flex shrink-0 items-center justify-center"
       onClick={(e) => e.stopPropagation()}
       title={`Input trim ${gain.toFixed(2)}× — before the fader and effects`}
     >
@@ -1030,9 +1030,8 @@ function Strip({
         >
           <ChevronRight className="size-3.5" />
         </button>
+        <ChannelGain t={t} narrow={narrow} />
       </div>
-
-      <ChannelGain t={t} narrow={narrow} />
 
       <div className={cn(ROW.scope, "border-b border-border/60 p-[3px]")}>
           <Scope scopeId={`ch:${t.id}`} height={40} compact color={t.color} />
@@ -1259,13 +1258,14 @@ function BusStrip({
   const tint = (pct: number) => `color-mix(in oklab, ${color} ${pct}%, transparent)`;
   return (
     <div
-      className="flex w-[116px] shrink-0 flex-col border-r border-black/50"
+      className="mx-routing-strip flex w-[116px] shrink-0 flex-col border-r border-black/50"
       style={{ background: `linear-gradient(${tint(8)}, ${tint(8)}), ${PANEL}`, boxShadow: `inset 4px 0 0 0 ${color}, inset 0 1px 0 0 rgba(255,255,255,0.08)` }}
     >
+      <div className={cn(ROW.name, "flex items-center justify-center border-b border-black/50 px-1.5 font-mono text-[11px] uppercase tracking-widest")} style={{ background: tint(16) }}><span>{id} BUS</span></div>
       <div className={cn(ROW.head, "flex items-center justify-between border-b border-black/50 px-1.5 font-mono text-[8px] uppercase tracking-widest text-muted-foreground")} style={{ background: tint(16) }}>
         <Screw />
-        <span className="truncate font-bold text-foreground">{id}</span>
-        <Screw />
+        <ChevronRight className="size-3.5 shrink-0" aria-hidden />
+        <div className="mx-header-gain"><Knob label={`${id} bus gain`} value={state.volume} min={0} max={1.2} step={0.01} size={30} onChange={(volume) => onChange({ volume })} midiTarget={{ id: `bus:${id}`, param: "volume" }} /></div>
       </div>
       {advanced && (
         <div className={cn(ROW.scope, "border-b border-border/60 p-[3px]")}>
@@ -1321,6 +1321,7 @@ function BusStrip({
           {state.muted ? "MUTED" : "MUTE"}
         </button>
       </div>
+      <div className={cn(ROW.icon, "flex items-center justify-center border-t border-border/60")} title={`${id} bus`} aria-hidden><Waves className="size-5" /></div>
     </div>
   );
 }
@@ -1361,8 +1362,9 @@ function ControlStrip({ kind, name, state, onChange, memberCount, level }: {
   const advanced = useApp().mode === "advanced";
   const aux = kind === "AUX";
   return (
-    <div className="flex w-[116px] shrink-0 flex-col border-r border-border bg-surface-2/70">
-      <div className={cn(ROW.head, "flex items-center justify-center border-b border-border font-mono text-[9px] font-bold tracking-wider", aux ? "text-primary" : "text-accent-foreground")}>{kind} {name}</div>
+    <div className="mx-routing-strip flex w-[116px] shrink-0 flex-col border-r border-border bg-surface-2/70">
+      <div className={cn(ROW.name, "flex items-center justify-center border-b border-border font-mono text-[11px] font-bold tracking-wider", aux ? "text-primary" : "text-accent-foreground")}>{kind} {name}</div>
+      <div className={cn(ROW.head, "flex items-center justify-end gap-1.5 border-b border-border px-1.5")}><ChevronRight className="size-3.5 shrink-0" aria-hidden /><div className="mx-header-gain"><Knob label={`${kind} ${name} gain`} value={state.volume} min={0} max={1.2} step={0.01} size={30} onChange={(volume) => onChange({ volume })} midiTarget={{ id: `${aux ? "aux" : "vca"}:${name}`, param: "volume" }} /></div></div>
        <div className={cn(ROW.eq, "flex items-center justify-center gap-1 border-b border-border/60")}><MidiLearnButton id={`${aux ? "aux" : "vca"}:${name}`} param="volume" label={`${kind} ${name} level`} /><MidiLearnButton id={`${aux ? "aux" : "vca"}:${name}`} param="mute" label={`${kind} ${name} mute`} /></div>
       {advanced && <div className={cn(ROW.scope, "flex items-center justify-center border-b border-border/60 font-mono text-[9px] text-muted-foreground")}>{aux ? "FX RETURN" : `${memberCount ?? 0} CHANNELS`}</div>}
       <div className={cn(ROW.devices, "flex items-center border-b border-border/60 p-2")}>
@@ -1380,6 +1382,7 @@ function ControlStrip({ kind, name, state, onChange, memberCount, level }: {
       <div className={cn(ROW.buttons, "px-2 pt-1")}>
         <Button variant={state.muted ? "destructive" : "outline"} size="sm" className="h-8 w-full text-[10px]" onClick={() => onChange({ muted: !state.muted })} aria-label={`${state.muted ? "Unmute" : "Mute"} ${kind} ${name}`}>{state.muted ? "MUTED" : "MUTE"}</Button>
       </div>
+      <div className={cn(ROW.icon, "flex items-center justify-center border-t border-border/60")} title={`${kind} ${name}`} aria-hidden>{aux ? <Waves className="size-5" /> : <Sliders className="size-5" />}</div>
     </div>
   );
 }
@@ -1636,11 +1639,9 @@ function MasterStrip({ level: peak }: { level: number }) {
             <MidiLearnBlock id="master" params={["volume", "mute"]} />
           </PopoverContent>
         </Popover>
-        <Screw />
-      </div>
-      {/* master input trim — the same GAIN row every channel strip carries */}
+        <ChevronRight className="size-3.5 shrink-0" aria-hidden />
       <div
-        className={cn(ROW.gain, "flex items-center justify-center border-b border-black/50 px-0.5")}
+        className="mx-header-gain flex shrink-0 items-center justify-center"
         title={`Master input trim ${(master.gain ?? 1).toFixed(2)}× — before the master fader`}
       >
         <Knob
@@ -1655,6 +1656,7 @@ function MasterStrip({ level: peak }: { level: number }) {
           midiTarget={{ id: "master", param: "gain" }}
         />
       </div>
+      </div>
       {/* live output scope, 3-band EQ and inserts — the same rows, meters and markings as every channel */}
       <div className={cn(ROW.scope, "border-b border-black/50 p-[3px]")}>
         <Scope scopeId="master" height={40} compact color={color} />
@@ -1664,6 +1666,7 @@ function MasterStrip({ level: peak }: { level: number }) {
       <div className={cn(ROW.sends, "border-b border-black/50 px-1 py-[2px]")}>
         <FxMenu target="bus:master" label="Master FX" />
       </div>
+      <div className={cn(ROW.sendBars, "border-b border-border/60")} />
       <div className={cn(ROW.io, "flex items-center justify-center border-b border-border/60 font-mono text-[8px] uppercase tracking-widest text-muted-foreground")}>
         Main out
       </div>

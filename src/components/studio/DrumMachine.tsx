@@ -264,9 +264,9 @@ export function DrumMachine({ track }: { track: Track }) {
   const drop = useImageDrop("drums");
   return (
     <div className="drum-machine studio-wallpaper space-y-3 rounded-md p-3" data-phone-view={isMobile ? phoneView : undefined} data-sideways={isMobile && landscape ? "true" : undefined} data-studio-panel="drums" style={skinBackground(skin)} {...drop}>
-      {isMobile && <div className="grid grid-cols-4 gap-1" role="tablist" aria-label="Drum machine views">
+      <div className="grid grid-cols-4 gap-1" role="tablist" aria-label="Drum machine views">
         {([['roll', 'Drum roll'], ['pads', 'Play pads'], ['sound', 'Sound'], ['kit', 'Kit']] as const).map(([id, label]) => <Button key={id} role="tab" aria-selected={phoneView === id} variant={phoneView === id ? "default" : "secondary"} className="h-12 min-w-0 px-1" onClick={() => setPhoneView(id)}>{label}</Button>)}
-      </div>}
+      </div>
       <div className="drum-skin"><SkinControls skinKey="drums" image /></div>
 
       <div className="drum-patterns flex flex-wrap items-center gap-2" role="group" aria-label="Drum patterns">
@@ -291,12 +291,12 @@ export function DrumMachine({ track }: { track: Track }) {
       </div>
 
       {/* Step sequencer */}
-      {(!isMobile || phoneView !== 'roll') && <DrumBulkControls track={track} />}
+      {phoneView !== 'roll' && <DrumBulkControls track={track} />}
       {isMobile && (phoneView === "roll" || phoneView === "pads") && <div className="grid grid-cols-2 gap-2" aria-label="Drum playback">
         <Button variant="secondary" className="h-12" onClick={transport.playing ? stop : togglePlay}>{transport.playing ? "Stop beat" : "Play beat"}</Button>
         <Button variant={tapRec ? "destructive" : "outline"} className="h-12" aria-pressed={tapRec} onClick={() => { setTapRec(!tapRec); if (!tapRec && !transport.playing) togglePlay(); }}>{tapRec ? "Stop tap REC" : "Tap REC"}</Button>
       </div>}
-      {isMobile && phoneView === "roll" && <DrumRoll track={track} initialFull />}
+      {phoneView === "roll" && <DrumRoll track={track} initialFull />}
       {isMobile && phoneView === "steps" && (
         <div className="grid grid-cols-[48px_minmax(0,1fr)_48px] items-center gap-2" aria-label="Drum pattern step pages">
           <Button variant="outline" size="icon" className="size-12" aria-label="Previous pattern steps" disabled={currentStepPage === 0} onClick={() => setStepPage(Math.max(0, currentStepPage - 1))}><ChevronLeft /></Button>
@@ -304,7 +304,7 @@ export function DrumMachine({ track }: { track: Track }) {
           <Button variant="outline" size="icon" className="size-12" aria-label="Next pattern steps" disabled={currentStepPage === stepPages - 1} onClick={() => setStepPage(Math.min(stepPages - 1, currentStepPage + 1))}><ChevronRight /></Button>
         </div>
       )}
-      <div aria-label="Drum pattern steps" className="drum-steps max-h-48 space-y-1 overflow-auto">
+      <div aria-label="Drum pattern steps" className="drum-steps max-h-48 space-y-1 overflow-auto" hidden={!isMobile || phoneView !== "steps"}>
         {pads.map((pad) => (
           <div key={pad.id} className="space-y-1" ref={(el) => { if (el) rowRefs.current.set(pad.id, el); else rowRefs.current.delete(pad.id); }}>
             <div className="flex items-center gap-2">
@@ -370,7 +370,7 @@ export function DrumMachine({ track }: { track: Track }) {
       </div>
 
       {/* Toolbar */}
-      <div className="drum-kit-tools flex flex-wrap items-center gap-2">
+      <div hidden={!isMobile && phoneView !== "kit"} className="drum-kit-tools flex flex-wrap items-center gap-2">
         <span className="font-mono text-[10px] text-muted-foreground">ORIGINAL SYNTHESIS · MACHINE-INSPIRED</span>
         <Select value={kit} onValueChange={(v) => loadKit(v as DrumKitId)}>
           <SelectTrigger className="w-56">
@@ -454,7 +454,7 @@ export function DrumMachine({ track }: { track: Track }) {
         </Button>
       </div>
 
-      <div className="drum-presets flex flex-wrap items-center gap-2">
+      <div hidden={!isMobile && phoneView !== "kit"} className="drum-presets flex flex-wrap items-center gap-2">
         <span className="label-xs">SOUND PRESET</span>
         <Select value="" onValueChange={loadPreset}>
           <SelectTrigger className="w-48">
@@ -479,7 +479,7 @@ export function DrumMachine({ track }: { track: Track }) {
       </div>
 
       {/* Impact-style instrument surface */}
-      <div className="drum-surface rounded-[3px] border border-border bg-background/70 p-2">
+      <div hidden={!isMobile && phoneView !== "pads" && phoneView !== "sound"} className="drum-surface rounded-[3px] border border-border bg-background/70 p-2" data-desktop-view={!isMobile ? phoneView : undefined}>
         {/* Display strip */}
         <div className="drum-display mb-2 flex items-center justify-between rounded-[3px] border border-border bg-background/60 px-3 py-2">
           <span className="font-display text-lg font-bold tracking-wide text-foreground/90">

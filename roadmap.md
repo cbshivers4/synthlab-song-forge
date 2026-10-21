@@ -338,3 +338,10 @@
 - [x] Oct 21: MPC-style rubber pads (drum machine + pad sampler), looper mic capture without voice processing + safety limiter, per-synth highlighted PRESET window, real-look VU meters and aluminium reels, realistic patch cords with plugs, 5 new modular devices (Wavefolder, Ring Mod, Sample & Hold, Chorus, Spring Verb).
 - [x] Oct 21: drum machine and sample pad cells are now true squares — both grids size every cell from one square variable and the fixed pad heights are gone. Measured signed-in: desktop drum pads 115×115, desktop sample pads 168×168, sideways-phone drum pads 112×112, sideways-phone sample pads 96×96; close-up confirmed a square face with icons, labels and S/M buttons readable. Portrait still shows the rotate prompt. Preview only.
 - [x] Oct 21: corrected the iPhone/iPad MIDI advice — Safari has no Web MIDI at any iOS/iPadOS version (the earlier "iOS 18.4 + cable works in Safari" line was wrong; that version belongs to a macOS-only Safari extension). midiUnsupportedMessage() now points to the free App Store MIDIWeb Browser (iOS/iPadOS 17+) or Web MIDI Browser (iOS 9+) opened on synclabsapp.com with a USB cable, plus on-screen instruments and the desktop app. Preview only.
+
+# Current studio corrections
+- [x] Fit desktop drum roll without scrolling and highlight Pad Sampler pattern section
+- [x] Align mixer GAIN headers and bottom icons across all strip types
+- [x] Make Acid Bass controls readable
+- [x] Start Plugins/Other Apps collapsed; desktop co-producer unavailable, phone unchanged
+- [x] Verify corrected views in preview

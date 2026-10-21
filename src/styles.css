@@ -1387,6 +1387,8 @@ html[data-reduce-motion] *, html[data-reduce-motion] *::before, html[data-reduce
   --surface: oklch(0.72 0.01 250); --surface-2: oklch(0.8 0.008 250); --border: oklch(0.55 0.01 250);
   --foreground: oklch(0.18 0.01 250); --muted-foreground: oklch(0.35 0.01 250); --background: oklch(0.86 0.005 250);
   --primary-foreground: oklch(0.98 0 0);
+  --muted: oklch(0.77 0.008 250); --accent: oklch(0.8 0.008 250); --accent-foreground: oklch(0.18 0.01 250);
+  --surface-1: oklch(0.78 0.008 250); --card: oklch(0.8 0.008 250); --card-foreground: oklch(0.18 0.01 250);
   background-image: linear-gradient(180deg, oklch(0.84 0.006 250), oklch(0.7 0.01 250));
   color: var(--foreground);
 }
@@ -2026,3 +2028,51 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
 .drum-roll:not(.phone-drum-roll) .drum-step { height: 14px; }
 .drum-roll:not(.phone-drum-roll) .drum-step + .drum-step, .drum-roll:not(.phone-drum-roll) .drum-step { margin: 0; }
 .drum-roll:not(.phone-drum-roll) div:has(> .drum-step) { padding-top: 2px; padding-bottom: 2px; }
+
+/* One readable header and matching foot rows across every mixer strip. */
+.mx-console:not(.mx-phone) :is(.mx-channel, .mx-master, .mx-routing-strip) > .mx-row-head { height: 68px !important; flex-wrap: nowrap; gap: 2px; justify-content: flex-end; overflow: visible; }
+.mx-header-gain { width: 46px; min-width: 46px; }
+.mx-header-gain .hardware-knob { width: 100%; min-width: 0; }
+.mx-header-gain .hardware-knob-label { font-size: 0; white-space: nowrap; }
+.mx-header-gain .hardware-knob-label::after { content: "GAIN"; font-size: 8px; }
+.mx-header-gain .hardware-knob { gap: 0; }
+.mx-header-gain .hardware-knob-dial { flex-shrink: 0; }
+.mx-header-gain .hardware-knob button { height: 12px !important; min-height: 12px !important; font-size: 7px; padding: 0 2px; }
+.mx-header-gain .hardware-knob-value { min-height: 10px; font-size: 9px; line-height: 10px; }
+.mx-console:not(.mx-phone) .mx-routing-strip > div { flex-shrink: 0; }
+.mx-console:not(.mx-phone) :is(.mx-master, .mx-routing-strip) > .mx-row-eq { height: 112px !important; min-height: 112px !important; }
+.mx-console:not(.mx-phone) .mx-routing-strip > .mx-row-buttons { order: 10; height: 56px; }
+.mx-console:not(.mx-phone) :is(.mx-channel, .mx-master, .mx-routing-strip) > .mx-row-icon { order: 12; height: 34px; margin-top: auto; }
+.mx-console[data-touch-console="true"] .mx-row-head { min-height: 68px !important; flex-wrap: nowrap !important; }
+.synth-hardware[data-synth-style="acid"] [role="tablist"] { background: var(--surface-2); border: 1px solid var(--border); }
+.synth-hardware[data-synth-style="acid"] [role="tab"] { color: var(--foreground); background-color: var(--surface); border: 1px solid var(--border); }
+.synth-hardware[data-synth-style="acid"] [role="tab"][data-state="active"] { background: var(--primary); color: var(--primary-foreground); border-color: var(--primary); }
+.drum-machine [hidden] { display: none !important; }
+.drum-machine:not([data-phone-view]) { padding: 6px; }
+.drum-machine:not([data-phone-view]) > [role="tablist"] button { height: 28px; min-height: 28px; }
+.drum-machine:not([data-phone-view]) .drum-skin { position: static; }
+.drum-machine:not([data-phone-view]) .drum-roll [aria-label="Drum roll grid"] { max-height: none; overflow: visible; }
+.drum-machine:not([data-phone-view]) .drum-roll [aria-label="Drum roll grid"] > div { min-width: 0; }
+.drum-machine:not([data-phone-view]) [data-desktop-view="sound"] .drum-pad-grid,
+.drum-machine:not([data-phone-view]) [data-desktop-view="sound"] .drum-side-banks { display: none; }
+.drum-machine:not([data-phone-view]) [data-desktop-view="sound"] .drum-sound-controls { width: 100%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.mx-console:not(.mx-phone) :is(.mx-channel, .mx-master, .mx-routing-strip) { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: 34px 68px 64px 112px 28px 26px 50px 30px 160px 22px 56px 30px 34px; align-content: start; }
+.mx-console:not(.mx-phone) .mx-channel > .mx-row-head { padding-inline: 2px; }
+.mx-console:not(.mx-phone) .mx-channel > .mx-row-head > button { flex-shrink: 1; min-width: 10px; }
+.mx-console:not(.mx-phone) :is(.mx-channel, .mx-master, .mx-routing-strip) > div { height: 100% !important; min-height: 0 !important; margin-top: 0; }
+.mx-console:not(.mx-phone) .mx-row-name { grid-row: 1; }
+.mx-console:not(.mx-phone) .mx-row-head { grid-row: 2; }
+.mx-console:not(.mx-phone) .mx-row-inserts { grid-row: 3; }
+.mx-console:not(.mx-phone) .mx-row-eq { grid-row: 4; }
+.mx-console:not(.mx-phone) .mx-row-sends { grid-row: 5; }
+.mx-console:not(.mx-phone) .mx-row-send-bars { grid-row: 6; }
+.mx-console:not(.mx-phone) .mx-row-routing { grid-row: 7; }
+.mx-console:not(.mx-phone) .mx-row-pan { grid-row: 8; }
+.mx-console:not(.mx-phone) .mx-row-fader { grid-row: 9; }
+.mx-console:not(.mx-phone) .mx-row-readout { grid-row: 10; }
+.mx-console:not(.mx-phone) .mx-row-buttons { grid-row: 11; }
+.mx-console:not(.mx-phone) .mx-row-scope { grid-row: 12; }
+.mx-console:not(.mx-phone) .mx-row-icon { grid-row: 13; }
+.mx-console:not(.mx-phone) .mx-routing-strip > .mx-row-eq,
+.mx-console:not(.mx-phone) .mx-master > .mx-row-eq { height: 100% !important; min-height: 0 !important; }
+.synth-hardware[data-synth-style="acid"] .label-xs { color: var(--foreground); }
