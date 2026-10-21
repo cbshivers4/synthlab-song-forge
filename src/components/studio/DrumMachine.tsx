@@ -528,7 +528,7 @@ export function DrumMachine({ track }: { track: Track }) {
           </div>
 
           {/* Original pad proportions, with instrument artwork beside the labels. */}
-          <div className="drum-pad-grid grid min-w-0 flex-1 grid-cols-5 gap-2">
+          <div className="drum-pad-grid grid min-w-0 flex-1 gap-2">
             {pads.map((pad, padIndex) => {
               const focused = focusPad?.id === pad.id;
               const hasSteps = pad.steps.some((v) => v > 0);
@@ -548,7 +548,7 @@ export function DrumMachine({ track }: { track: Track }) {
                     }
                   }}
                   className={cn(
-                    "mpc-pad mpc-pad-rubber relative flex min-h-16 cursor-pointer flex-col justify-between p-1.5 text-left outline-none focus-visible:ring-1 focus-visible:ring-ring",
+                    "mpc-pad mpc-pad-rubber relative flex cursor-pointer flex-col justify-between p-1.5 text-left outline-none focus-visible:ring-1 focus-visible:ring-ring",
                     focused && "is-lit",
                   )}
                 >

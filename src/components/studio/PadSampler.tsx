@@ -740,7 +740,7 @@ export function PadSampler() {
                         ? { borderColor: `color-mix(in hsl, ${c} 60%, transparent)` }
                         : undefined
               }
-              className={`sample-pad-wallpaper mpc-pad relative flex h-28 min-w-0 touch-none flex-col items-start justify-between whitespace-normal p-2 text-left select-none ${
+              className={`sample-pad-wallpaper mpc-pad relative flex min-w-0 touch-none flex-col items-start justify-between whitespace-normal p-2 text-left select-none ${
                 pad || recording ? "" : "mpc-pad-rubber"
               } ${active ? "is-lit" : ""} ${recording ? "animate-pulse" : ""}`}
             >
