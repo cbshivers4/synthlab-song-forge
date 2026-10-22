@@ -989,7 +989,7 @@ html[data-reduce-motion] *, html[data-reduce-motion] *::before, html[data-reduce
 /* Sideways phone Edit screen: one scrolling page (title + timeline move together) */
 .phone-edit-scroll { touch-action: pan-y; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
 /* Default finishes follow the phone palette; custom wallpaper stays available. */
-.phone-console .studio-wallpaper:not([style*="background-image"]),
+.phone-console .studio-wallpaper:not([style*="background-image"]):not(.hardware-device),
 .phone-console .creative-tool { background: var(--surface); }
 .phone-console .creative-tool .panel { background-image: none; background-color: var(--surface); }
 /* The phone login keeps the same studio photo as desktop, under a dark graphite veil. */
