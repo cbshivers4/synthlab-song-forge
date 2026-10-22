@@ -1,4 +1,4 @@
-import { Circle, ClipboardPaste, Copy, Headphones, Layers, Mic, Piano, Play, Repeat, Scissors, Square, SquareSplitHorizontal, Timer, Trash2, X } from 'lucide-react';
+import { Circle, ClipboardPaste, Copy, Layers, Metronome, Mic, Piano, Play, Repeat, Scissors, Square, SquareSplitHorizontal, Timer, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -50,7 +50,7 @@ export function WorkflowBar() {
         <SelectTrigger aria-label="Recording count-in" className="h-8 w-32 shrink-0 text-[11px]"><SelectValue /></SelectTrigger>
         <SelectContent><SelectItem value="0">Count-in off</SelectItem>{[1, 2, 4].map((bars) => <SelectItem key={bars} value={String(bars)}>Count-in {bars} {bars === 1 ? 'bar' : 'bars'}</SelectItem>)}</SelectContent>
       </Select>
-      <Button size="icon" variant={transport.metronome ? 'default' : 'ghost'} className="size-8 shrink-0" aria-label="Recording metronome" aria-pressed={!!transport.metronome} title="Metronome" onClick={() => setTransport({ metronome: !transport.metronome })}><Headphones className="size-3.5" /></Button>
+      <Button size="icon" variant={transport.metronome ? 'default' : 'ghost'} className="size-8 shrink-0" aria-label="Recording metronome" aria-pressed={!!transport.metronome} title="Metronome" onClick={() => setTransport({ metronome: !transport.metronome })}><Metronome className="size-3.5" /></Button>
       <span className="shrink-0 border-l border-border pl-2 font-mono text-[10px] text-muted-foreground">LOOP {positionLabel(bounds[0])}–{positionLabel(bounds[1])}</span>
       {panel && <Button size="icon" variant="ghost" className="ml-auto size-8 shrink-0" aria-label="Return to arrangement" title="Return to arrangement" onClick={() => setPanel(null)}><X className="size-4" /></Button>}
     </div>
