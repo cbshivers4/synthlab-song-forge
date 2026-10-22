@@ -2262,3 +2262,15 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
 .synth-hardware[data-synth-style="acid"] [role="tabpanel"] .hardware-knob-label { font-size: 11px !important; font-weight: 800; color: var(--acid-ink) !important; }
 .synth-hardware[data-synth-style="acid"] [role="tabpanel"] .hardware-knob-value { font-size: 12px !important; font-weight: 700; color: var(--acid-ink) !important; }
 .synth-hardware[data-synth-style="acid"] [role="tabpanel"] span.grow.overflow-hidden.rounded-full { min-width: 100%;  background: oklch(0.45 0.01 260) !important; }
+
+/* Short sideways phones (real landscape ≤420px tall, or rotated canvas on narrow portrait phones):
+   the drum controls leave too little height for 17 rows, so the drum page scrolls as one
+   page and every row keeps a readable, tappable height instead of being squashed. */
+@media (max-height: 420px), (orientation: portrait) and (max-width: 420px) {
+  .phone-console .phone-tool-panel:has(.drum-roll-fit) .phone-page-viewport { overflow-y: auto; display: block; }
+  .phone-console .drum-machine:has(.drum-roll-fit) { display: grid; grid-template-rows: auto auto auto; overflow: visible; flex: none; }
+  .phone-console .drum-roll-fit { flex: none !important; }
+  .phone-console .drum-roll-fit [aria-label="Drum roll grid"] { flex: none; overflow: visible; }
+  .phone-console .drum-roll-fit .drum-fit-rows { min-height: 0; grid-auto-rows: 26px; }
+  .phone-console .drum-roll-fit .drum-fit-rows { grid-template-rows: 20px repeat(var(--drum-fit-rows, 17), 26px) !important; }
+}
