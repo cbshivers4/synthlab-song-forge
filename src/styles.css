@@ -2366,6 +2366,77 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
 .synth-hardware[data-synth-style="acid"] [role="tabpanel"] .hardware-knob-value { font-size: 12px !important; font-weight: 700; color: var(--acid-ink) !important; }
 .synth-hardware[data-synth-style="acid"] [role="tabpanel"] span.grow.overflow-hidden.rounded-full { min-width: 100%;  background: oklch(0.45 0.01 260) !important; }
 
+/* Instrument console finishes: shared working controls, distinct physical identities. */
+:root {
+  --instrument-graphite: oklch(0.28 0.004 250);
+  --instrument-graphite-hi: oklch(0.38 0.005 250);
+  --instrument-silver: oklch(0.76 0.005 250);
+  --instrument-silver-hi: oklch(0.86 0.004 250);
+  --instrument-wood-edge: oklch(0.37 0.065 55);
+  --instrument-metal-face: linear-gradient(165deg, var(--instrument-graphite-hi), var(--instrument-graphite) 65%);
+  --instrument-silver-face: linear-gradient(165deg, var(--instrument-silver-hi), var(--instrument-silver));
+  --instrument-silver-knob: conic-gradient(from 30deg, var(--hardware-silver-dark), var(--hardware-silver-light), var(--hardware-silver), var(--hardware-silver-dark), var(--hardware-silver-light), var(--hardware-silver-dark));
+  --instrument-recess: inset 0 2px 5px var(--hardware-shade), inset 0 -1px var(--hardware-highlight);
+}
+.synth-hardware { position: relative; isolation: isolate; border: 3px solid var(--hardware-black); border-top: 7px solid var(--hardware-rubber-edge); }
+.synth-hardware:not([style*="background-image"]) { background-image: var(--hardware-brush), var(--instrument-metal-face); }
+.synth-hardware .synth-badge { display: block; font-size: 24px; font-style: italic; border-bottom: 1px solid var(--hardware-highlight); color: var(--primary); padding: 8px 12px; background: var(--instrument-metal-face); box-shadow: var(--hardware-case-shadow); }
+.synth-preset-deck { padding: 12px; border: 1px solid var(--hardware-black); background: var(--hardware-brush), var(--instrument-metal-face); box-shadow: var(--instrument-recess); border-radius: 4px; --foreground: var(--hardware-ink); --muted-foreground: var(--hardware-silver); --surface: var(--hardware-rubber); --background: var(--hardware-black); --border: var(--hardware-rubber-edge); }
+.synth-hardware .synth-preset-window { --lcd-hi: var(--hardware-black); --lcd-lo: var(--hardware-black); --lcd-ink: var(--primary); --lcd-bezel: var(--hardware-rubber-edge); text-shadow: none; letter-spacing: 0; }
+.synth-console-tabs > [role="tablist"] { padding: 5px; border: 1px solid var(--hardware-black); background: var(--instrument-metal-face); box-shadow: var(--hardware-case-shadow); }
+.synth-console-tabs > [role="tablist"] [role="tab"] { color: var(--hardware-silver-light); border: 1px solid var(--hardware-rubber-edge); background-color: var(--hardware-rubber); }
+.synth-console-tabs > [role="tablist"] [data-state="active"] { color: var(--primary-foreground); background-color: var(--primary); }
+.synth-hardware .synth-osc-module { border-top: 4px solid var(--primary); background-image: var(--hardware-brush), var(--instrument-metal-face); box-shadow: var(--hardware-case-shadow); }
+.synth-hardware .synth-osc-module > div:first-child { background: var(--hardware-black); color: var(--hardware-ink); }
+.synth-hardware .hardware-knob-dial { background: var(--hardware-black); box-shadow: 0 0 0 1px var(--hardware-rubber-edge), var(--hardware-knob-shadow); }
+.synth-hardware .hardware-knob-cap { background: var(--instrument-silver-knob); }
+.synth-hardware .hardware-knob-pointer i { background: var(--hardware-dark-ink); height: 36%; }
+.synth-hardware .hardware-knob-value { padding: 1px 5px; background: var(--hardware-black); color: var(--primary); border: 1px solid var(--hardware-rubber-edge); border-radius: 2px; }
+.synth-hardware[data-synth-style="spec4"] { --surface: var(--instrument-graphite); --surface-2: var(--instrument-graphite-hi); --foreground: var(--hardware-ink); --muted-foreground: var(--hardware-silver); --hardware-scale: var(--primary); }
+.synth-hardware[data-synth-style="spec4"] .synth-console-tabs > [role="tabpanel"]:not([data-state="inactive"]) { padding: 12px; border: 1px solid var(--hardware-black); background: var(--hardware-brush), var(--instrument-silver-face); --foreground: var(--hardware-dark-ink); --muted-foreground: var(--hardware-rubber-edge); --surface: var(--instrument-silver); --surface-2: var(--instrument-silver-hi); --background: var(--instrument-silver-hi); --border: var(--hardware-silver-dark); }
+.synth-hardware[data-synth-style="spec4"] .synth-osc-module { --foreground: var(--hardware-ink); --muted-foreground: var(--hardware-silver); --border: var(--hardware-rubber-edge); }
+.synth-hardware[data-synth-style="acid"] { border-inline: 8px solid var(--hardware-rubber); }
+.synth-hardware[data-synth-style="acid"]:not([style*="background-image"]) { background-image: var(--hardware-brush), var(--instrument-silver-face); }
+.synth-hardware[data-synth-style="acid"] .synth-badge { font-style: normal; color: var(--hardware-dark-ink); background: var(--instrument-silver-face); border-left: 6px solid var(--primary); }
+.synth-hardware[data-synth-style="acid"] .hardware-knob-grip { background: var(--instrument-silver-knob); }
+.synth-hardware[data-synth-style="poly"] { border-inline: 16px solid var(--instrument-wood-edge); --surface: var(--instrument-graphite); --surface-2: var(--instrument-graphite-hi); --border: var(--hardware-rubber-edge); }
+.synth-hardware[data-synth-style="poly"]::before, .drum-hardware::before, .drum-hardware::after { content: ""; position: absolute; top: 0; bottom: 0; width: 16px; background: url("./assets/rack-walnut.jpg") center / auto 100%; box-shadow: inset 1px 0 var(--hardware-highlight), inset -2px 0 var(--hardware-shade); pointer-events: none; }
+.synth-hardware[data-synth-style="poly"]::before { left: -16px; }
+.synth-hardware[data-synth-style="poly"] .synth-badge { font-style: normal; border-bottom: 3px double var(--primary); }
+.synth-hardware[data-synth-style="poly"] .synth-osc-module { border-top-width: 1px; border-left: 4px solid var(--primary); }
+.synth-hardware[data-synth-style="poly"] .hardware-knob-cap { background: var(--hardware-cap-face); }
+.synth-hardware[data-synth-style="poly"] .hardware-knob-pointer i { background: var(--primary); }
+.synth-hardware[data-synth-style="modular"] { border-top: 9px double var(--hardware-silver-dark); }
+.synth-hardware[data-synth-style="modular"] .synth-badge { font-family: var(--font-mono); font-size: 22px; font-style: normal; border-inline: 12px solid var(--hardware-rubber); }
+.synth-hardware[data-synth-style="modular"] .modular-module .hardware-knob-value { color: var(--hardware-ink); }
+.synth-hardware[data-synth-style="spec4"] .synth-osc-module .hardware-knob-label { color: var(--hardware-dark-ink); font-weight: 700; }
+.synth-hardware[data-synth-style="spec4"] .synth-osc-module .hardware-knob button { color: var(--hardware-dark-ink); }
+.synth-hardware[data-synth-style="acid"] .synth-console-tabs [role="tabpanel"] .hardware-knob .hardware-knob-value.hardware-knob-value { color: var(--hardware-silver-light) !important; }
+.synth-hardware[data-synth-style="acid"] .synth-console-tabs [role="tabpanel"] .synth-osc-module > div:first-child > span:not(.rounded-full) { color: var(--hardware-ink) !important; }
+.synth-preset-deck button:not([data-state="checked"]) { color: var(--hardware-ink); }
+.drum-hardware { position: relative; isolation: isolate; border: 3px solid var(--hardware-black); border-inline: 16px solid var(--instrument-wood-edge); --foreground: var(--hardware-ink); --muted-foreground: var(--hardware-silver); --surface: var(--instrument-graphite); --surface-2: var(--instrument-graphite-hi); --border: var(--hardware-rubber-edge); --hardware-scale: var(--hardware-silver); --hardware-mark: var(--hardware-dark-ink); }
+.drum-hardware:not([style*="background-image"]) { background-image: var(--hardware-brush), var(--instrument-metal-face); }
+.drum-hardware::before { left: -16px; } .drum-hardware::after { right: -16px; }
+.drum-hardware .drum-patterns { border-block: 1px solid var(--hardware-black); background: var(--instrument-metal-face); box-shadow: var(--instrument-recess); padding: 6px; }
+.drum-hardware .drum-display { background: var(--hardware-black); border: 2px solid var(--hardware-rubber-edge); box-shadow: var(--instrument-recess); }
+.drum-hardware .drum-surface { background: var(--hardware-black); border: 2px solid var(--hardware-rubber-edge); box-shadow: var(--instrument-recess); }
+.drum-hardware .drum-sound-controls > div { background: var(--hardware-brush), var(--instrument-metal-face); box-shadow: var(--hardware-case-shadow); }
+.drum-hardware .hardware-knob-grip { inset: 12%; background: var(--instrument-silver-knob); border: 2px solid var(--hardware-black); }
+.drum-hardware .hardware-knob-cap { background: var(--instrument-silver-knob); border: 0; }
+.drum-hardware .hardware-knob-pointer i { background: var(--hardware-dark-ink); height: 38%; }
+.drum-hardware .hardware-knob-value { color: var(--hardware-silver-light); }
+.drum-hardware .mpc-pad-rubber { background: var(--instrument-metal-face) !important; border: 2px solid var(--hardware-black); box-shadow: inset 0 1px var(--hardware-highlight), inset 0 -5px 8px var(--hardware-shade), 0 3px 0 var(--hardware-black) !important; }
+.drum-hardware .mpc-pad-rubber.is-lit { background: linear-gradient(145deg, color-mix(in oklab, var(--destructive) 75%, var(--hardware-silver)), var(--destructive)) !important; }
+@media (max-width: 767px), (orientation: landscape) and (max-height: 600px) and (max-width: 1100px) {
+  .drum-hardware { border-inline-width: 7px; }
+  .drum-hardware::before, .drum-hardware::after { width: 7px; }
+  .drum-hardware::before { left: -7px; } .drum-hardware::after { right: -7px; }
+  .synth-hardware .synth-badge { font-size: 20px; padding: 6px 8px; }
+  .synth-preset-deck { padding: 8px; }
+  .synth-preset-deck > [role="combobox"] { max-width: 100%; }
+  .phone-console .drum-hardware:has(.drum-roll-fit) .drum-patterns { padding: 0; }
+}
+
 /* Short sideways phones (real landscape ≤420px tall, or rotated canvas on narrow portrait phones):
    the drum controls leave too little height for 17 rows, so the drum page scrolls as one
    page and every row keeps a readable, tappable height instead of being squashed. */

@@ -54,4 +54,5 @@ Shortcuts share studio actions and yield to controls/claimed keys to avoid doubl
 Bulk drums use atomic store transforms preserving empty steps, loop bounds and hit metadata; shared controls prevent divergent editors.
 Sound screens use shared tokens and real parameter drag points with 20 fps signal drawing, never fake wave activity.
 Plugins cabinet presentation wraps existing RackEffect instances and a responsive installed-device browser; cabinet texture and scoped faceplate styles never change processing or duplicate plugin state.
+Synth and drum console finishes scope shared Knob parts and section hooks to the existing instrument wrappers; retain tab structure and DrumRoll geometry so hardware styling never changes audio or phone editing.
 Studio rear presentation follows the front room's furniture zones in one measured canvas; phone overview scales that entire canvas (including cable SVG) inside a sized scroll wrapper, while full-size inspection preserves native scrolling and real routing.
