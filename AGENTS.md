@@ -53,3 +53,4 @@ Project exits use AppProvider/ProjectCloseGuard on both layouts: compare musical
 Shortcuts share studio actions and yield to controls/claimed keys to avoid doubling.
 Bulk drums use atomic store transforms preserving empty steps, loop bounds and hit metadata; shared controls prevent divergent editors.
 Sound screens use shared tokens and real parameter drag points with 20 fps signal drawing, never fake wave activity.
+Studio rear presentation follows the front room's furniture zones while measuring jacks and cables in one scrollable canvas; this preserves spatial continuity and sideways-phone cable alignment without altering audio routing.

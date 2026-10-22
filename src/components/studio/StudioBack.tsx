@@ -1,9 +1,10 @@
 import { useLayoutEffect, useRef, useState } from "react";
-import { Cable, Unplug, SlidersHorizontal, Cpu, Drum, KeyboardMusic, Mic, Disc3, Speaker, AudioLines } from "lucide-react";
+import { Cable, Unplug, Cpu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStudio } from "@/lib/synclab/store";
 import type { PluginInstance, Track } from "@/lib/synclab/types";
 import { toast } from "sonner";
+import roomImage from "@/assets/studio-room.jpg";
 
 /**
  * Reason-style rear of the studio rack. Every cable mirrors the real signal
@@ -90,7 +91,8 @@ export function StudioBack() {
     }
   }
   wires.push(
-    { id: "master>monitors", from: { device: "master", port: "out" }, to: { device: "monitors", port: "in" }, color: "blue", label: "Master → Studio monitors", fixed: true },
+    { id: "master>monitor-l", from: { device: "master", port: "out" }, to: { device: "monitor-l", port: "in" }, color: "blue", label: "Master → Left studio monitor", fixed: true },
+    { id: "master>monitor-r", from: { device: "master", port: "out" }, to: { device: "monitor-r", port: "in" }, color: "blue", label: "Master → Right studio monitor", fixed: true },
     { id: "master>reel", from: { device: "master", port: "out" }, to: { device: "reel", port: "in" }, color: "purple", label: "Master → Reel-to-reel input", fixed: true },
   );
 
@@ -162,10 +164,8 @@ export function StudioBack() {
         wires.flatMap((w) => {
           const a = pos(w.from), b = pos(w.to);
           if (!a || !b) return [];
-          const dx = Math.max(40, Math.abs(b.x - a.x) * 0.45);
-          const sag = 18 + Math.abs(a.y - b.y) * 0.08;
-          const dir = b.x >= a.x ? 1 : -1;
-          return [{ id: w.id, color: w.color, selected: selectedWire === w.id, d: `M${a.x},${a.y} C${a.x + dx * dir},${a.y + sag} ${b.x - dx * dir},${b.y + sag} ${b.x},${b.y}` }];
+          const sag = Math.max(a.y, b.y) + 26 + (wires.indexOf(w) % 7) * 9;
+          return [{ id: w.id, color: w.color, selected: selectedWire === w.id, d: `M${a.x},${a.y} C${a.x},${sag} ${b.x},${sag} ${b.x},${b.y}` }];
         }),
       );
     };
@@ -217,7 +217,7 @@ export function StudioBack() {
       <div className="flex flex-wrap items-center gap-2 border-b border-border bg-surface px-3 py-2 text-xs">
         <Cable className="size-4 text-primary" />
         <span className="font-mono text-[11px] text-muted-foreground">
-          {pending ? "Cable in hand — tap a glowing input jack to connect." : "Tap an output jack, then an input jack, to re-patch. Cables show the real signal path."}
+          {pending ? "CONNECT CABLE" : "STUDIO · REAR CONNECTIONS"}
         </span>
         {pending && (
           <Button size="sm" variant="ghost" className="h-7" onClick={() => setPending(null)}>
@@ -243,25 +243,22 @@ export function StudioBack() {
         )}
       </div>
 
-      <div className="studio-back-scroll min-h-0 flex-1 overflow-auto" tabIndex={0} aria-label="Studio device columns">
+      <div className="studio-back-scroll min-h-0 flex-1 overflow-auto" tabIndex={0} aria-label="Studio rear room">
       <div ref={boxRef} className="studio-back-rack relative" aria-label="Back of the studio rack — audio cable routing">
-        <div className="studio-back-stage" data-stage="sources">
-        {([
-          { id: "synths", title: "SYNTHS", icon: KeyboardMusic, items: tracks.filter(t => t.kind !== "drum" && t.kind !== "sampler" && t.kind !== "audio" && t.kind !== "ai-vocal"), kind: "SYNTH" },
-          { id: "drums", title: "DRUM MACHINES", icon: Drum, items: tracks.filter(t => t.kind === "drum"), kind: "DRUM MACHINE" },
-          { id: "samplers", title: "SAMPLERS", icon: AudioLines, items: tracks.filter(t => t.kind === "sampler"), kind: "SAMPLER" },
-          { id: "microphones", title: "MICROPHONES", icon: Mic, items: tracks.filter(t => t.kind === "audio" || t.kind === "ai-vocal"), kind: "AUDIO CHANNEL" },
-        ]).map(({ id, title, icon: Icon, items, kind }) => (
-          <section key={id} hidden={!items.length} className="studio-back-column" data-column={id} aria-label={title}>
-            <header className="studio-back-column-header"><Icon className="size-4 text-primary" /><h3>{title}</h3><span>{items.length}</span></header>
-            <div className="studio-back-column-body">
-              {items.map(track => unit(`track:${track.id}`, track.name, kind, jack(trackOut(track), true, "AUDIO OUT")))}
-              
-            </div>
-          </section>
-        ))}
+        <img src={roomImage} alt="" className="studio-back-room-image" />
+        <div className="studio-room-brand font-display">SYNCLAB<span>STUDIO · BACK</span></div>
+        <div className="studio-rear-desk">
+          <div className="studio-rear-monitor">{unit("monitor-l", "MONITOR L", "LEFT · MASTER FEED", jack({ device: "monitor-l", port: "in" }, false, "LEFT IN", true))}<div className="studio-rear-speaker-stand" /></div>
+          <div className="studio-rear-console studio-back-mixing">{unit("master", "MIXING DESK", `${tracks.length} CHANNEL INPUTS · MASTER OUTPUT`, <>{tracks.map(t => jack(masterIn(t), false, t.name))}{jack({ device: "master", port: "out" }, true, "MASTER OUT")}</>)}<div className="studio-table-top" /><div className="studio-desk-legs" /></div>
+          <div className="studio-rear-monitor">{unit("monitor-r", "MONITOR R", "RIGHT · MASTER FEED", jack({ device: "monitor-r", port: "in" }, false, "RIGHT IN", true))}<div className="studio-rear-speaker-stand" /></div>
         </div>
-        <div className="studio-back-stage" data-stage="effects">
+        <div className="studio-rear-furniture">
+          <div className="studio-rear-recorder studio-back-tape">{unit("reel", "REEL TO REEL", "RECORDER · MASTER FEED", jack({ device: "reel", port: "in" }, false, "REC IN", true))}</div>
+          <svg viewBox="0 0 180 195" role="img" aria-label="Rear of studio chair" className="studio-chair"><path d="M90 124v40m0 0-54 20m54-20 54 20m-54-20-20 24m20-24 20 24" className="studio-stand" /><rect x="54" y="12" width="72" height="78" rx="16" className="studio-chair-cushion" /><path d="M90 90v19M42 83v30m96-30v30" className="studio-stand" /><path d="M45 101h90l12 23H33z" className="studio-chair-cushion" /></svg>
+          <svg viewBox="0 0 200 195" role="img" aria-label="Studio headphones" className="studio-rear-headphones"><path d="M40 120v-20q0-60 60-60t60 60v20" className="studio-stand" /><rect x="22" y="112" width="36" height="56" rx="16" className="studio-chair-cushion" /><rect x="142" y="112" width="36" height="56" rx="16" className="studio-chair-cushion" /></svg>
+        </div>
+        <div className="studio-rear-floor">
+          <div className="studio-rear-instruments">{tracks.map(track => <div key={track.id} className="studio-rear-instrument">{unit(`track:${track.id}`, track.name, track.kind === "drum" ? "DRUM MACHINE" : track.kind === "sampler" ? "SAMPLER" : track.kind === "audio" || track.kind === "ai-vocal" ? "MICROPHONE" : track.instrument ?? "SYNTH", jack(trackOut(track), true, "AUDIO OUT"))}<svg viewBox="0 0 280 82" aria-hidden="true" className="studio-rear-instrument-stand"><path d="M60 3 213 75M220 3 67 75M43 78h51m102 0h51" className="studio-stand" /></svg></div>)}</div>
         <section className="studio-back-column studio-back-effects" data-column="effects" aria-label="Effect rack">
           <header className="studio-back-column-header"><Cpu className="size-4 text-primary" /><h3>EFFECT RACK</h3><span>{tracks.reduce((n, t) => n + (t.plugins?.length ?? 0), 0)}</span></header>
           <div className="studio-back-column-body">
@@ -271,31 +268,15 @@ export function StudioBack() {
           </div>
         </section>
         </div>
-        <div className="studio-back-stage" data-stage="mix">
-        <section className="studio-back-column studio-back-mixing" data-column="mixer" aria-label="Mixing desk">
-          <header className="studio-back-column-header"><SlidersHorizontal className="size-4 text-primary" /><h3>MIXING DESK</h3><span>{tracks.length} CH</span></header>
-          <div className="studio-back-column-body">
-            {unit("master", "MIXING DESK", "CHANNEL INPUTS · MASTER OUTPUT", <>{tracks.map(t => jack(masterIn(t), false, t.name))}{jack({ device: "master", port: "out" }, true, "MASTER OUT")}</>)}
-          </div>
-        </section>
-        </div>
-        <div className="studio-back-stage" data-stage="outputs">
-        <section className="studio-back-column studio-back-tape" data-column="reel" aria-label="Reel-to-reel recorder">
-          <header className="studio-back-column-header"><Disc3 className="size-4 text-primary" /><h3>REEL TO REEL</h3><span>REC</span></header>
-          <div className="studio-back-column-body">{unit("reel", "REEL TO REEL", "RECORDER · MASTER FEED", jack({ device: "reel", port: "in" }, false, "REC IN", true))}</div>
-        </section>
-        <section className="studio-back-column studio-back-monitors" data-column="monitors" aria-label="Studio monitors">
-          <header className="studio-back-column-header"><Speaker className="size-4 text-primary" /><h3>STUDIO MONITORS</h3><span>L / R</span></header>
-          <div className="studio-back-column-body">{unit("monitors", "STUDIO MONITORS", "STEREO · MASTER FEED", jack({ device: "monitors", port: "in" }, false, "IN", true))}</div>
-        </section>
-        </div>
 
         <svg className="pointer-events-none absolute inset-0 size-full overflow-visible" aria-hidden>
           {lines.map((l) => (
             <g key={l.id}>
+              <title>{wires.find(w => w.id === l.id)?.label}</title>
               <path d={l.d} className="modular-cable-shadow" />
               <path d={l.d} className={`modular-cable cable-${l.color} ${l.selected ? "is-selected" : ""}`} style={l.selected ? { strokeWidth: 6 } : undefined} />
               <path d={l.d} className="modular-cable-sheen" />
+              <path d={l.d} className="studio-rear-cable-hit" onClick={() => setSelectedWire(selectedWire === l.id ? null : l.id)} />
             </g>
           ))}
         </svg>
