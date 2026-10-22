@@ -125,6 +125,9 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
             if (found) select(found.id);
             else addTrack("instrument", "TOUCH SYNTH", "Cybotron Lead");
           }
+          if (label === "Drum Machine" && !tracks.some((track) => track.kind === "drum")) {
+            addTrack("drum", "DRUM MACHINE", undefined, { keepPanel: true });
+          }
           setPanel(next as PanelId);
         }}><span className="phone-sound-icon flex size-16 shrink-0 items-center justify-center rounded-xl"><Icon className="size-10" /></span><span className="font-semibold">{label}</span></Button>)}</div>
         <footer className="phone-room-footer grid h-14 shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-t border-border px-4"><Button variant="ghost" className="h-12 justify-start" onClick={() => { requestBluetoothSettings(); setPanel("settings"); }}><Radio />Bluetooth & audio</Button><div className="flex gap-1"><Button variant="outline" className="h-12" onClick={() => openExport()}>Export</Button><Button variant="outline" size="icon" className="size-12" aria-label="Help" onClick={() => openHelp("help")}><LifeBuoy /></Button></div></footer>
