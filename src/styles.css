@@ -1792,7 +1792,6 @@ html[data-reduce-motion] *, html[data-reduce-motion] *::before, html[data-reduce
   .studio-back-monitors .studio-back-unit-vent { height: 40px; }
   .studio-back-mixing .studio-back-jacks { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
-}
 .modular-cable.is-selected { filter: drop-shadow(0 0 6px var(--primary)); }
 .modular-add.is-on { border-color: var(--primary); color: var(--primary); }
 
