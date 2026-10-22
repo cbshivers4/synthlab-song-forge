@@ -311,7 +311,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
         {panel === "reel-recorder" && <ReelRecorder />}{panel === "video-sampler" && <VideoSampler />}
         {panel === "mixer" && <Mixer desktopLayout />}
         {panel === "synth" && (synthTrack ? <SynthEditor track={synthTrack} /> : <p>Select an instrument track.</p>)}
-        {panel === "drums" && (drumTrack ? <DrumMachine track={drumTrack} /> : <p>Add a drum track.</p>)}
+        {panel === "drums" && (drumTrack ? <DrumMachine track={drumTrack} /> : <AddDrumTrack />)}
         {panel === "piano" && (selected?.kind === "drum" ? <DrumRoll track={selected} /> : pianoTrack ? <PianoRoll track={pianoTrack} /> : drumTrack ? <DrumRoll track={drumTrack} /> : <p>Select an instrument, MIDI or drum track.</p>)}
         {panel === "settings" && <Settings />}{panel === "keys" && <Keyboard />}{panel === "browser" && <Browser />}
         {panel === "plugins" && <PluginRack />}{panel === "appearance" && <Appearance />}{panel === "sampler" && <Sampler />}
@@ -547,4 +547,9 @@ function Studio() {
       <Stages />
     </AppProvider>
   );
+}
+
+function AddDrumTrack() {
+  const { addTrack } = useStudio();
+  return <div className="flex flex-col items-start gap-3 p-4"><p className="text-sm text-muted-foreground">This song has no drum track yet.</p><Button className="h-12" onClick={() => addTrack("drum", "DRUM MACHINE", undefined, { keepPanel: true })}>Add drum machine track</Button></div>;
 }
