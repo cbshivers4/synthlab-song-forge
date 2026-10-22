@@ -4,7 +4,7 @@ import { Fragment, memo, useEffect, useMemo, useRef, useState, useSyncExternalSt
 import { createPortal } from "react-dom";
 import { stepsPerBar, getBeatsPerBar, STEPS_PER_BEAT, songSteps, stepSeconds, positionLabel } from "@/lib/synclab/timebase";
 import { notesInRegion, regionsOf, snapCut, deleteRegion } from "@/lib/synclab/note-cuts";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useIsMobile, useIsLandscapePhone } from "@/hooks/use-mobile";
 import { PhonePages } from "./PhonePages";
 import { WorkflowBar } from "./WorkflowBar";
 import {
@@ -3393,6 +3393,7 @@ function FolderRow({
 
 export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandlesVisible = true, pageScroll = false }: { phonePaged?: boolean; desktopStyle?: boolean; resizeHandlesVisible?: boolean; pageScroll?: boolean }) {
   const { tracks, transport, addTrack, addClip, setPanel, loadSample, folders, renameFolder, removeFolder, toggleFolderCollapsed, setTransport, moveTrackToIndex } = useStudio();
+  const phone = useIsLandscapePhone();
   const totalSteps = songSteps(transport.bars);
   const [over, setOver] = useState(false);
   const [zoom, setZoom] = useState(1);
@@ -3439,7 +3440,8 @@ export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandl
     const arrangement = viewport?.firstElementChild;
     if (!viewport || !header || !(arrangement instanceof HTMLElement)) return;
     const sync = () => {
-      header.style.width = `${arrangement.getBoundingClientRect().width}px`;
+      // Use the layout width, not the rotated phone canvas's screen-space height.
+      header.style.width = `${arrangement.offsetWidth}px`;
       header.style.transform = `translateX(${-viewport.scrollLeft}px)`;
       header.style.setProperty("--timeline-scroll-x", `${viewport.scrollLeft}px`);
     };
@@ -3475,7 +3477,7 @@ export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandl
         </div>
       </div>
       <div id="timeline-scroll" ref={scrollRef} aria-label="Horizontal timeline" className={`relative overflow-auto overscroll-x-contain ${pageScroll ? "" : "min-h-0 flex-1"}`}>
-        <div className="min-w-[720px]" style={{ width: `max(${zoom * 100}%, ${transport.bars * 32 + headerWidth}px)` }}>
+        <div className="min-w-[720px]" style={{ width: `max(${zoom * 100}%, ${transport.bars * (phone ? 96 * zoom : 32) + headerWidth}px)` }}>
         {/* SYNCLAB watermark, low and centred in the empty workspace */}
         <div className="pointer-events-none sticky top-[68%] z-0 h-0" aria-hidden="true">
           <img
