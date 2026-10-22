@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState } from "react";
-import { Cable, Unplug, Cpu } from "lucide-react";
+import { Cable, Unplug, Cpu, Scan, ZoomIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStudio } from "@/lib/synclab/store";
 import type { PluginInstance, Track } from "@/lib/synclab/types";
@@ -41,7 +41,31 @@ export function StudioBack() {
   const [selectedWire, setSelectedWire] = useState<string | null>(null);
   const [listOpen, setListOpen] = useState(false);
   const boxRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [overview, setOverview] = useState(true);
+  const [view, setView] = useState({ phone: false, scale: 1, width: 760, height: 0 });
   const [lines, setLines] = useState<{ id: string; d: string; color: CableColor; selected: boolean }[]>([]);
+
+  // Scale the measured room and its cables together, never their individual jacks.
+  useLayoutEffect(() => {
+    const box = boxRef.current, scroll = scrollRef.current;
+    if (!box || !scroll) return;
+    const phoneQuery = window.matchMedia("(max-width: 767px), (orientation: landscape) and (max-width: 1100px) and (max-height: 600px)");
+    const measure = () => {
+      const phone = phoneQuery.matches;
+      const width = Math.max(760, scroll.clientWidth);
+      const height = box.offsetHeight;
+      const scale = phone && overview && height > 0
+        ? Math.min(1, scroll.clientWidth / width, scroll.clientHeight / height)
+        : 1;
+      setView(previous => previous.phone === phone && previous.width === width && previous.height === height && Math.abs(previous.scale - scale) < .001 ? previous : { phone, width, height, scale });
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(box); observer.observe(scroll);
+    phoneQuery.addEventListener("change", measure);
+    return () => { observer.disconnect(); phoneQuery.removeEventListener("change", measure); };
+  }, [overview]);
 
   // ---- derive the wiring from real routing state ----
   const wires: Wire[] = [];
@@ -214,11 +238,15 @@ export function StudioBack() {
 
   return (
     <div className="studio-back flex min-h-0 flex-1 flex-col">
-      <div className="flex flex-wrap items-center gap-2 border-b border-border bg-surface px-3 py-2 text-xs">
+      <div className="studio-back-toolbar flex shrink-0 flex-wrap items-center gap-2 border-b border-border bg-surface px-3 py-2 text-xs">
         <Cable className="size-4 text-primary" />
         <span className="font-mono text-[11px] text-muted-foreground">
           {pending ? "CONNECT CABLE" : "STUDIO · REAR CONNECTIONS"}
         </span>
+        <div className="studio-back-view-controls ml-auto gap-1">
+          <Button size="sm" variant={overview ? "secondary" : "ghost"} className="h-8" aria-label="Fit rear studio setup" aria-pressed={overview} onClick={() => { setOverview(true); scrollRef.current?.scrollTo(0, 0); }}><Scan className="size-4" />Fit</Button>
+          <Button size="sm" variant={!overview ? "secondary" : "ghost"} className="h-8" aria-label="View rear studio at full size" aria-pressed={!overview} onClick={() => setOverview(false)}><ZoomIn className="size-4" />100%</Button>
+        </div>
         {pending && (
           <Button size="sm" variant="ghost" className="h-7" onClick={() => setPending(null)}>
             CANCEL
@@ -243,8 +271,9 @@ export function StudioBack() {
         )}
       </div>
 
-      <div className="studio-back-scroll min-h-0 flex-1 overflow-auto" tabIndex={0} aria-label="Studio rear room">
-      <div ref={boxRef} className="studio-back-rack relative" aria-label="Back of the studio rack — audio cable routing">
+      <div ref={scrollRef} className="studio-back-scroll min-h-0 flex-1 overflow-auto" tabIndex={0} aria-label="Studio rear room">
+      <div className="studio-back-canvas" style={view.phone ? { width: view.width * view.scale, height: view.height * view.scale } : undefined}>
+      <div ref={boxRef} className="studio-back-rack relative" style={view.phone ? { width: view.width, transform: `scale(${view.scale})`, transformOrigin: "top left" } : undefined} aria-label="Back of the studio rack — audio cable routing">
         <img src={roomImage} alt="" className="studio-back-room-image" />
         <div className="studio-room-brand font-display">SYNCLAB<span>STUDIO · BACK</span></div>
         <div className="studio-rear-desk">
@@ -282,11 +311,12 @@ export function StudioBack() {
         </svg>
       </div>
       </div>
+      </div>
 
       {/* wire list — tap a wire to select it for unplugging */}
       <div className="max-h-36 shrink-0 overflow-auto border-t border-border bg-surface px-3 py-1.5" aria-label="Patched cables">
         <Button variant="ghost" size="sm" className="h-9 w-full justify-start px-1 text-xs font-bold" aria-expanded={listOpen} onClick={() => setListOpen((o) => !o)}>CABLES ({wires.length}) {listOpen ? "▾ HIDE" : "▸ SHOW LIST"}</Button>
-        <div className="flex flex-wrap gap-1" hidden={!listOpen}>
+        {listOpen && <div className="flex flex-wrap gap-1">
           {wires.map((w) => (
             <Button
               variant="ghost"
@@ -299,7 +329,7 @@ export function StudioBack() {
               {w.label}
             </Button>
           ))}
-        </div>
+        </div>}
       </div>
     </div>
   );
