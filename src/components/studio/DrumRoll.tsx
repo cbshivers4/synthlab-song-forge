@@ -14,7 +14,9 @@ import { useStudio } from "@/lib/synclab/store";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { DRUM_KIND_LABEL, drumRows, noteName } from "@/lib/synclab/drum-notes";
 import type { DrumPad, Track } from "@/lib/synclab/types";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useIsMobile, useIsLandscapePhone } from "@/hooks/use-mobile";
+import { editInstrumentNotes, type DrumHitField } from "@/lib/synclab/drum-bulk";
+import { Knob } from "./Knob";
 import { ChevronLeft, ChevronRight, Maximize2, Minimize2, Minus, Plus, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { loopRegion } from "@/lib/synclab/recording-region";
@@ -25,6 +27,8 @@ const VELOCITIES = [0, 0.35, 0.7, 1] as const;
 
 export function DrumRoll({ track, initialFull = false }: { track: Track; initialFull?: boolean }) {
   const isMobile = useIsMobile();
+  const fit = useIsLandscapePhone();
+  const [noteScope, setNoteScope] = useState<'one' | 'all'>('all');
   const { updatePad, updateTrack, setStepCount, transport, setTransport } = useStudio();
   const pads = track.pads ?? [];
   const rows = drumRows(pads);
@@ -41,8 +45,8 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
   const [full, setFull] = useState(initialFull);
   useEffect(() => { const query = window.matchMedia("(min-width: 480px)"); const read = () => setWidePhone(query.matches); read(); query.addEventListener("change", read); return () => query.removeEventListener("change", read); }, []);
   const baseSize = widePhone ? 4 : 3;
-  const pageSize = isMobile && !full ? Math.max(1, Math.floor(baseSize / view.zoom)) : total;
-  const start = isMobile && !full ? Math.min(view.start, Math.max(0, total - 1)) : 0;
+  const pageSize = isMobile && !full && !fit ? Math.max(1, Math.floor(baseSize / view.zoom)) : total;
+  const start = isMobile && !full && !fit ? Math.min(view.start, Math.max(0, total - 1)) : 0;
   const visibleSteps = Array.from({ length: Math.min(pageSize, total - start) }, (_, i) => start + i);
   const zoomTo = (zoom: number, anchor = view.step) => {
     const next = Math.max(1, Math.min(3, zoom));
@@ -197,7 +201,7 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
 
   return (
     <div
-      className={`drum-roll space-y-1.5 ${isMobile ? "phone-drum-roll" : ""}`}
+      className={`drum-roll space-y-1.5 ${isMobile ? "phone-drum-roll" : ""} ${fit ? "drum-roll-fit" : ""}`}
       onPointerUp={() => setPaint(null)}
       onPointerLeave={() => setPaint(null)}
     >
@@ -207,8 +211,8 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
           <Button size="sm" variant="secondary" onClick={() => updateTrack(track.id, { printedAudio: !track.printedAudio })}>{track.printedAudio ? "PLAY BEAT" : "PLAY WAVE"}</Button>
         </div>
       ) : null}
-      <DrumBulkControls track={track} />
-      <div className="flex flex-nowrap items-center gap-2 overflow-x-auto rounded-sm border border-border bg-surface/60 p-1.5 [&>*]:shrink-0">
+      {fit ? <details className="drum-fit-bulk"><summary className="text-xs font-semibold">All drums</summary><DrumBulkControls track={track} /></details> : <DrumBulkControls track={track} />}
+      <div className="drum-roll-toolbar flex flex-nowrap items-center gap-2 overflow-x-auto rounded-sm border border-border bg-surface/60 p-1.5 [&>*]:shrink-0">
         <span className="label-xs whitespace-nowrap px-1" title={track.name}>DRUM ROLL</span>
         <Select value={String(total)} onValueChange={(v) => setStepCount(track.id, Number(v))}>
           <SelectTrigger className="h-7 w-24 text-[10px]">
@@ -248,12 +252,12 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
         >
           CLEAR ALL
         </Button>
-        <Button size="sm" variant={full ? "secondary" : "ghost"} className="h-7 gap-1 text-[10px]" aria-pressed={full} onClick={() => setFull((f) => !f)}>
+        {!fit && <Button size="sm" variant={full ? "secondary" : "ghost"} className="h-7 gap-1 text-[10px]" aria-pressed={full} onClick={() => setFull((f) => !f)}>
           {full ? <Minimize2 className="size-3" /> : <Maximize2 className="size-3" />} {full ? "PAGED VIEW" : "FULL VIEW"}
-        </Button>
+        </Button>}
       </div>
 
-      {isMobile && <div className="space-y-1.5">
+      {isMobile && !fit && <div className="space-y-1.5">
         <div className="flex items-center justify-between gap-2">
           <span className="whitespace-nowrap font-mono text-xs">STEP SNAP</span>
           <Select value={String(view.snap)} onValueChange={(value) => updateView({ snap: Number(value) })}>
@@ -274,7 +278,7 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
       </div>}
 
       <div ref={gridRef} onScroll={readRows} aria-label="Drum roll grid" className={`overflow-auto rounded-[2px] border border-border bg-background ${full ? "max-h-[78dvh]" : isMobile ? "max-h-[45dvh] touch-pan-y" : ""}`}>
-        <div className={isMobile && !full ? "w-full" : isMobile ? "" : "min-w-[640px]"} style={isMobile && full ? { minWidth: 212 + total * (50 * view.zoom) } : undefined}>
+        <div className={fit ? "drum-fit-rows" : isMobile && !full ? "w-full" : isMobile ? "" : "min-w-[640px]"} style={fit ? { gridTemplateRows: `20px repeat(${rows.length}, minmax(0, 1fr))` } : isMobile && full ? { minWidth: 212 + total * (50 * view.zoom) } : undefined}>
           {/* bar numbers */}
           <div className="sticky top-0 z-10 flex border-b border-border bg-surface-2">
             <div className="drum-roll-label-header w-32 shrink-0 border-r border-border px-2 py-0.5 font-mono text-[8px] uppercase tracking-widest text-muted-foreground">
@@ -304,7 +308,7 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
                     title={`${pad.name} — MIDI note ${note} (${noteName(note)}). Click for tools.`}
                   >
                     <span className="truncate font-mono text-[10px] font-semibold uppercase tracking-wider">
-                      {isMobile ? `${rowIndex + 1}. ` : ""}{DRUM_KIND_LABEL[pad.kind] ?? pad.name}
+                      {isMobile ? `${rowIndex + 1}. ` : ""}{pad.name || DRUM_KIND_LABEL[pad.kind]}
                     </span>
                     <span className="shrink-0 font-mono text-[8px] text-muted-foreground">{pad.sampleUrl ? <span className="text-primary" title={pad.sample}>SMP</span> : noteName(note)}</span>
                   </Button>
@@ -376,7 +380,7 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
                   </div>
                 </div>
 
-                {isSel && (
+                {isSel && !fit && (
                   <div className="flex flex-nowrap items-center gap-1.5 overflow-x-auto whitespace-nowrap border-b border-border/40 bg-surface/40 px-2 py-1.5 [&>*]:shrink-0">
                     <span className="label-xs">{pad.name} tools</span>
                     <Button size="sm" variant="secondary" className="h-6 gap-1 px-2 text-[10px]" onClick={() => pickSample(pad)}><Upload className="size-3" /> {pad.sampleUrl ? "REPLACE SAMPLE" : "ADD SAMPLE"}</Button>
@@ -416,6 +420,33 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
           })}
         </div>
       </div>
+
+      {(() => {
+        const pad = pads.find(p => p.id === selected);
+        if (!pad) return null;
+        const index = noteScope === 'all' ? Math.max(0, pad.steps.findIndex(v => v > 0)) : view.step;
+        const edit = (field: DrumHitField, value: number) => {
+          const next = editInstrumentNotes(pads, pad.id, field, value, noteScope, view.step, transport.loop ? loopRegion(transport) : undefined).find(p => p.id === pad.id);
+          if (!next) return;
+          updatePad(track.id, pad.id, { [field]: next[field] });
+          if (transport.loop) updateTrack(track.id, { patternRegion: loopRegion(transport) });
+        };
+        return <div className="drum-note-dock" role="group" aria-label="Selected instrument notes">
+          <div className="drum-note-scope"><strong className="truncate text-xs" title={pad.name}>{pad.name}</strong><div className="flex gap-1">
+            <Button size="sm" variant={noteScope === 'one' ? 'default' : 'secondary'} aria-pressed={noteScope === 'one'} onClick={() => setNoteScope('one')}>One note</Button>
+            <Button size="sm" variant={noteScope === 'all' ? 'default' : 'secondary'} aria-pressed={noteScope === 'all'} onClick={() => setNoteScope('all')}>All notes</Button>
+          </div><span className="text-xs text-muted-foreground">{noteScope === 'one' ? `Step ${view.step + 1}` : transport.loop ? 'All loop notes' : 'All instrument notes'}</span></div>
+          <div className="drum-note-knobs">
+            <Knob label="VELOCITY" size={36} min={0.01} value={pad.steps[index] ?? 0.7} onChange={v => edit('steps', v)} />
+            <Knob label="PITCH" size={36} min={-12} max={12} step={1} value={pad.stepPitch?.[index] ?? 0} onChange={v => edit('stepPitch', v)} />
+            <Knob label="DECAY" size={36} min={0.1} max={2} value={pad.stepDecay?.[index] ?? 1} onChange={v => edit('stepDecay', v)} />
+            <Knob label="CHANCE" size={36} value={pad.probability?.[index] ?? 1} onChange={v => edit('probability', v)} />
+            <Knob label="FLAM" size={36} value={pad.flam?.[index] ?? 0} onChange={v => edit('flam', v)} />
+            <Knob label="RETRIG" size={36} min={1} max={4} step={1} value={pad.retrig?.[index] ?? 1} onChange={v => edit('retrig', v)} />
+            <Knob label="GLITCH" size={36} value={pad.glitch?.[index] ?? 0} onChange={v => edit('glitch', v)} />
+          </div>
+        </div>;
+      })()}
 
       <p className="font-mono text-[9px] leading-relaxed text-muted-foreground">
         Click a step to cycle ghost → normal → accent, drag across steps to paint, right-click to clear. Tap a drum name for Quick fill and Add sample, or drop an audio file on a row. Each row sends

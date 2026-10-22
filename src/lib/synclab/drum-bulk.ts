@@ -5,6 +5,20 @@ export type DrumBulkEdit = { scope: 'sounds'; patch: Partial<DrumPad> } | { scop
 const hitFields: DrumHitField[] = ['steps', 'stepPitch', 'stepDecay', 'probability', 'flam', 'retrig', 'glitch'];
 const fallback = (field: DrumHitField) => ['stepDecay', 'probability', 'retrig'].includes(field) ? 1 : 0;
 
+/** Selected-instrument editing never touches another pad or creates an empty hit. */
+export function editInstrumentNotes(pads: DrumPad[], padId: string, field: DrumHitField, value: number, scope: 'one' | 'all', step: number, region?: [number, number]): DrumPad[] {
+  return pads.map(pad => {
+    if (pad.id !== padId) return pad;
+    if (scope === 'all') return editDrumPads([pad], { scope: 'hits', field, value }, region)[0] ?? pad;
+    const count = pad.steps.length;
+    const first = step + Math.max(0, Math.ceil(((region?.[0] ?? 0) - step) / Math.max(1, count))) * count;
+    if (step < 0 || step >= count || (pad.steps[step] ?? 0) <= 0 || (region && first >= region[1])) return pad;
+    const values = Array.from({ length: count }, (_, i) => pad[field]?.[i] ?? fallback(field));
+    values[step] = value;
+    return { ...pad, [field]: values };
+  });
+}
+
 /** Bulk edits affect existing hits only; an active loop limits editable pattern positions. */
 export function editDrumPads(pads: DrumPad[], edit: DrumBulkEdit, region?: [number, number]): DrumPad[] {
   return pads.map(pad => {
