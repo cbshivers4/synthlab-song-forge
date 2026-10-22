@@ -35,6 +35,7 @@ Paste content at the playhead onto the selected or explicit channel, preserving 
 Synth selection opens piano roll. Pin sampler waveform above Stretch/chops to keep cuts visible; PCM slices use previewNote for gate/choke.
 Transport stays mounted: phone overlay and timeline use separate layout/paint containment with shared resize visibility; desktop transport stays below the workspace.
 Phone shares desktop audio/state and native scrolling. AppProvider scopes phone tokens to the document; desktop prefs stay separate.
+Phone entry and workspace use a CSS sideways body canvas on portrait phone viewports, including body portals; use canvas-relative viewport sizing instead of JS innerHeight overrides so splash, dialogs and timeline stay in the same frame without requiring unsupported orientation locks.
 Drum snap is session-only for new step writes, never existing hits.
 MP3/MP4 imports/exports retain originals in the private library with content hashes to avoid duplicates; saved videos open Video Sampler.
 Cloud deletion reads raw sessions, confirms deletion, then cleans owned files; missing assets cannot block removal.

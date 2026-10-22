@@ -914,6 +914,25 @@ html[data-reduce-motion] *, html[data-reduce-motion] *::before, html[data-reduce
   letter-spacing: 0;
 }
 .phone-console-active { overflow: hidden; }
+/* A sideways canvas from splash onward, without browser orientation permissions.
+   Transform the body itself so body-portalled menus/dialogs share the same canvas. */
+@media (orientation: portrait) and (max-width: 767px) and (pointer: coarse), (orientation: portrait) and (max-width: 600px) {
+  html.phone-sideways-default { overflow: hidden; }
+  .phone-sideways-default body {
+    position: fixed;
+    inset: 0 auto auto 0;
+    width: 100dvh;
+    height: 100dvw;
+    min-height: 0;
+    overflow: hidden;
+    transform-origin: top left;
+    transform: rotate(90deg) translateY(-100%);
+  }
+  .phone-sideways-default .h-\[100dvh\] { height: 100dvw; }
+  .phone-sideways-default .min-h-screen { min-height: 100dvw; }
+  .phone-sideways-default .phone-console.phone-entry .phone-page-viewport > div > .mx-auto.grid.login-inner { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .phone-sideways-default .spin-logo { width: min(38dvh, 240px); }
+}
 /* Sideways phone Edit screen: one scrolling page (title + timeline move together) */
 .phone-edit-scroll { touch-action: pan-y; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
 /* Default finishes follow the phone palette; custom wallpaper stays available. */

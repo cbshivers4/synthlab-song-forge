@@ -2,6 +2,7 @@ import * as React from "react";
 
 const LANDSCAPE_PHONE_QUERY = "(orientation: landscape) and (max-width: 1100px) and (max-height: 600px) and (pointer: coarse), (orientation: landscape) and (max-width: 1100px) and (max-height: 550px)";
 const MOBILE_QUERY = `(max-width: 767px), (pointer: coarse) and (max-width: 1024px), ${LANDSCAPE_PHONE_QUERY}`;
+const PHONE_WORKSPACE_QUERY = `${LANDSCAPE_PHONE_QUERY}, (orientation: portrait) and (max-width: 767px) and (pointer: coarse), (orientation: portrait) and (max-width: 600px)`;
 
 export function useIsMobile() {
   const [isMobile, setIsMobile] = React.useState<boolean | undefined>(undefined);
@@ -19,11 +20,11 @@ export function useIsMobile() {
   return !!isMobile;
 }
 
-/** Phone held sideways: switches the phone layout to production/edit mode. */
+/** Phone workspace is sideways even when the browser's physical viewport is upright. */
 export function useIsLandscapePhone() {
   const [on, setOn] = React.useState(false);
   React.useEffect(() => {
-    const mql = window.matchMedia(LANDSCAPE_PHONE_QUERY);
+    const mql = window.matchMedia(PHONE_WORKSPACE_QUERY);
     const onChange = () => setOn(mql.matches);
     mql.addEventListener("change", onChange);
     onChange();
