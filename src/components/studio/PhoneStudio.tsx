@@ -77,14 +77,9 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
   const consoleRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     document.documentElement.classList.add("phone-console-active");
-    const size = () => {
-      const el = consoleRef.current;
-      if (el) el.style.height = `${Math.max(240, window.innerHeight - el.getBoundingClientRect().top)}px`;
-    };
-    size(); window.addEventListener("resize", size);
     const onMixerFull = () => setMixerFull((full) => { const next = !full; if (next) setTransportOpen(false); return next; });
     window.addEventListener("synclab:mixer-full", onMixerFull);
-    return () => { window.removeEventListener("resize", size); window.removeEventListener("synclab:mixer-full", onMixerFull); document.documentElement.classList.remove("phone-console-active"); };
+    return () => { window.removeEventListener("synclab:mixer-full", onMixerFull); document.documentElement.classList.remove("phone-console-active"); };
   }, []);
   const enter = (next: typeof room) => { setTransportOpen(false); setPanel(null); setRoom(next); };
   const list = room === "sounds" ? sounds : tools;

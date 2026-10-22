@@ -1,5 +1,5 @@
 import { ToolErrorBoundary } from "@/components/studio/ToolErrorBoundary";
-import { RotateGate } from "@/components/studio/RotateGate";
+import { PhoneOrientation } from "@/components/studio/RotateGate";
 import { useEffect, useRef, useState } from "react";
 import { TrackSettingsDialog, openTrackSettings } from "@/components/studio/TrackSettingsDialog";
 import { useShortcuts } from "@/components/studio/useShortcuts";
@@ -527,7 +527,7 @@ function Stages() {
   return (
     <PlanProvider>
       <ProjectCloseGuard />
-      <RotateGate />
+      <PhoneOrientation />
       <SplashScreen />
       <HelpCenter />
       {stage === "welcome" && (isMobile ? <div className="phone-console phone-entry flex h-[100dvh] flex-col overflow-hidden"><PhonePages name="Sign in"><WelcomeScreen /></PhonePages></div> : <WelcomeScreen />)}
