@@ -3391,7 +3391,7 @@ function FolderRow({
   );
 }
 
-export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandlesVisible = true }: { phonePaged?: boolean; desktopStyle?: boolean; resizeHandlesVisible?: boolean }) {
+export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandlesVisible = true, pageScroll = false }: { phonePaged?: boolean; desktopStyle?: boolean; resizeHandlesVisible?: boolean; pageScroll?: boolean }) {
   const { tracks, transport, addTrack, addClip, setPanel, loadSample, folders, renameFolder, removeFolder, toggleFolderCollapsed, setTransport, moveTrackToIndex } = useStudio();
   const totalSteps = songSteps(transport.bars);
   const [over, setOver] = useState(false);
@@ -3465,7 +3465,7 @@ export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandl
     }
   }, [transport.follow, transport.playing, transport.step, totalSteps]);
   return (
-    <section data-desktop-style={desktopStyle} data-resize-handles={resizeHandlesVisible} style={{ "--timeline-header-width": `${headerWidth}px` } as CSSProperties} className="arrangement-timeline mobile-timeline relative flex min-h-[210px] min-w-0 flex-1 flex-col overflow-hidden border-x border-b border-border bg-background/60">
+    <section data-desktop-style={desktopStyle} data-page-scroll={pageScroll} data-resize-handles={resizeHandlesVisible} style={{ "--timeline-header-width": `${headerWidth}px` } as CSSProperties} className={`arrangement-timeline mobile-timeline relative flex min-w-0 flex-col border-x border-b border-border bg-background/60 ${pageScroll ? "" : "min-h-[210px] flex-1 overflow-hidden"}`}>
       <WorkflowBar />
       {phonePaged ? <div className="phone-timeline-heading grid h-14 shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-border bg-surface/50 px-3"><TrackSearch /><div className="flex gap-1"><Popover><PopoverTrigger asChild><Button variant="outline" className="h-12 gap-1.5 px-3 font-display text-xs font-semibold tracking-wide" aria-label="Timeline quick tools"><Settings2 className="size-4" /> TOOLS</Button></PopoverTrigger><PopoverContent className="phone-edit-menu flex h-[min(80dvh,440px)] w-[min(90vw,720px)] flex-col overflow-hidden p-0"><div className="shrink-0 border-b border-border px-3 py-2.5 font-display text-sm font-semibold">Timeline tools</div><PhonePages name="Timeline tools"><div className="p-1"><h3 className="px-2 pb-1 pt-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Song length &amp; export</h3><div className="px-2 pb-2"><TimelineOptionsPanel /></div><h3 className="px-2 pb-1 pt-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Edit &amp; arrange</h3><EditToolbar /><h3 className="border-t border-border px-2 pb-1 pt-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Song parts</h3><SectionLane /></div></PhonePages></PopoverContent></Popover><AddTrackMenu size="sm" /></div></div> : <EditToolbar />}
       <div className="shrink-0 overflow-hidden">
@@ -3474,7 +3474,7 @@ export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandl
           {!phonePaged && <SectionLane />}
         </div>
       </div>
-      <div id="timeline-scroll" ref={scrollRef} aria-label="Horizontal timeline" className="relative min-h-0 flex-1 overflow-auto overscroll-x-contain">
+      <div id="timeline-scroll" ref={scrollRef} aria-label="Horizontal timeline" className={`relative overflow-auto overscroll-x-contain ${pageScroll ? "" : "min-h-0 flex-1"}`}>
         <div className="min-w-[720px]" style={{ width: `max(${zoom * 100}%, ${transport.bars * 32 + headerWidth}px)` }}>
         {/* SYNCLAB watermark, low and centred in the empty workspace */}
         <div className="pointer-events-none sticky top-[68%] z-0 h-0" aria-hidden="true">
