@@ -70,7 +70,7 @@ export function RackEffect({ trackId, plugin: p, index, count }: { trackId: stri
     <div className="hardware-rack-ear pointer-events-none absolute inset-y-0 right-0 flex w-3 flex-col justify-between border-l border-border py-3 sm:w-5">
       {[0, 1].map((s) => <span key={s} className="hardware-rack-screw mx-auto size-2 rounded-full" />)}
     </div>
-    <div className="mx-3 sm:mx-5">
+    <div className="fx-module-body mx-3 sm:mx-5">
       <header className="hardware-device-header flex flex-wrap items-center gap-1 border-b border-border px-2 py-2">
         <Button size="icon" variant="ghost" className={`size-10 shrink-0 ${p.bypass ? "text-muted-foreground" : "text-primary"}`} aria-label={`${p.bypass ? "Enable" : "Bypass"} ${p.name}`} aria-pressed={!p.bypass} title="Enable / bypass effect" onClick={() => togglePluginBypass(trackId, p.id)}><Power className="size-4" /></Button>
         <div className="fx-nameplate min-w-0 flex-1"><h3 className="break-words text-sm font-semibold">{String(index + 1).padStart(2, "0")} · {p.name}</h3><span className="font-mono text-[9px] text-muted-foreground">SYNCLAB · {p.format} · {p.kind.toUpperCase()}</span></div>
@@ -82,11 +82,9 @@ export function RackEffect({ trackId, plugin: p, index, count }: { trackId: stri
           <Button size="icon" variant="ghost" className="size-10" title={expanded ? "Fold controls" : "Expand controls"} aria-label={`${expanded ? "Fold" : "Expand"} ${p.name} controls`} aria-expanded={expanded} onClick={() => setExpanded((value) => !value)}>{expanded ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}</Button>
         </div>
       </header>
-      <div className="hardware-device-screen mx-2 my-3 p-2"><RackMeter plugin={p} />
-        <Scope scopeId={p.bypass ? `bypassed:${p.id}` : p.id} height={88} />
-      </div>
+       <div className="fx-output-strip mx-2 py-1"><RackMeter plugin={p} /></div>
       {expanded && (p.kind === "paraeq" ? <div className="min-w-0 border-t border-border p-3"><ProEq trackId={trackId} plugin={p} /></div> : p.kind === "eq" ? <div className="min-w-0 space-y-3 border-t border-border p-3"><EffectDisplay plugin={p} height={280} onParam={(id, value) => setPluginParam(trackId, p.id, id, value)} /><div className="flex flex-wrap justify-center gap-3">{p.params.filter(param => param.id !== "low" && param.id !== "mid" && param.id !== "high").map(param => <Knob key={param.id} label={param.name} value={param.value} min={param.min} max={param.max} step={1} unit={param.unit ? ` ${param.unit}` : ""} size={52} onChange={value => setPluginParam(trackId, p.id, param.id, value)} midiTarget={{ id: trackId, param: `plugin:${p.id}:${param.id}` }} />)}</div></div> : <div className="grid min-w-0 gap-4 border-t border-border p-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-        <div className="fx-display-deck min-w-0 space-y-3"><EffectDisplay plugin={p} height={180} onParam={(id, value) => setPluginParam(trackId, p.id, id, value)} /><XYPad trackId={trackId} plugin={p} /></div>
+       <div className="fx-display-deck min-w-0 space-y-2"><EffectDisplay plugin={p} height={130} onParam={(id, value) => setPluginParam(trackId, p.id, id, value)} /><Scope scopeId={p.bypass ? `bypassed:${p.id}` : p.id} height={36} /><details className="fx-motion-controls"><summary>X / Y CONTROL</summary><XYPad trackId={trackId} plugin={p} /></details></div>
         <div className="fx-control-deck min-w-0">
           {p.kind === "vocoder" ? <VocoderPanel trackId={trackId} plugin={p} /> : <div className="fx-knob-bank flex flex-wrap justify-center gap-3">{withDefaultParams(p).map((param) => <Knob key={param.id} label={param.name} value={param.value} min={param.min} max={param.max} step={param.max - param.min > 40 ? 1 : (param.max - param.min) / 200} unit={param.unit ? ` ${param.unit}` : ""} size={64} onChange={(value) => setPluginParam(trackId, p.id, param.id, value)} midiTarget={{ id: trackId, param: `plugin:${p.id}:${param.id}` }} />)}</div>}
         </div>
