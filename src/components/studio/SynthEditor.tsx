@@ -132,7 +132,7 @@ function SynthTrackEditor({ track }: { track: Track }) {
       <div className="synth-badge" aria-hidden>{patch.modular ? "MODULAR TECH SYNTH" : patch.name.startsWith("TD-3") || /ACID/i.test(track.name) ? "ACID BASS · TD-3 STYLE" : patch.name.startsWith("Poly Synth") || /POLY/i.test(track.name) ? "POLY SYNTH · 8 VOICE" : "SPEC 4 SYNTH"}</div>
       <SkinControls skinKey="synth" image />
       <MidiLearnStrip id={track.id} label={`${track.name} — every knob below also has its own MIDI button`} />
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="synth-preset-deck flex flex-wrap items-center gap-2">
         <Select value={patch.name} onValueChange={(v) => {
           const selectedPatch = userPresets.find(p => p.name === v) ?? applyPreset(v);
           loadPreset(track.id, v);
@@ -194,7 +194,7 @@ function SynthTrackEditor({ track }: { track: Track }) {
       <PitchWheels trackId={track.id} />
       {(patch.name.startsWith("TD-3") || /ACID/i.test(track.name)) && <AcidSequencer track={track} />}
       {patch.modular ? <ModularSynth track={track} /> : (
-      <Tabs defaultValue={/^touch synth$/i.test(track.name) ? "touch" : "oscillators"} className="min-w-0">
+      <Tabs defaultValue={/^touch synth$/i.test(track.name) ? "touch" : "oscillators"} className="synth-console-tabs min-w-0">
         <TabsList aria-label="Synth features" className="flex h-auto w-full flex-wrap justify-start gap-1">
           <TabsTrigger value="oscillators">Oscillators</TabsTrigger>
           <TabsTrigger value="filters">Filters</TabsTrigger>
@@ -248,7 +248,7 @@ function SynthTrackEditor({ track }: { track: Track }) {
         {/* Oscillators + noise */}
         <div className="grid min-w-0 gap-3 lg:grid-cols-2">
           {patch.oscillators.map((osc, i) => (
-            <div key={i} className="rounded-[3px] border border-border bg-surface/80">
+            <div key={i} className="synth-osc-module rounded-[3px] border border-border bg-surface/80">
               <div className="flex flex-wrap items-center gap-2 border-b border-border px-2 py-1">
                 <span className={`size-1.5 rounded-full ${osc.on ? "bg-primary" : "bg-muted-foreground/40"}`} />
                 <span className="font-mono text-[10px] font-semibold uppercase tracking-widest">Osc {i + 1}</span>
