@@ -168,9 +168,26 @@ export class SyncLabEngine {
     this.ctx = ctx;
     if (!this.resumeListenersInstalled) {
       this.resumeListenersInstalled = true;
-      const resume = () => {
-        if (this.ctx?.state === "suspended") void this.ctx.resume().catch(() => undefined);
+      // iPhone/iPad: Web Audio is silenced by the ring/silent switch unless the
+      // page's audio session is "playback". Request it, and play a tiny silent
+      // media element inside a user gesture as the fallback for older iOS.
+      const session = (navigator as Navigator & { audioSession?: { type: string } }).audioSession;
+      try { if (session) session.type = "playback"; } catch { /* unsupported */ }
+      let mediaUnlocked = false;
+      const unlockMedia = () => {
+        if (mediaUnlocked) return;
+        mediaUnlocked = true;
+        try {
+          const el = new Audio("data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=");
+          el.setAttribute("playsinline", "");
+          void el.play().catch(() => { mediaUnlocked = false; });
+        } catch { mediaUnlocked = false; }
       };
+      const resume = () => {
+        unlockMedia();
+        if (this.ctx?.state === "suspended" || (this.ctx?.state as string) === "interrupted") void this.ctx!.resume().catch(() => undefined);
+      };
+      window.addEventListener("touchend", resume, { passive: true });
       document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "visible") resume();
       });

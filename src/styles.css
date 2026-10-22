@@ -904,8 +904,8 @@ html[data-reduce-motion] *, html[data-reduce-motion] *::before, html[data-reduce
 .phone-console .drum-roll-fit .drum-roll-toolbar { overflow: visible; padding: 2px; gap: 6px; }
 .phone-console .drum-roll-fit button,
 .phone-console .drum-roll-fit [role="combobox"] { min-height: 26px !important; height: 26px; }
-.phone-console .drum-roll-fit [aria-label="Drum roll grid"] { flex: 1; min-height: 0; max-height: none; overflow: hidden; }
-.phone-console .drum-roll-fit .drum-fit-rows { display: grid; height: 100%; width: 100%; min-width: 0; }
+.phone-console .drum-roll-fit [aria-label="Drum roll grid"] { flex: 1; min-height: 0; max-height: none; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; }
+.phone-console .drum-roll-fit .drum-fit-rows { display: grid; min-height: 100%; width: 100%; min-width: 0; }
 .phone-console .drum-fit-rows > div:not(:first-child),
 .phone-console .drum-fit-rows > div:not(:first-child) > div { min-height: 0; height: 100%; }
 .phone-console .drum-roll-fit .drum-row-name { width: 138px; height: 100%; min-height: 0 !important; padding: 0 4px; }
