@@ -104,12 +104,21 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
     </nav>
     </div>
     <main className="phone-console-stage relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-      {!panel && room === "edit" && <div className="flex h-7 shrink-0 items-center justify-between gap-3 border-b border-border bg-surface px-3"><h1 className="truncate text-xs font-semibold tracking-wide">{project?.id ? project.name : project ? `${project.name} · not saved yet` : "Untitled song"}</h1><DeviceClock inline /></div>}
+      {!panel && room === "edit" && !landscape && <div className="flex h-7 shrink-0 items-center justify-between gap-3 border-b border-border bg-surface px-3"><h1 className="truncate text-xs font-semibold tracking-wide">{project?.id ? project.name : project ? `${project.name} · not saved yet` : "Untitled song"}</h1><DeviceClock inline /></div>}
       {panel === "mixer" && !mixerFull && <>
         {dockHeight > 0 && <div className="docked-phone-timeline shrink-0 overflow-hidden" style={{ height: dockHeight }}><Timeline desktopStyle /></div>}
         <div role="separator" aria-orientation="horizontal" aria-label="Resize timeline and mixer" title="Drag to resize timeline and mixer" onPointerDown={startDockDrag} className="dock-splitter flex h-8 shrink-0 cursor-row-resize touch-none items-center justify-center gap-2 border-y-2 border-primary/50 bg-surface"><GripHorizontal className="size-5 text-primary" /><span className="text-[10px] font-bold uppercase tracking-widest text-primary">Drag to resize</span></div>
       </>}
-      {!panel && room === "edit" && <Timeline desktopStyle />}
+      {!panel && room === "edit" && (landscape ? (
+        // Sideways phone: the whole Edit screen scrolls as one page — title row,
+        // transport strip, ruler and every track row move together.
+        <div className="phone-edit-scroll min-h-0 flex-1 overflow-y-auto overscroll-y-contain">
+          <div className="flex h-7 shrink-0 items-center justify-between gap-3 border-b border-border bg-surface px-3"><h1 className="truncate text-xs font-semibold tracking-wide">{project?.id ? project.name : project ? `${project.name} · not saved yet` : "Untitled song"}</h1><DeviceClock inline /></div>
+          <Timeline desktopStyle pageScroll />
+        </div>
+      ) : (
+        <Timeline desktopStyle />
+      ))}
       {panel && children}
       {!panel && room !== "edit" && <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <header className="phone-room-header grid h-14 shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center border-b border-border px-5"><h2 className="truncate text-base font-semibold">{room === "sounds" ? "Sounds & instruments" : "Effects & tools"}</h2><span className="text-xs text-muted-foreground">SYNCLAB</span></header>

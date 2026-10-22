@@ -3391,7 +3391,7 @@ function FolderRow({
   );
 }
 
-export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandlesVisible = true }: { phonePaged?: boolean; desktopStyle?: boolean; resizeHandlesVisible?: boolean }) {
+export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandlesVisible = true, pageScroll = false }: { phonePaged?: boolean; desktopStyle?: boolean; resizeHandlesVisible?: boolean; pageScroll?: boolean }) {
   const { tracks, transport, addTrack, addClip, setPanel, loadSample, folders, renameFolder, removeFolder, toggleFolderCollapsed, setTransport, moveTrackToIndex } = useStudio();
   const totalSteps = songSteps(transport.bars);
   const [over, setOver] = useState(false);
