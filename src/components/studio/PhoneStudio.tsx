@@ -39,6 +39,7 @@ const tools = [
 ] as const;
 
 export function PhoneStudio({ children }: { children: ReactNode }) {
+  const landscape = useIsLandscapePhone();
   const { panel, setPanel, transport, tracks, select, addTrack } = useStudio();
   const { setStage, project } = useApp();
   const [room, setRoom] = useState<"edit" | "sounds" | "tools">("edit");
