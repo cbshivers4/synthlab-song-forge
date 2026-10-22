@@ -278,7 +278,7 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
       </div>}
 
       <div ref={gridRef} onScroll={readRows} aria-label="Drum roll grid" className={`overflow-auto rounded-[2px] border border-border bg-background ${full ? "max-h-[78dvh]" : isMobile ? "max-h-[45dvh] touch-pan-y" : ""}`}>
-        <div className={fit ? "drum-fit-rows" : isMobile && !full ? "w-full" : isMobile ? "" : "min-w-[640px]"} style={fit ? { gridTemplateRows: `20px repeat(${rows.length}, minmax(22px, 1fr))`, ["--drum-fit-rows" as string]: rows.length } : isMobile && full ? { minWidth: 212 + total * (50 * view.zoom) } : undefined}>
+        <div className={fit ? "drum-fit-rows" : isMobile && !full ? "w-full" : isMobile ? "" : "min-w-[640px]"} style={fit ? { gridTemplateRows: `24px repeat(${rows.length}, minmax(36px, 1fr))`, ["--drum-fit-rows" as string]: rows.length } : isMobile && full ? { minWidth: 212 + total * (50 * view.zoom) } : undefined}>
           {/* bar numbers */}
           <div className="sticky top-0 z-10 flex border-b border-border bg-surface-2">
             <div className="drum-roll-label-header w-32 shrink-0 border-r border-border px-2 py-0.5 font-mono text-[8px] uppercase tracking-widest text-muted-foreground">

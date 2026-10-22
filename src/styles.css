@@ -909,14 +909,19 @@ html[data-reduce-motion] *, html[data-reduce-motion] *::before, html[data-reduce
 .phone-console .drum-fit-rows > div:not(:first-child),
 .phone-console .drum-fit-rows > div:not(:first-child) > div { min-height: 0; height: 100%; }
 .phone-console .drum-roll-fit .drum-row-name { width: 138px; height: 100%; min-height: 0 !important; padding: 0 4px; }
-.phone-console .drum-roll-fit .drum-row-name span { font-size: 11px; line-height: 1; }
+.phone-console .drum-roll-fit .drum-row-name span { font-size: 13px; line-height: 1.1; font-weight: 700; }
 .phone-console .drum-roll-fit .drum-roll-label-header { width: 166px; }
-.phone-console .drum-roll-fit .drum-row-mute { height: 100%; min-height: 0 !important; width: 20px; font-size: 10px; }
-.phone-console .drum-roll-fit div:has(> .drum-step) { padding: 1px 3px; min-width: 0; height: 100%; }
+.phone-console .drum-roll-fit .drum-row-mute { height: 100%; min-height: 0 !important; width: 24px; font-size: 11px; }
+/* Sideways phone drum roll: keep step numbers pinned while rows scroll, and give rows breathing room. */
+.phone-console .drum-roll-fit .drum-fit-rows > div:first-child { position: sticky; top: 0; z-index: 5; background: var(--surface); }
+.phone-console .drum-roll-fit .drum-fit-rows > div:not(:first-child) { border-bottom: 1px solid var(--border); }
+.mobile-studio .phone-tool-panel:has(.drum-roll-fit) .editor-track-actions { min-height: 40px; padding-block: 2px; }
+.mobile-studio .phone-tool-panel:has(.drum-roll-fit) .editor-track-actions button { min-height: 36px; height: 36px; }
+.phone-console .drum-roll-fit div:has(> .drum-step) { padding: 2px 3px; min-width: 0; height: 100%; }
 .phone-console .drum-roll-fit .drum-step { height: 100%; min-height: 0 !important; min-width: 0 !important; }
 .phone-console .drum-roll-fit .drum-fit-bulk { position: relative; height: 20px; }
 .phone-console .drum-fit-bulk[open] > .drum-bulk { position: absolute; top: 20px; inset-inline: 0; z-index: 30; background: var(--surface); border: 1px solid var(--border); padding: 6px; }
-.phone-console .drum-roll-fit .drum-step span { font-size: 10px; line-height: 1; }
+.phone-console .drum-roll-fit .drum-step span { font-size: 12px; line-height: 1; }
 .phone-console .drum-roll-fit .drum-note-dock { height: 80px; }
 .phone-console .drum-roll-fit .hardware-knob { width: 48px; gap: 2px; }
 .phone-console .drum-roll-fit .hardware-knob-label { font-size: 9px; }
@@ -2271,6 +2276,6 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
   .phone-console .drum-machine:has(.drum-roll-fit) { display: grid; grid-template-rows: auto auto auto; overflow: visible; flex: none; }
   .phone-console .drum-roll-fit { flex: none !important; }
   .phone-console .drum-roll-fit [aria-label="Drum roll grid"] { flex: none; overflow: visible; }
-  .phone-console .drum-roll-fit .drum-fit-rows { min-height: 0; grid-auto-rows: 26px; }
-  .phone-console .drum-roll-fit .drum-fit-rows { grid-template-rows: 20px repeat(var(--drum-fit-rows, 17), 26px) !important; }
+  .phone-console .drum-roll-fit .drum-fit-rows { min-height: 0; grid-auto-rows: 36px; }
+  .phone-console .drum-roll-fit .drum-fit-rows { grid-template-rows: 24px repeat(var(--drum-fit-rows, 17), 36px) !important; }
 }
