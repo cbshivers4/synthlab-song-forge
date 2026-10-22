@@ -984,7 +984,7 @@ html[data-reduce-motion] *, html[data-reduce-motion] *::before, html[data-reduce
   .phone-sideways-default .h-\[100dvh\] { height: 100dvw; }
   .phone-sideways-default .min-h-screen { min-height: 100dvw; }
   .phone-sideways-default .phone-console.phone-entry .phone-page-viewport > div > .mx-auto.grid.login-inner { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-  .phone-sideways-default .spin-logo { width: min(38dvh, 240px); }
+  .phone-sideways-default .spin-logo { width: min(30dvh, 190px); }
 }
 /* Sideways phone Edit screen: one scrolling page (title + timeline move together) */
 .phone-edit-scroll { touch-action: pan-y; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
