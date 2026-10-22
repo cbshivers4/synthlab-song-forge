@@ -38,6 +38,7 @@ export function StudioBack() {
   const { tracks, togglePluginBypass, updateTrack } = useStudio();
   const [pending, setPending] = useState<JackRef | null>(null);
   const [selectedWire, setSelectedWire] = useState<string | null>(null);
+  const [listOpen, setListOpen] = useState(false);
   const boxRef = useRef<HTMLDivElement>(null);
   const [lines, setLines] = useState<{ id: string; d: string; color: CableColor; selected: boolean }[]>([]);
 
@@ -146,19 +147,25 @@ export function StudioBack() {
     const draw = () => {
       const box = boxRef.current;
       if (!box) return;
-      const r = box.getBoundingClientRect();
+      // Layout offsets (not screen rects) so cables stay correct inside the
+      // rotated sideways-phone canvas and while the rack scrolls.
       const pos = (p: JackRef) => {
         const el = box.querySelector<HTMLElement>(`[data-jack="${CSS.escape(pkey(p))}"]`);
         if (!el) return null;
-        const b = el.getBoundingClientRect();
-        return { x: b.left + b.width / 2 - r.left, y: b.top + b.height / 2 - r.top };
+        let x = el.offsetWidth / 2, y = el.offsetHeight / 2;
+        let n: HTMLElement | null = el;
+        while (n && n !== box) { x += n.offsetLeft; y += n.offsetTop; n = n.offsetParent as HTMLElement | null; }
+        if (n !== box) return null;
+        return { x, y };
       };
       setLines(
         wires.flatMap((w) => {
           const a = pos(w.from), b = pos(w.to);
           if (!a || !b) return [];
-          const sag = 46 + Math.abs(a.x - b.x) * 0.12 + Math.abs(a.y - b.y) * 0.25;
-          return [{ id: w.id, color: w.color, selected: selectedWire === w.id, d: `M${a.x},${a.y} C${a.x},${a.y + sag} ${b.x},${b.y + sag} ${b.x},${b.y}` }];
+          const dx = Math.max(40, Math.abs(b.x - a.x) * 0.45);
+          const sag = 18 + Math.abs(a.y - b.y) * 0.08;
+          const dir = b.x >= a.x ? 1 : -1;
+          return [{ id: w.id, color: w.color, selected: selectedWire === w.id, d: `M${a.x},${a.y} C${a.x + dx * dir},${a.y + sag} ${b.x - dx * dir},${b.y + sag} ${b.x},${b.y}` }];
         }),
       );
     };
@@ -238,20 +245,23 @@ export function StudioBack() {
 
       <div className="studio-back-scroll min-h-0 flex-1 overflow-auto" tabIndex={0} aria-label="Studio device columns">
       <div ref={boxRef} className="studio-back-rack relative" aria-label="Back of the studio rack — audio cable routing">
+        <div className="studio-back-stage" data-stage="sources">
         {([
           { id: "synths", title: "SYNTHS", icon: KeyboardMusic, items: tracks.filter(t => t.kind !== "drum" && t.kind !== "sampler" && t.kind !== "audio" && t.kind !== "ai-vocal"), kind: "SYNTH" },
           { id: "drums", title: "DRUM MACHINES", icon: Drum, items: tracks.filter(t => t.kind === "drum"), kind: "DRUM MACHINE" },
           { id: "samplers", title: "SAMPLERS", icon: AudioLines, items: tracks.filter(t => t.kind === "sampler"), kind: "SAMPLER" },
           { id: "microphones", title: "MICROPHONES", icon: Mic, items: tracks.filter(t => t.kind === "audio" || t.kind === "ai-vocal"), kind: "AUDIO CHANNEL" },
         ]).map(({ id, title, icon: Icon, items, kind }) => (
-          <section key={id} className="studio-back-column" data-column={id} aria-label={title}>
+          <section key={id} hidden={!items.length} className="studio-back-column" data-column={id} aria-label={title}>
             <header className="studio-back-column-header"><Icon className="size-4 text-primary" /><h3>{title}</h3><span>{items.length}</span></header>
             <div className="studio-back-column-body">
               {items.map(track => unit(`track:${track.id}`, track.name, kind, jack(trackOut(track), true, "AUDIO OUT")))}
-              {!items.length && <div className="studio-back-empty">NO {title}</div>}
+              
             </div>
           </section>
         ))}
+        </div>
+        <div className="studio-back-stage" data-stage="effects">
         <section className="studio-back-column studio-back-effects" data-column="effects" aria-label="Effect rack">
           <header className="studio-back-column-header"><Cpu className="size-4 text-primary" /><h3>EFFECT RACK</h3><span>{tracks.reduce((n, t) => n + (t.plugins?.length ?? 0), 0)}</span></header>
           <div className="studio-back-column-body">
@@ -260,12 +270,16 @@ export function StudioBack() {
             {SEND_BUSES.map(b => unit(`bus:${b}`, b.toUpperCase(), "SEND INPUT", jack(busIn(b), false, "IN")))}
           </div>
         </section>
+        </div>
+        <div className="studio-back-stage" data-stage="mix">
         <section className="studio-back-column studio-back-mixing" data-column="mixer" aria-label="Mixing desk">
           <header className="studio-back-column-header"><SlidersHorizontal className="size-4 text-primary" /><h3>MIXING DESK</h3><span>{tracks.length} CH</span></header>
           <div className="studio-back-column-body">
             {unit("master", "MIXING DESK", "CHANNEL INPUTS · MASTER OUTPUT", <>{tracks.map(t => jack(masterIn(t), false, t.name))}{jack({ device: "master", port: "out" }, true, "MASTER OUT")}</>)}
           </div>
         </section>
+        </div>
+        <div className="studio-back-stage" data-stage="outputs">
         <section className="studio-back-column studio-back-tape" data-column="reel" aria-label="Reel-to-reel recorder">
           <header className="studio-back-column-header"><Disc3 className="size-4 text-primary" /><h3>REEL TO REEL</h3><span>REC</span></header>
           <div className="studio-back-column-body">{unit("reel", "REEL TO REEL", "RECORDER · MASTER FEED", jack({ device: "reel", port: "in" }, false, "REC IN", true))}</div>
@@ -274,6 +288,7 @@ export function StudioBack() {
           <header className="studio-back-column-header"><Speaker className="size-4 text-primary" /><h3>STUDIO MONITORS</h3><span>L / R</span></header>
           <div className="studio-back-column-body">{unit("monitors", "STUDIO MONITORS", "STEREO · MASTER FEED", jack({ device: "monitors", port: "in" }, false, "IN", true))}</div>
         </section>
+        </div>
 
         <svg className="pointer-events-none absolute inset-0 size-full overflow-visible" aria-hidden>
           {lines.map((l) => (
@@ -288,9 +303,9 @@ export function StudioBack() {
       </div>
 
       {/* wire list — tap a wire to select it for unplugging */}
-      <div className="max-h-36 shrink-0 overflow-auto border-t border-border bg-surface px-3 py-2" aria-label="Patched cables">
-        <h4 className="label-xs mb-1">CABLES ({wires.length})</h4>
-        <div className="flex flex-wrap gap-1">
+      <div className="max-h-36 shrink-0 overflow-auto border-t border-border bg-surface px-3 py-1.5" aria-label="Patched cables">
+        <Button variant="ghost" size="sm" className="h-9 w-full justify-start px-1 text-xs font-bold" aria-expanded={listOpen} onClick={() => setListOpen((o) => !o)}>CABLES ({wires.length}) {listOpen ? "▾ HIDE" : "▸ SHOW LIST"}</Button>
+        <div className="flex flex-wrap gap-1" hidden={!listOpen}>
           {wires.map((w) => (
             <Button
               variant="ghost"
