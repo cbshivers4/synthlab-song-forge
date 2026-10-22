@@ -2411,7 +2411,8 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
 .synth-hardware[data-synth-style="modular"] .modular-module .hardware-knob-value { color: var(--hardware-ink); }
 .synth-hardware[data-synth-style="spec4"] .synth-osc-module .hardware-knob-label { color: var(--hardware-dark-ink); font-weight: 700; }
 .synth-hardware[data-synth-style="spec4"] .synth-osc-module .hardware-knob button { color: var(--hardware-dark-ink); }
-.synth-hardware[data-synth-style="acid"] [role="tabpanel"] .hardware-knob-value { color: var(--hardware-silver-light) !important; }
+.synth-hardware[data-synth-style="acid"] .synth-console-tabs [role="tabpanel"] .hardware-knob .hardware-knob-value.hardware-knob-value { color: var(--hardware-silver-light) !important; }
+.synth-hardware[data-synth-style="acid"] .synth-console-tabs [role="tabpanel"] .synth-osc-module > div:first-child > span:not(.rounded-full) { color: var(--hardware-ink) !important; }
 .synth-preset-deck button:not([data-state="checked"]) { color: var(--hardware-ink); }
 .drum-hardware { position: relative; isolation: isolate; border: 3px solid var(--hardware-black); border-inline: 16px solid var(--instrument-wood-edge); --foreground: var(--hardware-ink); --muted-foreground: var(--hardware-silver); --surface: var(--instrument-graphite); --surface-2: var(--instrument-graphite-hi); --border: var(--hardware-rubber-edge); --hardware-scale: var(--hardware-silver); --hardware-mark: var(--hardware-dark-ink); }
 .drum-hardware:not([style*="background-image"]) { background-image: var(--hardware-brush), var(--instrument-metal-face); }
