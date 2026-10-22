@@ -2305,6 +2305,62 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
 .device-module[data-fx-skin] .device-module-header { background: color-mix(in oklab, var(--hardware-face) 82%, var(--hardware-black)); border-bottom: 2px solid var(--hardware-trim); }
 .device-module[data-fx-skin] .hardware-knob-dial { box-shadow: 0 0 0 1px var(--hardware-trim), var(--hardware-knob-shadow); }
 .fx-face[data-bypassed="true"] { opacity: 0.65; }
+/* Cabinet and compact metal faceplates: scoped to the full Plugins rack. */
+:root {
+  --rack-edge: var(--hardware-black);
+  --rack-inner: var(--fx-charcoal);
+  --rack-metal: var(--hardware-silver-dark);
+  --rack-shadow: 0 8px 18px var(--hardware-shade), inset 0 1px var(--hardware-highlight);
+  --rack-panel-sheen: linear-gradient(180deg, var(--hardware-highlight), transparent 20%, transparent 80%, var(--hardware-shade));
+}
+.plugin-rack-workstation { display: grid; grid-template-columns: minmax(0,1fr) 210px; gap: 14px; align-items: start; }
+.plugin-rack-cabinet { position: relative; isolation: isolate; min-width: 0; overflow: hidden; padding: 18px; border: 2px solid var(--rack-edge); border-radius: 5px; box-shadow: var(--rack-shadow); }
+.plugin-rack-wood { position: absolute; z-index: -1; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.plugin-rack-badge { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; padding: 13px 18px; margin-bottom: 12px; border: 2px solid var(--rack-edge); background: var(--hardware-brush), var(--rack-panel-sheen), var(--fx-graphite); color: var(--hardware-ink); box-shadow: var(--hardware-case-shadow); }
+.plugin-rack-badge strong { font-family: var(--font-display); font-size: 24px; }
+.plugin-rack-badge span { font: 10px var(--font-mono); color: var(--hardware-silver); }
+.plugin-rack-badge span:last-child { margin-left: auto; }
+.plugin-rack-stack { display: flex; flex-direction: column; gap: 7px; padding: 6px; background: var(--rack-inner); border-inline: 5px solid var(--rack-edge); box-shadow: var(--hardware-pressed-shadow); }
+.plugin-rack-stack .fx-face { border: 1px solid var(--rack-edge); border-radius: 4px; background: var(--hardware-brush), var(--rack-panel-sheen), var(--hardware-face); box-shadow: var(--hardware-case-shadow); }
+.plugin-rack-stack .hardware-rack-ear { width: 19px; border: none; background: var(--rack-panel-sheen), var(--hardware-face); }
+.plugin-rack-stack .hardware-rack-screw { width: 11px; height: 11px; box-shadow: 0 0 0 2px var(--rack-edge), 0 2px 3px var(--hardware-shade); }
+.plugin-rack-stack .hardware-device-header { background: transparent; padding-block: 7px; border-bottom-color: var(--hardware-highlight); }
+.plugin-rack-stack .fx-nameplate { border-left: 0; padding-left: 2px; }
+.plugin-rack-stack .fx-nameplate h3 { font-size: 18px; color: var(--hardware-trim); letter-spacing: 0; }
+.plugin-rack-stack .fx-output-strip { padding-inline: 6px; }
+.plugin-rack-stack .fx-module-body > .grid { grid-template-columns: minmax(180px,0.85fr) minmax(0,1.15fr); gap: 12px; padding: 10px 12px 16px; border-top: 0; align-items: center; }
+.plugin-rack-stack .fx-control-deck { background: transparent; padding: 12px 4px; box-shadow: none; border: 0; --fx-deck-ink: var(--foreground); }
+.plugin-rack-stack .fx-knob-bank { display: flex; flex-wrap: wrap; gap: 12px 8px; justify-content: space-evenly; }
+.plugin-rack-stack .hardware-knob { width: 76px; }
+.plugin-rack-stack .hardware-knob-dial { box-shadow: var(--hardware-knob-shadow); background: var(--hardware-rubber); }
+.plugin-rack-stack .hardware-knob-grip { inset: 14%; background: repeating-conic-gradient(var(--hardware-rubber) 0deg 9deg, var(--hardware-rubber-edge) 9deg 12deg); }
+.plugin-rack-stack .hardware-knob-cap { inset: 14%; background: linear-gradient(145deg, var(--hardware-rubber-edge), var(--hardware-black)); border-color: var(--hardware-black); }
+.plugin-rack-stack .hardware-knob-pointer i { width: 3px; height: 33%; background: var(--hardware-trim); }
+.plugin-rack-stack .hardware-knob-scale { stroke: var(--hardware-silver); }
+.plugin-rack-stack .hardware-knob-label { margin-top: 4px; font-size: 10px; }
+.plugin-rack-stack .fx-parameter-window { border: 3px solid var(--hardware-rubber); box-shadow: var(--hardware-pressed-shadow); }
+.plugin-rack-stack .fx-motion-controls { font: 9px var(--font-mono); color: var(--muted-foreground); }
+.plugin-rack-stack .fx-motion-controls summary { cursor: pointer; padding: 6px 0; }
+.plugin-rack-stack .fx-face[data-fx-skin="reverb"] .fx-module-body > .grid { grid-template-columns: minmax(0,1fr); }
+.plugin-rack-stack .fx-face[data-fx-skin="delay"] { --hardware-face: var(--fx-petrol); }
+.plugin-rack-stack .fx-face[data-fx-skin="drive"] { --hardware-face: var(--fx-crimson); }
+.plugin-rack-stack .fx-face:is([data-fx-skin="compressor"], [data-fx-skin="chorus"], [data-fx-skin="gain"], [data-fx-skin="width"], [data-fx-skin="tremolo"], [data-fx-skin="scalechord"]) .hardware-knob-scale { stroke: var(--hardware-dark-ink); }
+.plugin-rack-browser { min-width: 0; padding: 10px; background: var(--rack-inner); border: 2px solid var(--rack-edge); box-shadow: var(--hardware-pressed-shadow); }
+.plugin-rack-browser-list { display: grid; gap: 7px; max-height: 720px; overflow-y: auto; }
+.plugin-rack-browser-device { min-width: 0; position: relative; border: 1px solid var(--rack-metal); border-left: 5px solid var(--hardware-trim); border-radius: 3px; background: var(--hardware-brush), var(--hardware-face); box-shadow: var(--hardware-case-shadow); }
+.plugin-rack-browser-device button { color: var(--foreground); }
+@media (max-width: 1100px) {
+  .plugin-rack-workstation { grid-template-columns: minmax(0,1fr); }
+  .plugin-rack-browser-list { grid-template-columns: repeat(auto-fit,minmax(175px,1fr)); max-height: 240px; }
+}
+@media (max-width: 767px), (orientation: landscape) and (max-height: 600px) and (max-width: 1100px) {
+  .plugin-rack-cabinet { padding: 10px; }
+  .plugin-rack-stack { padding: 3px; border-inline-width: 3px; }
+  .plugin-rack-stack .fx-module-body > .grid { grid-template-columns: minmax(0,1fr); }
+  .plugin-rack-stack .fx-nameplate h3 { font-size: 16px; }
+  .plugin-rack-stack .hardware-device-header { gap: 4px; }
+  .plugin-rack-badge { padding: 8px 12px; }
+}
 @media (max-width: 767px) { .fx-face .fx-nameplate h3 { font-size: 16px; } .fx-parameter-window { min-width: 85px; } .fx-parameter-window strong { font-size: 18px; } .fx-control-deck { padding: 18px 8px; } }
 .synth-hardware[data-synth-style="acid"] [role="tabpanel"] .hardware-knob-label { font-size: 11px !important; font-weight: 800; color: var(--acid-ink) !important; }
 .synth-hardware[data-synth-style="acid"] [role="tabpanel"] .hardware-knob-value { font-size: 12px !important; font-weight: 700; color: var(--acid-ink) !important; }

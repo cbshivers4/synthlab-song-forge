@@ -53,4 +53,5 @@ Project exits use AppProvider/ProjectCloseGuard on both layouts: compare musical
 Shortcuts share studio actions and yield to controls/claimed keys to avoid doubling.
 Bulk drums use atomic store transforms preserving empty steps, loop bounds and hit metadata; shared controls prevent divergent editors.
 Sound screens use shared tokens and real parameter drag points with 20 fps signal drawing, never fake wave activity.
+Plugins cabinet presentation wraps existing RackEffect instances and a responsive installed-device browser; cabinet texture and scoped faceplate styles never change processing or duplicate plugin state.
 Studio rear presentation follows the front room's furniture zones in one measured canvas; phone overview scales that entire canvas (including cable SVG) inside a sized scroll wrapper, while full-size inspection preserves native scrolling and real routing.

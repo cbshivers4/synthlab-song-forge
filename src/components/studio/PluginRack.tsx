@@ -15,6 +15,7 @@ import type { PluginDef, PluginKind } from "@/lib/synclab/types";
 import { RackEffect } from "./RackEffect";
 import { PluginBridge } from "./PluginBridge";
 import { toast } from "sonner";
+import rackWalnut from "@/assets/rack-walnut.jpg";
 
 const FORMATS: PluginDef["format"][] = ["VST3", "AU", "CLAP", "AAX"];
 
@@ -147,18 +148,24 @@ export function PluginRack() {
         </Select>
         <span className="text-xs text-muted-foreground">{chain.length} insert{chain.length === 1 ? "" : "s"}</span>
       </header>
-      <div className="space-y-2" aria-label={`${track.name} effects chain`}>
+      <div className="plugin-rack-workstation">
+      <div className="plugin-rack-cabinet">
+        <img src={rackWalnut} alt="" aria-hidden="true" className="plugin-rack-wood" loading="lazy" width={1152} height={576} />
+        <div className="plugin-rack-badge"><strong>SYNCLAB</strong><span>INSERT RACK</span><span>{track.name} · {chain.length} / SERIAL</span></div>
+      <div className="plugin-rack-stack" aria-label={`${track.name} effects chain`}>
         {chain.length === 0 && <p className="border-y border-dashed border-border px-3 py-6 text-center text-sm text-muted-foreground">No effects on {track.name}.</p>}
         {chain.map((p, i) => <RackEffect key={p.id} trackId={track.id} plugin={p} index={i} count={chain.length} />)}
       </div>
+      </div>
 
       {/* installed rack */}
-      <div>
+      <aside className="plugin-rack-browser">
         <p className="label-xs mb-1.5">ADD EFFECT · {track.name}</p>
-        <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="plugin-rack-browser-list">
           {installedPlugins.map((d) => (
             <div
               key={d.id}
+              data-fx-skin={d.kind}
               draggable
               onDragStart={(e) => {
                 const payload = JSON.stringify({ type: "plugin", defId: d.id });
@@ -166,10 +173,10 @@ export function PluginRack() {
                 e.dataTransfer.setData("text/plain", payload);
                 e.dataTransfer.effectAllowed = "copy";
               }}
-              className="panel flex cursor-grab items-center gap-2 px-2 py-1.5 active:cursor-grabbing"
+              className="plugin-rack-browser-device flex cursor-grab items-center gap-2 px-2 py-1.5 active:cursor-grabbing"
             >
               <Button variant="ghost" aria-label={`Add ${d.name}`} className="h-auto min-h-11 min-w-0 flex-1 flex-col items-start gap-0 text-left" onClick={() => addPlugin(track.id, d)}>
-                <span className="block truncate text-[11px] font-medium">{d.name}</span>
+                 <span className="block max-w-full truncate text-[11px] font-medium">{d.name}</span>
                 <span className="block truncate font-mono text-[9px] tracking-wider text-muted-foreground uppercase">
                   {d.vendor} · {d.format}
                 </span>
@@ -183,6 +190,7 @@ export function PluginRack() {
             </div>
           ))}
         </div>
+      </aside>
       </div>
 
       <details className="border-t border-border pt-3"><summary className="cursor-pointer py-3 text-sm font-semibold">Plugin files & desktop bridge</summary>
