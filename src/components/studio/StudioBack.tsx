@@ -314,7 +314,7 @@ export function StudioBack() {
       </div>
 
       {/* wire list — tap a wire to select it for unplugging */}
-      <div className="max-h-36 shrink-0 overflow-auto border-t border-border bg-surface px-3 py-1.5" aria-label="Patched cables">
+      <div className={`studio-back-cables max-h-36 shrink-0 overflow-auto border-t border-border bg-surface px-3 py-1.5 ${listOpen ? "" : "is-closed"}`} aria-label="Patched cables">
         <Button variant="ghost" size="sm" className="h-9 w-full justify-start px-1 text-xs font-bold" aria-expanded={listOpen} onClick={() => setListOpen((o) => !o)}>CABLES ({wires.length}) {listOpen ? "▾ HIDE" : "▸ SHOW LIST"}</Button>
         {listOpen && <div className="flex flex-wrap gap-1">
           {wires.map((w) => (
