@@ -425,10 +425,12 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
         const pad = pads.find(p => p.id === selected);
         if (!pad) return null;
         const index = noteScope === 'all' ? Math.max(0, pad.steps.findIndex(v => v > 0)) : view.step;
-        const edit = (field: DrumHitField, value: number) => updateTrack(track.id, {
-          pads: editInstrumentNotes(pads, pad.id, field, value, noteScope, view.step, transport.loop ? loopRegion(transport) : undefined),
-          ...(transport.loop ? { patternRegion: loopRegion(transport) } : {}),
-        });
+        const edit = (field: DrumHitField, value: number) => {
+          const next = editInstrumentNotes(pads, pad.id, field, value, noteScope, view.step, transport.loop ? loopRegion(transport) : undefined).find(p => p.id === pad.id);
+          if (!next) return;
+          updatePad(track.id, pad.id, { [field]: next[field] });
+          if (transport.loop) updateTrack(track.id, { patternRegion: loopRegion(transport) });
+        };
         return <div className="drum-note-dock" role="group" aria-label="Selected instrument notes">
           <div className="drum-note-scope"><strong className="truncate text-xs" title={pad.name}>{pad.name}</strong><div className="flex gap-1">
             <Button size="sm" variant={noteScope === 'one' ? 'default' : 'secondary'} aria-pressed={noteScope === 'one'} onClick={() => setNoteScope('one')}>One note</Button>
