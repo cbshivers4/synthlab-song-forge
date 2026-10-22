@@ -1,3 +1,4 @@
+import { useIsLandscapePhone } from "@/hooks/use-mobile";
 import { DeviceClock } from "./DeviceClock";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { AudioLines, ChevronLeft, ChevronRight, FolderOpen, Home, Music2, Scissors, SlidersHorizontal, Wand2, Settings2, Radio, Disc3, Grid2x2, Piano, Gauge, FileSearch, Cpu, Palette, NotebookPen, LifeBuoy, Mic, Bot, Sparkles, Film, PanelTop, Move, X, Maximize2, Minimize2, GripHorizontal } from "lucide-react";
