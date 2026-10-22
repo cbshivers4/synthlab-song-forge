@@ -27,7 +27,7 @@ import { openHelp } from "@/components/studio/HelpCenter";
 
 
 const FEATURES: { icon: React.ReactNode; title: string; body: string }[] = [
-  { icon: <Sparkles className="size-4" />, title: "AI Co-Producer", body: "Writes chords, basslines, drum patterns and lyrics — preview against your song, then add it to the timeline." },
+  { icon: <Sparkles className="size-4" />, title: "AI Co-Producer — Coming soon", body: "Not available now. Writes chords, basslines, drum patterns and lyrics — preview against your song, then add it to the timeline." },
   { icon: <Wand2 className="size-4" />, title: "Generate Stem — Coming soon", body: "Not available now. Describe a part and get a solo audio stem in your key and tempo." },
   { icon: <AudioLines className="size-4" />, title: "Separate Stems — Coming soon", body: "Not available now. Split any song into vocals, drums, bass or instrumental." },
   { icon: <Mic className="size-4" />, title: "Hum to Beat & Convert Voice", body: "Beatbox a rhythm or hum a melody into notes, and restyle recorded vocals with 21 voice templates." },
