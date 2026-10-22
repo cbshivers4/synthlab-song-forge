@@ -1797,7 +1797,7 @@ html[data-reduce-motion] *, html[data-reduce-motion] *::before, html[data-reduce
 .studio-back-monitors .studio-back-unit-vent { height: 90px; border-inline: 12px solid var(--surface-2); }
 .studio-back [aria-label="Patched cables"] .modular-add { min-height: 36px; height: auto; white-space: normal; text-align: left; letter-spacing: 0; }
 @media (max-width: 767px), (orientation: landscape) and (max-width: 1100px) and (max-height: 600px) {
-  /* Phone: open on a whole-room overview; full-size inspection keeps native scrolling. */
+  /* Phone: fit the room width, never shrink equipment to fit a short screen. */
   .phone-console .studio-visual { flex: 1 1 0%; }
   .phone-console .studio-visual > div:first-child > .text-muted-foreground { display: none; }
   .phone-console .studio-back { flex: 1 1 0%; overflow: hidden; }
@@ -1807,6 +1807,11 @@ html[data-reduce-motion] *, html[data-reduce-motion] *::before, html[data-reduce
   .studio-back-view-controls { display: flex; }
   .studio-back [aria-label="Patched cables"] { max-height: 96px; }
   .studio-back-rack { gap: 28px; padding: 14px 20px 90px; min-width: 760px; }
+  .studio-rear-monitor .studio-back-unit { min-height: 110px; }
+  .studio-rear-speaker-stand { height: 36px; }
+  .studio-back-rack .studio-desk-legs { height: 36px; }
+  .studio-rear-headphones { height: 95px; }
+  .studio-rear-furniture .studio-chair { height: 95px; }
   .studio-back-column-header { min-height: 36px; padding: 6px; }
   .studio-back-column-body { gap: 10px; padding: 8px 6px; }
   .studio-back-unit { gap: 10px; padding: 10px 8px; }

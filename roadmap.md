@@ -352,7 +352,7 @@
 - [x] Oct 21: corrected the iPhone/iPad MIDI advice — Safari has no Web MIDI at any iOS/iPadOS version (the earlier "iOS 18.4 + cable works in Safari" line was wrong; that version belongs to a macOS-only Safari extension). midiUnsupportedMessage() now points to the free App Store MIDIWeb Browser (iOS/iPadOS 17+) or Web MIDI Browser (iOS 9+) opened on synclabsapp.com with a USB cable, plus on-screen instruments and the desktop app. Preview only.
 
 # Current studio corrections
-- [ ] Make the phone rear studio show the equipment and cables on opening, with an overview, full-size inspection and an unobstructed scroll area; verify signed-in phone views.
+- [x] Make phone rear studio fit its width without shrinking devices to a short screen, retain full-size inspection and native scrolling, and mount the cable list only when opened; signed-in 534×942 and 942×400 checks verified 16 devices, 12 cables and bottom scrolling. Preview only.
 - [x] Fit desktop drum roll without scrolling and highlight Pad Sampler pattern section
 - [x] Align mixer GAIN headers and bottom icons across all strip types
 - [x] Make Acid Bass controls readable

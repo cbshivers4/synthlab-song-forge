@@ -56,7 +56,7 @@ export function StudioBack() {
       const width = Math.max(760, scroll.clientWidth);
       const height = box.offsetHeight;
       const scale = phone && overview && height > 0
-        ? Math.min(1, scroll.clientWidth / width, scroll.clientHeight / height)
+        ? Math.min(1, scroll.clientWidth / width)
         : 1;
       setView(previous => previous.phone === phone && previous.width === width && previous.height === height && Math.abs(previous.scale - scale) < .001 ? previous : { phone, width, height, scale });
     };
