@@ -1805,7 +1805,14 @@ html[data-reduce-motion] *, html[data-reduce-motion] *::before, html[data-reduce
   .studio-back-canvas { margin-inline: auto; }
   .studio-back-canvas > .studio-back-rack { position: absolute; inset: 0 auto auto 0; min-height: 0; }
   .studio-back-view-controls { display: flex; }
+  /* Phone: keep the rear setup as tall as possible — slim toolbar and a fully collapsible cable bar. */
+  .studio-back-toolbar { min-height: 30px; padding: 2px 8px; gap: 4px; }
+  .studio-back-toolbar > span { display: none; }
+  .studio-back-view-controls button { height: 24px; padding-inline: 6px; font-size: 10px; }
   .studio-back [aria-label="Patched cables"] { max-height: 96px; }
+  .studio-back-cables { padding: 2px 8px; }
+  .studio-back-cables button { height: 26px; }
+  .studio-back-cables.is-closed { border-top: 0; background: transparent; max-height: none; }
   .studio-back-rack { gap: 28px; padding: 14px 20px 90px; min-width: 760px; }
   .studio-rear-monitor .studio-back-unit { min-height: 110px; }
   .studio-rear-speaker-stand { height: 36px; }
