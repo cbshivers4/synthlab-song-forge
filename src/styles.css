@@ -2276,6 +2276,6 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
   .phone-console .drum-machine:has(.drum-roll-fit) { display: grid; grid-template-rows: auto auto auto; overflow: visible; flex: none; }
   .phone-console .drum-roll-fit { flex: none !important; }
   .phone-console .drum-roll-fit [aria-label="Drum roll grid"] { flex: none; overflow: visible; }
-  .phone-console .drum-roll-fit .drum-fit-rows { min-height: 0; grid-auto-rows: 26px; }
-  .phone-console .drum-roll-fit .drum-fit-rows { grid-template-rows: 20px repeat(var(--drum-fit-rows, 17), 26px) !important; }
+  .phone-console .drum-roll-fit .drum-fit-rows { min-height: 0; grid-auto-rows: 36px; }
+  .phone-console .drum-roll-fit .drum-fit-rows { grid-template-rows: 24px repeat(var(--drum-fit-rows, 17), 36px) !important; }
 }
