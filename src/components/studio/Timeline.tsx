@@ -335,7 +335,8 @@ function Waveform({ track }: { track: Track }) {
       el.style.transform = "";
       el.style.zIndex = "";
       if (!dragged) return;
-      if (overNewChannel(ev.clientX, ev.clientY)) {
+      const upPt = canvasPoint(ev.clientX, ev.clientY);
+      if (overNewChannel(upPt.x, upPt.y)) {
         moveClipToNew(track.id, clip.id, orig.start);
         toast.success(`${clip.name} moved to a new channel`);
         requestAnimationFrame(() => { if (viewport) viewport.scrollTop = viewport.scrollHeight; });
@@ -345,8 +346,8 @@ function Waveform({ track }: { track: Track }) {
       // The dragged clip floats over the destination. Hit-test lane bounds,
       // not the floating source element or the captured pointer target.
       for (const lane of document.querySelectorAll<HTMLElement>("[data-lane-track]")) {
-        const bounds = lane.getBoundingClientRect();
-        if (ev.clientX >= bounds.left && ev.clientX <= bounds.right && ev.clientY >= bounds.top && ev.clientY <= bounds.bottom) {
+        const bounds = canvasRect(lane);
+        if (upPt.x >= bounds.left && upPt.x <= bounds.right && upPt.y >= bounds.top && upPt.y <= bounds.bottom) {
           targetId = lane.dataset["laneTrack"];
           break;
         }
@@ -481,15 +482,15 @@ function MidiClip({ track }: { track: Track }) {
     e.preventDefault();
     const lane = (e.currentTarget as HTMLElement).closest("[data-lane]") as HTMLElement | null;
     if (!lane) return;
-    const rect = lane.getBoundingClientRect();
+    const rect = canvasRect(lane);
     const perStep = rect.width / total;
-    const x0 = e.clientX;
+    const x0 = canvasPoint(e.clientX, e.clientY).x;
     const grid = transport.snap ?? 1;
     const orig = notes.map((n) => ({ id: n.id, step: n.step, recordedEnd: n.recordedEnd }));
     const el = e.currentTarget as HTMLElement;
     el.setPointerCapture(e.pointerId);
     const onMove = (ev: PointerEvent) => {
-      const raw = (ev.clientX - x0) / Math.max(1, perStep);
+      const raw = (canvasPoint(ev.clientX, ev.clientY).x - x0) / Math.max(1, perStep);
       let d = grid > 0 ? Math.round(raw / grid) * grid : Math.round(raw * 100) / 100;
       const minStep = Math.min(...orig.map((o) => o.step));
       if (minStep + d < 0) d = -minStep;
@@ -624,15 +625,15 @@ function DrumClip({ track }: { track: Track }) {
     e.preventDefault();
     const lane = (e.currentTarget as HTMLElement).closest("[data-lane]") as HTMLElement | null;
     if (!lane) return;
-    const rect = lane.getBoundingClientRect();
+    const rect = canvasRect(lane);
     const perStep = rect.width / songSteps(transport.bars);
-    const x0 = e.clientX;
+    const x0 = canvasPoint(e.clientX, e.clientY).x;
     const grid = transport.snap ?? 1;
     const orig = (track.pads ?? []).map((p) => ({ id: p.id, steps: [...p.steps] }));
     const len = orig[0]?.steps.length ?? 16;
     let applied = 0;
     const onMove = (ev: PointerEvent) => {
-      const raw = (ev.clientX - x0) / Math.max(1, perStep);
+      const raw = (canvasPoint(ev.clientX, ev.clientY).x - x0) / Math.max(1, perStep);
       const d = grid > 0 ? Math.round(raw / grid) * grid : Math.round(raw);
       if (d === applied) return;
       applied = d;
