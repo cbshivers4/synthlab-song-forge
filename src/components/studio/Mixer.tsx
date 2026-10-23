@@ -40,6 +40,8 @@ import { clearClip, reportLevel, useClipped } from "@/lib/synclab/clip-monitor";
 import { Scope } from "./Scope";
 import { XYPad } from "./XYPad";
 import { EffectDisplay } from "./EffectDisplay";
+import { ProEq } from "./ProEq";
+import { VocoderPanel } from "./VocoderPanel";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const BUSES: BusId[] = ["drums", "vocals", "instruments", "synths", "fx", "master"];
@@ -254,6 +256,8 @@ export function InsertRack({
     if (onOpenChange) onOpenChange(id);
     else setOwnOpen(id);
   };
+  // ProEq/VocoderPanel write through the store by track id; bus/master chains use onParam instead.
+  const isTrack = !midiId.includes(":") && midiId !== "master";
   return (
     <div>
       <div className="label-xs mb-1">{title}</div>
@@ -283,6 +287,11 @@ export function InsertRack({
                     {p.name} <span className="text-xs text-muted-foreground">{title} · {p.format}</span>
                   </DialogTitle>
                 </DialogHeader>
+                {p.kind === "paraeq" && isTrack ? (
+                  <ProEq trackId={midiId} plugin={p} />
+                ) : p.kind === "vocoder" && isTrack ? (
+                  <VocoderPanel trackId={midiId} plugin={p} />
+                ) : (
                 <div className="grid gap-3 md:grid-cols-[1.4fr_1fr]">
                   <div className="space-y-2">
                     <EffectDisplay plugin={p} height={220} onParam={(paramId, v) => onParam(p.id, paramId, v)} />
