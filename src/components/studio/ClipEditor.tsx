@@ -541,11 +541,13 @@ function InteractiveWaveform({
 
   const drag = (e: ReactPointerEvent<HTMLDivElement>) => {
     const active = dragRef.current;
-    const rect = surfaceRef.current?.getBoundingClientRect();
-    if (!active || active.pointerId !== e.pointerId || !rect) return;
+    const rectEl = surfaceRef.current;
+    if (!active || active.pointerId !== e.pointerId || !rectEl) return;
+    const rect = canvasRect(rectEl);
+    const pt = canvasPoint(e.clientX, e.clientY);
     const seconds = Math.max(
       0,
-      Math.min(dur, visibleStart + ((e.clientX - rect.left) / rect.width) * visibleDuration),
+      Math.min(dur, visibleStart + ((pt.x - rect.left) / rect.width) * visibleDuration),
     );
     applyAt(active.kind, seconds, active);
   };

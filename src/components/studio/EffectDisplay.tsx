@@ -426,9 +426,10 @@ export function EffectDisplay({
   const apply = (clientX: number, clientY: number) => {
     const el = boxRef.current;
     if (!el) return;
-    const r = el.getBoundingClientRect();
-    const nx = clamp01((clientX - r.left) / r.width);
-    const ny = 1 - clamp01((clientY - r.top) / r.height);
+    const r = canvasRect(el);
+    const pt = canvasPoint(clientX, clientY);
+    const nx = clamp01((pt.x - r.left) / r.width);
+    const ny = 1 - clamp01((pt.y - r.top) / r.height);
     if (isStepFilter) {
       const count = Math.round(param("steps")?.value ?? 16);
       onParam(`s${Math.min(count, Math.floor(nx * count) + 1)}`, ny);
@@ -471,8 +472,8 @@ export function EffectDisplay({
           if (!xP && !yP && !isStepFilter) return;
           e.currentTarget.setPointerCapture(e.pointerId);
           if (isChannelEq && !eqDrag.current) {
-            const rect = e.currentTarget.getBoundingClientRect();
-            const nx = (e.clientX - rect.left) / rect.width;
+            const rect = canvasRect(e.currentTarget);
+            const nx = (canvasPoint(e.clientX, e.clientY).x - rect.left) / rect.width;
             eqDrag.current = DISPLAY_BANDS.reduce((a, b) => Math.abs(nx - (a.id === "mid" ? logX(get("midFreq")) : (a.from + a.to) / 2)) < Math.abs(nx - (b.id === "mid" ? logX(get("midFreq")) : (b.from + b.to) / 2)) ? a : b).id;
           }
           setDragging(true);

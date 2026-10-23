@@ -24,10 +24,11 @@ export function FloatingDevice({ title, faceplate, initial, onClose, children }:
     (mode: "move" | "size") => (e: React.PointerEvent) => {
       e.preventDefault();
       (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+      const pt = canvasPoint(e.clientX, e.clientY);
       drag.current = {
         mode,
-        sx: e.clientX,
-        sy: e.clientY,
+        sx: pt.x,
+        sy: pt.y,
         ox: mode === "move" ? pos.x : pos.w,
         oy: mode === "move" ? pos.y : pos.h,
       };
@@ -39,11 +40,15 @@ export function FloatingDevice({ title, faceplate, initial, onClose, children }:
     const move = (e: PointerEvent) => {
       const d = drag.current;
       if (!d) return;
-      const dx = e.clientX - d.sx;
-      const dy = e.clientY - d.sy;
+      const pt = canvasPoint(e.clientX, e.clientY);
+      const dx = pt.x - d.sx;
+      const dy = pt.y - d.sy;
+      // On the rotated phone canvas the layout axes are swapped.
+      const layoutW = sidewaysCanvas() ? window.innerHeight : window.innerWidth;
+      const layoutH = sidewaysCanvas() ? window.innerWidth : window.innerHeight;
       setPos((p) =>
         d.mode === "move"
-          ? { ...p, x: Math.max(-p.w + 160, Math.min(window.innerWidth - 120, d.ox + dx)), y: Math.max(0, Math.min(window.innerHeight - 48, d.oy + dy)) }
+          ? { ...p, x: Math.max(-p.w + 160, Math.min(layoutW - 120, d.ox + dx)), y: Math.max(0, Math.min(layoutH - 48, d.oy + dy)) }
           : { ...p, w: Math.max(420, d.ox + dx), h: Math.max(220, d.oy + dy) },
       );
     };
