@@ -1,3 +1,4 @@
+import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
 import { useEffect, useRef, useState } from "react";
 import { useStudio } from "@/lib/synclab/store";
 import { LIVE_FX, getLiveFx, type LiveFxInfo } from "@/lib/synclab/live-fx";
@@ -16,10 +17,11 @@ function FxPad({ fx }: { fx: LiveFxInfo }) {
   const down = useRef(false);
 
   const read = (e: React.PointerEvent) => {
-    const r = box.current!.getBoundingClientRect();
+    const r = canvasRect(box.current!);
+    const pt = canvasPoint(e.clientX, e.clientY);
     return {
-      x: Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)),
-      y: 1 - Math.min(1, Math.max(0, (e.clientY - r.top) / r.height)),
+      x: Math.min(1, Math.max(0, (pt.x - r.left) / r.width)),
+      y: 1 - Math.min(1, Math.max(0, (pt.y - r.top) / r.height)),
     };
   };
   const end = () => {

@@ -1,3 +1,4 @@
+import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
 import { useEffect, useRef, useState } from "react";
 import { Crop, ImagePlus, Palette, RotateCcw, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -273,18 +274,19 @@ export function useImageDrag(skinKey: SkinKey, skin: Skin) {
   return {
     onPointerDown: (e: React.PointerEvent<HTMLElement>) => {
       if (!skin.image || e.target !== e.currentTarget) return;
-      drag.current = { x: e.clientX, y: e.clientY, ix: skin.imageX ?? 50, iy: skin.imageY ?? 50 };
+      drag.current = { ...canvasPoint(e.clientX, e.clientY), ix: skin.imageX ?? 50, iy: skin.imageY ?? 50 };
       e.currentTarget.setPointerCapture(e.pointerId);
     },
     onPointerMove: (e: React.PointerEvent<HTMLElement>) => {
       const d = drag.current;
       if (!d) return;
-      const r = e.currentTarget.getBoundingClientRect();
+      const r = canvasRect(e.currentTarget);
+      const pt = canvasPoint(e.clientX, e.clientY);
       const clamp = (v: number) => Math.max(0, Math.min(100, v));
       safe(() =>
         setSkin(skinKey, {
-          imageX: clamp(d.ix - ((e.clientX - d.x) / r.width) * 100),
-          imageY: clamp(d.iy - ((e.clientY - d.y) / r.height) * 100),
+          imageX: clamp(d.ix - ((pt.x - d.x) / r.width) * 100),
+          imageY: clamp(d.iy - ((pt.y - d.y) / r.height) * 100),
         }),
       );
     },

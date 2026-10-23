@@ -1,3 +1,4 @@
+import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
 import { useEffect, useRef, useState, type PointerEvent } from 'react';
 import { ArrowRightToLine, ChevronLeft, ChevronRight, Circle, Eraser, Hand, ListMusic, Pencil, Play, Square } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -168,8 +169,9 @@ export function TouchSynth({ track }: { track: Track }) {
   };
 
   const move = (e: PointerEvent<HTMLDivElement>) => {
-    const r = e.currentTarget.getBoundingClientRect();
-    pos.current = { x: Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)), y: Math.max(0, Math.min(1, 1 - (e.clientY - r.top) / r.height)) };
+    const r = canvasRect(e.currentTarget);
+    const pt = canvasPoint(e.clientX, e.clientY);
+    pos.current = { x: Math.max(0, Math.min(1, (pt.x - r.left) / r.width)), y: Math.max(0, Math.min(1, 1 - (pt.y - r.top) / r.height)) };
     if (marker.current) { marker.current.style.left = `${pos.current.x * 100}%`; marker.current.style.top = `${(1 - pos.current.y) * 100}%`; }
     if (performance.now() - lastMove.current < 50) return;
     lastMove.current = performance.now();

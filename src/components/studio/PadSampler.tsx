@@ -1,3 +1,4 @@
+import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
 import { getLocalFile } from "@/lib/synclab/local-files";
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import {
@@ -107,9 +108,10 @@ function PadWave({ pad, color, onChange, manual }: { pad: Pad; color: string; on
 
   const move = (e: ReactPointerEvent) => {
     if (drag === null) return;
-    const box = ref.current?.getBoundingClientRect();
-    if (!box) return;
-    const f = Math.min(1, Math.max(0, (e.clientX - box.left) / box.width));
+    const boxEl = ref.current;
+    if (!boxEl) return;
+    const box = canvasRect(boxEl);
+    const f = Math.min(1, Math.max(0, (canvasPoint(e.clientX, e.clientY).x - box.left) / box.width));
     if (typeof drag === "number") {
       const slices = [...(pad.slices ?? [])];
       slices[drag] = Math.min((slices[drag + 1] ?? pad.end) - 0.002, Math.max((slices[drag - 1] ?? pad.start) + 0.002, f));
@@ -125,8 +127,8 @@ function PadWave({ pad, color, onChange, manual }: { pad: Pad; color: string; on
       aria-label="Pad sample chop waveform"
       onPointerDown={(e) => {
         if (!manual || e.target !== e.currentTarget) return;
-        const box = e.currentTarget.getBoundingClientRect();
-        const at = (e.clientX - box.left) / box.width;
+        const box = canvasRect(e.currentTarget);
+        const at = (canvasPoint(e.clientX, e.clientY).x - box.left) / box.width;
         if (at <= pad.start + 0.002 || at >= pad.end - 0.002) return;
         onChange({ slices: [...new Set([pad.start, ...(pad.slices ?? []), at])].sort((a, b) => a - b) });
       }}

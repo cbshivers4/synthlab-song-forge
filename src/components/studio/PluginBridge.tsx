@@ -1,3 +1,4 @@
+import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Loader2, Monitor, Plug, PlugZap, RefreshCw, Star, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -31,8 +32,9 @@ function EditorView({ editor }: { editor: BridgeEditor }) {
 
   const at = useCallback(
     (e: { clientX: number; clientY: number; currentTarget: Element }) => {
-      const r = e.currentTarget.getBoundingClientRect();
-      return { x: Math.round((e.clientX - r.left) / scale), y: Math.round((e.clientY - r.top) / scale) };
+      const r = canvasRect(e.currentTarget as HTMLElement);
+      const pt = canvasPoint(e.clientX, e.clientY);
+      return { x: Math.round((pt.x - r.left) / scale), y: Math.round((pt.y - r.top) / scale) };
     },
     [scale],
   );

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
 import { useStudio } from "@/lib/synclab/store";
 import type { PluginInstance } from "@/lib/synclab/types";
 import {
@@ -48,9 +49,10 @@ export function XYPad({
   const apply = (clientX: number, clientY: number) => {
     const el = boxRef.current;
     if (!el) return;
-    const r = el.getBoundingClientRect();
-    const nx = Math.min(1, Math.max(0, (clientX - r.left) / r.width));
-    const ny = 1 - Math.min(1, Math.max(0, (clientY - r.top) / r.height));
+    const r = canvasRect(el);
+    const pt = canvasPoint(clientX, clientY);
+    const nx = Math.min(1, Math.max(0, (pt.x - r.left) / r.width));
+    const ny = 1 - Math.min(1, Math.max(0, (pt.y - r.top) / r.height));
     if (xP) write(xP.id, xP.min + nx * (xP.max - xP.min));
     if (yP) write(yP.id, yP.min + ny * (yP.max - yP.min));
   };

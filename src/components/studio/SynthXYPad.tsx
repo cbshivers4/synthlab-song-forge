@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
 
 type Axis = { label: string; value: number; min: number; max: number; step: number; logarithmic?: boolean; unit?: string };
 
@@ -12,8 +13,9 @@ export function SynthXYPad({ x, y, onChange }: { x: Axis; y: Axis; onChange: (x:
   };
   const format = (a: Axis) => a.unit === "%" ? `${Math.round(a.value * 100)}%` : `${Number(a.value.toFixed(1))}${a.unit ? ` ${a.unit}` : ""}`;
   const move = (e: React.PointerEvent<HTMLDivElement>) => {
-    const r = e.currentTarget.getBoundingClientRect();
-    onChange(valueAt(x, (e.clientX - r.left) / r.width), valueAt(y, 1 - (e.clientY - r.top) / r.height));
+    const r = canvasRect(e.currentTarget);
+    const pt = canvasPoint(e.clientX, e.clientY);
+    onChange(valueAt(x, (pt.x - r.left) / r.width), valueAt(y, 1 - (pt.y - r.top) / r.height));
   };
   const px = position(x) * 100;
   const py = (1 - position(y)) * 100;

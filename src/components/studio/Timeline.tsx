@@ -116,6 +116,7 @@ const EMPTY_PEAKS: number[] = [0];
 import { LevelBar } from "@/components/studio/LevelBar";
 import { ClipEditor } from "@/components/studio/ClipEditor";
 import { clipRate, clipSeconds } from "@/lib/synclab/types";
+import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { parseMidiFile } from "@/lib/synclab/midi-file";
 
@@ -178,11 +179,12 @@ function TimelineCutGuide({ tool, position, selected, total, grid }: { tool: "sp
   const lineRef = useRef<HTMLDivElement>(null);
   const iconRef = useRef<HTMLDivElement>(null);
   const showAtPointer = (e: React.PointerEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const rawX = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
+    const rect = canvasRect(e.currentTarget);
+    const pt = canvasPoint(e.clientX, e.clientY);
+    const rawX = Math.max(0, Math.min(rect.width, pt.x - rect.left));
     // The guide shows exactly where the cut will land — snapped or free.
     const x = (cutPosition(rawX / Math.max(1, rect.width), total, grid, e.altKey) / Math.max(1, total)) * rect.width;
-    const y = Math.max(4, Math.min(rect.height - 32, e.clientY - rect.top + 10));
+    const y = Math.max(4, Math.min(rect.height - 32, pt.y - rect.top + 10));
     const line = lineRef.current;
     const icon = iconRef.current;
     if (line) { line.style.left = `${x}px`; line.style.opacity = "1"; }
@@ -235,9 +237,10 @@ function Waveform({ track }: { track: Track }) {
     e.preventDefault();
     const lane = (e.currentTarget as HTMLElement).closest("[data-lane]") as HTMLElement | null;
     if (!lane) return;
-    const rect = lane.getBoundingClientRect();
+    const rect = canvasRect(lane);
     const perStep = rect.width / total;
-    const x0 = e.clientX;
+    const startPt = canvasPoint(e.clientX, e.clientY);
+    const x0 = startPt.x;
     const orig = {
       start: clip.start ?? 0,
       offset: clip.offset ?? 0,
@@ -247,7 +250,7 @@ function Waveform({ track }: { track: Track }) {
     el.setPointerCapture(e.pointerId);
 
     const grid = transport.snap ?? 1;
-    const y0 = e.clientY;
+    const y0 = startPt.y;
     const viewport = lane.closest<HTMLElement>("#timeline-scroll");
     const newChannel = viewport?.querySelector<HTMLElement>("[data-new-channel-drop]");
     const initialScrollLeft = viewport?.scrollLeft ?? 0;
@@ -256,8 +259,8 @@ function Waveform({ track }: { track: Track }) {
     let dragged = false;
     const overNewChannel = (x: number, y: number) => {
       if (!newChannel || !viewport) return false;
-      const bounds = newChannel.getBoundingClientRect();
-      const visible = viewport.getBoundingClientRect();
+      const bounds = canvasRect(newChannel);
+      const visible = canvasRect(viewport);
       return x >= visible.left && x <= visible.right && y >= Math.max(bounds.top, visible.top) && y <= Math.min(bounds.bottom, visible.bottom);
     };
     const highlight = () => {
@@ -268,7 +271,7 @@ function Waveform({ track }: { track: Track }) {
     };
     const edgeScroll = window.setInterval(() => {
       if (!dragged || mode !== "move" || !viewport) return;
-      const bounds = viewport.getBoundingClientRect();
+      const bounds = canvasRect(viewport);
       if (pointerX < bounds.left || pointerX > bounds.right) return;
       const dy = pointerY > bounds.bottom - 48 ? 18 : pointerY < bounds.top + 48 ? -18 : 0;
       if (dy) viewport.scrollTop += dy;
@@ -280,16 +283,17 @@ function Waveform({ track }: { track: Track }) {
       if (el.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId);
     };
     const onMove = (ev: PointerEvent) => {
-      if (!dragged && Math.hypot(ev.clientX - x0, ev.clientY - y0) < 5) return;
+      const pt = canvasPoint(ev.clientX, ev.clientY);
+      if (!dragged && Math.hypot(pt.x - x0, pt.y - y0) < 5) return;
       dragged = true;
-      pointerX = ev.clientX;
-      pointerY = ev.clientY;
+      pointerX = pt.x;
+      pointerY = pt.y;
       highlight();
       if (mode === "move") {
-        el.style.transform = `translateY(${ev.clientY - y0}px)`;
+        el.style.transform = `translateY(${pt.y - y0}px)`;
         el.style.zIndex = "50";
       }
-      const raw = (ev.clientX - x0 + (viewport?.scrollLeft ?? initialScrollLeft) - initialScrollLeft) / Math.max(1, perStep);
+      const raw = (pt.x - x0 + (viewport?.scrollLeft ?? initialScrollLeft) - initialScrollLeft) / Math.max(1, perStep);
       const dSteps = grid > 0 ? Math.round(raw / grid) * grid : Math.round(raw * 100) / 100;
       if (mode === "move") {
         const next = orig.start + dSteps;
@@ -331,7 +335,8 @@ function Waveform({ track }: { track: Track }) {
       el.style.transform = "";
       el.style.zIndex = "";
       if (!dragged) return;
-      if (overNewChannel(ev.clientX, ev.clientY)) {
+      const upPt = canvasPoint(ev.clientX, ev.clientY);
+      if (overNewChannel(upPt.x, upPt.y)) {
         moveClipToNew(track.id, clip.id, orig.start);
         toast.success(`${clip.name} moved to a new channel`);
         requestAnimationFrame(() => { if (viewport) viewport.scrollTop = viewport.scrollHeight; });
@@ -341,8 +346,8 @@ function Waveform({ track }: { track: Track }) {
       // The dragged clip floats over the destination. Hit-test lane bounds,
       // not the floating source element or the captured pointer target.
       for (const lane of document.querySelectorAll<HTMLElement>("[data-lane-track]")) {
-        const bounds = lane.getBoundingClientRect();
-        if (ev.clientX >= bounds.left && ev.clientX <= bounds.right && ev.clientY >= bounds.top && ev.clientY <= bounds.bottom) {
+        const bounds = canvasRect(lane);
+        if (upPt.x >= bounds.left && upPt.x <= bounds.right && upPt.y >= bounds.top && upPt.y <= bounds.bottom) {
           targetId = lane.dataset["laneTrack"];
           break;
         }
@@ -477,15 +482,15 @@ function MidiClip({ track }: { track: Track }) {
     e.preventDefault();
     const lane = (e.currentTarget as HTMLElement).closest("[data-lane]") as HTMLElement | null;
     if (!lane) return;
-    const rect = lane.getBoundingClientRect();
+    const rect = canvasRect(lane);
     const perStep = rect.width / total;
-    const x0 = e.clientX;
+    const x0 = canvasPoint(e.clientX, e.clientY).x;
     const grid = transport.snap ?? 1;
     const orig = notes.map((n) => ({ id: n.id, step: n.step, recordedEnd: n.recordedEnd }));
     const el = e.currentTarget as HTMLElement;
     el.setPointerCapture(e.pointerId);
     const onMove = (ev: PointerEvent) => {
-      const raw = (ev.clientX - x0) / Math.max(1, perStep);
+      const raw = (canvasPoint(ev.clientX, ev.clientY).x - x0) / Math.max(1, perStep);
       let d = grid > 0 ? Math.round(raw / grid) * grid : Math.round(raw * 100) / 100;
       const minStep = Math.min(...orig.map((o) => o.step));
       if (minStep + d < 0) d = -minStep;
@@ -620,15 +625,15 @@ function DrumClip({ track }: { track: Track }) {
     e.preventDefault();
     const lane = (e.currentTarget as HTMLElement).closest("[data-lane]") as HTMLElement | null;
     if (!lane) return;
-    const rect = lane.getBoundingClientRect();
+    const rect = canvasRect(lane);
     const perStep = rect.width / songSteps(transport.bars);
-    const x0 = e.clientX;
+    const x0 = canvasPoint(e.clientX, e.clientY).x;
     const grid = transport.snap ?? 1;
     const orig = (track.pads ?? []).map((p) => ({ id: p.id, steps: [...p.steps] }));
     const len = orig[0]?.steps.length ?? 16;
     let applied = 0;
     const onMove = (ev: PointerEvent) => {
-      const raw = (ev.clientX - x0) / Math.max(1, perStep);
+      const raw = (canvasPoint(ev.clientX, ev.clientY).x - x0) / Math.max(1, perStep);
       const d = grid > 0 ? Math.round(raw / grid) * grid : Math.round(raw);
       if (d === applied) return;
       applied = d;
@@ -1039,7 +1044,7 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
     if (!isMobile || e.pointerType === "mouse") return;
     const target = e.target as HTMLElement;
     if (target.closest("button,input,textarea,select,[role='slider'],[role='combobox'],[contenteditable]")) return;
-    const gesture = { x: e.clientX, y: e.clientY, timer: null as number | null, moved: false };
+    const gesture = { ...canvasPoint(e.clientX, e.clientY), timer: null as number | null, moved: false };
     gesture.timer = window.setTimeout(() => {
       suppressClickRef.current = true;
       select(track.id);
@@ -1052,7 +1057,8 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
   const movePhoneGesture = (e: React.PointerEvent<HTMLDivElement>) => {
     const gesture = gestureRef.current;
     if (!gesture) return;
-    if (Math.hypot(e.clientX - gesture.x, e.clientY - gesture.y) > 12) {
+    const gpt = canvasPoint(e.clientX, e.clientY);
+    if (Math.hypot(gpt.x - gesture.x, gpt.y - gesture.y) > 12) {
       gesture.moved = true;
       if (gesture.timer) window.clearTimeout(gesture.timer);
       gesture.timer = null;
@@ -1063,8 +1069,9 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
     const gesture = gestureRef.current;
     if (!gesture) return;
     if (gesture.timer) window.clearTimeout(gesture.timer);
-    const dx = e.clientX - gesture.x;
-    const dy = e.clientY - gesture.y;
+    const ept = canvasPoint(e.clientX, e.clientY);
+    const dx = ept.x - gesture.x;
+    const dy = ept.y - gesture.y;
     gestureRef.current = null;
     if (Math.max(Math.abs(dx), Math.abs(dy)) < 52) return;
     suppressClickRef.current = true;
@@ -1094,13 +1101,13 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
   const resizeHeight = (e: React.PointerEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const y0 = e.clientY;
+    const y0 = canvasPoint(e.clientX, e.clientY).y;
     const row = e.currentTarget.parentElement;
     if (!row) return;
-    const h0 = row.getBoundingClientRect().height;
+    const h0 = canvasRect(row).height;
     let height = h0;
     const onMove = (ev: PointerEvent) => {
-      height = Math.max(132, Math.min(600, h0 + ev.clientY - y0));
+      height = Math.max(132, Math.min(600, h0 + canvasPoint(ev.clientX, ev.clientY).y - y0));
       row.style.height = `${height}px`;
     };
     const onUp = () => {
@@ -1115,8 +1122,8 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
   };
   const resizeWidth = (e: React.PointerEvent) => {
     e.preventDefault(); e.stopPropagation();
-    const x0 = e.clientX;
-    const move = (ev: PointerEvent) => setHeaderWidth(Math.max(220, Math.min(600, headerWidth + ev.clientX - x0)));
+    const x0 = canvasPoint(e.clientX, e.clientY).x;
+    const move = (ev: PointerEvent) => setHeaderWidth(Math.max(220, Math.min(600, headerWidth + canvasPoint(ev.clientX, ev.clientY).x - x0)));
     const up = () => {
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", up);
@@ -1136,12 +1143,12 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
     const rowAt = (clientY: number) => {
       const rows = Array.from(document.querySelectorAll<HTMLElement>("[data-track-row]"));
       return rows.findIndex((row) => {
-        const r = row.getBoundingClientRect();
+        const r = canvasRect(row);
         return clientY >= r.top && clientY < r.bottom;
       });
     };
     const move = (ev: PointerEvent) => {
-      const target = rowAt(ev.clientY);
+      const target = rowAt(canvasPoint(ev.clientX, ev.clientY).y);
       document.querySelectorAll<HTMLElement>("[data-track-row]").forEach((row, i) => {
         row.classList.toggle("track-drop-target", i === target);
       });
@@ -1151,7 +1158,7 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
       window.removeEventListener("pointerup", up);
       window.removeEventListener("pointercancel", up);
       document.querySelectorAll<HTMLElement>(".track-drop-target").forEach((row) => row.classList.remove("track-drop-target"));
-      const target = rowAt(ev.clientY);
+      const target = rowAt(canvasPoint(ev.clientX, ev.clientY).y);
       if (target < 0 || target === from) return;
       moveTrackToIndex(track.id, target);
       toast(`${track.name} moved to position ${target + 1}`);
@@ -1765,8 +1772,9 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
             e.stopPropagation();
             select(track.id);
           }
-          const r = e.currentTarget.getBoundingClientRect();
-          const frac = Math.min(0.99, Math.max(0, (e.clientX - r.left) / r.width));
+          const r = canvasRect(e.currentTarget);
+          const tapPt = canvasPoint(e.clientX, e.clientY);
+          const frac = Math.min(0.99, Math.max(0, (tapPt.x - r.left) / r.width));
           const step = Math.floor(frac * 16);
           if (editTool === "draw") {
             if (track.kind === "instrument" || track.kind === "midi" || track.kind === "sampler") {
@@ -1790,7 +1798,7 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
           // Split and razor cut audio clips, recorded waves and written notes where the guide line sits —
           // exactly at the pointer when FREE (off grid), or on the snap grid when GRID is on (Alt flips it).
           const total = songSteps(transport.bars);
-          const exact = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+          const exact = Math.max(0, Math.min(1, (tapPt.x - r.left) / r.width));
           razorAt(track.id, cutPosition(exact, total, transport.snap ?? 1, e.altKey));
           return;
         }}
@@ -2950,11 +2958,11 @@ function Ruler() {
   const exHi = exportOn ? Math.max(transport.exportEnd!, exLo + 1) : total;
 
 
-  const stepFromX = (clientX: number) => {
+  const stepFromX = (clientX: number, clientY: number) => {
     const el = gridRef.current;
     if (!el) return 0;
-    const r = el.getBoundingClientRect();
-    return Math.min(total, Math.max(0, Math.round(((clientX - r.left) / r.width) * total)));
+    const r = canvasRect(el);
+    return Math.min(total, Math.max(0, Math.round(((canvasPoint(clientX, clientY).x - r.left) / r.width) * total)));
   };
 
   // Drag on empty ruler space to draw a loop region. A plain click (no drag)
@@ -2962,10 +2970,10 @@ function Ruler() {
   const startDrag = (e: React.PointerEvent) => {
     if (e.button !== 0) return;
     e.preventDefault();
-    const s = stepFromX(e.clientX);
+    const s = stepFromX(e.clientX, e.clientY);
     let moved = false;
     const move = (ev: PointerEvent) => {
-      const end = stepFromX(ev.clientX);
+      const end = stepFromX(ev.clientX, ev.clientY);
       if (!moved && end === s) return;
       moved = true;
       const a = Math.min(s, end);
@@ -2985,10 +2993,10 @@ function Ruler() {
   const dragLoop = (which: "start" | "end" | "band") => (e: React.PointerEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const from = stepFromX(e.clientX);
+    const from = stepFromX(e.clientX, e.clientY);
     const len = hi - lo;
     const move = (ev: PointerEvent) => {
-      const s = stepFromX(ev.clientX);
+      const s = stepFromX(ev.clientX, ev.clientY);
       if (which === "start") setTransport({ loopStart: Math.max(0, Math.min(s, hi - 1)), loop: true });
       else if (which === "end") setTransport({ loopEnd: Math.min(total, Math.max(s, lo + 1)), loop: true });
       else {
@@ -3010,7 +3018,7 @@ function Ruler() {
     e.preventDefault();
     e.stopPropagation();
     const move = (ev: PointerEvent) => {
-      const s = stepFromX(ev.clientX);
+      const s = stepFromX(ev.clientX, ev.clientY);
       if (which === "start") setTransport({ exportStart: Math.min(s, exHi - 1) });
       else setTransport({ exportEnd: Math.max(s, exLo + 1) });
     };
@@ -3169,7 +3177,7 @@ function Ruler() {
             onPointerDown={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              const move = (ev: PointerEvent) => setTransport({ step: Math.min(total - 1, stepFromX(ev.clientX)) });
+              const move = (ev: PointerEvent) => setTransport({ step: Math.min(total - 1, stepFromX(ev.clientX, ev.clientY)) });
               const up = () => {
                 window.removeEventListener("pointermove", move);
                 window.removeEventListener("pointerup", up);

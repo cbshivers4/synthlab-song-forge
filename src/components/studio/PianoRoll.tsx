@@ -1,4 +1,5 @@
 import { capturedNote, loopRegion } from "@/lib/synclab/recording-region";
+import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { keysSnapshot, subscribeKeys } from "@/lib/synclab/active-keys";
 
@@ -100,9 +101,10 @@ export function PianoRoll({ track }: { track: Track }) {
   const posFromEvent = (e: React.PointerEvent | React.MouseEvent) => {
     const el = gridRef.current;
     if (!el) return null;
-    const r = el.getBoundingClientRect();
-    const x = ((e.clientX - r.left) / r.width) * steps;
-    const row = Math.floor((e.clientY - r.top) / ROW_H);
+    const r = canvasRect(el);
+    const pt = canvasPoint(e.clientX, e.clientY);
+    const x = ((pt.x - r.left) / r.width) * steps;
+    const row = Math.floor((pt.y - r.top) / ROW_H);
     const pitch = pitches[Math.min(ROWS - 1, Math.max(0, row))]!;
     return { step: snap(x), pitch, rawX: x };
   };
@@ -122,20 +124,22 @@ export function PianoRoll({ track }: { track: Track }) {
     e.stopPropagation();
     e.currentTarget.setPointerCapture(e.pointerId);
     setSel(e.shiftKey ? (s) => (s.includes(n.id) ? s : [...s, n.id]) : [n.id]);
+    const pt = canvasPoint(e.clientX, e.clientY);
     drag.current = resize
-      ? { mode: "resize", id: n.id, startX: e.clientX, length: n.length }
-      : { mode: "move", id: n.id, startX: e.clientX, startY: e.clientY, step: n.step, pitch: n.pitch };
+      ? { mode: "resize", id: n.id, startX: pt.x, length: n.length }
+      : { mode: "move", id: n.id, startX: pt.x, startY: pt.y, step: n.step, pitch: n.pitch };
   };
 
   const onMove = (e: React.PointerEvent) => {
     const el = gridRef.current;
     if (!el) return;
+    const pt = canvasPoint(e.clientX, e.clientY);
     // marquee select: pressed on empty grid and dragged
     const m = marq.current;
     if (m && !drag.current) {
-      const r = el.getBoundingClientRect();
-      const x = e.clientX - r.left;
-      const y = e.clientY - r.top;
+      const r = canvasRect(el);
+      const x = pt.x - r.left;
+      const y = pt.y - r.top;
       if (m.active || Math.hypot(x - m.x, y - m.y) > 4) {
         m.active = true;
         setMarquee({ x0: Math.min(m.x, x), y0: Math.min(m.y, y), x1: Math.max(m.x, x), y1: Math.max(m.y, y) });
@@ -144,13 +148,13 @@ export function PianoRoll({ track }: { track: Track }) {
     }
     const d = drag.current;
     if (!d) return;
-    const stepPx = el.getBoundingClientRect().width / steps;
+    const stepPx = canvasRect(el).width / steps;
     if (d.mode === "resize") {
-      const nl = Math.max(grid, snap(d.length + (e.clientX - d.startX) / stepPx) || grid);
+      const nl = Math.max(grid, snap(d.length + (pt.x - d.startX) / stepPx) || grid);
       setNotes(track.id, notes.map((n) => (n.id === d.id ? capturedNote({ ...n, length: nl }, loopRegion(transport)) ?? n : n)));
     } else {
-      const ds = snap(d.step + (e.clientX - d.startX) / stepPx);
-      const dp = d.pitch - Math.round((e.clientY - d.startY) / ROW_H);
+      const ds = snap(d.step + (pt.x - d.startX) / stepPx);
+      const dp = d.pitch - Math.round((pt.y - d.startY) / ROW_H);
       setNotes(
         track.id,
         notes.map((n) => (n.id === d.id ? capturedNote({ ...n, step: ds, pitch: Math.max(0, Math.min(120, dp)) }, loopRegion(transport)) ?? n : n)),
@@ -165,7 +169,7 @@ export function PianoRoll({ track }: { track: Track }) {
     if (m?.active && marquee) {
       const el = gridRef.current;
       if (el) {
-        const r = el.getBoundingClientRect();
+        const r = canvasRect(el);
         const stepPx = r.width / steps;
         const s0 = marquee.x0 / stepPx;
         const s1 = marquee.x1 / stepPx;
@@ -505,8 +509,9 @@ export function PianoRoll({ track }: { track: Track }) {
             style={{ height: ROWS * ROW_H }}
             onDoubleClick={addNote}
             onPointerDown={(e) => {
-              const r = e.currentTarget.getBoundingClientRect();
-              marq.current = { x: e.clientX - r.left, y: e.clientY - r.top, active: false };
+              const r = canvasRect(e.currentTarget);
+              const pt = canvasPoint(e.clientX, e.clientY);
+              marq.current = { x: pt.x - r.left, y: pt.y - r.top, active: false };
             }}
             onPointerMove={onMove}
           >

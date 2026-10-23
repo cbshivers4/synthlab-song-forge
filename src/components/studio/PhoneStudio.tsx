@@ -1,3 +1,4 @@
+import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
 import { useIsLandscapePhone } from "@/hooks/use-mobile";
 import { DeviceClock } from "./DeviceClock";
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -49,11 +50,11 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
   const [dockHeight, setDockHeight] = useState(150);
   const startDockDrag = (event: React.PointerEvent<HTMLDivElement>) => {
     event.preventDefault();
-    const startY = event.clientY;
+    const startY = canvasPoint(event.clientX, event.clientY).y;
     const startH = dockHeight;
     const move = (e: PointerEvent) => {
       const max = Math.max(120, window.innerHeight - 160);
-      setDockHeight(Math.min(max, Math.max(0, startH + e.clientY - startY)));
+      setDockHeight(Math.min(max, Math.max(0, startH + canvasPoint(e.clientX, e.clientY).y - startY)));
     };
     const up = () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
     window.addEventListener("pointermove", move);

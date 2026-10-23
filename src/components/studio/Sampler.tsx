@@ -1,3 +1,4 @@
+import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { AudioLines, Piano, Play, RotateCcw, Scissors, Square, Trash2, Upload } from "lucide-react";
 import { Keyboard } from "./Keyboard";
@@ -48,15 +49,16 @@ function Waveform({ track, onSlice, drawSlice = false }: { track: Track; onSlice
   if (!s) return null;
   const chops = s.slices ?? [];
 
-  const fracAt = (clientX: number) => {
-    const box = ref.current?.getBoundingClientRect();
-    if (!box) return 0;
-    return Math.min(1, Math.max(0, (clientX - box.left) / box.width));
+  const fracAt = (clientX: number, clientY: number) => {
+    const boxEl = ref.current;
+    if (!boxEl) return 0;
+    const box = canvasRect(boxEl);
+    return Math.min(1, Math.max(0, (canvasPoint(clientX, clientY).x - box.left) / box.width));
   };
 
   const move = (e: ReactPointerEvent) => {
     if (drag === null) return;
-    const f = fracAt(e.clientX);
+    const f = fracAt(e.clientX, e.clientY);
     if (drag === "start") updateSampler(track.id, { start: Math.min(f, s.end - 0.002) });
     else if (drag === "end") updateSampler(track.id, { end: Math.max(f, s.start + 0.002) });
     else {
@@ -73,7 +75,7 @@ function Waveform({ track, onSlice, drawSlice = false }: { track: Track; onSlice
       aria-label="Sample chop waveform"
       onPointerDown={(e) => {
         if (!drawSlice || (e.target as HTMLElement).closest('[role="slider"]')) return;
-        const at = Math.min(s.end - 0.002, Math.max(s.start, fracAt(e.clientX)));
+        const at = Math.min(s.end - 0.002, Math.max(s.start, fracAt(e.clientX, e.clientY)));
         if (chops.some((c) => Math.abs(c - at) < 0.002)) return;
         updateSampler(track.id, { slices: Array.from(new Set([s.start, ...chops, at])).sort((a, b) => a - b) });
       }}

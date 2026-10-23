@@ -1,4 +1,5 @@
 import { levelColor, peakOf, spectrumColor, dbColor, LEVEL_GREEN, LEVEL_ORANGE, LEVEL_RED } from "@/lib/synclab/level-colors";
+import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 // Console fader thumb sizing is provided by FADER_CAP below.
 import {
@@ -773,15 +774,15 @@ function EqCurve({
     } catch {
       /* synthetic pointers */
     }
-    dragRef.current = { band, startY: e.clientY, startGain: (bandGain[band] ?? 0) };
+    dragRef.current = { band, startY: canvasPoint(e.clientX, e.clientY).y, startGain: (bandGain[band] ?? 0) };
     setActiveBand(band);
   };
   const onPointerMove = (e: React.PointerEvent) => {
     const d = dragRef.current;
     if (!d || !svgRef.current) return;
-    const pxPerDb = (svgRef.current.getBoundingClientRect().height - PAD * 2 * 2) / 36;
+    const pxPerDb = (canvasRect(svgRef.current).height - PAD * 2 * 2) / 36;
     const fine = e.shiftKey ? 0.2 : 1;
-    const next = Math.max(-18, Math.min(18, d.startGain - ((e.clientY - d.startY) / Math.max(2, pxPerDb)) * fine));
+    const next = Math.max(-18, Math.min(18, d.startGain - ((canvasPoint(e.clientX, e.clientY).y - d.startY) / Math.max(2, pxPerDb)) * fine));
     onBand(d.band, Math.round(next * 2) / 2);
   };
   const endDrag = () => {

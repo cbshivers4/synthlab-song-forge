@@ -1,4 +1,5 @@
 import { useCallback, useRef } from "react";
+import { canvasPoint } from "@/lib/synclab/canvas-point";
 import { MidiLearnButton } from "./MidiLearn";
 
 interface KnobProps {
@@ -19,7 +20,7 @@ export function Knob({ label, value, min = 0, max = 1, step = 0.01, unit = "", s
   const onPointerDown = useCallback(
     (e: React.PointerEvent) => {
       (e.target as Element).setPointerCapture(e.pointerId);
-      start.current = { y: e.clientY, v: value };
+      start.current = { y: canvasPoint(e.clientX, e.clientY).y, v: value };
     },
     [value],
   );
@@ -27,7 +28,7 @@ export function Knob({ label, value, min = 0, max = 1, step = 0.01, unit = "", s
   const onPointerMove = useCallback(
     (e: React.PointerEvent) => {
       if (!start.current) return;
-      const delta = (start.current.y - e.clientY) / 160;
+      const delta = (start.current.y - canvasPoint(e.clientX, e.clientY).y) / 160;
       const next = Math.min(max, Math.max(min, start.current.v + delta * (max - min)));
       onChange(Math.round(next / step) * step);
     },
