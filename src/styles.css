@@ -2461,3 +2461,90 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
 .synth-hardware[data-synth-style="spec4"] [role="tabpanel"]:is([id$="-content-matrix"],[id$="-content-fx"],[id$="-content-arp"],[id$="-content-chords"]) :is(.panel, [class*="bg-"], .rounded-md, .rounded-lg, .border, section, fieldset):not(.hardware-knob-grip):not(.hardware-knob-cap):not(.hardware-knob-dial):not(button):not(select):not([role="slider"]):not(.grow):not(.absolute) { background-color: var(--s4-panel-2) !important; border-color: var(--s4-edge) !important; background-image: none !important; }
 .synth-hardware[data-synth-style="spec4"] [role="tabpanel"]:is([id$="-content-matrix"],[id$="-content-fx"],[id$="-content-arp"],[id$="-content-chords"]) :is(.text-muted-foreground, p, span, label, h3, h4, th, td, div, output):not(.hardware-knob-grip):not(.hardware-knob-cap):not(.hardware-knob-value) { color: var(--s4-ink) !important; opacity: 1 !important; font-weight: 600; }
 .synth-hardware[data-synth-style="spec4"] [role="tabpanel"]:is([id$="-content-matrix"],[id$="-content-fx"],[id$="-content-arp"],[id$="-content-chords"]) :is(button, select, input:not([type="range"]), [role="combobox"]):not([data-state="on"]):not([data-state="checked"]):not([aria-pressed="true"]) { background: var(--s4-btn) !important; color: var(--s4-ink) !important; border: 1px solid var(--s4-edge) !important; font-weight: 700; }
+
+/* Retail hardware realism: machined chassis, screws, bevels, recessed glass. */
+:root {
+  --fx-brush-fine: repeating-linear-gradient(90deg, transparent 0 1px, oklch(1 0 0 / 0.045) 1px 2px, transparent 2px 3px);
+  --fx-brush-cross: repeating-linear-gradient(0deg, transparent 0 2px, oklch(0 0 0 / 0.05) 2px 3px);
+  --fx-sheen: linear-gradient(105deg, transparent 0%, oklch(1 0 0 / 0.10) 18%, transparent 32%, transparent 62%, oklch(1 0 0 / 0.06) 78%, transparent 90%);
+  --fx-bevel: inset 0 1px 0 oklch(1 0 0 / 0.28), inset 0 -2px 0 oklch(0 0 0 / 0.45), inset 1px 0 0 oklch(1 0 0 / 0.12), inset -1px 0 0 oklch(0 0 0 / 0.3);
+  --fx-screw: radial-gradient(circle, oklch(0.16 0.004 260) 0 28%, oklch(0.55 0.008 260) 34% 52%, oklch(0.82 0.006 260) 58% 66%, oklch(0.3 0.006 260) 72% 100%);
+  --fx-glass-glare: linear-gradient(115deg, oklch(1 0 0 / 0.14) 0%, transparent 26%);
+}
+/* Chassis: dialog faces and rack modules get brushed metal, bevel and corner screws. */
+:is([data-fx-skin][role="dialog"], .fx-face[data-fx-skin], .device-module[data-fx-skin]) {
+  background:
+    var(--fx-sheen),
+    var(--fx-brush-fine),
+    var(--fx-brush-cross),
+    var(--hardware-face) !important;
+  box-shadow: var(--fx-bevel), 0 10px 24px oklch(0 0 0 / 0.5);
+}
+[data-fx-skin][role="dialog"] {
+  border: 1px solid var(--hardware-black);
+  outline: 1px solid oklch(1 0 0 / 0.14);
+  outline-offset: -3px;
+}
+[data-fx-skin][role="dialog"]::before {
+  content: ""; position: absolute; inset: 7px; pointer-events: none; z-index: 5;
+  background:
+    var(--fx-screw) left top / 11px 11px,
+    var(--fx-screw) right top / 11px 11px,
+    var(--fx-screw) left bottom / 11px 11px,
+    var(--fx-screw) right bottom / 11px 11px;
+  background-repeat: no-repeat;
+  filter: drop-shadow(0 1px 1px oklch(0 0 0 / 0.6));
+}
+.fx-face[data-fx-skin] { border-top: 4px solid var(--hardware-trim); }
+/* Nameplate: screened metal label with engraved model text. */
+.fx-face .fx-nameplate h3, .device-module .device-module-header strong {
+  color: var(--hardware-trim);
+  text-shadow: 0 1px 0 oklch(0 0 0 / 0.7), 0 -1px 0 oklch(1 0 0 / 0.16);
+  letter-spacing: 0.06em;
+}
+.fx-face .fx-nameplate {
+  border-left: 0;
+  padding: 3px 10px;
+  background: linear-gradient(180deg, oklch(1 0 0 / 0.10), oklch(0 0 0 / 0.22));
+  border: 1px solid oklch(0 0 0 / 0.5);
+  border-radius: 2px;
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.14), 0 1px 0 oklch(1 0 0 / 0.08);
+}
+/* Knobs: machined metal cap, knurled grip ring, bright pointer. */
+:is(.fx-face, .device-module, [data-fx-skin][role="dialog"]) .hardware-knob-grip {
+  background: repeating-conic-gradient(var(--hardware-rubber) 0deg 5deg, var(--hardware-rubber-edge) 5deg 8deg);
+  border: 1px solid var(--hardware-black);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--hardware-trim) 55%, var(--hardware-black)), 0 5px 9px oklch(0 0 0 / 0.6), inset 0 1px 0 oklch(1 0 0 / 0.25);
+}
+:is(.fx-face, .device-module, [data-fx-skin][role="dialog"]) .hardware-knob-cap {
+  background: conic-gradient(from 210deg, var(--hardware-silver-dark), var(--hardware-silver-light) 25%, var(--hardware-silver) 50%, var(--hardware-silver-dark) 75%, var(--hardware-silver-light));
+  border: 1px solid var(--hardware-black);
+  box-shadow: inset 0 1px 1px oklch(1 0 0 / 0.5), inset 0 -2px 3px oklch(0 0 0 / 0.4);
+}
+:is(.fx-face, .device-module, [data-fx-skin][role="dialog"]) .hardware-knob-pointer i {
+  width: 3px; background: var(--hardware-trim);
+  box-shadow: 0 0 3px var(--hardware-trim);
+}
+/* Displays and readouts: recessed bezel with glass glare. */
+:is(.fx-face, .device-module, [data-fx-skin][role="dialog"]) :is(.signal-screen, .fx-parameter-window) {
+  position: relative;
+  border: 3px solid var(--hardware-black);
+  outline: 1px solid oklch(1 0 0 / 0.12);
+  outline-offset: -1px;
+  box-shadow: inset 0 3px 8px oklch(0 0 0 / 0.75), inset 0 -1px 0 oklch(1 0 0 / 0.07), 0 1px 0 oklch(1 0 0 / 0.1);
+}
+:is(.fx-face, .device-module, [data-fx-skin][role="dialog"]) :is(.signal-screen, .fx-parameter-window)::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; background: var(--fx-glass-glare); border-radius: inherit;
+}
+/* Buttons and toggles: raised metal keys. */
+:is(.fx-face, .device-module, [data-fx-skin][role="dialog"]) :is(button, [role="tab"], select):not(.instrument-keyboard *):not(.modular-jack):not(.modular-swatch) {
+  background: linear-gradient(180deg, oklch(1 0 0 / 0.16), transparent 40%, oklch(0 0 0 / 0.28)), color-mix(in oklab, var(--hardware-face) 70%, var(--hardware-silver-dark));
+  border: 1px solid var(--hardware-black);
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.3), 0 2px 3px oklch(0 0 0 / 0.5);
+  text-shadow: 0 1px 0 oklch(0 0 0 / 0.5);
+}
+/* Section labels: stamped metal look. */
+:is(.fx-face, .device-module) :is(h4, .text-xs.font-semibold.uppercase) {
+  letter-spacing: 0.12em;
+  text-shadow: 0 1px 0 oklch(0 0 0 / 0.6);
+}
