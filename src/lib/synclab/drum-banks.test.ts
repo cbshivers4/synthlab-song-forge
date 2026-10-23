@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { appendDrumPad, recallDrumBank } from './drum-banks';
 
 const pads = appendDrumPad({ steps: 16 }, 'kick', { name: 'KICK', kind: 'kick' });
-const track = { pads: [{ ...pads[0], steps: [1, ...Array(15).fill(0)] }], steps: 16, activeDrumPattern: 0 };
+const track = { pads: pads.map(pad => ({ ...pad, steps: [1, ...Array(15).fill(0)] })), steps: 16, activeDrumPattern: 0 };
 describe('drum banks', () => {
   it('leaves every unused bank B-H entirely empty', () => {
     for (let bank = 1; bank < 8; bank++) expect(recallDrumBank(track, bank).pads).toEqual([]);

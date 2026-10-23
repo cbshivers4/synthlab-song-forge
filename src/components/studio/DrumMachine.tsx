@@ -202,7 +202,7 @@ export function DrumMachine({ track }: { track: Track }) {
     const [type, key] = padSound.split(":");
     const voice = type === "voice" ? VOICE_DEFS[key ?? ""] : undefined;
     const kind = voice?.kind ?? (key as DrumPad["kind"]);
-    addPad(track.id, { kind, kit, name: voice?.name ?? DRUM_KIND_LABEL[kind], voice: voice ? key : undefined });
+    addPad(track.id, { kind, kit, name: voice?.name ?? DRUM_KIND_LABEL[kind], ...(voice && key ? { voice: key } : {}) });
   };
   const importPads = async (files: File[]) => {
     setAddingSamples(true);
@@ -220,7 +220,7 @@ export function DrumMachine({ track }: { track: Track }) {
     const def = DRUM_KITS.find((k) => k.id === id);
     const decay = def?.decay ?? 0.5;
     // Base pads keep their patterns; old kit-only pads stay only if they hold hits.
-    const source = pads.length ? pads : PAD_ORDER.map(kind => ({ id: crypto.randomUUID(), name: DRUM_KIND_LABEL[kind], kind, volume: 0.8, pan: 0, pitch: 0, decay, muted: false, solo: false, steps: Array(track.steps).fill(0) }));
+    const source: DrumPad[] = pads.length ? pads : PAD_ORDER.map(kind => ({ id: crypto.randomUUID(), name: DRUM_KIND_LABEL[kind], kind, volume: 0.8, pan: 0, pitch: 0, decay, muted: false, solo: false, steps: Array(track.steps).fill(0) }));
     const kept = source.filter((p) => !p.voice || p.steps.some((v) => v > 0)).map((p) => factoryKitPad(p, id, p.voice ? p.decay : decay));
     const extras = kitExtraPads(id, track.steps, decay, () => crypto.randomUUID()).filter((x) => !kept.some((p) => p.voice === x.voice));
     updateTrack(track.id, { pads: [...kept, ...extras] });
