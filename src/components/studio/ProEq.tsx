@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
 import { EqGrid } from "./EqGrid";
 import { Knob } from "./Knob";
 import { Button } from "@/components/ui/button";
@@ -180,26 +181,30 @@ export function ProEq({ trackId, plugin }: { trackId: string; plugin: PluginInst
 
   const move = (e: ReactPointerEvent) => {
     if (drag === null) return;
-    const box = boxRef.current?.getBoundingClientRect();
-    if (!box) return;
+    const boxEl = boxRef.current;
+    if (!boxEl) return;
+    const box = canvasRect(boxEl);
+    const pt = canvasPoint(e.clientX, e.clientY);
     const b = bands.find((x) => x.n === drag);
     if (!b) return;
-    set(drag, "freq", Math.round(fOf(e.clientX - box.left, box.width)));
+    set(drag, "freq", Math.round(fOf(pt.x - box.left, box.width)));
     if (b.type !== 1 && b.type !== 5 && b.type !== 3) {
-      const db = dbOf(e.clientY - box.top, box.height);
+      const db = dbOf(pt.y - box.top, box.height);
       set(drag, "gain", Math.max(-30, Math.min(30, Math.round(db * 10) / 10)));
     }
   };
 
   const addAt = (clientX: number, clientY: number) => {
-    const box = boxRef.current?.getBoundingClientRect();
-    if (!box) return;
+    const boxEl = boxRef.current;
+    if (!boxEl) return;
+    const box = canvasRect(boxEl);
+    const pt = canvasPoint(clientX, clientY);
     const free = bands.find((b) => !b.on);
     if (!free) return;
     set(free.n, "on", 1);
     set(free.n, "type", 2);
-    set(free.n, "freq", Math.round(fOf(clientX - box.left, box.width)));
-    set(free.n, "gain", Math.max(-30, Math.min(30, Math.round(dbOf(clientY - box.top, box.height) * 10) / 10)));
+    set(free.n, "freq", Math.round(fOf(pt.x - box.left, box.width)));
+    set(free.n, "gain", Math.max(-30, Math.min(30, Math.round(dbOf(pt.y - box.top, box.height) * 10) / 10)));
     setActive(free.n);
   };
 
