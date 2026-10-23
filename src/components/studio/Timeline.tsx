@@ -1148,7 +1148,7 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
       });
     };
     const move = (ev: PointerEvent) => {
-      const target = rowAt(ev.clientY);
+      const target = rowAt(canvasPoint(ev.clientX, ev.clientY).y);
       document.querySelectorAll<HTMLElement>("[data-track-row]").forEach((row, i) => {
         row.classList.toggle("track-drop-target", i === target);
       });
@@ -1158,7 +1158,7 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
       window.removeEventListener("pointerup", up);
       window.removeEventListener("pointercancel", up);
       document.querySelectorAll<HTMLElement>(".track-drop-target").forEach((row) => row.classList.remove("track-drop-target"));
-      const target = rowAt(ev.clientY);
+      const target = rowAt(canvasPoint(ev.clientX, ev.clientY).y);
       if (target < 0 || target === from) return;
       moveTrackToIndex(track.id, target);
       toast(`${track.name} moved to position ${target + 1}`);
@@ -1772,8 +1772,9 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
             e.stopPropagation();
             select(track.id);
           }
-          const r = e.currentTarget.getBoundingClientRect();
-          const frac = Math.min(0.99, Math.max(0, (e.clientX - r.left) / r.width));
+          const r = canvasRect(e.currentTarget);
+          const tapPt = canvasPoint(e.clientX, e.clientY);
+          const frac = Math.min(0.99, Math.max(0, (tapPt.x - r.left) / r.width));
           const step = Math.floor(frac * 16);
           if (editTool === "draw") {
             if (track.kind === "instrument" || track.kind === "midi" || track.kind === "sampler") {
@@ -1797,7 +1798,7 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
           // Split and razor cut audio clips, recorded waves and written notes where the guide line sits —
           // exactly at the pointer when FREE (off grid), or on the snap grid when GRID is on (Alt flips it).
           const total = songSteps(transport.bars);
-          const exact = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+          const exact = Math.max(0, Math.min(1, (tapPt.x - r.left) / r.width));
           razorAt(track.id, cutPosition(exact, total, transport.snap ?? 1, e.altKey));
           return;
         }}
