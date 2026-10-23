@@ -2958,11 +2958,11 @@ function Ruler() {
   const exHi = exportOn ? Math.max(transport.exportEnd!, exLo + 1) : total;
 
 
-  const stepFromX = (clientX: number) => {
+  const stepFromX = (clientX: number, clientY: number) => {
     const el = gridRef.current;
     if (!el) return 0;
     const r = canvasRect(el);
-    return Math.min(total, Math.max(0, Math.round(((canvasPoint(clientX, 0).x - r.left) / r.width) * total)));
+    return Math.min(total, Math.max(0, Math.round(((canvasPoint(clientX, clientY).x - r.left) / r.width) * total)));
   };
 
   // Drag on empty ruler space to draw a loop region. A plain click (no drag)
@@ -2970,10 +2970,10 @@ function Ruler() {
   const startDrag = (e: React.PointerEvent) => {
     if (e.button !== 0) return;
     e.preventDefault();
-    const s = stepFromX(e.clientX);
+    const s = stepFromX(e.clientX, e.clientY);
     let moved = false;
     const move = (ev: PointerEvent) => {
-      const end = stepFromX(ev.clientX);
+      const end = stepFromX(ev.clientX, ev.clientY);
       if (!moved && end === s) return;
       moved = true;
       const a = Math.min(s, end);
