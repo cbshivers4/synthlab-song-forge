@@ -1,5 +1,7 @@
 # Roadmap — Source-code audit & DAW repair
 
+- [ ] Drum Machine: Banks A-H, empty unused banks, add sound/sample pads and verify persistence.
+
 - [x] Audit audio signal path (instruments → track → inserts → buses → mixer → master)
 - [x] Audit recording & MIDI (mic capture, MIDI notes, drum/sampler pads, overdub, reopen)
 - [x] Audit arrangement editor (clips, drag/trim/split, undo, persistence)
