@@ -688,6 +688,46 @@ export function Settings() {
         <Row label="Account / sign out" hint="Save your song before leaving the studio."><Button variant="secondary" onClick={() => { if (window.confirm("Return to your account and projects? Save your song first.")) setStage("start"); }}>Account & projects</Button></Row>
         <Row label="Offline authorization" hint="No offline license authorization is implemented. Cloud projects, subscriptions and AI require internet access."><span className="text-xs text-muted-foreground">Not available now</span></Row>
         <Row label="Project saving"><span className="text-xs text-primary">Manual — File → Save</span></Row>
+        <div className="mt-6 rounded-md border border-destructive/50 p-4">
+          <h3 className="text-sm font-semibold text-destructive">Delete my account</h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Permanently deletes your account, cloud projects, library files and subscription record. This cannot be undone.
+          </p>
+          <Button variant="destructive" className="mt-3" onClick={() => { setDeleteText(""); setDeleteOpen(true); }}>
+            Delete my account
+          </Button>
+        </div>
+        <Dialog open={deleteOpen} onOpenChange={(open) => { if (!deleting) setDeleteOpen(open); }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete your account forever?</DialogTitle>
+              <DialogDescription>
+                This permanently deletes your SYNCLAB account, all cloud projects, library files and your subscription record. This cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-2">
+              <label htmlFor="delete-confirm" className="text-xs font-medium text-muted-foreground">
+                Type DELETE to confirm
+              </label>
+              <Input
+                id="delete-confirm"
+                value={deleteText}
+                onChange={(e) => setDeleteText(e.target.value)}
+                placeholder="DELETE"
+                autoComplete="off"
+                disabled={deleting}
+              />
+            </div>
+            <DialogFooter>
+              <Button variant="secondary" onClick={() => setDeleteOpen(false)} disabled={deleting}>
+                Cancel
+              </Button>
+              <Button variant="destructive" onClick={() => void handleDeleteAccount()} disabled={deleteText !== "DELETE" || deleting}>
+                {deleting ? "Deleting…" : "Permanently delete my account"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </TabsContent>
 
       <TabsContent value="desktop" className="mt-4">
