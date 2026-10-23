@@ -56,8 +56,6 @@ export function MenuBar() {
     selectAll,
     splitAtPlayhead,
     snapshot,
-    stop,
-    transport,
     loadSample,
     setNotes,
     undo,
