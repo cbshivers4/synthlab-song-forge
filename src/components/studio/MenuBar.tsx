@@ -56,6 +56,8 @@ export function MenuBar() {
     selectAll,
     splitAtPlayhead,
     snapshot,
+    stop,
+    transport,
     loadSample,
     setNotes,
     undo,
@@ -126,6 +128,8 @@ export function MenuBar() {
     if (!requirePro("Cloud saving")) return;
     const saving = toast.loading("Saving project and audio…");
     try {
+      // Finalize any in-progress take first, so the save includes it.
+      if (transport.recording) await stop();
       const session = snapshot();
       const saved = await saveCloudProject({ ...project, id: project.id ?? "" }, session);
       setProject({ ...project, id: saved.id, openedAt: Date.now() });
