@@ -249,7 +249,7 @@ function Waveform({ track }: { track: Track }) {
     el.setPointerCapture(e.pointerId);
 
     const grid = transport.snap ?? 1;
-    const y0 = e.clientY;
+    const y0 = startPt.y;
     const viewport = lane.closest<HTMLElement>("#timeline-scroll");
     const newChannel = viewport?.querySelector<HTMLElement>("[data-new-channel-drop]");
     const initialScrollLeft = viewport?.scrollLeft ?? 0;
@@ -258,8 +258,8 @@ function Waveform({ track }: { track: Track }) {
     let dragged = false;
     const overNewChannel = (x: number, y: number) => {
       if (!newChannel || !viewport) return false;
-      const bounds = newChannel.getBoundingClientRect();
-      const visible = viewport.getBoundingClientRect();
+      const bounds = canvasRect(newChannel);
+      const visible = canvasRect(viewport);
       return x >= visible.left && x <= visible.right && y >= Math.max(bounds.top, visible.top) && y <= Math.min(bounds.bottom, visible.bottom);
     };
     const highlight = () => {
@@ -270,7 +270,7 @@ function Waveform({ track }: { track: Track }) {
     };
     const edgeScroll = window.setInterval(() => {
       if (!dragged || mode !== "move" || !viewport) return;
-      const bounds = viewport.getBoundingClientRect();
+      const bounds = canvasRect(viewport);
       if (pointerX < bounds.left || pointerX > bounds.right) return;
       const dy = pointerY > bounds.bottom - 48 ? 18 : pointerY < bounds.top + 48 ? -18 : 0;
       if (dy) viewport.scrollTop += dy;
@@ -282,16 +282,17 @@ function Waveform({ track }: { track: Track }) {
       if (el.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId);
     };
     const onMove = (ev: PointerEvent) => {
-      if (!dragged && Math.hypot(ev.clientX - x0, ev.clientY - y0) < 5) return;
+      const pt = canvasPoint(ev.clientX, ev.clientY);
+      if (!dragged && Math.hypot(pt.x - x0, pt.y - y0) < 5) return;
       dragged = true;
-      pointerX = ev.clientX;
-      pointerY = ev.clientY;
+      pointerX = pt.x;
+      pointerY = pt.y;
       highlight();
       if (mode === "move") {
-        el.style.transform = `translateY(${ev.clientY - y0}px)`;
+        el.style.transform = `translateY(${pt.y - y0}px)`;
         el.style.zIndex = "50";
       }
-      const raw = (ev.clientX - x0 + (viewport?.scrollLeft ?? initialScrollLeft) - initialScrollLeft) / Math.max(1, perStep);
+      const raw = (pt.x - x0 + (viewport?.scrollLeft ?? initialScrollLeft) - initialScrollLeft) / Math.max(1, perStep);
       const dSteps = grid > 0 ? Math.round(raw / grid) * grid : Math.round(raw * 100) / 100;
       if (mode === "move") {
         const next = orig.start + dSteps;
