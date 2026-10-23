@@ -95,11 +95,11 @@ export function VideoSampler() {
     const stride = Math.max(1, Math.ceil(buffer.duration / interval / 128));
     return Array.from({ length: Math.ceil(buffer.duration / interval / stride) }, (_, i) => i * stride * interval);
   }, [buffer, sourceBpm, noteGrid]);
-  const waveformTime = (clientX: number) => {
+  const waveformTime = (clientX: number, clientY: number) => {
     const waveEl = waveform.current;
     if (!waveEl || !buffer) return 0;
     const bounds = canvasRect(waveEl);
-    return Math.max(0, Math.min(buffer.duration - 0.01, snapVideoTime((canvasPoint(clientX, 0).x - bounds.left) / bounds.width * buffer.duration, sourceBpm, noteGrid)));
+    return Math.max(0, Math.min(buffer.duration - 0.01, snapVideoTime((canvasPoint(clientX, clientY).x - bounds.left) / bounds.width * buffer.duration, sourceBpm, noteGrid)));
   };
   const editChop = (i: number, time: number) => {
     if (!buffer) return;
@@ -289,7 +289,7 @@ export function VideoSampler() {
       </div>
       <div ref={waveform} className="relative h-36 min-h-36 w-full overflow-hidden rounded border border-border bg-surface-2 touch-pan-y" aria-label="Video chop waveform" onPointerDown={(e) => {
         if ((e.target as HTMLElement).closest("button")) return;
-        const time = waveformTime(e.clientX);
+        const time = waveformTime(e.clientX, e.clientY);
         seek(time); if (manualSlice) addChop(time);
       }}>
         <WaveformView peaks={peaks} label="Video audio waveform" />
@@ -299,7 +299,7 @@ export function VideoSampler() {
           dragChop.current = { index: i, pointer: e.pointerId };
           e.currentTarget.setPointerCapture(e.pointerId); seek(time);
         }} onPointerMove={(e) => {
-          if (dragChop.current?.pointer === e.pointerId && dragChop.current.index === i) editChop(i, waveformTime(e.clientX));
+          if (dragChop.current?.pointer === e.pointerId && dragChop.current.index === i) editChop(i, waveformTime(e.clientX, e.clientY));
         }} onPointerUp={() => { dragChop.current = null; }} onPointerCancel={() => { dragChop.current = null; }} onLostPointerCapture={() => { dragChop.current = null; }} onKeyDown={(e) => {
           if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
           e.preventDefault(); const delta = noteGrid ? 240 / sourceBpm / noteGrid : 0.01;

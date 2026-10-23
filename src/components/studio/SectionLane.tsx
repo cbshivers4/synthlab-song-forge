@@ -28,11 +28,11 @@ export function SectionLane() {
   const total = songSteps(transport.bars);
   const snap = 4; // sections snap to bars
 
-  const stepFromX = (clientX: number) => {
+  const stepFromX = (clientX: number, clientY: number) => {
     const el = gridRef.current;
     if (!el) return 0;
     const r = canvasRect(el);
-    const raw = ((canvasPoint(clientX, 0).x - r.left) / r.width) * total;
+    const raw = ((canvasPoint(clientX, clientY).x - r.left) / r.width) * total;
     return Math.min(total, Math.max(0, Math.round(raw / snap) * snap));
   };
 
@@ -42,9 +42,9 @@ export function SectionLane() {
     e.stopPropagation();
     const sec = sections.find((s) => s.id === id);
     if (!sec) return;
-    const from = stepFromX(e.clientX);
+    const from = stepFromX(e.clientX, e.clientY);
     const move = (ev: PointerEvent) => {
-      const now = stepFromX(ev.clientX);
+      const now = stepFromX(ev.clientX, ev.clientY);
       const shift = now - from;
       if (mode === "move") {
         updateSection(id, { start: Math.max(0, Math.min(total - sec.length, sec.start + shift)) });

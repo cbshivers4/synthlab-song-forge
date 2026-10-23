@@ -2993,10 +2993,10 @@ function Ruler() {
   const dragLoop = (which: "start" | "end" | "band") => (e: React.PointerEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const from = stepFromX(e.clientX);
+    const from = stepFromX(e.clientX, e.clientY);
     const len = hi - lo;
     const move = (ev: PointerEvent) => {
-      const s = stepFromX(ev.clientX);
+      const s = stepFromX(ev.clientX, ev.clientY);
       if (which === "start") setTransport({ loopStart: Math.max(0, Math.min(s, hi - 1)), loop: true });
       else if (which === "end") setTransport({ loopEnd: Math.min(total, Math.max(s, lo + 1)), loop: true });
       else {
@@ -3018,7 +3018,7 @@ function Ruler() {
     e.preventDefault();
     e.stopPropagation();
     const move = (ev: PointerEvent) => {
-      const s = stepFromX(ev.clientX);
+      const s = stepFromX(ev.clientX, ev.clientY);
       if (which === "start") setTransport({ exportStart: Math.min(s, exHi - 1) });
       else setTransport({ exportEnd: Math.max(s, exLo + 1) });
     };
@@ -3177,7 +3177,7 @@ function Ruler() {
             onPointerDown={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              const move = (ev: PointerEvent) => setTransport({ step: Math.min(total - 1, stepFromX(ev.clientX)) });
+              const move = (ev: PointerEvent) => setTransport({ step: Math.min(total - 1, stepFromX(ev.clientX, ev.clientY)) });
               const up = () => {
                 window.removeEventListener("pointermove", move);
                 window.removeEventListener("pointerup", up);
