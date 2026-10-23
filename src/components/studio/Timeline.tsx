@@ -116,6 +116,7 @@ const EMPTY_PEAKS: number[] = [0];
 import { LevelBar } from "@/components/studio/LevelBar";
 import { ClipEditor } from "@/components/studio/ClipEditor";
 import { clipRate, clipSeconds } from "@/lib/synclab/types";
+import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { parseMidiFile } from "@/lib/synclab/midi-file";
 
