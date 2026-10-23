@@ -216,6 +216,8 @@ export interface DrumPad {
   sample?: string | undefined;
   /** session audio URL of a loaded sample; when its buffer is loaded the pad plays it instead of the synthesized voice */
   sampleUrl?: string | undefined;
+  /** Private project storage path for manually saved drum samples. */
+  sampleCloudPath?: string | undefined;
   muted: boolean;
   solo: boolean;
   steps: number[]; // velocity 0..1 per step, 0 = off

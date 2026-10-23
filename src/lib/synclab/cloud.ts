@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
-import type { AudioClip, AuxId, BusId, BusState, PluginDef, PluginInstance, SongSection, SynthPatch, Track, TrackFolder, Transport, VcaId } from "./types";
+import type { AudioClip, AuxId, BusId, BusState, DrumPad, PluginDef, PluginInstance, SongSection, SynthPatch, Track, TrackFolder, Transport, VcaId } from "./types";
 import type { SavedPad } from "./pad-session";
 
 const BUCKET = "synclab-cloud";
@@ -69,7 +69,21 @@ async function prepareSession(session: CloudSession, userId: string, projectId: 
       const cloudPath = sampler.cloudPath ?? `${userId}/${projectId}/samples/${track.id}-${safe(sampler.name)}`;
       sampler = { ...sampler, cloudPath: await uploadUrl(sampler.url, cloudPath), url: "" };
     }
-    return { ...track, clips, sampler };
+    const sampleUploads = new Map<string, Promise<DrumPad>>();
+    const upPad = async (pad: DrumPad): Promise<DrumPad> => {
+      if (!pad.sampleUrl) return pad;
+      const key = `${pad.id}:${pad.sampleUrl}`;
+      let upload = sampleUploads.get(key);
+      if (!upload) {
+        upload = (async () => ({ ...pad, sampleCloudPath: await uploadUrl(pad.sampleUrl ?? "", pad.sampleCloudPath ?? `${userId}/${projectId}/drums/${track.id}-${pad.id}-${safe(pad.sample ?? pad.name)}`), sampleUrl: undefined }))();
+        sampleUploads.set(key, upload);
+      }
+      const saved = await upload;
+      return { ...pad, sampleCloudPath: saved.sampleCloudPath, sampleUrl: undefined };
+    };
+    const pads = track.pads ? await Promise.all(track.pads.map(upPad)) : undefined;
+    const drumPatterns = track.drumPatterns ? await Promise.all(track.drumPatterns.map(bank => Promise.all((bank ?? []).map(upPad)))) : undefined;
+    return { ...track, clips, sampler, pads, drumPatterns };
   }));
   const padBank: Record<number, SavedPad> = {};
   for (const [key, pad] of Object.entries(session.padBank)) {
@@ -87,8 +101,17 @@ async function signedUrl(path?: string) {
 }
 
 async function restoreSession(session: CloudSession): Promise<CloudSession> {
+  const sampleUrls = new Map<string, Promise<string>>();
+  const downPad = async (pad: DrumPad): Promise<DrumPad> => {
+    if (!pad.sampleCloudPath) return pad;
+    let url = sampleUrls.get(pad.sampleCloudPath);
+    if (!url) { url = signedUrl(pad.sampleCloudPath); sampleUrls.set(pad.sampleCloudPath, url); }
+    return { ...pad, sampleUrl: await url };
+  };
   const tracks = await Promise.all(session.tracks.map(async (track) => ({
     ...track,
+    pads: track.pads ? await Promise.all(track.pads.map(downPad)) : undefined,
+    drumPatterns: track.drumPatterns ? await Promise.all(track.drumPatterns.map(bank => Promise.all((bank ?? []).map(downPad)))) : undefined,
     clips: await Promise.all((track.clips ?? []).map(async function down(clip: AudioClip): Promise<AudioClip> {
       return {
         ...clip,
@@ -171,6 +194,7 @@ export async function deleteCloudProject(project: CloudProject) {
   for (const track of session?.tracks ?? []) {
     for (const clip of track.clips ?? []) collectClip(clip);
     if (track.sampler?.cloudPath) paths.add(track.sampler.cloudPath);
+    for (const pad of [...(track.pads ?? []), ...(track.drumPatterns ?? []).flat()]) if (pad?.sampleCloudPath) paths.add(pad.sampleCloudPath);
   }
   for (const pad of Object.values(session?.padBank ?? {})) if (pad.cloudPath) paths.add(pad.cloudPath);
   const { data: deleted, error } = await supabase.from("cloud_projects").delete().eq("id", project.id).eq("user_id", userId).select("id").single();
