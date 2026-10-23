@@ -427,6 +427,9 @@ html[data-reduce-motion] *, html[data-reduce-motion] *::before, html[data-reduce
 .mx-console:not(.mx-phone) .mx-row-head { order: 0; height: 32px; flex-wrap: wrap; gap: 2px; align-content: center; overflow: hidden; }
 .mx-console .mx-row-head { background: linear-gradient(180deg, color-mix(in oklab, var(--mx-a, var(--surface-2)) 92%, white 8%), var(--mx-b, var(--surface))); color: var(--foreground); }
 .mx-console .mx-row-head .hardware-knob-label::after, .mx-console .mx-row-head .hardware-knob-value { color: var(--foreground); }
+.mx-channel-menu { background: linear-gradient(180deg, color-mix(in oklab, var(--popover) 85%, white 15%), var(--popover)); border: 1px solid color-mix(in oklab, var(--border) 60%, white 40%); box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55); }
+.mx-channel-menu .label-xs { color: var(--foreground); }
+.mx-channel-menu input { background: var(--background); color: var(--foreground); }
 .mx-console:not(.mx-phone) .mx-row-inserts { order: 1; height: 78px; }
 .mx-console:not(.mx-phone) .mx-row-eq { order: 2; height: 32px; }
 .mx-console:not(.mx-phone) .mx-row-sends { order: 3; height: 28px; }

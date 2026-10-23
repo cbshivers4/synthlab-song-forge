@@ -274,7 +274,7 @@ export function InsertRack({
               </button>
             </div>
             <Dialog open={open === p.id} onOpenChange={(o) => setOpen(o ? p.id : null)}>
-              <DialogContent data-fx-skin={p.kind} className="max-h-[92vh] w-[min(97vw,72rem)] max-w-none overflow-y-auto">
+              <DialogContent data-fx-skin={p.kind} className="max-h-[86vh] w-[min(97vw,58rem)] max-w-none overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2 font-mono uppercase tracking-wider">
                     <button type="button" onClick={() => onBypass(p.id)} title={p.bypass ? "Turn on" : "Bypass"} aria-label="Bypass effect">
@@ -283,14 +283,14 @@ export function InsertRack({
                     {p.name} <span className="text-xs text-muted-foreground">{title} · {p.format}</span>
                   </DialogTitle>
                 </DialogHeader>
-                <div className="grid gap-4 md:grid-cols-[1.4fr_1fr]">
-                  <div className="space-y-3">
-                    <EffectDisplay plugin={p} height={280} onParam={(paramId, v) => onParam(p.id, paramId, v)} />
-                    <Scope scopeId={p.id} height={170} />
-                  </div>
-                  <div className="space-y-3">
+                <div className="grid gap-3 md:grid-cols-[1.4fr_1fr]">
+                  <div className="space-y-2">
+                    <EffectDisplay plugin={p} height={220} onParam={(paramId, v) => onParam(p.id, paramId, v)} />
+                    <Scope scopeId={p.id} height={96} />
+                   </div>
+                  <div className="space-y-2">
                     <XYPad plugin={p} onParam={(paramId, v) => onParam(p.id, paramId, v)} />
-                    <div className="flex flex-wrap justify-center gap-2">
+                    <div className="grid grid-cols-[repeat(auto-fill,minmax(88px,1fr))] justify-items-center gap-2">
                       {p.params.map((x) => (
                         <Knob
                           key={x.id}
@@ -299,7 +299,7 @@ export function InsertRack({
                           min={x.min}
                           max={x.max}
                           step={(x.max - x.min) / 200}
-                          size={60}
+                          size={56}
                           onChange={(v) => onParam(p.id, x.id, v)}
                           midiTarget={{ id: midiId, param: `${midiPrefix}:${p.id}:${x.id}` }}
                         />
@@ -885,7 +885,7 @@ function ChannelMenu({ t }: { t: Track }) {
           <MoreVertical className="size-3" />
         </button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-56 space-y-2 p-3" onClick={(e) => e.stopPropagation()}>
+      <PopoverContent align="start" className="mx-channel-menu w-56 space-y-2 p-3" onClick={(e) => e.stopPropagation()}>
         <div className="label-xs">Channel</div>
         <input
           aria-label={`${t.name} channel name`} value={t.name}
@@ -898,7 +898,7 @@ function ChannelMenu({ t }: { t: Track }) {
             <button
               key={kind}
               onClick={() => add(kind)}
-              className="h-6 rounded-sm border border-border bg-surface px-1 font-mono text-[8px] uppercase text-muted-foreground hover:text-foreground"
+              className="h-6 rounded-sm border border-border bg-secondary px-1 font-mono text-[9px] uppercase text-secondary-foreground hover:bg-accent"
             >
               {label}
             </button>
@@ -908,13 +908,13 @@ function ChannelMenu({ t }: { t: Track }) {
         <div className="grid grid-cols-2 gap-1 pt-1">
           <button
             onClick={() => updateTrack(t.id, { volume: 0.8, pan: 0, muted: false, solo: false })}
-            className="h-6 rounded-sm border border-border bg-surface font-mono text-[8px] uppercase text-muted-foreground hover:text-foreground"
+            className="h-6 rounded-sm border border-border bg-secondary font-mono text-[9px] uppercase text-secondary-foreground hover:bg-accent"
           >
             Reset
           </button>
           <button
             onClick={() => duplicateTrack(t.id)}
-            className="h-6 rounded-sm border border-border bg-surface font-mono text-[8px] uppercase text-muted-foreground hover:text-foreground"
+            className="h-6 rounded-sm border border-border bg-secondary font-mono text-[9px] uppercase text-secondary-foreground hover:bg-accent"
           >
             Duplicate
           </button>
