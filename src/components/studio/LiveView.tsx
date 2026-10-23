@@ -1,3 +1,4 @@
+import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
 import { useEffect, useRef, useState } from "react";
 import { useStudio } from "@/lib/synclab/store";
 import { LIVE_FX, getLiveFx, type LiveFxInfo } from "@/lib/synclab/live-fx";

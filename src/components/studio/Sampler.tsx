@@ -1,3 +1,4 @@
+import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { AudioLines, Piano, Play, RotateCcw, Scissors, Square, Trash2, Upload } from "lucide-react";
 import { Keyboard } from "./Keyboard";

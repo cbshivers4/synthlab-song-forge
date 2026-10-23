@@ -1,3 +1,4 @@
+import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
 import { useEffect, useRef, useState } from "react";
 import { Crop, ImagePlus, Palette, RotateCcw, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";

@@ -1,3 +1,4 @@
+import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Loader2, Monitor, Plug, PlugZap, RefreshCw, Star, X } from "lucide-react";
 import { Button } from "@/components/ui/button";

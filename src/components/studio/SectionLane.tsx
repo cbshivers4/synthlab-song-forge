@@ -1,3 +1,4 @@
+import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
 import { useRef, useState } from "react";
 import { songSteps, stepsPerBar } from "@/lib/synclab/timebase";
 import { Copy, LayoutList, Plus, Trash2 } from "lucide-react";

@@ -1,3 +1,4 @@
+import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
 import { useIsLandscapePhone } from "@/hooks/use-mobile";
 import { DeviceClock } from "./DeviceClock";
 import { useEffect, useRef, useState, type ReactNode } from "react";

@@ -1,3 +1,4 @@
+import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
 import { useEffect, useRef, useState, type PointerEvent } from 'react';
 import { ArrowRightToLine, ChevronLeft, ChevronRight, Circle, Eraser, Hand, ListMusic, Pencil, Play, Square } from 'lucide-react';
 import { Button } from '@/components/ui/button';
