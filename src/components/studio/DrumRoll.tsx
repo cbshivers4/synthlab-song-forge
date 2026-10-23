@@ -7,6 +7,7 @@
  * the drum name and the MIDI note the pad sends, instead of melodic note names.
  */
 import { useEffect, useRef, useState } from "react";
+import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -63,7 +64,7 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
     const id = requestAnimationFrame(() => {
       const grid = gridRef.current, row = rowRefs.current.get(view.padId ?? "");
       if (!grid || !row) return;
-      const offset = row.getBoundingClientRect().top - grid.getBoundingClientRect().top;
+      const offset = canvasRect(row).top - canvasRect(grid).top;
       if (offset < 24 || offset + 56 > grid.clientHeight) grid.scrollTop += offset - Math.max(24, grid.clientHeight - 64);
     });
     return () => cancelAnimationFrame(id);
@@ -82,8 +83,9 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
       if (!first || !second) return;
       e.preventDefault();
       touchStep.current = null;
-      const rect = el.getBoundingClientRect();
-      const fraction = Math.max(0, Math.min(1, ((first.clientX + second.clientX) / 2 - rect.left - 152) / Math.max(1, rect.width - 152)));
+      const rect = canvasRect(el);
+      const midX = (canvasPoint(first.clientX, first.clientY).x + canvasPoint(second.clientX, second.clientY).x) / 2;
+      const fraction = Math.max(0, Math.min(1, (midX - rect.left - 152) / Math.max(1, rect.width - 152)));
       initial = { distance: Math.max(1, distance(e)), zoom: viewRef.current.zoom, anchor: viewRef.current.start + Math.floor(fraction * Math.max(1, Math.floor(baseSize / viewRef.current.zoom))) };
     };
     const move = (e: TouchEvent) => {
@@ -101,9 +103,10 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
   const readRows = () => {
     const el = gridRef.current;
     if (!el) return;
-    const bounds = el.getBoundingClientRect();
+    const bounds = canvasRect(el);
     const visible = rows.flatMap(({ pad }, index) => {
-      const rect = rowRefs.current.get(pad.id)?.getBoundingClientRect();
+      const rowEl = rowRefs.current.get(pad.id);
+      const rect = rowEl ? canvasRect(rowEl) : undefined;
       return rect && rect.bottom > bounds.top + 24 && rect.top < bounds.bottom ? [index + 1] : [];
     });
     const first = visible[0], last = visible[visible.length - 1];

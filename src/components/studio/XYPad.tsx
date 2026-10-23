@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
 import { useStudio } from "@/lib/synclab/store";
 import type { PluginInstance } from "@/lib/synclab/types";
 import {
