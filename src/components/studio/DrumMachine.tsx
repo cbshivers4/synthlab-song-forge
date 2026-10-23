@@ -106,7 +106,7 @@ export function DrumMachine({ track }: { track: Track }) {
   const hitPad = (pad: DrumPad) => {
     getEngine().playDrum(track.id, pad, 1);
     setFocusPadId(pad.id);
-    if (!isMobile || !transport.playing || (!tapRec && !transport.recording)) return;
+    if (!transport.playing || (!tapRec && !transport.recording)) return;
     const total = pad.steps.length || track.steps || 16;
     const at = transport.step % total;
     const stale = transport.recording ? neighbourLiveHits(track.id, pad.id, at, total) : [];

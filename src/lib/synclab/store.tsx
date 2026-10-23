@@ -2306,8 +2306,10 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       toggleRecord: () => {
         const engine = getEngine();
         engine.init();
-        const isNote = (t: Track) => t.kind === "instrument" || t.kind === "midi" || t.kind === "drum";
-        const isAudio = (t: Track) => t.kind === "audio" || t.kind === "ai-vocal" || t.kind === "sampler";
+        // Sampler pads play internal audio, so they record like instruments
+        // (channel print + editable notes), not like a microphone input.
+        const isNote = (t: Track) => t.kind === "instrument" || t.kind === "midi" || t.kind === "drum" || t.kind === "sampler";
+        const isAudio = (t: Track) => t.kind === "audio" || t.kind === "ai-vocal";
         // Pressing REC during a count-in cancels it.
         if (countInTimerRef.current != null) {
           window.clearInterval(countInTimerRef.current);
