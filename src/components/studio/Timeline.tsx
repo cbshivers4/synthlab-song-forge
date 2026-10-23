@@ -178,11 +178,12 @@ function TimelineCutGuide({ tool, position, selected, total, grid }: { tool: "sp
   const lineRef = useRef<HTMLDivElement>(null);
   const iconRef = useRef<HTMLDivElement>(null);
   const showAtPointer = (e: React.PointerEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const rawX = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
+    const rect = canvasRect(e.currentTarget);
+    const pt = canvasPoint(e.clientX, e.clientY);
+    const rawX = Math.max(0, Math.min(rect.width, pt.x - rect.left));
     // The guide shows exactly where the cut will land — snapped or free.
     const x = (cutPosition(rawX / Math.max(1, rect.width), total, grid, e.altKey) / Math.max(1, total)) * rect.width;
-    const y = Math.max(4, Math.min(rect.height - 32, e.clientY - rect.top + 10));
+    const y = Math.max(4, Math.min(rect.height - 32, pt.y - rect.top + 10));
     const line = lineRef.current;
     const icon = iconRef.current;
     if (line) { line.style.left = `${x}px`; line.style.opacity = "1"; }
@@ -235,9 +236,10 @@ function Waveform({ track }: { track: Track }) {
     e.preventDefault();
     const lane = (e.currentTarget as HTMLElement).closest("[data-lane]") as HTMLElement | null;
     if (!lane) return;
-    const rect = lane.getBoundingClientRect();
+    const rect = canvasRect(lane);
     const perStep = rect.width / total;
-    const x0 = e.clientX;
+    const startPt = canvasPoint(e.clientX, e.clientY);
+    const x0 = startPt.x;
     const orig = {
       start: clip.start ?? 0,
       offset: clip.offset ?? 0,
