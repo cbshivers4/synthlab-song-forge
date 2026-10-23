@@ -133,12 +133,13 @@ export function PianoRoll({ track }: { track: Track }) {
   const onMove = (e: React.PointerEvent) => {
     const el = gridRef.current;
     if (!el) return;
+    const pt = canvasPoint(e.clientX, e.clientY);
     // marquee select: pressed on empty grid and dragged
     const m = marq.current;
     if (m && !drag.current) {
-      const r = el.getBoundingClientRect();
-      const x = e.clientX - r.left;
-      const y = e.clientY - r.top;
+      const r = canvasRect(el);
+      const x = pt.x - r.left;
+      const y = pt.y - r.top;
       if (m.active || Math.hypot(x - m.x, y - m.y) > 4) {
         m.active = true;
         setMarquee({ x0: Math.min(m.x, x), y0: Math.min(m.y, y), x1: Math.max(m.x, x), y1: Math.max(m.y, y) });
@@ -147,13 +148,13 @@ export function PianoRoll({ track }: { track: Track }) {
     }
     const d = drag.current;
     if (!d) return;
-    const stepPx = el.getBoundingClientRect().width / steps;
+    const stepPx = canvasRect(el).width / steps;
     if (d.mode === "resize") {
-      const nl = Math.max(grid, snap(d.length + (e.clientX - d.startX) / stepPx) || grid);
+      const nl = Math.max(grid, snap(d.length + (pt.x - d.startX) / stepPx) || grid);
       setNotes(track.id, notes.map((n) => (n.id === d.id ? capturedNote({ ...n, length: nl }, loopRegion(transport)) ?? n : n)));
     } else {
-      const ds = snap(d.step + (e.clientX - d.startX) / stepPx);
-      const dp = d.pitch - Math.round((e.clientY - d.startY) / ROW_H);
+      const ds = snap(d.step + (pt.x - d.startX) / stepPx);
+      const dp = d.pitch - Math.round((pt.y - d.startY) / ROW_H);
       setNotes(
         track.id,
         notes.map((n) => (n.id === d.id ? capturedNote({ ...n, step: ds, pitch: Math.max(0, Math.min(120, dp)) }, loopRegion(transport)) ?? n : n)),
@@ -168,7 +169,7 @@ export function PianoRoll({ track }: { track: Track }) {
     if (m?.active && marquee) {
       const el = gridRef.current;
       if (el) {
-        const r = el.getBoundingClientRect();
+        const r = canvasRect(el);
         const stepPx = r.width / steps;
         const s0 = marquee.x0 / stepPx;
         const s1 = marquee.x1 / stepPx;
@@ -508,8 +509,9 @@ export function PianoRoll({ track }: { track: Track }) {
             style={{ height: ROWS * ROW_H }}
             onDoubleClick={addNote}
             onPointerDown={(e) => {
-              const r = e.currentTarget.getBoundingClientRect();
-              marq.current = { x: e.clientX - r.left, y: e.clientY - r.top, active: false };
+              const r = canvasRect(e.currentTarget);
+              const pt = canvasPoint(e.clientX, e.clientY);
+              marq.current = { x: pt.x - r.left, y: pt.y - r.top, active: false };
             }}
             onPointerMove={onMove}
           >
