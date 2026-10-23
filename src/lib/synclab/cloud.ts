@@ -72,6 +72,7 @@ async function prepareSession(session: CloudSession, userId: string, projectId: 
     const sampleUploads = new Map<string, Promise<DrumPad>>();
     const upPad = async (pad: DrumPad): Promise<DrumPad> => {
       if (!pad.sampleUrl) return pad;
+      if (pad.sampleCloudPath && !pad.sampleUrl.startsWith("blob:")) return { ...pad, sampleUrl: undefined };
       const key = `${pad.id}:${pad.sampleUrl}`;
       let upload = sampleUploads.get(key);
       if (!upload) {
