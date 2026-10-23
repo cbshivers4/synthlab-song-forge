@@ -31,8 +31,8 @@ export function SectionLane() {
   const stepFromX = (clientX: number) => {
     const el = gridRef.current;
     if (!el) return 0;
-    const r = el.getBoundingClientRect();
-    const raw = ((clientX - r.left) / r.width) * total;
+    const r = canvasRect(el);
+    const raw = ((canvasPoint(clientX, 0).x - r.left) / r.width) * total;
     return Math.min(total, Math.max(0, Math.round(raw / snap) * snap));
   };
 

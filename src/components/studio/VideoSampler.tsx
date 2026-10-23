@@ -96,9 +96,10 @@ export function VideoSampler() {
     return Array.from({ length: Math.ceil(buffer.duration / interval / stride) }, (_, i) => i * stride * interval);
   }, [buffer, sourceBpm, noteGrid]);
   const waveformTime = (clientX: number) => {
-    const bounds = waveform.current?.getBoundingClientRect();
-    if (!bounds || !buffer) return 0;
-    return Math.max(0, Math.min(buffer.duration - 0.01, snapVideoTime((clientX - bounds.left) / bounds.width * buffer.duration, sourceBpm, noteGrid)));
+    const waveEl = waveform.current;
+    if (!waveEl || !buffer) return 0;
+    const bounds = canvasRect(waveEl);
+    return Math.max(0, Math.min(buffer.duration - 0.01, snapVideoTime((canvasPoint(clientX, 0).x - bounds.left) / bounds.width * buffer.duration, sourceBpm, noteGrid)));
   };
   const editChop = (i: number, time: number) => {
     if (!buffer) return;

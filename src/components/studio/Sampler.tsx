@@ -50,9 +50,10 @@ function Waveform({ track, onSlice, drawSlice = false }: { track: Track; onSlice
   const chops = s.slices ?? [];
 
   const fracAt = (clientX: number) => {
-    const box = ref.current?.getBoundingClientRect();
-    if (!box) return 0;
-    return Math.min(1, Math.max(0, (clientX - box.left) / box.width));
+    const boxEl = ref.current;
+    if (!boxEl) return 0;
+    const box = canvasRect(boxEl);
+    return Math.min(1, Math.max(0, (canvasPoint(clientX, 0).x - box.left) / box.width));
   };
 
   const move = (e: ReactPointerEvent) => {
