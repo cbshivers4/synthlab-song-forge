@@ -103,6 +103,8 @@ interface ChannelStrip {
   sendReverb: GainNode;
   sendDelay: GainNode;
   sendChorus: GainNode;
+  /** Scales per-voice synth FX taps (chorus/reverb) so they follow track mute/volume/VCA. */
+  sendScale: GainNode;
   bus: string;
   insertNodes: AudioNode[];
   insertKey: string;
@@ -378,7 +380,7 @@ export class SyncLabEngine {
       cap.frames += l.length;
     };
     cap.sink.gain.value = 0;
-    this.master.connect(proc);
+    (this.outputNode ?? this.master).connect(proc);
     proc.connect(cap.sink);
     cap.sink.connect(ctx.destination);
     this.capture = cap;
@@ -567,7 +569,11 @@ export class SyncLabEngine {
       sendReverb.connect(this.reverbSend!);
       sendDelay.connect(this.delaySend!);
       sendChorus.connect(this.chorusSend!);
-      ch = { input, trim, gain, pan, meter, sendReverb, sendDelay, sendChorus, bus: "master", insertNodes: [], insertKey: "", insertOut };
+      const sendScale = ctx.createGain();
+      sendScale.gain.value = 1;
+      sendScale.connect(this.reverbSend!);
+      sendScale.connect(this.chorusSend!);
+      ch = { input, trim, gain, pan, meter, sendReverb, sendDelay, sendChorus, sendScale, bus: "master", insertNodes: [], insertKey: "", insertOut };
       this.channels.set(id, ch);
     }
     return ch;
