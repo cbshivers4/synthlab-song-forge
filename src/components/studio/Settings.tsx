@@ -42,6 +42,11 @@ import { notifyPreferencesChanged } from "@/lib/synclab/preferences";
 import { Bluetooth, Mic } from "lucide-react";
 import { SettingsDiagnostics } from "./SettingsDiagnostics";
 import { KeyboardShortcuts } from "./KeyboardShortcuts";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { useServerFn } from "@tanstack/react-start";
+import { deleteMyAccount } from "@/utils/account.functions";
+import { supabase } from "@/integrations/supabase/client";
 
 export function requestBluetoothSettings() {
   sessionStorage.setItem("synclab.settings.bluetooth", "open");
