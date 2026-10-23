@@ -1044,7 +1044,7 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
     if (!isMobile || e.pointerType === "mouse") return;
     const target = e.target as HTMLElement;
     if (target.closest("button,input,textarea,select,[role='slider'],[role='combobox'],[contenteditable]")) return;
-    const gesture = { x: e.clientX, y: e.clientY, timer: null as number | null, moved: false };
+    const gesture = { ...canvasPoint(e.clientX, e.clientY), timer: null as number | null, moved: false };
     gesture.timer = window.setTimeout(() => {
       suppressClickRef.current = true;
       select(track.id);
@@ -1057,7 +1057,8 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
   const movePhoneGesture = (e: React.PointerEvent<HTMLDivElement>) => {
     const gesture = gestureRef.current;
     if (!gesture) return;
-    if (Math.hypot(e.clientX - gesture.x, e.clientY - gesture.y) > 12) {
+    const gpt = canvasPoint(e.clientX, e.clientY);
+    if (Math.hypot(gpt.x - gesture.x, gpt.y - gesture.y) > 12) {
       gesture.moved = true;
       if (gesture.timer) window.clearTimeout(gesture.timer);
       gesture.timer = null;
@@ -1068,8 +1069,9 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
     const gesture = gestureRef.current;
     if (!gesture) return;
     if (gesture.timer) window.clearTimeout(gesture.timer);
-    const dx = e.clientX - gesture.x;
-    const dy = e.clientY - gesture.y;
+    const ept = canvasPoint(e.clientX, e.clientY);
+    const dx = ept.x - gesture.x;
+    const dy = ept.y - gesture.y;
     gestureRef.current = null;
     if (Math.max(Math.abs(dx), Math.abs(dy)) < 52) return;
     suppressClickRef.current = true;
@@ -1099,13 +1101,13 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
   const resizeHeight = (e: React.PointerEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const y0 = e.clientY;
+    const y0 = canvasPoint(e.clientX, e.clientY).y;
     const row = e.currentTarget.parentElement;
     if (!row) return;
-    const h0 = row.getBoundingClientRect().height;
+    const h0 = canvasRect(row).height;
     let height = h0;
     const onMove = (ev: PointerEvent) => {
-      height = Math.max(132, Math.min(600, h0 + ev.clientY - y0));
+      height = Math.max(132, Math.min(600, h0 + canvasPoint(ev.clientX, ev.clientY).y - y0));
       row.style.height = `${height}px`;
     };
     const onUp = () => {
@@ -1120,8 +1122,8 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
   };
   const resizeWidth = (e: React.PointerEvent) => {
     e.preventDefault(); e.stopPropagation();
-    const x0 = e.clientX;
-    const move = (ev: PointerEvent) => setHeaderWidth(Math.max(220, Math.min(600, headerWidth + ev.clientX - x0)));
+    const x0 = canvasPoint(e.clientX, e.clientY).x;
+    const move = (ev: PointerEvent) => setHeaderWidth(Math.max(220, Math.min(600, headerWidth + canvasPoint(ev.clientX, ev.clientY).x - x0)));
     const up = () => {
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", up);
@@ -1141,7 +1143,7 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
     const rowAt = (clientY: number) => {
       const rows = Array.from(document.querySelectorAll<HTMLElement>("[data-track-row]"));
       return rows.findIndex((row) => {
-        const r = row.getBoundingClientRect();
+        const r = canvasRect(row);
         return clientY >= r.top && clientY < r.bottom;
       });
     };
