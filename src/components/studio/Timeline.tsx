@@ -298,21 +298,24 @@ function Waveform({ track }: { track: Track }) {
         });
       } else if (mode === "trim-right") {
         // Snap the clip end to whole bars so you choose how many bars it lasts (Shift = fine).
+        // Clip length/offset are source-file seconds, so convert through the playback rate.
+        const rate = clipRate(clip);
         const bar = stepsPerBar() * stepDur;
-        const raw = orig.length + dSteps * stepDur;
+        const raw = orig.length / rate + dSteps * stepDur;
         const snapped = ev.shiftKey ? raw : Math.max(bar, Math.round(raw / bar) * bar);
-        const len = Math.max(0.05, Math.min(clip.duration - orig.offset, snapped));
-        (el.closest(".arrangement-clip") as HTMLElement | null ?? el).dataset["bars"] = `${+(len / bar).toFixed(2)} BARS`;
+        const len = Math.max(0.05, Math.min(clip.duration - orig.offset, snapped * rate));
+        (el.closest(".arrangement-clip") as HTMLElement | null ?? el).dataset["bars"] = `${+(len / rate / bar).toFixed(2)} BARS`;
         writeClip(clip.id, { length: len });
       } else {
+        const rate = clipRate(clip);
         const bar = stepsPerBar() * stepDur;
         const rawDelta = dSteps * stepDur;
         const want = ev.shiftKey ? rawDelta : Math.round(rawDelta / bar) * bar;
-        const delta = Math.max(-orig.offset, Math.min(orig.length - 0.05, want));
-        (el.closest(".arrangement-clip") as HTMLElement | null ?? el).dataset["bars"] = `${+((orig.length - delta) / bar).toFixed(2)} BARS`;
+        const delta = Math.max(-orig.offset / rate, Math.min((orig.length - 0.05) / rate, want));
+        (el.closest(".arrangement-clip") as HTMLElement | null ?? el).dataset["bars"] = `${+((orig.length - delta * rate) / rate / bar).toFixed(2)} BARS`;
         writeClip(clip.id, {
-          offset: orig.offset + delta,
-          length: orig.length - delta,
+          offset: orig.offset + delta * rate,
+          length: orig.length - delta * rate,
           start: Math.max(0, orig.start + Math.round(delta / stepDur)),
         });
       }

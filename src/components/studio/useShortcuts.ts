@@ -66,13 +66,16 @@ export function useShortcuts() {
         case 'save':
           if (!isMobile) document.dispatchEvent(new Event('synclab:cloud-save'));
           else if (project && requirePro('Cloud saving')) {
-            const session = studio.snapshot();
             const id = toast.loading('Saving project and audio…');
-            void saveCloudProject({ ...project, id: project.id ?? '' }, session).then((saved) => {
+            void (async () => {
+              // Finalize any in-progress take first, so the save includes it.
+              if (transport.recording) await studio.stop();
+              const session = studio.snapshot();
+              const saved = await saveCloudProject({ ...project, id: project.id ?? '' }, session);
               setProject({ ...project, id: saved.id, openedAt: Date.now() });
               document.dispatchEvent(new CustomEvent('synclab:project-saved', { detail: session }));
               toast.success('Project saved to your cloud', { id });
-            }).catch((error: unknown) => toast.error(error instanceof Error ? error.message : 'Cloud save failed', { id }));
+            })().catch((error: unknown) => toast.error(error instanceof Error ? error.message : 'Cloud save failed', { id }));
           }
           break;
         case 'duplicate': if (selected) studio.duplicateTrack(selected.id); break;
