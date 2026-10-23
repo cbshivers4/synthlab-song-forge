@@ -23,10 +23,14 @@ export function canvasPoint(clientX: number, clientY: number) {
 }
 
 /** Element rect in layout space (getBoundingClientRect is screen-space when rotated). */
-export function canvasRect(el: HTMLElement) {
+export function canvasRect(el: HTMLElement | SVGSVGElement) {
   const r = el.getBoundingClientRect();
   if (!sidewaysCanvas()) {
     return { left: r.left, top: r.top, right: r.right, bottom: r.bottom, width: r.width, height: r.height };
+  }
+  if (!(el instanceof HTMLElement)) {
+    // SVG elements have no offset layout; the rotated bbox swaps the axes.
+    return { left: 0, top: 0, right: r.height, bottom: r.width, width: r.height, height: r.width };
   }
   let left = 0;
   let top = 0;
