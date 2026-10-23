@@ -10,6 +10,7 @@ import {
 } from "react";
 import { capturedNote, loopRegion } from "./recording-region";
 import { editDrumPads, type DrumBulkEdit } from "./drum-bulk";
+import { appendDrumPad } from "./drum-banks";
 import { timelineUsesWaveform } from "./timeline-content";
 import { ccAction } from "./midi-actions";
 import { previewTrack } from "./note-preview";
@@ -328,7 +329,7 @@ interface StudioApi extends StudioState {
   editAllDrums: (trackId: string, edit: DrumBulkEdit) => void;
   toggleStep: (trackId: string, padId: string, step: number) => void;
   setStepCount: (trackId: string, steps: number) => void;
-  addPad: (trackId: string) => void;
+  addPad: (trackId: string, sound?: Partial<DrumPad>) => void;
   setNotes: (trackId: string, notes: MidiNote[]) => void;
   setTransport: (t: Partial<Transport>) => void;
   togglePlay: () => void;
@@ -2271,27 +2272,13 @@ export function StudioProvider({ children }: { children: ReactNode }) {
               : t,
           ),
         ),
-      addPad: (trackId) =>
+      addPad: (trackId, sound) =>
         setTracks((ts) =>
           ts.map((t) =>
             t.id === trackId && t.pads
               ? {
                   ...t,
-                  pads: [
-                    ...t.pads,
-                    {
-                      id: uid(),
-                      name: `PAD ${t.pads.length + 1}`,
-                      kind: "perc",
-                      volume: 0.8,
-                      pan: 0,
-                      pitch: 0,
-                      decay: 0.5,
-                      muted: false,
-                      solo: false,
-                      steps: Array.from({ length: t.steps }, () => 0),
-                    },
-                  ],
+                  pads: appendDrumPad(t, uid(), sound),
                 }
               : t,
           ),
