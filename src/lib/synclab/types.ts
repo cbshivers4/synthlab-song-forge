@@ -475,6 +475,8 @@ export interface Track {
   activeClipId?: string | undefined;
   /** Play recorded instrument/drum audio instead of the editable live pattern. */
   printedAudio?: boolean;
+  /** Timeline clip display override: force waveform or note view per channel. */
+  clipView?: "wave" | "notes" | undefined;
   recording?: boolean;
   automation?: AutomationLane[] | undefined;
   /** free-text note the producer keeps on this channel; saved with the project */
