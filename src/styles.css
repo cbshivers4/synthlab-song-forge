@@ -425,6 +425,8 @@ html[data-reduce-motion] *, html[data-reduce-motion] *::before, html[data-reduce
 .mx-console[data-console="studiopro"]:not(.mx-phone) .mx-channel { background: color-mix(in oklab, var(--mixer-channel-color) 48%, var(--mixer-desk)) !important; box-shadow: none !important; }
 .mx-console:not(.mx-phone) .mx-channel[data-selected="true"] { outline: 1px solid var(--playhead); outline-offset: -1px; }
 .mx-console:not(.mx-phone) .mx-row-head { order: 0; height: 32px; flex-wrap: wrap; gap: 2px; align-content: center; overflow: hidden; }
+.mx-console .mx-row-head { background: linear-gradient(180deg, color-mix(in oklab, var(--mx-a, var(--surface-2)) 92%, white 8%), var(--mx-b, var(--surface))); color: var(--foreground); }
+.mx-console .mx-row-head .hardware-knob-label::after, .mx-console .mx-row-head .hardware-knob-value { color: var(--foreground); }
 .mx-console:not(.mx-phone) .mx-row-inserts { order: 1; height: 78px; }
 .mx-console:not(.mx-phone) .mx-row-eq { order: 2; height: 32px; }
 .mx-console:not(.mx-phone) .mx-row-sends { order: 3; height: 28px; }
@@ -448,7 +450,7 @@ html[data-reduce-motion] *, html[data-reduce-motion] *::before, html[data-reduce
 .mx-console:not(.mx-phone) .mx-row-readout { height: 16px; }
 .mx-console:not(.mx-phone) .mx-row-fader { height: 104px; }
 /* Channel name plate: a normal row above the controls — never floats over the level meter */
-.mx-console:not(.mx-phone) .mx-row-name { order: -1; height: 20px; flex-direction: row; gap: 3px; background: var(--mixer-channel-color) !important; box-shadow: none !important; }
+.mx-console:not(.mx-phone) .mx-row-name { order: -1; height: 20px; flex-direction: row; gap: 3px; background: var(--mixer-channel-color, var(--mx-accent, var(--primary))) !important; box-shadow: none !important; }
 .mx-console:not(.mx-phone) .mx-row-name > svg { width: 14px; height: 14px; }
 .mx-console:not(.mx-phone) .mx-row-name > span { font-size: 9px; letter-spacing: 0; }
 .mx-console:not(.mx-phone) .mx-row-scope { height: 26px; }
@@ -1143,7 +1145,7 @@ html[data-reduce-motion] *, html[data-reduce-motion] *::before, html[data-reduce
 .phone-console .mx-phone { height: 100%; min-height: 0; overflow: hidden; background: var(--mixer-desk); }
 .phone-console .mx-phone .mobile-mixer-strips { flex: 1; min-height: 0; overflow: auto; touch-action: pan-x pan-y; align-items: stretch; background: var(--mx-a); }
 .phone-console .mx-phone .mx-channel { width: 96px; height: 100%; min-height: 0; box-shadow: inset 3px 0 0 0 var(--mixer-channel-color), inset 0 1px 0 0 rgba(255,255,255,0.08); }
-.phone-console .mx-phone .mx-row-name { order: -1; height: 28px; flex-direction: row; gap: 3px; background: var(--mixer-channel-color) !important; }
+.phone-console .mx-phone .mx-row-name { order: -1; height: 28px; flex-direction: row; gap: 3px; background: var(--mixer-channel-color, var(--mx-accent, var(--primary))) !important; }
 .phone-console .mx-phone .mx-row-name > svg { width: 14px; height: 14px; }
 .phone-console .mx-phone .mx-row-name > span, .phone-console .mx-phone .mx-name-btn { font-size: 10px; letter-spacing: 0; }
 .phone-console .mx-phone .mx-row-head { order: 0; height: 30px; flex-wrap: wrap; gap: 2px; align-content: center; overflow: hidden; }
@@ -2287,8 +2289,8 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
 .fx-parameter-window > span { display: block; font: 8px var(--font-mono); text-transform: uppercase; color: var(--hardware-silver); }
 .fx-parameter-window strong { display: block; font: 22px var(--font-mono); font-variant-numeric: tabular-nums; color: var(--hardware-trim); }
 .fx-parameter-window small { margin-left: 5px; font-size: 10px; }
-.fx-control-deck { padding: 22px 16px; border: 1px solid var(--hardware-rubber-edge); background: var(--hardware-brush), var(--fx-deck); border-radius: 4px; box-shadow: var(--hardware-case-shadow); --foreground: var(--fx-deck-ink); --muted-foreground: var(--fx-deck-ink); }
-.fx-control-deck .hardware-knob { width: 82px; }
+.fx-control-deck { padding: 12px 10px; border: 1px solid var(--hardware-rubber-edge); background: var(--hardware-brush), var(--fx-deck); border-radius: 4px; box-shadow: var(--hardware-case-shadow); --foreground: var(--fx-deck-ink); --muted-foreground: var(--fx-deck-ink); }
+.fx-control-deck .hardware-knob { width: 62px; }
 .fx-control-deck .hardware-knob-dial { box-shadow: var(--fx-ring-shadow); background: var(--hardware-black); }
 .fx-control-deck .hardware-knob-scale { stroke: var(--hardware-trim); }
 .fx-control-deck .hardware-knob-label { color: var(--fx-deck-ink); font-size: 10px; font-weight: 700; margin-top: 7px; }
