@@ -2486,7 +2486,7 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
   outline-offset: -3px;
 }
 [data-fx-skin][role="dialog"]::before {
-  content: ""; position: absolute; inset: 7px; pointer-events: none; z-index: 5;
+  content: ""; position: absolute; inset: 6px; pointer-events: none; z-index: 0;
   background:
     var(--fx-screw) left top / 11px 11px,
     var(--fx-screw) right top / 11px 11px,
