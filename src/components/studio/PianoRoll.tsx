@@ -1,4 +1,5 @@
 import { capturedNote, loopRegion } from "@/lib/synclab/recording-region";
+import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { keysSnapshot, subscribeKeys } from "@/lib/synclab/active-keys";
 
@@ -100,9 +101,10 @@ export function PianoRoll({ track }: { track: Track }) {
   const posFromEvent = (e: React.PointerEvent | React.MouseEvent) => {
     const el = gridRef.current;
     if (!el) return null;
-    const r = el.getBoundingClientRect();
-    const x = ((e.clientX - r.left) / r.width) * steps;
-    const row = Math.floor((e.clientY - r.top) / ROW_H);
+    const r = canvasRect(el);
+    const pt = canvasPoint(e.clientX, e.clientY);
+    const x = ((pt.x - r.left) / r.width) * steps;
+    const row = Math.floor((pt.y - r.top) / ROW_H);
     const pitch = pitches[Math.min(ROWS - 1, Math.max(0, row))]!;
     return { step: snap(x), pitch, rawX: x };
   };
@@ -122,9 +124,10 @@ export function PianoRoll({ track }: { track: Track }) {
     e.stopPropagation();
     e.currentTarget.setPointerCapture(e.pointerId);
     setSel(e.shiftKey ? (s) => (s.includes(n.id) ? s : [...s, n.id]) : [n.id]);
+    const pt = canvasPoint(e.clientX, e.clientY);
     drag.current = resize
-      ? { mode: "resize", id: n.id, startX: e.clientX, length: n.length }
-      : { mode: "move", id: n.id, startX: e.clientX, startY: e.clientY, step: n.step, pitch: n.pitch };
+      ? { mode: "resize", id: n.id, startX: pt.x, length: n.length }
+      : { mode: "move", id: n.id, startX: pt.x, startY: pt.y, step: n.step, pitch: n.pitch };
   };
 
   const onMove = (e: React.PointerEvent) => {
