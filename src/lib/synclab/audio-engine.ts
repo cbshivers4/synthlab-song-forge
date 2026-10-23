@@ -1591,8 +1591,12 @@ export class SyncLabEngine {
     }
   }
 
+  /** Bumped on transport stop so pending async sample decodes don't trigger afterwards. */
+  private transportGen = 0;
+
   /** Fade queued transport/preview channels instead of leaving scheduled notes behind. */
   silenceChannels(ids: string[]) {
+    this.transportGen++;
     for (const id of ids) {
       this.stopSamples(id);
       const now = this.ctx?.currentTime ?? 0;
@@ -2036,8 +2040,10 @@ export class SyncLabEngine {
     if (!base) {
       // Sound not decoded yet (e.g. pad restored from a saved project): load it, then play once.
       if (s.url && !this.sampleBuffers.has(s.url)) {
+        const gen = this.transportGen;
         void this.ensureBuffer(s.url).then((b) => {
-          if (b) this.playSample(trackId, s, midi, duration, velocity, undefined, voiceKey);
+          // A transport stop while the decode was pending cancels the queued trigger.
+          if (b && gen === this.transportGen) this.playSample(trackId, s, midi, duration, velocity, undefined, voiceKey);
         });
       }
       return;
@@ -2530,14 +2536,15 @@ export class SyncLabEngine {
       wet.gain.value = patch.fx.chorus * 0.7;
       voiceFx.set("chorus", (v, time) => wet.gain.setTargetAtTime(v * 0.7, time, 0.015));
       voicePan.connect(wet);
-      wet.connect(this.chorusSend);
+      // Route through the channel's send scale so track mute/volume/VCA apply.
+      wet.connect(ch.sendScale);
     }
     if (this.reverbSend) {
       const wet = ctx.createGain();
       wet.gain.value = patch.fx.reverb * 0.5;
       voiceFx.set("reverb", (v, time) => wet.gain.setTargetAtTime(v * 0.5, time, 0.015));
       voicePan.connect(wet);
-      wet.connect(this.reverbSend);
+      wet.connect(ch.sendScale);
     }
 
     /* ---- oscillators ---- */
