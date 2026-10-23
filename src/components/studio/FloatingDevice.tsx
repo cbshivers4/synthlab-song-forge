@@ -1,4 +1,4 @@
-import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
+import { canvasPoint, canvasRect, sidewaysCanvas } from "@/lib/synclab/canvas-point";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { Minus, Maximize2, X } from "lucide-react";
 
