@@ -42,6 +42,11 @@ import { notifyPreferencesChanged } from "@/lib/synclab/preferences";
 import { Bluetooth, Mic } from "lucide-react";
 import { SettingsDiagnostics } from "./SettingsDiagnostics";
 import { KeyboardShortcuts } from "./KeyboardShortcuts";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { useServerFn } from "@tanstack/react-start";
+import { deleteMyAccount } from "@/utils/account.functions";
+import { supabase } from "@/integrations/supabase/client";
 
 export function requestBluetoothSettings() {
   sessionStorage.setItem("synclab.settings.bluetooth", "open");
@@ -199,7 +204,27 @@ export function Settings() {
   const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState("audio");
   const { transport, setTransport, midiInputs, midiInputId, enableMidi, setMidiInput, setPanel } = useStudio();
-  const { setStage } = useApp();
+  const { setStage, setSignedIn } = useApp();
+  const deleteAccountFn = useServerFn(deleteMyAccount);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteText, setDeleteText] = useState("");
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDeleteAccount = async () => {
+    if (deleting || deleteText !== "DELETE") return;
+    setDeleting(true);
+    try {
+      await deleteAccountFn({});
+      await supabase.auth.signOut();
+      setSignedIn(false);
+      setDeleteOpen(false);
+      setStage("welcome");
+      toast.success("Your account has been deleted", { description: "Your projects, files and subscription record were removed." });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not delete your account. Try again.");
+      setDeleting(false);
+    }
+  };
   const { email, tier, openUpgrade } = usePlan();
   const [typing, setTyping] = useState(true);
   const [octave, setOctave] = useState(4);
@@ -663,6 +688,46 @@ export function Settings() {
         <Row label="Account / sign out" hint="Save your song before leaving the studio."><Button variant="secondary" onClick={() => { if (window.confirm("Return to your account and projects? Save your song first.")) setStage("start"); }}>Account & projects</Button></Row>
         <Row label="Offline authorization" hint="No offline license authorization is implemented. Cloud projects, subscriptions and AI require internet access."><span className="text-xs text-muted-foreground">Not available now</span></Row>
         <Row label="Project saving"><span className="text-xs text-primary">Manual — File → Save</span></Row>
+        <div className="mt-6 rounded-md border border-destructive/50 p-4">
+          <h3 className="text-sm font-semibold text-destructive">Delete my account</h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Permanently deletes your account, cloud projects, library files and subscription record. This cannot be undone.
+          </p>
+          <Button variant="destructive" className="mt-3" onClick={() => { setDeleteText(""); setDeleteOpen(true); }}>
+            Delete my account
+          </Button>
+        </div>
+        <Dialog open={deleteOpen} onOpenChange={(open) => { if (!deleting) setDeleteOpen(open); }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete your account forever?</DialogTitle>
+              <DialogDescription>
+                This permanently deletes your SYNCLAB account, all cloud projects, library files and your subscription record. This cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-2">
+              <label htmlFor="delete-confirm" className="text-xs font-medium text-muted-foreground">
+                Type DELETE to confirm
+              </label>
+              <Input
+                id="delete-confirm"
+                value={deleteText}
+                onChange={(e) => setDeleteText(e.target.value)}
+                placeholder="DELETE"
+                autoComplete="off"
+                disabled={deleting}
+              />
+            </div>
+            <DialogFooter>
+              <Button variant="secondary" onClick={() => setDeleteOpen(false)} disabled={deleting}>
+                Cancel
+              </Button>
+              <Button variant="destructive" onClick={() => void handleDeleteAccount()} disabled={deleteText !== "DELETE" || deleting}>
+                {deleting ? "Deleting…" : "Permanently delete my account"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </TabsContent>
 
       <TabsContent value="desktop" className="mt-4">
