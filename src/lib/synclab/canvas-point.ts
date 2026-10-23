@@ -25,7 +25,9 @@ export function canvasPoint(clientX: number, clientY: number) {
 /** Element rect in layout space (getBoundingClientRect is screen-space when rotated). */
 export function canvasRect(el: HTMLElement) {
   const r = el.getBoundingClientRect();
-  if (!sidewaysCanvas()) return { left: r.left, top: r.top, width: r.width, height: r.height };
+  if (!sidewaysCanvas()) {
+    return { left: r.left, top: r.top, right: r.right, bottom: r.bottom, width: r.width, height: r.height };
+  }
   let left = 0;
   let top = 0;
   let node: HTMLElement | null = el;
@@ -34,5 +36,7 @@ export function canvasRect(el: HTMLElement) {
     top += node.offsetTop;
     node = node.offsetParent as HTMLElement | null;
   }
-  return { left, top, width: el.offsetWidth, height: el.offsetHeight };
+  const width = el.offsetWidth;
+  const height = el.offsetHeight;
+  return { left, top, right: left + width, bottom: top + height, width, height };
 }
