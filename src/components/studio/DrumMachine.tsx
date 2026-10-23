@@ -292,14 +292,15 @@ export function DrumMachine({ track }: { track: Track }) {
               className="h-8 w-8 p-0 font-mono"
               aria-label={`Bank ${number}`}
               aria-pressed={activePattern === index}
+              disabled={addingSamples}
               onClick={() => switchPattern(index)}
             >
               {number}
             </Button>
           ))}
         </div>
-        <Button size="sm" variant="secondary" onClick={copyPattern}><Copy className="size-4" /> Copy next</Button>
-        <Button size="sm" variant="ghost" onClick={clearPattern}><RotateCcw className="size-4" /> Clear</Button>
+        <Button size="sm" variant="secondary" disabled={addingSamples} onClick={copyPattern}><Copy className="size-4" /> Copy next</Button>
+        <Button size="sm" variant="ghost" disabled={addingSamples} onClick={clearPattern}><RotateCcw className="size-4" /> Clear</Button>
       </div>
 
       {(phoneView === "pads" || phoneView === "sound") && <div className="flex flex-wrap items-center gap-2" aria-label="Add bank pads">
@@ -541,6 +542,7 @@ export function DrumMachine({ track }: { track: Track }) {
                 key={number}
                 aria-label={`Bank ${number}`}
                 aria-pressed={activePattern === index}
+                disabled={addingSamples}
                 onClick={() => switchPattern(index)}
                 className={cn(
                   "flex h-full min-h-8 w-6 items-center justify-center rounded-[3px] border font-mono text-[11px] font-semibold",

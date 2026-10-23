@@ -107,7 +107,10 @@ async function restoreSession(session: CloudSession): Promise<CloudSession> {
     if (!pad.sampleCloudPath) return pad;
     let url = sampleUrls.get(pad.sampleCloudPath);
     if (!url) { url = signedUrl(pad.sampleCloudPath); sampleUrls.set(pad.sampleCloudPath, url); }
-    return { ...pad, sampleUrl: await url };
+    const sampleUrl = await url;
+    const { getEngine } = await import('./audio-engine');
+    if (!await getEngine().ensureBuffer(sampleUrl)) throw new Error(`Could not load drum sample ${pad.sample ?? pad.name}. Please try opening the project again.`);
+    return { ...pad, sampleUrl };
   };
   const tracks = await Promise.all(session.tracks.map(async (track) => ({
     ...track,
