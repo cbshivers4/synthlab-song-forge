@@ -204,7 +204,27 @@ export function Settings() {
   const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState("audio");
   const { transport, setTransport, midiInputs, midiInputId, enableMidi, setMidiInput, setPanel } = useStudio();
-  const { setStage } = useApp();
+  const { setStage, setSignedIn } = useApp();
+  const deleteAccountFn = useServerFn(deleteMyAccount);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteText, setDeleteText] = useState("");
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDeleteAccount = async () => {
+    if (deleting || deleteText !== "DELETE") return;
+    setDeleting(true);
+    try {
+      await deleteAccountFn({});
+      await supabase.auth.signOut();
+      setSignedIn(false);
+      setDeleteOpen(false);
+      setStage("welcome");
+      toast.success("Your account has been deleted", { description: "Your projects, files and subscription record were removed." });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not delete your account. Try again.");
+      setDeleting(false);
+    }
+  };
   const { email, tier, openUpgrade } = usePlan();
   const [typing, setTyping] = useState(true);
   const [octave, setOctave] = useState(4);
