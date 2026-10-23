@@ -316,6 +316,7 @@ export function InsertRack({
                     </div>
                   </div>
                 </div>
+                )}
               </DialogContent>
             </Dialog>
           </div>
