@@ -2961,8 +2961,8 @@ function Ruler() {
   const stepFromX = (clientX: number) => {
     const el = gridRef.current;
     if (!el) return 0;
-    const r = el.getBoundingClientRect();
-    return Math.min(total, Math.max(0, Math.round(((clientX - r.left) / r.width) * total)));
+    const r = canvasRect(el);
+    return Math.min(total, Math.max(0, Math.round(((canvasPoint(clientX, 0).x - r.left) / r.width) * total)));
   };
 
   // Drag on empty ruler space to draw a loop region. A plain click (no drag)
