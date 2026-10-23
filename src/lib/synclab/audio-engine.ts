@@ -1505,6 +1505,8 @@ export class SyncLabEngine {
       const vca = group ? this.vcaStates[group] : undefined;
       ch.gain.gain.setTargetAtTime(this.trackAudible.get(trackId) !== false && !vca?.muted
         ? clamp(v["volume"] * (vca?.volume ?? 1), 0, 1.5) : 0, t, 0.02);
+      ch.sendScale.gain.setTargetAtTime(this.trackAudible.get(trackId) !== false && !vca?.muted
+        ? clamp(v["volume"] * (vca?.volume ?? 1), 0, 1.5) : 0, t, 0.02);
     }
     if (v["pan"] !== undefined) ch.pan.pan.setTargetAtTime(clamp(v["pan"], -1, 1), t, 0.02);
     const bus = this.busStates[ch.bus];
@@ -1547,6 +1549,7 @@ export class SyncLabEngine {
       const vca = t.vca ? this.vcaStates[t.vca] : undefined;
       ch.trim.gain.setTargetAtTime(clamp(t.gain ?? 1, 0, 2), this.ctx.currentTime, 0.02);
       ch.gain.gain.setTargetAtTime(audible && !vca?.muted ? t.volume * (vca?.volume ?? 1) : 0, this.ctx.currentTime, 0.02);
+      ch.sendScale.gain.setTargetAtTime(audible && !vca?.muted ? clamp(t.volume * (vca?.volume ?? 1), 0, 1.5) : 0, this.ctx.currentTime, 0.02);
       ch.pan.pan.setTargetAtTime(clamp(t.pan, -1, 1), this.ctx.currentTime, 0.02);
       const bus = t.bus ?? "master";
       if (ch.bus !== bus) {
@@ -1577,6 +1580,7 @@ export class SyncLabEngine {
         ch.gain.gain.setTargetAtTime(0, now, 0.006);
         window.setTimeout(() => {
           try { ch.pan.disconnect(); } catch { /* already disconnected */ }
+          try { ch.sendScale.disconnect(); } catch { /* already disconnected */ }
           for (const node of ch.insertNodes) {
             try { node.disconnect(); } catch { /* already disconnected */ }
           }
