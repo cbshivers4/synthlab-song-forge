@@ -1355,6 +1355,19 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
               <DropdownMenuItem onClick={() => moveTrackToNew(track.id)}>
                 <ArrowDownToLine className="size-4" /> Move to a new track
               </DropdownMenuItem>
+              <DropdownMenuSub><DropdownMenuSubTrigger>Clip display</DropdownMenuSubTrigger><DropdownMenuSubContent>
+                <DropdownMenuItem onClick={() => updateTrack(track.id, { clipView: undefined })}>
+                  <span className="w-4">{!track.clipView ? "✓" : ""}</span>Automatic
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => updateTrack(track.id, { clipView: "wave" })}>
+                  <Waves className="size-4" /> Waveform
+                  {track.clipView === "wave" && <span className="ml-auto font-mono text-[10px] text-primary">✓</span>}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => updateTrack(track.id, { clipView: "notes" })}>
+                  <Music2 className="size-4" /> MIDI notes
+                  {track.clipView === "notes" && <span className="ml-auto font-mono text-[10px] text-primary">✓</span>}
+                </DropdownMenuItem>
+              </DropdownMenuSubContent></DropdownMenuSub>
               <DropdownMenuSub><DropdownMenuSubTrigger>Clipboard &amp; arrange</DropdownMenuSubTrigger><DropdownMenuSubContent>
               <DropdownMenuItem onClick={() => cutTrack(track.id)}>
                 <Scissors className="size-4" /> Cut track

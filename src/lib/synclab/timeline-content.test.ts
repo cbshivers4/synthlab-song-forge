@@ -19,4 +19,16 @@ describe('timeline razor target', () => {
   it('uses patterns when there is no recording', () => {
     expect(timelineUsesWaveform({ kind: 'drum', clips: [], printedAudio: true })).toBe(false);
   });
+  it('shows the waveform when the channel display is set to wave', () => {
+    expect(timelineUsesWaveform({ kind: 'instrument', clips, printedAudio: false, clipView: 'wave' })).toBe(true);
+  });
+  it('shows notes when the channel display is set to notes', () => {
+    expect(timelineUsesWaveform({ kind: 'instrument', clips, printedAudio: true, clipView: 'notes' })).toBe(false);
+  });
+  it('keeps imported audio on the waveform even in notes view', () => {
+    expect(timelineUsesWaveform({ kind: 'audio', clips, clipView: 'notes' })).toBe(true);
+  });
+  it('shows nothing extra when the channel has no clips', () => {
+    expect(timelineUsesWaveform({ kind: 'instrument', clips: [], clipView: 'wave' })).toBe(false);
+  });
 });
