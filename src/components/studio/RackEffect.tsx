@@ -62,6 +62,7 @@ function RackMeter({ plugin }: { plugin: PluginInstance }) {
 export function RackEffect({ trackId, plugin: p, index, count }: { trackId: string; plugin: PluginInstance; index: number; count: number }) {
   const { togglePluginBypass, movePlugin, removePlugin, setPluginParam } = useStudio();
   const [expanded, setExpanded] = useState(true);
+  const [xyOpen, setXYOpen] = useState(() => withDefaultParams(p).length > 1);
   const readoutParam = p.params.find(param => ["time", "cutoff", "threshold", "drive", "decay", "rate"].includes(param.id)) ?? p.params[0];
   return <section aria-label={`${p.name} rack module`} data-fx-kind={p.kind} data-fx-skin={p.kind} data-fx-variant={p.name.toLowerCase().includes("echo") ? "echo" : undefined} data-bypassed={p.bypass} className="fx-face hardware-device relative border-y border-border bg-surface">
     <div className="hardware-rack-ear pointer-events-none absolute inset-y-0 left-0 flex w-3 flex-col justify-between border-r border-border py-3 sm:w-5">
