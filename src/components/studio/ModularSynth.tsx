@@ -12,6 +12,10 @@ import type { SynthPatch, Track } from "@/lib/synclab/types";
 
 const SHORT: Record<string, string> = { sine: "SIN", triangle: "TRI", sawtooth: "SAW", square: "SQR", lowpass: "LP", highpass: "HP", bandpass: "BP", white: "WHT", pink: "PNK" };
 const pkey = (p: PortRef) => `${p.module}|${p.port}`;
+const DEVICE_SERIES: Partial<Record<ModuleType, string>> = {
+  sub: "S-01 • ANALOG LOW END", formant: "VF-03 • RESONANT VOICE", phaser: "PA-04 • FOUR STAGES",
+  compressor: "D-05 • DYNAMICS PROCESSOR", stereo: "SM-02 • PAN MODULATOR", attenuverter: "CV-02 • BIPOLAR UTILITY",
+};
 
 /** Empty Eurorack-style case: add devices, then tap an output jack and an input jack to run a coloured cable. */
 export function ModularSynth({ track }: { track: Track }) {
@@ -104,12 +108,14 @@ export function ModularSynth({ track }: { track: Track }) {
     const def = MODULE_DEFS[mod.type];
     const num = m.modules.filter((x) => x.type === mod.type).indexOf(mod) + 1;
     return (
-      <div className="modular-module" data-module-type={mod.type}>
+      <div className="modular-module" data-module-type={mod.type} data-module-width={def.hp}>
         <div className="modular-module-header flex w-full items-center justify-between gap-1">
           <Button variant="ghost" type="button" aria-label={`Move ${def.label} ${num} left`} disabled={index === 0} onClick={() => moveModule(mod.id, -1)} className="modular-screw"><ChevronLeft className="size-3" /></Button>
           <h4>{def.label} {num}</h4>
           <Button variant="ghost" type="button" aria-label={`Move ${def.label} ${num} right`} disabled={index === m.modules.length - 1} onClick={() => moveModule(mod.id, 1)} className="modular-screw"><ChevronRight className="size-3" /></Button>
         </div>
+        {DEVICE_SERIES[mod.type] && <div className="modular-model-plate">{DEVICE_SERIES[mod.type]}</div>}
+        {(mod.type === "phaser" || mod.type === "stereo") && <output className="modular-rate-window" aria-label={`${def.label} rate`}>{Number(mod.params.rate ?? 0).toFixed(2)} <small>Hz</small></output>}
         {def.params.map((p) =>
           p.options ? (
             <div key={p.id} className="flex flex-wrap justify-center gap-0.5" role="group" aria-label={p.label}>

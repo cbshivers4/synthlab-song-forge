@@ -2656,3 +2656,33 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
 .modular-workstation .modular-module-grid { background: var(--modular-dark); }
 .modular-workstation .modular-module .modular-screw { width: 22px; height: 22px; min-height: 22px; padding: 0; }
 .phone-console .modular-workstation .modular-module .modular-screw { width: 28px; height: 28px; min-height: 28px; }
+
+/* Expanded rack: different physical decks, not a single recolored panel. */
+:root {
+  --modular-teal-face: oklch(0.28 0.055 185);
+  --modular-vowel-face: oklch(0.88 0.012 105);
+  --modular-dynamics-face: oklch(0.69 0.009 250);
+}
+.modular-workstation .modular-module[data-module-width="2"] { grid-column: span 2; }
+.modular-model-plate { width: 100%; padding: 7px 2px; font: 8px var(--font-mono); text-align: center; border-bottom: 1px solid var(--hardware-silver-dark); color: var(--module-ink); }
+.modular-rate-window { width: 100%; margin-top: 8px; padding: 8px 4px; text-align: center; font: 24px var(--font-mono); color: var(--display-green); background: var(--hardware-black); border: 4px ridge var(--hardware-silver-dark); box-shadow: var(--hardware-pressed-shadow); }
+.modular-rate-window small { font-size: 10px; }
+.modular-workstation .modular-module[data-module-type="sub"] { border-top: 8px solid var(--display-orange); background: var(--fx-brush-fine), var(--modular-dark); --module-ink: var(--hardware-ink); --foreground: var(--hardware-ink); --hardware-scale: var(--hardware-ink); color: var(--module-ink); }
+.modular-workstation .modular-module[data-module-type="sub"] .modular-knob-bank { grid-template-columns: 1fr; }
+.modular-workstation .modular-module[data-module-type="sub"] .modular-model-plate { border: 1px solid var(--display-orange); }
+.modular-workstation .modular-module[data-module-type="formant"] { background: var(--fx-brush-fine), var(--modular-vowel-face); border-inline: 5px solid var(--display-wave); }
+.modular-workstation .modular-module[data-module-type="formant"] .modular-knob-bank { border-block: 2px solid var(--hardware-silver-dark); margin-top: 8px; }
+.modular-workstation .modular-module[data-module-type="formant"] .hardware-knob-cap { background: var(--fx-metal-cap); }
+.modular-workstation .modular-module[data-module-type="phaser"] { background: var(--fx-brush-fine), var(--modular-teal-face); --module-ink: var(--hardware-ink); --foreground: var(--hardware-ink); --hardware-scale: var(--hardware-ink); color: var(--module-ink); border-top: 8px double var(--hardware-silver); }
+.modular-workstation .modular-module[data-module-type="phaser"] .modular-knob-bank { border: 1px solid var(--hardware-silver-dark); margin-block: 8px; }
+.modular-workstation .modular-module[data-module-type="compressor"] { background: var(--fx-brush-fine), var(--modular-dynamics-face); border-top: 8px solid var(--hardware-black); }
+.modular-workstation .modular-module[data-module-type="compressor"] .modular-model-plate { background: var(--hardware-black); color: var(--hardware-ink); }
+.modular-workstation .modular-module[data-module-type="compressor"] .hardware-knob:last-child { grid-column: 1 / -1; border-top: 1px solid var(--hardware-silver-dark); padding-top: 8px; }
+.modular-workstation .modular-module[data-module-type="stereo"] { background: var(--fx-brush-fine), var(--modular-dark); --module-ink: var(--hardware-ink); --foreground: var(--hardware-ink); --hardware-scale: var(--hardware-ink); color: var(--module-ink); border-inline: 5px solid var(--display-pink); }
+.modular-workstation .modular-module[data-module-type="stereo"] .modular-rate-window { color: var(--display-pink); }
+.modular-workstation .modular-module[data-module-type="stereo"] .hardware-knob:first-child { grid-column: 1 / -1; }
+.modular-workstation .modular-module[data-module-type="attenuverter"] { background: var(--fx-brush-fine), var(--modular-silver); border-top: 8px double var(--hardware-black); }
+.modular-workstation .modular-module[data-module-type="attenuverter"] .modular-knob-bank { grid-template-columns: 1fr; border-left: 3px solid var(--hardware-black); }
+.modular-workstation .modular-module:is([data-module-type="sub"], [data-module-type="phaser"], [data-module-type="stereo"]) .hardware-knob-label,
+.modular-workstation .modular-module:is([data-module-type="sub"], [data-module-type="phaser"], [data-module-type="stereo"]) .hardware-knob-value { color: var(--module-ink); }
+@media (max-width: 360px) { .modular-workstation .modular-module[data-module-width="2"] { grid-column: auto; } }
