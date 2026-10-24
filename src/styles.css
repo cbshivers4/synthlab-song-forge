@@ -2694,3 +2694,61 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
 .modular-workstation .modular-module[data-module-type="delay"] { border-top: 6px solid var(--display-pink); }
 .modular-workstation .modular-module[data-module-type="reverb"] { border-top: 6px double var(--hardware-silver); }
 .modular-workstation .modular-module .hardware-knob-label { overflow-wrap: anywhere; white-space: normal; min-height: 24px; display: grid; place-items: center; }
+
+/* Reference-inspired silver stereo tape deck; processing stays in the shared recorder. */
+:root {
+  --tape-deck-face: oklch(0.8 0.009 155);
+  --tape-deck-light: oklch(0.93 0.006 155);
+  --tape-deck-ink: oklch(0.22 0.008 155);
+  --tape-deck-groove: oklch(0.52 0.007 155);
+  --tape-deck-brush: repeating-linear-gradient(0deg, transparent 0 2px, color-mix(in oklab,var(--tape-deck-ink) 5%,transparent) 2px 3px);
+  --tape-deck-metal: linear-gradient(135deg,var(--tape-deck-light),var(--tape-deck-face) 35%,var(--tape-deck-light) 55%,var(--tape-deck-groove));
+  --tape-deck-bevel: inset 0 1px 0 var(--tape-deck-light), inset 0 -2px 0 var(--tape-deck-groove), 0 3px 5px color-mix(in oklab,var(--hardware-black) 45%,transparent);
+}
+.reel-recorder[data-deck-look="reel"] { border: 16px solid var(--instrument-wood-edge); border-block: 4px solid var(--hardware-black); background: var(--tape-deck-brush),var(--tape-deck-face); border-radius: 3px; box-shadow: var(--hardware-case-shadow); --foreground: var(--tape-deck-ink); --muted-foreground: var(--tape-deck-ink); --border: var(--tape-deck-groove); --background: var(--tape-deck-light); --surface: var(--tape-deck-face); --surface-2: var(--tape-deck-light); --input: var(--tape-deck-groove); color: var(--tape-deck-ink); }
+.reel-recorder[data-deck-look="reel"] .tape-brand { padding: 12px 20px; background: var(--tape-deck-brush),var(--tape-deck-face); }
+.reel-recorder[data-deck-look="reel"] .tape-brand h2 { font-family: var(--font-mono); font-weight: 800; }
+.reel-recorder[data-deck-look="reel"] .tape-deck { position: relative; padding: 12px 16px 16px; background: var(--tape-deck-brush),var(--tape-deck-face); }
+.reel-recorder[data-deck-look="reel"] .tape-reels { gap: 2%; max-width: 740px; }
+.reel-recorder[data-deck-look="reel"] .reel-rim { fill: url(#reel-metal-l); stroke: var(--tape-deck-groove); }
+.reel-recorder[data-deck-look="reel"] .tape-reel:last-child .reel-rim { fill: url(#reel-metal-r); }
+.reel-recorder[data-deck-look="reel"] .reel-hub { fill: var(--hardware-black); stroke: var(--hardware-rubber-edge); stroke-width: 4; }
+.reel-lock { fill: var(--hardware-rubber); stroke: var(--hardware-black); stroke-width: 3; }
+.reel-recorder[data-deck-look="reel"] .tape-path { width: 85%; height: 70px; margin-top: -3%; }
+.reel-recorder[data-deck-look="reel"] .tape-path path { stroke-dasharray: none; stroke: var(--tape-media-edge); }
+.tape-head-assembly { position: relative; width: 82%; height: 90px; margin: -45px auto 0; }
+.tape-head-cover { position: absolute; inset: 12px 13% 17px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; background: var(--tape-deck-brush),var(--tape-deck-metal); border: 1px solid var(--tape-deck-groove); border-bottom: 6px solid var(--hardware-black); border-radius: 4px 4px 24px 24px; box-shadow: var(--tape-deck-bevel); z-index: 1; text-align: center; }
+.tape-head-cover span { font: 800 13px var(--font-mono); }
+.tape-head-cover strong { font: 8px var(--font-mono); }
+.tape-head-cover small { font: 7px var(--font-mono); }
+.tape-guide { position: absolute; top: 0; width: 24%; height: 42px; border-radius: 24px; border: 1px solid var(--tape-deck-groove); background: var(--tape-deck-metal); box-shadow: var(--tape-deck-bevel); }
+.tape-guide.left { left: 0; transform: rotate(20deg); }
+.tape-guide.right { right: 0; transform: rotate(-20deg); }
+.tape-guide::after { content: ""; position: absolute; top: 15px; left: 15px; width: 10px; height: 10px; border-radius: 50%; background: var(--hardware-black); border: 2px solid var(--tape-deck-light); }
+.tape-capstan { position: absolute; bottom: 0; left: calc(50% - 16px); width: 32px; height: 32px; border-radius: 50%; border: 3px solid var(--tape-deck-groove); background: var(--tape-deck-metal); box-shadow: var(--tape-deck-bevel); }
+.reel-recorder[data-deck-look="reel"] .tape-display { max-width: none; font-size: 10px; border-top: 0; padding-top: 12px; }
+.reel-recorder[data-deck-look="reel"] .tape-display output { color: var(--display-green); background: var(--hardware-black); border: 4px ridge var(--tape-deck-groove); padding: 3px 10px; font-size: 20px; }
+.reel-recorder[data-deck-look="reel"] .tape-console { display: grid; grid-template-columns: minmax(0,1.1fr) minmax(0,1fr); gap: 12px 20px; padding: 16px 20px; background: var(--tape-deck-brush),var(--tape-deck-face); }
+.reel-recorder[data-deck-look="reel"] .tape-console > * { grid-column: 1 / -1; }
+.reel-recorder[data-deck-look="reel"] .tape-console > .tape-meter-pair { grid-column: 1; grid-row: 1 / 3; align-self: center; gap: 4px; padding: 4px; border: 3px ridge var(--tape-deck-groove); background: var(--hardware-black); }
+.reel-recorder[data-deck-look="reel"] .tape-console > .tape-mode-switch { grid-column: 2; margin-top: 0; }
+.reel-recorder[data-deck-look="reel"] .tape-console > .tape-buttons { grid-column: 2; margin-top: 0; gap: 3px; }
+.reel-recorder[data-deck-look="reel"] .tape-buttons button { background: var(--tape-deck-metal); color: var(--tape-deck-ink); border: 1px solid var(--tape-deck-groove); box-shadow: var(--tape-deck-bevel); border-radius: 2px; padding-inline: 2px; }
+.reel-recorder[data-deck-look="reel"] .tape-buttons button svg { width: 17px; height: 17px; }
+.reel-recorder[data-deck-look="reel"] .tape-buttons button[aria-label^="Record"] { color: var(--destructive); }
+.reel-recorder[data-deck-look="reel"] .tape-buttons button:active { box-shadow: var(--hardware-pressed-shadow); }
+.reel-recorder[data-deck-look="reel"] .tape-knobs { margin-top: 4px; padding: 12px 0; border-block: 1px solid var(--tape-deck-groove); }
+.reel-recorder[data-deck-look="reel"] .hardware-knob { --hardware-scale: var(--tape-deck-ink); --hardware-mark: var(--tape-deck-ink); }
+.reel-recorder[data-deck-look="reel"] .hardware-knob-cap { background: var(--tape-deck-metal); border-color: var(--tape-deck-groove); }
+.reel-recorder[data-deck-look="reel"] .hardware-knob-grip { background: var(--tape-deck-metal); border: 2px solid var(--tape-deck-groove); }
+.reel-recorder[data-deck-look="reel"] .hardware-knob-label { color: var(--tape-deck-ink); }
+.reel-recorder[data-deck-look="reel"] .hardware-knob-value { color: var(--hardware-ink); }
+.reel-recorder[data-deck-look="reel"] footer { background: var(--tape-deck-brush),var(--tape-deck-face); }
+.reel-recorder[data-deck-look="reel"] .reel-channel { background: var(--tape-deck-light); }
+@container (max-width: 560px) {
+  .reel-recorder[data-deck-look="reel"] .tape-console { gap: 10px; padding: 12px; }
+  .reel-recorder[data-deck-look="reel"] .tape-console > .tape-meter-pair { grid-column: 1 / -1; grid-row: auto; max-width: 400px; width: 100%; justify-self: center; }
+  .reel-recorder[data-deck-look="reel"] .tape-console > :is(.tape-mode-switch,.tape-buttons) { grid-column: 1 / -1; }
+  .tape-head-cover span { font-size: 11px; }
+  .tape-head-cover strong { font-size: 7px; }
+}
