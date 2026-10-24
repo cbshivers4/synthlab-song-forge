@@ -2800,6 +2800,12 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
 .fx-workbench[data-fx-family="sequence"] .fx-section .hardware-knob-scale { stroke: var(--hardware-dark-ink); }
 .fx-workbench[data-fx-family="dynamics"] { grid-template-areas: "input display output" "input core output" "steps steps steps" "footer footer footer" "motion motion motion"; }
 .fx-workbench[data-fx-family="dynamics"] .fx-section-input,.fx-workbench[data-fx-family="dynamics"] .fx-section-output { align-self: start; }
+.fx-workbench[data-fx-family="space"] { grid-template-areas: "input display output" "input core output" "steps steps steps" "footer footer footer" "motion motion motion"; }
+.fx-workbench[data-fx-family="space"] .fx-section-input,.fx-workbench[data-fx-family="space"] .fx-section-output { align-self: start; }
+.plugin-rack-stack .fx-face[data-fx-family="space"] { --hardware-face: var(--fx-modern-face); --hardware-trim: var(--display-violet); }
+.plugin-rack-stack .fx-face[data-fx-family="buffer"] { --hardware-face: var(--fx-charcoal); --hardware-trim: var(--display-pink); }
+.plugin-rack-stack .fx-face[data-fx-family="sequence"] { --hardware-face: var(--fx-sequence-face); --hardware-trim: var(--display-wave); }
+.fx-workbench[data-fx-family="space"] .fx-section .hardware-knob-scale { stroke: var(--display-violet); }
 .fx-workbench[data-fx-family="buffer"] .fx-section-core .fx-section-knobs { padding-block: 12px; }
 .fx-workbench[data-fx-family="motion"] .fx-section-core { border-inline: 5px solid var(--hardware-trim); }
 .fx-step-faders { display: grid; grid-template-columns: repeat(16,minmax(0,1fr)); gap: 4px; padding: 10px; }
@@ -2815,7 +2821,7 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
 .device-module[data-fx-family="sequence"] { background: var(--fx-brush-fine),var(--fx-sequence-face); }
 @media (max-width: 767px) {
   .fx-workbench { grid-template-columns: repeat(2,minmax(0,1fr)); grid-template-areas: "display display" "input output" "core core" "steps steps" "footer footer" "motion motion"; }
-  .fx-workbench[data-fx-family="buffer"],.fx-workbench[data-fx-family="dynamics"] { grid-template-areas: "display display" "input output" "core core" "steps steps" "footer footer" "motion motion"; }
+  .fx-workbench[data-fx-family="buffer"],.fx-workbench[data-fx-family="dynamics"],.fx-workbench[data-fx-family="space"] { grid-template-areas: "display display" "input output" "core core" "steps steps" "footer footer" "motion motion"; }
   .fx-section-input .fx-section-knobs,.fx-section-output .fx-section-knobs { grid-template-columns: repeat(auto-fit,minmax(65px,1fr)); }
   .fx-step-faders { grid-template-columns: repeat(8,minmax(0,1fr)); }
 }
