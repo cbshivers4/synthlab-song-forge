@@ -143,7 +143,6 @@ export function StudioBack() {
     if (patch) {
       updateTrack(track.id, patch);
       setAddOpen(false);
-      toast.success("Cable connected", { description: to.device.startsWith("bus:") ? "Send set to 50% — adjust it in the mixer." : `${track.name} routing updated.` });
       return;
     }
     toast("That connection isn't possible", { description: "Monitors and the reel are always fed from the master output." });
@@ -254,7 +253,6 @@ export function StudioBack() {
             onClick={() => {
               selected.unplug?.();
               setSelectedWire(null);
-              toast.success(`Unplugged ${selected.label}`);
             }}
           >
             <Unplug className="size-4" /> Remove cable
