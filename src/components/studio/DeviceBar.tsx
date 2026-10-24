@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Scope } from "./Scope";
 import { EffectDisplay } from "./EffectDisplay";
 import { effectFamily } from "./EffectWorkbench";
+import { EffectPresetMenu } from "./EffectPresetMenu";
 
 function instrumentModule(track: Track): { label: string; icon: React.ReactNode; panel: "synth" | "drums" | "sampler" | "piano"; tone: string } {
   if (track.kind === "drum") return { label: "Drum Machine", icon: <Disc3 className="size-3.5" />, panel: "drums", tone: "drums" };
@@ -73,6 +74,7 @@ function EffectModule({ track, plugin }: { track: Track; plugin: PluginInstance 
           <X className="size-3" />
         </span>
       </button>
+      <EffectPresetMenu plugin={plugin} onParam={(id, value) => setPluginParam(track.id, plugin.id, id, value)} />
       <div className="px-1 pt-1">
         <EffectDisplay plugin={plugin} height={64} onParam={(paramId, v) => setPluginParam(track.id, plugin.id, paramId, v)} />
       </div>
