@@ -21,6 +21,7 @@ export function ModularSynth({ track }: { track: Track }) {
   const [pending, setPending] = useState<PortRef | null>(null);
   const [color, setColor] = useState<CableColor>("red");
   const boxRef = useRef<HTMLDivElement>(null);
+  const cableRef = useRef<SVGSVGElement>(null);
   const [lines, setLines] = useState<{ id: string; d: string; color: CableColor; a: { x: number; y: number }; b: { x: number; y: number } }[]>([]);
 
   const save = (next: ModularPatch) => updatePatch(track.id, { modular: next });
@@ -57,20 +58,21 @@ export function ModularSynth({ track }: { track: Track }) {
   useLayoutEffect(() => {
     const draw = () => {
       const box = boxRef.current;
-      if (!box) return;
-      const r = box.getBoundingClientRect();
+      const layer = cableRef.current;
+      if (!box || !layer) return;
+      const r = layer.getBoundingClientRect();
       const origin = canvasPoint(r.left + r.width / 2, r.top + r.height / 2);
       const pos = (p: PortRef) => {
         const el = box.querySelector<HTMLElement>(`[data-jack="${CSS.escape(pkey(p))}"]`);
         if (!el) return null;
         const b = el.getBoundingClientRect();
         const center = canvasPoint(b.left + b.width / 2, b.top + b.height / 2);
-        return { x: center.x - origin.x + box.offsetWidth / 2, y: center.y - origin.y + box.offsetHeight / 2 };
+        return { x: center.x - origin.x + box.clientWidth / 2, y: center.y - origin.y + box.clientHeight / 2 };
       };
       setLines(m.cables.flatMap((c) => {
         const a = pos(c.from), b = pos(c.to);
         if (!a || !b) return [];
-        const sag = 40 + Math.abs(a.x - b.x) * 0.15 + Math.abs(a.y - b.y) * 0.1;
+        const sag = Math.min(40 + Math.abs(a.x - b.x) * 0.15 + Math.abs(a.y - b.y) * 0.1, Math.max(12, box.clientHeight - Math.max(a.y, b.y) - 10));
         return [{ id: c.id, color: c.color, a, b, d: `M${a.x},${a.y} C${a.x},${a.y + sag} ${b.x},${b.y + sag} ${b.x},${b.y}` }];
       }));
     };
@@ -181,7 +183,7 @@ export function ModularSynth({ track }: { track: Track }) {
           </div>
         )}
         <div className="modular-rail" aria-hidden />
-        <svg className="pointer-events-none absolute inset-0 size-full overflow-visible" aria-hidden>
+        <svg ref={cableRef} className="modular-cable-layer pointer-events-none absolute inset-0 size-full overflow-visible" aria-hidden>
           {lines.map((l) => (
             <g key={l.id}>
               <path d={l.d} className="modular-cable-shadow" />
