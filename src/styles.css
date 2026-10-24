@@ -2933,6 +2933,8 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
 .fx-face .eq-control-dock, .fx-editor .eq-control-dock { gap: 8px; padding: 8px; }
 .fx-face .eq-control-dock, .fx-editor .eq-control-dock { display: grid; grid-template-columns: minmax(230px,0.9fr) minmax(0,1.1fr); align-items: center; }
 .fx-face .eq-knob-row, .fx-editor .eq-knob-row { gap: 8px; margin-bottom: 0; }
+.fx-face .eq-control-dock > .grid, .fx-editor .eq-control-dock > .grid { min-width: 0; grid-template-columns: repeat(4,minmax(0,1fr)); }
+.fx-face .eq-control-dock > .grid > .flex, .fx-editor .eq-control-dock > .grid > .flex { grid-column: 1 / -1; justify-self: end; }
 @container (max-width: 540px) {
   .fx-workbench, .fx-workbench[data-fx-family="buffer"], .fx-workbench[data-fx-family="dynamics"], .fx-workbench[data-fx-family="space"] { grid-template-columns: minmax(0,1fr); grid-template-areas: "display" "controls" "steps" "footer" "motion"; }
   .fx-controls-bank > .fx-section-core { flex-basis: 140px; }
