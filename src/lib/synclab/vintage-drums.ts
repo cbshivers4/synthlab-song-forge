@@ -21,8 +21,8 @@ export const LATIN_NAMES: Record<DrumPad['kind'], string> = { kick: 'LOW CONGA',
 export const JAZZ_NAMES: Record<DrumPad['kind'], string> = { kick: 'BRUSH KICK', snare: 'BRUSH SNARE', clap: 'BRUSH TAP', hat: 'BRUSH HAT', openhat: 'BRUSH SWISH', tom: 'TOM', perc: 'BRUSH SWIRL', rim: 'RIM CLICK', crash: 'CRASH', ride: 'BRUSH RIDE', fx: 'BRUSH SLIDE' };
 const STANDARD_NAMES: Record<DrumPad['kind'], string> = { kick: 'KICK', snare: 'SNARE', clap: 'CLAP', hat: 'HI-HAT', openhat: 'OPEN HAT', tom: 'TOM', perc: 'PERC', rim: 'RIM', crash: 'CRASH', ride: 'RIDE', fx: 'FX' };
 export function factoryKitPad(pad: DrumPad, kit: DrumKitId, decay: number): DrumPad {
-  if (pad.voice) return { ...pad, kit, decay, sample: undefined, sampleUrl: undefined, name: VOICE_DEFS[pad.voice]?.name ?? pad.name };
-  return { ...pad, kit, decay, sample: undefined, sampleUrl: undefined, name: (kit === '727' || kit === 'latin' ? LATIN_NAMES : kit === 'jazz' ? JAZZ_NAMES : STANDARD_NAMES)[pad.kind] };
+  if (pad.voice) return { ...pad, kit, decay, sample: undefined, sampleUrl: undefined, sampleCloudPath: undefined, name: VOICE_DEFS[pad.voice]?.name ?? pad.name };
+  return { ...pad, kit, decay, sample: undefined, sampleUrl: undefined, sampleCloudPath: undefined, name: (kit === '727' || kit === 'latin' ? LATIN_NAMES : kit === 'jazz' ? JAZZ_NAMES : STANDARD_NAMES)[pad.kind] };
 }
 
 /** Extra kit-specific voices: each is its own synthesized sound, not a renamed copy. */

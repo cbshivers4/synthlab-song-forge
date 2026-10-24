@@ -9,7 +9,9 @@ import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Knob } from "./Knob";
 import { useStudio } from "@/lib/synclab/store";
-import { factoryKitPad, kitExtraPads } from "@/lib/synclab/vintage-drums";
+import { factoryKitPad, kitExtraPads, VOICE_DEFS } from "@/lib/synclab/vintage-drums";
+import { DRUM_BANK_LABELS, recallDrumBank } from "@/lib/synclab/drum-banks";
+import { DRUM_KIND_LABEL } from "@/lib/synclab/drum-notes";
 import { DRUM_KITS, GENRES } from "@/lib/synclab/presets";
 import type { DrumKitId } from "@/lib/synclab/types";
 import { getEngine } from "@/lib/synclab/audio-engine";
@@ -32,7 +34,7 @@ function readPresets(): DrumPreset[] {
   }
 }
 
-const BANKS = ["1", "2", "3", "4", "5", "6", "7", "8"];
+const BANKS = DRUM_BANK_LABELS;
 const PAD_ORDER: DrumPad["kind"][] = ["kick", "snare", "hat", "openhat", "clap", "rim", "tom", "perc", "ride", "crash", "fx"];
 
 /** Instrument drawings, not abstract symbols; they fit inside the original pad layout. */
@@ -102,6 +104,9 @@ export function DrumMachine({ track }: { track: Track }) {
   const [energy, setEnergy] = useState(6);
   const [focusPadId, setFocusPadId] = useState<string | null>(null);
   const [selectedStep, setSelectedStep] = useState<{ padId: string; index: number } | null>(null);
+  const [padSound, setPadSound] = useState("kind:kick");
+  const [addingSamples, setAddingSamples] = useState(false);
+  const sampleInput = useRef<HTMLInputElement>(null);
   const pads = [...(track.pads ?? [])].sort((a, b) => PAD_ORDER.indexOf(a.kind) - PAD_ORDER.indexOf(b.kind));
   const hitPad = (pad: DrumPad) => {
     getEngine().playDrum(track.id, pad, 1);
@@ -134,35 +139,19 @@ export function DrumMachine({ track }: { track: Track }) {
   const clonePads = (source: DrumPad[]) => structuredClone(source) as DrumPad[];
   const switchPattern = (next: number) => {
     if (next === activePattern) return;
-    const patterns = [...(track.drumPatterns ?? [])];
-    patterns[activePattern] = clonePads(pads);
-    const target = patterns[next]
-      ? clonePads(patterns[next] as DrumPad[]).map((pad) => ({
-          ...pad,
-          steps: Array.from({ length: track.steps }, (_, i) => pad.steps[i] ?? 0),
-        }))
-      : pads.map((pad) => ({
-          ...pad,
-          steps: pad.steps.map(() => 0),
-          probability: undefined,
-          stepPitch: undefined,
-          stepDecay: undefined,
-          flam: undefined,
-          retrig: undefined,
-          glitch: undefined,
-        }));
-    patterns[next] = clonePads(target);
-    updateTrack(track.id, { drumPatterns: patterns, activeDrumPattern: next, pads: target });
+    updateTrack(track.id, recallDrumBank(track, next));
     setSelectedStep(null);
+    setFocusPadId(null);
   };
 
   const copyPattern = () => {
     const destination = (activePattern + 1) % 8;
+    if (track.drumPatterns?.[destination]?.length && !window.confirm(`Replace Bank ${BANKS[destination]} with Bank ${BANKS[activePattern]}?`)) return;
     const patterns = [...(track.drumPatterns ?? [])];
     patterns[activePattern] = clonePads(pads);
     patterns[destination] = clonePads(pads);
     updateTrack(track.id, { drumPatterns: patterns, activeDrumPattern: destination, pads: clonePads(pads) });
-    toast.success(`Pattern ${activePattern + 1} copied to ${destination + 1}`);
+    toast.success(`Bank ${BANKS[activePattern]} copied to ${BANKS[destination]}`);
   };
 
   const clearPattern = () => {
@@ -209,12 +198,31 @@ export function DrumMachine({ track }: { track: Track }) {
     updatePad(track.id, padId, { steps: steps.map((v, i) => (i % 2 === 0 ? v : Math.max(v, 0.45))) });
 
   const kit = (pads[0]?.kit ?? "909") as DrumKitId;
+  const addSoundPad = () => {
+    const [type, key] = padSound.split(":");
+    const voice = type === "voice" ? VOICE_DEFS[key ?? ""] : undefined;
+    const kind = voice?.kind ?? (key as DrumPad["kind"]);
+    addPad(track.id, { kind, kit, name: voice?.name ?? DRUM_KIND_LABEL[kind], ...(voice && key ? { voice: key } : {}) });
+  };
+  const importPads = async (files: File[]) => {
+    setAddingSamples(true);
+    try {
+      for (const file of files) {
+        try {
+          const info = await getEngine().loadSampleFile(file, file.name);
+          addPad(track.id, { name: file.name.replace(/\.[^.]+$/, ""), kind: "perc", sample: file.name, sampleUrl: info.url });
+          toast.success(`${file.name} added to Bank ${BANKS[activePattern]}`);
+        } catch { toast.error(`Could not read ${file.name}`); }
+      }
+    } finally { setAddingSamples(false); }
+  };
   const loadKit = (id: DrumKitId) => {
     const def = DRUM_KITS.find((k) => k.id === id);
     const decay = def?.decay ?? 0.5;
     // Base pads keep their patterns; old kit-only pads stay only if they hold hits.
-    const kept = pads.filter((p) => !p.voice || p.steps.some((v) => v > 0)).map((p) => factoryKitPad(p, id, p.voice ? p.decay : decay));
-    const extras = kitExtraPads(id, pads[0]?.steps.length ?? 16, decay, () => crypto.randomUUID()).filter((x) => !kept.some((p) => p.voice === x.voice));
+    const source: DrumPad[] = pads.length ? pads : PAD_ORDER.map(kind => ({ id: crypto.randomUUID(), name: DRUM_KIND_LABEL[kind], kind, volume: 0.8, pan: 0, pitch: 0, decay, muted: false, solo: false, steps: Array(track.steps).fill(0) }));
+    const kept = source.filter((p) => !p.voice || p.steps.some((v) => v > 0)).map((p) => factoryKitPad(p, id, p.voice ? p.decay : decay));
+    const extras = kitExtraPads(id, track.steps, decay, () => crypto.randomUUID()).filter((x) => !kept.some((p) => p.voice === x.voice));
     updateTrack(track.id, { pads: [...kept, ...extras] });
     toast.success(`${def?.name ?? id} kit loaded`, { description: "Patterns are kept, and this kit's extra pads were added." });
   };
@@ -273,8 +281,8 @@ export function DrumMachine({ track }: { track: Track }) {
       </div>
       <div className="drum-skin"><SkinControls skinKey="drums" image /></div>
 
-      <div className="drum-patterns flex flex-wrap items-center gap-2" role="group" aria-label="Drum patterns">
-        <span className="label-xs">PATTERN {activePattern + 1}</span>
+      <div className="drum-patterns flex flex-wrap items-center gap-2" role="group" aria-label="Drum banks">
+        <span className="label-xs">BANKS · {BANKS[activePattern]}</span>
         <div className="flex flex-wrap gap-1">
           {BANKS.map((number, index) => (
             <Button
@@ -282,17 +290,32 @@ export function DrumMachine({ track }: { track: Track }) {
               size="sm"
               variant={activePattern === index ? "default" : "secondary"}
               className="h-8 w-8 p-0 font-mono"
-              aria-label={`Pattern ${number}`}
+              aria-label={`Bank ${number}`}
               aria-pressed={activePattern === index}
+              disabled={addingSamples}
               onClick={() => switchPattern(index)}
             >
               {number}
             </Button>
           ))}
         </div>
-        <Button size="sm" variant="secondary" onClick={copyPattern}><Copy className="size-4" /> Copy next</Button>
-        <Button size="sm" variant="ghost" onClick={clearPattern}><RotateCcw className="size-4" /> Clear</Button>
+        <Button size="sm" variant="secondary" disabled={addingSamples} onClick={copyPattern}><Copy className="size-4" /> Copy next</Button>
+        <Button size="sm" variant="ghost" disabled={addingSamples} onClick={clearPattern}><RotateCcw className="size-4" /> Clear</Button>
       </div>
+
+      {(phoneView === "pads" || phoneView === "sound") && <div className="flex flex-wrap items-center gap-2" aria-label="Add bank pads">
+        <Select value={padSound} onValueChange={setPadSound}>
+          <SelectTrigger className="w-48" aria-label="New pad sound"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectGroup><SelectLabel>Drum sounds</SelectLabel>{PAD_ORDER.map(kind => <SelectItem key={kind} value={`kind:${kind}`}>{DRUM_KIND_LABEL[kind]}</SelectItem>)}</SelectGroup>
+            <SelectGroup><SelectLabel>Percussion &amp; brushes</SelectLabel>{Object.entries(VOICE_DEFS).map(([id, def]) => <SelectItem key={id} value={`voice:${id}`}>{def.name}</SelectItem>)}</SelectGroup>
+          </SelectContent>
+        </Select>
+        <Button variant="secondary" onClick={addSoundPad} disabled={addingSamples}><Plus className="size-4" /> Add sound pad</Button>
+        <Button variant="secondary" onClick={() => sampleInput.current?.click()} disabled={addingSamples}><Upload className="size-4" />{addingSamples ? "Loading…" : "Add sample pads"}</Button>
+        <input ref={sampleInput} type="file" accept="audio/*" multiple className="hidden" aria-label="Add samples to bank" onChange={e => { const files = Array.from(e.target.files ?? []); e.target.value = ""; void importPads(files); }} />
+        <span className="font-mono text-xs text-muted-foreground">{pads.length} pads · Bank {BANKS[activePattern]}</span>
+      </div>}
 
       {/* Step sequencer */}
       {phoneView !== 'roll' && <DrumBulkControls track={track} />}
@@ -511,13 +534,15 @@ export function DrumMachine({ track }: { track: Track }) {
         </div>
 
         <div className="flex gap-2">
-          {/* 1–8 → the 8 patterns */}
+          {/* A–H sound banks */}
           <div className="drum-side-banks flex flex-col gap-1">
-            <span className="font-mono text-[9px] text-muted-foreground">PATTERN</span>
+            <span className="font-mono text-[9px] text-muted-foreground">BANKS</span>
             {BANKS.map((number, index) => (
               <Button variant="ghost"
                 key={number}
-                aria-label={`Pattern ${number}`}
+                aria-label={`Bank ${number}`}
+                aria-pressed={activePattern === index}
+                disabled={addingSamples}
                 onClick={() => switchPattern(index)}
                 className={cn(
                   "flex h-full min-h-8 w-6 items-center justify-center rounded-[3px] border font-mono text-[11px] font-semibold",
@@ -533,6 +558,7 @@ export function DrumMachine({ track }: { track: Track }) {
 
           {/* Original pad proportions, with instrument artwork beside the labels. */}
           <div className="drum-pad-grid grid min-w-0 flex-1 gap-2">
+            {pads.length === 0 && <div className="col-span-full flex min-h-32 items-center justify-center font-mono text-sm text-muted-foreground">Bank {BANKS[activePattern]} · Empty</div>}
             {pads.map((pad, padIndex) => {
               const focused = focusPad?.id === pad.id;
               const hasSteps = pad.steps.some((v) => v > 0);
@@ -683,7 +709,7 @@ export function DrumMachine({ track }: { track: Track }) {
                       if (!file) return;
                       try {
                         const info = await getEngine().loadSampleFile(file, file.name);
-                        updatePad(track.id, focusPad.id, { sample: file.name, sampleUrl: info.url });
+                        updatePad(track.id, focusPad.id, { sample: file.name, sampleUrl: info.url, sampleCloudPath: undefined });
                         toast.success(`${file.name} loaded on ${focusPad.name}`, {
                           description: `${info.duration.toFixed(2)}s — trim, pitch and reverse from this pad.`,
                         });
