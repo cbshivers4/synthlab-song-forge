@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { Button } from "@/components/ui/button";
 import { waveformDisplayGain } from "@/lib/synclab/signal-display";
+import type { PluginKind } from "@/lib/synclab/types";
 
 type Mode = "wave" | "spectrum";
 
@@ -12,11 +13,13 @@ export function Scope({
   height = 74,
   compact = false,
   color,
+  effectKind,
 }: {
   scopeId: string;
   height?: number;
   compact?: boolean;
   color?: string;
+  effectKind?: PluginKind;
 }) {
   const ref = useRef<HTMLCanvasElement | null>(null);
   const [mode, setMode] = useState<Mode>("wave");
@@ -111,7 +114,8 @@ export function Scope({
           setMode(mode === "wave" ? "spectrum" : "wave");
         }}
         title={mode === "wave" ? "Scope — click for spectrum" : "Spectrum — click for waveform"}
-        className="signal-screen panel relative block w-full overflow-hidden p-0"
+        data-effect-scope={effectKind}
+        className="signal-screen effect-live-scope panel relative block w-full overflow-hidden p-0"
         style={{ height }}
       >
         <canvas ref={ref} className="h-full w-full" aria-label="Live channel or effect waveform" role="img" />
@@ -123,7 +127,7 @@ export function Scope({
   }
 
   return (
-    <div className="signal-screen panel relative overflow-hidden" style={{ height }}>
+    <div data-effect-scope={effectKind} className="effect-live-scope signal-screen panel relative overflow-hidden" style={{ height }}>
       <canvas ref={ref} className="h-full w-full" aria-label="Live channel or effect waveform" role="img" />
       <div className="absolute right-1 top-1 flex gap-1">
         {(["wave", "spectrum"] as Mode[]).map((m) => (

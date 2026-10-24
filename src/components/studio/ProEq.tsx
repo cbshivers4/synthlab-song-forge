@@ -212,7 +212,7 @@ export function ProEq({ trackId, plugin }: { trackId: string; plugin: PluginInst
   if (!sel) return null;
 
   return (
-    <div className="eq-workstation space-y-3" aria-label="SYNCLAB Pro EQ">
+    <div className="eq-workstation effect-response-window space-y-3" data-effect-window="paraeq" aria-label="SYNCLAB Pro EQ">
       <header className="eq-titlebar"><span>SYNCLAB <strong>PRO EQ</strong></span><span>8 BAND · PARAMETRIC</span></header>
       <div
         ref={boxRef}

@@ -94,7 +94,7 @@ function EffectModule({ track, plugin }: { track: Track; plugin: PluginInstance 
         ))}
         {shown.length === 0 && <span className="self-center text-[10px] text-muted-foreground">No controls</span>}
       </div>
-      <div className="px-1 pb-1"><Scope scopeId={plugin.id} height={22} compact /></div>
+      <div className="px-1 pb-1"><Scope scopeId={plugin.bypass ? `bypassed:${plugin.id}` : plugin.id} height={22} compact effectKind={plugin.kind} /></div>
     </div>
   );
 }
