@@ -422,6 +422,13 @@ export interface AutomationLane {
   locked?: boolean | undefined;
 }
 
+/** Rhythm-only snapshot; sound settings and samples remain in Banks A–H. */
+export interface DrumSequence {
+  hits: Record<string, Pick<DrumPad, 'steps' | 'probability' | 'stepPitch' | 'stepDecay' | 'flam' | 'retrig' | 'glitch'>>;
+  steps: number;
+  patternRegion?: [number, number] | undefined;
+}
+
 export interface Track {
   id: string;
   name: string;
@@ -473,6 +480,10 @@ export interface Track {
   activeDrumPattern?: number | undefined;
   /** Empty-bank migration applied; later user-created banks must be retained. */
   drumBanksVersion?: number | undefined;
+  /** Eight rhythm slots per sound bank, independent of the existing pad-bank snapshots. */
+  drumSequences?: (DrumSequence | undefined)[][];
+  /** Zero-based rhythm selection (Patterns 1–8). */
+  activeDrumSequence?: number;
   plugins?: PluginInstance[] | undefined;
   clips?: AudioClip[] | undefined;
   sampler?: SamplerState | undefined;
