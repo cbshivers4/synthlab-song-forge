@@ -2799,6 +2799,8 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
 .fx-workbench[data-fx-family="sequence"] .fx-section :is(.hardware-knob-label,.hardware-knob-value) { color: var(--hardware-dark-ink); }
 .fx-workbench[data-fx-family="sequence"] .fx-section .hardware-knob-scale { stroke: var(--hardware-dark-ink); }
 .fx-workbench[data-fx-family="dynamics"] { grid-template-areas: "input display output" "input core output" "steps steps steps" "footer footer footer" "motion motion motion"; }
+.fx-workbench[data-fx-family="dynamics"] .fx-section-input,.fx-workbench[data-fx-family="dynamics"] .fx-section-output { align-self: start; }
+.fx-workbench[data-fx-family="buffer"] .fx-section-core .fx-section-knobs { padding-block: 12px; }
 .fx-workbench[data-fx-family="motion"] .fx-section-core { border-inline: 5px solid var(--hardware-trim); }
 .fx-step-faders { display: grid; grid-template-columns: repeat(16,minmax(0,1fr)); gap: 4px; padding: 10px; }
 .fx-step-faders label { display: flex; flex-direction: column; align-items: center; gap: 5px; font: 9px var(--font-mono); }

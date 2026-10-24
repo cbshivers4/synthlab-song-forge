@@ -37,8 +37,8 @@ export function EffectWorkbench({ plugin, onParam, midiId, midiPrefix = "plugin"
   return <div className="fx-workbench" data-fx-family={family}>
     {controls(input, family === "dynamics" ? "DETECTOR" : "INPUT FILTER", "input")}
     <div className="fx-section fx-section-display"><h4>{family === "buffer" ? "DELAY BUFFER" : family === "space" ? "SPACE RESPONSE" : family === "sequence" ? "PATTERN RESPONSE" : "SIGNAL RESPONSE"}</h4>
-      <EffectDisplay plugin={plugin} height={180} onParam={onParam} />
-      <Scope scopeId={plugin.bypass ? `bypassed:${plugin.id}` : plugin.id} height={60} />
+      <EffectDisplay plugin={plugin} height={140} onParam={onParam} />
+      <Scope scopeId={plugin.bypass ? `bypassed:${plugin.id}` : plugin.id} height={40} />
     </div>
     {controls(output, "OUTPUT & BLEND", "output")}
     {controls(core, heading, "core")}
