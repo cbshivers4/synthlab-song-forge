@@ -1,5 +1,7 @@
 # Roadmap — Source-code audit & DAW repair
 
+- [ ] Add/remove real Studio View cables and show desktop-style digital clock throughout phone workspace.
+
 - [x] Added independent drum patterns 1–8, preserving Banks A–H and pad sounds; larger high-contrast bottom mixer icons. 22 tests pass; signed-in saved-project pattern switching, empty B and restored 20-pad A verified; preview only.
 
 - [x] Added six Detroit artist wall pictures to front/rear Studio View; all images load in a signed-in saved project, portrait credits open, and equipment/cables remain unobscured. Scan 7 label photo has no stated reuse license; permission required before public release.
