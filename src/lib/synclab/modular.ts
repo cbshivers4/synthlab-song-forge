@@ -210,7 +210,7 @@ const driveCurve = (k: number) => {
 };
 
 /** Builds one voice of the rack for a note. Unpatched modules make no sound; only what reaches an OUTPUT is heard. */
-export function playModularVoice(ctx: BaseAudioContext, dest: AudioNode, raw: unknown, midi: number, duration: number, velocity: number, t0: number, pitchBus?: AudioNode): number {
+export function playModularVoice(ctx: BaseAudioContext, dest: AudioNode, raw: unknown, midi: number, duration: number, velocity: number, t0: number, pitchBus?: AudioNode, observeOutput?: (mod: ModModule, source: AudioNode) => (() => void) | undefined): number {
   const m = normalizeModular(raw);
   const num = (mod: ModModule, k: string) => Number(mod.params[k] ?? MODULE_DEFS[mod.type].params.find((p) => p.id === k)?.def ?? 0);
   const str = (mod: ModModule, k: string) => String(mod.params[k] ?? MODULE_DEFS[mod.type].params.find((p) => p.id === k)?.def ?? "");
@@ -224,6 +224,7 @@ export function playModularVoice(ctx: BaseAudioContext, dest: AudioNode, raw: un
   const ins = new Map<string, AudioNode | AudioParam>();
   const key = (a: string, b: string) => `${a}|${b}`;
   const finals: GainNode[] = [];
+  const outputTaps = new Map<string, AudioNode>();
 
   for (const mod of m.modules) {
     switch (mod.type) {
@@ -394,6 +395,7 @@ export function playModularVoice(ctx: BaseAudioContext, dest: AudioNode, raw: un
         o.gain.value = num(mod, "level") * (0.35 + 0.65 * velocity);
         ins.set(key(mod.id, "level"), o.gain);
         i.connect(pan).connect(o).connect(dest); finals.push(o);
+        outputTaps.set(mod.id, o);
         ins.set(key(mod.id, "in"), i); ins.set(key(mod.id, "pan"), pan.pan); break;
       }
     }
@@ -412,7 +414,17 @@ export function playModularVoice(ctx: BaseAudioContext, dest: AudioNode, raw: un
     if (dst instanceof AudioParam) g.connect(dst); else g.connect(dst);
   }
 
-  for (const s of sources) { s.start(t0); s.stop(stopAt); }
+  const cleanups = m.modules.flatMap(mod => {
+    const output = outs.get(key(mod.id, 'out')) ?? outputTaps.get(mod.id);
+    const cleanup = output ? observeOutput?.(mod, output) : undefined;
+    return cleanup ? [cleanup] : [];
+  });
+  let remaining = sources.length;
+  if (!remaining) cleanups.forEach(cleanup => cleanup());
+  for (const s of sources) {
+    if (cleanups.length) s.addEventListener('ended', () => { remaining--; if (!remaining) cleanups.forEach(cleanup => cleanup()); }, { once: true });
+    s.start(t0); s.stop(stopAt);
+  }
   for (const f of finals) { f.gain.setValueAtTime(f.gain.value, stopAt - 0.03); f.gain.linearRampToValueAtTime(0, stopAt); }
   return life;
 }

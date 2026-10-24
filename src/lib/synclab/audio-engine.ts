@@ -2,6 +2,7 @@ import { phasedHarmonics } from "./oscillator-phase";
 import { envelopePoints } from "./live-envelope";
 import { renderVintageDrum } from "./vintage-drums";
 import { playModularVoice } from "./modular";
+import { MODULAR_SCOPE_TYPES, attachModularScope, modularScopeId } from './modular-scopes';
 import { playbackPreferences } from "./preferences";
 import { encodeWav } from "./bounce";
 import { sendExternalNote } from "./external-midi";
@@ -2381,7 +2382,8 @@ export class SyncLabEngine {
     if (sendExternalNote(trackId, midi, duration, velocity, t0 - ctx.currentTime)) return;
     const ch = this.channel(trackId);
     if (patch.modular) {
-      playModularVoice(ctx, ch.input, patch.modular, midi, duration, velocity, t0, this.pitchMod(trackId).sum);
+      playModularVoice(ctx, ch.input, patch.modular, midi, duration, velocity, t0, this.pitchMod(trackId).sum, (mod, output) =>
+        !(typeof OfflineAudioContext !== 'undefined' && ctx instanceof OfflineAudioContext) && MODULAR_SCOPE_TYPES.includes(mod.type) ? attachModularScope(ctx, modularScopeId(trackId, mod.id), output) : undefined);
       return;
     }
     const life = duration + patch.amp.release + 0.25;

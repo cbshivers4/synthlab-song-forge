@@ -9,6 +9,8 @@ import {
   type CableColor, type ModModule, type ModuleType, type ModularPatch, type PortRef,
 } from "@/lib/synclab/modular";
 import type { SynthPatch, Track } from "@/lib/synclab/types";
+import { MODULAR_SCOPE_TYPES } from '@/lib/synclab/modular-scopes';
+import { ModularScope } from './ModularScope';
 
 const SHORT: Record<string, string> = { sine: "SIN", triangle: "TRI", sawtooth: "SAW", square: "SQR", lowpass: "LP", highpass: "HP", bandpass: "BP", white: "WHT", pink: "PNK" };
 const pkey = (p: PortRef) => `${p.module}|${p.port}`;
@@ -115,6 +117,7 @@ export function ModularSynth({ track }: { track: Track }) {
           <Button variant="ghost" type="button" aria-label={`Move ${def.label} ${num} right`} disabled={index === m.modules.length - 1} onClick={() => moveModule(mod.id, 1)} className="modular-screw"><ChevronRight className="size-3" /></Button>
         </div>
         {DEVICE_SERIES[mod.type] && <div className="modular-model-plate">{DEVICE_SERIES[mod.type]}</div>}
+        {MODULAR_SCOPE_TYPES.includes(mod.type) && <ModularScope trackId={track.id} moduleId={mod.id} label={`${def.label} ${num}`} />}
         {(mod.type === "phaser" || mod.type === "stereo") && <output className="modular-rate-window" aria-label={`${def.label} rate`}>{Number(mod.params["rate"] ?? 0).toFixed(2)} <small>Hz</small></output>}
         {def.params.map((p) =>
           p.options ? (
