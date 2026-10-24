@@ -1098,7 +1098,7 @@ html[data-reduce-motion] *, html[data-reduce-motion] *::before, html[data-reduce
 .phone-console .mx-phone .mobile-mixer-strips > .bg-surface { height: 480px; }
 .phone-console .phone-timeline-heading button[aria-label="Previous tracks"],
 .phone-console .phone-timeline-heading button[aria-label="Next tracks"] { display: none; }
-.phone-console-rail { min-height: 0; overflow-x: hidden; overflow-y: auto; touch-action: pan-x pan-y; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
+.phone-console-rail { min-height: 0; overflow: auto; touch-action: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
 .phone-console .phone-transport-signals { grid-column: 1 / -1; order: 4; }
 .phone-master-display > div { width: max-content; }
 .phone-transport-signals button { min-height: 48px; }
