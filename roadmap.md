@@ -1,6 +1,6 @@
 # Roadmap — Source-code audit & DAW repair
 
-- [ ] Add real module-signal scopes to selected Modular Tech devices and verify signal activity on phone/desktop.
+- [x] Added live scopes on VCO, Sub, VCF, Fold, Drive, Delay and Output; desktop/phone windows checked, actual module peaks and voice-end cleanup verified; 29 tests passed.
 
 - [x] Added per-effect response/scope frames, proportions and delay side-by-side/reverb readout arrangements plus live vocoder window; phone/desktop five devices and mixer preset/knob edits checked, 28 tests passed.
 
