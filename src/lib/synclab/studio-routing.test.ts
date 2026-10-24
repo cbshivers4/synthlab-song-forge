@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { studioCablePatch } from "./studio-routing";
 import type { PluginInstance } from "./types";
 
-const effect = (id: string, bypass = false): PluginInstance => ({ id, defId: id, name: id, vendor: "SYNCLAB", format: "Internal", kind: "delay", bypass, params: [] });
+const effect = (id: string, bypass = false): PluginInstance => ({ id, defId: id, name: id, vendor: "SYNCLAB", format: "Built-in", kind: "delay", bypass, params: [] });
 const track = { id: "t", plugins: [effect("a"), effect("b", true)], sends: { reverb: 0.2, delay: 0, chorus: 0.3 } };
 const out = { device: "track:t", port: "out" };
 describe("Studio View real cable routing", () => {
