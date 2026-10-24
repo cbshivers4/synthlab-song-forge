@@ -1,5 +1,7 @@
 # Roadmap — Source-code audit & DAW repair
 
+- [ ] SYNCPADS: pad/envelope MIDI Learn and readable envelope labels; verify mapping without doubled notes.
+
 - [x] Drum Machine: Banks A-H, empty unused banks, selectable sound and multi-file sample pads; bank round-trip tests and browser add/recall verified; cloud drum asset upload/restore included.
 
 - [x] Audit audio signal path (instruments → track → inserts → buses → mixer → master)
