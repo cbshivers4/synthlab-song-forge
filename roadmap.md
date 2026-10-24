@@ -1,5 +1,7 @@
 # Roadmap — Source-code audit & DAW repair
 
+- [ ] Add effect-specific preset menus and visible preset windows across Plugins and mixer editors; verify parameter recall and phone layout.
+
 - [x] Effects now share segmented input/display/core/output decks with distinct space, pink-buffer, silver-sequence, dynamics, motion and tone finishes; mixer delay/compressor and rack reverb checked on phone/desktop with parameter edits; effect-control tests passed.
 
 - [x] Reel recorder restyled to uploaded silver/wood deck: large silver reels, black hubs, head cover, paired VU meters and raised keys; 9 tape tests passed and desktop/phone controls checked.
