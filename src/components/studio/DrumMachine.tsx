@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Knob } from "./Knob";
+import { MidiLearnButton } from "./MidiLearn";
 import { useStudio } from "@/lib/synclab/store";
 import { factoryKitPad, kitExtraPads, VOICE_DEFS } from "@/lib/synclab/vintage-drums";
 import { DRUM_BANK_LABELS, recallDrumBank } from "@/lib/synclab/drum-banks";
@@ -59,15 +60,16 @@ function DrumInstrumentIcon({ kind, className }: { kind: DrumPad["kind"]; classN
   );
 }
 
-/** Small vertical fader used for the A / H / D envelope sliders, Impact-style. */
-function VSlider({ label, value, min = 0, max = 1, onChange }: { label: string; value: number; min?: number; max?: number; onChange: (v: number) => void }) {
+/** Labelled envelope fader with the same hardware-learning path as knobs. */
+function VSlider({ label, value, min = 0, max = 1, onChange, midiTarget }: { label: string; value: number; min?: number; max?: number; onChange: (v: number) => void; midiTarget: { id: string; param: string } }) {
   const pct = Math.round(((value - min) / (max - min || 1)) * 100);
   return (
-    <label className="flex w-9 flex-col items-center gap-1">
-      <Slider orientation="vertical" className="h-20" min={min} max={max} step={0.01} value={[value]} onValueChange={([v = 0]) => onChange(v)} />
-      <span className="font-mono text-[9px] text-muted-foreground">{label}</span>
+    <div className="flex w-14 flex-col items-center gap-1">
+      <Slider aria-label={label} orientation="vertical" className="h-20" min={min} max={max} step={0.01} value={[value]} onValueChange={([v = 0]) => onChange(v)} />
+      <span className="font-mono text-[10px] text-foreground">{label}</span>
       <span className="font-mono text-[8px] text-foreground/60">{pct}</span>
-    </label>
+      <MidiLearnButton {...midiTarget} label={label} />
+    </div>
   );
 }
 
@@ -572,6 +574,7 @@ export function DrumMachine({ track }: { track: Track }) {
                     hitPad(pad);
                   }}
                   onKeyDown={(e) => {
+                    if (e.target !== e.currentTarget) return;
                     if (e.key === "Enter" || e.key === " ") {
                       e.preventDefault();
                       hitPad(pad);
@@ -592,6 +595,7 @@ export function DrumMachine({ track }: { track: Track }) {
                     </span>
                   </span>
                   <span className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                    <MidiLearnButton id={track.id} param={`drum-trigger:${pad.id}`} label={pad.name} />
                     <Button
                       size="sm"
                       variant={pad.solo ? "default" : "ghost"}
@@ -621,11 +625,11 @@ export function DrumMachine({ track }: { track: Track }) {
               <Section title="Pitch" active>
                 <Knob label="TRANSP" midiTarget={{ id: track.id, param: `drum:${focusPad.id}:pitch` }} min={-12} max={12} step={1} value={focusPad.pitch} onChange={(v) => updatePad(track.id, focusPad.id, { pitch: v })} />
                 <Knob label="ENV" midiTarget={{ id: track.id, param: `drum:${focusPad.id}:filterEnv` }} min={-1} max={1} value={focusPad.filterEnv ?? 0} onChange={(v) => updatePad(track.id, focusPad.id, { filterEnv: v })} />
-                <Knob label="VEL" value={focusPad.volume} onChange={(v) => updatePad(track.id, focusPad.id, { volume: v })} />
+                <Knob label="VEL" midiTarget={{ id: track.id, param: `drum:${focusPad.id}:volume` }} value={focusPad.volume} onChange={(v) => updatePad(track.id, focusPad.id, { volume: v })} />
                 <div className="ml-0.5 flex items-end gap-1.5 border-l border-border pl-2.5">
-                  <VSlider label="A" value={focusPad.attack ?? 0} onChange={(v) => updatePad(track.id, focusPad.id, { attack: v })} />
-                  <VSlider label="H" value={focusPad.sustain ?? 0} onChange={(v) => updatePad(track.id, focusPad.id, { sustain: v })} />
-                  <VSlider label="D" value={focusPad.decay} onChange={(v) => updatePad(track.id, focusPad.id, { decay: v })} />
+                  <VSlider label="Attack" midiTarget={{ id: track.id, param: `drum:${focusPad.id}:attack` }} value={focusPad.attack ?? 0} onChange={(v) => updatePad(track.id, focusPad.id, { attack: v })} />
+                  <VSlider label="Hold" midiTarget={{ id: track.id, param: `drum:${focusPad.id}:sustain` }} value={focusPad.sustain ?? 0} onChange={(v) => updatePad(track.id, focusPad.id, { sustain: v })} />
+                  <VSlider label="Decay" midiTarget={{ id: track.id, param: `drum:${focusPad.id}:decay` }} value={focusPad.decay} onChange={(v) => updatePad(track.id, focusPad.id, { decay: v })} />
                 </div>
               </Section>
               <Section title="Filter" active={(focusPad.filterType ?? "off") !== "off"}>
@@ -651,9 +655,9 @@ export function DrumMachine({ track }: { track: Track }) {
                 <Knob label="GAIN" midiTarget={{ id: track.id, param: `drum:${focusPad.id}:volume` }} value={focusPad.volume} onChange={(v) => updatePad(track.id, focusPad.id, { volume: v })} />
                 <Knob label="PAN" midiTarget={{ id: track.id, param: `drum:${focusPad.id}:pan` }} min={-1} max={1} value={focusPad.pan} onChange={(v) => updatePad(track.id, focusPad.id, { pan: v })} />
                 <div className="ml-0.5 flex items-end gap-1.5 border-l border-border pl-2.5">
-                  <VSlider label="A" value={focusPad.attack ?? 0} onChange={(v) => updatePad(track.id, focusPad.id, { attack: v })} />
-                  <VSlider label="D" value={focusPad.decay} onChange={(v) => updatePad(track.id, focusPad.id, { decay: v })} />
-                  <VSlider label="R" value={focusPad.release ?? 0.2} onChange={(v) => updatePad(track.id, focusPad.id, { release: v })} />
+                  <VSlider label="Attack" midiTarget={{ id: track.id, param: `drum:${focusPad.id}:attack` }} value={focusPad.attack ?? 0} onChange={(v) => updatePad(track.id, focusPad.id, { attack: v })} />
+                  <VSlider label="Decay" midiTarget={{ id: track.id, param: `drum:${focusPad.id}:decay` }} value={focusPad.decay} onChange={(v) => updatePad(track.id, focusPad.id, { decay: v })} />
+                  <VSlider label="Release" midiTarget={{ id: track.id, param: `drum:${focusPad.id}:release` }} value={focusPad.release ?? 0.2} onChange={(v) => updatePad(track.id, focusPad.id, { release: v })} />
                 </div>
               </Section>
               <Section title="Sample" active={Boolean(focusPad.sample)}>
