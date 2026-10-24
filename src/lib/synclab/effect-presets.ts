@@ -29,9 +29,198 @@ const RECIPES: Record<PluginKind, Recipe[]> = {
 };
 const TAPE_RECIPES: Recipe[] = [["Vintage Slap", { time: 110, feedback: 0.18, tone: 4200, mix: 0.2 }], ["Dub Tape", { time: 540, feedback: 0.7, tone: 2800, lowcut: 200, mix: 0.35 }], ["Warm Repeats", { time: 360, feedback: 0.4, tone: 5000, mix: 0.25 }], ["Long Tape Trail", { time: 800, feedback: 0.6, tone: 3200, mix: 0.3 }]];
 
+// Append recipes to preserve existing factory IDs and saved parameter matches.
+const MORE_RECIPES: Record<PluginKind, Recipe[]> = {
+  eq: [
+    ["Electro Bass Scoop", { low: 3.5, mid: -4, midFreq: 800, high: 1 }],
+    ["Techno Kick Weight", { low: 5, mid: -2.5, midFreq: 350, high: 1.5, mix: -2 }],
+    ["Jazz Warmth", { low: 1.5, mid: 1, midFreq: 1200, high: -2 }],
+    ["Acoustic Sparkle", { low: -2, mid: -1.5, midFreq: 500, high: 4.5 }],
+    ["Vocal De-Mud", { low: -4, mid: -3, midFreq: 300, high: 2 }],
+    ["Gentle Master Tilt", { low: -1, mid: -0.5, midFreq: 700, high: 1.5 }],
+  ],
+  paraeq: [
+    ["Airy Lead Vocal", { b1freq: 100, b3on: 1, b3freq: 350, b3gain: -2.5, b5on: 1, b5freq: 3500, b5gain: 2, b7on: 1, b7freq: 12000, b7gain: 3 }],
+    ["Techno Sub Shape", { b1freq: 24, b2on: 1, b2freq: 55, b2gain: 4, b4on: 1, b4freq: 500, b4gain: -3, b8freq: 6500 }],
+    ["Snare Crack", { b1freq: 110, b3on: 1, b3freq: 220, b3gain: 2, b5on: 1, b5freq: 2500, b5gain: 4, b5q: 1.4 }],
+    ["Hi-Hat Smooth", { b1freq: 600, b6on: 1, b6freq: 7000, b6gain: -3, b6q: 2, b7on: 1, b7gain: 1 }],
+    ["Piano Body", { b1freq: 60, b3on: 1, b3freq: 250, b3gain: 2, b4on: 1, b4freq: 800, b4gain: -2, b7on: 1, b7gain: 1.5 }],
+    ["Master Gentle Smile", { b1freq: 22, b2on: 1, b2gain: 1, b4on: 1, b4freq: 450, b4gain: -1, b7on: 1, b7gain: 1.2, output: -1 }],
+  ],
+  filter: [
+    ["Deep Dub Low Pass", { cutoff: 650, resonance: 2.8, mix: 0.9 }],
+    ["Bright Synth Sweep", { cutoff: 5200, resonance: 4, mix: 0.75 }],
+    ["Radio Band Pass", { type: 2, cutoff: 2200, resonance: 1.2, mix: 0.9 }],
+    ["Thin Percussion", { type: 1, cutoff: 650, resonance: 1.1 }],
+    ["Soft Pad Veil", { cutoff: 1800, resonance: 0.6, mix: 0.7 }],
+    ["Resonant Electro Bite", { cutoff: 1400, resonance: 6.5, input: -3, output: -2 }],
+  ],
+  drive: [
+    ["Electro Bass Edge", { drive: 0.42, tone: 3800, mix: 0.7, lowcut: 35, output: -4 }],
+    ["Techno Drum Dirt", { drive: 0.82, tone: 5200, mix: 0.55, output: -6 }],
+    ["Warm Vocal Edge", { drive: 0.12, tone: 8000, mix: 0.35, lowcut: 90, output: -1.5 }],
+    ["Fuzzy Lead", { drive: 0.9, tone: 2400, mix: 0.85, output: -8 }],
+    ["Parallel Drum Heat", { drive: 0.6, tone: 9500, mix: 0.25, output: -3 }],
+    ["Dark Synth Saturation", { drive: 0.35, tone: 1800, mix: 0.6, output: -3 }],
+  ],
+  compressor: [
+    ["Intimate Vocal", { threshold: -28, ratio: 2.5, attack: 18, release: 240, knee: 15, makeup: 2 }],
+    ["Rap Vocal Grip", { threshold: -20, ratio: 4.5, attack: 5, release: 90, knee: 5, makeup: 3 }],
+    ["Techno Drum Bus", { threshold: -18, ratio: 6, attack: 20, release: 75, knee: 3, makeup: 2.5 }],
+    ["Acoustic Leveling", { threshold: -26, ratio: 2, attack: 35, release: 300, knee: 18, makeup: 1.5 }],
+    ["Punchy Snare", { threshold: -15, ratio: 5, attack: 40, release: 65, makeup: 2 }],
+    ["Smooth Master Glue", { threshold: -10, ratio: 1.5, attack: 50, release: 350, knee: 20, makeup: 0.5 }],
+  ],
+  delay: [
+    ["Electro Stutter", { time: 125, feedback: 0.48, mix: 0.3, tone: 8500 }],
+    ["Techno Echo Grid", { time: 375, feedback: 0.55, mix: 0.32, lowcut: 250 }],
+    ["Airy Vocal Trail", { time: 480, feedback: 0.32, mix: 0.2, tone: 9000, lowcut: 200 }],
+    ["Deep Dub Space", { time: 750, feedback: 0.78, mix: 0.38, tone: 2200, lowcut: 320, output: -2 }],
+    ["Ambient Cascade", { time: 1050, feedback: 0.65, mix: 0.42, tone: 5500, lowcut: 180 }],
+    ["Percussion Flutter", { time: 65, feedback: 0.3, mix: 0.16, tone: 4500, lowcut: 400 }],
+  ],
+  gain: [
+    ["Headroom Minus 3", { gain: -3 }],
+    ["Headroom Minus 12", { gain: -12 }],
+    ["Gentle Boost", { gain: 2 }],
+    ["Half Left", { pan: -0.5 }],
+    ["Half Right", { pan: 0.5 }],
+    ["Inverted Quiet Trim", { gain: -6, phase: 1 }],
+  ],
+  width: [
+    ["Centered Bass", { width: 0.15, output: -0.5 }],
+    ["Intimate Vocal Image", { width: 0.7 }],
+    ["Open Drum Room", { width: 1.25, output: -0.5 }],
+    ["Spacious Pads", { width: 1.65, output: -1.5 }],
+    ["Left Narrow Layer", { width: 0.4, pan: -0.4, output: -2 }],
+    ["Right Wide Layer", { width: 1.3, pan: 0.4, output: -2 }],
+  ],
+  reverb: [
+    ["Intimate Vocal Room", { decay: 0.85, predelay: 22, mix: 0.16, tone: 6500, lowcut: 160 }],
+    ["Bright Snare Plate", { decay: 1.2, predelay: 12, mix: 0.24, tone: 11000, lowcut: 300 }],
+    ["Jazz Club", { decay: 1.4, predelay: 18, mix: 0.22, tone: 5200, lowcut: 100 }],
+    ["Techno Warehouse", { decay: 3.2, predelay: 55, mix: 0.38, tone: 6200, lowcut: 280 }],
+    ["Ambient Cathedral", { decay: 7.2, predelay: 85, mix: 0.55, tone: 7800, lowcut: 220 }],
+    ["Dark Drum Chamber", { decay: 2.1, predelay: 5, mix: 0.3, tone: 2600, lowcut: 250 }],
+  ],
+  chorus: [
+    ["Analog String Ensemble", { rate: 0.35, depth: 0.7, delay: 32, mix: 0.6 }],
+    ["Electro Keys", { rate: 1.8, depth: 0.45, delay: 18, mix: 0.4, feedback: 0.12 }],
+    ["Dreamy Guitar", { rate: 0.75, depth: 0.55, delay: 24, mix: 0.35 }],
+    ["Vocal Double Color", { rate: 0.25, depth: 0.2, delay: 35, mix: 0.2 }],
+    ["Liquid Pad", { rate: 0.18, depth: 0.85, delay: 38, mix: 0.65, feedback: 0.2 }],
+    ["Fast Wobble", { rate: 4.5, depth: 0.75, delay: 10, mix: 0.5 }],
+  ],
+  flanger: [
+    ["Tape-Like Sweep", { rate: 0.12, depth: 0.6, manual: 3, feedback: 0.4, mix: 0.4 }],
+    ["Electro Metallic", { rate: 1.2, depth: 0.9, manual: 1.5, feedback: 0.75 }],
+    ["Wide Pad Jet", { rate: 0.08, depth: 1, manual: 8, feedback: 0.6, mix: 0.6 }],
+    ["Percussion Comb", { rate: 0.6, depth: 0.25, manual: 2.5, feedback: 0.85, mix: 0.35 }],
+    ["Shallow Vocal Swirl", { rate: 0.2, depth: 0.2, manual: 5, feedback: 0.15, mix: 0.18 }],
+    ["Sci-Fi Spin", { rate: 3.8, depth: 0.95, manual: 10, feedback: 0.7, mix: 0.65 }],
+  ],
+  phaser: [
+    ["Soul Guitar", { rate: 0.65, depth: 0.5, center: 900, stages: 4, mix: 0.35 }],
+    ["Electro Sweep", { rate: 1.8, depth: 0.85, center: 1600, stages: 6, resonance: 2.5 }],
+    ["Deep Pad Orbit", { rate: 0.07, depth: 0.95, center: 600, stages: 8, resonance: 1.4 }],
+    ["Rhodes Motion", { rate: 0.9, depth: 0.45, center: 1100, stages: 4, mix: 0.4 }],
+    ["Talking Bass", { rate: 2.2, depth: 0.65, center: 450, stages: 6, resonance: 3, mix: 0.45 }],
+    ["Fast Psychedelic", { rate: 4, depth: 0.8, center: 2200, stages: 8, resonance: 2 }],
+  ],
+  tremolo: [
+    ["Soul Guitar Pulse", { rate: 4.2, depth: 0.45 }],
+    ["Electric Piano Drift", { rate: 2.2, depth: 0.35 }],
+    ["Techno Hard Chop", { rate: 12, depth: 0.95, shape: 1, output: -1 }],
+    ["Ambient Breathing", { rate: 0.25, depth: 0.7, shape: 2 }],
+    ["Electro Flicker", { rate: 16, depth: 0.75, shape: 1 }],
+    ["Soft Triangle Pulse", { rate: 6.5, depth: 0.5, shape: 2 }],
+  ],
+  autopan: [
+    ["Ambient Orbit", { rate: 0.08, depth: 0.9 }],
+    ["Electro Alternator", { rate: 6, depth: 0.85, shape: 1 }],
+    ["Percussion Travel", { rate: 3, depth: 0.65, shape: 2 }],
+    ["Left-Biased Drift", { rate: 0.35, depth: 0.4, center: -0.4 }],
+    ["Right-Biased Drift", { rate: 0.35, depth: 0.4, center: 0.4 }],
+    ["Slow Triangle Sweep", { rate: 0.15, depth: 1, shape: 2 }],
+  ],
+  limiter: [
+    ["Streaming Headroom", { ceiling: -1.2, input: 1, release: 140 }],
+    ["Punch Preservation", { ceiling: -1, input: 2, release: 40 }],
+    ["Dense Electronic Mix", { ceiling: -0.8, input: 5, release: 110 }],
+    ["Vocal Peak Catcher", { ceiling: -2, release: 75 }],
+    ["Gentle Piano Safety", { ceiling: -1.5, release: 260 }],
+    ["Conservative Bus Ceiling", { ceiling: -3, input: 0.5, release: 160 }],
+  ],
+  bitcrusher: [
+    ["Dusty Drum Texture", { bits: 10, mix: 0.35, tone: 6500, output: -1 }],
+    ["Electro Console", { bits: 7, mix: 0.6, tone: 10000, output: -2 }],
+    ["Four Bit Bass", { bits: 4, mix: 0.5, tone: 3200, output: -4 }],
+    ["Subtle Digital Grain", { bits: 14, mix: 0.4, tone: 14000 }],
+    ["Dark Pixel Pad", { bits: 5, mix: 0.3, tone: 1800, output: -2 }],
+    ["Two Bit Destruction", { bits: 2, mix: 0.45, tone: 4500, output: -6 }],
+  ],
+  vocoder: [
+    ["Detroit Electro Voice", { carrier: 1, pitch: 82.4, bands: 16, detune: 12, formant: -2, unison: 3, response: 10 }],
+    ["Bright Synth Choir", { carrier: 0, pitch: 261.6, bands: 24, detune: 28, unison: 5, formant: 2, tone: 12000 }],
+    ["Deep Robot Bass", { carrier: 1, pitch: 55, bands: 12, formant: -7, tone: 3200, unison: 2 }],
+    ["Airy Noise Whisper", { carrier: 2, bands: 24, response: 5, sibilance: 0.8, width: 1.8, mix: 0.85 }],
+    ["Slow Android Choir", { carrier: 0, pitch: 146.8, response: 90, detune: 35, unison: 5, formant: -3 }],
+    ["Keyboard Electro Lead", { play: 1, pitch: 220, glide: 120, carrier: 0, bands: 16, unison: 4, detune: 18, response: 8 }],
+  ],
+  gate: [
+    ["Quiet Spoken Vocal", { threshold: -52, attack: 4, release: 220, range: -30 }],
+    ["Snare Isolation", { threshold: -26, attack: 0.2, release: 95, range: -60 }],
+    ["Tight Kick Tail", { threshold: -32, attack: 0.3, release: 45, range: -50 }],
+    ["Gentle Room Reduction", { threshold: -60, attack: 8, release: 400, range: -12 }],
+    ["Synth Staccato", { threshold: -20, attack: 0.5, release: 20, range: -70 }],
+    ["Long Vocal Release", { threshold: -44, attack: 6, release: 600, range: -24 }],
+  ],
+  stepfilter: [
+    ["Acid Staircase", { rate: 8, cutoff: 4800, resonance: 9, smooth: 0.02, s1: 0.15, s2: 0.3, s3: 0.5, s4: 0.8, s5: 1, s6: 0.6, s7: 0.4, s8: 0.2 }],
+    ["Dub Offbeats", { rate: 4, cutoff: 2500, resonance: 3, swing: 0.25, smooth: 0.08, s1: 0.2, s2: 0.85, s3: 0.15, s4: 0.7 }],
+    ["Techno Rapid Grid", { rate: 16, cutoff: 7000, resonance: 6, smooth: 0.005, depth: 1 }],
+    ["Ambient Evolving Steps", { rate: 0.75, cutoff: 11000, resonance: 2, smooth: 0.22, depth: 0.6 }],
+    ["Electro Band Pass", { mode: 2, rate: 6, cutoff: 3600, resonance: 4.5, swing: 0.12, mix: 0.75 }],
+    ["High Pass Percussion", { mode: 1, rate: 10, cutoff: 1800, resonance: 1.5, depth: 0.5, smooth: 0.04, mix: 0.6 }],
+  ],
+  resonator: [
+    ["Electro Tuned Bass", { root: 31, spread: 0.15, decay: 1.6, damping: 0.65, mix: 0.3 }],
+    ["Glass Chimes", { root: 72, spread: 0.85, decay: 2.5, damping: 0.12, mix: 0.4 }],
+    ["Wooden Percussion Body", { root: 50, spread: 0.18, decay: 0.55, damping: 0.75, mix: 0.28 }],
+    ["Industrial Ring", { root: 42, spread: 1, decay: 3.8, damping: 0.25, mix: 0.5 }],
+    ["Ambient Harmonic Cloud", { root: 57, spread: 0.6, decay: 6.5, damping: 0.35, mix: 0.55 }],
+    ["Short Tuned Pluck", { root: 64, spread: 0.25, decay: 0.22, damping: 0.5, mix: 0.4 }],
+  ],
+  scalechord: [
+    ["C Minor Open Triads", { root: 0, scale: 1, chord: 2, inversion: 1, range: 2 }],
+    ["D Minor Seventh Spread", { root: 2, scale: 1, chord: 4, inversion: 2, range: 2 }],
+    ["F Major Seventh Lift", { root: 5, scale: 0, chord: 3, inversion: 2, range: 2 }],
+    ["A Minor Low Triads", { root: 9, scale: 1, chord: 2, inversion: 0, range: 1 }],
+    ["G Open Fifth Stack", { root: 7, scale: 3, chord: 5, inversion: 1, range: 3 }],
+    ["E Major High Triads", { root: 4, scale: 0, chord: 1, inversion: 2, range: 3 }],
+  ],
+  transient: [
+    ["Techno Kick Snap", { attack: 0.85, sustain: -0.35, sensitivity: 0.7, output: -2 }],
+    ["Snare Front Edge", { attack: 0.7, sustain: 0.1, sensitivity: 0.65, output: -1.5 }],
+    ["Brushes Soften", { attack: -0.35, sustain: 0.25, sensitivity: 0.4, mix: 0.75 }],
+    ["Dry Percussion", { attack: 0.25, sustain: -0.85, sensitivity: 0.7 }],
+    ["Ambient Tail Lift", { attack: -0.2, sustain: 0.8, mix: 0.55, output: -2 }],
+    ["Gentle Mix Definition", { attack: 0.2, sustain: -0.1, sensitivity: 0.45, mix: 0.5 }],
+  ],
+};
+const MORE_TAPE_RECIPES: Recipe[] = [
+  ["Motor City Slap", { time: 85, feedback: 0.22, tone: 3600, mix: 0.18, lowcut: 120 }],
+  ["Dark Dub Feedback", { time: 680, feedback: 0.8, tone: 1800, lowcut: 350, mix: 0.4, output: -3 }],
+  ["Worn Vocal Echo", { time: 290, feedback: 0.28, tone: 3200, lowcut: 180, mix: 0.22 }],
+  ["Warm Guitar Trail", { time: 440, feedback: 0.45, tone: 4800, lowcut: 100, mix: 0.28 }],
+  ["Tape Space Wash", { time: 1150, feedback: 0.68, tone: 2500, lowcut: 240, mix: 0.48, output: -2 }],
+  ["Percussion Tape Bounce", { time: 165, feedback: 0.5, tone: 5800, lowcut: 450, mix: 0.26 }],
+];
+
 export function effectPresets(plugin: Pick<PluginInstance, "kind" | "name">): EffectPreset[] {
   const defaults = Object.fromEntries(PARAMS_BY_KIND[plugin.kind]().map(p => [p.id, p.value]));
-  const recipes = plugin.kind === "delay" && plugin.name.toLowerCase().includes("echo") ? TAPE_RECIPES : RECIPES[plugin.kind];
+  const tapeEcho = plugin.kind === "delay" && plugin.name.toLowerCase().includes("echo");
+  const recipes = tapeEcho ? [...TAPE_RECIPES, ...MORE_TAPE_RECIPES] : [...RECIPES[plugin.kind], ...MORE_RECIPES[plugin.kind]];
   return [["Default", {}] as Recipe, ...recipes].map(([name, values], index) => ({ id: `${plugin.kind}:${name}:${index}`, name, values: { ...defaults, ...values } }));
 }
 
