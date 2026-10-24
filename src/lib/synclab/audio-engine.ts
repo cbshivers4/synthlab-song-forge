@@ -2,6 +2,7 @@ import { phasedHarmonics } from "./oscillator-phase";
 import { envelopePoints } from "./live-envelope";
 import { renderVintageDrum } from "./vintage-drums";
 import { playModularVoice } from "./modular";
+import { MODULAR_SCOPE_TYPES, attachModularScope, modularScopeId } from './modular-scopes';
 import { playbackPreferences } from "./preferences";
 import { encodeWav } from "./bounce";
 import { sendExternalNote } from "./external-midi";
