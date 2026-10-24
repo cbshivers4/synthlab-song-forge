@@ -115,7 +115,7 @@ export function ModularSynth({ track }: { track: Track }) {
           <Button variant="ghost" type="button" aria-label={`Move ${def.label} ${num} right`} disabled={index === m.modules.length - 1} onClick={() => moveModule(mod.id, 1)} className="modular-screw"><ChevronRight className="size-3" /></Button>
         </div>
         {DEVICE_SERIES[mod.type] && <div className="modular-model-plate">{DEVICE_SERIES[mod.type]}</div>}
-        {(mod.type === "phaser" || mod.type === "stereo") && <output className="modular-rate-window" aria-label={`${def.label} rate`}>{Number(mod.params.rate ?? 0).toFixed(2)} <small>Hz</small></output>}
+        {(mod.type === "phaser" || mod.type === "stereo") && <output className="modular-rate-window" aria-label={`${def.label} rate`}>{Number(mod.params["rate"] ?? 0).toFixed(2)} <small>Hz</small></output>}
         {def.params.map((p) =>
           p.options ? (
             <div key={p.id} className="flex flex-wrap justify-center gap-0.5" role="group" aria-label={p.label}>

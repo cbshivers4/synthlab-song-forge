@@ -283,7 +283,7 @@ export function playModularVoice(ctx: BaseAudioContext, dest: AudioNode, raw: un
         const mix = num(mod, "mix"); dry.gain.value = 1 - mix; input.connect(dry).connect(output);
         const vowels: Record<string, number[]> = { A: [800, 1150, 2900], E: [400, 1700, 2600], I: [350, 2000, 2800], O: [450, 800, 2830], U: [325, 700, 2530] };
         const shiftCV = ctx.createGain();
-        for (const frequency of vowels[str(mod, "vowel")] ?? vowels.A ?? []) {
+        for (const frequency of vowels[str(mod, "vowel")] ?? vowels["A"] ?? []) {
           const filter = ctx.createBiquadFilter(); filter.type = "bandpass";
           filter.frequency.value = frequency; filter.detune.value = num(mod, "shift") * 100; filter.Q.value = num(mod, "resonance");
           const gain = ctx.createGain(); gain.gain.value = mix * 0.8;
