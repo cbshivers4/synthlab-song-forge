@@ -1,6 +1,8 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Plus, Trash2, X } from "lucide-react";
 import { Knob } from "./Knob";
+import { Button } from "@/components/ui/button";
+import { canvasPoint } from "@/lib/synclab/canvas-point";
 import { useStudio } from "@/lib/synclab/store";
 import {
   CABLE_COLORS, MODULAR_PRESETS, initModularPatch, MODULE_DEFS, cableId, newModule, normalizeModular,
@@ -36,7 +38,10 @@ export function ModularSynth({ track }: { track: Track }) {
   const moveModule = (id: string, dir: -1 | 1) => {
     const i = m.modules.findIndex((x) => x.id === id), j = i + dir;
     if (j < 0 || j >= m.modules.length) return;
-    const mods = [...m.modules]; [mods[i], mods[j]] = [mods[j]!, mods[i]!];
+    const mods = [...m.modules];
+    const current = mods[i], neighbor = mods[j];
+    if (!current || !neighbor) return;
+    mods[i] = neighbor; mods[j] = current;
     save({ ...m, modules: mods });
   };
   const setParam = (id: string, k: string, v: number | string) => save({ ...m, modules: m.modules.map((x) => (x.id === id ? { ...x, params: { ...x.params, [k]: v } } : x)) });
@@ -54,11 +59,13 @@ export function ModularSynth({ track }: { track: Track }) {
       const box = boxRef.current;
       if (!box) return;
       const r = box.getBoundingClientRect();
+      const origin = canvasPoint(r.left + r.width / 2, r.top + r.height / 2);
       const pos = (p: PortRef) => {
         const el = box.querySelector<HTMLElement>(`[data-jack="${CSS.escape(pkey(p))}"]`);
         if (!el) return null;
         const b = el.getBoundingClientRect();
-        return { x: b.left + b.width / 2 - r.left, y: b.top + b.height / 2 - r.top };
+        const center = canvasPoint(b.left + b.width / 2, b.top + b.height / 2);
+        return { x: center.x - origin.x + box.offsetWidth / 2, y: center.y - origin.y + box.offsetHeight / 2 };
       };
       setLines(m.cables.flatMap((c) => {
         const a = pos(c.from), b = pos(c.to);
@@ -70,7 +77,8 @@ export function ModularSynth({ track }: { track: Track }) {
     draw();
     const ro = new ResizeObserver(draw);
     if (boxRef.current) ro.observe(boxRef.current);
-    return () => ro.disconnect();
+    window.addEventListener("resize", draw);
+    return () => { ro.disconnect(); window.removeEventListener("resize", draw); };
   }, [patch.modular]);
 
   const jack = (p: PortRef, out: boolean, text: string) => {
@@ -95,7 +103,7 @@ export function ModularSynth({ track }: { track: Track }) {
     const num = m.modules.filter((x) => x.type === mod.type).indexOf(mod) + 1;
     return (
       <div className="modular-module" data-module-type={mod.type}>
-        <div className="flex w-full items-center justify-between gap-1">
+        <div className="modular-module-header flex w-full items-center justify-between gap-1">
           <button type="button" aria-label={`Move ${def.label} ${num} left`} disabled={index === 0} onClick={() => moveModule(mod.id, -1)} className="modular-screw"><ChevronLeft className="size-3" /></button>
           <h4>{def.label} {num}</h4>
           <button type="button" aria-label={`Move ${def.label} ${num} right`} disabled={index === m.modules.length - 1} onClick={() => moveModule(mod.id, 1)} className="modular-screw"><ChevronRight className="size-3" /></button>
@@ -109,9 +117,9 @@ export function ModularSynth({ track }: { track: Track }) {
             </div>
           ) : null,
         )}
-        <div className="flex flex-wrap justify-center gap-1">
+        <div className="modular-knob-bank flex flex-wrap justify-center gap-1">
           {def.params.filter((p) => !p.options).map((p) => (
-            <Knob key={p.id} label={p.label} size={34} min={p.min ?? 0} max={p.max ?? 1} step={p.step ?? 0.01} unit={p.unit ?? ""} value={Number(mod.params[p.id] ?? p.def)} onChange={(v) => setParam(mod.id, p.id, v)} />
+            <Knob key={p.id} label={p.label} size={42} min={p.min ?? 0} max={p.max ?? 1} step={p.step ?? 0.01} unit={p.unit ?? ""} value={Number(mod.params[p.id] ?? p.def)} onChange={(v) => setParam(mod.id, p.id, v)} />
           ))}
         </div>
         <div className="modular-jacks">
@@ -124,7 +132,7 @@ export function ModularSynth({ track }: { track: Track }) {
   };
 
   return (
-    <div className="space-y-2">
+    <div className="modular-workstation space-y-2">
       <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Patched rack presets">
         <span className="label-xs mr-1">PRESET RACKS</span>
         <button type="button" aria-label="Initialize modular patch" onClick={() => {
@@ -168,7 +176,7 @@ export function ModularSynth({ track }: { track: Track }) {
             EMPTY RACK — add devices above (start with VCO, VCA, ENVELOPE and OUTPUT), then patch them with cables.
           </div>
         ) : (
-          <div className="flex flex-wrap gap-1.5 p-2">
+          <div className="modular-module-grid">
             {m.modules.map((mod, i) => <Device key={mod.id} mod={mod} index={i} />)}
           </div>
         )}
