@@ -2381,7 +2381,8 @@ export class SyncLabEngine {
     if (sendExternalNote(trackId, midi, duration, velocity, t0 - ctx.currentTime)) return;
     const ch = this.channel(trackId);
     if (patch.modular) {
-      playModularVoice(ctx, ch.input, patch.modular, midi, duration, velocity, t0, this.pitchMod(trackId).sum);
+      playModularVoice(ctx, ch.input, patch.modular, midi, duration, velocity, t0, this.pitchMod(trackId).sum, (mod, output) =>
+        MODULAR_SCOPE_TYPES.includes(mod.type) ? attachModularScope(ctx, modularScopeId(trackId, mod.id), output) : undefined);
       return;
     }
     const life = duration + patch.amp.release + 0.25;
