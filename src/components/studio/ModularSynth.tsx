@@ -85,7 +85,7 @@ export function ModularSynth({ track }: { track: Track }) {
     const isPending = !!pending && pkey(pending) === pkey(p);
     return (
       <div key={p.port + (out ? "o" : "i")} className="flex flex-col items-center gap-0.5">
-        <button
+        <Button variant="ghost"
           type="button"
           data-jack={pkey(p)}
           aria-label={`${label(p)}${out ? " output — pick to start a cable" : " input — connect cable here"}`}
@@ -104,15 +104,15 @@ export function ModularSynth({ track }: { track: Track }) {
     return (
       <div className="modular-module" data-module-type={mod.type}>
         <div className="modular-module-header flex w-full items-center justify-between gap-1">
-          <button type="button" aria-label={`Move ${def.label} ${num} left`} disabled={index === 0} onClick={() => moveModule(mod.id, -1)} className="modular-screw"><ChevronLeft className="size-3" /></button>
+          <Button variant="ghost" type="button" aria-label={`Move ${def.label} ${num} left`} disabled={index === 0} onClick={() => moveModule(mod.id, -1)} className="modular-screw"><ChevronLeft className="size-3" /></Button>
           <h4>{def.label} {num}</h4>
-          <button type="button" aria-label={`Move ${def.label} ${num} right`} disabled={index === m.modules.length - 1} onClick={() => moveModule(mod.id, 1)} className="modular-screw"><ChevronRight className="size-3" /></button>
+          <Button variant="ghost" type="button" aria-label={`Move ${def.label} ${num} right`} disabled={index === m.modules.length - 1} onClick={() => moveModule(mod.id, 1)} className="modular-screw"><ChevronRight className="size-3" /></Button>
         </div>
         {def.params.map((p) =>
           p.options ? (
             <div key={p.id} className="flex flex-wrap justify-center gap-0.5" role="group" aria-label={p.label}>
               {p.options.map((o) => (
-                <button key={o} type="button" aria-pressed={mod.params[p.id] === o} onClick={() => setParam(mod.id, p.id, o)} className={`modular-switch ${mod.params[p.id] === o ? "is-on" : ""}`}>{SHORT[o] ?? o}</button>
+                <Button variant="ghost" key={o} type="button" aria-pressed={mod.params[p.id] === o} onClick={() => setParam(mod.id, p.id, o)} className={`modular-switch ${mod.params[p.id] === o ? "is-on" : ""}`}>{SHORT[o] ?? o}</Button>
               ))}
             </div>
           ) : null,
@@ -126,7 +126,7 @@ export function ModularSynth({ track }: { track: Track }) {
           {def.inputs.map((i) => jack({ module: mod.id, port: i.id }, false, i.label))}
           {def.outputs.map((o) => jack({ module: mod.id, port: o.id }, true, o.label))}
         </div>
-        <button type="button" aria-label={`Remove ${def.label} ${num} from rack`} onClick={() => removeModule(mod.id)} className="modular-screw mt-1"><Trash2 className="size-3" /></button>
+        <Button variant="ghost" type="button" aria-label={`Remove ${def.label} ${num} from rack`} onClick={() => removeModule(mod.id)} className="modular-screw mt-1"><Trash2 className="size-3" /></Button>
       </div>
     );
   };
@@ -135,38 +135,38 @@ export function ModularSynth({ track }: { track: Track }) {
     <div className="modular-workstation space-y-2">
       <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Patched rack presets">
         <span className="label-xs mr-1">PRESET RACKS</span>
-        <button type="button" aria-label="Initialize modular patch" onClick={() => {
+        <Button variant="ghost" type="button" aria-label="Initialize modular patch" onClick={() => {
           const modular = initModularPatch();
           setPending(null);
           save(modular);
           previewNote(track.id, 48, 0.75, false, { ...patch, modular });
-        }} className="modular-add font-bold">INITIALIZE</button>
+        }} className="modular-add font-bold">INITIALIZE</Button>
         {MODULAR_PRESETS.map((p) => (
-          <button key={p.name} type="button" onClick={() => {
+          <Button variant="ghost" key={p.name} type="button" onClick={() => {
             const modular = structuredClone(p.modular);
             setPending(null);
             save(modular);
             previewNote(track.id, 48, 0.75, false, { ...patch, modular });
           }} className="modular-add">
             {p.name.replace("Modular Tech ", "")}
-          </button>
+          </Button>
         ))}
       </div>
       <div className="flex flex-wrap items-center gap-1.5" aria-label="Add devices to the rack">
         <span className="label-xs mr-1">ADD DEVICE</span>
         {(Object.keys(MODULE_DEFS) as ModuleType[]).map((t) => (
-          <button key={t} type="button" onClick={() => addModule(t)} className="modular-add"><Plus className="size-3" />{MODULE_DEFS[t].label}</button>
+          <Button variant="ghost" key={t} type="button" onClick={() => addModule(t)} className="modular-add"><Plus className="size-3" />{MODULE_DEFS[t].label}</Button>
         ))}
       </div>
       <div className="flex flex-wrap items-center gap-1.5" role="radiogroup" aria-label="Cable colour">
         <span className="label-xs mr-1">CABLE COLOUR</span>
         {CABLE_COLORS.map((c) => (
-          <button key={c} type="button" role="radio" aria-checked={color === c} aria-label={`${c} cable`} onClick={() => setColor(c)} className={`modular-swatch cable-${c} ${color === c ? "is-on" : ""}`} />
+          <Button variant="ghost" key={c} type="button" role="radio" aria-checked={color === c} aria-label={`${c} cable`} onClick={() => setColor(c)} className={`modular-swatch cable-${c} ${color === c ? "is-on" : ""}`} />
         ))}
         <span className="ml-2 font-mono text-[11px] text-muted-foreground">
           {pending ? `Cable from ${label(pending)} — tap a glowing input.` : "Tap an output jack (ringed), then an input jack."}
         </span>
-        {pending && <button type="button" className="modular-add" onClick={() => setPending(null)}>CANCEL</button>}
+        {pending && <Button variant="ghost" type="button" className="modular-add" onClick={() => setPending(null)}>CANCEL</Button>}
       </div>
 
       <div ref={boxRef} className="modular-case relative" aria-label="Modular Tech Synth case">
@@ -196,7 +196,7 @@ export function ModularSynth({ track }: { track: Track }) {
       <div className="space-y-1" aria-label="Patch cables">
         <div className="flex items-center gap-2">
           <h4 className="label-xs">CABLES ({m.cables.length})</h4>
-          {m.cables.length > 0 && <button type="button" className="modular-add ml-auto" onClick={() => save({ ...m, cables: [] })}>UNPLUG ALL</button>}
+          {m.cables.length > 0 && <Button variant="ghost" type="button" className="modular-add ml-auto" onClick={() => save({ ...m, cables: [] })}>UNPLUG ALL</Button>}
         </div>
         {m.cables.length === 0 && <p className="text-[11px] text-muted-foreground">No cables — nothing reaches an OUTPUT, so the synth is silent.</p>}
         {m.cables.map((c) => (
@@ -209,7 +209,7 @@ export function ModularSynth({ track }: { track: Track }) {
             <input type="range" aria-label={`Cable amount ${label(c.from)} to ${label(c.to)}`} min={-1} max={2} step={0.01} value={c.amount}
               onChange={(e) => save({ ...m, cables: m.cables.map((x) => (x.id === c.id ? { ...x, amount: Number(e.target.value) } : x)) })} className="w-28 accent-primary" />
             <span className="w-10 tabular-nums">{c.amount.toFixed(2)}</span>
-            <button type="button" aria-label={`Unplug ${label(c.from)} to ${label(c.to)}`} onClick={() => save({ ...m, cables: m.cables.filter((x) => x.id !== c.id) })} className="rounded-[3px] border border-border p-0.5 hover:border-destructive"><X className="size-3" /></button>
+            <Button variant="ghost" type="button" aria-label={`Unplug ${label(c.from)} to ${label(c.to)}`} onClick={() => save({ ...m, cables: m.cables.filter((x) => x.id !== c.id) })} className="rounded-[3px] border border-border p-0.5 hover:border-destructive"><X className="size-3" /></Button>
           </div>
         ))}
       </div>
