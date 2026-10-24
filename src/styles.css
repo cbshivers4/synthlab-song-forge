@@ -854,6 +854,9 @@ html[data-reduce-motion] *, html[data-reduce-motion] *::before, html[data-reduce
 .drum-machine[data-phone-view] .drum-display { gap: 8px; overflow-x: auto; white-space: nowrap; }
 .drum-machine[data-phone-view] .drum-display > * { flex-shrink: 0; }
 .drum-machine[data-phone-view] .drum-pad-grid button { min-width: 32px; }
+.drum-machine .mpc-pad .pad-manage-controls { height: 22px; }
+.drum-machine .mpc-pad .pad-manage-controls button { min-height: 20px; height: 20px; min-width: 20px; width: 20px; padding: 0; }
+.drum-machine .mpc-pad .pad-manage-controls [role="checkbox"] { min-height: 16px; height: 16px; min-width: 16px; width: 16px; background: var(--surface-2); }
 .drum-machine[data-phone-view] .drum-steps > div > div:first-child { min-width: 0; }
 .drum-machine[data-phone-view] .drum-steps button { min-width: 48px; }
 .drum-machine[data-phone-view] .drum-steps button.w-24 { width: 96px; }

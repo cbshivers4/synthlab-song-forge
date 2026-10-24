@@ -605,7 +605,7 @@ export function DrumMachine({ track }: { track: Track }) {
                     <DrumInstrumentIcon kind={pad.kind} className="size-[52%]" />
                   </span>
                   <span className="relative min-w-0">
-                    <span className="flex items-center justify-between gap-1" onClick={e => e.stopPropagation()}>
+                    <span className="pad-manage-controls flex items-center justify-between gap-1" onClick={e => e.stopPropagation()}>
                       <Checkbox aria-label={`Select pad ${pad.name}`} checked={selectedPads.includes(pad.id)} onCheckedChange={checked => setSelectedPads(ids => checked ? [...ids.filter(id => id !== pad.id), pad.id] : ids.filter(id => id !== pad.id))} />
                       <Button variant="ghost" size="icon" className="size-7 text-destructive" aria-label={`Delete pad ${pad.name}`} title={`Delete pad ${pad.name}`} disabled={addingSamples} onClick={() => deletePads([pad.id])}><Trash2 className="size-3.5" /></Button>
                     </span>
