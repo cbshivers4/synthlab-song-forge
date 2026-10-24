@@ -20,4 +20,15 @@ describe("expanded modular devices", () => {
       expect(MODULE_DEFS[to.type].inputs.some(p => p.id === cable.to.port)).toBe(true);
     }
   });
+  it.each(Object.keys(MODULE_DEFS) as ModuleType[])("gives %s multiple functional parameters without losing edits", (type) => {
+    const def = MODULE_DEFS[type];
+    expect(def.params.length).toBeGreaterThanOrEqual(2);
+    expect(new Set(def.params.map(p => p.id)).size).toBe(def.params.length);
+    const module = newModule(type);
+    const param = def.params.find(p => !p.options);
+    if (!param) throw new Error("Missing adjustable parameter");
+    module.params[param.id] = param.max ?? 1;
+    const patch = normalizeModular(JSON.parse(JSON.stringify({ version: 2, modules: [module], cables: [] })));
+    expect(patch.modules[0]?.params[param.id]).toBe(param.max ?? 1);
+  });
 });
