@@ -29,6 +29,7 @@ import { SplashScreen } from "@/components/studio/SplashScreen";
 import { PluginRack } from "@/components/studio/PluginRack";
 import { DeviceBar } from "@/components/studio/DeviceBar";
 import { QuickNotes } from "@/components/studio/QuickNotes";
+import { HardwareWindow } from "@/components/studio/HardwareWindow";
 import { FloatingDevice } from "@/components/studio/FloatingDevice";
 import { MenuBar } from "@/components/studio/MenuBar";
 import { ProjectCloseGuard } from "@/components/studio/ProjectCloseGuard";
@@ -255,10 +256,9 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
 
 
   return (
-    <section
-      className="phone-tool-panel rack fixed inset-0 z-40 flex min-w-0 flex-col overflow-x-hidden border-t-2 border-border sm:relative sm:inset-auto sm:z-auto sm:min-h-[240px]"
-       style={{ height: isMobile ? "100dvh" : panel ? "auto" : rackH }}
-    >
+    <HardwareWindow id={panel} enabled={["mixer", "synth", "drums", "keys", "plugins", "sampler", "pads", "mastering", "live", "looper", "reel-recorder", "video-sampler", "studio-view"].includes(panel)}>
+    {windowControls => <>
+
       <div
         onPointerDown={startResize}
         title="Drag to resize this editor"
@@ -271,6 +271,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
           {(panel === "synth" ? synthTrack : selected) && <span className="ml-2 hidden label-xs sm:inline">· {(panel === "synth" ? synthTrack : selected)?.name}</span>}
         </h2>
         <div className="ml-auto flex shrink-0 items-center gap-1">
+          {windowControls}
           {!isMobile && ((panel === "synth" && selected?.kind !== "sampler") || panel === "drums") && (
             <Button
               size="sm"
@@ -383,7 +384,8 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
           </Button>
         </div>
       )}
-    </section>
+    </>}
+    </HardwareWindow>
   );
 }
 

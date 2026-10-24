@@ -50,3 +50,5 @@ WaveformView collapses to its intrinsic 16px inside a <button> (pad grids, chop 
 Pad Sampler saves source-relative chop ranges; bank transforms preserve the source and require replacement confirmation. Pitch-preserving pad stretch runs shared WSOLA offline in a worker and retains pad shaping and manual-save semantics.
 
 Device-conditional UI reads `useIsAppleMobile()` (`src/hooks/use-is-apple-mobile.ts`), never `isAppleMobile()` inside a render body — the server and an iPad would disagree and hydration breaks; `outputRoutingHint(apple)` takes the flag for the same reason. `canPickOutput` stays a pure browser-capability check: iPadOS reports `setSinkId` as available yet every call rejects, so the Output picker is suppressed by the Apple flag and `setOutputDevice` refuses with the Control Centre hint.
+
+HardwareWindow moves/resizes the existing mounted whole editor in canvas coordinates; never clone instrument instances, audio owners, effect devices or modular modules for window presentation.
