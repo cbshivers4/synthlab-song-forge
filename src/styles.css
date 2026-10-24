@@ -2594,3 +2594,6 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
 .phone-console-active .mx-channel-menu { width: 280px; }
 .phone-console-active .mx-channel-menu button { min-height: 44px; font-size: 11px; }
 .phone-console-active .timeline-channel-menu [role="menuitem"] { min-height: 44px; font-size: 13px; }
+.phone-console .mx-console[data-touch-console="true"] .mx-row-head { flex-wrap: wrap !important; min-height: 88px !important; justify-content: flex-start; }
+.phone-console .mx-console:not(.mx-phone) :is(.mx-channel, .mx-master, .mx-routing-strip) { grid-template-rows: 34px 88px 64px 112px 28px 26px 50px 30px 160px 22px 56px 30px 34px; }
+.phone-console .mx-console .mx-channel > .mx-row-head > .channel-menu-trigger { flex-shrink: 0; min-width: 44px; }
