@@ -5,11 +5,9 @@ import { getEngine } from "@/lib/synclab/audio-engine";
 import { levelColor, peakOf } from "@/lib/synclab/level-colors";
 import { useStudio } from "@/lib/synclab/store";
 import type { PluginInstance } from "@/lib/synclab/types";
-import { withDefaultParams } from "@/lib/synclab/plugins";
 import { EffectDisplay } from "./EffectDisplay";
-import { Scope } from "./Scope";
 import { Knob } from "./Knob";
-import { XYPad } from "./XYPad";
+import { EffectWorkbench, effectFamily } from "./EffectWorkbench";
 import { ProEq } from "./ProEq";
 import { VocoderPanel } from "./VocoderPanel";
 
@@ -62,9 +60,8 @@ function RackMeter({ plugin }: { plugin: PluginInstance }) {
 export function RackEffect({ trackId, plugin: p, index, count }: { trackId: string; plugin: PluginInstance; index: number; count: number }) {
   const { togglePluginBypass, movePlugin, removePlugin, setPluginParam } = useStudio();
   const [expanded, setExpanded] = useState(true);
-  const [xyOpen, setXYOpen] = useState(() => withDefaultParams(p).length > 1);
   const readoutParam = p.params.find(param => ["time", "cutoff", "threshold", "drive", "decay", "rate"].includes(param.id)) ?? p.params[0];
-  return <section aria-label={`${p.name} rack module`} data-fx-kind={p.kind} data-fx-skin={p.kind} data-fx-variant={p.name.toLowerCase().includes("echo") ? "echo" : undefined} data-bypassed={p.bypass} className="fx-face hardware-device relative border-y border-border bg-surface">
+  return <section aria-label={`${p.name} rack module`} data-fx-family={effectFamily(p)} data-fx-kind={p.kind} data-fx-skin={p.kind} data-fx-variant={p.name.toLowerCase().includes("echo") ? "echo" : undefined} data-bypassed={p.bypass} className="fx-face hardware-device relative border-y border-border bg-surface">
     <div className="hardware-rack-ear pointer-events-none absolute inset-y-0 left-0 flex w-3 flex-col justify-between border-r border-border py-3 sm:w-5">
       {[0, 1].map((s) => <span key={s} className="hardware-rack-screw mx-auto size-2 rounded-full" />)}
     </div>
@@ -84,12 +81,7 @@ export function RackEffect({ trackId, plugin: p, index, count }: { trackId: stri
         </div>
       </header>
        <div className="fx-output-strip mx-2 py-1"><RackMeter plugin={p} /></div>
-      {expanded && (p.kind === "paraeq" ? <div className="min-w-0 border-t border-border p-2"><ProEq trackId={trackId} plugin={p} /></div> : p.kind === "eq" ? <div className="min-w-0 space-y-2 border-t border-border p-2"><EffectDisplay plugin={p} height={280} onParam={(id, value) => setPluginParam(trackId, p.id, id, value)} /><div className="flex flex-wrap justify-center gap-2">{p.params.filter(param => param.id !== "low" && param.id !== "mid" && param.id !== "high").map(param => <Knob key={param.id} label={param.name} value={param.value} min={param.min} max={param.max} step={1} unit={param.unit ? ` ${param.unit}` : ""} size={48} onChange={value => setPluginParam(trackId, p.id, param.id, value)} midiTarget={{ id: trackId, param: `plugin:${p.id}:${param.id}` }} />)}</div></div> : <div className="grid min-w-0 gap-3 border-t border-border p-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-       <div className="fx-display-deck min-w-0 space-y-1.5"><EffectDisplay plugin={p} height={112} onParam={(id, value) => setPluginParam(trackId, p.id, id, value)} /><Scope scopeId={p.bypass ? `bypassed:${p.id}` : p.id} height={32} /><details className="fx-motion-controls" open={xyOpen} onToggle={(e) => setXYOpen(e.currentTarget.open)}><summary>X / Y CONTROL</summary><XYPad trackId={trackId} plugin={p} /></details></div>
-        <div className="fx-control-deck min-w-0">
-          {p.kind === "vocoder" ? <VocoderPanel trackId={trackId} plugin={p} /> : <div className="fx-knob-bank flex flex-wrap justify-center gap-2">{withDefaultParams(p).map((param) => <Knob key={param.id} label={param.name} value={param.value} min={param.min} max={param.max} step={param.max - param.min > 40 ? 1 : (param.max - param.min) / 200} unit={param.unit ? ` ${param.unit}` : ""} size={56} onChange={(value) => setPluginParam(trackId, p.id, param.id, value)} midiTarget={{ id: trackId, param: `plugin:${p.id}:${param.id}` }} />)}</div>}
-        </div>
-      </div>)}
+      {expanded && (p.kind === "paraeq" ? <div className="min-w-0 border-t border-border p-2"><ProEq trackId={trackId} plugin={p} /></div> : p.kind === "eq" ? <div className="min-w-0 space-y-2 border-t border-border p-2"><EffectDisplay plugin={p} height={280} onParam={(id, value) => setPluginParam(trackId, p.id, id, value)} /><div className="flex flex-wrap justify-center gap-2">{p.params.filter(param => param.id !== "low" && param.id !== "mid" && param.id !== "high").map(param => <Knob key={param.id} label={param.name} value={param.value} min={param.min} max={param.max} step={1} unit={param.unit ? ` ${param.unit}` : ""} size={48} onChange={value => setPluginParam(trackId, p.id, param.id, value)} midiTarget={{ id: trackId, param: `plugin:${p.id}:${param.id}` }} />)}</div></div> : p.kind === "vocoder" ? <div className="fx-control-deck"><VocoderPanel trackId={trackId} plugin={p} /></div> : <EffectWorkbench plugin={p} midiId={trackId} onParam={(id, value) => setPluginParam(trackId, p.id, id, value)} />)}
     </div>
   </section>;
 }
