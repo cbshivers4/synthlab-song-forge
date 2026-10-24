@@ -139,7 +139,7 @@ for (const type of Object.keys(extraControls) as ModuleType[]) {
 }
 MODULE_DEFS.vco.inputs.push({ id: "level", label: "LEVEL CV", kind: "param", scale: 1 });
 MODULE_DEFS.vcf.inputs.push({ id: "resonance", label: "RES CV", kind: "param", scale: 10 });
-MODULE_DEFS.delay.inputs.push({ id: "feedback", label: "FDBK CV", kind: "param", scale: 0.1 });
+MODULE_DEFS.delay.inputs.push({ id: "mix", label: "WET CV", kind: "param", scale: 0.2 });
 MODULE_DEFS.chorus.inputs.push({ id: "rate", label: "RATE CV", kind: "param", scale: 2 });
 MODULE_DEFS.output.inputs.push({ id: "level", label: "LEVEL CV", kind: "param", scale: 0.2 });
 
@@ -287,9 +287,7 @@ export function playModularVoice(ctx: BaseAudioContext, dest: AudioNode, raw: un
       case "delay": {
         const i = ctx.createGain(); const dl = ctx.createDelay(2); dl.delayTime.value = num(mod, "time");
         const fb = ctx.createGain(); fb.gain.value = num(mod, "feedback"); const wet = ctx.createGain(); wet.gain.value = num(mod, "mix");
-        const feedbackCV = ctx.createGain(), limiter = ctx.createWaveShaper();
-        limiter.curve = Float32Array.from({ length: 1024 }, (_, i) => Math.max(-0.9, Math.min(0.9, i / 511.5 - 1)));
-        feedbackCV.connect(limiter).connect(fb.gain); ins.set(key(mod.id, "feedback"), feedbackCV);
+        ins.set(key(mod.id, "mix"), wet.gain);
         const dry = ctx.createGain(); dry.gain.value = 1 - num(mod, "mix") * 0.5; const o = ctx.createGain();
         const tone = ctx.createBiquadFilter(); tone.frequency.value = num(mod, "tone"); o.gain.value = num(mod, "level");
         i.connect(dry).connect(o); i.connect(dl); dl.connect(tone); tone.connect(fb).connect(dl); tone.connect(wet).connect(o);
