@@ -30,7 +30,7 @@ export function VocoderPanel({ trackId, plugin }: { trackId: string; plugin: Plu
   const play = Math.round(get("play", 0));
 
   return (
-    <div className="space-y-3 rounded-sm border border-border bg-[linear-gradient(180deg,hsl(35_18%_18%),hsl(28_14%_11%))] p-3">
+    <div className="space-y-2 rounded-sm border border-border bg-[linear-gradient(180deg,hsl(35_18%_18%),hsl(28_14%_11%))] p-3">
       <div className="flex items-center justify-between">
         <div className="font-mono text-[10px] tracking-[0.2em] text-amber-200/80 uppercase">VX-16 · Analysis / Synthesis</div>
         <div className="flex gap-1">
@@ -42,7 +42,7 @@ export function VocoderPanel({ trackId, plugin }: { trackId: string; plugin: Plu
 
       <div className="vocoder-analysis-window" data-effect-window="vocoder">
         <div className="vocoder-frequency-labels"><span>80 Hz</span><strong>{bands} BANDS · {CARRIERS[carrier]}</strong><span>12 kHz</span></div>
-        <Scope scopeId={plugin.bypass ? `bypassed:${plugin.id}` : plugin.id} height={110} effectKind="vocoder" />
+        <Scope scopeId={plugin.bypass ? `bypassed:${plugin.id}` : plugin.id} height={80} effectKind="vocoder" />
       </div>
 
       <div className="flex flex-wrap gap-1">

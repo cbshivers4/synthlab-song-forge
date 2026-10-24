@@ -32,16 +32,18 @@ export function EffectWorkbench({ plugin, onParam, midiId, midiPrefix = "plugin"
   const steps = params.filter(isStep);
   const heading = family === "space" ? "REFLECTIONS" : family === "buffer" ? "ECHO ENGINE" : family === "dynamics" ? "ENVELOPE" : family === "sequence" ? "CLOCK & SHAPE" : family === "motion" ? "MODULATION" : "COLOR ENGINE";
   const controls = (items: PluginParam[], title: string, section: string) => items.length > 0 && <div className={`fx-section fx-section-${section}`}>
-    <h4>{title}</h4><div className="fx-section-knobs">{items.map(p => <Knob key={p.id} label={p.name} value={p.value} min={p.min} max={p.max} step={(p.max - p.min) / 200} unit={p.unit ? ` ${p.unit}` : ""} size={section === "core" ? 60 : 44} onChange={v => onParam(p.id, v)} midiTarget={{ id: midiId, param: `${midiPrefix}:${plugin.id}:${p.id}` }} />)}</div>
+    <h4>{title}</h4><div className="fx-section-knobs">{items.map(p => <Knob key={p.id} label={p.name} value={p.value} min={p.min} max={p.max} step={(p.max - p.min) / 200} unit={p.unit ? ` ${p.unit}` : ""} size={section === "core" ? 52 : 44} onChange={v => onParam(p.id, v)} midiTarget={{ id: midiId, param: `${midiPrefix}:${plugin.id}:${p.id}` }} />)}</div>
   </div>;
   return <div className="fx-workbench" data-fx-family={family} data-display-kind={plugin.kind} data-window-variant={plugin.name.toLowerCase().includes("echo") ? "tape" : undefined}>
-    {controls(input, family === "dynamics" ? "DETECTOR" : "INPUT FILTER", "input")}
     <div className="fx-section fx-section-display"><h4>{family === "buffer" ? "DELAY BUFFER" : family === "space" ? "SPACE RESPONSE" : family === "sequence" ? "PATTERN RESPONSE" : "SIGNAL RESPONSE"}</h4>
-      <EffectDisplay plugin={plugin} height={140} onParam={onParam} />
-      <Scope scopeId={plugin.bypass ? `bypassed:${plugin.id}` : plugin.id} height={72} effectKind={plugin.kind} />
+      <EffectDisplay plugin={plugin} height={112} onParam={onParam} />
+      <Scope scopeId={plugin.bypass ? `bypassed:${plugin.id}` : plugin.id} height={52} effectKind={plugin.kind} />
     </div>
-    {controls(output, "OUTPUT & BLEND", "output")}
+    <div className="fx-controls-bank">
+    {controls(input, family === "dynamics" ? "DETECTOR" : "INPUT FILTER", "input")}
     {controls(core, heading, "core")}
+    {controls(output, "OUTPUT & BLEND", "output")}
+    </div>
     {steps.length > 0 && <div className="fx-section fx-section-steps"><h4>STEP LEVELS</h4><div className="fx-step-faders">{steps.map((p, i) => <label key={p.id}><input type="range" aria-label={p.name} min={p.min} max={p.max} step={0.01} value={p.value} onChange={e => onParam(p.id, Number(e.target.value))} /><span>{i + 1}</span></label>)}</div></div>}
     <div className="fx-workbench-footer"><span>SYNCLAB · {plugin.kind.toUpperCase()}</span><Button variant="ghost" size="sm" aria-pressed={motion} onClick={() => setMotion(v => !v)}>X / Y</Button></div>
     {motion && <div className="fx-section fx-section-motion"><XYPad plugin={plugin} onParam={onParam} /></div>}
