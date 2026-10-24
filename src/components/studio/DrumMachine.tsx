@@ -6,12 +6,13 @@ import { useSkin } from "@/lib/synclab/skins";
 import { ChevronLeft, ChevronRight, Copy, Plus, RotateCcw, Save, Sparkles, Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Knob } from "./Knob";
 import { MidiLearnButton } from "./MidiLearn";
 import { useStudio } from "@/lib/synclab/store";
 import { factoryKitPad, kitExtraPads, VOICE_DEFS } from "@/lib/synclab/vintage-drums";
-import { DRUM_BANK_LABELS, recallDrumBank } from "@/lib/synclab/drum-banks";
+import { DRUM_BANK_LABELS, recallDrumBank, removeDrumPads } from "@/lib/synclab/drum-banks";
 import { DRUM_KIND_LABEL } from "@/lib/synclab/drum-notes";
 import { DRUM_KITS, GENRES } from "@/lib/synclab/presets";
 import type { DrumKitId } from "@/lib/synclab/types";
@@ -108,6 +109,7 @@ export function DrumMachine({ track }: { track: Track }) {
   const [selectedStep, setSelectedStep] = useState<{ padId: string; index: number } | null>(null);
   const [padSound, setPadSound] = useState("kind:kick");
   const [addingSamples, setAddingSamples] = useState(false);
+  const [selectedPads, setSelectedPads] = useState<string[]>([]);
   const sampleInput = useRef<HTMLInputElement>(null);
   const pads = [...(track.pads ?? [])].sort((a, b) => PAD_ORDER.indexOf(a.kind) - PAD_ORDER.indexOf(b.kind));
   const hitPad = (pad: DrumPad) => {
@@ -144,6 +146,16 @@ export function DrumMachine({ track }: { track: Track }) {
     updateTrack(track.id, recallDrumBank(track, next));
     setSelectedStep(null);
     setFocusPadId(null);
+    setSelectedPads([]);
+  };
+
+  const deletePads = (ids: string[]) => {
+    if (!ids.length || !window.confirm(`Delete ${ids.length === 1 ? 'this pad' : `${ids.length} pads`} and its pattern from Bank ${BANKS[activePattern]}? Other banks and library samples are kept.`)) return;
+    updateTrack(track.id, removeDrumPads(track, ids));
+    setSelectedPads([]);
+    setSelectedStep(null);
+    if (focusPadId && ids.includes(focusPadId)) setFocusPadId(null);
+    toast.success(`${ids.length} ${ids.length === 1 ? 'pad' : 'pads'} deleted from Bank ${BANKS[activePattern]}`);
   };
 
   const copyPattern = () => {
@@ -317,6 +329,10 @@ export function DrumMachine({ track }: { track: Track }) {
         <Button variant="secondary" onClick={() => sampleInput.current?.click()} disabled={addingSamples}><Upload className="size-4" />{addingSamples ? "Loading…" : "Add sample pads"}</Button>
         <input ref={sampleInput} type="file" accept="audio/*" multiple className="hidden" aria-label="Add samples to bank" onChange={e => { const files = Array.from(e.target.files ?? []); e.target.value = ""; void importPads(files); }} />
         <span className="font-mono text-xs text-muted-foreground">{pads.length} pads · Bank {BANKS[activePattern]}</span>
+        {pads.length > 0 && <>
+          <Button variant="outline" disabled={addingSamples} onClick={() => setSelectedPads(selectedPads.length === pads.length ? [] : pads.map(p => p.id))}>{selectedPads.length === pads.length ? 'Deselect all' : 'Select all pads'}</Button>
+          <Button variant="destructive" disabled={addingSamples || selectedPads.length === 0} onClick={() => deletePads(selectedPads)}><Trash2 className="size-4" /> Delete selected{selectedPads.length > 0 ? ` (${selectedPads.length})` : ''}</Button>
+        </>}
       </div>}
 
       {/* Step sequencer */}
@@ -589,6 +605,10 @@ export function DrumMachine({ track }: { track: Track }) {
                     <DrumInstrumentIcon kind={pad.kind} className="size-[52%]" />
                   </span>
                   <span className="relative min-w-0">
+                    <span className="pad-manage-controls flex items-center justify-between gap-1" onClick={e => e.stopPropagation()}>
+                      <Checkbox aria-label={`Select pad ${pad.name}`} checked={selectedPads.includes(pad.id)} onCheckedChange={checked => setSelectedPads(ids => checked ? [...ids.filter(id => id !== pad.id), pad.id] : ids.filter(id => id !== pad.id))} />
+                      <Button variant="ghost" size="icon" className="size-7 text-destructive" aria-label={`Delete pad ${pad.name}`} title={`Delete pad ${pad.name}`} disabled={addingSamples} onClick={() => deletePads([pad.id])}><Trash2 className="size-3.5" /></Button>
+                    </span>
                     <span className="block truncate font-mono text-[10px] font-semibold tracking-wider">{padIndex + 1}. {pad.name}</span>
                     <span className="block font-mono text-[8px] text-muted-foreground">
                       {pad.sample ? "SMP" : pad.kit?.toUpperCase() ?? "909"}{hasSteps ? " ·" : ""}
