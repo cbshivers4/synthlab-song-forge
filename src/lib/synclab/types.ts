@@ -471,6 +471,8 @@ export interface Track {
   drumPatterns?: DrumPad[][] | undefined;
   /** zero-based active drum pattern slot */
   activeDrumPattern?: number | undefined;
+  /** Empty-bank migration applied; later user-created banks must be retained. */
+  drumBanksVersion?: number | undefined;
   plugins?: PluginInstance[] | undefined;
   clips?: AudioClip[] | undefined;
   sampler?: SamplerState | undefined;
