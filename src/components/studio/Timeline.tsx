@@ -1300,11 +1300,11 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
           <TrackNotes track={track} className="ml-auto" />
           <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
             <DropdownMenuTrigger asChild>
-              <Button size="icon" variant="ghost" className="size-6 shrink-0 touch-manipulation" aria-label="Track menu">
-                <MoreVertical className="size-3.5" />
+              <Button size="icon" variant="ghost" className="channel-menu-trigger size-6 shrink-0 touch-manipulation" aria-label="Track menu" title={`${track.name} channel menu`} onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
+                <MoreVertical className="size-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="min-w-56">
+            <DropdownMenuContent align="end" className="timeline-channel-menu min-w-56">
               <DropdownMenuItem onClick={() => setRenaming(true)}>Rename</DropdownMenuItem>
               {editorPanel === "synth" && (
                 <DropdownMenuSub><DropdownMenuSubTrigger><Sliders className="size-4" /> Open instrument</DropdownMenuSubTrigger><DropdownMenuSubContent className="min-w-60">

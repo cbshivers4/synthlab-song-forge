@@ -278,8 +278,8 @@ export function InsertRack({
               </button>
             </div>
             <Dialog open={open === p.id} onOpenChange={(o) => setOpen(o ? p.id : null)}>
-              <DialogContent data-fx-skin={p.kind} className="max-h-[86vh] w-[min(97vw,58rem)] max-w-none overflow-y-auto">
-                <DialogHeader>
+              <DialogContent data-fx-skin={p.kind} data-fx-variant={p.name.toLowerCase().includes("echo") ? "echo" : undefined} className="fx-editor max-h-[86vh] w-[min(97vw,58rem)] max-w-none overflow-y-auto">
+                <DialogHeader className="fx-editor-header">
                   <DialogTitle className="flex items-center gap-2 font-mono uppercase tracking-wider">
                     <button type="button" onClick={() => onBypass(p.id)} title={p.bypass ? "Turn on" : "Bypass"} aria-label="Bypass effect">
                       <Power className={cn("size-4", p.bypass ? "text-muted-foreground" : "text-primary")} />
@@ -292,14 +292,14 @@ export function InsertRack({
                 ) : p.kind === "vocoder" && isTrack ? (
                   <VocoderPanel trackId={midiId} plugin={p} />
                 ) : (
-                <div className="grid gap-3 md:grid-cols-[1.4fr_1fr]">
-                  <div className="space-y-2">
+                <div className="fx-editor-deck grid gap-3 md:grid-cols-[1.4fr_1fr]">
+                  <div className="fx-display-deck space-y-2">
                     <EffectDisplay plugin={p} height={220} onParam={(paramId, v) => onParam(p.id, paramId, v)} />
                     <Scope scopeId={p.id} height={96} />
                    </div>
-                  <div className="space-y-2">
+                  <div className="fx-control-deck space-y-2">
                     <XYPad plugin={p} onParam={(paramId, v) => onParam(p.id, paramId, v)} />
-                    <div className="grid grid-cols-[repeat(auto-fill,minmax(88px,1fr))] justify-items-center gap-2">
+                    <div className="fx-knob-bank grid grid-cols-[repeat(auto-fill,minmax(88px,1fr))] justify-items-center gap-2">
                       {p.params.map((x) => (
                         <Knob
                           key={x.id}
@@ -887,13 +887,14 @@ function ChannelMenu({ t }: { t: Track }) {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <button
+        <Button variant="ghost" size="icon"
+          onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
           aria-label={`${t.name} channel menu`} title="Channel menu"
-          className="shrink-0 text-muted-foreground hover:text-foreground"
+          className="channel-menu-trigger size-6 shrink-0 text-foreground hover:bg-accent"
         >
-          <MoreVertical className="size-3" />
-        </button>
+          <MoreVertical className="size-4" />
+        </Button>
       </PopoverTrigger>
       <PopoverContent align="start" className="mx-channel-menu w-56 space-y-2 p-3" onClick={(e) => e.stopPropagation()}>
         <div className="label-xs">Channel</div>
