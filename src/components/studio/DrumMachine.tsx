@@ -12,7 +12,7 @@ import { Knob } from "./Knob";
 import { MidiLearnButton } from "./MidiLearn";
 import { useStudio } from "@/lib/synclab/store";
 import { factoryKitPad, kitExtraPads, VOICE_DEFS } from "@/lib/synclab/vintage-drums";
-import { DRUM_BANK_LABELS, initializeDrumBanks, recallDrumBank, removeDrumPads } from "@/lib/synclab/drum-banks";
+import { DRUM_BANK_LABELS, DRUM_PATTERN_LABELS, initializeDrumBanks, recallDrumBank, recallDrumSequence, removeDrumPads } from "@/lib/synclab/drum-banks";
 import { DRUM_KIND_LABEL } from "@/lib/synclab/drum-notes";
 import { DRUM_KITS, GENRES } from "@/lib/synclab/presets";
 import type { DrumKitId } from "@/lib/synclab/types";
@@ -133,6 +133,19 @@ export function DrumMachine({ track }: { track: Track }) {
   const stepStart = currentStepPage * pageSize;
   const visibleSteps = Array.from({ length: isMobile ? Math.min(pageSize, track.steps - stepStart) : track.steps }, (_, i) => i + (isMobile ? stepStart : 0));
   const activePattern = Math.max(0, Math.min(7, track.activeDrumPattern ?? 0));
+  const activeSequence = Math.max(0, Math.min(7, track.activeDrumSequence ?? 0));
+  const switchSequence = (next: number, copy = false) => {
+    if (!copy && next === activeSequence) return;
+    updateTrack(track.id, recallDrumSequence(track, next, copy));
+    setSelectedStep(null);
+    setStepPage(0);
+  };
+  const copySequence = () => {
+    const next = (activeSequence + 1) % 8;
+    const existing = track.drumSequences?.[activePattern]?.[next];
+    if (existing && Object.values(existing.hits).some(hit => hit.steps.some(value => value > 0)) && !window.confirm(`Replace Pattern ${next + 1} in Bank ${BANKS[activePattern]}?`)) return;
+    switchSequence(next, true);
+  };
   const focusPad = pads.find((p) => p.id === focusPadId) ?? pads[0];
   useEffect(() => {
     if (!isMobile || !ready || !view.padId) return;
@@ -168,7 +181,9 @@ export function DrumMachine({ track }: { track: Track }) {
     const patterns = [...(track.drumPatterns ?? [])];
     patterns[activePattern] = clonePads(pads);
     patterns[destination] = clonePads(pads);
-    updateTrack(track.id, { drumPatterns: patterns, activeDrumPattern: destination, pads: clonePads(pads) });
+    const drumSequences = structuredClone(track.drumSequences ?? []);
+    drumSequences[destination] = [];
+    updateTrack(track.id, recallDrumBank({ ...track, drumPatterns: patterns, drumSequences }, destination));
     toast.success(`Bank ${BANKS[activePattern]} copied to ${BANKS[destination]}`);
   };
 
@@ -319,6 +334,15 @@ export function DrumMachine({ track }: { track: Track }) {
         </div>
         <Button size="sm" variant="secondary" disabled={addingSamples} onClick={copyPattern}><Copy className="size-4" /> Copy next</Button>
         <Button size="sm" variant="ghost" disabled={addingSamples} onClick={clearPattern}><RotateCcw className="size-4" /> Clear</Button>
+      </div>
+
+      <div className="drum-sequences flex flex-wrap items-center gap-2" role="group" aria-label="Drum patterns">
+        <span className="label-xs">PATTERNS · {activeSequence + 1}</span>
+        <div className="flex flex-wrap gap-1">
+          {DRUM_PATTERN_LABELS.map((number, index) => <Button key={number} size="sm" variant={activeSequence === index ? "default" : "secondary"} className="h-8 w-8 p-0 font-mono" aria-label={`Pattern ${number}`} aria-pressed={activeSequence === index} disabled={addingSamples || transport.recording} onClick={() => switchSequence(index)}>{number}</Button>)}
+        </div>
+        <Button size="sm" variant="secondary" disabled={addingSamples || transport.recording} onClick={copySequence} aria-label="Copy pattern to next"><Copy className="size-4" /> Copy next</Button>
+        <Button size="sm" variant="ghost" disabled={addingSamples || transport.recording} onClick={clearPattern} aria-label="Clear current pattern"><RotateCcw className="size-4" /> Clear</Button>
       </div>
 
       {(phoneView === "pads" || phoneView === "sound") && <div className="flex flex-wrap items-center gap-2" aria-label="Add bank pads">
