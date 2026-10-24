@@ -1,5 +1,7 @@
 # Shared audio logic
 
+Audio entry points unlock phone media in the triggering gesture using valid silent PCM and resume suspended/interrupted contexts; first drum taps restore cached mixer routing/inserts when their channel is absent, so Stop and cold starts cannot leave default routing.
+
 Drum-pad deletion updates both active pads and the active bank snapshot via the shared bank helper; other banks and library assets remain untouched so recalling a bank cannot resurrect deleted pads.
 
 Vintage drum PCM is deterministic, original synthesis cached by kit/kind/decay/sample rate in the existing playDrum path, so live playback and offline rendering share voices and pad shaping. Factory kit loading clears sample overrides while preserving pad IDs, MIDI mappings and patterns.

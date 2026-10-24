@@ -150,15 +150,35 @@ export class SyncLabEngine {
   private masterR: AnalyserNode | null = null;
   private masterBufs = new Map<string, Float32Array>();
   private resumeListenersInstalled = false;
+  private unlockMedia: HTMLAudioElement | null = null;
+  private mediaUnlocked = false;
   private monitorGeneration = 0;
   private recordingStart: Promise<void> | null = null;
   private distortionCurves = new Map<string, Float32Array<ArrayBuffer>>();
 
-
+  /** Called inside the same user gesture as a pad tap, including the first tap. */
+  private unlockAudio() {
+    const ctx = this.ctx;
+    if (!ctx) return;
+    if (ctx.state === "suspended" || (ctx.state as string) === "interrupted") {
+      void ctx.resume().catch(() => undefined);
+    }
+    if (this.mediaUnlocked) return;
+    const session = (navigator as Navigator & { audioSession?: { type: string } }).audioSession;
+    try { if (session) session.type = "playback"; } catch { /* unsupported */ }
+    try {
+      // A valid, non-empty silent WAV is required by older iOS media playback.
+      const el = this.unlockMedia ?? new Audio("data:audio/wav;base64,UklGRnQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YVAAAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA==");
+      el.setAttribute("playsinline", "");
+      this.unlockMedia = el;
+      this.mediaUnlocked = true;
+      void el.play().catch(() => { this.mediaUnlocked = false; });
+    } catch { this.mediaUnlocked = false; }
+  }
 
   init() {
     if (this.ctx) {
-      if (this.ctx.state === "suspended") void this.ctx.resume();
+      this.unlockAudio();
       return this.ctx;
     }
     const Ctor: typeof AudioContext =
@@ -171,25 +191,7 @@ export class SyncLabEngine {
     this.ctx = ctx;
     if (!this.resumeListenersInstalled) {
       this.resumeListenersInstalled = true;
-      // iPhone/iPad: Web Audio is silenced by the ring/silent switch unless the
-      // page's audio session is "playback". Request it, and play a tiny silent
-      // media element inside a user gesture as the fallback for older iOS.
-      const session = (navigator as Navigator & { audioSession?: { type: string } }).audioSession;
-      try { if (session) session.type = "playback"; } catch { /* unsupported */ }
-      let mediaUnlocked = false;
-      const unlockMedia = () => {
-        if (mediaUnlocked) return;
-        mediaUnlocked = true;
-        try {
-          const el = new Audio("data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=");
-          el.setAttribute("playsinline", "");
-          void el.play().catch(() => { mediaUnlocked = false; });
-        } catch { mediaUnlocked = false; }
-      };
-      const resume = () => {
-        unlockMedia();
-        if (this.ctx?.state === "suspended" || (this.ctx?.state as string) === "interrupted") void this.ctx!.resume().catch(() => undefined);
-      };
+      const resume = () => this.unlockAudio();
       window.addEventListener("touchend", resume, { passive: true });
       document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "visible") resume();
@@ -318,6 +320,7 @@ export class SyncLabEngine {
       silentSink.connect(ctx.destination);
       this.vcaMeters.set(id, meter);
     }
+    this.unlockAudio();
     return ctx;
   }
 
@@ -2905,6 +2908,12 @@ export class SyncLabEngine {
 
   playDrum(trackId: string, pad: DrumPad, velocity = 1, when?: number) {
     const ctx = this.init();
+    // A first tap (or a tap after Stop removed channels) must restore saved routing.
+    if (!this.channels.has(trackId)) {
+      this.syncMix(this.mixTracks);
+      const track = this.mixTracks.find(track => track.id === trackId);
+      if (track) this.setInserts(trackId, track.plugins ?? []);
+    }
     const t = Math.max(when ?? ctx.currentTime, ctx.currentTime + 0.002);
     const ch = this.channel(trackId);
     const out = ctx.createGain();
