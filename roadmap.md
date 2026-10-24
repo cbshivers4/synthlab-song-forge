@@ -1,5 +1,7 @@
 # Roadmap — Source-code audit & DAW repair
 
+- [x] Expanded all 21 Modular Tech devices with sound controls, five CV connections and per-device reset; 29 tests passed, browser audio renders confirmed new controls alter every device, desktop/phone knobs and reset checked.
+
 - [x] Modular Tech: six working devices with distinct narrow/wide hardware decks and two connected racks; 8 tests passed, offline audio renders verified each device changes sound, phone/desktop rack and knob checked.
 
 - [x] Reference-led effects: segmented graphite, silver/red and vintage faceplates; mixed Eurorack modules and scoped rails/jacks; phone/desktop rack checked with 7 modules/4 cables and knob change 0→1; 7 related tests pass.

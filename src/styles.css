@@ -2686,3 +2686,11 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
 .modular-workstation .modular-module:is([data-module-type="sub"], [data-module-type="phaser"], [data-module-type="stereo"]) .hardware-knob-label,
 .modular-workstation .modular-module:is([data-module-type="sub"], [data-module-type="phaser"], [data-module-type="stereo"]) .hardware-knob-value { color: var(--module-ink); }
 @media (max-width: 360px) { .modular-workstation .modular-module[data-module-width="2"] { grid-column: auto; } }
+.modular-device-actions { display: flex; justify-content: space-between; width: 100%; padding-top: 6px; }
+.modular-workstation .modular-module[data-module-width="2"] .modular-knob-bank { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px 4px; }
+.modular-workstation .modular-module[data-module-type="mixer"] .modular-knob-bank { grid-template-columns: repeat(2,minmax(0,1fr)); border: 1px solid var(--hardware-silver-dark); margin-top: 8px; }
+.modular-workstation .modular-module[data-module-type="mixer"] .hardware-knob:first-child { grid-column: 1 / -1; }
+.modular-workstation .modular-module[data-module-type="vcf"] { border-top: 6px solid var(--display-green); }
+.modular-workstation .modular-module[data-module-type="delay"] { border-top: 6px solid var(--display-pink); }
+.modular-workstation .modular-module[data-module-type="reverb"] { border-top: 6px double var(--hardware-silver); }
+.modular-workstation .modular-module .hardware-knob-label { overflow-wrap: anywhere; white-space: normal; min-height: 24px; display: grid; place-items: center; }

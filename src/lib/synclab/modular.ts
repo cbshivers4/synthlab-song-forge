@@ -109,6 +109,40 @@ export const MODULE_DEFS: Record<ModuleType, ModuleDef> = {
     inputs: [{ id: "in", label: "IN", kind: "audio" }, { id: "pan", label: "PAN CV", kind: "param", scale: 1 }], outputs: [] },
 };
 
+// New controls default to the old signal path so existing racks keep their sound.
+const extraControls: Partial<Record<ModuleType, ModuleDef["params"]>> = {
+  vco: [{ id: "semitone", label: "SEMITONE", min: -12, max: 12, step: 1, def: 0 }, { id: "level", label: "LEVEL", min: 0, max: 1, def: 1 }],
+  noise: [{ id: "level", label: "LEVEL", min: 0, max: 1, def: 1 }, { id: "tone", label: "TONE", min: 100, max: 20000, step: 10, unit: "Hz", def: 20000 }],
+  lfo: [{ id: "depth", label: "DEPTH", min: 0, max: 2, def: 1 }, { id: "offset", label: "OFFSET", min: -1, max: 1, def: 0 }],
+  env: [{ id: "amount", label: "AMOUNT", min: 0, max: 2, def: 1 }],
+  vcf: [{ id: "input", label: "INPUT", min: 0, max: 2, def: 1 }, { id: "tracking", label: "KEY TRACK", min: 0, max: 1, def: 0 }],
+  vca: [{ id: "level", label: "OUTPUT", min: 0, max: 2, def: 1 }],
+  mixer: [1, 2, 3, 4].map(i => ({ id: `level${i}`, label: `INPUT ${i}`, min: 0, max: 1.5, def: 1 })),
+  drive: [{ id: "tone", label: "TONE", min: 100, max: 20000, step: 10, unit: "Hz", def: 20000 }, { id: "mix", label: "BLEND", min: 0, max: 1, def: 1 }, { id: "level", label: "OUTPUT", min: 0, max: 1.5, def: 1 }],
+  delay: [{ id: "tone", label: "ECHO TONE", min: 100, max: 20000, step: 10, unit: "Hz", def: 20000 }, { id: "level", label: "OUTPUT", min: 0, max: 1.5, def: 1 }],
+  fold: [{ id: "mix", label: "BLEND", min: 0, max: 1, def: 1 }, { id: "level", label: "OUTPUT", min: 0, max: 1.5, def: 1 }],
+  ring: [{ id: "frequency", label: "OSC FREQ", min: 0, max: 2000, step: 1, unit: "Hz", def: 0 }, { id: "depth", label: "OSC DEPTH", min: 0, max: 1, def: 0 }],
+  sh: [{ id: "offset", label: "OFFSET", min: -1, max: 1, def: 0 }],
+  chorus: [{ id: "time", label: "DELAY", min: 10, max: 40, step: 1, unit: "ms", def: 15 }, { id: "feedback", label: "FEEDBACK", min: 0, max: 0.8, def: 0 }],
+  reverb: [{ id: "predelay", label: "PREDELAY", min: 0, max: 200, step: 1, unit: "ms", def: 0 }, { id: "tone", label: "DAMPING", min: 200, max: 20000, step: 10, unit: "Hz", def: 20000 }],
+  sub: [{ id: "fine", label: "FINE", min: -100, max: 100, step: 1, unit: "c", def: 0 }],
+  formant: [{ id: "level", label: "OUTPUT", min: 0, max: 2, def: 1 }],
+  phaser: [{ id: "stages", label: "STAGES", options: ["2", "4", "6", "8"], def: "4" }, { id: "resonance", label: "RESONANCE", min: 0.1, max: 4, def: 0.7 }],
+  compressor: [{ id: "knee", label: "SOFT KNEE", min: 0, max: 40, step: 1, unit: "dB", def: 6 }, { id: "mix", label: "PARALLEL", min: 0, max: 1, def: 1 }],
+  stereo: [{ id: "wave", label: "MOTION WAVE", options: WAVES, def: "sine" }, { id: "level", label: "OUTPUT", min: 0, max: 1.5, def: 1 }],
+  attenuverter: [{ id: "smooth", label: "CV FILTER", min: 1, max: 20000, step: 1, unit: "Hz", def: 20000 }],
+  output: [{ id: "pan", label: "PAN", min: -1, max: 1, def: 0 }],
+};
+for (const type of Object.keys(extraControls) as ModuleType[]) {
+  MODULE_DEFS[type].params.push(...(extraControls[type] ?? []));
+  if (MODULE_DEFS[type].params.length >= 5) MODULE_DEFS[type].hp = 2;
+}
+MODULE_DEFS.vco.inputs.push({ id: "level", label: "LEVEL CV", kind: "param", scale: 1 });
+MODULE_DEFS.vcf.inputs.push({ id: "resonance", label: "RES CV", kind: "param", scale: 10 });
+MODULE_DEFS.delay.inputs.push({ id: "mix", label: "WET CV", kind: "param", scale: 0.2 });
+MODULE_DEFS.chorus.inputs.push({ id: "rate", label: "RATE CV", kind: "param", scale: 2 });
+MODULE_DEFS.output.inputs.push({ id: "level", label: "LEVEL CV", kind: "param", scale: 0.2 });
+
 let n = 0;
 const nid = (p: string) => `${p}-${Date.now().toString(36)}-${(n++).toString(36)}`;
 export const cableId = () => nid("cab");
@@ -197,69 +231,92 @@ export function playModularVoice(ctx: BaseAudioContext, dest: AudioNode, raw: un
         const o = ctx.createOscillator();
         o.type = str(mod, "wave") as OscillatorType;
         o.frequency.value = freq * Math.pow(2, num(mod, "octave"));
-        o.detune.value = num(mod, "fine");
+        o.detune.value = num(mod, "fine") + num(mod, "semitone") * 100;
         if (pitchBus) pitchBus.connect(o.detune);
-        sources.push(o); outs.set(key(mod.id, "out"), o);
+        const level = ctx.createGain(); level.gain.value = num(mod, "level"); o.connect(level);
+        ins.set(key(mod.id, "level"), level.gain);
+        sources.push(o); outs.set(key(mod.id, "out"), level);
         ins.set(key(mod.id, "pitch"), o.detune); ins.set(key(mod.id, "fm"), o.frequency);
         break;
       }
       case "noise": {
         const s = ctx.createBufferSource(); s.buffer = noiseBuffer(ctx, str(mod, "color")); s.loop = true;
-        sources.push(s); outs.set(key(mod.id, "out"), s); break;
+        const tone = ctx.createBiquadFilter(); tone.frequency.value = num(mod, "tone");
+        const level = ctx.createGain(); level.gain.value = num(mod, "level"); s.connect(tone).connect(level);
+        sources.push(s); outs.set(key(mod.id, "out"), level); break;
       }
       case "lfo": {
         const o = ctx.createOscillator(); o.type = str(mod, "wave") as OscillatorType; o.frequency.value = num(mod, "rate");
-        sources.push(o); outs.set(key(mod.id, "out"), o); ins.set(key(mod.id, "rate"), o.frequency); break;
+        const depth = ctx.createGain(), output = ctx.createGain(), offset = ctx.createConstantSource();
+        depth.gain.value = num(mod, "depth"); offset.offset.value = num(mod, "offset");
+        o.connect(depth).connect(output); offset.connect(output); sources.push(o, offset);
+        outs.set(key(mod.id, "out"), output); ins.set(key(mod.id, "rate"), o.frequency); break;
       }
       case "env": {
         const s = ctx.createConstantSource(); const p = s.offset;
         const a = Math.max(0.001, num(mod, "attack")), d = Math.max(0.005, num(mod, "decay")), su = num(mod, "sustain"), r = Math.max(0.005, num(mod, "release"));
         p.setValueAtTime(0, t0); p.linearRampToValueAtTime(1, t0 + a); p.setTargetAtTime(su, t0 + a, d / 3);
         const rel = t0 + Math.max(duration, a); p.cancelScheduledValues(rel); p.setTargetAtTime(0, rel, r / 3);
-        sources.push(s); outs.set(key(mod.id, "out"), s); break;
+        const amount = ctx.createGain(); amount.gain.value = num(mod, "amount"); s.connect(amount);
+        sources.push(s); outs.set(key(mod.id, "out"), amount); break;
       }
       case "vcf": {
         const i = ctx.createGain(); const f = ctx.createBiquadFilter();
         f.type = str(mod, "type") as BiquadFilterType; f.frequency.value = num(mod, "cutoff"); f.Q.value = num(mod, "resonance");
+        i.gain.value = num(mod, "input"); f.detune.value = (midi - 60) * 100 * num(mod, "tracking");
+        ins.set(key(mod.id, "resonance"), f.Q);
         i.connect(f); ins.set(key(mod.id, "in"), i); ins.set(key(mod.id, "cutoff"), f.frequency); outs.set(key(mod.id, "out"), f); break;
       }
       case "vca": {
         const i = ctx.createGain(); const g = ctx.createGain(); g.gain.value = num(mod, "bias");
-        i.connect(g); ins.set(key(mod.id, "in"), i); ins.set(key(mod.id, "cv"), g.gain); outs.set(key(mod.id, "out"), g); break;
+        const output = ctx.createGain(); output.gain.value = num(mod, "level");
+        i.connect(g).connect(output); ins.set(key(mod.id, "in"), i); ins.set(key(mod.id, "cv"), g.gain); outs.set(key(mod.id, "out"), output); break;
       }
       case "mixer": {
         const g = ctx.createGain(); g.gain.value = num(mod, "level");
-        for (let k = 1; k <= 4; k++) ins.set(key(mod.id, `in${k}`), g);
+        for (let k = 1; k <= 4; k++) { const input = ctx.createGain(); input.gain.value = num(mod, `level${k}`); input.connect(g); ins.set(key(mod.id, `in${k}`), input); }
         outs.set(key(mod.id, "out"), g); break;
       }
       case "drive": {
         const i = ctx.createGain(); i.gain.value = 1 + num(mod, "amount") * 3; const w = ctx.createWaveShaper(); w.curve = driveCurve(num(mod, "amount")); w.oversample = "2x";
-        i.connect(w); ins.set(key(mod.id, "in"), i); outs.set(key(mod.id, "out"), w); break;
+        const tone = ctx.createBiquadFilter(), wet = ctx.createGain(), dry = ctx.createGain(), output = ctx.createGain();
+        tone.frequency.value = num(mod, "tone"); wet.gain.value = num(mod, "mix"); dry.gain.value = 1 - num(mod, "mix"); output.gain.value = num(mod, "level");
+        const input = ctx.createGain(); input.connect(dry).connect(output); input.connect(i).connect(w).connect(tone).connect(wet).connect(output);
+        ins.set(key(mod.id, "in"), input); outs.set(key(mod.id, "out"), output); break;
       }
       case "delay": {
         const i = ctx.createGain(); const dl = ctx.createDelay(2); dl.delayTime.value = num(mod, "time");
         const fb = ctx.createGain(); fb.gain.value = num(mod, "feedback"); const wet = ctx.createGain(); wet.gain.value = num(mod, "mix");
+        ins.set(key(mod.id, "mix"), wet.gain);
         const dry = ctx.createGain(); dry.gain.value = 1 - num(mod, "mix") * 0.5; const o = ctx.createGain();
-        i.connect(dry).connect(o); i.connect(dl); dl.connect(fb).connect(dl); dl.connect(wet).connect(o);
+        const tone = ctx.createBiquadFilter(); tone.frequency.value = num(mod, "tone"); o.gain.value = num(mod, "level");
+        i.connect(dry).connect(o); i.connect(dl); dl.connect(tone); tone.connect(fb).connect(dl); tone.connect(wet).connect(o);
         ins.set(key(mod.id, "in"), i); ins.set(key(mod.id, "time"), dl.delayTime); outs.set(key(mod.id, "out"), o); break;
       }
       case "fold": {
         const i = ctx.createGain(); i.gain.value = num(mod, "gain"); const w = ctx.createWaveShaper(); w.curve = foldCurve(num(mod, "folds")); w.oversample = "4x";
-        const o = ctx.createGain(); o.gain.value = 0.8;
-        i.connect(w).connect(o); ins.set(key(mod.id, "in"), i); ins.set(key(mod.id, "gain"), i.gain); outs.set(key(mod.id, "out"), o); break;
+        const o = ctx.createGain(), wet = ctx.createGain(), dry = ctx.createGain(), input = ctx.createGain(); o.gain.value = 0.8 * num(mod, "level");
+        wet.gain.value = num(mod, "mix"); dry.gain.value = 1 - num(mod, "mix");
+        input.connect(dry).connect(o); input.connect(i).connect(w).connect(wet).connect(o); ins.set(key(mod.id, "in"), input); ins.set(key(mod.id, "gain"), i.gain); outs.set(key(mod.id, "out"), o); break;
       }
       case "ring": {
         const i = ctx.createGain(); const r = ctx.createGain(); r.gain.value = 1 - num(mod, "mix");
+        if (num(mod, "frequency") > 0 && num(mod, "depth") > 0) {
+          const osc = ctx.createOscillator(), depth = ctx.createGain(); osc.frequency.value = num(mod, "frequency"); depth.gain.value = num(mod, "depth") * num(mod, "mix");
+          osc.connect(depth).connect(r.gain); sources.push(osc);
+        }
         i.connect(r); ins.set(key(mod.id, "in"), i); ins.set(key(mod.id, "mod"), r.gain); outs.set(key(mod.id, "out"), r); break;
       }
       case "sh": {
         const s = ctx.createConstantSource(); const rate = Math.max(0.5, num(mod, "rate")), range = num(mod, "range");
-        for (let t = t0; t < stopAt; t += 1 / rate) s.offset.setValueAtTime((Math.random() * 2 - 1) * range, t);
+        for (let t = t0; t < stopAt; t += 1 / rate) s.offset.setValueAtTime((Math.random() * 2 - 1) * range + num(mod, "offset"), t);
         sources.push(s); outs.set(key(mod.id, "out"), s); break;
       }
       case "chorus": {
-        const i = ctx.createGain(); const dl = ctx.createDelay(0.1); dl.delayTime.value = 0.015;
+        const i = ctx.createGain(); const dl = ctx.createDelay(0.1); dl.delayTime.value = num(mod, "time") / 1000;
+        const feedback = ctx.createGain(); feedback.gain.value = num(mod, "feedback"); dl.connect(feedback).connect(dl);
         const lfo = ctx.createOscillator(); lfo.frequency.value = num(mod, "rate"); const dep = ctx.createGain(); dep.gain.value = 0.008 * num(mod, "depth");
+        ins.set(key(mod.id, "rate"), lfo.frequency);
         lfo.connect(dep).connect(dl.delayTime); sources.push(lfo);
         const wet = ctx.createGain(); wet.gain.value = num(mod, "mix"); const dry = ctx.createGain(); dry.gain.value = 1 - num(mod, "mix") * 0.5; const o = ctx.createGain();
         i.connect(dry).connect(o); i.connect(dl).connect(wet).connect(o);
@@ -268,19 +325,21 @@ export function playModularVoice(ctx: BaseAudioContext, dest: AudioNode, raw: un
       case "reverb": {
         const i = ctx.createGain(); const cv = ctx.createConvolver(); cv.buffer = springIR(ctx, num(mod, "size"));
         const wet = ctx.createGain(); wet.gain.value = num(mod, "mix") * 0.6; const dry = ctx.createGain(); dry.gain.value = 1 - num(mod, "mix") * 0.5; const o = ctx.createGain();
-        i.connect(dry).connect(o); i.connect(cv).connect(wet).connect(o);
+        const predelay = ctx.createDelay(1), tone = ctx.createBiquadFilter(); predelay.delayTime.value = num(mod, "predelay") / 1000; tone.frequency.value = num(mod, "tone");
+        i.connect(dry).connect(o); i.connect(predelay).connect(cv).connect(tone).connect(wet).connect(o);
         ins.set(key(mod.id, "in"), i); outs.set(key(mod.id, "out"), o); break;
       }
       case "sub": {
         const osc = ctx.createOscillator(); osc.type = str(mod, "wave") as OscillatorType;
         osc.frequency.value = freq * Math.pow(2, num(mod, "octave"));
+        osc.detune.value = num(mod, "fine");
         if (pitchBus) pitchBus.connect(osc.detune);
         const level = ctx.createGain(); level.gain.value = num(mod, "level"); osc.connect(level);
         sources.push(osc); ins.set(key(mod.id, "pitch"), osc.detune); outs.set(key(mod.id, "out"), level); break;
       }
       case "formant": {
         const input = ctx.createGain(), output = ctx.createGain(), dry = ctx.createGain();
-        const mix = num(mod, "mix"); dry.gain.value = 1 - mix; input.connect(dry).connect(output);
+        const mix = num(mod, "mix"); dry.gain.value = 1 - mix; output.gain.value = num(mod, "level"); input.connect(dry).connect(output);
         const vowels: Record<string, number[]> = { A: [800, 1150, 2900], E: [400, 1700, 2600], I: [350, 2000, 2800], O: [450, 800, 2830], U: [325, 700, 2530] };
         const shiftCV = ctx.createGain();
         for (const frequency of vowels[str(mod, "vowel")] ?? vowels["A"] ?? []) {
@@ -297,8 +356,8 @@ export function playModularVoice(ctx: BaseAudioContext, dest: AudioNode, raw: un
         const lfo = ctx.createOscillator(), depth = ctx.createGain(); lfo.frequency.value = num(mod, "rate");
         depth.gain.value = num(mod, "depth") * 1600; lfo.connect(depth); sources.push(lfo);
         let previous: AudioNode = input;
-        for (let stage = 0; stage < 4; stage++) {
-          const filter = ctx.createBiquadFilter(); filter.type = "allpass"; filter.Q.value = 0.7;
+        for (let stage = 0; stage < num(mod, "stages"); stage++) {
+          const filter = ctx.createBiquadFilter(); filter.type = "allpass"; filter.Q.value = num(mod, "resonance");
           filter.frequency.value = num(mod, "center") * (1 + stage * 0.25); depth.connect(filter.detune);
           previous.connect(filter); previous = filter;
         }
@@ -306,26 +365,34 @@ export function playModularVoice(ctx: BaseAudioContext, dest: AudioNode, raw: un
       }
       case "compressor": {
         const comp = ctx.createDynamicsCompressor(), makeup = ctx.createGain();
-        comp.threshold.value = num(mod, "threshold"); comp.ratio.value = num(mod, "ratio"); comp.knee.value = 6;
+        comp.threshold.value = num(mod, "threshold"); comp.ratio.value = num(mod, "ratio"); comp.knee.value = num(mod, "knee");
         comp.attack.value = num(mod, "attack") / 1000; comp.release.value = num(mod, "release") / 1000;
         makeup.gain.value = Math.pow(10, num(mod, "makeup") / 20); comp.connect(makeup);
-        ins.set(key(mod.id, "in"), comp); outs.set(key(mod.id, "out"), makeup); break;
+        const input = ctx.createGain(), dry = ctx.createGain(), wet = ctx.createGain(), output = ctx.createGain();
+        dry.gain.value = 1 - num(mod, "mix"); wet.gain.value = num(mod, "mix");
+        input.connect(dry).connect(output); input.connect(comp); makeup.connect(wet).connect(output);
+        ins.set(key(mod.id, "in"), input); outs.set(key(mod.id, "out"), output); break;
       }
       case "stereo": {
         const pan = ctx.createStereoPanner(), lfo = ctx.createOscillator(), depth = ctx.createGain();
         pan.pan.value = num(mod, "pan"); lfo.frequency.value = num(mod, "rate"); depth.gain.value = num(mod, "depth");
+        lfo.type = str(mod, "wave") as OscillatorType;
+        const output = ctx.createGain(); output.gain.value = num(mod, "level"); pan.connect(output);
         lfo.connect(depth).connect(pan.pan); sources.push(lfo);
-        ins.set(key(mod.id, "in"), pan); ins.set(key(mod.id, "pan"), pan.pan); outs.set(key(mod.id, "out"), pan); break;
+        ins.set(key(mod.id, "in"), pan); ins.set(key(mod.id, "pan"), pan.pan); outs.set(key(mod.id, "out"), output); break;
       }
       case "attenuverter": {
         const input = ctx.createGain(), output = ctx.createGain(), offset = ctx.createConstantSource();
         input.gain.value = num(mod, "amount"); offset.offset.value = num(mod, "offset");
-        input.connect(output); offset.connect(output); sources.push(offset);
+        const smooth = ctx.createBiquadFilter(); smooth.frequency.value = num(mod, "smooth");
+        input.connect(smooth).connect(output); offset.connect(output); sources.push(offset);
         ins.set(key(mod.id, "in"), input); outs.set(key(mod.id, "out"), output); break;
       }
       case "output": {
         const i = ctx.createGain(); const pan = ctx.createStereoPanner(); const o = ctx.createGain();
+        pan.pan.value = num(mod, "pan");
         o.gain.value = num(mod, "level") * (0.35 + 0.65 * velocity);
+        ins.set(key(mod.id, "level"), o.gain);
         i.connect(pan).connect(o).connect(dest); finals.push(o);
         ins.set(key(mod.id, "in"), i); ins.set(key(mod.id, "pan"), pan.pan); break;
       }

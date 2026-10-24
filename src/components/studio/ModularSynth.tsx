@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Plus, Trash2, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, RotateCcw, Trash2, X } from "lucide-react";
 import { Knob } from "./Knob";
 import { Button } from "@/components/ui/button";
 import { canvasPoint } from "@/lib/synclab/canvas-point";
@@ -104,11 +104,11 @@ export function ModularSynth({ track }: { track: Track }) {
     );
   };
 
-  const Device = ({ mod, index }: { mod: ModModule; index: number }) => {
+  const renderDevice = (mod: ModModule, index: number) => {
     const def = MODULE_DEFS[mod.type];
     const num = m.modules.filter((x) => x.type === mod.type).indexOf(mod) + 1;
     return (
-      <div className="modular-module" data-module-type={mod.type} data-module-width={def.hp}>
+      <div key={mod.id} className="modular-module" data-module-type={mod.type} data-module-width={def.hp}>
         <div className="modular-module-header flex w-full items-center justify-between gap-1">
           <Button variant="ghost" type="button" aria-label={`Move ${def.label} ${num} left`} disabled={index === 0} onClick={() => moveModule(mod.id, -1)} className="modular-screw"><ChevronLeft className="size-3" /></Button>
           <h4>{def.label} {num}</h4>
@@ -120,7 +120,7 @@ export function ModularSynth({ track }: { track: Track }) {
           p.options ? (
             <div key={p.id} className="flex flex-wrap justify-center gap-0.5" role="group" aria-label={p.label}>
               {p.options.map((o) => (
-                <Button variant="ghost" key={o} type="button" aria-pressed={mod.params[p.id] === o} onClick={() => setParam(mod.id, p.id, o)} className={`modular-switch ${mod.params[p.id] === o ? "is-on" : ""}`}>{SHORT[o] ?? o}</Button>
+                <Button variant="ghost" key={o} type="button" aria-pressed={(mod.params[p.id] ?? p.def) === o} onClick={() => setParam(mod.id, p.id, o)} className={`modular-switch ${(mod.params[p.id] ?? p.def) === o ? "is-on" : ""}`}>{SHORT[o] ?? o}</Button>
               ))}
             </div>
           ) : null,
@@ -134,7 +134,10 @@ export function ModularSynth({ track }: { track: Track }) {
           {def.inputs.map((i) => jack({ module: mod.id, port: i.id }, false, i.label))}
           {def.outputs.map((o) => jack({ module: mod.id, port: o.id }, true, o.label))}
         </div>
-        <Button variant="ghost" type="button" aria-label={`Remove ${def.label} ${num} from rack`} onClick={() => removeModule(mod.id)} className="modular-screw mt-1"><Trash2 className="size-3" /></Button>
+        <div className="modular-device-actions">
+          <Button variant="ghost" type="button" title={`Reset ${def.label} controls`} aria-label={`Reset ${def.label} ${num} controls`} onClick={() => save({ ...m, modules: m.modules.map(x => x.id === mod.id ? { ...x, params: Object.fromEntries(def.params.map(p => [p.id, p.def])) } : x) })} className="modular-screw"><RotateCcw className="size-3" /></Button>
+          <Button variant="ghost" type="button" title={`Remove ${def.label}`} aria-label={`Remove ${def.label} ${num} from rack`} onClick={() => removeModule(mod.id)} className="modular-screw"><Trash2 className="size-3" /></Button>
+        </div>
       </div>
     );
   };
@@ -185,7 +188,7 @@ export function ModularSynth({ track }: { track: Track }) {
           </div>
         ) : (
           <div className="modular-module-grid">
-            {m.modules.map((mod, i) => <Device key={mod.id} mod={mod} index={i} />)}
+            {m.modules.map(renderDevice)}
           </div>
         )}
         <div className="modular-rail" aria-hidden />
