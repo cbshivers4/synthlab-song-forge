@@ -1,5 +1,7 @@
 # Roadmap — Source-code audit & DAW repair
 
+- [ ] Add authentic Detroit techno artist wall pictures to Studio View and verify the room remains accessible.
+
 - [x] Whole hardware editors have float, header-drag, corner-resize, fit and dock controls; desktop and sideways-touch phone movement/resize verified, preset recall preserved; 9 tests passed.
 
 - [x] Compacted shared effect hardware, packed control decks, reduced rack/mixer widths and EQ/vocoder heights; desktop rack and phone preset recall checked, 29 tests passed.
