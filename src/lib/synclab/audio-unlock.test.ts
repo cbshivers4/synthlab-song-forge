@@ -23,7 +23,7 @@ describe('drum gesture audio unlocking', () => {
     engine.init();
     expect(resume).toHaveBeenCalledTimes(1);
     expect(play).toHaveBeenCalledTimes(1);
-    expect(navigator.audioSession?.type).toBe('playback');
+    expect((navigator as Navigator & { audioSession?: { type: string } }).audioSession?.type).toBe('playback');
     const wav = Buffer.from(urls[0]?.split(',')[1] ?? '', 'base64');
     expect(wav.readUInt32LE(40)).toBe(80);
     expect(wav.length).toBe(124);
