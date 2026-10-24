@@ -6,6 +6,7 @@ import type { Track } from "@/lib/synclab/types";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { Scope } from "./Scope";
 import { StudioBack } from "./StudioBack";
+import { StudioWallGallery } from "./StudioWallGallery";
 import roomImage from "@/assets/studio-room.jpg";
 
 function InstrumentDrawing({ track }: { track: Track }) {
@@ -181,6 +182,7 @@ export function StudioView() {
       <img src={roomImage} width={1536} height={1024} alt="Graphite music studio with acoustic wall panels" className="pointer-events-none absolute inset-0 h-full w-full object-cover" />
       <div ref={contentRef} className="studio-room-content relative" style={fit < 1 ? { transform: `scale(${fit})`, transformOrigin: "top center" } : undefined}>
         <div className="studio-room-brand font-display">SYNCLAB<span>CREATE. RECORD. PRODUCE. FINISH.</span></div>
+        <StudioWallGallery />
         <div className="studio-control-desk">
           <Button variant="ghost" className="studio-monitor" aria-label="Left studio monitor — open mastering" onClick={() => open("mastering")}><MonitorDrawing /><span>MONITOR L</span></Button>
           <div className="studio-desk-center">

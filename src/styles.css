@@ -112,6 +112,10 @@ html[data-reduce-motion] *, html[data-reduce-motion] *::before, html[data-reduce
   --studio-speaker: oklch(0.12 0.005 255);
   --studio-speaker-inner: oklch(0.28 0.008 255);
   --studio-room-overlay: color-mix(in oklab, var(--background) 28%, transparent);
+  --studio-photo-mat: oklch(0.86 0.008 90);
+  --studio-photo-frame: var(--studio-speaker);
+  --studio-photo-ink: var(--studio-metal-dark);
+  --studio-photo-shadow: 0 5px 9px oklch(0 0 0 / 0.55), inset 0 0 0 1px var(--studio-metal);
   --keyboard-natural: oklch(0.96 0.005 90);
   --keyboard-sharp: oklch(0.14 0.008 255);
   --keyboard-active: var(--primary);
@@ -1396,6 +1400,19 @@ html[data-reduce-motion] *, html[data-reduce-motion] *::before, html[data-reduce
 .studio-room[data-studio-fit="true"] .studio-room-content { padding-bottom: 6px; }
 .studio-room-brand { text-align: center; font-size: 18px; font-weight: 800; color: var(--foreground); text-shadow: var(--shadow-panel); }
 .studio-room-brand span { display: block; font-size: 9px; font-weight: 500; margin-top: 4px; color: var(--foreground); }
+.studio-wall-gallery { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px; max-width: 920px; margin: 16px auto 22px; width: 100%; }
+.studio-artist-frame { display: flex; flex-direction: column; gap: 0; height: auto; min-width: 0; padding: 5px; border: 3px solid var(--studio-photo-frame); border-radius: 1px; background: var(--studio-photo-mat); box-shadow: var(--studio-photo-shadow); white-space: normal; }
+.studio-artist-frame:hover { background: var(--studio-photo-mat); border-color: var(--studio-metal); }
+.studio-artist-photo { display: block; aspect-ratio: 4 / 3; width: 100%; overflow: hidden; background: var(--studio-photo-frame); }
+.studio-artist-photo img { width: 100%; height: 100%; object-fit: contain; }
+.studio-artist-plaque { display: flex; align-items: center; justify-content: center; min-height: 28px; padding: 4px 0 0; font-size: 9px; line-height: 1.2; font-weight: 700; color: var(--studio-photo-ink); text-align: center; overflow-wrap: anywhere; }
+.studio-artist-enlarged { width: 100%; max-height: 55dvh; object-fit: contain; background: var(--studio-photo-frame); }
+.studio-back-rack > .studio-wall-gallery { margin-top: -16px; margin-bottom: -12px; }
+@media (max-width: 767px) {
+  .studio-wall-gallery { gap: 7px; margin: 12px auto 18px; }
+  .studio-artist-frame { padding: 3px; border-width: 2px; }
+  .studio-artist-plaque { font-size: 8px; min-height: 30px; }
+}
 .studio-control-desk { display: grid; grid-template-columns: 90px minmax(0, 1fr) 90px; gap: 14px; align-items: start; max-width: 760px; margin: 12px auto 0; }
 .studio-monitor { height: 168px; width: 90px; display: flex; flex-direction: column; gap: 0; padding: 0; }
 .studio-monitor span { font-size: 8px; color: var(--foreground); }

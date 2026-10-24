@@ -5,6 +5,7 @@ import { useStudio } from "@/lib/synclab/store";
 import type { PluginInstance, Track } from "@/lib/synclab/types";
 import { toast } from "sonner";
 import roomImage from "@/assets/studio-room.jpg";
+import { StudioWallGallery } from "./StudioWallGallery";
 
 /**
  * Reason-style rear of the studio rack. Every cable mirrors the real signal
@@ -276,6 +277,7 @@ export function StudioBack() {
       <div ref={boxRef} className="studio-back-rack relative" style={view.phone ? { width: view.width, transform: `scale(${view.scale})`, transformOrigin: "top left" } : undefined} aria-label="Back of the studio rack — audio cable routing">
         <img src={roomImage} alt="" className="studio-back-room-image" />
         <div className="studio-room-brand font-display">SYNCLAB<span>STUDIO · BACK</span></div>
+        <StudioWallGallery />
         <div className="studio-rear-desk">
           <div className="studio-rear-monitor">{unit("monitor-l", "MONITOR L", "LEFT · MASTER FEED", jack({ device: "monitor-l", port: "in" }, false, "LEFT IN", true))}<div className="studio-rear-speaker-stand" /></div>
           <div className="studio-rear-console studio-back-mixing">{unit("master", "MIXING DESK", `${tracks.length} CHANNEL INPUTS · MASTER OUTPUT`, <>{tracks.map(t => jack(masterIn(t), false, t.name))}{jack({ device: "master", port: "out" }, true, "MASTER OUT")}</>)}<div className="studio-table-top" /><div className="studio-desk-legs" /></div>
