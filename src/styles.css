@@ -2754,3 +2754,66 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
   .tape-head-cover span { font-size: 11px; }
   .tape-head-cover strong { font-size: 7px; }
 }
+
+/* Reference workbenches: segmented space processor, buffer delay, silver sequencer. */
+:root {
+  --fx-section-face: oklch(0.3 0.012 255);
+  --fx-section-header: oklch(0.2 0.008 255);
+  --fx-section-edge: oklch(0.47 0.013 255);
+  --fx-sequence-face: oklch(0.76 0.004 250);
+  --fx-sequence-deck: oklch(0.64 0.005 250);
+}
+:is(.fx-face,.fx-editor,.device-module)[data-fx-family] { --hardware-face: var(--fx-modern-face); --hardware-trim: var(--display-cyan); --foreground: var(--hardware-ink); --muted-foreground: var(--hardware-silver); --fx-deck-ink: var(--hardware-ink); }
+:is(.fx-face,.fx-editor,.device-module)[data-fx-family="buffer"] { --hardware-face: var(--fx-charcoal); --hardware-trim: var(--display-pink); --fx-section-face: var(--fx-charcoal); --fx-section-header: var(--hardware-black); --display-wave: var(--display-pink); }
+:is(.fx-face,.fx-editor,.device-module)[data-fx-family="space"] { --hardware-trim: var(--display-violet); --display-wave: var(--display-violet); }
+:is(.fx-face,.fx-editor,.device-module)[data-fx-family="sequence"] { --hardware-face: var(--fx-sequence-face); --hardware-trim: var(--display-wave); --foreground: var(--hardware-dark-ink); --muted-foreground: var(--hardware-dark-ink); --fx-deck-ink: var(--hardware-dark-ink); --fx-section-face: var(--fx-sequence-deck); --fx-section-header: var(--fx-sequence-face); }
+:is(.fx-face,.fx-editor,.device-module)[data-fx-family="dynamics"] { --hardware-face: var(--fx-silver); --hardware-trim: var(--hardware-black); --foreground: var(--hardware-dark-ink); --muted-foreground: var(--hardware-dark-ink); --fx-section-face: var(--fx-charcoal); }
+:is(.fx-face,.fx-editor,.device-module)[data-fx-family="motion"] { --hardware-face: var(--fx-graphite); --hardware-trim: var(--display-green); }
+:is(.fx-face,.fx-editor,.device-module)[data-fx-family="tone"] { --hardware-face: var(--fx-silver); --hardware-trim: var(--display-orange); --foreground: var(--hardware-dark-ink); --muted-foreground: var(--hardware-dark-ink); --fx-section-face: var(--fx-charcoal); }
+.fx-workbench { display: grid; grid-template-columns: minmax(110px,0.8fr) minmax(180px,2fr) minmax(110px,0.8fr); grid-template-areas: "input display output" "core core core" "steps steps steps" "footer footer footer" "motion motion motion"; gap: 8px; padding: 10px; min-width: 0; }
+.fx-section { min-width: 0; border: 1px solid var(--fx-section-edge); border-radius: 5px; background: var(--fx-section-face); color: var(--hardware-ink); box-shadow: var(--fx-bevel); overflow: hidden; --foreground: var(--hardware-ink); --muted-foreground: var(--hardware-silver); }
+.fx-section h4 { background: var(--fx-section-header); padding: 8px 6px; font: 600 10px var(--font-mono); text-align: center; border-bottom: 1px solid var(--fx-section-edge); color: inherit; }
+.fx-section-input { grid-area: input; }
+.fx-section-output { grid-area: output; }
+.fx-section-display { grid-area: display; display: flex; flex-direction: column; gap: 5px; padding: 0 6px 6px; }
+.fx-section-display h4 { margin-inline: -6px; }
+.fx-section-core { grid-area: core; }
+.fx-section-steps { grid-area: steps; }
+.fx-section-motion { grid-area: motion; padding: 8px; }
+.fx-section-knobs { display: grid; grid-template-columns: repeat(auto-fit,minmax(70px,1fr)); align-items: start; justify-items: center; gap: 8px 4px; padding: 12px 5px; }
+.fx-section-input .fx-section-knobs,.fx-section-output .fx-section-knobs { grid-template-columns: 1fr; }
+.fx-section-core .fx-section-knobs { grid-template-columns: repeat(auto-fit,minmax(88px,1fr)); }
+.fx-section .hardware-knob { width: 100%; min-width: 0; }
+.fx-section .hardware-knob-label { color: var(--hardware-ink); font-size: 10px; white-space: normal; overflow-wrap: anywhere; }
+.fx-section .hardware-knob-value { color: var(--hardware-ink); }
+.fx-section .hardware-knob-scale { stroke: var(--hardware-silver); }
+.fx-section .hardware-knob-grip { background: var(--fx-rubber-cap); border: 2px solid var(--hardware-rubber-edge); }
+.fx-section .hardware-knob-cap { background: var(--fx-metal-cap); }
+.fx-workbench-footer { grid-area: footer; display: flex; align-items: center; justify-content: space-between; border-top: 2px solid var(--hardware-trim); padding: 4px 8px; font: 9px var(--font-mono); }
+.fx-workbench[data-fx-family="buffer"] { grid-template-areas: "input core output" "display display display" "steps steps steps" "footer footer footer" "motion motion motion"; }
+.fx-workbench[data-fx-family="buffer"] .fx-section-display .signal-screen { min-height: 115px; }
+.fx-workbench[data-fx-family="buffer"] .fx-section .hardware-knob-cap { background: var(--fx-charcoal); border: 2px solid var(--hardware-silver-light); }
+.fx-workbench[data-fx-family="buffer"] .fx-section .hardware-knob-scale { stroke: var(--display-pink); stroke-width: 5; }
+.fx-workbench[data-fx-family="buffer"] .fx-section-core .fx-section-knobs { grid-template-columns: repeat(2,minmax(0,1fr)); }
+.fx-workbench[data-fx-family="sequence"] .fx-section { color: var(--hardware-dark-ink); --foreground: var(--hardware-dark-ink); --muted-foreground: var(--hardware-dark-ink); }
+.fx-workbench[data-fx-family="sequence"] .fx-section :is(.hardware-knob-label,.hardware-knob-value) { color: var(--hardware-dark-ink); }
+.fx-workbench[data-fx-family="sequence"] .fx-section .hardware-knob-scale { stroke: var(--hardware-dark-ink); }
+.fx-workbench[data-fx-family="dynamics"] { grid-template-areas: "input display output" "input core output" "steps steps steps" "footer footer footer" "motion motion motion"; }
+.fx-workbench[data-fx-family="motion"] .fx-section-core { border-inline: 5px solid var(--hardware-trim); }
+.fx-step-faders { display: grid; grid-template-columns: repeat(16,minmax(0,1fr)); gap: 4px; padding: 10px; }
+.fx-step-faders label { display: flex; flex-direction: column; align-items: center; gap: 5px; font: 9px var(--font-mono); }
+.fx-step-faders input { writing-mode: vertical-lr; direction: rtl; width: 18px; height: 90px; accent-color: var(--hardware-trim); }
+.plugin-rack-stack .fx-face[data-fx-family] { background: var(--fx-brush-fine),var(--hardware-face); border: 2px solid var(--hardware-rubber-edge); }
+.plugin-rack-stack .fx-workbench .hardware-knob { width: 100%; }
+.plugin-rack-stack .fx-face[data-fx-family] .fx-nameplate h3 { color: var(--foreground); }
+.fx-editor[data-fx-family] { padding: 10px; gap: 8px; }
+.fx-editor .fx-workbench { padding: 0; }
+.device-module[data-fx-family] { border-inline: 5px solid var(--hardware-trim); border-radius: 2px; }
+.device-module[data-fx-family="buffer"] .hardware-knob-scale { stroke: var(--display-pink); stroke-width: 4; }
+.device-module[data-fx-family="sequence"] { background: var(--fx-brush-fine),var(--fx-sequence-face); }
+@media (max-width: 767px) {
+  .fx-workbench { grid-template-columns: repeat(2,minmax(0,1fr)); grid-template-areas: "display display" "input output" "core core" "steps steps" "footer footer" "motion motion"; }
+  .fx-workbench[data-fx-family="buffer"],.fx-workbench[data-fx-family="dynamics"] { grid-template-areas: "display display" "input output" "core core" "steps steps" "footer footer" "motion motion"; }
+  .fx-section-input .fx-section-knobs,.fx-section-output .fx-section-knobs { grid-template-columns: repeat(auto-fit,minmax(65px,1fr)); }
+  .fx-step-faders { grid-template-columns: repeat(8,minmax(0,1fr)); }
+}
