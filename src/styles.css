@@ -2912,12 +2912,14 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
 .fx-controls-bank .fx-section-input { order: 0; }
 .fx-controls-bank .fx-section-core { order: 1; }
 .fx-controls-bank .fx-section-output { order: 2; }
+.fx-controls-bank .fx-section:has(.hardware-knob:only-child) { flex-grow: 0; flex-basis: 94px; }
 .fx-section-display > .effect-response-window { flex: 0 0 auto; }
 .fx-workbench, .fx-workbench[data-fx-family="space"], .fx-workbench[data-fx-family="dynamics"] { grid-template-columns: minmax(0,1fr); grid-template-areas: "display" "controls" "steps" "footer" "motion"; }
 .fx-workbench[data-fx-family="buffer"] { grid-template-columns: minmax(0,1fr); grid-template-areas: "controls" "display" "steps" "footer" "motion"; }
 .fx-workbench .fx-section-display, .fx-workbench[data-display-kind="delay"] .fx-section-display { display: grid; grid-template-columns: minmax(0,1.4fr) minmax(160px,1fr); align-items: center; }
 .fx-workbench .fx-section-display h4 { grid-column: 1 / -1; }
 .fx-workbench .effect-live-scope { width: 100%; }
+.fx-workbench .fx-section-display > .effect-live-scope { height: 112px !important; }
 .fx-editor:is([data-fx-skin="gain"],[data-fx-skin="width"],[data-fx-skin="tremolo"],[data-fx-skin="autopan"]) { width: min(97vw,620px); }
 .plugin-rack-workstation { max-width: 1060px; margin-inline: auto; gap: 10px; }
 .plugin-rack-cabinet { padding: 10px; }
@@ -2929,9 +2931,13 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
 .fx-face .fx-preset-window { height: 38px; }
 .fx-face .eq-chart-pro, .fx-editor .eq-chart-pro { height: 220px; min-height: 0; }
 .fx-face .eq-control-dock, .fx-editor .eq-control-dock { gap: 8px; padding: 8px; }
+.fx-face .eq-control-dock, .fx-editor .eq-control-dock { display: grid; grid-template-columns: minmax(230px,0.9fr) minmax(0,1.1fr); align-items: center; }
+.fx-face .eq-knob-row, .fx-editor .eq-knob-row { gap: 8px; margin-bottom: 0; }
 @container (max-width: 540px) {
   .fx-workbench, .fx-workbench[data-fx-family="buffer"], .fx-workbench[data-fx-family="dynamics"], .fx-workbench[data-fx-family="space"] { grid-template-columns: minmax(0,1fr); grid-template-areas: "display" "controls" "steps" "footer" "motion"; }
   .fx-controls-bank > .fx-section-core { flex-basis: 140px; }
   .fx-workbench .fx-section-display, .fx-workbench[data-display-kind="delay"] .fx-section-display { grid-template-columns: minmax(0,1fr); }
+  .fx-workbench .fx-section-display > .effect-live-scope { height: 52px !important; }
+  .fx-control-dock, .fx-face .eq-control-dock, .fx-editor .eq-control-dock { grid-template-columns: minmax(0,1fr); }
   .fx-step-faders { grid-template-columns: repeat(8,minmax(0,1fr)); }
 }
