@@ -905,11 +905,18 @@ html[data-reduce-motion] *, html[data-reduce-motion] *::before, html[data-reduce
 /* Sideways roll owns the available panel height: all rows and steps share it. */
 .phone-console .phone-tool-panel:has(.drum-roll-fit) .phone-page-viewport { overflow: hidden; display: flex; flex-direction: column; }
 .phone-console .phone-editor-content:has(.drum-roll-fit) { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 4px; }
-.phone-console .drum-machine:has(.drum-roll-fit) { display: grid; flex: 1; min-height: 0; grid-template-columns: minmax(0,1fr) 180px; grid-template-rows: 30px 30px minmax(0,1fr); padding: 4px; gap: 4px; overflow: hidden; }
+.phone-console .drum-machine:has(.drum-roll-fit) { display: grid; flex: 1; min-height: 0; grid-template-columns: minmax(0,1fr) 180px; grid-template-rows: 30px 30px 30px minmax(0,1fr); padding: 4px; gap: 4px; overflow: hidden; }
 .phone-console .drum-machine:has(.drum-roll-fit) > [role="tablist"] { grid-column: 1 / -1; }
 .phone-console .drum-machine:has(.drum-roll-fit) > .drum-patterns { grid-column: 1; }
 .phone-console .drum-machine:has(.drum-roll-fit) > [aria-label="Drum playback"] { grid-column: 2; grid-row: 2; gap: 4px; }
-.phone-console .drum-machine:has(.drum-roll-fit) > .drum-roll-fit { grid-column: 1 / -1; grid-row: 3; }
+.phone-console .drum-machine:has(.drum-roll-fit) > .drum-roll-fit { grid-column: 1 / -1; grid-row: 4; }
+.drum-sequences { border-block: 1px solid var(--border); padding-block: 4px; }
+.drum-machine[data-phone-view] .drum-sequences { flex-wrap: nowrap; overflow-x: auto; }
+.drum-machine[data-phone-view] .drum-sequences > *,
+.drum-machine[data-phone-view] .drum-sequences > div > * { flex-shrink: 0; white-space: nowrap; }
+.drum-machine[data-phone-view] .drum-sequences > div { flex-wrap: nowrap; }
+.phone-console .drum-machine:has(.drum-roll-fit) > .drum-sequences { grid-column: 1 / -1; grid-row: 3; padding: 0; gap: 4px; }
+.phone-console .drum-machine:has(.drum-roll-fit) .drum-sequences button { height: 30px; min-height: 30px; min-width: 30px; }
 .phone-console .drum-machine:has(.drum-roll-fit) > * { margin-top: 0; flex-shrink: 0; }
 .phone-console .drum-machine:has(.drum-roll-fit) > [role="tablist"] button,
 .phone-console .drum-machine:has(.drum-roll-fit) [aria-label="Drum playback"] button,
