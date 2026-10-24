@@ -107,6 +107,9 @@ html[data-reduce-motion] *, html[data-reduce-motion] *::before, html[data-reduce
   --mixer-fader-mid: oklch(0.77 0.005 285);
   --mixer-fader-dark: oklch(0.63 0.008 285);
   --mixer-fader-line: oklch(0.27 0.005 285);
+  --mixer-icon-plate: var(--display-black);
+  --mixer-icon-ink: var(--mixer-text);
+  --mixer-icon-edge: var(--mixer-fader-mid);
   --mixer-fader-shadow: 0 2px 4px oklch(0 0 0 / 0.55), inset 0 1px oklch(1 0 0 / 0.75);
   --studio-metal-dark: oklch(0.25 0.008 255);
   --studio-speaker: oklch(0.12 0.005 255);
@@ -2253,6 +2256,18 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
 .mx-console:not(.mx-phone) .mx-row-buttons { grid-row: 11; }
 .mx-console:not(.mx-phone) .mx-row-scope { grid-row: 12; }
 .mx-console:not(.mx-phone) .mx-row-icon { grid-row: 13; }
+.mx-console .mx-row-icon {
+  background: var(--mixer-icon-plate);
+  color: var(--mixer-icon-ink);
+  border-top: 1px solid var(--mixer-icon-edge);
+}
+.mx-console .mx-row-icon > svg {
+  width: 28px;
+  height: 28px;
+  color: var(--mixer-icon-ink) !important;
+  stroke-width: 2.25;
+  flex-shrink: 0;
+}
 .mx-console:not(.mx-phone) .mx-routing-strip > .mx-row-eq,
 .mx-console:not(.mx-phone) .mx-master > .mx-row-eq { height: 100% !important; min-height: 0 !important; }
 .synth-hardware[data-synth-style="acid"] .label-xs { color: var(--foreground); }
