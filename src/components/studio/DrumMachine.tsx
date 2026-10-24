@@ -12,7 +12,7 @@ import { Knob } from "./Knob";
 import { MidiLearnButton } from "./MidiLearn";
 import { useStudio } from "@/lib/synclab/store";
 import { factoryKitPad, kitExtraPads, VOICE_DEFS } from "@/lib/synclab/vintage-drums";
-import { DRUM_BANK_LABELS, recallDrumBank, removeDrumPads } from "@/lib/synclab/drum-banks";
+import { DRUM_BANK_LABELS, initializeDrumBanks, recallDrumBank, removeDrumPads } from "@/lib/synclab/drum-banks";
 import { DRUM_KIND_LABEL } from "@/lib/synclab/drum-notes";
 import { DRUM_KITS, GENRES } from "@/lib/synclab/presets";
 import type { DrumKitId } from "@/lib/synclab/types";
@@ -103,6 +103,10 @@ export function DrumMachine({ track }: { track: Track }) {
     return () => query.removeEventListener("change", read);
   }, []);
   const { updatePad, updateTrack, setStepCount, addPad, generateBeat, transport, togglePlay, stop } = useStudio();
+  useEffect(() => {
+    const initialized = initializeDrumBanks(track);
+    if (initialized) updateTrack(track.id, initialized);
+  }, [track, updateTrack]);
   const [genre, setGenre] = useState("Detroit Techno");
   const [energy, setEnergy] = useState(6);
   const [focusPadId, setFocusPadId] = useState<string | null>(null);

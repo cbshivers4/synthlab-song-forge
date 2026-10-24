@@ -2,6 +2,15 @@ import type { DrumPad, Track } from './types';
 
 export const DRUM_BANK_LABELS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'] as const;
 
+/** One-time reset requested for legacy prefilled banks; A is never changed. */
+export function initializeDrumBanks(track: Pick<Track, 'pads' | 'drumPatterns' | 'activeDrumPattern' | 'drumBanksVersion'>) {
+  if (track.drumBanksVersion === 1) return undefined;
+  const active = Math.max(0, Math.min(7, track.activeDrumPattern ?? 0));
+  const bankA = structuredClone(active === 0 ? track.pads ?? [] : track.drumPatterns?.[0] ?? []);
+  const drumPatterns = [bankA, ...Array.from({ length: 7 }, () => [] as DrumPad[])];
+  return { drumPatterns, pads: active === 0 ? bankA : [], drumBanksVersion: 1 };
+}
+
 /** Bank recall preserves user-created banks; a never-used bank has no pads. */
 export function recallDrumBank(track: Pick<Track, 'pads' | 'drumPatterns' | 'activeDrumPattern' | 'steps'>, next: number) {
   const active = Math.max(0, Math.min(7, track.activeDrumPattern ?? 0));

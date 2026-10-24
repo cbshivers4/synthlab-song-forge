@@ -40,6 +40,7 @@ Phone entry and workspace use a CSS sideways body canvas on portrait phone viewp
 Sideways DrumRoll fits a flex-height panel using equal grid row tracks; selected-instrument note knobs use editInstrumentNotes for One note/All notes, preserving other pads, empty steps and loop boundaries rather than global pad sound changes.
 Drum snap is session-only for new step writes, never existing hits.
 Drum bank recall and pad creation use shared pure helpers with existing snapshot fields; unused slots do not clone sounds, while saved banks retain IDs and sample references.
+Legacy SYNCPADS bank cleanup is versioned in each track: preserve A, clear B–H once, and retain subsequent user additions through manual saves.
 Learned drum triggers resolve saved track/pad IDs in the single MIDI subscription and consume mapped messages before normal note routing, preventing duplicate playback and recording.
 MP3/MP4 imports/exports retain originals in the private library with content hashes to avoid duplicates; saved videos open Video Sampler.
 Cloud deletion reads raw sessions, confirms deletion, then cleans owned files; missing assets cannot block removal.
