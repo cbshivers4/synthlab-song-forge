@@ -2651,3 +2651,8 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
 .phone-console .modular-module-grid { grid-template-columns: repeat(auto-fill,minmax(138px,1fr)); }
 .phone-console .modular-workstation .modular-jack { width: 36px; height: 36px; }
 .phone-console .modular-workstation .modular-add { min-height: 36px; }
+.modular-workstation .modular-case::before { display: none; }
+.modular-workstation .modular-case { border-image: var(--modular-wood) 1; }
+.modular-workstation .modular-module-grid { background: var(--modular-dark); }
+.modular-workstation .modular-module .modular-screw { width: 22px; height: 22px; min-height: 22px; padding: 0; }
+.phone-console .modular-workstation .modular-module .modular-screw { width: 28px; height: 28px; min-height: 28px; }
