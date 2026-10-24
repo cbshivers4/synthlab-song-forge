@@ -1,6 +1,6 @@
 # Roadmap — Source-code audit & DAW repair
 
-- [ ] Add effect-specific preset menus and visible preset windows across Plugins and mixer editors; verify parameter recall and phone layout.
+- [x] Effect-specific preset menus/windows added across Plugins, compact devices and mixer editors; 26 preset tests and 2 live-control tests passed; phone/desktop reverb and mixer compressor recall verified, manual edits show Custom.
 
 - [x] Effects now share segmented input/display/core/output decks with distinct space, pink-buffer, silver-sequence, dynamics, motion and tone finishes; mixer delay/compressor and rack reverb checked on phone/desktop with parameter edits; effect-control tests passed.
 

@@ -22,7 +22,9 @@ describe("effect-specific preset recall", () => {
     });
   }
   it("does not show reverb presets on a delay", () => {
-    const delay = instantiate(BUILT_IN_PLUGINS.find(p => p.name === "Stereo Delay") ?? BUILT_IN_PLUGINS[0]);
+    const definition = BUILT_IN_PLUGINS.find(p => p.name === "Stereo Delay");
+    if (!definition) throw new Error("Stereo Delay is missing");
+    const delay = instantiate(definition);
     expect(effectPresetParams(delay, "reverb:Large Hall:3")).toBeUndefined();
     expect(effectPresets(delay).some(p => p.name === "Large Hall")).toBe(false);
   });
@@ -30,9 +32,13 @@ describe("effect-specific preset recall", () => {
     expect(effectPresets({ kind: "delay", name: "Tape Echo" }).map(p => p.name)).not.toEqual(effectPresets({ kind: "delay", name: "Stereo Delay" }).map(p => p.name));
   });
   it("manual edits are Custom and Default restores the original controls", () => {
-    const plugin = instantiate(BUILT_IN_PLUGINS[0]);
+    const definition = BUILT_IN_PLUGINS.find(p => p.kind === "eq");
+    if (!definition) throw new Error("Channel EQ is missing");
+    const plugin = instantiate(definition);
     const edited = { ...plugin, params: plugin.params.map(p => ({ ...p, value: p.id === "low" ? 1.23 : p.value })) };
     expect(currentEffectPreset(edited)).toBeUndefined();
-    expect(effectPresetParams(edited, effectPresets(plugin)[0].id)).toEqual(plugin.params);
+    const preset = effectPresets(plugin).find(p => p.name === "Default");
+    if (!preset) throw new Error("Default preset is missing");
+    expect(effectPresetParams(edited, preset.id)).toEqual(plugin.params);
   });
 });
