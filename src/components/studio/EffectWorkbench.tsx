@@ -34,11 +34,11 @@ export function EffectWorkbench({ plugin, onParam, midiId, midiPrefix = "plugin"
   const controls = (items: PluginParam[], title: string, section: string) => items.length > 0 && <div className={`fx-section fx-section-${section}`}>
     <h4>{title}</h4><div className="fx-section-knobs">{items.map(p => <Knob key={p.id} label={p.name} value={p.value} min={p.min} max={p.max} step={(p.max - p.min) / 200} unit={p.unit ? ` ${p.unit}` : ""} size={section === "core" ? 60 : 44} onChange={v => onParam(p.id, v)} midiTarget={{ id: midiId, param: `${midiPrefix}:${plugin.id}:${p.id}` }} />)}</div>
   </div>;
-  return <div className="fx-workbench" data-fx-family={family}>
+  return <div className="fx-workbench" data-fx-family={family} data-display-kind={plugin.kind} data-window-variant={plugin.name.toLowerCase().includes("echo") ? "tape" : undefined}>
     {controls(input, family === "dynamics" ? "DETECTOR" : "INPUT FILTER", "input")}
     <div className="fx-section fx-section-display"><h4>{family === "buffer" ? "DELAY BUFFER" : family === "space" ? "SPACE RESPONSE" : family === "sequence" ? "PATTERN RESPONSE" : "SIGNAL RESPONSE"}</h4>
       <EffectDisplay plugin={plugin} height={140} onParam={onParam} />
-      <Scope scopeId={plugin.bypass ? `bypassed:${plugin.id}` : plugin.id} height={40} />
+      <Scope scopeId={plugin.bypass ? `bypassed:${plugin.id}` : plugin.id} height={72} effectKind={plugin.kind} />
     </div>
     {controls(output, "OUTPUT & BLEND", "output")}
     {controls(core, heading, "core")}

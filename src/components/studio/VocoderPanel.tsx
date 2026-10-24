@@ -1,6 +1,7 @@
 import { Knob as SharedKnob } from "./Knob";
 import { useStudio } from "@/lib/synclab/store";
 import type { PluginInstance } from "@/lib/synclab/types";
+import { Scope } from "./Scope";
 
 const CARRIERS = ["Saw bank", "Pulse bank", "Noise"];
 const PRESETS: { name: string; values: Record<string, number> }[] = [
@@ -37,6 +38,11 @@ export function VocoderPanel({ trackId, plugin }: { trackId: string; plugin: Plu
             <span key={i} className="h-3 w-1 rounded-[1px] bg-amber-300/30" />
           ))}
         </div>
+      </div>
+
+      <div className="vocoder-analysis-window" data-effect-window="vocoder">
+        <div className="vocoder-frequency-labels"><span>80 Hz</span><strong>{bands} BANDS · {CARRIERS[carrier]}</strong><span>12 kHz</span></div>
+        <Scope scopeId={plugin.bypass ? `bypassed:${plugin.id}` : plugin.id} height={110} effectKind="vocoder" />
       </div>
 
       <div className="flex flex-wrap gap-1">

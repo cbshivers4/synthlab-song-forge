@@ -451,7 +451,7 @@ export function EffectDisplay({
   const fill = `${path} L100,100 L0,100 Z`;
 
   return (
-    <div className={isChannelEq ? "eq-workstation space-y-2" : "space-y-1"}>
+    <div data-effect-window={plugin.kind} data-window-variant={plugin.name.toLowerCase().includes("echo") ? "tape" : undefined} className={isChannelEq ? "eq-workstation effect-response-window space-y-2" : "effect-response-window space-y-1"}>
       {isChannelEq && <header className="eq-titlebar"><span>SYNCLAB <strong>EQ</strong></span><span>3 BAND · CHANNEL</span></header>}
       <div className="flex items-center gap-2">
         <span className="label-xs">{shape.title}</span>
@@ -466,7 +466,7 @@ export function EffectDisplay({
         tabIndex={0}
         aria-label={`${shape.title} display for ${plugin.name}`}
         aria-valuenow={Math.round((xP ? (xP.value - xP.min) / (xP.max - xP.min) : 0) * 100)}
-        className={`signal-screen panel relative touch-none overflow-hidden ${isChannelEq ? "eq-chart" : ""}`}
+        className={`signal-screen response-glass panel relative touch-none overflow-hidden ${isChannelEq ? "eq-chart" : ""}`}
         style={{ height, cursor: xP ? "crosshair" : "default" }}
         onPointerDown={(e) => {
           if (!xP && !yP && !isStepFilter) return;
@@ -544,7 +544,7 @@ export function EffectDisplay({
           })}
         </div>
       )}
-      <p className="font-mono text-[9px] tracking-wider text-muted-foreground uppercase">{shape.readout(get)}</p>
+      <p className="response-readout font-mono text-[9px] tracking-wider text-muted-foreground uppercase">{shape.readout(get)}</p>
     </div>
   );
 }
