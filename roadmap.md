@@ -1,5 +1,7 @@
 # Roadmap — Source-code audit & DAW repair
 
+- [x] Added six Detroit artist wall pictures to front/rear Studio View; all images load in a signed-in saved project, portrait credits open, and equipment/cables remain unobscured. Scan 7 label photo has no stated reuse license; permission required before public release.
+
 - [x] Whole hardware editors have float, header-drag, corner-resize, fit and dock controls; desktop and sideways-touch phone movement/resize verified, preset recall preserved; 9 tests passed.
 
 - [x] Compacted shared effect hardware, packed control decks, reduced rack/mixer widths and EQ/vocoder heights; desktop rack and phone preset recall checked, 29 tests passed.
