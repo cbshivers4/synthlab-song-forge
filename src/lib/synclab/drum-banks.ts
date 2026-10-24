@@ -20,3 +20,12 @@ export function appendDrumPad(track: Pick<Track, 'pads' | 'steps'>, id: string, 
     id, steps: Array.from({ length: track.steps }, () => 0),
   }];
 }
+
+/** Delete only from the active bank, including its saved snapshot so recall cannot resurrect pads. */
+export function removeDrumPads(track: Pick<Track, 'pads' | 'drumPatterns' | 'activeDrumPattern'>, ids: readonly string[]) {
+  const removed = new Set(ids);
+  const pads = (track.pads ?? []).filter(pad => !removed.has(pad.id));
+  const drumPatterns = [...(track.drumPatterns ?? [])];
+  drumPatterns[track.activeDrumPattern ?? 0] = structuredClone(pads);
+  return { pads, drumPatterns };
+}

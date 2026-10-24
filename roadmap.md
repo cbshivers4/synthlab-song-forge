@@ -1,5 +1,7 @@
 # Roadmap — Source-code audit & DAW repair
 
+- [ ] SYNCPADS: preserve empty unused Banks B–H; add single/multiple-pad deletion and verify sound/sample add-delete bank round trips.
+
 - [x] SYNCPADS: pad/envelope MIDI Learn and readable envelope labels; simulated MIDI verified learning is silent, note press plays once, release adds no hit, and CC updates both Attack controls.
 
 - [x] Drum Machine: Banks A-H, empty unused banks, selectable sound and multi-file sample pads; bank round-trip tests and browser add/recall verified; cloud drum asset upload/restore included.
