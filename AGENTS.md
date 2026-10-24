@@ -39,6 +39,7 @@ Phone entry and workspace use a CSS sideways body canvas on portrait phone viewp
 Sideways DrumRoll fits a flex-height panel using equal grid row tracks; selected-instrument note knobs use editInstrumentNotes for One note/All notes, preserving other pads, empty steps and loop boundaries rather than global pad sound changes.
 Drum snap is session-only for new step writes, never existing hits.
 Drum bank recall and pad creation use shared pure helpers with existing snapshot fields; unused slots do not clone sounds, while saved banks retain IDs and sample references.
+Learned drum triggers resolve saved track/pad IDs in the single MIDI subscription and consume mapped messages before normal note routing, preventing duplicate playback and recording.
 MP3/MP4 imports/exports retain originals in the private library with content hashes to avoid duplicates; saved videos open Video Sampler.
 Cloud deletion reads raw sessions, confirms deletion, then cleans owned files; missing assets cannot block removal.
 Reel recorder: singleton worklet; playback bypasses master. Meters use post-master taps; exit releases input, keeps tape. Shared winding math uses capture duration and conserved tape area to match song length.

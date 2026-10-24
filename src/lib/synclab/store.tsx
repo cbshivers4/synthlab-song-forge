@@ -11,6 +11,7 @@ import {
 import { capturedNote, loopRegion } from "./recording-region";
 import { editDrumPads, type DrumBulkEdit } from "./drum-bulk";
 import { appendDrumPad } from "./drum-banks";
+import { learnedDrumPad } from "./drum-midi";
 import { timelineUsesWaveform } from "./timeline-content";
 import { ccAction } from "./midi-actions";
 import { previewTrack } from "./note-preview";
@@ -644,6 +645,21 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     void getMidiAccess().then((a) => {
       if (cancelled) return;
       off = subscribe(a, midiInputId, (msg, inputId) => {
+        const triggerLearnedDrum = (target: MidiTarget, velocity: number) => {
+          const hit = learnedDrumPad(tracksRef.current, target);
+          if (!hit) return;
+          const engine = getEngine();
+          engine.init();
+          engine.syncMix(tracksRef.current);
+          engine.playDrum(hit.track.id, hit.pad, Math.max(0.15, velocity));
+          const tp = transportRef.current;
+          if (!tp.recording || !tp.playing || !hit.track.recording) return;
+          const total = hit.pad.steps.length || hit.track.steps || 16;
+          const at = tp.step % total;
+          const stale = neighbourLiveHits(hit.track.id, hit.pad.id, at, total);
+          markLiveHit(hit.track.id, hit.pad.id, at);
+          setTracks(ts => ts.map(t => t.id === hit.track.id ? { ...t, pads: (t.pads ?? []).map(p => p.id === hit.pad.id ? { ...p, steps: p.steps.map((v, i) => i === at ? Math.max(0.15, velocity) : stale.includes(i) ? 0 : v) } : p) } : t));
+        };
         // Hardware mixer: knobs and faders send control-change messages.
         if (msg.type === "cc") {
           const key = `${msg.channel}:${msg.cc}`;
@@ -759,6 +775,10 @@ export function StudioProvider({ children }: { children: ReactNode }) {
              }));
              return;
            }
+           if (target.param.startsWith("drum-trigger:")) {
+             if (v >= 0.5) triggerLearnedDrum(target, v);
+             return;
+           }
            if (target.param.startsWith("drum:")) {
              const [, padId, field] = target.param.split(":");
              const range = field ? drumRanges[field] : undefined;
@@ -858,6 +878,10 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           const noteTarget = midiMapRef.current[nKey];
           if (noteTarget) {
             if (msg.type !== "on") return; // toggle on press only
+            if (noteTarget.param.startsWith("drum-trigger:")) {
+              triggerLearnedDrum(noteTarget, msg.velocity);
+              return;
+            }
             if (noteTarget.id === "master" && noteTarget.param === "mute") {
               setBuses((b) => ({ ...b, master: { ...b.master, muted: !b.master.muted } }));
               return;
