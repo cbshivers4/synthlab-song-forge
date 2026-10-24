@@ -1089,6 +1089,40 @@ SYNTH_PRESETS.push(
   { name: "Poly Lead Soft Saw", category: "Poly Synth", mutate: (p) => { O(p,0).wave = "sawtooth"; p.oscillators[1] = { ...O(p,1), on: true, wave: "sawtooth", octave: 0, detune: 7, level: 0.6 }; p.voiceMode = "poly"; p.glide = 0.04; p.cutoff = 2600; p.resonance = 3; p.amp = { attack: 0.02, decay: 0.3, sustain: 0.8, release: 0.4 }; p.fx = { ...p.fx, delay: 0.25, reverb: 0.3 }; } },
 );
 
+// Original electro/techno bass voices, kept in the Acid Bass bank and single-oscillator path.
+SYNTH_PRESETS.push(...([
+  ["TD-3 Electro Motor City", { wave: "square", cutoff: 780, res: 9, envAmt: 1800, envDecay: 0.13, decay: 0.18, sustain: 0.25, glide: 0.035, drive: 0.22 }],
+  ["TD-3 Electro Robot Funk", { wave: "sawtooth", cutoff: 1100, res: 12, envAmt: 2400, envDecay: 0.09, decay: 0.14, sustain: 0.1, glide: 0.02, dist: 0.24 }],
+  ["TD-3 Electro Sub Glide", { wave: "square", oct: -2, cutoff: 240, res: 3, envAmt: 450, envDecay: 0.35, decay: 0.4, sustain: 0.85, release: 0.18, glide: 0.14, drive: 0.12 }],
+  ["TD-3 Electro Rubber Bounce", { wave: "square", cutoff: 480, res: 13, envAmt: 2100, envDecay: 0.24, decay: 0.26, sustain: 0.35, glide: 0.075, dist: 0.18 }],
+  ["TD-3 Electro Circuit Pluck", { wave: "sawtooth", cutoff: 1500, res: 7, envAmt: 1700, envDecay: 0.06, decay: 0.09, sustain: 0, release: 0.045, delay: 0.1 }],
+  ["TD-3 Electro Breakbeat Bite", { wave: "square", cutoff: 950, res: 15, envAmt: 3000, envDecay: 0.11, decay: 0.16, sustain: 0.18, drive: 0.38, dist: 0.3 }],
+  ["TD-3 Electro Neon Pulse", { wave: "sawtooth", cutoff: 620, res: 11, envAmt: 1900, envDecay: 0.2, sustain: 0.55, glide: 0.05, lfo: { rate: 3, wave: "triangle", amount: 0.18, destination: "filter" } }],
+  ["TD-3 Electro Dry Machine", { wave: "square", cutoff: 1250, res: 5, envAmt: 800, envDecay: 0.08, decay: 0.12, sustain: 0.05, release: 0.04, drive: 0.15 }],
+  ["TD-3 Techno Warehouse", { wave: "sawtooth", cutoff: 400, res: 19, envAmt: 3800, envDecay: 0.16, sustain: 0.6, glide: 0.055, drive: 0.48, dist: 0.32 }],
+  ["TD-3 Techno Tunnel Sub", { wave: "triangle", oct: -2, cutoff: 350, res: 4, envAmt: 700, envDecay: 0.28, decay: 0.35, sustain: 0.8, release: 0.16, drive: 0.3 }],
+  ["TD-3 Techno Steel Acid", { wave: "sawtooth", cutoff: 850, res: 23, envAmt: 4600, envDecay: 0.1, decay: 0.2, sustain: 0.3, drive: 0.55, dist: 0.4 }],
+  ["TD-3 Techno Minimal Knock", { wave: "square", cutoff: 520, res: 8, envAmt: 1200, envDecay: 0.07, decay: 0.1, sustain: 0, release: 0.035, drive: 0.24 }],
+  ["TD-3 Techno Hypnotic Slide", { wave: "sawtooth", cutoff: 460, res: 17, envAmt: 2800, envDecay: 0.3, sustain: 0.7, glide: 0.11, delay: 0.16, lfo: { rate: 0.3, wave: "sine", amount: 0.2, destination: "filter" } }],
+  ["TD-3 Techno Industrial Grind", { wave: "square", cutoff: 680, res: 14, envAmt: 2600, envDecay: 0.15, sustain: 0.45, drive: 0.65, dist: 0.5, crush: 0.12 }],
+  ["TD-3 Techno Peak Time", { wave: "sawtooth", cutoff: 1300, res: 20, envAmt: 4200, envDecay: 0.12, decay: 0.18, sustain: 0.25, glide: 0.04, drive: 0.45, dist: 0.28, delay: 0.12 }],
+  ["TD-3 Techno Dub Pressure", { wave: "square", cutoff: 330, res: 10, envAmt: 1500, envDecay: 0.38, decay: 0.4, sustain: 0.4, release: 0.2, glide: 0.065, delay: 0.22, reverb: 0.08 }],
+] satisfies [string, PresetCfg][]).map(([name, config]) => {
+  const voice = mk(name, "Acid Bass", {
+    wave2: null, oct: -1, unison: 1, width: 0, attack: 0.002,
+    decay: 0.22, release: 0.08, glide: 0,
+    chorus: 0, reverb: 0.02, delay: 0, dist: 0.12, drive: 0.2,
+    ...config,
+  });
+  return { ...voice, mutate: (p: SynthPatch) => {
+    voice.mutate(p);
+    p.voiceMode = p.glide > 0 ? "legato" : "mono";
+    p.glideMode = "legato";
+    p.filterEnv = { ...p.filterEnv, attack: 0.001, sustain: 0, release: 0.08 };
+    p.fx.delayFeedback = 0.25;
+  } };
+}));
+
 /** Starter notes so a new acid bass or poly synth channel plays straight away; fully editable in the piano roll. */
 export const STARTER_NOTES: Record<string, Omit<import("./types").MidiNote, "id">[]> = {
   acid: [36, 36, 48, 36, 39, 36, 43, 46, 36, 36, 48, 41, 36, 39, 36, 34].map((pitch, step) => ({ step, length: step % 4 === 3 ? 2 : 1, pitch, velocity: step % 4 === 0 ? 1 : 0.7 })),
