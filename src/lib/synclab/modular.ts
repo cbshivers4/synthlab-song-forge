@@ -1,6 +1,6 @@
 /** Modular Tech Synth: an empty rack you fill with devices, then wire with coloured patch cables. */
 
-export type ModuleType = "vco" | "noise" | "lfo" | "env" | "vcf" | "vca" | "mixer" | "drive" | "delay" | "output" | "fold" | "ring" | "sh" | "chorus" | "reverb";
+export type ModuleType = "vco" | "noise" | "lfo" | "env" | "vcf" | "vca" | "mixer" | "drive" | "delay" | "output" | "fold" | "ring" | "sh" | "chorus" | "reverb" | "sub" | "formant" | "phaser" | "compressor" | "stereo" | "attenuverter";
 export type CableColor = "red" | "orange" | "yellow" | "green" | "blue" | "purple" | "white";
 export const CABLE_COLORS: CableColor[] = ["red", "orange", "yellow", "green", "blue", "purple", "white"];
 
@@ -72,6 +72,39 @@ export const MODULE_DEFS: Record<ModuleType, ModuleDef> = {
     { id: "size", label: "SIZE", min: 0.3, max: 4, step: 0.05, unit: "s", def: 1.6 },
     { id: "mix", label: "MIX", min: 0, max: 1, step: 0.01, def: 0.35 },
   ], inputs: [{ id: "in", label: "IN", kind: "audio" }], outputs: [{ id: "out", label: "OUT" }] },
+  sub: { type: "sub", label: "SUB OSC", hp: 1, params: [
+    { id: "wave", label: "WAVE", options: ["sine", "square", "triangle"], def: "sine" },
+    { id: "octave", label: "OCTAVE", min: -3, max: -1, step: 1, def: -1 },
+    { id: "level", label: "LEVEL", min: 0, max: 1, step: 0.01, def: 0.7 },
+  ], inputs: [{ id: "pitch", label: "PITCH", kind: "param", scale: 1200 }], outputs: [{ id: "out", label: "OUT" }] },
+  formant: { type: "formant", label: "VOWEL FILTER", hp: 2, params: [
+    { id: "vowel", label: "VOWEL", options: ["A", "E", "I", "O", "U"], def: "A" },
+    { id: "shift", label: "SHIFT", min: -12, max: 12, step: 0.1, unit: "st", def: 0 },
+    { id: "resonance", label: "RESONANCE", min: 1, max: 20, step: 0.1, def: 6 },
+    { id: "mix", label: "BLEND", min: 0, max: 1, step: 0.01, def: 0.85 },
+  ], inputs: [{ id: "in", label: "IN", kind: "audio" }, { id: "shift", label: "SHIFT CV", kind: "param", scale: 1200 }], outputs: [{ id: "out", label: "OUT" }] },
+  phaser: { type: "phaser", label: "PHASE ARRAY", hp: 2, params: [
+    { id: "rate", label: "RATE", min: 0.05, max: 8, step: 0.05, unit: "Hz", def: 0.4 },
+    { id: "depth", label: "DEPTH", min: 0, max: 1, step: 0.01, def: 0.6 },
+    { id: "center", label: "CENTER", min: 100, max: 4000, step: 10, unit: "Hz", def: 700 },
+    { id: "mix", label: "BLEND", min: 0, max: 1, step: 0.01, def: 0.5 },
+  ], inputs: [{ id: "in", label: "IN", kind: "audio" }], outputs: [{ id: "out", label: "OUT" }] },
+  compressor: { type: "compressor", label: "DYNAMICS", hp: 2, params: [
+    { id: "threshold", label: "THRESHOLD", min: -60, max: 0, step: 1, unit: "dB", def: -24 },
+    { id: "ratio", label: "RATIO", min: 1, max: 20, step: 0.1, def: 4 },
+    { id: "attack", label: "ATTACK", min: 1, max: 100, step: 1, unit: "ms", def: 10 },
+    { id: "release", label: "RELEASE", min: 20, max: 1000, step: 10, unit: "ms", def: 180 },
+    { id: "makeup", label: "MAKEUP", min: 0, max: 18, step: 0.1, unit: "dB", def: 0 },
+  ], inputs: [{ id: "in", label: "IN", kind: "audio" }], outputs: [{ id: "out", label: "OUT" }] },
+  stereo: { type: "stereo", label: "STEREO MOTION", hp: 2, params: [
+    { id: "pan", label: "PAN", min: -1, max: 1, step: 0.01, def: 0 },
+    { id: "rate", label: "RATE", min: 0.05, max: 10, step: 0.05, unit: "Hz", def: 0.5 },
+    { id: "depth", label: "MOTION", min: 0, max: 1, step: 0.01, def: 0.7 },
+  ], inputs: [{ id: "in", label: "IN", kind: "audio" }, { id: "pan", label: "PAN CV", kind: "param", scale: 1 }], outputs: [{ id: "out", label: "OUT" }] },
+  attenuverter: { type: "attenuverter", label: "CV UTILITY", hp: 1, params: [
+    { id: "amount", label: "POLARITY", min: -2, max: 2, step: 0.01, def: 1 },
+    { id: "offset", label: "OFFSET", min: -1, max: 1, step: 0.01, def: 0 },
+  ], inputs: [{ id: "in", label: "CV IN", kind: "audio" }], outputs: [{ id: "out", label: "CV OUT" }] },
   output: { type: "output", label: "OUTPUT", hp: 1, params: [{ id: "level", label: "LEVEL", min: 0, max: 1, step: 0.01, def: 0.7 }],
     inputs: [{ id: "in", label: "IN", kind: "audio" }, { id: "pan", label: "PAN CV", kind: "param", scale: 1 }], outputs: [] },
 };
@@ -238,6 +271,58 @@ export function playModularVoice(ctx: BaseAudioContext, dest: AudioNode, raw: un
         i.connect(dry).connect(o); i.connect(cv).connect(wet).connect(o);
         ins.set(key(mod.id, "in"), i); outs.set(key(mod.id, "out"), o); break;
       }
+      case "sub": {
+        const osc = ctx.createOscillator(); osc.type = str(mod, "wave") as OscillatorType;
+        osc.frequency.value = freq * Math.pow(2, num(mod, "octave"));
+        if (pitchBus) pitchBus.connect(osc.detune);
+        const level = ctx.createGain(); level.gain.value = num(mod, "level"); osc.connect(level);
+        sources.push(osc); ins.set(key(mod.id, "pitch"), osc.detune); outs.set(key(mod.id, "out"), level); break;
+      }
+      case "formant": {
+        const input = ctx.createGain(), output = ctx.createGain(), dry = ctx.createGain();
+        const mix = num(mod, "mix"); dry.gain.value = 1 - mix; input.connect(dry).connect(output);
+        const vowels: Record<string, number[]> = { A: [800, 1150, 2900], E: [400, 1700, 2600], I: [350, 2000, 2800], O: [450, 800, 2830], U: [325, 700, 2530] };
+        const shiftCV = ctx.createGain();
+        for (const frequency of vowels[str(mod, "vowel")] ?? vowels.A ?? []) {
+          const filter = ctx.createBiquadFilter(); filter.type = "bandpass";
+          filter.frequency.value = frequency; filter.detune.value = num(mod, "shift") * 100; filter.Q.value = num(mod, "resonance");
+          const gain = ctx.createGain(); gain.gain.value = mix * 0.8;
+          shiftCV.connect(filter.detune); input.connect(filter).connect(gain).connect(output);
+        }
+        ins.set(key(mod.id, "in"), input); ins.set(key(mod.id, "shift"), shiftCV); outs.set(key(mod.id, "out"), output); break;
+      }
+      case "phaser": {
+        const input = ctx.createGain(), output = ctx.createGain(), dry = ctx.createGain(), wet = ctx.createGain();
+        dry.gain.value = 1 - num(mod, "mix"); wet.gain.value = num(mod, "mix"); input.connect(dry).connect(output);
+        const lfo = ctx.createOscillator(), depth = ctx.createGain(); lfo.frequency.value = num(mod, "rate");
+        depth.gain.value = num(mod, "depth") * 1600; lfo.connect(depth); sources.push(lfo);
+        let previous: AudioNode = input;
+        for (let stage = 0; stage < 4; stage++) {
+          const filter = ctx.createBiquadFilter(); filter.type = "allpass"; filter.Q.value = 0.7;
+          filter.frequency.value = num(mod, "center") * (1 + stage * 0.25); depth.connect(filter.detune);
+          previous.connect(filter); previous = filter;
+        }
+        previous.connect(wet).connect(output); ins.set(key(mod.id, "in"), input); outs.set(key(mod.id, "out"), output); break;
+      }
+      case "compressor": {
+        const comp = ctx.createDynamicsCompressor(), makeup = ctx.createGain();
+        comp.threshold.value = num(mod, "threshold"); comp.ratio.value = num(mod, "ratio"); comp.knee.value = 6;
+        comp.attack.value = num(mod, "attack") / 1000; comp.release.value = num(mod, "release") / 1000;
+        makeup.gain.value = Math.pow(10, num(mod, "makeup") / 20); comp.connect(makeup);
+        ins.set(key(mod.id, "in"), comp); outs.set(key(mod.id, "out"), makeup); break;
+      }
+      case "stereo": {
+        const pan = ctx.createStereoPanner(), lfo = ctx.createOscillator(), depth = ctx.createGain();
+        pan.pan.value = num(mod, "pan"); lfo.frequency.value = num(mod, "rate"); depth.gain.value = num(mod, "depth");
+        lfo.connect(depth).connect(pan.pan); sources.push(lfo);
+        ins.set(key(mod.id, "in"), pan); ins.set(key(mod.id, "pan"), pan.pan); outs.set(key(mod.id, "out"), pan); break;
+      }
+      case "attenuverter": {
+        const input = ctx.createGain(), output = ctx.createGain(), offset = ctx.createConstantSource();
+        input.gain.value = num(mod, "amount"); offset.offset.value = num(mod, "offset");
+        input.connect(output); offset.connect(output); sources.push(offset);
+        ins.set(key(mod.id, "in"), input); outs.set(key(mod.id, "out"), output); break;
+      }
       case "output": {
         const i = ctx.createGain(); const pan = ctx.createStereoPanner(); const o = ctx.createGain();
         o.gain.value = num(mod, "level") * (0.35 + 0.65 * velocity);
@@ -276,6 +361,12 @@ const VOICE: Spec["cables"] = [["f", "out", "a", "in", 1, "white"], ["e1", "out"
 const BASIC: Spec["mods"] = [["v1", "vco"], ["f", "vcf"], ["e1", "env"], ["a", "vca"], ["o", "output"]];
 
 export const MODULAR_PRESETS: { name: string; modular: ModularPatch }[] = [
+  { name: "Modular Tech Vowel Motion", modular: build({
+    mods: [["v1", "vco"], ["f", "formant"], ["e1", "env"], ["a", "vca"], ["p", "phaser"], ["s", "stereo"], ["o", "output"]],
+    cables: [["v1", "out", "f", "in", 0.8, "red"], ...VOICE.filter((c) => c[2] !== "o"), ["a", "out", "p", "in", 1, "green"], ["p", "out", "s", "in", 1, "blue"], ["s", "out", "o", "in", 1, "white"]] }) },
+  { name: "Modular Tech Sub Pressure", modular: build({
+    mods: [["v1", "vco", { octave: -1 }], ["sub", "sub"], ["m", "mixer"], ["f", "vcf", { cutoff: 600 }], ["l", "lfo", { rate: 2 }], ["cv", "attenuverter", { amount: 0.2 }], ["e1", "env"], ["a", "vca"], ["c", "compressor"], ["o", "output"]],
+    cables: [["v1", "out", "m", "in1", 0.6, "red"], ["sub", "out", "m", "in2", 0.8, "orange"], ["m", "out", "f", "in", 1, "white"], ["l", "out", "cv", "in", 1, "blue"], ["cv", "out", "f", "cutoff", 0.3, "purple"], ...VOICE.filter((c) => c[2] !== "o"), ["a", "out", "c", "in", 1, "green"], ["c", "out", "o", "in", 1, "white"]] }) },
   { name: "Modular Tech Empty Rack", modular: emptyModular() },
   { name: "Modular Tech Basic Voice", modular: build({ mods: BASIC, cables: [["v1", "out", "f", "in", 1, "red"], ...VOICE] }) },
   { name: "Modular Tech Wobble Bass", modular: build({
