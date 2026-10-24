@@ -1,6 +1,6 @@
 # Roadmap — Source-code audit & DAW repair
 
-- [ ] Add/remove real Studio View cables and show desktop-style digital clock throughout phone workspace.
+- [x] Added accessible real cable add/remove controls in Studio View and fixed desktop-style time/date/seconds clock throughout phone workspace; four routing tests and signed-in desktop/sideways-phone add/remove flows passed. Fixed monitor/recorder feeds remain labeled; preview only.
 
 - [x] Added independent drum patterns 1–8, preserving Banks A–H and pad sounds; larger high-contrast bottom mixer icons. 22 tests pass; signed-in saved-project pattern switching, empty B and restored 20-pad A verified; preview only.
 
