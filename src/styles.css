@@ -997,7 +997,11 @@ html[data-reduce-motion] *, html[data-reduce-motion] *::before, html[data-reduce
   .phone-sideways-default .spin-logo { width: min(30dvh, 190px); }
 }
 /* Sideways phone Edit screen: one scrolling page (title + timeline move together) */
-.phone-edit-scroll { touch-action: pan-y; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
+.phone-edit-scroll { touch-action: pan-x pan-y; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
+/* Keep the full arrangement in the outer Edit scrollport instead of shrinking
+   its rows into a second, clipped vertical scrollport. */
+.phone-edit-scroll > .arrangement-timeline[data-page-scroll="true"] { flex: none; min-height: max-content; }
+.phone-edit-scroll .arrangement-timeline[data-page-scroll="true"] > #timeline-scroll { flex: none; max-height: none; }
 /* Default finishes follow the phone palette; custom wallpaper stays available. */
 .phone-console .studio-wallpaper:not([style*="background-image"]):not(.hardware-device),
 .phone-console .creative-tool { background: var(--surface); }
@@ -1094,7 +1098,7 @@ html[data-reduce-motion] *, html[data-reduce-motion] *::before, html[data-reduce
 .phone-console .mx-phone .mobile-mixer-strips > .bg-surface { height: 480px; }
 .phone-console .phone-timeline-heading button[aria-label="Previous tracks"],
 .phone-console .phone-timeline-heading button[aria-label="Next tracks"] { display: none; }
-.phone-console-rail { overflow-y: auto; touch-action: pan-y; }
+.phone-console-rail { min-height: 0; overflow-x: hidden; overflow-y: auto; touch-action: pan-x pan-y; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
 .phone-console .phone-transport-signals { grid-column: 1 / -1; order: 4; }
 .phone-master-display > div { width: max-content; }
 .phone-transport-signals button { min-height: 48px; }
