@@ -2742,7 +2742,9 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
 .reel-recorder[data-deck-look="reel"] .hardware-knob-cap { background: var(--tape-deck-metal); border-color: var(--tape-deck-groove); }
 .reel-recorder[data-deck-look="reel"] .hardware-knob-grip { background: var(--tape-deck-metal); border: 2px solid var(--tape-deck-groove); }
 .reel-recorder[data-deck-look="reel"] .hardware-knob-label { color: var(--tape-deck-ink); }
-.reel-recorder[data-deck-look="reel"] .hardware-knob-value { color: var(--hardware-ink); }
+.reel-recorder[data-deck-look="reel"] .hardware-knob-value { color: var(--tape-deck-ink); }
+.reel-recorder[data-deck-look="reel"] .tape-meter { --muted-foreground: var(--hardware-ink); }
+.reel-recorder[data-deck-look="reel"] .label-xs { color: var(--tape-deck-ink); }
 .reel-recorder[data-deck-look="reel"] footer { background: var(--tape-deck-brush),var(--tape-deck-face); }
 .reel-recorder[data-deck-look="reel"] .reel-channel { background: var(--tape-deck-light); }
 @container (max-width: 560px) {
