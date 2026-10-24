@@ -137,6 +137,11 @@ for (const type of Object.keys(extraControls) as ModuleType[]) {
   MODULE_DEFS[type].params.push(...(extraControls[type] ?? []));
   if (MODULE_DEFS[type].params.length >= 5) MODULE_DEFS[type].hp = 2;
 }
+MODULE_DEFS.vco.inputs.push({ id: "level", label: "LEVEL CV", kind: "param", scale: 1 });
+MODULE_DEFS.vcf.inputs.push({ id: "resonance", label: "RES CV", kind: "param", scale: 10 });
+MODULE_DEFS.delay.inputs.push({ id: "feedback", label: "FDBK CV", kind: "param", scale: 0.1 });
+MODULE_DEFS.chorus.inputs.push({ id: "rate", label: "RATE CV", kind: "param", scale: 2 });
+MODULE_DEFS.output.inputs.push({ id: "level", label: "LEVEL CV", kind: "param", scale: 0.2 });
 
 let n = 0;
 const nid = (p: string) => `${p}-${Date.now().toString(36)}-${(n++).toString(36)}`;
@@ -229,6 +234,7 @@ export function playModularVoice(ctx: BaseAudioContext, dest: AudioNode, raw: un
         o.detune.value = num(mod, "fine") + num(mod, "semitone") * 100;
         if (pitchBus) pitchBus.connect(o.detune);
         const level = ctx.createGain(); level.gain.value = num(mod, "level"); o.connect(level);
+        ins.set(key(mod.id, "level"), level.gain);
         sources.push(o); outs.set(key(mod.id, "out"), level);
         ins.set(key(mod.id, "pitch"), o.detune); ins.set(key(mod.id, "fm"), o.frequency);
         break;
@@ -258,6 +264,7 @@ export function playModularVoice(ctx: BaseAudioContext, dest: AudioNode, raw: un
         const i = ctx.createGain(); const f = ctx.createBiquadFilter();
         f.type = str(mod, "type") as BiquadFilterType; f.frequency.value = num(mod, "cutoff"); f.Q.value = num(mod, "resonance");
         i.gain.value = num(mod, "input"); f.detune.value = (midi - 60) * 100 * num(mod, "tracking");
+        ins.set(key(mod.id, "resonance"), f.Q);
         i.connect(f); ins.set(key(mod.id, "in"), i); ins.set(key(mod.id, "cutoff"), f.frequency); outs.set(key(mod.id, "out"), f); break;
       }
       case "vca": {
@@ -280,6 +287,9 @@ export function playModularVoice(ctx: BaseAudioContext, dest: AudioNode, raw: un
       case "delay": {
         const i = ctx.createGain(); const dl = ctx.createDelay(2); dl.delayTime.value = num(mod, "time");
         const fb = ctx.createGain(); fb.gain.value = num(mod, "feedback"); const wet = ctx.createGain(); wet.gain.value = num(mod, "mix");
+        const feedbackCV = ctx.createGain(), limiter = ctx.createWaveShaper();
+        limiter.curve = Float32Array.from({ length: 1024 }, (_, i) => Math.max(-0.9, Math.min(0.9, i / 511.5 - 1)));
+        feedbackCV.connect(limiter).connect(fb.gain); ins.set(key(mod.id, "feedback"), feedbackCV);
         const dry = ctx.createGain(); dry.gain.value = 1 - num(mod, "mix") * 0.5; const o = ctx.createGain();
         const tone = ctx.createBiquadFilter(); tone.frequency.value = num(mod, "tone"); o.gain.value = num(mod, "level");
         i.connect(dry).connect(o); i.connect(dl); dl.connect(tone); tone.connect(fb).connect(dl); tone.connect(wet).connect(o);
@@ -308,6 +318,7 @@ export function playModularVoice(ctx: BaseAudioContext, dest: AudioNode, raw: un
         const i = ctx.createGain(); const dl = ctx.createDelay(0.1); dl.delayTime.value = num(mod, "time") / 1000;
         const feedback = ctx.createGain(); feedback.gain.value = num(mod, "feedback"); dl.connect(feedback).connect(dl);
         const lfo = ctx.createOscillator(); lfo.frequency.value = num(mod, "rate"); const dep = ctx.createGain(); dep.gain.value = 0.008 * num(mod, "depth");
+        ins.set(key(mod.id, "rate"), lfo.frequency);
         lfo.connect(dep).connect(dl.delayTime); sources.push(lfo);
         const wet = ctx.createGain(); wet.gain.value = num(mod, "mix"); const dry = ctx.createGain(); dry.gain.value = 1 - num(mod, "mix") * 0.5; const o = ctx.createGain();
         i.connect(dry).connect(o); i.connect(dl).connect(wet).connect(o);
@@ -383,6 +394,7 @@ export function playModularVoice(ctx: BaseAudioContext, dest: AudioNode, raw: un
         const i = ctx.createGain(); const pan = ctx.createStereoPanner(); const o = ctx.createGain();
         pan.pan.value = num(mod, "pan");
         o.gain.value = num(mod, "level") * (0.35 + 0.65 * velocity);
+        ins.set(key(mod.id, "level"), o.gain);
         i.connect(pan).connect(o).connect(dest); finals.push(o);
         ins.set(key(mod.id, "in"), i); ins.set(key(mod.id, "pan"), pan.pan); break;
       }
