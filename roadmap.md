@@ -1,5 +1,7 @@
 # Roadmap — Source-code audit & DAW repair
 
+- [ ] Ensure SYNCPADS Banks B–H contain no prefilled pads until explicitly populated, preserving Bank A; verify switching and adding pads.
+
 - [x] Effect-specific preset menus/windows added across Plugins, compact devices and mixer editors; 26 preset tests and 2 live-control tests passed; phone/desktop reverb and mixer compressor recall verified, manual edits show Custom.
 
 - [x] Effects now share segmented input/display/core/output decks with distinct space, pink-buffer, silver-sequence, dynamics, motion and tone finishes; mixer delay/compressor and rack reverb checked on phone/desktop with parameter edits; effect-control tests passed.
