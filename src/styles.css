@@ -2597,3 +2597,62 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
 .phone-console .mx-console[data-touch-console="true"] .mx-row-head { flex-wrap: wrap !important; min-height: 88px !important; justify-content: flex-start; }
 .phone-console .mx-console:not(.mx-phone) :is(.mx-channel, .mx-master, .mx-routing-strip) { grid-template-rows: 34px 88px 64px 112px 28px 26px 50px 30px 160px 22px 56px 30px 34px; }
 .phone-console .mx-console .mx-channel > .mx-row-head > .channel-menu-trigger { flex-shrink: 0; min-width: 44px; }
+
+/* Reference device families: segmented modern decks, vintage processors, Eurorack. */
+:root {
+  --fx-modern-face: oklch(0.35 0.012 255);
+  --fx-modern-deck: oklch(0.27 0.009 255);
+  --fx-retro-face: oklch(0.78 0.025 92);
+  --fx-retro-deck: oklch(0.24 0.01 92);
+  --modular-silver: oklch(0.83 0.004 250);
+  --modular-ink: oklch(0.18 0.003 250);
+  --modular-dark: oklch(0.19 0.003 250);
+  --modular-wood: linear-gradient(90deg, var(--instrument-wood-edge), var(--hardware-silver-dark) 4%, var(--instrument-wood-edge) 7%, var(--instrument-wood-edge) 94%, var(--hardware-black));
+  --modular-rail-face: repeating-linear-gradient(90deg, var(--hardware-silver) 0 22px, var(--hardware-black) 22px 24px);
+}
+:is(.fx-editor, .fx-face)[data-fx-skin="reverb"], :is(.fx-editor, .fx-face)[data-fx-skin="resonator"] {
+  --hardware-face: var(--fx-modern-face); --hardware-trim: var(--display-violet); --fx-deck: var(--fx-modern-deck); --fx-deck-ink: var(--hardware-ink); --foreground: var(--hardware-ink); --muted-foreground: var(--hardware-silver); --fx-cap: var(--fx-rubber-cap);
+}
+:is(.fx-editor, .fx-face)[data-fx-skin="reverb"] .fx-control-deck { background: var(--fx-modern-deck); --fx-deck-ink: var(--hardware-ink); border: 2px solid var(--hardware-rubber-edge); border-radius: 6px; }
+:is(.fx-editor, .fx-face):is([data-fx-skin="reverb"], [data-fx-skin="resonator"]) .fx-knob-bank { display: grid; grid-template-columns: repeat(auto-fit,minmax(86px,1fr)); gap: 8px; }
+:is(.fx-editor, .fx-face):is([data-fx-skin="reverb"], [data-fx-skin="resonator"]) .fx-knob-bank > .hardware-knob { width: 100%; padding: 10px 2px; border-bottom: 2px solid var(--hardware-rubber-edge); }
+:is(.fx-editor, .fx-face)[data-fx-skin="delay"]:not([data-fx-variant="echo"]) { --hardware-face: var(--fx-charcoal); --hardware-trim: var(--display-pink); --fx-deck: var(--fx-charcoal); --fx-deck-ink: var(--hardware-ink); --fx-cap: var(--fx-rubber-cap); }
+:is(.fx-editor, .fx-face)[data-fx-skin="delay"]:not([data-fx-variant="echo"]) .fx-control-deck { border: 1px solid var(--hardware-silver); background: var(--fx-charcoal); }
+:is(.fx-editor, .fx-face)[data-fx-skin="delay"]:not([data-fx-variant="echo"]) .hardware-knob-grip { background: var(--fx-charcoal); box-shadow: none; border: 2px solid var(--hardware-trim); }
+:is(.fx-editor, .fx-face)[data-fx-skin="delay"]:not([data-fx-variant="echo"]) .hardware-knob-cap { background: var(--fx-charcoal); border-color: var(--hardware-silver); box-shadow: none; }
+:is(.fx-editor, .fx-face)[data-fx-skin="stepfilter"] { --hardware-face: var(--fx-silver); --hardware-trim: var(--display-wave); --fx-deck: var(--fx-pearl); --foreground: var(--hardware-dark-ink); --muted-foreground: var(--hardware-rubber-edge); --fx-deck-ink: var(--hardware-dark-ink); border-inline: 9px solid var(--hardware-trim); }
+:is(.fx-editor, .fx-face):is([data-fx-skin="drive"], [data-fx-skin="bitcrusher"], [data-fx-variant="echo"]) { --hardware-face: var(--fx-retro-face); --foreground: var(--hardware-dark-ink); --muted-foreground: var(--hardware-rubber-edge); --fx-deck: var(--fx-retro-deck); --fx-deck-ink: var(--hardware-ink); --fx-cap: var(--fx-metal-cap); }
+:is(.fx-editor, .fx-face)[data-fx-skin="drive"] { --hardware-trim: var(--display-orange); }
+:is(.fx-editor, .fx-face)[data-fx-skin="bitcrusher"] { --hardware-trim: var(--display-green); }
+:is(.fx-editor, .fx-face):is([data-fx-skin="drive"], [data-fx-skin="bitcrusher"], [data-fx-variant="echo"]) .fx-knob-bank { display: grid; grid-template-columns: repeat(auto-fit,minmax(86px,1fr)); }
+:is(.fx-editor, .fx-face):is([data-fx-skin="drive"], [data-fx-skin="bitcrusher"], [data-fx-variant="echo"]) .fx-knob-bank > .hardware-knob { width: 100%; padding: 10px 2px; background: color-mix(in oklab,var(--hardware-trim) 16%,var(--fx-retro-deck)); border-top: 3px solid var(--hardware-trim); }
+/* Real modules, no decorative fake knobs, graphs or jacks. */
+.modular-workstation .modular-case { border: 12px solid var(--instrument-wood-edge); border-block-width: 16px; background: var(--modular-dark); box-shadow: var(--hardware-case-shadow); border-radius: 4px; isolation: isolate; }
+.modular-workstation .modular-case::before { content: ""; position: absolute; inset: -16px -12px; background: var(--modular-wood); z-index: -1; pointer-events: none; }
+.modular-workstation .modular-rail { height: 9px; background: var(--modular-rail-face); border-block: 1px solid var(--hardware-black); }
+.modular-module-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(126px,1fr)); gap: 3px; padding: 5px; align-items: stretch; }
+.modular-workstation .modular-module { width: auto; min-width: 0; min-height: 340px; padding: 8px 5px; border-radius: 0; border: 1px solid var(--hardware-silver-dark); border-top: 3px solid var(--hardware-silver); background: var(--fx-brush-fine), var(--modular-silver); color: var(--modular-ink); --foreground: var(--modular-ink); --muted-foreground: var(--modular-ink); --hardware-scale: var(--modular-ink); --hardware-mark: var(--modular-ink); --module-ink: var(--modular-ink); box-shadow: var(--fx-bevel); }
+.modular-workstation .modular-module:is([data-module-type="lfo"], [data-module-type="fold"], [data-module-type="ring"], [data-module-type="delay"], [data-module-type="reverb"]) { background: var(--fx-brush-fine),var(--modular-dark); --module-ink: var(--hardware-ink); --foreground: var(--hardware-ink); --muted-foreground: var(--hardware-silver); --hardware-scale: var(--hardware-silver); --hardware-mark: var(--hardware-ink); color: var(--hardware-ink); }
+.modular-workstation .modular-module-header { min-height: 32px; border-bottom: 2px solid var(--hardware-silver-dark); padding-bottom: 5px; }
+.modular-workstation .modular-module h4 { font-size: 11px; letter-spacing: 0; text-align: center; overflow-wrap: anywhere; }
+.modular-workstation .modular-knob-bank { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); width: 100%; gap: 12px 2px; padding: 12px 0; }
+.modular-workstation .modular-knob-bank .hardware-knob { width: 100%; }
+.modular-workstation .modular-knob-bank .hardware-knob:only-child { grid-column: 1 / -1; }
+.modular-workstation .modular-module .hardware-knob-label, .modular-workstation .modular-module .hardware-knob-value { color: var(--module-ink); font-size: 10px; letter-spacing: 0; }
+.modular-workstation .modular-module .hardware-knob-grip { background: repeating-conic-gradient(var(--hardware-rubber) 0deg 8deg,var(--hardware-black) 8deg 12deg); border: 1px solid var(--hardware-black); }
+.modular-workstation .modular-module .hardware-knob-cap { background: var(--fx-rubber-cap); }
+.modular-workstation .modular-module .hardware-knob-pointer i { background: var(--hardware-silver-light); }
+.modular-workstation .modular-jacks { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px 2px; padding-block: 12px; border-block: 1px solid var(--hardware-silver-dark); }
+.modular-workstation .modular-jack { width: 28px; height: 28px; padding: 0; background: radial-gradient(circle,var(--hardware-black) 0 28%,var(--hardware-silver-light) 30% 46%,var(--hardware-silver-dark) 48% 60%,var(--hardware-black) 62% 68%,var(--hardware-silver) 70%); }
+.modular-workstation .modular-jack-label { color: var(--module-ink); font-size: 9px; }
+.modular-workstation .modular-switch { height: auto; min-height: 24px; padding: 3px 5px; color: var(--module-ink); background: transparent; border: 1px solid var(--hardware-silver-dark); }
+.modular-workstation .modular-switch.is-on { background: var(--primary); color: var(--primary-foreground); }
+.modular-workstation .modular-screw { padding: 0; }
+.phone-console .modular-module-grid { grid-template-columns: repeat(auto-fill,minmax(138px,1fr)); }
+.phone-console .modular-workstation .modular-jack { width: 36px; height: 36px; }
+.phone-console .modular-workstation .modular-add { min-height: 36px; }
+.modular-workstation .modular-case::before { display: none; }
+.modular-workstation .modular-case { border-image: var(--modular-wood) 1; }
+.modular-workstation .modular-module-grid { background: var(--modular-dark); }
+.modular-workstation .modular-module .modular-screw { width: 22px; height: 22px; min-height: 22px; padding: 0; }
+.phone-console .modular-workstation .modular-module .modular-screw { width: 28px; height: 28px; min-height: 28px; }
