@@ -426,7 +426,7 @@ export interface AutomationLane {
 export interface DrumSequence {
   hits: Record<string, Pick<DrumPad, 'steps' | 'probability' | 'stepPitch' | 'stepDecay' | 'flam' | 'retrig' | 'glitch'>>;
   steps: number;
-  patternRegion?: [number, number];
+  patternRegion?: [number, number] | undefined;
 }
 
 export interface Track {
