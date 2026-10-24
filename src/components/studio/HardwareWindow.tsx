@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState, type ReactNode, type PointerEvent } from 'react';
 import { Move, Maximize2, PanelBottom, Grip } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { canvasPoint, canvasRect } from '@/lib/synclab/canvas-point';
+import { canvasPoint, canvasRect, sidewaysCanvas } from '@/lib/synclab/canvas-point';
 import { fitWindow, type WindowBounds } from '@/lib/synclab/window-bounds';
 
 const remembered = new Map<string, WindowBounds>();
-const viewport = () => ({ w: document.body.clientWidth, h: document.body.clientHeight });
+const viewport = () => sidewaysCanvas() ? { w: window.innerHeight, h: window.innerWidth } : { w: window.innerWidth, h: window.innerHeight };
 
 /** Move/resize the same mounted editor, never a second instrument or audio owner. */
 export function HardwareWindow({ id, enabled, children }: { id: string; enabled: boolean; children: (controls: ReactNode) => ReactNode }) {
@@ -22,7 +22,7 @@ export function HardwareWindow({ id, enabled, children }: { id: string; enabled:
   const float = () => {
     const box = ref.current ? canvasRect(ref.current) : null;
     const size = viewport();
-    const next = fitWindow(remembered.get(id) ?? { x: 40, y: 40, w: Math.min(box?.width ?? 960, size.w - 80), h: Math.min(box?.height ?? 600, size.h - 80) }, size);
+    const next = fitWindow(remembered.get(id) ?? { x: 40, y: 40, w: Math.min(box?.width ?? 960, size.w - 80), h: Math.min(box?.height ?? 600, 680, size.h - 80) }, size);
     setBounds(next);
     return next;
   };

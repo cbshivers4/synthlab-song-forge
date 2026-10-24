@@ -2953,3 +2953,4 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
 .phone-console .hardware-window-control { width: 44px; height: 44px; }
 .phone-console .hardware-window-resize { width: 44px; height: 44px; }
 .hardware-window[data-floating="true"] .editor-track-actions { padding-right: 46px; }
+.phone-console .hardware-window[data-floating="true"] { position: fixed !important; height: var(--hardware-window-h) !important; width: var(--hardware-window-w) !important; }
