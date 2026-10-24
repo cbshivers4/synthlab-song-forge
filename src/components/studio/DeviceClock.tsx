@@ -9,7 +9,7 @@ export function DeviceClock({ mobile, inline }: { mobile?: boolean; inline?: boo
     return () => window.clearInterval(id);
   }, []);
   if (!now) return inline ? null : <div className={mobile ? "w-[126px]" : "w-[184px]"} aria-hidden />;
-  const time = now.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit", second: mobile ? undefined : "2-digit" });
+  const time = now.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit", second: "2-digit" });
   const date = now.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: mobile ? undefined : "numeric" });
   if (inline) return <span className="shrink-0 font-mono text-[17px] font-semibold tabular-nums text-primary" aria-label={`Device clock ${date} ${time}`}>{date} · {time}</span>;
   return (

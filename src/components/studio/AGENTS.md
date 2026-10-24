@@ -40,6 +40,7 @@ Timeline ruler synchronization uses untransformed layout width (offsetWidth), so
 Touch mixer styling is scoped by data-touch-console; keep desktop strips and audio routing shared while sizing phone targets independently.
 Phone studio always opens on the edit screen: entering the studio or resuming the page closes any tool panel, so an instrument like the drum machine never greets the user first.
 Studio View back side (StudioBack.tsx) mirrors the real signal path — track → inserts → mixer channel → master → monitors/reel plus bus sends; re-patching a cable performs the matching store action (insert reorder, bypass, send level), never a visual-only change.
+Studio cable menus and jacks share studioCablePatch for atomic insert/send changes; only same-channel supported routes are offered, keeping fixed output feeds honest.
 
 Studio rear devices follow the front room's furniture zones inside one scrollable measured canvas; keep the cable SVG and jack positions in that same coordinate space so horizontal and vertical scrolling preserve connections.
 Drum-channel razor/split unrolls pad steps to song length and reuses track.cuts/activeRegion; deleting a part zeroes those steps. Generate Stem isolates the chosen part with Demucs (lib/synclab/ai-isolate) and falls back to on-device cleaning when the AI service fails.

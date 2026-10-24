@@ -1,6 +1,9 @@
 import { useLayoutEffect, useRef, useState } from "react";
-import { Cable, Unplug, Cpu, Scan, ZoomIn } from "lucide-react";
+import { Cable, Unplug, Cpu, Scan, ZoomIn, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { studioCablePatch } from "@/lib/synclab/studio-routing";
 import { useStudio } from "@/lib/synclab/store";
 import type { PluginInstance, Track } from "@/lib/synclab/types";
 import { toast } from "sonner";
@@ -41,6 +44,9 @@ export function StudioBack() {
   const [pending, setPending] = useState<JackRef | null>(null);
   const [selectedWire, setSelectedWire] = useState<string | null>(null);
   const [listOpen, setListOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+  const [sourceKey, setSourceKey] = useState("");
+  const [targetKey, setTargetKey] = useState("");
   const boxRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [overview, setOverview] = useState(true);
@@ -122,8 +128,7 @@ export function StudioBack() {
   );
 
   // ---- re-patch: turn a new connection into a real routing change ----
-  const connect = (to: JackRef) => {
-    const from = pending;
+  const connect = (to: JackRef, from: JackRef | null = pending) => {
     setPending(null);
     if (!from || from.device === to.device) return;
     const fromTrack = from.device.startsWith("track:") ? from.device.slice(6) : null;
@@ -134,36 +139,10 @@ export function StudioBack() {
       return;
     }
 
-    if (to.device.startsWith("fx:")) {
-      const fxId = to.device.slice(3);
-      const list = track.plugins ?? [];
-      const fx = list.find((p) => p.id === fxId);
-      if (!fx) return;
-      if (fx.bypass) togglePluginBypass(track.id, fx.id);
-      // Move the effect to sit right after the source node in the chain, in one update.
-      const ordered = [...list];
-      const fromIdx = ordered.findIndex((p) => p.id === fxId);
-      if (fromIdx >= 0) {
-        const [item] = ordered.splice(fromIdx, 1);
-        const anchor = fromFx ? ordered.findIndex((p) => p.id === fromFx) + 1 : 0;
-        if (item) ordered.splice(anchor, 0, item);
-        updateTrack(track.id, { plugins: ordered });
-      }
-      toast.success(`${fx.name} re-patched`, { description: `It now sits after ${fromFx ? "the previous effect" : track.name} in the chain.` });
-      return;
-    }
-    if (to.device === "master") {
-      // Patching straight to the mixer bypasses everything after the source.
-      const list = track.plugins ?? [];
-      const after = fromFx ? list.slice(list.findIndex((p) => p.id === fromFx) + 1) : list;
-      after.filter((p) => !p.bypass).forEach((p) => togglePluginBypass(track.id, p.id));
-      toast.success(`${track.name} patched straight to the mixer`, { description: after.length ? `${after.length} effect${after.length === 1 ? "" : "s"} bypassed.` : "No effects were in the way." });
-      return;
-    }
-    if (to.device.startsWith("bus:")) {
-      const bus = to.device.slice(4) as (typeof SEND_BUSES)[number];
-      updateTrack(track.id, { sends: { reverb: 0, delay: 0, chorus: 0, ...track.sends, [bus]: 0.5 } });
-      toast.success(`${track.name} → ${bus} send`, { description: "Send set to 50% — adjust it in the mixer." });
+    const patch = studioCablePatch(track, from, to);
+    if (patch) {
+      updateTrack(track.id, patch);
+      setAddOpen(false);
       return;
     }
     toast("That connection isn't possible", { description: "Monitors and the reel are always fed from the master output." });
@@ -236,11 +215,24 @@ export function StudioBack() {
   );
 
   const selected = wires.find((w) => w.id === selectedWire);
+  const sources = tracks.flatMap(t => [
+    { jack: trackOut(t), label: `${t.name} · Audio out`, track: t },
+    ...(t.plugins ?? []).filter(p => !p.bypass).map(p => ({ jack: fxOut(p), label: `${t.name} · ${p.name} out`, track: t })),
+  ]);
+  const source = sources.find(s => pkey(s.jack) === sourceKey);
+  const targets = source ? [
+    ...(source.track.plugins ?? []).map(p => ({ jack: fxIn(p), label: `${p.name} · In` })),
+    { jack: masterIn(source.track), label: `Mixer · ${source.track.name}` },
+    ...SEND_BUSES.map(b => ({ jack: busIn(b), label: `${b.toUpperCase()} · Send in` })),
+  ].filter(t => studioCablePatch(source.track, source.jack, t.jack) !== null) : [];
+  const target = targets.find(t => pkey(t.jack) === targetKey);
 
   return (
     <div className="studio-back flex min-h-0 flex-1 flex-col">
       <div className="studio-back-toolbar flex shrink-0 flex-wrap items-center gap-2 border-b border-border bg-surface px-3 py-2 text-xs">
         <Cable className="size-4 text-primary" />
+        <Button variant="secondary" size="sm" className="min-h-11" onClick={() => { setSourceKey(sources[0] ? pkey(sources[0].jack) : ""); setTargetKey(""); setAddOpen(true); }} disabled={!tracks.length}><Plus className="size-4" />Add cable</Button>
+        <Button variant="outline" size="sm" className="min-h-11" aria-expanded={listOpen} onClick={() => setListOpen(o => !o)}><Cable className="size-4" />Cables ({wires.length})</Button>
         <span className="font-mono text-[11px] text-muted-foreground">
           {pending ? "CONNECT CABLE" : "STUDIO · REAR CONNECTIONS"}
         </span>
@@ -257,14 +249,13 @@ export function StudioBack() {
           <Button
             size="sm"
             variant="secondary"
-            className="ml-auto h-7 gap-1.5"
+            className="min-h-11 gap-1.5"
             onClick={() => {
               selected.unplug?.();
               setSelectedWire(null);
-              toast.success(`Unplugged ${selected.label}`);
             }}
           >
-            <Unplug className="size-3.5" /> UNPLUG {selected.label.toUpperCase()}
+            <Unplug className="size-4" /> Remove cable
           </Button>
         )}
         {selected && (selected.fixed || !selected.unplug) && (
@@ -272,6 +263,19 @@ export function StudioBack() {
         )}
       </div>
 
+      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+        <DialogContent className="max-h-[80dvh] overflow-y-auto">
+          <DialogTitle>Add cable</DialogTitle>
+          <DialogDescription>Channel inserts and sends · Monitor and recorder feeds are fixed.</DialogDescription>
+          <label className="grid gap-2 text-sm">From
+            <Select value={sourceKey} onValueChange={v => { setSourceKey(v); setTargetKey(""); }}><SelectTrigger aria-label="Cable output" className="min-h-11"><SelectValue placeholder="Choose output" /></SelectTrigger><SelectContent>{sources.map(s => <SelectItem key={pkey(s.jack)} value={pkey(s.jack)}>{s.label}</SelectItem>)}</SelectContent></Select>
+          </label>
+          <label className="grid gap-2 text-sm">To
+            <Select value={targetKey} onValueChange={setTargetKey}><SelectTrigger aria-label="Cable input" className="min-h-11"><SelectValue placeholder="Choose input" /></SelectTrigger><SelectContent>{targets.map(t => <SelectItem key={pkey(t.jack)} value={pkey(t.jack)}>{t.label}</SelectItem>)}</SelectContent></Select>
+          </label>
+          <Button className="min-h-11" disabled={!source || !target} onClick={() => { if (source && target) connect(target.jack, source.jack); }}><Plus className="size-4" />Connect cable</Button>
+        </DialogContent>
+      </Dialog>
       <div ref={scrollRef} className="studio-back-scroll min-h-0 flex-1 overflow-auto" tabIndex={0} aria-label="Studio rear room">
       <div className="studio-back-canvas" style={view.phone ? { width: view.width * view.scale, height: view.height * view.scale } : undefined}>
       <div ref={boxRef} className="studio-back-rack relative" style={view.phone ? { width: view.width, transform: `scale(${view.scale})`, transformOrigin: "top left" } : undefined} aria-label="Back of the studio rack — audio cable routing">
