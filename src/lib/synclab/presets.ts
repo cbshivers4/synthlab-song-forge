@@ -1110,7 +1110,7 @@ SYNTH_PRESETS.push(...([
 ] satisfies [string, PresetCfg][]).map(([name, config]) => {
   const voice = mk(name, "Acid Bass", {
     wave2: null, oct: -1, unison: 1, width: 0, attack: 0.002,
-    decay: 0.22, sustain: 0.5, release: 0.08, glide: 0,
+    decay: 0.22, release: 0.08, glide: 0,
     chorus: 0, reverb: 0.02, delay: 0, dist: 0.12, drive: 0.2,
     ...config,
   });
