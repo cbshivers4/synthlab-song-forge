@@ -7,6 +7,7 @@ import { Knob } from "./Knob";
 import { Button } from "@/components/ui/button";
 import { Scope } from "./Scope";
 import { EffectDisplay } from "./EffectDisplay";
+import { effectFamily } from "./EffectWorkbench";
 
 function instrumentModule(track: Track): { label: string; icon: React.ReactNode; panel: "synth" | "drums" | "sampler" | "piano"; tone: string } {
   if (track.kind === "drum") return { label: "Drum Machine", icon: <Disc3 className="size-3.5" />, panel: "drums", tone: "drums" };
@@ -20,6 +21,7 @@ function EffectModule({ track, plugin }: { track: Track; plugin: PluginInstance 
   const shown = plugin.params.slice(0, 8);
   return (
     <div
+      data-fx-family={effectFamily(plugin)}
       data-device-kind={plugin.kind}
       data-fx-skin={plugin.kind}
       data-fx-variant={plugin.name.toLowerCase().includes("echo") ? "echo" : undefined}

@@ -38,7 +38,7 @@ import type { AuxId, BusId, BusState, PluginInstance, Track, VcaId } from "@/lib
 import { cn } from "@/lib/utils";
 import { clearClip, reportLevel, useClipped } from "@/lib/synclab/clip-monitor";
 import { Scope } from "./Scope";
-import { XYPad } from "./XYPad";
+import { EffectWorkbench, effectFamily } from "./EffectWorkbench";
 import { EffectDisplay } from "./EffectDisplay";
 import { ProEq } from "./ProEq";
 import { VocoderPanel } from "./VocoderPanel";
@@ -278,7 +278,7 @@ export function InsertRack({
               </button>
             </div>
             <Dialog open={open === p.id} onOpenChange={(o) => setOpen(o ? p.id : null)}>
-              <DialogContent data-fx-skin={p.kind} data-fx-variant={p.name.toLowerCase().includes("echo") ? "echo" : undefined} className="fx-editor max-h-[86vh] w-[min(97vw,58rem)] max-w-none overflow-y-auto">
+              <DialogContent data-fx-family={effectFamily(p)} data-fx-skin={p.kind} data-fx-variant={p.name.toLowerCase().includes("echo") ? "echo" : undefined} className="fx-editor max-h-[86vh] w-[min(97vw,58rem)] max-w-none overflow-y-auto">
                 <DialogHeader className="fx-editor-header">
                   <DialogTitle className="flex items-center gap-2 font-mono uppercase tracking-wider">
                     <button type="button" onClick={() => onBypass(p.id)} title={p.bypass ? "Turn on" : "Bypass"} aria-label="Bypass effect">
@@ -292,30 +292,7 @@ export function InsertRack({
                 ) : p.kind === "vocoder" && isTrack ? (
                   <VocoderPanel trackId={midiId} plugin={p} />
                 ) : (
-                <div className="fx-editor-deck grid gap-3 md:grid-cols-[1.4fr_1fr]">
-                  <div className="fx-display-deck space-y-2">
-                    <EffectDisplay plugin={p} height={220} onParam={(paramId, v) => onParam(p.id, paramId, v)} />
-                    <Scope scopeId={p.id} height={96} />
-                   </div>
-                  <div className="fx-control-deck space-y-2">
-                    <XYPad plugin={p} onParam={(paramId, v) => onParam(p.id, paramId, v)} />
-                    <div className="fx-knob-bank grid grid-cols-[repeat(auto-fill,minmax(88px,1fr))] justify-items-center gap-2">
-                      {p.params.map((x) => (
-                        <Knob
-                          key={x.id}
-                          label={x.name}
-                          value={x.value}
-                          min={x.min}
-                          max={x.max}
-                          step={(x.max - x.min) / 200}
-                          size={56}
-                          onChange={(v) => onParam(p.id, x.id, v)}
-                          midiTarget={{ id: midiId, param: `${midiPrefix}:${p.id}:${x.id}` }}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                </div>
+                <EffectWorkbench plugin={p} midiId={midiId} midiPrefix={midiPrefix} onParam={(id, value) => onParam(p.id, id, value)} />
                 )}
               </DialogContent>
             </Dialog>
