@@ -2943,3 +2943,14 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
   .fx-control-dock, .fx-face .eq-control-dock, .fx-editor .eq-control-dock { grid-template-columns: minmax(0,1fr); }
   .fx-step-faders { grid-template-columns: repeat(8,minmax(0,1fr)); }
 }
+
+/* Whole-editor floating geometry stays in the sideways body's coordinate space. */
+.hardware-window[data-hardware-window] .editor-panel-header { cursor: grab; touch-action: none; }
+.hardware-window[data-moving="true"] .editor-panel-header { cursor: grabbing; }
+.hardware-window-control { width: 36px; height: 36px; flex-shrink: 0; }
+.hardware-window[data-floating="true"] { position: fixed !important; inset: auto !important; left: var(--hardware-window-x) !important; top: var(--hardware-window-y) !important; width: var(--hardware-window-w) !important; height: var(--hardware-window-h) !important; min-height: 0 !important; max-height: none !important; z-index: 45 !important; margin: 0 !important; overflow: hidden !important; background: var(--background); border: 2px solid var(--border); border-radius: 5px; box-shadow: var(--rack-shadow); }
+.hardware-window-resize { position: absolute; right: 0; bottom: 0; z-index: 30; width: 32px; height: 32px; cursor: nwse-resize; touch-action: none; background: var(--surface); color: var(--foreground); border-top: 1px solid var(--border); border-left: 1px solid var(--border); }
+.phone-console .hardware-window-control { width: 44px; height: 44px; }
+.phone-console .hardware-window-resize { width: 44px; height: 44px; }
+.hardware-window[data-floating="true"] .editor-track-actions { padding-right: 46px; }
+.phone-console .hardware-window[data-floating="true"] { position: fixed !important; height: var(--hardware-window-h) !important; width: var(--hardware-window-w) !important; }

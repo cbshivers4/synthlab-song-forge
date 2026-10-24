@@ -29,6 +29,7 @@ import { SplashScreen } from "@/components/studio/SplashScreen";
 import { PluginRack } from "@/components/studio/PluginRack";
 import { DeviceBar } from "@/components/studio/DeviceBar";
 import { QuickNotes } from "@/components/studio/QuickNotes";
+import { HardwareWindow } from "@/components/studio/HardwareWindow";
 import { FloatingDevice } from "@/components/studio/FloatingDevice";
 import { MenuBar } from "@/components/studio/MenuBar";
 import { ProjectCloseGuard } from "@/components/studio/ProjectCloseGuard";
@@ -188,36 +189,6 @@ function SafePanels(props: { float: FloatState; setFloat: (f: (p: FloatState) =>
 function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: FloatState) => FloatState) => void }) {
   const isMobile = useIsMobile();
   const { selected, tracks, panel, setPanel, select } = useStudio();
-  // Resizable editor height, remembered between sessions.
-  const [rackH, setRackH] = useState(() => {
-    if (typeof window === "undefined") return 380;
-    try {
-      const v = Number(window.localStorage.getItem("synclab.rack.height"));
-      return Number.isFinite(v) && v >= 180 ? v : 380;
-    } catch {
-      return 380;
-    }
-  });
-  const startResize = (e: React.PointerEvent) => {
-    e.preventDefault();
-    const y0 = e.clientY;
-    const h0 = rackH;
-    const onMove = (ev: PointerEvent) =>
-      setRackH(Math.max(180, Math.min(window.innerHeight - 220, h0 - (ev.clientY - y0))));
-    const onUp = () => {
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerup", onUp);
-      try {
-        window.localStorage.setItem("synclab.rack.height", String(rackHRef.current));
-      } catch {
-        /* storage unavailable */
-      }
-    };
-    window.addEventListener("pointermove", onMove);
-    window.addEventListener("pointerup", onUp);
-  };
-  const rackHRef = useRef(rackH);
-  rackHRef.current = rackH;
   const drumTrack = selected?.kind === "drum" ? selected : tracks.find((t) => t.kind === "drum");
   const pianoTrack = selected?.patch ? selected : tracks.find((t) => t.patch);
   const synthTrack = selected?.patch && selected.kind !== "sampler" ? selected : tracks.find((t) => t.patch && t.kind !== "sampler");
@@ -255,15 +226,9 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
 
 
   return (
-    <section
-      className="phone-tool-panel rack fixed inset-0 z-40 flex min-w-0 flex-col overflow-x-hidden border-t-2 border-border sm:relative sm:inset-auto sm:z-auto sm:min-h-[240px]"
-       style={{ height: isMobile ? "100dvh" : panel ? "auto" : rackH }}
-    >
-      <div
-        onPointerDown={startResize}
-        title="Drag to resize this editor"
-        className="absolute inset-x-0 -top-1 z-20 h-2 cursor-ns-resize hover:bg-primary/40"
-      />
+    <HardwareWindow id={panel} enabled={["mixer", "synth", "drums", "keys", "plugins", "sampler", "pads", "mastering", "live", "looper", "reel-recorder", "video-sampler", "studio-view"].includes(panel)}>
+    {windowControls => <>
+
       <div className="editor-panel-header flex min-h-14 items-center gap-2 border-b border-border bg-surface-2/60 px-3 py-1.5">
         <span className="shrink-0 text-primary">{current.icon}</span>
         <h2 className="min-w-0 flex-1 truncate font-display text-sm font-semibold tracking-[0.12em] sm:text-[11px] sm:tracking-[0.2em]">
@@ -271,6 +236,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
           {(panel === "synth" ? synthTrack : selected) && <span className="ml-2 hidden label-xs sm:inline">· {(panel === "synth" ? synthTrack : selected)?.name}</span>}
         </h2>
         <div className="ml-auto flex shrink-0 items-center gap-1">
+          {windowControls}
           {!isMobile && ((panel === "synth" && selected?.kind !== "sampler") || panel === "drums") && (
             <Button
               size="sm"
@@ -383,7 +349,8 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
           </Button>
         </div>
       )}
-    </section>
+    </>}
+    </HardwareWindow>
   );
 }
 
