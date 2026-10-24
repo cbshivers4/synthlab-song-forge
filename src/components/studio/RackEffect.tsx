@@ -10,6 +10,7 @@ import { Knob } from "./Knob";
 import { EffectWorkbench, effectFamily } from "./EffectWorkbench";
 import { ProEq } from "./ProEq";
 import { VocoderPanel } from "./VocoderPanel";
+import { EffectPresetMenu } from "./EffectPresetMenu";
 
 const meterListeners = new Set<() => void>();
 let meterTimer: ReturnType<typeof setInterval> | undefined;
@@ -80,6 +81,7 @@ export function RackEffect({ trackId, plugin: p, index, count }: { trackId: stri
           <Button size="icon" variant="ghost" className="size-10" title={expanded ? "Fold controls" : "Expand controls"} aria-label={`${expanded ? "Fold" : "Expand"} ${p.name} controls`} aria-expanded={expanded} onClick={() => setExpanded((value) => !value)}>{expanded ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}</Button>
         </div>
       </header>
+      <EffectPresetMenu plugin={p} onParam={(id, value) => setPluginParam(trackId, p.id, id, value)} />
        <div className="fx-output-strip mx-2 py-1"><RackMeter plugin={p} /></div>
       {expanded && (p.kind === "paraeq" ? <div className="min-w-0 border-t border-border p-2"><ProEq trackId={trackId} plugin={p} /></div> : p.kind === "eq" ? <div className="min-w-0 space-y-2 border-t border-border p-2"><EffectDisplay plugin={p} height={280} onParam={(id, value) => setPluginParam(trackId, p.id, id, value)} /><div className="flex flex-wrap justify-center gap-2">{p.params.filter(param => param.id !== "low" && param.id !== "mid" && param.id !== "high").map(param => <Knob key={param.id} label={param.name} value={param.value} min={param.min} max={param.max} step={1} unit={param.unit ? ` ${param.unit}` : ""} size={48} onChange={value => setPluginParam(trackId, p.id, param.id, value)} midiTarget={{ id: trackId, param: `plugin:${p.id}:${param.id}` }} />)}</div></div> : p.kind === "vocoder" ? <div className="fx-control-deck"><VocoderPanel trackId={trackId} plugin={p} /></div> : <EffectWorkbench plugin={p} midiId={trackId} onParam={(id, value) => setPluginParam(trackId, p.id, id, value)} />)}
     </div>

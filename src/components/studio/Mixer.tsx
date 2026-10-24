@@ -42,6 +42,7 @@ import { EffectWorkbench, effectFamily } from "./EffectWorkbench";
 import { EffectDisplay } from "./EffectDisplay";
 import { ProEq } from "./ProEq";
 import { VocoderPanel } from "./VocoderPanel";
+import { EffectPresetMenu } from "./EffectPresetMenu";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const BUSES: BusId[] = ["drums", "vocals", "instruments", "synths", "fx", "master"];
@@ -287,6 +288,7 @@ export function InsertRack({
                     {p.name} <span className="text-xs text-muted-foreground">{title} · {p.format}</span>
                   </DialogTitle>
                 </DialogHeader>
+                <EffectPresetMenu plugin={p} onParam={(id, value) => onParam(p.id, id, value)} />
                 {p.kind === "paraeq" && isTrack ? (
                   <ProEq trackId={midiId} plugin={p} />
                 ) : p.kind === "vocoder" && isTrack ? (

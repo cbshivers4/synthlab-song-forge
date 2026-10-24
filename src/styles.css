@@ -2756,6 +2756,14 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
 }
 
 /* Reference workbenches: segmented space processor, buffer delay, silver sequencer. */
+.fx-preset-strip { min-width: 0; padding: 6px 10px; }
+.fx-preset-window { width: 100%; min-width: 0; height: 46px; border: 2px solid var(--hardware-rubber-edge); border-radius: 3px; background: var(--display-black); color: var(--display-cyan); box-shadow: var(--hardware-pressed-shadow); font: 600 13px var(--font-mono); }
+.fx-preset-window .fx-preset-caption { flex-shrink: 0; color: var(--hardware-silver); font-size: 9px; }
+.fx-preset-window > [data-slot="select-value"] { min-width: 0; flex: 1; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fx-preset-options { background: var(--surface); color: var(--foreground); border-color: var(--border); }
+.fx-editor .fx-preset-strip { padding: 0; }
+.device-module .fx-preset-strip { padding: 4px; }
+
 :root {
   --fx-section-face: oklch(0.3 0.012 255);
   --fx-section-header: oklch(0.2 0.008 255);
