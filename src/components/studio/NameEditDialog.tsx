@@ -30,7 +30,7 @@ export function NameEditDialog({ open, title, label, value, onChange, onClose, o
   }, [open, mobile]);
   return <Dialog open={open} onOpenChange={(next) => { if (!next && !busy) onClose(); }}>
     <DialogContent {...(mobile ? { overlayClassName: "name-editor-overlay" } : {})}
-      className={mobile ? "name-editor-dialog" : undefined} aria-describedby={undefined}>
+      className={mobile ? "name-editor-dialog translate-x-0 translate-y-0" : undefined} aria-describedby={undefined}>
       <DialogHeader><DialogTitle>{title}</DialogTitle></DialogHeader>
       <form className="grid min-w-0 gap-4" onSubmit={(e) => { e.preventDefault(); if (value.trim() && !busy) onSave(); }}>
         <div className="grid min-w-0 gap-2"><Label htmlFor="name-editor-input">{label}</Label>
