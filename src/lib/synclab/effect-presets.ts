@@ -227,7 +227,7 @@ export function effectPresets(plugin: Pick<PluginInstance, "kind" | "name">): Ef
 /** Match parameter values rather than local selection, so manual saves and all editors agree. */
 export function currentEffectPreset(plugin: PluginInstance): EffectPreset | undefined {
   const params = withDefaultParams(plugin);
-  return effectPresets(plugin).find(preset => params.every(p => preset.values[p.id] !== undefined && Math.abs(p.value - (preset.values[p.id] ?? 0)) < 0.000001));
+  return effectPresets(plugin).find(preset => params.every(p => preset.values[p.id] !== undefined && Math.abs(p.value - Math.max(p.min, Math.min(p.max, preset.values[p.id] ?? 0))) < 0.000001));
 }
 
 export function effectPresetParams(plugin: PluginInstance, presetId: string): PluginParam[] | undefined {
