@@ -1,5 +1,7 @@
+import { ClipboardPaste, Copy, MousePointer2, Pencil, Scissors, Trash2, Undo2, Redo2, ZoomIn, ZoomOut } from "lucide-react";
+import { movePianoNotes, pastePianoNotes } from "@/lib/synclab/piano-edit";
 import { capturedNote, loopRegion } from "@/lib/synclab/recording-region";
-import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
+import { canvasPoint } from "@/lib/synclab/canvas-point";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { keysSnapshot, subscribeKeys } from "@/lib/synclab/active-keys";
 
@@ -12,10 +14,17 @@ import { useStudio } from "@/lib/synclab/store";
 import { uid } from "@/lib/synclab/presets";
 import type { MidiNote, Track } from "@/lib/synclab/types";
 
+// Map the visible bounds, including native scroll offsets, into the sideways canvas.
+const editorRect = (el: HTMLElement) => {
+  const r = el.getBoundingClientRect();
+  const a = canvasPoint(r.left, r.top), b = canvasPoint(r.right, r.bottom);
+  return { left: Math.min(a.x,b.x), top: Math.min(a.y,b.y), width: Math.abs(b.x-a.x), height: Math.abs(b.y-a.y) };
+};
+
 const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 const isBlack = (p: number) => [1, 3, 6, 8, 10].includes(((p % 12) + 12) % 12);
 const ROWS = 24;
-const ROW_H = 16;
+let noteClipboard: MidiNote[] = [];
 
 const SCALES: Record<string, number[]> = {
   Minor: [0, 2, 3, 5, 7, 8, 10],
@@ -27,14 +36,21 @@ const SCALES: Record<string, number[]> = {
 };
 
 type Drag =
-  | { mode: "move"; id: string; startX: number; startY: number; step: number; pitch: number }
+  | { mode: "move"; id: string; startX: number; startY: number; step: number; pitch: number; ids: string[]; notes: MidiNote[] }
   | { mode: "resize"; id: string; startX: number; length: number }
   | null;
 
 export function PianoRoll({ track }: { track: Track }) {
   const isMobile = useIsMobile();
-  const { setNotes, previewNote, transport, setStepCount, updateTrack } = useStudio();
+  const { setNotes, previewNote, transport, setStepCount, updateTrack, undo, redo, canUndo, canRedo } = useStudio();
   const litKeys = useSyncExternalStore(subscribeKeys, keysSnapshot, () => NO_KEYS);
+  const ROW_H = isMobile ? 28 : 22;
+  const [mode, setMode] = useState<"draw" | "select" | "erase">("draw");
+  const [multi, setMulti] = useState(false);
+  const [zoom, setZoom] = useState(1);
+  const [cursor, setCursor] = useState(() => transport.step);
+  const [clipboardCount, setClipboardCount] = useState(noteClipboard.length);
+  const suppressClick = useRef(false);
   const [low, setLow] = useState(48);
   const [grid, setGrid] = useState(1); // steps per snap
   const [len, setLen] = useState(1);
@@ -79,7 +95,7 @@ export function PianoRoll({ track }: { track: Track }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [track.id]);
   const pitches = Array.from({ length: ROWS }, (_, i) => low + ROWS - 1 - i);
-  const scale = SCALES[scaleName] ?? SCALES["Minor"]!;
+  const scale = SCALES[scaleName] ?? SCALES["Minor"] ?? [];
   const inScale = (p: number) => scale.includes((((p - root) % 12) + 12) % 12);
   const snap = (v: number) => Math.max(0, Math.round(v / grid) * grid);
   const apply = (fn: (n: MidiNote) => MidiNote) =>
@@ -101,18 +117,22 @@ export function PianoRoll({ track }: { track: Track }) {
   const posFromEvent = (e: React.PointerEvent | React.MouseEvent) => {
     const el = gridRef.current;
     if (!el) return null;
-    const r = canvasRect(el);
+    const r = editorRect(el);
     const pt = canvasPoint(e.clientX, e.clientY);
     const x = ((pt.x - r.left) / r.width) * steps;
     const row = Math.floor((pt.y - r.top) / ROW_H);
-    const pitch = pitches[Math.min(ROWS - 1, Math.max(0, row))]!;
-    return { step: snap(x), pitch, rawX: x };
+    const pitch = pitches[Math.min(ROWS - 1, Math.max(0, row))] ?? low;
+    return { step: Math.max(0, Math.floor(x / grid) * grid), pitch, rawX: x };
   };
 
   const addNote = (e: React.MouseEvent) => {
+    if (suppressClick.current) { suppressClick.current = false; return; }
     const p = posFromEvent(e);
     if (!p) return;
     if (scaleLock && !inScale(p.pitch)) return;
+    setCursor(p.step);
+    if (mode !== "draw") { if (!multi) setSel([]); return; }
+    if (notes.some(n => n.pitch === p.pitch && n.step === p.step)) return;
     const n = capturedNote({ id: uid(), pitch: p.pitch, step: p.step, length: len, velocity: 0.85 }, loopRegion(transport));
     if (!n) return;
     setNotes(track.id, [...notes, n]);
@@ -122,12 +142,21 @@ export function PianoRoll({ track }: { track: Track }) {
 
   const onNoteDown = (e: React.PointerEvent, n: MidiNote, resize: boolean) => {
     e.stopPropagation();
+    e.preventDefault();
+    if (mode === "erase") { del(n.id); return; }
+    if ((multi || e.shiftKey) && !resize) {
+      setSel(s => s.includes(n.id) ? s.filter(id => id !== n.id) : [...s, n.id]);
+      return;
+    }
     e.currentTarget.setPointerCapture(e.pointerId);
-    setSel(e.shiftKey ? (s) => (s.includes(n.id) ? s : [...s, n.id]) : [n.id]);
+    const ids = sel.includes(n.id) ? sel : [n.id];
+    setSel(ids);
+    setCursor(n.step);
     const pt = canvasPoint(e.clientX, e.clientY);
     drag.current = resize
       ? { mode: "resize", id: n.id, startX: pt.x, length: n.length }
-      : { mode: "move", id: n.id, startX: pt.x, startY: pt.y, step: n.step, pitch: n.pitch };
+      : { mode: "move", id: n.id, startX: pt.x, startY: pt.y, step: n.step, pitch: n.pitch, ids, notes: structuredClone(notes) };
+
   };
 
   const onMove = (e: React.PointerEvent) => {
@@ -137,7 +166,7 @@ export function PianoRoll({ track }: { track: Track }) {
     // marquee select: pressed on empty grid and dragged
     const m = marq.current;
     if (m && !drag.current) {
-      const r = canvasRect(el);
+      const r = editorRect(el);
       const x = pt.x - r.left;
       const y = pt.y - r.top;
       if (m.active || Math.hypot(x - m.x, y - m.y) > 4) {
@@ -148,17 +177,14 @@ export function PianoRoll({ track }: { track: Track }) {
     }
     const d = drag.current;
     if (!d) return;
-    const stepPx = canvasRect(el).width / steps;
+    const stepPx = editorRect(el).width / steps;
     if (d.mode === "resize") {
       const nl = Math.max(grid, snap(d.length + (pt.x - d.startX) / stepPx) || grid);
       setNotes(track.id, notes.map((n) => (n.id === d.id ? capturedNote({ ...n, length: nl }, loopRegion(transport)) ?? n : n)));
     } else {
-      const ds = snap(d.step + (pt.x - d.startX) / stepPx);
-      const dp = d.pitch - Math.round((pt.y - d.startY) / ROW_H);
-      setNotes(
-        track.id,
-        notes.map((n) => (n.id === d.id ? capturedNote({ ...n, step: ds, pitch: Math.max(0, Math.min(120, dp)) }, loopRegion(transport)) ?? n : n)),
-      );
+      const ds = Math.round((pt.x - d.startX) / stepPx / grid) * grid;
+      const dp = -Math.round((pt.y - d.startY) / ROW_H);
+      setNotes(track.id, movePianoNotes(d.notes, d.ids, ds, dp, loopRegion(transport)));
     }
   };
 
@@ -167,30 +193,78 @@ export function PianoRoll({ track }: { track: Track }) {
     const m = marq.current;
     marq.current = null;
     if (m?.active && marquee) {
+      suppressClick.current = true;
       const el = gridRef.current;
       if (el) {
-        const r = canvasRect(el);
+        const r = editorRect(el);
         const stepPx = r.width / steps;
         const s0 = marquee.x0 / stepPx;
         const s1 = marquee.x1 / stepPx;
-        const pTop = pitches[Math.min(ROWS - 1, Math.max(0, Math.floor(marquee.y0 / ROW_H)))]!;
-        const pBot = pitches[Math.min(ROWS - 1, Math.max(0, Math.floor(marquee.y1 / ROW_H)))]!;
+        const pTop = pitches[Math.min(ROWS - 1, Math.max(0, Math.floor(marquee.y0 / ROW_H)))] ?? low;
+        const pBot = pitches[Math.min(ROWS - 1, Math.max(0, Math.floor(marquee.y1 / ROW_H)))] ?? low;
         setSel(notes.filter((n) => n.step < s1 && n.step + n.length > s0 && n.pitch <= pTop && n.pitch >= pBot).map((n) => n.id));
       }
     }
     setMarquee(null);
   };
 
-  const del = (id: string) => setNotes(track.id, notes.filter((n) => n.id !== id));
+  const del = (id: string) => { setNotes(track.id, notes.filter(n => n.id !== id)); setSel(s => s.filter(x => x !== id)); };
+  const deleteSelected = () => { if (!sel.length) return; setNotes(track.id, notes.filter(n => !sel.includes(n.id))); setSel([]); };
+  const copySelected = (cut = false) => {
+    if (!sel.length) return;
+    noteClipboard = structuredClone(notes.filter(n => sel.includes(n.id)));
+    setClipboardCount(noteClipboard.length);
+    if (cut) deleteSelected();
+  };
+  const paste = () => {
+    const pasted = pastePianoNotes(noteClipboard, cursor, loopRegion(transport));
+    if (!pasted.length) return;
+    setNotes(track.id, [...notes, ...pasted]);
+    setSel(pasted.map(n => n.id));
+  };
+  const handleKey = (e: React.KeyboardEvent) => {
+    if (e.defaultPrevented || e.nativeEvent.isComposing) return;
+    if ((e.target as HTMLElement).closest('input, select, textarea, [role="combobox"], [role="slider"]')) return;
+    const mod = e.ctrlKey || e.metaKey;
+    const key = e.key.toLowerCase();
+    const claim = () => { e.preventDefault(); e.stopPropagation(); };
+    if (mod && ['a','c','x','v','z','y'].includes(key)) {
+      claim();
+      if (key === 'a') setSel(notes.map(n => n.id));
+      if (key === 'c') copySelected();
+      if (key === 'x') copySelected(true);
+      if (key === 'v') paste();
+      if (key === 'z') e.shiftKey ? redo() : undo();
+      if (key === 'y') redo();
+    } else if (key === 'delete' || key === 'backspace') { claim(); deleteSelected(); }
+    else if (key.startsWith('arrow') && sel.length) {
+      claim();
+      setNotes(track.id, movePianoNotes(notes, sel, key === 'arrowleft' ? -grid : key === 'arrowright' ? grid : 0, key === 'arrowup' ? 1 : key === 'arrowdown' ? -1 : 0, loopRegion(transport)));
+    }
+  };
 
   const Tool = ({ children, onClick, active }: { children: React.ReactNode; onClick: () => void; active?: boolean }) => (
-    <Button size="sm" variant={active ? "default" : "ghost"} className="h-7 px-2 text-[10px]" onClick={onClick}>
+    <Button size="sm" variant={active ? "default" : "ghost"} className="h-9 shrink-0 px-2 text-[11px]" onClick={onClick}>
       {children}
     </Button>
   );
 
   return (
-    <div className="space-y-1.5" onPointerUp={endDrag} onPointerLeave={endDrag}>
+    <div className="piano-roll space-y-1.5 outline-none" tabIndex={0} aria-label="Piano roll note editor" onKeyDown={handleKey} onPointerDownCapture={e => { if (!(e.target as HTMLElement).closest('button,input,[role="combobox"]')) e.currentTarget.focus({ preventScroll: true }); }} onPointerUp={endDrag} onPointerCancel={endDrag}>
+      <div className="sticky top-0 z-20 flex flex-wrap items-center gap-1 border-b border-border bg-surface-2 p-1" role="toolbar" aria-label="Note editing">
+        {([{ id: 'draw', icon: Pencil, label: 'Draw notes' }, { id: 'select', icon: MousePointer2, label: 'Select notes' }, { id: 'erase', icon: Trash2, label: 'Erase notes' }] as const).map(tool => <Button key={tool.id} variant={mode === tool.id ? 'default' : 'outline'} size="icon" className="size-10 shrink-0" aria-label={tool.label} title={tool.label} aria-pressed={mode === tool.id} onClick={() => setMode(tool.id)}><tool.icon className="size-4" /></Button>)}
+        <Button variant={multi ? 'default' : 'outline'} className="h-10" aria-pressed={multi} onClick={() => { setMode('select'); setMulti(!multi); }}>Multi-select</Button>
+        <div className="mx-1 h-6 border-l border-border" />
+        <Button variant="outline" size="icon" className="size-10" aria-label="Copy notes" title="Copy notes" disabled={!sel.length} onClick={() => copySelected()}><Copy className="size-4" /></Button>
+        <Button variant="outline" size="icon" className="size-10" aria-label="Cut notes" title="Cut notes" disabled={!sel.length} onClick={() => copySelected(true)}><Scissors className="size-4" /></Button>
+        <Button variant="outline" size="icon" className="size-10" aria-label="Paste notes" title="Paste notes at cursor" disabled={!clipboardCount} onClick={paste}><ClipboardPaste className="size-4" /></Button>
+        <Button variant="outline" size="icon" className="size-10 text-destructive" aria-label="Delete selected notes" title="Delete selected notes" disabled={!sel.length} onClick={deleteSelected}><Trash2 className="size-4" /></Button>
+        <span className="px-1 font-mono text-xs text-muted-foreground">{sel.length} selected · Step {cursor + 1}</span>
+        <Button variant="ghost" size="icon" className="size-10" aria-label="Undo note edit" disabled={!canUndo} onClick={undo}><Undo2 className="size-4" /></Button>
+        <Button variant="ghost" size="icon" className="size-10" aria-label="Redo note edit" disabled={!canRedo} onClick={redo}><Redo2 className="size-4" /></Button>
+        <Button variant="ghost" size="icon" className="size-10" aria-label="Zoom out notes" disabled={zoom <= 1} onClick={() => setZoom(z => Math.max(1,z / 2))}><ZoomOut className="size-4" /></Button>
+        <Button variant="ghost" size="icon" className="size-10" aria-label="Zoom in notes" disabled={zoom >= 4} onClick={() => setZoom(z => Math.min(4,z * 2))}><ZoomIn className="size-4" /></Button>
+      </div>
       {track.clips?.length ? (
         <div className="flex items-center justify-between gap-2 border-b border-border px-2 py-1 text-xs text-muted-foreground">
           <span>{track.printedAudio ? "Recorded waveform is playing; notes remain editable here." : "Notes are playing; this track also holds a recorded waveform."}</span>
@@ -345,8 +419,8 @@ export function PianoRoll({ track }: { track: Track }) {
         )}
         <Tool onClick={() => setSel(notes.map((n) => n.id))}>SELECT ALL</Tool>
         <Tool onClick={() => setSel([])}>DESELECT</Tool>
-        <Tool onClick={() => setNotes(track.id, sel.length ? notes.filter((n) => !sel.includes(n.id)) : [])}>
-          {sel.length ? "DELETE SEL" : "CLEAR"}
+        <Tool onClick={deleteSelected}>
+          {"DELETE SEL"}
         </Tool>
       </div>
 
@@ -386,7 +460,7 @@ export function PianoRoll({ track }: { track: Track }) {
             const ids = new Map(t.map((n, i) => [n.id, start + i * grid]));
             setNotes(
               track.id,
-              notes.map((n) => (ids.has(n.id) ? { ...n, step: ids.get(n.id)!, length: grid } : n)),
+              notes.map((n) => (ids.has(n.id) ? { ...n, step: ids.get(n.id) ?? n.step, length: grid } : n)),
             );
           }}
         >
@@ -410,7 +484,7 @@ export function PianoRoll({ track }: { track: Track }) {
             const t = [...targets()].sort((a, b) => a.pitch - b.pitch);
             if (!t.length) return;
             const off = new Map(t.map((n, i) => [n.id, i * 0.12]));
-            setNotes(track.id, notes.map((n) => (off.has(n.id) ? { ...n, step: n.step + off.get(n.id)! } : n)));
+            setNotes(track.id, notes.map((n) => (off.has(n.id) ? { ...n, step: n.step + (off.get(n.id) ?? 0) } : n)));
           }}
         >
           STRUM
@@ -463,7 +537,7 @@ export function PianoRoll({ track }: { track: Track }) {
             const groups = new Map<number, MidiNote[]>();
             t.forEach((n) => groups.set(Math.floor(n.step), [...(groups.get(Math.floor(n.step)) ?? []), n]));
             groups.forEach((g, st) => g.sort((a, b) => a.pitch - b.pitch).forEach((n, i) => off.set(n.id, st + Math.min(0.9, i * 0.15))));
-            setNotes(track.id, notes.map((n) => (off.has(n.id) ? { ...n, step: off.get(n.id)! } : n)));
+            setNotes(track.id, notes.map((n) => (off.has(n.id) ? { ...n, step: off.get(n.id) ?? n.step } : n)));
           }}
         >
           STRUM ↑
@@ -475,7 +549,7 @@ export function PianoRoll({ track }: { track: Track }) {
             const groups = new Map<number, MidiNote[]>();
             t.forEach((n) => groups.set(Math.floor(n.step), [...(groups.get(Math.floor(n.step)) ?? []), n]));
             groups.forEach((g, st) => g.sort((a, b) => b.pitch - a.pitch).forEach((n, i) => off.set(n.id, st + Math.min(0.9, i * 0.15))));
-            setNotes(track.id, notes.map((n) => (off.has(n.id) ? { ...n, step: off.get(n.id)! } : n)));
+            setNotes(track.id, notes.map((n) => (off.has(n.id) ? { ...n, step: off.get(n.id) ?? n.step } : n)));
           }}
         >
           STRUM ↓
@@ -502,14 +576,17 @@ export function PianoRoll({ track }: { track: Track }) {
           ))}
         </div>
 
-        <div className="relative flex-1 overflow-hidden">
+        <div className="relative min-w-0 flex-1 overflow-x-auto">
+          <div style={{ width: `${zoom * 100}%`, minWidth: steps * (isMobile ? 28 : 20) }}> 
           <div
             ref={gridRef}
             className="relative select-none bg-background"
             style={{ height: ROWS * ROW_H }}
-            onDoubleClick={addNote}
+            onClick={addNote}
             onPointerDown={(e) => {
-              const r = canvasRect(e.currentTarget);
+              if (mode !== "select") return;
+              e.currentTarget.setPointerCapture(e.pointerId);
+              const r = editorRect(e.currentTarget);
               const pt = canvasPoint(e.clientX, e.clientY);
               marq.current = { x: pt.x - r.left, y: pt.y - r.top, active: false };
             }}
@@ -542,6 +619,7 @@ export function PianoRoll({ track }: { track: Track }) {
               className="playhead-line pointer-events-none absolute top-0 bottom-0 w-[2px]"
               style={{ left: `${((transport.step % steps) / steps) * 100}%` }}
             />
+            <div className="pointer-events-none absolute inset-y-0 z-10 border-l border-dashed border-primary" style={{ left: `${cursor / steps * 100}%` }} />
             {marquee && (
               <div
                 className="pointer-events-none absolute z-10 border border-primary bg-primary/15"
@@ -555,7 +633,10 @@ export function PianoRoll({ track }: { track: Track }) {
               return (
                 <div
                   key={n.id}
-                  data-note
+                  data-note={n.id}
+                  data-selected={selected}
+                  role="button" aria-label={`${NOTE_NAMES[n.pitch % 12]}${Math.floor(n.pitch / 12) - 1} note at step ${n.step + 1}`} aria-pressed={selected}
+                  onClick={e => e.stopPropagation()}
                   onPointerDown={(e) => onNoteDown(e, n, false)}
                   onContextMenu={(e) => {
                     e.preventDefault();
@@ -567,6 +648,7 @@ export function PianoRoll({ track }: { track: Track }) {
                     width: `${(n.length / steps) * 100}%`,
                     top: rowIndex * ROW_H + 1,
                     height: ROW_H - 3,
+                    minWidth: 14,
                     opacity: 0.55 + n.velocity * 0.45,
                     outline: selected ? "1px solid var(--foreground)" : "none",
                     cursor: "grab",
@@ -575,23 +657,9 @@ export function PianoRoll({ track }: { track: Track }) {
                 >
                   <div
                     onPointerDown={(e) => onNoteDown(e, n, true)}
-                     className="absolute inset-y-0 right-0 w-1.5 cursor-ew-resize touch-none bg-clip-midi-dark/35"
+                     className="absolute inset-y-0 right-0 w-2 cursor-ew-resize touch-none bg-clip-midi-dark/35"
                   />
-                  {selected && (
-                    <button
-                      type="button"
-                      aria-label="Delete note"
-                      title="Delete this note"
-                      onPointerDown={(e) => e.stopPropagation()}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        del(n.id);
-                      }}
-                      className="absolute -top-2 -right-2 z-10 flex size-5 items-center justify-center rounded-full bg-destructive font-mono text-[10px] leading-none text-destructive-foreground shadow-sm"
-                    >
-                      ×
-                    </button>
-                  )}
+
                 </div>
               );
             })}
@@ -603,7 +671,7 @@ export function PianoRoll({ track }: { track: Track }) {
             const bipolar = key === "bendLane";
             const draw = (e: React.PointerEvent<HTMLDivElement>) => {
               e.preventDefault();
-              const r = e.currentTarget.getBoundingClientRect();
+              const r = editorRect(e.currentTarget);
               let cur = [...(track[key] ?? [])];
               const put = (cx: number, cy: number) => {
                 const step = Math.max(0, Math.min(steps - 1, Math.floor(((cx - r.left) / r.width) * steps)));
@@ -612,8 +680,9 @@ export function PianoRoll({ track }: { track: Track }) {
                 cur = [...cur.filter((p) => p.step !== step), { step, value }].sort((a, b) => a.step - b.step);
                 updateTrack(track.id, { [key]: cur });
               };
-              put(e.clientX, e.clientY);
-              const mv = (ev: PointerEvent) => put(ev.clientX, ev.clientY);
+              const initial = canvasPoint(e.clientX, e.clientY);
+              put(initial.x, initial.y);
+              const mv = (ev: PointerEvent) => { const pt = canvasPoint(ev.clientX, ev.clientY); put(pt.x, pt.y); };
               const up = () => { window.removeEventListener("pointermove", mv); window.removeEventListener("pointerup", up); };
               window.addEventListener("pointermove", mv);
               window.addEventListener("pointerup", up);
@@ -653,8 +722,9 @@ export function PianoRoll({ track }: { track: Track }) {
                 onPointerDown={(e) => {
                   e.preventDefault();
                   setSel([n.id]);
-                  const el = e.currentTarget.parentElement!;
-                  const r = el.getBoundingClientRect();
+                  const el = e.currentTarget.parentElement;
+                  if (!el) return;
+                  const r = editorRect(el);
                   const set = (cy: number) =>
                     setNotes(
                       track.id,
@@ -662,8 +732,8 @@ export function PianoRoll({ track }: { track: Track }) {
                         x.id === n.id ? { ...x, velocity: Math.min(1, Math.max(0.05, 1 - (cy - r.top) / r.height)) } : x,
                       ),
                     );
-                  set(e.clientY);
-                  const mv = (ev: PointerEvent) => set(ev.clientY);
+                  set(canvasPoint(e.clientX,e.clientY).y);
+                  const mv = (ev: PointerEvent) => set(canvasPoint(ev.clientX,ev.clientY).y);
                   const up = () => {
                     window.removeEventListener("pointermove", mv);
                     window.removeEventListener("pointerup", up);
@@ -682,11 +752,8 @@ export function PianoRoll({ track }: { track: Track }) {
           </div>
         </div>
       </div>
+      </div>
 
-      <p className="label-xs">
-        DOUBLE-CLICK TO DRAW · DRAG A NOTE TO MOVE · DRAG EMPTY SPACE TO SELECT A GROUP · OCT +/− MOVES THE SELECTION AN OCTAVE ·
-        RIGHT-CLICK OR TAP A NOTE'S × TO DELETE · SHIFT-CLICK TO MULTI-SELECT · DRAG BARS IN VELOCITY LANE
-      </p>
     </div>
   );
 }
