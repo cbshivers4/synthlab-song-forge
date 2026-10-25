@@ -8,7 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { materialEnd, pasteTrackContent } from "./arrangement-edit";
+import { materialEnd, pasteTrackContent, timelinePasteStep } from "./arrangement-edit";
 import { createRecordingFinalizer } from "./recording-finalizer";
 import { capturedNote, loopRegion } from "./recording-region";
 import { editDrumPads, type DrumBulkEdit } from "./drum-bulk";
@@ -322,11 +322,11 @@ interface StudioApi extends StudioState {
   clipboardName: string | null;
   copyTrack: (id: string) => void;
   cutTrack: (id: string) => void;
-  pasteTrack: (targetId?: string) => void;
+  pasteTrack: (targetId?: string, destinationStep?: number) => void;
   clipClipboardName: string | null;
   copyClip: (trackId: string, clipId: string) => void;
   cutClip: (trackId: string, clipId: string) => void;
-  pasteClip: (atEnd?: boolean, targetId?: string) => void;
+  pasteClip: (atEnd?: boolean, targetId?: string, destinationStep?: number) => void;
   updatePatch: (id: string, patch: Partial<SynthPatch>) => void;
   updatePad: (trackId: string, padId: string, patch: Partial<DrumPad>) => void;
   editAllDrums: (trackId: string, edit: DrumBulkEdit) => void;
@@ -2155,7 +2155,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         setSelectedIds((s) => s.filter((x) => x !== id));
         toast("Cut", { description: `${src.name} removed and placed on the clipboard.` });
       },
-      pasteTrack: (targetId) => {
+      pasteTrack: (targetId, destinationStep) => {
         const src = clipboardRef.current;
         if (!src) {
           toast("Clipboard is empty", { description: "Copy a track first with ⌘C / Ctrl+C." });
@@ -2168,7 +2168,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             toast.error("Choose a matching channel");
             return;
           }
-          const pasted = pasteTrackContent(target, src, Math.max(0, transportRef.current.step), stepSeconds(transportRef.current.bpm));
+          const pasted = pasteTrackContent(target, src, timelinePasteStep(transportRef.current.step, destinationStep), stepSeconds(transportRef.current.bpm));
           setTracks(ts => ts.map(t => t.id === target.id ? pasted : t));
           setTransportState(tp => ({ ...tp, bars: Math.max(tp.bars, barsForSteps(materialEnd(pasted, stepSeconds(tp.bpm)))) }));
           return;
@@ -2215,7 +2215,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         );
         toast("Clip cut", { description: `${clip.name} — paste it at the playhead with ⌘V / Ctrl+V.` });
       },
-      pasteClip: (atEnd, targetId) => {
+      pasteClip: (atEnd, targetId, destinationStep) => {
         const src = clipClipboardRef.current;
         if (!src) {
           toast("Clip clipboard is empty", { description: "Click a clip and press ⌘C / Ctrl+C first." });
@@ -2231,7 +2231,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         const pasteStepDur = stepSeconds(transportRef.current.bpm);
         const endOf = (t: Track) =>
           (t.clips ?? []).reduce((m, c) => Math.max(m, (c.start ?? 0) + clipSeconds(c) / pasteStepDur), 0);
-        const at = atEnd ? endOf(target) : Math.max(0, transportRef.current.step);
+        const at = atEnd ? endOf(target) : timelinePasteStep(transportRef.current.step, destinationStep);
         const clip: AudioClip = { ...(structuredClone(src) as AudioClip), id: uid(), start: at };
         const isNotes = target.kind === "drum" || target.kind === "instrument" || target.kind === "midi";
         // Paste onto the selected track itself; note tracks switch to WAVE so the audio plays there.

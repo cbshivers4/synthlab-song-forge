@@ -874,6 +874,19 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
   const [confirm, setConfirm] = useState(false);
   const [dropping, setDropping] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [pastePosition, setPastePosition] = useState<number | null>(null);
+  const clipTapRef = useRef<{ x: number; y: number } | null>(null);
+  const hasClipboard = Boolean(clipboardName || clipClipboardName);
+  const pasteAt = (step?: number) => {
+    if (clipClipboardName) pasteClip(false, track.id, step);
+    else pasteTrack(track.id, step);
+  };
+  const selectForEditing = () => {
+    select(track.id);
+    setPastePosition(null);
+    if (track.kind === "instrument" || track.kind === "midi") setPanel("piano");
+    else setMenuOpen(true);
+  };
   const gestureRef = useRef<{ x: number; y: number; timer: number | null; moved: boolean } | null>(null);
   const suppressClickRef = useRef(false);
   const isSelected = selectedId === track.id || selectedIds.includes(track.id);
@@ -1192,6 +1205,20 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
       className={`relative flex items-stretch transition-colors ${isSelected ? "track-selected bg-foreground/10" : "hover:bg-surface/50"} ${track.hidden ? "opacity-40" : ""} ${dropping ? "ring-1 ring-primary ring-inset" : ""}`}
       data-track-row={track.id}
       style={{ height: Math.max(132, track.height ?? 140) }}
+      onPointerDownCapture={(e) => {
+        const target = e.target as HTMLElement;
+        clipTapRef.current = target.closest(".arrangement-clip") && !target.closest("button,[role='slider'],[role='menu']")
+          ? canvasPoint(e.clientX, e.clientY) : null;
+      }}
+      onPointerUpCapture={(e) => {
+        const start = clipTapRef.current;
+        clipTapRef.current = null;
+        if (!start || editTool !== "select") return;
+        const end = canvasPoint(e.clientX, e.clientY);
+        if (Math.hypot(end.x - start.x, end.y - start.y) > 6) return;
+        // Finish the existing part-selection handler before opening its editor/menu.
+        window.setTimeout(selectForEditing, 0);
+      }}
       onClick={(e) => {
         if (suppressClickRef.current) {
           suppressClickRef.current = false;
@@ -1201,14 +1228,10 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
           toggleSelectId(track.id);
           return;
         }
-        // Click highlights the track (Ctrl/Cmd+C, X, V or the toolbar act on it); the ⋮ menu or right-click opens actions.
         // Clicks from the track menu arrive through a portal; they act on their own and never jump to the piano roll.
         if (!e.currentTarget.contains(e.target as Node)) return;
-        select(track.id);
         const target = e.target as HTMLElement;
-        if ((track.kind === "instrument" || track.kind === "midi") && !target.closest("button,input,textarea,select,[role='slider'],[role='combobox'],[role='menuitem'],[role='menu'],[data-cut-tool]")) {
-          setPanel("piano");
-        }
+        if (!target.closest("button,input,textarea,select,[role='slider'],[role='combobox'],[role='menuitem'],[role='menu'],[data-cut-tool]")) selectForEditing();
       }}
       onContextMenu={(e) => {
         e.preventDefault();
@@ -1241,10 +1264,8 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
           if (!e.currentTarget.contains(e.target as Node)) return;
           const el = e.target as HTMLElement;
           if (el.closest("button,input,[role='slider'],[role='combobox'],[role='menuitem'],[role='menu']")) return;
-          select(track.id);
-          if (track.kind === "instrument" || track.kind === "midi") setPanel("piano");
-          else if (editorPanel) setPanel(editorPanel);
-          else if (!isMobile) setMenuOpen(true);
+          e.stopPropagation();
+          selectForEditing();
         }}
       >
         <div className="flex min-w-0 items-center gap-1">
@@ -1296,9 +1317,9 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
               onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
             />
           ) : (
-            <Button variant="ghost" className="h-6 min-w-0 flex-1 justify-start px-0 py-0 text-left font-display text-[11px] font-semibold" title={track.name} onClick={() => {
-              select(track.id);
-              if (track.kind === "instrument" || track.kind === "midi") setPanel("piano");
+            <Button variant="ghost" className="h-6 min-w-0 flex-1 justify-start px-0 py-0 text-left font-display text-[11px] font-semibold" title={track.name} onClick={(e) => {
+              e.stopPropagation();
+              selectForEditing();
             }} onDoubleClick={() => setRenaming(true)}>
               <span className="truncate">{index + 1}. {track.name}</span>
             </Button>
@@ -1323,6 +1344,18 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="timeline-channel-menu min-w-56">
+              <DropdownMenuLabel>{track.name}</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => {
+                if (track.kind === "instrument" || track.kind === "midi") { select(track.id); setPanel("piano"); }
+                else if (activeClip) { select(track.id); fileStudio.setActiveClip(track.id, activeClip.id); window.dispatchEvent(new CustomEvent("synclab:edit-clip", { detail: activeClip.id })); }
+                else if (editorPanel) openTrackEditor();
+                else openTrackSettings(track.id);
+              }}><Pencil className="size-4" /> Edit</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => activeClip ? copyClip(track.id, activeClip.id) : copyTrack(track.id)}><Copy className="size-4" /> Copy</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => activeClip ? cutClip(track.id, activeClip.id) : cutTrack(track.id)}><Scissors className="size-4" /> Cut</DropdownMenuItem>
+              {pastePosition !== null && <DropdownMenuItem disabled={!hasClipboard} onClick={() => pasteAt(pastePosition)}><ClipboardPaste className="size-4" /> Paste here · {positionLabel(pastePosition)}</DropdownMenuItem>}
+              <DropdownMenuItem disabled={!hasClipboard} onClick={() => pasteAt()}><ClipboardPaste className="size-4" /> Paste at playhead</DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => setRenaming(true)}>Rename</DropdownMenuItem>
               {editorPanel === "synth" && (
                 <DropdownMenuSub><DropdownMenuSubTrigger><Sliders className="size-4" /> Open instrument</DropdownMenuSubTrigger><DropdownMenuSubContent className="min-w-60">
@@ -1798,7 +1831,20 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
                 : undefined
         }
         onClick={(e) => {
-          if (editTool === "select") return;
+          if (editTool === "select") {
+            if (!e.currentTarget.contains(e.target as Node)) return;
+            e.stopPropagation();
+            const rect = canvasRect(e.currentTarget);
+            const point = canvasPoint(e.clientX, e.clientY);
+            const grid = transport.snap ?? 1;
+            const raw = Math.max(0, Math.min(1, (point.x - rect.left) / Math.max(1, rect.width))) * songSteps(transport.bars);
+            select(track.id);
+            setPastePosition(grid > 0 ? Math.round(raw / grid) * grid : raw);
+            // With copied material, empty space chooses a paste destination even on synth channels.
+            if (!hasClipboard && (track.kind === "instrument" || track.kind === "midi")) setPanel("piano");
+            else setMenuOpen(true);
+            return;
+          }
           if (editTool === "split" || editTool === "razor") {
             e.stopPropagation();
             select(track.id);
