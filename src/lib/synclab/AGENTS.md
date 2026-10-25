@@ -1,5 +1,7 @@
 # Shared audio logic
 
+Timeline mono/stereo file actions render selected clip trims/rates/fades or the loaded sampler source offline, then encode an explicit one- or two-channel WAV; never replace source material or alter live routing/tempo during conversion.
+
 Built-in synth chorus and reverb use separate per-channel destination scales; update both for fader/automation/mute/VCA and disconnect both on removal, so effects stay independent without bypassing mix controls.
 
 Recording Stop paths share a deduplicated finalizer that awaits pending input starts before landing takes; preserve the stop position until notes finish, then rewind. Arrangement paste uses material helpers on the selected channel, and right-edge extension renders pitch-preserving audio through the existing stretch path rather than referencing beyond source bounds.
