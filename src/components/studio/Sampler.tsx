@@ -583,6 +583,13 @@ export function Sampler() {
                 onClick={() => {
                   const engine = getEngine();
                   engine.init();
+                  if (sampleIssue) {
+                    toast.error("This sample can't play", { description: sampleIssue });
+                    return;
+                  }
+                  if (track.muted || (tracks.some((t) => t.solo) && !track.solo)) {
+                    toast.warning("This channel is silenced", { description: track.muted ? "Unmute (M) this sampler channel to hear it." : "Another channel is soloed (S). Solo this channel or clear the other solo to hear it." });
+                  }
                   engine.syncMixIfChanged(tracks);
                   stopSamples(track.id);
                   engine.playSample(track.id, { ...s, loop: false, oneShot: true }, s.rootNote);
