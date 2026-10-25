@@ -107,7 +107,9 @@ function shifter(ctx: BaseAudioContext, input: AudioNode, out: AudioNode, semis:
 export function widthStage(ctx: BaseAudioContext, input: AudioNode, out: AudioNode, width: number) {
   const split = ctx.createChannelSplitter(2); const merge = ctx.createChannelMerger(2);
   const ll = ctx.createGain(), rr = ctx.createGain(), lr = ctx.createGain(), rl = ctx.createGain();
-  input.connect(split);
+  // Mono sources must be upmixed first, or the splitter leaves the right side silent.
+  const stereo = ctx.createGain(); stereo.channelCount = 2; stereo.channelCountMode = "explicit"; stereo.channelInterpretation = "speakers";
+  input.connect(stereo); stereo.connect(split);
   split.connect(ll, 0); split.connect(lr, 0); split.connect(rr, 1); split.connect(rl, 1);
   ll.connect(merge, 0, 0); rl.connect(merge, 0, 0); rr.connect(merge, 0, 1); lr.connect(merge, 0, 1);
   merge.connect(out);
