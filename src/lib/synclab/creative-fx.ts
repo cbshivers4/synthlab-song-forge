@@ -290,16 +290,15 @@ export function buildCreativeFx(ctx: BaseAudioContext, pl: PluginInstance, h: Fx
       break;
     }
     case "imager": {
-      const lo = ctx.createBiquadFilter(); lo.type = "lowpass"; const hi = ctx.createBiquadFilter(); hi.type = "highpass";
-      lo.frequency.value = hi.frequency.value = val("crossover", 250);
+      // Linkwitz-Riley 4th-order crossover: cascaded Butterworth pairs sum flat.
+      const bq = (type: BiquadFilterType) => { const b = ctx.createBiquadFilter(); b.type = type; b.Q.value = -3.0103; b.frequency.value = val("crossover", 250); return b; };
+      const lo1 = bq("lowpass"), lo = bq("lowpass"), hi1 = bq("highpass"), hi = bq("highpass");
       const post = ctx.createGain(); outLevel(post);
-      input.connect(lo); input.connect(hi);
+      input.connect(lo1); lo1.connect(lo); input.connect(hi1); hi1.connect(hi);
       const setLo = widthStage(ctx, lo, post, val("lowWidth", 0.6));
-      // Inverting the high band keeps the 2nd-order crossover sum flat instead of notching.
-      const flip = ctx.createGain(); flip.gain.value = -1; flip.connect(post);
-      const setHi = widthStage(ctx, hi, flip, val("highWidth", 1.4));
+      const setHi = widthStage(ctx, hi, post, val("highWidth", 1.4));
       post.connect(wet); wet.gain.value = 1; dry.gain.value = 0;
-      live("crossover", (v, t) => { glide(lo.frequency, v, t); glide(hi.frequency, v, t); });
+      live("crossover", (v, t) => [lo1, lo, hi1, hi].forEach(b => glide(b.frequency, v, t)));
       live("lowWidth", (v, t) => setLo(v, t)); live("highWidth", (v, t) => setHi(v, t));
       break;
     }
