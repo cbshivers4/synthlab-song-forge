@@ -3504,7 +3504,54 @@ function FolderRow({
 }
 
 export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandlesVisible = true, pageScroll = false }: { phonePaged?: boolean; desktopStyle?: boolean; resizeHandlesVisible?: boolean; pageScroll?: boolean }) {
-  const { tracks, transport, addTrack, addClip, setPanel, loadSample, folders, renameFolder, removeFolder, toggleFolderCollapsed, setTransport, moveTrackToIndex } = useStudio();
+  const { tracks, transport, addTrack, addClip, setPanel, loadSample, folders, renameFolder, removeFolder, toggleFolderCollapsed, setTransport, moveTrackToIndex, selectBoxed } = useStudio();
+  // Shift/Ctrl + mouse drag over the lanes boxes clips across channels
+  const [clipBox, setClipBox] = useState<{ x0: number; y0: number; x1: number; y1: number } | null>(null);
+  const clipBoxRef = useRef<{ x: number; y: number; add: boolean; active: boolean } | null>(null);
+  const onBoxDown = (e: React.PointerEvent) => {
+    if (e.pointerType !== "mouse" || e.button !== 0 || !(e.shiftKey || e.ctrlKey || e.metaKey)) return;
+    const target = e.target as HTMLElement;
+    if (!target.closest("[data-lane]") || target.closest("button,input,[role='slider']")) return;
+    // Shift on a clip stays the fine-drag modifier; Ctrl/Cmd boxes from anywhere
+    if (!(e.ctrlKey || e.metaKey) && target.closest(".arrangement-clip")) return;
+    e.preventDefault();
+    e.stopPropagation();
+    clipBoxRef.current = { x: e.clientX, y: e.clientY, add: true, active: false };
+    const move = (ev: PointerEvent) => {
+      const b = clipBoxRef.current;
+      if (!b) return;
+      if (!b.active && Math.hypot(ev.clientX - b.x, ev.clientY - b.y) < 5) return;
+      b.active = true;
+      setClipBox({ x0: Math.min(b.x, ev.clientX), y0: Math.min(b.y, ev.clientY), x1: Math.max(b.x, ev.clientX), y1: Math.max(b.y, ev.clientY) });
+    };
+    const up = (ev: PointerEvent) => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      const b = clipBoxRef.current;
+      clipBoxRef.current = null;
+      setClipBox(null);
+      if (!b?.active) return;
+      const box = { l: Math.min(b.x, ev.clientX), r: Math.max(b.x, ev.clientX), t: Math.min(b.y, ev.clientY), btm: Math.max(b.y, ev.clientY) };
+      const hit = (r: DOMRect) => r.left < box.r && r.right > box.l && r.top < box.btm && r.bottom > box.t;
+      const picks: { trackId: string; clipId?: string }[] = [];
+      for (const lane of document.querySelectorAll<HTMLElement>("[data-lane-track]")) {
+        if (!hit(lane.getBoundingClientRect())) continue;
+        const clip = [...lane.querySelectorAll<HTMLElement>("[data-audio-clip]")].find((c) => hit(c.getBoundingClientRect()));
+        const content = clip || [...lane.querySelectorAll<HTMLElement>(".arrangement-clip")].find((c) => hit(c.getBoundingClientRect()));
+        if (!content) continue;
+        const trackId = lane.dataset["laneTrack"];
+        const clipId = clip?.dataset["audioClip"];
+        if (trackId) picks.push(clipId ? { trackId, clipId } : { trackId });
+      }
+      selectBoxed(picks, b.add);
+      // swallow the click that follows the drag so it doesn't toggle a channel
+      const swallow = (ce: MouseEvent) => { ce.stopPropagation(); ce.preventDefault(); };
+      window.addEventListener("click", swallow, { capture: true, once: true });
+      window.setTimeout(() => window.removeEventListener("click", swallow, { capture: true }), 50);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+  };
   const phone = useIsLandscapePhone();
   const totalSteps = songSteps(transport.bars);
   const [over, setOver] = useState(false);
@@ -3586,7 +3633,8 @@ export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandl
           {!phonePaged && <SectionLane />}
         </div>
       </div>
-      <div id="timeline-scroll" ref={scrollRef} aria-label="Horizontal timeline" className={`relative overflow-auto overscroll-x-contain ${pageScroll ? "" : "min-h-0 flex-1"}`}>
+      {clipBox && <div aria-hidden className="pointer-events-none fixed z-50 border border-primary bg-primary/15" style={{ left: clipBox.x0, top: clipBox.y0, width: clipBox.x1 - clipBox.x0, height: clipBox.y1 - clipBox.y0 }} />}
+      <div id="timeline-scroll" ref={scrollRef} onPointerDownCapture={onBoxDown} aria-label="Horizontal timeline" className={`relative overflow-auto overscroll-x-contain ${pageScroll ? "" : "min-h-0 flex-1"}`}>
         <div className="min-w-[720px]" style={{ width: `max(${zoom * 100}%, ${transport.bars * (phone ? 96 * zoom : 32) + headerWidth}px)` }}>
         {/* SYNCLAB watermark, low and centred in the empty workspace */}
         <div className="pointer-events-none sticky top-[68%] z-0 h-0" aria-hidden="true">

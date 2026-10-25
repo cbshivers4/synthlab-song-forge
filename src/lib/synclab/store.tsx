@@ -309,6 +309,8 @@ interface StudioApi extends StudioState {
   setEditTool: (t: EditTool) => void;
   selectAll: () => void;
   toggleSelectId: (id: string) => void;
+  /** Mouse box selection: select these channels and their boxed clips. */
+  selectBoxed: (picks: { trackId: string; clipId?: string }[], add: boolean) => void;
   splitClipAt: (trackId: string, frac: number) => void;
   razorAt: (trackId: string, posSteps: number) => void;
   splitAtPlayhead: () => void;
@@ -1989,6 +1991,14 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         setSelectedIds(ids);
         if (ids.length > 0) setSelectedId(ids[ids.length - 1] ?? null);
         toast("All channels selected", { description: `${ids.length} channels — delete or cut applies to the selection.` });
+      },
+      selectBoxed: (picks, add) => {
+        if (!picks.length) return;
+        const ids = picks.map((p) => p.trackId);
+        setSelectedIds((s) => (add ? [...new Set([...s, ...ids])] : ids));
+        setSelectedId(ids[ids.length - 1] ?? null);
+        const clipFor = new Map(picks.filter((p) => p.clipId).map((p) => [p.trackId, p.clipId]));
+        if (clipFor.size) setTracks((ts) => ts.map((t) => (clipFor.has(t.id) ? { ...t, activeClipId: clipFor.get(t.id) } : t)));
       },
       toggleSelectId: (id) =>
         setSelectedIds((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id])),

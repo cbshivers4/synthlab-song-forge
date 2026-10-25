@@ -62,7 +62,7 @@ export function PianoRoll({ track }: { track: Track }) {
   const [trackOct, setTrackOct] = useState(0);
   const gridRef = useRef<HTMLDivElement | null>(null);
   const drag = useRef<Drag>(null);
-  const marq = useRef<{ x: number; y: number; active: boolean } | null>(null);
+  const marq = useRef<{ x: number; y: number; active: boolean; add?: boolean } | null>(null);
   const [marquee, setMarquee] = useState<{ x0: number; y0: number; x1: number; y1: number } | null>(null);
 
   const steps = bars * stepsPerBar();
@@ -131,7 +131,7 @@ export function PianoRoll({ track }: { track: Track }) {
     if (!p) return;
     if (scaleLock && !inScale(p.pitch)) return;
     setCursor(p.step);
-    if (mode !== "draw") { if (!multi) setSel([]); return; }
+    if (mode !== "draw") { if (!multi && !e.shiftKey && !e.ctrlKey && !e.metaKey) setSel([]); return; }
     if (notes.some(n => n.pitch === p.pitch && n.step === p.step)) return;
     const n = capturedNote({ id: uid(), pitch: p.pitch, step: p.step, length: len, velocity: 0.85 }, loopRegion(transport));
     if (!n) return;
@@ -144,7 +144,7 @@ export function PianoRoll({ track }: { track: Track }) {
     e.stopPropagation();
     e.preventDefault();
     if (mode === "erase") { del(n.id); return; }
-    if ((multi || e.shiftKey) && !resize) {
+    if ((multi || e.shiftKey || e.ctrlKey || e.metaKey) && !resize) {
       setSel(s => s.includes(n.id) ? s.filter(id => id !== n.id) : [...s, n.id]);
       return;
     }
@@ -202,7 +202,8 @@ export function PianoRoll({ track }: { track: Track }) {
         const s1 = marquee.x1 / stepPx;
         const pTop = pitches[Math.min(ROWS - 1, Math.max(0, Math.floor(marquee.y0 / ROW_H)))] ?? low;
         const pBot = pitches[Math.min(ROWS - 1, Math.max(0, Math.floor(marquee.y1 / ROW_H)))] ?? low;
-        setSel(notes.filter((n) => n.step < s1 && n.step + n.length > s0 && n.pitch <= pTop && n.pitch >= pBot).map((n) => n.id));
+        const boxed = notes.filter((n) => n.step < s1 && n.step + n.length > s0 && n.pitch <= pTop && n.pitch >= pBot).map((n) => n.id);
+        setSel((prev) => (m.add ? [...new Set([...prev, ...boxed])] : boxed));
       }
     }
     setMarquee(null);
@@ -586,11 +587,13 @@ export function PianoRoll({ track }: { track: Track }) {
             style={{ height: ROWS * ROW_H }}
             onClick={addNote}
             onPointerDown={(e) => {
-              if (mode !== "select") return;
+              // the mouse can box-select in any mode; touch keeps Select mode for it
+              if (mode !== "select" && !(e.pointerType === "mouse" && mode === "draw")) return;
+              if (e.button !== 0) return;
               e.currentTarget.setPointerCapture(e.pointerId);
               const r = editorRect(e.currentTarget);
               const pt = canvasPoint(e.clientX, e.clientY);
-              marq.current = { x: pt.x - r.left, y: pt.y - r.top, active: false };
+              marq.current = { x: pt.x - r.left, y: pt.y - r.top, active: false, add: e.shiftKey || e.ctrlKey || e.metaKey };
             }}
             onPointerMove={onMove}
           >
