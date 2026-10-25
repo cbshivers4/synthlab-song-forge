@@ -223,7 +223,7 @@ export function PianoRoll({ track }: { track: Track }) {
     setSel(pasted.map(n => n.id));
   };
   const handleKey = (e: React.KeyboardEvent) => {
-    if (e.defaultPrevented || e.isComposing) return;
+    if (e.defaultPrevented || e.nativeEvent.isComposing) return;
     if ((e.target as HTMLElement).closest('input, select, textarea, [role="combobox"], [role="slider"]')) return;
     const mod = e.ctrlKey || e.metaKey;
     const key = e.key.toLowerCase();
