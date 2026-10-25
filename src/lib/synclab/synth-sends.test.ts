@@ -36,9 +36,9 @@ describe('independent synth effect sends', () => {
     for (const send of [channel.synthReverbScale, channel.synthChorusScale]) expect(send.gain.setTargetAtTime).toHaveBeenLastCalledWith(0, 2, 0.02);
     engine.syncMix([track, { ...track, id: 'other', solo: true }]);
     for (const send of [channel.synthReverbScale, channel.synthChorusScale]) expect(send.gain.setTargetAtTime).toHaveBeenLastCalledWith(0, 2, 0.02);
-    engine.setVcaStates({ group: { volume: 0.5, muted: false } }, [{ ...track, vca: 'group' }]);
+    engine.setVcaStates({ A: { volume: 0.5, muted: false } }, [{ ...track, vca: 'A' }]);
     for (const send of [channel.synthReverbScale, channel.synthChorusScale]) expect(send.gain.setTargetAtTime).toHaveBeenLastCalledWith(0.2, 2, 0.02);
-    engine.setVcaStates({ group: { volume: 0.5, muted: true } }, [{ ...track, vca: 'group' }]);
+    engine.setVcaStates({ A: { volume: 0.5, muted: true } }, [{ ...track, vca: 'A' }]);
     for (const send of [channel.synthReverbScale, channel.synthChorusScale]) expect(send.gain.setTargetAtTime).toHaveBeenLastCalledWith(0, 2, 0.02);
   });
   it('disconnects both destinations when the channel is removed', () => {
