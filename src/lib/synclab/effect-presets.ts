@@ -231,9 +231,10 @@ const CHARACTERS: [string, (i: number) => number][] = [
 function characterRecipes(kind: PluginKind): Recipe[] {
   const params = PARAMS_BY_KIND[kind]();
   return CHARACTERS.map(([name, at]) => [name, Object.fromEntries(params.flatMap((q, i) => {
-    const integer = Number.isInteger(q.min) && Number.isInteger(q.max) && Number.isInteger(q.value) && q.max - q.min <= 32;
-    if (integer || KEEP.has(q.id)) return [];
-    return [[q.id, Math.round((q.min + at(i) * (q.max - q.min)) * 1000) / 1000]];
+    if (KEEP.has(q.id) || /^b\d+(on|type)$/.test(q.id) || ["protect", "phase", "steps", "play"].includes(q.id)) return [];
+    const integer = Number.isInteger(q.min) && Number.isInteger(q.max) && Number.isInteger(q.value) && q.max - q.min <= 32 && !q.unit && q.max - q.min > 2;
+    const v = q.min + at(i) * (q.max - q.min);
+    return [[q.id, integer ? Math.round(v) : Math.round(v * 1000) / 1000]];
   }))] as Recipe);
 }
 
