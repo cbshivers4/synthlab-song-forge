@@ -226,6 +226,8 @@ export function Sampler() {
   const sampleUrl = track?.sampler?.url ?? "";
   const sampleCloudPath = track?.sampler?.cloudPath;
   const sampleTrackId = track?.id;
+  const updateSamplerRef = useRef(updateSampler);
+  updateSamplerRef.current = updateSampler;
   useEffect(() => {
     setSampleIssue(null);
     if (!sampleTrackId || (!sampleUrl && !sampleCloudPath)) return;
@@ -238,7 +240,7 @@ export function Sampler() {
           const { freshCloudUrl } = await import("@/lib/synclab/cloud");
           const fresh = await freshCloudUrl(sampleCloudPath);
           if (fresh && fresh !== sampleUrl && await engine.ensureBuffer(fresh)) {
-            if (!cancelled) updateSampler(sampleTrackId, { url: fresh });
+            if (!cancelled) updateSamplerRef.current(sampleTrackId, { url: fresh });
             return;
           }
         } catch { /* reported below */ }
@@ -246,7 +248,7 @@ export function Sampler() {
       if (!cancelled) setSampleIssue("This sample's audio couldn't be loaded, so it will be silent. This browser may not read its file type — re-import it as WAV or MP3.");
     })();
     return () => { cancelled = true; };
-  }, [sampleTrackId, sampleUrl, sampleCloudPath, updateSampler]);
+  }, [sampleTrackId, sampleUrl, sampleCloudPath]);
 
 
   const stopPreview = () => {
