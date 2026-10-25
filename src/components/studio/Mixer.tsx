@@ -1425,6 +1425,7 @@ function MasterChain({ color, className }: { color: string; className?: string }
           </button>
         ))}
       </div>
+      <Popover><PopoverTrigger asChild><Button variant="ghost" className="h-8 w-full text-[10px]" aria-label="Add any effect to master">Add effect</Button></PopoverTrigger><PopoverContent className="w-72" onClick={event => event.stopPropagation()}><EffectPicker effects={availableEffects(installedPlugins)} onAdd={def => addFxPlugin("bus:master", def)} /></PopoverContent></Popover>
     </div>
   );
 }
