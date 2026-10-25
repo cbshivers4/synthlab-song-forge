@@ -218,6 +218,39 @@ export function Sampler() {
     [],
   );
 
+  /**
+   * Loads the sample's audio as soon as the sampler opens, so pads, keys and Preview are ready.
+   * Saved cloud samples use 12-hour links; an expired link is renewed instead of playing silently.
+   */
+  const [sampleIssue, setSampleIssue] = useState<string | null>(null);
+  const sampleUrl = track?.sampler?.url ?? "";
+  const sampleCloudPath = track?.sampler?.cloudPath;
+  const sampleTrackId = track?.id;
+  const updateSamplerRef = useRef(updateSampler);
+  updateSamplerRef.current = updateSampler;
+  useEffect(() => {
+    setSampleIssue(null);
+    if (!sampleTrackId || (!sampleUrl && !sampleCloudPath)) return;
+    let cancelled = false;
+    void (async () => {
+      const engine = getEngine();
+      if (sampleUrl && await engine.ensureBuffer(sampleUrl)) return;
+      if (sampleCloudPath) {
+        try {
+          const { freshCloudUrl } = await import("@/lib/synclab/cloud");
+          const fresh = await freshCloudUrl(sampleCloudPath);
+          if (fresh && fresh !== sampleUrl && await engine.ensureBuffer(fresh)) {
+            if (!cancelled) updateSamplerRef.current(sampleTrackId, { url: fresh });
+            return;
+          }
+        } catch { /* reported below */ }
+      }
+      if (!cancelled) setSampleIssue("This sample's audio couldn't be loaded, so it will be silent. This browser may not read its file type — re-import it as WAV or MP3.");
+    })();
+    return () => { cancelled = true; };
+  }, [sampleTrackId, sampleUrl, sampleCloudPath]);
+
+
   const stopPreview = () => {
     try { warpSourceRef.current?.stop(); } catch { /* already stopped */ }
     warpSourceRef.current?.disconnect();
@@ -550,6 +583,13 @@ export function Sampler() {
                 onClick={() => {
                   const engine = getEngine();
                   engine.init();
+                  if (sampleIssue) {
+                    toast.error("This sample can't play", { description: sampleIssue });
+                    return;
+                  }
+                  if (track.muted || (tracks.some((t) => t.solo) && !track.solo)) {
+                    toast.warning("This channel is silenced", { description: track.muted ? "Unmute (M) this sampler channel to hear it." : "Another channel is soloed (S). Solo this channel or clear the other solo to hear it." });
+                  }
                   engine.syncMixIfChanged(tracks);
                   stopSamples(track.id);
                   engine.playSample(track.id, { ...s, loop: false, oneShot: true }, s.rootNote);
@@ -582,6 +622,11 @@ export function Sampler() {
               </Button>
             </div>
           </div>
+          {sampleIssue && (
+            <p role="alert" className="rounded-md border border-destructive/60 bg-destructive/15 px-3 py-2 text-xs text-foreground">
+              {sampleIssue}
+            </p>
+          )}
 
           <div className="sticky top-0 z-30 space-y-1 border-b border-border bg-background pb-2" aria-label="Sample waveform editor">
             <div className="flex items-center justify-between gap-2 py-1">

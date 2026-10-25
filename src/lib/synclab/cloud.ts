@@ -2,6 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
 import type { AudioClip, AuxId, BusId, BusState, DrumPad, PluginDef, PluginInstance, SongSection, SynthPatch, Track, TrackFolder, Transport, VcaId } from "./types";
 import type { SavedPad } from "./pad-session";
+import { mediaStorePlan } from "./cloud-media";
 
 const BUCKET = "synclab-cloud";
 
@@ -56,18 +57,25 @@ async function uploadUrl(url: string, path: string) {
   return path;
 }
 
+/** Stores one audio reference: uploads new audio, keeps permanent paths, never saves expiring links. */
+async function storeMedia(url: string | undefined, existingPath: string | undefined, newPath: string) {
+  const plan = mediaStorePlan(url, existingPath, newPath);
+  if ("upload" in plan) await uploadUrl(url ?? "", plan.upload);
+  return "cloudPath" in plan ? { cloudPath: plan.cloudPath, url: undefined } : { cloudPath: undefined, url: plan.url };
+}
+
 async function prepareSession(session: CloudSession, userId: string, projectId: string): Promise<CloudSession> {
   const tracks = await Promise.all(session.tracks.map(async (track) => {
     const up = async (clip: AudioClip): Promise<AudioClip> => {
-      const cloudPath = clip.cloudPath ?? `${userId}/${projectId}/audio/${clip.id}-${safe(clip.name)}`;
       const alts = clip.alts ? await Promise.all(clip.alts.map(up)) : undefined;
-      return clip.url ? { ...clip, alts, cloudPath: await uploadUrl(clip.url, cloudPath), url: undefined } : { ...clip, alts };
+      if (!clip.url && !clip.cloudPath) return { ...clip, alts };
+      return { ...clip, alts, ...(await storeMedia(clip.url, clip.cloudPath, `${userId}/${projectId}/audio/${clip.id}-${safe(clip.name)}`)) };
     };
     const clips = await Promise.all((track.clips ?? []).map(up));
     let sampler = track.sampler;
-    if (sampler?.url) {
-      const cloudPath = sampler.cloudPath ?? `${userId}/${projectId}/samples/${track.id}-${safe(sampler.name)}`;
-      sampler = { ...sampler, cloudPath: await uploadUrl(sampler.url, cloudPath), url: "" };
+    if (sampler?.url || sampler?.cloudPath) {
+      const stored = await storeMedia(sampler.url, sampler.cloudPath, `${userId}/${projectId}/samples/${track.id}-${safe(sampler.name)}`);
+      sampler = { ...sampler, cloudPath: stored.cloudPath, url: stored.url ?? "" };
     }
     const sampleUploads = new Map<string, Promise<DrumPad>>();
     const upPad = async (pad: DrumPad): Promise<DrumPad> => {
@@ -88,18 +96,22 @@ async function prepareSession(session: CloudSession, userId: string, projectId: 
   }));
   const padBank: Record<number, SavedPad> = {};
   for (const [key, pad] of Object.entries(session.padBank)) {
-    const cloudPath = pad.cloudPath ?? `${userId}/${projectId}/pads/${key}-${safe(pad.name)}`;
-    padBank[Number(key)] = { ...pad, cloudPath: await uploadUrl(pad.url, cloudPath), url: "" };
+    const stored = await storeMedia(pad.url, pad.cloudPath, `${userId}/${projectId}/pads/${key}-${safe(pad.name)}`);
+    padBank[Number(key)] = { ...pad, cloudPath: stored.cloudPath, url: stored.url ?? "" };
   }
   return { ...session, tracks, padBank };
 }
 
 async function signedUrl(path?: string) {
   if (!path) return "";
+  if (/^https?:/i.test(path)) return path;
   const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(path, 60 * 60 * 12);
   if (error) throw error;
   return data.signedUrl;
 }
+
+/** Fresh playable link for audio stored in the cloud (links expire after 12 hours). */
+export const freshCloudUrl = (path: string) => signedUrl(path);
 
 async function restoreSession(session: CloudSession): Promise<CloudSession> {
   const sampleUrls = new Map<string, Promise<string>>();
