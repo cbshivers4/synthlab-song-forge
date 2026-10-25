@@ -104,7 +104,7 @@ function shifter(ctx: BaseAudioContext, input: AudioNode, out: AudioNode, semis:
 }
 
 /** Stereo width matrix: L' = aL + bR, R' = bL + aR. */
-function widthStage(ctx: BaseAudioContext, input: AudioNode, out: AudioNode, width: number) {
+export function widthStage(ctx: BaseAudioContext, input: AudioNode, out: AudioNode, width: number) {
   const split = ctx.createChannelSplitter(2); const merge = ctx.createChannelMerger(2);
   const ll = ctx.createGain(), rr = ctx.createGain(), lr = ctx.createGain(), rl = ctx.createGain();
   input.connect(split);
