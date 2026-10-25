@@ -1,4 +1,5 @@
 import { WaveformZoom, waveformFraction, useWaveformDetail } from "./WaveformZoom";
+import { centerOneSided } from "@/lib/synclab/one-sided-audio";
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { AudioLines, Piano, Play, RotateCcw, Scissors, Square, Trash2, Upload } from "lucide-react";
 import { Keyboard } from "./Keyboard";
