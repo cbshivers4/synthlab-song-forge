@@ -39,6 +39,10 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
   const setSelected = (padId: string | null) => updateView({ padId });
   const [paint, setPaint] = useState<number | null>(null);
   const touchStep = useRef<string | null>(null);
+  // Shift/Ctrl + mouse drag boxes hits across rows and steps
+  const [box, setBox] = useState<{ r0: number; s0: number; r1: number; s1: number } | null>(null);
+  const [boxing, setBoxing] = useState(false);
+  const hitClip = useRef<{ rows: number[][]; width: number } | null>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   const rowRefs = useRef(new Map<string, HTMLDivElement>());
   const [visibleRows, setVisibleRows] = useState([1, rows.length]);
@@ -155,6 +159,54 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
     if (next > 0) getEngine().playDrum(track.id, pad, next);
     return next;
   };
+
+  const boxBounds = box && { rLo: Math.min(box.r0, box.r1), rHi: Math.max(box.r0, box.r1), sLo: Math.min(box.s0, box.s1), sHi: Math.max(box.s0, box.s1) };
+  const inBox = (r: number, i: number) => !!boxBounds && r >= boxBounds.rLo && r <= boxBounds.rHi && i >= boxBounds.sLo && i <= boxBounds.sHi;
+  const boxRef = useRef({ boxBounds, rows, total, write, step: view.step });
+  boxRef.current = { boxBounds, rows, total, write, step: view.step };
+  useEffect(() => {
+    if (!boxing) return;
+    const up = () => setBoxing(false);
+    window.addEventListener("pointerup", up);
+    return () => window.removeEventListener("pointerup", up);
+  }, [boxing]);
+  useEffect(() => {
+    if (!box) return;
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t?.closest("input,textarea,select,[contenteditable='true']")) return;
+      const { boxBounds: b, rows: rs, total: n, write: w, step } = boxRef.current;
+      if (!b) return;
+      const key = e.key.toLowerCase();
+      const mod = e.ctrlKey || e.metaKey;
+      if (e.key === "Escape") { setBox(null); return; }
+      if (e.key === "Delete" || e.key === "Backspace" || (mod && key === "x")) {
+        e.preventDefault(); e.stopImmediatePropagation();
+        if (mod) hitClip.current = { rows: rs.slice(b.rLo, b.rHi + 1).map(({ pad }) => Array.from({ length: b.sHi - b.sLo + 1 }, (_, k) => pad.steps[b.sLo + k] ?? 0)), width: b.sHi - b.sLo + 1 };
+        for (let r = b.rLo; r <= b.rHi; r++) {
+          const pad = rs[r]?.pad; if (!pad) continue;
+          const steps = Array.from({ length: n }, (_, k) => (k >= b.sLo && k <= b.sHi ? 0 : pad.steps[k] ?? 0));
+          w(pad, { steps });
+        }
+      } else if (mod && key === "c") {
+        e.preventDefault(); e.stopImmediatePropagation();
+        hitClip.current = { rows: rs.slice(b.rLo, b.rHi + 1).map(({ pad }) => Array.from({ length: b.sHi - b.sLo + 1 }, (_, k) => pad.steps[b.sLo + k] ?? 0)), width: b.sHi - b.sLo + 1 };
+      } else if (mod && key === "v" && hitClip.current) {
+        e.preventDefault(); e.stopImmediatePropagation();
+        const c = hitClip.current;
+        const at = step > b.sHi || step < b.sLo ? step : b.sHi + 1;
+        c.rows.forEach((vals, k) => {
+          const pad = rs[b.rLo + k]?.pad; if (!pad) return;
+          const steps = Array.from({ length: n }, (_, j) => pad.steps[j] ?? 0);
+          vals.forEach((v, j) => { if (at + j < n) steps[at + j] = v; });
+          w(pad, { steps });
+        });
+        setBox({ r0: b.rLo, r1: b.rHi, s0: at, s1: Math.min(n - 1, at + c.width - 1) });
+      }
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [box]);
 
   const rowSteps = (pad: DrumPad) => Array.from({ length: total }, (_, k) => pad.steps[k] ?? 0);
 
@@ -277,6 +329,7 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
           <span className="min-w-0 whitespace-nowrap font-mono text-xs" aria-label="Visible drum rows">Rows {visibleRows[0]}–{visibleRows[1]} / {rows.length}</span>
           <div className="flex shrink-0 items-center gap-1"><Button variant="outline" size="icon" className="size-12" aria-label="Zoom out drum roll" title="Zoom out" disabled={view.zoom <= 1} onClick={() => zoomTo(view.zoom - 0.5)}><Minus /></Button><span className="w-12 text-center font-mono text-xs" aria-label="Drum roll zoom">{Math.round(view.zoom * 100)}%</span><Button variant="outline" size="icon" className="size-12" aria-label="Zoom in drum roll" title="Zoom in" disabled={view.zoom >= 3} onClick={() => zoomTo(view.zoom + 0.5)}><Plus /></Button></div>
         </div>
+        {boxBounds && <div className="flex items-center gap-2 font-mono text-xs text-primary"><span>{(() => { let c = 0; for (let r = boxBounds.rLo; r <= boxBounds.rHi; r++) for (let k = boxBounds.sLo; k <= boxBounds.sHi; k++) if ((rows[r]?.pad.steps[k] ?? 0) > 0) c++; return `${c} hits selected`; })()}</span><Button size="sm" variant="secondary" className="h-6 px-2 text-[10px]" onClick={() => { for (let r = boxBounds.rLo; r <= boxBounds.rHi; r++) { const pad = rows[r]?.pad; if (pad) write(pad, { steps: Array.from({ length: total }, (_, k) => (k >= boxBounds.sLo && k <= boxBounds.sHi ? 0 : pad.steps[k] ?? 0)) }); } }}>DELETE</Button><Button size="sm" variant="ghost" className="h-6 px-2 text-[10px]" onClick={() => setBox(null)}>DESELECT</Button></div>}
         <div className="truncate font-mono text-xs text-primary" aria-label="Selected drum position">{selected ? `Row ${rows.findIndex(({ pad }) => pad.id === selected) + 1} · ${pads.find((pad) => pad.id === selected)?.name ?? "Drum"} · Step ${Math.min(total, view.step + 1)}` : "No step selected"}</div>
       </div>}
 
@@ -337,7 +390,7 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
                               ? `velocity ${Math.round(v * 100)}%${chance < 1 ? ` · ${Math.round(chance * 100)}% chance` : ""}`
                               : "empty"
                           }
-                           className={`drum-step relative h-6 min-w-0 flex-1 rounded-[3px] border p-0 transition-all ${selected === pad.id && view.step === i ? "ring-2 ring-primary ring-inset" : ""}`}
+                           className={`drum-step relative h-6 min-w-0 flex-1 rounded-[3px] border p-0 transition-all ${selected === pad.id && view.step === i ? "ring-2 ring-primary ring-inset" : ""} ${inBox(rows.findIndex((row) => row.pad.id === pad.id), i) ? "outline outline-2 -outline-offset-2 outline-primary" : ""}`}
                           style={{
                             minWidth: 10,
                             borderColor: playing ? "var(--neon)" : "var(--color-border)",
@@ -353,10 +406,20 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
                             touchStep.current = e.pointerType === "touch" ? `${pad.id}:${i}` : null;
                             if (e.pointerType === "touch") return;
                             e.preventDefault();
+                            const r = rows.findIndex((row) => row.pad.id === pad.id);
+                            if (e.shiftKey || e.ctrlKey || e.metaKey) {
+                              (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId);
+                              setBox({ r0: r, s0: i, r1: r, s1: i });
+                              setBoxing(true);
+                              updateView({ padId: pad.id, step: i });
+                              return;
+                            }
+                            setBox(null);
                             setSelected(pad.id);
                             setPaint(cycle(pad, i));
                           }}
                           onPointerEnter={() => {
+                            if (boxing) { const r = rows.findIndex((row) => row.pad.id === pad.id); setBox((b) => b && { ...b, r1: r, s1: i }); return; }
                             if (paint == null) return;
                             setStep(pad, i, paint);
                           }}
@@ -452,7 +515,7 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
       })()}
 
       <p className="font-mono text-[9px] leading-relaxed text-muted-foreground">
-        Click a step to cycle ghost → normal → accent, drag across steps to paint, right-click to clear. Tap a drum name for Quick fill and Add sample, or drop an audio file on a row. Each row sends
+        Click a step to cycle ghost → normal → accent, drag across steps to paint, right-click to clear. Shift- or Ctrl-drag to box-select hits, then Delete, Ctrl+C, Ctrl+X or Ctrl+V (pastes after the box). Tap a drum name for Quick fill and Add sample, or drop an audio file on a row. Each row sends
         its own MIDI note, so a drum controller on those notes plays and records these same pads.
       </p>
     </div>
