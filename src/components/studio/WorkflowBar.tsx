@@ -1,4 +1,4 @@
-import { Circle, ClipboardPaste, Copy, Layers, Metronome, Mic, Piano, Play, Repeat, Scissors, Square, SquareSplitHorizontal, Timer, Trash2, X } from 'lucide-react';
+import { Circle, ClipboardMinus, ClipboardPaste, Copy, Layers, Metronome, Mic, Piano, Play, Repeat, Square, SquareSplitHorizontal, Timer, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -49,7 +49,7 @@ export function WorkflowBar() {
       <span className="max-w-40 shrink-0 truncate pr-1 font-mono text-[10px] text-muted-foreground" title={clip?.name ?? selected.name}>{clip?.name ?? (part ? 'Selected part' : selected.name)}</span>
       <Button size="icon" variant="ghost" className="size-8 shrink-0" aria-label="Split selected part at playhead" title="Split at playhead" onClick={() => razorAt(selected.id, transport.step)}><SquareSplitHorizontal className="size-3.5" /></Button>
       <Button size="icon" variant="ghost" className="size-8 shrink-0" disabled={!clip} aria-label="Copy selected clip" title="Copy selected clip" onClick={() => { if (clip) copyClip(selected.id, clip.id); }}><Copy className="size-3.5" /></Button>
-      <Button size="icon" variant="ghost" className="size-8 shrink-0" disabled={!clip} aria-label="Cut selected clip" title="Cut selected clip; keep channel" onClick={() => { if (clip) cutClip(selected.id, clip.id); }}><Scissors className="size-3.5" /></Button>
+      <Button size="sm" variant="ghost" className="h-8 shrink-0 gap-1 px-2 text-[11px] font-bold tracking-wider" disabled={!clip} aria-label="Cut selected clip" title="Cut selected clip; keep channel" onClick={() => { if (clip) cutClip(selected.id, clip.id); }}><ClipboardMinus className="size-3.5" />CUT</Button>
       <Button size="icon" variant="ghost" className="size-8 shrink-0" disabled={!clipClipboardName} aria-label="Paste clip at playhead" title="Paste clip at playhead" onClick={() => pasteClip(false, selected.id)}><ClipboardPaste className="size-3.5" /></Button>
       <Button size="icon" variant="ghost" className="size-8 shrink-0 text-destructive" disabled={!part} aria-label="Delete selected part" title="Delete selected part; keep channel" onClick={removePart}><Trash2 className="size-3.5" /></Button>
       <Button size="sm" variant={transport.loop ? 'default' : 'outline'} aria-pressed={!!transport.loop} className="h-8 shrink-0 gap-1 px-2 text-[11px]" disabled={!part || part[1] <= part[0]} onClick={() => { if (part) setTransport({ loop: true, loopStart: part[0], loopEnd: part[1], ...(!transport.playing ? { step: part[0] } : {}), bars: Math.max(transport.bars, barsForSteps(part[1])) }); }}><Repeat className="size-3.5" />Loop selected part</Button>

@@ -2701,17 +2701,18 @@ function EditToolbar() {
   };
 
   const cutFree = useCutFree();
-  const ToolBtn = ({ tool, icon, label, keys }: { tool: EditTool; icon: React.ReactNode; label: string; keys: string }) => (
+  const ToolBtn = ({ tool, icon, label, keys, text }: { tool: EditTool; icon: React.ReactNode; label: string; keys: string; text?: string }) => (
     <Button
       size="sm"
       variant={editTool === tool ? "default" : "ghost"}
-      className="arrangement-tool size-8 shrink-0 p-0"
+      className={`arrangement-tool h-8 shrink-0 gap-1 ${text ? "px-2" : "size-8 p-0"}`}
       aria-label={label}
       aria-pressed={editTool === tool}
       title={`${label} (${keys})`}
       onClick={() => setEditTool(tool)}
     >
       {icon}
+      {text && <span className="tool-label hidden text-[10px] font-semibold tracking-wider sm:inline">{text}</span>}
     </Button>
   );
 
@@ -2725,7 +2726,7 @@ function EditToolbar() {
       </Button>
       <div className="mx-1 h-4 w-px bg-border" />
       <ToolBtn tool="draw" icon={<Pencil className="size-3" />} label="Draw" keys="B" />
-      <ToolBtn tool="split" icon={<ScissorsLineDashed className="size-3" />} label="Split" keys="C" />
+      <ToolBtn tool="split" icon={<ScissorsLineDashed className="size-3" />} label="Split" keys="C" text="SPLIT" />
       <ToolBtn tool="razor" icon={<RazorIcon className="size-3" />} label="Razor" keys="R" />
       <Button size="sm" variant="ghost" className="arrangement-tool size-8 shrink-0 p-0" aria-label="Mute selected channels" aria-pressed={targets.length > 0 && targets.every((id) => tracks.find((t) => t.id === id)?.muted)} disabled={!targets.length} title="Mute selected channels" onClick={() => { const muted = targets.every((id) => tracks.find((t) => t.id === id)?.muted); targets.forEach((id) => updateTrack(id, { muted: !muted })); }}><Volume2 className="size-3.5" /></Button>
       {(editTool === "split" || editTool === "razor") && (
