@@ -1,4 +1,5 @@
 import { levelColor, peakOf, spectrumColor, dbColor, LEVEL_GREEN, LEVEL_ORANGE, LEVEL_RED } from "@/lib/synclab/level-colors";
+import { effectBrand, groupByCategory } from "@/lib/synclab/effect-catalog";
 import {
   AudioLines,
   AppWindow,
@@ -407,18 +408,20 @@ export function ToolsRail() {
                     {s.id === "plugins" && (
                       <div className="pt-1.5">
                         <div className="px-2 pb-1 font-mono text-[9px] tracking-[0.18em] text-muted-foreground/70">
-                          MY PLUGINS — DRAG ONTO A TRACK
+                          EFFECTS — DRAG ONTO A TIMELINE TRACK
                         </div>
                         {installedPlugins.length === 0 ? (
                           <p className="px-2 text-[10px] leading-snug text-muted-foreground/80">
                             None yet — drop your VST3 / AU / CLAP files on "Plugins" above or open it to scan a folder.
                           </p>
                         ) : (
-                          installedPlugins.map((d) => (
+                          groupByCategory(installedPlugins).map(([category, defs]) => <div key={category} role="group" aria-label={category}>
+                          <div className="px-2 pt-1.5 font-mono text-[8px] tracking-[0.16em] text-muted-foreground/70">{category.toUpperCase()}</div>
+                          {defs.map((d) => (
                             <button
                               key={d.id}
                               type="button"
-                              title={`${d.name} — drag onto a timeline track to insert it`}
+                              title={`${effectBrand(d)} (${d.name}) — drag onto a timeline track to insert it`}
                               draggable
                               onDragStart={(e) => {
                                 const payload = JSON.stringify({ type: "plugin", defId: d.id });
@@ -430,10 +433,11 @@ export function ToolsRail() {
                               className="flex w-full cursor-grab items-center gap-2 rounded-[3px] px-2 py-1.5 text-left text-xs text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground active:cursor-grabbing"
                             >
                               <Puzzle className="size-3.5 shrink-0 text-primary/80" />
-                              <span className="min-w-0 flex-1 truncate font-medium tracking-wide">{d.name}</span>
-                              <span className="shrink-0 font-mono text-[8px] text-muted-foreground/70">{d.format}</span>
+                              <span className="min-w-0 flex-1 truncate font-medium tracking-wide">{effectBrand(d)}</span>
+                              <span className="shrink-0 font-mono text-[8px] text-muted-foreground/70">{d.format === "Built-in" ? "" : d.format}</span>
                             </button>
-                          ))
+                          ))}
+                          </div>)
                         )}
                       </div>
                     )}
