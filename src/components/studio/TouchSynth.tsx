@@ -10,6 +10,7 @@ import { getEngine } from '@/lib/synclab/audio-engine';
 import { laneById, loopsToNotes, placeLoopNote, eraseLoopNote, touchPitch, touchCutoff, TOUCH_LANES, TOUCH_LOOP_STEPS, TOUCH_SCALES, TOUCH_SOUNDS, type TouchLoops } from '@/lib/synclab/touch-synth';
 import type { Track } from '@/lib/synclab/types';
 import { genreLoops, loadGenreLoops, TOUCH_LOOP_GENRES, TOUCH_LOOP_LIBRARY } from '@/lib/synclab/touch-loop-library';
+import { PresetNavigator } from './PresetNavigator';
 
 const KEYS = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
 const drumPad = (kind: string) => ({ id: `touch-${kind}`, name: kind, kind: kind as 'kick', volume: 1, pan: 0, pitch: 0, decay: .4, muted: false, solo: false, steps: [] as number[] });
@@ -42,6 +43,13 @@ export function TouchSynth({ track }: { track: Track }) {
   const choices = TOUCH_LOOP_LIBRARY.filter(p => p.genre === genre);
   const selectedPreset = choices.find(p => p.id === presetId) ?? choices[0];
   const save = (values: Partial<typeof settings>) => updatePatch(track.id, { touch: { ...settings, ...values } });
+  const selectSound = (name: string) => {
+    stopPad();
+    const patch = applyPreset(name);
+    const touch = { ...settings, sounds: { ...settings.sounds, [lane.id]: name } };
+    updatePatch(track.id, { ...patch, touch });
+    previewNote(track.id, 60 + settings.root, .4, false, { ...patch, touch });
+  };
 
   const stopPad = () => {
     pointer.current = null;
@@ -236,10 +244,12 @@ export function TouchSynth({ track }: { track: Track }) {
     </div>
     <div className="flex flex-wrap gap-2">
       {!lane.drums && <>
-        <Select value={laneSound(lane.id)} onValueChange={name => { stopPad(); const patch = applyPreset(name); const touch = { ...settings, sounds: { ...settings.sounds, [lane.id]: name } }; updatePatch(track.id, { ...patch, touch }); previewNote(track.id, 60 + settings.root, .4, false, patch); }}>
+        <PresetNavigator label="Touch sound preset" options={TOUCH_SOUNDS} current={laneSound(lane.id)} onSelect={selectSound}>
+        <Select value={laneSound(lane.id)} onValueChange={selectSound}>
           <SelectTrigger aria-label="Touch sound" className="w-48"><SelectValue placeholder="Sound" /></SelectTrigger>
           <SelectContent>{TOUCH_SOUNDS.map(name => <SelectItem key={name} value={name}>{name}</SelectItem>)}</SelectContent>
         </Select>
+        </PresetNavigator>
         <Select value={String(settings.root)} onValueChange={v => save({ root: Number(v) })}><SelectTrigger aria-label="Touch key" className="w-20"><SelectValue /></SelectTrigger><SelectContent>{KEYS.map((k, i) => <SelectItem key={k} value={String(i)}>{k}</SelectItem>)}</SelectContent></Select>
         <Select value={settings.scale} onValueChange={scale => save({ scale })}><SelectTrigger aria-label="Touch scale" className="w-48"><SelectValue /></SelectTrigger><SelectContent>{Object.keys(TOUCH_SCALES).map(scale => <SelectItem key={scale} value={scale}>{scale}</SelectItem>)}</SelectContent></Select>
       </>}

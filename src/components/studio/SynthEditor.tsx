@@ -22,6 +22,7 @@ import { MidiLearnStrip } from "./MidiLearn";
 import { PitchWheels } from "./PitchWheels";
 import { ModularSynth } from "./ModularSynth";
 import { AcidSequencer } from "./AcidSequencer";
+import { PresetNavigator } from "./PresetNavigator";
 
 const WAVES: OscWave[] = ["sine", "triangle", "sawtooth", "square", "pulse", "noise", "wavetable"];
 
@@ -125,6 +126,11 @@ function SynthTrackEditor({ track }: { track: Track }) {
     return order.map((category) => ({ category, items: map.get(category)! }));
   })();
 
+  const selectPreset = (name: string) => {
+    const selectedPatch = userPresets.find(p => p.name === name) ?? applyPreset(name);
+    loadPreset(track.id, name);
+    previewNote(track.id, 60, 0.75, false, selectedPatch);
+  };
   const skin = useSkin("synth");
   const drop = useImageDrop("synth");
   return (
@@ -133,11 +139,8 @@ function SynthTrackEditor({ track }: { track: Track }) {
       <SkinControls skinKey="synth" image />
       <MidiLearnStrip id={track.id} label={`${track.name} — every knob below also has its own MIDI button`} />
       <div className="synth-preset-deck flex flex-wrap items-center gap-2">
-        <Select value={patch.name} onValueChange={(v) => {
-          const selectedPatch = userPresets.find(p => p.name === v) ?? applyPreset(v);
-          loadPreset(track.id, v);
-          previewNote(track.id, 60, 0.75, false, selectedPatch);
-        }}>
+        <PresetNavigator label="synth preset" options={presetGroups.flatMap(g => g.items)} current={patch.name} onSelect={selectPreset}>
+        <Select value={patch.name} onValueChange={selectPreset}>
           <SelectTrigger className="synth-preset-window w-72" aria-label="Preset window">
             <span className="synth-preset-tag" aria-hidden>PRESET</span>
             <SelectValue placeholder="Browse presets" />
@@ -157,6 +160,7 @@ function SynthTrackEditor({ track }: { track: Track }) {
             ))}
           </SelectContent>
         </Select>
+        </PresetNavigator>
         <Input
           value={presetName}
           onChange={(e) => setPresetName(e.target.value)}
