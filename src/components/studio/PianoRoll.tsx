@@ -255,10 +255,12 @@ export function PianoRoll({ track }: { track: Track }) {
         {([{ id: 'draw', icon: Pencil, label: 'Draw notes' }, { id: 'select', icon: MousePointer2, label: 'Select notes' }, { id: 'erase', icon: Trash2, label: 'Erase notes' }] as const).map(tool => <Button key={tool.id} variant={mode === tool.id ? 'default' : 'outline'} size="icon" className="size-10 shrink-0" aria-label={tool.label} title={tool.label} aria-pressed={mode === tool.id} onClick={() => setMode(tool.id)}><tool.icon className="size-4" /></Button>)}
         <Button variant={multi ? 'default' : 'outline'} className="h-10" aria-pressed={multi} onClick={() => { setMode('select'); setMulti(!multi); }}>Multi-select</Button>
         <div className="mx-1 h-6 border-l border-border" />
-        <Button variant="outline" size="icon" className="size-10" aria-label="Copy notes" title="Copy notes" disabled={!sel.length} onClick={() => copySelected()}><Copy className="size-4" /></Button>
-        <Button variant="outline" size="icon" className="size-10" aria-label="Cut notes" title="Cut notes" disabled={!sel.length} onClick={() => copySelected(true)}><Scissors className="size-4" /></Button>
-        <Button variant="outline" size="icon" className="size-10" aria-label="Paste notes" title="Paste notes at cursor" disabled={!clipboardCount} onClick={paste}><ClipboardPaste className="size-4" /></Button>
-        <Button variant="outline" size="icon" className="size-10 text-destructive" aria-label="Delete selected notes" title="Delete selected notes" disabled={!sel.length} onClick={deleteSelected}><Trash2 className="size-4" /></Button>
+        {([{ id: 'copy', icon: Copy, label: 'COPY', title: 'Copy selected notes', disabled: !sel.length, run: () => copySelected() }, { id: 'cut', icon: Scissors, label: 'CUT', title: 'Cut selected notes', disabled: !sel.length, run: () => copySelected(true) }, { id: 'paste', icon: ClipboardPaste, label: 'PASTE', title: 'Paste notes at cursor', disabled: !clipboardCount, run: paste }, { id: 'del', icon: Trash2, label: 'DELETE', title: 'Delete selected notes', disabled: !sel.length, run: deleteSelected, danger: true }] as const).map(b => (
+          <Button key={b.id} variant="outline" size="icon" className={`h-10 w-auto gap-1 px-2 text-[10px] font-semibold shrink-0${'danger' in b && b.danger ? ' text-destructive' : ''}`} aria-label={b.title} title={b.title} disabled={b.disabled} onClick={b.run}>
+            <b.icon className="size-4" />
+            {b.label}
+          </Button>
+        ))}
         <span className="px-1 font-mono text-xs text-muted-foreground">{sel.length} selected · Step {cursor + 1}</span>
         <Button variant="ghost" size="icon" className="size-10" aria-label="Undo note edit" disabled={!canUndo} onClick={undo}><Undo2 className="size-4" /></Button>
         <Button variant="ghost" size="icon" className="size-10" aria-label="Redo note edit" disabled={!canRedo} onClick={redo}><Redo2 className="size-4" /></Button>
