@@ -9,6 +9,9 @@ import { Button } from "@/components/ui/button";
 
 export function effectFamily(plugin: PluginInstance) {
   if (plugin.kind === "delay") return plugin.name.toLowerCase().includes("echo") ? "sequence" : "buffer";
+  if (["modulator", "modfx", "unison", "ensemble", "imager"].includes(plugin.kind)) return "motion";
+  if (["trigate", "sidechain"].includes(plugin.kind)) return "sequence";
+  if (plugin.kind === "maximizer") return "dynamics";
   if (["reverb", "resonator"].includes(plugin.kind)) return "space";
   if (["stepfilter", "bitcrusher", "scalechord"].includes(plugin.kind)) return "sequence";
   if (["compressor", "limiter", "gate", "transient"].includes(plugin.kind)) return "dynamics";

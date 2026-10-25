@@ -326,7 +326,8 @@ export type PluginKind =
   | "stepfilter"
   | "resonator"
   | "scalechord"
-  | "transient";
+  | "transient"
+  | import("./creative-fx").CreativeKind;
 
 export interface PluginParam {
   id: string;

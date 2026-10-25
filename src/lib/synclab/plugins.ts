@@ -1,5 +1,6 @@
 import type { PluginDef, PluginInstance, PluginKind, PluginParam } from "./types";
 import { uid } from "./presets";
+import { CREATIVE_DEVICES, CREATIVE_KINDS, CREATIVE_PARAMS } from "./creative-fx";
 
 const p = (id: string, name: string, value: number, min: number, max: number, unit?: string): PluginParam => ({
   id,
@@ -192,6 +193,7 @@ export const PARAMS_BY_KIND: Record<PluginKind, () => PluginParam[]> = {
     p("output", "Output", 0, -12, 12, "dB"),
     p("mix", "Mix", 1, 0, 1, ""),
   ],
+  ...CREATIVE_PARAMS,
 };
 
 const def = (name: string, vendor: string, format: PluginDef["format"], kind: PluginKind): PluginDef => ({
@@ -227,6 +229,7 @@ export const BUILT_IN_PLUGINS: PluginDef[] = [
   def("Harmonic Body", "SYNCLAB", "Built-in", "resonator"),
   def("Chord Compass", "SYNCLAB", "Built-in", "scalechord"),
   def("Transient Architect", "SYNCLAB", "Built-in", "transient"),
+  ...CREATIVE_DEVICES.map(([name, kind]) => def(name, "SYNCLAB", "Built-in", kind)),
 ];
 
 export const makeDef = (name: string, vendor: string, format: PluginDef["format"], kind: PluginKind) =>
@@ -304,6 +307,7 @@ export const PLUGIN_KINDS: PluginKind[] = [
   "resonator",
   "scalechord",
   "transient",
+  ...CREATIVE_KINDS,
 ];
 
 /** Plugin bundle extensions we recognise when a folder or file is dropped in. */
