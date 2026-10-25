@@ -1,5 +1,7 @@
 # Roadmap — Source-code audit & DAW repair
 
+- [ ] Add previous/next preset arrows across instruments, drums and effect selectors using their existing application/audition paths; preserve menus and saved projects, verify desktop and phone.
+
 - [x] Track selection opens editing actions in the synth piano roll; stationary note clicks/right-clicks open Copy/Cut/Paste/Delete without interfering with drags. Loop highlighting follows enabled state and repeated band clicks no longer disable it. Signed-in menus, note copy/paste, boundary adjustment and repeated loop clicks verified; 10 related tests pass. Preview only.
 
 - [x] Piano-roll horizontal navigation stays above the grid with arrow controls and a scroll slider; a white placement playhead has a draggable bar ruler. Signed-in note placement/copy/paste and scrolling verified; 3 piano-edit tests pass. Preview only.
