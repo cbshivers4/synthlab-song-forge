@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { effectBrand, groupByCategory } from "@/lib/synclab/effect-catalog";
 import { ChevronDown, ChevronUp, Disc3, AudioLines, Music2, Piano, Plus, Power, X } from "lucide-react";
 import { useStudio } from "@/lib/synclab/store";
 import { BUILT_IN_PLUGINS } from "@/lib/synclab/plugins";
@@ -197,8 +198,9 @@ export function DeviceBar() {
                 className="fixed z-50 max-h-64 w-56 overflow-y-auto rounded-md border border-border bg-popover p-1 shadow-xl"
                 style={{ left: pickerPos.left, bottom: pickerPos.bottom }}
               >
-                <div className="px-2 py-1 font-mono text-[9px] tracking-widest text-muted-foreground">BUILT-IN EFFECTS</div>
-                {[...addable].sort((a, b) => (a.name === "Stereo Delay" ? -1 : b.name === "Stereo Delay" ? 1 : 0)).map((d) => (
+                {groupByCategory(addable).map(([category, defs]) => <div key={category} role="group" aria-label={category}>
+                <div className="sticky top-0 bg-popover px-2 py-1 font-mono text-[9px] tracking-widest text-muted-foreground">{category.toUpperCase()}</div>
+                {defs.map((d) => (
                   <button
                     key={d.id}
                     type="button"
@@ -210,10 +212,11 @@ export function DeviceBar() {
                     }}
                   >
                     <span className="size-2 shrink-0 rounded-full bg-[color:var(--device-accent)]" />
-                    <span className="min-w-0 flex-1 truncate">{d.name}</span>
-                    <span className="shrink-0 text-[9px] text-muted-foreground">{d.format}</span>
+                    <span className="min-w-0 flex-1 truncate">{effectBrand(d)}</span>
+                    <span className="shrink-0 text-[9px] text-muted-foreground">{d.format === "Built-in" ? d.name : d.format}</span>
                   </button>
                 ))}
+                </div>)}
               </div>
             )}
           </div>

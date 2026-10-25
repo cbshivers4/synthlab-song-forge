@@ -1,4 +1,5 @@
 import { levelColor, peakOf, spectrumColor, dbColor, LEVEL_GREEN, LEVEL_ORANGE, LEVEL_RED, mixerDbToFraction, mixerFractionToDb, mixerSegmentDb } from "@/lib/synclab/level-colors";
+import { effectBrand, groupByCategory } from "@/lib/synclab/effect-catalog";
 import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 // Console fader thumb sizing is provided by FADER_CAP below.
@@ -300,18 +301,21 @@ export function InsertRack({
           </div>
         ))}
       </div>
-      <div className="mt-1.5 grid grid-cols-2 gap-1.5">
-        {installedPlugins.map((d) => (
+      {groupByCategory(installedPlugins).map(([category, defs]) => <div key={category} role="group" aria-label={category}>
+      <p className="mt-1.5 font-mono text-[8px] tracking-widest text-muted-foreground">{category.toUpperCase()}</p>
+      <div className="mt-1 grid grid-cols-2 gap-1.5">
+        {defs.map((d) => (
           <button
             key={d.id}
             onClick={() => onAdd(d)}
             className="truncate rounded-md border border-border bg-surface px-2 py-1.5 text-left font-mono text-[10px] uppercase text-muted-foreground hover:text-foreground"
             title={`${d.vendor} · ${d.format}`}
           >
-            + {d.name}
+            + {effectBrand(d)}
           </button>
         ))}
       </div>
+      </div>)}
       <p className="mt-1 font-mono text-[8px] leading-tight text-muted-foreground">
         Add 3rd-party plugins in the PLUGINS panel — they appear here.
       </p>

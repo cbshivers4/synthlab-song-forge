@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { effectBrand, groupByCategory } from "@/lib/synclab/effect-catalog";
 import { Cpu, FolderSearch, Plus, Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -161,8 +162,10 @@ export function PluginRack() {
       {/* installed rack */}
       <aside className="plugin-rack-browser">
         <p className="label-xs mb-1.5">ADD EFFECT · {track.name}</p>
+        {groupByCategory(installedPlugins).map(([category, defs]) => <div key={category} role="group" aria-label={category}>
+        <p className="label-xs mt-2 mb-1 text-muted-foreground">{category.toUpperCase()}</p>
         <div className="plugin-rack-browser-list">
-          {installedPlugins.map((d) => (
+          {defs.map((d) => (
             <div
               key={d.id}
               data-fx-skin={d.kind}
@@ -176,9 +179,9 @@ export function PluginRack() {
               className="plugin-rack-browser-device flex cursor-grab items-center gap-2 px-2 py-1.5 active:cursor-grabbing"
             >
               <Button variant="ghost" aria-label={`Add ${d.name}`} className="h-auto min-h-11 min-w-0 flex-1 flex-col items-start gap-0 text-left" onClick={() => addPlugin(track.id, d)}>
-                 <span className="block max-w-full truncate text-[11px] font-medium">{d.name}</span>
+                 <span className="block max-w-full truncate text-[11px] font-medium">{effectBrand(d)}</span>
                 <span className="block truncate font-mono text-[9px] tracking-wider text-muted-foreground uppercase">
-                  {d.vendor} · {d.format}
+                  {d.format === "Built-in" ? d.name : `${d.vendor} · ${d.format}`}
                 </span>
               </Button>
               {d.format !== "Built-in" && (
@@ -190,6 +193,7 @@ export function PluginRack() {
             </div>
           ))}
         </div>
+        </div>)}
       </aside>
       </div>
 
