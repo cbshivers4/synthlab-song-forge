@@ -2,6 +2,11 @@ import type { AudioClip, Track } from './types';
 import { clipRate, clipSeconds } from './types';
 import { uid } from './presets';
 
+/** A clicked destination is independent of the moving transport playhead. */
+export function timelinePasteStep(playhead: number, destination?: number): number {
+  return Math.max(0, destination ?? playhead);
+}
+
 /** Paste material, not channel settings; even the source channel is a valid target. */
 export function pasteTrackContent(target: Track, source: Track, at: number, stepDuration: number): Track {
   const origin = Math.min(...(source.clips ?? []).map(c => c.start ?? 0), ...(source.notes ?? []).map(n => n.step), ...(source.pads?.some(p => p.steps.some(v => v > 0)) ? [0] : []));

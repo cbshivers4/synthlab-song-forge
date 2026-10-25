@@ -1,9 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { materialEnd, pasteTrackContent, rightEdgeEdit } from './arrangement-edit';
+import { materialEnd, pasteTrackContent, rightEdgeEdit, timelinePasteStep } from './arrangement-edit';
 import type { Track } from './types';
 
 const track: Track = { id: 'audio', name: 'Take', kind: 'audio', color: 'grey', volume: 0.7, pan: 0.2, muted: false, solo: false, armed: false, frozen: false, hidden: false, input: 'none', bus: 'master', steps: 16, clips: [{ id: 'clip', name: 'Take', duration: 2, length: 2, peaks: [1], start: 0 }] };
 describe('arrangement paste', () => {
+  it('pastes at the clicked location without substituting the playhead', () => {
+    expect(timelinePasteStep(8, 32)).toBe(32);
+    expect(pasteTrackContent(track, track, timelinePasteStep(8, 32), 0.125).clips?.[1]?.start).toBe(32);
+  });
+  it('pastes at the playhead when no area is specified', () => {
+    expect(timelinePasteStep(24)).toBe(24);
+    expect(pasteTrackContent(track, track, timelinePasteStep(24), 0.125).clips?.[1]?.start).toBe(24);
+  });
   it('pastes on the same channel at its end/playhead without replacing its settings', () => {
     const next = pasteTrackContent(track, track, 16, 0.125);
     expect(next.id).toBe('audio');

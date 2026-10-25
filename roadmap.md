@@ -1,5 +1,7 @@
 # Roadmap — Source-code audit & DAW repair
 
+- [ ] Timeline selection editing menu, explicit tap-location/playhead paste, and single-tap synth piano-roll opening on desktop and phone.
+
 - [x] Piano-roll single-tap Draw/Select/Erase modes, larger notes, zoom, visible paste cursor, explicit selection-only deletion, note clipboard and focused keyboard commands; desktop and sideways-phone placement/copy/paste/delete verified, 13 related tests pass. Native scroll-aware coordinates retain precise phone placement. Preview only.
 
 - [x] Repaired Stop/finalization including pending microphone starts, same-channel material paste and clipboard controls, and pitch-preserving right-edge extension with song growth. Signed-in saved-project recording/Stop/paste/stretch verified on desktop and sideways phone; 24 related tests pass. Phone notifications no longer intercept timeline taps. Preview only; physical devices unverified.
