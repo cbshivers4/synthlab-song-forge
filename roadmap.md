@@ -1,5 +1,7 @@
 # Roadmap — Source-code audit & DAW repair
 
+- [x] Shared BYPASS controls added to synths, modular/Touch synth, drums, all samplers and rack/mixer/compact effects. Instrument channels/sends silence independently of mixer mute; video mutes preview audio; effects pass dry audio. 50 related tests pass; signed-in unsaved desktop sampler silences/restores and phone button toggles. Track state uses existing manual project persistence; no saved music touched. Preview only; physical devices unverified.
+
 - [x] Audio Converter added to desktop Files/Audio/Tools and phone Tools: open/drop audio, waveform, output/rate/bitrate/mono WAV, convert/download/share and cancellation. Eight focused tests pass; signed-in unsaved WAV→MP3→WAV downloads verified with actual codecs, phone conversion succeeds. M4A decoding/encoding depends on device support (test Chromium cannot decode AAC and shows a warning); WAV/MP3/AIFF/FLAC available. Saved tracks untouched; preview only.
 
 - [x] Timeline menu creates mono/stereo WAV files from selected audio clips or loaded sampler sources without replacing originals. Nine focused tests pass; signed-in unsaved-session downloads verified as one/two channels, phone menu available, build clean. MIDI/drum patterns must first be recorded to audio; conversion excludes mixer inserts/master processing. Preview only.

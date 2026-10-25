@@ -1571,7 +1571,7 @@ export class SyncLabEngine {
     const anySolo = tracks.some((t) => t.solo);
     for (const t of tracks) {
       const ch = this.channel(t.id);
-      const audible = !t.muted && (!anySolo || t.solo);
+      const audible = !t.muted && !t.deviceBypassed && (!anySolo || t.solo);
       const vca = t.vca ? this.vcaStates[t.vca] : undefined;
       const busState = this.busStates[t.bus ?? "master"];
       const inputs = JSON.stringify([t.gain ?? 1, t.volume, t.pan, audible, t.vca, vca?.volume, vca?.muted, t.bus ?? "master", busState?.volume, busState?.muted, t.sends?.reverb ?? 0, t.sends?.delay ?? 0, t.sends?.chorus ?? 0]);

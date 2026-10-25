@@ -1,5 +1,6 @@
 import { WaveformZoom, waveformFraction, useWaveformDetail } from "./WaveformZoom";
 import { SampleExportButtons } from "./SampleExportButtons";
+import { BypassButton } from "./HardwareBypass";
 import { captureFromUrl } from "@/lib/synclab/sample-export";
 import { getLocalFile } from "@/lib/synclab/local-files";
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
@@ -181,7 +182,7 @@ function PadWave({ pad, color, onChange, manual }: { pad: Pad; color: string; on
 }
 
 export function PadSampler() {
-  const { tracks, transport, addTrack, select, captureNote } = useStudio();
+  const { tracks, transport, addTrack, select, captureNote, updateTrack } = useStudio();
   const [pads, setPadsState] = useState<Record<number, Pad>>(() => getPadBank());
   const setPads: typeof setPadsState = useCallback((next) => {
     setPadsState((current) => {
@@ -514,6 +515,7 @@ export function PadSampler() {
       <div className="flex flex-wrap items-center gap-2">
         <Grid2x2 className="size-4 text-primary" />
         <span className="label-xs">PAD SAMPLER · {filled} pads loaded</span>
+        <BypassButton name="Pad Sampler" bypassed={tracks.find(t => t.id === trackId || (t.kind === "sampler" && t.name === "PAD SAMPLER"))?.deviceBypassed ?? false} onToggle={() => { const id = ensureTrack(); const current = tracks.find(t => t.id === id); updateTrack(id, { deviceBypassed: !current?.deviceBypassed }); }} />
         <div className="flex gap-1">
           {BANKS.map((b, i) => (
             <Button

@@ -444,6 +444,8 @@ export interface Track {
   muted: boolean;
   solo: boolean;
   armed: boolean;
+  /** Hardware bypass silences the device channel independently of mixer mute. */
+  deviceBypassed?: boolean;
   frozen: boolean;
   hidden: boolean;
   /** lane height in px on the arrangement */

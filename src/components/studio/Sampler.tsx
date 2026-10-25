@@ -1,5 +1,6 @@
 import { WaveformZoom, waveformFraction, useWaveformDetail } from "./WaveformZoom";
 import { SampleExportButtons } from "./SampleExportButtons";
+import { HardwareBypass } from "./HardwareBypass";
 import { captureFromUrl } from "@/lib/synclab/sample-export";
 import { centerOneSided } from "@/lib/synclab/one-sided-audio";
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
@@ -513,6 +514,7 @@ export function Sampler() {
 
   return (
     <div className="studio-wallpaper space-y-3 rounded-md p-3" data-studio-panel="sample" style={skinBackground(skin)} {...drop}>
+      <div className="flex items-center justify-between gap-2"><span className="label-xs">SYNCLAB · SAMPLER</span><HardwareBypass track={track} name="Sampler" /></div>
       <details className="text-xs text-muted-foreground">
         <summary className="cursor-pointer py-2">Sampler colors & wallpaper</summary>
         <SkinControls skinKey="sample" image />

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, ChevronUp, Power, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { levelColor, peakOf } from "@/lib/synclab/level-colors";
@@ -12,6 +12,7 @@ import { ProEq } from "./ProEq";
 import { VocoderPanel } from "./VocoderPanel";
 import { EffectPresetMenu } from "./EffectPresetMenu";
 import { effectBrand, effectCategory } from "@/lib/synclab/effect-catalog";
+import { BypassButton } from "./HardwareBypass";
 
 const meterListeners = new Set<() => void>();
 let meterTimer: ReturnType<typeof setInterval> | undefined;
@@ -73,7 +74,7 @@ export function RackEffect({ trackId, plugin: p, index, count }: { trackId: stri
     <div className="fx-rack-vents" aria-hidden="true" />
     <div className="fx-module-body mx-3 sm:mx-5">
       <header className="hardware-device-header flex flex-wrap items-center gap-1 border-b border-border px-2 py-2">
-        <Button size="icon" variant="ghost" className={`size-10 shrink-0 ${p.bypass ? "text-muted-foreground" : "text-primary"}`} aria-label={`${p.bypass ? "Enable" : "Bypass"} ${p.name}`} aria-pressed={!p.bypass} title="Enable / bypass effect" onClick={() => togglePluginBypass(trackId, p.id)}><Power className="size-4" /></Button>
+        <BypassButton name={p.name} bypassed={p.bypass} onToggle={() => togglePluginBypass(trackId, p.id)} />
         <div className="fx-nameplate min-w-0 flex-1"><h3 className="break-words text-sm font-semibold">{String(index + 1).padStart(2, "0")} · {effectBrand(p)}</h3><span className="font-mono text-[9px] text-muted-foreground">SYNCLAB · {p.name} · {effectCategory(p.kind)}</span></div>
         {readoutParam && p.kind !== "paraeq" && <div className="fx-parameter-window" aria-label={`${p.name} ${readoutParam.name} readout`}><span>{readoutParam.name}</span><strong>{Number(readoutParam.value.toFixed(2))}<small>{readoutParam.unit}</small></strong></div>}
         <div className="ml-auto flex shrink-0">

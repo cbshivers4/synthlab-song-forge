@@ -1,5 +1,6 @@
 import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
 import { SampleExportButtons } from "./SampleExportButtons";
+import { BypassButton } from "./HardwareBypass";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Circle, Grid3x3, Piano, Plus, Save, Scissors, Square, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
@@ -30,6 +31,7 @@ export function VideoSampler() {
   const consumedNotes = useRef(new Set<string>());
   const blobRef = useRef<{ blob: Blob; name: string } | null>(null);
   const [saving, setSaving] = useState(false);
+  const [bypassed, setBypassed] = useState(false);
   const [videoHeight, setVideoHeight] = useState(220);
   useEffect(() => { const v = Number(localStorage.getItem("synclab.videoHeight")); if (v >= 120 && v <= 720) setVideoHeight(v); }, []);
   const setVideoSize = (h: number) => { setVideoHeight(h); localStorage.setItem("synclab.videoHeight", String(h)); };
@@ -205,7 +207,7 @@ export function VideoSampler() {
       rec.ondataavailable = (e) => { if (e.data.size) parts.push(e.data); };
       rec.onstop = () => {
         setFilming(false); release();
-        if (video.current) { video.current.srcObject = null; video.current.muted = false; }
+        if (video.current) { video.current.srcObject = null; }
         void loadBlob(new Blob(parts, { type: rec.mimeType || "video/webm" }));
       };
       recorder.current = rec; rec.start(); setFilming(true);
@@ -274,6 +276,7 @@ export function VideoSampler() {
   };
 
   return <section className="space-y-3" aria-label="Video sampler">
+    <div className="flex items-center justify-between gap-2"><span className="label-xs">SYNCLAB · VIDEO SAMPLER</span><BypassButton name="Video Sampler" bypassed={bypassed} onToggle={() => setBypassed(value => !value)} /></div>
     <div className="overflow-hidden rounded border border-border bg-background">
       <div className="flex flex-wrap items-center gap-1" role="group" aria-label="Video size">
         <span className="font-mono text-[10px] text-muted-foreground">VIDEO SIZE</span>
@@ -281,7 +284,7 @@ export function VideoSampler() {
         <input type="range" min={120} max={720} step={10} value={videoHeight} onChange={(e) => setVideoSize(Number(e.target.value))} aria-label="Video height" className="min-w-24 flex-1" />
         <Button size="sm" variant="outline" className="h-9" onClick={() => void video.current?.requestFullscreen?.().catch(() => toast.error("Full screen isn't available here"))}>Full screen</Button>
       </div>
-      <video ref={video} src={url ?? undefined} playsInline style={{ height: `${videoHeight}px` }} className="w-full bg-background object-contain" controls={!filming && !!url} aria-label="Video sample" onTimeUpdate={(e) => setPosition(e.currentTarget.currentTime)} onSeeked={(e) => setPosition(e.currentTarget.currentTime)} onEnded={() => setActive(null)} />
+      <video ref={video} src={url ?? undefined} muted={bypassed || filming} playsInline style={{ height: `${videoHeight}px` }} className="w-full bg-background object-contain" controls={!filming && !!url} aria-label="Video sample" onTimeUpdate={(e) => setPosition(e.currentTarget.currentTime)} onSeeked={(e) => setPosition(e.currentTarget.currentTime)} onEnded={() => setActive(null)} />
     </div>
     {buffer && <div className="space-y-1 border-b border-border bg-background py-2" aria-label="Video audio waveform editor">
       <div className="flex flex-wrap items-center justify-between gap-2">
