@@ -10,7 +10,7 @@
 <!-- LOVABLE:END -->
 
 Live Looper/View stay separate; singleton loops survive switching, bypass master to prevent recapture; timeline handles export/mastering.
-Meter/looper visuals share 20 fps timers; keep rapid React updates off audio paths.
+Meters/loopers draw at 20 fps. HardwareBypass uses track.deviceBypassed in mix/scheduler separately from mute; effects use plugin bypass, video mutes media. Preserve notes/faders.
 Mixer VCAs scale assigned channel gains without changing individual faders, while aux returns control post-effect levels before the master; this avoids routing returns back into their own sends.
 Mixer meters tap real bus/return/VCA signals; master scales the mix and subgroups scale pre-bus sends.
 MIDI: stable IDs, one hot-plug-safe multi-input subscription. Read nested AGENTS.md.
