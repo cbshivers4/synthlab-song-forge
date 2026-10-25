@@ -29,7 +29,7 @@ import type { DrumKitId, DrumPad } from "@/lib/synclab/types";
 import { toast } from "sonner";
 import { clipFromLocalFile, pickFolder, playPreview, stopPreview, onPreviewChange, getLocalFile, getPreviewAnalyser, getLocalFolders, addLocalFolder, removeLocalFolder, onFoldersChange } from "@/lib/synclab/local-files";
 import { LibraryPanel } from "./LibraryPanel";
-import { effectBrand, groupByCategory } from "@/lib/synclab/effect-catalog";
+import { availableEffects, effectBrand, groupByCategory } from "@/lib/synclab/effect-catalog";
 
 /** Bottom-of-browser player: shows the file being previewed with a live waveform scope. */
 function PreviewPlayer({ playingFile }: { playingFile: string | null }) {
@@ -486,7 +486,8 @@ export function Browser() {
     [query],
   );
   const filteredPlugins = EFFECT_PLUGINS.filter((e) => match(e.name, e.desc, e.fx));
-  const filteredRack = installedPlugins.filter((d) => match(d.name, effectBrand(d), d.kind));
+  const effects = availableEffects(installedPlugins);
+  const filteredRack = effects.filter((d) => match(d.name, effectBrand(d), d.kind));
   const filteredPresets = SYNTH_PRESETS.filter((p) => match(p.name, p.category));
   const filteredKits = DRUM_KITS.filter((k) => match(k.name, k.desc, k.category));
   const filteredTemplates = TEMPLATES.filter((t) => match(t.name, t.key));
@@ -804,7 +805,7 @@ export function Browser() {
 
       {/* RACK EFFECTS — drag onto a timeline track */}
       <div>
-        <FolderHeader id="effects" icon={<Waves className="size-3 text-primary" />} label="EFFECTS" count={installedPlugins.length} hasMatch={filteredRack.length > 0} />
+        <FolderHeader id="effects" icon={<Waves className="size-3 text-primary" />} label="EFFECTS" count={effects.length} hasMatch={filteredRack.length > 0} />
         {isOpen("effects", filteredRack.length > 0) && (
           <div className="ml-3 border-l-2 border-border">
             <p className="px-2 py-1 text-[9px] text-muted-foreground">Drag onto a timeline track, or click to add to the selected channel.</p>

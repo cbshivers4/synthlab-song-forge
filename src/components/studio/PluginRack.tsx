@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { effectBrand, groupByCategory } from "@/lib/synclab/effect-catalog";
+import { availableEffects, effectBrand, groupByCategory } from "@/lib/synclab/effect-catalog";
 import { Cpu, FolderSearch, Plus, Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -162,7 +162,7 @@ export function PluginRack() {
       {/* installed rack */}
       <aside className="plugin-rack-browser">
         <p className="label-xs mb-1.5">ADD EFFECT · {track.name}</p>
-        {groupByCategory(installedPlugins).map(([category, defs]) => <div key={category} role="group" aria-label={category}>
+        {groupByCategory(availableEffects(installedPlugins)).map(([category, defs]) => <div key={category} role="group" aria-label={category}>
         <p className="label-xs mt-2 mb-1 text-muted-foreground">{category.toUpperCase()}</p>
         <div className="plugin-rack-browser-list">
           {defs.map((d) => (

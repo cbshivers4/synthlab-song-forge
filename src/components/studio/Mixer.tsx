@@ -1,5 +1,6 @@
 import { levelColor, peakOf, spectrumColor, dbColor, LEVEL_GREEN, LEVEL_ORANGE, LEVEL_RED, mixerDbToFraction, mixerFractionToDb, mixerSegmentDb } from "@/lib/synclab/level-colors";
-import { effectBrand, groupByCategory } from "@/lib/synclab/effect-catalog";
+import { availableEffects, effectBrand, groupByCategory } from "@/lib/synclab/effect-catalog";
+import { EffectPicker } from "./EffectPicker";
 import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 // Console fader thumb sizing is provided by FADER_CAP below.
@@ -298,7 +299,7 @@ export function InsertRack({
           </div>
         ))}
       </div>
-      {groupByCategory(installedPlugins).map(([category, defs]) => <div key={category} role="group" aria-label={category}>
+      {groupByCategory(availableEffects(installedPlugins)).map(([category, defs]) => <div key={category} role="group" aria-label={category}>
       <p className="mt-1.5 font-mono text-[8px] tracking-widest text-muted-foreground">{category.toUpperCase()}</p>
       <div className="mt-1 grid grid-cols-2 gap-1.5">
         {defs.map((d) => (
@@ -838,31 +839,6 @@ function EqCurve({
 
 function ChannelMenu({ t }: { t: Track }) {
   const { updateTrack, duplicateTrack, removeTrack, addPlugin, installedPlugins } = useStudio();
-  const quick: [string, string][] = [
-    ["eq", "EQ"],
-    ["paraeq", "Pro-EQ"],
-    ["filter", "Filter"],
-    ["drive", "Drive"],
-    ["compressor", "Comp"],
-    ["limiter", "Limiter"],
-    ["gate", "Gate"],
-    ["delay", "Delay"],
-    ["reverb", "Reverb"],
-    ["chorus", "Chorus"],
-    ["flanger", "Flanger"],
-    ["phaser", "Phaser"],
-    ["tremolo", "Tremolo"],
-    ["autopan", "Autopan"],
-    ["width", "Width"],
-    ["bitcrusher", "Crusher"],
-    ["vocoder", "Vocoder"],
-    ["gain", "Gain"],
-  ];
-  const add = (kind: string) => {
-    const def =
-      installedPlugins.find((d) => d.kind === kind) ?? BUILT_IN_PLUGINS.find((d) => d.kind === kind);
-    if (def) addPlugin(t.id, def);
-  };
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -883,17 +859,7 @@ function ChannelMenu({ t }: { t: Track }) {
           className="h-7 w-full rounded-sm border border-border bg-surface-2 px-2 font-mono text-[10px] uppercase"
         />
         <div className="label-xs pt-1">Add effect</div>
-        <div className="grid grid-cols-3 gap-1">
-          {quick.map(([kind, label]) => (
-            <button
-              key={kind}
-              onClick={() => add(kind)}
-              className="h-6 rounded-sm border border-border bg-secondary px-1 font-mono text-[9px] uppercase text-secondary-foreground hover:bg-accent"
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+        <EffectPicker effects={availableEffects(installedPlugins)} onAdd={def => addPlugin(t.id, def)} />
         <MidiLearnBlock id={t.id} />
         <div className="grid grid-cols-2 gap-1 pt-1">
           <button
@@ -1459,6 +1425,7 @@ function MasterChain({ color, className }: { color: string; className?: string }
           </button>
         ))}
       </div>
+      <Popover><PopoverTrigger asChild><Button variant="ghost" className="h-8 w-full text-[10px]" aria-label="Add any effect to master">Add effect</Button></PopoverTrigger><PopoverContent className="w-72" onClick={event => event.stopPropagation()}><EffectPicker effects={availableEffects(installedPlugins)} onAdd={def => addFxPlugin("bus:master", def)} /></PopoverContent></Popover>
     </div>
   );
 }

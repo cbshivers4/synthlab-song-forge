@@ -1,5 +1,5 @@
 import { levelColor, peakOf, spectrumColor, dbColor, LEVEL_GREEN, LEVEL_ORANGE, LEVEL_RED } from "@/lib/synclab/level-colors";
-import { effectBrand, groupByCategory } from "@/lib/synclab/effect-catalog";
+import { availableEffects, effectBrand, groupByCategory } from "@/lib/synclab/effect-catalog";
 import {
   AudioLines,
   AppWindow,
@@ -445,12 +445,12 @@ export function ToolsRail() {
                         <div className="px-2 pb-1 font-mono text-[9px] tracking-[0.18em] text-muted-foreground/70">
                           EFFECTS — DRAG ONTO A TIMELINE TRACK
                         </div>
-                        {installedPlugins.length === 0 ? (
+                        {availableEffects(installedPlugins).length === 0 ? (
                           <p className="px-2 text-[10px] leading-snug text-muted-foreground/80">
                             None yet — drop your VST3 / AU / CLAP files on "Plugins" above or open it to scan a folder.
                           </p>
                         ) : (
-                          groupByCategory(installedPlugins).map(([category, defs]) => <div key={category} role="group" aria-label={category}>
+                          groupByCategory(availableEffects(installedPlugins)).map(([category, defs]) => <div key={category} role="group" aria-label={category}>
                           <div className="px-2 pt-1.5 font-mono text-[8px] tracking-[0.16em] text-muted-foreground/70">{category.toUpperCase()}</div>
                           {defs.map((d) => (
                             <button
