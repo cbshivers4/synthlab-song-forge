@@ -218,6 +218,37 @@ export function Sampler() {
     [],
   );
 
+  /**
+   * Loads the sample's audio as soon as the sampler opens, so pads, keys and Preview are ready.
+   * Saved cloud samples use 12-hour links; an expired link is renewed instead of playing silently.
+   */
+  const [sampleIssue, setSampleIssue] = useState<string | null>(null);
+  const sampleUrl = track?.sampler?.url ?? "";
+  const sampleCloudPath = track?.sampler?.cloudPath;
+  const sampleTrackId = track?.id;
+  useEffect(() => {
+    setSampleIssue(null);
+    if (!sampleTrackId || (!sampleUrl && !sampleCloudPath)) return;
+    let cancelled = false;
+    void (async () => {
+      const engine = getEngine();
+      if (sampleUrl && await engine.ensureBuffer(sampleUrl)) return;
+      if (sampleCloudPath) {
+        try {
+          const { freshCloudUrl } = await import("@/lib/synclab/cloud");
+          const fresh = await freshCloudUrl(sampleCloudPath);
+          if (fresh && fresh !== sampleUrl && await engine.ensureBuffer(fresh)) {
+            if (!cancelled) updateSampler(sampleTrackId, { url: fresh });
+            return;
+          }
+        } catch { /* reported below */ }
+      }
+      if (!cancelled) setSampleIssue("This sample's audio couldn't be loaded, so it will be silent. This browser may not read its file type — re-import it as WAV or MP3.");
+    })();
+    return () => { cancelled = true; };
+  }, [sampleTrackId, sampleUrl, sampleCloudPath, updateSampler]);
+
+
   const stopPreview = () => {
     try { warpSourceRef.current?.stop(); } catch { /* already stopped */ }
     warpSourceRef.current?.disconnect();
