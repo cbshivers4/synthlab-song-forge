@@ -1,5 +1,7 @@
 # Roadmap — Source-code audit & DAW repair
 
+- [x] Audio Converter added to desktop Files/Audio/Tools and phone Tools: open/drop audio, waveform, output/rate/bitrate/mono WAV, convert/download/share and cancellation. Eight focused tests pass; signed-in unsaved WAV→MP3→WAV downloads verified with actual codecs, phone conversion succeeds. M4A decoding/encoding depends on device support (test Chromium cannot decode AAC and shows a warning); WAV/MP3/AIFF/FLAC available. Saved tracks untouched; preview only.
+
 - [x] Timeline menu creates mono/stereo WAV files from selected audio clips or loaded sampler sources without replacing originals. Nine focused tests pass; signed-in unsaved-session downloads verified as one/two channels, phone menu available, build clean. MIDI/drum patterns must first be recorded to audio; conversion excludes mixer inserts/master processing. Preview only.
 
 - [x] Reduce playback edit work: channel-scoped caches skip unchanged mixer/rack inputs; sequence-only drum edits preserve live envelopes. Thirteen focused tests pass. Signed-in unsaved-session chop edits produce zero mixer writes/rack rebuilds; effect add/remove rebuilds only the affected rack while transport and sample output continue. Preview only; physical-device lag remains unmeasured.

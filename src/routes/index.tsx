@@ -56,6 +56,7 @@ import { ExternalApps } from "@/components/studio/ExternalApps";
 import { HumToBeat } from "@/components/studio/HumToBeat";
 import { BassGenerator } from "@/components/studio/BassGenerator";
 import { VoiceConverter } from "@/components/studio/VoiceConverter";
+import { AudioConverter } from "@/components/studio/AudioConverter";
 import { ComingSoon } from "@/components/studio/ComingSoon";
 import { ReelRecorder } from "@/components/studio/ReelRecorder";
 import { Bot, Film } from "lucide-react";
@@ -216,6 +217,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
     stems: { title: "SEPARATE STEMS", icon: <Split className="size-4" /> },
     coproducer: { title: "AI CO-PRODUCER", icon: <Sparkles className="size-4" /> },
     voice: { title: "CONVERT VOICE", icon: <AudioWaveform className="size-4" /> },
+    "audio-converter": { title: "AUDIO CONVERTER", icon: <AudioLines className="size-4" /> },
     genstem: { title: "GENERATE STEM", icon: <Sparkles className="size-4" /> },
     bassgen: { title: "BASS GENERATOR", icon: <AudioLines className="size-4" /> },
     "reel-recorder": { title: "REEL-TO-REEL RECORDER", icon: <Disc3 className="size-4" /> },
@@ -280,6 +282,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
         {panel === "drums" && (drumTrack ? <DrumMachine track={drumTrack} /> : <AddDrumTrack />)}
         {panel === "piano" && (selected?.kind === "drum" ? <DrumRoll track={selected} /> : pianoTrack ? <PianoRoll track={pianoTrack} /> : drumTrack ? <DrumRoll track={drumTrack} /> : <p>Select an instrument, MIDI or drum track.</p>)}
         {panel === "settings" && <Settings />}{panel === "keys" && <Keyboard />}{panel === "browser" && <Browser />}
+        {panel === "audio-converter" && <AudioConverter />}
         {panel === "plugins" && <PluginRack />}{panel === "appearance" && <Appearance />}{panel === "sampler" && <Sampler />}
         {panel === "pads" && <PadSampler />}{panel === "mastering" && <Mastering />}{panel === "notes" && <NotesPanel />}
         {panel === "reference" && <ReferenceAnalyzer />}{panel === "live" && <LiveView />}{panel === "looper" && <LiveLooperView />}{panel === "apps" && <ExternalApps />}{panel === "humbeat" && <ToolErrorBoundary name="Hum to Beat"><HumToBeat /></ToolErrorBoundary>}{panel === "stems" && <ComingSoon title="Separate stems" />}{panel === "coproducer" && <ComingSoon title="AI Co-Producer — unavailable" />}{panel === "voice" && <ToolErrorBoundary name="Convert Voice"><VoiceConverter /></ToolErrorBoundary>}{panel === "genstem" && <ComingSoon title="Generate stem" />}{panel === "bassgen" && <ToolErrorBoundary name="Bass Generator"><BassGenerator /></ToolErrorBoundary>}
@@ -322,6 +325,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
       {panel === "settings" && <Settings />}
       {panel === "keys" && <Keyboard />}
       {panel === "browser" && <Browser />}
+      {panel === "audio-converter" && <AudioConverter />}
       {panel === "plugins" && <PluginRack />}
       {panel === "appearance" && <Appearance />}
       {panel === "sampler" && <Sampler />}

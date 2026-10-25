@@ -417,6 +417,7 @@ export function MenuBar() {
             <MenubarItem onClick={() => setTransport({ metronome: !transport.metronome })}>Metronome</MenubarItem>
             <MenubarItem onClick={() => setTransport({ countIn: !transport.countIn })}>Count-in</MenubarItem>
             <MenubarItem onClick={() => setPanel("settings")}>Audio Settings</MenubarItem>
+            <MenubarItem onClick={() => setPanel("audio-converter")}>Audio Converter</MenubarItem>
           </MenubarContent>
         </MenubarMenu>
 
@@ -467,6 +468,7 @@ export function MenuBar() {
             <MenubarItem onClick={() => setPanel("drums")}>Drum Machine</MenubarItem>
             <MenubarItem onClick={() => setPanel("sampler")}>Sampler</MenubarItem>
             <MenubarItem onClick={() => setPanel("browser")}>Browser</MenubarItem>
+            <MenubarItem onClick={() => setPanel("audio-converter")}>Audio Converter</MenubarItem>
             <MenubarSeparator />
             <MenubarItem onClick={() => setPanel("plugins")}>Plugin Rack</MenubarItem>
           </MenubarContent>

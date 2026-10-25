@@ -1,5 +1,7 @@
 # Shared audio logic
 
+Audio Converter decodes local files in a disposable context and reuses shared PCM/MP3 encoders; device-only formats use a silent isolated recorder with cancellation/cleanup and honest capability checks, never the studio transport or project mutations.
+
 Timeline mono/stereo file actions render selected clip trims/rates/fades or the loaded sampler source offline, then encode an explicit one- or two-channel WAV; never replace source material or alter live routing/tempo during conversion.
 
 Built-in synth chorus and reverb use separate per-channel destination scales; update both for fader/automation/mute/VCA and disconnect both on removal, so effects stay independent without bypassing mix controls.
