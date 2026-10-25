@@ -10,6 +10,7 @@ import { stepsPerBar } from "@/lib/synclab/timebase";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
+import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useStudio } from "@/lib/synclab/store";
 import { uid } from "@/lib/synclab/presets";
@@ -43,7 +44,7 @@ type Drag =
 
 export function PianoRoll({ track }: { track: Track }) {
   const isMobile = useIsMobile();
-  const { setNotes, previewNote, transport, setTransport, setStepCount, updateTrack, undo, redo, canUndo, canRedo } = useStudio();
+  const { setNotes, previewNote, transport, setTransport, setStepCount, updateTrack, undo, redo, canUndo, canRedo, copyTrack, cutTrack, pasteTrack, clipboardName } = useStudio();
   const litKeys = useSyncExternalStore(subscribeKeys, keysSnapshot, () => NO_KEYS);
   const ROW_H = isMobile ? 28 : 22;
   const [mode, setMode] = useState<"draw" | "select" | "erase">("draw");
@@ -60,6 +61,17 @@ export function PianoRoll({ track }: { track: Track }) {
   const [root, setRoot] = useState(0);
   const [scaleName, setScaleName] = useState("Minor");
   const [sel, setSel] = useState<string[]>([]);
+  const [noteMenu, setNoteMenu] = useState(false);
+  const [trackMenu, setTrackMenu] = useState(true);
+  const trackAnchor = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const open = (e: Event) => { if ((e as CustomEvent<string>).detail === track.id) setTrackMenu(true); };
+    window.addEventListener('synclab:selected-track-menu', open);
+    return () => window.removeEventListener('synclab:selected-track-menu', open);
+  }, [track.id]);
+  const noteElement = useRef<HTMLElement | null>(null);
+  const noteAnchor = useRef({ getBoundingClientRect: () => noteElement.current?.getBoundingClientRect() ?? new DOMRect() });
+  const noteMoved = useRef(false);
   const [trackOct, setTrackOct] = useState(0);
   const gridRef = useRef<HTMLDivElement | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -168,6 +180,8 @@ export function PianoRoll({ track }: { track: Track }) {
   const onNoteDown = (e: React.PointerEvent, n: MidiNote, resize: boolean) => {
     e.stopPropagation();
     e.preventDefault();
+    noteMoved.current = resize;
+    setNoteMenu(false);
     if (mode === "erase") { del(n.id); return; }
     if ((multi || e.shiftKey || e.ctrlKey || e.metaKey) && !resize) {
       setSel(s => s.includes(n.id) ? s.filter(id => id !== n.id) : [...s, n.id]);
@@ -202,6 +216,7 @@ export function PianoRoll({ track }: { track: Track }) {
     }
     const d = drag.current;
     if (!d) return;
+    if (Math.hypot(pt.x - d.startX, pt.y - (d.mode === 'move' ? d.startY : pt.y)) > 4) noteMoved.current = true;
     const stepPx = editorRect(el).width / steps;
     if (d.mode === "resize") {
       const nl = Math.max(grid, snap(d.length + (pt.x - d.startX) / stepPx) || grid);
@@ -277,6 +292,24 @@ export function PianoRoll({ track }: { track: Track }) {
 
   return (
     <div className="piano-roll space-y-1.5 outline-none" tabIndex={0} aria-label="Piano roll note editor" onKeyDown={handleKey} onPointerDownCapture={e => { if (!(e.target as HTMLElement).closest('button,input,[role="combobox"]')) e.currentTarget.focus({ preventScroll: true }); }} onPointerUp={endDrag} onPointerCancel={endDrag}>
+      <Popover open={trackMenu} onOpenChange={setTrackMenu}>
+        <PopoverAnchor virtualRef={trackAnchor} />
+        <PopoverContent aria-label="Selected track actions" className="w-56 space-y-1 p-2" onOpenAutoFocus={e => e.preventDefault()} onCloseAutoFocus={e => e.preventDefault()} onPointerDown={e => e.stopPropagation()} onClick={e => e.stopPropagation()}>
+          <div className="border-b border-border px-2 py-1 font-mono text-xs">{track.name}</div>
+          <Button variant="ghost" className="h-10 w-full justify-start gap-2 text-xs" onClick={() => setTrackMenu(false)}><Pencil className="size-4" />Edit notes</Button>
+          <Button variant="ghost" className="h-10 w-full justify-start gap-2 text-xs" onClick={() => { copyTrack(track.id); setTrackMenu(false); }}><Copy className="size-4" />Copy track content</Button>
+          <Button variant="ghost" className="h-10 w-full justify-start gap-2 text-xs" onClick={() => { cutTrack(track.id); setTrackMenu(false); }}><Scissors className="size-4" />Cut track content</Button>
+          <Button variant="ghost" className="h-10 w-full justify-start gap-2 text-xs" disabled={!clipboardName} onClick={() => { pasteTrack(track.id); setTrackMenu(false); }}><ClipboardPaste className="size-4" />Paste at playhead</Button>
+        </PopoverContent>
+      </Popover>
+      <div ref={trackAnchor} />
+      <Popover open={noteMenu} onOpenChange={setNoteMenu}>
+        <PopoverAnchor virtualRef={noteAnchor} />
+        <PopoverContent aria-label="Selected note actions" className="w-56 space-y-1 p-2" onOpenAutoFocus={e => e.preventDefault()} onCloseAutoFocus={e => e.preventDefault()} onPointerDown={e => e.stopPropagation()} onClick={e => e.stopPropagation()}>
+          <div className="border-b border-border px-2 py-1 font-mono text-xs">{sel.length} selected · Step {cursor + 1}</div>
+          {([{ label: 'Copy notes', icon: Copy, run: () => copySelected() }, { label: 'Cut notes', icon: Scissors, run: () => copySelected(true) }, { label: 'Paste at placement playhead', icon: ClipboardPaste, run: paste, disabled: !clipboardCount }, { label: 'Delete notes', icon: Trash2, run: deleteSelected }] as const).map(action => <Button key={action.label} variant="ghost" className="h-10 w-full justify-start gap-2 text-xs" disabled={'disabled' in action && action.disabled} onClick={() => { action.run(); setNoteMenu(false); }}><action.icon className="size-4" />{action.label}</Button>)}
+        </PopoverContent>
+      </Popover>
       <div className="sticky top-0 z-20 flex flex-wrap items-center gap-1 border-b border-border bg-surface-2 p-1" role="toolbar" aria-label="Note editing">
         {([{ id: 'draw', icon: Pencil, label: 'Draw notes' }, { id: 'select', icon: MousePointer2, label: 'Select notes' }, { id: 'erase', icon: Trash2, label: 'Erase notes' }] as const).map(tool => <Button key={tool.id} variant={mode === tool.id ? 'default' : 'outline'} size="icon" className="size-10 shrink-0" aria-label={tool.label} title={tool.label} aria-pressed={mode === tool.id} onClick={() => setMode(tool.id)}><tool.icon className="size-4" /></Button>)}
         <Button variant={multi ? 'default' : 'outline'} className="h-10" aria-pressed={multi} onClick={() => { setMode('select'); setMulti(!multi); }}>Multi-select</Button>
@@ -679,11 +712,15 @@ export function PianoRoll({ track }: { track: Track }) {
                   data-note={n.id}
                   data-selected={selected}
                   role="button" aria-label={`${NOTE_NAMES[n.pitch % 12]}${Math.floor(n.pitch / 12) - 1} note at step ${n.step + 1}`} aria-pressed={selected}
-                  onClick={e => e.stopPropagation()}
+                  onClick={e => { e.stopPropagation(); if (mode === 'erase' || noteMoved.current || multi || e.shiftKey || e.ctrlKey || e.metaKey) return; noteElement.current = e.currentTarget; setNoteMenu(true); }}
                   onPointerDown={(e) => onNoteDown(e, n, false)}
                   onContextMenu={(e) => {
                     e.preventDefault();
-                    del(n.id);
+                    e.stopPropagation();
+                    setSel(sel.includes(n.id) ? sel : [n.id]);
+                    setCursor(n.step);
+                    noteElement.current = e.currentTarget;
+                    setNoteMenu(true);
                   }}
                   className="absolute touch-none rounded-[1px] border border-clip-midi-dark/60 bg-clip-midi shadow-sm"
                   style={{

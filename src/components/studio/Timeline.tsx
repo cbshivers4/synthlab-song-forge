@@ -894,8 +894,10 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
   const selectForEditing = () => {
     select(track.id);
     setPastePosition(null);
-    if (track.kind === "instrument" || track.kind === "midi") setPanel("piano");
-    else setMenuOpen(true);
+    if (track.kind === "instrument" || track.kind === "midi") {
+      setPanel("piano");
+      window.setTimeout(() => window.dispatchEvent(new CustomEvent("synclab:selected-track-menu", { detail: track.id })), 0);
+    } else setMenuOpen(true);
   };
   const gestureRef = useRef<{ x: number; y: number; timer: number | null; moved: boolean } | null>(null);
   const suppressClickRef = useRef(false);
@@ -1859,8 +1861,10 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
             select(track.id);
             setPastePosition(grid > 0 ? Math.round(raw / grid) * grid : raw);
             // With copied material, empty space chooses a paste destination even on synth channels.
-            if (!hasClipboard && (track.kind === "instrument" || track.kind === "midi")) setPanel("piano");
-            else setMenuOpen(true);
+            if (!hasClipboard && (track.kind === "instrument" || track.kind === "midi")) {
+              setPanel("piano");
+              window.setTimeout(() => window.dispatchEvent(new CustomEvent("synclab:selected-track-menu", { detail: track.id })), 0);
+            } else setMenuOpen(true);
             return;
           }
           if (editTool === "split" || editTool === "razor") {
@@ -3186,8 +3190,8 @@ function Ruler() {
             {/* loop band — drag it to move the whole region */}
             <div
               onPointerDown={dragLoop("band")}
-              onDoubleClick={() => setTransport({ loop: false })}
-              title={`Loop bar ${Math.floor(lo / stepsPerBar()) + 1} to ${Math.floor(hi / stepsPerBar()) + 1} — drag to move, double-click to clear`}
+              aria-label="Move loop range"
+              title={`Loop bar ${Math.floor(lo / stepsPerBar()) + 1} to ${Math.floor(hi / stepsPerBar()) + 1} — drag to move`}
               className="absolute inset-y-0 z-10 cursor-grab touch-none border-x-2 border-y border-primary bg-primary/35 active:cursor-grabbing"
               style={{ left: `${(lo / total) * 100}%`, width: `${((hi - lo) / total) * 100}%` }}
             />
