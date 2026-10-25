@@ -19,6 +19,17 @@ function setup() {
 }
 
 describe('independent synth effect sends', () => {
+  it('skips mixer writes for musical edits but still applies actual level changes', () => {
+    const { engine, channel } = setup();
+    const track = { id: 'synth', volume: 0.4, pan: 0, muted: false, solo: false } as Track;
+    engine.syncMix([track]);
+    const writes = vi.mocked(channel.gain.gain.setTargetAtTime);
+    writes.mockClear();
+    engine.syncMix([{ ...track, notes: [{ id: 'n', pitch: 60, step: 0, length: 1, velocity: 1 }] }]);
+    expect(writes).not.toHaveBeenCalled();
+    engine.syncMix([{ ...track, volume: 0.7 }]);
+    expect(writes).toHaveBeenCalledExactlyOnceWith(0.7, 2, 0.02);
+  });
   it('connects each scale to only its matching return', () => {
     const { engine, channel } = setup();
     expect(channel.synthReverbScale).not.toBe(channel.synthChorusScale);

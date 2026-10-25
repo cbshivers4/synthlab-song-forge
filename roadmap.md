@@ -1,5 +1,7 @@
 # Roadmap — Source-code audit & DAW repair
 
+- [ ] Reduce playback edit work: skip unchanged mixer/rack inputs and avoid live drum envelope rewrites for sequence-only edits; verify ongoing playback in an unsaved session.
+
 - [x] Restore shared sample/clip/drum routing and inserts after Stop without rebuilding existing channels. Eleven tests pass; signed-in unsaved-session whole-sample/stretch preview, chop press/release and preview after transport Stop produce real master output. Saved music untouched; preview only.
 - [ ] Confirm the reported silence on the user's physical output: not reproduced with the test WAV; requires checking the affected sample and device output on the live website. Screenshot shows input activity but no MIDI material or master output.
 
