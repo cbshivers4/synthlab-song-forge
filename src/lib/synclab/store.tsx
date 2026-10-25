@@ -59,6 +59,7 @@ import type {
 import { clipRate, clipSeconds, laneValueAt, SECTION_COLORS } from "./types";
 import { wsolaStretch } from "./stretch";
 import { encodeWav } from "./bounce";
+import { alignedTake, getInputLatencyMs, outputDelay } from "./latency";
 import { addCut, cutNotesAt, deleteRegion, regionAt, unrollNotes } from "./note-cuts";
 
 /** A persistent hardware CC destination. Namespaced parameters identify device controls. */
@@ -445,6 +446,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const finalizingRef = useRef(false);
   /** timeline step where the current take started, so the clip lands there */
   const recStartStepRef = useRef(0);
+  const recAudioStartRef = useRef<number | null>(null);
   /** punch recording hooks, filled in once the record helpers exist */
   const punchRef = useRef<{ start: () => void; stop: () => void } | null>(null);
   const loopStopRef = useRef<(() => void) | null>(null);
