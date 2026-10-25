@@ -1409,6 +1409,8 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
                 else if (editorPanel) openTrackEditor();
                 else openTrackSettings(track.id);
               }}><Pencil className="size-4" /> Edit</DropdownMenuItem>
+              <DropdownMenuItem disabled={!hasFileSource || makingFile} onClick={() => void makeAudioFile(1)}><Download className="size-4" /> Make mono file (WAV)</DropdownMenuItem>
+              <DropdownMenuItem disabled={!hasFileSource || makingFile} onClick={() => void makeAudioFile(2)}><Download className="size-4" /> Make stereo file (WAV)</DropdownMenuItem>
               <DropdownMenuItem onClick={() => activeClip ? copyClip(track.id, activeClip.id) : copyTrack(track.id)}><Copy className="size-4" /> Copy</DropdownMenuItem>
               <DropdownMenuItem onClick={() => activeClip ? cutClip(track.id, activeClip.id) : cutTrack(track.id)}><Scissors className="size-4" /> Cut</DropdownMenuItem>
               {pastePosition !== null && <DropdownMenuItem disabled={!hasClipboard} onClick={() => pasteAt(pastePosition)}><ClipboardPaste className="size-4" /> Paste here · {positionLabel(pastePosition)}</DropdownMenuItem>}
@@ -1423,8 +1425,6 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={beginRename}>Rename</DropdownMenuItem>
               <DropdownMenuLabel className="text-[10px] text-muted-foreground">Audio file{makingFile ? " · creating…" : fileClip ? ` · ${fileClip.name}` : track.sampler ? " · sample" : " · select an audio clip"}</DropdownMenuLabel>
-              <DropdownMenuItem disabled={!hasFileSource || makingFile} onClick={() => void makeAudioFile(1)}><Download className="size-4" /> Make mono file (WAV)</DropdownMenuItem>
-              <DropdownMenuItem disabled={!hasFileSource || makingFile} onClick={() => void makeAudioFile(2)}><Download className="size-4" /> Make stereo file (WAV)</DropdownMenuItem>
               {editorPanel === "synth" && (
                 <DropdownMenuSub><DropdownMenuSubTrigger><Sliders className="size-4" /> Open instrument</DropdownMenuSubTrigger><DropdownMenuSubContent className="min-w-60">
                   <DropdownMenuLabel className="text-[10px] tracking-widest text-muted-foreground">CHOOSE A SYNTH FOR THIS TRACK</DropdownMenuLabel>
