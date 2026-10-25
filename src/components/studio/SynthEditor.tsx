@@ -23,6 +23,7 @@ import { PitchWheels } from "./PitchWheels";
 import { ModularSynth } from "./ModularSynth";
 import { AcidSequencer } from "./AcidSequencer";
 import { PresetNavigator } from "./PresetNavigator";
+import { HardwareBypass } from "./HardwareBypass";
 
 const WAVES: OscWave[] = ["sine", "triangle", "sawtooth", "square", "pulse", "noise", "wavetable"];
 
@@ -139,6 +140,7 @@ function SynthTrackEditor({ track }: { track: Track }) {
       <SkinControls skinKey="synth" image />
       <MidiLearnStrip id={track.id} label={`${track.name} — every knob below also has its own MIDI button`} />
       <div className="synth-preset-deck flex flex-wrap items-center gap-2">
+        <HardwareBypass track={track} />
         <PresetNavigator label="synth preset" options={presetGroups.flatMap(g => g.items)} current={patch.name} onSelect={selectPreset}>
         <Select value={patch.name} onValueChange={selectPreset}>
           <SelectTrigger className="synth-preset-window w-72" aria-label="Preset window">

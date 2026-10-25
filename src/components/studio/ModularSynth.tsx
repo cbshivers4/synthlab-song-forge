@@ -12,6 +12,7 @@ import type { SynthPatch, Track } from "@/lib/synclab/types";
 import { MODULAR_SCOPE_TYPES } from '@/lib/synclab/modular-scopes';
 import { ModularScope } from './ModularScope';
 import { PresetNavigator } from './PresetNavigator';
+import { HardwareBypass } from './HardwareBypass';
 
 const SHORT: Record<string, string> = { sine: "SIN", triangle: "TRI", sawtooth: "SAW", square: "SQR", lowpass: "LP", highpass: "HP", bandpass: "BP", white: "WHT", pink: "PNK" };
 const pkey = (p: PortRef) => `${p.module}|${p.port}`;
@@ -160,6 +161,7 @@ export function ModularSynth({ track }: { track: Track }) {
     <div className="modular-workstation space-y-2">
       <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Patched rack presets">
         <span className="label-xs mr-1">PRESET RACKS</span>
+        <HardwareBypass track={track} name="Modular Tech" />
         <PresetNavigator label="modular rack preset" options={MODULAR_PRESETS.map(p => p.name)} current={rackPreset} onSelect={selectRackPreset}>
           <span className="max-w-48 truncate font-mono text-xs text-primary" aria-live="polite">{rackPreset.replace("Modular Tech ", "") || "Custom rack"}</span>
         </PresetNavigator>

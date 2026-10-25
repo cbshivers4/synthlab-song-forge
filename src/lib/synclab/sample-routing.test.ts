@@ -57,4 +57,20 @@ describe("sample playback routing after Stop", () => {
     engine.playSample("sample", sample, 60);
     expect(engine.channel("sample").gain.gain.setTargetAtTime).toHaveBeenLastCalledWith(0, 2, 0.02);
   });
+
+  it.each(["instrument", "drum", "sampler"])("hardware bypass silences %s channel and synth sends without changing its fader or mute", kind => {
+    const { engine, track } = setup();
+    const bypassed = { ...track, kind: kind as Track["kind"], deviceBypassed: true };
+    engine.syncMix([bypassed]);
+    const ch = engine.channel(track.id);
+    expect(ch.gain.gain.setTargetAtTime).toHaveBeenLastCalledWith(0, 2, 0.02);
+    expect(ch.synthReverbScale.gain.setTargetAtTime).toHaveBeenLastCalledWith(0, 2, 0.02);
+    expect(ch.synthChorusScale.gain.setTargetAtTime).toHaveBeenLastCalledWith(0, 2, 0.02);
+    expect(bypassed.volume).toBe(0.7);
+    expect(bypassed.muted).toBe(false);
+    engine.syncMix([{ ...bypassed, deviceBypassed: false }]);
+    expect(ch.gain.gain.setTargetAtTime).toHaveBeenLastCalledWith(0.7, 2, 0.02);
+    engine.syncMix([{ ...bypassed, deviceBypassed: false, muted: true }]);
+    expect(ch.gain.gain.setTargetAtTime).toHaveBeenLastCalledWith(0, 2, 0.02);
+  });
 });

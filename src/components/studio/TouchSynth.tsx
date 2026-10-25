@@ -11,6 +11,7 @@ import { laneById, loopsToNotes, placeLoopNote, eraseLoopNote, touchPitch, touch
 import type { Track } from '@/lib/synclab/types';
 import { genreLoops, loadGenreLoops, TOUCH_LOOP_GENRES, TOUCH_LOOP_LIBRARY } from '@/lib/synclab/touch-loop-library';
 import { PresetNavigator } from './PresetNavigator';
+import { HardwareBypass } from './HardwareBypass';
 
 const KEYS = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
 const drumPad = (kind: string) => ({ id: `touch-${kind}`, name: kind, kind: kind as 'kick', volume: 1, pan: 0, pitch: 0, decay: .4, muted: false, solo: false, steps: [] as number[] });
@@ -205,6 +206,7 @@ export function TouchSynth({ track }: { track: Track }) {
   return <section className="min-w-0 space-y-3" aria-label="Touch synth">
     <header className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-2">
       <h3 className="flex items-center gap-2 font-display text-lg font-bold text-primary"><Hand className="size-5" /> SYNCLAB TOUCH</h3>
+      <HardwareBypass track={track} name="Touch Synth" />
       <span className="font-mono text-xs text-muted-foreground">5-LANE LOOP SYNTH · {totalNotes} NOTES RECORDED</span>
     </header>
     <div className="space-y-2 border-b border-border pb-3" aria-label="Touch genre loop library">

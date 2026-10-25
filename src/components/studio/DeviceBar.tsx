@@ -10,6 +10,7 @@ import { Scope } from "./Scope";
 import { EffectDisplay } from "./EffectDisplay";
 import { effectFamily } from "./EffectWorkbench";
 import { EffectPresetMenu } from "./EffectPresetMenu";
+import { BypassButton, HardwareBypass } from "./HardwareBypass";
 
 function instrumentModule(track: Track): { label: string; icon: React.ReactNode; panel: "synth" | "drums" | "sampler" | "piano"; tone: string } {
   if (track.kind === "drum") return { label: "Drum Machine", icon: <Disc3 className="size-3.5" />, panel: "drums", tone: "drums" };
@@ -76,6 +77,7 @@ function EffectModule({ track, plugin }: { track: Track; plugin: PluginInstance 
         </span>
       </button>
       <EffectPresetMenu plugin={plugin} onParam={(id, value) => setPluginParam(track.id, plugin.id, id, value)} />
+      <BypassButton name={plugin.name} bypassed={plugin.bypass} onToggle={() => togglePluginBypass(track.id, plugin.id)} />
       <div className="px-1 pt-1">
         <EffectDisplay plugin={plugin} height={64} onParam={(paramId, v) => setPluginParam(track.id, plugin.id, paramId, v)} />
       </div>
@@ -174,6 +176,7 @@ export function DeviceBar() {
             <span className="font-mono text-[10px] font-semibold tracking-wide text-foreground">{inst.label}</span>
           </Button>
           <div className="mt-auto"><Scope scopeId={`ch:${track.id}`} height={150} compact /></div>
+          <HardwareBypass track={track} />
           </div>
           {plugins.map((p) => (
             <EffectModule key={p.id} track={track} plugin={p} />

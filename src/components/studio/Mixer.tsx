@@ -23,6 +23,7 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { Knob } from "./Knob";
 import { Button } from "@/components/ui/button";
+import { BypassButton } from "./HardwareBypass";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -267,9 +268,7 @@ export function InsertRack({
         {list.map((p) => (
           <div key={p.id} className="rounded-md border border-border bg-surface-2/50 px-2 py-1.5">
             <div className="flex items-center gap-1.5">
-              <button aria-label={`${p.bypass ? "Enable" : "Bypass"} ${p.name}`} aria-pressed={p.bypass} onClick={() => onBypass(p.id)} title="Bypass" className="p-0.5">
-                <Power className={cn("size-4", p.bypass ? "text-muted-foreground" : "text-primary")} />
-              </button>
+              <BypassButton name={p.name} bypassed={p.bypass} onToggle={() => onBypass(p.id)} />
               <button className="flex-1 truncate text-left font-mono text-[11px] uppercase" onClick={() => setOpen(open === p.id ? null : p.id)}>
                 {p.name}
                 <span className="ml-1 text-muted-foreground">{p.format}</span>
@@ -281,10 +280,8 @@ export function InsertRack({
             <Dialog open={open === p.id} onOpenChange={(o) => setOpen(o ? p.id : null)}>
               <DialogContent data-fx-family={effectFamily(p)} data-fx-skin={p.kind} data-fx-variant={p.name.toLowerCase().includes("echo") ? "echo" : undefined} className="fx-editor max-h-[86vh] w-[min(97vw,58rem)] max-w-none overflow-y-auto">
                 <DialogHeader className="fx-editor-header">
-                  <DialogTitle className="flex items-center gap-2 font-mono uppercase tracking-wider">
-                    <button type="button" onClick={() => onBypass(p.id)} title={p.bypass ? "Turn on" : "Bypass"} aria-label="Bypass effect">
-                      <Power className={cn("size-4", p.bypass ? "text-muted-foreground" : "text-primary")} />
-                    </button>
+                  <DialogTitle className="flex flex-wrap items-center gap-2 font-mono uppercase tracking-wider">
+                    <BypassButton name={p.name} bypassed={p.bypass} onToggle={() => onBypass(p.id)} />
                     {p.name} <span className="text-xs text-muted-foreground">{title} · {p.format}</span>
                   </DialogTitle>
                 </DialogHeader>

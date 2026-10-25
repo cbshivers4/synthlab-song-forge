@@ -1116,7 +1116,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       // a drum machine gives you. Arrangement clips keep their exact position.
       const swung = when + (n % 2 === 1 ? Math.min(0.9, Math.max(0, tp.swing ?? 0)) * 0.5 * stepDur : 0);
       for (const t of list) {
-        if (t.muted || t.frozen || (anySolo && !t.solo)) continue;
+        if (t.muted || t.deviceBypassed || t.frozen || (anySolo && !t.solo)) continue;
         const len = Math.max(1, t.steps);
         const s = n % len;
         // arrangement clips fire at their own position on the timeline
@@ -1262,7 +1262,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       if (tp.punchIn != null && at === tp.punchIn) punchRef.current?.start();
       if (tp.punchOut != null && at === tp.punchOut) punchRef.current?.stop();
       for (const t of list) {
-        if (t.muted || t.frozen || (anySolo && !t.solo)) continue;
+        if (t.muted || t.deviceBypassed || t.frozen || (anySolo && !t.solo)) continue;
         if (!t.automation?.length) continue;
         const ride: Record<string, number> = {};
         for (const lane of t.automation) {
