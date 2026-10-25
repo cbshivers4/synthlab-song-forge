@@ -1031,6 +1031,7 @@ html[data-reduce-motion] *, html[data-reduce-motion] *::before, html[data-reduce
   width: calc(var(--name-editor-width, 100dvw) - 16px);
   max-width: none;
   max-height: calc(var(--name-editor-height, 100dvh) - 16px);
+  translate: none;
   transform: none;
   overflow-y: auto;
   padding: 16px;
