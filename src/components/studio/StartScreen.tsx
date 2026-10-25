@@ -16,6 +16,7 @@ import synclabLogoAsset from "@/assets/synclab-logo-neon.jpg.asset.json";
 import { listUserTemplates, removeUserTemplate, type UserTemplate } from "@/lib/synclab/user-templates";
 import { deleteCloudProject, listCloudProjects, loadCloudProject, renameCloudProject, saveCloudProject, type CloudProject } from "@/lib/synclab/cloud";
 import { supabase } from "@/integrations/supabase/client";
+import { NameEditDialog } from "./NameEditDialog";
 
 const FAVS_KEY = "synclab.start.favs";
 
@@ -464,30 +465,8 @@ export function StartScreen() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={rename !== null} onOpenChange={(v) => { if (!v) setRename(null); }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="font-display tracking-wide">Rename project</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-1.5">
-            <Label className="label-xs">Project name</Label>
-            <Input
-              aria-label="Project name"
-              autoFocus
-              maxLength={80}
-              value={renameName}
-              onChange={(e) => setRenameName(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") void confirmRename(); }}
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setRename(null)}>Cancel</Button>
-            <Button className="glow" disabled={renameBusy} onClick={() => void confirmRename()}>
-              {renameBusy && <Loader2 className="size-4 animate-spin" />} Rename
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <NameEditDialog open={rename !== null} title="Rename project" label="Project name" value={renameName}
+        onChange={setRenameName} onClose={() => setRename(null)} onSave={() => void confirmRename()} busy={renameBusy} />
     </div>
   );
 }

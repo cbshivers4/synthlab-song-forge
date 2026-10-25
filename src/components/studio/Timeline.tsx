@@ -8,6 +8,8 @@ import { notesInRegion, regionsOf, snapCut, deleteRegion } from "@/lib/synclab/n
 import { useIsMobile, useIsLandscapePhone } from "@/hooks/use-mobile";
 import { PhonePages } from "./PhonePages";
 import { WorkflowBar } from "./WorkflowBar";
+import { NameEditDialog } from "./NameEditDialog";
+import { recordingFollowScroll } from "@/lib/synclab/recording-display";
 import {
   ArrowDownToLine,
   ArrowLeftToLine,
@@ -880,6 +882,8 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
   const advanced = useApp().mode === "advanced";
 
   const [renaming, setRenaming] = useState(false);
+  const [renameName, setRenameName] = useState(track.name);
+  const beginRename = () => { setRenameName(track.name); setRenaming(true); };
   const [confirm, setConfirm] = useState(false);
   const [dropping, setDropping] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -1315,7 +1319,7 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
               <TrackIcon track={track} className="size-5" />
             </button>
           </TrackStylePicker>
-          {renaming ? (
+          {renaming && !isMobile ? (
             <Input
               autoFocus
               defaultValue={track.name}
@@ -1330,7 +1334,7 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
             <Button variant="ghost" className="h-6 min-w-0 flex-1 justify-start px-0 py-0 text-left font-display text-[11px] font-semibold" title={track.name} onClick={(e) => {
               e.stopPropagation();
               selectForEditing();
-            }} onDoubleClick={() => setRenaming(true)}>
+            }} onDoubleClick={beginRename}>
               <span className="truncate">{index + 1}. {track.name}</span>
             </Button>
           )}
@@ -1371,7 +1375,7 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
                 else removeTrack(track.id);
               }}><Trash2 className="size-4" /> Delete</DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => setRenaming(true)}>Rename</DropdownMenuItem>
+              <DropdownMenuItem onClick={beginRename}>Rename</DropdownMenuItem>
               {editorPanel === "synth" && (
                 <DropdownMenuSub><DropdownMenuSubTrigger><Sliders className="size-4" /> Open instrument</DropdownMenuSubTrigger><DropdownMenuSubContent className="min-w-60">
                   <DropdownMenuLabel className="text-[10px] tracking-widest text-muted-foreground">CHOOSE A SYNTH FOR THIS TRACK</DropdownMenuLabel>
@@ -1927,6 +1931,10 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
         className="timeline-height-handle absolute inset-x-0 bottom-0 z-40 h-2 cursor-ns-resize touch-none hover:bg-primary/40 focus-visible:bg-primary/40"
       />
 
+      {isMobile && <NameEditDialog open={renaming} title="Rename channel" label="Instrument / channel name" value={renameName}
+        onChange={setRenameName} onClose={() => setRenaming(false)} onSave={() => {
+          updateTrack(track.id, { name: renameName.trim().toUpperCase() }); setRenaming(false);
+        }} />}
       <AlertDialog open={confirm} onOpenChange={setConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -3563,14 +3571,12 @@ export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandl
 
   // keeps the playhead in view while the song plays, when FOLLOW is on
   useEffect(() => {
-    if (!transport.follow || !transport.playing) return;
+    if ((!transport.follow && !(phone && transport.recording)) || !transport.playing) return;
     const el = scrollRef.current;
     if (!el || el.scrollWidth <= el.clientWidth) return;
-    const x = (transport.step / totalSteps) * el.scrollWidth;
-    if (x < el.scrollLeft + 80 || x > el.scrollLeft + el.clientWidth - 80) {
-      el.scrollTo({ left: Math.max(0, x - el.clientWidth / 2), behavior: "smooth" });
-    }
-  }, [transport.follow, transport.playing, transport.step, totalSteps]);
+    const left = recordingFollowScroll(transport.step, totalSteps, el.scrollWidth, headerWidth, el.clientWidth, el.scrollLeft);
+    if (left !== el.scrollLeft) el.scrollTo({ left, behavior: "instant" });
+  }, [transport.follow, transport.playing, transport.recording, transport.step, totalSteps, phone, headerWidth]);
   return (
     <section data-desktop-style={desktopStyle} data-page-scroll={pageScroll} data-resize-handles={resizeHandlesVisible} style={{ "--timeline-header-width": `${headerWidth}px` } as CSSProperties} className={`arrangement-timeline mobile-timeline relative flex min-w-0 flex-col border-x border-b border-border bg-background/60 ${pageScroll ? "" : "min-h-[210px] flex-1 overflow-hidden"}`}>
       <WorkflowBar />

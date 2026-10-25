@@ -4,6 +4,8 @@ Every mixer channel and the master strip carry a pre-fader GAIN knob (Track.gain
 
 # Studio components
 
+Phone channel/project naming shares a screen-aligned NameEditDialog counter-rotated inside the body portal and measured by VisualViewport, keeping native keyboard typing visible without rotating the studio. Recording position derives from the shared transport and phone recording follows the timeline without changing playback.
+
 Timeline selection exposes shared track actions; synth taps open the piano roll while empty-lane taps with copied material offer a snapped destination independently of the playhead. Portal events and drag movement must not trigger editor selection.
 
 PianoRoll owns focused note shortcuts and a session-only note clipboard; single-tap Draw, Select and Erase modes use loop-bounded helpers. Coordinate mapping derives visible canvas bounds so native phone scrolling does not displace note edits; deletion only removes explicit selections.
