@@ -777,9 +777,8 @@ function RecordingClip({ track }: { track: Track }) {
 function Lane({ track }: { track: Track }) {
   const isMidi = track.kind === "instrument" || track.kind === "midi" || track.kind === "sampler";
   const live = track.recording ? <RecordingClip track={track} /> : null;
-  // While recording, the lane shows only the incoming take, never notes.
-  if (track.recording && (isMidi || track.kind === "drum"))
-    return <>{(track.clips?.length ?? 0) > 0 && <Waveform track={track} />}{live}</>;
+  // Keep the same editable material beneath the non-interactive incoming-take
+  // indicator, so recording never replaces the arrangement with a locked view.
   if ((track.kind === "instrument" || track.kind === "midi" || track.kind === "sampler" || track.kind === "drum") && (track.clips?.length ?? 0) > 0)
     return (
       <>
