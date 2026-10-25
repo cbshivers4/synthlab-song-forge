@@ -3512,6 +3512,8 @@ export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandl
     if (e.pointerType !== "mouse" || e.button !== 0 || !(e.shiftKey || e.ctrlKey || e.metaKey)) return;
     const target = e.target as HTMLElement;
     if (!target.closest("[data-lane]") || target.closest("button,input,[role='slider']")) return;
+    // Shift on a clip stays the fine-drag modifier; Ctrl/Cmd boxes from anywhere
+    if (!(e.ctrlKey || e.metaKey) && target.closest(".arrangement-clip")) return;
     e.preventDefault();
     e.stopPropagation();
     clipBoxRef.current = { x: e.clientX, y: e.clientY, add: true, active: false };
@@ -3541,7 +3543,9 @@ export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandl
       }
       selectBoxed(picks, b.add);
       // swallow the click that follows the drag so it doesn't toggle a channel
-      window.addEventListener("click", (ce) => { ce.stopPropagation(); ce.preventDefault(); }, { capture: true, once: true });
+      const swallow = (ce: MouseEvent) => { ce.stopPropagation(); ce.preventDefault(); };
+      window.addEventListener("click", swallow, { capture: true, once: true });
+      window.setTimeout(() => window.removeEventListener("click", swallow, { capture: true }), 50);
     };
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", up);
