@@ -1,3 +1,4 @@
+import { centerOneSided } from "./one-sided-audio";
 import { phasedHarmonics } from "./oscillator-phase";
 import { envelopePoints } from "./live-envelope";
 import { renderVintageDrum } from "./vintage-drums";
@@ -1734,7 +1735,7 @@ export class SyncLabEngine {
         return peak;
       });
       const url = URL.createObjectURL(blob);
-      this.sampleBuffers.set(url, buffer);
+      this.sampleBuffers.set(url, this.centered(buffer));
       return { peaks, duration: buffer.duration, url, trackId };
     } finally {
       source.disconnect(destination);
@@ -1933,7 +1934,7 @@ export class SyncLabEngine {
       peaks.push(peak);
     }
     const url = URL.createObjectURL(outBlob);
-    this.sampleBuffers.set(url, buf);
+    this.sampleBuffers.set(url, this.centered(buf));
     return { peaks, duration, url };
   }
 
@@ -1955,6 +1956,8 @@ export class SyncLabEngine {
 
   /* ---------------- sampler ---------------- */
   private sampleBuffers = new Map<string, AudioBuffer>();
+  /** Interface takes recorded on one side only play from both speakers. */
+  private centered(buf: AudioBuffer) { centerOneSided(buf); return buf; }
   private reversedBuffers = new Map<string, AudioBuffer>();
   private liveSamples = new Map<string, AudioBufferSourceNode[]>();
   /** voices grouped by an arbitrary key so pads can choke each other */
@@ -1970,7 +1973,7 @@ export class SyncLabEngine {
     const raw = await (file as File).arrayBuffer();
     const buf = await ctx.decodeAudioData(raw.slice(0));
     const url = URL.createObjectURL(file);
-    this.sampleBuffers.set(url, buf);
+    this.sampleBuffers.set(url, this.centered(buf));
     const data = buf.getChannelData(0);
     const buckets = 480;
     const size = Math.max(1, Math.floor(data.length / buckets));
@@ -2181,7 +2184,7 @@ export class SyncLabEngine {
     try {
       const res = await fetch(url);
       const buf = await this.init().decodeAudioData(await res.arrayBuffer());
-      this.sampleBuffers.set(url, buf);
+      this.sampleBuffers.set(url, this.centered(buf));
       return buf;
     } catch {
       return null;
