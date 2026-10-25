@@ -104,7 +104,7 @@ function shifter(ctx: BaseAudioContext, input: AudioNode, out: AudioNode, semis:
 }
 
 /** Stereo width matrix: L' = aL + bR, R' = bL + aR. */
-export function widthStage(ctx: BaseAudioContext, input: AudioNode, out: AudioNode, width: number) {
+function widthStage(ctx: BaseAudioContext, input: AudioNode, out: AudioNode, width: number) {
   const split = ctx.createChannelSplitter(2); const merge = ctx.createChannelMerger(2);
   const ll = ctx.createGain(), rr = ctx.createGain(), lr = ctx.createGain(), rl = ctx.createGain();
   // Mono sources must be upmixed first, or the splitter leaves the right side silent.
