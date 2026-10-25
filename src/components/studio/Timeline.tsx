@@ -223,6 +223,14 @@ function Waveform({ track }: { track: Track }) {
   const total = songSteps(transport.bars);
   const stepDur = stepSeconds(transport.bpm);
   const editing = clips.find((c) => c.id === editingId) ?? null;
+  useEffect(() => {
+    const edit = (event: Event) => {
+      const id: unknown = (event as CustomEvent).detail;
+      if (typeof id === "string" && clips.some((clip) => clip.id === id)) setEditingId(id);
+    };
+    window.addEventListener("synclab:edit-clip", edit);
+    return () => window.removeEventListener("synclab:edit-clip", edit);
+  }, [clips]);
   const tracksLive = useRef(tracks);
   tracksLive.current = tracks;
 
@@ -234,6 +242,7 @@ function Waveform({ track }: { track: Track }) {
     clip: (typeof clips)[number],
     mode: "move" | "trim-left" | "trim-right",
   ) => {
+    if (e.button !== 0) return;
     e.stopPropagation();
     e.preventDefault();
     const lane = (e.currentTarget as HTMLElement).closest("[data-lane]") as HTMLElement | null;
@@ -892,7 +901,7 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
   const isSelected = selectedId === track.id || selectedIds.includes(track.id);
 
   const clips = track.clips ?? [];
-  const activeClip = clips.find((c) => c.id === track.activeClipId) ?? clips[clips.length - 1];
+  const activeClip = clips.find((c) => c.id === track.activeClipId);
   const playFrac = Math.min(0.98, Math.max(0.02, ((transport.step ?? 0) % 16) / 16));
 
   const editorPanel: PanelId =
@@ -1220,6 +1229,7 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
         window.setTimeout(selectForEditing, 0);
       }}
       onClick={(e) => {
+        if (!e.currentTarget.contains(e.target as Node)) return;
         if (suppressClickRef.current) {
           suppressClickRef.current = false;
           return;
@@ -1355,6 +1365,11 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
               <DropdownMenuItem onClick={() => activeClip ? cutClip(track.id, activeClip.id) : cutTrack(track.id)}><Scissors className="size-4" /> Cut</DropdownMenuItem>
               {pastePosition !== null && <DropdownMenuItem disabled={!hasClipboard} onClick={() => pasteAt(pastePosition)}><ClipboardPaste className="size-4" /> Paste here · {positionLabel(pastePosition)}</DropdownMenuItem>}
               <DropdownMenuItem disabled={!hasClipboard} onClick={() => pasteAt()}><ClipboardPaste className="size-4" /> Paste at playhead</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => {
+                if (activeClip) fileStudio.removeClip(track.id, activeClip.id);
+                else if (clips.length || track.notes?.length || track.pads?.some((pad) => pad.steps.some((value) => value > 0))) setConfirm(true);
+                else removeTrack(track.id);
+              }}><Trash2 className="size-4" /> Delete</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => setRenaming(true)}>Rename</DropdownMenuItem>
               {editorPanel === "synth" && (
@@ -3500,20 +3515,20 @@ export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandl
   const shownTracks = tracks;
 
   // Grabbing the white playhead line inside the track lanes moves song position.
-  const stepFromRowsX = (clientX: number) => {
+  const stepFromRowsX = (clientX: number, clientY: number) => {
     const el = rowsRef.current;
     if (!el) return transport.step;
-    const r = el.getBoundingClientRect();
+    const r = canvasRect(el);
     const headerW = parseFloat(getComputedStyle(el).getPropertyValue("--timeline-header-width")) || 0;
     const lane = Math.max(1, r.width - headerW);
-    return Math.min(totalSteps - 1, Math.max(0, Math.round(((clientX - r.left - headerW) / lane) * totalSteps)));
+    return Math.min(totalSteps - 1, Math.max(0, Math.round(((canvasPoint(clientX, clientY).x - r.left - headerW) / lane) * totalSteps)));
   };
   const dragSongPlayhead = (e: React.PointerEvent) => {
     if (e.pointerType === "mouse" && e.button !== 0) return;
     e.preventDefault();
     e.stopPropagation();
-    setTransport({ step: stepFromRowsX(e.clientX) });
-    const move = (ev: PointerEvent) => setTransport({ step: stepFromRowsX(ev.clientX) });
+    setTransport({ step: stepFromRowsX(e.clientX, e.clientY) });
+    const move = (ev: PointerEvent) => setTransport({ step: stepFromRowsX(ev.clientX, ev.clientY) });
     const up = () => {
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", up);

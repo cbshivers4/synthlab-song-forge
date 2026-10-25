@@ -2485,6 +2485,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       setActiveClip: (trackId, clipId) => {
         updateTrack(trackId, { activeClipId: clipId });
         setSelectedId(trackId);
+        setSelectedIds([trackId]);
       },
       toggleAutomationLane: (trackId, param) => {
         const t = tracksRef.current.find((x) => x.id === trackId);

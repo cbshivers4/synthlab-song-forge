@@ -4,6 +4,8 @@ Every mixer channel and the master strip carry a pre-fader GAIN knob (Track.gain
 
 # Studio components
 
+Timeline selection exposes shared track actions; synth taps open the piano roll while empty-lane taps with copied material offer a snapped destination independently of the playhead. Portal events and drag movement must not trigger editor selection.
+
 PianoRoll owns focused note shortcuts and a session-only note clipboard; single-tap Draw, Select and Erase modes use loop-bounded helpers. Coordinate mapping derives visible canvas bounds so native phone scrolling does not displace note edits; deletion only removes explicit selections.
 
 EQ and Pro EQ share EqGrid and scoped eq-workstation/eq-chart tokens for their frequency-display presentation; keep response paths parameter-derived and analyser drawing at 20 fps, without changing DSP or adding simulated spectra.
