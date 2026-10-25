@@ -1,6 +1,6 @@
 # Roadmap — Source-code audit & DAW repair
 
-- [ ] Verify released sampler pads stop immediately and cannot restart after decoding; preserve saved music.
+- [x] Sampler chop pads stop on release even for one-shot samples; pending keyed decoding is cancelled on release. Pad Sampler already stops touch pads on release. Signed-in unsaved sampler press/release measured sound then zero output; five focused tests pass, build clean. Saved music untouched; preview only.
 
 - [x] Sampler whole-sample preview plays on one click without note capture; stretch preview uses gesture-unlocked Web Audio and decodes saved sources before rendering. Signed-in unsaved-session real audio verified for both previews and Stop (output returns to zero); six focused tests pass, build clean. Saved music untouched; preview only, physical devices unverified.
 
