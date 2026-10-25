@@ -24,12 +24,13 @@ export function NameEditDialog({ open, title, label, value, onChange, onClose, o
       root.style.setProperty("--name-editor-height", `${viewport?.height ?? window.innerHeight}px`);
     };
     sync();
+    window.addEventListener("resize", sync);
     viewport?.addEventListener("resize", sync);
     viewport?.addEventListener("scroll", sync);
-    return () => { viewport?.removeEventListener("resize", sync); viewport?.removeEventListener("scroll", sync); };
+    return () => { window.removeEventListener("resize", sync); viewport?.removeEventListener("resize", sync); viewport?.removeEventListener("scroll", sync); };
   }, [open, mobile]);
   return <Dialog open={open} onOpenChange={(next) => { if (!next && !busy) onClose(); }}>
-    <DialogContent portalContainer={container} overlayClassName={mobile ? "name-editor-overlay" : undefined}
+    <DialogContent {...(container ? { portalContainer: container } : {})} {...(mobile ? { overlayClassName: "name-editor-overlay" } : {})}
       className={mobile ? "name-editor-dialog" : undefined} aria-describedby={undefined}>
       <DialogHeader><DialogTitle>{title}</DialogTitle></DialogHeader>
       <form className="grid min-w-0 gap-4" onSubmit={(e) => { e.preventDefault(); if (value.trim() && !busy) onSave(); }}>
