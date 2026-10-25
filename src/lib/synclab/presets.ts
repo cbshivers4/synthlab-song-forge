@@ -1123,6 +1123,22 @@ SYNTH_PRESETS.push(...([
   } };
 }));
 
+// Additional SYNCE 4 voices; append without changing existing factory patches or saved music.
+SYNTH_PRESETS.push(
+  mk("SYNCE 4 Motor City Strings", "Strings", { wave: "sawtooth", wave2: "sawtooth", oct2: 0, detune2: 11, level2: 0.55, unison: 3, width: 0.8, cutoff: 1900, res: 2, envAmt: 450, attack: 0.32, decay: 0.65, sustain: 0.85, release: 1.3, drive: 0.05, dist: 0, chorus: 0.4, delay: 0, reverb: 0.35 }),
+  mk("SYNCE 4 Silky Ensemble", "Strings", { wave: "sawtooth", wave2: "triangle", oct2: 0, detune2: -9, level2: 0.5, unison: 3, width: 0.9, cutoff: 1350, res: 1, envAmt: 250, attack: 0.55, decay: 0.8, sustain: 0.9, release: 1.8, drive: 0, dist: 0, chorus: 0.5, delay: 0, reverb: 0.4 }),
+  mk("SYNCE 4 Cinematic Strings", "Strings", { wave: "sawtooth", wave2: "sawtooth", oct2: 0, detune2: 17, level2: 0.6, unison: 4, width: 0.85, cutoff: 2700, res: 2, envAmt: 850, attack: 0.75, decay: 1.1, sustain: 0.9, release: 2.4, drive: 0.05, dist: 0, chorus: 0.3, delay: 0, reverb: 0.6 }),
+  mk("SYNCE 4 Low Cello Strings", "Strings", { wave: "sawtooth", wave2: "triangle", oct: -1, oct2: -1, detune2: 5, level2: 0.45, unison: 2, width: 0.45, cutoff: 1050, res: 3, envAmt: 350, attack: 0.22, decay: 0.5, sustain: 0.8, release: 0.9, drive: 0.08, dist: 0, chorus: 0.15, delay: 0, reverb: 0.25 }),
+  mk("SYNCE 4 Pizzicato Strings", "Strings", { wave: "sawtooth", wave2: "triangle", oct2: 0, detune2: 4, level2: 0.3, unison: 2, width: 0.55, cutoff: 2100, res: 2, envAmt: 1800, envDecay: 0.065, attack: 0.002, decay: 0.18, sustain: 0, release: 0.12, drive: 0, dist: 0, chorus: 0.1, delay: 0, reverb: 0.2 }),
+  mk("SYNCE 4 Tremolo Ensemble", "Strings", { wave: "sawtooth", wave2: "sawtooth", oct2: 0, detune2: 8, level2: 0.5, unison: 3, width: 0.7, cutoff: 2300, res: 2, envAmt: 400, attack: 0.2, decay: 0.55, sustain: 0.85, release: 1.1, drive: 0, dist: 0, chorus: 0.25, delay: 0, reverb: 0.3, lfo: { rate: 5, wave: "sine", amount: 0.22, destination: "volume" } }),
+  mk("SYNCE 4 Detroit Chord Stab", "Stabs", { wave: "sawtooth", wave2: "square", oct2: 0, detune2: -7, level2: 0.45, unison: 2, width: 0.6, cutoff: 1800, res: 6, envAmt: 2400, envDecay: 0.1, attack: 0.002, decay: 0.2, sustain: 0, release: 0.15, drive: 0.15, dist: 0.08, chorus: 0.15, delay: 0.2, reverb: 0.2 }),
+  mk("SYNCE 4 Warehouse Stab", "Stabs", { wave: "sawtooth", wave2: "sawtooth", oct2: 0, detune2: 15, level2: 0.6, unison: 3, width: 0.8, cutoff: 3200, res: 5, envAmt: 3000, envDecay: 0.12, attack: 0.001, decay: 0.26, sustain: 0, release: 0.18, drive: 0.25, dist: 0.2, chorus: 0.25, delay: 0.12, reverb: 0.3 }),
+  mk("SYNCE 4 Dub Echo Stab", "Stabs", { wave: "square", wave2: "sawtooth", oct2: 0, detune2: 6, level2: 0.4, unison: 2, width: 0.7, cutoff: 950, res: 5, envAmt: 1400, envDecay: 0.18, attack: 0.005, decay: 0.3, sustain: 0, release: 0.24, drive: 0.08, dist: 0, chorus: 0.1, delay: 0.45, reverb: 0.35 }),
+  mk("SYNCE 4 Brass Punch Stab", "Stabs", { wave: "sawtooth", wave2: "square", oct2: 0, detune2: 3, level2: 0.35, unison: 2, width: 0.4, cutoff: 2200, res: 3, envAmt: 3400, envDecay: 0.16, attack: 0.008, decay: 0.32, sustain: 0, release: 0.16, drive: 0.1, dist: 0, chorus: 0, delay: 0, reverb: 0.15 }),
+  mk("SYNCE 4 Electro Needle Stab", "Stabs", { wave: "square", wave2: "triangle", oct2: 1, detune2: -3, level2: 0.25, unison: 1, width: 0.2, cutoff: 2900, res: 9, envAmt: 1900, envDecay: 0.055, attack: 0.001, decay: 0.1, sustain: 0, release: 0.07, drive: 0.12, dist: 0.1, chorus: 0, delay: 0.18, reverb: 0.08 }),
+  mk("SYNCE 4 Muted House Stab", "Stabs", { wave: "triangle", wave2: "sawtooth", oct2: 0, detune2: 5, level2: 0.3, unison: 2, width: 0.5, cutoff: 1250, res: 2, envAmt: 900, envDecay: 0.09, attack: 0.004, decay: 0.16, sustain: 0, release: 0.1, drive: 0, dist: 0, chorus: 0.2, delay: 0.08, reverb: 0.12 }),
+);
+
 /** Starter notes so a new acid bass or poly synth channel plays straight away; fully editable in the piano roll. */
 export const STARTER_NOTES: Record<string, Omit<import("./types").MidiNote, "id">[]> = {
   acid: [36, 36, 48, 36, 39, 36, 43, 46, 36, 36, 48, 41, 36, 39, 36, 34].map((pitch, step) => ({ step, length: step % 4 === 3 ? 2 : 1, pitch, velocity: step % 4 === 0 ? 1 : 0.7 })),
