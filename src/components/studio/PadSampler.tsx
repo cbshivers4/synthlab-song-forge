@@ -1,4 +1,6 @@
 import { WaveformZoom, waveformFraction, useWaveformDetail } from "./WaveformZoom";
+import { SampleExportButtons } from "./SampleExportButtons";
+import { captureFromUrl } from "@/lib/synclab/sample-export";
 import { getLocalFile } from "@/lib/synclab/local-files";
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import {
@@ -929,6 +931,7 @@ export function PadSampler() {
               >
                 <Copy className="size-3.5" /> Copy pad
               </Button>
+              <SampleExportButtons className="h-7 gap-1.5" name={selPad.name} getCapture={() => captureFromUrl(selPad.url, selPad.start, selPad.end, selPad.reverse)} />
               <Button size="sm" variant="ghost" className="h-7 gap-1.5 text-destructive" onClick={() => clearPad(sel)}>
                 <Trash2 className="size-3.5" /> Clear pad
               </Button>

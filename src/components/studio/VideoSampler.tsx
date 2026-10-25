@@ -1,4 +1,5 @@
 import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
+import { SampleExportButtons } from "./SampleExportButtons";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Circle, Grid3x3, Piano, Plus, Save, Scissors, Square, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
@@ -325,7 +326,8 @@ export function VideoSampler() {
       <Button variant="outline" className="h-11" disabled={filming} onClick={() => file.current?.click()}><Upload />Load video</Button>
       <input ref={file} hidden type="file" accept="video/*" aria-label="Load video sample" onChange={(e) => { const f = e.target.files?.[0]; if (f) void loadBlob(f); e.target.value = ""; }} />
       <Button variant={filming ? "destructive" : "outline"} className="h-11" onClick={() => void film()}>{filming ? <Square /> : <Circle className="text-destructive" />}{filming ? "Stop filming" : "Record video"}</Button>
-      <Button variant="outline" className="h-11" disabled={!buffer} onClick={() => void toProject()}><Plus />Audio to project</Button>
+      <Button variant="outline" className="h-11" disabled={!buffer} onClick={() => void toProject()}><Plus />Add to timeline</Button>
+      <SampleExportButtons timeline={false} className="h-11 gap-1.5" name={kitName()} getCapture={() => buffer ? slice(0, buffer.duration) : null} />
       <Button variant="outline" className="h-11" disabled={!buffer || saving} onClick={() => void saveKit()}><Save />{saving ? "Saving…" : "Save video & chops"}</Button>
       <Button variant="secondary" className="h-11" disabled={!buffer} onClick={() => void openInSampler()} title="Opens the audio and chops in the full Sampler: trim, envelope, filter, chop banks, choke, keyboard and stretch">Open in Sampler</Button>
     </div>
