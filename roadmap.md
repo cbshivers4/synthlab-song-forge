@@ -1,5 +1,7 @@
 # Roadmap — Source-code audit & DAW repair
 
+- [ ] Verify confirmed synth chorus/reverb crossfeed repair: separate destination scales while retaining fader, automation, mute/VCA and cleanup.
+
 - [x] Sampler/Pad Sampler share inspection-only waveform zoom (1–32×), scrolling, decoded source-detail drawing and a matching seconds ruler. Signed-in desktop and sideways-phone loaded-sample zoom/scroll/manual chops place cuts at 7s in an 8s sample; Fit restores full view. 10 related tests pass; source audio and existing stretch tools remain unchanged. Preview only; physical devices unverified.
 
 - [x] Ordinary timeline/part/keyboard Delete preserves channels and sibling bars through shared bounded repeat expansion; recording retains editable lanes, instrument changes restore live sound, loop button shows selected state without seeking playback. Mixer meters share true -48…+6 dB scale/clip latch, track faders boost to 1.2, loop band is brighter, transport labels identify Learn and Recording options. Signed-in desktop/phone part deletion, fader changes and real output increase verified; instrument/preset additions during recording verified on both. 30 related tests pass; preview only, physical devices unverified.

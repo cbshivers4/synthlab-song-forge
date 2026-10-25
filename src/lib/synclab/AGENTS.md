@@ -1,5 +1,7 @@
 # Shared audio logic
 
+Built-in synth chorus and reverb use separate per-channel destination scales; update both for fader/automation/mute/VCA and disconnect both on removal, so effects stay independent without bypassing mix controls.
+
 Recording Stop paths share a deduplicated finalizer that awaits pending input starts before landing takes; preserve the stop position until notes finish, then rewind. Arrangement paste uses material helpers on the selected channel, and right-edge extension renders pitch-preserving audio through the existing stretch path rather than referencing beyond source bounds.
 
 Audio entry points unlock phone media in the triggering gesture using valid silent PCM and resume suspended/interrupted contexts; first drum taps restore cached mixer routing/inserts when their channel is absent, so Stop and cold starts cannot leave default routing.

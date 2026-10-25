@@ -105,7 +105,8 @@ interface ChannelStrip {
   sendDelay: GainNode;
   sendChorus: GainNode;
   /** Scales per-voice synth FX taps (chorus/reverb) so they follow track mute/volume/VCA. */
-  sendScale: GainNode;
+  synthReverbScale: GainNode;
+  synthChorusScale: GainNode;
   bus: string;
   insertNodes: AudioNode[];
   insertKey: string;
@@ -570,14 +571,17 @@ export class SyncLabEngine {
       pan.connect(sendReverb);
       pan.connect(sendDelay);
       pan.connect(sendChorus);
-      sendReverb.connect(this.reverbSend!);
-      sendDelay.connect(this.delaySend!);
-      sendChorus.connect(this.chorusSend!);
-      const sendScale = ctx.createGain();
-      sendScale.gain.value = 1;
-      sendScale.connect(this.reverbSend!);
-      sendScale.connect(this.chorusSend!);
-      ch = { input, trim, gain, pan, meter, sendReverb, sendDelay, sendChorus, sendScale, bus: "master", insertNodes: [], insertKey: "", insertOut };
+      if (this.reverbSend) sendReverb.connect(this.reverbSend);
+      if (this.delaySend) sendDelay.connect(this.delaySend);
+      if (this.chorusSend) sendChorus.connect(this.chorusSend);
+      // Independent destinations prevent one patch effect from exciting both returns.
+      const synthReverbScale = ctx.createGain();
+      const synthChorusScale = ctx.createGain();
+      synthReverbScale.gain.value = 1;
+      synthChorusScale.gain.value = 1;
+      if (this.reverbSend) synthReverbScale.connect(this.reverbSend);
+      if (this.chorusSend) synthChorusScale.connect(this.chorusSend);
+      ch = { input, trim, gain, pan, meter, sendReverb, sendDelay, sendChorus, synthReverbScale, synthChorusScale, bus: "master", insertNodes: [], insertKey: "", insertOut };
       this.channels.set(id, ch);
     }
     return ch;
@@ -1509,8 +1513,10 @@ export class SyncLabEngine {
       const vca = group ? this.vcaStates[group] : undefined;
       ch.gain.gain.setTargetAtTime(this.trackAudible.get(trackId) !== false && !vca?.muted
         ? clamp(v["volume"] * (vca?.volume ?? 1), 0, 1.5) : 0, t, 0.02);
-      ch.sendScale.gain.setTargetAtTime(this.trackAudible.get(trackId) !== false && !vca?.muted
-        ? clamp(v["volume"] * (vca?.volume ?? 1), 0, 1.5) : 0, t, 0.02);
+      for (const send of [ch.synthReverbScale, ch.synthChorusScale]) {
+        send.gain.setTargetAtTime(this.trackAudible.get(trackId) !== false && !vca?.muted
+          ? clamp(v["volume"] * (vca?.volume ?? 1), 0, 1.5) : 0, t, 0.02);
+      }
     }
     if (v["pan"] !== undefined) ch.pan.pan.setTargetAtTime(clamp(v["pan"], -1, 1), t, 0.02);
     const bus = this.busStates[ch.bus];
@@ -1553,7 +1559,9 @@ export class SyncLabEngine {
       const vca = t.vca ? this.vcaStates[t.vca] : undefined;
       ch.trim.gain.setTargetAtTime(clamp(t.gain ?? 1, 0, 2), this.ctx.currentTime, 0.02);
       ch.gain.gain.setTargetAtTime(audible && !vca?.muted ? t.volume * (vca?.volume ?? 1) : 0, this.ctx.currentTime, 0.02);
-      ch.sendScale.gain.setTargetAtTime(audible && !vca?.muted ? clamp(t.volume * (vca?.volume ?? 1), 0, 1.5) : 0, this.ctx.currentTime, 0.02);
+      for (const send of [ch.synthReverbScale, ch.synthChorusScale]) {
+        send.gain.setTargetAtTime(audible && !vca?.muted ? clamp(t.volume * (vca?.volume ?? 1), 0, 1.5) : 0, this.ctx.currentTime, 0.02);
+      }
       ch.pan.pan.setTargetAtTime(clamp(t.pan, -1, 1), this.ctx.currentTime, 0.02);
       const bus = t.bus ?? "master";
       if (ch.bus !== bus) {
@@ -1584,13 +1592,18 @@ export class SyncLabEngine {
         ch.gain.gain.setTargetAtTime(0, now, 0.006);
         window.setTimeout(() => {
           try { ch.pan.disconnect(); } catch { /* already disconnected */ }
-          try { ch.sendScale.disconnect(); } catch { /* already disconnected */ }
+          for (const send of [ch.synthReverbScale, ch.synthChorusScale]) {
+            try { send.disconnect(); } catch { /* already disconnected */ }
+          }
           for (const node of ch.insertNodes) {
             try { node.disconnect(); } catch { /* already disconnected */ }
           }
         }, 35);
       } catch {
         try { ch.pan.disconnect(); } catch { /* already disconnected */ }
+        for (const send of [ch.synthReverbScale, ch.synthChorusScale]) {
+          try { send.disconnect(); } catch { /* already disconnected */ }
+        }
       }
     }
   }
@@ -2542,14 +2555,14 @@ export class SyncLabEngine {
       voiceFx.set("chorus", (v, time) => wet.gain.setTargetAtTime(v * 0.7, time, 0.015));
       voicePan.connect(wet);
       // Route through the channel's send scale so track mute/volume/VCA apply.
-      wet.connect(ch.sendScale);
+      wet.connect(ch.synthChorusScale);
     }
     if (this.reverbSend) {
       const wet = ctx.createGain();
       wet.gain.value = patch.fx.reverb * 0.5;
       voiceFx.set("reverb", (v, time) => wet.gain.setTargetAtTime(v * 0.5, time, 0.015));
       voicePan.connect(wet);
-      wet.connect(ch.sendScale);
+      wet.connect(ch.synthReverbScale);
     }
 
     /* ---- oscillators ---- */
