@@ -29,6 +29,7 @@ import type { DrumKitId, DrumPad } from "@/lib/synclab/types";
 import { toast } from "sonner";
 import { clipFromLocalFile, pickFolder, playPreview, stopPreview, onPreviewChange, getLocalFile, getPreviewAnalyser, getLocalFolders, addLocalFolder, removeLocalFolder, onFoldersChange } from "@/lib/synclab/local-files";
 import { LibraryPanel } from "./LibraryPanel";
+import { effectBrand, groupByCategory } from "@/lib/synclab/effect-catalog";
 
 /** Bottom-of-browser player: shows the file being previewed with a live waveform scope. */
 function PreviewPlayer({ playingFile }: { playingFile: string | null }) {
@@ -245,6 +246,8 @@ export function Browser() {
     removeTrack,
     setTransport,
     transport,
+    addPlugin,
+    installedPlugins,
   } = useStudio();
   const { setProject } = useApp();
 
@@ -483,6 +486,7 @@ export function Browser() {
     [query],
   );
   const filteredPlugins = EFFECT_PLUGINS.filter((e) => match(e.name, e.desc, e.fx));
+  const filteredRack = installedPlugins.filter((d) => match(d.name, effectBrand(d), d.kind));
   const filteredPresets = SYNTH_PRESETS.filter((p) => match(p.name, p.category));
   const filteredKits = DRUM_KITS.filter((k) => match(k.name, k.desc, k.category));
   const filteredTemplates = TEMPLATES.filter((t) => match(t.name, t.key));
@@ -794,6 +798,44 @@ export function Browser() {
               );
             })}
             {filteredPresets.length === 0 && <p className="px-2 py-1.5 text-[10px] text-muted-foreground">No instruments match.</p>}
+          </div>
+        )}
+      </div>
+
+      {/* RACK EFFECTS — drag onto a timeline track */}
+      <div>
+        <FolderHeader id="effects" icon={<Waves className="size-3 text-primary" />} label="EFFECTS" count={installedPlugins.length} hasMatch={filteredRack.length > 0} />
+        {isOpen("effects", filteredRack.length > 0) && (
+          <div className="ml-3 border-l-2 border-border">
+            <p className="px-2 py-1 text-[9px] text-muted-foreground">Drag onto a timeline track, or click to add to the selected channel.</p>
+            {groupByCategory(filteredRack).map(([category, defs]) => (
+              <div key={category} role="group" aria-label={category}>
+                <p className="px-2 pt-1.5 font-mono text-[8px] tracking-widest text-muted-foreground">{category.toUpperCase()}</p>
+                {defs.map((d) => (
+                  <button
+                    key={d.id}
+                    type="button"
+                    draggable
+                    title={`${effectBrand(d)} — drag onto a timeline track`}
+                    onDragStart={(e) => {
+                      const payload = JSON.stringify({ type: "plugin", defId: d.id });
+                      e.dataTransfer.setData("application/synclab", payload);
+                      e.dataTransfer.setData("text/plain", payload);
+                      e.dataTransfer.effectAllowed = "copy";
+                    }}
+                    onClick={() => {
+                      const target = selected ?? tracks[0];
+                      if (!target) { toast("Add a track first"); return; }
+                      addPlugin(target.id, d);
+                    }}
+                    className="flex w-full cursor-grab items-center gap-2 px-2 py-1 text-left hover:bg-primary/10 active:cursor-grabbing"
+                  >
+                    <span className="flex-1 truncate font-mono text-[11px]">{effectBrand(d)}</span>
+                    <span className="truncate text-[9px] text-muted-foreground">{d.format === "Built-in" ? d.name : d.format}</span>
+                  </button>
+                ))}
+              </div>
+            ))}
           </div>
         )}
       </div>
