@@ -4,8 +4,7 @@ import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useStudio } from '@/lib/synclab/store';
-import { selectedClip, selectedPartBounds } from '@/lib/synclab/workflow';
-import { deleteRegion } from '@/lib/synclab/note-cuts';
+import { deleteSelectedPart, selectedClip, selectedPartBounds } from '@/lib/synclab/workflow';
 import { loopRegion } from '@/lib/synclab/recording-region';
 import { barsForSteps, positionLabel } from '@/lib/synclab/timebase';
 
@@ -13,7 +12,7 @@ export function WorkflowBar() {
   const { selected, tracks, transport, setTransport, updateTrack, togglePlay, toggleRecord, stop, setPanel, panel, copyClip, cutClip, pasteClip, clipClipboardName, removeClip, swapTake, razorAt } = useStudio();
   const isPhone = useIsMobile();
   const clip = selectedClip(selected);
-  const part = selectedPartBounds(selected, transport.bpm, transport.bars);
+  const part = selectedPartBounds(selected, transport.bpm, transport.bars, transport.loop ? loopRegion(transport) : undefined);
   const active = transport.recording || transport.countInLeft != null;
   const armed = tracks.filter((track) => track.armed || track.recording);
   const targets = armed.length ? armed : selected ? [selected] : [];
@@ -21,16 +20,8 @@ export function WorkflowBar() {
   const removePart = () => {
     if (!selected || !part) return;
     if (clip) { removeClip(selected.id, clip.id); return; }
-    const [start, end] = part;
-    updateTrack(selected.id, {
-      notes: deleteRegion(selected.notes ?? [], part),
-      ...(selected.pads ? { pads: selected.pads.map((pad) => ({ ...pad, steps: pad.steps.map((value, index) => {
-        const length = Math.max(1, pad.steps.length);
-        const first = index + Math.max(0, Math.ceil((start - index) / length)) * length;
-        return first < end ? 0 : value;
-      }) })) } : {}),
-      activeRegion: undefined,
-    });
+    const patch = deleteSelectedPart(selected, transport.bpm, transport.bars, transport.loop ? bounds : undefined);
+    if (patch) updateTrack(selected.id, patch);
   };
   return <div aria-label="Recording and selected part" className="shrink-0 border-b border-border bg-surface-2">
     <div className="flex min-w-0 items-center gap-2 overflow-x-auto px-2 py-1.5">

@@ -1,3 +1,4 @@
+import { deleteSelectedPart, selectedPartBounds } from '@/lib/synclab/workflow';
 import { boundedRegions, loopRegion } from "@/lib/synclab/recording-region";
 import { timelineUsesWaveform } from "@/lib/synclab/timeline-content";
 import { rightEdgeEdit } from "@/lib/synclab/arrangement-edit";
@@ -582,7 +583,7 @@ function MidiClip({ track }: { track: Track }) {
         <span className="min-w-0 flex-1 truncate font-mono text-[9px] font-semibold">{track.name}</span>
 
       </div>
-      {active && <PartMenu label={`${track.name} part`} onDelete={() => { updateTrack(track.id, { notes: deleteRegion(track.notes ?? [], [a, b]), activeRegion: undefined }); toast.success("Part deleted"); }} />}
+      {active && <PartMenu label={`${track.name} part`} onDelete={() => { const patch = deleteSelectedPart(track, transport.bpm, transport.bars, transport.loop ? loopRegion(transport) : undefined); if (patch) updateTrack(track.id, patch); toast.success("Part deleted"); }} />}
       <div className="relative min-h-0 flex-1">
         {Array.from({ length: rows }).map((_, r) => <div key={r} className="arrangement-note-grid absolute inset-x-0 border-t" style={{ top: `${r / rows * 100}%` }} />)}
         {Array.from({ length: reps }).flatMap((_, rep) => regionNotes.map((n) => {
@@ -715,10 +716,7 @@ function DrumClip({ track }: { track: Track }) {
             <span className="min-w-0 flex-1 truncate font-mono text-[9px] font-semibold">{track.name} · {hits} HITS</span>
 
           </div>
-          {active && <PartMenu label={`${track.name} beat part`} onDelete={() => { updateTrack(track.id, { pads: (track.pads ?? []).map((p) => ({ ...p, steps: p.steps.map((v, i) => {
-                  const first = i + Math.max(0, Math.ceil((a - i) / Math.max(1, p.steps.length))) * p.steps.length;
-                  return first < b ? 0 : v;
-                }) })), activeRegion: undefined });
+          {active && <PartMenu label={`${track.name} beat part`} onDelete={() => { const patch = deleteSelectedPart(track, transport.bpm, transport.bars, transport.loop ? loopRegion(transport) : undefined); if (patch) updateTrack(track.id, patch);
                 toast.success("Beat part deleted"); }} />}
           <div className="relative min-h-0 flex-1"><DrumHitWave pads={part} steps={hi - lo} total={hi - lo} tone="text-[var(--arrangement-ink)]" /></div>
         </div>
@@ -1369,11 +1367,13 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
               <DropdownMenuItem onClick={() => activeClip ? cutClip(track.id, activeClip.id) : cutTrack(track.id)}><Scissors className="size-4" /> Cut</DropdownMenuItem>
               {pastePosition !== null && <DropdownMenuItem disabled={!hasClipboard} onClick={() => pasteAt(pastePosition)}><ClipboardPaste className="size-4" /> Paste here · {positionLabel(pastePosition)}</DropdownMenuItem>}
               <DropdownMenuItem disabled={!hasClipboard} onClick={() => pasteAt()}><ClipboardPaste className="size-4" /> Paste at playhead</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => {
+              <DropdownMenuItem disabled={!selectedPartBounds(track, fileStudio.transport.bpm, fileStudio.transport.bars, fileStudio.transport.loop ? loopRegion(fileStudio.transport) : undefined)} onClick={() => {
                 if (activeClip) fileStudio.removeClip(track.id, activeClip.id);
-                else if (clips.length || track.notes?.length || track.pads?.some((pad) => pad.steps.some((value) => value > 0))) setConfirm(true);
-                else removeTrack(track.id);
-              }}><Trash2 className="size-4" /> Delete</DropdownMenuItem>
+                else {
+                  const patch = deleteSelectedPart(track, fileStudio.transport.bpm, fileStudio.transport.bars, fileStudio.transport.loop ? loopRegion(fileStudio.transport) : undefined);
+                  if (patch) updateTrack(track.id, patch);
+                }
+              }}><Trash2 className="size-4" /> Delete selected part</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={beginRename}>Rename</DropdownMenuItem>
               {editorPanel === "synth" && (

@@ -8,8 +8,8 @@ import { saveCloudProject } from '@/lib/synclab/cloud';
 import { QWERTY_MAP, qwertyEnabled, qwertyOctave, setQwertyEnabled, setQwertyOctave } from '@/lib/synclab/qwerty';
 import { matchShortcut } from '@/lib/synclab/shortcuts';
 import { songSteps } from '@/lib/synclab/timebase';
-import { deleteRegion } from '@/lib/synclab/note-cuts';
-import { selectedClip, selectedPartBounds } from '@/lib/synclab/workflow';
+import { loopRegion } from '@/lib/synclab/recording-region';
+import { deleteSelectedPart, selectedClip } from '@/lib/synclab/workflow';
 
 export function openShortcutSettings() {
   sessionStorage.setItem('synclab.settings.shortcuts', 'open');
@@ -91,17 +91,11 @@ export function useShortcuts() {
         case 'delete': {
           if (!selected) break;
           const clip = selectedClip(selected);
-          const part = selectedPartBounds(selected, transport.bpm, transport.bars);
           if (clip) studio.removeClip(selected.id, clip.id);
-          else if (part) studio.updateTrack(selected.id, {
-            notes: deleteRegion(selected.notes ?? [], part), activeRegion: undefined,
-            ...(selected.pads ? { pads: selected.pads.map((pad) => ({ ...pad, steps: pad.steps.map((value, index) => {
-              const length = Math.max(1, pad.steps.length);
-              const first = index + Math.max(0, Math.ceil((part[0] - index) / length)) * length;
-              return first < part[1] ? 0 : value;
-            }) })) } : {}),
-          });
-          else studio.removeTrack(selected.id);
+          else {
+            const patch = deleteSelectedPart(selected, transport.bpm, transport.bars, transport.loop ? loopRegion(transport) : undefined);
+            if (patch) studio.updateTrack(selected.id, patch);
+          }
           break;
         }
         case 'split': studio.splitAtPlayhead(); break;
