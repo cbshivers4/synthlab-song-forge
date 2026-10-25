@@ -39,12 +39,14 @@ export function normalize(cap: Capture, target = 0.98): Capture {
   return { left: l, right: r, sampleRate: cap.sampleRate };
 }
 
-/** 16-bit stereo WAV. */
-export function encodeWav(cap: Capture): Blob {
-  const l = toPcm16(cap.left);
+/** 16-bit WAV; mono averages left/right without changing the original capture. */
+export function encodeWav(cap: Capture, channels: 1 | 2 = 2): Blob {
+  const frames = Math.min(cap.left.length, cap.right.length);
+  const mono = channels === 1 ? Float32Array.from({ length: frames }, (_, i) => ((cap.left[i] ?? 0) + (cap.right[i] ?? 0)) / 2) : cap.left;
+  const l = toPcm16(mono);
   const r = toPcm16(cap.right);
-  const frames = Math.min(l.length, r.length);
-  const dataBytes = frames * 4;
+  const blockAlign = channels * 2;
+  const dataBytes = frames * blockAlign;
   const buf = new ArrayBuffer(44 + dataBytes);
   const view = new DataView(buf);
   const str = (off: number, s: string) => {
@@ -56,18 +58,18 @@ export function encodeWav(cap: Capture): Blob {
   str(12, "fmt ");
   view.setUint32(16, 16, true);
   view.setUint16(20, 1, true);
-  view.setUint16(22, 2, true);
+  view.setUint16(22, channels, true);
   view.setUint32(24, cap.sampleRate, true);
-  view.setUint32(28, cap.sampleRate * 4, true);
-  view.setUint16(32, 4, true);
+  view.setUint32(28, cap.sampleRate * blockAlign, true);
+  view.setUint16(32, blockAlign, true);
   view.setUint16(34, 16, true);
   str(36, "data");
   view.setUint32(40, dataBytes, true);
   let o = 44;
   for (let i = 0; i < frames; i++) {
     view.setInt16(o, l[i] ?? 0, true);
-    view.setInt16(o + 2, r[i] ?? 0, true);
-    o += 4;
+    if (channels === 2) view.setInt16(o + 2, r[i] ?? 0, true);
+    o += blockAlign;
   }
   return new Blob([buf], { type: "audio/wav" });
 }

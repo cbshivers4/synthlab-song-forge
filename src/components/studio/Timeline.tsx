@@ -31,6 +31,7 @@ import {
   ChevronUp,
   Copy,
   Disc3,
+  Download,
   Eraser,
   Eye,
   Flag,
@@ -122,6 +123,8 @@ import { ClipEditor } from "@/components/studio/ClipEditor";
 import { clipRate, clipSeconds } from "@/lib/synclab/types";
 import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
 import { getEngine } from "@/lib/synclab/audio-engine";
+import { downloadBlob, encodeWav } from "@/lib/synclab/bounce";
+import { freshCloudUrl } from "@/lib/synclab/cloud";
 import { parseMidiFile } from "@/lib/synclab/midi-file";
 
 import { TrackIcon, TrackStylePicker } from "@/components/studio/TrackStyle";
@@ -884,6 +887,7 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
   const [confirm, setConfirm] = useState(false);
   const [dropping, setDropping] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [makingFile, setMakingFile] = useState(false);
   const [pastePosition, setPastePosition] = useState<number | null>(null);
   const clipTapRef = useRef<{ x: number; y: number } | null>(null);
   const hasClipboard = Boolean(clipboardName || clipClipboardName);
@@ -905,6 +909,47 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
 
   const clips = track.clips ?? [];
   const activeClip = clips.find((c) => c.id === track.activeClipId);
+  const fileClip = activeClip ?? (clips.length === 1 ? clips[0] : undefined);
+  const hasFileSource = Boolean(fileClip || track.sampler);
+  const makeAudioFile = async (channels: 1 | 2) => {
+    if (makingFile || !hasFileSource) return;
+    setMakingFile(true);
+    try {
+      const engine = getEngine();
+      engine.init();
+      let source = track.sampler ? { ...track.sampler } : null;
+      let name = track.sampler?.name ?? track.name;
+      if (fileClip) {
+        const url = fileClip.cloudPath ? await freshCloudUrl(fileClip.cloudPath) : fileClip.url;
+        if (!url || !(fileClip.duration > 0)) throw new Error("Select a loaded audio clip first.");
+        const offset = Math.max(0, fileClip.offset ?? 0);
+        const length = Math.min(fileClip.length ?? fileClip.duration, fileClip.duration - offset);
+        if (length <= 0) throw new Error("The selected clip has no audio in its trim range.");
+        source = {
+          name: fileClip.name, url, duration: fileClip.duration, peaks: fileClip.peaks,
+          start: fileClip.reverse ? 1 - (offset + length) / fileClip.duration : offset / fileClip.duration,
+          end: fileClip.reverse ? 1 - offset / fileClip.duration : (offset + length) / fileClip.duration,
+          gain: fileClip.gain ?? 1, pitch: 12 * Math.log2(clipRate(fileClip)),
+          rootNote: 60, loop: false, reverse: fileClip.reverse ?? false, oneShot: true,
+          attack: 0, release: 0, fadeIn: fileClip.fadeIn ?? 0, fadeOut: fileClip.fadeOut ?? 0,
+        };
+        name = fileClip.name;
+      } else if (source?.cloudPath) source.url = await freshCloudUrl(source.cloudPath);
+      if (!source?.url) throw new Error("Load a sample or select an audio clip first.");
+      // Conversion must never change the live engine's tempo or routing.
+      if (source.syncToBpm && source.sampleBpm) {
+        source.pitch += 12 * Math.log2(transport.bpm / source.sampleBpm);
+        source.syncToBpm = false;
+      }
+      const audio = await engine.renderSample(source);
+      if (!audio) throw new Error("This audio could not be decoded. Try a WAV or MP3 source.");
+      const safeName = name.replace(/[^\w\-. ]+/g, "").trim() || "SYNCLAB audio";
+      downloadBlob(encodeWav(audio, channels), `${safeName}-${channels === 1 ? "mono" : "stereo"}.wav`);
+      toast.success(`${channels === 1 ? "Mono" : "Stereo"} WAV created`);
+    } catch (error) {
+      toast.error("Could not make audio file", { description: error instanceof Error ? error.message : String(error) });
+    } finally { setMakingFile(false); }
+  };
   const playFrac = Math.min(0.98, Math.max(0.02, ((transport.step ?? 0) % 16) / 16));
 
   const editorPanel: PanelId =
@@ -1364,6 +1409,8 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
                 else if (editorPanel) openTrackEditor();
                 else openTrackSettings(track.id);
               }}><Pencil className="size-4" /> Edit</DropdownMenuItem>
+              <DropdownMenuItem disabled={!hasFileSource || makingFile} onClick={() => void makeAudioFile(1)}><Download className="size-4" /> Make mono file (WAV)</DropdownMenuItem>
+              <DropdownMenuItem disabled={!hasFileSource || makingFile} onClick={() => void makeAudioFile(2)}><Download className="size-4" /> Make stereo file (WAV)</DropdownMenuItem>
               <DropdownMenuItem onClick={() => activeClip ? copyClip(track.id, activeClip.id) : copyTrack(track.id)}><Copy className="size-4" /> Copy</DropdownMenuItem>
               <DropdownMenuItem onClick={() => activeClip ? cutClip(track.id, activeClip.id) : cutTrack(track.id)}><Scissors className="size-4" /> Cut</DropdownMenuItem>
               {pastePosition !== null && <DropdownMenuItem disabled={!hasClipboard} onClick={() => pasteAt(pastePosition)}><ClipboardPaste className="size-4" /> Paste here · {positionLabel(pastePosition)}</DropdownMenuItem>}
@@ -1377,6 +1424,7 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
               }}><Trash2 className="size-4" /> Delete selected part</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={beginRename}>Rename</DropdownMenuItem>
+              <DropdownMenuLabel className="text-[10px] text-muted-foreground">Audio file{makingFile ? " · creating…" : fileClip ? ` · ${fileClip.name}` : track.sampler ? " · sample" : " · select an audio clip"}</DropdownMenuLabel>
               {editorPanel === "synth" && (
                 <DropdownMenuSub><DropdownMenuSubTrigger><Sliders className="size-4" /> Open instrument</DropdownMenuSubTrigger><DropdownMenuSubContent className="min-w-60">
                   <DropdownMenuLabel className="text-[10px] tracking-widest text-muted-foreground">CHOOSE A SYNTH FOR THIS TRACK</DropdownMenuLabel>

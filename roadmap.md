@@ -1,5 +1,7 @@
 # Roadmap — Source-code audit & DAW repair
 
+- [x] Timeline menu creates mono/stereo WAV files from selected audio clips or loaded sampler sources without replacing originals. Nine focused tests pass; signed-in unsaved-session downloads verified as one/two channels, phone menu available, build clean. MIDI/drum patterns must first be recorded to audio; conversion excludes mixer inserts/master processing. Preview only.
+
 - [x] Reduce playback edit work: channel-scoped caches skip unchanged mixer/rack inputs; sequence-only drum edits preserve live envelopes. Thirteen focused tests pass. Signed-in unsaved-session chop edits produce zero mixer writes/rack rebuilds; effect add/remove rebuilds only the affected rack while transport and sample output continue. Preview only; physical-device lag remains unmeasured.
 
 - [x] Restore shared sample/clip/drum routing and inserts after Stop without rebuilding existing channels. Eleven tests pass; signed-in unsaved-session whole-sample/stretch preview, chop press/release and preview after transport Stop produce real master output. Saved music untouched; preview only.
