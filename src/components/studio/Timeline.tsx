@@ -1861,8 +1861,10 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
             select(track.id);
             setPastePosition(grid > 0 ? Math.round(raw / grid) * grid : raw);
             // With copied material, empty space chooses a paste destination even on synth channels.
-            if (!hasClipboard && (track.kind === "instrument" || track.kind === "midi")) setPanel("piano");
-            else setMenuOpen(true);
+            if (!hasClipboard && (track.kind === "instrument" || track.kind === "midi")) {
+              setPanel("piano");
+              window.setTimeout(() => window.dispatchEvent(new CustomEvent("synclab:selected-track-menu", { detail: track.id })), 0);
+            } else setMenuOpen(true);
             return;
           }
           if (editTool === "split" || editTool === "razor") {
