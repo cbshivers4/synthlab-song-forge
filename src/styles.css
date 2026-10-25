@@ -1006,6 +1006,18 @@ html[data-reduce-motion] *, html[data-reduce-motion] *::before, html[data-reduce
     transform: rotate(90deg) translateY(-100%);
   }
   .phone-sideways-default .h-\[100dvh\] { height: 100dvw; }
+  /* Popper measures screen-space rects; this menu lives in the rotated body canvas. */
+  .phone-sideways-default [data-radix-popper-content-wrapper]:has(> .timeline-channel-menu) {
+    position: fixed !important;
+    left: max(8px, calc((100dvh - 280px) / 2)) !important;
+    top: 8px !important;
+    transform: none !important;
+    z-index: 60 !important;
+  }
+  .phone-sideways-default .timeline-channel-menu {
+    width: 280px;
+    max-height: calc(100dvw - 16px) !important;
+  }
   .phone-sideways-default .min-h-screen { min-height: 100dvw; }
   .phone-sideways-default .phone-console.phone-entry .phone-page-viewport > div > .mx-auto.grid.login-inner { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .phone-sideways-default .spin-logo { width: min(30dvh, 190px); }
