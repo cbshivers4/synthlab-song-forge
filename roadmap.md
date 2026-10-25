@@ -1,5 +1,7 @@
 # Roadmap — Source-code audit & DAW repair
 
+- [ ] Loop-only timeline deletion, live playback/recording editing and instrument/preset additions, audible mixer gain with true overload meters, highlighted loop selection and clearly identified transport buttons.
+
 - [x] Phone channel/recent-project naming uses readable screen-aligned Save/Cancel dialogs, constrained to the visible keyboard area; signed-in typing and channel rename verified at full/reduced phone sizes. Recording shows persistent current bar/beat, next-measure countdown and Stop; zoomed timeline follows the recording cursor (scroll 781px), live position and Stop verified. 18 related tests pass; preview only, physical native keyboards unverified.
 
 - [x] Timeline selection exposes Edit/Copy/Cut/Paste/Delete, with independent tap-location/playhead paste and single-tap synth piano-roll opening. Signed-in saved-project audio copy/paste/delete and synth selection verified on desktop and sideways phone; Edit opens the real clip editor. Phone menu stays within the screen; 36 related tests pass. Preview only; physical devices unverified.
