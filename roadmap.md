@@ -1,5 +1,8 @@
 # Roadmap — Source-code audit & DAW repair
 
+- [x] Restore shared sample/clip/drum routing and inserts after Stop without rebuilding existing channels. Eleven tests pass; signed-in unsaved-session whole-sample/stretch preview, chop press/release and preview after transport Stop produce real master output. Saved music untouched; preview only.
+- [ ] Confirm the reported silence on the user's physical output: not reproduced with the test WAV; requires checking the affected sample and device output on the live website. Screenshot shows input activity but no MIDI material or master output.
+
 - [x] Sampler chop pads stop on release even for one-shot samples; pending keyed decoding is cancelled on release. Pad Sampler already stops touch pads on release. Signed-in unsaved sampler press/release measured sound then zero output; five focused tests pass, build clean. Saved music untouched; preview only.
 
 - [x] Sampler whole-sample preview plays on one click without note capture; stretch preview uses gesture-unlocked Web Audio and decodes saved sources before rendering. Signed-in unsaved-session real audio verified for both previews and Stop (output returns to zero); six focused tests pass, build clean. Saved music untouched; preview only, physical devices unverified.
