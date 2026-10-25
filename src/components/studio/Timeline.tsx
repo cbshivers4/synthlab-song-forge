@@ -3539,7 +3539,9 @@ export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandl
         const clip = [...lane.querySelectorAll<HTMLElement>("[data-audio-clip]")].find((c) => hit(c.getBoundingClientRect()));
         const content = clip || [...lane.querySelectorAll<HTMLElement>(".arrangement-clip")].find((c) => hit(c.getBoundingClientRect()));
         if (!content) continue;
-        picks.push({ trackId: lane.dataset.laneTrack!, clipId: clip?.dataset.audioClip });
+        const trackId = lane.dataset["laneTrack"];
+        const clipId = clip?.dataset["audioClip"];
+        if (trackId) picks.push(clipId ? { trackId, clipId } : { trackId });
       }
       selectBoxed(picks, b.add);
       // swallow the click that follows the drag so it doesn't toggle a channel
