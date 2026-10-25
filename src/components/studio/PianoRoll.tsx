@@ -62,7 +62,7 @@ export function PianoRoll({ track }: { track: Track }) {
   const [scaleName, setScaleName] = useState("Minor");
   const [sel, setSel] = useState<string[]>([]);
   const [noteMenu, setNoteMenu] = useState(false);
-  const [trackMenu, setTrackMenu] = useState(false);
+  const [trackMenu, setTrackMenu] = useState(true);
   const trackAnchor = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     const open = (e: Event) => { if ((e as CustomEvent<string>).detail === track.id) setTrackMenu(true); };
