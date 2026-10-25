@@ -228,6 +228,7 @@ export type PanelId =
   | "stems"
   | "coproducer"
   | "voice"
+  | "audio-converter"
   | "genstem"
   | "bassgen"
   | "reel-recorder"
