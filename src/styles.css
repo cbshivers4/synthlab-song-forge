@@ -3034,3 +3034,31 @@ body:has(.phone-console) [data-sonner-toast] button { pointer-events: auto; }
 .phone-console .hardware-window-resize { width: 44px; height: 44px; }
 .hardware-window[data-floating="true"] .editor-track-actions { padding-right: 46px; }
 .phone-console .hardware-window[data-floating="true"] { position: fixed !important; height: var(--hardware-window-h) !important; width: var(--hardware-window-w) !important; }
+
+/* Creative hardware effects: each gets its own faceplate, trim and deck. */
+:is(.fx-face.hardware-device, .device-module, .fx-editor)[data-fx-skin="modulator"] { --hardware-face: var(--fx-petrol); --hardware-trim: var(--display-green); --fx-deck: var(--fx-charcoal); --fx-deck-ink: var(--hardware-ink); }
+:is(.fx-editor, .fx-face)[data-fx-skin="modulator"] :is(.fx-control-deck, .fx-controls-bank) { border-top: 8px double var(--hardware-trim); }
+:is(.fx-face.hardware-device, .device-module, .fx-editor)[data-fx-skin="modfx"] { --hardware-face: var(--fx-pearl); --hardware-trim: var(--display-pink); --fx-deck: var(--fx-pearl); --fx-deck-ink: var(--hardware-dark-ink); --foreground: var(--hardware-dark-ink); --muted-foreground: var(--hardware-rubber-edge); }
+:is(.fx-editor, .fx-face)[data-fx-skin="modfx"] :is(.fx-control-deck, .fx-controls-bank) { border-radius: 18px; }
+:is(.fx-face.hardware-device, .device-module, .fx-editor)[data-fx-skin="retro"] { --hardware-face: var(--fx-crimson); --hardware-trim: var(--display-yellow); --fx-deck: var(--fx-pearl); --fx-deck-ink: var(--hardware-dark-ink); }
+:is(.fx-editor, .fx-face)[data-fx-skin="retro"] :is(.fx-control-deck, .fx-controls-bank) { border: 3px dashed var(--hardware-trim); }
+:is(.fx-face.hardware-device, .device-module, .fx-editor)[data-fx-skin="trigate"] { --hardware-face: var(--fx-charcoal); --hardware-trim: var(--display-green); --fx-deck: var(--fx-moss); --fx-deck-ink: var(--hardware-ink); }
+:is(.fx-editor, .fx-face)[data-fx-skin="trigate"] :is(.fx-control-deck, .fx-controls-bank) { border-left: 10px solid var(--hardware-trim); border-right: 10px solid var(--hardware-trim); }
+:is(.fx-face.hardware-device, .device-module, .fx-editor)[data-fx-skin="demolition"] { --hardware-face: var(--fx-crimson); --hardware-trim: var(--display-orange); --fx-deck: var(--fx-charcoal); --fx-deck-ink: var(--hardware-ink); }
+:is(.fx-editor, .fx-face)[data-fx-skin="demolition"] :is(.fx-control-deck, .fx-controls-bank) { border: 4px solid var(--hardware-black); outline: 2px dashed var(--hardware-trim); outline-offset: -8px; }
+:is(.fx-face.hardware-device, .device-module, .fx-editor)[data-fx-skin="pitchvoice"] { --hardware-face: var(--fx-graphite); --hardware-trim: var(--display-blue); --fx-deck: var(--fx-pearl); --fx-deck-ink: var(--hardware-dark-ink); }
+:is(.fx-editor, .fx-face)[data-fx-skin="pitchvoice"] :is(.fx-control-deck, .fx-controls-bank) { border-bottom: 8px solid var(--hardware-trim); }
+:is(.fx-face.hardware-device, .device-module, .fx-editor)[data-fx-skin="maximizer"] { --hardware-face: var(--fx-silver); --hardware-trim: var(--display-orange); --fx-deck: var(--fx-charcoal); --fx-deck-ink: var(--hardware-ink); --foreground: var(--hardware-dark-ink); --muted-foreground: var(--hardware-rubber-edge); }
+:is(.fx-editor, .fx-face)[data-fx-skin="maximizer"] :is(.fx-control-deck, .fx-controls-bank) { border-top: 4px solid var(--hardware-trim); border-bottom: 4px solid var(--hardware-trim); }
+:is(.fx-face.hardware-device, .device-module, .fx-editor)[data-fx-skin="imager"] { --hardware-face: var(--fx-charcoal); --hardware-trim: var(--display-cyan); --fx-deck: var(--fx-petrol); --fx-deck-ink: var(--hardware-ink); }
+:is(.fx-editor, .fx-face)[data-fx-skin="imager"] :is(.fx-control-deck, .fx-controls-bank) { border-left: 4px solid var(--hardware-trim); border-right: 4px solid var(--display-pink); }
+:is(.fx-face.hardware-device, .device-module, .fx-editor)[data-fx-skin="unison"] { --hardware-face: var(--fx-moss); --hardware-trim: var(--display-pink); --fx-deck: var(--fx-charcoal); --fx-deck-ink: var(--hardware-ink); }
+:is(.fx-editor, .fx-face)[data-fx-skin="unison"] :is(.fx-control-deck, .fx-controls-bank) { border-top: 6px solid var(--hardware-trim); }
+:is(.fx-face.hardware-device, .device-module, .fx-editor)[data-fx-skin="amp"] { --hardware-face: var(--fx-charcoal); --hardware-trim: var(--display-yellow); --fx-deck: var(--fx-crimson); --fx-deck-ink: var(--hardware-ink); }
+:is(.fx-editor, .fx-face)[data-fx-skin="amp"] :is(.fx-control-deck, .fx-controls-bank) { border: 6px solid var(--hardware-black); border-radius: 12px; box-shadow: inset 0 0 0 2px var(--hardware-trim); }
+:is(.fx-face.hardware-device, .device-module, .fx-editor)[data-fx-skin="ensemble"] { --hardware-face: var(--fx-silver); --hardware-trim: var(--display-blue); --fx-deck: var(--fx-pearl); --fx-deck-ink: var(--hardware-dark-ink); --foreground: var(--hardware-dark-ink); --muted-foreground: var(--hardware-rubber-edge); }
+:is(.fx-editor, .fx-face)[data-fx-skin="ensemble"] :is(.fx-control-deck, .fx-controls-bank) { border-radius: 10px; border-left: 12px solid var(--hardware-trim); }
+:is(.fx-face.hardware-device, .device-module, .fx-editor)[data-fx-skin="sidechain"] { --hardware-face: var(--fx-graphite); --hardware-trim: var(--display-orange); --fx-deck: var(--fx-silver); --fx-deck-ink: var(--hardware-dark-ink); }
+:is(.fx-editor, .fx-face)[data-fx-skin="sidechain"] :is(.fx-control-deck, .fx-controls-bank) { border-left: 6px solid var(--hardware-trim); border-top: 2px solid var(--hardware-trim); }
+:is(.fx-face.hardware-device, .device-module, .fx-editor)[data-fx-skin="distmatrix"] { --hardware-face: var(--fx-graphite); --hardware-trim: var(--display-orange); --fx-deck: var(--fx-crimson); --fx-deck-ink: var(--hardware-ink); }
+:is(.fx-editor, .fx-face)[data-fx-skin="distmatrix"] :is(.fx-control-deck, .fx-controls-bank) { border: 2px solid var(--hardware-trim); background-image: repeating-linear-gradient(45deg, transparent 0 12px, color-mix(in oklab, var(--hardware-trim) 12%, transparent) 12px 14px); }
