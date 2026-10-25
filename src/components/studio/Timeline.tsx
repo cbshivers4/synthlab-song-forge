@@ -1,5 +1,6 @@
 import { boundedRegions, loopRegion } from "@/lib/synclab/recording-region";
 import { timelineUsesWaveform } from "@/lib/synclab/timeline-content";
+import { rightEdgeEdit } from "@/lib/synclab/arrangement-edit";
 import { Fragment, memo, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { stepsPerBar, getBeatsPerBar, STEPS_PER_BEAT, songSteps, stepSeconds, positionLabel } from "@/lib/synclab/timebase";
@@ -215,7 +216,7 @@ function TimelineCutGuide({ tool, position, selected, total, grid }: { tool: "sp
 
 /** Audio lane: every clip sits at its own bar position and can be moved, trimmed and dragged between tracks. */
 function Waveform({ track }: { track: Track }) {
-  const { setActiveClip, removeClip, updateTrack, moveClipToNew, transport, tracks, editTool } = useStudio();
+  const { setActiveClip, removeClip, updateTrack, moveClipToNew, stretchClip, setTransport, transport, tracks, editTool } = useStudio();
   const cutting = editTool === "split" || editTool === "razor";
   const [editingId, setEditingId] = useState<string | null>(null);
   const clips = track.clips ?? [];
@@ -257,6 +258,9 @@ function Waveform({ track }: { track: Track }) {
     let pointerX = x0;
     let pointerY = y0;
     let dragged = false;
+    let edgeEdit: ReturnType<typeof rightEdgeEdit> | null = null;
+    const clipElement = el.closest<HTMLElement>(".arrangement-clip");
+    const originalWidth = clipElement?.style.width ?? "";
     const overNewChannel = (x: number, y: number) => {
       if (!newChannel || !viewport) return false;
       const bounds = canvasRect(newChannel);
@@ -270,8 +274,11 @@ function Waveform({ track }: { track: Track }) {
       newChannel?.classList.toggle("bg-primary/10", over);
     };
     const edgeScroll = window.setInterval(() => {
-      if (!dragged || mode !== "move" || !viewport) return;
+      if (!dragged || !viewport) return;
       const bounds = canvasRect(viewport);
+      const dx = pointerX > bounds.right - 32 ? 18 : pointerX < bounds.left + 32 ? -18 : 0;
+      if (dx) viewport.scrollLeft += dx;
+      if (mode !== "move") return;
       if (pointerX < bounds.left || pointerX > bounds.right) return;
       const dy = pointerY > bounds.bottom - 48 ? 18 : pointerY < bounds.top + 48 ? -18 : 0;
       if (dy) viewport.scrollTop += dy;
@@ -303,13 +310,12 @@ function Waveform({ track }: { track: Track }) {
       } else if (mode === "trim-right") {
         // Snap the clip end to whole bars so you choose how many bars it lasts (Shift = fine).
         // Clip length/offset are source-file seconds, so convert through the playback rate.
-        const rate = clipRate(clip);
         const bar = stepsPerBar() * stepDur;
-        const raw = orig.length / rate + dSteps * stepDur;
-        const snapped = ev.shiftKey ? raw : Math.max(bar, Math.round(raw / bar) * bar);
-        const len = Math.max(0.05, Math.min(clip.duration - orig.offset, snapped * rate));
-        (el.closest(".arrangement-clip") as HTMLElement | null ?? el).dataset["bars"] = `${+(len / rate / bar).toFixed(2)} BARS`;
-        writeClip(clip.id, { length: len });
+        edgeEdit = rightEdgeEdit(clip, dSteps * stepDur, bar, ev.shiftKey);
+        if (clipElement) {
+          clipElement.dataset["bars"] = `${+(edgeEdit.seconds / bar).toFixed(2)} BARS${edgeEdit.stretch ? " · STRETCH" : ""}`;
+          clipElement.style.width = `${edgeEdit.seconds / stepDur * perStep}px`;
+        }
       } else {
         const rate = clipRate(clip);
         const bar = stepsPerBar() * stepDur;
@@ -331,6 +337,16 @@ function Waveform({ track }: { track: Track }) {
       window.removeEventListener("pointercancel", onCancel);
       clearDrag();
       delete (el.closest(".arrangement-clip") as HTMLElement | null ?? el).dataset["bars"];
+      if (mode === "trim-right") {
+        if (clipElement) clipElement.style.width = originalWidth;
+        if (edgeEdit) {
+          const neededBars = Math.ceil((orig.start + edgeEdit.seconds / stepDur) / stepsPerBar());
+          if (neededBars > transport.bars) setTransport({ bars: neededBars });
+          if (edgeEdit.stretch) void stretchClip(track.id, clip.id, edgeEdit.stretch);
+          else writeClip(clip.id, { length: edgeEdit.length });
+        }
+        return;
+      }
       if (mode !== "move") return;
       el.style.transform = "";
       el.style.zIndex = "";
@@ -384,6 +400,7 @@ function Waveform({ track }: { track: Track }) {
       window.removeEventListener("pointerup", onUp);
       window.removeEventListener("pointercancel", onCancel);
       clearDrag();
+      if (clipElement) clipElement.style.width = originalWidth;
       if (dragged) writeClip(clip.id, orig);
       el.style.transform = "";
       el.style.zIndex = "";
@@ -457,7 +474,8 @@ function Waveform({ track }: { track: Track }) {
             />
             <div
               onPointerDown={(e) => beginDrag(e, clip, "trim-right")}
-              title="Drag to set how many bars it lasts (Shift for fine)"
+              role="slider" aria-label={`Resize or stretch ${clip.name}`} aria-valuenow={length} aria-valuemin={0.05}
+              title="Drag to resize; extends past source end with pitch-preserving stretch (Shift for fine)"
               className="arrangement-trim arrangement-trim-right absolute inset-y-0 right-0 z-30 w-3 cursor-ew-resize touch-none"
             />
           </div>
@@ -2409,6 +2427,8 @@ function EditToolbar() {
     cutTrack,
     copyTrack,
     pasteTrack,
+    pasteClip,
+    clipClipboardName,
     removeTrack,
     clearTrackContent,
     clipboardName,
@@ -2650,9 +2670,9 @@ function EditToolbar() {
         size="sm"
         variant="ghost"
         className="h-6 gap-1 px-2 text-[10px]"
-        disabled={!clipboardName}
+        disabled={!clipboardName && !clipClipboardName}
         title="Paste (⌘V / Ctrl+V)"
-        onClick={() => pasteTrack()}
+        onClick={() => clipClipboardName ? pasteClip(false, selected?.id) : pasteTrack(selected?.id)}
       >
         <ClipboardPaste className="size-3" /> Paste
       </Button>

@@ -1,5 +1,7 @@
 # Shared audio logic
 
+Recording Stop paths share a deduplicated finalizer that awaits pending input starts before landing takes; preserve the stop position until notes finish, then rewind. Arrangement paste uses material helpers on the selected channel, and right-edge extension renders pitch-preserving audio through the existing stretch path rather than referencing beyond source bounds.
+
 Audio entry points unlock phone media in the triggering gesture using valid silent PCM and resume suspended/interrupted contexts; first drum taps restore cached mixer routing/inserts when their channel is absent, so Stop and cold starts cannot leave default routing.
 
 Drum-pad deletion updates both active pads and the active bank snapshot via the shared bank helper; other banks and library assets remain untouched so recalling a bank cannot resurrect deleted pads.

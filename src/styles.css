@@ -2069,6 +2069,8 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
 .arrangement-clip[data-bars]::before { content: attr(data-bars); position: absolute; right: 14px; bottom: 4px; z-index: 40; padding: 1px 5px; border-radius: 3px; font: 600 10px/1.3 ui-monospace, monospace; background: var(--popover); color: var(--popover-foreground); pointer-events: none; }
 .arrangement-trim { max-width: 25%; }
 .phone-console .arrangement-trim { width: 22px; }
+body:has(.phone-console) [data-sonner-toaster], body:has(.phone-console) [data-sonner-toast] { pointer-events: none !important; }
+body:has(.phone-console) [data-sonner-toast] button { pointer-events: auto; }
 
 /* ===== MPC-style rubber pads (drum machine + pad sampler) ===== */
 .mpc-pad {
