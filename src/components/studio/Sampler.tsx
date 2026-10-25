@@ -1,4 +1,4 @@
-import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
+import { WaveformZoom, waveformFraction, useWaveformDetail } from "./WaveformZoom";
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { AudioLines, Piano, Play, RotateCcw, Scissors, Square, Trash2, Upload } from "lucide-react";
 import { Keyboard } from "./Keyboard";
@@ -46,14 +46,14 @@ function Waveform({ track, onSlice, drawSlice = false }: { track: Track; onSlice
   const s = track.sampler;
   const ref = useRef<HTMLDivElement | null>(null);
   const [drag, setDrag] = useState<"start" | "end" | number | null>(null);
+  const peaks = useWaveformDetail(s?.url ?? "", s?.peaks ?? []);
   if (!s) return null;
   const chops = s.slices ?? [];
 
   const fracAt = (clientX: number, clientY: number) => {
     const boxEl = ref.current;
     if (!boxEl) return 0;
-    const box = canvasRect(boxEl);
-    return Math.min(1, Math.max(0, (canvasPoint(clientX, clientY).x - box.left) / box.width));
+    return waveformFraction(boxEl, clientX, clientY);
   };
 
   const move = (e: ReactPointerEvent) => {
@@ -69,6 +69,7 @@ function Waveform({ track, onSlice, drawSlice = false }: { track: Track; onSlice
   };
 
   return (
+    <WaveformZoom duration={s.duration} label="Sample">
     <div
       ref={ref}
       className={`relative h-32 min-h-32 w-full overflow-hidden rounded border border-border bg-surface-2 sm:h-20 sm:min-h-20 ${drawSlice ? "touch-none" : "touch-pan-y"}`}
@@ -81,10 +82,10 @@ function Waveform({ track, onSlice, drawSlice = false }: { track: Track; onSlice
       }}
       onPointerMove={move}
       onPointerUp={() => setDrag(null)}
-      onPointerLeave={() => setDrag(null)}
+      onPointerCancel={() => setDrag(null)}
     >
-      <div className="absolute inset-0">
-        <WaveformView peaks={s.peaks} color="var(--display-wave)" label={`${s.name} waveform`} />
+      <div className="pointer-events-none absolute inset-0">
+        <WaveformView peaks={peaks} color="var(--display-wave)" label={`${s.name} waveform`} />
       </div>
 
       <div className="absolute inset-y-0 left-0 bg-background/70" style={{ width: `${s.start * 100}%` }} />
@@ -150,6 +151,7 @@ function Waveform({ track, onSlice, drawSlice = false }: { track: Track; onSlice
         </div>
       ))}
     </div>
+    </WaveformZoom>
   );
 }
 
@@ -588,10 +590,7 @@ export function Sampler() {
               <span className="truncate font-mono text-xs text-primary">{s.name}</span>
               <Button size="sm" variant={drawSlice ? "default" : "outline"} aria-pressed={drawSlice} onClick={() => setDrawSlice(!drawSlice)} className="h-9 shrink-0"><Scissors className="size-4" /> Manual slice</Button>
             </div>
-            <Waveform track={track} onSlice={removeChop} drawSlice={drawSlice} />
-            <div className="flex justify-between font-mono text-[10px] text-muted-foreground" aria-label="Sample time ruler">
-              {[0, 0.25, 0.5, 0.75, 1].map((fraction) => <span key={fraction}>{(s.duration * fraction).toFixed(2)}s</span>)}
-            </div>
+            <Waveform key={`${track.id}:${s.url}`} track={track} onSlice={removeChop} drawSlice={drawSlice} />
           </div>
 
             <div className="space-y-3 border-y border-border py-3">

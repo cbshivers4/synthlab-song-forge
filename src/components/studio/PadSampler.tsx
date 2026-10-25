@@ -1,4 +1,4 @@
-import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
+import { WaveformZoom, waveformFraction, useWaveformDetail } from "./WaveformZoom";
 import { getLocalFile } from "@/lib/synclab/local-files";
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import {
@@ -105,13 +105,13 @@ function Row({ label, value, children }: { label: string; value: string; childre
 function PadWave({ pad, color, onChange, manual }: { pad: Pad; color: string; onChange: (p: Partial<Pad>) => void; manual: boolean }) {
   const ref = useRef<HTMLDivElement | null>(null);
   const [drag, setDrag] = useState<"start" | "end" | number | null>(null);
+  const peaks = useWaveformDetail(pad.url, pad.peaks);
 
   const move = (e: ReactPointerEvent) => {
     if (drag === null) return;
     const boxEl = ref.current;
     if (!boxEl) return;
-    const box = canvasRect(boxEl);
-    const f = Math.min(1, Math.max(0, (canvasPoint(e.clientX, e.clientY).x - box.left) / box.width));
+    const f = waveformFraction(boxEl, e.clientX, e.clientY);
     if (typeof drag === "number") {
       const slices = [...(pad.slices ?? [])];
       slices[drag] = Math.min((slices[drag + 1] ?? pad.end) - 0.002, Math.max((slices[drag - 1] ?? pad.start) + 0.002, f));
@@ -121,23 +121,23 @@ function PadWave({ pad, color, onChange, manual }: { pad: Pad; color: string; on
   };
 
   return (
+    <WaveformZoom duration={pad.duration} label="Pad sample">
     <div
       ref={ref}
       className="relative h-28 w-full touch-none overflow-hidden rounded-lg border border-border bg-surface-2/60"
       aria-label="Pad sample chop waveform"
       onPointerDown={(e) => {
         if (!manual || e.target !== e.currentTarget) return;
-        const box = canvasRect(e.currentTarget);
-        const at = (canvasPoint(e.clientX, e.clientY).x - box.left) / box.width;
+        const at = waveformFraction(e.currentTarget, e.clientX, e.clientY);
         if (at <= pad.start + 0.002 || at >= pad.end - 0.002) return;
         onChange({ slices: [...new Set([pad.start, ...(pad.slices ?? []), at])].sort((a, b) => a - b) });
       }}
       onPointerMove={move}
       onPointerUp={() => setDrag(null)}
-      onPointerLeave={() => setDrag(null)}
+      onPointerCancel={() => setDrag(null)}
     >
       <div className="pointer-events-none absolute inset-0">
-        <WaveformView peaks={pad.peaks} color="var(--display-wave)" label="Pad waveform" />
+        <WaveformView peaks={peaks} color="var(--display-wave)" label="Pad waveform" />
       </div>
       <div className="pointer-events-none absolute inset-y-0 left-0 bg-background/70" style={{ width: `${pad.start * 100}%` }} />
       <div className="pointer-events-none absolute inset-y-0 right-0 bg-background/70" style={{ width: `${(1 - pad.end) * 100}%` }} />
@@ -174,6 +174,7 @@ function PadWave({ pad, color, onChange, manual }: { pad: Pad; color: string; on
         </div>
       ))}
     </div>
+    </WaveformZoom>
   );
 }
 
@@ -934,7 +935,7 @@ export function PadSampler() {
             </div>
           </div>
 
-          <PadWave pad={selPad} color={BANK_COLORS[bank] as string} manual={manualCuts} onChange={(n) => patch(sel, n)} />
+          <PadWave key={`${sel}:${selPad.url}`} pad={selPad} color={BANK_COLORS[bank] as string} manual={manualCuts} onChange={(n) => patch(sel, n)} />
           <PadSampleTools key={sel} id={sel} pad={selPad} manual={manualCuts} onManual={() => setManualCuts(value => !value)} onPatch={next => patch(sel, next)} onPreview={(start, end) => { stopPad(sel); trigger(sel, 1, undefined, 60, { start, end }); }} onStop={() => stopPad(sel)} onStopTarget={stopPad} />
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
