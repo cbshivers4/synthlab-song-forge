@@ -1,5 +1,6 @@
 import type { PluginInstance, PluginKind, PluginParam } from "./types";
 import { PARAMS_BY_KIND, withDefaultParams } from "./plugins";
+import { CREATIVE_KINDS, CREATIVE_RECIPES } from "./creative-fx";
 
 export interface EffectPreset { id: string; name: string; values: Record<string, number> }
 type Recipe = [name: string, values: Record<string, number>];
@@ -26,6 +27,7 @@ const RECIPES: Record<PluginKind, Recipe[]> = {
   resonator: [["Warm Body", { root: 43, spread: 0.2, decay: 1.2, damping: 0.6 }], ["Metal Bells", { root: 60, spread: 0.7, decay: 3.2, damping: 0.2 }], ["Deep Chamber", { root: 36, decay: 4, mix: 0.45 }], ["Short Wood", { root: 55, spread: 0.1, decay: 0.35, damping: 0.8 }]],
   scalechord: [["Minor Triads", { scale: 1, chord: 2 }], ["Major Sevenths", { chord: 3, inversion: 1 }], ["Minor Sevenths", { scale: 1, chord: 4 }], ["Open Fifths", { scale: 3, chord: 5, range: 2 }]],
   transient: [["Drum Punch", { attack: 0.65, sustain: -0.2 }], ["Soft Attack", { attack: -0.5, sustain: 0.15 }], ["Tight Percussion", { attack: 0.4, sustain: -0.65 }], ["Long Sustain", { attack: 0.15, sustain: 0.6, mix: 0.65 }]],
+  ...Object.fromEntries(CREATIVE_KINDS.map(k => [k, []])) as unknown as Record<(typeof CREATIVE_KINDS)[number], Recipe[]>,
 };
 const TAPE_RECIPES: Recipe[] = [["Vintage Slap", { time: 110, feedback: 0.18, tone: 4200, mix: 0.2 }], ["Dub Tape", { time: 540, feedback: 0.7, tone: 2800, lowcut: 200, mix: 0.35 }], ["Warm Repeats", { time: 360, feedback: 0.4, tone: 5000, mix: 0.25 }], ["Long Tape Trail", { time: 800, feedback: 0.6, tone: 3200, mix: 0.3 }]];
 
@@ -207,6 +209,7 @@ const MORE_RECIPES: Record<PluginKind, Recipe[]> = {
     ["Ambient Tail Lift", { attack: -0.2, sustain: 0.8, mix: 0.55, output: -2 }],
     ["Gentle Mix Definition", { attack: 0.2, sustain: -0.1, sensitivity: 0.45, mix: 0.5 }],
   ],
+  ...CREATIVE_RECIPES,
 };
 const MORE_TAPE_RECIPES: Recipe[] = [
   ["Motor City Slap", { time: 85, feedback: 0.22, tone: 3600, mix: 0.18, lowcut: 120 }],

@@ -1,4 +1,5 @@
 import { centerOneSided } from "./one-sided-audio";
+import { buildCreativeFx, isCreativeKind } from "./creative-fx";
 import { phasedHarmonics } from "./oscillator-phase";
 import { envelopePoints } from "./live-envelope";
 import { renderVintageDrum } from "./vintage-drums";
@@ -749,7 +750,7 @@ export class SyncLabEngine {
         resonator: 12,
         scalechord: 1,
         transient: 5,
-      }[pl.kind];
+      }[pl.kind as string] ?? (isCreativeKind(pl.kind) ? 2 : 0);
       const head = nodes[idx];
       const tail = nodes[idx + size - 1];
       if (head && tail) {
@@ -1512,6 +1513,11 @@ export class SyncLabEngine {
           bind(pl, "mix", wet.gain, 0, 1.5);
           nodes.push(input, dry, compressor, wet, out);
           break;
+        }
+        default: {
+          if (!isCreativeKind(pl.kind)) break;
+          const fx = buildCreativeFx(ctx, pl, { val: (id, fb) => val(pl, id, fb), live: (id, fn) => live(pl, id, fn) });
+          nodes.push(fx.input, fx.output);
         }
       }
     }
