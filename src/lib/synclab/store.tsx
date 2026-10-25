@@ -8,6 +8,8 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { materialEnd, pasteTrackContent } from "./arrangement-edit";
+import { createRecordingFinalizer } from "./recording-finalizer";
 import { capturedNote, loopRegion } from "./recording-region";
 import { editDrumPads, type DrumBulkEdit } from "./drum-bulk";
 import { appendDrumPad } from "./drum-banks";
@@ -438,6 +440,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   transportRef.current = transport;
   setBeatsPerBar(transport.beatsPerBar);
   const countInTimerRef = useRef<number | null>(null);
+  const pendingInputStartRef = useRef<Promise<void> | null>(null);
+  const recordingGenerationRef = useRef(0);
+  const finalizingRef = useRef(false);
   /** timeline step where the current take started, so the clip lands there */
   const recStartStepRef = useRef(0);
   /** punch recording hooks, filled in once the record helpers exist */
@@ -1513,6 +1518,26 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const finalizeRecording = useMemo(() => createRecordingFinalizer(
+    () => pendingInputStartRef.current,
+    async () => { await Promise.all([finishRecording(), finishTrackRecording()]); },
+  ), [finishRecording, finishTrackRecording]);
+
+  const endRecording = useCallback(async (rewind = false) => {
+    recordingGenerationRef.current += 1;
+    finalizingRef.current = true;
+    if (countInTimerRef.current != null) window.clearInterval(countInTimerRef.current);
+    countInTimerRef.current = null;
+    transportRef.current = { ...transportRef.current, playing: rewind ? false : transportRef.current.playing, recording: false, countInLeft: null };
+    setTransportState(transportRef.current);
+    try { await finalizeRecording(); }
+    finally {
+      finalizingRef.current = false;
+      setTracks(ts => ts.map(t => t.recording ? { ...t, recording: false } : t));
+      if (rewind) setTransportState(s => ({ ...s, playing: false, paused: false, step: 0 }));
+    }
+  }, [finalizeRecording]);
+
   // keep the punch hooks pointing at the current record helpers
   useEffect(() => {
     punchRef.current = {
@@ -1522,26 +1547,19 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         const target = tracksRef.current.find((t) => t.armed && (t.kind === "audio" || t.kind === "ai-vocal"));
         if (!target) return;
         recStartStepRef.current = transportRef.current.step ?? 0;
-        void engine
-          .startInputRecording(target.id, transportRef.current.monitor ?? false)
+        const generation = recordingGenerationRef.current;
+        updateTrack(target.id, { recording: true });
+        pendingInputStartRef.current = engine.startInputRecording(target.id, transportRef.current.monitor ?? false)
           .then(() => {
-            updateTrack(target.id, { recording: true });
-            setTransportState((t) => ({ ...t, recording: true }));
-            toast("Punched in", { description: `Recording ${target.name}.` });
-          })
-          .catch((err: unknown) =>
-            toast.error("Microphone unavailable", {
-              description: err instanceof Error ? err.message : "The microphone could not be opened.",
-              duration: 9000,
-              action: { label: "Open in tab", onClick: openInOwnTab },
-            }),
-          );
+            if (generation !== recordingGenerationRef.current) return;
+            setTransportState(t => ({ ...t, recording: true }));
+          }).catch((err: unknown) => {
+            updateTrack(target.id, { recording: false });
+            toast.error("Microphone unavailable", { description: err instanceof Error ? err.message : undefined });
+          });
       },
       stop: () => {
-        if (!getEngine().isRecording) return;
-        void finishRecording();
-        setTransportState((t) => ({ ...t, recording: false }));
-        toast("Punched out", { description: "The take stops at your punch-out marker." });
+        void endRecording();
       },
     };
     loopStopRef.current = () => {
@@ -1557,7 +1575,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       setTransportState((t) => ({ ...t, recording: false }));
       toast("Recording stopped at the loop end", { description: "Takes stay inside the bars you selected." });
     };
-  }, [finishRecording, finishTrackRecording, updateTrack]);
+  }, [finishRecording, finishTrackRecording, updateTrack, endRecording]);
 
   /** Cut clips under a timeline position (steps). Each half keeps the right audio via offset/length and its own start. */
   const razorAtImpl = useCallback(
@@ -2014,6 +2032,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         toast.success("Take swapped", { description: "This section now plays the earlier take. Pick again to switch back." });
       },
       stretchClip: async (trackId, clipId, factor) => {
+        if (!Number.isFinite(factor) || factor <= 0) return;
         const t = tracksRef.current.find((x) => x.id === trackId);
         const c = t?.clips?.find((x) => x.id === clipId);
         if (!t || !c?.url) return;
@@ -2025,7 +2044,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         const sr = buf.sampleRate;
         const from = Math.floor((c.offset ?? 0) * sr);
         const to = Math.min(buf.length, from + Math.floor((c.length ?? c.duration) * sr));
-        const chan = (i: number) => wsolaStretch(buf.getChannelData(Math.min(i, buf.numberOfChannels - 1)).slice(from, to), 1 / factor);
+        const chan = (i: number) => wsolaStretch(buf.getChannelData(Math.min(i, buf.numberOfChannels - 1)).slice(from, to), clipRate(c) / factor);
         const left = chan(0);
         const right = buf.numberOfChannels > 1 ? chan(1) : left;
         const url = URL.createObjectURL(encodeWav({ left, right, sampleRate: sr }));
@@ -2040,10 +2059,11 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         setTracks((ts) => ts.map((x) => x.id !== trackId ? x : {
           ...x,
           clips: (x.clips ?? []).map((k) => k.id !== clipId ? k : {
-            ...k, url, cloudPath: undefined, peaks, duration, offset: 0, length: duration,
+            ...k, url, cloudPath: undefined, peaks, duration, offset: 0, length: duration, speed: 1, pitch: 0,
             fadeIn: Math.min(k.fadeIn ?? 0, duration / 2), fadeOut: Math.min(k.fadeOut ?? 0, duration / 2),
           }),
         }));
+        setTransportState(tp => ({ ...tp, bars: Math.max(tp.bars, barsForSteps((c.start ?? 0) + duration / stepSeconds(tp.bpm))) }));
         toast.success(`Stretched to ${Math.round(factor * 100)}%`, { id, description: `${duration.toFixed(2)}s, pitch unchanged. Undo restores the original.` });
       },
       clearTrackContent: (id) => {
@@ -2144,35 +2164,16 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           toast("Clipboard is empty", { description: "Copy a track first with ⌘C / Ctrl+C." });
           return;
         }
-        // Paste onto the explicitly chosen or selected channel — but never back
-        // onto the track it was copied from (that would stack notes on themselves);
-        // in that case fall through and create a new COPY track.
         const wantedId = targetId ?? selectedIdRef.current;
-        const target = wantedId && wantedId !== src.id ? tracksRef.current.find((t) => t.id === wantedId) : undefined;
+        const target = tracksRef.current.find(t => t.id === wantedId);
         if (target) {
-          const at = Math.max(0, transportRef.current.step);
-          const origin = Math.min(...(src.clips ?? []).map((c) => c.start ?? 0), ...(src.notes ?? []).map((n) => n.step), ...(src.pads?.some((p) => p.steps.some((v) => v > 0)) ? [0] : []));
-          const shift = at - (Number.isFinite(origin) ? origin : 0);
-          const clips = (src.clips ?? []).map((c) => ({ ...structuredClone(c), id: uid(), start: (c.start ?? 0) + shift }));
-          const notes = (src.notes ?? []).map((n) => ({ ...n, id: uid(), step: n.step + shift, ...(n.recordedEnd !== undefined ? { recordedEnd: n.recordedEnd + shift } : {}) }));
-          if ((notes.length || src.pads?.some((p) => p.steps.some((v) => v > 0))) && src.kind !== target.kind) {
-            toast.error("Choose a matching channel", { description: "Paste notes onto the same instrument type, or duplicate the track." });
+          if ((src.notes?.length || src.pads?.some(p => p.steps.some(v => v > 0))) && src.kind !== target.kind) {
+            toast.error("Choose a matching channel");
             return;
           }
-          const steps = Math.max(target.steps, Math.ceil(at + src.steps), ...notes.map((n) => Math.ceil(n.step + n.length)));
-          setTracks((ts) => ts.map((t) => {
-            if (t.id !== target.id) return t;
-            const pads = t.pads?.map((pad, i) => {
-              const source = src.pads?.[i];
-              const values = Array.from({ length: steps }, (_, s) => pad.steps[s] ?? 0);
-              source?.steps.forEach((v, s) => { if (v > 0) values[Math.max(0, Math.round(at) + s)] = v; });
-              return { ...pad, steps: values };
-            });
-            return { ...t, steps, notes: [...(t.notes ?? []), ...notes], clips: [...(t.clips ?? []), ...clips], pads,
-              activeClipId: clips[0]?.id ?? t.activeClipId,
-              ...(clips.length && (t.kind === "instrument" || t.kind === "midi" || t.kind === "drum") ? { printedAudio: true } : {}) };
-          }));
-          toast.success(`Pasted on ${target.name}`, { description: "Channel and sound settings unchanged." });
+          const pasted = pasteTrackContent(target, src, Math.max(0, transportRef.current.step), stepSeconds(transportRef.current.bpm));
+          setTracks(ts => ts.map(t => t.id === target.id ? pasted : t));
+          setTransportState(tp => ({ ...tp, bars: Math.max(tp.bars, barsForSteps(materialEnd(pasted, stepSeconds(tp.bpm)))) }));
           return;
         }
         const copy: Track = { ...(structuredClone(src) as Track), id: uid(), name: `${src.name} COPY`, recording: false };
@@ -2231,13 +2232,14 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         const pasteStepDur = stepSeconds(transportRef.current.bpm);
         const endOf = (t: Track) =>
           (t.clips ?? []).reduce((m, c) => Math.max(m, (c.start ?? 0) + clipSeconds(c) / pasteStepDur), 0);
-        const at = atEnd ? Math.round(endOf(target)) : transportRef.current.step;
+        const at = atEnd ? endOf(target) : Math.max(0, transportRef.current.step);
         const clip: AudioClip = { ...(structuredClone(src) as AudioClip), id: uid(), start: at };
         const isNotes = target.kind === "drum" || target.kind === "instrument" || target.kind === "midi";
         // Paste onto the selected track itself; note tracks switch to WAVE so the audio plays there.
         setTracks((ts) =>
           ts.map((t) => (t.id === target.id ? { ...t, clips: [...(t.clips ?? []), clip], activeClipId: clip.id, ...(isNotes ? { printedAudio: true } : {}) } : t)),
         );
+        setTransportState(tp => ({ ...tp, bars: Math.max(tp.bars, barsForSteps(at + clipSeconds(clip) / pasteStepDur)) }));
         toast.success(`${clip.name} pasted on ${target.name}`, { description: `At step ${at} — drag it anywhere from there.` });
       },
       updatePatch: (id, patch) =>
@@ -2315,6 +2317,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       },
       pause: () => setTransportState((s) => ({ ...s, playing: false, paused: true })),
       toggleRecord: () => {
+        if (finalizingRef.current) return;
         const engine = getEngine();
         engine.init();
         // Sampler pads play internal audio, so they record like instruments
@@ -2347,19 +2350,17 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             if (armedAudio) {
               const target = armedAudio;
               recStartStepRef.current = transportRef.current.step ?? 0;
-              void engine
-                .startInputRecording(target.id, transportRef.current.monitor ?? false)
-                .then(() => updateTrack(target.id, { recording: true }))
-                .catch((err: unknown) =>
-                  {
-                    setTransportState((state) => ({ ...state, recording: false }));
-                    toast.error("Microphone unavailable", {
-                      description: err instanceof Error ? err.message : "The microphone could not be opened.",
-                      duration: 9000,
-                      action: { label: "Open in tab", onClick: openInOwnTab },
-                    });
-                  },
-                );
+              const generation = recordingGenerationRef.current;
+              updateTrack(target.id, { recording: true });
+              pendingInputStartRef.current = engine.startInputRecording(target.id, transportRef.current.monitor ?? false)
+                .then(() => {
+                  if (generation !== recordingGenerationRef.current) return;
+                  updateTrack(target.id, { recording: true });
+                }).catch((err: unknown) => {
+                  updateTrack(target.id, { recording: false });
+                  setTransportState(state => ({ ...state, recording: false }));
+                  toast.error("Microphone unavailable", { description: err instanceof Error ? err.message : undefined });
+                });
             }
             if (armedNote) {
               recStartStepRef.current = transportRef.current.step ?? 0;
@@ -2433,22 +2434,10 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           }
           begin();
         } else {
-          void finishRecording();
-          void finishTrackRecording();
-          setTracks((ts) => ts.map((t) => (t.recording ? { ...t, recording: false } : t)));
-          setTransportState((s) => ({ ...s, recording: false }));
+          void endRecording();
         }
       },
-      stop: async () => {
-        if (countInTimerRef.current != null) {
-          window.clearInterval(countInTimerRef.current);
-          countInTimerRef.current = null;
-        }
-        const wasRecording = transportRef.current.recording;
-        setTracks((ts) => ts.map((t) => (t.recording ? { ...t, recording: false } : t)));
-        setTransportState((s) => ({ ...s, playing: false, recording: false, paused: false, step: 0, countInLeft: null }));
-        if (wasRecording) await Promise.all([finishRecording(), finishTrackRecording()]);
-      },
+      stop: () => endRecording(true),
       changeInstrument: (trackId, preset) =>
         setTracks((ts) =>
           ts.map((t) =>
