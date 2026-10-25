@@ -1,6 +1,6 @@
 # Roadmap — Source-code audit & DAW repair
 
-- [ ] Verify confirmed synth chorus/reverb crossfeed repair: separate destination scales while retaining fader, automation, mute/VCA and cleanup.
+- [x] Confirmed and repaired synth chorus/reverb crossfeed with separate destination scales, retaining fader, automation, mute/VCA and cleanup. Real browser audio and signed-in saved-project Audition verify reverb-only produces zero chorus and chorus-only produces zero reverb; routing/live-control/audio-unlock tests pass. Preview only.
 
 - [x] Sampler/Pad Sampler share inspection-only waveform zoom (1–32×), scrolling, decoded source-detail drawing and a matching seconds ruler. Signed-in desktop and sideways-phone loaded-sample zoom/scroll/manual chops place cuts at 7s in an 8s sample; Fit restores full view. 10 related tests pass; source audio and existing stretch tools remain unchanged. Preview only; physical devices unverified.
 
