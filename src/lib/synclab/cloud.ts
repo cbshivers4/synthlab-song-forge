@@ -2,6 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
 import type { AudioClip, AuxId, BusId, BusState, DrumPad, PluginDef, PluginInstance, SongSection, SynthPatch, Track, TrackFolder, Transport, VcaId } from "./types";
 import type { SavedPad } from "./pad-session";
+import { mediaStorePlan } from "./cloud-media";
 
 const BUCKET = "synclab-cloud";
 
@@ -103,10 +104,14 @@ async function prepareSession(session: CloudSession, userId: string, projectId: 
 
 async function signedUrl(path?: string) {
   if (!path) return "";
+  if (/^https?:/i.test(path)) return path;
   const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(path, 60 * 60 * 12);
   if (error) throw error;
   return data.signedUrl;
 }
+
+/** Fresh playable link for audio stored in the cloud (links expire after 12 hours). */
+export const freshCloudUrl = (path: string) => signedUrl(path);
 
 async function restoreSession(session: CloudSession): Promise<CloudSession> {
   const sampleUrls = new Map<string, Promise<string>>();
