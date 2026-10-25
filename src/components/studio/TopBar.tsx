@@ -300,7 +300,7 @@ export function TopBar() {
         </div>
         <div className="transport-row contents sm:flex sm:flex-wrap sm:items-center sm:gap-2">
         {!isMobile && (
-          <Popover><PopoverTrigger asChild><Button variant="outline" size="icon" className="order-4 size-10 shrink-0" aria-label="Recording options" title="Recording options"><Timer className="size-4" /></Button></PopoverTrigger><PopoverContent align="end" className="w-[min(92vw,520px)]"><div className="transport-glass-group flex flex-wrap items-center gap-1 rounded-[3px] border border-border bg-background/70 p-1">
+          <Popover><PopoverTrigger asChild><Button variant="outline" size="sm" className="order-4 h-10 shrink-0 gap-1 px-2" aria-label="Recording options" title="Recording options: metronome, count-in, loop and overdub"><Timer className="size-4" /><span className="text-[10px]">REC OPTIONS</span></Button></PopoverTrigger><PopoverContent align="end" className="w-[min(92vw,520px)]"><div className="transport-glass-group flex flex-wrap items-center gap-1 rounded-[3px] border border-border bg-background/70 p-1">
             <FeatBtn
               label="METRONOME"
               icon={<Timer className="size-3.5" />}
