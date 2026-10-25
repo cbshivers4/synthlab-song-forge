@@ -3189,7 +3189,7 @@ function Ruler() {
               onPointerDown={dragLoop("band")}
               onDoubleClick={() => setTransport({ loop: false })}
               title={`Loop bar ${Math.floor(lo / stepsPerBar()) + 1} to ${Math.floor(hi / stepsPerBar()) + 1} — drag to move, double-click to clear`}
-              className="absolute inset-y-0 z-10 cursor-grab touch-none border-x border-primary/70 bg-primary/15 active:cursor-grabbing"
+              className="absolute inset-y-0 z-10 cursor-grab touch-none border-x-2 border-y border-primary bg-primary/35 active:cursor-grabbing"
               style={{ left: `${(lo / total) * 100}%`, width: `${((hi - lo) / total) * 100}%` }}
             />
             {/* draggable loop markers */}
