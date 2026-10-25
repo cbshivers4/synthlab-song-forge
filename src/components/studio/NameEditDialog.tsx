@@ -1,18 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-/** Native-keyboard naming surface outside the sideways body's transform. */
+/** Native-keyboard naming surface counter-rotated within the shared phone canvas. */
 export function NameEditDialog({ open, title, label, value, onChange, onClose, onSave, busy = false }: {
   open: boolean; title: string; label: string; value: string; onChange: (value: string) => void;
   onClose: () => void; onSave: () => void; busy?: boolean;
 }) {
   const mobile = useIsMobile();
-  const [container, setContainer] = useState<HTMLElement>();
-  useEffect(() => { setContainer(mobile ? document.documentElement : undefined); }, [mobile]);
   useEffect(() => {
     if (!open || !mobile) return;
     const viewport = window.visualViewport;
@@ -22,6 +20,7 @@ export function NameEditDialog({ open, title, label, value, onChange, onClose, o
       root.style.setProperty("--name-editor-left", `${viewport?.offsetLeft ?? 0}px`);
       root.style.setProperty("--name-editor-width", `${viewport?.width ?? window.innerWidth}px`);
       root.style.setProperty("--name-editor-height", `${viewport?.height ?? window.innerHeight}px`);
+      root.style.setProperty("--name-editor-screen-width", `${window.innerWidth}px`);
     };
     sync();
     window.addEventListener("resize", sync);
@@ -30,7 +29,7 @@ export function NameEditDialog({ open, title, label, value, onChange, onClose, o
     return () => { window.removeEventListener("resize", sync); viewport?.removeEventListener("resize", sync); viewport?.removeEventListener("scroll", sync); };
   }, [open, mobile]);
   return <Dialog open={open} onOpenChange={(next) => { if (!next && !busy) onClose(); }}>
-    <DialogContent {...(container ? { portalContainer: container } : {})} {...(mobile ? { overlayClassName: "name-editor-overlay" } : {})}
+    <DialogContent {...(mobile ? { overlayClassName: "name-editor-overlay" } : {})}
       className={mobile ? "name-editor-dialog" : undefined} aria-describedby={undefined}>
       <DialogHeader><DialogTitle>{title}</DialogTitle></DialogHeader>
       <form className="grid min-w-0 gap-4" onSubmit={(e) => { e.preventDefault(); if (value.trim() && !busy) onSave(); }}>

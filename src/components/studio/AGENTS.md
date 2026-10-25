@@ -4,7 +4,7 @@ Every mixer channel and the master strip carry a pre-fader GAIN knob (Track.gain
 
 # Studio components
 
-Phone channel/project naming shares NameEditDialog in a screen-aligned root portal measured by VisualViewport, keeping native keyboard typing visible without rotating the studio. Recording position derives from the shared transport and phone recording follows the timeline without changing playback.
+Phone channel/project naming shares a screen-aligned NameEditDialog counter-rotated inside the body portal and measured by VisualViewport, keeping native keyboard typing visible without rotating the studio. Recording position derives from the shared transport and phone recording follows the timeline without changing playback.
 
 Timeline selection exposes shared track actions; synth taps open the piano roll while empty-lane taps with copied material offer a snapped destination independently of the playhead. Portal events and drag movement must not trigger editor selection.
 
