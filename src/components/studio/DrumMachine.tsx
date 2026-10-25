@@ -257,7 +257,10 @@ export function DrumMachine({ track }: { track: Track }) {
     const source: DrumPad[] = pads.length ? pads : PAD_ORDER.map(kind => ({ id: crypto.randomUUID(), name: DRUM_KIND_LABEL[kind], kind, volume: 0.8, pan: 0, pitch: 0, decay, muted: false, solo: false, steps: Array(track.steps).fill(0) }));
     const kept = source.filter((p) => !p.voice || p.steps.some((v) => v > 0)).map((p) => factoryKitPad(p, id, p.voice ? p.decay : decay));
     const extras = kitExtraPads(id, track.steps, decay, () => crypto.randomUUID()).filter((x) => !kept.some((p) => p.voice === x.voice));
-    updateTrack(track.id, { pads: [...kept, ...extras] });
+    const nextPads = [...kept, ...extras];
+    updateTrack(track.id, { pads: nextPads });
+    const audition = nextPads.find(p => p.kind === "kick" && !p.muted) ?? nextPads.find(p => !p.muted);
+    if (audition) getEngine().playDrum(track.id, audition, 1);
     toast.success(`${def?.name ?? id} kit loaded`, { description: "Patterns are kept, and this kit's extra pads were added." });
   };
 
@@ -286,6 +289,11 @@ export function DrumMachine({ track }: { track: Track }) {
       const s = pr.pads.find((x) => x.name === p.name) ?? pr.pads[i];
       if (s) updatePad(track.id, p.id, s);
     });
+    const pad = pads.find(p => !p.muted);
+    if (pad) {
+      const sound = pr.pads.find(p => p.name === pad.name) ?? pr.pads[pads.indexOf(pad)];
+      if (sound) getEngine().playDrum(track.id, { ...pad, ...sound }, 1);
+    }
     toast.success(`Preset "${name}" loaded`, { description: "Your patterns are kept." });
   };
   const deletePreset = () => {
