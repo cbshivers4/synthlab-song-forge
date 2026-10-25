@@ -1,4 +1,6 @@
 import { WaveformZoom, waveformFraction, useWaveformDetail } from "./WaveformZoom";
+import { SampleExportButtons } from "./SampleExportButtons";
+import { captureFromUrl } from "@/lib/synclab/sample-export";
 import { centerOneSided } from "@/lib/synclab/one-sided-audio";
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { AudioLines, Piano, Play, RotateCcw, Scissors, Square, Trash2, Upload } from "lucide-react";
@@ -602,6 +604,11 @@ export function Sampler() {
               <Button size="sm" variant="ghost" className="h-9 gap-1.5 sm:h-7" onClick={() => stopSamples(track.id)}>
                 <Square className="size-3.5" /> Stop
               </Button>
+              <SampleExportButtons name={s.name ?? track.name} getCapture={async () => {
+                let url = s.url;
+                if (s.cloudPath) { const { freshCloudUrl } = await import("@/lib/synclab/cloud"); url = (await freshCloudUrl(s.cloudPath)) || url; }
+                return url ? captureFromUrl(url, s.start ?? 0, s.end ?? 1, s.reverse ?? false) : null;
+              }} />
               <Button
                 size="sm"
                 variant="ghost"
