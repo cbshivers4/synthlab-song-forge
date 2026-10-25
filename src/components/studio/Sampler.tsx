@@ -204,22 +204,24 @@ export function Sampler() {
   const [wMode, setWMode] = useState<"keep" | "repitch">("keep");
   const [wBusy, setWBusy] = useState(false);
   const [wPlaying, setWPlaying] = useState(false);
-  const previewRef = useRef<{ audio: HTMLAudioElement; url: string; blob: Blob; key: string } | null>(null);
+  const previewRef = useRef<{ blob: Blob; key: string } | null>(null);
+  const warpSourceRef = useRef<AudioBufferSourceNode | null>(null);
 
   // Leaving the sampler (switching tools) must silence the looping preview.
   useEffect(
     () => () => {
-      const pv = previewRef.current;
-      if (!pv) return;
-      pv.audio.pause();
-      URL.revokeObjectURL(pv.url);
+      try { warpSourceRef.current?.stop(); } catch { /* already stopped */ }
+      warpSourceRef.current?.disconnect();
+      warpSourceRef.current = null;
       previewRef.current = null;
     },
     [],
   );
 
   const stopPreview = () => {
-    previewRef.current?.audio.pause();
+    try { warpSourceRef.current?.stop(); } catch { /* already stopped */ }
+    warpSourceRef.current?.disconnect();
+    warpSourceRef.current = null;
     setWPlaying(false);
   };
 
@@ -250,22 +252,26 @@ export function Sampler() {
     if (previewRef.current?.key === key) return previewRef.current;
     const blob = await renderWarp(t);
     if (!blob) return null;
-    if (previewRef.current) URL.revokeObjectURL(previewRef.current.url);
-    const url = URL.createObjectURL(blob);
-    const audio = new Audio(url);
-    audio.loop = true;
-    previewRef.current = { audio, url, blob, key };
+    previewRef.current = { blob, key };
     return previewRef.current;
   };
 
   const previewWarp = async (t: Track) => {
     if (wPlaying) return stopPreview();
+    // Unlock audio in the click itself, before asynchronous rendering.
+    const engine = getEngine();
+    const ctx = engine.init();
     setWBusy(true);
     try {
       const pv = await getWarp(t);
       if (!pv) throw new Error("none");
-      pv.audio.currentTime = 0;
-      await pv.audio.play();
+      const buffer = await ctx.decodeAudioData(await pv.blob.arrayBuffer());
+      const source = ctx.createBufferSource();
+      source.buffer = buffer;
+      source.loop = true;
+      source.connect(engine.master ?? ctx.destination);
+      warpSourceRef.current = source;
+      source.start();
       setWPlaying(true);
     } catch {
       toast.error("SYNCLAB couldn't complete this operation.", { description: "Load a sample first, then try again." });
@@ -541,23 +547,15 @@ export function Sampler() {
                 size="sm"
                 variant="secondary"
                 className="h-9 touch-none gap-1.5 sm:h-7"
-                onPointerDown={(e) => {
-                  e.preventDefault();
-                  try {
-                    e.currentTarget.setPointerCapture(e.pointerId);
-                  } catch {
-                    /* pointer capture is unavailable in a few mobile webviews */
-                  }
-                  previewNote(track.id, s.rootNote);
-                }}
-                onPointerUp={() => stopSamples(track.id)}
-                onPointerCancel={() => stopSamples(track.id)}
-                onLostPointerCapture={() => stopSamples(track.id)}
-                onPointerLeave={(e) => {
-                  if (e.buttons > 0) stopSamples(track.id);
+                onClick={() => {
+                  const engine = getEngine();
+                  engine.init();
+                  engine.syncMixIfChanged(tracks);
+                  stopSamples(track.id);
+                  engine.playSample(track.id, { ...s, loop: false, oneShot: true }, s.rootNote);
                 }}
               >
-                <Play className="size-3.5" /> Hold to play
+                <Play className="size-3.5" /> Preview sample
               </Button>
               <Button size="sm" variant="ghost" className="h-9 gap-1.5 sm:h-7" onClick={() => stopSamples(track.id)}>
                 <Square className="size-3.5" /> Stop

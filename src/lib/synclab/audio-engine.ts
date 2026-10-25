@@ -1987,6 +1987,8 @@ export class SyncLabEngine {
   /** Renders the sampler's processed sound (trim, reverse, tune, sync, filter, fades) offline. Original stays untouched. */
   async renderSample(s: Parameters<SyncLabEngine["playSample"]>[1]): Promise<{ left: Float32Array; right: Float32Array; sampleRate: number } | null> {
     this.init();
+    // Saved samples may not have been played (and decoded) in this session yet.
+    if (!this.sampleBuffers.has(s.url)) await this.ensureBuffer(s.url);
     const base = s.reverse ? this.reversed(s.url) : this.sampleBuffers.get(s.url);
     if (!base) return null;
     const sync = s.syncToBpm && s.sampleBpm && s.sampleBpm > 0 ? this.tempo / s.sampleBpm : 1;

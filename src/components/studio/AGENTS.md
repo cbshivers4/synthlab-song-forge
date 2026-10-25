@@ -5,6 +5,7 @@ Every mixer channel and the master strip carry a pre-fader GAIN knob (Track.gain
 # Studio components
 
 Sampler and Pad Sampler share WaveformZoom for inspection-only zoom/scroll and decoded detail; chop/trim coordinates use the visible expanded waveform rectangle, including sideways phones, without changing source audio or stretch settings.
+Sampler whole-sample preview is click/keyboard activated and never captures notes; stretch preview unlocks Web Audio synchronously before rendering and releases its loop source on Stop/unmount, avoiding delayed media autoplay restrictions.
 
 Phone channel/project naming shares a screen-aligned NameEditDialog counter-rotated inside the body portal and measured by VisualViewport, keeping native keyboard typing visible without rotating the studio. Recording position derives from the shared transport and phone recording follows the timeline without changing playback.
 
