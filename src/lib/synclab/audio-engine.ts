@@ -127,6 +127,8 @@ export class SyncLabEngine {
   private buses = new Map<string, GainNode>();
   private busStates: Record<string, { volume: number; muted: boolean; gain?: number }> = {};
   private mixTracks: Track[] = [];
+  private mixerInputs = new WeakMap<ChannelStrip, string>();
+  private insertInputs = new WeakMap<ChannelStrip, PluginInstance[]>();
   private busMeters = new Map<string, AnalyserNode>();
   private auxReturns = new Map<string, GainNode>();
   private auxMeters = new Map<string, AnalyserNode>();
@@ -631,6 +633,9 @@ export class SyncLabEngine {
   setInserts(trackId: string, plugins: PluginInstance[]) {
     const ctx = this.init();
     const ch = this.channel(trackId);
+    // Store edits are immutable; note/name changes retain the rack reference.
+    if (this.insertInputs.get(ch) === plugins) return;
+    this.insertInputs.set(ch, plugins);
     const active = plugins.filter((pl) => !pl.bypass);
     const key = JSON.stringify(active.map((pl) => [pl.kind, pl.params.map((x) => x.value)]));
     if (key === ch.insertKey) return;
@@ -1560,6 +1565,11 @@ export class SyncLabEngine {
     for (const t of tracks) {
       const ch = this.channel(t.id);
       const audible = !t.muted && (!anySolo || t.solo);
+      const vca = t.vca ? this.vcaStates[t.vca] : undefined;
+      const busState = this.busStates[t.bus ?? "master"];
+      const inputs = JSON.stringify([t.gain ?? 1, t.volume, t.pan, audible, t.vca, vca?.volume, vca?.muted, t.bus ?? "master", busState?.volume, busState?.muted, t.sends?.reverb ?? 0, t.sends?.delay ?? 0, t.sends?.chorus ?? 0]);
+      if (this.mixerInputs.get(ch) === inputs) continue;
+      this.mixerInputs.set(ch, inputs);
       this.trackAudible.set(t.id, audible);
       const previousVca = this.trackVcas.get(t.id);
       if (previousVca !== t.vca) {
@@ -1572,7 +1582,6 @@ export class SyncLabEngine {
       }
       if (t.vca) this.trackVcas.set(t.id, t.vca);
       else this.trackVcas.delete(t.id);
-      const vca = t.vca ? this.vcaStates[t.vca] : undefined;
       ch.trim.gain.setTargetAtTime(clamp(t.gain ?? 1, 0, 2), this.ctx.currentTime, 0.02);
       ch.gain.gain.setTargetAtTime(audible && !vca?.muted ? t.volume * (vca?.volume ?? 1) : 0, this.ctx.currentTime, 0.02);
       for (const send of [ch.synthReverbScale, ch.synthChorusScale]) {
@@ -2360,8 +2369,9 @@ export class SyncLabEngine {
     const ctx = this.ctx;
     if (!ctx) return;
     const now = ctx.currentTime;
+    const byId = new Map(tracks.map(track => [track.id, track]));
     for (const [id, voices] of this.liveVoices) {
-      const patch = tracks.find(track => track.id === id)?.patch;
+      const patch = byId.get(id)?.patch;
       for (const voice of voices) {
         if (voice.end <= now) { voices.delete(voice); continue; }
         if (!patch || patch === voice.patch || patch.modular) continue;
@@ -2372,11 +2382,14 @@ export class SyncLabEngine {
     }
     for (const [key, voices] of this.liveDrums) {
       const [trackId, padId] = JSON.parse(key) as [string, string];
-      const pad = tracks.find(track => track.id === trackId)?.pads?.find(item => item.id === padId);
+      const pad = byId.get(trackId)?.pads?.find(item => item.id === padId);
       for (const voice of voices) {
         if (voice.end <= now) { voices.delete(voice); continue; }
         if (!pad || pad === voice.pad) continue;
-        voice.update(pad, now); voice.pad = pad;
+        // Sequencer edits must not rewrite sound controls or cancel filter envelopes.
+        const previous = voice.pad;
+        if (pad.volume !== previous.volume || pad.pan !== previous.pan || pad.pitch !== previous.pitch || pad.tone !== previous.tone || pad.filterType !== previous.filterType || pad.cutoff !== previous.cutoff || pad.resonance !== previous.resonance) voice.update(pad, now);
+        voice.pad = pad;
       }
       if (!voices.size) this.liveDrums.delete(key);
     }

@@ -1,5 +1,7 @@
 # Roadmap — Source-code audit & DAW repair
 
+- [x] Reduce playback edit work: channel-scoped caches skip unchanged mixer/rack inputs; sequence-only drum edits preserve live envelopes. Thirteen focused tests pass. Signed-in unsaved-session chop edits produce zero mixer writes/rack rebuilds; effect add/remove rebuilds only the affected rack while transport and sample output continue. Preview only; physical-device lag remains unmeasured.
+
 - [x] Restore shared sample/clip/drum routing and inserts after Stop without rebuilding existing channels. Eleven tests pass; signed-in unsaved-session whole-sample/stretch preview, chop press/release and preview after transport Stop produce real master output. Saved music untouched; preview only.
 - [ ] Confirm the reported silence on the user's physical output: not reproduced with the test WAV; requires checking the affected sample and device output on the live website. Screenshot shows input activity but no MIDI material or master output.
 
