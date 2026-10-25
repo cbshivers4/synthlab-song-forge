@@ -21,7 +21,7 @@ export function PresetNavigator({ options, current, onSelect, label, children }:
   }, [current]);
   const step = (direction: -1 | 1) => {
     const l = last.current;
-    const base = l && !l.pending && (current === l.seen || current === l.chosen) && options.includes(l.chosen) ? l.chosen : current;
+    const base = l && (l.pending || current === l.seen || current === l.chosen) && options.includes(l.chosen) ? l.chosen : current;
     const next = adjacentPreset(options, base, direction);
     if (next === undefined) return;
     last.current = { chosen: next, pending: true };
