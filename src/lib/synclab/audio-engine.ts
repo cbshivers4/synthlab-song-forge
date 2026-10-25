@@ -542,6 +542,16 @@ export class SyncLabEngine {
     return this.peakOf(ch?.meter);
   }
 
+  /** Restore mixer routing and inserts when Stop has retired a playback channel. */
+  private playbackChannel(id: string): ChannelStrip {
+    if (!this.channels.has(id)) {
+      this.syncMix(this.mixTracks);
+      const track = this.mixTracks.find(track => track.id === id);
+      if (track) this.setInserts(id, track.plugins ?? []);
+    }
+    return this.channel(id);
+  }
+
   channel(id: string): ChannelStrip {
     const ctx = this.init();
     let ch = this.channels.get(id);
@@ -2081,7 +2091,7 @@ export class SyncLabEngine {
       return;
     }
     const t0 = Math.max(when ?? ctx.currentTime, ctx.currentTime + 0.002);
-    const ch = this.channel(trackId);
+    const ch = this.playbackChannel(trackId);
 
     const src = ctx.createBufferSource();
     src.buffer = base;
@@ -2207,7 +2217,7 @@ export class SyncLabEngine {
     const decoded = this.sampleBuffers.get(c.url);
     if (!decoded) return false;
     const t0 = when ?? ctx.currentTime;
-    const ch = this.channel(trackId);
+    const ch = this.playbackChannel(trackId);
     const offset = clamp(c.offset ?? 0, 0, Math.max(0, decoded.duration - 0.01));
     const len = clamp(c.length ?? decoded.duration - offset, 0.01, decoded.duration - offset);
     const peak = clamp(c.gain ?? 1, 0, 2);
@@ -2938,14 +2948,8 @@ export class SyncLabEngine {
 
   playDrum(trackId: string, pad: DrumPad, velocity = 1, when?: number) {
     const ctx = this.init();
-    // A first tap (or a tap after Stop removed channels) must restore saved routing.
-    if (!this.channels.has(trackId)) {
-      this.syncMix(this.mixTracks);
-      const track = this.mixTracks.find(track => track.id === trackId);
-      if (track) this.setInserts(trackId, track.plugins ?? []);
-    }
     const t = Math.max(when ?? ctx.currentTime, ctx.currentTime + 0.002);
-    const ch = this.channel(trackId);
+    const ch = this.playbackChannel(trackId);
     const out = ctx.createGain();
     out.gain.value = pad.volume;
     const p = ctx.createStereoPanner();
