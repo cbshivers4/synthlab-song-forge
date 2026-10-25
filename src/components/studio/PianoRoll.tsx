@@ -1,7 +1,7 @@
 import { ClipboardPaste, Copy, MousePointer2, Pencil, Scissors, Trash2, Undo2, Redo2, ZoomIn, ZoomOut } from "lucide-react";
 import { movePianoNotes, pastePianoNotes } from "@/lib/synclab/piano-edit";
 import { capturedNote, loopRegion } from "@/lib/synclab/recording-region";
-import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
+import { canvasPoint } from "@/lib/synclab/canvas-point";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { keysSnapshot, subscribeKeys } from "@/lib/synclab/active-keys";
 
@@ -13,6 +13,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useStudio } from "@/lib/synclab/store";
 import { uid } from "@/lib/synclab/presets";
 import type { MidiNote, Track } from "@/lib/synclab/types";
+
+// Map the visible bounds, including native scroll offsets, into the sideways canvas.
+const editorRect = (el: HTMLElement) => {
+  const r = el.getBoundingClientRect();
+  const a = canvasPoint(r.left, r.top), b = canvasPoint(r.right, r.bottom);
+  return { left: Math.min(a.x,b.x), top: Math.min(a.y,b.y), width: Math.abs(b.x-a.x), height: Math.abs(b.y-a.y) };
+};
 
 const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 const isBlack = (p: number) => [1, 3, 6, 8, 10].includes(((p % 12) + 12) % 12);
@@ -110,7 +117,7 @@ export function PianoRoll({ track }: { track: Track }) {
   const posFromEvent = (e: React.PointerEvent | React.MouseEvent) => {
     const el = gridRef.current;
     if (!el) return null;
-    const r = canvasRect(el);
+    const r = editorRect(el);
     const pt = canvasPoint(e.clientX, e.clientY);
     const x = ((pt.x - r.left) / r.width) * steps;
     const row = Math.floor((pt.y - r.top) / ROW_H);
@@ -159,7 +166,7 @@ export function PianoRoll({ track }: { track: Track }) {
     // marquee select: pressed on empty grid and dragged
     const m = marq.current;
     if (m && !drag.current) {
-      const r = canvasRect(el);
+      const r = editorRect(el);
       const x = pt.x - r.left;
       const y = pt.y - r.top;
       if (m.active || Math.hypot(x - m.x, y - m.y) > 4) {
@@ -170,7 +177,7 @@ export function PianoRoll({ track }: { track: Track }) {
     }
     const d = drag.current;
     if (!d) return;
-    const stepPx = canvasRect(el).width / steps;
+    const stepPx = editorRect(el).width / steps;
     if (d.mode === "resize") {
       const nl = Math.max(grid, snap(d.length + (pt.x - d.startX) / stepPx) || grid);
       setNotes(track.id, notes.map((n) => (n.id === d.id ? capturedNote({ ...n, length: nl }, loopRegion(transport)) ?? n : n)));
@@ -189,7 +196,7 @@ export function PianoRoll({ track }: { track: Track }) {
       suppressClick.current = true;
       const el = gridRef.current;
       if (el) {
-        const r = canvasRect(el);
+        const r = editorRect(el);
         const stepPx = r.width / steps;
         const s0 = marquee.x0 / stepPx;
         const s1 = marquee.x1 / stepPx;
@@ -216,6 +223,7 @@ export function PianoRoll({ track }: { track: Track }) {
     setSel(pasted.map(n => n.id));
   };
   const handleKey = (e: React.KeyboardEvent) => {
+    if (e.defaultPrevented || e.isComposing) return;
     if ((e.target as HTMLElement).closest('input, select, textarea, [role="combobox"], [role="slider"]')) return;
     const mod = e.ctrlKey || e.metaKey;
     const key = e.key.toLowerCase();
@@ -452,7 +460,7 @@ export function PianoRoll({ track }: { track: Track }) {
             const ids = new Map(t.map((n, i) => [n.id, start + i * grid]));
             setNotes(
               track.id,
-              notes.map((n) => (ids.has(n.id) ? { ...n, step: ids.get(n.id)!, length: grid } : n)),
+              notes.map((n) => (ids.has(n.id) ? { ...n, step: ids.get(n.id) ?? n.step, length: grid } : n)),
             );
           }}
         >
@@ -476,7 +484,7 @@ export function PianoRoll({ track }: { track: Track }) {
             const t = [...targets()].sort((a, b) => a.pitch - b.pitch);
             if (!t.length) return;
             const off = new Map(t.map((n, i) => [n.id, i * 0.12]));
-            setNotes(track.id, notes.map((n) => (off.has(n.id) ? { ...n, step: n.step + off.get(n.id)! } : n)));
+            setNotes(track.id, notes.map((n) => (off.has(n.id) ? { ...n, step: n.step + (off.get(n.id) ?? 0) } : n)));
           }}
         >
           STRUM
@@ -529,7 +537,7 @@ export function PianoRoll({ track }: { track: Track }) {
             const groups = new Map<number, MidiNote[]>();
             t.forEach((n) => groups.set(Math.floor(n.step), [...(groups.get(Math.floor(n.step)) ?? []), n]));
             groups.forEach((g, st) => g.sort((a, b) => a.pitch - b.pitch).forEach((n, i) => off.set(n.id, st + Math.min(0.9, i * 0.15))));
-            setNotes(track.id, notes.map((n) => (off.has(n.id) ? { ...n, step: off.get(n.id)! } : n)));
+            setNotes(track.id, notes.map((n) => (off.has(n.id) ? { ...n, step: off.get(n.id) ?? n.step } : n)));
           }}
         >
           STRUM ↑
@@ -541,7 +549,7 @@ export function PianoRoll({ track }: { track: Track }) {
             const groups = new Map<number, MidiNote[]>();
             t.forEach((n) => groups.set(Math.floor(n.step), [...(groups.get(Math.floor(n.step)) ?? []), n]));
             groups.forEach((g, st) => g.sort((a, b) => b.pitch - a.pitch).forEach((n, i) => off.set(n.id, st + Math.min(0.9, i * 0.15))));
-            setNotes(track.id, notes.map((n) => (off.has(n.id) ? { ...n, step: off.get(n.id)! } : n)));
+            setNotes(track.id, notes.map((n) => (off.has(n.id) ? { ...n, step: off.get(n.id) ?? n.step } : n)));
           }}
         >
           STRUM ↓
@@ -578,7 +586,7 @@ export function PianoRoll({ track }: { track: Track }) {
             onPointerDown={(e) => {
               if (mode !== "select") return;
               e.currentTarget.setPointerCapture(e.pointerId);
-              const r = canvasRect(e.currentTarget);
+              const r = editorRect(e.currentTarget);
               const pt = canvasPoint(e.clientX, e.clientY);
               marq.current = { x: pt.x - r.left, y: pt.y - r.top, active: false };
             }}
@@ -611,6 +619,7 @@ export function PianoRoll({ track }: { track: Track }) {
               className="playhead-line pointer-events-none absolute top-0 bottom-0 w-[2px]"
               style={{ left: `${((transport.step % steps) / steps) * 100}%` }}
             />
+            <div className="pointer-events-none absolute inset-y-0 z-10 border-l border-dashed border-primary" style={{ left: `${cursor / steps * 100}%` }} />
             {marquee && (
               <div
                 className="pointer-events-none absolute z-10 border border-primary bg-primary/15"
@@ -662,7 +671,7 @@ export function PianoRoll({ track }: { track: Track }) {
             const bipolar = key === "bendLane";
             const draw = (e: React.PointerEvent<HTMLDivElement>) => {
               e.preventDefault();
-              const r = e.currentTarget.getBoundingClientRect();
+              const r = editorRect(e.currentTarget);
               let cur = [...(track[key] ?? [])];
               const put = (cx: number, cy: number) => {
                 const step = Math.max(0, Math.min(steps - 1, Math.floor(((cx - r.left) / r.width) * steps)));
@@ -671,8 +680,9 @@ export function PianoRoll({ track }: { track: Track }) {
                 cur = [...cur.filter((p) => p.step !== step), { step, value }].sort((a, b) => a.step - b.step);
                 updateTrack(track.id, { [key]: cur });
               };
-              put(e.clientX, e.clientY);
-              const mv = (ev: PointerEvent) => put(ev.clientX, ev.clientY);
+              const initial = canvasPoint(e.clientX, e.clientY);
+              put(initial.x, initial.y);
+              const mv = (ev: PointerEvent) => { const pt = canvasPoint(ev.clientX, ev.clientY); put(pt.x, pt.y); };
               const up = () => { window.removeEventListener("pointermove", mv); window.removeEventListener("pointerup", up); };
               window.addEventListener("pointermove", mv);
               window.addEventListener("pointerup", up);
@@ -712,8 +722,9 @@ export function PianoRoll({ track }: { track: Track }) {
                 onPointerDown={(e) => {
                   e.preventDefault();
                   setSel([n.id]);
-                  const el = e.currentTarget.parentElement!;
-                  const r = el.getBoundingClientRect();
+                  const el = e.currentTarget.parentElement;
+                  if (!el) return;
+                  const r = editorRect(el);
                   const set = (cy: number) =>
                     setNotes(
                       track.id,
@@ -721,8 +732,8 @@ export function PianoRoll({ track }: { track: Track }) {
                         x.id === n.id ? { ...x, velocity: Math.min(1, Math.max(0.05, 1 - (cy - r.top) / r.height)) } : x,
                       ),
                     );
-                  set(e.clientY);
-                  const mv = (ev: PointerEvent) => set(ev.clientY);
+                  set(canvasPoint(e.clientX,e.clientY).y);
+                  const mv = (ev: PointerEvent) => set(canvasPoint(ev.clientX,ev.clientY).y);
                   const up = () => {
                     window.removeEventListener("pointermove", mv);
                     window.removeEventListener("pointerup", up);
