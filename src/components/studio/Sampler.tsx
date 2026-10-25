@@ -334,7 +334,7 @@ export function Sampler() {
   };
   const releaseChop = (index: number) => {
     setHeld(null);
-    if (track && s && !s.oneShot) getEngine().stopVoiceKey(track.id, s.chopChoke ? `chop-choke-${s.chopChoke}` : `chop-${index}`);
+    if (track && s) getEngine().stopVoiceKey(track.id, s.chopChoke ? `chop-choke-${s.chopChoke}` : `chop-${index}`);
   };
   const chopPads = useMidiPads(`sampler:${track?.id ?? "none"}`, Math.min(64, chops.length), (i, velocity) => {
     if (!track || !s) return;

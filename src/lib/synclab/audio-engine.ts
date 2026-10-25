@@ -1940,6 +1940,7 @@ export class SyncLabEngine {
   private liveSamples = new Map<string, AudioBufferSourceNode[]>();
   /** voices grouped by an arbitrary key so pads can choke each other */
   private keyedSamples = new Map<string, AudioBufferSourceNode[]>();
+  private sampleTriggerVersions = new Map<string, number>();
 
   /** Decodes a dropped audio file, keeps the buffer and returns its display data. */
   async loadSampleFile(file: File | Blob, name: string) {
@@ -2063,6 +2064,9 @@ export class SyncLabEngine {
     voiceKey?: string,
   ) {
     if (voiceKey) this.stopVoiceKey(trackId, voiceKey);
+    const triggerKey = voiceKey ? `${trackId}|${voiceKey}` : trackId;
+    const version = this.sampleTriggerVersions.get(triggerKey) ?? 0;
+    const trackVersion = this.sampleTriggerVersions.get(trackId) ?? 0;
     const ctx = this.init();
     const base = s.reverse ? this.reversed(s.url) : this.sampleBuffers.get(s.url);
     if (!base) {
@@ -2071,7 +2075,7 @@ export class SyncLabEngine {
         const gen = this.transportGen;
         void this.ensureBuffer(s.url).then((b) => {
           // A transport stop while the decode was pending cancels the queued trigger.
-          if (b && gen === this.transportGen) this.playSample(trackId, s, midi, duration, velocity, undefined, voiceKey);
+          if (b && gen === this.transportGen && version === (this.sampleTriggerVersions.get(triggerKey) ?? 0) && trackVersion === (this.sampleTriggerVersions.get(trackId) ?? 0)) this.playSample(trackId, s, midi, duration, velocity, undefined, voiceKey);
         });
       }
       return;
@@ -2287,6 +2291,7 @@ export class SyncLabEngine {
   /** Stops only the voices started with this voice key (pad choke groups). */
   stopVoiceKey(trackId: string, voiceKey: string) {
     const kk = `${trackId}|${voiceKey}`;
+    this.sampleTriggerVersions.set(kk, (this.sampleTriggerVersions.get(kk) ?? 0) + 1);
     for (const src of this.keyedSamples.get(kk) ?? []) {
       try {
         src.stop();
@@ -2298,8 +2303,9 @@ export class SyncLabEngine {
   }
 
   stopSamples(trackId?: string) {
-    const ids = trackId ? [trackId] : [...this.liveSamples.keys()];
+    const ids = trackId ? [trackId] : [...new Set([...this.liveSamples.keys(), ...[...this.sampleTriggerVersions.keys()].map(key => key.split("|")[0] ?? key)])];
     for (const id of ids) {
+      this.sampleTriggerVersions.set(id, (this.sampleTriggerVersions.get(id) ?? 0) + 1);
       for (const src of this.liveSamples.get(id) ?? []) {
         try {
           src.stop();

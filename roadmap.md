@@ -1,5 +1,7 @@
 # Roadmap — Source-code audit & DAW repair
 
+- [x] Sampler chop pads stop on release even for one-shot samples; pending keyed decoding is cancelled on release. Pad Sampler already stops touch pads on release. Signed-in unsaved sampler press/release measured sound then zero output; five focused tests pass, build clean. Saved music untouched; preview only.
+
 - [x] Sampler whole-sample preview plays on one click without note capture; stretch preview uses gesture-unlocked Web Audio and decodes saved sources before rendering. Signed-in unsaved-session real audio verified for both previews and Stop (output returns to zero); six focused tests pass, build clean. Saved music untouched; preview only, physical devices unverified.
 
 - [x] Added shared previous/next preset arrows to synth, drum kits/saved sounds, effects, Touch lane sounds and modular racks; existing Touch loop arrows retained. Menus and manual-save behavior unchanged. Signed-in unsaved-session desktop synth/effect/drum and sideways-phone synth/drum round trips verified; 42 focused tests pass. Preview only; no saved projects overwritten or deleted.
