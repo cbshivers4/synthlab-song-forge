@@ -2366,6 +2366,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
               pendingInputStartRef.current = engine.startInputRecording(target.id, transportRef.current.monitor ?? false)
                 .then(() => {
                   if (generation !== recordingGenerationRef.current) return;
+                  recAudioStartRef.current = transportRef.current.playing ? heardStepPos() : null;
                   updateTrack(target.id, { recording: true });
                 }).catch((err: unknown) => {
                   updateTrack(target.id, { recording: false });
