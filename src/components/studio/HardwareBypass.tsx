@@ -9,7 +9,7 @@ export function BypassButton({ bypassed, onToggle, name, disabled = false }: { b
   </Button>;
 }
 
-export function HardwareBypass({ track, name }: { track?: Track; name?: string }) {
+export function HardwareBypass({ track, name }: { track?: Track | null; name?: string }) {
   const { updateTrack } = useStudio();
   return <BypassButton name={name ?? track?.name ?? "instrument"} bypassed={track?.deviceBypassed ?? false} disabled={!track} onToggle={() => { if (track) updateTrack(track.id, { deviceBypassed: !track.deviceBypassed }); }} />;
 }
