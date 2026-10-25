@@ -402,6 +402,7 @@ export function Sampler() {
     if (!track || !s || chops.length === 0) return [];
     const ctx = getEngine().init();
     const buf = await ctx.decodeAudioData(await (await fetch(s.url)).arrayBuffer());
+    centerOneSided(buf);
     const sr = buf.sampleRate;
     return chops.map((c, i) => {
       const end = chops[i + 1] ?? s.end;
