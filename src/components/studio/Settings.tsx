@@ -1,3 +1,4 @@
+import { getInputLatencyMs, setInputLatencyMs } from "@/lib/synclab/latency";
 import { stepsPerBar } from "@/lib/synclab/timebase";
 import { useEffect, useRef, useState } from "react";
 import { Slider } from "@/components/ui/slider";
@@ -197,6 +198,17 @@ function Num({
         {unit ? ` ${unit}` : ""}
       </span>
     </div>
+  );
+}
+
+function LatencyOffset() {
+  const [ms, setMs] = useState(10);
+  useEffect(() => setMs(getInputLatencyMs()), []);
+  return (
+    <label className="flex items-center gap-2 text-xs">
+      <input type="range" min={0} max={300} step={1} value={ms} aria-label="Mic recording offset in milliseconds" onChange={(e) => { const v = Number(e.target.value); setMs(v); setInputLatencyMs(v); }} className="w-32 accent-primary" />
+      <span className="w-12 text-right text-primary">{ms} ms</span>
+    </label>
   );
 }
 
@@ -522,6 +534,7 @@ export function Settings() {
         </Row>
         <Row label="Audio buffer" hint="Managed by the browser and operating system; no ASIO/Core Audio buffer control is available."><span className="text-xs text-muted-foreground">Automatic</span></Row>
         <Row label="Output latency" hint="Device-reported estimate; round-trip recording latency is not measured."><span className="text-xs text-primary">{getEngine().ctx ? `${Math.round(((getEngine().ctx?.baseLatency ?? 0) + (getEngine().ctx?.outputLatency ?? 0)) * 1000)} ms` : "Start playback to measure"}</span></Row>
+        <Row label="Mic recording offset" hint="Shifts new mic takes earlier to cancel your interface/mic delay. Raise it if vocals land behind the beat."><LatencyOffset /></Row>
         <Row label="Master tuning / background audio" hint="Global tuning is not implemented. Phones and browsers may suspend background playback."><span className="text-xs text-muted-foreground">Not available</span></Row>
       </TabsContent>
 

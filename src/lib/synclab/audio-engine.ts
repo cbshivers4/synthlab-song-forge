@@ -1536,6 +1536,12 @@ export class SyncLabEngine {
     }
   }
 
+  /** Live-note fast path: skip the full mix sync when nothing changed. */
+  syncMixIfChanged(tracks: Track[]) {
+    if (this.ctx && this.mixTracks === tracks) return;
+    this.syncMix(tracks);
+  }
+
   syncMix(tracks: Track[]) {
     this.mixTracks = tracks;
     if (!this.ctx) return;
@@ -1642,6 +1648,8 @@ export class SyncLabEngine {
   /* ---------------- input recording ---------------- */
   private recorder: MediaRecorder | null = null;
   private recStream: MediaStream | null = null;
+  /** AudioContext time the current mic recorder began capturing. */
+  recStartedAt = 0;
   private recChunks: Blob[] = [];
   private monitorNode: MediaStreamAudioSourceNode | null = null;
   private monitorGain: GainNode | null = null;
@@ -1817,6 +1825,7 @@ export class SyncLabEngine {
       rec.ondataavailable = (e) => e.data.size > 0 && this.recChunks.push(e.data);
       rec.start(200);
       this.recorder = rec;
+      this.recStartedAt = this.ctx?.currentTime ?? 0;
     })();
     try {
       await this.recordingStart;
