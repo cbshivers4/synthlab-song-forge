@@ -1,6 +1,6 @@
 # Roadmap — Source-code audit & DAW repair
 
-- [ ] Add Audio Converter to desktop/phone tools: load audio, convert/download WAV/MP3/AIFF/FLAC and device-supported M4A/Ogg/Opus; verify conversions without touching saved music.
+- [x] Audio Converter added to desktop Files/Audio/Tools and phone Tools: open/drop audio, waveform, output/rate/bitrate/mono WAV, convert/download/share and cancellation. Eight focused tests pass; signed-in unsaved WAV→MP3→WAV downloads verified with actual codecs, phone conversion succeeds. M4A decoding/encoding depends on device support (test Chromium cannot decode AAC and shows a warning); WAV/MP3/AIFF/FLAC available. Saved tracks untouched; preview only.
 
 - [x] Timeline menu creates mono/stereo WAV files from selected audio clips or loaded sampler sources without replacing originals. Nine focused tests pass; signed-in unsaved-session downloads verified as one/two channels, phone menu available, build clean. MIDI/drum patterns must first be recorded to audio; conversion excludes mixer inserts/master processing. Preview only.
 
