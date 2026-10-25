@@ -24,6 +24,7 @@ import { useIsMobile, useIsLandscapePhone } from "@/hooks/use-mobile";
 import { DrumRoll } from "./DrumRoll";
 import { DrumBulkControls } from "./DrumBulkControls";
 import { markLiveHit, neighbourLiveHits } from "@/lib/synclab/live-take";
+import { PresetNavigator } from "./PresetNavigator";
 
 const PRESET_KEY = "synclab.drumPresets.v1";
 type DrumPreset = { name: string; pads: Partial<DrumPad>[] };
@@ -261,6 +262,7 @@ export function DrumMachine({ track }: { track: Track }) {
   };
 
   const [presets, setPresets] = useState<DrumPreset[]>([]);
+  const [selectedPreset, setSelectedPreset] = useState("");
   useEffect(() => setPresets(readPresets()), []);
   const persist = (list: DrumPreset[]) => {
     setPresets(list);
@@ -279,6 +281,7 @@ export function DrumMachine({ track }: { track: Track }) {
   const loadPreset = (name: string) => {
     const pr = presets.find((p) => p.name === name);
     if (!pr) return;
+    setSelectedPreset(name);
     pads.forEach((p, i) => {
       const s = pr.pads.find((x) => x.name === p.name) ?? pr.pads[i];
       if (s) updatePad(track.id, p.id, s);
@@ -445,8 +448,9 @@ export function DrumMachine({ track }: { track: Track }) {
       {/* Toolbar */}
       <div hidden={!isMobile && phoneView !== "kit"} className="drum-kit-tools flex flex-wrap items-center gap-2">
         <span className="font-mono text-[10px] text-muted-foreground">ORIGINAL SYNTHESIS · MACHINE-INSPIRED</span>
+        <PresetNavigator label="drum kit" options={kitGroups.flatMap(g => g.items.map(k => k.id))} current={kit} onSelect={v => loadKit(v as DrumKitId)}>
         <Select value={kit} onValueChange={(v) => loadKit(v as DrumKitId)}>
-          <SelectTrigger className="w-56">
+          <SelectTrigger className="w-56" aria-label="Drum kit">
             <SelectValue placeholder="Kit" />
           </SelectTrigger>
           <SelectContent className="max-h-[420px]">
@@ -464,6 +468,7 @@ export function DrumMachine({ track }: { track: Track }) {
             ))}
           </SelectContent>
         </Select>
+        </PresetNavigator>
         <Button
           variant="outline"
           size="sm"
@@ -529,8 +534,9 @@ export function DrumMachine({ track }: { track: Track }) {
 
       <div hidden={!isMobile && phoneView !== "kit"} className="drum-presets flex flex-wrap items-center gap-2">
         <span className="label-xs">SOUND PRESET</span>
-        <Select value="" onValueChange={loadPreset}>
-          <SelectTrigger className="w-48">
+        <PresetNavigator label="drum sound preset" options={presets.map(p => p.name)} current={selectedPreset} onSelect={loadPreset}>
+        <Select value={selectedPreset} onValueChange={loadPreset}>
+          <SelectTrigger className="w-48" aria-label="Drum sound preset">
             <SelectValue placeholder={presets.length ? "Load preset…" : "No saved presets"} />
           </SelectTrigger>
           <SelectContent>
@@ -541,6 +547,7 @@ export function DrumMachine({ track }: { track: Track }) {
             ))}
           </SelectContent>
         </Select>
+        </PresetNavigator>
         <Button variant="secondary" size="sm" onClick={savePreset}>
           <Save className="size-4" /> Save preset
         </Button>
