@@ -3062,3 +3062,21 @@ body:has(.phone-console) [data-sonner-toast] button { pointer-events: auto; }
 :is(.fx-editor, .fx-face)[data-fx-skin="sidechain"] :is(.fx-control-deck, .fx-controls-bank) { border-left: 6px solid var(--hardware-trim); border-top: 2px solid var(--hardware-trim); }
 :is(.fx-face.hardware-device, .device-module, .fx-editor)[data-fx-skin="distmatrix"] { --hardware-face: var(--fx-graphite); --hardware-trim: var(--display-orange); --fx-deck: var(--fx-crimson); --fx-deck-ink: var(--hardware-ink); }
 :is(.fx-editor, .fx-face)[data-fx-skin="distmatrix"] :is(.fx-control-deck, .fx-controls-bank) { border: 2px solid var(--hardware-trim); background-image: repeating-linear-gradient(45deg, transparent 0 12px, color-mix(in oklab, var(--hardware-trim) 12%, transparent) 12px 14px); }
+
+/* Rack-mount hardware: vented top strip and per-device display placement. */
+.fx-face.hardware-device { border-radius: 2px; box-shadow: inset 0 1px 0 color-mix(in oklab, var(--hardware-silver-light) 40%, transparent), inset 0 -2px 0 var(--hardware-black), 0 3px 6px var(--hardware-shade); }
+.fx-rack-vents { height: 7px; margin-inline: 22px; background: repeating-linear-gradient(90deg, var(--hardware-black) 0 10px, transparent 10px 14px); opacity: 0.55; border-radius: 0 0 2px 2px; }
+.fx-workbench[data-display-pos][data-fx-family] { grid-template-columns: minmax(0,1fr); }
+.fx-workbench[data-display-pos="top"][data-fx-family] { grid-template-areas: "display" "controls" "steps" "footer" "motion"; }
+.fx-workbench[data-display-pos="bottom"][data-fx-family] { grid-template-areas: "controls" "display" "steps" "footer" "motion"; }
+.fx-workbench[data-display-pos="center"][data-fx-family] { grid-template-areas: "display" "controls" "steps" "footer" "motion"; }
+.fx-workbench[data-display-pos="center"] .fx-section-display { justify-self: center; width: min(100%, 560px); border-width: 3px; }
+@container (min-width: 760px) {
+  .fx-workbench[data-display-pos="left"][data-fx-family] { grid-template-columns: minmax(260px,0.9fr) minmax(0,1.1fr); grid-template-areas: "display controls" "steps steps" "footer footer" "motion motion"; }
+  .fx-workbench[data-display-pos="right"][data-fx-family] { grid-template-columns: minmax(0,1.1fr) minmax(260px,0.9fr); grid-template-areas: "controls display" "steps steps" "footer footer" "motion motion"; }
+  .fx-workbench:is([data-display-pos="left"],[data-display-pos="right"]) .fx-section-display { grid-template-columns: minmax(0,1fr); }
+}
+@container (max-width: 759px) {
+  .fx-workbench[data-display-pos="left"][data-fx-family] { grid-template-areas: "display" "controls" "steps" "footer" "motion"; }
+  .fx-workbench[data-display-pos="right"][data-fx-family] { grid-template-areas: "controls" "display" "steps" "footer" "motion"; }
+}

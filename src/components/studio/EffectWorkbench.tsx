@@ -6,6 +6,7 @@ import { EffectDisplay } from "./EffectDisplay";
 import { Scope } from "./Scope";
 import { XYPad } from "./XYPad";
 import { Button } from "@/components/ui/button";
+import { displayPosition, effectBrand, effectCategory } from "@/lib/synclab/effect-catalog";
 
 export function effectFamily(plugin: PluginInstance) {
   if (plugin.kind === "delay") return plugin.name.toLowerCase().includes("echo") ? "sequence" : "buffer";
@@ -37,7 +38,7 @@ export function EffectWorkbench({ plugin, onParam, midiId, midiPrefix = "plugin"
   const controls = (items: PluginParam[], title: string, section: string) => items.length > 0 && <div className={`fx-section fx-section-${section}`}>
     <h4>{title}</h4><div className="fx-section-knobs">{items.map(p => <Knob key={p.id} label={p.name} value={p.value} min={p.min} max={p.max} step={(p.max - p.min) / 200} unit={p.unit ? ` ${p.unit}` : ""} size={section === "core" ? 52 : 44} onChange={v => onParam(p.id, v)} midiTarget={{ id: midiId, param: `${midiPrefix}:${plugin.id}:${p.id}` }} />)}</div>
   </div>;
-  return <div className="fx-workbench" data-fx-family={family} data-display-kind={plugin.kind} data-window-variant={plugin.name.toLowerCase().includes("echo") ? "tape" : undefined}>
+  return <div className="fx-workbench" data-display-pos={displayPosition(plugin)} data-fx-family={family} data-display-kind={plugin.kind} data-window-variant={plugin.name.toLowerCase().includes("echo") ? "tape" : undefined}>
     <div className="fx-section fx-section-display"><h4>{family === "buffer" ? "DELAY BUFFER" : family === "space" ? "SPACE RESPONSE" : family === "sequence" ? "PATTERN RESPONSE" : "SIGNAL RESPONSE"}</h4>
       <EffectDisplay plugin={plugin} height={112} onParam={onParam} />
       <Scope scopeId={plugin.bypass ? `bypassed:${plugin.id}` : plugin.id} height={52} effectKind={plugin.kind} />
@@ -48,7 +49,7 @@ export function EffectWorkbench({ plugin, onParam, midiId, midiPrefix = "plugin"
     {controls(output, "OUTPUT & BLEND", "output")}
     </div>
     {steps.length > 0 && <div className="fx-section fx-section-steps"><h4>STEP LEVELS</h4><div className="fx-step-faders">{steps.map((p, i) => <label key={p.id}><input type="range" aria-label={p.name} min={p.min} max={p.max} step={0.01} value={p.value} onChange={e => onParam(p.id, Number(e.target.value))} /><span>{i + 1}</span></label>)}</div></div>}
-    <div className="fx-workbench-footer"><span>SYNCLAB · {plugin.kind.toUpperCase()}</span><Button variant="ghost" size="sm" aria-pressed={motion} onClick={() => setMotion(v => !v)}>X / Y</Button></div>
+    <div className="fx-workbench-footer"><span>SYNCLAB · {effectBrand(plugin).toUpperCase()} · {effectCategory(plugin.kind).toUpperCase()}</span><Button variant="ghost" size="sm" aria-pressed={motion} onClick={() => setMotion(v => !v)}>X / Y</Button></div>
     {motion && <div className="fx-section fx-section-motion"><XYPad plugin={plugin} onParam={onParam} /></div>}
   </div>;
 }
