@@ -1713,6 +1713,9 @@ body:has(.name-editor-dialog) [data-sonner-toast] { visibility: hidden; }
 .transport-glass[data-desktop-transport="true"] .transport-tempo { order: 3; }
 .transport-glass[data-desktop-transport="true"] .transport-glass-group, .transport-glass[data-desktop-transport="true"] .transport-glass-display { box-shadow: none; backdrop-filter: none; }
 .phone-edit-menu .timeline-edit-toolbar .arrangement-tool { width: 44px; height: 44px; }
+/* Phone keeps the tool buttons icon-only so the arrangement keeps its width. */
+.phone-edit-menu .timeline-edit-toolbar .arrangement-tool .tool-label,
+.phone-console .timeline-edit-toolbar .arrangement-tool .tool-label { display: none; }
 
 /* Phone rotate gate: gentle rocking phone icon while held upright. */
 @keyframes rotate-gate-rock {
