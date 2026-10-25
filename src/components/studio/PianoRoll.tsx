@@ -1,4 +1,4 @@
-import { ClipboardPaste, Copy, MousePointer2, Pencil, Scissors, Trash2, Undo2, Redo2, ZoomIn, ZoomOut } from "lucide-react";
+import { ClipboardPaste, Copy, MousePointer2, Pencil, Scissors, Trash2, Undo2, Redo2, ZoomIn, ZoomOut, ChevronLeft, ChevronRight } from "lucide-react";
 import { movePianoNotes, pastePianoNotes } from "@/lib/synclab/piano-edit";
 import { capturedNote, loopRegion } from "@/lib/synclab/recording-region";
 import { canvasPoint } from "@/lib/synclab/canvas-point";
@@ -9,6 +9,7 @@ const NO_KEYS: number[] = [];
 import { stepsPerBar } from "@/lib/synclab/timebase";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useStudio } from "@/lib/synclab/store";
 import { uid } from "@/lib/synclab/presets";
@@ -42,7 +43,7 @@ type Drag =
 
 export function PianoRoll({ track }: { track: Track }) {
   const isMobile = useIsMobile();
-  const { setNotes, previewNote, transport, setStepCount, updateTrack, undo, redo, canUndo, canRedo } = useStudio();
+  const { setNotes, previewNote, transport, setTransport, setStepCount, updateTrack, undo, redo, canUndo, canRedo } = useStudio();
   const litKeys = useSyncExternalStore(subscribeKeys, keysSnapshot, () => NO_KEYS);
   const ROW_H = isMobile ? 28 : 22;
   const [mode, setMode] = useState<"draw" | "select" | "erase">("draw");
@@ -61,11 +62,35 @@ export function PianoRoll({ track }: { track: Track }) {
   const [sel, setSel] = useState<string[]>([]);
   const [trackOct, setTrackOct] = useState(0);
   const gridRef = useRef<HTMLDivElement | null>(null);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const [scrollPosition, setScrollPosition] = useState(0);
+  const [scrollMax, setScrollMax] = useState(0);
   const drag = useRef<Drag>(null);
   const marq = useRef<{ x: number; y: number; active: boolean; add?: boolean } | null>(null);
   const [marquee, setMarquee] = useState<{ x0: number; y0: number; x1: number; y1: number } | null>(null);
 
   const steps = bars * stepsPerBar();
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const measure = () => { setScrollMax(Math.max(0, el.scrollWidth - el.clientWidth)); setScrollPosition(el.scrollLeft); };
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    if (el.firstElementChild) observer.observe(el.firstElementChild);
+    measure();
+    return () => observer.disconnect();
+  }, [steps, zoom]);
+  const scrollTo = (value: number) => {
+    const el = scrollRef.current;
+    if (el) el.scrollLeft = Math.max(0, Math.min(scrollMax, value));
+  };
+  const placeCursor = (e: React.PointerEvent<HTMLDivElement>) => {
+    const r = editorRect(e.currentTarget);
+    const pt = canvasPoint(e.clientX, e.clientY);
+    const step = Math.min(steps - grid, Math.max(0, Math.floor((pt.x - r.left) / r.width * steps / grid) * grid));
+    setCursor(step);
+    if (!transport.playing && !transport.recording) setTransport({ step });
+  };
 
   // the piano roll page length IS the track's loop length, so what you draw is
   // exactly what the timeline plays back
@@ -560,8 +585,14 @@ export function PianoRoll({ track }: { track: Track }) {
       </div>
 
       {/* editor */}
+      <div className="sticky top-0 z-20 flex h-10 items-center gap-3 border border-border bg-surface-2 px-2" aria-label="Piano roll horizontal navigation">
+        <Button variant="outline" size="icon" className="size-8 shrink-0" aria-label="Scroll notes left" title="Scroll notes left" disabled={scrollPosition <= 0} onClick={() => scrollTo(scrollPosition - (scrollRef.current?.clientWidth ?? 200) / 2)}><ChevronLeft className="size-4" /></Button>
+        <Slider aria-label="Horizontal note scroll" value={[scrollPosition]} min={0} max={Math.max(1, scrollMax)} step={1} disabled={!scrollMax} onValueChange={values => scrollTo(values[0] ?? 0)} className="min-w-0 flex-1" />
+        <Button variant="outline" size="icon" className="size-8 shrink-0" aria-label="Scroll notes right" title="Scroll notes right" disabled={scrollPosition >= scrollMax} onClick={() => scrollTo(scrollPosition + (scrollRef.current?.clientWidth ?? 200) / 2)}><ChevronRight className="size-4" /></Button>
+      </div>
       <div className="flex overflow-hidden rounded-[2px] border border-border bg-background">
         <div className="w-16 shrink-0 border-r border-border bg-surface-2">
+          <div className="flex h-9 items-center justify-center border-b border-border font-mono text-[10px] text-muted-foreground">BAR</div>
           {pitches.map((p) => (
             <button
               key={p}
@@ -579,8 +610,15 @@ export function PianoRoll({ track }: { track: Track }) {
           ))}
         </div>
 
-        <div className="relative min-w-0 flex-1 overflow-x-auto">
+        <div ref={scrollRef} aria-label="Scrollable piano notes" className="relative min-w-0 flex-1 overflow-x-scroll" onScroll={e => setScrollPosition(e.currentTarget.scrollLeft)}>
           <div style={{ width: `${zoom * 100}%`, minWidth: steps * (isMobile ? 28 : 20) }}> 
+          <div role="slider" tabIndex={0} aria-label="Note placement playhead" aria-valuemin={1} aria-valuemax={steps} aria-valuenow={cursor + 1} aria-valuetext={`Bar ${Math.floor(cursor / stepsPerBar()) + 1}, step ${cursor + 1}`} className="relative h-9 touch-none select-none border-b border-border bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring"
+            onPointerDown={e => { e.preventDefault(); e.currentTarget.setPointerCapture(e.pointerId); placeCursor(e); }}
+            onPointerMove={e => { if (e.currentTarget.hasPointerCapture(e.pointerId)) placeCursor(e); }}
+            onKeyDown={e => { if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return; e.preventDefault(); e.stopPropagation(); const step = Math.max(0, Math.min(steps - grid, cursor + (e.key === 'ArrowRight' ? grid : -grid))); setCursor(step); if (!transport.playing && !transport.recording) setTransport({ step }); }}>
+            {Array.from({ length: steps }, (_, s) => s % 4 === 0 ? <span key={s} className="pointer-events-none absolute inset-y-0 border-l border-border pl-1 pt-1 font-mono text-[10px] text-muted-foreground" style={{ left: `${s / steps * 100}%` }}>{s % stepsPerBar() === 0 ? Math.floor(s / stepsPerBar()) + 1 : '·'}</span> : null)}
+            <span className="pointer-events-none absolute inset-y-0 z-10 border-l-2 border-[var(--playhead)]" style={{ left: `${cursor / steps * 100}%` }}><span className="absolute -left-1.5 top-0 h-3 w-3 bg-[var(--playhead)] [clip-path:polygon(0_0,100%_0,50%_100%)]" /></span>
+          </div>
           <div
             ref={gridRef}
             className="relative select-none bg-background"
@@ -621,10 +659,10 @@ export function PianoRoll({ track }: { track: Track }) {
               />
             ))}
             <div
-              className="playhead-line pointer-events-none absolute top-0 bottom-0 w-[2px]"
+              className={`playhead-line pointer-events-none absolute top-0 bottom-0 z-20 w-[2px] ${transport.playing || transport.recording ? '' : 'hidden'}`}
               style={{ left: `${((transport.step % steps) / steps) * 100}%` }}
             />
-            <div className="pointer-events-none absolute inset-y-0 z-10 border-l border-dashed border-primary" style={{ left: `${cursor / steps * 100}%` }} />
+            <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 z-20 w-[2px] bg-[var(--playhead)]" style={{ left: `${cursor / steps * 100}%` }} />
             {marquee && (
               <div
                 className="pointer-events-none absolute z-10 border border-primary bg-primary/15"

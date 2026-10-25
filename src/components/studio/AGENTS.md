@@ -11,6 +11,7 @@ Phone channel/project naming shares a screen-aligned NameEditDialog counter-rota
 Timeline selection exposes shared track actions; synth taps open the piano roll while empty-lane taps with copied material offer a snapped destination independently of the playhead. Portal events and drag movement must not trigger editor selection.
 
 PianoRoll owns focused note shortcuts and a session-only note clipboard; single-tap Draw, Select and Erase modes use loop-bounded helpers. Coordinate mapping derives visible canvas bounds so native phone scrolling does not displace note edits; deletion only removes explicit selections.
+PianoRoll keeps horizontal navigation above the grid and a shared-width draggable ruler for its placement cursor; stopped ruler seeks use the existing transport, while playback/recording placement never interrupts audio.
 
 EQ and Pro EQ share EqGrid and scoped eq-workstation/eq-chart tokens for their frequency-display presentation; keep response paths parameter-derived and analyser drawing at 20 fps, without changing DSP or adding simulated spectra.
 
