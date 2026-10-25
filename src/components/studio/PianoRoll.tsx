@@ -62,7 +62,7 @@ export function PianoRoll({ track }: { track: Track }) {
   const [trackOct, setTrackOct] = useState(0);
   const gridRef = useRef<HTMLDivElement | null>(null);
   const drag = useRef<Drag>(null);
-  const marq = useRef<{ x: number; y: number; active: boolean } | null>(null);
+  const marq = useRef<{ x: number; y: number; active: boolean; add?: boolean } | null>(null);
   const [marquee, setMarquee] = useState<{ x0: number; y0: number; x1: number; y1: number } | null>(null);
 
   const steps = bars * stepsPerBar();
