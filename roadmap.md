@@ -1,5 +1,7 @@
 # Roadmap — Source-code audit & DAW repair
 
+- [ ] Make piano-roll placement, selection, deletion, copy and paste easy on desktop and phone; verify loop-bounded note edits and live interactions.
+
 - [x] Repaired Stop/finalization including pending microphone starts, same-channel material paste and clipboard controls, and pitch-preserving right-edge extension with song growth. Signed-in saved-project recording/Stop/paste/stretch verified on desktop and sideways phone; 24 related tests pass. Phone notifications no longer intercept timeline taps. Preview only; physical devices unverified.
 
 - [x] Repaired phone first-gesture/interrupted audio unlock with valid silent PCM and restored drum routing/inserts after cold start or Stop; 11 tests pass, signed-in phone-sized saved-project taps/patterns/after-Stop taps produce nonzero master output. Physical iPhone audio remains unverified; preview only.
