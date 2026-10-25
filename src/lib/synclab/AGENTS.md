@@ -20,3 +20,4 @@ Live sound edits use engine-owned, expiring voice handles through syncSoundContr
 - Latency: heardStepPos subtracts outputDelay(ctx); mic takes use alignedTake with the device-local input offset (latency.ts); live notes call syncMixIfChanged so per-note work stays minimal.
 
 Interface takes recorded on one side only (left-only or right-only stereo) are centred when decoded into sampleBuffers via centerOneSided, so samples/clips play from both speakers; real stereo is untouched.
+Creative hardware effects (creative-fx.ts) each build their own real signal path between one input and one output node (insert size 2), with their own params, 10 recipes and CSS skin; stereo matrices must upmix mono before splitting.
