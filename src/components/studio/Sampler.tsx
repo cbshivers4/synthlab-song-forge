@@ -622,6 +622,11 @@ export function Sampler() {
               </Button>
             </div>
           </div>
+          {sampleIssue && (
+            <p role="alert" className="rounded-md border border-destructive/60 bg-destructive/15 px-3 py-2 text-xs text-foreground">
+              {sampleIssue}
+            </p>
+          )}
 
           <div className="sticky top-0 z-30 space-y-1 border-b border-border bg-background pb-2" aria-label="Sample waveform editor">
             <div className="flex items-center justify-between gap-2 py-1">
