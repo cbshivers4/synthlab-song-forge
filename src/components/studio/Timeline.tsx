@@ -894,8 +894,10 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
   const selectForEditing = () => {
     select(track.id);
     setPastePosition(null);
-    if (track.kind === "instrument" || track.kind === "midi") setPanel("piano");
-    else setMenuOpen(true);
+    if (track.kind === "instrument" || track.kind === "midi") {
+      setPanel("piano");
+      window.setTimeout(() => window.dispatchEvent(new CustomEvent("synclab:selected-track-menu", { detail: track.id })), 0);
+    } else setMenuOpen(true);
   };
   const gestureRef = useRef<{ x: number; y: number; timer: number | null; moved: boolean } | null>(null);
   const suppressClickRef = useRef(false);
