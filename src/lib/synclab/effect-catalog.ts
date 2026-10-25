@@ -1,4 +1,11 @@
 import type { PluginDef, PluginInstance, PluginKind } from "./types";
+import { BUILT_IN_PLUGINS } from "./plugins";
+
+/** Saved projects may predate newer devices; menus always include the current factory catalog. */
+export function availableEffects(installed: PluginDef[]): PluginDef[] {
+  const factoryIds = new Set(BUILT_IN_PLUGINS.map(def => def.id));
+  return [...BUILT_IN_PLUGINS, ...installed.filter(def => !factoryIds.has(def.id))];
+}
 
 /** Browser categories for every effect device. */
 export const EFFECT_CATEGORIES = [

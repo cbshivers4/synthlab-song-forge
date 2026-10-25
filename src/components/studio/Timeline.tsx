@@ -89,6 +89,8 @@ import { toast } from "sonner";
 import { clipFromLocalFile } from "@/lib/synclab/local-files";
 import { openTrackSettings } from "@/components/studio/TrackSettingsDialog";
 import { InsertRack } from "./Mixer";
+import { EffectMenuItems } from "./EffectPicker";
+import { availableEffects } from "@/lib/synclab/effect-catalog";
 import { BUILT_IN_PLUGINS } from "@/lib/synclab/plugins";
 import { SectionLane } from "./SectionLane";
 import { useStudio } from "@/lib/synclab/store";
@@ -1115,7 +1117,7 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
       toast("Drop tools below the tracks", { description: "That area creates a new channel for the tool." });
       return;
     }
-    const def = installedPlugins.find((d) => d.id === payload.defId);
+    const def = availableEffects(installedPlugins).find((d) => d.id === payload.defId);
     if (def) {
       addPlugin(track.id, def);
       select(track.id);
@@ -1424,6 +1426,7 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
               }}><Trash2 className="size-4" /> Delete selected part</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={beginRename}>Rename</DropdownMenuItem>
+              <EffectMenuItems effects={availableEffects(installedPlugins)} onAdd={def => { addPlugin(track.id, def); toast.success(`${def.name} added to ${track.name}`); }} />
               <DropdownMenuLabel className="text-[10px] text-muted-foreground">Audio file{makingFile ? " · creating…" : fileClip ? ` · ${fileClip.name}` : track.sampler ? " · sample" : " · select an audio clip"}</DropdownMenuLabel>
               {editorPanel === "synth" && (
                 <DropdownMenuSub><DropdownMenuSubTrigger><Sliders className="size-4" /> Open instrument</DropdownMenuSubTrigger><DropdownMenuSubContent className="min-w-60">
