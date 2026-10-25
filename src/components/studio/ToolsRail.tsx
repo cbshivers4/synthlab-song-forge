@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import { Film } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { addLocalFolder, getLocalFile, getLocalFolders, getPreviewAnalyser, onFoldersChange, onPreviewChange, pickFolder, playPreview, stopPreview } from "@/lib/synclab/local-files";
+import { addLocalFolder, forgetRememberedFolder, getLocalFile, getLocalFolders, getPreviewAnalyser, onFoldersChange, onPreviewChange, pickFiles, pickFolder, playPreview, reconnectFolder, rememberedFolders, removeLocalFolder, stopPreview, type RememberedFolder } from "@/lib/synclab/local-files";
 import { useStudio, type PanelId } from "@/lib/synclab/store";
 import { useApp } from "@/lib/synclab/app-state";
 import type { TrackKind } from "@/lib/synclab/types";
@@ -162,7 +162,26 @@ export function ToolsRail() {
   const [folders, setFolders] = useState(getLocalFolders);
   const [playingFile, setPlayingFile] = useState<string | null>(null);
   const [openFolders, setOpenFolders] = useState<Record<string, boolean>>({});
-  useEffect(() => onFoldersChange(() => setFolders(getLocalFolders())), []);
+  const [remembered, setRemembered] = useState<RememberedFolder[]>([]);
+  useEffect(() => {
+    const refresh = () => { setFolders(getLocalFolders()); void rememberedFolders().then(setRemembered); };
+    refresh();
+    return onFoldersChange(refresh);
+  }, []);
+  const openComputerFiles = async () => {
+    const f = await pickFiles();
+    if (!f) return;
+    addLocalFolder(f);
+    setOpenFolders((o) => ({ ...o, [f.id]: true }));
+  };
+  const reopen = async (r: RememberedFolder) => {
+    try {
+      const f = await reconnectFolder(r.id);
+      if (f) setOpenFolders((o) => ({ ...o, [f.id]: true }));
+    } catch (err) {
+      toast.error(`Couldn't reopen ${r.name}`, { description: err instanceof Error ? err.message : undefined });
+    }
+  };
   useEffect(() => onPreviewChange(setPlayingFile), []);
 
   const openComputerFolder = async () => {
@@ -346,9 +365,24 @@ export function ToolsRail() {
                           <Plus className="size-3.5 shrink-0" />
                           <span className="font-medium tracking-wide">Open a folder…</span>
                         </button>
+                        <button
+                          type="button"
+                          onClick={() => void openComputerFiles()}
+                          className="flex w-full items-center gap-2 rounded-[3px] px-2 py-1.5 text-left text-xs text-primary transition-colors hover:bg-surface-2"
+                        >
+                          <Plus className="size-3.5 shrink-0" />
+                          <span className="font-medium tracking-wide">Add audio files…</span>
+                        </button>
+                        {remembered.map((r) => (
+                          <div key={r.id} className="flex items-center gap-1 px-2 py-1 text-xs text-muted-foreground">
+                            <FolderOpen className="size-3.5 shrink-0 opacity-60" />
+                            <button type="button" onClick={() => void reopen(r)} title="Allow access again and list its files" className="min-w-0 flex-1 truncate text-left hover:text-foreground">{r.name} · <span className="text-primary">Reopen</span></button>
+                            <button type="button" aria-label={`Forget ${r.name}`} onClick={() => void forgetRememberedFolder(r.id).then(() => rememberedFolders().then(setRemembered))} className="px-1 hover:text-foreground">×</button>
+                          </div>
+                        ))}
                         {folders.length === 0 ? (
                           <p className="px-2 text-[10px] leading-snug text-muted-foreground/80">
-                            No folders open yet. Files stay on your device and clear when you reload.
+                            Open a folder or add files from your computer. They stay on your device; preview with ▶, then drag a file onto a track.
                           </p>
                         ) : (
                           folders.map((f) => {
@@ -366,6 +400,7 @@ export function ToolsRail() {
                                   <span className="min-w-0 flex-1 truncate font-medium tracking-wide">{f.name}</span>
                                   <span className="shrink-0 font-mono text-[8px] text-muted-foreground/70">{f.files.length}</span>
                                 </button>
+                                {isOpen && <button type="button" onClick={() => removeLocalFolder(f.id)} className="ml-6 px-2 text-[9px] text-muted-foreground hover:text-foreground">Close folder</button>}
                                 {isOpen && (
                                   <div className="ml-4 border-l border-border/70">
                                     {f.files.map((x) => {
