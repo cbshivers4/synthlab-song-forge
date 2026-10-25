@@ -220,11 +220,28 @@ const MORE_TAPE_RECIPES: Recipe[] = [
   ["Percussion Tape Bounce", { time: 165, feedback: 0.5, tone: 5800, lowcut: 450, mix: 0.26 }],
 ];
 
+const KEEP = new Set(["output", "gain", "ceiling", "makeup", "input"]);
+const CHARACTERS: [string, (i: number) => number][] = [
+  ["Gentle Touch", i => 0.22 + (i % 3) * 0.08],
+  ["Pushed Hard", i => 0.78 + (i % 3) * 0.07],
+  ["Low Range Color", i => (i % 2 ? 0.38 : 0.12)],
+  ["Upper Range Color", i => (i % 2 ? 0.62 : 0.9)],
+];
+/** Four range-spanning factory settings per device; integer switches keep their default. */
+function characterRecipes(kind: PluginKind): Recipe[] {
+  const params = PARAMS_BY_KIND[kind]();
+  return CHARACTERS.map(([name, at]) => [name, Object.fromEntries(params.flatMap((q, i) => {
+    const integer = Number.isInteger(q.min) && Number.isInteger(q.max) && Number.isInteger(q.value) && q.max - q.min <= 32;
+    if (integer || KEEP.has(q.id)) return [];
+    return [[q.id, Math.round((q.min + at(i) * (q.max - q.min)) * 1000) / 1000]];
+  }))] as Recipe);
+}
+
 export function effectPresets(plugin: Pick<PluginInstance, "kind" | "name">): EffectPreset[] {
   const defaults = Object.fromEntries(PARAMS_BY_KIND[plugin.kind]().map(p => [p.id, p.value]));
   const tapeEcho = plugin.kind === "delay" && plugin.name.toLowerCase().includes("echo");
   const recipes = tapeEcho ? [...TAPE_RECIPES, ...MORE_TAPE_RECIPES] : [...RECIPES[plugin.kind], ...MORE_RECIPES[plugin.kind]];
-  return [["Default", {}] as Recipe, ...recipes].map(([name, values], index) => ({ id: `${plugin.kind}:${name}:${index}`, name, values: { ...defaults, ...values } }));
+  return [["Default", {}] as Recipe, ...recipes, ...characterRecipes(plugin.kind)].slice(0, 15).map(([name, values], index) => ({ id: `${plugin.kind}:${name}:${index}`, name, values: { ...defaults, ...values } }));
 }
 
 /** Match parameter values rather than local selection, so manual saves and all editors agree. */

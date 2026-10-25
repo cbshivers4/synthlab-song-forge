@@ -7,7 +7,7 @@ describe("effect-specific preset recall", () => {
     it(`${definition.name} recalls only its own complete, in-range presets`, () => {
       const plugin = instantiate(definition);
       const presets = effectPresets(plugin);
-      expect(presets).toHaveLength(11);
+      expect(presets).toHaveLength(15);
       expect(new Set(presets.map(p => p.id)).size).toBe(presets.length);
       expect(new Set(presets.map(p => JSON.stringify(p.values))).size).toBe(presets.length);
       for (const preset of presets) {
