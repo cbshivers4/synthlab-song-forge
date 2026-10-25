@@ -12,7 +12,8 @@ function setup() {
   engine.ctx = ctx;
   vi.spyOn(engine, "init").mockReturnValue(ctx);
   vi.spyOn(engine, "busNode").mockReturnValue(node() as unknown as GainNode);
-  engine.sampleBuffers.set("tone.wav", { duration: 3 } as AudioBuffer);
+  const buffers = Reflect.get(engine, "sampleBuffers") as Map<string, AudioBuffer>;
+  buffers.set("tone.wav", { duration: 3 } as AudioBuffer);
   const inserts = vi.spyOn(engine, "setInserts").mockImplementation(() => {});
   const track = { id: "sample", kind: "sampler", volume: 0.7, gain: 1.3, pan: -0.2, bus: "instruments", sends: { reverb: 0.2, delay: 0.1, chorus: 0 }, muted: false, solo: false, plugins: [] } as unknown as Track;
   const tracks = [track];
@@ -47,9 +48,12 @@ describe("sample playback routing after Stop", () => {
   });
 
   it("retains intentional mute rather than bypassing the mixer on a cold preview", () => {
+    vi.useFakeTimers();
+    vi.stubGlobal("window", { setTimeout });
     const { engine, track } = setup();
     engine.syncMix([{ ...track, muted: true }]);
-    engine.channels.delete("sample");
+    engine.silenceChannels(["sample"]);
+    vi.advanceTimersByTime(35);
     engine.playSample("sample", sample, 60);
     expect(engine.channel("sample").gain.gain.setTargetAtTime).toHaveBeenLastCalledWith(0, 2, 0.02);
   });
