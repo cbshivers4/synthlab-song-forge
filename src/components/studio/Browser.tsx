@@ -842,7 +842,7 @@ export function Browser() {
 
       {/* PLUGINS */}
       <div>
-        <FolderHeader id="plugins" icon={<Waves className="size-3 text-primary" />} label="PLUGINS" count={EFFECT_PLUGINS.length} hasMatch={filteredPlugins.length > 0} />
+        <FolderHeader id="plugins" icon={<Waves className="size-3 text-primary" />} label="SYNTH FX" count={EFFECT_PLUGINS.length} hasMatch={filteredPlugins.length > 0} />
         {isOpen("plugins", filteredPlugins.length > 0) && (
           <div className="ml-3 border-l-2 border-border">
             <p className="px-2 py-1 text-[9px] text-muted-foreground">Click to insert on the selected instrument channel.</p>
