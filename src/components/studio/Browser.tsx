@@ -827,7 +827,6 @@ export function Browser() {
                       const target = selected ?? tracks[0];
                       if (!target) { toast("Add a track first"); return; }
                       addPlugin(target.id, d);
-                      toast.success(`${effectBrand(d)} added`, { description: `on ${target.name}` });
                     }}
                     className="flex w-full cursor-grab items-center gap-2 px-2 py-1 text-left hover:bg-primary/10 active:cursor-grabbing"
                   >

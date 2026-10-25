@@ -1118,7 +1118,6 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
     const def = installedPlugins.find((d) => d.id === payload.defId);
     if (def) {
       addPlugin(track.id, def);
-      toast.success(`${def.name} added`, { description: `on ${track.name}` });
       select(track.id);
       setPanel("plugins");
     }
