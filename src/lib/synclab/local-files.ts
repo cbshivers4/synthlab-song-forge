@@ -4,7 +4,7 @@ import type { AudioClip as Clip } from "./types";
 
 /** Audio files read from a folder on the user's computer (kept in memory for this session only). */
 export type LocalFile = { id: string; name: string; path: string; size: number; file: File };
-export type LocalFolder = { id: string; name: string; files: LocalFile[] };
+export type LocalFolder = { id: string; name: string; files: LocalFile[]; handle?: DirHandle };
 
 export const AUDIO_EXT = /\.(mp3|wav|wave|aif|aiff|m4a|aac|ogg|flac|webm)$/i;
 const registry = new Map<string, LocalFile>();
@@ -19,12 +19,73 @@ export function addLocalFolder(f: LocalFolder) {
   void import("./media-library").then(({ retainMediaInBackground }) => {
     for (const item of f.files) if (/\.mp3$/i.test(item.name)) retainMediaInBackground(item.file, item.name);
   });
-  folders = [f, ...folders];
+  folders = [f, ...folders.filter((x) => x.id !== f.id)];
+  if (f.handle) void rememberHandle(f.id, f.name, f.handle);
   emitFolders();
 }
 export function removeLocalFolder(id: string) {
   folders = folders.filter((f) => f.id !== id);
+  void forgetHandle(id);
   emitFolders();
+}
+
+/* ---------- remembered folders (Chrome/Edge folder access survives reloads) ---------- */
+const DB = "synclab-local-folders";
+function db(): Promise<IDBDatabase | null> {
+  if (typeof indexedDB === "undefined") return Promise.resolve(null);
+  return new Promise((resolve) => {
+    const req = indexedDB.open(DB, 1);
+    req.onupgradeneeded = () => req.result.createObjectStore("handles");
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => resolve(null);
+  });
+}
+async function tx<T>(mode: IDBTransactionMode, fn: (s: IDBObjectStore) => IDBRequest<T>): Promise<T | undefined> {
+  const d = await db();
+  if (!d) return undefined;
+  return new Promise((resolve) => {
+    try {
+      const r = fn(d.transaction("handles", mode).objectStore("handles"));
+      r.onsuccess = () => resolve(r.result);
+      r.onerror = () => resolve(undefined);
+    } catch { resolve(undefined); }
+  });
+}
+async function rememberHandle(id: string, name: string, handle: DirHandle) { await tx("readwrite", (s) => s.put({ id, name, handle }, id)); }
+async function forgetHandle(id: string) { await tx("readwrite", (s) => s.delete(id)); }
+export type RememberedFolder = { id: string; name: string };
+/** Folders opened before a reload that are not open now; reopening needs one click to re-allow access. */
+export async function rememberedFolders(): Promise<RememberedFolder[]> {
+  const all = (await tx("readonly", (s) => s.getAll() as IDBRequest<{ id: string; name: string }[]>)) ?? [];
+  return all.filter((r) => !folders.some((f) => f.id === r.id)).map((r) => ({ id: r.id, name: r.name }));
+}
+export async function forgetRememberedFolder(id: string) { await forgetHandle(id); }
+/** Must run from a click: the browser asks to allow reading the folder again. */
+export async function reconnectFolder(id: string): Promise<LocalFolder | null> {
+  const rec = await tx("readonly", (s) => s.get(id) as IDBRequest<{ id: string; name: string; handle: DirHandle & { requestPermission?: (o: { mode: string }) => Promise<string> } } | undefined>);
+  if (!rec) return null;
+  const perm = await rec.handle.requestPermission?.({ mode: "read" });
+  if (perm && perm !== "granted") throw new Error("Access to that folder was not allowed.");
+  const out: { file: File; path: string }[] = [];
+  await walk(rec.handle, "", out, 0);
+  const f = { ...toFolder(rec.name, out), id, handle: rec.handle };
+  addLocalFolder(f);
+  return f;
+}
+
+/** Pick individual audio files (works in every browser). */
+export function pickFiles(): Promise<LocalFolder | null> {
+  return new Promise((resolve) => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.multiple = true;
+    input.accept = "audio/*,.wav,.mp3,.aif,.aiff,.flac,.ogg,.m4a";
+    input.onchange = () => {
+      const list = Array.from(input.files ?? []);
+      resolve(list.length ? toFolder(list.length === 1 ? list[0]!.name : `${list.length} files`, list.map((f) => ({ file: f, path: f.name }))) : null);
+    };
+    input.click();
+  });
 }
 export const onFoldersChange = (fn: () => void) => {
   folderListeners.add(fn);
@@ -60,7 +121,7 @@ export async function pickFolder(): Promise<LocalFolder | null> {
       const dir = await w.showDirectoryPicker();
       const out: { file: File; path: string }[] = [];
       await walk(dir, "", out, 0);
-      return toFolder(dir.name, out);
+      return { ...toFolder(dir.name, out), handle: dir };
     } catch (e) {
       if ((e as Error)?.name === "AbortError") return null;
       /* blocked inside the preview frame — fall back to the input */
