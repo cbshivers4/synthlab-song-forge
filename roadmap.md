@@ -1,5 +1,7 @@
 # Roadmap — Source-code audit & DAW repair
 
+- [x] Ordinary timeline/part/keyboard Delete preserves channels and sibling bars through shared bounded repeat expansion; recording retains editable lanes, instrument changes restore live sound, loop button shows selected state without seeking playback. Mixer meters share true -48…+6 dB scale/clip latch, track faders boost to 1.2, loop band is brighter, transport labels identify Learn and Recording options. Signed-in desktop/phone part deletion, fader changes and real output increase verified; instrument/preset additions during recording verified on both. 30 related tests pass; preview only, physical devices unverified.
+
 - [x] Phone channel/recent-project naming uses readable screen-aligned Save/Cancel dialogs, constrained to the visible keyboard area; signed-in typing and channel rename verified at full/reduced phone sizes. Recording shows persistent current bar/beat, next-measure countdown and Stop; zoomed timeline follows the recording cursor (scroll 781px), live position and Stop verified. 18 related tests pass; preview only, physical native keyboards unverified.
 
 - [x] Timeline selection exposes Edit/Copy/Cut/Paste/Delete, with independent tap-location/playhead paste and single-tap synth piano-roll opening. Signed-in saved-project audio copy/paste/delete and synth selection verified on desktop and sideways phone; Edit opens the real clip editor. Phone menu stays within the screen; 36 related tests pass. Preview only; physical devices unverified.

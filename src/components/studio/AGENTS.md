@@ -19,6 +19,7 @@ Rack and compact effect modules share data-fx-skin tokens and data-fx-variant fo
 Drum artwork uses semantic SVG; sort copies and banks by stable IDs so pad identity stays consistent.
 
 WorkflowBar reuses shared recording, clipboard, take and routing actions; only explicit active clips/regions are part targets, so deleting a part never removes its channel. Keep the bar shared by phone and desktop without duplicating transport state.
+Timeline menus, part menus and shortcuts share deleteSelectedPart: expand repeating MIDI/drum material before bounded deletion so sibling bars survive; only explicit Delete track removes a channel. Mixer meter ticks and segments share the -48…+6 dB scale and raw-signal clip latch to avoid contradictory overload indicators.
 
 Settings diagnostics snapshots only device preferences across explicit reloads; independent test capture is released and never takes shared studio mic ownership. Access checks never replace MIDI handlers or audio routing, so live work stays intact.
 MIDI settings uses shared controller profiles and store input selection; illustrations distinguish available profiles from reported inputs, and category navigation remains alongside the panel to match the workstation reference without duplicate MIDI state.

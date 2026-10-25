@@ -1,4 +1,4 @@
-import { levelColor, peakOf, spectrumColor, dbColor, LEVEL_GREEN, LEVEL_ORANGE, LEVEL_RED } from "@/lib/synclab/level-colors";
+import { levelColor, peakOf, spectrumColor, dbColor, LEVEL_GREEN, LEVEL_ORANGE, LEVEL_RED, mixerDbToFraction, mixerFractionToDb, mixerSegmentDb } from "@/lib/synclab/level-colors";
 import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 // Console fader thumb sizing is provided by FADER_CAP below.
@@ -69,11 +69,11 @@ function toDb(v: number) {
 }
 
 function dbToFrac(db: number) {
-  return Math.min(1, Math.max(0, (db + 48) / 54));
+  return mixerDbToFraction(db);
 }
 
 function fracToDb(frac: number) {
-  return frac * 54 - 48;
+  return mixerFractionToDb(frac);
 }
 
 /** Real post-fader signal readings; one shared 20 fps refresh for every strip. */
@@ -134,13 +134,12 @@ function Meter({ id, level, tall }: { id: string; level: number; tall?: boolean 
     return () => clearInterval(id);
   }, []);
   const holdSeg = Math.round(Math.max(held, hold.current) * segs) - 1;
-  // dB scale: level is a 0..1 linear fraction, so dB = 20·log10(level); show -60..0 dB.
-  const DB_TICKS = [0, -6, -12, -24, -36, -48, -60];
+  const DB_TICKS = [6, 0, -6, -12, -24, -36, -48];
   return (
     <div className={cn("flex items-stretch gap-0.5", tall ? "h-full min-h-0" : "h-44")}>
       <div className="relative w-5 shrink-0" aria-hidden>
         {DB_TICKS.map((db) => (
-          <div key={db} className="absolute right-0 flex items-center gap-px" style={{ top: `calc(${(db / -60) * 100}% - ${(db / -60) * 7}px)` }}>
+          <div key={db} className="absolute right-0 flex items-center gap-px" style={{ top: `calc(${(1 - dbToFrac(db)) * 100}% - ${(1 - dbToFrac(db)) * 7}px)` }}>
             <span className="font-mono text-[6px] leading-none text-muted-foreground/80">{db}</span>
             <span className="inline-block h-px w-1 bg-muted-foreground/60" />
           </div>
@@ -153,7 +152,7 @@ function Meter({ id, level, tall }: { id: string; level: number; tall?: boolean 
         // Printed hot zone like a hardware LED ladder: the top segments are
         // physically amber/red even when unlit, so the clipping area reads as
         // a marked danger region instead of a flat recolour.
-        const segDb = -60 + ((i + 1) / segs) * 60;
+        const segDb = mixerSegmentDb(i, segs);
         const zone = segDb >= -1 ? "red" : segDb >= -6 ? "amber" : "green";
         const unlitZone =
           zone === "red" ? "oklch(0.32 0.09 27 / 0.55)" : zone === "amber" ? "oklch(0.38 0.08 55 / 0.35)" : undefined;
@@ -938,13 +937,10 @@ function Strip({
   const { updateTrack, moveTrack, tracks, transport, setTransport, vcas } = useStudio();
   const vcaState = t.vca ? vcas[t.vca] : undefined;
   const vcaGain = vcaState ? (vcaState.muted ? 0 : vcaState.volume) : 1;
-  const effective = Math.min(1, t.volume * vcaGain);
+  const effective = t.volume * vcaGain;
   const advanced = useApp().mode === "advanced";
 
-  const [clip, setClip] = useState(false);
-  useEffect(() => {
-    if (level > 0.985) setClip(true);
-  }, [level]);
+  const clip = useClipped(t.id);
 
   const tint = (pct: number) => `color-mix(in oklab, ${t.color} ${pct}%, transparent)`;
   return (
@@ -984,7 +980,7 @@ function Strip({
           {t.name}
         </Button>
         <button
-          onClick={(e) => { e.stopPropagation(); setClip(false); }}
+          onClick={(e) => { e.stopPropagation(); clearClip(t.id); }}
           title="Clip indicator — click to reset"
           aria-label={`Clip indicator for ${t.name} — click to reset`}
           className={cn(
@@ -1131,7 +1127,7 @@ function Strip({
           className={cn("h-full w-8", FADER_CAP)}
           value={[t.volume]}
           min={0}
-          max={1}
+          max={1.2}
           step={0.01}
           onDoubleClick={() => updateTrack(t.id, { volume: 0.8 })}
           onValueChange={([v = 0]) => updateTrack(t.id, { volume: v })}
@@ -2133,7 +2129,7 @@ function PhoneChannel({ track, level, selected, index }: { track?: Track; level:
       <div aria-hidden className="flex flex-col items-end justify-between py-1 font-mono text-[10px] font-bold leading-none text-foreground">
         {(track ? ["0", "-6", "-12", "-24", "-∞"] : ["+6", "0", "-6", "-12", "-24", "-∞"]).map((m) => <span key={m}>{m}</span>)}
       </div>
-      <Slider aria-label={`${name} volume`} orientation="vertical" className={cn("mx-fader h-full w-12", FADER_CAP)} value={[volume]} min={0} max={track ? 1 : 1.5} step={0.01} onValueChange={([v = 0]) => track ? updateTrack(track.id, { volume: v }) : setBus("master", { volume: v })} /><Meter id={track?.id ?? "master"} level={level} tall />
+      <Slider aria-label={`${name} volume`} orientation="vertical" className={cn("mx-fader h-full w-12", FADER_CAP)} value={[volume]} min={0} max={track ? 1.2 : 1.5} step={0.01} onValueChange={([v = 0]) => track ? updateTrack(track.id, { volume: v }) : setBus("master", { volume: v })} /><Meter id={track?.id ?? "master"} level={level} tall />
     </div>
     {track ? <>
       <div className="grid h-14 grid-cols-[auto_minmax(0,1fr)_48px] items-center gap-2 border-y border-border px-3"><span aria-hidden className="font-mono text-[10px] font-bold text-foreground">PAN</span><Slider aria-label={`${name} pan`} className="h-12" value={[track.pan]} min={-1} max={1} step={0.01} onValueChange={([pan = 0]) => updateTrack(track.id, { pan })} /><Button variant="ghost" className="size-12 px-0 font-mono text-xs font-bold text-foreground" title="Reset pan to centre" onClick={() => updateTrack(track.id, { pan: 0 })}>{track.pan === 0 ? "C" : `${track.pan < 0 ? "L" : "R"}${Math.round(Math.abs(track.pan) * 100)}`}</Button></div>

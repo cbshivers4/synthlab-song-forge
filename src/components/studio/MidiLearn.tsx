@@ -24,7 +24,7 @@ export function MidiLearnButton({ id, param, label }: MidiTarget & { label: stri
             if (!midiInputId) enableMidi();
           }
         }}>
-        {learning ? "MOVE" : assigned ? mapLabel(assigned[0]) : "MIDI"}
+        {learning ? "MOVE" : assigned ? mapLabel(assigned[0]) : "LEARN"}
       </Button>
       {assigned && <Button type="button" size="icon" variant="ghost" className="size-6" aria-label={`Clear ${label} MIDI mapping`} onClick={() => clearMidiMapping(target)}><X className="size-3" /></Button>}
     </span>

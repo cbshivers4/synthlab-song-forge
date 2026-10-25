@@ -2440,7 +2440,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       changeInstrument: (trackId, preset) =>
         setTracks((ts) =>
           ts.map((t) =>
-            t.id === trackId ? { ...t, instrument: preset, patch: applyPreset(preset) } : t,
+            t.id === trackId ? liveSound({ ...t, instrument: preset, patch: applyPreset(preset) }) : t,
           ),
         ),
       addClip: (trackId, clip) =>

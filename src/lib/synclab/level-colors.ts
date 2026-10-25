@@ -7,6 +7,11 @@ export const LEVEL_RED = "oklch(0.63 0.24 27)";
 export const ORANGE_AT = 0.5;
 export const RED_AT = 0.89;
 
+/** Shared mixer scale: -48 to +6 dBFS, including an actual overload zone. */
+export const mixerDbToFraction = (db: number) => Math.min(1, Math.max(0, (db + 48) / 54));
+export const mixerFractionToDb = (fraction: number) => fraction * 54 - 48;
+export const mixerSegmentDb = (index: number, count = 32) => mixerFractionToDb((index + 1) / count);
+
 export function levelColor(peak: number): string {
   if (peak >= RED_AT) return LEVEL_RED;
   if (peak >= ORANGE_AT) return LEVEL_ORANGE;
