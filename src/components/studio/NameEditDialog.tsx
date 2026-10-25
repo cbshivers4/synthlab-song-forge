@@ -15,6 +15,9 @@ export function NameEditDialog({ open, title, label, value, onChange, onClose, o
     if (!open || !mobile) return;
     const viewport = window.visualViewport;
     const sync = () => {
+      // Native focus may scroll the clipped rotated body instead of a real scrollport.
+      document.body.scrollLeft = 0;
+      document.body.scrollTop = 0;
       const root = document.documentElement;
       root.style.setProperty("--name-editor-top", `${viewport?.offsetTop ?? 0}px`);
       root.style.setProperty("--name-editor-left", `${viewport?.offsetLeft ?? 0}px`);
@@ -24,9 +27,11 @@ export function NameEditDialog({ open, title, label, value, onChange, onClose, o
     };
     sync();
     window.addEventListener("resize", sync);
+    document.body.addEventListener("scroll", sync, { passive: true });
+    const frame = requestAnimationFrame(sync);
     viewport?.addEventListener("resize", sync);
     viewport?.addEventListener("scroll", sync);
-    return () => { window.removeEventListener("resize", sync); viewport?.removeEventListener("resize", sync); viewport?.removeEventListener("scroll", sync); };
+    return () => { cancelAnimationFrame(frame); document.body.removeEventListener("scroll", sync); window.removeEventListener("resize", sync); viewport?.removeEventListener("resize", sync); viewport?.removeEventListener("scroll", sync); };
   }, [open, mobile]);
   return <Dialog open={open} onOpenChange={(next) => { if (!next && !busy) onClose(); }}>
     <DialogContent {...(mobile ? { overlayClassName: "name-editor-overlay" } : {})}

@@ -1024,6 +1024,7 @@ html[data-reduce-motion] *, html[data-reduce-motion] *::before, html[data-reduce
 }
 /* Name editors remain screen-aligned above native keyboards. */
 .name-editor-overlay { z-index: 80; background: var(--background); opacity: 0.9; }
+body:has(.name-editor-dialog) [data-sonner-toast] { visibility: hidden; }
 .name-editor-dialog {
   z-index: 81;
   left: calc(var(--name-editor-left, 0px) + 8px);
