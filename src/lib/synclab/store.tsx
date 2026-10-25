@@ -531,7 +531,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     const ls = lastStepRef.current;
     const eng = getEngine();
     if (!tp.playing || !ls || !eng.ctx) return tp.step;
-    const offset = (eng.ctx.currentTime - ls.time) / ls.dur;
+    // players respond to what they hear, which leaves the speakers late
+    const offset = (eng.ctx.currentTime - outputDelay(eng.ctx) - ls.time) / ls.dur;
     if (Math.abs(offset) > 8) return tp.step;
     const total = songSteps(tp.bars);
     let pos = ls.step + offset;
@@ -655,7 +656,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           if (!hit) return;
           const engine = getEngine();
           engine.init();
-          engine.syncMix(tracksRef.current);
+          engine.syncMixIfChanged(tracksRef.current);
           engine.playDrum(hit.track.id, hit.pad, Math.max(0.15, velocity));
           const tp = transportRef.current;
           if (!tp.recording || !tp.playing || !hit.track.recording) return;
@@ -937,7 +938,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
               keyDown(pitch, 30000);
               const engine = getEngine();
               engine.init();
-              engine.syncMix(tracksRef.current);
+              engine.syncMixIfChanged(tracksRef.current);
               engine.playDrum(drumTarget.id, hit, Math.max(0.15, velocity));
               const tp = transportRef.current;
               if (tp.recording && tp.playing && drumTarget.recording) {
@@ -981,7 +982,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         if (type === "on") {
           keyDown(pitch, 30000);
           setMidiLearning(true);
-          engine.syncMix(tracksRef.current);
+          engine.syncMixIfChanged(tracksRef.current);
           triggerNote(engine, target, pitch, 0.6, Math.max(0.15, velocity));
           if (tp.recording && target.recording) {
             const pitches = processMidiThroughPlugins(pitch, target.plugins);
@@ -1391,15 +1392,23 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       return;
     }
     const takeNo = (target.clips?.length ?? 0) + 1;
+    // place the take where the recorder truly began (heard position), minus mic input delay
+    const measured = recAudioStartRef.current;
+    recAudioStartRef.current = null;
+    const aligned = alignedTake(
+      measured ?? snapRecStart(recStartStepRef.current, transportRef.current.snap),
+      result.duration,
+      getInputLatencyMs() / 1000,
+    );
     const clip: AudioClip = {
       id: uid(),
       name: `TAKE ${takeNo}`,
       peaks: result.peaks,
       duration: result.duration,
       url: result.url,
-      start: snapRecStart(recStartStepRef.current, transportRef.current.snap),
-      offset: 0,
-      length: Math.min(result.duration, Math.max(0, loopRegion(transportRef.current)[1] - snapRecStart(recStartStepRef.current, transportRef.current.snap)) * stepSeconds(transportRef.current.bpm)),
+      start: aligned.start,
+      offset: aligned.offset,
+      length: Math.min(aligned.length, Math.max(0, loopRegion(transportRef.current)[1] - aligned.start) * stepSeconds(transportRef.current.bpm)),
       gain: 1,
     };
     const replace = !!transportRef.current.replace;
@@ -1552,6 +1561,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         pendingInputStartRef.current = engine.startInputRecording(target.id, transportRef.current.monitor ?? false)
           .then(() => {
             if (generation !== recordingGenerationRef.current) return;
+            recAudioStartRef.current = transportRef.current.playing ? heardStepPos() : null;
             setTransportState(t => ({ ...t, recording: true }));
           }).catch((err: unknown) => {
             updateTrack(target.id, { recording: false });
@@ -2667,7 +2677,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         const t = tracksRef.current.find((x) => x.id === trackId);
         const engine = getEngine();
         engine.init();
-        engine.syncMix(tracksRef.current);
+        engine.syncMixIfChanged(tracksRef.current);
         if (t) triggerNote(engine, previewTrack(t, patch), midi, duration, 0.9);
         keyDown(midi);
         // Notes played on screen are captured while the transport records.
