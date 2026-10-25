@@ -1,4 +1,4 @@
-import { levelColor, peakOf, spectrumColor, dbColor, LEVEL_GREEN, LEVEL_ORANGE, LEVEL_RED } from "@/lib/synclab/level-colors";
+import { levelColor, peakOf, spectrumColor, dbColor, LEVEL_GREEN, LEVEL_ORANGE, LEVEL_RED, mixerDbToFraction, mixerFractionToDb, mixerSegmentDb } from "@/lib/synclab/level-colors";
 import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 // Console fader thumb sizing is provided by FADER_CAP below.
@@ -69,11 +69,11 @@ function toDb(v: number) {
 }
 
 function dbToFrac(db: number) {
-  return Math.min(1, Math.max(0, (db + 48) / 54));
+  return mixerDbToFraction(db);
 }
 
 function fracToDb(frac: number) {
-  return frac * 54 - 48;
+  return mixerFractionToDb(frac);
 }
 
 /** Real post-fader signal readings; one shared 20 fps refresh for every strip. */
@@ -134,13 +134,12 @@ function Meter({ id, level, tall }: { id: string; level: number; tall?: boolean 
     return () => clearInterval(id);
   }, []);
   const holdSeg = Math.round(Math.max(held, hold.current) * segs) - 1;
-  // dB scale: level is a 0..1 linear fraction, so dB = 20·log10(level); show -60..0 dB.
-  const DB_TICKS = [0, -6, -12, -24, -36, -48, -60];
+  const DB_TICKS = [6, 0, -6, -12, -24, -36, -48];
   return (
     <div className={cn("flex items-stretch gap-0.5", tall ? "h-full min-h-0" : "h-44")}>
       <div className="relative w-5 shrink-0" aria-hidden>
         {DB_TICKS.map((db) => (
-          <div key={db} className="absolute right-0 flex items-center gap-px" style={{ top: `calc(${(db / -60) * 100}% - ${(db / -60) * 7}px)` }}>
+          <div key={db} className="absolute right-0 flex items-center gap-px" style={{ top: `calc(${(1 - dbToFrac(db)) * 100}% - ${(1 - dbToFrac(db)) * 7}px)` }}>
             <span className="font-mono text-[6px] leading-none text-muted-foreground/80">{db}</span>
             <span className="inline-block h-px w-1 bg-muted-foreground/60" />
           </div>
@@ -153,7 +152,7 @@ function Meter({ id, level, tall }: { id: string; level: number; tall?: boolean 
         // Printed hot zone like a hardware LED ladder: the top segments are
         // physically amber/red even when unlit, so the clipping area reads as
         // a marked danger region instead of a flat recolour.
-        const segDb = -60 + ((i + 1) / segs) * 60;
+        const segDb = mixerSegmentDb(i, segs);
         const zone = segDb >= -1 ? "red" : segDb >= -6 ? "amber" : "green";
         const unlitZone =
           zone === "red" ? "oklch(0.32 0.09 27 / 0.55)" : zone === "amber" ? "oklch(0.38 0.08 55 / 0.35)" : undefined;
