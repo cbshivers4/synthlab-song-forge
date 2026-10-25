@@ -1567,12 +1567,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       const audio = engine.isRecording;
       const inst = engine.isTrackRecording;
       if (!audio && !inst) return;
-      if (audio) void finishRecording();
-      // an instrument take clears its own recording flag when it lands, so its
-      // printed audio takes over from the notes without a gap or a double
-      if (inst) void finishTrackRecording();
-      setTracks((ts) => ts.map((t) => (t.recording && (t.kind === "audio" || t.kind === "ai-vocal" || t.kind === "sampler") ? { ...t, recording: false } : t)));
-      setTransportState((t) => ({ ...t, recording: false }));
+      void endRecording();
       toast("Recording stopped at the loop end", { description: "Takes stay inside the bars you selected." });
     };
   }, [finishRecording, finishTrackRecording, updateTrack, endRecording]);
@@ -2151,6 +2146,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         const src = tracksRef.current.find((t) => t.id === id);
         if (!src) return;
         clipboardRef.current = structuredClone(src) as Track;
+        clipClipboardRef.current = null;
+        setClipClipboardName(null);
         setClipboardName(src.name);
         getEngine().removeChannel(id);
         setTracks((ts) => ts.filter((t) => t.id !== id));
@@ -2207,6 +2204,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         if (!track || !clip) return;
         clipClipboardRef.current = structuredClone(clip) as AudioClip;
         setClipClipboardName(clip.name);
+        clipboardRef.current = null;
+        setClipboardName(null);
         setTracks((ts) =>
           ts.map((t) =>
             t.id === trackId
