@@ -2384,7 +2384,9 @@ export class SyncLabEngine {
   private liveVoices = new Map<string, Set<{ end: number; patch: SynthPatch; update: (patch: SynthPatch, time: number) => void }>>();
   private liveDrums = new Map<string, Set<{ end: number; pad: DrumPad; update: (pad: DrumPad, time: number) => void }>>();
 
-  /** Update nodes already sounding, without triggering or capturing another note. */
+  /* holds the current value so live envelope edits don't jump */
+const holdAt = (pr: AudioParam, tm: number) => { const x = pr as AudioParam & { cancelAndHoldAtTime?: (t: number) => AudioParam }; if (x.cancelAndHoldAtTime) x.cancelAndHoldAtTime(tm); else { const v = pr.value; pr.cancelScheduledValues(tm); pr.setValueAtTime(v, tm); } };
+/** Update nodes already sounding, without triggering or capturing another note. */
   syncSoundControls(tracks: Track[]) {
     const ctx = this.ctx;
     if (!ctx) return;
@@ -2878,7 +2880,7 @@ export class SyncLabEngine {
       const old = voice.patch;
       const glideParam = (param: AudioParam, value: number) => param.setTargetAtTime(value, Math.max(t0, time), 0.015);
       if (next.cutoff !== old.cutoff || next.keyTracking !== old.keyTracking || next.filterEnv !== old.filterEnv) {
-        filter.frequency.cancelScheduledValues(time);
+        holdAt(filter.frequency, time);
         const base = clamp(next.cutoff * Math.pow(2, ((next.keyTracking ?? 0) * (midi - 60)) / 12) * cutoffMod, 40, 18000);
         for (const [age, level] of envelopePoints(next.filterEnv, duration, Math.max(0, time - t0))) {
           filter.frequency.linearRampToValueAtTime(clamp(base + next.filterEnv.amount * level, 40, 18000), Math.max(time, t0 + age) + 0.015);
@@ -2928,7 +2930,7 @@ export class SyncLabEngine {
         glideParam(control.depth.gain, lfo.on ? lfo.amount * scale : 0);
       }
       if (next.amp !== old.amp || next.velocitySens !== old.velocitySens) {
-        voiceOut.gain.cancelScheduledValues(time);
+        holdAt(voiceOut.gain, time);
         const sens = next.velocitySens ?? 1;
         const peak = 0.35 * (1 - sens + sens * clamp(velocity, 0, 1));
         for (const [age, level] of envelopePoints(next.amp, duration, Math.max(0, time - t0)))
