@@ -1,7 +1,7 @@
 import { deleteSelectedPart, selectedPartBounds } from '@/lib/synclab/workflow';
 import { boundedRegions, loopRegion } from "@/lib/synclab/recording-region";
 import { timelineUsesWaveform } from "@/lib/synclab/timeline-content";
-import { rightEdgeEdit } from "@/lib/synclab/arrangement-edit";
+import { materialEnd, rightEdgeEdit } from "@/lib/synclab/arrangement-edit";
 import { Fragment, memo, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { stepsPerBar, getBeatsPerBar, STEPS_PER_BEAT, songSteps, stepSeconds, positionLabel } from "@/lib/synclab/timebase";
@@ -1429,6 +1429,10 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
               <DropdownMenuItem onClick={() => activeClip ? cutClip(track.id, activeClip.id) : cutTrack(track.id)}><Scissors className="size-4" /> Cut</DropdownMenuItem>
               {pastePosition !== null && <DropdownMenuItem disabled={!hasClipboard} onClick={() => pasteAt(pastePosition)}><ClipboardPaste className="size-4" /> Paste here · {positionLabel(pastePosition)}</DropdownMenuItem>}
               <DropdownMenuItem disabled={!hasClipboard} onClick={() => pasteAt()}><ClipboardPaste className="size-4" /> Paste at playhead</DropdownMenuItem>
+              <DropdownMenuItem disabled={!hasClipboard} onClick={() => {
+                if (clipClipboardName) pasteClip(true, track.id);
+                else pasteTrack(track.id, Math.ceil(materialEnd(track, stepSeconds(fileStudio.transport.bpm))));
+              }}><ClipboardPaste className="size-4" /> Paste at end</DropdownMenuItem>
               <DropdownMenuItem disabled={!selectedPartBounds(track, fileStudio.transport.bpm, fileStudio.transport.bars, fileStudio.transport.loop ? loopRegion(fileStudio.transport) : undefined)} onClick={() => {
                 if (activeClip) fileStudio.removeClip(track.id, activeClip.id);
                 else {
@@ -1511,6 +1515,9 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => pasteTrack(track.id)}>
                 <ClipboardPaste className="size-4" /> Paste track{clipboardName ? ` (${clipboardName})` : ""}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => pasteTrack(track.id, Math.ceil(materialEnd(track, stepSeconds(fileStudio.transport.bpm))))}>
+                <ClipboardPaste className="size-4" /> Paste track at end
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => updateTrack(track.id, { frozen: !track.frozen })}>
                 <Snowflake className="size-4" /> {track.frozen ? "Unfreeze" : "Freeze"}

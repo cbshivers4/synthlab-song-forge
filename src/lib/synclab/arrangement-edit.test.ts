@@ -20,6 +20,13 @@ describe('arrangement paste', () => {
     expect(next.clips?.[1]?.id).not.toBe('clip');
     expect(materialEnd(next, 0.125)).toBe(32);
   });
+  it('appends drum hits at the end of the drum track instead of overwriting the start', () => {
+    const pad = { id: 'k', name: 'Kick', kind: 'kick' as const, volume: 1, pan: 0, pitch: 0, decay: 0.5, muted: false, solo: false, steps: [1, 0, 0, 0] };
+    const drums: Track = { ...track, kind: 'drum', clips: [], steps: 4, pads: [pad] };
+    const next = pasteTrackContent(drums, drums, materialEnd(drums, 0.125), 0.125);
+    expect(next.steps).toBe(8);
+    expect(next.pads?.[0]?.steps).toEqual([1, 0, 0, 0, 1, 0, 0, 0]);
+  });
   it('places note content at the playhead once rather than repeating it before that position', () => {
     const source = { ...track, kind: 'instrument' as const, clips: [], notes: [{ id: 'n', step: 0, length: 4, pitch: 60, velocity: 1 }] };
     const next = pasteTrackContent(source, source, 32, 0.125);

@@ -19,14 +19,16 @@ import {
   Scissors,
   SlidersHorizontal,
   Waves,
+  FilePlus2,
+  Folder,
   FolderOpen,
   Play,
-  Plus,
+  Search,
   Square,
 } from "lucide-react";
 import { Film } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import { addLocalFolder, forgetRememberedFolder, getLocalFile, getLocalFolders, getPreviewAnalyser, onFoldersChange, onPreviewChange, pickFiles, pickFolder, playPreview, reconnectFolder, rememberedFolders, restoreGrantedFolders, removeLocalFolder, stopPreview, type RememberedFolder } from "@/lib/synclab/local-files";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { addLocalFolder, forgetRememberedFolder, getLocalFile, getLocalFolders, getPreviewAnalyser, onFoldersChange, onPreviewChange, pickFiles, pickFolder, playPreview, reconnectFolder, rememberedFolders, restoreGrantedFolders, removeLocalFolder, stopPreview, type LocalFile, type LocalFolder, type RememberedFolder } from "@/lib/synclab/local-files";
 import { useStudio, type PanelId } from "@/lib/synclab/store";
 import { useApp } from "@/lib/synclab/app-state";
 import type { TrackKind } from "@/lib/synclab/types";
@@ -152,6 +154,148 @@ function PreviewScope({ playingFile }: { playingFile: string }) {
   );
 }
 
+/* ---------- Studio One-style file browser: breadcrumb + folder tree + file list ---------- */
+type DirNode = { name: string; path: string; dirs: DirNode[]; files: LocalFile[] };
+
+function buildTree(files: LocalFile[]): DirNode {
+  const root: DirNode = { name: "", path: "", dirs: [], files: [] };
+  const nodes = new Map<string, DirNode>([["", root]]);
+  const ensure = (path: string): DirNode => {
+    const found = nodes.get(path);
+    if (found) return found;
+    const parentPath = path.includes("/") ? path.slice(0, path.lastIndexOf("/")) : "";
+    const node: DirNode = { name: path.slice(parentPath ? parentPath.length + 1 : 0), path, dirs: [], files: [] };
+    nodes.set(path, node);
+    ensure(parentPath).dirs.push(node);
+    return node;
+  };
+  for (const f of files) {
+    const dirPath = f.path.includes("/") ? f.path.slice(0, f.path.lastIndexOf("/")) : "";
+    ensure(dirPath).files.push(f);
+  }
+  for (const n of nodes.values()) {
+    n.dirs.sort((a, b) => a.name.localeCompare(b.name));
+    n.files.sort((a, b) => a.name.localeCompare(b.name));
+  }
+  return root;
+}
+
+function nodeAt(root: DirNode, path: string): DirNode {
+  let node = root;
+  if (!path) return node;
+  for (const part of path.split("/")) {
+    const next = node.dirs.find((d) => d.name === part);
+    if (!next) return root;
+    node = next;
+  }
+  return node;
+}
+
+const fileSize = (n: number) => (n >= 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
+
+function FolderBrowser({ folder, playingFile, query }: { folder: LocalFolder; playingFile: string | null; query: string }) {
+  const [dir, setDir] = useState("");
+  const tree = useMemo(() => buildTree(folder.files), [folder.files]);
+  const node = nodeAt(tree, dir);
+  const crumbs = dir ? dir.split("/") : [];
+  const matches = query ? folder.files.filter((f) => f.name.toLowerCase().includes(query)) : null;
+
+  const fileRow = (x: LocalFile) => {
+    const playing = playingFile === x.id;
+    return (
+      <div
+        key={x.id}
+        draggable
+        onDragStart={(e) => {
+          const payload = JSON.stringify({ type: "localfile", id: x.id, name: x.name });
+          e.dataTransfer.setData("application/synclab", payload);
+          e.dataTransfer.setData("text/plain", payload);
+          e.dataTransfer.effectAllowed = "copy";
+        }}
+        title={`${x.path} — drag onto the timeline`}
+        className={`group flex cursor-grab items-center gap-1.5 rounded-[3px] px-1.5 py-1 active:cursor-grabbing ${playing ? "bg-primary/15" : "hover:bg-surface-2"}`}
+      >
+        <button
+          type="button"
+          aria-label={playing ? `Stop ${x.name}` : `Play ${x.name}`}
+          onClick={() => (playing ? stopPreview() : void playPreview(x.id).catch(() => toast.error(`Can't play ${x.name}`, { description: "This browser can't decode that file type." })))}
+          className="grid size-5 shrink-0 place-items-center rounded-sm border border-border text-primary hover:border-primary"
+        >
+          {playing ? <Square className="size-2.5 fill-current" /> : <Play className="size-2.5 fill-current" />}
+        </button>
+        <Music2 className="size-3.5 shrink-0 text-primary/70" />
+        <span className="min-w-0 flex-1 truncate text-[11px]">{x.name.replace(/\.[^.]+$/, "")}</span>
+        <span className="shrink-0 font-mono text-[8px] text-muted-foreground/60">{fileSize(x.size)}</span>
+      </div>
+    );
+  };
+
+  return (
+    <div className="overflow-hidden rounded-[3px] border border-border/60 bg-surface-1/40">
+      {/* Breadcrumb trail, like Files › Desktop › my songs */}
+      <div className="flex items-center gap-0.5 border-b border-border/60 px-1.5 py-1">
+        <FolderOpen className="size-3 shrink-0 text-amber-400" />
+        <button
+          type="button"
+          onClick={() => setDir("")}
+          className={`max-w-24 truncate font-mono text-[9px] font-bold uppercase tracking-wider ${crumbs.length ? "text-muted-foreground hover:text-foreground" : "text-foreground"}`}
+        >
+          {folder.name}
+        </button>
+        {crumbs.map((c, i) => (
+          <span key={i} className="flex min-w-0 items-center gap-0.5">
+            <ChevronRight className="size-2.5 shrink-0 text-muted-foreground/50" />
+            <button
+              type="button"
+              onClick={() => setDir(crumbs.slice(0, i + 1).join("/"))}
+              className={`max-w-20 truncate font-mono text-[9px] font-bold uppercase tracking-wider ${i === crumbs.length - 1 ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              {c}
+            </button>
+          </span>
+        ))}
+        <button
+          type="button"
+          aria-label={`Close ${folder.name}`}
+          title="Close this folder"
+          onClick={() => removeLocalFolder(folder.id)}
+          className="ml-auto shrink-0 px-1 text-muted-foreground/60 hover:text-foreground"
+        >
+          ×
+        </button>
+      </div>
+      <div className="max-h-56 overflow-y-auto p-0.5">
+        {matches ? (
+          matches.length ? (
+            matches.map(fileRow)
+          ) : (
+            <p className="px-2 py-1.5 text-[10px] text-muted-foreground/70">No files match “{query}”.</p>
+          )
+        ) : (
+          <>
+            {node.dirs.map((d) => (
+              <button
+                key={d.path}
+                type="button"
+                onClick={() => setDir(d.path)}
+                className="flex w-full items-center gap-1.5 rounded-[3px] px-1.5 py-1 text-left text-[11px] text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground"
+              >
+                <ChevronRight className="size-3 shrink-0 text-muted-foreground/60" />
+                <Folder className="size-3.5 shrink-0 text-amber-400" />
+                <span className="min-w-0 flex-1 truncate font-medium">{d.name}</span>
+              </button>
+            ))}
+            {node.files.map(fileRow)}
+            {node.dirs.length === 0 && node.files.length === 0 && (
+              <p className="px-2 py-1.5 text-[10px] text-muted-foreground/70">Empty folder.</p>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function ToolsRail() {
   const { panel, setPanel, installedPlugins, installPlugin, tracks, select, addTrack } = useStudio();
   const { mode, setMode } = useApp();
@@ -161,8 +305,28 @@ export function ToolsRail() {
   const [closedSections, setClosedSections] = useState<Record<string, boolean>>({ plugins: true, apps: true });
   const [folders, setFolders] = useState(getLocalFolders);
   const [playingFile, setPlayingFile] = useState<string | null>(null);
-  const [openFolders, setOpenFolders] = useState<Record<string, boolean>>({});
+  const [fileQuery, setFileQuery] = useState("");
   const [remembered, setRemembered] = useState<RememberedFolder[]>([]);
+  const [railW, setRailW] = useState(() => {
+    if (typeof localStorage === "undefined") return 208;
+    const v = Number(localStorage.getItem("synclab-tools-width"));
+    return v >= 168 && v <= 420 ? v : 208;
+  });
+  useEffect(() => {
+    try { localStorage.setItem("synclab-tools-width", String(railW)); } catch { /* private mode */ }
+  }, [railW]);
+  const startRailResize = (e: React.PointerEvent) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startW = railW;
+    const move = (ev: PointerEvent) => setRailW(Math.min(420, Math.max(168, startW + ev.clientX - startX)));
+    const up = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+  };
   useEffect(() => {
     const refresh = () => { setFolders(getLocalFolders()); void rememberedFolders().then(setRemembered); };
     refresh();
@@ -173,12 +337,10 @@ export function ToolsRail() {
     const f = await pickFiles();
     if (!f) return;
     addLocalFolder(f);
-    setOpenFolders((o) => ({ ...o, [f.id]: true }));
   };
   const reopen = async (r: RememberedFolder) => {
     try {
-      const f = await reconnectFolder(r.id);
-      if (f) setOpenFolders((o) => ({ ...o, [f.id]: true }));
+      await reconnectFolder(r.id);
     } catch (err) {
       toast.error(`Couldn't reopen ${r.name}`, { description: err instanceof Error ? err.message : undefined });
     }
@@ -194,7 +356,6 @@ export function ToolsRail() {
         return;
       }
       addLocalFolder(f);
-      setOpenFolders((o) => ({ ...o, [f.id]: true }));
       toast.success(`${f.name}: ${f.files.length} audio file${f.files.length === 1 ? "" : "s"}`);
     } catch (err) {
       toast.error("Couldn't open that folder", { description: err instanceof Error ? err.message : undefined });
@@ -302,8 +463,19 @@ export function ToolsRail() {
 
   return (
     <aside
-      className={`arrangement-tools hidden shrink-0 flex-col border-r border-border bg-sidebar transition-[width] sm:flex ${open ? "w-52" : "w-11"}`}
+      className={`arrangement-tools relative hidden shrink-0 flex-col border-r border-border bg-sidebar transition-[width] sm:flex ${open ? "" : "w-11"}`}
+      style={open ? { width: railW } : undefined}
     >
+      {open && (
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize left menu"
+          title="Drag to resize"
+          onPointerDown={startRailResize}
+          className="absolute inset-y-0 -right-1 z-10 w-2 cursor-col-resize hover:bg-primary/20"
+        />
+      )}
       <div className="flex items-center gap-1 border-b border-border px-2 py-1.5">
         {open && <span className="label-xs">SYNCLAB TOOLS</span>}
         <button
@@ -352,12 +524,44 @@ export function ToolsRail() {
                   <div className="space-y-0.5 pb-0.5 pl-1.5">
                     {s.tools.map((t) => renderToolButton(t, false))}
 
-                    {/* My Files lives inside the Files section — same folders as the browser */}
+                    {/* My Computer — Studio One-style browser: breadcrumb, folder tree, search, drag to timeline */}
                     {s.id === "files" && (
                       <div className="pt-1.5">
-                        <div className="px-2 pb-1 font-mono text-[9px] tracking-[0.18em] text-muted-foreground/70">
-                          MY FILES — PREVIEW, THEN DRAG ONTO THE TIMELINE
+                        <div className="flex items-center gap-0.5 px-1.5 pb-1">
+                          <span className="min-w-0 flex-1 font-mono text-[9px] tracking-[0.18em] text-muted-foreground/70">
+                            MY COMPUTER
+                          </span>
+                          <button
+                            type="button"
+                            title="Open a folder from your computer"
+                            aria-label="Open a folder from your computer"
+                            onClick={() => void openComputerFolder()}
+                            className="rounded-[3px] p-1 text-muted-foreground transition-colors hover:bg-surface-2 hover:text-primary"
+                          >
+                            <FolderOpen className="size-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            title="Add individual audio files"
+                            aria-label="Add individual audio files"
+                            onClick={() => void openComputerFiles()}
+                            className="rounded-[3px] p-1 text-muted-foreground transition-colors hover:bg-surface-2 hover:text-primary"
+                          >
+                            <FilePlus2 className="size-3.5" />
+                          </button>
                         </div>
+                        {(folders.length > 0 || remembered.length > 0) && (
+                          <div className="mx-1.5 mb-1 flex items-center gap-1.5 rounded-[3px] border border-border/60 bg-surface-1/60 px-1.5">
+                            <Search className="size-3 shrink-0 text-muted-foreground/60" />
+                            <input
+                              value={fileQuery}
+                              onChange={(e) => setFileQuery(e.target.value)}
+                              placeholder="Search files"
+                              aria-label="Search your files"
+                              className="h-6 min-w-0 flex-1 bg-transparent text-[11px] outline-none placeholder:text-muted-foreground/50"
+                            />
+                          </div>
+                        )}
                         {remembered.map((r) => (
                           <div key={r.id} className="flex items-center gap-1 px-2 py-1 text-xs text-muted-foreground">
                             <FolderOpen className="size-3.5 shrink-0 opacity-60" />
@@ -375,56 +579,11 @@ export function ToolsRail() {
                             <span className="font-medium tracking-wide">Choose your music folder (once)</span>
                           </button>
                         ) : (
-                          folders.map((f) => {
-                            const isOpen = !!openFolders[f.id];
-                            return (
-                              <div key={f.id}>
-                                <button
-                                  type="button"
-                                  onClick={() => setOpenFolders((o) => ({ ...o, [f.id]: !o[f.id] }))}
-                                  aria-expanded={isOpen}
-                                  className="flex w-full items-center gap-1.5 rounded-[3px] px-2 py-1 text-left text-xs text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground"
-                                >
-                                  <ChevronDown className={`size-3 shrink-0 transition-transform duration-200 ${isOpen ? "" : "-rotate-90"}`} />
-                                  <FolderOpen className="size-3.5 shrink-0 text-amber-400" />
-                                  <span className="min-w-0 flex-1 truncate font-medium tracking-wide">{f.name}</span>
-                                  <span className="shrink-0 font-mono text-[8px] text-muted-foreground/70">{f.files.length}</span>
-                                </button>
-                                {isOpen && <button type="button" onClick={() => removeLocalFolder(f.id)} className="ml-6 px-2 text-[9px] text-muted-foreground hover:text-foreground">Close folder</button>}
-                                {isOpen && (
-                                  <div className="ml-4 border-l border-border/70">
-                                    {f.files.map((x) => {
-                                      const playing = playingFile === x.id;
-                                      return (
-                                        <div
-                                          key={x.id}
-                                          draggable
-                                          onDragStart={(e) => {
-                                            const payload = JSON.stringify({ type: "localfile", id: x.id, name: x.name });
-                                            e.dataTransfer.setData("application/synclab", payload);
-                                            e.dataTransfer.setData("text/plain", payload);
-                                            e.dataTransfer.effectAllowed = "copy";
-                                          }}
-                                          title={`${x.path} — drag onto the timeline`}
-                                          className={`group flex cursor-grab items-center gap-1.5 rounded-[3px] px-2 py-1 active:cursor-grabbing ${playing ? "bg-primary/15" : "hover:bg-surface-2"}`}
-                                        >
-                                          <button
-                                            type="button"
-                                            aria-label={playing ? `Stop ${x.name}` : `Play ${x.name}`}
-                                            onClick={() => (playing ? stopPreview() : void playPreview(x.id).catch(() => toast.error(`Can't play ${x.name}`, { description: "This browser can't decode that file type." })))}
-                                            className="grid size-5 shrink-0 place-items-center rounded-sm border border-border text-primary hover:border-primary"
-                                          >
-                                            {playing ? <Square className="size-2.5 fill-current" /> : <Play className="size-2.5 fill-current" />}
-                                          </button>
-                                          <span className="min-w-0 flex-1 truncate font-mono text-[10px]">{x.name}</span>
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })
+                          <div className="space-y-1 px-0.5">
+                            {folders.map((f) => (
+                              <FolderBrowser key={f.id} folder={f} playingFile={playingFile} query={fileQuery.trim().toLowerCase()} />
+                            ))}
+                          </div>
                         )}
                       </div>
                     )}
