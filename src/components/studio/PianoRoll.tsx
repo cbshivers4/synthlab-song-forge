@@ -307,7 +307,7 @@ export function PianoRoll({ track }: { track: Track }) {
         <PopoverAnchor virtualRef={noteAnchor} />
         <PopoverContent aria-label="Selected note actions" className="w-56 space-y-1 p-2" onOpenAutoFocus={e => e.preventDefault()} onCloseAutoFocus={e => e.preventDefault()} onPointerDown={e => e.stopPropagation()} onClick={e => e.stopPropagation()}>
           <div className="border-b border-border px-2 py-1 font-mono text-xs">{sel.length} selected · Step {cursor + 1}</div>
-          {([{ label: 'Copy notes', icon: Copy, run: () => copySelected() }, { label: 'Cut notes', icon: Scissors, run: () => copySelected(true) }, { label: 'Paste at placement playhead', icon: ClipboardPaste, run: paste, disabled: !clipboardCount }, { label: 'Delete notes', icon: Trash2, run: deleteSelected }] as const).map(action => <Button key={action.label} variant="ghost" className="h-10 w-full justify-start gap-2 text-xs" disabled={'disabled' in action && action.disabled} onClick={() => { action.run(); setNoteMenu(false); }}><action.icon className="size-4" />{action.label}</Button>)}
+          {([{ label: 'Copy notes', icon: Copy, run: () => copySelected() }, { label: 'Cut notes', icon: Scissors, run: () => copySelected(true) }, { label: 'Paste at playhead', icon: ClipboardPaste, run: paste, disabled: !clipboardCount }, { label: 'Delete notes', icon: Trash2, run: deleteSelected }] as const).map(action => <Button key={action.label} variant="ghost" className="h-10 w-full justify-start gap-2 text-xs" disabled={'disabled' in action && action.disabled} onClick={() => { action.run(); setNoteMenu(false); }}><action.icon className="size-4" />{action.label}</Button>)}
         </PopoverContent>
       </Popover>
       <div className="sticky top-0 z-20 flex flex-wrap items-center gap-1 border-b border-border bg-surface-2 p-1" role="toolbar" aria-label="Note editing">
@@ -645,7 +645,7 @@ export function PianoRoll({ track }: { track: Track }) {
 
         <div ref={scrollRef} aria-label="Scrollable piano notes" className="relative min-w-0 flex-1 overflow-x-scroll" onScroll={e => setScrollPosition(e.currentTarget.scrollLeft)}>
           <div style={{ width: `${zoom * 100}%`, minWidth: steps * (isMobile ? 28 : 20) }}> 
-          <div role="slider" tabIndex={0} aria-label="Note placement playhead" aria-valuemin={1} aria-valuemax={steps} aria-valuenow={cursor + 1} aria-valuetext={`Bar ${Math.floor(cursor / stepsPerBar()) + 1}, step ${cursor + 1}`} className="relative h-9 touch-none select-none border-b border-border bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring"
+          <div role="slider" tabIndex={0} aria-label="Playhead" aria-valuemin={1} aria-valuemax={steps} aria-valuenow={cursor + 1} aria-valuetext={`Bar ${Math.floor(cursor / stepsPerBar()) + 1}, step ${cursor + 1}`} className="relative h-9 touch-none select-none border-b border-border bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring"
             onPointerDown={e => { e.preventDefault(); e.currentTarget.setPointerCapture(e.pointerId); placeCursor(e); }}
             onPointerMove={e => { if (e.currentTarget.hasPointerCapture(e.pointerId)) placeCursor(e); }}
             onKeyDown={e => { if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return; e.preventDefault(); e.stopPropagation(); const step = Math.max(0, Math.min(steps - grid, cursor + (e.key === 'ArrowRight' ? grid : -grid))); setCursor(step); if (!transport.playing && !transport.recording) setTransport({ step }); }}>

@@ -9,6 +9,11 @@ import {
   type ReactNode,
 } from "react";
 import { materialEnd, pasteTrackContent, timelinePasteStep } from "./arrangement-edit";
+
+/** Drum/sampler tracks can hold values the browser cannot deep-copy; fall back so copy never silently fails. */
+function cloneTrack(t: Track): Track {
+  try { return structuredClone(t); } catch { return JSON.parse(JSON.stringify(t)) as Track; }
+}
 import { createRecordingFinalizer } from "./recording-finalizer";
 import { capturedNote, loopRegion } from "./recording-region";
 import { editDrumPads, type DrumBulkEdit } from "./drum-bulk";
@@ -2016,12 +2021,15 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       addTrack: (kind, name, preset, opts) => {
         const id = uid();
         setTracks((ts) => {
-          const t = { ...newTrack(kind, name ?? `TRACK ${ts.length + 1}`, ts.length, preset), id };
+          // A track the user adds is armed right away (others disarm so one take goes to one place).
+          // keepPanel callers (pad sampler, tape/sample exports) create channels for content, not recording.
+          const autoArm = !opts?.keepPanel;
+          const t = { ...newTrack(kind, name ?? `TRACK ${ts.length + 1}`, ts.length, preset), id, ...(autoArm ? { armed: true } : {}) };
           setSelectedId(t.id);
           // keepPanel: the pad sampler and phone beat maker create their channel while the
           // user is playing — never navigate them away from what they are doing.
           if (!opts?.keepPanel) setPanel(kind === "drum" ? "drums" : kind === "sampler" ? "sampler" : kind === "ai-vocal" || kind === "audio" ? null : "synth");
-          return [...ts, t];
+          return [...(autoArm ? ts.map((x) => (x.armed ? { ...x, armed: false } : x)) : ts), t];
         });
         return id;
       },
@@ -2159,7 +2167,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       copyTrack: (id) => {
         const src = tracksRef.current.find((t) => t.id === id);
         if (!src) return;
-        clipboardRef.current = structuredClone(src) as Track;
+        clipboardRef.current = cloneTrack(src);
         clipClipboardRef.current = null;
         setClipClipboardName(null);
         setClipboardName(src.name);
@@ -2168,7 +2176,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       cutTrack: (id) => {
         const src = tracksRef.current.find((t) => t.id === id);
         if (!src) return;
-        clipboardRef.current = structuredClone(src) as Track;
+        clipboardRef.current = cloneTrack(src);
         clipClipboardRef.current = null;
         setClipClipboardName(null);
         setClipboardName(src.name);
@@ -2186,17 +2194,15 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         }
         const wantedId = targetId ?? selectedIdRef.current;
         const target = tracksRef.current.find(t => t.id === wantedId);
-        if (target) {
-          if ((src.notes?.length || src.pads?.some(p => p.steps.some(v => v > 0))) && src.kind !== target.kind) {
-            toast.error("Choose a matching channel");
-            return;
-          }
+        // Pasting drums onto a synth (or vice versa) makes a new matching channel instead of failing.
+        const mismatched = !!target && (src.notes?.length || src.pads?.some(p => p.steps.some(v => v > 0))) && src.kind !== target.kind;
+        if (target && !mismatched) {
           const pasted = pasteTrackContent(target, src, timelinePasteStep(transportRef.current.step, destinationStep), stepSeconds(transportRef.current.bpm));
           setTracks(ts => ts.map(t => t.id === target.id ? pasted : t));
           setTransportState(tp => ({ ...tp, bars: Math.max(tp.bars, barsForSteps(materialEnd(pasted, stepSeconds(tp.bpm)))) }));
           return;
         }
-        const copy: Track = { ...(structuredClone(src) as Track), id: uid(), name: `${src.name} COPY`, recording: false };
+        const copy: Track = { ...cloneTrack(src), id: uid(), name: `${src.name} COPY`, recording: false };
         if (copy.pads) copy.pads = copy.pads.map((p) => ({ ...p, id: uid() }));
         if (copy.notes) copy.notes = copy.notes.map((n) => ({ ...n, id: uid() }));
         if (copy.clips) copy.clips = copy.clips.map((c) => ({ ...c, id: uid() }));

@@ -91,12 +91,12 @@
 - [x] Sampler preview: preload saved samples, renew expired cloud links, warn instead of playing silently; re-saving keeps permanent storage paths
 
 ## Oct 26 requests
-- [ ] Reel recorder: respect mutes in reel/QuickTime capture; reels visibly wind while playing/recording
-- [ ] Stability: editing instruments during play/record must not glitch
-- [ ] Left menu: show computer files without extra buttons (browser limit: must pick folder once)
-- [ ] Copy/paste a drum track
-- [ ] New tracks auto-arm
-- [ ] Timeline: single tap opens track menu, double tap opens drum/piano roll
-- [ ] Notes: save button on all notes
-- [ ] Vocoder / Modular Tech stuck sustained noise
-- [ ] Piano roll: don't place notes by moving the playhead
+- [x] Reel recorder: respect mutes in reel/QuickTime capture; reels visibly wind while playing/recording
+- [ ] Stability (needs a specific repro from user): editing instruments during play/record must not glitch
+- [x] Left menu: show computer files without extra buttons (browser limit: must pick folder once)
+- [x] Copy/paste a drum track
+- [x] New tracks auto-arm
+- [x] Timeline: single tap opens track menu, double tap opens drum/piano roll
+- [x] Notes: save button on all notes
+- [x] Vocoder / Modular Tech stuck sustained noise
+- [x] Piano roll: don't place notes by moving the playhead

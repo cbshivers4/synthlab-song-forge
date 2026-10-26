@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Check, NotebookPen, Trash2 } from "lucide-react";
+import { Check, NotebookPen, Save, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -128,7 +129,18 @@ export function QuickNotes({ className, label }: { className?: string; label?: b
           >
             <Trash2 className="size-3.5" /> Clear this note
           </Button>
-          <span className="ml-auto text-[10px] text-muted-foreground">Autosaves as you type</span>
+          <Button
+            size="sm"
+            className="ml-auto gap-1.5"
+            onClick={() => {
+              pending.current = { target, text: draft.trim() };
+              commit();
+              setOpen(false);
+              toast.success("Note saved", { description: "Save the project to keep it after closing." });
+            }}
+          >
+            <Save className="size-3.5" /> Save
+          </Button>
         </div>
       </SheetContent>
     </Sheet>
