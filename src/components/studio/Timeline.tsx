@@ -1431,7 +1431,7 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
               <DropdownMenuItem disabled={!hasClipboard} onClick={() => pasteAt()}><ClipboardPaste className="size-4" /> Paste at playhead</DropdownMenuItem>
               <DropdownMenuItem disabled={!hasClipboard} onClick={() => {
                 if (clipClipboardName) pasteClip(true, track.id);
-                else pasteTrack(track.id, Math.ceil(materialEnd(track, stepSeconds(fileStudio.transport.bpm))));
+                else pasteTrack(track.id, Math.ceil(materialEnd(track, stepSeconds(fileStudio.transport.bpm), fileStudio.transport.loop ? loopRegion(fileStudio.transport)[1] : songSteps(fileStudio.transport.bars))));
               }}><ClipboardPaste className="size-4" /> Paste at end</DropdownMenuItem>
               <DropdownMenuItem disabled={!selectedPartBounds(track, fileStudio.transport.bpm, fileStudio.transport.bars, fileStudio.transport.loop ? loopRegion(fileStudio.transport) : undefined)} onClick={() => {
                 if (activeClip) fileStudio.removeClip(track.id, activeClip.id);
@@ -1516,7 +1516,7 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
               <DropdownMenuItem onClick={() => pasteTrack(track.id)}>
                 <ClipboardPaste className="size-4" /> Paste track{clipboardName ? ` (${clipboardName})` : ""}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => pasteTrack(track.id, Math.ceil(materialEnd(track, stepSeconds(fileStudio.transport.bpm))))}>
+              <DropdownMenuItem onClick={() => pasteTrack(track.id, Math.ceil(materialEnd(track, stepSeconds(fileStudio.transport.bpm), fileStudio.transport.loop ? loopRegion(fileStudio.transport)[1] : songSteps(fileStudio.transport.bars))))}>
                 <ClipboardPaste className="size-4" /> Paste track at end
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => updateTrack(track.id, { frozen: !track.frozen })}>
