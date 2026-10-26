@@ -104,3 +104,20 @@ export function generateBass(roots: number[], style: BassStyle, barSteps: number
   });
   return out;
 }
+
+/** Clean, low-headroom-safe version of a bass preset for generated basslines:
+ *  removes drive/distortion/bitcrush, tames resonance, mono voice, no unison smear. */
+export function cleanBassPatch(p: import("./types").SynthPatch): import("./types").SynthPatch {
+  const q: import("./types").SynthPatch = JSON.parse(JSON.stringify(p));
+  q.drive = 0;
+  q.resonance = Math.min(q.resonance, 4);
+  q.analog = Math.min(q.analog ?? 0, 0.05);
+  q.noise = 0;
+  q.unison = { ...q.unison, voices: 1, detune: 0 };
+  q.voiceMode = "mono";
+  q.fx = { ...q.fx, distortion: 0, bitcrush: 0, chorus: 0, delay: 0, reverb: Math.min(q.fx.reverb, 0.05) };
+  const on = q.oscillators.filter((o) => o.on);
+  const sum = on.reduce((s, o) => s + o.level, 0);
+  if (sum > 0.8) q.oscillators = q.oscillators.map((o) => (o.on ? { ...o, level: (o.level * 0.8) / sum } : o));
+  return q;
+}
