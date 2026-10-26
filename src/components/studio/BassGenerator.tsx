@@ -6,10 +6,10 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useStudio } from "@/lib/synclab/store";
 import { getBeatsPerBar } from "@/lib/synclab/timebase";
-import { SYNTH_PRESETS } from "@/lib/synclab/presets";
+import { SYNTH_PRESETS, applyPreset } from "@/lib/synclab/presets";
 
 const BASS_SOUNDS = SYNTH_PRESETS.filter((p) => p.category === "Bass").map((p) => p.name);
-import { BASS_STYLES, BASS_TEMPLATES, generateBass, NOTE_NAMES, PROGRESSIONS, rootsFromKey, rootsFromTracks, type BassStyle } from "@/lib/synclab/bass-gen";
+import { BASS_STYLES, BASS_TEMPLATES, cleanBassPatch, generateBass, NOTE_NAMES, PROGRESSIONS, rootsFromKey, rootsFromTracks, type BassStyle } from "@/lib/synclab/bass-gen";
 
 export function BassGenerator() {
   const { tracks, transport, addTrack, updateTrack, setTransport } = useStudio();
@@ -62,7 +62,7 @@ export function BassGenerator() {
   const build = (name: string, withSound = sound) => {
     const notes = generated ?? generateBass(roots, style, barSteps, octave);
     const id = addTrack("instrument", name, withSound, { keepPanel: true });
-    updateTrack(id, { steps: bars * barSteps, notes });
+    updateTrack(id, { steps: bars * barSteps, notes, patch: cleanBassPatch(applyPreset(withSound)) });
     return { id, notes };
   };
   const preview = (withSound?: string) => pv.start((n) => build(n(`BASS · ${label}`), withSound ?? sound).id);
