@@ -337,12 +337,10 @@ export function ToolsRail() {
     const f = await pickFiles();
     if (!f) return;
     addLocalFolder(f);
-    setOpenFolders((o) => ({ ...o, [f.id]: true }));
   };
   const reopen = async (r: RememberedFolder) => {
     try {
-      const f = await reconnectFolder(r.id);
-      if (f) setOpenFolders((o) => ({ ...o, [f.id]: true }));
+      await reconnectFolder(r.id);
     } catch (err) {
       toast.error(`Couldn't reopen ${r.name}`, { description: err instanceof Error ? err.message : undefined });
     }
@@ -358,7 +356,6 @@ export function ToolsRail() {
         return;
       }
       addLocalFolder(f);
-      setOpenFolders((o) => ({ ...o, [f.id]: true }));
       toast.success(`${f.name}: ${f.files.length} audio file${f.files.length === 1 ? "" : "s"}`);
     } catch (err) {
       toast.error("Couldn't open that folder", { description: err instanceof Error ? err.message : undefined });
