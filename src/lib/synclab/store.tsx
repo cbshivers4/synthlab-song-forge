@@ -9,6 +9,11 @@ import {
   type ReactNode,
 } from "react";
 import { materialEnd, pasteTrackContent, timelinePasteStep } from "./arrangement-edit";
+
+/** Drum/sampler tracks can hold values the browser cannot deep-copy; fall back so copy never silently fails. */
+function cloneTrack(t: Track): Track {
+  try { return structuredClone(t); } catch { return JSON.parse(JSON.stringify(t)) as Track; }
+}
 import { createRecordingFinalizer } from "./recording-finalizer";
 import { capturedNote, loopRegion } from "./recording-region";
 import { editDrumPads, type DrumBulkEdit } from "./drum-bulk";
@@ -2159,7 +2164,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       copyTrack: (id) => {
         const src = tracksRef.current.find((t) => t.id === id);
         if (!src) return;
-        clipboardRef.current = structuredClone(src) as Track;
+        clipboardRef.current = cloneTrack(src);
         clipClipboardRef.current = null;
         setClipClipboardName(null);
         setClipboardName(src.name);
@@ -2168,7 +2173,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       cutTrack: (id) => {
         const src = tracksRef.current.find((t) => t.id === id);
         if (!src) return;
-        clipboardRef.current = structuredClone(src) as Track;
+        clipboardRef.current = cloneTrack(src);
         clipClipboardRef.current = null;
         setClipClipboardName(null);
         setClipboardName(src.name);
@@ -2194,7 +2199,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           setTransportState(tp => ({ ...tp, bars: Math.max(tp.bars, barsForSteps(materialEnd(pasted, stepSeconds(tp.bpm)))) }));
           return;
         }
-        const copy: Track = { ...(structuredClone(src) as Track), id: uid(), name: `${src.name} COPY`, recording: false };
+        const copy: Track = { ...cloneTrack(src), id: uid(), name: `${src.name} COPY`, recording: false };
         if (copy.pads) copy.pads = copy.pads.map((p) => ({ ...p, id: uid() }));
         if (copy.notes) copy.notes = copy.notes.map((n) => ({ ...n, id: uid() }));
         if (copy.clips) copy.clips = copy.clips.map((c) => ({ ...c, id: uid() }));
