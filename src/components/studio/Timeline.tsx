@@ -716,6 +716,7 @@ function DrumClip({ track }: { track: Track }) {
       .flatMap(([x, y]) => [y, x - (b - a)]);
     let to = a;
     const target = e.currentTarget as HTMLElement;
+    try { target.setPointerCapture(e.pointerId); } catch { /* pointer already released */ }
     const onMove = (ev: PointerEvent) => {
       const raw = a + (canvasPoint(ev.clientX, ev.clientY).x - x0) / Math.max(0.0001, perStep);
       const near = edges.reduce<number | null>((best, edge) => Math.abs(edge - raw) <= bar / 4 && (best == null || Math.abs(edge - raw) < Math.abs(best - raw)) ? edge : best, null);
