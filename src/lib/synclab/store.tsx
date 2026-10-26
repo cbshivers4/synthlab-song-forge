@@ -76,7 +76,10 @@ function liveSound(t: Track): Track {
   if (!t.printedAudio || t.recording) return t;
   const hasNotes = (t.notes?.length ?? 0) > 0;
   const hasHits = t.pads?.some((p) => p.steps.some((v) => v > 0)) ?? false;
-  return hasNotes || hasHits ? { ...t, printedAudio: false } : t;
+  if (!hasNotes && !hasHits) return t;
+  // Fade out the printed take now so it doesn't double with the live notes that replace it.
+  queueMicrotask(() => getEngine().stopSamples(t.id));
+  return { ...t, printedAudio: false };
 }
 
 export interface MidiTarget {
