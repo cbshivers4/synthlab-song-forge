@@ -119,6 +119,9 @@ type AutomatableAudioParam = { param: AudioParam; min: number; max: number; loga
 
 const vocoderCleanups = new Map<string, () => void>();
 
+/* holds the current value so live envelope edits don't jump */
+const holdAt = (pr: AudioParam, tm: number) => { const x = pr as AudioParam & { cancelAndHoldAtTime?: (t: number) => AudioParam }; if (x.cancelAndHoldAtTime) x.cancelAndHoldAtTime(tm); else { const v = pr.value; pr.cancelScheduledValues(tm); pr.setValueAtTime(v, tm); } };
+
 export class SyncLabEngine {
   ctx: AudioContext | null = null;
   master: GainNode | null = null;
@@ -2878,7 +2881,7 @@ export class SyncLabEngine {
       const old = voice.patch;
       const glideParam = (param: AudioParam, value: number) => param.setTargetAtTime(value, Math.max(t0, time), 0.015);
       if (next.cutoff !== old.cutoff || next.keyTracking !== old.keyTracking || next.filterEnv !== old.filterEnv) {
-        filter.frequency.cancelScheduledValues(time);
+        holdAt(filter.frequency, time);
         const base = clamp(next.cutoff * Math.pow(2, ((next.keyTracking ?? 0) * (midi - 60)) / 12) * cutoffMod, 40, 18000);
         for (const [age, level] of envelopePoints(next.filterEnv, duration, Math.max(0, time - t0))) {
           filter.frequency.linearRampToValueAtTime(clamp(base + next.filterEnv.amount * level, 40, 18000), Math.max(time, t0 + age) + 0.015);
@@ -2905,10 +2908,14 @@ export class SyncLabEngine {
         glideParam(control.pan.pan, clamp(osc.pan + control.spread * next.unison.width, -1, 1));
         if (control.source instanceof OscillatorNode) {
           const source = control.source;
-          if (osc.wave === "pulse") source.setPeriodicWave(this.pulseWave(ctx, clamp(osc.pulseWidth ?? 0.3, 0.02, 0.98)));
+          const prev = old.oscillators[control.index];
+          // Only replace the waveform when its shape actually changed; rewriting it on every knob move clicks.
+          const shapeChanged = !prev || prev.wave !== osc.wave || prev.pulseWidth !== osc.pulseWidth || prev.morph !== osc.morph || (prev.phase ?? 0) !== (osc.phase ?? 0);
+          if (!shapeChanged) { /* keep current waveform */ }
+          else if (osc.wave === "pulse") source.setPeriodicWave(this.pulseWave(ctx, clamp(osc.pulseWidth ?? 0.3, 0.02, 0.98)));
           else if (osc.wave === "wavetable") source.setPeriodicWave(this.wavetableWave(ctx, clamp(osc.morph ?? 0.5, 0, 1)));
           else if (osc.wave !== "noise") source.type = osc.wave;
-          if ((osc.phase ?? 0) !== 0) {
+          if (shapeChanged && (osc.phase ?? 0) !== 0) {
             const harmonics = phasedHarmonics(osc.wave, osc.phase ?? 0, osc.pulseWidth, osc.morph);
             source.setPeriodicWave(ctx.createPeriodicWave(harmonics.real, harmonics.imag));
           }
@@ -2924,7 +2931,7 @@ export class SyncLabEngine {
         glideParam(control.depth.gain, lfo.on ? lfo.amount * scale : 0);
       }
       if (next.amp !== old.amp || next.velocitySens !== old.velocitySens) {
-        voiceOut.gain.cancelScheduledValues(time);
+        holdAt(voiceOut.gain, time);
         const sens = next.velocitySens ?? 1;
         const peak = 0.35 * (1 - sens + sens * clamp(velocity, 0, 1));
         for (const [age, level] of envelopePoints(next.amp, duration, Math.max(0, time - t0)))
@@ -3093,15 +3100,17 @@ export class SyncLabEngine {
       const key = JSON.stringify([trackId, pad.id]);
       const voices = this.liveDrums.get(key) ?? new Set();
       const voice = { end: t + length, pad, update: (next: DrumPad, time: number) => {
-        out.gain.setTargetAtTime(next.volume, time, 0.015);
-        p.pan.setTargetAtTime(clamp(next.pan, -1, 1), time, 0.015);
-        source.playbackRate.setTargetAtTime(Math.pow(2, next.pitch / 12), time, 0.015);
-        if (drumTone) {
+        const prev = voice.pad;
+        if (next.volume !== prev.volume) out.gain.setTargetAtTime(next.volume, time, 0.015);
+        if (next.pan !== prev.pan) p.pan.setTargetAtTime(clamp(next.pan, -1, 1), time, 0.015);
+        if (next.pitch !== prev.pitch) source.playbackRate.setTargetAtTime(Math.pow(2, next.pitch / 12), time, 0.015);
+        if (drumTone && next.tone !== prev.tone) {
           const tone = clamp(next.tone ?? 0.5, 0, 1);
           drumTone.type = tone < 0.5 ? "lowpass" : "highpass";
           drumTone.frequency.setTargetAtTime(tone < 0.5 ? 300 * Math.pow(60, tone * 2) : 30 * Math.pow(120, (tone - 0.5) * 2), time, 0.015);
         }
-        if (drumFilter && next.filterType && next.filterType !== "off") {
+        // Only touch the filter when a filter control moved, so volume/pan edits keep its envelope.
+        if (drumFilter && next.filterType && next.filterType !== "off" && (next.filterType !== prev.filterType || next.cutoff !== prev.cutoff || next.resonance !== prev.resonance)) {
           drumFilter.type = next.filterType;
           drumFilter.frequency.cancelScheduledValues(time);
           drumFilter.frequency.setTargetAtTime(40 * Math.pow(450, clamp(next.cutoff ?? 1, 0, 1)), time, 0.015);

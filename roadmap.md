@@ -92,7 +92,7 @@
 
 ## Oct 26 requests
 - [x] Reel recorder: respect mutes in reel/QuickTime capture; reels visibly wind while playing/recording
-- [ ] Stability (needs a specific repro from user): editing instruments during play/record must not glitch
+- [x] Stability pass (doubling, waveform rewrites, drum filter, envelope jumps fixed; reverb decay still rebuilds): editing instruments during play/record must not glitch
 - [x] Left menu: show computer files without extra buttons (browser limit: must pick folder once)
 - [x] Copy/paste a drum track
 - [x] New tracks auto-arm
