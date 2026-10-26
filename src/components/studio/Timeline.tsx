@@ -711,16 +711,22 @@ function DrumClip({ track }: { track: Track }) {
     const x0 = canvasPoint(e.clientX, e.clientY).x;
     const grid = transport.snap && transport.snap > 0 ? transport.snap : 1;
     const bar = stepsPerBar();
-    const edges = boundedRegions(regionsOf(cuts, total), bounds)
-      .filter(([x, y]) => (x !== a || y !== b) && track.pads?.some((p) => p.steps.slice(Math.floor(x), Math.ceil(y)).some((v) => v > 0)))
-      .flatMap(([x, y]) => [y, x - (b - a)]);
+    const others = boundedRegions(regionsOf(cuts, total), bounds)
+      .filter(([x, y]) => (x !== a || y !== b) && track.pads?.some((p) => p.steps.slice(Math.floor(x), Math.ceil(y)).some((v) => v > 0)));
+    const edges = others.flatMap(([x, y]) => [y, x - (b - a)]);
     let to = a;
     const target = e.currentTarget as HTMLElement;
     try { target.setPointerCapture(e.pointerId); } catch { /* pointer already released */ }
     const onMove = (ev: PointerEvent) => {
       const raw = a + (canvasPoint(ev.clientX, ev.clientY).x - x0) / Math.max(0.0001, perStep);
       const near = edges.reduce<number | null>((best, edge) => Math.abs(edge - raw) <= bar / 4 && (best == null || Math.abs(edge - raw) < Math.abs(best - raw)) ? edge : best, null);
-      to = Math.max(0, near ?? Math.round(raw / grid) * grid);
+      let next = Math.max(0, near ?? Math.round(raw / grid) * grid);
+      // Never drop a part on top of another one: butt it against the closest free edge instead.
+      if (others.some(([x, y]) => next < y && next + (b - a) > x)) {
+        const free = edges.filter((edge) => edge >= 0 && !others.some(([x, y]) => edge < y - 0.001 && edge + (b - a) > x + 0.001));
+        if (free.length) next = free.reduce((best, edge) => Math.abs(edge - raw) < Math.abs(best - raw) ? edge : best);
+      }
+      to = next;
       if (target) target.style.transform = `translateX(${(to - a) * perStep}px)`;
     };
     const onUp = () => {
