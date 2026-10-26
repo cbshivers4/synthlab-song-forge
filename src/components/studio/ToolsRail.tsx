@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import { Film } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { addLocalFolder, forgetRememberedFolder, getLocalFile, getLocalFolders, getPreviewAnalyser, onFoldersChange, onPreviewChange, pickFiles, pickFolder, playPreview, reconnectFolder, rememberedFolders, removeLocalFolder, stopPreview, type RememberedFolder } from "@/lib/synclab/local-files";
+import { addLocalFolder, forgetRememberedFolder, getLocalFile, getLocalFolders, getPreviewAnalyser, onFoldersChange, onPreviewChange, pickFiles, pickFolder, playPreview, reconnectFolder, rememberedFolders, restoreGrantedFolders, removeLocalFolder, stopPreview, type RememberedFolder } from "@/lib/synclab/local-files";
 import { useStudio, type PanelId } from "@/lib/synclab/store";
 import { useApp } from "@/lib/synclab/app-state";
 import type { TrackKind } from "@/lib/synclab/types";
