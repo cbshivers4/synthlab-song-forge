@@ -36,6 +36,13 @@ describe('arrangement paste', () => {
     expect(next.pads?.[0]?.steps.slice(0, 8)).toEqual([1, 0, 0, 0, 1, 0, 0, 0]);
     expect(next.pads?.[0]?.steps[8]).toBe(0);
   });
+  it('pastes a printed drum track right after its last audio clip', () => {
+    const pad = { id: 'k', name: 'Kick', kind: 'kick' as const, volume: 1, pan: 0, pitch: 0, decay: 0.5, muted: false, solo: false, steps: [1, 0, 0, 0] };
+    const drums: Track = { ...track, kind: 'drum', steps: 4, pads: [pad], printedAudio: true };
+    const at = materialEnd(drums, 0.125, 128);
+    expect(at).toBe(16);
+    expect(pasteTrackContent(drums, drums, at, 0.125).clips?.map(c => c.start)).toEqual([0, 16]);
+  });
   it('pastes a looping drum pattern after the end the timeline shows', () => {
     const pad = { id: 'k', name: 'Kick', kind: 'kick' as const, volume: 1, pan: 0, pitch: 0, decay: 0.5, muted: false, solo: false, steps: [1, 0, 0, 0] };
     const drums: Track = { ...track, kind: 'drum', clips: [], steps: 4, pads: [pad] };
