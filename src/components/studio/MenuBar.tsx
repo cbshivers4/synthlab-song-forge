@@ -33,6 +33,7 @@ import { useDesktopMenu } from "@/lib/synclab/desktop-menu";
 import { SYNCLAB_VERSION } from "@/lib/synclab/support";
 import { AbletonHandoff } from "@/components/studio/AbletonHandoff";
 import { openShortcutSettings } from "./useShortcuts";
+import { qwertyEnabled, setQwertyEnabled } from "@/lib/synclab/qwerty";
 
 import { stepsPerBar } from "@/lib/synclab/timebase";
 export function MenuBar() {
@@ -69,6 +70,12 @@ export function MenuBar() {
     addSection,
     tracks,
   } = useStudio();
+  const [qwertyOn, setQwertyOn] = useState(false);
+  useEffect(() => {
+    const sync = () => setQwertyOn(qwertyEnabled());
+    sync(); window.addEventListener("synclab:qwerty", sync);
+    return () => window.removeEventListener("synclab:qwerty", sync);
+  }, []);
   const nextEvent = (dir: 1 | -1) => {
     const pts = [...new Set(tracks.flatMap((t) => [...(t.clips ?? []).map((c) => Math.floor(c.start ?? 0)), ...(t.notes ?? []).map((n) => Math.floor(n.step))]))].sort((a, b) => a - b);
     const p = dir > 0 ? pts.find((x) => x > transport.step) : [...pts].reverse().find((x) => x < transport.step);
@@ -458,6 +465,14 @@ export function MenuBar() {
             <MenubarItem onClick={() => setPanel("piano")}>Piano Roll</MenubarItem>
             <MenubarItem onClick={() => setPanel("keys")}>Virtual Keyboard</MenubarItem>
             <MenubarItem onClick={() => setPanel("settings")}>MIDI Devices</MenubarItem>
+            <MenubarSeparator />
+            <MenubarItem onClick={() => {
+              const on = !qwertyEnabled();
+              setQwertyEnabled(on);
+              toast(on ? "Computer keyboard plays notes" : "Computer keyboard notes off", {
+                description: on ? "Arm or select a synth or sampler track. A W S E D F T G Y H U J K play notes; Z / X change octave; Space plays and stops." : "Space still plays and stops the song.",
+              });
+            }}>Computer Keyboard as Controller{qwertyOn ? " ✓" : ""}</MenubarItem>
           </MenubarContent>
         </MenubarMenu>
 

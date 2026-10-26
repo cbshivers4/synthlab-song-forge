@@ -24,8 +24,16 @@ export function useShortcuts() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const el = e.target instanceof HTMLElement ? e.target : null;
-      if (e.defaultPrevented || e.isComposing || el?.isContentEditable || el?.closest('input, textarea, select, [role="slider"], [role="spinbutton"], [role="tablist"], [role="menu"], [role="listbox"], [role="dialog"], [role="alertdialog"]') || document.querySelector('[role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"]')) return;
-      if (e.key === ' ' && el?.closest('button, [role="button"], [role="checkbox"], [role="switch"]')) return;
+      const typing = e.isComposing || el?.isContentEditable || el?.closest('input:not([type=range]):not([type=checkbox]):not([type=radio]), textarea, select');
+      // Space is the transport key like any DAW: a focused button, knob or tab must not swallow it.
+      if (e.key === ' ' && !e.ctrlKey && !e.metaKey && !e.altKey && !typing && !document.querySelector('[role="dialog"], [role="alertdialog"], [role="menu"]')) {
+        e.preventDefault();
+        if (e.repeat) return;
+        if (el && el !== document.body) el.blur();
+        if (e.shiftKey) void studio.stop(); else studio.togglePlay();
+        return;
+      }
+      if (e.defaultPrevented || typing || el?.closest('[role="slider"], [role="spinbutton"], [role="tablist"], [role="menu"], [role="listbox"], [role="dialog"], [role="alertdialog"]') || document.querySelector('[role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"]')) return;
       const { selected, tracks, transport } = studio;
       if (!e.ctrlKey && !e.metaKey && !e.altKey && qwertyEnabled()) {
         const playable = (t: typeof selected) => t && ['instrument', 'midi', 'sampler'].includes(t.kind);
