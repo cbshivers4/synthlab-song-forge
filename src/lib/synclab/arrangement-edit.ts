@@ -68,3 +68,26 @@ export function rightEdgeEdit(clip: AudioClip, deltaSeconds: number, barSeconds:
   const available = (clip.duration - (clip.offset ?? 0)) / clipRate(clip);
   return { seconds, length: Math.min(clip.duration - (clip.offset ?? 0), seconds * clipRate(clip)), stretch: seconds > available + 0.001 ? seconds / current : null };
 }
+/**
+ * Move one drum part [a, b) so it starts at `to`, like dragging a synth take.
+ * Hits outside the part stay; the moved hits replace whatever was at the destination.
+ */
+export function moveDrumPart(track: Track, a: number, b: number, to: number): Partial<Track> {
+  const len = Math.max(1, Math.round(b - a));
+  const from = Math.round(a);
+  const dest = Math.max(0, Math.round(to));
+  const region = track.patternRegion;
+  const padLen = Math.max(1, track.pads?.[0]?.steps.length ?? track.steps);
+  const steps = Math.max(track.steps, padLen, dest + len);
+  const pads = track.pads?.map(pad => {
+    const plen = Math.max(1, pad.steps.length);
+    const values = Array.from({ length: steps }, (_, s) => region && (s < region[0] || s >= region[1]) ? 0 : pad.steps[s % plen] ?? 0);
+    const part = values.slice(from, from + len);
+    for (let s = from; s < from + len; s++) values[s] = 0;
+    for (let i = 0; i < len; i++) values[dest + i] = part[i] ?? 0;
+    return { ...pad, steps: values };
+  });
+  const lo = Math.min(region?.[0] ?? 0, dest), hi = Math.max(region?.[1] ?? padLen, dest + len);
+  const cuts = [...new Set([...(track.cuts ?? []).filter(c => c <= dest || c >= dest + len), from, from + len, dest, dest + len])].sort((x, y) => x - y);
+  return { pads, steps, cuts, patternRegion: [lo, hi], activeRegion: dest };
+}
