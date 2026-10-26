@@ -3080,3 +3080,63 @@ body:has(.phone-console) [data-sonner-toast] button { pointer-events: auto; }
   .fx-workbench[data-display-pos="left"][data-fx-family] { grid-template-areas: "display" "controls" "steps" "footer" "motion"; }
   .fx-workbench[data-display-pos="right"][data-fx-family] { grid-template-areas: "controls" "display" "steps" "footer" "motion"; }
 }
+
+/* ==== Instrument faces: dark modelling synth, light-deck sampler, teal bass generator ==== */
+
+/* Synth envelope displays: dark window with grid, curve and A·D·S·R dots (every synth style). */
+.env-display { background: var(--display-black); border: 2px solid var(--hardware-rubber); border-radius: 3px; box-shadow: var(--hardware-pressed-shadow); padding: 4px 4px 0; }
+.env-grid-line { stroke: color-mix(in oklab, var(--hardware-silver) 25%, transparent); stroke-width: 0.4; }
+.env-dot { fill: var(--display-black); stroke: var(--neon); stroke-width: 1.2; }
+.env-marks { display: flex; justify-content: space-around; padding: 1px 0 2px; font: 8px var(--font-mono); letter-spacing: 0.1em; color: var(--hardware-silver); }
+
+/* SPEC 4: dark charcoal modelling-synth face with a blue accent (Studio One Mai Tai reference). */
+.synth-hardware[data-synth-style="spec4"] {
+  --primary: oklch(0.72 0.13 235); --neon: oklch(0.72 0.13 235); --studio-accent: oklch(0.72 0.13 235);
+  --primary-foreground: oklch(0.98 0 0);
+  --surface: oklch(0.24 0.008 250); --surface-2: oklch(0.29 0.01 250); --border: oklch(0.4 0.015 250);
+  --hardware-face: oklch(0.27 0.01 250); --hardware-trim: oklch(0.72 0.13 235);
+  background: var(--hardware-brush), linear-gradient(180deg, oklch(0.27 0.01 250), oklch(0.21 0.008 250));
+}
+.synth-hardware[data-synth-style="spec4"] .synth-osc-module,
+.synth-hardware[data-synth-style="spec4"] [role="tabpanel"] .rounded-\[3px\] {
+  border-color: oklch(0.38 0.012 250);
+  background: linear-gradient(180deg, oklch(0.28 0.01 250), oklch(0.24 0.008 250));
+}
+.synth-hardware[data-synth-style="spec4"] .synth-badge { border-bottom-color: var(--primary); }
+
+/* Sampler: dark waveform window on top, light silver control deck below (Sample One reference). */
+.sampler-device { --sampler-ink: oklch(0.22 0.01 250); --sampler-deck: oklch(0.88 0.005 250); --sampler-deck-2: oklch(0.8 0.006 250); --sampler-edge: oklch(0.62 0.008 250); --sampler-accent: oklch(0.6 0.14 230); }
+.sampler-device .sampler-badge { font-family: var(--font-display); font-size: 16px; letter-spacing: 0.04em; color: var(--foreground); border-bottom: 2px solid var(--sampler-accent); padding-bottom: 4px; }
+.sampler-device .sampler-wave-window { background: var(--display-black); border: 3px solid var(--hardware-rubber); border-radius: 5px; box-shadow: var(--hardware-pressed-shadow); padding: 6px; }
+.sampler-device .sampler-wave-window .label-xs, .sampler-device .sampler-wave-window .font-mono { color: var(--hardware-silver); }
+.sampler-device .sampler-deck {
+  background: linear-gradient(180deg, var(--sampler-deck), var(--sampler-deck-2));
+  border: 1px solid var(--sampler-edge); border-radius: 6px; padding: 10px; color: var(--sampler-ink);
+  --foreground: var(--sampler-ink); --muted-foreground: oklch(0.4 0.01 250); --border: var(--sampler-edge);
+  --surface: var(--sampler-deck); --surface-2: oklch(0.94 0.003 250); --background: var(--sampler-deck);
+  --primary: var(--sampler-accent); --primary-foreground: oklch(0.98 0 0);
+}
+.sampler-device .sampler-deck .label-xs { color: oklch(0.38 0.01 250); }
+.sampler-device .sampler-deck .hardware-knob-label { color: var(--sampler-ink); }
+.sampler-device .sampler-deck .hardware-knob-value { color: oklch(0.4 0.01 250); }
+
+/* Bass Generator: light panel, teal accents, dark display and step grid (Reason Bassline Generator reference). */
+.bassgen-device {
+  --bass-teal: oklch(0.72 0.13 185); --bass-teal-deep: oklch(0.5 0.1 205); --bass-ink: oklch(0.24 0.01 250);
+  --bass-panel: oklch(0.94 0.004 250); --bass-panel-2: oklch(0.88 0.005 250); --bass-edge: oklch(0.7 0.008 250);
+  background: linear-gradient(180deg, var(--bass-panel), var(--bass-panel-2)); color: var(--bass-ink);
+  --foreground: var(--bass-ink); --muted-foreground: oklch(0.42 0.01 250); --border: var(--bass-edge);
+  --surface-1: var(--bass-panel); --surface-2: oklch(0.97 0.002 250); --primary: var(--bass-teal-deep); --primary-foreground: oklch(0.98 0 0); --neon: var(--bass-teal);
+  border: 1px solid var(--bass-edge); box-shadow: var(--hardware-case-shadow);
+}
+.bassgen-device .bassgen-brand { font-family: var(--font-display); font-size: 20px; color: var(--bass-ink); }
+.bassgen-device .bassgen-brand b { color: var(--bass-teal-deep); }
+.bassgen-display { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 16px; background: linear-gradient(180deg, oklch(0.2 0.04 210), oklch(0.16 0.03 215)); border: 2px solid var(--hardware-rubber); border-radius: 4px; padding: 10px 14px; box-shadow: var(--hardware-pressed-shadow); }
+.bassgen-display-key { font-family: var(--font-display); font-size: 22px; color: var(--bass-teal); }
+.bassgen-display-roots { font-family: var(--font-mono); font-size: 12px; color: oklch(0.85 0.08 190); }
+.bassgen-display-meta { margin-left: auto; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em; color: var(--hardware-silver); }
+.bassgen-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(14px, 1fr)); gap: 2px; background: oklch(0.18 0.03 215); border: 2px solid var(--hardware-rubber); border-radius: 4px; padding: 6px; }
+.bassgen-cell { height: 26px; border-radius: 2px; background: oklch(0.26 0.03 215); }
+.bassgen-cell.is-bar { margin-left: 3px; }
+.bassgen-cell.is-on { background: color-mix(in oklab, var(--bass-teal) calc(var(--cell-level, 1) * 100%), oklch(0.3 0.05 200)); }
+.bassgen-cell.is-start { box-shadow: inset 0 -3px 0 var(--bass-teal); }
