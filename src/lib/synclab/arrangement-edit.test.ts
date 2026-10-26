@@ -21,7 +21,7 @@ describe('arrangement paste', () => {
     expect(materialEnd(next, 0.125)).toBe(32);
   });
   it('appends drum hits at the end of the drum track instead of overwriting the start', () => {
-    const pad = { id: 'k', name: 'Kick', kind: 'kick' as const, volume: 1, pan: 0, pitch: 0, decay: 0.5, steps: [1, 0, 0, 0] };
+    const pad = { id: 'k', name: 'Kick', kind: 'kick' as const, volume: 1, pan: 0, pitch: 0, decay: 0.5, muted: false, solo: false, steps: [1, 0, 0, 0] };
     const drums: Track = { ...track, kind: 'drum', clips: [], steps: 4, pads: [pad] };
     const next = pasteTrackContent(drums, drums, materialEnd(drums, 0.125), 0.125);
     expect(next.steps).toBe(8);
