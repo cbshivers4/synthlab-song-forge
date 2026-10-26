@@ -72,4 +72,13 @@ describe('clip right edge', () => {
   it('converts a rate-adjusted clip into timeline seconds', () => {
     expect(rightEdgeEdit({ ...clip, speed: 2 }, 3, 2, false)).toEqual({ seconds: 4, length: 2, stretch: 4 });
   });
+});describe('drum part move', () => {
+  it('moves a pasted beat part next to the previous part without touching it', async () => {
+    const { moveDrumPart } = await import('./arrangement-edit');
+    const pad = { id: 'k', name: 'Kick', kind: 'kick' as const, volume: 1, pan: 0, pitch: 0, decay: 0.5, muted: false, solo: false, steps: [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0] };
+    const drums: Track = { ...track, kind: 'drum', clips: [], steps: 14, pads: [pad], patternRegion: [0, 14], cuts: [4, 10, 14] };
+    const next = moveDrumPart(drums, 10, 14, 4);
+    expect(next.pads?.[0]?.steps.slice(0, 14)).toEqual([1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    expect(next.activeRegion).toBe(4);
+  });
 });
