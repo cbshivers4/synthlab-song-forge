@@ -1560,7 +1560,8 @@ export class SyncLabEngine {
 
   /** Live-note fast path: skip the full mix sync when nothing changed. */
   syncMixIfChanged(tracks: Track[]) {
-    if (this.ctx && this.mixTracks === tracks) return;
+    // Stop retires channels without changing tracks; resync when any strip is missing.
+    if (this.ctx && this.mixTracks === tracks && tracks.every(t => this.channels.has(t.id))) return;
     this.syncMix(tracks);
   }
 
@@ -2445,7 +2446,7 @@ export class SyncLabEngine {
     const ctx = this.init();
     const t0 = when ?? ctx.currentTime;
     if (sendExternalNote(trackId, midi, duration, velocity, t0 - ctx.currentTime)) return;
-    const ch = this.channel(trackId);
+    const ch = this.playbackChannel(trackId);
     if (patch.modular) {
       playModularVoice(ctx, ch.input, patch.modular, midi, duration, velocity, t0, this.pitchMod(trackId).sum, (mod, output) =>
         !(typeof OfflineAudioContext !== 'undefined' && ctx instanceof OfflineAudioContext) && MODULAR_SCOPE_TYPES.includes(mod.type) ? attachModularScope(ctx, modularScopeId(trackId, mod.id), output) : undefined);
