@@ -27,6 +27,24 @@ describe('arrangement paste', () => {
     expect(next.steps).toBe(8);
     expect(next.pads?.[0]?.steps).toEqual([1, 0, 0, 0, 1, 0, 0, 0]);
   });
+  it('widens a drum pattern region so a beat pasted at the end can be seen and heard', () => {
+    const pad = { id: 'k', name: 'Kick', kind: 'kick' as const, volume: 1, pan: 0, pitch: 0, decay: 0.5, muted: false, solo: false, steps: [1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0] };
+    const drums: Track = { ...track, kind: 'drum', clips: [], steps: 16, pads: [pad], patternRegion: [0, 4] };
+    expect(materialEnd(drums, 0.125)).toBe(4);
+    const next = pasteTrackContent(drums, drums, materialEnd(drums, 0.125), 0.125);
+    expect(next.patternRegion).toEqual([0, 8]);
+    expect(next.pads?.[0]?.steps.slice(0, 8)).toEqual([1, 0, 0, 0, 1, 0, 0, 0]);
+    expect(next.pads?.[0]?.steps[8]).toBe(0);
+  });
+  it('pastes a looping drum pattern after the end the timeline shows', () => {
+    const pad = { id: 'k', name: 'Kick', kind: 'kick' as const, volume: 1, pan: 0, pitch: 0, decay: 0.5, muted: false, solo: false, steps: [1, 0, 0, 0] };
+    const drums: Track = { ...track, kind: 'drum', clips: [], steps: 4, pads: [pad] };
+    const at = materialEnd(drums, 0.125, 16);
+    expect(at).toBe(16);
+    const next = pasteTrackContent(drums, drums, at, 0.125);
+    expect(next.patternRegion).toEqual([0, 20]);
+    expect(next.pads?.[0]?.steps[16]).toBe(1);
+  });
   it('places note content at the playhead once rather than repeating it before that position', () => {
     const source = { ...track, kind: 'instrument' as const, clips: [], notes: [{ id: 'n', step: 0, length: 4, pitch: 60, velocity: 1 }] };
     const next = pasteTrackContent(source, source, 32, 0.125);
