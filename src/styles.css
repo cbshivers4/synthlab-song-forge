@@ -3140,3 +3140,30 @@ body:has(.phone-console) [data-sonner-toast] button { pointer-events: auto; }
 .bassgen-cell.is-bar { margin-left: 3px; }
 .bassgen-cell.is-on { background: color-mix(in oklab, var(--bass-teal) calc(var(--cell-level, 1) * 100%), oklch(0.3 0.05 200)); }
 .bassgen-cell.is-start { box-shadow: inset 0 -3px 0 var(--bass-teal); }
+
+/* Reference looks, stronger: flat studio faces instead of the console wallpaper (a user-chosen skin image still wins). */
+.synth-hardware:not([style*="background-image"]) {
+  background: linear-gradient(180deg, oklch(0.3 0.006 260), oklch(0.25 0.006 260)) !important;
+  border: 1px solid oklch(0.18 0.005 260); border-top: 3px solid oklch(0.66 0.16 245); border-inline-width: 1px;
+}
+.synth-hardware {
+  --primary: oklch(0.66 0.16 245); --neon: oklch(0.66 0.16 245); --studio-accent: oklch(0.66 0.16 245); --primary-foreground: oklch(0.98 0 0);
+  --surface: oklch(0.22 0.005 260); --surface-2: oklch(0.27 0.006 260); --border: oklch(0.36 0.008 260);
+  --foreground: oklch(0.93 0.004 260); --muted-foreground: oklch(0.7 0.008 260);
+}
+.synth-hardware .synth-badge { font-family: var(--font-display); font-size: 26px; letter-spacing: 0.02em; color: oklch(0.96 0 0); background: none; border: 0; font-style: normal; }
+.synth-hardware .synth-osc-module,
+.synth-hardware .synth-console-tabs > [role="tabpanel"]:not([data-state="inactive"]) {
+  background: oklch(0.21 0.005 260) !important; border: 1px solid oklch(0.15 0.004 260) !important; border-radius: 4px;
+  --foreground: oklch(0.93 0.004 260); --muted-foreground: oklch(0.7 0.008 260); --surface: oklch(0.21 0.005 260); --surface-2: oklch(0.27 0.006 260); --background: oklch(0.21 0.005 260);
+}
+.synth-hardware .env-display { background: oklch(0.2 0.03 255); border: 1px solid oklch(0.45 0.1 250); border-radius: 3px; }
+.synth-hardware [role="tab"][data-state="active"] { background: oklch(0.66 0.16 245); color: oklch(0.98 0 0); }
+
+.sampler-device:not([style*="background-image"]) { background: oklch(0.22 0.005 260) !important; border: 1px solid oklch(0.15 0.004 260); border-top: 3px solid var(--sampler-accent); }
+.sampler-device .sampler-badge { font-size: 26px; color: oklch(0.97 0 0); border: 0; }
+.sampler-device .sampler-wave-window { background: oklch(0.14 0.004 260) !important; border: 1px solid oklch(0.5 0.12 235); }
+.sampler-device .sampler-deck { background: linear-gradient(180deg, oklch(0.93 0.003 260), oklch(0.88 0.004 260)) !important; }
+
+.bassgen-device { border-top: 4px solid var(--bass-teal); }
+.bassgen-device .bassgen-brand { font-size: 26px; }
