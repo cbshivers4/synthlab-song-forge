@@ -1309,8 +1309,10 @@ export class SyncLabEngine {
 
             // envelope follower: rectify then smooth
             const rect = ctx.createWaveShaper();
-            const curve = new Float32Array(1024);
-            for (let i = 0; i < 1024; i++) curve[i] = Math.abs((i / 1023) * 2 - 1);
+            // Odd length puts an exact 0 at silence; an even curve interpolated to a small DC
+            // offset that held every band slightly open and left a constant carrier hum.
+            const curve = new Float32Array(1025);
+            for (let i = 0; i < 1025; i++) curve[i] = Math.max(0, Math.abs((i / 1024) * 2 - 1) - 0.003);
             rect.curve = curve;
             const smooth = ctx.createBiquadFilter();
             smooth.type = "lowpass";
