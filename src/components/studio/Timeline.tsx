@@ -1,7 +1,7 @@
 import { deleteSelectedPart, selectedPartBounds } from '@/lib/synclab/workflow';
 import { boundedRegions, loopRegion } from "@/lib/synclab/recording-region";
 import { timelineUsesWaveform } from "@/lib/synclab/timeline-content";
-import { materialEnd, rightEdgeEdit } from "@/lib/synclab/arrangement-edit";
+import { materialEnd, moveDrumPart, rightEdgeEdit } from "@/lib/synclab/arrangement-edit";
 import { Fragment, memo, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { stepsPerBar, getBeatsPerBar, STEPS_PER_BEAT, songSteps, stepSeconds, positionLabel } from "@/lib/synclab/timebase";
@@ -700,6 +700,38 @@ function DrumClip({ track }: { track: Track }) {
   const steps = track.pads?.[0]?.steps.length ?? 16;
   const cuts = track.cuts ?? [];
   const bounds = track.patternRegion ?? (transport.loop ? loopRegion(transport) : [0, total] as [number, number]);
+  /** Drag one beat part like a synth take; it snaps to the grid and clicks onto neighbouring parts' edges. */
+  const beginPartDrag = (e: React.PointerEvent, a: number, b: number) => {
+    e.stopPropagation();
+    if (e.button !== 0) return;
+    const lane = (e.currentTarget as HTMLElement).closest("[data-lane]") as HTMLElement | null;
+    if (!lane) return;
+    const perStep = canvasRect(lane).width / Math.max(1, total);
+    const x0 = canvasPoint(e.clientX, e.clientY).x;
+    const grid = transport.snap && transport.snap > 0 ? transport.snap : 1;
+    const bar = stepsPerBar();
+    const edges = boundedRegions(regionsOf(cuts, total), bounds)
+      .filter(([x, y]) => (x !== a || y !== b) && track.pads?.some((p) => p.steps.slice(Math.floor(x), Math.ceil(y)).some((v) => v > 0)))
+      .flatMap(([x, y]) => [y, x - (b - a)]);
+    let to = a;
+    const onMove = (ev: PointerEvent) => {
+      const raw = a + (canvasPoint(ev.clientX, ev.clientY).x - x0) / Math.max(0.0001, perStep);
+      const near = edges.reduce<number | null>((best, edge) => Math.abs(edge - raw) <= bar && (best == null || Math.abs(edge - raw) < Math.abs(best - raw)) ? edge : best, null);
+      to = Math.max(0, near ?? Math.round(raw / grid) * grid);
+      const el = e.currentTarget as HTMLElement | null;
+      if (el) el.style.transform = `translateX(${(to - a) * perStep}px)`;
+    };
+    const target = e.currentTarget as HTMLElement;
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      target.style.transform = "";
+      if (Math.abs(to - a) < 0.5) return;
+      updateTrack(track.id, moveDrumPart(track, a, b, to));
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  };
   {
     // Cut beat: each part is its own block that can be selected and deleted, like a DAW part.
     return <>{boundedRegions(regionsOf(cuts, total), bounds).map(([a, b]) => {
@@ -711,11 +743,11 @@ function DrumClip({ track }: { track: Track }) {
       return (
         <div key={a} data-selected={active} data-note-region={active ? "active" : "part"}
           className="arrangement-clip absolute inset-y-1 flex flex-col overflow-hidden rounded-[2px] border"
-          style={{ left: `${a / total * 100}%`, width: `calc(${(b - a) / total * 100}% - 1px)` }}
-          onPointerDown={(e) => { e.stopPropagation(); updateTrack(track.id, { activeRegion: a }); select(track.id); }}
+          onPointerDown={(e) => { updateTrack(track.id, { activeRegion: a }); select(track.id); beginPartDrag(e, a, b); }}
           onClick={(e) => e.stopPropagation()}
           onDoubleClick={() => { select(track.id); setPanel("drums"); }}
-          title={`${track.name} beat part — double-click to open the drum machine`}>
+          style={{ left: `${a / total * 100}%`, width: `calc(${(b - a) / total * 100}% - 1px)`, cursor: "grab", touchAction: "none" }}
+          title={`${track.name} beat part — drag to move, double-click to open the drum machine`}>
           <div className="arrangement-clip-name flex h-[17px] shrink-0 items-center gap-1 px-1.5">
             <Disc3 className="size-2.5 shrink-0" />
             <span className="min-w-0 flex-1 truncate font-mono text-[9px] font-semibold">{track.name} · {hits} HITS</span>
