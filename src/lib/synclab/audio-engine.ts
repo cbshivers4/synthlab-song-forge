@@ -119,6 +119,9 @@ type AutomatableAudioParam = { param: AudioParam; min: number; max: number; loga
 
 const vocoderCleanups = new Map<string, () => void>();
 
+/* holds the current value so live envelope edits don't jump */
+const holdAt = (pr: AudioParam, tm: number) => { const x = pr as AudioParam & { cancelAndHoldAtTime?: (t: number) => AudioParam }; if (x.cancelAndHoldAtTime) x.cancelAndHoldAtTime(tm); else { const v = pr.value; pr.cancelScheduledValues(tm); pr.setValueAtTime(v, tm); } };
+
 export class SyncLabEngine {
   ctx: AudioContext | null = null;
   master: GainNode | null = null;
@@ -2384,9 +2387,7 @@ export class SyncLabEngine {
   private liveVoices = new Map<string, Set<{ end: number; patch: SynthPatch; update: (patch: SynthPatch, time: number) => void }>>();
   private liveDrums = new Map<string, Set<{ end: number; pad: DrumPad; update: (pad: DrumPad, time: number) => void }>>();
 
-  /* holds the current value so live envelope edits don't jump */
-const holdAt = (pr: AudioParam, tm: number) => { const x = pr as AudioParam & { cancelAndHoldAtTime?: (t: number) => AudioParam }; if (x.cancelAndHoldAtTime) x.cancelAndHoldAtTime(tm); else { const v = pr.value; pr.cancelScheduledValues(tm); pr.setValueAtTime(v, tm); } };
-/** Update nodes already sounding, without triggering or capturing another note. */
+  /** Update nodes already sounding, without triggering or capturing another note. */
   syncSoundControls(tracks: Track[]) {
     const ctx = this.ctx;
     if (!ctx) return;
