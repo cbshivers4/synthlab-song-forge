@@ -706,6 +706,7 @@ function DrumClip({ track }: { track: Track }) {
     e.stopPropagation();
     if (e.button !== 0) return;
     const lane = (e.currentTarget as HTMLElement).closest("[data-lane]") as HTMLElement | null;
+    console.log("partdrag lane", !!lane, e.button);
     if (!lane) return;
     const perStep = canvasRect(lane).width / Math.max(1, total);
     const x0 = canvasPoint(e.clientX, e.clientY).x;
@@ -717,6 +718,7 @@ function DrumClip({ track }: { track: Track }) {
     let to = a;
     const onMove = (ev: PointerEvent) => {
       const raw = a + (canvasPoint(ev.clientX, ev.clientY).x - x0) / Math.max(0.0001, perStep);
+      console.log("partdrag move", raw);
       const near = edges.reduce<number | null>((best, edge) => Math.abs(edge - raw) <= bar / 4 && (best == null || Math.abs(edge - raw) < Math.abs(best - raw)) ? edge : best, null);
       to = Math.max(0, near ?? Math.round(raw / grid) * grid);
       const el = e.currentTarget as HTMLElement | null;
