@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type CSSProperties } from "react";
 import { usePreviewTrack } from "@/lib/synclab/use-preview-track";
 import { PreviewButtons } from "./PreviewButtons";
 import { PatternWaveform } from "./PatternWaveform";
@@ -75,11 +75,17 @@ export function BassGenerator() {
   const chip = (on: boolean) => `min-h-11 rounded-md border px-3 text-sm ${on ? "border-primary bg-primary/15 text-primary" : "border-border text-muted-foreground hover:text-foreground"}`;
 
   return (
-    <section className="space-y-4 rounded-md border border-border bg-surface-1 p-4">
+    <section className="bassgen-device space-y-4 rounded-md border border-border bg-surface-1 p-4">
       <header>
-        <h2 className="font-mono text-sm font-bold tracking-[0.18em]">BASS GENERATOR</h2>
+        <h2 className="bassgen-brand">SYNCLAB <b>Bassline Generator</b></h2>
         <p className="text-xs text-muted-foreground">Writes a bassline from music theory — following the chords already in your song, or a key and progression you pick. No AI credits used.</p>
       </header>
+
+      <div className="bassgen-display" aria-live="polite">
+        <span className="bassgen-display-key">{useSong ? "FOLLOWING YOUR CHORDS" : `${NOTE_NAMES[tonic]} ${minor ? "MINOR" : "MAJOR"}`}</span>
+        <span className="bassgen-display-roots">{roots.map((r) => NOTE_NAMES[r]).join(" → ")}</span>
+        <span className="bassgen-display-meta">{label} · {bars} BARS · {sound.toUpperCase()}</span>
+      </div>
 
       <div className="space-y-2">
         <p className="font-mono text-xs font-bold tracking-widest text-muted-foreground">GENRE TEMPLATES</p>
@@ -145,12 +151,25 @@ export function BassGenerator() {
         <p className="text-xs text-muted-foreground">Pick a sound, then press Preview to hear your bassline with it. Changing the sound while previewing switches it right away.</p>
       </div>
 
-      <p className="font-mono text-xs text-primary">Roots: {roots.map((r) => NOTE_NAMES[r]).join(" → ")}</p>
-
       <div className="flex flex-wrap items-center gap-2">
         <Button size="lg" className="min-h-12" onClick={generate}>Generate bassline</Button>
         {generated && <span className="font-mono text-xs text-muted-foreground">{generated.length} notes ready</span>}
       </div>
+      {generated && (
+        <div className="bassgen-grid" role="img" aria-label={`Generated bassline: ${generated.length} notes over ${bars} bars`}>
+          {Array.from({ length: bars * barSteps }, (_, i) => {
+            const note = generated.find((n) => i >= n.step && i < n.step + n.length);
+            const start = generated.find((n) => n.step === i);
+            return (
+              <span
+                key={i}
+                className={`bassgen-cell${note ? " is-on" : ""}${start ? " is-start" : ""}${i % barSteps === 0 ? " is-bar" : ""}`}
+                style={note ? ({ "--cell-level": String(0.35 + note.velocity * 0.65) } as CSSProperties) : undefined}
+              />
+            );
+          })}
+        </div>
+      )}
       {generated && <PatternWaveform pattern={{ notes: generated, instrument: sound, steps: bars * barSteps }} bpm={transport.bpm} label="Generated bassline waveform" />}
       <PreviewButtons pv={pv} onPreview={() => preview()} onAdd={create} addLabel="Add bassline to timeline" />
     </section>

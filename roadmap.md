@@ -102,3 +102,4 @@
 - [x] Piano roll: don't place notes by moving the playhead
 - [x] Left menu: Studio One-style file browser (breadcrumb, folder tree, search, file sizes) under My Computer; rail resizable by dragging its edge
 - [x] Timeline: Paste at end appends drums/clips after existing material (track menu + Clipboard & arrange submenu)
+- [x] Instrument faces (Studio One/Reason reference): Spec 4 synth dark charcoal face with blue accent and A·D·S·R envelope displays; Sampler dark wave window + light silver control decks as "Sample One"; Bass Generator light teal panel with key display and step grid. Presentation only — no sound or control changes; 305 tests pass, build OK, visually verified.
