@@ -35,6 +35,7 @@ describe('arrangement paste', () => {
     expect(next.patternRegion).toEqual([0, 8]);
     expect(next.pads?.[0]?.steps.slice(0, 8)).toEqual([1, 0, 0, 0, 1, 0, 0, 0]);
     expect(next.pads?.[0]?.steps[8]).toBe(0);
+    expect(next.cuts).toEqual([4, 8]);
   });
   it('pastes a printed drum track right after its last audio clip', () => {
     const pad = { id: 'k', name: 'Kick', kind: 'kick' as const, volume: 1, pan: 0, pitch: 0, decay: 0.5, muted: false, solo: false, steps: [1, 0, 0, 0] };

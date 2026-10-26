@@ -41,7 +41,9 @@ export function pasteTrackContent(target: Track, source: Track, at: number, step
   const patternRegion: [number, number] | undefined = pastedDrums
     ? [region ? Math.min(region[0], start) : 0, Math.max(region?.[1] ?? 0, start + sourceLength)]
     : target.patternRegion;
-  return { ...target, steps, notes: [...(target.notes ?? []), ...notes], clips: [...(target.clips ?? []), ...clips], pads, patternRegion,
+  // Like a pasted synth take, a pasted beat is its own part: cut marks at both edges separate it.
+  const cuts = pastedDrums ? [...new Set([...(target.cuts ?? []), start, start + sourceLength])].sort((a, b) => a - b) : target.cuts;
+  return { ...target, steps, notes: [...(target.notes ?? []), ...notes], clips: [...(target.clips ?? []), ...clips], pads, patternRegion, cuts,
     activeClipId: clips[0]?.id ?? target.activeClipId,
     ...(clips.length && ['instrument', 'midi', 'drum', 'sampler'].includes(target.kind) ? { printedAudio: true } : {}) };
 }
