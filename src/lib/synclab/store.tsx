@@ -2186,11 +2186,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         }
         const wantedId = targetId ?? selectedIdRef.current;
         const target = tracksRef.current.find(t => t.id === wantedId);
-        if (target) {
-          if ((src.notes?.length || src.pads?.some(p => p.steps.some(v => v > 0))) && src.kind !== target.kind) {
-            toast.error("Choose a matching channel");
-            return;
-          }
+        // Pasting drums onto a synth (or vice versa) makes a new matching channel instead of failing.
+        const mismatched = !!target && (src.notes?.length || src.pads?.some(p => p.steps.some(v => v > 0))) && src.kind !== target.kind;
+        if (target && !mismatched) {
           const pasted = pasteTrackContent(target, src, timelinePasteStep(transportRef.current.step, destinationStep), stepSeconds(transportRef.current.bpm));
           setTracks(ts => ts.map(t => t.id === target.id ? pasted : t));
           setTransportState(tp => ({ ...tp, bars: Math.max(tp.bars, barsForSteps(materialEnd(pasted, stepSeconds(tp.bpm)))) }));
