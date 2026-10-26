@@ -1562,7 +1562,9 @@ export class SyncLabEngine {
   syncMixIfChanged(tracks: Track[]) {
     // Stop retires channels without changing tracks; resync when any strip is missing.
     if (this.ctx && this.mixTracks === tracks && tracks.every(t => this.channels.has(t.id))) return;
+    const missing = this.ctx ? tracks.filter(t => !this.channels.has(t.id)) : [];
     this.syncMix(tracks);
+    for (const t of missing) this.setInserts(t.id, t.plugins ?? []);
   }
 
   syncMix(tracks: Track[]) {
