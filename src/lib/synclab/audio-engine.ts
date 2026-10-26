@@ -1659,6 +1659,10 @@ export class SyncLabEngine {
       this.monoVoice.get(id)?.stop(now);
       this.monoVoice.delete(id);
       this.lastMidi.delete(id);
+      for (const gate of this.modularGates.get(id) ?? []) {
+        try { gate.gain.cancelScheduledValues(now); gate.gain.setTargetAtTime(0, now, 0.01); setTimeout(() => { try { gate.disconnect(); } catch { /* gone */ } }, 120); } catch { /* gone */ }
+      }
+      this.modularGates.delete(id);
       this.removeChannel(id);
     }
   }
@@ -2412,6 +2416,7 @@ export class SyncLabEngine {
   }
 
   private lastMidi = new Map<string, number>();
+  private modularGates = new Map<string, Set<GainNode>>();
   private monoVoice = new Map<string, { out: GainNode; stop: (t: number) => void }>();
 
   /* ---------------- synth voice ---------------- */
@@ -2454,8 +2459,14 @@ export class SyncLabEngine {
     if (sendExternalNote(trackId, midi, duration, velocity, t0 - ctx.currentTime)) return;
     const ch = this.playbackChannel(trackId);
     if (patch.modular) {
-      playModularVoice(ctx, ch.input, patch.modular, midi, duration, velocity, t0, this.pitchMod(trackId).sum, (mod, output) =>
+      // Each modular voice runs through its own gate so Stop/silence can always cut it.
+      const gate = ctx.createGain();
+      gate.connect(ch.input);
+      const gates = this.modularGates.get(trackId) ?? new Set<GainNode>();
+      gates.add(gate); this.modularGates.set(trackId, gates);
+      const life = playModularVoice(ctx, gate, patch.modular, midi, duration, velocity, t0, this.pitchMod(trackId).sum, (mod, output) =>
         !(typeof OfflineAudioContext !== 'undefined' && ctx instanceof OfflineAudioContext) && MODULAR_SCOPE_TYPES.includes(mod.type) ? attachModularScope(ctx, modularScopeId(trackId, mod.id), output) : undefined);
+      setTimeout(() => { gates.delete(gate); try { gate.disconnect(); } catch { /* gone */ } }, (t0 - ctx.currentTime + life + 0.2) * 1000);
       return;
     }
     const life = duration + patch.amp.release + 0.25;
