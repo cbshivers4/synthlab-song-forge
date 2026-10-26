@@ -357,33 +357,22 @@ export function ToolsRail() {
                         <div className="px-2 pb-1 font-mono text-[9px] tracking-[0.18em] text-muted-foreground/70">
                           MY FILES — PREVIEW, THEN DRAG ONTO THE TIMELINE
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => void openComputerFolder()}
-                          className="flex w-full items-center gap-2 rounded-[3px] px-2 py-1.5 text-left text-xs text-primary transition-colors hover:bg-surface-2"
-                        >
-                          <Plus className="size-3.5 shrink-0" />
-                          <span className="font-medium tracking-wide">Open a folder…</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => void openComputerFiles()}
-                          className="flex w-full items-center gap-2 rounded-[3px] px-2 py-1.5 text-left text-xs text-primary transition-colors hover:bg-surface-2"
-                        >
-                          <Plus className="size-3.5 shrink-0" />
-                          <span className="font-medium tracking-wide">Add audio files…</span>
-                        </button>
                         {remembered.map((r) => (
                           <div key={r.id} className="flex items-center gap-1 px-2 py-1 text-xs text-muted-foreground">
                             <FolderOpen className="size-3.5 shrink-0 opacity-60" />
-                            <button type="button" onClick={() => void reopen(r)} title="Allow access again and list its files" className="min-w-0 flex-1 truncate text-left hover:text-foreground">{r.name} · <span className="text-primary">Reopen</span></button>
+                            <button type="button" onClick={() => void reopen(r)} title="Allow access again and list its files" className="min-w-0 flex-1 truncate text-left hover:text-foreground">{r.name}</button>
                             <button type="button" aria-label={`Forget ${r.name}`} onClick={() => void forgetRememberedFolder(r.id).then(() => rememberedFolders().then(setRemembered))} className="px-1 hover:text-foreground">×</button>
                           </div>
                         ))}
-                        {folders.length === 0 ? (
-                          <p className="px-2 text-[10px] leading-snug text-muted-foreground/80">
-                            Open a folder or add files from your computer. They stay on your device; preview with ▶, then drag a file onto a track.
-                          </p>
+                        {folders.length === 0 && remembered.length === 0 ? (
+                          <button
+                            type="button"
+                            onClick={() => void openComputerFolder()}
+                            className="flex w-full items-center gap-2 rounded-[3px] px-2 py-1.5 text-left text-xs text-primary transition-colors hover:bg-surface-2"
+                          >
+                            <FolderOpen className="size-3.5 shrink-0" />
+                            <span className="font-medium tracking-wide">Choose your music folder (once)</span>
+                          </button>
                         ) : (
                           folders.map((f) => {
                             const isOpen = !!openFolders[f.id];
