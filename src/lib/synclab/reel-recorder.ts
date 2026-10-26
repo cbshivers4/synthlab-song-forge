@@ -138,7 +138,7 @@ class ReelRecorder {
           this.inputRouting = [source, splitter, selected];
         } else this.sourceNode = source;
         result.stream.getAudioTracks()[0]?.addEventListener("ended", () => { void this.release().then(() => this.update({ error: "Audio input disconnected. Enable the input again." })); }, { once: true });
-      } else this.sourceNode = getEngine().outputNode;
+      } else this.sourceNode = getEngine().songTap;
       if (!this.sourceNode) throw new Error("Song output is not available.");
       this.input = ctx.createGain(); this.input.gain.value = 10 ** (this.state.inputGain / 20);
       this.input.channelCount = 2; this.input.channelCountMode = "explicit";

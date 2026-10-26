@@ -364,6 +364,11 @@ export class SyncLabEngine {
     return this.masterInsert?.output ?? this.master;
   }
 
+  /** Stable final tap (after master FX, mutes and bypass); survives master-chain rebuilds, unlike outputNode. */
+  get songTap(): AudioNode | null {
+    return this.analyser ?? this.outputNode;
+  }
+
   /* ---------------- master capture (bounce / export) ---------------- */
   private capture: {
     proc: ScriptProcessorNode;

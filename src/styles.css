@@ -1433,7 +1433,7 @@ body:has(.name-editor-dialog) [data-sonner-toast] { visibility: hidden; }
   .tape-path { height: 40px; }
   .tape-buttons { gap: 4px; }
 }
-@media (prefers-reduced-motion: reduce) { .tape-reel { animation: none; } }
+
 
 /* Project-derived studio equipment, with native scrolling on small screens. */
 .studio-room::after { content: ""; position: absolute; inset: 0; background: var(--studio-room-overlay); pointer-events: none; }
