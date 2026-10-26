@@ -458,6 +458,14 @@ export function MenuBar() {
             <MenubarItem onClick={() => setPanel("piano")}>Piano Roll</MenubarItem>
             <MenubarItem onClick={() => setPanel("keys")}>Virtual Keyboard</MenubarItem>
             <MenubarItem onClick={() => setPanel("settings")}>MIDI Devices</MenubarItem>
+            <MenubarSeparator />
+            <MenubarItem onClick={() => {
+              const on = !qwertyEnabled();
+              setQwertyEnabled(on);
+              toast(on ? "Computer keyboard plays notes" : "Computer keyboard notes off", {
+                description: on ? "Arm or select a synth or sampler track. A W S E D F T G Y H U J K play notes; Z / X change octave; Space plays and stops." : "Space still plays and stops the song.",
+              });
+            }}>Computer Keyboard as Controller{qwertyOn ? " ✓" : ""}</MenubarItem>
           </MenubarContent>
         </MenubarMenu>
 
