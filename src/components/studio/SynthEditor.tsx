@@ -59,21 +59,26 @@ const FIXED_ONLY: ModDest[] = ["pulseWidth", "morph", "fmAmount", "unisonDetune"
 
 function EnvelopeGraph({ env }: { env: EnvelopeParams }) {
   const total = env.attack + env.decay + 0.6 + env.release || 1;
-  const x = (t: number) => (t / total) * 100;
+  const x = (t: number) => 4 + (t / total) * 92;
   const a = x(env.attack);
   const d = a + x(env.decay);
   const s = d + x(0.6);
   const r = s + x(env.release);
-  const sustainY = 40 - env.sustain * 36;
+  const sustainY = 42 - env.sustain * 34;
+  const pts: [number, number][] = [[4, 42], [a, 6], [d, sustainY], [s, sustainY], [r, 42]];
   return (
-    <svg viewBox="0 0 100 40" className="h-20 w-full rounded-md border border-border bg-background/60">
-      <polyline
-        points={`0,40 ${a},4 ${d},${sustainY} ${s},${sustainY} ${r},40`}
-        fill="none"
-        stroke="var(--neon)"
-        strokeWidth="1.5"
-      />
-    </svg>
+    <div className="env-display" aria-hidden="true">
+      <svg viewBox="0 0 100 46" className="h-24 w-full">
+        {[25, 50, 75].map((g) => (
+          <line key={g} x1={g} y1="0" x2={g} y2="46" className="env-grid-line" />
+        ))}
+        <polyline points={pts.map((p) => p.join(",")).join(" ")} fill="none" stroke="var(--neon)" strokeWidth="1.6" />
+        {pts.map(([px, py], i) => (
+          <circle key={i} cx={px} cy={py} r="2.1" className="env-dot" />
+        ))}
+      </svg>
+      <div className="env-marks"><span>A</span><span>D</span><span>S</span><span>R</span></div>
+    </div>
   );
 }
 
@@ -101,7 +106,7 @@ export function SynthEditor({ track }: { track: Track }) {
 function SynthTrackEditor({ track }: { track: Track }) {
   const { updatePatch, savePreset, loadPreset, userPresets, previewNote } = useStudio();
   const [presetName, setPresetName] = useState("");
-  const [showKeyboard, setShowKeyboard] = useState(false);
+  const [showKeyboard, setShowKeyboard] = useState(true);
   const patch = track.patch as SynthPatch;
   if (!patch) return null;
   const set = (p: Partial<SynthPatch>) => updatePatch(track.id, p);
@@ -136,7 +141,7 @@ function SynthTrackEditor({ track }: { track: Track }) {
   const drop = useImageDrop("synth");
   return (
     <div className="studio-wallpaper hardware-device synth-hardware space-y-4 rounded-md p-3" data-studio-panel="synth" data-synth-style={synthStyle} style={skinBackground(skin)} {...drop}>
-      <div className="synth-badge" aria-hidden>{patch.modular ? "MODULAR TECH SYNTH" : patch.name.startsWith("TD-3") || /ACID/i.test(track.name) ? "ACID BASS · TD-3 STYLE" : patch.name.startsWith("Poly Synth") || /POLY/i.test(track.name) ? "POLY SYNTH · 8 VOICE" : "SPEC 4 SYNTH"}</div>
+      <div className="synth-badge" aria-hidden>{patch.modular ? "MODULAR TECH SYNTH" : patch.name.startsWith("TD-3") || /ACID/i.test(track.name) ? "ACID BASS · TD-3 STYLE" : patch.name.startsWith("Poly Synth") || /POLY/i.test(track.name) ? "POLY SYNTH · 8 VOICE" : "SPEC 4 · ANALOG MODELING SYNTH"}</div>
       <SkinControls skinKey="synth" image />
       <MidiLearnStrip id={track.id} label={`${track.name} — every knob below also has its own MIDI button`} />
       <div className="synth-preset-deck flex flex-wrap items-center gap-2">
