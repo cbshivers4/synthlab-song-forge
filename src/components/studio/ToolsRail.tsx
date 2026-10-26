@@ -166,6 +166,7 @@ export function ToolsRail() {
   useEffect(() => {
     const refresh = () => { setFolders(getLocalFolders()); void rememberedFolders().then(setRemembered); };
     refresh();
+    void restoreGrantedFolders().then(refresh);
     return onFoldersChange(refresh);
   }, []);
   const openComputerFiles = async () => {
