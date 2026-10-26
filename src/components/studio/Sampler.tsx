@@ -513,8 +513,8 @@ export function Sampler() {
   };
 
   return (
-    <div className="studio-wallpaper space-y-3 rounded-md p-3" data-studio-panel="sample" style={skinBackground(skin)} {...drop}>
-      <div className="flex items-center justify-between gap-2"><span className="label-xs">SYNCLAB · SAMPLER</span><HardwareBypass track={track} name="Sampler" /></div>
+    <div className="studio-wallpaper sampler-device hardware-device space-y-3 rounded-md p-3" data-studio-panel="sample" style={skinBackground(skin)} {...drop}>
+      <div className="flex items-center justify-between gap-2"><span className="sampler-badge" aria-hidden>SAMPLE ONE · SYNCLAB SAMPLER</span><HardwareBypass track={track} name="Sampler" /></div>
       <details className="text-xs text-muted-foreground">
         <summary className="cursor-pointer py-2">Sampler colors & wallpaper</summary>
         <SkinControls skinKey="sample" image />
@@ -639,7 +639,7 @@ export function Sampler() {
             </p>
           )}
 
-          <div className="sticky top-0 z-30 space-y-1 border-b border-border bg-background pb-2" aria-label="Sample waveform editor">
+          <div className="sampler-wave-window sticky top-0 z-30 space-y-1 border-b border-border bg-background pb-2" aria-label="Sample waveform editor">
             <div className="flex items-center justify-between gap-2 py-1">
               <span className="truncate font-mono text-xs text-primary">{s.name}</span>
               <Button size="sm" variant={drawSlice ? "default" : "outline"} aria-pressed={drawSlice} onClick={() => setDrawSlice(!drawSlice)} className="h-9 shrink-0"><Scissors className="size-4" /> Manual slice</Button>
@@ -647,7 +647,7 @@ export function Sampler() {
             <Waveform key={`${track.id}:${s.url}`} track={track} onSlice={removeChop} drawSlice={drawSlice} />
           </div>
 
-            <div className="space-y-3 border-y border-border py-3">
+            <div className="sampler-deck space-y-3 border-y border-border py-3">
               <p className="label-xs">TIME STRETCH & PITCH</p>
               <div className="flex flex-wrap gap-1">
                 {(["keep", "repitch"] as const).map((m) => (
@@ -689,7 +689,7 @@ export function Sampler() {
             </div>
 
 
-          <div className="space-y-2 rounded-lg border border-border bg-surface-2/40 p-3">
+          <div className="sampler-deck space-y-2 rounded-lg border border-border bg-surface-2/40 p-3">
             <div className="flex flex-wrap items-center gap-2">
               <Scissors className="size-4 text-primary" />
               <span className="label-xs">Chop sample</span>
@@ -848,7 +848,7 @@ export function Sampler() {
             )}
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="sampler-deck grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <Row label="Trim start" midiId={track.id} midiParam="start" value={`${(s.start * s.duration).toFixed(2)}s`}>
               <Slider
                 value={[s.start]}
