@@ -716,7 +716,7 @@ function DrumClip({ track }: { track: Track }) {
     let to = a;
     const onMove = (ev: PointerEvent) => {
       const raw = a + (canvasPoint(ev.clientX, ev.clientY).x - x0) / Math.max(0.0001, perStep);
-      const near = edges.reduce<number | null>((best, edge) => Math.abs(edge - raw) <= bar && (best == null || Math.abs(edge - raw) < Math.abs(best - raw)) ? edge : best, null);
+      const near = edges.reduce<number | null>((best, edge) => Math.abs(edge - raw) <= bar / 4 && (best == null || Math.abs(edge - raw) < Math.abs(best - raw)) ? edge : best, null);
       to = Math.max(0, near ?? Math.round(raw / grid) * grid);
       const el = e.currentTarget as HTMLElement | null;
       if (el) el.style.transform = `translateX(${(to - a) * perStep}px)`;
