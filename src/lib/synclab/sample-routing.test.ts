@@ -74,3 +74,18 @@ describe("sample playback routing after Stop", () => {
     expect(ch.gain.gain.setTargetAtTime).toHaveBeenLastCalledWith(0, 2, 0.02);
   });
 });
+describe("synth note routing after Stop", () => {
+  it("restores the channel's mixer settings for live synth notes", () => {
+    vi.useFakeTimers();
+    vi.stubGlobal("window", { setTimeout });
+    const { engine, tracks, inserts, sync } = setup();
+    engine.silenceChannels(["sample"]);
+    vi.advanceTimersByTime(35);
+    engine.syncMixIfChanged(tracks);
+    try { engine.playNote("sample", {} as never, 60, 0.2); } catch { /* voice build needs real nodes */ }
+    const ch = engine.channel("sample");
+    expect(sync).toHaveBeenCalledExactlyOnceWith(tracks);
+    expect(inserts).toHaveBeenCalledExactlyOnceWith("sample", []);
+    expect(ch.gain.gain.setTargetAtTime).toHaveBeenLastCalledWith(0.7, 2, 0.02);
+  });
+});
