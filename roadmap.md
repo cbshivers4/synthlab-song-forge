@@ -89,3 +89,14 @@
 - [x] Upright-phone pointer fix: canvas-point helper maps rotated touch coords across knobs, timeline, piano roll, mixer, XY pads, drum roll, sampler, EQ — verified playhead tap works
 - [ ] Stage 3 (needs runtime verification): Stop can detach live mic monitoring; overdub can re-capture existing printed material; undo debounce gaps; cold-start master gain; metronome clicks after Stop
 - [x] Sampler preview: preload saved samples, renew expired cloud links, warn instead of playing silently; re-saving keeps permanent storage paths
+
+## Oct 26 requests
+- [ ] Reel recorder: respect mutes in reel/QuickTime capture; reels visibly wind while playing/recording
+- [ ] Stability: editing instruments during play/record must not glitch
+- [ ] Left menu: show computer files without extra buttons (browser limit: must pick folder once)
+- [ ] Copy/paste a drum track
+- [ ] New tracks auto-arm
+- [ ] Timeline: single tap opens track menu, double tap opens drum/piano roll
+- [ ] Notes: save button on all notes
+- [ ] Vocoder / Modular Tech stuck sustained noise
+- [ ] Piano roll: don't place notes by moving the playhead

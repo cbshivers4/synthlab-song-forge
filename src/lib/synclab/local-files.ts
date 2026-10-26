@@ -60,6 +60,23 @@ export async function rememberedFolders(): Promise<RememberedFolder[]> {
   return all.filter((r) => !folders.some((f) => f.id === r.id)).map((r) => ({ id: r.id, name: r.name }));
 }
 export async function forgetRememberedFolder(id: string) { await forgetHandle(id); }
+/** Silently reloads remembered folders the browser still allows reading (no prompt), so they just appear. */
+let restoring: Promise<void> | null = null;
+export function restoreGrantedFolders(): Promise<void> {
+  restoring ??= (async () => {
+    const all = (await tx("readonly", (s) => s.getAll() as IDBRequest<{ id: string; name: string; handle: DirHandle & { queryPermission?: (o: { mode: string }) => Promise<string> } }[]>)) ?? [];
+    for (const rec of all) {
+      if (folders.some((f) => f.id === rec.id)) continue;
+      try {
+        if ((await rec.handle.queryPermission?.({ mode: "read" })) !== "granted") continue;
+        const out: { file: File; path: string }[] = [];
+        await walk(rec.handle, "", out, 0);
+        addLocalFolder({ ...toFolder(rec.name, out), id: rec.id, handle: rec.handle });
+      } catch { /* stays as a one-click Reopen entry */ }
+    }
+  })();
+  return restoring;
+}
 /** Must run from a click: the browser asks to allow reading the folder again. */
 export async function reconnectFolder(id: string): Promise<LocalFolder | null> {
   const rec = await tx("readonly", (s) => s.get(id) as IDBRequest<{ id: string; name: string; handle: DirHandle & { requestPermission?: (o: { mode: string }) => Promise<string> } } | undefined>);

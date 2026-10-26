@@ -219,7 +219,7 @@ export class LiveLooper {
       this.micStream = stream;
       node = this.ctx.createMediaStreamSource(stream);
     } else {
-      node = getEngine().outputNode;
+      node = getEngine().songTap;
     }
     if (!node) throw new Error("Audio output is not ready yet.");
     const proc = this.ctx.createScriptProcessor(BLOCK, 2, 2);
