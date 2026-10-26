@@ -702,11 +702,10 @@ function DrumClip({ track }: { track: Track }) {
   const bounds = track.patternRegion ?? (transport.loop ? loopRegion(transport) : [0, total] as [number, number]);
   /** Drag one beat part like a synth take; it snaps to the grid and clicks onto neighbouring parts' edges. */
   const beginPartDrag = (e: React.PointerEvent, a: number, b: number) => {
-    console.log("partdrag down", a, b);
     e.stopPropagation();
     if (e.button !== 0) return;
+    e.preventDefault(); // no native drag or text selection, which would swallow the move
     const lane = (e.currentTarget as HTMLElement).closest("[data-lane]") as HTMLElement | null;
-    console.log("partdrag lane", !!lane, e.button);
     if (!lane) return;
     const perStep = canvasRect(lane).width / Math.max(1, total);
     const x0 = canvasPoint(e.clientX, e.clientY).x;
@@ -716,25 +715,24 @@ function DrumClip({ track }: { track: Track }) {
       .filter(([x, y]) => (x !== a || y !== b) && track.pads?.some((p) => p.steps.slice(Math.floor(x), Math.ceil(y)).some((v) => v > 0)))
       .flatMap(([x, y]) => [y, x - (b - a)]);
     let to = a;
+    const target = e.currentTarget as HTMLElement;
     const onMove = (ev: PointerEvent) => {
       const raw = a + (canvasPoint(ev.clientX, ev.clientY).x - x0) / Math.max(0.0001, perStep);
-      console.log("partdrag move", raw);
       const near = edges.reduce<number | null>((best, edge) => Math.abs(edge - raw) <= bar / 4 && (best == null || Math.abs(edge - raw) < Math.abs(best - raw)) ? edge : best, null);
       to = Math.max(0, near ?? Math.round(raw / grid) * grid);
-      const el = e.currentTarget as HTMLElement | null;
-      if (el) el.style.transform = `translateX(${(to - a) * perStep}px)`;
+      if (target) target.style.transform = `translateX(${(to - a) * perStep}px)`;
     };
-    const target = e.currentTarget as HTMLElement;
     const onUp = () => {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
       target.style.transform = "";
-      console.log("partdrag", a, b, to);
       if (Math.abs(to - a) < 0.5) return;
       updateTrack(track.id, moveDrumPart(track, a, b, to));
     };
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
   };
   {
     // Cut beat: each part is its own block that can be selected and deleted, like a DAW part.
