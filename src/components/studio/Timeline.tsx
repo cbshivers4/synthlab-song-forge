@@ -702,6 +702,7 @@ function DrumClip({ track }: { track: Track }) {
   const bounds = track.patternRegion ?? (transport.loop ? loopRegion(transport) : [0, total] as [number, number]);
   /** Drag one beat part like a synth take; it snaps to the grid and clicks onto neighbouring parts' edges. */
   const beginPartDrag = (e: React.PointerEvent, a: number, b: number) => {
+    console.log("partdrag down", a, b);
     e.stopPropagation();
     if (e.button !== 0) return;
     const lane = (e.currentTarget as HTMLElement).closest("[data-lane]") as HTMLElement | null;
