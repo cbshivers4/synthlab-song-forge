@@ -33,6 +33,7 @@ import { useDesktopMenu } from "@/lib/synclab/desktop-menu";
 import { SYNCLAB_VERSION } from "@/lib/synclab/support";
 import { AbletonHandoff } from "@/components/studio/AbletonHandoff";
 import { openShortcutSettings } from "./useShortcuts";
+import { qwertyEnabled, setQwertyEnabled } from "@/lib/synclab/qwerty";
 
 import { stepsPerBar } from "@/lib/synclab/timebase";
 export function MenuBar() {
@@ -69,6 +70,12 @@ export function MenuBar() {
     addSection,
     tracks,
   } = useStudio();
+  const [qwertyOn, setQwertyOn] = useState(false);
+  useEffect(() => {
+    const sync = () => setQwertyOn(qwertyEnabled());
+    sync(); window.addEventListener("synclab:qwerty", sync);
+    return () => window.removeEventListener("synclab:qwerty", sync);
+  }, []);
   const nextEvent = (dir: 1 | -1) => {
     const pts = [...new Set(tracks.flatMap((t) => [...(t.clips ?? []).map((c) => Math.floor(c.start ?? 0)), ...(t.notes ?? []).map((n) => Math.floor(n.step))]))].sort((a, b) => a - b);
     const p = dir > 0 ? pts.find((x) => x > transport.step) : [...pts].reverse().find((x) => x < transport.step);
