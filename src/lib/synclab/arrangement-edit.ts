@@ -51,8 +51,10 @@ export function pasteTrackContent(target: Track, source: Track, at: number, step
  * loops across the timeline, so pass `shownEnd` (the end the timeline draws it to).
  */
 export function materialEnd(track: Track, stepDuration: number, shownEnd?: number): number {
-  const drums = track.kind === 'drum' && hasHits(track);
-  const base = drums ? (track.patternRegion?.[1] ?? shownEnd ?? track.steps) : track.steps;
+  // A printed drum track shows and plays its audio clips, so its end is the last clip, not the looping pattern.
+  const printed = !!track.printedAudio && !!track.clips?.length;
+  const drums = track.kind === 'drum' && hasHits(track) && !printed;
+  const base = drums ? (track.patternRegion?.[1] ?? shownEnd ?? track.steps) : printed ? 0 : track.steps;
   return Math.max(base, ...(track.notes ?? []).map(n => n.step + n.length), ...(track.clips ?? []).map(c => (c.start ?? 0) + clipSeconds(c) / stepDuration));
 }
 
