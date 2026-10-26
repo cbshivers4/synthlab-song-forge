@@ -726,6 +726,7 @@ function DrumClip({ track }: { track: Track }) {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
       target.style.transform = "";
+      console.log("partdrag", a, b, to);
       if (Math.abs(to - a) < 0.5) return;
       updateTrack(track.id, moveDrumPart(track, a, b, to));
     };
