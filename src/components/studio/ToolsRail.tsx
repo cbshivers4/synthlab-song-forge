@@ -52,7 +52,6 @@ const TOOLS: Tool[] = [
   { id: "studio-view", label: "Studio View", icon: <AppWindow className="size-4" />, panel: "studio-view" },
   { id: "reel-recorder", label: "Reel-to-Reel Recorder", icon: <Disc3 className="size-4" />, panel: "reel-recorder" },
   { id: "video-sampler", label: "Video Sampler", icon: <Film className="size-4" />, panel: "video-sampler" },
-  { id: "files", label: "My Computer / Browser", icon: <FolderOpen className="size-4" />, panel: "browser" },
   { id: "audio-converter", label: "Audio Converter", icon: <AudioLines className="size-4" />, panel: "audio-converter" },
   { id: "synth", label: "Spec 4 Synth", icon: <Music2 className="size-4" />, panel: "synth", drag: { kind: "instrument", name: "Spec 4 Synth", preset: "Cybotron Lead" } },
   { id: "touch", label: "Touch Synth", icon: <Hand className="size-4" />, panel: "synth", drag: { kind: "instrument", name: "Touch Synth", preset: "Cybotron Lead" } },
@@ -89,7 +88,7 @@ interface Section {
 }
 
 const SECTIONS: Section[] = [
-  { id: "files", label: "Files", tools: ["files", "audio-converter"].map(tool) },
+  { id: "files", label: "Files", tools: ["audio-converter"].map(tool) },
   { id: "perform", label: "Perform", tools: ["studio-view", "reel-recorder", "video-sampler", "live", "looper", "humbeat"].map(tool) },
   { id: "synths", label: "Synthesizers", tools: ["synth", "touch", "acid", "poly", "modular"].map(tool) },
   { id: "instruments", label: "Instruments", tools: ["coproducer", "genstem", "bassgen", "drums", "beat", "chop", "sampler"].map(tool) },
