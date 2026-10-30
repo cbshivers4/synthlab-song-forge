@@ -432,11 +432,14 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const setTransportState = useCallback((update: Transport | ((s: Transport) => Transport)) => {
     rawSetTransportState((s) => {
       const base = s.playing && s.step !== getPlayStep() ? { ...s, step: getPlayStep() } : s;
-      const next = typeof update === "function" ? update(base) : update;
-      if (next.step !== getPlayStep()) setPlayStep(next.step);
-      return next;
+      return typeof update === "function" ? update(base) : update;
     });
   }, []);
+  // An explicit step (seek, stop back to the start, loading a song) moves the playhead.
+  // Declared before the playback clock so a seek-then-play starts from the new position.
+  useEffect(() => {
+    setPlayStep(transport.step);
+  }, [transport.step]);
 
   const tracksRef = useRef(tracks);
   tracksRef.current = tracks;
