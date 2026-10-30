@@ -8,7 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { materialEnd, pasteTrackContent, timelinePasteStep } from "./arrangement-edit";
+import { drumCopySpan, materialEnd, pasteTrackContent, timelinePasteStep } from "./arrangement-edit";
 
 /** Drum/sampler tracks can hold values the browser cannot deep-copy; fall back so copy never silently fails. */
 function cloneTrack(t: Track): Track {
@@ -2212,6 +2212,11 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         const src = tracksRef.current.find((t) => t.id === id);
         if (!src) return;
         clipboardRef.current = cloneTrack(src);
+        // A drum beat copies the part you see (or the selected part), at its full length.
+        if (src.kind === "drum" && !src.printedAudio && src.pads?.some((p) => p.steps.some((v) => v > 0))) {
+          const tp = transportRef.current;
+          clipboardRef.current.patternRegion = drumCopySpan(src, tp.loop ? loopRegion(tp) : [0, songSteps(tp.bars)]);
+        }
         clipClipboardRef.current = null;
         setClipClipboardName(null);
         setClipboardName(src.name);
