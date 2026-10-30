@@ -105,18 +105,28 @@ export function generateBass(roots: number[], style: BassStyle, barSteps: number
   return out;
 }
 
-/** Clean, low-headroom-safe version of a bass preset for generated basslines:
- *  removes drive/distortion/bitcrush, tames resonance, mono voice, no unison smear. */
+/** Clean, headroom-safe version of a bass preset for generated basslines. Root causes of the
+ *  distortion it removes: the always-on voice saturation stage (6x gain into a soft clipper),
+ *  preset oscillators pitched 1-2 octaves below the written note (C1 notes sounding at 8-16 Hz,
+ *  which speakers can only reproduce as distorted harmonics), drive/distortion/bitcrush,
+ *  hot resonance, stacked unison voices and instant attacks/releases that click. */
 export function cleanBassPatch(p: import("./types").SynthPatch): import("./types").SynthPatch {
   const q: import("./types").SynthPatch = JSON.parse(JSON.stringify(p));
+  q.clean = true;
   q.drive = 0;
   q.resonance = Math.min(q.resonance, 4);
+  if (q.filter2) q.filter2 = { ...q.filter2, resonance: Math.min(q.filter2.resonance, 4) };
   q.analog = Math.min(q.analog ?? 0, 0.05);
   q.noise = 0;
   q.unison = { ...q.unison, voices: 1, detune: 0 };
   q.voiceMode = "mono";
-  q.fx = { ...q.fx, distortion: 0, bitcrush: 0, chorus: 0, delay: 0, reverb: Math.min(q.fx.reverb, 0.05) };
+  q.fx = { ...q.fx, distortion: 0, saturation: 0, bitcrush: 0, chorus: 0, flanger: 0, phaser: 0, delay: 0, reverb: Math.min(q.fx.reverb, 0.05) };
+  q.amp = { ...q.amp, attack: Math.max(0.003, q.amp.attack), release: Math.max(0.03, q.amp.release) };
   const on = q.oscillators.filter((o) => o.on);
+  // The generator already writes notes in the bass register its Octave menu names, so lift the
+  // preset's own sub-octave offset (keeping the oscillators' spacing) to sound at that pitch.
+  const lowest = on.length ? Math.min(...on.map((o) => o.octave)) : 0;
+  if (lowest < 0) q.oscillators = q.oscillators.map((o) => ({ ...o, octave: o.octave - lowest }));
   const sum = on.reduce((s, o) => s + o.level, 0);
   if (sum > 0.8) q.oscillators = q.oscillators.map((o) => (o.on ? { ...o, level: (o.level * 0.8) / sum } : o));
   return q;
