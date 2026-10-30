@@ -563,6 +563,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   };
   /** TOUCH releases shortly after a gesture; LATCH holds until playback stops. */
   const automationGestureRef = useRef(new Map<string, { touchedUntil: number; latched: boolean }>());
+  // Mute/solo presses captured during the current take (timeline or reel recording).
+  const switchTakeRef = useRef<{ start: number; prev: number; baseline: Map<string, { muted: boolean; solo: boolean }> } | null>(null);
   // Per-lane edit history so a device automation lane can be stepped back on its
   // own without rewinding the rest of the project.
   const automationHistoryRef = useRef(
@@ -1269,7 +1271,40 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       // punch in / out: the take starts and stops itself at the markers
       if (tp.punchIn != null && at === tp.punchIn) punchRef.current?.start();
       if (tp.punchOut != null && at === tp.punchOut) punchRef.current?.stop();
-      for (const t of list) {
+      // Mute/solo buttons: recorded with their timing during a take, replayed otherwise.
+      {
+        const taking = tp.playing && (tp.recording || getReelRecorder().getSnapshot().mode === "recording");
+        const patches = new Map<string, Partial<Track>>();
+        if (taking) {
+          const take = switchTakeRef.current ?? (switchTakeRef.current = { start: at, prev: at - 1, baseline: new Map() });
+          const from = at <= take.prev ? at - 1 : take.prev;
+          for (const t of list) {
+            const base = take.baseline.get(t.id) ?? { muted: !!t.muted, solo: !!t.solo };
+            if (!take.baseline.has(t.id)) take.baseline.set(t.id, base);
+            const muteEvents = writeSwitchStep(t.muteEvents, from, at, !!t.muted, base.muted, take.start);
+            const soloEvents = writeSwitchStep(t.soloEvents, from, at, !!t.solo, base.solo, take.start);
+            if (muteEvents || soloEvents) patches.set(t.id, { ...(muteEvents ? { muteEvents } : {}), ...(soloEvents ? { soloEvents } : {}) });
+          }
+          take.prev = at;
+        } else {
+          switchTakeRef.current = null;
+          for (const t of list) {
+            const muted = switchStateAt(t.muteEvents, at);
+            const solo = switchStateAt(t.soloEvents, at);
+            const patch: Partial<Track> = {};
+            if (muted !== undefined && muted !== !!t.muted) patch.muted = muted;
+            if (solo !== undefined && solo !== !!t.solo) patch.solo = solo;
+            if (Object.keys(patch).length) patches.set(t.id, patch);
+          }
+        }
+        if (patches.size) {
+          const next = list.map((t) => (patches.has(t.id) ? { ...t, ...patches.get(t.id) } : t));
+          tracksRef.current = next;
+          setTracks((current) => current.map((t) => (patches.has(t.id) ? { ...t, ...patches.get(t.id) } : t)));
+          if (!taking) engine.syncMixIfChanged(next);
+        }
+      }
+      for (const t of tracksRef.current) {
         if (t.muted || t.deviceBypassed || t.frozen || (anySolo && !t.solo)) continue;
         if (!t.automation?.length) continue;
         const ride: Record<string, number> = {};
