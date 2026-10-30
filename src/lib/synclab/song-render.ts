@@ -95,22 +95,23 @@ export async function renderSong(input: SongRenderInput): Promise<Capture | null
   for (const [id, b] of Object.entries(input.buses)) engine.setBus(id, b.volume, b.muted, b.gain ?? 1);
   engine.setVcaStates(input.vcas, input.tracks);
   for (const [id, a] of Object.entries(input.auxReturns)) engine.setAuxReturn(id, a.volume, a.muted);
-  const first = tracksAtStep(input.tracks, input.startStep);
-  engine.syncMix(first);
+  // Channels with recorded mute/solo presses stay open in the mixer; the scheduler skips their
+  // notes and clips while they're muted, so the presses land at their step.
+  const anyRecordedSolo = input.tracks.some((t) => t.soloEvents?.length);
+  engine.syncMix(input.tracks.map((t) => ({
+    ...t,
+    ...(t.muteEvents?.length ? { muted: false } : {}),
+    ...(anyRecordedSolo ? { solo: false } : {}),
+  })));
   for (const t of input.tracks) engine.setInserts(t.id, t.plugins ?? []);
   for (const [target, list] of Object.entries(input.fxChains)) engine.setFxInserts(target, list);
 
   // Export plays the range straight through: no loop wrap, no metronome.
   const tp: Transport = { ...input.transport, loop: false, metronome: false, recording: false };
-  let lastKey = "";
   for (let i = 0; i < input.lengthSteps; i++) {
     const n = input.startStep + i;
     const when = i * stepDur;
     const list = tracksAtStep(input.tracks, n);
-    // Recorded mute/solo presses change the mix at their step.
-    const key = list.map((t) => `${t.muted ? 1 : 0}${t.solo ? 1 : 0}`).join("");
-    if (i > 0 && key !== lastKey) engine.syncMix(list);
-    lastKey = key;
     scheduleStep(engine, list, tp, n, when, { ...OFFLINE_LIVE, lastScheduled: i === 0 ? null : n - 1 });
     const anySolo = list.some((t) => t.solo);
     for (const t of list) {

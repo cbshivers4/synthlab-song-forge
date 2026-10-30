@@ -1984,6 +1984,10 @@ export class SyncLabEngine {
 
   /* ---------------- sampler ---------------- */
   protected sampleBuffers = new Map<string, AudioBuffer>();
+  /** Decoded audio this engine holds; AudioBuffers are context-independent, so offline renders reuse them. */
+  decodedAudio(): ReadonlyMap<string, AudioBuffer> {
+    return this.sampleBuffers;
+  }
   /** Interface takes recorded on one side only play from both speakers. */
   private centered(buf: AudioBuffer) { centerOneSided(buf); return buf; }
   protected reversedBuffers = new Map<string, AudioBuffer>();
