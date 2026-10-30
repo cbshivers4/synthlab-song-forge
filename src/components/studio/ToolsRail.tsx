@@ -5,7 +5,6 @@ import {
   AppWindow,
   ChevronDown,
   ChevronLeft,
-  ChevronRight,
   Cpu,
   Disc3,
   FileSearch,
@@ -19,16 +18,12 @@ import {
   Scissors,
   SlidersHorizontal,
   Waves,
-  FilePlus2,
-  Folder,
-  FolderOpen,
-  Play,
-  Search,
   Square,
 } from "lucide-react";
 import { Film } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { addLocalFolder, forgetRememberedFolder, getLocalFile, getLocalFolders, getPreviewAnalyser, onFoldersChange, onPreviewChange, pickFiles, pickFolder, playPreview, reconnectFolder, rememberedFolders, restoreGrantedFolders, removeLocalFolder, stopPreview, type LocalFile, type LocalFolder, type RememberedFolder } from "@/lib/synclab/local-files";
+import { useEffect, useRef, useState } from "react";
+import { getLocalFile, getPreviewAnalyser, onPreviewChange, stopPreview } from "@/lib/synclab/local-files";
+import { ComputerFiles } from "./ComputerFiles";
 import { useStudio, type PanelId } from "@/lib/synclab/store";
 import { useApp } from "@/lib/synclab/app-state";
 import type { TrackKind } from "@/lib/synclab/types";
@@ -161,10 +156,7 @@ export function ToolsRail() {
   const [open, setOpen] = useState(true);
   const [pluginDrop, setPluginDrop] = useState(false);
   const [closedSections, setClosedSections] = useState<Record<string, boolean>>({ plugins: true, apps: true });
-  const [folders, setFolders] = useState(getLocalFolders);
   const [playingFile, setPlayingFile] = useState<string | null>(null);
-  const [fileQuery, setFileQuery] = useState("");
-  const [remembered, setRemembered] = useState<RememberedFolder[]>([]);
   const [railW, setRailW] = useState(() => {
     if (typeof localStorage === "undefined") return 208;
     const v = Number(localStorage.getItem("synclab-tools-width"));
@@ -185,40 +177,7 @@ export function ToolsRail() {
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", up);
   };
-  useEffect(() => {
-    const refresh = () => { setFolders(getLocalFolders()); void rememberedFolders().then(setRemembered); };
-    refresh();
-    void restoreGrantedFolders().then(refresh);
-    return onFoldersChange(refresh);
-  }, []);
-  const openComputerFiles = async () => {
-    const f = await pickFiles();
-    if (!f) return;
-    addLocalFolder(f);
-  };
-  const reopen = async (r: RememberedFolder) => {
-    try {
-      await reconnectFolder(r.id);
-    } catch (err) {
-      toast.error(`Couldn't reopen ${r.name}`, { description: err instanceof Error ? err.message : undefined });
-    }
-  };
   useEffect(() => onPreviewChange(setPlayingFile), []);
-
-  const openComputerFolder = async () => {
-    try {
-      const f = await pickFolder();
-      if (!f) return;
-      if (f.files.length === 0) {
-        toast("No audio files in that folder", { description: "Looking for WAV, MP3, AIFF, FLAC, OGG and M4A." });
-        return;
-      }
-      addLocalFolder(f);
-      toast.success(`${f.name}: ${f.files.length} audio file${f.files.length === 1 ? "" : "s"}`);
-    } catch (err) {
-      toast.error("Couldn't open that folder", { description: err instanceof Error ? err.message : undefined });
-    }
-  };
 
   const visible = (t: Tool) => advanced || !t.advanced;
   const sections = SECTIONS.map((s) => ({ ...s, tools: s.tools.filter(visible) })).filter((s) => s.tools.length > 0);
