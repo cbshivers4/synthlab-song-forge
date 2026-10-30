@@ -375,6 +375,8 @@ export class SyncLabEngine {
   /* ---------------- master capture (bounce / export) ---------------- */
   private capture: {
     proc: ScriptProcessorNode;
+    /** the node actually feeding the capture, so Stop disconnects that same node */
+    source: AudioNode;
     sink: GainNode;
     left: Float32Array[];
     right: Float32Array[];
@@ -388,7 +390,8 @@ export class SyncLabEngine {
     const proc = ctx.createScriptProcessor(4096, 2, 2);
     const left: Float32Array[] = [];
     const right: Float32Array[] = [];
-    const cap = { proc, sink: ctx.createGain(), left, right, frames: 0 };
+    const source = this.outputNode ?? this.master;
+    const cap = { proc, source, sink: ctx.createGain(), left, right, frames: 0 };
     proc.onaudioprocess = (e) => {
       const l = e.inputBuffer.getChannelData(0);
       const r = e.inputBuffer.numberOfChannels > 1 ? e.inputBuffer.getChannelData(1) : l;
@@ -397,7 +400,7 @@ export class SyncLabEngine {
       cap.frames += l.length;
     };
     cap.sink.gain.value = 0;
-    (this.outputNode ?? this.master).connect(proc);
+    source.connect(proc);
     proc.connect(cap.sink);
     cap.sink.connect(ctx.destination);
     this.capture = cap;
@@ -419,7 +422,7 @@ export class SyncLabEngine {
     this.capture = null;
     cap.proc.onaudioprocess = null;
     try {
-      this.master.disconnect(cap.proc);
+      cap.source.disconnect(cap.proc);
     } catch {
       /* already detached */
     }
