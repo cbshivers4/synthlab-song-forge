@@ -23,27 +23,26 @@ export const PRIME_FRAMES = 256;
 
 /** Self-contained (no outside references) so its source can run inside the AudioWorklet too. */
 export class NativeInsertCore {
-  static HEADER = 4;
   static create(capacity: number, channels: number): SharedArrayBuffer {
-    const sab = new SharedArrayBuffer(NativeInsertCore.HEADER * 4 + capacity * channels * 4);
-    const head = new Int32Array(sab, 0, NativeInsertCore.HEADER);
+    const sab = new SharedArrayBuffer(4 * 4 + capacity * channels * 4);
+    const head = new Int32Array(sab, 0, 4);
     head[2] = capacity;
     head[3] = channels;
     return sab;
   }
   static readable(sab: SharedArrayBuffer): number {
-    const head = new Int32Array(sab, 0, NativeInsertCore.HEADER);
+    const head = new Int32Array(sab, 0, 4);
     return (Atomics.load(head, 0) - Atomics.load(head, 1) + 0x80000000) % 0x80000000;
   }
   static writable(sab: SharedArrayBuffer): number {
-    const head = new Int32Array(sab, 0, NativeInsertCore.HEADER);
+    const head = new Int32Array(sab, 0, 4);
     return head[2]! - NativeInsertCore.readable(sab);
   }
   /** Writes up to `frames` frames from planar channels; returns frames written (drops on overflow). */
   static write(sab: SharedArrayBuffer, channels: Float32Array[], frames: number): number {
-    const head = new Int32Array(sab, 0, NativeInsertCore.HEADER);
+    const head = new Int32Array(sab, 0, 4);
     const cap = head[2]!, ch = head[3]!;
-    const data = new Float32Array(sab, NativeInsertCore.HEADER * 4, cap * ch);
+    const data = new Float32Array(sab, 4 * 4, cap * ch);
     const n = Math.min(frames, NativeInsertCore.writable(sab));
     let w = Atomics.load(head, 0);
     for (let i = 0; i < n; i++) {
@@ -56,9 +55,9 @@ export class NativeInsertCore {
   }
   /** Reads up to `frames` frames into planar channels; returns frames read. */
   static read(sab: SharedArrayBuffer, out: Float32Array[], frames: number): number {
-    const head = new Int32Array(sab, 0, NativeInsertCore.HEADER);
+    const head = new Int32Array(sab, 0, 4);
     const cap = head[2]!, ch = head[3]!;
-    const data = new Float32Array(sab, NativeInsertCore.HEADER * 4, cap * ch);
+    const data = new Float32Array(sab, 4 * 4, cap * ch);
     const n = Math.min(frames, NativeInsertCore.readable(sab));
     let r = Atomics.load(head, 1);
     for (let i = 0; i < n; i++) {
@@ -70,9 +69,20 @@ export class NativeInsertCore {
     return n;
   }
 
-  primed = false;
-  underruns = 0;
-  constructor(public toHost: SharedArrayBuffer | null, public fromHost: SharedArrayBuffer | null, public prime = 256) {}
+  // Plain constructor assignments (no class fields / parameter properties), so the compiled
+  // class needs no helper functions and its source runs unchanged inside the AudioWorklet.
+  toHost: SharedArrayBuffer | null;
+  fromHost: SharedArrayBuffer | null;
+  prime: number;
+  primed: boolean;
+  underruns: number;
+  constructor(toHost: SharedArrayBuffer | null, fromHost: SharedArrayBuffer | null, prime = 256) {
+    this.toHost = toHost;
+    this.fromHost = fromHost;
+    this.prime = prime;
+    this.primed = false;
+    this.underruns = 0;
+  }
 
   /**
    * One audio block. Sends input to the host; plays host output once `prime` frames are queued.
@@ -103,7 +113,8 @@ export class NativeInsertCore {
 
 /** Source for audioWorklet.addModule (via a Blob URL), built from the same tested core. */
 export function nativeInsertWorkletSource(): string {
-  return `${NativeInsertCore.toString()}
+  // A named class expression keeps its own name inside its body even if the bundler renames it.
+  return `const NativeInsertCore = (${NativeInsertCore.toString()});
 class SynclabNativeInsert extends AudioWorkletProcessor {
   constructor() {
     super();
@@ -155,7 +166,7 @@ export class FakeNativeHost {
     if (n <= 0) return 0;
     const buf = Array.from({ length: ch }, () => new Float32Array(n));
     NativeInsertCore.read(this.toHost, buf, n);
-    for (const c of buf) for (let i = 0; i < n; i++) c[i]! *= this.gain;
+    for (const c of buf) for (let i = 0; i < n; i++) c[i] = c[i]! * this.gain;
     NativeInsertCore.write(this.fromHost, buf, n);
     return n;
   }
