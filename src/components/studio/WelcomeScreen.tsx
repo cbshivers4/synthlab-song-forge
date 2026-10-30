@@ -27,18 +27,34 @@ import { openHelp } from "@/components/studio/HelpCenter";
 
 
 const FEATURES: { icon: React.ReactNode; title: string; body: string }[] = [
-  { icon: <Sparkles className="size-4" />, title: "AI Co-Producer — Coming soon", body: "Not available now. Writes chords, basslines, drum patterns and lyrics — preview against your song, then add it to the timeline." },
-  { icon: <Wand2 className="size-4" />, title: "Generate Stem — Coming soon", body: "Not available now. Describe a part and get a solo audio stem in your key and tempo." },
-  { icon: <AudioLines className="size-4" />, title: "Separate Stems — Coming soon", body: "Not available now. Split any song into vocals, drums, bass or instrumental." },
-  { icon: <Mic className="size-4" />, title: "Hum to Beat & Convert Voice", body: "Beatbox a rhythm or hum a melody into notes, and restyle recorded vocals with 21 voice templates." },
   { icon: <Music2 className="size-4" />, title: "Four Synthesizers", body: "Spec 4, Acid Bass (TD-3 style) with step write, Poly Synth and a patchable Modular Tech rack." },
-  { icon: <Cpu className="size-4" />, title: "Modular Tech Synth", body: "Build your own rack — VCOs, filters, envelopes, mixers — and patch it with colour cables." },
   { icon: <Disc3 className="size-4" />, title: "Drum Machine & Drum Roll", body: "24 kits with step sequencing, per-step pitch, chance, flam and choke groups." },
   { icon: <Grid2x2 className="size-4" />, title: "Pad Sampler & Chopper", body: "64 pads, live mic sampling, slice any MP3 or WAV to pads and keys." },
-  { icon: <Scissors className="size-4" />, title: "Video Sampler", body: "Chop video to pads, trigger clips from keys or MIDI, and record straight from your camera." },
   { icon: <Disc3 className="size-4" />, title: "Reel-to-Reel Recorder", body: "16 input channels with analog meters, mute and solo, tape saturation and WAV/MP3 export." },
   { icon: <SlidersHorizontal className="size-4" />, title: "Pro Mixer & Effects Rack", body: "Buses, sends, VCA groups, aux returns, rack-mounted effects with live scopes and meters." },
+  { icon: <Mic className="size-4" />, title: "Hum to Beat & Convert Voice", body: "Beatbox a rhythm or hum a melody into notes, and restyle recorded vocals with 21 voice templates." },
+  { icon: <Cpu className="size-4" />, title: "Modular Tech Synth", body: "Build your own rack — VCOs, filters, envelopes, mixers — and patch it with colour cables." },
+  { icon: <Scissors className="size-4" />, title: "Video Sampler", body: "Chop video to pads, trigger clips from keys or MIDI, and record straight from your camera." },
   { icon: <Piano className="size-4" />, title: "Studio View & MIDI Learn", body: "See your gear on stands and racks, and map any knob, fader or pad on your controller." },
+];
+
+const COMING_SOON: { icon: React.ReactNode; title: string; body: string }[] = [
+  { icon: <Sparkles className="size-4" />, title: "AI Co-Producer", body: "Writes chords, basslines, drum patterns and lyrics — preview against your song, then add it to the timeline." },
+  { icon: <Wand2 className="size-4" />, title: "Generate Stem", body: "Describe a part and get a solo audio stem in your key and tempo." },
+  { icon: <AudioLines className="size-4" />, title: "Separate Stems", body: "Split any song into vocals, drums, bass or instrumental." },
+];
+
+// PLACEHOLDER audio — replace files in /public/demo with real SYNCLAB demos.
+const DEMOS = [
+  { title: "Demo track 1 (placeholder)", src: "/demo/demo-1.wav" },
+  { title: "Demo track 2 (placeholder)", src: "/demo/demo-2.wav" },
+  { title: "Demo track 3 (placeholder)", src: "/demo/demo-3.wav" },
+];
+
+const QUOTES = [
+  { quote: "Placeholder quote — replace with a real testimonial.", who: "Name, Detroit producer" },
+  { quote: "Placeholder quote — replace with a real testimonial.", who: "Name, DJ / artist" },
+  { quote: "Placeholder quote — replace with a real testimonial.", who: "Name, beta tester" },
 ];
 
 const GOOGLE_ICON = (
@@ -203,11 +219,23 @@ export function WelcomeScreen() {
             <p className="mb-6 text-sm text-muted-foreground">Sign in to SYNCLAB</p>
             <div className="space-y-6">
               <div className="space-y-4">
-                <Button className="min-h-14 w-full text-base font-bold" onClick={() => setMode("signup")}>
-                  START FREE TRIAL
-                </Button>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <Button className="min-h-14 w-full text-base font-bold" onClick={() => setMode("signup")}>
+                    START FREE TRIAL
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="min-h-14 w-full text-base font-bold"
+                    onClick={() => document.getElementById("demo")?.scrollIntoView({ behavior: "smooth" })}
+                  >
+                    TRY THE DEMO
+                  </Button>
+                </div>
                 <p className="text-center text-xs font-medium text-muted-foreground">
-                  7-day free trial · no card needed yet
+                  7-day free trial · no card required
+                </p>
+                <p className="text-center text-[11px] text-muted-foreground">
+                  Works in Chrome, Edge, Safari and Firefox. Best on desktop.
                 </p>
               </div>
 
@@ -328,6 +356,9 @@ export function WelcomeScreen() {
             <p className="mt-4 text-center text-xs text-muted-foreground">
               Free for 7 days, then $19.95/month or $149/year.
             </p>
+            <p className="mt-1 text-center text-xs text-muted-foreground">
+              Your projects stay saved if you don’t subscribe.
+            </p>
             <LegalFooter className="mt-3" />
             <Button variant="link"
               type="button"
@@ -338,6 +369,66 @@ export function WelcomeScreen() {
             </Button>
           </div>
         </div>
+      </div>
+
+      <div className="login-inner mx-auto w-full space-y-12 px-5 pb-12 sm:px-8">
+        <section aria-labelledby="coming-soon">
+          <h2 id="coming-soon" className="mb-4 font-display text-2xl font-semibold">Coming soon</h2>
+          <ul className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {COMING_SOON.map((f) => (
+              <li key={f.title} className="login-auth rounded-lg border border-border p-4">
+                <div className="mb-2 flex items-center gap-2">
+                  <span className="text-primary">{f.icon}</span>
+                  <span className="font-semibold">{f.title}</span>
+                  <span className="ml-auto rounded-full border border-primary/60 px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider text-primary">
+                    Coming soon
+                  </span>
+                </div>
+                <p className="text-sm text-muted-foreground">{f.body}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section id="demo" aria-labelledby="demo-title" className="scroll-mt-6">
+          <h2 id="demo-title" className="mb-1 font-display text-2xl font-semibold">Hear the demo</h2>
+          <p className="mb-4 text-sm text-muted-foreground">Made in SYNCLAB — no account needed to listen.</p>
+          <ul className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {DEMOS.map((d) => (
+              <li key={d.src} className="login-auth rounded-lg border border-border p-4">
+                <div className="mb-2 text-sm font-semibold">{d.title}</div>
+                <audio controls preload="none" src={d.src} className="w-full" />
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section aria-labelledby="detroit" className="grid grid-cols-1 items-start gap-6 md:grid-cols-2">
+          <div>
+            <h2 id="detroit" className="mb-2 font-display text-2xl font-semibold">
+              Built in <span className="text-primary">Detroit</span>
+            </h2>
+            <p className="mb-4 text-sm text-muted-foreground">
+              SYNCLAB is made in Detroit, Michigan — the city that gave the world techno. It’s built by a
+              producer for producers: the sound of the machines that shaped the city, in a studio that opens in your browser.
+            </p>
+            <ul className="space-y-3">
+              {QUOTES.map((q, i) => (
+                <li key={i} className="border-l-2 border-primary pl-3">
+                  <p className="text-sm italic">“{q.quote}”</p>
+                  <p className="font-mono text-[10px] uppercase text-muted-foreground">— {q.who}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div
+            role="img"
+            aria-label="Photo placeholder"
+            className="flex aspect-video w-full items-center justify-center rounded-lg border border-dashed border-border font-mono text-xs uppercase text-muted-foreground"
+          >
+            Photo placeholder — Detroit studio photo
+          </div>
+        </section>
       </div>
     </div>
 

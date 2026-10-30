@@ -89,9 +89,9 @@ export const Route = createFileRoute("/")({
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { property: "og:url", content: "https://synclab-app.lovable.app/" },
+      { property: "og:url", content: "https://synclabsapp.com/" },
     ],
-    links: [{ rel: "canonical", href: "https://synclab-app.lovable.app/" }],
+    links: [{ rel: "canonical", href: "https://synclabsapp.com/" }],
     scripts: [
       {
         type: "application/ld+json",
