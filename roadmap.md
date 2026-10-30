@@ -125,3 +125,5 @@
 - [x] Step 5b: Timeline (4,031 → 270 lines + 6 modules) and Mixer (2,167 → 312 + 7 modules) split; duplicate automation-curve maths merged
 - [ ] Step 5c (later, higher risk): split audio engine class and studio store provider
 - [x] Step 6: loop take recording — microphone passes kept as takes (instrument/drum still stop at loop end)
+- [x] Step 8: native plugin hosting design written (/mnt/documents/SYNCLAB-plugin-hosting-design.md); building it needs a C++ developer and real Mac/Windows machines
+- [ ] Step 7: offline desktop app (bundled studio) — not started
