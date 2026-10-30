@@ -265,6 +265,3 @@ export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandl
     </section>
   );
 }
-
-export { setCutFree, useCutFree, cutPosition, laneGridBackground, readDrag } from "./timeline/shared";
-export type { DragPayload } from "./timeline/shared";
