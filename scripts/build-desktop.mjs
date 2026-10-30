@@ -14,6 +14,7 @@ import { createRequire } from "node:module";
 import { execFileSync } from "node:child_process";
 import { mkdirSync } from "node:fs";
 import path from "node:path";
+import { captureOfflineStudio } from "./capture-offline-studio.mjs";
 
 const require = createRequire(import.meta.url);
 const info = require("../electron/app-info.cjs");
@@ -32,6 +33,10 @@ const out = path.resolve(args.out || process.env.SYNCLAB_OUT || "/tmp/synclab-re
 const icon = path.resolve("build-resources", "icon"); // packager appends .icns/.ico/.png
 
 mkdirSync(out, { recursive: true });
+
+// Ship a copy of the published studio so the app opens offline from the first launch.
+// --no-offline-copy skips it (the app then needs internet once before it works offline).
+if (!args["no-offline-copy"]) await captureOfflineStudio();
 
 const appPaths = await packager({
   dir: process.cwd(),

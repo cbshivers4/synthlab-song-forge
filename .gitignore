@@ -31,3 +31,6 @@ dist-ssr
 *.sln
 *.sw?
 electron-release/
+
+# Desktop offline studio copy (generated while packaging)
+build-resources/offline-studio/
