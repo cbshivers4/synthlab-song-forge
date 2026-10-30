@@ -27,3 +27,5 @@ Creative hardware effects (creative-fx.ts) each build their own real signal path
 Scheduler: the frame loop calls reachStep for every heard step in order (never only the latest), so punch markers, automation writes and recorded mute presses survive stalls.
 Count-in clicks are scheduled on the AudioContext clock just ahead of time (cancellable); the visible countdown follows the audio clock, not a beat-length interval.
 Fader/pan/send moves touch their automation lane through updateTrack (automation-write.ts helpers); Write/Touch/Latch record at the heard step and Latch/Touch read back when not recording.
+scheduleStep (schedule-step.ts) is the single per-step note/drum/clip scheduler for live playback and the offline song render (song-render.ts), so exports play exactly what you hear; live-only take bookkeeping is passed in via ScheduleLive.
+Offline renders build the engine graph with buildGraph() on an OfflineAudioContext and reuse the live engine's decoded AudioBuffers; the live performance insert (live-fx) is not part of exports.
