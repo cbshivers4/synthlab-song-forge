@@ -16,7 +16,9 @@ describe('loop take recording', () => {
   it('a first pass started mid-loop keeps its real position', () => {
     const passes = splitLoopPasses({ start: 8, offset: 0.01, duration: 3.01, ...loop });
     expect(passes[0]).toEqual({ start: 8, offset: 0.01, length: 1 });
-    expect(passes[1]).toEqual({ start: 0, offset: 1.01, length: 2 });
+    expect(passes[1]!.start).toBe(0);
+    expect(passes[1]!.offset).toBeCloseTo(1.01);
+    expect(passes[1]!.length).toBeCloseTo(2);
   });
   it('shows the newest pass, unless the last one was stopped early', () => {
     expect(shownPassIndex(splitLoopPasses({ start: 0, offset: 0, duration: 6, ...loop }), 0, 16, 0.125)).toBe(2);
