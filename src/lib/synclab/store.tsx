@@ -35,6 +35,7 @@ import { getPadBank, setPadBank } from "./pad-session";
 import { getLooper } from "./live-looper";
 import { getReelRecorder } from "./reel-recorder";
 import { switchEdge, switchStateAt, writeSwitchStep } from "./switch-automation";
+import { scheduleStep as scheduleSongStep, triggerNote } from "./schedule-step";
 import { isLiveParam, laneReads, laneWrites, liveValue, movedLiveParams, writePoint } from "./automation-write";
 import { padNote } from "./drum-notes";
 import { markLiveHit, isLiveHit, clearLiveHits, neighbourLiveHits } from "./live-take";
@@ -189,33 +190,6 @@ export const newTrack = (kind: TrackKind, name: string, index: number, preset?: 
 });
 
 const initialTracks = (): Track[] => [];
-
-/** Plays one note: a sampler channel uses its loaded file, everything else the synth. */
-function triggerNote(
-  engine: ReturnType<typeof getEngine>,
-  t: Track,
-  midi: number,
-  dur: number,
-  vel: number,
-  when?: number,
-) {
-  if (t.kind === "sampler" && t.sampler) {
-    const s = t.sampler;
-    const chops = s.slices ?? [];
-    const idx = midi - s.rootNote;
-    const shifted = midi + (t.octave ?? 0) * 12;
-    if (chops.length > 0 && idx >= 0 && idx < chops.length) {
-      // each key from the root upwards plays one chop at its original pitch
-      const start = chops[idx] as number;
-      const end = (chops[idx + 1] ?? s.end) as number;
-      engine.playSample(t.id, { ...s, start, end, loop: false }, s.rootNote, dur, vel, when, s.chopChoke ? `chop-choke-${s.chopChoke}` : `chop-${idx}`);
-      return;
-    }
-    engine.playSample(t.id, s, shifted, dur, vel, when);
-    return;
-  }
-  if (t.patch) for (const pitch of processMidiThroughPlugins(midi + (t.octave ?? 0) * 12, t.plugins)) engine.playNote(t.id, t.patch, pitch, dur, vel, when);
-}
 
 export type PanelId =
   | "mixer"

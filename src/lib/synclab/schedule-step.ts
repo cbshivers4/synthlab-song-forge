@@ -1,5 +1,5 @@
 import type { getEngine } from "./audio-engine";
-import { clipRate, laneValueAt, type Track, type TransportState } from "./types";
+import { clipRate, laneValueAt, type Track, type Transport } from "./types";
 import { songSteps, stepSeconds, stepsPerBar, STEPS_PER_BEAT } from "./timebase";
 import { playbackPreferences } from "./preferences";
 import { processMidiThroughPlugins } from "./plugins";
@@ -44,7 +44,7 @@ export function triggerNote(engine: Engine, t: Track, midi: number, dur: number,
  * Queue everything that makes sound for one step at an exact audio time. Shared by live
  * playback and the offline song render, so an export plays exactly what you hear.
  */
-export function scheduleStep(engine: Engine, list: Track[], tp: TransportState, n: number, when: number, live: ScheduleLive) {
+export function scheduleStep(engine: Engine, list: Track[], tp: Transport, n: number, when: number, live: ScheduleLive) {
   const stepDur = stepSeconds(tp.bpm);
   engine.tempo = tp.bpm;
   const anySolo = list.some((t) => t.solo);
