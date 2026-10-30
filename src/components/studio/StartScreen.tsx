@@ -86,6 +86,14 @@ export function StartScreen() {
   const [templateSearch, setTemplateSearch] = useState("");
   const [selectedCloudId, setSelectedCloudId] = useState<string | null>(null);
   const [accountEmail, setAccountEmail] = useState("");
+  const [online, setOnline] = useState(true);
+  useEffect(() => {
+    const update = () => setOnline(navigator.onLine);
+    update();
+    window.addEventListener("online", update);
+    window.addEventListener("offline", update);
+    return () => { window.removeEventListener("online", update); window.removeEventListener("offline", update); };
+  }, []);
 
   const toggleFav = (id: string) => {
     setFavs((prev) => {
@@ -259,7 +267,7 @@ export function StartScreen() {
           </div>
           <div className="max-h-[570px] min-h-40 overflow-y-auto">
           {projectTab === "cloud" && (matchingCloud.length === 0 ? (
-            <p className="p-5 text-sm text-muted-foreground">{projectSearch ? "No matching projects." : "No cloud projects yet. Open a session and choose File → Save."}</p>
+            <p className="p-5 text-sm text-muted-foreground">{projectSearch ? "No matching projects." : !online ? "You're offline. Cloud projects appear here again when you reconnect — projects you saved to this computer are under This device." : "No cloud projects yet. Open a session and choose File → Save."}</p>
           ) : (
             <div className="divide-y divide-border/60">
               {matchingCloud.map((item) => {
