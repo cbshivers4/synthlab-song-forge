@@ -34,7 +34,7 @@ import { getMidiAccess, listInputs, listOutputs, midiSupported, midiUnsupportedM
 import { getPadBank, setPadBank } from "./pad-session";
 import { getLooper } from "./live-looper";
 import { getReelRecorder } from "./reel-recorder";
-import { switchStateAt, writeSwitchStep } from "./switch-automation";
+import { switchEdge, switchStateAt, writeSwitchStep } from "./switch-automation";
 import { padNote } from "./drum-notes";
 import { markLiveHit, isLiveHit, clearLiveHits, neighbourLiveHits } from "./live-take";
 import { keyDown, keyUp } from "./active-keys";
@@ -565,8 +565,6 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   };
   /** TOUCH releases shortly after a gesture; LATCH holds until playback stops. */
   const automationGestureRef = useRef(new Map<string, { touchedUntil: number; latched: boolean }>());
-  // Mute/solo presses captured during the current take (timeline or reel recording).
-  const switchTakeRef = useRef<{ start: number; prev: number; baseline: Map<string, { muted: boolean; solo: boolean }> } | null>(null);
   // Per-lane edit history so a device automation lane can be stepped back on its
   // own without rewinding the rest of the project.
   const automationHistoryRef = useRef(
@@ -1258,6 +1256,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
 
     /** Everything that should happen the moment a step is actually heard. */
     let prevAt = -1;
+    // Mute/solo presses captured during the current take (timeline or reel recording), and the last replayed step.
+    let switchTake: { start: number; prev: number; baseline: Map<string, { muted: boolean; solo: boolean }> } | null = null;
+    let switchPrev = -1;
     const reachStep = (n: number) => {
       const tp = transportRef.current;
       const list = tracksRef.current;
@@ -1278,7 +1279,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         const taking = tp.playing && (tp.recording || getReelRecorder().getSnapshot().mode === "recording");
         const patches = new Map<string, Partial<Track>>();
         if (taking) {
-          const take = switchTakeRef.current ?? (switchTakeRef.current = { start: at, prev: at - 1, baseline: new Map() });
+          const take = switchTake ?? (switchTake = { start: at, prev: at - 1, baseline: new Map() });
           const from = at <= take.prev ? at - 1 : take.prev;
           for (const t of list) {
             const base = take.baseline.get(t.id) ?? { muted: !!t.muted, solo: !!t.solo };
@@ -1288,17 +1289,20 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             if (muteEvents || soloEvents) patches.set(t.id, { ...(muteEvents ? { muteEvents } : {}), ...(soloEvents ? { soloEvents } : {}) });
           }
           take.prev = at;
+          switchPrev = at;
         } else {
-          switchTakeRef.current = null;
+          switchTake = null;
+          // Replay at recorded presses (and when playback starts), so a manual press still works between them.
           for (const t of list) {
-            const muted = switchStateAt(t.muteEvents, at);
-            const solo = switchStateAt(t.soloEvents, at);
+            const muted = switchEdge(t.muteEvents, switchPrev, at) ? switchStateAt(t.muteEvents, at) : undefined;
+            const solo = switchEdge(t.soloEvents, switchPrev, at) ? switchStateAt(t.soloEvents, at) : undefined;
             const patch: Partial<Track> = {};
             if (muted !== undefined && muted !== !!t.muted) patch.muted = muted;
             if (solo !== undefined && solo !== !!t.solo) patch.solo = solo;
             if (Object.keys(patch).length) patches.set(t.id, patch);
           }
         }
+        if (!taking) switchPrev = at;
         if (patches.size) {
           const next = list.map((t) => (patches.has(t.id) ? { ...t, ...patches.get(t.id) } : t));
           tracksRef.current = next;

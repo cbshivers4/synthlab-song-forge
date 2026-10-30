@@ -45,3 +45,10 @@ export function writeSwitchStep(
   // Drop events that repeat the state before them; they change nothing.
   return next.filter((e, i) => i === 0 || e.on !== next[i - 1]!.on);
 }
+
+/** True when replay should set the button at `at`: playback just started, looped back, or a recorded press lies in (prev, at]. */
+export function switchEdge(events: SwitchEvent[] | undefined, prev: number, at: number): boolean {
+  if (!events?.length) return false;
+  if (prev < 0 || at <= prev) return true;
+  return events.some((e) => e.step > prev && e.step <= at);
+}
