@@ -171,3 +171,8 @@ export class FakeNativeHost {
     return n;
   }
 }
+
+/** Shared memory needs a cross-origin-isolated page (the desktop window must send COOP/COEP headers). */
+export function nativeLinkSupported(): boolean {
+  return typeof SharedArrayBuffer !== "undefined" && (globalThis as { crossOriginIsolated?: boolean }).crossOriginIsolated === true;
+}
