@@ -12,7 +12,6 @@ import { encodeAiff, encodeFlac, encodeWavDepth } from "@/lib/synclab/export-for
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { uid } from "@/lib/synclab/presets";
 import { Knob } from "./Knob";
-import { stepsPerBar, stepSeconds, STEPS_PER_BEAT } from "@/lib/synclab/timebase";
 
 const clock = (s: number) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(Math.floor(s % 60)).padStart(2, "0")}.${Math.floor((s % 1) * 10)}`;
 function Reel({ moving, right, fill = 0.5 }: { moving: boolean; right?: boolean; fill?: number }) {
