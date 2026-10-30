@@ -328,7 +328,7 @@ function Waveform({ track }: { track: Track }) {
         // Snap the clip end to whole bars so you choose how many bars it lasts (Shift = fine).
         // Clip length/offset are source-file seconds, so convert through the playback rate.
         const bar = stepsPerBar() * stepDur;
-        edgeEdit = rightEdgeEdit(clip, dSteps * stepDur, bar, ev.shiftKey);
+        edgeEdit = rightEdgeEdit(clip, dSteps * stepDur, bar, ev.shiftKey, track.kind === "drum");
         if (clipElement) {
           clipElement.dataset["bars"] = `${+(edgeEdit.seconds / bar).toFixed(2)} BARS${edgeEdit.stretch ? " · STRETCH" : ""}`;
           clipElement.style.width = `${edgeEdit.seconds / stepDur * perStep}px`;
