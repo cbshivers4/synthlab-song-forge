@@ -5,6 +5,7 @@ import {
   AppWindow,
   ChevronDown,
   ChevronLeft,
+  ChevronRight,
   Cpu,
   Disc3,
   FileSearch,
