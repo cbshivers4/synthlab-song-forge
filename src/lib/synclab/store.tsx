@@ -35,6 +35,7 @@ import { getPadBank, setPadBank } from "./pad-session";
 import { getLooper } from "./live-looper";
 import { getReelRecorder } from "./reel-recorder";
 import { switchEdge, switchStateAt, writeSwitchStep } from "./switch-automation";
+import { isLiveParam, laneReads, laneWrites, liveValue, movedLiveParams, writePoint } from "./automation-write";
 import { padNote } from "./drum-notes";
 import { markLiveHit, isLiveHit, clearLiveHits, neighbourLiveHits } from "./live-take";
 import { keyDown, keyUp } from "./active-keys";
@@ -461,7 +462,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const recStartStepRef = useRef(0);
   const recAudioStartRef = useRef<number | null>(null);
   /** punch recording hooks, filled in once the record helpers exist */
-  const punchRef = useRef<{ start: () => void; stop: () => void } | null>(null);
+  const punchRef = useRef<{ start: (at: number) => void; stop: () => void } | null>(null);
   const loopStopRef = useRef<(() => void) | null>(null);
 
   const [sections, setSections] = useState<SongSection[]>([]);
@@ -1272,7 +1273,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       }
       prevAt = at;
       // punch in / out: the take starts and stops itself at the markers
-      if (tp.punchIn != null && at === tp.punchIn) punchRef.current?.start();
+      if (tp.punchIn != null && at === tp.punchIn) punchRef.current?.start(at);
       if (tp.punchOut != null && at === tp.punchOut) punchRef.current?.stop();
       // Mute/solo buttons: recorded with their timing during a take, replayed otherwise.
       {
@@ -1317,8 +1318,20 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         for (const lane of t.automation) {
           const gesture = automationGestureRef.current.get(`${t.id}:${lane.param}`);
           const touching = (gesture?.touchedUntil ?? 0) > performance.now();
-          const writing =
-            !lane.locked && (lane.mode === "write" || (lane.mode === "latch" && gesture?.latched) || (lane.mode === "touch" && touching));
+          const latched = !!gesture?.latched;
+          const writing = laneWrites(lane, touching, latched);
+          if (writing && isLiveParam(lane.param)) {
+            // Fader / pan / send moves are recorded at the step you hear them.
+            const points = writePoint(lane.points, at, liveValue(t, lane.param));
+            setTracks((current) =>
+              current.map((track) =>
+                track.id === t.id
+                  ? { ...track, automation: (track.automation ?? []).map((item) => (item.param === lane.param ? { ...item, points } : item)) }
+                  : track,
+              ),
+            );
+            continue;
+          }
           if (writing && lane.param.startsWith("plugin:")) {
             const [, pluginId = "", paramId = ""] = lane.param.split(":");
             const plugin = (t.plugins ?? []).find((item) => item.id === pluginId);
@@ -1338,7 +1351,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             }
             continue;
           }
-          if ((lane.mode === "read" || lane.mode === "touch") && !touching && lane.points.length > 0) ride[lane.param] = valueAt(lane.points, at);
+          if (laneReads(lane, touching, latched) && lane.points.length > 0) ride[lane.param] = valueAt(lane.points, at);
         }
         if (Object.keys(ride).length > 0) engine.automate(t.id, ride);
       }
@@ -1379,9 +1392,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     const frame = () => {
       if (cancelled) return;
       const now = ctx.currentTime;
-      let reached = -1;
-      while (queue.length > 0 && queue[0]!.time <= now) reached = queue.shift()!.step;
-      if (reached >= 0) reachStep(reached);
+      // Every heard step runs, even after a stall, so punch markers, automation and recorded
+      // mute presses between frames are never skipped.
+      while (queue.length > 0 && queue[0]!.time <= now) reachStep(queue.shift()!.step);
       raf = requestAnimationFrame(frame);
     };
 
@@ -1400,6 +1413,19 @@ export function StudioProvider({ children }: { children: ReactNode }) {
 
 
   const updateTrack = useCallback((id: string, patch: Partial<Track>) => {
+    // Moving a fader, pan or send while playing "touches" its automation lane so Write/Touch/Latch record it.
+    if (transportRef.current.playing) {
+      const prev = tracksRef.current.find((t) => t.id === id);
+      if (prev?.automation?.length) {
+        for (const param of movedLiveParams(prev, patch)) {
+          const lane = prev.automation.find((l) => l.param === param);
+          if (!lane || lane.locked || !["write", "touch", "latch"].includes(lane.mode)) continue;
+          const key = `${id}:${param}`;
+          const before = automationGestureRef.current.get(key);
+          automationGestureRef.current.set(key, { touchedUntil: performance.now() + 180, latched: lane.mode === "latch" || !!before?.latched });
+        }
+      }
+    }
     setTracks((ts) => ts.map((t) => (t.id === id ? { ...t, ...patch } : t)));
   }, []);
 
@@ -1604,12 +1630,31 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   // keep the punch hooks pointing at the current record helpers
   useEffect(() => {
     punchRef.current = {
-      start: () => {
+      start: (at: number) => {
         const engine = getEngine();
-        if (engine.isRecording) return;
+        if (engine.isRecording || engine.isTrackRecording) return;
         const target = tracksRef.current.find((t) => t.armed && (t.kind === "audio" || t.kind === "ai-vocal"));
-        if (!target) return;
-        recStartStepRef.current = transportRef.current.step ?? 0;
+        if (!target) {
+          // Instrument, drum and sampler channels punch in too: notes and their printed take start at the marker.
+          const note = tracksRef.current.find((t) => t.armed && (t.kind === "instrument" || t.kind === "midi" || t.kind === "drum" || t.kind === "sampler"));
+          if (!note) return;
+          recStartStepRef.current = at;
+          const tpr = transportRef.current;
+          const to = tpr.punchOut != null && tpr.punchOut > at ? tpr.punchOut : Number.POSITIVE_INFINITY;
+          replacedNoteIdsRef.current = tpr.overdub && !tpr.replace
+            ? new Set()
+            : new Set((note.notes ?? []).filter((n) => n.step >= at && n.step < to).map((n) => n.id));
+          try {
+            engine.startTrackRecording(note.id);
+          } catch (err) {
+            toast.error("Could not record this channel", { description: err instanceof Error ? err.message : undefined });
+            return;
+          }
+          updateTrack(note.id, { recording: true });
+          setTransportState(s => ({ ...s, recording: true }));
+          return;
+        }
+        recStartStepRef.current = at;
         const generation = recordingGenerationRef.current;
         updateTrack(target.id, { recording: true });
         pendingInputStartRef.current = engine.startInputRecording(target.id, transportRef.current.monitor ?? false)
@@ -2489,25 +2534,44 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             let left = ciBars * bpb;
             // Hold the transport during the count-in, even if it was already rolling.
             setTransportState((s) => ({ ...s, playing: false, paused: true, countInLeft: left }));
-            const click = (accent: boolean) => {
-              if (transportRef.current.countInClick !== false) engine.playClick(accent);
+            // Clicks are timed on the audio clock (scheduled just ahead, so cancelling stops them),
+            // keeping the count-in steady when the page is busy; countdown and haptics follow.
+            const ctx = engine.init();
+            const beatSec = beatMs / 1000;
+            const t0 = ctx.currentTime + 0.05;
+            const total = left;
+            let nextClick = 0;
+            const scheduleClicks = () => {
+              while (nextClick < total && t0 + nextClick * beatSec < ctx.currentTime + 0.12) {
+                if (transportRef.current.countInClick !== false) engine.playClick(nextClick % bpb === 0, t0 + nextClick * beatSec);
+                nextClick += 1;
+              }
+            };
+            scheduleClicks();
+            const buzz = (accent: boolean) => {
               if (transportRef.current.countInHaptics && typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
                 try { navigator.vibrate(accent ? 70 : 30); } catch { /* Device may block vibration; visual countdown continues. */ }
               }
             };
-            click(true);
-            countInTimerRef.current = window.setInterval(() => {
-              left -= 1;
-              if (left <= 0) {
+            buzz(true);
+            const startAt = t0 + total * beatSec;
+            const tick = () => {
+              scheduleClicks();
+              const remaining = Math.ceil((startAt - ctx.currentTime) / beatSec - 1e-6);
+              if (remaining <= 0) {
                 if (countInTimerRef.current != null) window.clearInterval(countInTimerRef.current);
                 countInTimerRef.current = null;
                 setTransportState((s) => ({ ...s, countInLeft: null }));
                 begin();
-              } else {
-                click(left % bpb === 0);
+                return;
+              }
+              if (remaining !== left) {
+                left = remaining;
+                buzz(left % bpb === 0);
                 setTransportState((s) => ({ ...s, countInLeft: left }));
               }
-            }, beatMs);
+            };
+            countInTimerRef.current = window.setInterval(tick, 10);
             return;
           }
           begin();

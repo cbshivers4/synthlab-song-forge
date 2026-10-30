@@ -375,6 +375,8 @@ export class SyncLabEngine {
   /* ---------------- master capture (bounce / export) ---------------- */
   private capture: {
     proc: ScriptProcessorNode;
+    /** the node actually feeding the capture, so Stop disconnects that same node */
+    source: AudioNode;
     sink: GainNode;
     left: Float32Array[];
     right: Float32Array[];
@@ -388,7 +390,8 @@ export class SyncLabEngine {
     const proc = ctx.createScriptProcessor(4096, 2, 2);
     const left: Float32Array[] = [];
     const right: Float32Array[] = [];
-    const cap = { proc, sink: ctx.createGain(), left, right, frames: 0 };
+    const source = this.outputNode ?? this.master;
+    const cap = { proc, source, sink: ctx.createGain(), left, right, frames: 0 };
     proc.onaudioprocess = (e) => {
       const l = e.inputBuffer.getChannelData(0);
       const r = e.inputBuffer.numberOfChannels > 1 ? e.inputBuffer.getChannelData(1) : l;
@@ -397,7 +400,7 @@ export class SyncLabEngine {
       cap.frames += l.length;
     };
     cap.sink.gain.value = 0;
-    (this.outputNode ?? this.master).connect(proc);
+    source.connect(proc);
     proc.connect(cap.sink);
     cap.sink.connect(ctx.destination);
     this.capture = cap;
@@ -419,7 +422,7 @@ export class SyncLabEngine {
     this.capture = null;
     cap.proc.onaudioprocess = null;
     try {
-      this.master.disconnect(cap.proc);
+      cap.source.disconnect(cap.proc);
     } catch {
       /* already detached */
     }
@@ -2604,8 +2607,11 @@ export class SyncLabEngine {
     }
     tail.connect(voiceOut);
 
+    /** Per-voice echo nodes, released once the echo has died away. */
+    const echoNodes: AudioNode[] = [];
     {
       const delay = ctx.createDelay(1.5);
+      echoNodes.push(delay);
       delay.delayTime.value = 0.28;
       const fb = ctx.createGain();
       fb.gain.value = clamp(patch.fx.delayFeedback, 0, 0.8);
@@ -2940,7 +2946,18 @@ export class SyncLabEngine {
     } };
     active.add(voice); this.liveVoices.set(trackId, active);
     const cleanupSource = nodes[0];
-    cleanupSource?.addEventListener("ended", () => { active.delete(voice); if (!active.size) this.liveVoices.delete(trackId); });
+    cleanupSource?.addEventListener("ended", () => {
+      active.delete(voice);
+      if (!active.size) this.liveVoices.delete(trackId);
+      // Release the finished voice's graph so long sessions don't pile up silent nodes.
+      // The echo keeps ringing for a few seconds first; offline renders keep everything until done.
+      if (typeof OfflineAudioContext !== "undefined" && ctx instanceof OfflineAudioContext) return;
+      try { voiceOut.disconnect(); } catch { /* already detached */ }
+      setTimeout(() => {
+        try { voicePan.disconnect(); } catch { /* already detached */ }
+        for (const n of echoNodes) { try { n.disconnect(); } catch { /* already detached */ } }
+      }, 8000);
+    });
     this.lastMidi.set(trackId, midi);
     if (mode !== "poly") {
       this.monoVoice.set(trackId, {

@@ -23,3 +23,7 @@ Live sound edits use engine-owned, expiring voice handles through syncSoundContr
 
 Interface takes recorded on one side only (left-only or right-only stereo) are centred when decoded into sampleBuffers via centerOneSided, so samples/clips play from both speakers; real stereo is untouched.
 Creative hardware effects (creative-fx.ts) each build their own real signal path between one input and one output node (insert size 2), with their own params, 10 recipes and CSS skin; stereo matrices must upmix mono before splitting.
+
+Scheduler: the frame loop calls reachStep for every heard step in order (never only the latest), so punch markers, automation writes and recorded mute presses survive stalls.
+Count-in clicks are scheduled on the AudioContext clock just ahead of time (cancellable); the visible countdown follows the audio clock, not a beat-length interval.
+Fader/pan/send moves touch their automation lane through updateTrack (automation-write.ts helpers); Write/Touch/Latch record at the heard step and Latch/Touch read back when not recording.
