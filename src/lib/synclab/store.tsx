@@ -37,7 +37,7 @@ import { getReelRecorder } from "./reel-recorder";
 import { switchEdge, switchStateAt, writeSwitchStep } from "./switch-automation";
 import { scheduleStep as scheduleSongStep, triggerNote } from "./schedule-step";
 import { getPlayStep, setPlayStep } from "./playhead";
-import { isLiveParam, laneReads, laneWrites, liveValue, movedLiveParams, writePoint } from "./automation-write";
+import { isLiveParam, laneReads, laneWrites, liveValue, movedLiveParams, valueAt, writePoint } from "./automation-write";
 import { padNote } from "./drum-notes";
 import { markLiveHit, isLiveHit, clearLiveHits, neighbourLiveHits } from "./live-take";
 import { keyDown, keyUp } from "./active-keys";
@@ -240,27 +240,6 @@ interface StudioState {
   setProjectNotes: (notes: string) => void;
 }
 
-/** Shaped value of an automation curve at a step, held flat outside the drawn range. */
-function valueAt(points: AutomationPoint[], step: number): number {
-  const first = points[0]!;
-  if (step <= first.step) return first.value;
-  const last = points[points.length - 1]!;
-  if (step >= last.step) return last.value;
-  for (let i = 1; i < points.length; i++) {
-    const a = points[i - 1]!;
-    const b = points[i]!;
-    if (step <= b.step) {
-      const span = b.step - a.step || 1;
-      const linear = (step - a.step) / span;
-      const curve = Math.max(-1, Math.min(1, a.curve ?? 0));
-      const shaped = curve >= 0
-        ? Math.pow(linear, 1 + curve * 3)
-        : 1 - Math.pow(1 - linear, 1 - curve * 3);
-      return a.value + shaped * (b.value - a.value);
-    }
-  }
-  return last.value;
-}
 
 interface StudioApi extends StudioState {
   snapshot: () => CloudSession;

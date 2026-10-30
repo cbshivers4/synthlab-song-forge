@@ -1,5 +1,6 @@
 import type { AutomationLane, AutomationParam, AutomationPoint, Track } from "./types";
 
+
 /** Channel controls (fader, pan, sends) that automation lanes can record from live moves. */
 export const LIVE_PARAMS = ["volume", "pan", "sendReverb", "sendDelay"] as const satisfies readonly AutomationParam[];
 type LiveParam = (typeof LIVE_PARAMS)[number];
@@ -40,4 +41,24 @@ export function laneReads(lane: Pick<AutomationLane, "mode" | "locked">, touchin
 
 export function writePoint(points: AutomationPoint[], step: number, value: number): AutomationPoint[] {
   return [...points.filter((p) => p.step !== step), { step, value }].sort((a, b) => a.step - b.step);
+}
+
+/** Shaped value of an automation curve at a step, held flat outside the drawn range. Shared by live playback and export. */
+export function valueAt(points: AutomationPoint[], step: number): number {
+  const first = points[0]!;
+  if (step <= first.step) return first.value;
+  const last = points[points.length - 1]!;
+  if (step >= last.step) return last.value;
+  for (let i = 1; i < points.length; i++) {
+    const a = points[i - 1]!;
+    const b = points[i]!;
+    if (step <= b.step) {
+      const span = b.step - a.step || 1;
+      const linear = (step - a.step) / span;
+      const curve = Math.max(-1, Math.min(1, a.curve ?? 0));
+      const shaped = curve >= 0 ? Math.pow(linear, 1 + curve * 3) : 1 - Math.pow(1 - linear, 1 - curve * 3);
+      return a.value + shaped * (b.value - a.value);
+    }
+  }
+  return last.value;
 }
