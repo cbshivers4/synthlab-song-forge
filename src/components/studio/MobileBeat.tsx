@@ -54,6 +54,7 @@ function buzz(ms = 12) {
  * same project state as the desktop studio — no separate engine, no demo mode.
  */
 export function MobileBeat({ onClose }: { onClose: () => void }) {
+  const liveStep = usePlayStep();
   const { tracks, addTrack, updatePad, generateBeat, transport, setTransport, togglePlay, stop, updateTrack, addClip, previewClip, setPanel } =
     useStudio();
   const [tab, setTab] = useState<Tab>("pads");
@@ -426,7 +427,7 @@ export function MobileBeat({ onClose }: { onClose: () => void }) {
               {Array.from({ length: Math.min(16, stepCount - pageStart) }, (_, n) => {
                 const i = pageStart + n;
                 const v = pad.steps[i] ?? 0;
-                const live = transport.playing && transport.step === i % 16;
+                const live = transport.playing && liveStep === i % 16;
                 return (
                   <button
                     key={i}

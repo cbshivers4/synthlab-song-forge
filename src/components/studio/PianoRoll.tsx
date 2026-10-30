@@ -692,10 +692,7 @@ export function PianoRoll({ track }: { track: Track }) {
                 }}
               />
             ))}
-            <div
-              className={`playhead-line pointer-events-none absolute top-0 bottom-0 z-20 w-[2px] ${transport.playing || transport.recording ? '' : 'hidden'}`}
-              style={{ left: `${((transport.step % steps) / steps) * 100}%` }}
-            />
+            <PianoPlayhead visible={transport.playing || transport.recording} steps={steps} />
             <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 z-20 w-[2px] bg-[var(--playhead)]" style={{ left: `${cursor / steps * 100}%` }} />
             {marquee && (
               <div
@@ -836,5 +833,16 @@ export function PianoRoll({ track }: { track: Track }) {
       </div>
 
     </div>
+  );
+}
+
+/** The moving playhead line; only it re-renders each step, not the whole piano roll. */
+function PianoPlayhead({ visible, steps }: { visible: boolean; steps: number }) {
+  const step = usePlayStep();
+  return (
+    <div
+      className={`playhead-line pointer-events-none absolute top-0 bottom-0 z-20 w-[2px] ${visible ? "" : "hidden"}`}
+      style={{ left: `${((step % steps) / steps) * 100}%` }}
+    />
   );
 }

@@ -90,6 +90,7 @@ function Section({ title, active, children }: { title: string; active?: boolean;
 }
 
 export function DrumMachine({ track }: { track: Track }) {
+  const liveStep = usePlayStep();
   const isMobile = useIsMobile();
   const landscape = useIsLandscapePhone();
   const [phoneView, setPhoneView] = useState("roll");
@@ -424,7 +425,7 @@ export function DrumMachine({ track }: { track: Track }) {
                     style={{
                       minWidth: isMobile ? undefined : 12,
                       borderColor:
-                        transport.playing && transport.step % Math.max(1, pad.steps.length) === i ? "var(--neon)" : "var(--color-border)",
+                        transport.playing && liveStep % Math.max(1, pad.steps.length) === i ? "var(--neon)" : "var(--color-border)",
                       opacity: v > 0 ? 0.35 + v * 0.65 : 1,
                       background:
                         v > 0
