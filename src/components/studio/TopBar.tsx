@@ -1,3 +1,4 @@
+import { getPlayStep, usePlayStep } from "@/lib/synclab/playhead";
 import {
   LifeBuoy,
   Cpu,
@@ -377,7 +378,7 @@ export function TopBar() {
               active={transport.punchIn != null}
               onClick={() =>
                 setTransport(
-                  transport.punchIn == null ? { punchIn: transport.step } : { punchOut: transport.step },
+                  transport.punchIn == null ? { punchIn: getPlayStep() } : { punchOut: getPlayStep() },
                 )
               }
             />

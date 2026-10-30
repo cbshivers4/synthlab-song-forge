@@ -1,3 +1,4 @@
+import { getPlayStep, usePlayStep } from "@/lib/synclab/playhead";
 import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
 import { SampleExportButtons } from "./SampleExportButtons";
 import { BypassButton } from "./HardwareBypass";
@@ -271,7 +272,7 @@ export function VideoSampler() {
     const name = speed !== 1 ? `${base} ${targetBpm} BPM` : base;
     const audio = await getEngine().loadSampleFile(encodeWav(cap), name);
     const id = addTrack("audio", name, undefined, { keepPanel: true });
-    addClip(id, { ...audio, id: uid(), name, start: transport.step, offset: 0, length: audio.duration });
+    addClip(id, { ...audio, id: uid(), name, start: getPlayStep(), offset: 0, length: audio.duration });
     toast.success(`${name} added at the playhead`);
   };
 

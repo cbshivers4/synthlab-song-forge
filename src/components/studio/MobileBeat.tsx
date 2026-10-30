@@ -1,3 +1,4 @@
+import { getPlayStep, usePlayStep } from "@/lib/synclab/playhead";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Disc3, Grid2x2, Mic, Minus, Play, Plus, Settings2, Shuffle, SlidersHorizontal, Square, Waves, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -217,7 +218,7 @@ export function MobileBeat({ onClose }: { onClose: () => void }) {
       });
       return;
     }
-    recStartRef.current = transport.step ?? 0;
+    recStartRef.current = getPlayStep() ?? 0;
     updateTrack(id, { armed: true, recording: true });
     setRecording(true);
     setRecElapsed(0);

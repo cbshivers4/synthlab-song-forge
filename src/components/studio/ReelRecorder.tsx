@@ -1,3 +1,4 @@
+import { getPlayStep, usePlayStep } from "@/lib/synclab/playhead";
 import { VuFace } from "./VuFace";
 import { ReelInputChannels } from "./ReelInputChannels";
 import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
@@ -72,7 +73,7 @@ export function ReelRecorder() {
       if (toProject) {
         const audio = await getEngine().loadSampleFile(encodeWav(capture), name);
         const id = addTrack("audio", name, undefined, { keepPanel: true });
-        addClip(id, { ...audio, id: uid(), name, start: transport.step, offset: 0, length: audio.duration }); toast.success("Tape added to project");
+        addClip(id, { ...audio, id: uid(), name, start: getPlayStep(), offset: 0, length: audio.duration }); toast.success("Tape added to project");
       } else {
         const blob = format === "mp3" ? encodeMp3(capture, quality) : format === "flac" ? encodeFlac(capture, 24) : format === "aiff" ? encodeAiff(capture, 24) : encodeWavDepth(capture, format === "wav16" ? 16 : format === "wav32" ? 32 : 24);
         const extension = format.startsWith("wav") ? "wav" : format;

@@ -1,3 +1,4 @@
+import { getPlayStep, usePlayStep } from "@/lib/synclab/playhead";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AudioLines,
@@ -208,7 +209,7 @@ export function Browser() {
   useEffect(() => () => stopPreview(), []);
   const addLocalFile = async (id: string, name: string) => {
     try {
-      const clip = await clipFromLocalFile(id, transport.step);
+      const clip = await clipFromLocalFile(id, getPlayStep());
       const target = selected?.kind === "audio" ? selected.id : addTrack("audio", clip.name);
       if (!target) return;
       addClip(target, clip);

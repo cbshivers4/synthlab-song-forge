@@ -1,3 +1,4 @@
+import { getPlayStep, usePlayStep } from "@/lib/synclab/playhead";
 import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, ChevronRight, Cloud, Download, FolderOpen, HardDrive, Play, Plus, Save, Square, Trash2, Upload, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -132,7 +133,7 @@ export function LibraryPanel() {
         const nm = item.name.toUpperCase().slice(0, 18);
         const loaded = await engine.loadSampleFile(new File([blob], item.name, { type: blob.type }), nm);
         const target = selected?.kind === "audio" ? selected.id : addTrack("audio", nm);
-        addClip(target, { id: uid(), name: nm, peaks: loaded.peaks, duration: loaded.duration, url: loaded.url, start: transport.step, offset: 0, length: loaded.duration, gain: 1 });
+        addClip(target, { id: uid(), name: nm, peaks: loaded.peaks, duration: loaded.duration, url: loaded.url, start: getPlayStep(), offset: 0, length: loaded.duration, gain: 1 });
         toast.success(`${item.name} on the timeline`, { description: "Placed at the playhead" });
       } else if (item.kind === "synth") {
         const target = selected?.kind === "instrument" ? selected.id : addTrack("instrument", item.name);

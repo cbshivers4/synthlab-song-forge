@@ -1,3 +1,4 @@
+import { getPlayStep, usePlayStep } from "@/lib/synclab/playhead";
 import { Circle, ClipboardMinus, ClipboardPaste, Copy, Layers, Metronome, Mic, Piano, Play, Repeat, Square, SquareSplitHorizontal, Timer, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -47,7 +48,7 @@ export function WorkflowBar() {
     </div>
     {selected && <div className="flex min-w-0 items-center gap-1 overflow-x-auto border-t border-border px-2 py-1">
       <span className="max-w-40 shrink-0 truncate pr-1 font-mono text-[10px] text-muted-foreground" title={clip?.name ?? selected.name}>{clip?.name ?? (part ? 'Selected part' : selected.name)}</span>
-      <Button size="icon" variant="ghost" className="size-8 shrink-0" aria-label="Split selected part at playhead" title="Split at playhead" onClick={() => razorAt(selected.id, transport.step)}><SquareSplitHorizontal className="size-3.5" /></Button>
+      <Button size="icon" variant="ghost" className="size-8 shrink-0" aria-label="Split selected part at playhead" title="Split at playhead" onClick={() => razorAt(selected.id, getPlayStep())}><SquareSplitHorizontal className="size-3.5" /></Button>
       <Button size="icon" variant="ghost" className="size-8 shrink-0" disabled={!clip} aria-label="Copy selected clip" title="Copy selected clip" onClick={() => { if (clip) copyClip(selected.id, clip.id); }}><Copy className="size-3.5" /></Button>
       <Button size="sm" variant="ghost" className="h-8 shrink-0 gap-1 px-2 text-[11px] font-bold tracking-wider" disabled={!clip} aria-label="Cut selected clip" title="Cut selected clip; keep channel" onClick={() => { if (clip) cutClip(selected.id, clip.id); }}><ClipboardMinus className="size-3.5" />CUT</Button>
       <Button size="icon" variant="ghost" className="size-8 shrink-0" disabled={!clipClipboardName} aria-label="Paste clip at playhead" title="Paste clip at playhead" onClick={() => pasteClip(false, selected.id)}><ClipboardPaste className="size-3.5" /></Button>

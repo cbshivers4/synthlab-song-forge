@@ -1,3 +1,4 @@
+import { getPlayStep, usePlayStep } from "@/lib/synclab/playhead";
 import { useEffect, useRef, useState } from "react";
 import { useDrumEditorView } from "@/lib/synclab/drum-editor-view";
 import { stepsPerBar, getBeatsPerBar } from "@/lib/synclab/timebase";
@@ -123,7 +124,7 @@ export function DrumMachine({ track }: { track: Track }) {
     setFocusPadId(pad.id);
     if (!transport.playing || (!tapRec && !transport.recording)) return;
     const total = pad.steps.length || track.steps || 16;
-    const at = transport.step % total;
+    const at = getPlayStep() % total;
     const stale = transport.recording ? neighbourLiveHits(track.id, pad.id, at, total) : [];
     if (transport.recording) markLiveHit(track.id, pad.id, at);
     updatePad(track.id, pad.id, { steps: Array.from({ length: total }, (_, i) => i === at ? 1 : stale.includes(i) ? 0 : pad.steps[i] ?? 0) });

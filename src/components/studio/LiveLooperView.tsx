@@ -1,3 +1,4 @@
+import { getPlayStep, usePlayStep } from "@/lib/synclab/playhead";
 import { useEffect, useMemo, useReducer } from "react";
 import { ArrowDownToLine, Circle, Mic, Play, RotateCcw, Square, Trash2, Volume2, VolumeX } from "lucide-react";
 import { toast } from "sonner";
@@ -203,7 +204,7 @@ export function LiveLooperView() {
       const name = `LIVE LOOP ${i + 1}`;
       const res = await getEngine().loadSampleFile(blob, name);
       const trackId = addTrack("audio", name);
-      addClip(trackId, { id: crypto.randomUUID(), name, peaks: res.peaks, duration: res.duration, url: res.url, start: transport.step, offset: 0, length: res.duration, gain: 1 });
+      addClip(trackId, { id: crypto.randomUUID(), name, peaks: res.peaks, duration: res.duration, url: res.url, start: getPlayStep(), offset: 0, length: res.duration, gain: 1 });
       toast.success(`${name} added to the timeline`);
     } catch (error) { toast.error("Couldn't send the loop", { description: error instanceof Error ? error.message : undefined }); }
   };

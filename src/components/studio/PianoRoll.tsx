@@ -1,3 +1,4 @@
+import { getPlayStep, usePlayStep } from "@/lib/synclab/playhead";
 import { ClipboardPaste, Copy, MousePointer2, Pencil, Scissors, Trash2, Undo2, Redo2, ZoomIn, ZoomOut, ChevronLeft, ChevronRight } from "lucide-react";
 import { movePianoNotes, pastePianoNotes } from "@/lib/synclab/piano-edit";
 import { capturedNote, loopRegion } from "@/lib/synclab/recording-region";
@@ -50,7 +51,7 @@ export function PianoRoll({ track }: { track: Track }) {
   const [mode, setMode] = useState<"draw" | "select" | "erase">("draw");
   const [multi, setMulti] = useState(false);
   const [zoom, setZoom] = useState(1);
-  const [cursor, setCursor] = useState(() => transport.step);
+  const [cursor, setCursor] = useState(() => getPlayStep());
   const [clipboardCount, setClipboardCount] = useState(noteClipboard.length);
   const suppressClick = useRef(false);
   const [low, setLow] = useState(48);
