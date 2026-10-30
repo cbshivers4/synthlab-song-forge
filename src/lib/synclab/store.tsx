@@ -2534,25 +2534,29 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             let left = ciBars * bpb;
             // Hold the transport during the count-in, even if it was already rolling.
             setTransportState((s) => ({ ...s, playing: false, paused: true, countInLeft: left }));
-            // Clicks are scheduled on the audio clock up front, so the count-in stays steady even
-            // when the page is busy; the on-screen countdown and haptics follow on a timer.
+            // Clicks are timed on the audio clock (scheduled just ahead, so cancelling stops them),
+            // keeping the count-in steady when the page is busy; countdown and haptics follow.
             const ctx = engine.init();
             const beatSec = beatMs / 1000;
             const t0 = ctx.currentTime + 0.05;
             const total = left;
-            const clickIds: number[] = [];
-            if (transportRef.current.countInClick !== false) {
-              for (let i = 0; i < total; i++) engine.playClick(i % bpb === 0, t0 + i * beatSec);
-            }
+            let nextClick = 0;
+            const scheduleClicks = () => {
+              while (nextClick < total && t0 + nextClick * beatSec < ctx.currentTime + 0.12) {
+                if (transportRef.current.countInClick !== false) engine.playClick(nextClick % bpb === 0, t0 + nextClick * beatSec);
+                nextClick += 1;
+              }
+            };
+            scheduleClicks();
             const buzz = (accent: boolean) => {
               if (transportRef.current.countInHaptics && typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
                 try { navigator.vibrate(accent ? 70 : 30); } catch { /* Device may block vibration; visual countdown continues. */ }
               }
             };
             buzz(true);
-            void clickIds;
             const startAt = t0 + total * beatSec;
             const tick = () => {
+              scheduleClicks();
               const remaining = Math.ceil((startAt - ctx.currentTime) / beatSec - 1e-6);
               if (remaining <= 0) {
                 if (countInTimerRef.current != null) window.clearInterval(countInTimerRef.current);
