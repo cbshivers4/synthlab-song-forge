@@ -2534,25 +2534,40 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             let left = ciBars * bpb;
             // Hold the transport during the count-in, even if it was already rolling.
             setTransportState((s) => ({ ...s, playing: false, paused: true, countInLeft: left }));
-            const click = (accent: boolean) => {
-              if (transportRef.current.countInClick !== false) engine.playClick(accent);
+            // Clicks are scheduled on the audio clock up front, so the count-in stays steady even
+            // when the page is busy; the on-screen countdown and haptics follow on a timer.
+            const ctx = engine.init();
+            const beatSec = beatMs / 1000;
+            const t0 = ctx.currentTime + 0.05;
+            const total = left;
+            const clickIds: number[] = [];
+            if (transportRef.current.countInClick !== false) {
+              for (let i = 0; i < total; i++) engine.playClick(i % bpb === 0, t0 + i * beatSec);
+            }
+            const buzz = (accent: boolean) => {
               if (transportRef.current.countInHaptics && typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
                 try { navigator.vibrate(accent ? 70 : 30); } catch { /* Device may block vibration; visual countdown continues. */ }
               }
             };
-            click(true);
-            countInTimerRef.current = window.setInterval(() => {
-              left -= 1;
-              if (left <= 0) {
+            buzz(true);
+            void clickIds;
+            const startAt = t0 + total * beatSec;
+            const tick = () => {
+              const remaining = Math.ceil((startAt - ctx.currentTime) / beatSec - 1e-6);
+              if (remaining <= 0) {
                 if (countInTimerRef.current != null) window.clearInterval(countInTimerRef.current);
                 countInTimerRef.current = null;
                 setTransportState((s) => ({ ...s, countInLeft: null }));
                 begin();
-              } else {
-                click(left % bpb === 0);
+                return;
+              }
+              if (remaining !== left) {
+                left = remaining;
+                buzz(left % bpb === 0);
                 setTransportState((s) => ({ ...s, countInLeft: left }));
               }
-            }, beatMs);
+            };
+            countInTimerRef.current = window.setInterval(tick, 10);
             return;
           }
           begin();
