@@ -12,7 +12,6 @@ import { Lane } from "./clips";
 import { laneGridBackground, laneLabel } from "./shared";
 
 let automationClipboard: { duration: number; points: AutomationPoint[] } | null = null;
-import { WaveformView } from "@/components/studio/WaveformView";
 
 /** One automation lane under a track: click to add a point, drag points, double-click to remove. */
 export function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) {

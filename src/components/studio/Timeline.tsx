@@ -15,6 +15,7 @@ import { useStudio } from "@/lib/synclab/store";
 import { AddTrackMenu } from "@/components/studio/AddTrackMenu";
 import { TrackSearch } from "@/components/studio/TrackSearch";
 import type { Track } from "@/lib/synclab/types";
+import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
 import { EditToolbar, TimelineOptionsPanel } from "./timeline/EditToolbar";
 import { Ruler, SongPlayhead, TimelineOverview } from "./timeline/Ruler";
 import { FolderRow, TrackRow } from "./timeline/TrackRow";

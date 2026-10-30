@@ -5,6 +5,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Flag, Settings2 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useStudio } from "@/lib/synclab/store";
+import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
 import { TimelineOptionsPanel } from "./EditToolbar";
 
 /** Density-aware measure numbering for the ruler: keeps bar labels readable

@@ -7,7 +7,11 @@ import { Scissors, Trash2 } from "lucide-react";
 import synclabLogoAsset from "@/assets/synclab-logo-neon.jpg.asset.json";
 import { Button } from "@/components/ui/button";
 import type { AutomationParam, BusId, Track } from "@/lib/synclab/types";
+import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
 import { Lane } from "./clips";
+
+export const synclabLogo = synclabLogoAsset.url;
+
 
 const CORE_LANE_LABEL: Record<Exclude<AutomationParam, `plugin:${string}:${string}`>, string> = {
   volume: "VOLUME",
@@ -24,18 +28,7 @@ export const laneLabel = (track: Track, param: AutomationParam) => {
 };
 
 export const EMPTY_PEAKS: number[] = [0];
-import { LevelBar } from "@/components/studio/LevelBar";
-import { ClipEditor } from "@/components/studio/ClipEditor";
-import { clipRate, clipSeconds } from "@/lib/synclab/types";
-import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
-import { getEngine } from "@/lib/synclab/audio-engine";
-import { downloadBlob, encodeWav } from "@/lib/synclab/bounce";
-import { freshCloudUrl } from "@/lib/synclab/cloud";
-import { parseMidiFile } from "@/lib/synclab/midi-file";
 
-import { TrackIcon, TrackStylePicker } from "@/components/studio/TrackStyle";
-import { TrackNotes } from "@/components/studio/TrackNotes";
-export const synclabLogo = synclabLogoAsset.url;
 
 export const INPUTS = ["Microphone", "Guitar / Line 1", "Keyboard / Line 2", "External Instrument", "MIDI Keyboard", "Internal", "Stereo File"];
 

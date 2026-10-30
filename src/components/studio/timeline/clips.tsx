@@ -1,5 +1,6 @@
 import { getPlayStep, usePlayStep } from "@/lib/synclab/playhead";
-import { deleteSelectedPart, loopRegion } from "@/lib/synclab/recording-region";
+import { deleteSelectedPart } from '@/lib/synclab/workflow';
+import { boundedRegions, loopRegion } from "@/lib/synclab/recording-region";
 import { timelineUsesWaveform } from "@/lib/synclab/timeline-content";
 import { moveDrumPart, rightEdgeEdit, stretchDrumPart } from "@/lib/synclab/arrangement-edit";
 import { useEffect, useRef, useState } from "react";
@@ -10,6 +11,10 @@ import { toast } from "sonner";
 import { useStudio } from "@/lib/synclab/store";
 import { uid } from "@/lib/synclab/presets";
 import type { Track } from "@/lib/synclab/types";
+import { WaveformView } from "@/components/studio/WaveformView";
+import { ClipEditor } from "@/components/studio/ClipEditor";
+import { clipRate, clipSeconds } from "@/lib/synclab/types";
+import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
 import { DrumHitWave, EMPTY_PEAKS, NOTE_NAMES, PartMenu } from "./shared";
 
 /** Audio lane: every clip sits at its own bar position and can be moved, trimmed and dragged between tracks. */
