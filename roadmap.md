@@ -117,3 +117,5 @@
 ## Oct 30 — Professional DAW master brief
 - [x] Phase 1 audit report + phased development plan (/mnt/documents/SYNCLAB-audit-and-plan.md); awaiting user's choice of first step
 - [ ] Clear track content must stay on the edit page — could not reproduce (desktop, narrow, touch all stay); waiting on user for device/track/path
+- [x] Step 1: desktop security hardening (navigation lock, safe external links, origin-checked mic/MIDI, IPC sender checks, sandbox, CSP subset, startup crash guard) — verified in a test desktop window
+- [ ] Step 2: timing and recording fixes (next)
