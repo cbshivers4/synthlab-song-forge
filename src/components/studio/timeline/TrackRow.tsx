@@ -17,7 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { clipFromLocalFile } from "@/lib/synclab/local-files";
 import { openTrackSettings } from "@/components/studio/TrackSettingsDialog";
-import { InsertRack } from "../Mixer";
+import { InsertRack } from "../mixer/InsertRack";
 import { EffectMenuItems } from "../EffectPicker";
 import { availableEffects } from "@/lib/synclab/effect-catalog";
 import { BUILT_IN_PLUGINS } from "@/lib/synclab/plugins";
