@@ -119,4 +119,5 @@
 - [ ] Clear track content must stay on the edit page — could not reproduce (desktop, narrow, touch all stay); waiting on user for device/track/path
 - [x] Step 1: desktop security hardening (navigation lock, safe external links, origin-checked mic/MIDI, IPC sender checks, sandbox, CSP subset, startup crash guard) — verified in a test desktop window
 - [x] Step 2: timing and recording fixes (every heard step processed, punch at the marker incl. instrument/drum/sampler, audio-clock count-in, fader/pan/send automation writing + latch read-back, capture disconnect fix, finished synth voices released)
-- [ ] Step 3: offline export render (next)
+- [x] Step 3: offline export render (shared scheduler, faster than real time, real-time fallback)
+- [ ] Step 4: crash recovery that never overwrites saved projects (next)

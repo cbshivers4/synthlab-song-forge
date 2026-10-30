@@ -208,6 +208,13 @@ export class SyncLabEngine {
       window.addEventListener("pointerdown", resume, { passive: true });
       window.addEventListener("keydown", resume);
     }
+    this.buildGraph(ctx);
+    this.unlockAudio();
+    return ctx;
+  }
+
+  /** Master, send returns and buses. Shared by the live context and offline song renders. */
+  protected buildGraph(ctx: BaseAudioContext) {
     const master = ctx.createGain();
     master.gain.value = this.busStates["master"]?.muted ? 0 : 0.85 * (this.busStates["master"]?.volume ?? 1);
     const analyser = ctx.createAnalyser();
@@ -328,8 +335,6 @@ export class SyncLabEngine {
       silentSink.connect(ctx.destination);
       this.vcaMeters.set(id, meter);
     }
-    this.unlockAudio();
-    return ctx;
   }
 
   private distortionCurve(amount: number) {
@@ -1539,10 +1544,10 @@ export class SyncLabEngine {
 
 
   /** Rides a channel from an automation curve without touching stored track values. */
-  automate(trackId: string, v: Record<string, number>) {
+  automate(trackId: string, v: Record<string, number>, when?: number) {
     if (!this.ctx) return;
     const ch = this.channel(trackId);
-    const t = this.ctx.currentTime;
+    const t = when ?? this.ctx.currentTime;
     if (v["volume"] !== undefined) {
       const group = this.trackVcas.get(trackId);
       const vca = group ? this.vcaStates[group] : undefined;
@@ -1978,10 +1983,14 @@ export class SyncLabEngine {
   }
 
   /* ---------------- sampler ---------------- */
-  private sampleBuffers = new Map<string, AudioBuffer>();
+  protected sampleBuffers = new Map<string, AudioBuffer>();
+  /** Decoded audio this engine holds; AudioBuffers are context-independent, so offline renders reuse them. */
+  decodedAudio(): ReadonlyMap<string, AudioBuffer> {
+    return this.sampleBuffers;
+  }
   /** Interface takes recorded on one side only play from both speakers. */
   private centered(buf: AudioBuffer) { centerOneSided(buf); return buf; }
-  private reversedBuffers = new Map<string, AudioBuffer>();
+  protected reversedBuffers = new Map<string, AudioBuffer>();
   private liveSamples = new Map<string, AudioBufferSourceNode[]>();
   /** voices grouped by an arbitrary key so pads can choke each other */
   private keyedSamples = new Map<string, AudioBufferSourceNode[]>();
