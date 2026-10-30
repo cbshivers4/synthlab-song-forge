@@ -18,11 +18,12 @@ import { uploadCloudExport } from "@/lib/synclab/cloud";
 import { usePlan } from "@/lib/synclab/plan";
 import { stepsPerBar } from "@/lib/synclab/timebase";
 import { playbackPreferences } from "@/lib/synclab/preferences";
+import { renderSong } from "@/lib/synclab/song-render";
 
 export const EXPORT_EVENT = "synclab:export";
 export const openExport = () => window.dispatchEvent(new CustomEvent(EXPORT_EVENT));
 
-type Status = "idle" | "recording" | "encoding" | "done";
+type Status = "idle" | "rendering" | "recording" | "encoding" | "done";
 type Fmt = "wav" | "aiff" | "flac" | "caf" | "m4a" | "ogg" | "opus" | "mp3";
 type Range = "bars" | "loop" | "flags";
 
@@ -48,7 +49,7 @@ const sel = "h-7 rounded-sm border border-border bg-surface-2 px-1.5 font-mono t
 interface Result { blob: Blob; name: string }
 
 export function ExportDialog() {
-  const { transport, stop, setTransport, addTrack, addClip } = useStudio();
+  const { transport, stop, setTransport, addTrack, addClip, tracks, buses, vcas, auxReturns, fxChains } = useStudio();
   const [importBack, setImportBack] = useState(false);
   const { project } = useApp();
   const [open, setOpen] = useState(false);
@@ -201,9 +202,28 @@ export function ExportDialog() {
     [formats, rate, depth, kbps, loud, loudPreset, peakDb, norm, closeAfter, importBack, startStep, addTrack, addClip, safeName, stop, setTransport, support]
   );
 
-  const start = () => {
+  /** Fast export: render the arrangement offline; fall back to real-time capture if the browser can't. */
+  const start = async () => {
     if (!formats.length) { toast("Pick at least one file type"); return; }
     setResults([]);
+    setElapsed(0);
+    stop();
+    setStatus("rendering");
+    try {
+      const cap = await renderSong({
+        tracks, transport, buses, vcas, auxReturns, fxChains,
+        startStep, lengthSteps: Math.max(1, Math.round(lenBars * stepsBar)), tail, sampleRate: rate,
+      });
+      if (cap) { await finish(cap); return; }
+      toast("Fast export isn't available in this browser", { description: "Recording the song in real time instead." });
+    } catch (e) {
+      toast("Fast export failed — recording in real time instead", { description: e instanceof Error ? e.message : undefined });
+    }
+    startRealtime();
+  };
+
+  /** Real-time export: plays the song and captures the master output. */
+  const startRealtime = () => {
     setElapsed(0);
     const engine = getEngine();
     stop();
@@ -220,7 +240,7 @@ export function ExportDialog() {
   };
 
   const stopNow = () => void finish(getEngine().stopCapture());
-  const busy = status === "recording" || status === "encoding";
+  const busy = status === "rendering" || status === "recording" || status === "encoding";
   const lossy = formats.some((f) => ["mp3", "m4a", "ogg", "opus"].includes(f));
   const pcmFmt = formats.some((f) => ["wav", "aiff", "flac", "caf"].includes(f));
   const first = results[0];
@@ -356,6 +376,7 @@ export function ExportDialog() {
             </div>
           </div>
         )}
+        {status === "rendering" && <div className="flex items-center gap-1 font-mono text-[10px] uppercase text-muted-foreground"><Disc3 className="size-3 animate-spin" /> Rendering {total.toFixed(1)}s of audio — faster than real time</div>}
         {status === "encoding" && <div className="font-mono text-[10px] text-muted-foreground">{stage}</div>}
         {status === "done" && results.length > 0 && (
           <div className="space-y-1 rounded-sm border border-primary/40 bg-primary/10 px-2 py-2 font-mono text-[10px]">
@@ -373,8 +394,8 @@ export function ExportDialog() {
           {status === "recording" ? (
             <Button variant="destructive" className="flex-1" onClick={stopNow}><Square className="size-4" /> Stop &amp; keep</Button>
           ) : (
-            <Button className="flex-1" disabled={status === "encoding"} onClick={start}>
-              <Disc3 className="size-4" /> {status === "encoding" ? "Finishing…" : "Export"}
+            <Button className="flex-1" disabled={status === "encoding" || status === "rendering"} onClick={() => void start()}>
+              <Disc3 className="size-4" /> {status === "rendering" ? "Rendering…" : status === "encoding" ? "Finishing…" : "Export"}
             </Button>
           )}
           <Button variant="outline" disabled={!results.length} onClick={() => results.forEach((r) => downloadBlob(r.blob, r.name))}>
