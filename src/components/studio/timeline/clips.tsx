@@ -6,6 +6,10 @@ import { useEffect, useRef, useState } from "react";
 import { stepsPerBar, songSteps, stepSeconds } from "@/lib/synclab/timebase";
 import { notesInRegion, regionsOf, deleteRegion } from "@/lib/synclab/note-cuts";
 import { Copy, Disc3, Piano } from "lucide-react";
+import { toast } from "sonner";
+import { useStudio } from "@/lib/synclab/store";
+import { uid } from "@/lib/synclab/presets";
+import type { Track } from "@/lib/synclab/types";
 import { DrumHitWave, EMPTY_PEAKS, NOTE_NAMES, PartMenu } from "./shared";
 
 /** Audio lane: every clip sits at its own bar position and can be moved, trimmed and dragged between tracks. */

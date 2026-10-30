@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { stepsPerBar, getBeatsPerBar, songSteps, stepSeconds, positionLabel } from "@/lib/synclab/timebase";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Flag, Settings2 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useStudio } from "@/lib/synclab/store";
 import { TimelineOptionsPanel } from "./EditToolbar";
 
 /** Density-aware measure numbering for the ruler: keeps bar labels readable

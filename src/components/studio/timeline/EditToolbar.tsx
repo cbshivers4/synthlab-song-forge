@@ -2,6 +2,13 @@ import { getPlayStep } from "@/lib/synclab/playhead";
 import { useEffect, useRef, useState } from "react";
 import { stepsPerBar, songSteps, stepSeconds } from "@/lib/synclab/timebase";
 import { ArrowLeftToLine, ArrowRightToLine, ClipboardPaste, ListChecks, MousePointer2, Pencil, ScissorsLineDashed, SquareScissors, SquareSplitHorizontal, Waves, ChevronDown, Copy, Eye, Flag, Redo2, Undo2, Music2, Settings2, Trash2, Volume2, X, FolderOpen } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
+import { useStudio } from "@/lib/synclab/store";
+import { uid } from "@/lib/synclab/presets";
+import type { EditTool } from "@/lib/synclab/store";
 import { GRID_OPTIONS, RazorIcon, SNAP_OPTIONS, setCutFree, useCutFree } from "./shared";
 
 export function EditToolbar() {

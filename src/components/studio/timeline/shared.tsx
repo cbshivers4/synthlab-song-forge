@@ -5,51 +5,9 @@ import { stepsPerBar, getBeatsPerBar } from "@/lib/synclab/timebase";
 import { snapCut } from "@/lib/synclab/note-cuts";
 import { Scissors, Trash2 } from "lucide-react";
 import synclabLogoAsset from "@/assets/synclab-logo-neon.jpg.asset.json";
-import { Lane } from "./clips";
-
-export const synclabLogo = synclabLogoAsset.url;
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Slider } from "@/components/ui/slider";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "sonner";
-import { clipFromLocalFile } from "@/lib/synclab/local-files";
-import { openTrackSettings } from "@/components/studio/TrackSettingsDialog";
-import { InsertRack } from "./Mixer";
-import { EffectMenuItems } from "./EffectPicker";
-import { availableEffects } from "@/lib/synclab/effect-catalog";
-import { BUILT_IN_PLUGINS } from "@/lib/synclab/plugins";
-import { SectionLane } from "./SectionLane";
-import { useStudio } from "@/lib/synclab/store";
-import { useApp } from "@/lib/synclab/app-state";
-import { AddTrackMenu } from "@/components/studio/AddTrackMenu";
-import { TrackSearch } from "@/components/studio/TrackSearch";
-
-import { INSTRUMENTS, KIND_LABEL, uid } from "@/lib/synclab/presets";
-import type { EditTool, PanelId } from "@/lib/synclab/store";
-import type { AutomationLane, AutomationParam, AutomationPoint, BusId, MidiNote, Track, TrackFolder } from "@/lib/synclab/types";
+import type { AutomationParam, BusId, Track } from "@/lib/synclab/types";
+import { Lane } from "./clips";
 
 const CORE_LANE_LABEL: Record<Exclude<AutomationParam, `plugin:${string}:${string}`>, string> = {
   volume: "VOLUME",
@@ -77,6 +35,7 @@ import { parseMidiFile } from "@/lib/synclab/midi-file";
 
 import { TrackIcon, TrackStylePicker } from "@/components/studio/TrackStyle";
 import { TrackNotes } from "@/components/studio/TrackNotes";
+export const synclabLogo = synclabLogoAsset.url;
 
 export const INPUTS = ["Microphone", "Guitar / Line 1", "Keyboard / Line 2", "External Instrument", "MIDI Keyboard", "Internal", "Stereo File"];
 

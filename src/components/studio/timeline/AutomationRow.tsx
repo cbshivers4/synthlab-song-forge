@@ -3,6 +3,11 @@ import { useRef, useState } from "react";
 import { songSteps } from "@/lib/synclab/timebase";
 import { deleteRegion } from "@/lib/synclab/note-cuts";
 import { ClipboardPaste, Copy, Eraser, Lock, LockOpen, Redo2, Repeat, Undo2, Trash2, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
+import { useStudio } from "@/lib/synclab/store";
+import type { AutomationLane, AutomationPoint, Track } from "@/lib/synclab/types";
 import { Lane } from "./clips";
 import { laneGridBackground, laneLabel } from "./shared";
 
