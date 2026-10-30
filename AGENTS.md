@@ -44,10 +44,9 @@ Legacy SYNCPADS bank cleanup is versioned in each track: preserve A, clear B–H
 Learned drum triggers resolve saved track/pad IDs in the single MIDI subscription and consume mapped messages before normal note routing, preventing duplicate playback and recording.
 MP3/MP4 imports/exports retain originals in the private library with content hashes to avoid duplicates; saved videos open Video Sampler.
 Cloud deletion reads raw sessions, confirms deletion, then cleans owned files; missing assets cannot block removal.
-Reel recorder: singleton worklet; playback bypasses master. Meters use post-master taps; exit releases input, keeps tape. Shared winding math uses capture duration and conserved tape area to match song length.
+Reel recorder: singleton worklet; playback bypasses master. Meters use post-master taps; exit releases input, keeps tape. Shared winding math uses capture duration and conserved tape area to match song length. Tape transport is independent of the song transport (never starts, stops or follows it).
 
 Video cuts use source seconds/grid/clamp; kits save MIDI notes. Keyboard/learned MIDI share pad triggers; MIDI consumers prevent doubled track notes.
-
 
 Device prefs use cache/events, not autosave/tick storage. Diagnostics preserve audio; unsupported controls stay read-only.
 
@@ -57,14 +56,7 @@ Project exits use AppProvider/ProjectCloseGuard on both layouts: compare musical
 Shortcuts share studio actions and yield to controls/claimed keys to avoid doubling.
 Bulk drums use atomic store transforms preserving empty steps, loop bounds and hit metadata; shared controls prevent divergent editors.
 Sound screens use shared tokens and real parameter drag points with 20 fps signal drawing, never fake wave activity.
-Plugins cabinet presentation wraps existing RackEffect instances and a responsive installed-device browser; cabinet texture and scoped faceplate styles never change processing or duplicate plugin state.
-EffectWorkbench packs existing parameters in wrapping control banks beside real displays; container widths support rack/mixer and sideways phones. data-fx-skin/family preserves identity without duplicate state. Keep dedicated EQ/vocoder editors and isolated touch-sized channel menus.
 Effect editors share EffectPresetMenu and a kind-specific factory recipe library; derive the selected name from stored parameter values so manual edits, project reloads and track/bus/master editors agree without duplicate preset state.
-Effect response/scope window skins use per-kind attributes in shared displays; frame/layout changes never alter DSP, signal taps, EQ curves or pointer coordinates.
 Modular Tech uses definition-driven controls and narrow/wide hardware decks; each module type must implement matching DSP ports in the shared voice builder so saved patches, live preview and offline export agree. Cable centers use canvasPoint against the SVG overlay so sideways-phone transforms cannot offset connections.
-Modular scopes branch from voice outputs, sum active taps at 20 fps and release on voice end; offline voices omit observers.
-Synth and drum console finishes scope shared Knob parts and section hooks to the existing instrument wrappers; retain tab structure and DrumRoll geometry so hardware styling never changes audio or phone editing.
-Studio rear mirrors front furniture in one measured canvas; phone Fit scales it with cables, while 100% retains native scrolling/routing. Both room canvases share wall art with CDN pointers and source/license credits, clear of equipment.
-Reel/QuickTime tape transport is independent of the song transport (never starts, stops or follows it) so tape takes and song playback can't fight each other.
 Mute/solo presses record as per-track switch events in the scheduler's reachStep during timeline or tape takes (replace semantics) and replay only at recorded presses, so manual presses still work between them.
 The "My Computer" file list is one shared ComputerFiles component used by the desktop left menu and the phone/narrow navigation bar, so both stay in sync.
