@@ -1,3 +1,4 @@
+import { usePlayStep } from "@/lib/synclab/playhead";
 /**
  * Drum roll — the piano roll for a drum track.
  *
@@ -27,6 +28,7 @@ import { DrumBulkControls } from "./DrumBulkControls";
 const VELOCITIES = [0, 0.35, 0.7, 1] as const;
 
 export function DrumRoll({ track, initialFull = false }: { track: Track; initialFull?: boolean }) {
+  const liveStep = usePlayStep();
   const isMobile = useIsMobile();
   const fit = useIsLandscapePhone();
   const [noteScope, setNoteScope] = useState<'one' | 'all'>('all');
@@ -378,7 +380,7 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
                   <div className="flex flex-1 gap-[2px] px-1 py-1">
                     {visibleSteps.map((i) => {
                       const v = steps[i] ?? 0;
-                      const playing = transport.playing && transport.step % total === i;
+                      const playing = transport.playing && liveStep % total === i;
                       const chance = pad.probability?.[i] ?? 1;
                       return (
                         <Button variant="ghost"

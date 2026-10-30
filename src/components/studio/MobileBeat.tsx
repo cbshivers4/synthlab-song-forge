@@ -1,3 +1,4 @@
+import { getPlayStep, usePlayStep } from "@/lib/synclab/playhead";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Disc3, Grid2x2, Mic, Minus, Play, Plus, Settings2, Shuffle, SlidersHorizontal, Square, Waves, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -53,6 +54,7 @@ function buzz(ms = 12) {
  * same project state as the desktop studio — no separate engine, no demo mode.
  */
 export function MobileBeat({ onClose }: { onClose: () => void }) {
+  const liveStep = usePlayStep();
   const { tracks, addTrack, updatePad, generateBeat, transport, setTransport, togglePlay, stop, updateTrack, addClip, previewClip, setPanel } =
     useStudio();
   const [tab, setTab] = useState<Tab>("pads");
@@ -217,7 +219,7 @@ export function MobileBeat({ onClose }: { onClose: () => void }) {
       });
       return;
     }
-    recStartRef.current = transport.step ?? 0;
+    recStartRef.current = getPlayStep() ?? 0;
     updateTrack(id, { armed: true, recording: true });
     setRecording(true);
     setRecElapsed(0);
@@ -425,7 +427,7 @@ export function MobileBeat({ onClose }: { onClose: () => void }) {
               {Array.from({ length: Math.min(16, stepCount - pageStart) }, (_, n) => {
                 const i = pageStart + n;
                 const v = pad.steps[i] ?? 0;
-                const live = transport.playing && transport.step === i % 16;
+                const live = transport.playing && liveStep === i % 16;
                 return (
                   <button
                     key={i}

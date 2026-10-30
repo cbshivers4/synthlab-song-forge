@@ -120,4 +120,7 @@
 - [x] Step 1: desktop security hardening (navigation lock, safe external links, origin-checked mic/MIDI, IPC sender checks, sandbox, CSP subset, startup crash guard) — verified in a test desktop window
 - [x] Step 2: timing and recording fixes (every heard step processed, punch at the marker incl. instrument/drum/sampler, audio-clock count-in, fader/pan/send automation writing + latch read-back, capture disconnect fix, finished synth voices released)
 - [x] Step 3: offline export render (shared scheduler, faster than real time, real-time fallback)
-- [ ] Step 4: crash recovery that never overwrites saved projects (next)
+- [x] Step 4: crash recovery — skipped at user's request (manual save only stays)
+- [x] Step 5a: speed-up — playhead moved out of shared state; only counters, playhead lines and step lights update each step
+- [ ] Step 5b: split the largest files (Timeline, audio engine, store, Mixer) into modules without behaviour changes
+- [ ] Step 6: loop take recording (every loop pass kept as a take)

@@ -1,3 +1,4 @@
+import { getPlayStep, usePlayStep } from "@/lib/synclab/playhead";
 import { useEffect, useRef, useState } from "react";
 import { useDrumEditorView } from "@/lib/synclab/drum-editor-view";
 import { stepsPerBar, getBeatsPerBar } from "@/lib/synclab/timebase";
@@ -89,6 +90,7 @@ function Section({ title, active, children }: { title: string; active?: boolean;
 }
 
 export function DrumMachine({ track }: { track: Track }) {
+  const liveStep = usePlayStep();
   const isMobile = useIsMobile();
   const landscape = useIsLandscapePhone();
   const [phoneView, setPhoneView] = useState("roll");
@@ -123,7 +125,7 @@ export function DrumMachine({ track }: { track: Track }) {
     setFocusPadId(pad.id);
     if (!transport.playing || (!tapRec && !transport.recording)) return;
     const total = pad.steps.length || track.steps || 16;
-    const at = transport.step % total;
+    const at = getPlayStep() % total;
     const stale = transport.recording ? neighbourLiveHits(track.id, pad.id, at, total) : [];
     if (transport.recording) markLiveHit(track.id, pad.id, at);
     updatePad(track.id, pad.id, { steps: Array.from({ length: total }, (_, i) => i === at ? 1 : stale.includes(i) ? 0 : pad.steps[i] ?? 0) });
@@ -423,7 +425,7 @@ export function DrumMachine({ track }: { track: Track }) {
                     style={{
                       minWidth: isMobile ? undefined : 12,
                       borderColor:
-                        transport.playing && transport.step % Math.max(1, pad.steps.length) === i ? "var(--neon)" : "var(--color-border)",
+                        transport.playing && liveStep % Math.max(1, pad.steps.length) === i ? "var(--neon)" : "var(--color-border)",
                       opacity: v > 0 ? 0.35 + v * 0.65 : 1,
                       background:
                         v > 0

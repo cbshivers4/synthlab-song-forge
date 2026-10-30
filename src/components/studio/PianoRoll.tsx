@@ -1,3 +1,4 @@
+import { getPlayStep, usePlayStep } from "@/lib/synclab/playhead";
 import { ClipboardPaste, Copy, MousePointer2, Pencil, Scissors, Trash2, Undo2, Redo2, ZoomIn, ZoomOut, ChevronLeft, ChevronRight } from "lucide-react";
 import { movePianoNotes, pastePianoNotes } from "@/lib/synclab/piano-edit";
 import { capturedNote, loopRegion } from "@/lib/synclab/recording-region";
@@ -50,7 +51,7 @@ export function PianoRoll({ track }: { track: Track }) {
   const [mode, setMode] = useState<"draw" | "select" | "erase">("draw");
   const [multi, setMulti] = useState(false);
   const [zoom, setZoom] = useState(1);
-  const [cursor, setCursor] = useState(() => transport.step);
+  const [cursor, setCursor] = useState(() => getPlayStep());
   const [clipboardCount, setClipboardCount] = useState(noteClipboard.length);
   const suppressClick = useRef(false);
   const [low, setLow] = useState(48);
@@ -691,10 +692,7 @@ export function PianoRoll({ track }: { track: Track }) {
                 }}
               />
             ))}
-            <div
-              className={`playhead-line pointer-events-none absolute top-0 bottom-0 z-20 w-[2px] ${transport.playing || transport.recording ? '' : 'hidden'}`}
-              style={{ left: `${((transport.step % steps) / steps) * 100}%` }}
-            />
+            <PianoPlayhead visible={transport.playing || transport.recording} steps={steps} />
             <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 z-20 w-[2px] bg-[var(--playhead)]" style={{ left: `${cursor / steps * 100}%` }} />
             {marquee && (
               <div
@@ -835,5 +833,16 @@ export function PianoRoll({ track }: { track: Track }) {
       </div>
 
     </div>
+  );
+}
+
+/** The moving playhead line; only it re-renders each step, not the whole piano roll. */
+function PianoPlayhead({ visible, steps }: { visible: boolean; steps: number }) {
+  const step = usePlayStep();
+  return (
+    <div
+      className={`playhead-line pointer-events-none absolute top-0 bottom-0 z-20 w-[2px] ${visible ? "" : "hidden"}`}
+      style={{ left: `${((step % steps) / steps) * 100}%` }}
+    />
   );
 }

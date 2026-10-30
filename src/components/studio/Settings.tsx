@@ -1,3 +1,4 @@
+import { getPlayStep, usePlayStep } from "@/lib/synclab/playhead";
 import { getInputLatencyMs, setInputLatencyMs } from "@/lib/synclab/latency";
 import { stepsPerBar } from "@/lib/synclab/timebase";
 import { useEffect, useRef, useState } from "react";
@@ -557,14 +558,14 @@ export function Settings() {
         <Row label="Punch in" hint="Recording starts at this position">
           <div className="flex items-center gap-2">
             <span className="font-mono text-xs text-primary">{punchLabel(transport.punchIn)}</span>
-            <Button size="sm" variant="secondary" onClick={() => setTransport({ punchIn: transport.step })}>Set at playhead</Button>
+            <Button size="sm" variant="secondary" onClick={() => setTransport({ punchIn: getPlayStep() })}>Set at playhead</Button>
             <Button size="sm" variant="ghost" disabled={transport.punchIn == null} onClick={() => setTransport({ punchIn: null, punchOut: null })}>Clear</Button>
           </div>
         </Row>
         <Row label="Punch out" hint="Recording stops at this position">
           <div className="flex items-center gap-2">
             <span className="font-mono text-xs text-primary">{punchLabel(transport.punchOut)}</span>
-            <Button size="sm" variant="secondary" onClick={() => setTransport({ punchOut: transport.step })}>Set at playhead</Button>
+            <Button size="sm" variant="secondary" onClick={() => setTransport({ punchOut: getPlayStep() })}>Set at playhead</Button>
             <Button size="sm" variant="ghost" disabled={transport.punchOut == null} onClick={() => setTransport({ punchOut: null })}>Clear</Button>
           </div>
         </Row>

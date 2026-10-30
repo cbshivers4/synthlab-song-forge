@@ -1,3 +1,4 @@
+import { getPlayStep, usePlayStep } from "@/lib/synclab/playhead";
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useStudio } from "@/lib/synclab/store";
@@ -23,12 +24,12 @@ export function DrumPads({ track, compact }: { track: Track; compact?: boolean }
       if (navigator.vibrate) navigator.vibrate(8);
       if ((!tapRec && !transport.recording) || !transport.playing) return;
       const total = pad.steps.length || track.steps || 16;
-      const at = transport.step % total;
+      const at = getPlayStep() % total;
       const stale = transport.recording ? neighbourLiveHits(track.id, pad.id, at, total) : [];
       if (transport.recording) markLiveHit(track.id, pad.id, at);
       updatePad(track.id, pad.id, { steps: pad.steps.map((v, i) => (i === at ? velocity : stale.includes(i) ? 0 : v)) });
     },
-    [tapRec, transport.playing, transport.recording, transport.step, track.id, track.steps, updatePad],
+    [tapRec, transport.playing, transport.recording, track.id, track.steps, updatePad],
   );
 
   // Number keys 1-8 hit the first eight pads.

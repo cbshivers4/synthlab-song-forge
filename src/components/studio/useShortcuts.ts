@@ -1,3 +1,4 @@
+import { getPlayStep } from "@/lib/synclab/playhead";
 import { useEffect } from 'react';
 import { toast } from 'sonner';
 import { useStudio } from '@/lib/synclab/store';
@@ -55,7 +56,7 @@ export function useShortcuts() {
         if (selected) studio.updateTrack(selected.id, patch);
         else toast('Select a track first');
       };
-      const move = (amount: number) => studio.setTransport({ step: Math.max(0, Math.min(songSteps(transport.bars) - 1, transport.step + amount)) });
+      const move = (amount: number) => studio.setTransport({ step: Math.max(0, Math.min(songSteps(transport.bars) - 1, getPlayStep() + amount)) });
       switch (action) {
         case 'play': studio.togglePlay(); break;
         case 'stop': void studio.stop(); break;

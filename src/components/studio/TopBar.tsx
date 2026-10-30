@@ -1,3 +1,4 @@
+import { getPlayStep, usePlayStep } from "@/lib/synclab/playhead";
 import {
   LifeBuoy,
   Cpu,
@@ -199,7 +200,7 @@ export function TopBar() {
               </div>
             </div>
           ) : (
-            <PositionDisplay step={transport.step} bpm={transport.bpm} playing={transport.playing} />
+            <PositionDisplay bpm={transport.bpm} playing={transport.playing} />
           )}
           {isMobile && <>
             <label className="phone-tempo-value shrink-0"><span className="label-xs">BPM</span><BpmInput bpm={transport.bpm} onChange={(bpm) => setTransport({ bpm })} /></label>
@@ -377,7 +378,7 @@ export function TopBar() {
               active={transport.punchIn != null}
               onClick={() =>
                 setTransport(
-                  transport.punchIn == null ? { punchIn: transport.step } : { punchOut: transport.step },
+                  transport.punchIn == null ? { punchIn: getPlayStep() } : { punchOut: getPlayStep() },
                 )
               }
             />
@@ -650,7 +651,8 @@ function MidiControl() {
 const TICKS = 960;
 
 /** Musical (BAR | BEAT | TICK) or absolute (H:MM:SS.mmm) playhead position, click to switch. */
-function PositionDisplay({ step: beatStep, bpm, playing }: { step: number; bpm: number; playing: boolean }) {
+function PositionDisplay({ bpm, playing }: { bpm: number; playing: boolean }) {
+  const beatStep = usePlayStep();
   const [abs, setAbs] = useState(false);
   useEffect(() => {
     if (localStorage.getItem("synclab.timeMode") === "abs") setAbs(true);

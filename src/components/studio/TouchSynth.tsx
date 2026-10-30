@@ -1,3 +1,4 @@
+import { getPlayStep, usePlayStep } from "@/lib/synclab/playhead";
 import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
 import { useEffect, useRef, useState, type PointerEvent } from 'react';
 import { ArrowRightToLine, ChevronLeft, ChevronRight, Circle, Eraser, Hand, ListMusic, Pencil, Play, Square } from 'lucide-react';
@@ -153,7 +154,7 @@ export function TouchSynth({ track }: { track: Track }) {
   };
   const sendToTimeline = () => {
     const s = latest.current;
-    const notes = loopsToNotes(s.loops, Math.max(0, Math.floor(s.transport.step)), Date.now());
+    const notes = loopsToNotes(s.loops, Math.max(0, Math.floor(getPlayStep())), Date.now());
     if (!notes.length) return;
     s.updateTrack(s.track.id, { notes: [...(s.track.notes ?? []), ...notes] });
     setReadout(`${notes.length} NOTES SENT TO TIMELINE`);

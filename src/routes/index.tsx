@@ -1,3 +1,4 @@
+import { usePlayStep } from "@/lib/synclab/playhead";
 import { ToolErrorBoundary } from "@/components/studio/ToolErrorBoundary";
 import { PhoneOrientation } from "@/components/studio/RotateGate";
 import { useEffect, useRef, useState } from "react";
@@ -359,6 +360,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
 }
 
 function StatusBar() {
+  const liveStep = usePlayStep();
   const { tracks, transport, panel, savedAt } = useStudio();
   const [engine, setEngine] = useState<{ state: string; rate: number; latency: number }>({
     state: "idle",
@@ -397,7 +399,7 @@ function StatusBar() {
       <span>{transport.beatsPerBar ?? 4}/4</span>
       <span>{tracks.length} CH</span>
       <span>
-        BAR {barBeat(transport.step).bar}.{barBeat(transport.step).beat} / {transport.bars ?? 4}
+        BAR {barBeat(liveStep).bar}.{barBeat(liveStep).beat} / {transport.bars ?? 4}
       </span>
       <span className="hidden sm:inline">{saved ? `SAVED ${saved}` : "NOT SAVED YET"}</span>
       <span className="ml-auto hidden sm:inline">{panel ? `${panel} editor open` : "synclab studio"}</span>

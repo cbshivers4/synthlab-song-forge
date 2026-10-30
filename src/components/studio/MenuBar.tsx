@@ -1,3 +1,4 @@
+import { getPlayStep, usePlayStep } from "@/lib/synclab/playhead";
 import {
   Menubar,
   MenubarContent,
@@ -78,18 +79,18 @@ export function MenuBar() {
   }, []);
   const nextEvent = (dir: 1 | -1) => {
     const pts = [...new Set(tracks.flatMap((t) => [...(t.clips ?? []).map((c) => Math.floor(c.start ?? 0)), ...(t.notes ?? []).map((n) => Math.floor(n.step))]))].sort((a, b) => a - b);
-    const p = dir > 0 ? pts.find((x) => x > transport.step) : [...pts].reverse().find((x) => x < transport.step);
+    const p = dir > 0 ? pts.find((x) => x > getPlayStep()) : [...pts].reverse().find((x) => x < getPlayStep());
     if (p != null) setTransport({ step: p }); else toast("No more clips or notes that way");
   };
   const spb = stepsPerBar();
   const go = (step: number) => setTransport({ step: Math.max(0, Math.min(step, transport.bars * spb - 1)) });
   const marks = [...sections].sort((a, b) => a.start - b.start);
   const nextMark = (dir: 1 | -1) => {
-    const m = dir > 0 ? marks.find((x) => x.start > transport.step) : [...marks].reverse().find((x) => x.start < transport.step);
+    const m = dir > 0 ? marks.find((x) => x.start > getPlayStep()) : [...marks].reverse().find((x) => x.start < getPlayStep());
     if (m) go(m.start); else toast(dir > 0 ? "No marker after the playhead" : "No marker before the playhead");
   };
   const gotoBar = () => {
-    const v = window.prompt("Go to bar", String(Math.floor(transport.step / spb) + 1));
+    const v = window.prompt("Go to bar", String(Math.floor(getPlayStep() / spb) + 1));
     const n = v ? parseInt(v, 10) : NaN;
     if (Number.isFinite(n) && n >= 1) go((n - 1) * spb);
   };
@@ -439,9 +440,9 @@ export function MenuBar() {
             <MenubarItem onClick={() => setTransport({ loop: !transport.loop })}>{transport.loop ? "✓ " : ""}Loop Active <MenubarShortcut>L</MenubarShortcut></MenubarItem>
             <MenubarItem disabled={transport.loopStart == null} onClick={() => go(transport.loopStart ?? 0)}>Go to Loop Start</MenubarItem>
             <MenubarItem disabled={transport.loopEnd == null} onClick={() => go(transport.loopEnd ?? 0)}>Go to Loop End</MenubarItem>
-            <MenubarItem onClick={() => { const s = Math.floor(transport.step / spb) * spb; setTransport({ loopStart: s, loopEnd: s + spb * 4, loop: true }); }}>Loop 4 Bars from Playhead</MenubarItem>
+            <MenubarItem onClick={() => { const s = Math.floor(getPlayStep() / spb) * spb; setTransport({ loopStart: s, loopEnd: s + spb * 4, loop: true }); }}>Loop 4 Bars from Playhead</MenubarItem>
             <MenubarSeparator />
-            <MenubarItem onClick={() => { addSection(undefined, Math.floor(transport.step / spb) * spb, spb * 4); toast("Marker added at the playhead"); }}>Insert Marker</MenubarItem>
+            <MenubarItem onClick={() => { addSection(undefined, Math.floor(getPlayStep() / spb) * spb, spb * 4); toast("Marker added at the playhead"); }}>Insert Marker</MenubarItem>
             <MenubarItem disabled={!marks.length} onClick={() => nextMark(1)}>Go to Next Marker</MenubarItem>
             <MenubarItem disabled={!marks.length} onClick={() => nextMark(-1)}>Go to Previous Marker</MenubarItem>
             <MenubarItem onClick={() => nextEvent(1)}>Go to Next Event</MenubarItem>

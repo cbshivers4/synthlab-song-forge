@@ -1,3 +1,4 @@
+import { getPlayStep, usePlayStep } from "@/lib/synclab/playhead";
 import { useState } from "react";
 import { Download, ListPlus } from "lucide-react";
 import { toast } from "sonner";
@@ -30,7 +31,7 @@ export function SampleExportButtons({ getCapture, name, timeline = true, classNa
     {timeline && <Button size="sm" variant="ghost" className={className} disabled={busy} onClick={() => void run(async (cap) => {
       const audio = await getEngine().loadSampleFile(encodeWav(cap), label);
       const id = addTrack("audio", label, undefined, { keepPanel: true });
-      addClip(id, { ...audio, id: uid(), name: label, start: transport.step, offset: 0, length: audio.duration, gain: 1 });
+      addClip(id, { ...audio, id: uid(), name: label, start: getPlayStep(), offset: 0, length: audio.duration, gain: 1 });
       toast.success(`${label} added to the timeline`, { description: "On a new audio track at the playhead" });
     })}><ListPlus className="size-3.5" /> Add to timeline</Button>}
     <Button size="sm" variant="ghost" className={className} disabled={busy} onClick={() => void run(async (cap) => {

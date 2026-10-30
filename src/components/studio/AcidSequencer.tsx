@@ -1,3 +1,4 @@
+import { usePlayStep } from "@/lib/synclab/playhead";
 import { useMemo, useState } from "react";
 import { useStudio } from "@/lib/synclab/store";
 import { uid } from "@/lib/synclab/presets";
@@ -10,10 +11,11 @@ interface Step { pitch: number; on: boolean; accent: boolean; slide: boolean }
 
 /** TD-3-style 16-step pattern: step write, accent, slide, rest, transpose. Reads/writes the track's real notes. */
 export function AcidSequencer({ track }: { track: Track }) {
+  const liveStep = usePlayStep();
   const { setNotes, previewNote, transport } = useStudio();
   const [cursor, setCursor] = useState(0);
   const [octave, setOctave] = useState(2); // C2 = 36
-  const playStep = transport.playing ? Math.floor(transport.step) % 16 : -1;
+  const playStep = transport.playing ? Math.floor(liveStep) % 16 : -1;
 
   const steps: Step[] = useMemo(() => {
     const out: Step[] = Array.from({ length: 16 }, () => ({ pitch: 36, on: false, accent: false, slide: false }));

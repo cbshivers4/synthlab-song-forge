@@ -1,3 +1,4 @@
+import { getPlayStep, subscribePlayStep, usePlayStep } from "@/lib/synclab/playhead";
 import { deleteSelectedPart, selectedPartBounds } from '@/lib/synclab/workflow';
 import { boundedRegions, loopRegion } from "@/lib/synclab/recording-region";
 import { timelineUsesWaveform } from "@/lib/synclab/timeline-content";
@@ -184,7 +185,8 @@ export function laneGridBackground(bars: number) {
   ].join(", ");
 }
 
-function TimelineCutGuide({ tool, position, selected, total, grid }: { tool: "split" | "razor"; position: number; selected: boolean; total: number; grid: number }) {
+function TimelineCutGuide({ tool, selected, total, grid }: { tool: "split" | "razor"; selected: boolean; total: number; grid: number }) {
+  const position = Math.min(0.99, Math.max(0, usePlayStep() / Math.max(1, total)));
   const lineRef = useRef<HTMLDivElement>(null);
   const iconRef = useRef<HTMLDivElement>(null);
   const showAtPointer = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -848,9 +850,10 @@ function DrumClip({ track }: { track: Track }) {
 function RecordingClip({ track }: { track: Track }) {
   const { transport } = useStudio();
   const total = songSteps(transport.bars);
-  const startRef = useRef(transport.step ?? 0);
+  const liveStep = usePlayStep();
+  const startRef = useRef(getPlayStep());
   const start = startRef.current;
-  const now = transport.step ?? start;
+  const now = liveStep;
   const length = Math.max(1, (now >= start ? now - start : total - start) + 1);
   const left = (start / total) * 100;
   const width = Math.min(100 - left, (length / total) * 100);
@@ -1051,7 +1054,8 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
       toast.error("Could not make audio file", { description: error instanceof Error ? error.message : String(error) });
     } finally { setMakingFile(false); }
   };
-  const playFrac = Math.min(0.98, Math.max(0.02, ((transport.step ?? 0) % 16) / 16));
+  // Read when the action runs, so the track row doesn't re-render on every playback step.
+  const playFracNow = () => Math.min(0.98, Math.max(0.02, (getPlayStep() % 16) / 16));
 
   const editorPanel: PanelId =
     track.kind === "drum" ? "drums"
@@ -1076,11 +1080,12 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
 
   const splitClip = () => {
     if (!activeClip) return;
-    splitClipAt(track.id, playFrac);
+    splitClipAt(track.id, playFracNow());
   };
 
   const trimClip = (side: "left" | "right") => {
     if (!activeClip) return;
+    const playFrac = playFracNow();
     const cut = Math.max(1, Math.round(activeClip.peaks.length * playFrac));
     const peaks = side === "left" ? activeClip.peaks.slice(cut) : activeClip.peaks.slice(0, cut);
     const duration = activeClip.duration * (side === "left" ? 1 - playFrac : playFrac);
@@ -1186,7 +1191,7 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
     if (payload.type === "localfile") {
       void (async () => {
         try {
-          const clip = await clipFromLocalFile(payload.id, transport.step);
+          const clip = await clipFromLocalFile(payload.id, getPlayStep());
           if (track.kind === "audio") {
             fileStudio.addClip(track.id, clip);
             select(track.id);
@@ -2073,7 +2078,6 @@ function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track;
         <Lane track={track} />
         {(editTool === "split" || editTool === "razor") && <TimelineCutGuide
           tool={editTool}
-          position={Math.min(0.99, Math.max(0, (transport.step ?? 0) / songSteps(transport.bars)))}
           selected={isSelected}
           total={songSteps(transport.bars)}
           grid={transport.snap ?? 1}
@@ -2298,7 +2302,7 @@ function AutomationRow({ track, lane }: { track: Track; lane: AutomationLane }) 
       toast("Automation clipboard is empty");
       return;
     }
-    const origin = snapStep(transport.step);
+    const origin = snapStep(getPlayStep());
     const pasted = automationClipboard.points
       .map((point) => ({ ...point, step: snapStep(origin + point.step), value: snapValue(point.value) }))
       .filter((point, index, all) => all.findIndex((candidate) => candidate.step === point.step) === index);
@@ -2773,7 +2777,7 @@ function EditToolbar() {
         peaks: loaded.peaks,
         duration: loaded.duration,
         url: loaded.url,
-        start: transport.step,
+        start: getPlayStep(),
         offset: 0,
         length: loaded.duration,
         gain: 1,
@@ -3155,7 +3159,7 @@ function TimelineOptionsPanel() {
       bars: b,
       loopStart: Math.min(lo, steps - 1),
       loopEnd: Math.min(hi, steps),
-      step: transport.step % steps,
+      step: getPlayStep() % steps,
     });
   };
 
@@ -3209,6 +3213,7 @@ function TimelineOptionsPanel() {
 }
 
 function Ruler() {
+  const liveStep = usePlayStep();
   const { transport, setTransport } = useStudio();
   const isMobile = useIsMobile();
   const gridRef = useRef<HTMLDivElement>(null);
@@ -3300,8 +3305,8 @@ function Ruler() {
           <span className="font-display text-[11px] font-semibold tracking-[0.2em]">TIMELINE</span>
           <span className="label-xs ml-auto">
             {(transport.timebase ?? "bars") === "seconds"
-              ? (() => { const t = transport.step * stepSeconds(transport.bpm); return `${Math.floor(t / 60)}:${(t % 60).toFixed(2).padStart(5, "0")}`; })()
-              : positionLabel(transport.step)}
+              ? (() => { const t = liveStep * stepSeconds(transport.bpm); return `${Math.floor(t / 60)}:${(t % 60).toFixed(2).padStart(5, "0")}`; })()
+              : positionLabel(liveStep)}
           </span>
         </div>
         <div className="flex items-center gap-1.5">
@@ -3419,7 +3424,7 @@ function Ruler() {
 
         <div
           className="pointer-events-none absolute top-0 z-30 h-full"
-          style={{ left: `${(transport.step / total) * 100}%` }}
+          style={{ left: `${(liveStep / total) * 100}%` }}
         >
           {/* grab the line anywhere along the ruler to move the playhead */}
           <div
@@ -3427,7 +3432,7 @@ function Ruler() {
             aria-label="Playhead — drag to move"
             aria-valuemin={0}
             aria-valuemax={total - 1}
-            aria-valuenow={transport.step}
+            aria-valuenow={liveStep}
             tabIndex={0}
             className="playhead-grip pointer-events-auto absolute left-1/2 top-0 h-full w-6 -translate-x-1/2"
             title="Drag to move the playhead"
@@ -3435,7 +3440,7 @@ function Ruler() {
               const d = e.key === "ArrowLeft" ? -1 : e.key === "ArrowRight" ? 1 : 0;
               if (!d) return;
               e.preventDefault();
-              setTransport({ step: Math.max(0, Math.min(total - 1, transport.step + d)) });
+              setTransport({ step: Math.max(0, Math.min(total - 1, liveStep + d)) });
             }}
             onPointerDown={(e) => {
               e.preventDefault();
@@ -3474,6 +3479,7 @@ function TimelineOverview({
   zoom: number;
   setZoom: (z: number) => void;
 }) {
+  const liveStep = usePlayStep();
   const { transport } = useStudio();
   const total = songSteps(transport.bars);
   const [view, setView] = useState({ left: 0, width: 1 });
@@ -3554,7 +3560,7 @@ function TimelineOverview({
         {/* playhead */}
         <span
           className="playhead-line absolute inset-y-0 w-[2px]"
-          style={{ left: `${((transport.step % total) / total) * 100}%` }}
+          style={{ left: `${((liveStep % total) / total) * 100}%` }}
         />
         {/* viewport */}
         <span
@@ -3733,7 +3739,7 @@ export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandl
   // Grabbing the white playhead line inside the track lanes moves song position.
   const stepFromRowsX = (clientX: number, clientY: number) => {
     const el = rowsRef.current;
-    if (!el) return transport.step;
+    if (!el) return getPlayStep();
     const r = canvasRect(el);
     const headerW = parseFloat(getComputedStyle(el).getPropertyValue("--timeline-header-width")) || 0;
     const lane = Math.max(1, r.width - headerW);
@@ -3780,11 +3786,15 @@ export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandl
   // keeps the playhead in view while the song plays, when FOLLOW is on
   useEffect(() => {
     if ((!transport.follow && !(phone && transport.recording)) || !transport.playing) return;
-    const el = scrollRef.current;
-    if (!el || el.scrollWidth <= el.clientWidth) return;
-    const left = recordingFollowScroll(transport.step, totalSteps, el.scrollWidth, headerWidth, el.clientWidth, el.scrollLeft);
-    if (left !== el.scrollLeft) el.scrollTo({ left, behavior: "instant" });
-  }, [transport.follow, transport.playing, transport.recording, transport.step, totalSteps, phone, headerWidth]);
+    const follow = () => {
+      const el = scrollRef.current;
+      if (!el || el.scrollWidth <= el.clientWidth) return;
+      const left = recordingFollowScroll(getPlayStep(), totalSteps, el.scrollWidth, headerWidth, el.clientWidth, el.scrollLeft);
+      if (left !== el.scrollLeft) el.scrollTo({ left, behavior: "instant" });
+    };
+    follow();
+    return subscribePlayStep(follow);
+  }, [transport.follow, transport.playing, transport.recording, totalSteps, phone, headerWidth]);
   return (
     <section data-desktop-style={desktopStyle} data-page-scroll={pageScroll} data-resize-handles={resizeHandlesVisible} style={{ "--timeline-header-width": `${headerWidth}px` } as CSSProperties} className={`arrangement-timeline mobile-timeline relative flex min-w-0 flex-col border-x border-b border-border bg-background/60 ${pageScroll ? "" : "min-h-[210px] flex-1 overflow-hidden"}`}>
       <WorkflowBar />
@@ -3827,34 +3837,7 @@ export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandl
             </Fragment>
           );
         })}
-        <div
-          className="pointer-events-none absolute inset-y-0 z-30 -translate-x-1/2"
-          style={{ left: `calc(var(--timeline-header-width) + (100% - var(--timeline-header-width)) * ${(transport.step % totalSteps) / totalSteps})` }}
-        >
-          <div
-            data-timeline-playhead
-            className="playhead-line absolute inset-y-0 left-1/2 w-[2px] -translate-x-1/2"
-            aria-hidden="true"
-          />
-          <div
-            data-playhead-drag
-            role="slider"
-            aria-label="Playhead — drag to move"
-            aria-valuemin={0}
-            aria-valuemax={totalSteps - 1}
-            aria-valuenow={transport.step % totalSteps}
-            tabIndex={0}
-            title="Drag to move the playhead"
-            className="playhead-grip pointer-events-auto absolute inset-y-0 left-1/2 w-5 -translate-x-1/2"
-            onPointerDown={dragSongPlayhead}
-            onKeyDown={(e) => {
-              const d = e.key === "ArrowLeft" ? -1 : e.key === "ArrowRight" ? 1 : 0;
-              if (!d) return;
-              e.preventDefault();
-              setTransport({ step: Math.max(0, Math.min(totalSteps - 1, (transport.step % totalSteps) + d)) });
-            }}
-          />
-        </div>
+        <SongPlayhead totalSteps={totalSteps} onDragStart={dragSongPlayhead} onMove={(step) => setTransport({ step })} />
         </div>
         <div data-new-channel-drop className="min-h-28 transition-colors">
         <div className="flex items-center gap-3 px-2 pt-2">
@@ -3893,7 +3876,7 @@ export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandl
             if (!payload) return;
             e.preventDefault();
             if (payload.type === "localfile") {
-              void clipFromLocalFile(payload.id, transport.step)
+              void clipFromLocalFile(payload.id, getPlayStep())
                 .then((clip) => {
                   const id = addTrack("audio", clip.name);
                   if (id) addClip(id, clip);
@@ -4028,4 +4011,39 @@ function PartMenu({ label, onDelete }: { label: string; onDelete: () => void }) 
       </Button>
     </div>, document.body)}
   </>;
+}
+
+/** The white song playhead over the track lanes; only it re-renders on each playback step. */
+function SongPlayhead({ totalSteps, onDragStart, onMove }: { totalSteps: number; onDragStart: (e: React.PointerEvent<HTMLDivElement>) => void; onMove: (step: number) => void }) {
+  const step = usePlayStep();
+  return (
+    <div
+      className="pointer-events-none absolute inset-y-0 z-30 -translate-x-1/2"
+      style={{ left: `calc(var(--timeline-header-width) + (100% - var(--timeline-header-width)) * ${(step % totalSteps) / totalSteps})` }}
+    >
+      <div
+        data-timeline-playhead
+        className="playhead-line absolute inset-y-0 left-1/2 w-[2px] -translate-x-1/2"
+        aria-hidden="true"
+      />
+      <div
+        data-playhead-drag
+        role="slider"
+        aria-label="Playhead — drag to move"
+        aria-valuemin={0}
+        aria-valuemax={totalSteps - 1}
+        aria-valuenow={step % totalSteps}
+        tabIndex={0}
+        title="Drag to move the playhead"
+        className="playhead-grip pointer-events-auto absolute inset-y-0 left-1/2 w-5 -translate-x-1/2"
+        onPointerDown={onDragStart}
+        onKeyDown={(e) => {
+          const d = e.key === "ArrowLeft" ? -1 : e.key === "ArrowRight" ? 1 : 0;
+          if (!d) return;
+          e.preventDefault();
+          onMove(Math.max(0, Math.min(totalSteps - 1, (step % totalSteps) + d)));
+        }}
+      />
+    </div>
+  );
 }

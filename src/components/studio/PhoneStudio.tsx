@@ -16,6 +16,7 @@ import { openExport } from "./ExportDialog";
 import logo from "@/assets/synclab-logo-neon.jpg.asset.json";
 import { Hand } from "lucide-react";
 import { recordingPosition } from "@/lib/synclab/recording-display";
+import { usePlayStep } from "@/lib/synclab/playhead";
 
 const sounds = [
   { label: "Drum Machine", icon: Disc3, panel: "drums" }, { label: "Synth", icon: Piano, panel: "synth" },
@@ -88,7 +89,6 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
   }, []);
   const enter = (next: typeof room) => { setTransportOpen(false); setPanel(null); setRoom(next); };
   const list = room === "sounds" ? sounds : tools;
-  const recordingAt = recordingPosition(transport.step, transport.beatsPerBar ?? 4);
   return <div ref={consoleRef} data-mixer-full={panel === "mixer" && mixerFull ? "true" : undefined} className="phone-console mobile-studio landscape-prod flex h-[100dvh] min-w-0 overflow-hidden bg-background text-foreground">
     <div className="relative shrink-0 transition-[width] duration-200 ease-out" style={{ width: railOpen ? "5rem" : "3rem" }}>
     <nav aria-label="Studio navigation" data-rail-open={railOpen} className="phone-console-rail flex h-full w-full flex-col items-center gap-2 border-r border-border bg-surface px-2 py-3">
@@ -112,13 +112,7 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
     </aside>}
     <main className="phone-console-stage relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
       <header className="flex min-h-14 shrink-0 items-center justify-between gap-3 border-b border-border bg-surface px-3"><h1 className="min-w-0 truncate text-xs font-semibold">{project?.id ? project.name : project ? `${project.name} · not saved yet` : "Untitled song"}</h1><DeviceClock mobile /></header>
-      {transport.recording && <div aria-label="Recording position" className="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-1 border-b border-border bg-surface-2 px-3 py-2">
-        <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-destructive"><span className="size-2 rounded-full bg-destructive" />REC</span>
-        <span className="shrink-0 font-mono text-lg font-bold tabular-nums">BAR {recordingAt.bar} <span className="text-primary">BEAT {recordingAt.beat}</span></span>
-        <span className="min-w-0 text-xs text-foreground">BAR {recordingAt.nextBar} IN {Math.ceil(recordingAt.beatsRemaining)} {Math.ceil(recordingAt.beatsRemaining) === 1 ? "BEAT" : "BEATS"}</span>
-        <Button size="sm" variant="destructive" className="ml-auto h-10 shrink-0" aria-label="Stop recording now" onClick={() => void stop()}>■ STOP</Button>
-        <div className="flex h-1 w-full gap-1" aria-hidden="true">{Array.from({ length: transport.beatsPerBar ?? 4 }, (_, beat) => <div key={beat} className={`h-full flex-1 ${beat < recordingAt.beat ? "bg-primary" : "bg-muted"}`} />)}</div>
-      </div>}
+      {transport.recording && <PhoneRecordingPosition beatsPerBar={transport.beatsPerBar ?? 4} onStop={() => void stop()} />}
       {panel === "mixer" && !mixerFull && <>
         {dockHeight > 0 && <div className="docked-phone-timeline shrink-0 overflow-hidden" style={{ height: dockHeight }}><Timeline desktopStyle /></div>}
         <div role="separator" aria-orientation="horizontal" aria-label="Resize timeline and mixer" title="Drag to resize timeline and mixer" onPointerDown={startDockDrag} className="dock-splitter flex h-8 shrink-0 cursor-row-resize touch-none items-center justify-center gap-2 border-y-2 border-primary/50 bg-surface"><GripHorizontal className="size-5 text-primary" /><span className="text-[10px] font-bold uppercase tracking-widest text-primary">Drag to resize</span></div>
@@ -155,4 +149,15 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
       </div>
     </main>
   </div>;
+}
+/** Live bar/beat while recording on the phone; only this strip re-renders each step. */
+function PhoneRecordingPosition({ beatsPerBar, onStop }: { beatsPerBar: number; onStop: () => void }) {
+  const recordingAt = recordingPosition(usePlayStep(), beatsPerBar);
+  return <div aria-label="Recording position" className="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-1 border-b border-border bg-surface-2 px-3 py-2">
+        <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-destructive"><span className="size-2 rounded-full bg-destructive" />REC</span>
+        <span className="shrink-0 font-mono text-lg font-bold tabular-nums">BAR {recordingAt.bar} <span className="text-primary">BEAT {recordingAt.beat}</span></span>
+        <span className="min-w-0 text-xs text-foreground">BAR {recordingAt.nextBar} IN {Math.ceil(recordingAt.beatsRemaining)} {Math.ceil(recordingAt.beatsRemaining) === 1 ? "BEAT" : "BEATS"}</span>
+        <Button size="sm" variant="destructive" className="ml-auto h-10 shrink-0" aria-label="Stop recording now" onClick={onStop}>■ STOP</Button>
+        <div className="flex h-1 w-full gap-1" aria-hidden="true">{Array.from({ length: beatsPerBar }, (_, beat) => <div key={beat} className={`h-full flex-1 ${beat < recordingAt.beat ? "bg-primary" : "bg-muted"}`} />)}</div>
+      </div>;
 }
