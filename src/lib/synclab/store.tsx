@@ -36,6 +36,7 @@ import { getLooper } from "./live-looper";
 import { getReelRecorder } from "./reel-recorder";
 import { switchEdge, switchStateAt, writeSwitchStep } from "./switch-automation";
 import { scheduleStep as scheduleSongStep, triggerNote } from "./schedule-step";
+import { shownPassIndex, splitLoopPasses } from "./loop-takes";
 import { getPlayStep, setPlayStep } from "./playhead";
 import { isLiveParam, laneReads, laneWrites, liveValue, movedLiveParams, valueAt, writePoint } from "./automation-write";
 import { padNote } from "./drum-notes";
@@ -435,6 +436,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const recAudioStartRef = useRef<number | null>(null);
   /** punch recording hooks, filled in once the record helpers exist */
   const punchRef = useRef<{ start: (at: number) => void; stop: () => void } | null>(null);
+  /** loop wraps during the current microphone take; each wrap starts another pass */
+  const loopPassesRef = useRef(0);
   const loopStopRef = useRef<(() => void) | null>(null);
 
   const [sections, setSections] = useState<SongSection[]>([]);
@@ -1336,6 +1339,28 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     };
     const replace = !!transportRef.current.replace;
     const stepDur = 60 / (transportRef.current.bpm || 120) / 4;
+    const passes = loopPassesRef.current;
+    loopPassesRef.current = 0;
+    if (passes > 0 && transportRef.current.loop) {
+      // One continuous recording across loop passes: cut it into one take per pass.
+      const [lo, hi] = loopRegion(transportRef.current);
+      const windows = splitLoopPasses({ start: aligned.start, offset: aligned.offset, duration: result.duration, lo, hi, stepDur });
+      if (windows.length > 1) {
+        const shown = shownPassIndex(windows, lo, hi, stepDur);
+        const takes = windows.map((w, k) => ({ ...clip, id: uid(), name: `TAKE ${takeNo} · PASS ${k + 1}`, start: w.start, offset: w.offset, length: w.length }));
+        const top = { ...takes[shown]! };
+        const others = takes.filter((_, k) => k !== shown).reverse();
+        const end = (top.start ?? 0) + (hi - (top.start ?? 0));
+        const oldClips = target.clips ?? [];
+        const kept = replace ? replaceTakeRegion(oldClips, lo, end, stepDur) : oldClips;
+        top.alts = [...others, ...(replace ? coveredTakes(oldClips, lo, end, stepDur) : [])].slice(0, 12);
+        setTracks((ts) => ts.map((t) => (t.id === target.id ? { ...t, recording: false, clips: [...kept, top], activeClipId: top.id } : t)));
+        toast.success(`${windows.length} takes recorded on ${target.name}`, {
+          description: `Showing pass ${shown + 1}. Pick another pass from the clip's takes — Undo brings back what was there before.`,
+        });
+        return;
+      }
+    }
     const newEnd = (clip.start ?? 0) + (clip.length ?? clip.duration) / stepDur;
     const oldClips = target.clips ?? [];
     const kept = replace ? replaceTakeRegion(oldClips, clip.start ?? 0, newEnd, stepDur) : oldClips;
@@ -1519,6 +1544,12 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       const audio = engine.isRecording;
       const inst = engine.isTrackRecording;
       if (!audio && !inst) return;
+      if (audio && !inst) {
+        // Microphone takes keep recording through the loop: each pass becomes its own take.
+        loopPassesRef.current += 1;
+        if (loopPassesRef.current === 1) toast("Recording the next pass", { description: "Each time round the loop is kept as its own take. Press Stop when you're done." });
+        return;
+      }
       void endRecording();
       toast("Recording stopped at the loop end", { description: "Takes stay inside the bars you selected." });
     };
