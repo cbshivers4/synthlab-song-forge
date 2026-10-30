@@ -3213,6 +3213,7 @@ function TimelineOptionsPanel() {
 }
 
 function Ruler() {
+  const liveStep = usePlayStep();
   const { transport, setTransport } = useStudio();
   const isMobile = useIsMobile();
   const gridRef = useRef<HTMLDivElement>(null);
@@ -3304,8 +3305,8 @@ function Ruler() {
           <span className="font-display text-[11px] font-semibold tracking-[0.2em]">TIMELINE</span>
           <span className="label-xs ml-auto">
             {(transport.timebase ?? "bars") === "seconds"
-              ? (() => { const t = transport.step * stepSeconds(transport.bpm); return `${Math.floor(t / 60)}:${(t % 60).toFixed(2).padStart(5, "0")}`; })()
-              : positionLabel(transport.step)}
+              ? (() => { const t = liveStep * stepSeconds(transport.bpm); return `${Math.floor(t / 60)}:${(t % 60).toFixed(2).padStart(5, "0")}`; })()
+              : positionLabel(liveStep)}
           </span>
         </div>
         <div className="flex items-center gap-1.5">
@@ -3423,7 +3424,7 @@ function Ruler() {
 
         <div
           className="pointer-events-none absolute top-0 z-30 h-full"
-          style={{ left: `${(transport.step / total) * 100}%` }}
+          style={{ left: `${(liveStep / total) * 100}%` }}
         >
           {/* grab the line anywhere along the ruler to move the playhead */}
           <div
@@ -3431,7 +3432,7 @@ function Ruler() {
             aria-label="Playhead — drag to move"
             aria-valuemin={0}
             aria-valuemax={total - 1}
-            aria-valuenow={transport.step}
+            aria-valuenow={liveStep}
             tabIndex={0}
             className="playhead-grip pointer-events-auto absolute left-1/2 top-0 h-full w-6 -translate-x-1/2"
             title="Drag to move the playhead"
@@ -3439,7 +3440,7 @@ function Ruler() {
               const d = e.key === "ArrowLeft" ? -1 : e.key === "ArrowRight" ? 1 : 0;
               if (!d) return;
               e.preventDefault();
-              setTransport({ step: Math.max(0, Math.min(total - 1, transport.step + d)) });
+              setTransport({ step: Math.max(0, Math.min(total - 1, liveStep + d)) });
             }}
             onPointerDown={(e) => {
               e.preventDefault();
@@ -3478,6 +3479,7 @@ function TimelineOverview({
   zoom: number;
   setZoom: (z: number) => void;
 }) {
+  const liveStep = usePlayStep();
   const { transport } = useStudio();
   const total = songSteps(transport.bars);
   const [view, setView] = useState({ left: 0, width: 1 });
@@ -3558,7 +3560,7 @@ function TimelineOverview({
         {/* playhead */}
         <span
           className="playhead-line absolute inset-y-0 w-[2px]"
-          style={{ left: `${((transport.step % total) / total) * 100}%` }}
+          style={{ left: `${((liveStep % total) / total) * 100}%` }}
         />
         {/* viewport */}
         <span
