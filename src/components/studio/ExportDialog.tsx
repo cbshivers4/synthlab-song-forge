@@ -258,7 +258,7 @@ export function ExportDialog() {
       <DialogContent className="max-h-[92vh] max-w-3xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-display uppercase tracking-widest">Export mixdown</DialogTitle>
-          <DialogDescription>Your song plays through the mixer and is captured to one or more finished files.</DialogDescription>
+          <DialogDescription>Your song is rendered through the mixer, effects and buses, faster than real time, into one or more finished files.</DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-3 md:grid-cols-2">
@@ -418,7 +418,7 @@ export function ExportDialog() {
           )}
         </div>
         <p className="font-mono text-[9px] leading-tight text-muted-foreground">
-          Capture runs in real time — keep this tab in front. M4A, Ogg and Opus use your browser's own encoder, so they take one extra play-through and appear only where the browser supports them.
+          Export renders faster than real time. If your browser can't, it records the song in real time instead — keep this tab in front then. M4A, Ogg and Opus use your browser's own encoder, so they take one extra play-through and appear only where the browser supports them.
         </p>
       </DialogContent>
     </Dialog>
