@@ -65,3 +65,6 @@ Modular Tech uses definition-driven controls and narrow/wide hardware decks; eac
 Modular scopes branch from voice outputs, sum active taps at 20 fps and release on voice end; offline voices omit observers.
 Synth and drum console finishes scope shared Knob parts and section hooks to the existing instrument wrappers; retain tab structure and DrumRoll geometry so hardware styling never changes audio or phone editing.
 Studio rear mirrors front furniture in one measured canvas; phone Fit scales it with cables, while 100% retains native scrolling/routing. Both room canvases share wall art with CDN pointers and source/license credits, clear of equipment.
+Reel/QuickTime tape transport is independent of the song transport (never starts, stops or follows it) so tape takes and song playback can't fight each other.
+Mute/solo presses record as per-track switch events in the scheduler's reachStep during timeline or tape takes (replace semantics) and replay only at recorded presses, so manual presses still work between them.
+The "My Computer" file list is one shared ComputerFiles component used by the desktop left menu and the phone/narrow navigation bar, so both stay in sync.
