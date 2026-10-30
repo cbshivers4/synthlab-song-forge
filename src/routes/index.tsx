@@ -99,7 +99,7 @@ export const Route = createFileRoute("/")({
           "@context": "https://schema.org",
           "@type": "SoftwareApplication",
           name: "SYNCLAB",
-          url: "https://synclab-app.lovable.app/",
+          url: "https://synclabsapp.com/",
           applicationCategory: "MultimediaApplication",
           operatingSystem: "Web Browser",
           description:
