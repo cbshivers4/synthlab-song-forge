@@ -2607,8 +2607,11 @@ export class SyncLabEngine {
     }
     tail.connect(voiceOut);
 
+    /** Per-voice echo nodes, released once the echo has died away. */
+    const echoNodes: AudioNode[] = [];
     {
       const delay = ctx.createDelay(1.5);
+      echoNodes.push(delay);
       delay.delayTime.value = 0.28;
       const fb = ctx.createGain();
       fb.gain.value = clamp(patch.fx.delayFeedback, 0, 0.8);
@@ -2943,7 +2946,18 @@ export class SyncLabEngine {
     } };
     active.add(voice); this.liveVoices.set(trackId, active);
     const cleanupSource = nodes[0];
-    cleanupSource?.addEventListener("ended", () => { active.delete(voice); if (!active.size) this.liveVoices.delete(trackId); });
+    cleanupSource?.addEventListener("ended", () => {
+      active.delete(voice);
+      if (!active.size) this.liveVoices.delete(trackId);
+      // Release the finished voice's graph so long sessions don't pile up silent nodes.
+      // The echo keeps ringing for a few seconds first; offline renders keep everything until done.
+      if (typeof OfflineAudioContext !== "undefined" && ctx instanceof OfflineAudioContext) return;
+      try { voiceOut.disconnect(); } catch { /* already detached */ }
+      setTimeout(() => {
+        try { voicePan.disconnect(); } catch { /* already detached */ }
+        for (const n of echoNodes) { try { n.disconnect(); } catch { /* already detached */ } }
+      }, 8000);
+    });
     this.lastMidi.set(trackId, midi);
     if (mode !== "poly") {
       this.monoVoice.set(trackId, {
