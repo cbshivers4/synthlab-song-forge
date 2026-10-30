@@ -122,5 +122,6 @@
 - [x] Step 3: offline export render (shared scheduler, faster than real time, real-time fallback)
 - [x] Step 4: crash recovery — skipped at user's request (manual save only stays)
 - [x] Step 5a: speed-up — playhead moved out of shared state; only counters, playhead lines and step lights update each step
-- [ ] Step 5b: split the largest files (Timeline, audio engine, store, Mixer) into modules without behaviour changes
+- [x] Step 5b: Timeline (4,031 → 270 lines + 6 modules) and Mixer (2,167 → 312 + 7 modules) split; duplicate automation-curve maths merged
+- [ ] Step 5c (later, higher risk): split audio engine class and studio store provider
 - [ ] Step 6: loop take recording (every loop pass kept as a take)

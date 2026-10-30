@@ -73,3 +73,5 @@ Effect response/scope window skins use per-kind attributes in shared displays; f
 Modular scopes branch from voice outputs, sum active taps at 20 fps and release on voice end; offline voices omit observers.
 Synth and drum console finishes scope shared Knob parts and section hooks to the existing instrument wrappers; retain tab structure and DrumRoll geometry so hardware styling never changes audio or phone editing.
 Studio rear mirrors front furniture in one measured canvas; phone Fit scales it with cables, while 100% retains native scrolling/routing. Both room canvases share wall art with CDN pointers and source/license credits, clear of equipment.
+
+Timeline.tsx and Mixer.tsx are thin entry points; their parts live in timeline/ (shared, clips, TrackRow, AutomationRow, EditToolbar, Ruler) and mixer/ (shared, InsertRack, ChannelEq, Strip, BusStrips, MasterStrip, PhoneMixer). Add new timeline/mixer code to the matching module instead of regrowing the entry files.
