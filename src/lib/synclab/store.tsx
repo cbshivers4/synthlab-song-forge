@@ -8,7 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { materialEnd, pasteTrackContent, timelinePasteStep } from "./arrangement-edit";
+import { drumCopySpan, materialEnd, pasteTrackContent, timelinePasteStep } from "./arrangement-edit";
 
 /** Drum/sampler tracks can hold values the browser cannot deep-copy; fall back so copy never silently fails. */
 function cloneTrack(t: Track): Track {
@@ -33,6 +33,8 @@ import { BUILT_IN_PLUGINS, instantiate, processMidiThroughPlugins, withDefaultPa
 import { getMidiAccess, listInputs, listOutputs, midiSupported, midiUnsupportedMessage, subscribe, type MidiPortInfo } from "./midi";
 import { getPadBank, setPadBank } from "./pad-session";
 import { getLooper } from "./live-looper";
+import { getReelRecorder } from "./reel-recorder";
+import { switchEdge, switchStateAt, writeSwitchStep } from "./switch-automation";
 import { padNote } from "./drum-notes";
 import { markLiveHit, isLiveHit, clearLiveHits, neighbourLiveHits } from "./live-take";
 import { keyDown, keyUp } from "./active-keys";
@@ -1254,6 +1256,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
 
     /** Everything that should happen the moment a step is actually heard. */
     let prevAt = -1;
+    // Mute/solo presses captured during the current take (timeline or reel recording), and the last replayed step.
+    let switchTake: { start: number; prev: number; baseline: Map<string, { muted: boolean; solo: boolean }> } | null = null;
+    let switchPrev = -1;
     const reachStep = (n: number) => {
       const tp = transportRef.current;
       const list = tracksRef.current;
@@ -1269,7 +1274,43 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       // punch in / out: the take starts and stops itself at the markers
       if (tp.punchIn != null && at === tp.punchIn) punchRef.current?.start();
       if (tp.punchOut != null && at === tp.punchOut) punchRef.current?.stop();
-      for (const t of list) {
+      // Mute/solo buttons: recorded with their timing during a take, replayed otherwise.
+      {
+        const taking = tp.playing && (tp.recording || getReelRecorder().getSnapshot().mode === "recording");
+        const patches = new Map<string, Partial<Track>>();
+        if (taking) {
+          const take = switchTake ?? (switchTake = { start: at, prev: at - 1, baseline: new Map() });
+          const from = at <= take.prev ? at - 1 : take.prev;
+          for (const t of list) {
+            const base = take.baseline.get(t.id) ?? { muted: !!t.muted, solo: !!t.solo };
+            if (!take.baseline.has(t.id)) take.baseline.set(t.id, base);
+            const muteEvents = writeSwitchStep(t.muteEvents, from, at, !!t.muted, base.muted, take.start);
+            const soloEvents = writeSwitchStep(t.soloEvents, from, at, !!t.solo, base.solo, take.start);
+            if (muteEvents || soloEvents) patches.set(t.id, { ...(muteEvents ? { muteEvents } : {}), ...(soloEvents ? { soloEvents } : {}) });
+          }
+          take.prev = at;
+          switchPrev = at;
+        } else {
+          switchTake = null;
+          // Replay at recorded presses (and when playback starts), so a manual press still works between them.
+          for (const t of list) {
+            const muted = switchEdge(t.muteEvents, switchPrev, at) ? switchStateAt(t.muteEvents, at) : undefined;
+            const solo = switchEdge(t.soloEvents, switchPrev, at) ? switchStateAt(t.soloEvents, at) : undefined;
+            const patch: Partial<Track> = {};
+            if (muted !== undefined && muted !== !!t.muted) patch.muted = muted;
+            if (solo !== undefined && solo !== !!t.solo) patch.solo = solo;
+            if (Object.keys(patch).length) patches.set(t.id, patch);
+          }
+        }
+        if (!taking) switchPrev = at;
+        if (patches.size) {
+          const next = list.map((t) => (patches.has(t.id) ? { ...t, ...patches.get(t.id) } : t));
+          tracksRef.current = next;
+          setTracks((current) => current.map((t) => (patches.has(t.id) ? { ...t, ...patches.get(t.id) } : t)));
+          if (!taking) engine.syncMixIfChanged(next);
+        }
+      }
+      for (const t of tracksRef.current) {
         if (t.muted || t.deviceBypassed || t.frozen || (anySolo && !t.solo)) continue;
         if (!t.automation?.length) continue;
         const ride: Record<string, number> = {};
@@ -2171,6 +2212,11 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         const src = tracksRef.current.find((t) => t.id === id);
         if (!src) return;
         clipboardRef.current = cloneTrack(src);
+        // A drum beat copies the part you see (or the selected part), at its full length.
+        if (src.kind === "drum" && !src.printedAudio && src.pads?.some((p) => p.steps.some((v) => v > 0))) {
+          const tp = transportRef.current;
+          clipboardRef.current.patternRegion = drumCopySpan(src, tp.loop ? loopRegion(tp) : [0, songSteps(tp.bars)]);
+        }
         clipClipboardRef.current = null;
         setClipClipboardName(null);
         setClipboardName(src.name);

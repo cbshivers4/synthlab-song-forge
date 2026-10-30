@@ -66,3 +66,10 @@ Pad Sampler saves source-relative chop ranges; bank transforms preserve the sour
 Device-conditional UI reads `useIsAppleMobile()` (`src/hooks/use-is-apple-mobile.ts`), never `isAppleMobile()` inside a render body — the server and an iPad would disagree and hydration breaks; `outputRoutingHint(apple)` takes the flag for the same reason. `canPickOutput` stays a pure browser-capability check: iPadOS reports `setSinkId` as available yet every call rejects, so the Output picker is suppressed by the Apple flag and `setOutputDevice` refuses with the Control Centre hint.
 
 HardwareWindow moves/resizes the existing mounted whole editor in canvas coordinates; never clone instrument instances, audio owners, effect devices or modular modules for window presentation.
+
+Plugins cabinet presentation wraps existing RackEffect instances and a responsive installed-device browser; cabinet texture and scoped faceplate styles never change processing or duplicate plugin state.
+EffectWorkbench packs existing parameters in wrapping control banks beside real displays; container widths support rack/mixer and sideways phones. data-fx-skin/family preserves identity without duplicate state. Keep dedicated EQ/vocoder editors and isolated touch-sized channel menus.
+Effect response/scope window skins use per-kind attributes in shared displays; frame/layout changes never alter DSP, signal taps, EQ curves or pointer coordinates.
+Modular scopes branch from voice outputs, sum active taps at 20 fps and release on voice end; offline voices omit observers.
+Synth and drum console finishes scope shared Knob parts and section hooks to the existing instrument wrappers; retain tab structure and DrumRoll geometry so hardware styling never changes audio or phone editing.
+Studio rear mirrors front furniture in one measured canvas; phone Fit scales it with cables, while 100% retains native scrolling/routing. Both room canvases share wall art with CDN pointers and source/license credits, clear of equipment.

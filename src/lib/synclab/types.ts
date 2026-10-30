@@ -121,6 +121,8 @@ export interface SynthPatch {
   velocitySens?: number;
   /** analogue drift: random per-voice tuning and cutoff wobble, 0..1 */
   analog?: number;
+  /** Clean voice: skips the always-on voice saturation stage (used for generated basslines). */
+  clean?: boolean;
   /** Modular Tech Synth patch; when set the voice is built from these modules and cables. */
   modular?: import("./modular").ModularPatch | undefined;
   fx: {
@@ -497,6 +499,9 @@ export interface Track {
   clipView?: "wave" | "notes" | undefined;
   recording?: boolean;
   automation?: AutomationLane[] | undefined;
+  /** Mute / solo presses recorded during a take, replayed during playback. */
+  muteEvents?: import("./switch-automation").SwitchEvent[] | undefined;
+  soloEvents?: import("./switch-automation").SwitchEvent[] | undefined;
   /** free-text note the producer keeps on this channel; saved with the project */
   memo?: string | undefined;
 }

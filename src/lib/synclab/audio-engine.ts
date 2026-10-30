@@ -2526,7 +2526,7 @@ export class SyncLabEngine {
     filterIn.connect(filter);
 
     const shaper = ctx.createWaveShaper();
-    shaper.curve = this.distortionCurve(Math.min(1.5, 0.05 + patch.fx.distortion + (patch.fx.saturation ?? 0) * 0.6 + (patch.drive ?? 0) * 0.8));
+    shaper.curve = patch.clean ? null : this.distortionCurve(Math.min(1.5, 0.05 + patch.fx.distortion + (patch.fx.saturation ?? 0) * 0.6 + (patch.drive ?? 0) * 0.8));
 
     const f2 = patch.filter2;
     let filter2: BiquadFilterNode | null = null;
@@ -2894,8 +2894,8 @@ export class SyncLabEngine {
       }
       filter.type = next.filterType;
       glideParam(filter.Q, clamp(next.resonance * (1 + fixedMod("resonance")), 0, 30));
-      if (next.drive !== old.drive || next.fx.distortion !== old.fx.distortion || next.fx.saturation !== old.fx.saturation)
-        shaper.curve = this.distortionCurve(Math.min(1.5, 0.05 + next.fx.distortion + (next.fx.saturation ?? 0) * 0.6 + next.drive * 0.8));
+      if (next.drive !== old.drive || next.fx.distortion !== old.fx.distortion || next.fx.saturation !== old.fx.saturation || next.clean !== old.clean)
+        shaper.curve = next.clean ? null : this.distortionCurve(Math.min(1.5, 0.05 + next.fx.distortion + (next.fx.saturation ?? 0) * 0.6 + next.drive * 0.8));
       if (filter2 && next.filter2) {
         filter2.type = next.filter2.type;
         glideParam(filter2.frequency, clamp(next.filter2.cutoff, 40, 18000));

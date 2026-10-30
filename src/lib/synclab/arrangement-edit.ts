@@ -34,7 +34,8 @@ export function pasteTrackContent(target: Track, source: Track, at: number, step
     const values = Array.from({ length: steps }, (_, s) =>
       region && (s < region[0] || s >= region[1]) ? 0 : pad.steps[s % Math.max(1, pad.steps.length)] ?? 0);
     const src = source.pads?.[i]?.steps ?? [];
-    for (let s = srcA; s < srcB; s++) { const v = src[s] ?? 0; if (v > 0) values[start + s - srcA] = v; }
+    // The timeline tiles a short pattern across its part, so copy the tiled hits: the copy is as long as the part you see.
+    for (let s = srcA; s < srcB; s++) { const v = src[s % Math.max(1, src.length)] ?? 0; if (v > 0) values[start + s - srcA] = v; }
     return { ...pad, steps: values };
   });
   const pastedDrums = !!pads && drumSource;
@@ -61,11 +62,13 @@ export function materialEnd(track: Track, stepDuration: number, shownEnd?: numbe
 }
 
 /** Reveal source audio when available; beyond the source end, stretch the selected audio. */
-export function rightEdgeEdit(clip: AudioClip, deltaSeconds: number, barSeconds: number, fine: boolean) {
+export function rightEdgeEdit(clip: AudioClip, deltaSeconds: number, barSeconds: number, fine: boolean, alwaysStretch = false) {
   const current = clipSeconds(clip);
   const raw = current + deltaSeconds;
   const seconds = Math.max(0.05, fine ? raw : Math.max(barSeconds, Math.round(raw / barSeconds) * barSeconds));
   const available = (clip.duration - (clip.offset ?? 0)) / clipRate(clip);
+  // Drum blocks stretch their audio to whatever length the block is dragged to.
+  if (alwaysStretch) return { seconds, length: clip.length ?? clip.duration, stretch: Math.abs(seconds - current) > 0.001 ? seconds / current : null };
   return { seconds, length: Math.min(clip.duration - (clip.offset ?? 0), seconds * clipRate(clip)), stretch: seconds > available + 0.001 ? seconds / current : null };
 }
 /**
@@ -90,4 +93,45 @@ export function moveDrumPart(track: Track, a: number, b: number, to: number): Pa
   const lo = Math.min(region?.[0] ?? 0, dest), hi = Math.max(region?.[1] ?? padLen, dest + len);
   const cuts = [...new Set([...(track.cuts ?? []).filter(c => c <= dest || c >= dest + len), from, from + len, dest, dest + len])].sort((x, y) => x - y);
   return { pads, steps, cuts, patternRegion: [lo, hi], activeRegion: dest };
+}
+
+/** The part of a drum track a copy should take: the selected part between cut marks, else what the timeline shows. */
+export function drumCopySpan(track: Track, shown: [number, number]): [number, number] {
+  const bounds = track.patternRegion ?? shown;
+  const cuts = (track.cuts ?? []).filter(c => c > bounds[0] && c < bounds[1]).sort((a, b) => a - b);
+  const edges = [bounds[0], ...cuts, bounds[1]];
+  const at = track.activeRegion;
+  if (at != null && cuts.length) {
+    for (let i = 0; i < edges.length - 1; i++) if (at >= edges[i]! - 0.001 && at < edges[i + 1]! - 0.001) return [edges[i]!, edges[i + 1]!];
+  }
+  return bounds;
+}
+
+/**
+ * Stretch one drum part [a, b) to `newLength` steps, like stretching audio: every hit keeps its
+ * relative position in the part. Hits outside the part stay where they are.
+ */
+export function stretchDrumPart(track: Track, a: number, b: number, newLength: number): Partial<Track> {
+  const from = Math.round(a);
+  const len = Math.max(1, Math.round(b - a));
+  const next = Math.max(1, Math.round(newLength));
+  const region = track.patternRegion;
+  const padLen = Math.max(1, track.pads?.[0]?.steps.length ?? track.steps);
+  const steps = Math.max(track.steps, padLen, from + next, from + len);
+  const factor = next / len;
+  const pads = track.pads?.map(pad => {
+    const plen = Math.max(1, pad.steps.length);
+    const values = Array.from({ length: steps }, (_, s) => region && (s < region[0] || s >= region[1]) ? 0 : pad.steps[s % plen] ?? 0);
+    const part = values.slice(from, from + len);
+    for (let s = from; s < from + Math.max(len, next); s++) values[s] = 0;
+    part.forEach((v, i) => {
+      if (v <= 0) return;
+      const to = from + Math.min(next - 1, Math.round(i * factor));
+      values[to] = Math.max(values[to] ?? 0, v);
+    });
+    return { ...pad, steps: values };
+  });
+  const lo = Math.min(region?.[0] ?? 0, from), hi = Math.max(region?.[1] ?? padLen, from + next);
+  const cuts = [...new Set([...(track.cuts ?? []).filter(c => c <= from || c >= from + Math.max(len, next)), from, from + next])].sort((x, y) => x - y);
+  return { pads, steps, cuts, patternRegion: [lo, hi], activeRegion: from };
 }

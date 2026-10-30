@@ -2305,7 +2305,7 @@ body:has(.phone-console) [data-sonner-toast] button { pointer-events: auto; }
 .mx-console:not(.mx-phone) .mx-row-scope { grid-row: 12; }
 .mx-console:not(.mx-phone) .mx-row-icon { grid-row: 13; }
 .mx-console .mx-row-icon {
-  background: var(--mixer-icon-plate);
+  background: transparent; /* shows the channel strip colour */
   color: var(--mixer-icon-ink);
   border-top: 1px solid var(--mixer-icon-edge);
 }
