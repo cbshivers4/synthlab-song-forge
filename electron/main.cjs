@@ -171,7 +171,10 @@ app.whenReady().then(async () => {
     if (details.resourceType !== "mainFrame" || !security.isAppUrl(details.url, APP_URL)) return callback({});
     callback({ responseHeaders: { ...details.responseHeaders, "Content-Security-Policy": [security.CONTENT_SECURITY_POLICY] } });
   });
-  session.defaultSession.setBluetoothDevicePermissionHandler(details => details.origin === new URL(APP_URL).origin);
+  // Older/newer Electron versions differ here; a missing API must never stop the window from opening.
+  if (typeof session.defaultSession.setBluetoothDevicePermissionHandler === "function") {
+    session.defaultSession.setBluetoothDevicePermissionHandler(details => security.isAppUrl(details.origin, APP_URL));
+  }
   if (process.platform === "darwin") {
     try {
       await systemPreferences.askForMediaAccess("microphone");
