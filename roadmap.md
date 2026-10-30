@@ -124,4 +124,4 @@
 - [x] Step 5a: speed-up — playhead moved out of shared state; only counters, playhead lines and step lights update each step
 - [x] Step 5b: Timeline (4,031 → 270 lines + 6 modules) and Mixer (2,167 → 312 + 7 modules) split; duplicate automation-curve maths merged
 - [ ] Step 5c (later, higher risk): split audio engine class and studio store provider
-- [ ] Step 6: loop take recording (every loop pass kept as a take)
+- [x] Step 6: loop take recording — microphone passes kept as takes (instrument/drum still stop at loop end)
