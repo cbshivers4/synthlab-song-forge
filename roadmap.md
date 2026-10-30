@@ -105,11 +105,11 @@
 - [x] Instrument faces (Studio One/Reason reference): Spec 4 synth dark charcoal face with blue accent and A·D·S·R envelope displays; Sampler dark wave window + light silver control decks as "Sample One"; Bass Generator light teal panel with key display and step grid. Presentation only — no sound or control changes; 305 tests pass, build OK, visually verified.
 
 ## Oct 30 change list
-- [ ] Reel-to-Reel / QuickTime recorders run independently of the master transport
-- [ ] Record mute/solo changes during a take (Mixer + Reel) and replay them; re-recording replaces them
-- [ ] Bass Generator distortion: find cause and fix
-- [ ] Drum machine waveform block: copy at full length; stretching stretches audio
-- [ ] Timeline loop button toggles loop on/off
-- [ ] "Choose your music folder (once)" → "Choose your music"
-- [ ] Music files listed in left menu after choosing folder
-- [ ] Mixer channel bottom icon background matches strip color
+- [x] Reel-to-Reel / QuickTime recorders run independently of the master transport
+- [x] Record mute/solo changes during a take (Mixer + Reel) and replay them; re-recording replaces them
+- [x] Bass Generator distortion: find cause and fix
+- [x] Drum machine waveform block: copy at full length; stretching stretches audio
+- [x] Timeline loop button toggles loop on/off
+- [x] "Choose your music folder (once)" → "Choose your music"
+- [x] Music files listed in left menu after choosing folder
+- [x] Mixer channel bottom icon background matches strip color
