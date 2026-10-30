@@ -1,3 +1,4 @@
+import { nativeInsertMode } from "./native-insert";
 import { centerOneSided } from "./one-sided-audio";
 import { buildCreativeFx, isCreativeKind } from "./creative-fx";
 import { phasedHarmonics } from "./oscillator-phase";
@@ -812,6 +813,9 @@ export class SyncLabEngine {
 
 
     for (const pl of active) {
+      // Real desktop plugins run in the native host; until it's attached they pass audio through
+      // untouched instead of being imitated by a built-in effect.
+      if (nativeInsertMode(pl, false) !== "builtin") continue;
       switch (pl.kind) {
         case "eq": {
           const low = ctx.createBiquadFilter();

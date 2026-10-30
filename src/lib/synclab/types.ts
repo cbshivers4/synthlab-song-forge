@@ -358,6 +358,24 @@ export interface PluginInstance {
   kind: PluginKind;
   bypass: boolean;
   params: PluginParam[];
+  /**
+   * Set only for a real desktop plugin hosted by the native plugin host. Saved with the
+   * project so it reopens everywhere; where no host is running the insert passes audio through.
+   */
+  native?: NativePluginRef | undefined;
+}
+
+/** A desktop VST3 / AU / CLAP plugin as the native host knows it, plus its saved state. */
+export interface NativePluginRef {
+  format: "VST3" | "AU" | "CLAP";
+  /** host's stable id for the plugin (VST3 class id, AU type/subtype/manufacturer, CLAP id) */
+  uid: string;
+  name: string;
+  vendor: string;
+  /** plugin's own state blob, base64; restored when the host opens the plugin */
+  state?: string | undefined;
+  /** processing delay the host reported, in samples */
+  latencySamples?: number | undefined;
 }
 
 /** A loaded audio file played back by the sampler instrument. */
