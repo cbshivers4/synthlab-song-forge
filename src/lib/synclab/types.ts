@@ -497,6 +497,9 @@ export interface Track {
   clipView?: "wave" | "notes" | undefined;
   recording?: boolean;
   automation?: AutomationLane[] | undefined;
+  /** Mute / solo presses recorded during a take, replayed during playback. */
+  muteEvents?: import("./switch-automation").SwitchEvent[] | undefined;
+  soloEvents?: import("./switch-automation").SwitchEvent[] | undefined;
   /** free-text note the producer keeps on this channel; saved with the project */
   memo?: string | undefined;
 }
