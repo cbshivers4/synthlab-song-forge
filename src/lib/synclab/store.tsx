@@ -1303,6 +1303,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           }
         }
         if (!taking) switchPrev = at;
+        if ((window as any).__dbgSwitch) console.log('SWITCH', at, taking, tp.recording, JSON.stringify([...patches]));
         if (patches.size) {
           const next = list.map((t) => (patches.has(t.id) ? { ...t, ...patches.get(t.id) } : t));
           tracksRef.current = next;
