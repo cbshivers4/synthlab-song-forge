@@ -113,3 +113,7 @@
 - [x] "Choose your music folder (once)" → "Choose your music"
 - [x] Music files listed in left menu after choosing folder
 - [x] Mixer channel bottom icon background matches strip color
+
+## Oct 30 — Professional DAW master brief
+- [x] Phase 1 audit report + phased development plan (/mnt/documents/SYNCLAB-audit-and-plan.md); awaiting user's choice of first step
+- [ ] Clear track content must stay on the edit page — could not reproduce (desktop, narrow, touch all stay); waiting on user for device/track/path
