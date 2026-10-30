@@ -113,3 +113,7 @@
 - [x] "Choose your music folder (once)" → "Choose your music"
 - [x] Music files listed in left menu after choosing folder
 - [x] Mixer channel bottom icon background matches strip color
+
+## Oct 30 — Professional DAW master brief
+- [ ] Phase 1 audit report + phased development plan (present before major changes)
+- [ ] Clear track content must stay on the edit page (no jump to instrument)
