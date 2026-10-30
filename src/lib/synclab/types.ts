@@ -121,6 +121,8 @@ export interface SynthPatch {
   velocitySens?: number;
   /** analogue drift: random per-voice tuning and cutoff wobble, 0..1 */
   analog?: number;
+  /** Clean voice: skips the always-on voice saturation stage (used for generated basslines). */
+  clean?: boolean;
   /** Modular Tech Synth patch; when set the voice is built from these modules and cables. */
   modular?: import("./modular").ModularPatch | undefined;
   fx: {
