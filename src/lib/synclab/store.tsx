@@ -33,6 +33,8 @@ import { BUILT_IN_PLUGINS, instantiate, processMidiThroughPlugins, withDefaultPa
 import { getMidiAccess, listInputs, listOutputs, midiSupported, midiUnsupportedMessage, subscribe, type MidiPortInfo } from "./midi";
 import { getPadBank, setPadBank } from "./pad-session";
 import { getLooper } from "./live-looper";
+import { getReelRecorder } from "./reel-recorder";
+import { switchStateAt, writeSwitchStep } from "./switch-automation";
 import { padNote } from "./drum-notes";
 import { markLiveHit, isLiveHit, clearLiveHits, neighbourLiveHits } from "./live-take";
 import { keyDown, keyUp } from "./active-keys";
