@@ -434,7 +434,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       const base = s.playing && s.step !== getPlayStep() ? { ...s, step: getPlayStep() } : s;
       const next = typeof update === "function" ? update(base) : update;
       if (next.step !== getPlayStep()) setPlayStep(next.step);
-      return next === base && base !== s ? base : next;
+      return next;
     });
   }, []);
 
