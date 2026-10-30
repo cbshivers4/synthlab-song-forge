@@ -1630,12 +1630,31 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   // keep the punch hooks pointing at the current record helpers
   useEffect(() => {
     punchRef.current = {
-      start: () => {
+      start: (at: number) => {
         const engine = getEngine();
-        if (engine.isRecording) return;
+        if (engine.isRecording || engine.isTrackRecording) return;
         const target = tracksRef.current.find((t) => t.armed && (t.kind === "audio" || t.kind === "ai-vocal"));
-        if (!target) return;
-        recStartStepRef.current = transportRef.current.step ?? 0;
+        if (!target) {
+          // Instrument, drum and sampler channels punch in too: notes and their printed take start at the marker.
+          const note = tracksRef.current.find((t) => t.armed && (t.kind === "instrument" || t.kind === "midi" || t.kind === "drum" || t.kind === "sampler"));
+          if (!note) return;
+          recStartStepRef.current = at;
+          const tpr = transportRef.current;
+          const to = tpr.punchOut != null && tpr.punchOut > at ? tpr.punchOut : Number.POSITIVE_INFINITY;
+          replacedNoteIdsRef.current = tpr.overdub && !tpr.replace
+            ? new Set()
+            : new Set((note.notes ?? []).filter((n) => n.step >= at && n.step < to).map((n) => n.id));
+          try {
+            engine.startTrackRecording(note.id);
+          } catch (err) {
+            toast.error("Could not record this channel", { description: err instanceof Error ? err.message : undefined });
+            return;
+          }
+          updateTrack(note.id, { recording: true });
+          setTransportState(s => ({ ...s, recording: true }));
+          return;
+        }
+        recStartStepRef.current = at;
         const generation = recordingGenerationRef.current;
         updateTrack(target.id, { recording: true });
         pendingInputStartRef.current = engine.startInputRecording(target.id, transportRef.current.monitor ?? false)
