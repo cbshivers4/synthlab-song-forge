@@ -36,6 +36,7 @@ import { getLooper } from "./live-looper";
 import { getReelRecorder } from "./reel-recorder";
 import { switchEdge, switchStateAt, writeSwitchStep } from "./switch-automation";
 import { scheduleStep as scheduleSongStep, triggerNote } from "./schedule-step";
+import { getPlayStep, setPlayStep } from "./playhead";
 import { isLiveParam, laneReads, laneWrites, liveValue, movedLiveParams, writePoint } from "./automation-write";
 import { padNote } from "./drum-notes";
 import { markLiveHit, isLiveHit, clearLiveHits, neighbourLiveHits } from "./live-take";
@@ -400,7 +401,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const [editTool, setEditTool] = useState<EditTool>("select");
   const [panel, setPanel] = useState<PanelId>(null);
   const [userPresets, setUserPresets] = useState<SynthPatch[]>([]);
-  const [transport, setTransportState] = useState<Transport>({
+  const [transport, rawSetTransportState] = useState<Transport>({
     playing: false,
     recording: false,
     bpm: 128,
@@ -423,10 +424,25 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     monitor: false,
   });
 
+  /**
+   * Every transport update goes through here. While playing, the moving step lives in the
+   * playhead store (not React state), so updates first pick up the live step, and an
+   * explicit step (seek, stop to start) moves the playhead too.
+   */
+  const setTransportState = useCallback((update: Transport | ((s: Transport) => Transport)) => {
+    rawSetTransportState((s) => {
+      const base = s.playing && s.step !== getPlayStep() ? { ...s, step: getPlayStep() } : s;
+      const next = typeof update === "function" ? update(base) : update;
+      if (next.step !== getPlayStep()) setPlayStep(next.step);
+      return next === base && base !== s ? base : next;
+    });
+  }, []);
+
   const tracksRef = useRef(tracks);
   tracksRef.current = tracks;
   const transportRef = useRef(transport);
-  transportRef.current = transport;
+  // While playing, the heard step comes from the playhead store; state holds it only between updates.
+  transportRef.current = transport.playing ? { ...transport, step: getPlayStep() } : transport;
   setBeatsPerBar(transport.beatsPerBar);
   const countInTimerRef = useRef<number | null>(null);
   const pendingInputStartRef = useRef<Promise<void> | null>(null);
@@ -1198,7 +1214,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         }
         if (Object.keys(ride).length > 0) engine.automate(t.id, ride);
       }
-      setTransportState((t) => (t.step === at ? t : { ...t, step: at }));
+      // The heard step moves the playhead only: no studio-wide re-render per step.
+      transportRef.current = { ...transportRef.current, step: at };
+      setPlayStep(at);
     };
 
     const pump = () => {
