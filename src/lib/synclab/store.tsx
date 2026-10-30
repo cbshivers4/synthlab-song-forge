@@ -1523,6 +1523,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           return;
         }
         recStartStepRef.current = at;
+        loopPassesRef.current = 0;
         const generation = recordingGenerationRef.current;
         updateTrack(target.id, { recording: true });
         pendingInputStartRef.current = engine.startInputRecording(target.id, transportRef.current.monitor ?? false)
@@ -2345,6 +2346,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             }
             if (armedAudio) {
               const target = armedAudio;
+              loopPassesRef.current = 0;
               recStartStepRef.current = transportRef.current.step ?? 0;
               const generation = recordingGenerationRef.current;
               updateTrack(target.id, { recording: true });
