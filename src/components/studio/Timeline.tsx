@@ -1,7 +1,7 @@
 import { deleteSelectedPart, selectedPartBounds } from '@/lib/synclab/workflow';
 import { boundedRegions, loopRegion } from "@/lib/synclab/recording-region";
 import { timelineUsesWaveform } from "@/lib/synclab/timeline-content";
-import { materialEnd, moveDrumPart, rightEdgeEdit } from "@/lib/synclab/arrangement-edit";
+import { materialEnd, moveDrumPart, rightEdgeEdit, stretchDrumPart } from "@/lib/synclab/arrangement-edit";
 import { Fragment, memo, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { stepsPerBar, getBeatsPerBar, STEPS_PER_BEAT, songSteps, stepSeconds, positionLabel } from "@/lib/synclab/timebase";
@@ -741,6 +741,45 @@ function DrumClip({ track }: { track: Track }) {
     window.addEventListener("pointerup", onUp);
     window.addEventListener("pointercancel", onUp);
   };
+  /** Drag a beat part's right edge to stretch it: its hits spread out (or squeeze in) to fill the new length. */
+  const beginPartStretch = (e: React.PointerEvent, a: number, b: number) => {
+    e.stopPropagation();
+    if (e.button !== 0) return;
+    e.preventDefault();
+    const handle = e.currentTarget as HTMLElement;
+    const block = handle.parentElement;
+    const lane = handle.closest("[data-lane]") as HTMLElement | null;
+    if (!lane || !block) return;
+    const perStep = canvasRect(lane).width / Math.max(1, total);
+    const x0 = canvasPoint(e.clientX, e.clientY).x;
+    const grid = transport.snap && transport.snap > 0 ? transport.snap : 1;
+    const nextStart = boundedRegions(regionsOf(cuts, total), bounds)
+      .filter(([x, y]) => x >= b - 0.001 && track.pads?.some((p) => p.steps.slice(Math.floor(x), Math.ceil(y)).some((v) => v > 0)))
+      .reduce((m, [x]) => Math.min(m, x), total);
+    const maxLen = Math.max(1, nextStart - a);
+    let len = b - a;
+    const originalWidth = block.style.width;
+    try { handle.setPointerCapture(e.pointerId); } catch { /* pointer already released */ }
+    const onMove = (ev: PointerEvent) => {
+      const raw = b - a + (canvasPoint(ev.clientX, ev.clientY).x - x0) / Math.max(0.0001, perStep);
+      len = Math.max(grid, Math.min(maxLen, Math.round(raw / grid) * grid));
+      block.style.width = `${len * perStep - 1}px`;
+      block.dataset["bars"] = `${+(len / stepsPerBar()).toFixed(2)} BARS · STRETCH`;
+    };
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
+      block.style.width = originalWidth;
+      delete block.dataset["bars"];
+      if (Math.abs(len - (b - a)) < 0.5) return;
+      updateTrack(track.id, stretchDrumPart(track, a, b, len));
+      toast.success(`Beat part stretched to ${+(len / stepsPerBar()).toFixed(2)} bars`);
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
+  };
   {
     // Cut beat: each part is its own block that can be selected and deleted, like a DAW part.
     return <>{boundedRegions(regionsOf(cuts, total), bounds).map(([a, b]) => {
@@ -765,6 +804,13 @@ function DrumClip({ track }: { track: Track }) {
           {active && <PartMenu label={`${track.name} beat part`} onDelete={() => { const patch = deleteSelectedPart(track, transport.bpm, transport.bars, transport.loop ? loopRegion(transport) : undefined); if (patch) updateTrack(track.id, patch);
                 toast.success("Beat part deleted"); }} />}
           <div className="relative min-h-0 flex-1"><DrumHitWave pads={part} steps={hi - lo} total={hi - lo} tone="text-[var(--arrangement-ink)]" /></div>
+          <div
+            onPointerDown={(e) => beginPartStretch(e, a, b)}
+            onClick={(e) => e.stopPropagation()}
+            role="slider" aria-label={`Stretch ${track.name} beat part`} aria-valuenow={b - a} aria-valuemin={1}
+            title="Drag to stretch this beat part — its hits spread out to fill the new length"
+            className="arrangement-trim arrangement-trim-right absolute inset-y-0 right-0 z-30 w-3 cursor-ew-resize touch-none"
+          />
         </div>
       );
     })}</>;
