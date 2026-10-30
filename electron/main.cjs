@@ -13,7 +13,7 @@
  * Run:      npm run desktop:dev
  * Package:  npm run desktop:package -- --platform=darwin --arch=arm64
  */
-const { app, BrowserWindow, ipcMain, dialog, shell, session, systemPreferences } = require("electron");
+const { app, BrowserWindow, ipcMain, dialog, shell, session, systemPreferences, net } = require("electron");
 const path = require("path");
 const fs = require("fs/promises");
 const crypto = require("crypto");
@@ -22,6 +22,7 @@ const info = require("./app-info.cjs");
 const { buildMenu } = require("./menu.cjs");
 const windowState = require("./window-state.cjs");
 const security = require("./security.cjs");
+const { createOfflineStudio } = require("./offline-studio.cjs");
 
 /** Where the studio is served from. Override with SYNCLAB_URL for a local dev server. */
 const APP_URL = process.env.SYNCLAB_URL || info.website;
@@ -116,17 +117,52 @@ function createWindow() {
   win.loadURL(APP_URL);
 
 
-  win.webContents.on("did-fail-load", (_e, _code, description) => {
+  win.webContents.on("did-fail-load", (_e, code, description, _url, isMainFrame) => {
+    // -3 is a cancelled load (e.g. a redirect), not a failure.
+    if (!isMainFrame || code === -3) return;
     win.loadURL(
       "data:text/html," +
         encodeURIComponent(
           `<body style="background:#0a0a0c;color:#e6e6e6;font:14px system-ui;padding:40px">
-             <h2>${info.productName} could not reach the studio</h2>
+             <h2>${info.productName} could not open the studio</h2>
              <p>${description}</p>
-             <p>This build loads the studio over the network. Check your connection and reopen the app.</p>
+             <p>No stored copy of the studio was found on this computer. Connect to the internet and reopen the app once; after that it also opens offline.</p>
            </body>`,
         ),
     );
+  });
+}
+
+/**
+ * Serves the studio from a copy stored on this computer when the internet is down (see
+ * offline-studio.cjs). The window keeps its normal https address, so sign-in, saved projects
+ * and settings are the same online and offline. Local dev servers (http://) are never copied.
+ */
+function startOfflineStudio() {
+  if (!APP_URL.startsWith("https:")) return;
+  const ses = session.defaultSession;
+  const passThrough = (request, signal) => ses.fetch(request, { bypassCustomProtocolHandlers: true, ...(signal ? { signal } : {}) });
+  const studio = createOfflineStudio({
+    appUrl: APP_URL,
+    dir: path.join(app.getPath("userData"), "offline-studio"),
+    fetchNetwork: passThrough,
+    // SYNCLAB_OFFLINE=1 simulates a dead connection for testing the offline copy.
+    offline: () => process.env.SYNCLAB_OFFLINE === "1" || !net.isOnline(),
+  });
+  try {
+    studio.seedFrom(path.join(__dirname, "..", "build-resources", "offline-studio"));
+  } catch {
+    /* a missing or unreadable packaged copy just means the first launch needs internet */
+  }
+  void studio.prune().catch(() => {});
+  ses.protocol.handle("https", async (request) => {
+    if (!studio.owns(request.url)) return passThrough(request);
+    const res = await studio.handle(request);
+    if (!security.isAppUrl(request.url, APP_URL) || !(res.headers.get("content-type") || "").includes("text/html")) return res;
+    // Same hardening header the network copy gets (see security.cjs).
+    const headers = new Headers(res.headers);
+    headers.set("Content-Security-Policy", security.CONTENT_SECURITY_POLICY);
+    return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
   });
 }
 
@@ -188,6 +224,7 @@ app.whenReady().then(async () => {
   } catch {
     /* cache clearing is best-effort */
   }
+  startOfflineStudio();
   startPluginBridge();
   createWindow();
 });

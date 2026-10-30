@@ -76,6 +76,25 @@ export function markProPaid() {
   }
 }
 
+const SUB_CACHE_KEY = "synclab.plan.lastSeen";
+
+/** Last plan row the server returned for this account, used only while offline. */
+function readCachedSubscription(uid: string): SubscriptionRow | null {
+  try {
+    const raw = JSON.parse(localStorage.getItem(SUB_CACHE_KEY) || "null") as { uid: string; sub: SubscriptionRow | null } | null;
+    return raw && raw.uid === uid ? raw.sub : null;
+  } catch {
+    return null;
+  }
+}
+function writeCachedSubscription(uid: string, sub: SubscriptionRow | null) {
+  try {
+    localStorage.setItem(SUB_CACHE_KEY, JSON.stringify({ uid, sub }));
+  } catch {
+    /* storage unavailable */
+  }
+}
+
 /** Active means usable now: paid/current, or canceled but still inside the paid period. */
 export function subscriptionIsActive(sub: SubscriptionRow | null): boolean {
   if (!sub) return false;
@@ -96,7 +115,10 @@ export function PlanProvider({ children }: { children: ReactNode }) {
   const [checkoutBusy, setCheckoutBusy] = useState(false);
 
   useEffect(() => {
-    void supabase.auth.getUser().then(({ data }) => {
+    void supabase.auth.getUser().then(({ data, error }) => {
+      // Offline (desktop offline copy) the check can't reach the server: keep the signed-in
+      // session the auth listener already restored instead of treating the user as signed out.
+      if (error && !data.user) return;
       setUserId(data.user?.id ?? null);
       setEmail(data.user?.email?.toLowerCase() ?? null);
     });
@@ -110,7 +132,7 @@ export function PlanProvider({ children }: { children: ReactNode }) {
   const env = getPaddleEnvironment();
 
   const loadSubscription = useCallback(async (uid: string) => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("subscriptions")
       .select("paddle_subscription_id, price_id, status, current_period_end, cancel_at_period_end")
       .eq("user_id", uid)
@@ -118,7 +140,13 @@ export function PlanProvider({ children }: { children: ReactNode }) {
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
+    if (error) {
+      // No connection: use the last plan this device saw for this account.
+      setSubscription(readCachedSubscription(uid));
+      return;
+    }
     setSubscription((data as SubscriptionRow | null) ?? null);
+    writeCachedSubscription(uid, (data as SubscriptionRow | null) ?? null);
   }, [env]);
 
   useEffect(() => {
