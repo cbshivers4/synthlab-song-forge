@@ -3,14 +3,22 @@
  * contextIsolation is on, so the page sees exactly the functions listed here and nothing else.
  */
 const { contextBridge, ipcRenderer } = require("electron");
-const info = require("./app-info.cjs");
+// Sandboxed preload: no file access, so the main process passes the app identity as an argument.
+const info = (() => {
+  const arg = process.argv.find((a) => a.startsWith("--synclab-info="));
+  try {
+    return JSON.parse(arg ? arg.slice("--synclab-info=".length) : "{}");
+  } catch {
+    return {};
+  }
+})();
 
 contextBridge.exposeInMainWorld("synclab", {
   desktop: true,
   platform: process.platform, // "darwin" | "win32" | "linux"
   appName: info.productName,
   appId: info.appId,
-  appVersion: info.version,
+  appVersion: info.version || "",
   versions: {
     electron: process.versions.electron,
     chrome: process.versions.chrome,
