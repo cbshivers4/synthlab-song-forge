@@ -115,5 +115,5 @@
 - [x] Mixer channel bottom icon background matches strip color
 
 ## Oct 30 — Professional DAW master brief
-- [ ] Phase 1 audit report + phased development plan (present before major changes)
-- [ ] Clear track content must stay on the edit page (no jump to instrument)
+- [x] Phase 1 audit report + phased development plan (/mnt/documents/SYNCLAB-audit-and-plan.md); awaiting user's choice of first step
+- [ ] Clear track content must stay on the edit page — could not reproduce (desktop, narrow, touch all stay); waiting on user for device/track/path
