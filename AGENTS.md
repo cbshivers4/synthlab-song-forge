@@ -62,3 +62,5 @@ Mute/solo presses record as per-track switch events in the scheduler's reachStep
 The "My Computer" file list is one shared ComputerFiles component used by the desktop left menu and the phone/narrow navigation bar, so both stay in sync.
 Desktop workspace layout prefs (split view + timeline height in workspace-prefs.ts, timeline zoom, rail collapse/sections) are device-only localStorage, never project data; full-workspace editors stay the default and split view is opt-in.
 Every paid AI server function reserves a use with reserveAiUse (src/lib/ai-quota.ts → consume_ai_use RPC) before calling the provider and refunds on provider failure, so the per-user daily limit is enforced server-side, never in the browser.
+MIDI export (midi-export.ts) collects notes by running scheduleStep against a note-collecting stand-in engine, so .mid files match playback; stems/one-track exports re-render through renderSong with only that track soloed.
+Cloud saves store sampler, clip and pad-sampler audio as the project's own copy (ownedMediaPlan), like drum pads, so duplicates survive deletion of the original.
