@@ -1,6 +1,7 @@
 import { getPlayStep, usePlayStep } from "@/lib/synclab/playhead";
 import { getInputLatencyMs, setInputLatencyMs } from "@/lib/synclab/latency";
 import { stepsPerBar } from "@/lib/synclab/timebase";
+import { midiClockPrefs, onMidiClockPrefs, setMidiClockPrefs } from "@/lib/synclab/midi-clock";
 import { useEffect, useRef, useState } from "react";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
