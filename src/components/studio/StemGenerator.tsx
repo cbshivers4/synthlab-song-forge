@@ -96,8 +96,7 @@ export function StemGenerator() {
     audioRef.current = a;
     a.currentTime = 0;
     a.onended = () => setPlaying(false);
-    void a.play();
-    setPlaying(true);
+    a.play().then(() => setPlaying(true)).catch(() => { setPlaying(false); toast.error("Couldn't play the preview", { description: "Tap Play again." }); });
   };
 
   const pv = usePreviewTrack();

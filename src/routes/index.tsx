@@ -61,7 +61,9 @@ import { HumToBeat } from "@/components/studio/HumToBeat";
 import { BassGenerator } from "@/components/studio/BassGenerator";
 import { VoiceConverter } from "@/components/studio/VoiceConverter";
 import { AudioConverter } from "@/components/studio/AudioConverter";
-import { ComingSoon } from "@/components/studio/ComingSoon";
+import { CoProducer } from "@/components/studio/CoProducer";
+import { StemGenerator } from "@/components/studio/StemGenerator";
+import { StemSplitter } from "@/components/studio/StemSplitter";
 import { ReelRecorder } from "@/components/studio/ReelRecorder";
 import { Bot, Film } from "lucide-react";
 import { VideoSampler } from "@/components/studio/VideoSampler";
@@ -314,7 +316,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
         {panel === "audio-converter" && <AudioConverter />}
         {panel === "plugins" && <PluginRack />}{panel === "appearance" && <Appearance />}{panel === "sampler" && <Sampler />}
         {panel === "pads" && <PadSampler />}{panel === "mastering" && <Mastering />}{panel === "notes" && <NotesPanel />}
-        {panel === "reference" && <ReferenceAnalyzer />}{panel === "live" && <LiveView />}{panel === "looper" && <LiveLooperView />}{panel === "apps" && <ExternalApps />}{panel === "humbeat" && <ToolErrorBoundary name="Hum to Beat"><HumToBeat /></ToolErrorBoundary>}{panel === "stems" && <ComingSoon title="Separate stems" />}{panel === "coproducer" && <ComingSoon title="AI Co-Producer — unavailable" />}{panel === "voice" && <ToolErrorBoundary name="Convert Voice"><VoiceConverter /></ToolErrorBoundary>}{panel === "genstem" && <ComingSoon title="Generate stem" />}{panel === "bassgen" && <ToolErrorBoundary name="Bass Generator"><BassGenerator /></ToolErrorBoundary>}
+        {panel === "reference" && <ReferenceAnalyzer />}{panel === "live" && <LiveView />}{panel === "looper" && <LiveLooperView />}{panel === "apps" && <ExternalApps />}{panel === "humbeat" && <ToolErrorBoundary name="Hum to Beat"><HumToBeat /></ToolErrorBoundary>}{panel === "stems" && <ToolErrorBoundary name="Separate Stems"><StemSplitter /></ToolErrorBoundary>}{panel === "coproducer" && <ToolErrorBoundary name="AI Co-Producer"><CoProducer /></ToolErrorBoundary>}{panel === "voice" && <ToolErrorBoundary name="Convert Voice"><VoiceConverter /></ToolErrorBoundary>}{panel === "genstem" && <ToolErrorBoundary name="Generate Stem"><StemGenerator /></ToolErrorBoundary>}{panel === "bassgen" && <ToolErrorBoundary name="Bass Generator"><BassGenerator /></ToolErrorBoundary>}
       </div></PhonePages> : <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3 pb-24 sm:pb-3">
       {panel === "reel-recorder" && <ReelRecorder />}{panel === "video-sampler" && <VideoSampler />}
       {panel === "mixer" && <Mixer />}
@@ -364,7 +366,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
       {panel === "reference" && <ReferenceAnalyzer />}
       {panel === "live" && <LiveView />}
       {panel === "looper" && <LiveLooperView />}
-      {panel === "apps" && <ExternalApps />}{panel === "humbeat" && <ToolErrorBoundary name="Hum to Beat"><HumToBeat /></ToolErrorBoundary>}{panel === "stems" && <ComingSoon title="Separate stems" />}{panel === "coproducer" && <ComingSoon title="AI Co-Producer — unavailable" />}{panel === "voice" && <ToolErrorBoundary name="Convert Voice"><VoiceConverter /></ToolErrorBoundary>}{panel === "genstem" && <ComingSoon title="Generate stem" />}{panel === "bassgen" && <ToolErrorBoundary name="Bass Generator"><BassGenerator /></ToolErrorBoundary>}
+      {panel === "apps" && <ExternalApps />}{panel === "humbeat" && <ToolErrorBoundary name="Hum to Beat"><HumToBeat /></ToolErrorBoundary>}{panel === "stems" && <ToolErrorBoundary name="Separate Stems"><StemSplitter /></ToolErrorBoundary>}{panel === "coproducer" && <ToolErrorBoundary name="AI Co-Producer"><CoProducer /></ToolErrorBoundary>}{panel === "voice" && <ToolErrorBoundary name="Convert Voice"><VoiceConverter /></ToolErrorBoundary>}{panel === "genstem" && <ToolErrorBoundary name="Generate Stem"><StemGenerator /></ToolErrorBoundary>}{panel === "bassgen" && <ToolErrorBoundary name="Bass Generator"><BassGenerator /></ToolErrorBoundary>}
 
       </div>}
 
