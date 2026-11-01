@@ -18,7 +18,7 @@
   "overrides": {
     "rolldown": "1.2.1",
     "undici": "^7.30.1",
-    "seroval": "^1.6.11",
+    "seroval": "~1.6.11",
     "js-yaml": "^4.3.2",
     "source-map-js": "^1.2.2",
     "zod": "^4.6.6"
