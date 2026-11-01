@@ -157,6 +157,20 @@ export function ToolsRail() {
   const [open, setOpen] = useState(true);
   const [pluginDrop, setPluginDrop] = useState(false);
   const [closedSections, setClosedSections] = useState<Record<string, boolean>>({ plugins: true, apps: true });
+  // Collapsed rail and folded sections are remembered on this device.
+  const railLoaded = useRef(false);
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("synclab.rail") || "null") as { open?: boolean; closed?: Record<string, boolean> } | null;
+      if (saved?.open === false) setOpen(false);
+      if (saved?.closed) setClosedSections(saved.closed);
+    } catch { /* storage unavailable */ }
+    railLoaded.current = true;
+  }, []);
+  useEffect(() => {
+    if (!railLoaded.current) return;
+    try { localStorage.setItem("synclab.rail", JSON.stringify({ open, closed: closedSections })); } catch { /* storage unavailable */ }
+  }, [open, closedSections]);
   const [playingFile, setPlayingFile] = useState<string | null>(null);
   const [railW, setRailW] = useState(() => {
     if (typeof localStorage === "undefined") return 208;
