@@ -77,3 +77,59 @@ export const deleteRegion = (notes: MidiNote[], region: [number, number]) => {
 
 /** Snap a cut position to the grid unless free cutting is on. grid <= 0 = free. */
 export const snapCut = (pos: number, grid: number, free: boolean) => (free || grid <= 0 ? pos : Math.round(pos / grid) * grid);
+
+/**
+ * Free space a note part [a, b) can move or grow into: from the end of the nearest part
+ * with notes on its left to the start of the nearest one on its right.
+ */
+export function regionRoom(notes: MidiNote[], cuts: number[] | undefined, total: number, [a, b]: [number, number]): [number, number] {
+  let lo = 0, hi = total;
+  for (const [x, y] of regionsOf(cuts, total)) {
+    if (Math.abs(x - a) < EPS && Math.abs(y - b) < EPS) continue;
+    if (!notesInRegion(notes, [x, y]).length) continue;
+    if (y <= a + EPS) lo = Math.max(lo, y);
+    if (x >= b - EPS) hi = Math.min(hi, x);
+  }
+  return [lo, hi];
+}
+
+/** Clean cut list: drop marks strictly inside [from, to), add both edges. */
+function partCuts(cuts: number[] | undefined, total: number, from: number, to: number, keep: number[] = []) {
+  let list = (cuts ?? []).filter((c) => c <= from + EPS || c >= to - EPS);
+  for (const c of [...keep, from, to]) list = addCut(list, c, total);
+  return list;
+}
+
+/**
+ * Move one note part [a, b) by `delta` steps, like dragging a take: only its notes move,
+ * the parts around it stay. The move is clamped so it never lands on another part.
+ */
+export function moveNoteRegion(notes: MidiNote[], cuts: number[] | undefined, total: number, region: [number, number], delta: number) {
+  const [a, b] = region;
+  const [lo, hi] = regionRoom(notes, cuts, total, region);
+  const d = Math.max(lo - a, Math.min(hi - b, delta));
+  const inside = new Set(notesInRegion(notes, region).map((n) => n.id));
+  const moved = notes.map((n) => inside.has(n.id)
+    ? { ...n, step: n.step + d, ...(n.recordedEnd != null ? { recordedEnd: n.recordedEnd + d } : {}) }
+    : n);
+  return { notes: moved, cuts: partCuts(cuts, total, a + d, b + d, [a, b]), activeRegion: a + d, delta: d };
+}
+
+/**
+ * Trim or extend one note part to [newA, newB). Notes crossing a new edge are cut there and the
+ * outside piece is removed (Undo brings it back); extending only opens empty space up to the
+ * neighbouring part.
+ */
+export function trimNoteRegion(notes: MidiNote[], cuts: number[] | undefined, total: number, region: [number, number], newA: number, newB: number) {
+  const [a, b] = region;
+  const [lo, hi] = regionRoom(notes, cuts, total, region);
+  const from = Math.max(lo, Math.min(newA, b - 0.25));
+  const to = Math.min(hi, Math.max(newB, from + 0.25));
+  const inside = notesInRegion(notes, region);
+  const ids = new Set(inside.map((n) => n.id));
+  let part = cutNotesAt(inside, from).notes;
+  part = cutNotesAt(part, to).notes;
+  part = part.filter((n) => n.step >= from - EPS && n.step < to - EPS)
+    .map((n) => (n.recordedEnd != null ? { ...n, recordedEnd: Math.min(Math.max(n.recordedEnd, n.step + n.length), to) } : n));
+  return { notes: [...notes.filter((n) => !ids.has(n.id)), ...part], cuts: partCuts(cuts, total, from, to, [a, b].filter((c) => c < from - EPS || c > to + EPS)), activeRegion: from };
+}

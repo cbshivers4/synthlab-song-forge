@@ -3,10 +3,10 @@ import { getPlayStep, usePlayStep } from "@/lib/synclab/playhead";
 import { deleteSelectedPart } from '@/lib/synclab/workflow';
 import { boundedRegions, loopRegion } from "@/lib/synclab/recording-region";
 import { timelineUsesWaveform } from "@/lib/synclab/timeline-content";
-import { moveDrumPart, rightEdgeEdit, stretchDrumPart } from "@/lib/synclab/arrangement-edit";
+import { drumPartRoom, moveDrumPart, rightEdgeEdit, stretchDrumPart, trimDrumPart } from "@/lib/synclab/arrangement-edit";
 import { useEffect, useRef, useState } from "react";
 import { stepsPerBar, songSteps, stepSeconds } from "@/lib/synclab/timebase";
-import { notesInRegion, regionsOf, deleteRegion } from "@/lib/synclab/note-cuts";
+import { notesInRegion, regionsOf, deleteRegion, moveNoteRegion, regionRoom, trimNoteRegion, unrollNotes } from "@/lib/synclab/note-cuts";
 import { Copy, Disc3, Piano } from "lucide-react";
 import { toast } from "sonner";
 import { useStudio } from "@/lib/synclab/store";
@@ -342,6 +342,82 @@ function MidiClip({ track }: { track: Track }) {
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
   };
+  /** Notes and cut marks as parts: a looping pattern is written out across the song first. */
+  const asParts = () => {
+    const unrolled = cuts.length === 0 && patLen < total;
+    return { notes: unrolled ? unrollNotes(notes, patLen, total) : notes, extra: unrolled ? { steps: total } : {} };
+  };
+  const snapDelta = (raw: number) => {
+    const grid = transport.snap ?? 1;
+    return grid > 0 ? Math.round(raw / grid) * grid : Math.round(raw * 100) / 100;
+  };
+  /** Drag one part (between cut marks) along the timeline: only its notes move. */
+  const beginRegionDrag = (e: React.PointerEvent, a: number, b: number) => {
+    e.stopPropagation();
+    if (e.button !== 0) return;
+    e.preventDefault();
+    const el = e.currentTarget as HTMLElement;
+    const lane = el.closest("[data-lane]") as HTMLElement | null;
+    if (!lane) return;
+    const perStep = canvasRect(lane).width / Math.max(1, total);
+    const x0 = canvasPoint(e.clientX, e.clientY).x;
+    const [lo, hi] = regionRoom(notes, cuts, total, [a, b]);
+    let d = 0;
+    try { el.setPointerCapture(e.pointerId); } catch { /* released */ }
+    const onMove = (ev: PointerEvent) => {
+      d = Math.max(lo - a, Math.min(hi - b, snapDelta((canvasPoint(ev.clientX, ev.clientY).x - x0) / Math.max(0.0001, perStep))));
+      el.style.transform = `translateX(${d * perStep}px)`;
+    };
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
+      el.style.transform = "";
+      if (Math.abs(d) < 0.001) return;
+      const r = moveNoteRegion(track.notes ?? [], track.cuts, total, [a, b], d);
+      updateTrack(track.id, { notes: r.notes, cuts: r.cuts, activeRegion: r.activeRegion });
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
+  };
+  /** Pull a part's left or right edge: trims notes off (Undo restores them) or opens empty room. */
+  const beginRegionTrim = (e: React.PointerEvent, a: number, b: number, side: "left" | "right") => {
+    e.stopPropagation();
+    if (e.button !== 0) return;
+    e.preventDefault();
+    const handle = e.currentTarget as HTMLElement;
+    const block = handle.parentElement;
+    const lane = handle.closest("[data-lane]") as HTMLElement | null;
+    if (!lane || !block) return;
+    const perStep = canvasRect(lane).width / Math.max(1, total);
+    const x0 = canvasPoint(e.clientX, e.clientY).x;
+    const parts = asParts();
+    const [lo, hi] = regionRoom(parts.notes, cuts.length ? cuts : undefined, total, [a, b]);
+    let na = a, nb = b;
+    const style0 = { left: block.style.left, width: block.style.width };
+    try { handle.setPointerCapture(e.pointerId); } catch { /* released */ }
+    const onMove = (ev: PointerEvent) => {
+      const d = snapDelta((canvasPoint(ev.clientX, ev.clientY).x - x0) / Math.max(0.0001, perStep));
+      if (side === "left") na = Math.max(lo, Math.min(b - 0.25, a + d));
+      else nb = Math.min(hi, Math.max(a + 0.25, b + d));
+      block.style.left = `${(na / total) * 100}%`;
+      block.style.width = `calc(${((nb - na) / total) * 100}% - 1px)`;
+    };
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
+      block.style.left = style0.left;
+      block.style.width = style0.width;
+      if (Math.abs(na - a) < 0.001 && Math.abs(nb - b) < 0.001) return;
+      const r = trimNoteRegion(parts.notes, cuts.length ? cuts : [a, b].filter((c) => c > 0 && c < total), total, [a, b], na, nb);
+      updateTrack(track.id, { ...parts.extra, notes: r.notes, cuts: r.cuts, activeRegion: r.activeRegion });
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
+  };
   // the pattern loops for the whole song, so draw every repeat where it is heard
   const total = songSteps(transport.bars);
   const patLen = Math.max(stepsPerBar(), track.steps || stepsPerBar());
@@ -370,11 +446,13 @@ function MidiClip({ track }: { track: Track }) {
       onPointerDown={(e) => {
         updateTrack(track.id, { activeRegion: a });
         select(track.id);
-        beginPatternDrag(e);
+        // A part between cut marks moves on its own; an uncut pattern moves as a whole.
+        if (cuts.length > 0) beginRegionDrag(e, a, b);
+        else beginPatternDrag(e);
       }}
       onClick={(e) => e.stopPropagation()}
       onDoubleClick={() => { select(track.id); setPanel("piano"); }}
-      title={`${track.name} — double-click to edit notes`}
+      title={`${track.name} — drag to move, pull the edges to trim, double-click to edit notes`}
     >
       <div className="arrangement-clip-name flex h-[17px] shrink-0 items-center gap-1 px-1.5">
         <Piano className="size-2.5 shrink-0" />
@@ -396,7 +474,14 @@ function MidiClip({ track }: { track: Track }) {
             style={{ left: `${(from - a) / (b - a) * 100}%`, width: `${Math.max(0.3, (to - from) / (b - a) * 100 - 0.1)}%`, top: `${(1 - (n.pitch - lo) / span) * 82 + 4}%`, height: "6%", opacity: 0.5 + (n.velocity ?? 0.8) * 0.35 }} />;
         }))}
       </div>
-      {active && <><span aria-hidden="true" className="arrangement-region-handle left-0" /><span aria-hidden="true" className="arrangement-region-handle right-0" /></>}
+      <div onPointerDown={(e) => beginRegionTrim(e, a, b, "left")} onClick={(e) => e.stopPropagation()}
+        role="slider" aria-label={`Trim start of ${track.name} part`} aria-valuenow={a} aria-valuemin={0} aria-valuemax={total}
+        title="Drag to trim or extend the start of this part"
+        className="arrangement-trim arrangement-trim-left absolute inset-y-0 left-0 z-30 w-3 cursor-ew-resize touch-none" />
+      <div onPointerDown={(e) => beginRegionTrim(e, a, b, "right")} onClick={(e) => e.stopPropagation()}
+        role="slider" aria-label={`Trim end of ${track.name} part`} aria-valuenow={b} aria-valuemin={0} aria-valuemax={total}
+        title="Drag to trim or extend the end of this part"
+        className="arrangement-trim arrangement-trim-right absolute inset-y-0 right-0 z-30 w-3 cursor-ew-resize touch-none" />
     </div>;
   })}</>;
 
@@ -505,6 +590,42 @@ function DrumClip({ track }: { track: Track }) {
     window.addEventListener("pointerup", onUp);
     window.addEventListener("pointercancel", onUp);
   };
+  /** Pull a beat part's left edge (or Alt + right edge) to trim it: hits keep their places, trimmed hits are removed. */
+  const beginPartTrim = (e: React.PointerEvent, a: number, b: number, side: "left" | "right") => {
+    e.stopPropagation();
+    if (e.button !== 0) return;
+    e.preventDefault();
+    const handle = e.currentTarget as HTMLElement;
+    const block = handle.parentElement;
+    const lane = handle.closest("[data-lane]") as HTMLElement | null;
+    if (!lane || !block) return;
+    const perStep = canvasRect(lane).width / Math.max(1, total);
+    const x0 = canvasPoint(e.clientX, e.clientY).x;
+    const grid = transport.snap && transport.snap > 0 ? transport.snap : 1;
+    const [lo, hi] = drumPartRoom(track, boundedRegions(regionsOf(cuts, total), bounds), a, b, total);
+    let na = a, nb = b;
+    const style0 = { left: block.style.left, width: block.style.width };
+    try { handle.setPointerCapture(e.pointerId); } catch { /* released */ }
+    const onMove = (ev: PointerEvent) => {
+      const d = Math.round((canvasPoint(ev.clientX, ev.clientY).x - x0) / Math.max(0.0001, perStep) / grid) * grid;
+      if (side === "left") na = Math.max(lo, Math.min(b - 1, a + d));
+      else nb = Math.min(hi, Math.max(a + 1, b + d));
+      block.style.left = `${(na / total) * 100}%`;
+      block.style.width = `calc(${((nb - na) / total) * 100}% - 1px)`;
+    };
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
+      block.style.left = style0.left;
+      block.style.width = style0.width;
+      if (na === a && nb === b) return;
+      updateTrack(track.id, trimDrumPart(track, a, b, na, nb));
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
+  };
   /** Drag a beat part's right edge to stretch it: its hits spread out (or squeeze in) to fill the new length. */
   const beginPartStretch = (e: React.PointerEvent, a: number, b: number) => {
     e.stopPropagation();
@@ -559,7 +680,7 @@ function DrumClip({ track }: { track: Track }) {
           onClick={(e) => e.stopPropagation()}
           onDoubleClick={() => { select(track.id); setPanel("drums"); }}
           style={{ left: `${a / total * 100}%`, width: `calc(${(b - a) / total * 100}% - 1px)`, cursor: "grab", touchAction: "none" }}
-          title={`${track.name} beat part — drag to move, double-click to open the drum machine`}>
+          title={`${track.name} beat part — drag to move, pull the left edge to trim, the right edge to stretch (Alt + right edge trims), double-click to open the drum machine`}>
           <div className="arrangement-clip-name flex h-[17px] shrink-0 items-center gap-1 px-1.5">
             <Disc3 className="size-2.5 shrink-0" />
             <span className="min-w-0 flex-1 truncate font-mono text-[9px] font-semibold">{track.name} · {hits} HITS</span>
@@ -569,10 +690,17 @@ function DrumClip({ track }: { track: Track }) {
                 toast.success("Beat part deleted"); }} />}
           <div className="relative min-h-0 flex-1"><DrumHitWave pads={part} steps={hi - lo} total={hi - lo} tone="text-[var(--arrangement-ink)]" /></div>
           <div
-            onPointerDown={(e) => beginPartStretch(e, a, b)}
+            onPointerDown={(e) => beginPartTrim(e, a, b, "left")}
+            onClick={(e) => e.stopPropagation()}
+            role="slider" aria-label={`Trim start of ${track.name} beat part`} aria-valuenow={a} aria-valuemin={0}
+            title="Drag to trim or extend the start of this beat part"
+            className="arrangement-trim arrangement-trim-left absolute inset-y-0 left-0 z-30 w-3 cursor-ew-resize touch-none"
+          />
+          <div
+            onPointerDown={(e) => (e.altKey ? beginPartTrim(e, a, b, "right") : beginPartStretch(e, a, b))}
             onClick={(e) => e.stopPropagation()}
             role="slider" aria-label={`Stretch ${track.name} beat part`} aria-valuenow={b - a} aria-valuemin={1}
-            title="Drag to stretch this beat part — its hits spread out to fill the new length"
+            title="Drag to stretch this beat part — its hits spread out to fill the new length. Hold Alt while dragging to trim instead."
             className="arrangement-trim arrangement-trim-right absolute inset-y-0 right-0 z-30 w-3 cursor-ew-resize touch-none"
           />
         </div>
