@@ -100,7 +100,7 @@ export function AudioInterfaceCard({ inputs, outputs, inputDevice, channel, samp
           <Stat label="Inputs" value={isVolt ? "1 (mic / line)" : String(inputs.length)} />
           <Stat label="Outputs" value={isVolt ? "2 (line out)" : String(outputs.length)} />
           <Stat label="Record ch" value={channel === "in1" ? "1 (mono)" : channel === "in2" ? "2 (mono)" : "1+2 stereo"} />
-          <Stat label="Sample rate" value={`${sampleRate} Hz`} />
+          <Stat label="Sample rate" value={sampleRate > 0 ? `${sampleRate} Hz` : "Not started yet"} />
         </div>
         <div className="truncate text-[10px] text-muted-foreground">
           {scanning

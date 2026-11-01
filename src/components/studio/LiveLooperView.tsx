@@ -1,6 +1,6 @@
 import { getPlayStep, usePlayStep } from "@/lib/synclab/playhead";
 import { useEffect, useMemo, useReducer } from "react";
-import { ArrowDownToLine, Circle, Mic, Play, RotateCcw, Square, Trash2, Volume2, VolumeX } from "lucide-react";
+import { ArrowDownToLine, Circle, Mic, Play, RotateCcw, Square, Trash2, Undo2, Volume2, VolumeX } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -145,6 +145,7 @@ function LoopDonut({ slot, send }: { slot: LoopSlot; send: (i: number) => void }
       </div>
       <div className="flex w-full max-w-72 gap-1">
         <Button variant="outline" className="h-10 flex-1" disabled={!slot.buffer} onClick={() => send(slot.index)} aria-label={`Send loop ${slot.index + 1} to timeline`}><ArrowDownToLine className="size-4" /> Timeline</Button>
+        <Button variant="outline" size="icon" className="size-10" disabled={!looper.canUndo(slot.index) || slot.overdubbing || slot.state === "armed" || slot.state === "recording"} onClick={() => looper.undo(slot.index)} aria-label={`Undo last overdub on loop ${slot.index + 1}`} title="Undo last overdub"><Undo2 className="size-4" /></Button>
         <Button variant="outline" size="icon" className="size-10" disabled={slot.state === "empty"} onClick={() => looper.clear(slot.index)} aria-label={`Clear loop ${slot.index + 1}`} title="Clear"><Trash2 className="size-4" /></Button>
       </div>
     </div>
@@ -245,7 +246,7 @@ export function LiveLooperView() {
             <Button size="sm" variant={looper.source === "output" ? "default" : "secondary"} disabled={capturing} onClick={() => looper.setSource("output")}>App output</Button>
           </div>
         </div>
-        <span className="ml-auto font-mono text-xs text-muted-foreground">{looper.mode === "sync" ? `${looper.bars} ${looper.bars === 1 ? "BAR" : "BARS"} · ${transport.bpm} BPM` : "FREE LENGTH"}</span>
+        <span className="ml-auto font-mono text-xs text-muted-foreground">{looper.mode === "sync" ? `${looper.bars} ${looper.bars === 1 ? "BAR" : "BARS"} · ${transport.bpm} BPM${looper.songLocked ? " · ON SONG BARS" : transport.playing ? " · STARTS ON NEXT SONG BAR" : ""}` : "FREE LENGTH"}</span>
       </div>
       <div className="looper-pad-grid grid grid-cols-4 gap-x-2 gap-y-4">
         {looper.slots.map((slot) => <LoopDonut key={slot.index} slot={slot} send={send} />)}
@@ -255,7 +256,7 @@ export function LiveLooperView() {
         <Button variant="secondary" onClick={() => looper.stopAll()}><Square className="size-4" /> Stop all</Button>
         <Button variant="secondary" onClick={() => looper.clearAll()}><Trash2 className="size-4" /> Clear all</Button>
       </div>
-       <p className="text-xs text-muted-foreground">Start on sound: tap a loop and it waits — recording begins the moment your input crosses the threshold (first loop only; it replaces the pre-count). The pre-count clicks before the first loop only and recording starts on GO; later loops wait for the next cycle instead. The first loop sets the shared cycle. Later recordings wait for the next cycle. Free length closes on a second tap; sync closes after the selected bars. Overdub adds one mic cycle. Loops play outside the song master effects to prevent app-output capture feeding back into itself. Loops remain in this session until cleared; send them to the timeline to include them in your project. Input delay depends on your browser and audio interface; use headphones when recording.</p>
+       <p className="text-xs text-muted-foreground">Start on sound: tap a loop and it waits — recording begins the moment your input crosses the threshold (first loop only; it replaces the pre-count). The pre-count clicks before the first loop only and recording starts on GO; later loops wait for the next cycle instead. In Sync mode with the song playing, the first loop starts on the next song bar line (count-in bars = bars to wait) so loops line up with the song; tempo changes after recording don't stretch existing loops. Undo removes the last overdub. The first loop sets the shared cycle. Later recordings wait for the next cycle. Free length closes on a second tap; sync closes after the selected bars. Overdub adds one mic cycle. Loops play outside the song master effects to prevent app-output capture feeding back into itself. Loops remain in this session until cleared; send them to the timeline to include them in your project. Input delay depends on your browser and audio interface; use headphones when recording.</p>
     </div>
   );
 }

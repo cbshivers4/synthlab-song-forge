@@ -1,5 +1,6 @@
 import { getEngine } from "./audio-engine";
-import { getBeatsPerBar } from "./timebase";
+import { getBeatsPerBar, stepsPerBar } from "./timebase";
+import { activeSongClock, nextSongBarTime } from "./song-clock";
 import { borrowActiveMic, openMic, releaseMic } from "./mic";
 import { encodeWav } from "./bounce";
 
@@ -26,11 +27,15 @@ export interface LoopSlot {
   muted: boolean;
   reversed: boolean;
   color: string;
+  /** loop as it was before each overdub, newest last (Undo restores it) */
+  history: { buffer: AudioBuffer; reversed: boolean }[];
 }
 
 type Chunk = { t: number; l: Float32Array; r: Float32Array };
 
 const SLOTS = 8;
+/** overdubs that can be undone per loop */
+const UNDO_DEPTH = 8;
 const BLOCK = 2048;
 const DEFAULT_COLORS = [
   "oklch(0.78 0.16 195)",
@@ -67,6 +72,8 @@ export class LiveLooper {
   inputPeak = 0;
   origin: number | null = null;
   cycle: number | null = null;
+  /** true when the loops were started on the playing song's bar lines */
+  songLocked = false;
 
   private proc: ScriptProcessorNode | null = null;
   private procSink: GainNode | null = null;
@@ -106,6 +113,7 @@ export class LiveLooper {
       overdubbing: false,
       muted: false,
       reversed: false,
+      history: [],
       color: savedColors[index] ?? DEFAULT_COLORS[index] ?? "oklch(0.78 0.16 195)",
     }));
     try {
@@ -352,6 +360,7 @@ export class LiveLooper {
     }
     if (s.overdubbing && s.buffer) {
       const original = s.buffer;
+      s.history = [...s.history.slice(-(UNDO_DEPTH - 1)), { buffer: original, reversed: s.reversed }];
       const merged = this.ctx.createBuffer(2, original.length, original.sampleRate);
       for (let channel = 0; channel < 2; channel++) {
         const output = merged.getChannelData(channel);
@@ -424,6 +433,20 @@ export class LiveLooper {
     await this.openInput();
     if (s.state !== "empty" || this.slots.some((slot) => slot.state === "armed" || slot.state === "recording")) { if (!this.slots.some((slot) => slot.state === "armed" || slot.state === "recording")) this.closeInput(); return; }
     let now = this.ctx.currentTime + 0.03;
+    // Bar-synced first loop while the song plays: start exactly on a song bar line, so the
+    // loop lines up with the song. The song itself counts in (count-in bars = bars to wait).
+    const song = this.mode === "sync" && this.cycle === null && this.threshold === null ? activeSongClock(this.ctx.currentTime) : null;
+    if (song) {
+      const barLen = song.dur * stepsPerBar();
+      const start = nextSongBarTime(song, now + Math.max(0, this.precount - 1) * barLen, stepsPerBar());
+      s.recStart = start;
+      s.recEnd = start + (this.bars * getBeatsPerBar() * 60) / (this.bpm || 120);
+      this.songLocked = true;
+      s.state = "armed";
+      this.ensureTimer();
+      this.emit();
+      return;
+    }
     if (this.cycle === null && this.threshold !== null) {
       // wait for the player: recording starts the moment the input crosses the threshold
       s.recStart = this.ctx.currentTime;
@@ -552,6 +575,22 @@ export class LiveLooper {
     this.emit();
   }
 
+  canUndo(i: number) {
+    return (this.slots[i]?.history.length ?? 0) > 0;
+  }
+
+  /** Removes the last overdub from this loop, restoring it exactly as it was before. */
+  undo(i: number) {
+    const s = this.slots[i];
+    const prev = s?.history.at(-1);
+    if (!s || !prev || s.state === "armed" || s.state === "recording") return;
+    s.history = s.history.slice(0, -1);
+    s.buffer = prev.buffer;
+    s.reversed = prev.reversed;
+    if (s.state === "playing") this.play(i);
+    this.emit();
+  }
+
   /** Downsampled amplitudes around the ring, including a live recording. */
   levels(i: number, count = 64): number[] {
     const s = this.slots[i];
@@ -562,12 +601,14 @@ export class LiveLooper {
       const cached = byCount?.get(count);
       if (cached) values = cached;
       else {
-        const data = s.buffer.getChannelData(0);
+        // Both channels, so a sound panned to one side still shows on the ring.
+        const chans = Array.from({ length: s.buffer.numberOfChannels }, (_, c) => s.buffer!.getChannelData(c));
+        const length = chans[0]?.length ?? 0;
         for (let n = 0; n < count; n++) {
           let peak = 0;
-          const from = Math.floor(n * data.length / count);
-          const to = Math.floor((n + 1) * data.length / count);
-          for (let j = from; j < to; j += Math.max(1, Math.floor((to - from) / 32))) peak = Math.max(peak, Math.abs(data[j] ?? 0));
+          const from = Math.floor(n * length / count);
+          const to = Math.floor((n + 1) * length / count);
+          for (const data of chans) for (let j = from; j < to; j += Math.max(1, Math.floor((to - from) / 32))) peak = Math.max(peak, Math.abs(data[j] ?? 0));
           values[n] = peak;
         }
         if (!byCount) { byCount = new Map(); this.waveCache.set(s.buffer, byCount); }
@@ -581,7 +622,7 @@ export class LiveLooper {
         const n = Math.floor(((chunk.t - s.recStart) / length) * count);
         if (n < 0 || n >= count) continue;
         let peak = 0;
-        for (let j = 0; j < chunk.l.length; j += 64) peak = Math.max(peak, Math.abs(chunk.l[j] ?? 0));
+        for (let j = 0; j < chunk.l.length; j += 64) peak = Math.max(peak, Math.abs(chunk.l[j] ?? 0), Math.abs(chunk.r[j] ?? 0));
         values[n] = Math.max(values[n] ?? 0, peak);
       }
     }
@@ -598,10 +639,12 @@ export class LiveLooper {
     s.overdubbing = false;
     s.muted = false;
     s.reversed = false;
+    s.history = [];
     if (!this.slots.some((slot) => slot.state === "armed" || slot.state === "recording")) this.closeInput();
     if (this.isEmpty) {
       this.cycle = null;
       this.origin = null;
+      this.songLocked = false;
     }
     this.emit();
   }

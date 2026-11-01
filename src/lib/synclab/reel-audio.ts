@@ -26,3 +26,25 @@ export function tapeCurve(drive: number): Float32Array<ArrayBuffer> {
   }
   return curve;
 }
+/** Default reel for microphone/line takes: a 30-minute reel, so the reels fill honestly while you record. */
+export const INPUT_REEL_SECONDS = 30 * 60;
+
+/** How much tape the reels hold while recording: the song length for song-master takes, else a 30-minute reel. */
+export function recordingReelSeconds(source: "input" | "song", songSeconds: number, position: number) {
+  const capacity = source === "song" && songSeconds > 0 ? songSeconds : INPUT_REEL_SECONDS;
+  return Math.max(capacity, position + 1);
+}
+
+/**
+ * Reel rotation in degrees from the real tape position. Tape runs past the heads at a constant
+ * speed, so each reel turns by (tape wound) ÷ (its current radius): the nearly empty reel spins
+ * fast, the full one slowly, both stop with the tape and turn backwards when rewinding.
+ * With tape thickness h, the turns on a reel are (radius − hub) ÷ h.
+ */
+export function reelAngles(fillTakeUp: number, totalSeconds: number) {
+  const hub = reelTapeRadius(0), full = reelTapeRadius(1);
+  const turnsFull = Math.max(12, totalSeconds * 0.5);
+  const h = (full - hub) / turnsFull;
+  const supplyR = reelTapeRadius(1 - fillTakeUp), takeR = reelTapeRadius(fillTakeUp);
+  return { supply: (((full - supplyR) / h) * 360) % 360, takeUp: (((takeR - hub) / h) * 360) % 360 };
+}

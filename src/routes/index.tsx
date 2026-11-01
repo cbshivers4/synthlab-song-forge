@@ -34,6 +34,7 @@ import { HardwareWindow } from "@/components/studio/HardwareWindow";
 import { FloatingDevice } from "@/components/studio/FloatingDevice";
 import { MenuBar } from "@/components/studio/MenuBar";
 import { ProjectCloseGuard } from "@/components/studio/ProjectCloseGuard";
+import { MidiClockFollow } from "@/components/studio/MidiClockFollow";
 import { ToolsRail } from "@/components/studio/ToolsRail";
 import { Appearance } from "@/components/studio/Appearance";
 import { WelcomeScreen } from "@/components/studio/WelcomeScreen";
@@ -460,7 +461,7 @@ function StudioWorkspace() {
   }, [isMobile, mobileAccessibility]);
   if (isMobile) return <>
     <PhoneStudio><SafePanels float={float} setFloat={setFloat} /></PhoneStudio>
-    <TrackSettingsDialog /><DeviceSetup /><ExportDialog />
+    <TrackSettingsDialog /><DeviceSetup /><ExportDialog /><MidiClockFollow />
   </>;
   return (
     <div className={`arrangement-workspace flex h-[100dvh] flex-col overflow-hidden ${landscape ? "landscape-prod" : ""} ${landscape && landscapeTools ? "landscape-tools" : ""} ${isMobile ? "mobile-studio" : ""} ${isMobile && mobileAccessibility.extraLargeControls ? "mobile-controls-xl" : ""} ${isMobile && mobileAccessibility.increasedText ? "mobile-text-xl" : ""} ${isMobile && mobileAccessibility.highContrast ? "mobile-high-contrast" : ""}`}>
@@ -500,6 +501,7 @@ function Stages() {
   return (
     <PlanProvider>
       <ProjectCloseGuard />
+      <MidiClockFollow />
       <PhoneOrientation />
       <SplashScreen />
       <HelpCenter />

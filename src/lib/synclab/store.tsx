@@ -9,6 +9,9 @@ import {
   type ReactNode,
 } from "react";
 import { markTakeFailed } from "./take-status";
+import { setSongClock } from "./song-clock";
+import { sendClockForStep, sendTransportStart, sendTransportStop } from "./midi-clock";
+import { INPUT_CHANGED_EVENT, INPUT_FALLBACK_EVENT, INPUT_LOST_EVENT } from "./mic";
 import { drumCopySpan, materialEnd, pasteTrackContent, timelinePasteStep } from "./arrangement-edit";
 
 /** Drum/sampler tracks can hold values the browser cannot deep-copy; fall back so copy never silently fails. */
@@ -1225,6 +1228,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         lastScheduled = step % total;
         queue.push({ step: step % total, time: nextTime });
         lastStepRef.current = { step: step % total, time: nextTime, dur: stepDur };
+        setSongClock(lastStepRef.current);
+        if (engine.ctx) sendClockForStep(engine.ctx, nextTime, stepDur);
         nextTime += stepDur;
         step += 1;
         if (tp.loop) {
@@ -1259,6 +1264,14 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     };
   }, [transport.playing]);
 
+
+  // MIDI clock out: Start/Continue when the song starts, Stop when it stops.
+  const midiWasPlayingRef = useRef(false);
+  useEffect(() => {
+    if (transport.playing) sendTransportStart(transportRef.current.step);
+    else if (midiWasPlayingRef.current) sendTransportStop();
+    midiWasPlayingRef.current = transport.playing;
+  }, [transport.playing]);
 
   const updateTrack = useCallback((id: string, patch: Partial<Track>) => {
     // Moving a fader, pan or send while playing "touches" its automation lane so Write/Touch/Latch record it.
@@ -1301,6 +1314,52 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       cancelled = true;
     };
   }, [armedInputId, monitorOn]);
+
+  // Recording input changes and losses: switch an armed channel to the newly chosen input,
+  // and if the interface is unplugged mid-take, stop and keep what was recorded.
+  const armedInputRef = useRef(armedInputId);
+  armedInputRef.current = armedInputId;
+  const monitorOnRef = useRef(monitorOn);
+  monitorOnRef.current = monitorOn;
+  const endRecordingRef = useRef<((rewind?: boolean) => Promise<void>) | null>(null);
+  useEffect(() => {
+    const reopen = () => {
+      const engine = getEngine();
+      const id = armedInputRef.current;
+      if (!id || engine.isRecording) return;
+      engine.stopInputMonitoring();
+      void engine.startInputMonitoring(id, monitorOnRef.current).catch((err: unknown) =>
+        toast.error("Microphone unavailable", { description: err instanceof Error ? err.message : undefined }));
+    };
+    const onChanged = () => {
+      if (getEngine().isRecording) toast("New input applies after this take", { description: "The take in progress keeps recording from the current input." });
+      else reopen();
+    };
+    const onLost = (e: Event) => {
+      const { owner, label } = (e as CustomEvent<{ owner?: string; label?: string }>).detail ?? {};
+      if (owner !== "timeline") return;
+      const engine = getEngine();
+      if (engine.isRecording) {
+        toast.error("Audio input disconnected — recording stopped", { description: `${label || "The input"} went away. The take up to that point was kept. Reconnect it and press record again.`, duration: 10000 });
+        void endRecordingRef.current?.(false).finally(reopen);
+      } else {
+        toast.warning("Audio input disconnected", { description: `${label || "The input"} went away. Reconnect it, or choose another input in Settings → Audio.` });
+        reopen();
+      }
+    };
+    const onFallback = (e: Event) => {
+      const { label } = (e as CustomEvent<{ label?: string }>).detail ?? {};
+      toast.warning("Your chosen input isn't connected", { description: `Using ${label || "the default input"} instead. Pick another in Settings → Audio.` });
+    };
+    window.addEventListener(INPUT_CHANGED_EVENT, onChanged);
+    window.addEventListener(INPUT_LOST_EVENT, onLost);
+    window.addEventListener(INPUT_FALLBACK_EVENT, onFallback);
+    return () => {
+      window.removeEventListener(INPUT_CHANGED_EVENT, onChanged);
+      window.removeEventListener(INPUT_LOST_EVENT, onLost);
+      window.removeEventListener(INPUT_FALLBACK_EVENT, onFallback);
+    };
+  }, []);
 
   const finishRecording = useCallback(async () => {
     const engine = getEngine();
@@ -1498,6 +1557,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       if (rewind) setTransportState(s => ({ ...s, playing: false, paused: false, step: 0 }));
     }
   }, [finalizeRecording]);
+  endRecordingRef.current = endRecording;
 
   // keep the punch hooks pointing at the current record helpers
   useEffect(() => {

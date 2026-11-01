@@ -1796,7 +1796,7 @@ export class SyncLabEngine {
   }
 
   private async openInputMonitoring(trackId: string, monitor: boolean) {
-    if (this.monitorTrackId === trackId && this.recStream) {
+    if (this.monitorTrackId === trackId && this.recStream?.active) {
       this.setMonitoring(monitor);
       return;
     }
@@ -1928,7 +1928,10 @@ export class SyncLabEngine {
     const rec = this.recorder;
     if (!rec) return null;
     const blob: Blob = await new Promise((resolve) => {
-      rec.onstop = () => resolve(new Blob(this.recChunks, { type: rec.mimeType || "audio/webm" }));
+      const done = () => resolve(new Blob(this.recChunks, { type: rec.mimeType || "audio/webm" }));
+      // A recorder whose input was unplugged has already stopped by itself.
+      if (rec.state === "inactive") return done();
+      rec.onstop = done;
       rec.stop();
     });
     this.recorder = null;
