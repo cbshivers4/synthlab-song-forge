@@ -9,7 +9,7 @@ import { getBeatsPerBar } from "@/lib/synclab/timebase";
 import { SYNTH_PRESETS, applyPreset } from "@/lib/synclab/presets";
 
 const BASS_SOUNDS = SYNTH_PRESETS.filter((p) => p.category === "Bass").map((p) => p.name);
-import { BASS_STYLES, BASS_TEMPLATES, cleanBassPatch, generateBass, NOTE_NAMES, PROGRESSIONS, rootsFromKey, rootsFromTracks, type BassStyle } from "@/lib/synclab/bass-gen";
+import { BASS_STYLES, BASS_TEMPLATES, cleanBassPatch, generateBass, varyBass, NOTE_NAMES, PROGRESSIONS, rootsFromKey, rootsFromTracks, type BassStyle } from "@/lib/synclab/bass-gen";
 
 export function BassGenerator() {
   const { tracks, transport, addTrack, updateTrack, setTransport } = useStudio();
