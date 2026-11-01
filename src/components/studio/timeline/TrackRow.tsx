@@ -1087,7 +1087,6 @@ export function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track:
       <div
         data-lane
         data-lane-track={track.id}
-        data-debug-cuts={JSON.stringify(track.cuts ?? [])}
         className={`lane-grid relative min-h-[92px] flex-1 bg-background/70 ${
           editTool === "draw"
             ? "cursor-crosshair"
