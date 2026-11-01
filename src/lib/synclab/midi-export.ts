@@ -70,7 +70,8 @@ export function writeMidiFile(tracks: MidiTrackOut[], bpm: number, beatsPerBar =
   const chunks = [chunk("MTrk", conductor)];
   let melodic = 0;
   for (const t of tracks) {
-    const ch = t.drums ? 9 : (melodic++ % 15 >= 9 ? (melodic - 1) % 15 + 1 : (melodic - 1) % 15);
+    const idx = t.drums ? 9 : melodic++ % 15;
+    const ch = t.drums ? 9 : idx >= 9 ? idx + 1 : idx; // channel 10 (index 9) is kept for drums
     const evs: { tick: number; bytes: number[]; off: boolean }[] = [];
     for (const e of t.events) {
       const p = Math.max(0, Math.min(127, Math.round(e.pitch)));
