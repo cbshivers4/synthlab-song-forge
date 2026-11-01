@@ -41,3 +41,8 @@ Sampler reverse reads the mirrored window (sampleWindow) of the reversed buffer 
 Note repeat (note-repeat.ts) schedules held-pad hits on the audio clock, aligned to the song grid via the song clock while playing; recorded rolls accumulate into one local step array per hold so fast hits don't overwrite each other.
 Drum pad HOLD (pad.sustain, 0..1 s) extends the full-level stage before release; unset = 0 keeps old projects sounding the same.
 Drum pattern chains (drum-chain.ts, track.drumChain) are resolved per step inside scheduleStep, so live playback and export agree: the on-screen pattern plays its live pads, other slots play their saved bank snapshots, unused slots are silent. Taps/recording still write into the pattern on screen.
+
+Bulk drums use atomic store transforms preserving empty steps, loop bounds and hit metadata; shared controls prevent divergent editors.
+Mute/solo presses record as per-track switch events in the scheduler's reachStep during timeline or tape takes (replace semantics) and replay only at recorded presses, so manual presses still work between them.
+MIDI export (midi-export.ts) collects notes by running scheduleStep against a note-collecting stand-in engine, so .mid files match playback; stems/one-track exports re-render through renderSong with only that track soloed.
+Cloud saves store sampler, clip and pad-sampler audio as the project's own copy (ownedMediaPlan), like drum pads, so duplicates survive deletion of the original.

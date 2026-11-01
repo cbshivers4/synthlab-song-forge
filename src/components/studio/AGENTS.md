@@ -79,3 +79,8 @@ Knob is the one rotary control (drag/Shift-fine, non-passive wheel, arrows/Page 
 Mixer readouts show peak hold from clip-monitor (raw maxima since reset); the CLIP button resets both the clip light and the peak.
 Timeline file drops land at the dropped grid position (drop-position.ts); Ctrl/Cmd+wheel zooms around the pointer; Mod+D duplicates the selected clip exactly after itself (clipCopyAfter) before falling back to track duplication. The small per-clip quick menu (data-part-quick-menu) never blocks shortcuts.
 MIDI parts between cut marks move on their own (moveNoteRegion) and both edges trim (trimNoteRegion); drum parts move, trim from the left edge, stretch from the right edge, Alt + right edge trims (trimDrumPart). Moves and trims are clamped to the free room between neighbouring parts with content, so parts never overlap; an uncut pattern still moves as a whole.
+
+Sound screens use shared tokens and real parameter drag points with 20 fps signal drawing, never fake wave activity.
+Effect editors share EffectPresetMenu and a kind-specific factory recipe library; derive the selected name from stored parameter values so manual edits, project reloads and track/bus/master editors agree without duplicate preset state.
+Modular Tech uses definition-driven controls and narrow/wide hardware decks; each module type must implement matching DSP ports in the shared voice builder so saved patches, live preview and offline export agree. Cable centers use canvasPoint against the SVG overlay so sideways-phone transforms cannot offset connections.
+The "My Computer" file list is one shared ComputerFiles component used by the desktop left menu and the phone/narrow navigation bar, so both stay in sync.

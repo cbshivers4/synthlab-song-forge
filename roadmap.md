@@ -147,3 +147,5 @@
 
 - [x] Phase 6: AI Co-Producer / Generate Stem / Separate Stems switched on; 25 AI uses per person per day (server-enforced, shown in each tool); stem separation 15-min deadline + real cancel; Hum to Beat transpose/snap-to-key/instrument/tempo; Bass Generator regenerate variations
 - [ ] Phase 6 not done: true AI voice conversion (no suitable service connected), dedicated Vocal Forge lyrics-to-tempo tool; landing page still lists the three AI tools as Coming soon (needs your OK to change)
+- [x] Phase 7: whole-song range, stems + one-track export, MIDI export, cancel, choose save folder, export history, delete confirmations, project-owned copies of sampler/clip/pad audio
+- [ ] Phase 7 not done: autosave/recovery (manual-save rule), Video Sampler video isn't saved in cloud projects, device-list entries are only shortcuts (not separate saved copies)
