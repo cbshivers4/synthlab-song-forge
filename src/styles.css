@@ -1397,8 +1397,8 @@ body:has(.name-editor-dialog) [data-sonner-toast] { visibility: hidden; }
 .tape-brand { border-bottom: 1px solid var(--border); }
 .tape-deck { padding: 16px 24px 12px; background: var(--background); }
 .tape-reels { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12%; max-width: 660px; margin: auto; }
-.tape-reel { aspect-ratio: 1; animation: tape-turn var(--reel-time, 3s) linear infinite; animation-play-state: paused; }
-.tape-reel[data-moving="true"] { animation-play-state: running; }
+/* Reel rotation is set from the real tape position (reelAngles), not a looping animation. */
+.tape-reel { aspect-ratio: 1; }
 .tape-reel svg { width: 100%; height: 100%; }
 .reel-rim { fill: var(--tape-metal); stroke: var(--tape-hub); stroke-width: 3; }
 .reel-tape { fill: var(--tape-media); stroke: var(--tape-media-edge); stroke-width: 3; }
@@ -1409,7 +1409,8 @@ body:has(.name-editor-dialog) [data-sonner-toast] { visibility: hidden; }
 .reel-screw { stroke: var(--background); stroke-width: 3; }
 .reel-edge { fill: none; stroke: var(--tape-metal-edge); stroke-width: 2; }
 .tape-path { display: block; width: 90%; height: 64px; margin: -8px auto 0; overflow: visible; }
-.tape-path path { fill: none; stroke: var(--tape-media); stroke-width: 4; stroke-dasharray: 14 6; animation: tape-roll 0.6s linear infinite; animation-play-state: paused; }
+.tape-path path { fill: none; stroke: var(--tape-media); stroke-width: 4; stroke-dasharray: 14 6; animation: tape-roll var(--tape-roll-time, 0.6s) linear infinite; animation-play-state: paused; }
+.tape-deck[data-rewinding="true"] .tape-path path { animation-direction: reverse; }
 .tape-deck[data-moving="true"] .tape-path path { animation-play-state: running; }
 @keyframes tape-roll { to { stroke-dashoffset: -20; } }
 .tape-path circle, .tape-path rect { fill: var(--tape-hub); stroke: var(--tape-metal); stroke-width: 2; }

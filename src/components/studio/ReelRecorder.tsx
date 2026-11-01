@@ -6,7 +6,8 @@ import { Circle, Download, Headphones, Pause, Play, Plus, RotateCcw, SkipBack, S
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { getReelRecorder } from "@/lib/synclab/reel-recorder";
-import { reelTapeProgress, reelTapeRadius } from "@/lib/synclab/reel-audio";
+import { reelAngles, recordingReelSeconds, reelTapeProgress, reelTapeRadius } from "@/lib/synclab/reel-audio";
+import { songSteps, stepSeconds } from "@/lib/synclab/timebase";
 import { useStudio } from "@/lib/synclab/store";
 import { encodeMp3, encodeWav, downloadBlob } from "@/lib/synclab/bounce";
 import { encodeAiff, encodeFlac, encodeWavDepth } from "@/lib/synclab/export-formats";
@@ -15,10 +16,10 @@ import { uid } from "@/lib/synclab/presets";
 import { Knob } from "./Knob";
 
 const clock = (s: number) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(Math.floor(s % 60)).padStart(2, "0")}.${Math.floor((s % 1) * 10)}`;
-function Reel({ moving, right, fill = 0.5 }: { moving: boolean; right?: boolean; fill?: number }) {
+function Reel({ moving, right, fill = 0.5, angle = 0 }: { moving: boolean; right?: boolean; fill?: number; angle?: number }) {
   const radius = reelTapeRadius(fill);
   const id = right ? "r" : "l";
-  return <div className="tape-reel" data-moving={moving} aria-label={`${right ? "Take-up" : "Supply"} reel ${moving ? "moving" : "stopped"}`}><svg viewBox="0 0 240 240" role="img" aria-label="Tape reel">
+  return <div className="tape-reel" data-moving={moving} aria-label={`${right ? "Take-up" : "Supply"} reel ${moving ? "moving" : "stopped"}`}><svg viewBox="0 0 240 240" role="img" aria-label="Tape reel" style={{ transform: `rotate(${angle}deg)` }}>
     <defs>
       <radialGradient id={`reel-metal-${id}`} cx="40%" cy="35%" r="75%"><stop offset="0" className="reel-stop-hi" /><stop offset="0.55" className="reel-stop-mid" /><stop offset="1" className="reel-stop-lo" /></radialGradient>
       <radialGradient id={`reel-tape-${id}`} cx="50%" cy="50%" r="50%"><stop offset="0.3" className="tape-stop-in" /><stop offset="1" className="tape-stop-out" /></radialGradient>
@@ -64,7 +65,11 @@ export function ReelRecorder() {
   const locked = state.busy || saving;
   const recording = state.mode === "recording";
   /** Tape progress 0..1: supply reel starts full and empties as the song/tape plays or records. */
-  const progress = reelTapeProgress({ tapePosition: state.position, tapeDuration: state.duration, timelinePosition: state.position, timelineDuration: Math.max(180, state.position + 30), master: false, recording, tapeMoving: rewinding || state.mode === "playing" || state.mode === "paused" });
+  // While recording, the reels hold the song's length (song master) or a 30-minute reel (mic/line).
+  const songSeconds = songSteps(transport.bars) * stepSeconds(transport.bpm);
+  const reelSeconds = recording ? recordingReelSeconds(state.source, songSeconds, state.position) : state.duration;
+  const progress = reelTapeProgress({ tapePosition: state.position, tapeDuration: state.duration, timelinePosition: state.position, timelineDuration: reelSeconds, master: false, recording, tapeMoving: rewinding || state.mode === "playing" || state.mode === "paused" });
+  const angles = reelAngles(progress, reelSeconds || 1);
   const save = async (toProject: boolean) => {
     if (locked || recording || !state.hasTape) return;
     setSaving(true);
@@ -107,10 +112,10 @@ export function ReelRecorder() {
       {state.error && <p role="alert" className="text-sm text-destructive">{state.error}</p>}
     </div> : <>
 
-    <div className="tape-deck" data-moving={active} style={{ "--reel-time": rewinding ? "0.4s" : `${3 / state.speed}s` } as CSSProperties}><div className="tape-reels"><Reel moving={active} fill={1 - progress} /><Reel moving={active} right fill={progress} /></div>
+    <div className="tape-deck" data-moving={active} data-rewinding={rewinding} style={{ "--tape-roll-time": rewinding ? "0.15s" : `${0.6 / state.speed}s` } as CSSProperties}><div className="tape-reels"><Reel moving={active} fill={1 - progress} angle={angles.supply} /><Reel moving={active} right fill={progress} angle={angles.takeUp} /></div>
       <svg className="tape-path" viewBox="0 0 600 80" aria-hidden="true"><path d="M88 5L176 60H424L512 5" /><circle cx="176" cy="60" r="13" /><circle cx="424" cy="60" r="13" /><rect x="267" y="41" width="66" height="24" rx="3" /><path d="M286 45V60M302 45V60M318 45V60" /></svg>
       <div className="tape-head-assembly" aria-hidden="true"><span className="tape-guide left" /><div className="tape-head-cover"><span>SYNCLAB</span><strong>PRECISION STEREO HEAD</strong><small>R2R · DIRECT DRIVE</small></div><span className="tape-guide right" /><span className="tape-capstan" /></div>
-      <div className="tape-display flex flex-wrap items-center justify-between gap-3"><span className="font-mono text-xs">{master || state.source === "song" ? "SONG MASTER" : "MIC / LINE"}</span><output aria-label="Tape counter" className="font-mono text-2xl text-primary">{clock(state.position)}</output><span aria-label="Tape length" className="font-mono text-xs text-muted-foreground">{clock(state.duration)}</span></div>
+      <div className="tape-display flex flex-wrap items-center justify-between gap-3"><span className="font-mono text-xs">{state.source === "song" ? "SONG MASTER" : "MIC / LINE"}</span><output aria-label="Tape counter" className="font-mono text-2xl text-primary">{clock(state.position)}</output><span aria-label="Tape length" className="font-mono text-xs text-muted-foreground">{clock(state.duration)}</span></div>
     </div>
     <div className="tape-console"><div className="tape-meter-pair grid grid-cols-2 gap-3"><TapeMeter channel="L" level={state.levelL} clipped={state.clipped} reset={recorder.resetClip} /><TapeMeter channel="R" level={state.levelR} clipped={state.clipped} reset={recorder.resetClip} /></div>
       <div className="tape-mode-switch mt-3 flex gap-2" role="group" aria-label="Deck controls"><Button variant={master ? "default" : "outline"} className="h-10 flex-1 text-xs" aria-pressed={master} onClick={() => setDeck("timeline")}>Timeline master</Button><Button variant={!master ? "default" : "outline"} className="h-10 flex-1 text-xs" aria-pressed={!master} onClick={() => setDeck("tape")}>Tape only</Button></div>
