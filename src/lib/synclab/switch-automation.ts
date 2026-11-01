@@ -52,3 +52,15 @@ export function switchEdge(events: SwitchEvent[] | undefined, prev: number, at: 
   if (prev < 0 || at <= prev) return true;
   return events.some((e) => e.step > prev && e.step <= at);
 }
+
+/**
+ * A mute/solo press made by hand outside a recording take wins over recorded presses:
+ * it clears that button's recorded presses so playback can't flip it back.
+ */
+export function manualSwitchPatch<P extends { muted?: boolean; solo?: boolean; muteEvents?: SwitchEvent[] | undefined; soloEvents?: SwitchEvent[] | undefined }>(patch: P, taking: boolean): P {
+  if (taking) return patch;
+  let next = patch;
+  if ("muted" in patch && !("muteEvents" in patch)) next = { ...next, muteEvents: undefined };
+  if ("solo" in patch && !("soloEvents" in patch)) next = { ...next, soloEvents: undefined };
+  return next;
+}

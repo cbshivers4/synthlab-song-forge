@@ -702,8 +702,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
               if (t.id !== track.id) return t;
               if (hit.param === "volume") return { ...t, volume: v * 1.2 };
               if (hit.param === "pan") return { ...t, pan: v * 2 - 1 };
-              if (hit.param === "solo") return { ...t, solo: !t.solo };
-              if (hit.param === "mute") return { ...t, muted: !t.muted };
+              if (hit.param === "solo") return { ...t, ...manualSwitchPatch({ solo: !t.solo }, isTakingSwitches()) };
+              if (hit.param === "mute") return { ...t, ...manualSwitchPatch({ muted: !t.muted }, isTakingSwitches()) };
               return { ...t, armed: !t.armed };
             }));
             return;
@@ -845,8 +845,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
                       ? { ...t, pan: v * 2 - 1 }
                       : target.param === "mute"
                         // Buttons toggle on press; releasing the button (value 0) does nothing.
-                        ? v >= 0.5 ? { ...t, muted: !t.muted } : t
-                        : v >= 0.5 ? { ...t, solo: !t.solo } : t
+                        ? v >= 0.5 ? { ...t, ...manualSwitchPatch({ muted: !t.muted }, isTakingSwitches()) } : t
+                        : v >= 0.5 ? { ...t, ...manualSwitchPatch({ solo: !t.solo }, isTakingSwitches()) } : t
                 : t,
             ),
           );
@@ -892,8 +892,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             setTracks((ts) =>
               ts.map((t) => {
                 if (t.id !== noteTarget.id) return t;
-                if (noteTarget.param === "mute") return { ...t, muted: !t.muted };
-                if (noteTarget.param === "solo") return { ...t, solo: !t.solo };
+                if (noteTarget.param === "mute") return { ...t, ...manualSwitchPatch({ muted: !t.muted }, isTakingSwitches()) };
+                if (noteTarget.param === "solo") return { ...t, ...manualSwitchPatch({ solo: !t.solo }, isTakingSwitches()) };
                 if (noteTarget.param === "arm") return { ...t, armed: !t.armed };
                 return t;
               }),
@@ -1274,7 +1274,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     midiWasPlayingRef.current = transport.playing;
   }, [transport.playing]);
 
-  const updateTrack = useCallback((id: string, patch: Partial<Track>) => {
+  const updateTrack = useCallback((id: string, rawPatch: Partial<Track>) => {
+    // A hand press of mute/solo outside a take replaces that button's recorded presses.
+    const patch = manualSwitchPatch(rawPatch, isTakingSwitches());
     // Moving a fader, pan or send while playing "touches" its automation lane so Write/Touch/Latch record it.
     if (transportRef.current.playing) {
       const prev = tracksRef.current.find((t) => t.id === id);
