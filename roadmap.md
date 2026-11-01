@@ -139,5 +139,6 @@
 - [x] MIDI/drum part editing: move one part, trim both edges (drums: left trim, right stretch, Alt+right trim)
 - [ ] Phase 3 not done: per-channel input selection, pre/post send switch, automation lane controls in mixer strips
 - [x] Phase 4: drum HOLD wired, note repeat (hold-to-roll, 6 rates), sampler/pad knobs + Normalize, reverse plays the trimmed part, preset search, 8 Sequence presets, honest mod-matrix warnings, drum envelope knobs
-- [ ] Phase 4 not done: song pattern chaining (1–8 order), multi-sample layers, separate loop points, per-pad sends, per-track swing
+- [x] Drum pattern chaining (patterns 1–8 in order with bars each, CHAIN on/off, playing step lit, timeline label)
+- [ ] Phase 4 not done: multi-sample layers, separate loop points, per-pad sends, per-track swing
 - [ ] Phases 5–8: wait for Phase 4 report

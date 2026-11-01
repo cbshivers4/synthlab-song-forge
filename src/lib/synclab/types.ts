@@ -509,6 +509,8 @@ export interface Track {
   drumSequences?: (DrumSequence | undefined)[][];
   /** Zero-based rhythm selection (Patterns 1–8). */
   activeDrumSequence?: number;
+  /** Play patterns 1–8 in an order across the song (see drum-chain.ts). */
+  drumChain?: import("./drum-chain").DrumChain | undefined;
   plugins?: PluginInstance[] | undefined;
   clips?: AudioClip[] | undefined;
   sampler?: SamplerState | undefined;
