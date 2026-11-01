@@ -35,7 +35,7 @@ export function useShortcuts() {
         if (e.shiftKey) void studio.stop(); else studio.togglePlay();
         return;
       }
-      if (e.defaultPrevented || typing || el?.closest('[role="slider"], [role="spinbutton"], [role="tablist"], [role="menu"], [role="listbox"], [role="dialog"], [role="alertdialog"]') || document.querySelector('[role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"]')) return;
+      if (e.defaultPrevented || typing || el?.closest('[role="slider"], [role="spinbutton"], [role="tablist"], [role="menu"], [role="listbox"], [role="dialog"], [role="alertdialog"]') || document.querySelector('[role="dialog"], [role="alertdialog"], [role="menu"]:not([data-part-quick-menu]), [role="listbox"]')) return;
       const { selected, tracks, transport } = studio;
       if (!e.ctrlKey && !e.metaKey && !e.altKey && qwertyEnabled()) {
         const playable = (t: typeof selected) => t && ['instrument', 'midi', 'sampler'].includes(t.kind);
