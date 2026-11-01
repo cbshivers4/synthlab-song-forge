@@ -3171,3 +3171,10 @@ body:has(.phone-console) [data-sonner-toast] button { pointer-events: auto; }
 
 .bassgen-device { border-top: 4px solid var(--bass-teal); }
 .bassgen-device .bassgen-brand { font-size: 26px; }
+
+/* Touch screens: every timeline toolbar control and the ruler options stay at least 40px tall to tap reliably. */
+@media (pointer: coarse) {
+  .timeline-edit-toolbar button, .timeline-edit-toolbar [role="combobox"] { min-height: 40px; }
+  .arrangement-timeline button[aria-label="Timeline options"] { min-height: 40px; padding-inline: 10px; }
+  .arrangement-timeline [aria-label="Loop start"], .arrangement-timeline [aria-label="Loop end"] { min-width: 32px; }
+}
