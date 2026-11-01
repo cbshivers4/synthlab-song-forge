@@ -16,7 +16,12 @@
     "desktop:package": "node scripts/build-desktop.mjs"
   },
   "overrides": {
-    "rolldown": "1.2.1"
+    "rolldown": "1.2.1",
+    "undici": "^7.30.1",
+    "seroval": "^1.6.11",
+    "js-yaml": "^4.3.2",
+    "source-map-js": "^1.2.2",
+    "zod": "^4.6.6"
   },
   "dependencies": {
     "@ai-sdk/openai": "^4.0.106",
@@ -106,6 +111,6 @@
   },
   "productName": "SYNCLAB",
   "version": "1.0.0",
-  "description": "SYNCLAB — record, produce and finish music.",
+  "description": "SYNCLAB \u2014 record, produce and finish music.",
   "author": "Christopher Shivers"
 }
