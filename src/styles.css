@@ -3177,4 +3177,6 @@ body:has(.phone-console) [data-sonner-toast] button { pointer-events: auto; }
   .timeline-edit-toolbar button, .timeline-edit-toolbar [role="combobox"] { min-height: 40px; }
   .arrangement-timeline button[aria-label="Timeline options"] { min-height: 40px; padding-inline: 10px; }
   .arrangement-timeline [aria-label="Loop start"], .arrangement-timeline [aria-label="Loop end"] { min-width: 32px; }
+  [aria-label="Zoom out the arrangement"], [aria-label="Zoom in on the arrangement"] { min-width: 40px; min-height: 40px; }
+  .song-lane-controls button { min-height: 36px; min-width: 36px; }
 }
