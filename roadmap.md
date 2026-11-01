@@ -131,5 +131,6 @@
 
 ## Nov 1 — Master upgrade brief (phases 1–8, one at a time)
 - [x] Phase 1: audit + fixes (synth LFO/arp sync & swing, import success/failure, desktop menu commands, honest update message, Save As/close-save with failed takes, device-library commit, drum lane double-click, capture/preview cleanup); clear track verified staying on Edit (desktop + phone)
-- [ ] Phase 1 leftovers needing a decision: cloud saves keep non-uploaded drum sample links; dormant Generate Stem/Separate Stems error wording (both Coming Soon)
+- [x] Drum pad samples always saved as the project's own cloud copy; unreadable old samples no longer block opening
+- [ ] Phase 1 leftover: dormant Generate Stem/Separate Stems error wording (both Coming Soon)
 - [ ] Phases 2–8: waiting for the go-ahead after the Phase 1 report
