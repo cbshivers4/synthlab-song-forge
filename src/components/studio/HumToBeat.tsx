@@ -19,7 +19,7 @@ const MAX_SEC = 30;
 const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 
 export function HumToBeat() {
-  const { tracks, transport, addTrack, updateTrack } = useStudio();
+  const { tracks, transport, addTrack, updateTrack, setTransport } = useStudio();
   const [mode, setMode] = useState<Mode>("beat");
   const [recording, setRecording] = useState(false);
   const [busy, setBusy] = useState(false);
