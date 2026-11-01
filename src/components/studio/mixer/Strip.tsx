@@ -236,7 +236,7 @@ export function Strip({
 
       {/* pan */}
       <div
-        className={cn(ROW.pan, "flex flex-col justify-center border-b border-border/60 px-1.5")}
+        className={cn(ROW.pan, "flex items-center justify-center border-b border-border/60 px-1.5")}
         style={{ "--primary": t.color } as CSSProperties}
         onClick={(e) => e.stopPropagation()}
       >
@@ -251,7 +251,6 @@ export function Strip({
           step={0.01}
           defaultValue={0}
           format={panText}
-          midiTarget={{ id: t.id, param: "pan" }}
           onChange={(v) => updateTrack(t.id, { pan: v })}
         />
       </div>

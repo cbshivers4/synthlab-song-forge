@@ -157,25 +157,20 @@ function MasterWidth({ color }: { color: string }) {
   };
   const v = width?.params.find((p) => p.id === "width")?.value ?? 1;
   return (
-    <div className={cn(ROW.pan, "flex flex-col justify-center border-b border-border/60 px-1.5")} style={{ "--primary": color } as CSSProperties}>
-      <Slider
-        aria-label="Master stereo width"
-        aria-valuetext={v === 0 ? "Mono" : `${Math.round(v * 100)} percent`}
-        value={[v]}
+    <div className={cn(ROW.pan, "flex items-center justify-center border-b border-border/60 px-1.5")} style={{ "--primary": color } as CSSProperties}>
+      <Knob
+        label="WIDTH"
+        ariaLabel="Master stereo width"
+        layout="inline"
+        size={30}
+        value={v}
         min={0}
         max={2}
         step={0.01}
-        className="h-3"
-        onDoubleClick={() => setWidth(1)}
-        onValueChange={([n = 1]) => setWidth(n)}
+        defaultValue={1}
+        format={(n) => (n === 0 ? "MONO" : `${Math.round(n * 100)}%`)}
+        onChange={setWidth}
       />
-      <button
-        onClick={() => setWidth(1)}
-        title="Reset the main output to its original stereo width"
-        className="mt-0.5 text-center font-mono text-[8px] text-muted-foreground hover:text-foreground"
-      >
-        {v === 0 ? "MONO" : `${Math.round(v * 100)}%`}
-      </button>
     </div>
   );
 }

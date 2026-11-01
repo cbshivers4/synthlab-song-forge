@@ -457,7 +457,7 @@ html[data-reduce-motion] *, html[data-reduce-motion] *::before, html[data-reduce
 .mx-console:not(.mx-phone) .mx-row-sends { height: 20px; }
 .mx-console:not(.mx-phone) .mx-row-send-bars { height: 16px; }
 .mx-console:not(.mx-phone) .mx-row-routing { height: 26px; }
-.mx-console:not(.mx-phone) .mx-row-pan { height: 24px; }
+.mx-console:not(.mx-phone) .mx-row-pan { height: 38px; }
 .mx-console:not(.mx-phone) .mx-row-buttons { height: 26px; }
 .mx-console:not(.mx-phone) .mx-row-readout { height: 16px; }
 .mx-console:not(.mx-phone) .mx-row-fader { height: 104px; }
