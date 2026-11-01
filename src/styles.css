@@ -1914,6 +1914,9 @@ body:has(.name-editor-dialog) [data-sonner-toast] { visibility: hidden; }
 /* Desktop: an open tool (mixer, synths, drums...) fills the workspace; the timeline stays mounted but hidden. */
 main[data-panel-full="true"] > .arrangement-timeline { display: none; }
 main[data-panel-full="true"] > .phone-tool-panel { flex: 1 1 auto; min-height: 0; }
+/* Desktop split view: the timeline keeps a resizable height above the open editor. */
+main[data-panel-split="true"] > .arrangement-timeline { flex: 0 0 var(--split-timeline-h, 300px); min-height: 0; overflow: hidden; }
+main[data-panel-split="true"] > .phone-tool-panel { flex: 1 1 auto; min-height: 0; overflow: auto; }
 /* Full-workspace desktop mixer: roomy rows that fit their controls and tall faders */
 main[data-panel-full="true"] .mx-console:not(.mx-phone) { flex: 1 1 auto; min-height: 0; }
 main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-row-head { height: 34px; }
@@ -3168,3 +3171,12 @@ body:has(.phone-console) [data-sonner-toast] button { pointer-events: auto; }
 
 .bassgen-device { border-top: 4px solid var(--bass-teal); }
 .bassgen-device .bassgen-brand { font-size: 26px; }
+
+/* Touch screens: every timeline toolbar control and the ruler options stay at least 40px tall to tap reliably. */
+@media (pointer: coarse) {
+  .timeline-edit-toolbar button, .timeline-edit-toolbar [role="combobox"] { min-height: 40px; }
+  .arrangement-timeline button[aria-label="Timeline options"] { min-height: 40px; padding-inline: 10px; }
+  .arrangement-timeline [aria-label="Loop start"], .arrangement-timeline [aria-label="Loop end"] { min-width: 32px; }
+  [aria-label="Zoom out the arrangement"], [aria-label="Zoom in on the arrangement"] { min-width: 40px; min-height: 40px; }
+  .song-lane-controls button { min-height: 36px; min-width: 36px; }
+}
