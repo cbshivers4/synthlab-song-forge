@@ -18,6 +18,7 @@ import { uid } from "@/lib/synclab/presets";
 import { wsolaStretch } from "@/lib/synclab/stretch";
 import { WaveformView } from "@/components/studio/WaveformView";
 import { MidiLearnButton } from "./MidiLearn";
+import { Knob } from "./Knob";
 import { MidiPadLearnBar, useMidiPads } from "./MidiPadLearn";
 import { SkinControls, skinBackground, useImageDrop } from "@/components/studio/SkinControls";
 import { useSkin } from "@/lib/synclab/skins";
@@ -42,6 +43,14 @@ function Row({ label, value, children, midiId, midiParam }: { label: string; val
       {children}
     </div>
   );
+}
+
+/** Sampler sound knob: drag, scroll or arrow keys; double-click resets; MIDI-learnable like the old rows. */
+function SK({ label, aria, mt, v, min, max, step, def, fmt, set, disabled }: { label: string; aria: string; mt?: { id: string; param: string }; v: number; min: number; max: number; step: number; def: number; fmt: (v: number) => string; set: (v: number) => void; disabled?: boolean }) {
+  return <div className={disabled ? "pointer-events-none opacity-40" : undefined} aria-disabled={disabled || undefined}>
+    <Knob label={label} ariaLabel={aria} size={46} value={v} min={min} max={max} step={step} defaultValue={def} format={fmt} onChange={set}
+      midiTarget={mt} />
+  </div>;
 }
 
 /** Waveform with draggable trim handles and chop markers. */
@@ -849,57 +858,28 @@ export function Sampler() {
           </div>
 
           <div className="sampler-deck grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <Row label="Trim start" midiId={track.id} midiParam="start" value={`${(s.start * s.duration).toFixed(2)}s`}>
-              <Slider
-                value={[s.start]}
-                min={0}
-                max={1}
-                step={0.001}
-                onValueChange={([v]) => updateSampler(track.id, { start: Math.min(v ?? 0, s.end - 0.002) })}
-              />
-            </Row>
-            <Row label="Trim end" midiId={track.id} midiParam="end" value={`${(s.end * s.duration).toFixed(2)}s`}>
-              <Slider
-                value={[s.end]}
-                min={0}
-                max={1}
-                step={0.001}
-                onValueChange={([v]) => updateSampler(track.id, { end: Math.max(v ?? 1, s.start + 0.002) })}
-              />
-            </Row>
-            <Row label="Level" midiId={track.id} midiParam="gain" value={`${Math.round(s.gain * 100)}%`}>
-              <Slider value={[s.gain]} min={0} max={2} step={0.01} onValueChange={([v]) => updateSampler(track.id, { gain: v ?? 1 })} />
-            </Row>
-            <Row label="Tune" midiId={track.id} midiParam="pitch" value={`${s.pitch > 0 ? "+" : ""}${s.pitch.toFixed(1)} st`}>
-              <Slider value={[s.pitch]} min={-24} max={24} step={0.1} onValueChange={([v]) => updateSampler(track.id, { pitch: v ?? 0 })} />
-            </Row>
-            <Row label="Root note" midiId={track.id} midiParam="rootNote" value={noteName(s.rootNote)}>
-              <Slider
-                value={[s.rootNote]}
-                min={24}
-                max={96}
-                step={1}
-                onValueChange={([v]) => updateSampler(track.id, { rootNote: v ?? 60 })}
-              />
-            </Row>
-            <Row label="Attack" midiId={track.id} midiParam="attack" value={`${Math.round(s.attack * 1000)} ms`}>
-              <Slider value={[s.attack]} min={0} max={2} step={0.001} onValueChange={([v]) => updateSampler(track.id, { attack: v ?? 0 })} />
-            </Row>
-            <Row label="Release" midiId={track.id} midiParam="release" value={`${Math.round(s.release * 1000)} ms`}>
-              <Slider value={[s.release]} min={0.005} max={4} step={0.005} onValueChange={([v]) => updateSampler(track.id, { release: v ?? 0.06 })} />
-            </Row>
-            <Row label="Decay" midiId={track.id} midiParam="decay" value={`${Math.round((s.decay ?? 0) * 1000)} ms`}>
-              <Slider value={[s.decay ?? 0]} min={0} max={3} step={0.005} onValueChange={([v]) => updateSampler(track.id, { decay: v ?? 0 })} />
-            </Row>
-            <Row label="Sustain" midiId={track.id} midiParam="sustain" value={`${Math.round((s.sustain ?? 1) * 100)}%`}>
-              <Slider value={[s.sustain ?? 1]} min={0} max={1} step={0.01} onValueChange={([v]) => updateSampler(track.id, { sustain: v ?? 1 })} />
-            </Row>
-            <Row label="Fade in" midiId={track.id} midiParam="fadeIn" value={`${Math.round((s.fadeIn ?? 0) * 1000)} ms`}>
-              <Slider value={[s.fadeIn ?? 0]} min={0} max={2} step={0.005} onValueChange={([v]) => updateSampler(track.id, { fadeIn: v ?? 0 })} />
-            </Row>
-            <Row label="Fade out" midiId={track.id} midiParam="fadeOut" value={`${Math.round((s.fadeOut ?? 0) * 1000)} ms`}>
-              <Slider value={[s.fadeOut ?? 0]} min={0} max={2} step={0.005} onValueChange={([v]) => updateSampler(track.id, { fadeOut: v ?? 0 })} />
-            </Row>
+            <div className="sampler-knob-deck col-span-full flex flex-wrap items-start gap-x-2 gap-y-3" role="group" aria-label="Sample shape">
+              <SK label="START" aria="Trim start" mt={{ id: track.id, param: "sampler:start" }} v={s.start} min={0} max={1} step={0.001} def={0} fmt={(v) => `${(v * s.duration).toFixed(2)}s`} set={(v) => updateSampler(track.id, { start: Math.min(v, s.end - 0.002) })} />
+              <SK label="END" aria="Trim end" mt={{ id: track.id, param: "sampler:end" }} v={s.end} min={0} max={1} step={0.001} def={1} fmt={(v) => `${(v * s.duration).toFixed(2)}s`} set={(v) => updateSampler(track.id, { end: Math.max(v, s.start + 0.002) })} />
+              <SK label="LEVEL" aria="Level" mt={{ id: track.id, param: "sampler:gain" }} v={s.gain} min={0} max={2} step={0.01} def={1} fmt={(v) => `${Math.round(v * 100)}%`} set={(v) => updateSampler(track.id, { gain: v })} />
+              <div className="flex flex-col items-center gap-1 pt-1">
+                <Button size="sm" variant="secondary" className="h-8 px-2 text-[10px]" title="Set LEVEL so the loudest point of the trimmed part reaches −1 dB (up to 200%)" onClick={() => {
+                  const peak = getEngine().samplePeak(s.url, s.start, s.end);
+                  if (!(peak > 0)) { toast("Nothing to normalize", { description: "The trimmed part is silent or not loaded yet." }); return; }
+                  const gain = Math.min(2, 0.89 / peak);
+                  updateSampler(track.id, { gain: Math.round(gain * 100) / 100 });
+                  toast.success(`Normalized to −1 dB`, { description: gain >= 2 ? "Level set to the 200% maximum — the sample is very quiet." : `Level ${Math.round(gain * 100)}%` });
+                }}>NORMALIZE</Button>
+              </div>
+              <SK label="TUNE" aria="Tune" mt={{ id: track.id, param: "sampler:pitch" }} v={s.pitch} min={-24} max={24} step={0.1} def={0} fmt={(v) => `${v > 0 ? "+" : ""}${v.toFixed(1)} st`} set={(v) => updateSampler(track.id, { pitch: v })} />
+              <SK label="ROOT" aria="Root note" mt={{ id: track.id, param: "sampler:rootNote" }} v={s.rootNote} min={24} max={96} step={1} def={60} fmt={(v) => noteName(Math.round(v))} set={(v) => updateSampler(track.id, { rootNote: Math.round(v) })} />
+              <SK label="ATTACK" aria="Attack" mt={{ id: track.id, param: "sampler:attack" }} v={s.attack} min={0} max={2} step={0.001} def={0.002} fmt={(v) => `${Math.round(v * 1000)} ms`} set={(v) => updateSampler(track.id, { attack: v })} />
+              <SK label="DECAY" aria="Decay" mt={{ id: track.id, param: "sampler:decay" }} v={s.decay ?? 0} min={0} max={3} step={0.005} def={0} fmt={(v) => `${Math.round(v * 1000)} ms`} set={(v) => updateSampler(track.id, { decay: v })} />
+              <SK label="SUSTAIN" aria="Sustain" mt={{ id: track.id, param: "sampler:sustain" }} v={s.sustain ?? 1} min={0} max={1} step={0.01} def={1} fmt={(v) => `${Math.round(v * 100)}%`} set={(v) => updateSampler(track.id, { sustain: v })} />
+              <SK label="RELEASE" aria="Release" mt={{ id: track.id, param: "sampler:release" }} v={s.release} min={0.005} max={4} step={0.005} def={0.06} fmt={(v) => `${Math.round(v * 1000)} ms`} set={(v) => updateSampler(track.id, { release: v })} />
+              <SK label="FADE IN" aria="Fade in" mt={{ id: track.id, param: "sampler:fadeIn" }} v={s.fadeIn ?? 0} min={0} max={2} step={0.005} def={0} fmt={(v) => `${Math.round(v * 1000)} ms`} set={(v) => updateSampler(track.id, { fadeIn: v })} />
+              <SK label="FADE OUT" aria="Fade out" mt={{ id: track.id, param: "sampler:fadeOut" }} v={s.fadeOut ?? 0} min={0} max={2} step={0.005} def={0} fmt={(v) => `${Math.round(v * 1000)} ms`} set={(v) => updateSampler(track.id, { fadeOut: v })} />
+            </div>
             <div className="space-y-1.5">
               <span className="label-xs">Filter</span>
               <div className="flex flex-wrap gap-1">
@@ -916,15 +896,11 @@ export function Sampler() {
                 ))}
               </div>
             </div>
-            <Row label="Cutoff" midiId={track.id} midiParam="cutoff" value={`${Math.round(s.cutoff ?? 18000)} Hz`}>
-              <Slider value={[Math.log10(s.cutoff ?? 18000)]} min={Math.log10(20)} max={Math.log10(20000)} step={0.01} disabled={(s.filterType ?? "off") === "off"} onValueChange={([v]) => updateSampler(track.id, { cutoff: Math.round(Math.pow(10, v ?? 4.25)) })} />
-            </Row>
-            <Row label="Resonance" midiId={track.id} midiParam="resonance" value={(s.resonance ?? 0.7).toFixed(1)}>
-              <Slider value={[s.resonance ?? 0.7]} min={0.1} max={20} step={0.1} disabled={(s.filterType ?? "off") === "off"} onValueChange={([v]) => updateSampler(track.id, { resonance: v ?? 0.7 })} />
-            </Row>
-            <Row label="Sample BPM" value={s.sampleBpm ? `${s.sampleBpm}` : "—"}>
-              <Slider value={[s.sampleBpm ?? 120]} min={60} max={200} step={1} onValueChange={([v]) => updateSampler(track.id, { sampleBpm: v ?? 120 })} />
-            </Row>
+            <div className="flex flex-wrap items-start gap-x-2" role="group" aria-label="Filter and tempo">
+              <SK label="CUTOFF" aria="Cutoff" mt={{ id: track.id, param: "sampler:cutoff" }} v={Math.log10(s.cutoff ?? 18000)} min={Math.log10(20)} max={Math.log10(20000)} step={0.01} def={Math.log10(18000)} disabled={(s.filterType ?? "off") === "off"} fmt={(v) => { const hz = Math.pow(10, v); return hz >= 1000 ? `${(hz / 1000).toFixed(1)}k` : `${Math.round(hz)}`; }} set={(v) => updateSampler(track.id, { cutoff: Math.round(Math.pow(10, v)) })} />
+              <SK label="RES" aria="Resonance" mt={{ id: track.id, param: "sampler:resonance" }} v={s.resonance ?? 0.7} min={0.1} max={20} step={0.1} def={0.7} disabled={(s.filterType ?? "off") === "off"} fmt={(v) => v.toFixed(1)} set={(v) => updateSampler(track.id, { resonance: v })} />
+              <SK label="SMP BPM" aria="Sample BPM" v={s.sampleBpm ?? 120} min={60} max={200} step={1} def={120} fmt={(v) => `${Math.round(v)}`} set={(v) => updateSampler(track.id, { sampleBpm: Math.round(v) })} />
+            </div>
             <div className="flex items-center justify-between">
               <span className="label-xs" title="Repitch mode: speed and pitch change together. Pitch-preserving warp (Beats/Tones/Complex) needs the desktop engine.">Sync to project BPM (repitch)</span>
               <Switch checked={!!s.syncToBpm} onCheckedChange={(v) => updateSampler(track.id, { syncToBpm: v, sampleBpm: s.sampleBpm ?? 120 })} />

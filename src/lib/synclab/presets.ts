@@ -179,6 +179,30 @@ export const SYNTH_PRESETS: PresetDef[] = [
       p.fx.delay = 0.4;
     },
   },
+  // Sequence presets: tempo-synced arpeggiated patches that turn a held chord into a moving line.
+  ...([
+    ["Motor City Sequence", "sawtooth", { on: true, rate: 2, direction: "up", octaves: 2, gate: 0.4 }, 1800, 0.3, 0.25],
+    ["Belle Isle Pulse", "square", { on: true, rate: 1, direction: "updown", octaves: 1, gate: 0.55 }, 2400, 0.2, 0.35],
+    ["Woodward Run", "sawtooth", { on: true, rate: 4, direction: "up", octaves: 3, gate: 0.3 }, 3200, 0.15, 0.2],
+    ["Eastside Ostinato", "triangle", { on: true, rate: 2, direction: "alternate", octaves: 2, gate: 0.6 }, 1400, 0.1, 0.45],
+    ["Grand River Gate", "square", { on: true, rate: 2, direction: "down", octaves: 2, gate: 0.25, swing: 0.35 }, 2000, 0.25, 0.3],
+    ["Riverfront Sequencer", "sawtooth", { on: true, rate: 1, direction: "random", octaves: 2, gate: 0.5 }, 1200, 0.35, 0.4],
+    ["Cass Corridor Stepper", "square", { on: true, rate: 4, direction: "updown", octaves: 1, gate: 0.35, swing: 0.2 }, 2800, 0.1, 0.15],
+    ["Midnight Mover", "sawtooth", { on: true, rate: 2, direction: "up", octaves: 1, gate: 0.45 }, 900, 0.4, 0.5],
+  ] as const).map(([name, wave, arp, cutoff, delay, envAmt]) => ({
+    name,
+    category: "Sequence",
+    mutate: (p: SynthPatch) => {
+      O(p, 0).wave = wave;
+      p.arp = { ...arp, sync: true };
+      p.amp = { attack: 0.002, decay: 0.16, sustain: 0.15, release: 0.12 };
+      p.cutoff = cutoff;
+      p.resonance = 6;
+      p.filterEnv = { ...p.filterEnv, attack: 0.002, decay: 0.14, sustain: 0.1, release: 0.1, amount: Math.round(envAmt * 6000) };
+      p.fx.delay = delay;
+      p.fx.delayFeedback = 0.35;
+    },
+  })),
   {
     name: "Void Ambient",
     category: "Ambient",

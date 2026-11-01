@@ -168,6 +168,7 @@ function SynthTrackEditor({ track }: { track: Track }) {
           </SelectContent>
         </Select>
         </PresetNavigator>
+        <PresetSearch groups={presetGroups} onSelect={selectPreset} />
         <Input
           value={presetName}
           onChange={(e) => setPresetName(e.target.value)}
@@ -552,20 +553,21 @@ function SynthTrackEditor({ track }: { track: Track }) {
                     ))}
                   </SelectContent>
                 </Select>
-                <div className="w-40">
-                  <Slider
-                    min={-1}
-                    max={1}
-                    step={0.01}
-                    value={[r.amount]}
-                    onValueChange={([v = 0]) =>
-                      set({ modMatrix: matrix.map((x) => (x.id === r.id ? { ...x, amount: v } : x)) })
-                    }
-                  />
-                </div>
-                <span className="w-12 font-mono text-[10px] text-primary">{r.amount.toFixed(2)}</span>
+                <Knob
+                  label="AMOUNT"
+                  ariaLabel={`Route ${r.source} to ${r.dest} amount`}
+                  layout="inline"
+                  size={34}
+                  min={-1}
+                  max={1}
+                  step={0.01}
+                  defaultValue={0}
+                  value={r.amount}
+                  format={(v) => (v > 0 ? `+${v.toFixed(2)}` : v.toFixed(2))}
+                  onChange={(v) => set({ modMatrix: matrix.map((x) => (x.id === r.id ? { ...x, amount: v } : x)) })}
+                />
                 {FIXED_ONLY.includes(r.dest) && !["velocity", "keytrack", "random", "macro1", "macro2", "macro3", "macro4"].includes(r.source) && (
-                  <span className="font-mono text-[9px] text-muted-foreground">set per note, not moving</span>
+                  <span role="status" className="font-mono text-[9px] text-destructive">no effect: {r.dest} only takes velocity, key, random or a macro</span>
                 )}
                 <Button
                   size="icon"
@@ -858,4 +860,36 @@ export function presetMatchesSynth(category: string, style: string): boolean {
   if (style === "poly") return poly;
   if (style === "modular") return modular;
   return !acid && !poly && !modular;
+}
+
+/** Type to find a preset by name or category (e.g. "bass", "pad", "arp"); click a match to load and hear it. */
+function PresetSearch({ groups, onSelect }: { groups: { category: string; items: string[] }[]; onSelect: (name: string) => void }) {
+  const [query, setQuery] = useState("");
+  const q = query.trim().toLowerCase();
+  const matches = q
+    ? groups.flatMap((g) => g.items.filter((name) => name.toLowerCase().includes(q) || g.category.toLowerCase().includes(q)).map((name) => ({ name, category: g.category }))).slice(0, 14)
+    : [];
+  return (
+    <div className="relative">
+      <input
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        onKeyDown={(e) => { if (e.key === "Escape") setQuery(""); if (e.key === "Enter" && matches[0]) { onSelect(matches[0].name); setQuery(""); } }}
+        placeholder="Find preset…"
+        aria-label="Find preset"
+        className="h-9 w-40 rounded-sm border border-input bg-background px-2 font-mono text-xs text-foreground"
+      />
+      {q && (
+        <div role="listbox" aria-label="Matching presets" className="absolute left-0 top-10 z-50 max-h-72 w-64 overflow-auto rounded-md border border-border bg-popover p-1 shadow-lg">
+          {matches.length === 0 ? <p className="px-2 py-1.5 text-xs text-muted-foreground">No preset matches “{query}”.</p> : matches.map((m) => (
+            <button key={`${m.category}:${m.name}`} type="button" role="option" aria-selected={false}
+              onClick={() => { onSelect(m.name); setQuery(""); }}
+              className="flex w-full items-center justify-between gap-2 rounded-sm px-2 py-1.5 text-left text-xs hover:bg-accent">
+              <span className="truncate">{m.name}</span><span className="shrink-0 font-mono text-[9px] uppercase text-muted-foreground">{m.category}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }

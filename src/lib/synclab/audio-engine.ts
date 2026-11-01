@@ -62,6 +62,25 @@ const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
 
 export const midiToFreq = (n: number) => 440 * Math.pow(2, (n - 69) / 12);
 
+/** Loudest absolute value inside a 0..1 window of some channels. */
+export function peakInWindow(channels: Float32Array[], start: number, end: number): number {
+  let peak = 0;
+  for (const data of channels) {
+    const from = Math.max(0, Math.floor(clamp(start, 0, 1) * data.length));
+    const to = Math.min(data.length, Math.ceil(clamp(end, 0, 1) * data.length));
+    for (let i = from; i < to; i++) { const v = Math.abs(data[i]!); if (v > peak) peak = v; }
+  }
+  return peak;
+}
+
+/** Trim window (0..1) to read from the (possibly reversed) buffer so reverse plays the selected part backwards. */
+export function sampleWindow(start: number, end: number, reverse: boolean): [number, number] {
+  const a0 = clamp(start, 0, 0.999);
+  const b0 = clamp(end, a0 + 0.001, 1);
+  if (!reverse) return [a0, b0];
+  return [clamp(1 - b0, 0, 0.999), clamp(1 - a0, 1 - b0 + 0.001, 1)];
+}
+
 function makeImpulse(ctx: AudioContext, decay: number) {
   const rate = ctx.sampleRate;
   const len = Math.max(1, Math.floor(rate * decay));
@@ -2004,6 +2023,13 @@ export class SyncLabEngine {
   private keyedSamples = new Map<string, AudioBufferSourceNode[]>();
   private sampleTriggerVersions = new Map<string, number>();
 
+  /** Loudest absolute sample (0..1) in the start..end part of a loaded sample, across all channels; 0 when not loaded. */
+  samplePeak(url: string, start = 0, end = 1): number {
+    const buf = this.sampleBuffers.get(url);
+    if (!buf) return 0;
+    return peakInWindow(Array.from({ length: buf.numberOfChannels }, (_, c) => buf.getChannelData(c)), start, end);
+  }
+
   /** Decodes a dropped audio file, keeps the buffer and returns its display data. */
   async loadSampleFile(file: File | Blob, name: string) {
     const ctx = this.init();
@@ -2057,8 +2083,7 @@ export class SyncLabEngine {
     if (!base) return null;
     const sync = s.syncToBpm && s.sampleBpm && s.sampleBpm > 0 ? this.tempo / s.sampleBpm : 1;
     const rate = clamp(Math.pow(2, s.pitch / 12) * sync, 0.0625, 16);
-    const a = clamp(s.start, 0, 0.999);
-    const b = clamp(s.end, a + 0.001, 1);
+    const [a, b] = sampleWindow(s.start, s.end, !!s.reverse);
     const win = base.duration * (b - a);
     const len = win / rate;
     const sr = base.sampleRate;
@@ -2152,8 +2177,8 @@ export class SyncLabEngine {
     const rate = Math.pow(2, (midi - s.rootNote + s.pitch) / 12) * sync;
     src.playbackRate.value = clamp(rate, 0.0625, 16);
 
-    const a = clamp(s.start, 0, 0.999);
-    const b = clamp(s.end, a + 0.001, 1);
+    // Reverse plays the trimmed part backwards: in the flipped buffer that part sits at [1 − end, 1 − start].
+    const [a, b] = sampleWindow(s.start, s.end, !!s.reverse);
     const offset = base.duration * a;
     const window = base.duration * (b - a);
     const playable = window / src.playbackRate.value;
@@ -3121,7 +3146,8 @@ export class SyncLabEngine {
     const env = ctx.createGain();
     const atk = Math.max(0.0005, (pad.attack ?? 0) * 0.25);
     const rel = 0.02 + (pad.release ?? 0.2) * 1.5;
-    const hold = Math.max(0.02, dec * 1.2);
+    // HOLD keeps the pad at full level for up to one extra second before its release.
+    const hold = Math.max(0.02, dec * 1.2) + Math.max(0, Math.min(1, pad.sustain ?? 0));
     env.gain.setValueAtTime(0.0001, t);
     env.gain.linearRampToValueAtTime(1, t + atk);
     env.gain.setValueAtTime(1, t + atk + hold);
