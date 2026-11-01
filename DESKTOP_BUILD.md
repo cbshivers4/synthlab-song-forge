@@ -76,13 +76,20 @@ right-click -> Open the first time.
 Not implemented yet. The intended path is `electron-updater` with a static update feed hosted on
 the same CDN as the installers. It must not interrupt an active recording or playback: check on
 launch and when idle, offer "Install on quit", and allow postponing. Until that exists, the Help
-menu's "Check for Updates" states plainly that this build loads the studio over the network.
+menu's "Check for Updates" explains that the studio itself updates from the website when online.
 
 ## Offline
 
-This shell loads the studio over the network, so it needs a connection to start; it shows an honest
-message when it cannot reach it. Fully offline operation requires bundling a static studio build
-into the app package, which means a client-only build target of the app — not yet done.
+The window always shows https://synclabsapp.com, but every page and code file it receives is also
+stored on the computer (`electron/offline-studio.cjs`). Without internet the studio opens from that
+copy: same sign-in, same projects saved on this computer, playing, recording and exporting. Cloud
+projects, cloud saving, signing in for the first time, payments and AI tools still need internet.
+
+`npm run desktop:package` first runs `scripts/capture-offline-studio.mjs`, which stores a copy of the
+currently published studio in `build-resources/offline-studio/` (needs internet while packaging), so
+even the first launch works offline. Pass `--no-offline-copy` to skip it; the app then needs to be
+opened online once. Online, pages are always fetched fresh, so publishing the website still updates
+desktop users on their next launch.
 
 ## Distribution
 

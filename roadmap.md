@@ -126,5 +126,5 @@
 - [ ] Step 5c (later, higher risk): split audio engine class and studio store provider
 - [x] Step 6: loop take recording — microphone passes kept as takes (instrument/drum still stop at loop end)
 - [x] Step 8: native plugin hosting design written (/mnt/documents/SYNCLAB-plugin-hosting-design.md); building it needs a C++ developer and real Mac/Windows machines
-- [ ] Step 7: offline desktop app (bundled studio) — not started
+- [x] Step 7: offline desktop app — stored studio copy (packaged + refreshed online), verified signed-in with networking fully cut; cloud saving/sign-in/payments/AI need internet; plan + start-screen offline fixes reach desktop after publishing
 - [x] Plugin preparation: saved-state fields for desktop plugins, pass-through where no host runs, shared-memory audio link + AudioWorklet insert + fake host, all tested (needs cross-origin isolation in the desktop window before real use)
