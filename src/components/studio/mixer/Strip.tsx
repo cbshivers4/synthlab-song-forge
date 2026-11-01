@@ -3,6 +3,7 @@ import { EffectPicker } from "../EffectPicker";
 import { type CSSProperties } from "react";
 import { ChevronLeft, ChevronRight, MoreVertical } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
+import { Knob } from "../Knob";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -18,6 +19,8 @@ import { Scope } from "../Scope";
 import { ChannelEq } from "./ChannelEq";
 import { DeviceSlots, SendsMenu } from "./InsertRack";
 import { BUSES, BUS_COLOR, ChannelGain, ClipLed, ColorDot, DB_TICKS, FADER_CAP, KindIcon, Meter, PANEL, ROW, SEND_KEYS, VCA_IDS, fracToDb, toDb } from "./shared";
+
+const panText = (p: number) => (Math.abs(p) < 0.005 ? "C" : p < 0 ? `L${Math.round(-p * 100)}` : `R${Math.round(p * 100)}`);
 
 /** Channel menu: rename, quick inserts, reset, duplicate, delete. */
 
@@ -237,22 +240,20 @@ export function Strip({
         style={{ "--primary": t.color } as CSSProperties}
         onClick={(e) => e.stopPropagation()}
       >
-        <Slider
-          aria-label={`${t.name} pan`}
-          value={[t.pan]}
+        <Knob
+          label="PAN"
+          ariaLabel={`${t.name} pan`}
+          layout="inline"
+          size={30}
+          value={t.pan}
           min={-1}
           max={1}
           step={0.01}
-          className="h-3"
-          onValueChange={([v = 0]) => updateTrack(t.id, { pan: v })}
+          defaultValue={0}
+          format={panText}
+          midiTarget={{ id: t.id, param: "pan" }}
+          onChange={(v) => updateTrack(t.id, { pan: v })}
         />
-        <button
-          onClick={(e) => { e.stopPropagation(); updateTrack(t.id, { pan: 0 }); }}
-          title="Double-click resets to centre"
-          className="mt-0.5 text-center font-mono text-[8px] text-muted-foreground hover:text-foreground"
-        >
-          {t.pan === 0 ? "C" : t.pan < 0 ? `L${Math.round(-t.pan * 100)}` : `R${Math.round(t.pan * 100)}`}
-        </button>
       </div>
 
       {/* fader + scale + meter */}
