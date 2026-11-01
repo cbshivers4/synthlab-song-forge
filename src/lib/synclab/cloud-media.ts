@@ -38,3 +38,27 @@ export function drumSamplePlan(sampleUrl: string | undefined, existingPath: stri
   if (path) return { kind: "keep", cloudPath: path };
   return { kind: "copy", from: sampleUrl, cloudPath: newPath };
 }
+
+/**
+ * How a sampler sample, audio clip or pad-sampler sound is stored when a project is saved.
+ * Same rule as drum pads: the project keeps its own copy, so a duplicate keeps playing after the
+ * original project is deleted and old expiring links get replaced by a stored copy.
+ *  - new audio (blob:) uploads to this project's path;
+ *  - this project's own stored copy is kept;
+ *  - anything else that still has a playable link (another project's copy, web link) is copied in;
+ *  - a stored path with no link to read from is kept as it is (nothing to copy from right now).
+ */
+export type OwnedMediaPlan =
+  | { kind: "none" }
+  | { kind: "keep"; cloudPath: string }
+  | { kind: "copy"; from: string; cloudPath: string; fallbackPath?: string | undefined };
+
+export function ownedMediaPlan(url: string | undefined, existingPath: string | undefined, newPath: string, projectPrefix: string): OwnedMediaPlan {
+  const stored = existingPath && !/^https?:/i.test(existingPath) ? existingPath : undefined;
+  const own = stored?.startsWith(projectPrefix) ? stored : undefined;
+  if (url?.startsWith("blob:")) return { kind: "copy", from: url, cloudPath: own ?? newPath };
+  if (own) return { kind: "keep", cloudPath: own };
+  if (url) return { kind: "copy", from: url, cloudPath: newPath, fallbackPath: stored };
+  if (stored) return { kind: "keep", cloudPath: stored };
+  return { kind: "none" };
+}

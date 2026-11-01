@@ -71,25 +71,37 @@ async function uploadUrl(url: string, path: string) {
   return path;
 }
 
-/** Stores one audio reference: uploads new audio, keeps permanent paths, never saves expiring links. */
-async function storeMedia(url: string | undefined, existingPath: string | undefined, newPath: string) {
-  const plan = mediaStorePlan(url, existingPath, newPath);
-  if ("upload" in plan) await uploadUrl(url ?? "", plan.upload);
-  return "cloudPath" in plan ? { cloudPath: plan.cloudPath, url: undefined } : { cloudPath: undefined, url: plan.url };
+/** Stores one audio reference as this project's own copy (see ownedMediaPlan). */
+async function storeOwned(url: string | undefined, existingPath: string | undefined, newPath: string, prefix: string, label: string, failed: Set<string>) {
+  const plan = ownedMediaPlan(url, existingPath, newPath, prefix);
+  if (plan.kind === "none") return { cloudPath: undefined, url: url };
+  if (plan.kind === "keep") return { cloudPath: plan.cloudPath, url: undefined };
+  try {
+    await copyToStorage(plan.from, plan.cloudPath);
+    return { cloudPath: plan.cloudPath, url: undefined };
+  } catch {
+    // Couldn't read it right now: keep the previous reference untouched (old behaviour) and say so.
+    failed.add(label);
+    if (plan.fallbackPath) return { cloudPath: plan.fallbackPath, url: undefined };
+    if (url?.startsWith("blob:")) throw new Error(`“${label}” couldn't be prepared for saving. Try saving again.`);
+    return { cloudPath: undefined, url };
+  }
 }
 
 async function prepareSession(session: CloudSession, userId: string, projectId: string): Promise<CloudSession> {
   const notStored = new Set<string>();
+  const prefix = `${userId}/${projectId}/`;
+  const mediaFailed = new Set<string>();
   const tracks = await Promise.all(session.tracks.map(async (track) => {
     const up = async (clip: AudioClip): Promise<AudioClip> => {
       const alts = clip.alts ? await Promise.all(clip.alts.map(up)) : undefined;
       if (!clip.url && !clip.cloudPath) return { ...clip, alts };
-      return { ...clip, alts, ...(await storeMedia(clip.url, clip.cloudPath, `${userId}/${projectId}/audio/${clip.id}-${safe(clip.name)}`)) };
+      return { ...clip, alts, ...(await storeOwned(clip.url, clip.cloudPath, `${userId}/${projectId}/audio/${clip.id}-${safe(clip.name)}`, prefix, clip.name, mediaFailed)) };
     };
     const clips = await Promise.all((track.clips ?? []).map(up));
     let sampler = track.sampler;
     if (sampler?.url || sampler?.cloudPath) {
-      const stored = await storeMedia(sampler.url, sampler.cloudPath, `${userId}/${projectId}/samples/${track.id}-${safe(sampler.name)}`);
+      const stored = await storeOwned(sampler.url, sampler.cloudPath, `${userId}/${projectId}/samples/${track.id}-${safe(sampler.name)}`, prefix, sampler.name, mediaFailed);
       sampler = { ...sampler, cloudPath: stored.cloudPath, url: stored.url ?? "" };
     }
     const sampleUploads = new Map<string, Promise<string | null>>();
@@ -116,8 +128,13 @@ async function prepareSession(session: CloudSession, userId: string, projectId: 
   }));
   const padBank: Record<number, SavedPad> = {};
   for (const [key, pad] of Object.entries(session.padBank)) {
-    const stored = await storeMedia(pad.url, pad.cloudPath, `${userId}/${projectId}/pads/${key}-${safe(pad.name)}`);
+    const stored = await storeOwned(pad.url, pad.cloudPath, `${userId}/${projectId}/pads/${key}-${safe(pad.name)}`, prefix, pad.name, mediaFailed);
     padBank[Number(key)] = { ...pad, cloudPath: stored.cloudPath, url: stored.url ?? "" };
+  }
+  if (mediaFailed.size) {
+    toast.warning(`${mediaFailed.size === 1 ? "A sound" : `${mediaFailed.size} sounds`} couldn't be copied into the project`, {
+      description: `${[...mediaFailed].slice(0, 4).join(", ")} — the old link was kept. Load ${mediaFailed.size === 1 ? "it" : "them"} again and save so ${mediaFailed.size === 1 ? "it keeps" : "they keep"} playing later.`,
+    });
   }
   if (notStored.size) {
     toast.warning(`${notStored.size === 1 ? "A drum sample" : `${notStored.size} drum samples`} couldn't be copied into the project`, {
