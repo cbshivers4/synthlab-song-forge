@@ -13,7 +13,7 @@ import { effectFamily } from "./EffectWorkbench";
 import { EffectPresetMenu } from "./EffectPresetMenu";
 import { BypassButton, HardwareBypass } from "./HardwareBypass";
 
-function instrumentModule(track: Track): { label: string; icon: React.ReactNode; panel: "synth" | "drums" | "sampler" | "piano"; tone: string } {
+function instrumentModule(track: Track): { label: string; icon: React.ReactNode; panel: "synth" | "drums" | "sampler" | "pads" | "piano"; tone: string } {
   if (track.kind === "drum") return { label: "Drum Machine", icon: <Disc3 className="size-3.5" />, panel: "drums", tone: "drums" };
   if (isPadSamplerTrack(track)) return { label: "Pad Sampler", icon: <AudioLines className="size-3.5" />, panel: "pads", tone: "sampler" };
   if (track.kind === "sampler") return { label: "Sampler", icon: <AudioLines className="size-3.5" />, panel: "sampler", tone: "sampler" };
