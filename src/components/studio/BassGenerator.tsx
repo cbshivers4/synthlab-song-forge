@@ -9,7 +9,7 @@ import { getBeatsPerBar } from "@/lib/synclab/timebase";
 import { SYNTH_PRESETS, applyPreset } from "@/lib/synclab/presets";
 
 const BASS_SOUNDS = SYNTH_PRESETS.filter((p) => p.category === "Bass").map((p) => p.name);
-import { BASS_STYLES, BASS_TEMPLATES, cleanBassPatch, generateBass, varyBass, NOTE_NAMES, PROGRESSIONS, rootsFromKey, rootsFromTracks, type BassStyle } from "@/lib/synclab/bass-gen";
+import { BASS_STYLES, BASS_TEMPLATES, cleanBassPatch, generateBass, riffBass, varyBass, NOTE_NAMES, PROGRESSIONS, rootsFromKey, rootsFromTracks, type BassStyle } from "@/lib/synclab/bass-gen";
 
 export function BassGenerator() {
   const { tracks, transport, addTrack, updateTrack, setTransport } = useStudio();
@@ -38,7 +38,10 @@ export function BassGenerator() {
   const pv = usePreviewTrack();
   const label = BASS_STYLES.find((s) => s.id === style)!.label.toUpperCase();
   const [template, setTemplate] = useState<string | null>(null);
-  const signature = `${roots.join(",")}|${style}|${octave}|${barSteps}`;
+  // A template keeps its own riff while its pattern is selected; picking another pattern uses that pattern.
+  const riffOf = BASS_TEMPLATES.find((x) => x.id === template && x.style === style)?.riff;
+  const plainLine = () => (riffOf ? riffBass(roots, riffOf, barSteps, octave) : generateBass(roots, style, barSteps, octave));
+  const signature = `${roots.join(",")}|${style}|${octave}|${barSteps}|${riffOf ? template : ""}`;
   const [made, setMade] = useState<{ notes: ReturnType<typeof generateBass>; signature: string } | null>(null);
   const generated = made && made.signature === signature ? made.notes : null;
   const [variation, setVariation] = useState(0);
@@ -46,7 +49,7 @@ export function BassGenerator() {
     // Pressing again with the same settings makes a new variation; changing settings starts from the plain line.
     const v = made && made.signature === signature ? variation + 1 : 0;
     setVariation(v);
-    const notes = varyBass(generateBass(roots, style, barSteps, octave), v, minor, barSteps);
+    const notes = varyBass(plainLine(), v, minor, barSteps);
     setMade({ notes, signature });
     toast.success(v ? `Bassline variation ${v}` : "Bassline generated", { description: `${notes.length} notes over ${bars} bars — preview it or add it to the timeline.` });
   };
@@ -58,14 +61,14 @@ export function BassGenerator() {
     setTonic(t.tonic); setMinor(t.minor); setProg(t.prog); setFollow(false);
     const degrees = PROGRESSIONS.find((p) => p.id === t.prog)!.degrees;
     const r = rootsFromKey(t.tonic, t.minor, degrees, bars);
-    const notes = generateBass(r, t.style, barSteps, t.octave);
+    const notes = riffBass(r, t.riff, barSteps, t.octave);
     setVariation(0);
-    setMade({ notes, signature: `${r.join(",")}|${t.style}|${t.octave}|${barSteps}` });
+    setMade({ notes, signature: `${r.join(",")}|${t.style}|${t.octave}|${barSteps}|${t.id}` });
     toast.success(`${t.label} bassline generated`, { description: `${notes.length} notes in ${NOTE_NAMES[t.tonic]} ${t.minor ? "minor" : "major"} — check the waveform, then preview or add it.` });
   };
   const activeTemplate = BASS_TEMPLATES.find((t) => t.id === template);
   const build = (name: string, withSound = sound) => {
-    const notes = generated ?? generateBass(roots, style, barSteps, octave);
+    const notes = generated ?? plainLine();
     const id = addTrack("instrument", name, withSound, { keepPanel: true });
     updateTrack(id, { steps: bars * barSteps, notes, patch: cleanBassPatch(applyPreset(withSound)) });
     return { id, notes };

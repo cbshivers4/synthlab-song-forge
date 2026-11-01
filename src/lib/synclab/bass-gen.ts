@@ -153,7 +153,7 @@ export function cleanBassPatch(p: import("./types").SynthPatch): import("./types
   // and stop the filter envelope or LFOs from sweeping it back open.
   const bright = q.oscillators.some((o) => o.on && (o.wave === "sawtooth" || o.wave === "square"));
   q.cutoff = Math.min(q.cutoff, bright ? 650 : 1200);
-  q.filterEnv = { ...q.filterEnv, amount: Math.min(q.filterEnv.amount, 0.25) };
+  q.filterEnv = { ...q.filterEnv, amount: Math.min(q.filterEnv.amount, bright ? 300 : 600) }; // Hz of sweep
   q.lfos = q.lfos.map((l) => (l.destination === "pitch" || l.destination === "filter" ? { ...l, amount: l.amount * 0.3 } : l));
   q.analog = Math.min(q.analog ?? 0, 0.05);
   q.noise = 0;

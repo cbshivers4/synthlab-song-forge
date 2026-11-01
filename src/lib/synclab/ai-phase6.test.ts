@@ -44,3 +44,38 @@ describe("Bass Generator regenerate", () => {
     for (let i = 1; i < sorted.length; i++) expect(sorted[i]!.step).toBeGreaterThanOrEqual(sorted[i - 1]!.step + sorted[i - 1]!.length);
   });
 });
+
+import { BASS_TEMPLATES, cleanBassPatch, riffBass, rootsFromKey, PROGRESSIONS } from "./bass-gen";
+import { applyPreset } from "./presets";
+
+describe("Bass Generator templates and clean sound", () => {
+  const line = (id: string) => {
+    const t = BASS_TEMPLATES.find((x) => x.id === id)!;
+    const roots = rootsFromKey(t.tonic, t.minor, PROGRESSIONS.find((p) => p.id === t.prog)!.degrees, 4);
+    return riffBass(roots, t.riff, 16, t.octave);
+  };
+  it("every template plays a different melody (pitch order relative to its key)", () => {
+    const shapes = BASS_TEMPLATES.map((t) => {
+      const ns = line(t.id);
+      return ns.map((n) => `${n.step}:${n.pitch - ns[0]!.pitch}`).join(",");
+    });
+    expect(new Set(shapes).size).toBe(BASS_TEMPLATES.length);
+  });
+  it("each template answers bar 1 with a different bar 2", () => {
+    for (const t of BASS_TEMPLATES) {
+      const ns = line(t.id);
+      const bar = (b: number) => ns.filter((n) => Math.floor(n.step / 16) === b).map((n) => `${n.step % 16}:${n.pitch}`).join(",");
+      expect(bar(1)).not.toBe(bar(0));
+    }
+  });
+  it("generated bass has no drive, no resonant peak and a round tone", () => {
+    for (const t of BASS_TEMPLATES) {
+      const p = cleanBassPatch(applyPreset(t.sound));
+      expect(p.clean).toBe(true);
+      expect(p.drive).toBe(0);
+      expect(p.resonance).toBeLessThanOrEqual(1);
+      expect(p.fx.distortion + (p.fx.saturation ?? 0) + (p.fx.bitcrush ?? 0)).toBe(0);
+      expect(p.cutoff).toBeLessThanOrEqual(1200);
+    }
+  });
+});
