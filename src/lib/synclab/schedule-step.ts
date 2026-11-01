@@ -1,3 +1,4 @@
+import { arpHitOffset, arpStepSeconds } from "./synth-timing";
 import type { getEngine } from "./audio-engine";
 import { clipRate, laneValueAt, type Track, type Transport } from "./types";
 import { songSteps, stepSeconds, stepsPerBar, STEPS_PER_BEAT } from "./timebase";
@@ -158,8 +159,8 @@ export function scheduleStep(engine: Engine, list: Track[], tp: Transport, n: nu
           const arp = t.patch.arp;
           const oct = Math.max(1, Math.round(arp.octaves));
           const rate = Math.max(0.25, arp.rate || 1);
-          const arpStep = stepDur / rate;
-          const hits = Math.max(1, Math.round(note.length * rate));
+          const arpStep = arpStepSeconds(arp, stepDur);
+          const hits = Math.max(1, Math.round((note.length * stepDur) / arpStep));
           const up = Array.from({ length: oct }, (_, k) => k);
           const seq = arp.direction === "down" ? [...up].reverse()
             : arp.direction === "updown" ? (oct > 1 ? [...up, ...up.slice(1, -1).reverse()] : up)
@@ -167,7 +168,7 @@ export function scheduleStep(engine: Engine, list: Track[], tp: Transport, n: nu
             : up;
           for (let i = 0; i < hits; i++) {
             const k = arp.direction === "random" ? Math.floor(Math.random() * oct) : seq[i % seq.length] ?? 0;
-            engine.playNote(t.id, t.patch, note.pitch + octShift + k * 12, arpStep * arp.gate, note.velocity, swung + i * arpStep);
+            engine.playNote(t.id, t.patch, note.pitch + octShift + k * 12, arpStep * arp.gate, note.velocity, swung + arpHitOffset(i, arpStep, arp.swing));
           }
         } else {
           engine.playNote(t.id, t.patch, note.pitch + octShift, dur, note.velocity, swung + (note.step - step0) * stepDur);

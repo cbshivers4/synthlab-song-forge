@@ -381,10 +381,10 @@ function SynthTrackEditor({ track }: { track: Track }) {
               <div className="flex flex-wrap items-end gap-2 p-2">
                 <Knob label="RATE" midiTarget={{ id: track.id, param: `synth:lfo:${i}:rate` }} min={0.05} max={20} step={0.05} value={lfo.rate} onChange={(v) => set({ lfos: patch.lfos.map((l, j) => (j === i ? { ...l, rate: v } : l)) })} />
                 <Knob label="AMOUNT" midiTarget={{ id: track.id, param: `synth:lfo:${i}:amount` }} value={lfo.amount} onChange={(v) => set({ lfos: patch.lfos.map((l, j) => (j === i ? { ...l, amount: v } : l)) })} />
-                <Select value={lfo.destination} onValueChange={(v) => set({ lfos: patch.lfos.map((l, j) => (j === i ? { ...l, destination: v as never } : l)) })}>
+                <Select value={lfo.destination === "wavetable" ? "pitch" : lfo.destination} onValueChange={(v) => set({ lfos: patch.lfos.map((l, j) => (j === i ? { ...l, destination: v as never } : l)) })}>
                   <SelectTrigger className="h-6 w-24 text-[10px]"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {["pitch", "filter", "volume", "pan", "wavetable"].map((d) => (
+                    {["pitch", "filter", "volume", "pan"].map((d) => (
                       <SelectItem key={d} value={d}>{d}</SelectItem>
                     ))}
                   </SelectContent>
