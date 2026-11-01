@@ -1,6 +1,6 @@
 import { getPlayStep, usePlayStep } from "@/lib/synclab/playhead";
 import { useEffect, useMemo, useReducer } from "react";
-import { ArrowDownToLine, Circle, Mic, Play, RotateCcw, Square, Trash2, Volume2, VolumeX } from "lucide-react";
+import { ArrowDownToLine, Circle, Mic, Play, RotateCcw, Square, Trash2, Undo2, Volume2, VolumeX } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -145,6 +145,7 @@ function LoopDonut({ slot, send }: { slot: LoopSlot; send: (i: number) => void }
       </div>
       <div className="flex w-full max-w-72 gap-1">
         <Button variant="outline" className="h-10 flex-1" disabled={!slot.buffer} onClick={() => send(slot.index)} aria-label={`Send loop ${slot.index + 1} to timeline`}><ArrowDownToLine className="size-4" /> Timeline</Button>
+        <Button variant="outline" size="icon" className="size-10" disabled={!looper.canUndo(slot.index) || slot.overdubbing || slot.state === "armed" || slot.state === "recording"} onClick={() => looper.undo(slot.index)} aria-label={`Undo last overdub on loop ${slot.index + 1}`} title="Undo last overdub"><Undo2 className="size-4" /></Button>
         <Button variant="outline" size="icon" className="size-10" disabled={slot.state === "empty"} onClick={() => looper.clear(slot.index)} aria-label={`Clear loop ${slot.index + 1}`} title="Clear"><Trash2 className="size-4" /></Button>
       </div>
     </div>
