@@ -141,4 +141,5 @@
 - [x] Phase 4: drum HOLD wired, note repeat (hold-to-roll, 6 rates), sampler/pad knobs + Normalize, reverse plays the trimmed part, preset search, 8 Sequence presets, honest mod-matrix warnings, drum envelope knobs
 - [x] Drum pattern chaining (patterns 1–8 in order with bars each, CHAIN on/off, playing step lit, timeline label)
 - [ ] Phase 4 not done: multi-sample layers, separate loop points, per-pad sends, per-track swing
-- [ ] Phases 5–8: wait for Phase 4 report
+- [ ] Phase 5: desktop + mobile polish — audit + fixes in progress
+- [ ] Phases 6–8: wait for Phase 5 report
