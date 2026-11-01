@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Bot, Copy, Send } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
+import { AiUsesLeft, announceAiUse } from "./AiUsesLeft";
 import { Button } from "@/components/ui/button";
 import { usePreviewTrack } from "@/lib/synclab/use-preview-track";
 import { PreviewButtons } from "./PreviewButtons";
@@ -47,7 +48,10 @@ export function CoProducer() {
     return [
       `Tempo ${transport.bpm} BPM, ${getBeatsPerBar()}/4.`,
       used ? `Notes used: ${used}.` : "No notes written yet.",
-      `Tracks: ${tracks.map((t) => `${t.name} (${t.kind}${t.notes?.length ? `, ${t.notes.length} notes` : ""}${t.clips?.length ? `, ${t.clips.length} clips` : ""})`).join("; ") || "none"}.`,
+      `Tracks: ${tracks.map((t) => {
+        const fx = (t.plugins ?? []).filter((p) => !p.bypass).map((p) => p.name).join("/");
+        return `${t.name} (${t.kind}${t.notes?.length ? `, ${t.notes.length} notes` : ""}${t.clips?.length ? `, ${t.clips.length} clips` : ""}, fader ${Math.round(t.volume * 100)}%, pan ${Math.round(t.pan * 100)}${t.muted ? ", muted" : ""}${fx ? `, effects: ${fx}` : ", no effects"})`;
+      }).join("; ") || "none"}.`,
     ].join("\n").slice(0, 3800);
   };
 
@@ -59,6 +63,7 @@ export function CoProducer() {
     setBusy(true);
     try {
       const res = await ask({ data: { question, song: songSummary() } });
+      announceAiUse();
       if (res.ok) setMsgs((m) => [...m, { role: "ai", text: res.result.reply, result: res.result }]);
       else { setMsgs((m) => [...m, { role: "ai", text: res.error }]); }
     } catch (e) {
@@ -113,7 +118,8 @@ export function CoProducer() {
         <Bot className="size-5 text-primary" />
         <div>
           <h2 className="font-mono text-sm font-bold tracking-[0.18em]">AI CO-PRODUCER</h2>
-          <p className="text-xs text-muted-foreground">Ask for ideas, chords, basslines or drum patterns. It sees your tempo, tracks and notes. Uses AI credits.</p>
+          <p className="text-xs text-muted-foreground">Ask for ideas, chords, basslines or drum patterns. It reads your tempo, notes, track list, effects and fader/pan/mute settings — not the audio itself. Ideas play as a preview before you add them.</p>
+          <AiUsesLeft />
         </div>
       </header>
 
