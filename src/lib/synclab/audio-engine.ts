@@ -62,6 +62,14 @@ const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
 
 export const midiToFreq = (n: number) => 440 * Math.pow(2, (n - 69) / 12);
 
+/** Trim window (0..1) to read from the (possibly reversed) buffer so reverse plays the selected part backwards. */
+export function sampleWindow(start: number, end: number, reverse: boolean): [number, number] {
+  const a0 = clamp(start, 0, 0.999);
+  const b0 = clamp(end, a0 + 0.001, 1);
+  if (!reverse) return [a0, b0];
+  return [clamp(1 - b0, 0, 0.999), clamp(1 - a0, 1 - b0 + 0.001, 1)];
+}
+
 function makeImpulse(ctx: AudioContext, decay: number) {
   const rate = ctx.sampleRate;
   const len = Math.max(1, Math.floor(rate * decay));
@@ -2057,8 +2065,7 @@ export class SyncLabEngine {
     if (!base) return null;
     const sync = s.syncToBpm && s.sampleBpm && s.sampleBpm > 0 ? this.tempo / s.sampleBpm : 1;
     const rate = clamp(Math.pow(2, s.pitch / 12) * sync, 0.0625, 16);
-    const a = clamp(s.start, 0, 0.999);
-    const b = clamp(s.end, a + 0.001, 1);
+    const [a, b] = sampleWindow(s.start, s.end, !!s.reverse);
     const win = base.duration * (b - a);
     const len = win / rate;
     const sr = base.sampleRate;
@@ -2152,8 +2159,8 @@ export class SyncLabEngine {
     const rate = Math.pow(2, (midi - s.rootNote + s.pitch) / 12) * sync;
     src.playbackRate.value = clamp(rate, 0.0625, 16);
 
-    const a = clamp(s.start, 0, 0.999);
-    const b = clamp(s.end, a + 0.001, 1);
+    // Reverse plays the trimmed part backwards: in the flipped buffer that part sits at [1 − end, 1 − start].
+    const [a, b] = sampleWindow(s.start, s.end, !!s.reverse);
     const offset = base.duration * a;
     const window = base.duration * (b - a);
     const playable = window / src.playbackRate.value;
