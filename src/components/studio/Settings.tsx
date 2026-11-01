@@ -681,7 +681,8 @@ export function Settings() {
         <LibraryPanel />
       </TabsContent>
       <TabsContent value="sync" className="mt-4">
-        {["MIDI clock input / output", "Song position / Start / Stop / Continue", "MIDI clock offsets", "Ableton Link"].map((label) => <Row key={label} label={label} hint="External transport synchronization is not implemented."><span className="text-xs text-muted-foreground">Not available now</span></Row>)}
+        <MidiClockRows />
+        {["MIDI clock offsets", "Ableton Link"].map((label) => <Row key={label} label={label} hint="Not implemented."><span className="text-xs text-muted-foreground">Not available now</span></Row>)}
         <Row label="Ableton project handoff" hint="Audio stems and standard MIDI export are available; this is not live synchronization."><Button variant="secondary" onClick={() => setPanel("apps")}>Other apps</Button></Row>
       </TabsContent>
       <TabsContent value="controls" className="mt-4">
@@ -817,4 +818,17 @@ function InputMeter() {
       <div ref={bar} className="h-full w-0 bg-primary data-[clip=1]:bg-destructive" />
     </div>
   );
+}
+
+function MidiClockRows() {
+  const [prefs, setPrefs] = useState(midiClockPrefs);
+  useEffect(() => onMidiClockPrefs(() => setPrefs({ ...midiClockPrefs() })), []);
+  return <>
+    <Row label="Send MIDI clock" hint="Sends 24-per-beat clock to every MIDI output while the song plays, with Start, Continue (from the song position) and Stop. Drum machines and other apps set to external clock follow SYNCLAB's tempo.">
+      <Switch aria-label="Send MIDI clock" checked={prefs.send} onCheckedChange={(v) => setMidiClockPrefs({ send: v })} />
+    </Row>
+    <Row label="Follow MIDI clock" hint="Start, Continue and Stop from your enabled MIDI inputs control the song, and their clock sets the tempo (whole BPM). Turn off Send MIDI clock on the other device's side to avoid a loop.">
+      <Switch aria-label="Follow MIDI clock" checked={prefs.follow} onCheckedChange={(v) => setMidiClockPrefs({ follow: v })} />
+    </Row>
+  </>;
 }
