@@ -54,13 +54,5 @@ Recording-region helpers bound edits; patternRegion bounds drums. Captured notes
 Touch genre loops are pure MIDI compositions in touch-loop-library; load through patch.touch so editing and playback share state.
 Project exits use AppProvider/ProjectCloseGuard on both layouts: compare musical snapshots and await recording before save-and-close to preserve manual saving.
 Shortcuts share studio actions and yield to controls/claimed keys to avoid doubling.
-Bulk drums use atomic store transforms preserving empty steps, loop bounds and hit metadata; shared controls prevent divergent editors.
-Sound screens use shared tokens and real parameter drag points with 20 fps signal drawing, never fake wave activity.
-Effect editors share EffectPresetMenu and a kind-specific factory recipe library; derive the selected name from stored parameter values so manual edits, project reloads and track/bus/master editors agree without duplicate preset state.
-Modular Tech uses definition-driven controls and narrow/wide hardware decks; each module type must implement matching DSP ports in the shared voice builder so saved patches, live preview and offline export agree. Cable centers use canvasPoint against the SVG overlay so sideways-phone transforms cannot offset connections.
-Mute/solo presses record as per-track switch events in the scheduler's reachStep during timeline or tape takes (replace semantics) and replay only at recorded presses, so manual presses still work between them.
-The "My Computer" file list is one shared ComputerFiles component used by the desktop left menu and the phone/narrow navigation bar, so both stay in sync.
 Desktop workspace layout prefs (split view + timeline height in workspace-prefs.ts, timeline zoom, rail collapse/sections) are device-only localStorage, never project data; full-workspace editors stay the default and split view is opt-in.
 Every paid AI server function reserves a use with reserveAiUse (src/lib/ai-quota.ts → consume_ai_use RPC) before calling the provider and refunds on provider failure, so the per-user daily limit is enforced server-side, never in the browser.
-MIDI export (midi-export.ts) collects notes by running scheduleStep against a note-collecting stand-in engine, so .mid files match playback; stems/one-track exports re-render through renderSong with only that track soloed.
-Cloud saves store sampler, clip and pad-sampler audio as the project's own copy (ownedMediaPlan), like drum pads, so duplicates survive deletion of the original.
