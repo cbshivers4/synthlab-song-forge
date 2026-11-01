@@ -434,7 +434,7 @@ export function Settings() {
             outputs={outputs}
             inputDevice={p.inputDevice}
             channel={inChan}
-            sampleRate={getEngine().sampleRate}
+            sampleRate={getEngine().ctx ? getEngine().sampleRate : 0}
             scanning={scanning}
           />
         </div>
@@ -522,7 +522,7 @@ export function Settings() {
           </Button>
         </Row>
         <Row label="Sample rate" hint="Set by your device and browser">
-          <span className="font-mono text-sm text-primary">{getEngine().sampleRate} Hz</span>
+          <span className="font-mono text-sm text-primary">{getEngine().ctx ? `${getEngine().sampleRate} Hz` : "Shown once audio starts"}</span>
         </Row>
         <Row label="Input monitoring" hint="Hear yourself while recording">
           <Switch
