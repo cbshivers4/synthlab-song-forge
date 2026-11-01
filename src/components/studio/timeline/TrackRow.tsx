@@ -1,4 +1,5 @@
 import { getPlayStep } from "@/lib/synclab/playhead";
+import { editorPanelFor } from "@/lib/synclab/track-editor";
 import { deleteSelectedPart, selectedPartBounds } from '@/lib/synclab/workflow';
 import { loopRegion } from "@/lib/synclab/recording-region";
 import { materialEnd } from "@/lib/synclab/arrangement-edit";
@@ -131,13 +132,10 @@ export function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track:
   // Read when the action runs, so the track row doesn't re-render on every playback step.
   const playFracNow = () => Math.min(0.98, Math.max(0.02, (getPlayStep() % 16) / 16));
 
-  const editorPanel: PanelId =
-    track.kind === "drum" ? "drums"
-    : track.kind === "sampler" ? "sampler"
-    : track.kind === "instrument" || track.kind === "midi" ? "synth"
-    : null;
+  const editorPanel: PanelId = editorPanelFor(track);
   const editorLabel =
     track.kind === "drum" ? "Open drum machine"
+    : editorPanel === "pads" ? "Open pad sampler"
     : track.kind === "sampler" ? "Open sampler"
     : "Open instrument";
   const openTrackEditor = (id: string = track.id) => {
@@ -331,7 +329,7 @@ export function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track:
 
   const openEditor = () => {
     select(track.id);
-    setPanel(track.kind === "drum" ? "drums" : track.kind === "audio" ? "mixer" : track.kind === "sampler" ? "sampler" : "synth");
+    setPanel(track.kind === "audio" ? "mixer" : editorPanelFor(track) ?? "synth");
   };
 
   const startPhoneGesture = (e: React.PointerEvent<HTMLDivElement>) => {

@@ -456,6 +456,8 @@ export interface Track {
   id: string;
   name: string;
   kind: TrackKind;
+  /** sampler channel that belongs to the Pad Sampler (opens it instead of the Sampler) */
+  padSampler?: boolean | undefined;
   color: string;
   /** id from TRACK_ICONS; when unset the icon is picked automatically from the kind */
   icon?: string | undefined;

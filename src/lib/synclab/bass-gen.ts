@@ -16,13 +16,45 @@ export const BASS_STYLES: { id: BassStyle; label: string; hint: string }[] = [
 ];
 
 /** Genre starting points: pattern, sound, key, progression and the usual tempo. */
-export const BASS_TEMPLATES: { id: string; label: string; style: BassStyle; sound: string; octave: number; tonic: number; minor: boolean; prog: string; bpm: number }[] = [
-  { id: "detroit-techno", label: "Detroit Techno", style: "detroit", sound: "Techno Drone Bass", octave: 1, tonic: 5, minor: true, prog: "1-1-1-1", bpm: 132 },
-  { id: "electro", label: "Electro", style: "electro", sound: "Sub Bass", octave: 1, tonic: 0, minor: true, prog: "1-6-4-5", bpm: 126 },
-  { id: "house", label: "House", style: "house", sound: "Acid Rubber", octave: 1, tonic: 9, minor: true, prog: "1-6-4-5", bpm: 124 },
-  { id: "trance", label: "Trance", style: "trance", sound: "Reese Bass", octave: 1, tonic: 9, minor: true, prog: "6-4-1-5", bpm: 138 },
-  { id: "ghetto-tech", label: "Ghetto Tech", style: "ghettotech", sound: "Ghetto Tech Bass", octave: 1, tonic: 7, minor: true, prog: "1-1-1-1", bpm: 150 },
+/** One riff note inside a 16-step bar: [step, length, semitones above the bar's root, velocity]. */
+export type RiffNote = [number, number, number, number];
+
+/**
+ * Genre starting points. Each has its own two-bar riff (bar A, then answer bar B) so every
+ * template plays a different bass melody, not just a different rhythm. Intervals follow the key.
+ */
+export const BASS_TEMPLATES: { id: string; label: string; style: BassStyle; sound: string; octave: number; tonic: number; minor: boolean; prog: string; bpm: number; riff: [RiffNote[], RiffNote[]] }[] = [
+  { id: "detroit-techno", label: "Detroit Techno", style: "detroit", sound: "Techno Drone Bass", octave: 1, tonic: 5, minor: true, prog: "1-1-1-1", bpm: 132,
+    riff: [[[2, 1, 0, 0.9], [3, 1, 12, 0.7], [6, 1, 0, 0.9], [7, 1, 10, 0.7], [10, 1, 0, 0.9], [11, 1, 12, 0.7], [14, 1, 7, 0.85], [15, 1, 3, 0.7]],
+           [[2, 1, 0, 0.9], [3, 1, 12, 0.7], [6, 1, 3, 0.9], [7, 1, 5, 0.75], [10, 1, 7, 0.9], [11, 1, 10, 0.75], [14, 2, 12, 0.85]]] },
+  { id: "electro", label: "Electro", style: "electro", sound: "Sub Bass", octave: 1, tonic: 0, minor: true, prog: "1-6-4-5", bpm: 126,
+    riff: [[[0, 3, 0, 1], [3, 1, 0, 0.75], [4, 2, 12, 0.85], [7, 1, 10, 0.7], [10, 2, 7, 0.85], [13, 1, 5, 0.7], [14, 2, 3, 0.8]],
+           [[0, 3, 0, 1], [3, 1, 0, 0.75], [6, 2, 3, 0.85], [8, 2, 5, 0.85], [10, 1, 7, 0.75], [12, 4, 10, 0.85]]] },
+  { id: "house", label: "House", style: "house", sound: "Round Bass", octave: 1, tonic: 9, minor: true, prog: "1-6-4-5", bpm: 124,
+    riff: [[[2, 2, 0, 0.9], [6, 2, 0, 0.85], [9, 1, 12, 0.7], [10, 2, 0, 0.9], [14, 2, 7, 0.85]],
+           [[2, 2, 0, 0.9], [6, 2, 3, 0.85], [10, 2, 5, 0.9], [13, 1, 7, 0.7], [14, 2, 10, 0.85]]] },
+  { id: "trance", label: "Trance", style: "trance", sound: "Reese Bass", octave: 1, tonic: 9, minor: true, prog: "6-4-1-5", bpm: 138,
+    riff: [[[1, 1, 0, 0.8], [2, 1, 0, 0.7], [3, 1, 12, 0.75], [5, 1, 0, 0.8], [6, 1, 0, 0.7], [7, 1, 12, 0.75], [9, 1, 0, 0.8], [10, 1, 0, 0.7], [11, 1, 12, 0.75], [13, 1, 7, 0.8], [14, 1, 7, 0.7], [15, 1, 12, 0.75]],
+           [[1, 1, 0, 0.8], [2, 1, 0, 0.7], [3, 1, 12, 0.75], [5, 1, 3, 0.8], [6, 1, 3, 0.7], [7, 1, 15, 0.75], [9, 1, 5, 0.8], [10, 1, 5, 0.7], [11, 1, 17, 0.75], [13, 1, 7, 0.8], [14, 1, 7, 0.7], [15, 1, 19, 0.75]]] },
+  { id: "ghetto-tech", label: "Ghetto Tech", style: "ghettotech", sound: "Ghetto Tech Bass", octave: 1, tonic: 7, minor: true, prog: "1-1-1-1", bpm: 150,
+    riff: [[[0, 3, 0, 1], [3, 1, 0, 0.8], [4, 1, 12, 0.85], [6, 2, 0, 0.9], [8, 3, 0, 1], [11, 1, 0, 0.8], [12, 2, 10, 0.85], [14, 2, 12, 0.85]],
+           [[0, 3, 0, 1], [3, 1, 3, 0.8], [4, 2, 5, 0.85], [6, 2, 7, 0.9], [8, 3, 0, 1], [11, 1, 7, 0.8], [12, 1, 10, 0.85], [13, 1, 12, 0.8], [14, 2, 15, 0.85]]] },
 ];
+
+/** A template's riff over the chord roots: bar A on even bars, answer bar B on odd bars, fitted to the bar length. */
+export function riffBass(roots: number[], riff: [RiffNote[], RiffNote[]], barSteps: number, octave = 1): MidiNote[] {
+  const base = 12 * (octave + 1);
+  const out: MidiNote[] = [];
+  let k = 0;
+  roots.forEach((pc, b) => {
+    const s0 = b * barSteps;
+    for (const [s, l, iv, v] of riff[b % 2]!) {
+      if (s >= barSteps) continue;
+      out.push({ id: `bass-${Date.now()}-${k++}`, step: s0 + s, length: Math.min(l, barSteps - s), pitch: base + pc + iv, velocity: v });
+    }
+  });
+  return out;
+}
 
 export const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 const MAJOR = [0, 2, 4, 5, 7, 9, 11];
@@ -114,8 +146,15 @@ export function cleanBassPatch(p: import("./types").SynthPatch): import("./types
   const q: import("./types").SynthPatch = JSON.parse(JSON.stringify(p));
   q.clean = true;
   q.drive = 0;
-  q.resonance = Math.min(q.resonance, 4);
-  if (q.filter2) q.filter2 = { ...q.filter2, resonance: Math.min(q.filter2.resonance, 4) };
+  // A resonant peak on a bass reads as buzz/grit: keep the filter smooth (Q ≈ 0.7–1).
+  q.resonance = Math.min(q.resonance, 1);
+  if (q.filter2) q.filter2 = { ...q.filter2, resonance: Math.min(q.filter2.resonance, 1) };
+  // Saw/square partials above ~1 kHz are what sounds "distorted" on a bass: keep the tone round,
+  // and stop the filter envelope or LFOs from sweeping it back open.
+  const bright = q.oscillators.some((o) => o.on && (o.wave === "sawtooth" || o.wave === "square"));
+  q.cutoff = Math.min(q.cutoff, bright ? 650 : 1200);
+  q.filterEnv = { ...q.filterEnv, amount: Math.min(q.filterEnv.amount, bright ? 300 : 600) }; // Hz of sweep
+  q.lfos = q.lfos.map((l) => (l.destination === "pitch" || l.destination === "filter" ? { ...l, amount: l.amount * 0.3 } : l));
   q.analog = Math.min(q.analog ?? 0, 0.05);
   q.noise = 0;
   q.unison = { ...q.unison, voices: 1, detune: 0 };
@@ -128,7 +167,7 @@ export function cleanBassPatch(p: import("./types").SynthPatch): import("./types
   const lowest = on.length ? Math.min(...on.map((o) => o.octave)) : 0;
   if (lowest < 0) q.oscillators = q.oscillators.map((o) => ({ ...o, octave: o.octave - lowest }));
   const sum = on.reduce((s, o) => s + o.level, 0);
-  if (sum > 0.8) q.oscillators = q.oscillators.map((o) => (o.on ? { ...o, level: (o.level * 0.8) / sum } : o));
+  if (sum > 0.7) q.oscillators = q.oscillators.map((o) => (o.on ? { ...o, level: (o.level * 0.7) / sum } : o));
   return q;
 }
 
