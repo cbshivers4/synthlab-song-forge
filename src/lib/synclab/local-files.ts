@@ -209,9 +209,14 @@ export async function playPreview(id: string) {
 export async function clipFromLocalFile(id: string, start: number): Promise<Clip> {
   const lf = registry.get(id);
   if (!lf) throw new Error("That file is no longer open — reopen its folder.");
+  return clipFromFile(lf.file, start);
+}
+
+/** Decodes any audio file into a waveform clip starting at `start` (steps). */
+export async function clipFromFile(file: File, start: number): Promise<Clip> {
   const engine = getEngine();
   await engine.init();
-  const name = lf.name.replace(/\.[^.]+$/, "").toUpperCase().slice(0, 18);
-  const loaded = await engine.loadSampleFile(lf.file, name);
+  const name = file.name.replace(/\.[^.]+$/, "").toUpperCase().slice(0, 18);
+  const loaded = await engine.loadSampleFile(file, name);
   return { id: uid(), name, peaks: loaded.peaks, duration: loaded.duration, url: loaded.url, start, offset: 0, length: loaded.duration, gain: 1 };
 }

@@ -15,7 +15,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { clipFromLocalFile } from "@/lib/synclab/local-files";
+import { clipFromFile, clipFromLocalFile } from "@/lib/synclab/local-files";
+import { snapDropStep, positionLabel } from "./drop-position";
 import { openTrackSettings } from "@/components/studio/TrackSettingsDialog";
 import { InsertRack } from "../mixer/InsertRack";
 import { EffectMenuItems } from "../EffectPicker";
@@ -231,6 +232,15 @@ export function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track:
   };
 
 
+  /** Song step under a drop on this row's lane (snapped to the grid); the playhead when dropped on the header. */
+  const dropStep = (e: React.DragEvent) => {
+    const lane = (e.currentTarget as HTMLElement).querySelector<HTMLElement>("[data-lane]");
+    if (!lane) return getPlayStep();
+    const rect = canvasRect(lane);
+    const x = canvasPoint(e.clientX, e.clientY).x;
+    if (x < rect.left || x > rect.right) return getPlayStep();
+    return snapDropStep((x - rect.left) / Math.max(1, rect.width), songSteps(transport.bars), transport.snap ?? 1);
+  };
   const onDrop = (e: React.DragEvent) => {
     setDropping(false);
     const movedId = e.dataTransfer.getData("application/x-synclab-track");
@@ -249,7 +259,24 @@ export function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track:
       e.preventDefault();
       e.stopPropagation();
       if (track.kind !== "sampler") {
-        toast("Drop audio files on a sampler channel", { description: "Or drop below the tracks to create one." });
+        // Audio files land as waveform clips exactly where they're dropped (snapped to the grid):
+        // on this audio channel, or on a new audio channel when dropped on an instrument/drum lane.
+        const at = dropStep(e);
+        void (async () => {
+          try {
+            const clip = await clipFromFile(file, at);
+            if (track.kind === "audio" || track.kind === "ai-vocal") {
+              fileStudio.addClip(track.id, clip);
+              select(track.id);
+            } else {
+              const id = fileStudio.addTrack("audio", clip.name);
+              if (id) fileStudio.addClip(id, clip);
+            }
+            toast.success(`${file.name} on the timeline`, { description: `${track.kind === "audio" || track.kind === "ai-vocal" ? `On ${track.name}` : "On a new audio track"} at ${positionLabel(at)}` });
+          } catch (err) {
+            toast.error("Could not read that audio file", { description: err instanceof Error ? err.message : undefined });
+          }
+        })();
         return;
       }
       select(track.id);
@@ -264,7 +291,7 @@ export function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track:
     if (payload.type === "localfile") {
       void (async () => {
         try {
-          const clip = await clipFromLocalFile(payload.id, getPlayStep());
+          const clip = await clipFromLocalFile(payload.id, dropStep(e));
           if (track.kind === "audio") {
             fileStudio.addClip(track.id, clip);
             select(track.id);
@@ -272,7 +299,7 @@ export function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track:
             const id = fileStudio.addTrack("audio", clip.name);
             if (id) fileStudio.addClip(id, clip);
           }
-          toast.success(`${payload.name} on the timeline`, { description: track.kind === "audio" ? `Added to ${track.name} at the playhead` : "Placed on a new audio track" });
+          toast.success(`${payload.name} on the timeline`, { description: track.kind === "audio" ? `Added to ${track.name} where you dropped it` : "Placed on a new audio track where you dropped it" });
         } catch (err) {
           toast.error("Could not read that audio file", { description: err instanceof Error ? err.message : undefined });
         }
