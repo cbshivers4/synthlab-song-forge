@@ -10,6 +10,7 @@ import { useStudio } from "@/lib/synclab/store";
 import { uid } from "@/lib/synclab/presets";
 import type { EditTool } from "@/lib/synclab/store";
 import { clipSeconds } from "@/lib/synclab/types";
+import { clipCopyAfter } from "@/lib/synclab/workflow";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { parseMidiFile } from "@/lib/synclab/midi-file";
 import { GRID_OPTIONS, RazorIcon, SNAP_OPTIONS, setCutFree, useCutFree } from "./shared";
@@ -115,9 +116,7 @@ export function EditToolbar() {
       toast("Pick a clip first", { description: "Click a clip on the timeline to duplicate it." });
       return;
     }
-    const stepDur = stepSeconds(transport.bpm);
-    const steps = Math.max(1, Math.round(clipSeconds(activeClip) / stepDur));
-    addClip(selected.id, { ...activeClip, id: uid(), name: `${activeClip.name} COPY`, start: (activeClip.start ?? 0) + steps });
+    addClip(selected.id, clipCopyAfter(activeClip, stepSeconds(transport.bpm), uid()));
   };
 
   const fade = (which: "in" | "out") => {

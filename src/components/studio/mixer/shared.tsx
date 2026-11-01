@@ -174,7 +174,7 @@ export function ClipLed({ id, compact }: { id: string; compact?: boolean }) {
   return (
     <button
       type="button"
-      title={clipped ? "Clipping — click to reset" : "No clipping"}
+      title={clipped ? "Clipping — click to reset the clip light and peak hold" : "No clipping — click to reset the peak hold"}
       onClick={(e) => {
         e.stopPropagation();
         clearClip(id);

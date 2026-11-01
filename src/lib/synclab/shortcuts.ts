@@ -21,7 +21,7 @@ export const SHORTCUTS = [
   { id: "copy", group: "Project & editing", keys: "Mod + C", key: "c", mod: true, description: "Copy the selected clip, or selected track contents." },
   { id: "cut", group: "Project & editing", keys: "Mod + X", key: "x", mod: true, description: "Cut the selected clip, or selected track contents." },
   { id: "paste", group: "Project & editing", keys: "Mod + V", key: "v", mod: true, description: "Paste contents at the playhead into the selected channel." },
-  { id: "duplicate", group: "Project & editing", keys: "Mod + D", key: "d", mod: true, description: "Duplicate the selected track, including its settings." },
+  { id: "duplicate", group: "Project & editing", keys: "Mod + D", key: "d", mod: true, description: "Duplicate the selected clip right after itself; with no clip selected, duplicate the whole track." },
   { id: "selectAll", group: "Project & editing", keys: "Mod + A", key: "a", mod: true, description: "Select all timeline tracks." },
   { id: "delete", group: "Project & editing", keys: "Delete", key: "Delete", description: "Delete only the selected clip or loop part; keep the channel." },
   { id: "delete", group: "Project & editing", keys: "Backspace", key: "Backspace", description: "Same as Delete; no selection leaves the channel untouched." },

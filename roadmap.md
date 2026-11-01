@@ -135,4 +135,6 @@
 - [ ] Phase 1 leftover: dormant Generate Stem/Separate Stems error wording (both Coming Soon)
 - [x] Phase 2: looper undo + song-bar sync + true rings, reel rotation from tape position, input loss/change handling, MIDI clock send/follow, honest sample-rate display (autosave/crash recovery excluded: manual-save-only rule)
 - [ ] Phase 2 not done (needs decisions/hardware): interface inputs beyond 1/2, loopback latency calibration, selectable sample rate/buffer (browser-limited), MIDI-note loops in looper
-- [ ] Phases 3–8: wait for Phase 2 report
+- [x] Phase 3: file drops at drop position, Ctrl+D clip duplicate, Ctrl/pinch zoom, undo-right-after-edit fix, per-clip colours, pan/width knobs (wheel + double-click reset), mixer peak hold
+- [ ] Phase 3 not done: independent MIDI/drum region move + edge trims, per-channel input selection, pre/post send switch, automation lane controls in mixer strips
+- [ ] Phases 4–8: wait for Phase 3 report

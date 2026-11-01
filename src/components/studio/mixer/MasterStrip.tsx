@@ -11,7 +11,7 @@ import { MidiLearnBlock } from "../MidiLearn";
 import { BUILT_IN_PLUGINS } from "@/lib/synclab/plugins";
 import type { BusState } from "@/lib/synclab/types";
 import { cn } from "@/lib/utils";
-import { clearClip, useClipped } from "@/lib/synclab/clip-monitor";
+import { clearClip, peakHoldDb, peakHoldText, useClipped } from "@/lib/synclab/clip-monitor";
 import { Scope } from "../Scope";
 import { FxMenu } from "./BusStrips";
 import { EqCurve } from "./ChannelEq";
@@ -157,25 +157,20 @@ function MasterWidth({ color }: { color: string }) {
   };
   const v = width?.params.find((p) => p.id === "width")?.value ?? 1;
   return (
-    <div className={cn(ROW.pan, "flex flex-col justify-center border-b border-border/60 px-1.5")} style={{ "--primary": color } as CSSProperties}>
-      <Slider
-        aria-label="Master stereo width"
-        aria-valuetext={v === 0 ? "Mono" : `${Math.round(v * 100)} percent`}
-        value={[v]}
+    <div className={cn(ROW.pan, "flex items-center justify-center border-b border-border/60 px-1.5")} style={{ "--primary": color } as CSSProperties}>
+      <Knob
+        label="WIDTH"
+        ariaLabel="Master stereo width"
+        layout="inline"
+        size={30}
+        value={v}
         min={0}
         max={2}
         step={0.01}
-        className="h-3"
-        onDoubleClick={() => setWidth(1)}
-        onValueChange={([n = 1]) => setWidth(n)}
+        defaultValue={1}
+        format={(n) => (n === 0 ? "MONO" : `${Math.round(n * 100)}%`)}
+        onChange={setWidth}
       />
-      <button
-        onClick={() => setWidth(1)}
-        title="Reset the main output to its original stereo width"
-        className="mt-0.5 text-center font-mono text-[8px] text-muted-foreground hover:text-foreground"
-      >
-        {v === 0 ? "MONO" : `${Math.round(v * 100)}%`}
-      </button>
     </div>
   );
 }
@@ -303,8 +298,8 @@ export function MasterStrip({ level: peak }: { level: number }) {
         <span className="font-mono text-[9px] text-muted-foreground" title="Fader position">
           {toDb(master.volume).toFixed(1)}
         </span>
-        <span className={cn("font-mono text-[9px]", peak > 0.98 ? "text-red-400" : "text-foreground/70")} title="Output level">
-          {fracToDb(peak).toFixed(1)}
+        <span className={cn("font-mono text-[9px]", peakHoldDb("master") > -0.2 ? "text-red-400" : "text-foreground/70")} title="Master peak hold (dBFS) — highest level since reset; click CLIP to reset" aria-label={`Master peak hold ${peakHoldText("master")} dB`}>
+          {peakHoldText("master")}
         </span>
         <ClipLed id="master" compact />
       </div>

@@ -20,6 +20,7 @@ import { EditToolbar, TimelineOptionsPanel } from "./timeline/EditToolbar";
 import { Ruler, SongPlayhead, TimelineOverview } from "./timeline/Ruler";
 import { FolderRow, TrackRow } from "./timeline/TrackRow";
 import { readDrag, synclabLogo } from "./timeline/shared";
+import { zoomAround } from "./timeline/drop-position";
 
 export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandlesVisible = true, pageScroll = false }: { phonePaged?: boolean; desktopStyle?: boolean; resizeHandlesVisible?: boolean; pageScroll?: boolean }) {
   const { tracks, transport, addTrack, addClip, setPanel, loadSample, folders, renameFolder, removeFolder, toggleFolderCollapsed, setTransport, moveTrackToIndex, selectBoxed } = useStudio();
@@ -74,6 +75,27 @@ export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandl
   const totalSteps = songSteps(transport.bars);
   const [over, setOver] = useState(false);
   const [zoom, setZoom] = useState(1);
+  const zoomRef = useRef(zoom);
+  zoomRef.current = zoom;
+  // Ctrl/Cmd + wheel (and trackpad pinch, which arrives as Ctrl + wheel) zooms around the pointer,
+  // keeping the bar under the mouse in place. Plain wheel still scrolls.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey && !e.metaKey) return;
+      e.preventDefault();
+      const next = zoomAround(zoomRef.current, e.deltaY);
+      if (next === zoomRef.current) return;
+      const rect = el.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const frac = (el.scrollLeft + x) / Math.max(1, el.scrollWidth);
+      setZoom(next);
+      requestAnimationFrame(() => { el.scrollLeft = frac * el.scrollWidth - x; });
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, []);
   const [headerWidth, setHeaderWidth] = useState(294);
   const widthLoaded = useRef(false);
   useEffect(() => {

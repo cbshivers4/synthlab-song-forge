@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { getPlayStep, usePlayStep } from "@/lib/synclab/playhead";
 import { deleteSelectedPart } from '@/lib/synclab/workflow';
 import { boundedRegions, loopRegion } from "@/lib/synclab/recording-region";
@@ -242,7 +243,7 @@ export function Waveform({ track }: { track: Track }) {
             data-selected={active}
             data-cutting={cutting}
             className="arrangement-clip group absolute inset-y-1 flex touch-none flex-col overflow-hidden rounded-[2px] border transition-colors"
-            style={{ left: `${left}%`, width: `max(0px, calc(${width}% - 2px))` }}
+            style={{ left: `${left}%`, width: `max(0px, calc(${width}% - 2px))`, ...(clip.color ? { "--clip-audio": clip.color, "--color-clip-audio": clip.color } : {}) } as CSSProperties}
             onPointerDown={(e) => {
               setActiveClip(track.id, clip.id);
               beginDrag(e, clip, "move");
@@ -262,7 +263,7 @@ export function Waveform({ track }: { track: Track }) {
                 onClick={(e) => {
                   e.stopPropagation();
                   updateTrack(track.id, {
-                    clips: [...clips, { ...clip, id: uid(), name: `${clip.name} COPY`, start: start + Math.round(steps) }],
+                    clips: [...clips, { ...clip, id: uid(), name: `${clip.name} COPY`, start: start + steps }],
                   });
                 }}
                 title="Duplicate clip"

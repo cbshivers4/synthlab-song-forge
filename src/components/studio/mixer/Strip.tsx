@@ -3,6 +3,7 @@ import { EffectPicker } from "../EffectPicker";
 import { type CSSProperties } from "react";
 import { ChevronLeft, ChevronRight, MoreVertical } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
+import { Knob } from "../Knob";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -13,11 +14,13 @@ import { TrackNotes } from "@/components/studio/TrackNotes";
 import { TrackIcon } from "@/components/studio/TrackStyle";
 import type { BusId, Track, VcaId } from "@/lib/synclab/types";
 import { cn } from "@/lib/utils";
-import { clearClip, useClipped } from "@/lib/synclab/clip-monitor";
+import { clearClip, peakHoldDb, peakHoldText, useClipped } from "@/lib/synclab/clip-monitor";
 import { Scope } from "../Scope";
 import { ChannelEq } from "./ChannelEq";
 import { DeviceSlots, SendsMenu } from "./InsertRack";
 import { BUSES, BUS_COLOR, ChannelGain, ClipLed, ColorDot, DB_TICKS, FADER_CAP, KindIcon, Meter, PANEL, ROW, SEND_KEYS, VCA_IDS, fracToDb, toDb } from "./shared";
+
+const panText = (p: number) => (Math.abs(p) < 0.005 ? "C" : p < 0 ? `L${Math.round(-p * 100)}` : `R${Math.round(p * 100)}`);
 
 /** Channel menu: rename, quick inserts, reset, duplicate, delete. */
 
@@ -233,26 +236,23 @@ export function Strip({
 
       {/* pan */}
       <div
-        className={cn(ROW.pan, "flex flex-col justify-center border-b border-border/60 px-1.5")}
+        className={cn(ROW.pan, "flex items-center justify-center border-b border-border/60 px-1.5")}
         style={{ "--primary": t.color } as CSSProperties}
         onClick={(e) => e.stopPropagation()}
       >
-        <Slider
-          aria-label={`${t.name} pan`}
-          value={[t.pan]}
+        <Knob
+          label="PAN"
+          ariaLabel={`${t.name} pan`}
+          layout="inline"
+          size={30}
+          value={t.pan}
           min={-1}
           max={1}
           step={0.01}
-          className="h-3"
-          onValueChange={([v = 0]) => updateTrack(t.id, { pan: v })}
+          defaultValue={0}
+          format={panText}
+          onChange={(v) => updateTrack(t.id, { pan: v })}
         />
-        <button
-          onClick={(e) => { e.stopPropagation(); updateTrack(t.id, { pan: 0 }); }}
-          title="Double-click resets to centre"
-          className="mt-0.5 text-center font-mono text-[8px] text-muted-foreground hover:text-foreground"
-        >
-          {t.pan === 0 ? "C" : t.pan < 0 ? `L${Math.round(-t.pan * 100)}` : `R${Math.round(t.pan * 100)}`}
-        </button>
       </div>
 
       {/* fader + scale + meter */}
@@ -295,8 +295,8 @@ export function Strip({
       {/* fader dB + live peak dB */}
       <div className={cn(ROW.readout, "flex items-center justify-between border-b border-border/60 px-1.5")}>
         <span className={cn("font-mono text-[9px]", vcaState ? "text-primary" : "text-muted-foreground")} title={vcaState ? `Fader ${toDb(t.volume).toFixed(1)} dB, after VCA ${t.vca}` : undefined}>{toDb(effective).toFixed(1)}</span>
-        <span className={cn("font-mono text-[9px]", level > 0.98 ? "text-red-400" : "text-foreground/70")}>
-          {fracToDb(level).toFixed(0)}
+        <span className={cn("font-mono text-[9px]", peakHoldDb(t.id) > -0.2 ? "text-red-400" : "text-foreground/70")} title="Peak hold (dBFS) — highest level since reset; click CLIP to reset" aria-label={`${t.name} peak hold ${peakHoldText(t.id)} dB`}>
+          {peakHoldText(t.id)}
         </span>
         <ClipLed id={t.id} compact />
       </div>

@@ -1,10 +1,15 @@
-import { clipSeconds, type Track } from './types';
+import { clipSeconds, type AudioClip, type Track } from './types';
 import { songSteps, stepSeconds } from './timebase';
 import { regionAt, unrollNotes, cutNotesAt, deleteRegion } from './note-cuts';
 
 /** Only an explicitly selected audio clip is an editing target. */
 export function selectedClip(track: Track | null | undefined) {
   return track?.clips?.find((clip) => clip.id === track.activeClipId);
+}
+
+/** A copy of the clip placed so it starts exactly where the original ends (no rounding gap). */
+export function clipCopyAfter<C extends AudioClip>(clip: C, stepDur: number, newId: string): C {
+  return { ...clip, id: newId, name: `${clip.name} COPY`, start: (clip.start ?? 0) + clipSeconds(clip) / stepDur };
 }
 
 export function selectedPartBounds(track: Track | null | undefined, bpm: number, bars: number, loop?: [number, number]): [number, number] | null {

@@ -25,7 +25,21 @@ function subscribe(fn: () => void) {
 }
 
 /** Feed a raw 0..1 peak for a channel id ("master" for the main output). */
+const peaks = new Map<string, number>();
+
+/** Highest raw peak since the last reset, in dBFS (−Infinity when silent). */
+export function peakHoldDb(id: string): number {
+  const p = peaks.get(id) ?? 0;
+  return p > 0 ? 20 * Math.log10(p) : -Infinity;
+}
+/** Peak readout text: one decimal, "−∞" when nothing has played. */
+export function peakHoldText(id: string): string {
+  const db = peakHoldDb(id);
+  return Number.isFinite(db) ? db.toFixed(1) : "−∞";
+}
+
 export function reportLevel(id: string, level: number) {
+  if (level > (peaks.get(id) ?? 0)) peaks.set(id, level);
   if (level >= CLIP_AT && !clipped.has(id)) {
     clipped.add(id);
     emit();
@@ -33,10 +47,12 @@ export function reportLevel(id: string, level: number) {
 }
 
 export function clearClip(id: string) {
+  peaks.delete(id);
   if (clipped.delete(id)) emit();
 }
 
 export function clearAllClips() {
+  peaks.clear();
   if (clipped.size) {
     clipped.clear();
     emit();

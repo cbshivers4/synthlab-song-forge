@@ -75,3 +75,6 @@ Synth and drum console finishes scope shared Knob parts and section hooks to the
 Studio rear mirrors front furniture in one measured canvas; phone Fit scales it with cables, while 100% retains native scrolling/routing. Both room canvases share wall art with CDN pointers and source/license credits, clear of equipment.
 
 Timeline.tsx and Mixer.tsx are thin entry points; their parts live in timeline/ (shared, clips, TrackRow, AutomationRow, EditToolbar, Ruler) and mixer/ (shared, InsertRack, ChannelEq, Strip, BusStrips, MasterStrip, PhoneMixer). Add new timeline/mixer code to the matching module instead of regrowing the entry files.
+Knob is the one rotary control (drag/Shift-fine, non-passive wheel, arrows/Page keys, Home or double-click to defaultValue, inline layout for compact rows); mixer pan and master width use it instead of sliders, faders stay vertical sliders.
+Mixer readouts show peak hold from clip-monitor (raw maxima since reset); the CLIP button resets both the clip light and the peak.
+Timeline file drops land at the dropped grid position (drop-position.ts); Ctrl/Cmd+wheel zooms around the pointer; Mod+D duplicates the selected clip exactly after itself (clipCopyAfter) before falling back to track duplication. The small per-clip quick menu (data-part-quick-menu) never blocks shortcuts.
