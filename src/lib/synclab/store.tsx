@@ -39,7 +39,7 @@ import { getMidiAccess, listInputs, listOutputs, midiSupported, midiUnsupportedM
 import { getPadBank, setPadBank } from "./pad-session";
 import { getLooper } from "./live-looper";
 import { getReelRecorder } from "./reel-recorder";
-import { switchEdge, switchStateAt, writeSwitchStep } from "./switch-automation";
+import { manualSwitchPatch, switchEdge, switchStateAt, writeSwitchStep } from "./switch-automation";
 import { scheduleStep as scheduleSongStep, triggerNote } from "./schedule-step";
 import { shownPassIndex, splitLoopPasses } from "./loop-takes";
 import { getPlayStep, setPlayStep } from "./playhead";
@@ -430,6 +430,11 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const tracksRef = useRef(tracks);
   tracksRef.current = tracks;
   const transportRef = useRef(transport);
+  /** True while a timeline or reel take is recording mute/solo presses. */
+  const isTakingSwitches = () => {
+    const tp = transportRef.current;
+    return !!tp.playing && (!!tp.recording || getReelRecorder().getSnapshot().mode === "recording");
+  };
   // While playing, the heard step comes from the playhead store; state holds it only between updates.
   transportRef.current = transport.playing ? { ...transport, step: getPlayStep() } : transport;
   setBeatsPerBar(transport.beatsPerBar);
