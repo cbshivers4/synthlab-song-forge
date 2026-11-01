@@ -94,7 +94,7 @@ async function prepareSession(session: CloudSession, userId: string, projectId: 
     }
     const sampleUploads = new Map<string, Promise<string | null>>();
     const upPad = async (pad: DrumPad): Promise<DrumPad> => {
-      const plan = drumSamplePlan(pad.sampleUrl, pad.sampleCloudPath, `${userId}/${projectId}/drums/${track.id}-${pad.id}-${safe(pad.sample ?? pad.name)}`);
+      const plan = drumSamplePlan(pad.sampleUrl, pad.sampleCloudPath, `${userId}/${projectId}/drums/${track.id}-${pad.id}-${safe(pad.sample ?? pad.name)}`, `${userId}/${projectId}/`);
       if (plan.kind === "none") return pad;
       if (plan.kind === "keep") return { ...pad, sampleCloudPath: plan.cloudPath, sampleUrl: undefined };
       // The same sample is shared by a pad's copies in every bank: copy it once.
