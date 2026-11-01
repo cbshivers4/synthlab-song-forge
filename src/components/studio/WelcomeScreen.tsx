@@ -1,8 +1,7 @@
-// ============= Full file contents =============
-
 import {
   AudioLines,
   Disc3,
+  Download,
   Grid2x2,
   Mic,
   Music2,
