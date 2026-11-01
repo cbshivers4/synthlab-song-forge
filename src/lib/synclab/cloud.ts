@@ -175,7 +175,7 @@ async function restoreSession(session: CloudSession): Promise<CloudSession> {
   }
   if (missing.size) {
     toast.warning(`${missing.size === 1 ? "A drum sample" : `${missing.size} drum samples`} couldn't be loaded`, {
-      description: `${[...missing].slice(0, 4).join(", ")} — the pad stays silent for its sample until you load the sound onto it again. Everything else opened normally.`,
+      description: `${[...missing].slice(0, 4).join(", ")} — those pads play their built-in drum sound until you load the sample onto them again. Everything else opened normally.`,
     });
   }
   return { ...session, tracks, padBank, transport: { ...session.transport, playing: false, recording: false, paused: false, step: 0 } };
@@ -254,7 +254,7 @@ export async function deleteCloudProject(project: CloudProject) {
   if (ownedPaths.length) {
     const { error: cleanupError } = await supabase.storage.from(BUCKET).remove(ownedPaths);
     if (cleanupError) {
-      const { toast } = await import("sonner");
+
       toast.warning("Project deleted; some stored audio could not be removed.");
     }
   }
