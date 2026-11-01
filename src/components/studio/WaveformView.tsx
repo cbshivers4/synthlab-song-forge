@@ -14,7 +14,10 @@ export const WaveformView = memo(function WaveformView({
   grid = true,
   gain = 1,
   outline = true,
+  autoLift = true,
 }: {
+  /** Lift quiet audio to fill the lane; off draws the true level against full scale. */
+  autoLift?: boolean;
   /** Draw the crisp peak outlines; off gives a solid filled shape only. */
   outline?: boolean;
   peaks: number[];
@@ -36,7 +39,7 @@ export const WaveformView = memo(function WaveformView({
     // point fills the lane. This is display only — nothing about the audio,
     // the clip gain or the export changes.
     const loudest = Math.max(0.0001, ...data);
-    const view = gain * (loudest < 0.85 ? Math.min(8, 0.85 / loudest) : 1);
+    const view = gain * (autoLift && loudest < 0.85 ? Math.min(8, 0.85 / loudest) : 1);
     const x = (i: number) => ((i / (n - 1)) * 1000).toFixed(2);
     const h = (p: number, k = 1) => Math.max(0.9, Math.min(1, p * view) * 48 * k);
     const topPts = data.map((p, i) => `${x(i)},${(50 - h(p)).toFixed(2)}`);
@@ -49,7 +52,7 @@ export const WaveformView = memo(function WaveformView({
       top: `M ${topPts.join(" L ")}`,
       bottom: `M ${botPts.join(" L ")}`,
     };
-  }, [data, gain]);
+  }, [data, gain, autoLift]);
 
   return (
     <svg
