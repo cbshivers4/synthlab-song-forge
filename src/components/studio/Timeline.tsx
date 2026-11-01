@@ -20,6 +20,7 @@ import { EditToolbar, TimelineOptionsPanel } from "./timeline/EditToolbar";
 import { Ruler, SongPlayhead, TimelineOverview } from "./timeline/Ruler";
 import { FolderRow, TrackRow } from "./timeline/TrackRow";
 import { readDrag, synclabLogo } from "./timeline/shared";
+import { zoomAround } from "./timeline/drop-position";
 
 export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandlesVisible = true, pageScroll = false }: { phonePaged?: boolean; desktopStyle?: boolean; resizeHandlesVisible?: boolean; pageScroll?: boolean }) {
   const { tracks, transport, addTrack, addClip, setPanel, loadSample, folders, renameFolder, removeFolder, toggleFolderCollapsed, setTransport, moveTrackToIndex, selectBoxed } = useStudio();
