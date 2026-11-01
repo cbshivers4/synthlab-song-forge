@@ -135,4 +135,5 @@
 - [ ] Phase 1 leftover: dormant Generate Stem/Separate Stems error wording (both Coming Soon)
 - [x] Phase 2: looper undo + song-bar sync + true rings, reel rotation from tape position, input loss/change handling, MIDI clock send/follow, honest sample-rate display (autosave/crash recovery excluded: manual-save-only rule)
 - [ ] Phase 2 not done (needs decisions/hardware): interface inputs beyond 1/2, loopback latency calibration, selectable sample rate/buffer (browser-limited), MIDI-note loops in looper
-- [ ] Phases 3–8: wait for Phase 2 report
+- [ ] Phase 3: timeline + mixer — audit + fixes in progress (keep Studio Pro desk, silver faders; knobs over sliders)
+- [ ] Phases 4–8: wait for Phase 3 report
