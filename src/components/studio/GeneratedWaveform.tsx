@@ -46,7 +46,9 @@ export function GeneratedWaveform({ buffer, data, peaks, label = "Generated audi
     return channels[0]?.map((_, i) => Math.max(...channels.map((c) => c[i] ?? 0))) ?? [];
   }, [buffer, data, peaks]);
   const info = useMemo(() => (closeUp && buffer ? analyseBuffer(buffer) : null), [buffer, closeUp]);
-  const shapePath = info ? info.shape.map((v, i) => `${i ? "L" : "M"} ${((i / (info.shape.length - 1)) * 300).toFixed(1)} ${(50 - v * 46).toFixed(2)}`).join(" ") : "";
+  // Zoomed to its own height so the shape is readable; the peak readout gives the real level.
+  const lift = info && info.peak > 0 ? 0.9 / info.peak : 1;
+  const shapePath = info ? info.shape.map((v, i) => `${i ? "L" : "M"} ${((i / (info.shape.length - 1)) * 300).toFixed(1)} ${(50 - v * lift * 46).toFixed(2)}`).join(" ") : "";
   return <figure className="m-0 min-w-0 w-full space-y-1" aria-label={label}>
     <figcaption className="flex flex-wrap items-baseline justify-between gap-2 font-mono text-xs text-muted-foreground">
       <span>{label}</span>

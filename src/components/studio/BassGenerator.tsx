@@ -180,7 +180,7 @@ export function BassGenerator() {
           })}
         </div>
       )}
-      {generated && <PatternWaveform pattern={{ notes: generated, instrument: sound, patch: drawPatch, steps: bars * barSteps }} bpm={transport.bpm} label="Generated bassline waveform · true level" trueLevel closeUp color="var(--display-cyan)" />}
+      {generated && <PatternWaveform pattern={{ notes: generated, instrument: sound, patch: drawPatch, steps: bars * barSteps }} bpm={transport.bpm} label="Generated bassline waveform" closeUp color="var(--display-cyan)" />}
       <PreviewButtons pv={pv} onPreview={() => preview()} onAdd={create} addLabel="Add bassline to timeline" />
     </section>
   );
