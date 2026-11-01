@@ -1,8 +1,9 @@
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
 import type { AudioClip, AuxId, BusId, BusState, DrumPad, PluginDef, PluginInstance, SongSection, SynthPatch, Track, TrackFolder, Transport, VcaId } from "./types";
 import type { SavedPad } from "./pad-session";
-import { mediaStorePlan } from "./cloud-media";
+import { drumSamplePlan, mediaStorePlan } from "./cloud-media";
 
 const BUCKET = "synclab-cloud";
 
@@ -44,6 +45,19 @@ async function currentUserId() {
   return data.user.id;
 }
 
+/** Copies audio from any readable link (new recording, web link, app file) into project storage. */
+async function copyToStorage(url: string, path: string) {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error("An audio file could not be read for saving.");
+  const blob = await response.blob();
+  if (!blob.size) throw new Error("An audio file was empty.");
+  const { error } = await supabase.storage.from(BUCKET).upload(path, blob, {
+    contentType: blob.type || "application/octet-stream",
+    upsert: true,
+  });
+  if (error) throw error;
+}
+
 async function uploadUrl(url: string, path: string) {
   if (!url.startsWith("blob:")) return url;
   const response = await fetch(url);
@@ -65,6 +79,7 @@ async function storeMedia(url: string | undefined, existingPath: string | undefi
 }
 
 async function prepareSession(session: CloudSession, userId: string, projectId: string): Promise<CloudSession> {
+  const notStored = new Set<string>();
   const tracks = await Promise.all(session.tracks.map(async (track) => {
     const up = async (clip: AudioClip): Promise<AudioClip> => {
       const alts = clip.alts ? await Promise.all(clip.alts.map(up)) : undefined;
@@ -77,18 +92,23 @@ async function prepareSession(session: CloudSession, userId: string, projectId: 
       const stored = await storeMedia(sampler.url, sampler.cloudPath, `${userId}/${projectId}/samples/${track.id}-${safe(sampler.name)}`);
       sampler = { ...sampler, cloudPath: stored.cloudPath, url: stored.url ?? "" };
     }
-    const sampleUploads = new Map<string, Promise<DrumPad>>();
+    const sampleUploads = new Map<string, Promise<string | null>>();
     const upPad = async (pad: DrumPad): Promise<DrumPad> => {
-      if (!pad.sampleUrl) return pad;
-      if (pad.sampleCloudPath && !pad.sampleUrl.startsWith("blob:")) return { ...pad, sampleUrl: undefined };
-      const key = `${pad.id}:${pad.sampleUrl}`;
+      const plan = drumSamplePlan(pad.sampleUrl, pad.sampleCloudPath, `${userId}/${projectId}/drums/${track.id}-${pad.id}-${safe(pad.sample ?? pad.name)}`);
+      if (plan.kind === "none") return pad;
+      if (plan.kind === "keep") return { ...pad, sampleCloudPath: plan.cloudPath, sampleUrl: undefined };
+      // The same sample is shared by a pad's copies in every bank: copy it once.
+      const key = `${plan.from}>${plan.cloudPath}`;
       let upload = sampleUploads.get(key);
       if (!upload) {
-        upload = (async () => ({ ...pad, sampleCloudPath: await uploadUrl(pad.sampleUrl ?? "", pad.sampleCloudPath ?? `${userId}/${projectId}/drums/${track.id}-${pad.id}-${safe(pad.sample ?? pad.name)}`), sampleUrl: undefined }))();
+        upload = copyToStorage(plan.from, plan.cloudPath).then(() => plan.cloudPath, () => null);
         sampleUploads.set(key, upload);
       }
-      const saved = await upload;
-      return { ...pad, sampleCloudPath: saved.sampleCloudPath, sampleUrl: undefined };
+      const stored = await upload;
+      if (stored) return { ...pad, sampleCloudPath: stored, sampleUrl: undefined };
+      // Couldn't read the sample right now: keep the old reference untouched and say so.
+      notStored.add(pad.sample ?? pad.name);
+      return pad;
     };
     const pads = track.pads ? await Promise.all(track.pads.map(upPad)) : undefined;
     const drumPatterns = track.drumPatterns ? await Promise.all(track.drumPatterns.map(bank => Promise.all((bank ?? []).map(upPad)))) : undefined;
@@ -98,6 +118,11 @@ async function prepareSession(session: CloudSession, userId: string, projectId: 
   for (const [key, pad] of Object.entries(session.padBank)) {
     const stored = await storeMedia(pad.url, pad.cloudPath, `${userId}/${projectId}/pads/${key}-${safe(pad.name)}`);
     padBank[Number(key)] = { ...pad, cloudPath: stored.cloudPath, url: stored.url ?? "" };
+  }
+  if (notStored.size) {
+    toast.warning(`${notStored.size === 1 ? "A drum sample" : `${notStored.size} drum samples`} couldn't be copied into the project`, {
+      description: `${[...notStored].slice(0, 4).join(", ")} — load ${notStored.size === 1 ? "it" : "them"} onto the pad again, then save, so ${notStored.size === 1 ? "it keeps" : "they keep"} playing later.`,
+    });
   }
   return { ...session, tracks, padBank };
 }
@@ -115,14 +140,18 @@ export const freshCloudUrl = (path: string) => signedUrl(path);
 
 async function restoreSession(session: CloudSession): Promise<CloudSession> {
   const sampleUrls = new Map<string, Promise<string>>();
+  const missing = new Set<string>();
   const downPad = async (pad: DrumPad): Promise<DrumPad> => {
     if (!pad.sampleCloudPath) return pad;
     let url = sampleUrls.get(pad.sampleCloudPath);
-    if (!url) { url = signedUrl(pad.sampleCloudPath); sampleUrls.set(pad.sampleCloudPath, url); }
+    if (!url) { url = signedUrl(pad.sampleCloudPath).catch(() => ""); sampleUrls.set(pad.sampleCloudPath, url); }
     const sampleUrl = await url;
     const { getEngine } = await import('./audio-engine');
-    if (!await getEngine().ensureBuffer(sampleUrl)) throw new Error(`Could not load drum sample ${pad.sample ?? pad.name}. Please try opening the project again.`);
-    return { ...pad, sampleUrl };
+    if (sampleUrl && await getEngine().ensureBuffer(sampleUrl)) return { ...pad, sampleUrl };
+    // One unreadable sample (e.g. an expired link from an old save) must not stop the project
+    // opening. The pad keeps its saved reference, so saving again never erases it.
+    missing.add(pad.sample ?? pad.name);
+    return { ...pad, sampleUrl: undefined };
   };
   const tracks = await Promise.all(session.tracks.map(async (track) => ({
     ...track,
@@ -143,6 +172,11 @@ async function restoreSession(session: CloudSession): Promise<CloudSession> {
   const padBank: Record<number, SavedPad> = {};
   for (const [key, pad] of Object.entries(session.padBank ?? {})) {
     padBank[Number(key)] = { ...pad, url: pad.cloudPath ? await signedUrl(pad.cloudPath) : pad.url };
+  }
+  if (missing.size) {
+    toast.warning(`${missing.size === 1 ? "A drum sample" : `${missing.size} drum samples`} couldn't be loaded`, {
+      description: `${[...missing].slice(0, 4).join(", ")} — the pad stays silent for its sample until you load the sound onto it again. Everything else opened normally.`,
+    });
   }
   return { ...session, tracks, padBank, transport: { ...session.transport, playing: false, recording: false, paused: false, step: 0 } };
 }

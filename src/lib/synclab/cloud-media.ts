@@ -15,3 +15,24 @@ export function mediaStorePlan(url: string | undefined, existingPath: string | u
   if (path) return { cloudPath: path };
   return { url: url ?? "" };
 }
+
+/**
+ * How one drum pad's sample is stored when a project is saved to the cloud.
+ * Every pad sample ends up as the project's own copy in cloud storage, so it keeps playing after
+ * temporary links expire or the place it came from changes:
+ *  - a stored copy that already exists is kept (reopened projects don't upload again);
+ *  - new audio (blob:) and any other link (web link, app file, old expiring link) is copied in.
+ * Old saves wrongly kept an expiring https link as the "stored path"; those are copied again.
+ */
+export type DrumSamplePlan =
+  | { kind: "none" }
+  | { kind: "keep"; cloudPath: string }
+  | { kind: "copy"; from: string; cloudPath: string };
+
+export function drumSamplePlan(sampleUrl: string | undefined, existingPath: string | undefined, newPath: string): DrumSamplePlan {
+  const path = existingPath && !/^https?:/i.test(existingPath) ? existingPath : undefined;
+  if (!sampleUrl) return { kind: "none" };
+  if (sampleUrl.startsWith("blob:")) return { kind: "copy", from: sampleUrl, cloudPath: path ?? newPath };
+  if (path) return { kind: "keep", cloudPath: path };
+  return { kind: "copy", from: sampleUrl, cloudPath: newPath };
+}
