@@ -36,12 +36,15 @@ const FEATURES: { icon: React.ReactNode; title: string; body: string }[] = [
   { icon: <Cpu className="size-4" />, title: "Modular Tech Synth", body: "Build your own rack — VCOs, filters, envelopes, mixers — and patch it with colour cables." },
   { icon: <Scissors className="size-4" />, title: "Video Sampler", body: "Chop video to pads, trigger clips from keys or MIDI, and record straight from your camera." },
   { icon: <Piano className="size-4" />, title: "Studio View & MIDI Learn", body: "See your gear on stands and racks, and map any knob, fader or pad on your controller." },
+  { icon: <Music2 className="size-4" />, title: "Bass Generator", body: "Genre templates with their own bass riffs, any key and chord progression, a new variation every press." },
+  { icon: <Download className="size-4" />, title: "Pro Export", body: "Full mix, every track as stems, or one track — WAV, MP3, FLAC up to 96 kHz, plus MIDI files." },
+  { icon: <SlidersHorizontal className="size-4" />, title: "Desktop & Phone", body: "A full desktop DAW with split view, and a touch studio on your phone — the same projects on both." },
 ];
 
-const COMING_SOON: { icon: React.ReactNode; title: string; body: string }[] = [
-  { icon: <Sparkles className="size-4" />, title: "AI Co-Producer", body: "Writes chords, basslines, drum patterns and lyrics — preview against your song, then add it to the timeline." },
-  { icon: <Wand2 className="size-4" />, title: "Generate Stem", body: "Describe a part and get a solo audio stem in your key and tempo." },
-  { icon: <AudioLines className="size-4" />, title: "Separate Stems", body: "Split any song into vocals, drums, bass or instrumental." },
+const AI_TOOLS: { icon: React.ReactNode; title: string; body: string }[] = [
+  { icon: <Sparkles className="size-4" />, title: "AI Co-Producer", body: "Ask for chords, basslines, drum patterns, mixing tips or lyrics — preview them with your song, then add them to the timeline." },
+  { icon: <Wand2 className="size-4" />, title: "Generate Stem", body: "Describe a part and get a 30-second audio clip in your song's key and tempo, ready for the timeline." },
+  { icon: <AudioLines className="size-4" />, title: "Separate Stems", body: "Split a song into vocals, drums, bass and music with AI — or free on your device." },
 ];
 
 // PLACEHOLDER audio — replace files in /public/demo with real SYNCLAB demos.
@@ -372,16 +375,17 @@ export function WelcomeScreen() {
       </div>
 
       <div className="login-inner mx-auto w-full space-y-12 px-5 pb-12 sm:px-8">
-        <section aria-labelledby="coming-soon">
-          <h2 id="coming-soon" className="mb-4 font-display text-2xl font-semibold">Coming soon</h2>
+        <section aria-labelledby="ai-tools">
+          <h2 id="ai-tools" className="mb-1 font-display text-2xl font-semibold">AI production tools</h2>
+          <p className="mb-4 text-sm text-muted-foreground">Included with your subscription — up to 25 AI uses a day, shared across the AI tools.</p>
           <ul className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            {COMING_SOON.map((f) => (
+            {AI_TOOLS.map((f) => (
               <li key={f.title} className="login-auth rounded-lg border border-border p-4">
                 <div className="mb-2 flex items-center gap-2">
                   <span className="text-primary">{f.icon}</span>
                   <span className="font-semibold">{f.title}</span>
                   <span className="ml-auto rounded-full border border-primary/60 px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider text-primary">
-                    Coming soon
+                    AI
                   </span>
                 </div>
                 <p className="text-sm text-muted-foreground">{f.body}</p>
