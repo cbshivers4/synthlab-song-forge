@@ -75,6 +75,16 @@ export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandl
   const totalSteps = songSteps(transport.bars);
   const [over, setOver] = useState(false);
   const [zoom, setZoom] = useState(1);
+  // Arrangement zoom is remembered on this device.
+  const zoomLoaded = useRef(false);
+  useEffect(() => {
+    try { const z = Number(localStorage.getItem("synclab.timeline.zoom")); if (z >= 1 && z <= 8) setZoom(z); } catch { /* storage unavailable */ }
+    zoomLoaded.current = true;
+  }, []);
+  useEffect(() => {
+    if (!zoomLoaded.current) return;
+    try { localStorage.setItem("synclab.timeline.zoom", String(zoom)); } catch { /* storage unavailable */ }
+  }, [zoom]);
   const zoomRef = useRef(zoom);
   zoomRef.current = zoom;
   // Ctrl/Cmd + wheel (and trackpad pinch, which arrives as Ctrl + wheel) zooms around the pointer,
