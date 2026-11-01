@@ -8,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { markTakeFailed } from "./take-status";
 import { drumCopySpan, materialEnd, pasteTrackContent, timelinePasteStep } from "./arrangement-edit";
 
 /** Drum/sampler tracks can hold values the browser cannot deep-copy; fall back so copy never silently fails. */
@@ -1311,6 +1312,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     try {
       result = await engine.stopInputRecording();
     } catch (err) {
+      markTakeFailed();
       toast.error("Take couldn't be kept", { description: err instanceof Error ? err.message : undefined });
     }
     if (!target) return;
@@ -1469,6 +1471,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       landed = true;
       toast.success(`${clip.name} recorded`, { description: "Double-click the waveform to edit it; switch to Notes to edit the pattern." });
     } catch (err) {
+      markTakeFailed();
       toast.error("Take couldn't be kept", { description: err instanceof Error ? err.message : undefined });
     } finally {
       releaseTake();

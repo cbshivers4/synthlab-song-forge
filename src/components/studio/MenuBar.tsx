@@ -9,6 +9,7 @@ import {
   MenubarTrigger,
 } from "@/components/ui/menubar";
 import { useStudio } from "@/lib/synclab/store";
+import { consumeTakeFailure, TakeNotKeptError } from "@/lib/synclab/take-status";
 import { importAudioToSampler, AUDIO_IMPORT_ACCEPT } from "@/lib/synclab/import-audio";
 import { DeviceClock } from "./DeviceClock";
 import { requestBluetoothSettings } from "./Settings";
@@ -134,7 +135,9 @@ export function MenuBar() {
     const saving = toast.loading("Saving project and audio…");
     try {
       // Finalize any in-progress take first, so the save includes it.
+      consumeTakeFailure();
       if (transport.recording) await stop();
+      if (consumeTakeFailure()) throw new TakeNotKeptError();
       const session = snapshot();
       const saved = await saveCloudProject({ ...project, id: project.id ?? "" }, session);
       setProject({ ...project, id: saved.id, openedAt: Date.now() });
@@ -173,7 +176,9 @@ export function MenuBar() {
     try {
       // Finalize any in-progress take first, so the copy includes it. The open project only
       // switches to the copy once the copy has really been saved.
+      consumeTakeFailure();
       if (transport.recording) await stop();
+      if (consumeTakeFailure()) throw new TakeNotKeptError();
       const session = snapshot();
       const saved = await saveCloudProject({ ...newProject, id: "" }, session);
       setProject({ ...newProject, id: saved.id });

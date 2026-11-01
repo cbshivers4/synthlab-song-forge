@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { consumeTakeFailure, TakeNotKeptError } from '@/lib/synclab/take-status';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useApp, type Stage } from '@/lib/synclab/app-state';
@@ -52,7 +53,9 @@ export function ProjectCloseGuard() {
     setSaving(true);
     try {
       await completeProjectClose(async () => {
+        consumeTakeFailure();
         await stop();
+        if (consumeTakeFailure()) throw new TakeNotKeptError();
         // Let React publish the completed recording into the snapshot refs.
         await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
         const session = latest.current.snapshot();
