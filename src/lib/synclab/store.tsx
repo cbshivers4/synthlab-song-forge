@@ -1779,6 +1779,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     setPanel(null);
   }, []);
 
+  const pendingHistoryRef = useRef<(() => void) | null>(null);
   // Record a history step, debounced so a drag or a knob sweep counts as one edit.
   // No automatic saving: the project is saved only when the user chooses File → Save.
   useEffect(() => {
@@ -1791,7 +1792,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       lastSnapRef.current = buildSnapshot();
       return;
     }
-    const id = window.setTimeout(() => {
+    const commit = () => {
+      pendingHistoryRef.current = null;
       const prev = lastSnapRef.current;
       if (prev) {
         pastRef.current = [...pastRef.current, prev].slice(-60);
@@ -1799,8 +1801,11 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       }
       lastSnapRef.current = buildSnapshot();
       setHistoryTick((t) => t + 1);
-    }, 600);
-    return () => window.clearTimeout(id);
+    };
+    const id = window.setTimeout(commit, 600);
+    // Undo pressed straight after an edit commits that edit first, so it is the one undone.
+    pendingHistoryRef.current = () => { window.clearTimeout(id); commit(); };
+    return () => { window.clearTimeout(id); if (pendingHistoryRef.current) pendingHistoryRef.current = null; };
   }, [tracks, buses, vcas, auxReturns, fxChains, installedPlugins, userPresets, sections, folders, projectNotes, buildSnapshot]);
 
   // The Saved timestamp in the status bar only moves on a manual save
@@ -1828,6 +1833,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       setTracks((ts) => ts.map((x) => (x.id === t.id ? { ...x, notes: [...(x.notes ?? []), note] } : x)));
     };
     const stepBack = (from: "past" | "future") => {
+      if (from === "past") pendingHistoryRef.current?.();
       const stack = from === "past" ? pastRef : futureRef;
       const other = from === "past" ? futureRef : pastRef;
       const entry = stack.current.pop();
