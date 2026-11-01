@@ -639,10 +639,12 @@ export class LiveLooper {
     s.overdubbing = false;
     s.muted = false;
     s.reversed = false;
+    s.history = [];
     if (!this.slots.some((slot) => slot.state === "armed" || slot.state === "recording")) this.closeInput();
     if (this.isEmpty) {
       this.cycle = null;
       this.origin = null;
+      this.songLocked = false;
     }
     this.emit();
   }
