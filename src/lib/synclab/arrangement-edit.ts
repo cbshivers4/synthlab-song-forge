@@ -135,3 +135,38 @@ export function stretchDrumPart(track: Track, a: number, b: number, newLength: n
   const cuts = [...new Set([...(track.cuts ?? []).filter(c => c <= from || c >= from + Math.max(len, next)), from, from + next])].sort((x, y) => x - y);
   return { pads, steps, cuts, patternRegion: [lo, hi], activeRegion: from };
 }
+
+/**
+ * Trim or extend one drum part [a, b) to [newA, newB): hits inside the new edges stay where they
+ * are, hits trimmed off are removed (Undo brings them back). It never grows into a neighbouring part.
+ */
+export function trimDrumPart(track: Track, a: number, b: number, newA: number, newB: number): Partial<Track> {
+  const from = Math.max(0, Math.round(Math.min(newA, b - 1)));
+  const to = Math.max(from + 1, Math.round(newB));
+  const lo0 = Math.round(a), hi0 = Math.round(b);
+  const region = track.patternRegion;
+  const padLen = Math.max(1, track.pads?.[0]?.steps.length ?? track.steps);
+  const steps = Math.max(track.steps, padLen, to, hi0);
+  const pads = track.pads?.map(pad => {
+    const plen = Math.max(1, pad.steps.length);
+    const values = Array.from({ length: steps }, (_, s) => region && (s < region[0] || s >= region[1]) ? 0 : pad.steps[s % plen] ?? 0);
+    for (let s = lo0; s < hi0; s++) if (s < from || s >= to) values[s] = 0;
+    return { ...pad, steps: values };
+  });
+  const lo = Math.min(region?.[0] ?? 0, from), hi = Math.max(region?.[1] ?? padLen, to);
+  const keep = [lo0, hi0].filter(c => c < from || c > to);
+  const cuts = [...new Set([...(track.cuts ?? []).filter(c => c <= from || c >= to), ...keep, from, to])].sort((x, y) => x - y);
+  return { pads, steps, cuts, patternRegion: [lo, hi], activeRegion: from };
+}
+
+/** Free steps around drum part [a, b): from the nearest part with hits on the left to the nearest on the right. */
+export function drumPartRoom(track: Track, parts: [number, number][], a: number, b: number, total: number): [number, number] {
+  let lo = 0, hi = total;
+  for (const [x, y] of parts) {
+    if (x === a && y === b) continue;
+    if (!track.pads?.some(p => p.steps.slice(Math.floor(x), Math.ceil(y)).some(v => v > 0))) continue;
+    if (y <= a) lo = Math.max(lo, y);
+    if (x >= b) hi = Math.min(hi, x);
+  }
+  return [lo, hi];
+}
