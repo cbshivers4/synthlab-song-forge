@@ -113,7 +113,12 @@ export function getPreferredInput(): string | null {
   }
 }
 
+/** Fired on window when the chosen recording input changes, so an armed channel can switch to it. */
+export const INPUT_CHANGED_EVENT = "synclab:input-changed";
+
 export function setPreferredInput(deviceId: string | null) {
+  const before = getPreferredInput();
+  if (before !== deviceId && typeof window !== "undefined") queueMicrotask(() => window.dispatchEvent(new CustomEvent(INPUT_CHANGED_EVENT)));
   try {
     if (deviceId) localStorage.setItem(INPUT_KEY, deviceId);
     else localStorage.removeItem(INPUT_KEY);
