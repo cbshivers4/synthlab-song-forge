@@ -173,6 +173,23 @@ export function onDeviceChange(cb: () => void): () => void {
   return () => md.removeEventListener("devicechange", cb);
 }
 
+/** Fired on window when the open input stops (unplugged interface, revoked permission…). */
+export const INPUT_LOST_EVENT = "synclab:input-lost";
+/** Fired when the chosen input is missing and the default input was opened instead. */
+export const INPUT_FALLBACK_EVENT = "synclab:input-fallback";
+
+function adopt(stream: MediaStream, owner: string) {
+  activeStream = stream;
+  activeOwner = owner;
+  stream.getAudioTracks()[0]?.addEventListener("ended", () => {
+    if (activeStream === stream) {
+      activeStream = null;
+      activeOwner = null;
+    }
+    window.dispatchEvent(new CustomEvent(INPUT_LOST_EVENT, { detail: { owner, label: stream.getAudioTracks()[0]?.label } }));
+  }, { once: true });
+}
+
 export async function openMic(constraints?: MediaTrackConstraints, owner = "shared"): Promise<MicResult> {
   const blocked = micUnavailableReason();
   if (blocked) return { error: blocked, canOpenTab: inFrame() };
@@ -193,14 +210,7 @@ export async function openMic(constraints?: MediaTrackConstraints, owner = "shar
       releaseMic(stream);
       return { error: "Another recording tool took control of the audio input.", canOpenTab: false };
     }
-    activeStream = stream;
-    activeOwner = owner;
-    stream.getAudioTracks()[0]?.addEventListener("ended", () => {
-      if (activeStream === stream) {
-        activeStream = null;
-        activeOwner = null;
-      }
-    }, { once: true });
+    adopt(stream, owner);
     return { stream };
   } catch (err) {
     const name = (err as { name?: string })?.name;
@@ -214,8 +224,10 @@ export async function openMic(constraints?: MediaTrackConstraints, owner = "shar
           releaseMic(stream);
           return { error: "Another recording tool took control of the audio input.", canOpenTab: false };
         }
-        activeStream = stream;
-        activeOwner = owner;
+        adopt(stream, owner);
+        // Say so instead of silently recording from a different microphone.
+        const label = stream.getAudioTracks()[0]?.label;
+        window.dispatchEvent(new CustomEvent(INPUT_FALLBACK_EVENT, { detail: { label } }));
         return { stream };
       } catch (err2) {
         return { error: describe(err2), canOpenTab: inFrame() };
