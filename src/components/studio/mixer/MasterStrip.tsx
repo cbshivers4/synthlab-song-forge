@@ -11,6 +11,7 @@ import { MidiLearnBlock } from "../MidiLearn";
 import { BUILT_IN_PLUGINS } from "@/lib/synclab/plugins";
 import type { BusState } from "@/lib/synclab/types";
 import { cn } from "@/lib/utils";
+import { peakHoldDb, peakHoldText } from "@/lib/synclab/clip-monitor";
 import { clearClip, useClipped } from "@/lib/synclab/clip-monitor";
 import { Scope } from "../Scope";
 import { FxMenu } from "./BusStrips";
@@ -298,8 +299,8 @@ export function MasterStrip({ level: peak }: { level: number }) {
         <span className="font-mono text-[9px] text-muted-foreground" title="Fader position">
           {toDb(master.volume).toFixed(1)}
         </span>
-        <span className={cn("font-mono text-[9px]", peak > 0.98 ? "text-red-400" : "text-foreground/70")} title="Output level">
-          {fracToDb(peak).toFixed(1)}
+        <span className={cn("font-mono text-[9px]", peakHoldDb("master") > -0.2 ? "text-red-400" : "text-foreground/70")} title="Master peak hold (dBFS) — highest level since reset; click CLIP to reset" aria-label={`Master peak hold ${peakHoldText("master")} dB`}>
+          {peakHoldText("master")}
         </span>
         <ClipLed id="master" compact />
       </div>

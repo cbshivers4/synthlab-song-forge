@@ -52,6 +52,7 @@ export function clearClip(id: string) {
 }
 
 export function clearAllClips() {
+  peaks.clear();
   if (clipped.size) {
     clipped.clear();
     emit();

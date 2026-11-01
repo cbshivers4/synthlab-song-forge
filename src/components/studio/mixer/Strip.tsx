@@ -14,7 +14,7 @@ import { TrackNotes } from "@/components/studio/TrackNotes";
 import { TrackIcon } from "@/components/studio/TrackStyle";
 import type { BusId, Track, VcaId } from "@/lib/synclab/types";
 import { cn } from "@/lib/utils";
-import { clearClip, useClipped } from "@/lib/synclab/clip-monitor";
+import { clearClip, peakHoldDb, peakHoldText, useClipped } from "@/lib/synclab/clip-monitor";
 import { Scope } from "../Scope";
 import { ChannelEq } from "./ChannelEq";
 import { DeviceSlots, SendsMenu } from "./InsertRack";
@@ -295,8 +295,8 @@ export function Strip({
       {/* fader dB + live peak dB */}
       <div className={cn(ROW.readout, "flex items-center justify-between border-b border-border/60 px-1.5")}>
         <span className={cn("font-mono text-[9px]", vcaState ? "text-primary" : "text-muted-foreground")} title={vcaState ? `Fader ${toDb(t.volume).toFixed(1)} dB, after VCA ${t.vca}` : undefined}>{toDb(effective).toFixed(1)}</span>
-        <span className={cn("font-mono text-[9px]", level > 0.98 ? "text-red-400" : "text-foreground/70")}>
-          {fracToDb(level).toFixed(0)}
+        <span className={cn("font-mono text-[9px]", peakHoldDb(t.id) > -0.2 ? "text-red-400" : "text-foreground/70")} title="Peak hold (dBFS) — highest level since reset; click CLIP to reset" aria-label={`${t.name} peak hold ${peakHoldText(t.id)} dB`}>
+          {peakHoldText(t.id)}
         </span>
         <ClipLed id={t.id} compact />
       </div>
