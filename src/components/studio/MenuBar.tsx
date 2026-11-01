@@ -169,9 +169,11 @@ export function MenuBar() {
     setSaveAsOpen(false);
     const { id: _id, ...copy } = project;
     const newProject = { ...copy, name, openedAt: Date.now() };
-    setProject(newProject);
     const saving = toast.loading(`Saving “${name}” and its audio…`);
     try {
+      // Finalize any in-progress take first, so the copy includes it. The open project only
+      // switches to the copy once the copy has really been saved.
+      if (transport.recording) await stop();
       const session = snapshot();
       const saved = await saveCloudProject({ ...newProject, id: "" }, session);
       setProject({ ...newProject, id: saved.id });
