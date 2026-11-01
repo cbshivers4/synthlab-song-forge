@@ -62,6 +62,17 @@ const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
 
 export const midiToFreq = (n: number) => 440 * Math.pow(2, (n - 69) / 12);
 
+/** Loudest absolute value inside a 0..1 window of some channels. */
+export function peakInWindow(channels: Float32Array[], start: number, end: number): number {
+  let peak = 0;
+  for (const data of channels) {
+    const from = Math.max(0, Math.floor(clamp(start, 0, 1) * data.length));
+    const to = Math.min(data.length, Math.ceil(clamp(end, 0, 1) * data.length));
+    for (let i = from; i < to; i++) { const v = Math.abs(data[i]!); if (v > peak) peak = v; }
+  }
+  return peak;
+}
+
 /** Trim window (0..1) to read from the (possibly reversed) buffer so reverse plays the selected part backwards. */
 export function sampleWindow(start: number, end: number, reverse: boolean): [number, number] {
   const a0 = clamp(start, 0, 0.999);
@@ -2011,6 +2022,13 @@ export class SyncLabEngine {
   /** voices grouped by an arbitrary key so pads can choke each other */
   private keyedSamples = new Map<string, AudioBufferSourceNode[]>();
   private sampleTriggerVersions = new Map<string, number>();
+
+  /** Loudest absolute sample (0..1) in the start..end part of a loaded sample, across all channels; 0 when not loaded. */
+  samplePeak(url: string, start = 0, end = 1): number {
+    const buf = this.sampleBuffers.get(url);
+    if (!buf) return 0;
+    return peakInWindow(Array.from({ length: buf.numberOfChannels }, (_, c) => buf.getChannelData(c)), start, end);
+  }
 
   /** Decodes a dropped audio file, keeps the buffer and returns its display data. */
   async loadSampleFile(file: File | Blob, name: string) {
