@@ -37,6 +37,6 @@ describe('hand-pressed mute/solo', () => {
     expect(manualSwitchPatch({ muted: true }, true)).toEqual({ muted: true });
   });
   it('changes that are not mute/solo keep recorded presses', () => {
-    expect(manualSwitchPatch({ volume: 0.5 } as { volume: number }, false)).toEqual({ volume: 0.5 });
+    expect(manualSwitchPatch({ volume: 0.5 } as { volume: number; muted?: boolean }, false)).toEqual({ volume: 0.5 });
   });
 });

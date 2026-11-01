@@ -178,10 +178,10 @@ export function StemSplitter() {
     } catch (e) {
       const msg = e instanceof Error ? e.message : "";
       const serviceDown = /credit|billing|402|busy|429|unavailable/i.test(msg);
+      const description = /unauthor|401|jwt|session/i.test(msg) ? "Sign in to use AI stem separation." : serviceDown ? `${msg} Your AI use was given back. You can separate on this device for free instead.` : msg;
       toast.error("Couldn't separate this song", {
-        description: /unauthor|401|jwt|session/i.test(msg) ? "Sign in to use AI stem separation." : serviceDown ? `${msg} Your AI use was given back. You can separate on this device for free instead.` : msg || undefined,
-        duration: serviceDown ? 15000 : undefined,
-        action: serviceDown ? { label: "Separate on this device", onClick: () => { setMode("device"); void run("device"); } } : undefined,
+        ...(description ? { description } : {}),
+        ...(serviceDown ? { duration: 15000, action: { label: "Separate on this device", onClick: () => { setMode("device"); void run("device"); } } } : {}),
       });
     } finally {
       setBusy(null);
