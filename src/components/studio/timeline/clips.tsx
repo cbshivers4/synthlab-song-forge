@@ -683,7 +683,7 @@ function DrumClip({ track }: { track: Track }) {
           title={`${track.name} beat part — drag to move, pull the left edge to trim, the right edge to stretch (Alt + right edge trims), double-click to open the drum machine`}>
           <div className="arrangement-clip-name flex h-[17px] shrink-0 items-center gap-1 px-1.5">
             <Disc3 className="size-2.5 shrink-0" />
-            <span className="min-w-0 flex-1 truncate font-mono text-[9px] font-semibold">{track.name} · {hits} HITS</span>
+            <span className="min-w-0 flex-1 truncate font-mono text-[9px] font-semibold">{track.name} · {track.drumChain?.on && track.drumChain.items.length ? `CHAIN ${track.drumChain.items.map((i) => `${i.slot + 1}×${i.bars}`).join(" → ")}` : `${hits} HITS`}</span>
 
           </div>
           {active && <PartMenu label={`${track.name} beat part`} onDelete={() => { const patch = deleteSelectedPart(track, transport.bpm, transport.bars, transport.loop ? loopRegion(transport) : undefined); if (patch) updateTrack(track.id, patch);
