@@ -1,5 +1,6 @@
 // Minimal Web MIDI helper — hardware controller input for SYNCLAB.
 import { curvedVelocity, playbackPreferences } from "./preferences";
+import { dispatchRealtime } from "./midi-clock";
 
 export interface MidiPortInfo {
   id: string;
@@ -89,6 +90,8 @@ export function subscribe(a: AnyAccess | null, id: string, handler: (msg: MidiMe
   const lastNote = new Map<string, number>();
   const onMsg = (e: { data: Uint8Array }, inputId: string) => {
     const [status = 0, d1 = 0, d2 = 0] = Array.from(e.data);
+    // MIDI clock and transport messages go to the clock follower, never to notes or controls.
+    if (status >= 0xf8 && dispatchRealtime(status, (e as { timeStamp?: number }).timeStamp ?? performance.now())) return;
     const cmd = status & 0xf0;
     const channel = status & 0x0f;
     if (cmd === 0x90 || cmd === 0x80) {

@@ -10,6 +10,7 @@ import {
 } from "react";
 import { markTakeFailed } from "./take-status";
 import { setSongClock } from "./song-clock";
+import { sendClockForStep, sendTransportStart, sendTransportStop } from "./midi-clock";
 import { INPUT_CHANGED_EVENT, INPUT_FALLBACK_EVENT, INPUT_LOST_EVENT } from "./mic";
 import { drumCopySpan, materialEnd, pasteTrackContent, timelinePasteStep } from "./arrangement-edit";
 
@@ -1228,6 +1229,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         queue.push({ step: step % total, time: nextTime });
         lastStepRef.current = { step: step % total, time: nextTime, dur: stepDur };
         setSongClock(lastStepRef.current);
+        if (engine.ctx) sendClockForStep(engine.ctx, nextTime, stepDur);
         nextTime += stepDur;
         step += 1;
         if (tp.loop) {
@@ -1262,6 +1264,14 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     };
   }, [transport.playing]);
 
+
+  // MIDI clock out: Start/Continue when the song starts, Stop when it stops.
+  const midiWasPlayingRef = useRef(false);
+  useEffect(() => {
+    if (transport.playing) sendTransportStart(transportRef.current.step);
+    else if (midiWasPlayingRef.current) sendTransportStop();
+    midiWasPlayingRef.current = transport.playing;
+  }, [transport.playing]);
 
   const updateTrack = useCallback((id: string, patch: Partial<Track>) => {
     // Moving a fader, pan or send while playing "touches" its automation lane so Write/Touch/Latch record it.
