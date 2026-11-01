@@ -168,6 +168,7 @@ function SynthTrackEditor({ track }: { track: Track }) {
           </SelectContent>
         </Select>
         </PresetNavigator>
+        <PresetSearch groups={presetGroups} onSelect={selectPreset} />
         <Input
           value={presetName}
           onChange={(e) => setPresetName(e.target.value)}
@@ -859,4 +860,36 @@ export function presetMatchesSynth(category: string, style: string): boolean {
   if (style === "poly") return poly;
   if (style === "modular") return modular;
   return !acid && !poly && !modular;
+}
+
+/** Type to find a preset by name or category (e.g. "bass", "pad", "arp"); click a match to load and hear it. */
+function PresetSearch({ groups, onSelect }: { groups: { category: string; items: string[] }[]; onSelect: (name: string) => void }) {
+  const [query, setQuery] = useState("");
+  const q = query.trim().toLowerCase();
+  const matches = q
+    ? groups.flatMap((g) => g.items.filter((name) => name.toLowerCase().includes(q) || g.category.toLowerCase().includes(q)).map((name) => ({ name, category: g.category }))).slice(0, 14)
+    : [];
+  return (
+    <div className="relative">
+      <input
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        onKeyDown={(e) => { if (e.key === "Escape") setQuery(""); if (e.key === "Enter" && matches[0]) { onSelect(matches[0].name); setQuery(""); } }}
+        placeholder="Find preset…"
+        aria-label="Find preset"
+        className="h-9 w-40 rounded-sm border border-input bg-background px-2 font-mono text-xs text-foreground"
+      />
+      {q && (
+        <div role="listbox" aria-label="Matching presets" className="absolute left-0 top-10 z-50 max-h-72 w-64 overflow-auto rounded-md border border-border bg-popover p-1 shadow-lg">
+          {matches.length === 0 ? <p className="px-2 py-1.5 text-xs text-muted-foreground">No preset matches “{query}”.</p> : matches.map((m) => (
+            <button key={`${m.category}:${m.name}`} type="button" role="option" aria-selected={false}
+              onClick={() => { onSelect(m.name); setQuery(""); }}
+              className="flex w-full items-center justify-between gap-2 rounded-sm px-2 py-1.5 text-left text-xs hover:bg-accent">
+              <span className="truncate">{m.name}</span><span className="shrink-0 font-mono text-[9px] uppercase text-muted-foreground">{m.category}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
