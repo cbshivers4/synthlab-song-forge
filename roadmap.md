@@ -130,5 +130,6 @@
 - [x] Plugin preparation: saved-state fields for desktop plugins, pass-through where no host runs, shared-memory audio link + AudioWorklet insert + fake host, all tested (needs cross-origin isolation in the desktop window before real use)
 
 ## Nov 1 — Master upgrade brief (phases 1–8, one at a time)
-- [ ] Phase 1: audit every feature, fix nonfunctional controls/placeholders/broken navigation, clear-track stays on Edit page — in progress
-- [ ] Phases 2–8: wait until Phase 1 is reported
+- [x] Phase 1: audit + fixes (synth LFO/arp sync & swing, import success/failure, desktop menu commands, honest update message, Save As/close-save with failed takes, device-library commit, drum lane double-click, capture/preview cleanup); clear track verified staying on Edit (desktop + phone)
+- [ ] Phase 1 leftovers needing a decision: cloud saves keep non-uploaded drum sample links; dormant Generate Stem/Separate Stems error wording (both Coming Soon)
+- [ ] Phases 2–8: waiting for the go-ahead after the Phase 1 report
