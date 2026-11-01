@@ -9,6 +9,7 @@ import {
   MenubarTrigger,
 } from "@/components/ui/menubar";
 import { useStudio } from "@/lib/synclab/store";
+import { importAudioToSampler, AUDIO_IMPORT_ACCEPT } from "@/lib/synclab/import-audio";
 import { DeviceClock } from "./DeviceClock";
 import { requestBluetoothSettings } from "./Settings";
 import { useApp } from "@/lib/synclab/app-state";
