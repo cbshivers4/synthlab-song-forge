@@ -149,3 +149,4 @@
 - [ ] Phase 6 not done: true AI voice conversion (no suitable service connected), dedicated Vocal Forge lyrics-to-tempo tool; landing page still lists the three AI tools as Coming soon (needs your OK to change)
 - [x] Phase 7: whole-song range, stems + one-track export, MIDI export, cancel, choose save folder, export history, delete confirmations, project-owned copies of sampler/clip/pad audio
 - [ ] Phase 7 not done: autosave/recovery (manual-save rule), Video Sampler video isn't saved in cloud projects, device-list entries are only shortcuts (not separate saved copies)
+- [x] Phase 8: full QA pass (399 tests, 0 type errors, 3-min session memory steady, 60 fps, 22 tools error-free, phone recording, 0 dependency advisories); completion report delivered
