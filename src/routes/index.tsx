@@ -271,6 +271,13 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
               Pop out
             </Button>
           )}
+          {!isMobile && (
+            <Button size="sm" variant={workspace.split ? "secondary" : "ghost"} className="h-11 gap-1.5 px-2 font-mono text-[10px] tracking-widest uppercase sm:h-7"
+              aria-pressed={workspace.split} title={workspace.split ? "Give the editor the whole workspace" : "Show the timeline above this editor (drag the bar between them to resize)"}
+              onClick={() => setWorkspacePrefs({ split: !workspace.split })}>
+              <Rows2 className="size-3.5" /> {workspace.split ? "Full view" : "Split view"}
+            </Button>
+          )}
           {panel !== "mixer" && <QuickNotes label={!isMobile} className="h-11 sm:h-7" />}
           <Button size="icon" variant="secondary" className="size-12 sm:size-7" onClick={() => setPanel(null)} aria-label="Close editor">
             <X className="size-6 sm:size-4" />
@@ -469,11 +476,14 @@ function StudioWorkspace() {
       <div className="flex min-h-0 flex-1">
         {!isMobile && <ToolsRail />}
         {landscape && <MobileNav landscape toolsOpen={landscapeTools} onToggleTools={() => setLandscapeTools((v) => !v)} onBeatMode={() => setBeatMode(true)} view={mobileView} setView={setMobileView} moreSignal={moreSignal} />}
-        <main data-panel-full={!isMobile && panel ? "true" : undefined} className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+        <main data-panel-full={!isMobile && panel && !workspace.split ? "true" : undefined} data-panel-split={!isMobile && panel && workspace.split ? "true" : undefined}
+          style={!isMobile && panel && workspace.split ? ({ "--split-timeline-h": `${workspace.timelineHeight}px` } as CSSProperties) : undefined}
+          className="relative flex min-h-0 min-w-0 flex-1 flex-col">
           {isMobile && mobileView === "edit" && !panel && <TopBar />}
           {isMobile && mobileView === "create" && !panel && !beatMode && <MobileCreate onBeatMode={() => setBeatMode(true)} onMore={() => setMoreSignal((n) => n + 1)} />}
           <h1 className="sr-only">SYNCLAB Studio — browser digital audio workstation</h1>
           <Timeline />
+          {!isMobile && panel && workspace.split && <SplitHandle />}
           <SafePanels float={float} setFloat={setFloat} />
           <DetachedPanels />
           {/* The device strip steps out for tools that own the whole workspace: mixer and studio view. */}
