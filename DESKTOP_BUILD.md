@@ -76,7 +76,7 @@ right-click -> Open the first time.
 Not implemented yet. The intended path is `electron-updater` with a static update feed hosted on
 the same CDN as the installers. It must not interrupt an active recording or playback: check on
 launch and when idle, offer "Install on quit", and allow postponing. Until that exists, the Help
-menu's "Check for Updates" states plainly that this build loads the studio over the network.
+menu's "Check for Updates" explains that the studio itself updates from the website when online.
 
 ## Offline
 
