@@ -1,15 +1,18 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { refundAiUse, reserveAiUse } from "@/lib/ai-quota";
 
 export const generateStemFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
     z.object({ prompt: z.string().min(3).max(800), instrument: z.string().max(60), bpm: z.number().min(40).max(240), key: z.string().max(20) }).parse(d),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const apiKey = process.env["LOVABLE_API_KEY"];
     if (!apiKey) return { ok: false as const, error: "AI is not configured for this app." };
+    const use = await reserveAiUse(context.supabase, "genstem");
+    if (!use.ok) return { ok: false as const, error: use.error };
     const inst = data.instrument || "instrument";
     const drumWords = /drum|percussion|hi-hat|hats/i.test(inst)
       ? "No melodic or harmonic instruments at all."
@@ -27,6 +30,7 @@ export const generateStemFn = createServerFn({ method: "POST" })
       body: JSON.stringify({ model: "google/lyria-3-clip-preview", input: [{ type: "user_input", content: [{ type: "text", text }] }] }),
     });
     if (!res.ok) {
+      await refundAiUse(context.supabase, use.id);
       let msg = "";
       try { const j = (await res.json()) as { message?: string; error?: { message?: string } }; msg = j.message ?? j.error?.message ?? ""; } catch { /* not json */ }
       const error =
@@ -39,5 +43,5 @@ export const generateStemFn = createServerFn({ method: "POST" })
     const bytes = new Uint8Array(await res.arrayBuffer());
     let bin = "";
     for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
-    return { ok: true as const, mp3: btoa(bin) };
+    return { ok: true as const, mp3: btoa(bin), remaining: use.remaining };
   });
