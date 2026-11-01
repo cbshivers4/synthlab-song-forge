@@ -1,3 +1,4 @@
+import { chainedPads } from "./drum-chain";
 import { arpHitOffset, arpStepSeconds } from "./synth-timing";
 import type { getEngine } from "./audio-engine";
 import { clipRate, laneValueAt, type Track, type Transport } from "./types";
@@ -110,9 +111,13 @@ export function scheduleStep(engine: Engine, list: Track[], tp: Transport, n: nu
     }
     if (t.printedAudio && t.clips?.length && !t.recording) continue;
     if (t.kind === "drum" && t.pads) {
-      if (t.patternRegion && (n < t.patternRegion[0] || n >= t.patternRegion[1])) continue;
+      // A pattern chain decides which pattern plays at this bar; otherwise the pads loop as usual.
+      const chained = chainedPads(t, n, stepsPerBar());
+      if (!chained && t.patternRegion && (n < t.patternRegion[0] || n >= t.patternRegion[1])) continue;
+      const pads = chained?.pads ?? t.pads;
+      const s = chained ? chained.s : n % Math.max(1, t.steps);
       const padSolo = t.pads.some((p) => p.solo);
-      for (const pad of t.pads) {
+      for (const pad of pads) {
         if (pad.muted || (padSolo && !pad.solo)) continue;
         const v = pad.steps[s] ?? 0;
         if (v <= 0) continue;
