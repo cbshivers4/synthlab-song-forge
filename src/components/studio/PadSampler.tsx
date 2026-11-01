@@ -31,6 +31,7 @@ import { LiveWave } from "@/components/studio/LiveWave";
 import { getPadBank, setPadBank, subscribePadBank, type SavedPad } from "@/lib/synclab/pad-session";
 import { renderStarterSamples } from "@/lib/synclab/starter-samples";
 import { MidiLearnButton } from "./MidiLearn";
+import { Knob } from "./Knob";
 import { MidiPadLearnBar, useMidiPads } from "./MidiPadLearn";
 import { Keyboard } from "./Keyboard";
 import { qwertyEnabled } from "@/lib/synclab/qwerty";
@@ -944,26 +945,22 @@ export function PadSampler() {
           <PadSampleTools key={sel} id={sel} pad={selPad} manual={manualCuts} onManual={() => setManualCuts(value => !value)} onPatch={next => patch(sel, next)} onPreview={(start, end) => { stopPad(sel); trigger(sel, 1, undefined, 60, { start, end }); }} onStop={() => stopPad(sel)} onStopTarget={stopPad} />
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <Row label="Level" value={`${Math.round(selPad.gain * 100)}%`}>
-              <MidiLearnButton id={`sampler-pad:${sel}`} param="pad:gain" label={`Pad ${sel + 1} level`} />
-              <Slider value={[selPad.gain]} min={0} max={2} step={0.01} onValueChange={([v]) => patch(sel, { gain: v ?? 1 })} />
-            </Row>
-            <Row label="Tune" value={`${selPad.pitch > 0 ? "+" : ""}${selPad.pitch.toFixed(1)} st`}>
-              <MidiLearnButton id={`sampler-pad:${sel}`} param="pad:pitch" label={`Pad ${sel + 1} tune`} />
-              <Slider value={[selPad.pitch]} min={-24} max={24} step={0.1} onValueChange={([v]) => patch(sel, { pitch: v ?? 0 })} />
-            </Row>
-            <Row label="Attack" value={`${Math.round(selPad.attack * 1000)} ms`}>
-              <MidiLearnButton id={`sampler-pad:${sel}`} param="pad:attack" label={`Pad ${sel + 1} attack`} />
-              <Slider value={[selPad.attack]} min={0} max={1} step={0.001} onValueChange={([v]) => patch(sel, { attack: v ?? 0 })} />
-            </Row>
-            <Row label="Release" value={`${Math.round(selPad.release * 1000)} ms`}>
-              <MidiLearnButton id={`sampler-pad:${sel}`} param="pad:release" label={`Pad ${sel + 1} release`} />
-              <Slider value={[selPad.release]} min={0.005} max={4} step={0.005} onValueChange={([v]) => patch(sel, { release: v ?? 0.08 })} />
-            </Row>
-            <Row label="Choke group" value={selPad.choke ? `Group ${selPad.choke}` : "Off"}>
-              <MidiLearnButton id={`sampler-pad:${sel}`} param="pad:choke" label={`Pad ${sel + 1} choke`} />
-              <Slider value={[selPad.choke]} min={0} max={4} step={1} onValueChange={([v]) => patch(sel, { choke: v ?? 0 })} />
-            </Row>
+            <div className="col-span-full flex flex-wrap items-start gap-x-2 gap-y-3 sm:col-span-1 lg:col-span-3" role="group" aria-label={`Pad ${sel + 1} sound`}>
+              <Knob label="LEVEL" ariaLabel={`Pad ${sel + 1} level`} size={46} value={selPad.gain} min={0} max={2} step={0.01} defaultValue={1} format={(v) => `${Math.round(v * 100)}%`} midiTarget={{ id: `sampler-pad:${sel}`, param: "pad:gain" }} onChange={(v) => patch(sel, { gain: v })} />
+              <Knob label="TUNE" ariaLabel={`Pad ${sel + 1} tune`} size={46} value={selPad.pitch} min={-24} max={24} step={0.1} defaultValue={0} format={(v) => `${v > 0 ? "+" : ""}${v.toFixed(1)} st`} midiTarget={{ id: `sampler-pad:${sel}`, param: "pad:pitch" }} onChange={(v) => patch(sel, { pitch: v })} />
+              <Knob label="ATTACK" ariaLabel={`Pad ${sel + 1} attack`} size={46} value={selPad.attack} min={0} max={1} step={0.001} defaultValue={0} format={(v) => `${Math.round(v * 1000)} ms`} midiTarget={{ id: `sampler-pad:${sel}`, param: "pad:attack" }} onChange={(v) => patch(sel, { attack: v })} />
+              <Knob label="RELEASE" ariaLabel={`Pad ${sel + 1} release`} size={46} value={selPad.release} min={0.005} max={4} step={0.005} defaultValue={0.08} format={(v) => `${Math.round(v * 1000)} ms`} midiTarget={{ id: `sampler-pad:${sel}`, param: "pad:release" }} onChange={(v) => patch(sel, { release: v })} />
+              <Knob label="CHOKE" ariaLabel={`Pad ${sel + 1} choke group`} size={46} value={selPad.choke} min={0} max={4} step={1} defaultValue={0} format={(v) => (Math.round(v) ? `GRP ${Math.round(v)}` : "OFF")} midiTarget={{ id: `sampler-pad:${sel}`, param: "pad:choke" }} onChange={(v) => patch(sel, { choke: Math.round(v) })} />
+              <div className="flex flex-col items-center gap-1 pt-1">
+                <Button size="sm" variant="secondary" className="h-8 px-2 text-[10px]" title="Set LEVEL so the loudest point of this pad's trimmed part reaches −1 dB (up to 200%)" onClick={() => {
+                  const peak = getEngine().samplePeak(selPad.url, selPad.start, selPad.end);
+                  if (!(peak > 0)) { toast("Nothing to normalize", { description: "This pad's trimmed part is silent or not loaded yet — play it once first." }); return; }
+                  const gain = Math.min(2, 0.89 / peak);
+                  patch(sel, { gain: Math.round(gain * 100) / 100 });
+                  toast.success("Pad normalized to −1 dB", { description: gain >= 2 ? "Level set to the 200% maximum — the sample is very quiet." : `Level ${Math.round(gain * 100)}%` });
+                }}>NORMALIZE</Button>
+              </div>
+            </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="label-xs">Loop</span>
