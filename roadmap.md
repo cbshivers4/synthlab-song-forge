@@ -133,4 +133,5 @@
 - [x] Phase 1: audit + fixes (synth LFO/arp sync & swing, import success/failure, desktop menu commands, honest update message, Save As/close-save with failed takes, device-library commit, drum lane double-click, capture/preview cleanup); clear track verified staying on Edit (desktop + phone)
 - [x] Drum pad samples always saved as the project's own cloud copy; unreadable old samples no longer block opening
 - [ ] Phase 1 leftover: dormant Generate Stem/Separate Stems error wording (both Coming Soon)
-- [ ] Phases 2–8: waiting for the go-ahead after the Phase 1 report
+- [ ] Phase 2: audio engine & recording — audit + fixes in progress (autosave/crash recovery excluded: manual-save-only rule)
+- [ ] Phases 3–8: wait for Phase 2 report
