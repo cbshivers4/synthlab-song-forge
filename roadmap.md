@@ -141,5 +141,6 @@
 - [x] Phase 4: drum HOLD wired, note repeat (hold-to-roll, 6 rates), sampler/pad knobs + Normalize, reverse plays the trimmed part, preset search, 8 Sequence presets, honest mod-matrix warnings, drum envelope knobs
 - [x] Drum pattern chaining (patterns 1–8 in order with bars each, CHAIN on/off, playing step lit, timeline label)
 - [ ] Phase 4 not done: multi-sample layers, separate loop points, per-pad sends, per-track swing
-- [ ] Phase 5: desktop + mobile polish — audit + fixes in progress
+- [x] Phase 5: desktop split view (timeline above any editor, draggable divider, remembered), remembered zoom + rail state, 40px touch targets for phone timeline toolbar/zoom/song lane
+- [ ] Phase 5 not done: editable keyboard shortcuts, saved-library search + drag to timeline, true portrait layout (phones currently show the sideways studio by design)
 - [ ] Phases 6–8: wait for Phase 5 report
