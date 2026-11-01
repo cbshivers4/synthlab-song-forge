@@ -263,6 +263,9 @@ export function ExportDialog() {
       : what === "track" ? (() => { const t = tracks.find((x) => x.id === trackId); return t ? [{ base: `${safeName} - ${t.name}`, tracks: soloOnly(tracks, t.id), level: true }] : []; })()
       : soundTracks.map((t) => ({ base: `${safeName} - ${t.name}`, tracks: soloOnly(tracks, t.id), level: false }));
     if (!targets.length) { toast(what === "track" ? "Pick a track to export" : "No tracks with sound to export"); return; }
+    // Two tracks with the same name still get separate files.
+    const seen = new Map<string, number>();
+    for (const tg of targets) { const n = (seen.get(tg.base) ?? 0) + 1; seen.set(tg.base, n); if (n > 1) tg.base = `${tg.base} ${n}`; }
     setResults([]);
     setElapsed(0);
     cancelled.current = false;
