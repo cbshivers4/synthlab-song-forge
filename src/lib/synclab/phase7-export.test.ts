@@ -18,7 +18,7 @@ describe("MIDI export", () => {
   it("round-trips through the MIDI file reader at the same steps, pitch and length", async () => {
     const blob = writeMidiFile(collectSongNotes([synth], tp, 0, 32), 120, 4);
     const parsed = parseMidiFile(await blob.arrayBuffer());
-    const lead = parsed.find((t) => t.name === "Lead")!;
+    const lead = parsed.find((t) => t.name.toUpperCase() === "LEAD")!;
     expect(lead.notes.map((n) => [n.step, n.pitch, n.length])).toEqual([[4, 60, 2], [20, 60, 2]]);
   });
   it("skips muted tracks", () => {
