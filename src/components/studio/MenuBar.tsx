@@ -118,10 +118,8 @@ export function MenuBar() {
   };
 
   const importAudio = (file: File) => {
-    const id = addTrack("sampler", file.name.replace(/\.[^.]+$/, "").toUpperCase().slice(0, 16));
-    setPanel("sampler");
-    void loadSample(id, file);
-    toast.success(`Imported ${file.name}`, { description: "Loaded into a new sampler channel." });
+    // The sampler reports "Sample loaded" or the read error once decoding has really finished.
+    void importAudioToSampler({ addTrack, setPanel, loadSample, removeTrack }, file);
   };
   const { setStage, mode, toggleMode, project, setProject } = useApp();
   const { requirePro } = usePlan();
@@ -245,13 +243,18 @@ export function MenuBar() {
     "track:midi": () => addTrack("midi", "MIDI", "Deep Keys"),
     "track:drum": () => addTrack("drum", "DRUM MACHINE"),
     "track:sampler": () => addTrack("sampler", "SAMPLER", "Metro Pluck"),
+    "track:ai-vocal": () => addTrack("ai-vocal", "AI VOCAL"),
+    "panel:stems": () => setPanel("stems"),
+    "panel:voice": () => setPanel("voice"),
     "help:center": () => openHelp("help"),
     "help:shortcuts": () => { openShortcutSettings(); setPanel("settings"); },
     "help:problem": () => openHelp("problem"),
     "help:about": () => openHelp("about"),
     "app:check-updates": () =>
       toast("You are on SYNCLAB " + SYNCLAB_VERSION, {
-        description: "This build loads the studio over the network, so it is always up to date. Automatic desktop updates arrive with the signed installers.",
+        description: navigator.onLine
+          ? "The studio inside the desktop app refreshes from synclabsapp.com each time it opens online. New versions of the desktop app itself are installed by downloading the latest installer."
+          : "You're offline, so this is the copy stored on this computer. It refreshes the next time the app opens online.",
       }),
   });
 

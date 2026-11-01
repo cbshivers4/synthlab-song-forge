@@ -338,7 +338,8 @@ interface StudioApi extends StudioState {
   previewNote: (trackId: string, midi: number, duration?: number, capture?: boolean, patch?: SynthPatch) => void;
   /** Writes a note into the live timeline recording without playing it (the caller already sounded it). */
   captureNote: (trackId: string, midi: number, velocity?: number) => void;
-  loadSample: (trackId: string, file: File) => Promise<void>;
+  /** Resolves true once the file is decoded onto the sampler; false (after an error toast) when it can't be read. */
+  loadSample: (trackId: string, file: File) => Promise<boolean>;
   updateSampler: (trackId: string, patch: Partial<SamplerState>) => void;
   clearSample: (trackId: string) => void;
   stopSamples: (trackId?: string) => void;
@@ -2720,10 +2721,12 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           toast.success("Sample loaded", {
             description: `${loaded.name} · ${loaded.duration.toFixed(2)}s`,
           });
+          return true;
         } catch {
           toast.error("That file could not be read", {
             description: "Try a standard MP3, WAV, AIFF, M4A or OGG file.",
           });
+          return false;
         }
       },
       updateSampler: (trackId, patch) =>
