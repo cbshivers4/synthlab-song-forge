@@ -63,14 +63,12 @@ export function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track:
   /** One tap opens the track menu; a second tap within 300 ms opens the drum roll or piano roll instead. */
   const tapTimerRef = useRef<number | null>(null);
   const openRoll = () => {
-    console.warn("DBG openRoll", track.kind);
     select(track.id);
     if (track.kind === "drum") setPanel("drums");
     else if (track.kind === "instrument" || track.kind === "midi") setPanel("piano");
     else openEditor();
   };
   const selectForEditing = () => {
-    console.warn("DBG selectForEditing", tapTimerRef.current);
     select(track.id);
     setPastePosition(null);
     if (tapTimerRef.current !== null) {
@@ -1101,7 +1099,17 @@ export function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track:
             if (!hasClipboard && (track.kind === "instrument" || track.kind === "midi")) {
               setPanel("piano");
               window.setTimeout(() => window.dispatchEvent(new CustomEvent("synclab:selected-track-menu", { detail: track.id })), 0);
-            } else setMenuOpen(true);
+              return;
+            }
+            // Single tap opens the track menu; a second tap within 300 ms opens the drum roll / editor instead.
+            if (tapTimerRef.current !== null) {
+              window.clearTimeout(tapTimerRef.current);
+              tapTimerRef.current = null;
+              setMenuOpen(false);
+              openRoll();
+              return;
+            }
+            tapTimerRef.current = window.setTimeout(() => { tapTimerRef.current = null; setMenuOpen(true); }, 300);
             return;
           }
           if (editTool === "split" || editTool === "razor") {
