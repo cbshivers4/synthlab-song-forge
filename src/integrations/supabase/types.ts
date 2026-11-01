@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_usage: {
+        Row: {
+          created_at: string
+          id: string
+          tool: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          tool: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          tool?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       cloud_projects: {
         Row: {
           bpm: number
@@ -277,6 +298,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      ai_uses_left: { Args: { _daily_limit?: number }; Returns: number }
+      consume_ai_use: {
+        Args: { _daily_limit?: number; _tool: string }
+        Returns: Json
+      }
       has_active_subscription: {
         Args: { check_env?: string; user_uuid: string }
         Returns: boolean
@@ -288,6 +314,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      refund_ai_use: { Args: { _id: string }; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"

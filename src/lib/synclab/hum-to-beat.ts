@@ -175,3 +175,21 @@ export function alignToStart<T extends { step: number }>(events: T[]): T[] {
   const first = Math.min(...events.map((e) => e.step));
   return events.map((e) => ({ ...e, step: e.step - first }));
 }
+
+const SCALE = { major: [0, 2, 4, 5, 7, 9, 11], minor: [0, 2, 3, 5, 7, 8, 10] } as const;
+
+/**
+ * Edits a hummed melody before it goes on the timeline: shifts every note by `transpose` semitones,
+ * then (when a key is chosen) moves each note to the nearest note of that key, preferring the lower one on ties.
+ */
+export function shapeMelody(notes: HumNote[], transpose: number, key: { tonic: number; minor: boolean } | null): HumNote[] {
+  return notes.map((n) => {
+    let p = n.pitch + transpose;
+    if (key) {
+      const scale = key.minor ? SCALE.minor : SCALE.major;
+      const inKey = (q: number) => scale.includes(((((q - key.tonic) % 12) + 12) % 12) as never);
+      for (let d = 0; d <= 6; d++) { if (inKey(p - d)) { p -= d; break; } if (inKey(p + d)) { p += d; break; } }
+    }
+    return { ...n, pitch: Math.max(0, Math.min(127, p)) };
+  });
+}

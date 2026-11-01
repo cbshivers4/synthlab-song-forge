@@ -8,7 +8,10 @@ import { GeneratedWaveform } from "./GeneratedWaveform";
 import { PatternWaveform } from "./PatternWaveform";
 import { useStudio } from "@/lib/synclab/store";
 import { openMic, preferredRecordingMime, releaseMic } from "@/lib/synclab/mic";
-import { alignToStart, analyseBeatbox, analyseMelody, type BeatHit, type HumNote } from "@/lib/synclab/hum-to-beat";
+import { alignToStart, analyseBeatbox, analyseMelody, shapeMelody, type BeatHit, type HumNote } from "@/lib/synclab/hum-to-beat";
+import { SYNTH_PRESETS } from "@/lib/synclab/presets";
+
+const MELODY_SOUNDS = SYNTH_PRESETS.filter((p) => /lead|keys|pluck|bell|pad|brass|string|arp/i.test(p.category)).map((p) => p.name).slice(0, 24);
 import { stepsPerBar } from "@/lib/synclab/timebase";
 
 type Mode = "beat" | "melody";
@@ -16,13 +19,19 @@ const MAX_SEC = 30;
 const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 
 export function HumToBeat() {
-  const { tracks, transport, addTrack, updateTrack } = useStudio();
+  const { tracks, transport, addTrack, updateTrack, setTransport } = useStudio();
   const [mode, setMode] = useState<Mode>("beat");
   const [recording, setRecording] = useState(false);
   const [busy, setBusy] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [result, setResult] = useState<{ mode: Mode; hits: BeatHit[]; notes: HumNote[] } | null>(null);
   const [recordedBuffer, setRecordedBuffer] = useState<AudioBuffer | null>(null);
+  const [transpose, setTranspose] = useState(0);
+  const [keyTonic, setKeyTonic] = useState<number | null>(null);
+  const [keyMinor, setKeyMinor] = useState(true);
+  const [sound, setSound] = useState(MELODY_SOUNDS.includes("Metro Pluck") ? "Metro Pluck" : (MELODY_SOUNDS[0] ?? ""));
+  // The hummed notes after your transpose / key choices — this is what previews and goes on the timeline.
+  const melody = result?.mode === "melody" ? shapeMelody(result.notes, transpose, keyTonic === null ? null : { tonic: keyTonic, minor: keyMinor }) : [];
   const recRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const timerRef = useRef<number | null>(null);
@@ -118,9 +127,9 @@ export function HumToBeat() {
       pending.current = { id, hits: result.hits, steps };
       return id;
     }
-    const steps = lengthSteps(Math.max(...result.notes.map((n) => n.step + n.length - 1)));
-    const id = addTrack("instrument", name, undefined, { keepPanel: true });
-    updateTrack(id, { steps, notes: result.notes.map((n, i) => ({ id: `hum-${Date.now()}-${i}`, ...n })) });
+    const steps = lengthSteps(Math.max(...melody.map((n) => n.step + n.length - 1)));
+    const id = addTrack("instrument", name, sound || undefined, { keepPanel: true });
+    updateTrack(id, { steps, notes: melody.map((n, i) => ({ id: `hum-${Date.now()}-${i}`, ...n })) });
     return id;
   };
   const preview = () => pv.start((n) => build(n(finalName())));
@@ -128,7 +137,7 @@ export function HumToBeat() {
     if (!result) return;
     if (!pv.keep(finalName())) build(finalName());
     toast.success(result.mode === "beat" ? "Beat track added" : "Melody track added", {
-      description: result.mode === "beat" ? `${result.hits.length} hits on kick, snare and hat.` : `${result.notes.length} notes — edit them in the piano roll.`,
+      description: result.mode === "beat" ? `${result.hits.length} hits on kick, snare and hat.` : `${melody.length} notes — edit them in the piano roll.`,
     });
     setResult(null);
   };
@@ -181,12 +190,48 @@ export function HumToBeat() {
         )}
       </div>
 
+      {result?.mode === "melody" && result.notes.length > 0 && (
+        <div className="space-y-3 rounded-md border border-border bg-surface-2 p-3">
+          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Shape the melody before adding it — preview again to hear changes</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="w-20 text-xs text-muted-foreground">Transpose</span>
+            {[-12, -1, 1, 12].map((d) => (
+              <Button key={d} size="sm" variant="secondary" className="min-h-11 min-w-11" onClick={() => setTranspose((v) => Math.max(-24, Math.min(24, v + d)))} aria-label={`Transpose ${d > 0 ? "up" : "down"} ${Math.abs(d) === 12 ? "an octave" : "a semitone"}`}>
+                {d > 0 ? "+" : "−"}{Math.abs(d) === 12 ? "Oct" : "1"}
+              </Button>
+            ))}
+            <span className="min-w-16 font-mono text-sm" aria-live="polite">{transpose > 0 ? "+" : ""}{transpose} st</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <label htmlFor="hum-key" className="w-20 text-xs text-muted-foreground">Snap to key</label>
+            <select id="hum-key" className="min-h-11 rounded-md border border-border bg-background px-2 text-sm" value={keyTonic ?? ""} onChange={(e) => setKeyTonic(e.target.value === "" ? null : Number(e.target.value))}>
+              <option value="">Off — keep exact notes</option>
+              {NOTE_NAMES.map((n, i) => <option key={n} value={i}>{n}</option>)}
+            </select>
+            <select aria-label="Scale" disabled={keyTonic === null} className="min-h-11 rounded-md border border-border bg-background px-2 text-sm disabled:opacity-50" value={keyMinor ? "minor" : "major"} onChange={(e) => setKeyMinor(e.target.value === "minor")}>
+              <option value="minor">Minor</option><option value="major">Major</option>
+            </select>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <label htmlFor="hum-sound" className="w-20 text-xs text-muted-foreground">Instrument</label>
+            <select id="hum-sound" className="min-h-11 rounded-md border border-border bg-background px-2 text-sm" value={sound} onChange={(e) => setSound(e.target.value)}>
+              {MELODY_SOUNDS.map((s) => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <label htmlFor="hum-bpm" className="w-20 text-xs text-muted-foreground">Song tempo</label>
+            <input id="hum-bpm" type="number" min={40} max={240} className="min-h-11 w-24 rounded-md border border-border bg-background px-2 font-mono text-sm" value={transport.bpm}
+              onChange={(e) => { const v = Number(e.target.value); if (v >= 40 && v <= 240) setTransport({ bpm: v }); }} />
+            <span className="text-xs text-muted-foreground">BPM — the notes keep their place in the bar and play faster or slower.</span>
+          </div>
+        </div>
+      )}
       {recordedBuffer && <GeneratedWaveform buffer={recordedBuffer} label="Recorded hum / beatbox waveform" />}
       {result && (
         <div className="rounded-md border border-border bg-surface-2 p-3 font-mono text-xs">
           {result.mode === "beat"
             ? `Heard ${result.hits.length} hits — kick ${counts?.['kick'] ?? 0}, snare ${counts?.['snare'] ?? 0}, hat ${counts?.['hat'] ?? 0}`
-            : `Heard ${result.notes.length} notes${result.notes.length ? ` — ${result.notes.slice(0, 16).map((n) => NOTE_NAMES[n.pitch % 12]! + (Math.floor(n.pitch / 12) - 1)).join(" ")}${result.notes.length > 16 ? " …" : ""}` : ""}`}
+            : `Heard ${melody.length} notes${melody.length ? ` — ${melody.slice(0, 16).map((n) => NOTE_NAMES[n.pitch % 12]! + (Math.floor(n.pitch / 12) - 1)).join(" ")}${melody.length > 16 ? " …" : ""}` : ""}`}
         </div>
       )}
       {result && (result.hits.length > 0 || result.notes.length > 0) && (
@@ -195,7 +240,7 @@ export function HumToBeat() {
           label={result.mode === "beat" ? "Generated drum beat waveform" : "Generated melody waveform"}
           pattern={result.mode === "beat"
             ? { hits: result.hits, steps: lengthSteps(Math.max(...result.hits.map((h) => h.step))) }
-            : { notes: result.notes, instrument: "Metro Pluck", steps: lengthSteps(Math.max(...result.notes.map((n) => n.step + n.length - 1))) }}
+            : { notes: melody, instrument: sound || "Metro Pluck", steps: lengthSteps(Math.max(...melody.map((n) => n.step + n.length - 1))) }}
         />
       )}
     </section>

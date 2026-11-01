@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Play, Sparkles, Square } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
+import { AiUsesLeft, announceAiUse } from "./AiUsesLeft";
 import { Button } from "@/components/ui/button";
 import { usePreviewTrack } from "@/lib/synclab/use-preview-track";
 import { PreviewButtons } from "./PreviewButtons";
@@ -47,6 +48,7 @@ export function StemGenerator() {
     pv.stop();
     try {
       const res = await gen({ data: { prompt: prompt.trim() || `${instrument} groove`, instrument, bpm: transport.bpm || 120, key } });
+      announceAiUse();
       if (!res.ok) { setError(res.error); return; }
       const bytes = Uint8Array.from(atob(res.mp3), (c) => c.charCodeAt(0));
       const blob = new Blob([bytes], { type: "audio/mpeg" });
@@ -60,7 +62,8 @@ export function StemGenerator() {
       try {
         const iso = await ctx.decodeAudioData(await (await isolatePart(blob, part)).arrayBuffer());
         left = iso.getChannelData(0).slice(); right = (iso.numberOfChannels > 1 ? iso.getChannelData(1) : iso.getChannelData(0)).slice(); sr = iso.sampleRate;
-        how = "AI kept only the " + instrument.toLowerCase() + ".";
+        how = "AI separated the " + part + " part" + (part === "other" ? " (everything except drums, bass and vocals)" : "") + "; other instruments in that group can remain.";
+        announceAiUse();
       } catch (e) {
         const msg = e instanceof Error ? e.message : "";
         const want = part === "drums" ? ["drums"] : part === "vocals" ? ["vocals"] : part === "bass" ? ["bass"] : ["drums", "bass", "vocals"];
@@ -93,8 +96,7 @@ export function StemGenerator() {
     audioRef.current = a;
     a.currentTime = 0;
     a.onended = () => setPlaying(false);
-    void a.play();
-    setPlaying(true);
+    a.play().then(() => setPlaying(true)).catch(() => { setPlaying(false); toast.error("Couldn't play the preview", { description: "Tap Play again." }); });
   };
 
   const pv = usePreviewTrack();
@@ -120,8 +122,9 @@ export function StemGenerator() {
       <header>
         <h2 className="font-mono text-sm font-bold tracking-[0.18em]">GENERATE STEM</h2>
         <p className="text-xs text-muted-foreground">
-          Describe a part and AI creates a 30-second audio clip at {transport.bpm} BPM. Afterwards AI separation keeps only the instrument you picked and removes everything else. If that service is unavailable, SYNCLAB cleans it on your device instead, where faint bleed can remain. Each generation uses AI credits.
+          Describe a part and AI creates a 30-second audio clip at {transport.bpm} BPM. Afterwards AI separation keeps only the instrument you picked and removes everything else. If that service is unavailable, SYNCLAB cleans it on your device instead, where faint bleed can remain. Each generation counts as 1 AI use, plus 1 for the clean-up separation.
         </p>
+        <AiUsesLeft />
       </header>
 
       <div className="flex flex-wrap gap-2">

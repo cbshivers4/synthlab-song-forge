@@ -15,6 +15,13 @@
       "when": 1791101161992,
       "tag": "0001_restore_has_role_execute_for_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793515321708,
+      "tag": "0002_ai_daily_usage_limit",
+      "breakpoints": true
     }
   ]
 }

@@ -144,3 +144,6 @@
 - [x] Phase 5: desktop split view (timeline above any editor, draggable divider, remembered), remembered zoom + rail state, 40px touch targets for phone timeline toolbar/zoom/song lane
 - [ ] Phase 5 not done: editable keyboard shortcuts, saved-library search + drag to timeline, true portrait layout (phones currently show the sideways studio by design)
 - [ ] Phases 6–8: wait for Phase 5 report
+
+- [x] Phase 6: AI Co-Producer / Generate Stem / Separate Stems switched on; 25 AI uses per person per day (server-enforced, shown in each tool); stem separation 15-min deadline + real cancel; Hum to Beat transpose/snap-to-key/instrument/tempo; Bass Generator regenerate variations
+- [ ] Phase 6 not done: true AI voice conversion (no suitable service connected), dedicated Vocal Forge lyrics-to-tempo tool; landing page still lists the three AI tools as Coming soon (needs your OK to change)

@@ -8,7 +8,8 @@ import { isStereo, MAX_STEM_SECONDS, peaksOf, separateStems, STEMS, type StemId 
 import { retainMediaInBackground } from "@/lib/synclab/media-library";
 import { GeneratedWaveform } from "./GeneratedWaveform";
 import { useServerFn } from "@tanstack/react-start";
-import { checkStemSplitFn, fetchStemFn, startStemSplitFn } from "@/utils/stem-split.functions";
+import { cancelStemSplitFn, checkStemSplitFn, fetchStemFn, startStemSplitFn } from "@/utils/stem-split.functions";
+import { AiUsesLeft, announceAiUse } from "./AiUsesLeft";
 
 const MAX_AI_BYTES = 40 * 1024 * 1024;
 const toBase64 = async (blob: Blob) => {
@@ -39,6 +40,7 @@ export function StemSplitter() {
   const startAi = useServerFn(startStemSplitFn);
   const checkAi = useServerFn(checkStemSplitFn);
   const fetchAi = useServerFn(fetchStemFn);
+  const cancelAi = useServerFn(cancelStemSplitFn);
   const cancelRef = useRef(false);
 
   const clips = useMemo(
@@ -129,12 +131,15 @@ export function StemSplitter() {
     try {
       setBusy("Uploading…");
       const started = await startAi({ data: { audio: await toBase64(source.blob), name: `${source.name}.${source.blob.type.includes("wav") ? "wav" : "mp3"}`, mime: source.blob.type || "audio/mpeg" } });
+      announceAiUse();
       if (!started.ok) throw new Error(started.error);
       setBusy("Separating with AI…");
       let stems: Record<string, string> | null = null;
+      const deadline = Date.now() + 15 * 60_000;
       while (!stems) {
         await new Promise((r) => setTimeout(r, 4000));
-        if (cancelRef.current) { toast("Separation stopped"); return; }
+        if (cancelRef.current) { void cancelAi({ data: { id: started.id } }).catch(() => {}); toast("Separation stopped"); return; }
+        if (Date.now() > deadline) { void cancelAi({ data: { id: started.id } }).catch(() => {}); throw new Error("The separator took longer than 15 minutes, so it was stopped. Try a shorter song or an MP3."); }
         const res = await checkAi({ data: { id: started.id } });
         if (!res.ok) throw new Error(res.error);
         if (res.status.state === "failed") throw new Error(res.status.error);
@@ -205,6 +210,7 @@ export function StemSplitter() {
             ? "AI separation (Demucs) splits a song into clean Vocals, Drums, Bass and Music. Your song is uploaded to Replicate for processing, which costs a few cents per song on the connected Replicate account. A 3-minute song takes about 1–2 minutes."
             : "On-device separation analyses the sound spectrum: hits go to Drums, centre sounds in the voice range go to Vocals, low notes go to Bass. Free and private, but expect bleed between parts."}
         </p>
+        {mode === "ai" && <AiUsesLeft />}
       </header>
 
       <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Separation method">

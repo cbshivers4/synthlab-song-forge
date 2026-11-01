@@ -9,7 +9,7 @@ import { getBeatsPerBar } from "@/lib/synclab/timebase";
 import { SYNTH_PRESETS, applyPreset } from "@/lib/synclab/presets";
 
 const BASS_SOUNDS = SYNTH_PRESETS.filter((p) => p.category === "Bass").map((p) => p.name);
-import { BASS_STYLES, BASS_TEMPLATES, cleanBassPatch, generateBass, NOTE_NAMES, PROGRESSIONS, rootsFromKey, rootsFromTracks, type BassStyle } from "@/lib/synclab/bass-gen";
+import { BASS_STYLES, BASS_TEMPLATES, cleanBassPatch, generateBass, varyBass, NOTE_NAMES, PROGRESSIONS, rootsFromKey, rootsFromTracks, type BassStyle } from "@/lib/synclab/bass-gen";
 
 export function BassGenerator() {
   const { tracks, transport, addTrack, updateTrack, setTransport } = useStudio();
@@ -41,10 +41,14 @@ export function BassGenerator() {
   const signature = `${roots.join(",")}|${style}|${octave}|${barSteps}`;
   const [made, setMade] = useState<{ notes: ReturnType<typeof generateBass>; signature: string } | null>(null);
   const generated = made && made.signature === signature ? made.notes : null;
+  const [variation, setVariation] = useState(0);
   const generate = () => {
-    const notes = generateBass(roots, style, barSteps, octave);
+    // Pressing again with the same settings makes a new variation; changing settings starts from the plain line.
+    const v = made && made.signature === signature ? variation + 1 : 0;
+    setVariation(v);
+    const notes = varyBass(generateBass(roots, style, barSteps, octave), v, minor, barSteps);
     setMade({ notes, signature });
-    toast.success("Bassline generated", { description: `${notes.length} notes over ${bars} bars — preview it or add it to the timeline.` });
+    toast.success(v ? `Bassline variation ${v}` : "Bassline generated", { description: `${notes.length} notes over ${bars} bars — preview it or add it to the timeline.` });
   };
   const applyTemplate = (id: string) => {
     const t = BASS_TEMPLATES.find((x) => x.id === id);
@@ -55,6 +59,7 @@ export function BassGenerator() {
     const degrees = PROGRESSIONS.find((p) => p.id === t.prog)!.degrees;
     const r = rootsFromKey(t.tonic, t.minor, degrees, bars);
     const notes = generateBass(r, t.style, barSteps, t.octave);
+    setVariation(0);
     setMade({ notes, signature: `${r.join(",")}|${t.style}|${t.octave}|${barSteps}` });
     toast.success(`${t.label} bassline generated`, { description: `${notes.length} notes in ${NOTE_NAMES[t.tonic]} ${t.minor ? "minor" : "major"} — check the waveform, then preview or add it.` });
   };
@@ -152,7 +157,7 @@ export function BassGenerator() {
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <Button size="lg" className="min-h-12" onClick={generate}>Generate bassline</Button>
+        <Button size="lg" className="min-h-12" onClick={generate}>{generated ? "Regenerate (new variation)" : "Generate bassline"}</Button>
         {generated && <span className="font-mono text-xs text-muted-foreground">{generated.length} notes ready</span>}
       </div>
       {generated && (

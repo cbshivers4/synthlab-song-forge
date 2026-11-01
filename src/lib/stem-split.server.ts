@@ -65,6 +65,11 @@ export async function checkStemSplit(id: string): Promise<StemSplitStatus> {
   return { state: "running" };
 }
 
+export async function cancelStemSplit(id: string) {
+  const res = await fetch(`${GATEWAY}/predictions/${encodeURIComponent(id)}/cancel`, { method: "POST", headers: headers() });
+  if (!res.ok && res.status !== 404) await fail(res, "cancel");
+}
+
 const ALLOWED = /^https:\/\/(?:[a-z0-9-]+\.)?replicate\.delivery\/|^https:\/\/storage\.googleapis\.com\/replicate-files\//;
 
 /** Downloads one finished stem (only Replicate output hosts) and returns it as base64 MP3. */
