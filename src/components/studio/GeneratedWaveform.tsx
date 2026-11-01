@@ -3,7 +3,7 @@ import { WaveformView } from "./WaveformView";
 import { peaksOf } from "@/lib/synclab/stems";
 
 /** Peak level, clipped-sample count and a short real-sample window from the loudest note. */
-export function analyseBuffer(buffer: AudioBuffer, windowSeconds = 0.05) {
+export function analyseBuffer(buffer: AudioBuffer, windowSeconds = 0.12) {
   let peak = 0;
   let peakAt = 0;
   let clipped = 0;
@@ -64,7 +64,7 @@ export function GeneratedWaveform({ buffer, data, peaks, label = "Generated audi
             {[4, 50, 96].map((y) => <line key={y} x1="0" x2="300" y1={y} y2={y} stroke={color ?? "var(--display-wave)"} strokeOpacity={y === 50 ? 0.25 : 0.12} strokeWidth="0.6" strokeDasharray={y === 50 ? undefined : "3 3"} />)}
             <path d={shapePath} fill="none" stroke={color ?? "var(--display-wave)"} strokeWidth="1.6" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
           </svg>
-          <span className="absolute left-1.5 top-1 font-mono text-[9px] uppercase tracking-widest text-muted-foreground">Wave shape · 50 ms</span>
+          <span className="absolute left-1.5 top-1 font-mono text-[9px] uppercase tracking-widest text-muted-foreground">Wave shape · 120 ms</span>
         </div>
       )}
     </div>
