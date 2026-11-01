@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
 import type { AudioClip, AuxId, BusId, BusState, DrumPad, PluginDef, PluginInstance, SongSection, SynthPatch, Track, TrackFolder, Transport, VcaId } from "./types";
 import type { SavedPad } from "./pad-session";
-import { drumSamplePlan, mediaStorePlan } from "./cloud-media";
+import { drumSamplePlan, ownedMediaPlan } from "./cloud-media";
 
 const BUCKET = "synclab-cloud";
 
@@ -56,19 +56,6 @@ async function copyToStorage(url: string, path: string) {
     upsert: true,
   });
   if (error) throw error;
-}
-
-async function uploadUrl(url: string, path: string) {
-  if (!url.startsWith("blob:")) return url;
-  const response = await fetch(url);
-  if (!response.ok) throw new Error("An audio file could not be prepared for upload.");
-  const blob = await response.blob();
-  const { error } = await supabase.storage.from(BUCKET).upload(path, blob, {
-    contentType: blob.type || "application/octet-stream",
-    upsert: true,
-  });
-  if (error) throw error;
-  return path;
 }
 
 /** Stores one audio reference as this project's own copy (see ownedMediaPlan). */
