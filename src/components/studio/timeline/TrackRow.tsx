@@ -1099,7 +1099,17 @@ export function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track:
             if (!hasClipboard && (track.kind === "instrument" || track.kind === "midi")) {
               setPanel("piano");
               window.setTimeout(() => window.dispatchEvent(new CustomEvent("synclab:selected-track-menu", { detail: track.id })), 0);
-            } else setMenuOpen(true);
+              return;
+            }
+            // Single tap opens the track menu; a second tap within 300 ms opens the drum roll / editor instead.
+            if (tapTimerRef.current !== null) {
+              window.clearTimeout(tapTimerRef.current);
+              tapTimerRef.current = null;
+              setMenuOpen(false);
+              openRoll();
+              return;
+            }
+            tapTimerRef.current = window.setTimeout(() => { tapTimerRef.current = null; setMenuOpen(true); }, 300);
             return;
           }
           if (editTool === "split" || editTool === "razor") {

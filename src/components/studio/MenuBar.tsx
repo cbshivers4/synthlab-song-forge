@@ -9,6 +9,8 @@ import {
   MenubarTrigger,
 } from "@/components/ui/menubar";
 import { useStudio } from "@/lib/synclab/store";
+import { consumeTakeFailure, TakeNotKeptError } from "@/lib/synclab/take-status";
+import { importAudioToSampler, AUDIO_IMPORT_ACCEPT } from "@/lib/synclab/import-audio";
 import { DeviceClock } from "./DeviceClock";
 import { requestBluetoothSettings } from "./Settings";
 import { useApp } from "@/lib/synclab/app-state";
@@ -118,10 +120,8 @@ export function MenuBar() {
   };
 
   const importAudio = (file: File) => {
-    const id = addTrack("sampler", file.name.replace(/\.[^.]+$/, "").toUpperCase().slice(0, 16));
-    setPanel("sampler");
-    void loadSample(id, file);
-    toast.success(`Imported ${file.name}`, { description: "Loaded into a new sampler channel." });
+    // The sampler reports "Sample loaded" or the read error once decoding has really finished.
+    void importAudioToSampler({ addTrack, setPanel, loadSample, removeTrack }, file);
   };
   const { setStage, mode, toggleMode, project, setProject } = useApp();
   const { requirePro } = usePlan();
@@ -135,7 +135,9 @@ export function MenuBar() {
     const saving = toast.loading("Saving project and audio…");
     try {
       // Finalize any in-progress take first, so the save includes it.
+      consumeTakeFailure();
       if (transport.recording) await stop();
+      if (consumeTakeFailure()) throw new TakeNotKeptError();
       const session = snapshot();
       const saved = await saveCloudProject({ ...project, id: project.id ?? "" }, session);
       setProject({ ...project, id: saved.id, openedAt: Date.now() });
@@ -170,9 +172,13 @@ export function MenuBar() {
     setSaveAsOpen(false);
     const { id: _id, ...copy } = project;
     const newProject = { ...copy, name, openedAt: Date.now() };
-    setProject(newProject);
     const saving = toast.loading(`Saving “${name}” and its audio…`);
     try {
+      // Finalize any in-progress take first, so the copy includes it. The open project only
+      // switches to the copy once the copy has really been saved.
+      consumeTakeFailure();
+      if (transport.recording) await stop();
+      if (consumeTakeFailure()) throw new TakeNotKeptError();
       const session = snapshot();
       const saved = await saveCloudProject({ ...newProject, id: "" }, session);
       setProject({ ...newProject, id: saved.id });
@@ -245,13 +251,18 @@ export function MenuBar() {
     "track:midi": () => addTrack("midi", "MIDI", "Deep Keys"),
     "track:drum": () => addTrack("drum", "DRUM MACHINE"),
     "track:sampler": () => addTrack("sampler", "SAMPLER", "Metro Pluck"),
+    "track:ai-vocal": () => addTrack("ai-vocal", "AI VOCAL"),
+    "panel:stems": () => setPanel("stems"),
+    "panel:voice": () => setPanel("voice"),
     "help:center": () => openHelp("help"),
     "help:shortcuts": () => { openShortcutSettings(); setPanel("settings"); },
     "help:problem": () => openHelp("problem"),
     "help:about": () => openHelp("about"),
     "app:check-updates": () =>
       toast("You are on SYNCLAB " + SYNCLAB_VERSION, {
-        description: "This build loads the studio over the network, so it is always up to date. Automatic desktop updates arrive with the signed installers.",
+        description: navigator.onLine
+          ? "The studio inside the desktop app refreshes from synclabsapp.com each time it opens online. New versions of the desktop app itself are installed by downloading the latest installer."
+          : "You're offline, so this is the copy stored on this computer. It refreshes the next time the app opens online.",
       }),
   });
 
@@ -261,7 +272,7 @@ export function MenuBar() {
       <input
         ref={importRef}
         type="file"
-        accept="audio/*,.mp3,.wav,.wave,.aif,.aiff,.m4a,.aac,.ogg,.flac,.webm"
+        accept={AUDIO_IMPORT_ACCEPT}
         multiple
         className="hidden"
         aria-label="Import audio files"

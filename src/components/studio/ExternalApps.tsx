@@ -20,7 +20,10 @@ export function ExternalApps() {
   const stopRef = useRef<() => void>(() => {});
 
   useEffect(() => onRoutesChange(() => setRoutesState({ ...getRoutes() })), []);
-  useEffect(() => () => { stopRef.current(); views.forEach((v) => v.stream.getTracks().forEach((t) => t.stop())); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // Latest captures, so closing the panel stops window captures added after it opened.
+  const viewsRef = useRef(views);
+  viewsRef.current = views;
+  useEffect(() => () => { stopRef.current(); viewsRef.current.forEach((v) => v.stream.getTracks().forEach((t) => t.stop())); }, []);
 
   const scanAudio = async () => {
     try { const s = await navigator.mediaDevices.getUserMedia({ audio: true }); s.getTracks().forEach((t) => t.stop()); } catch { /* permission denied */ }

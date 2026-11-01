@@ -8,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { markTakeFailed } from "./take-status";
 import { drumCopySpan, materialEnd, pasteTrackContent, timelinePasteStep } from "./arrangement-edit";
 
 /** Drum/sampler tracks can hold values the browser cannot deep-copy; fall back so copy never silently fails. */
@@ -338,7 +339,8 @@ interface StudioApi extends StudioState {
   previewNote: (trackId: string, midi: number, duration?: number, capture?: boolean, patch?: SynthPatch) => void;
   /** Writes a note into the live timeline recording without playing it (the caller already sounded it). */
   captureNote: (trackId: string, midi: number, velocity?: number) => void;
-  loadSample: (trackId: string, file: File) => Promise<void>;
+  /** Resolves true once the file is decoded onto the sampler; false (after an error toast) when it can't be read. */
+  loadSample: (trackId: string, file: File) => Promise<boolean>;
   updateSampler: (trackId: string, patch: Partial<SamplerState>) => void;
   clearSample: (trackId: string) => void;
   stopSamples: (trackId?: string) => void;
@@ -1310,6 +1312,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     try {
       result = await engine.stopInputRecording();
     } catch (err) {
+      markTakeFailed();
       toast.error("Take couldn't be kept", { description: err instanceof Error ? err.message : undefined });
     }
     if (!target) return;
@@ -1468,6 +1471,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       landed = true;
       toast.success(`${clip.name} recorded`, { description: "Double-click the waveform to edit it; switch to Notes to edit the pattern." });
     } catch (err) {
+      markTakeFailed();
       toast.error("Take couldn't be kept", { description: err instanceof Error ? err.message : undefined });
     } finally {
       releaseTake();
@@ -2720,10 +2724,12 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           toast.success("Sample loaded", {
             description: `${loaded.name} · ${loaded.duration.toFixed(2)}s`,
           });
+          return true;
         } catch {
           toast.error("That file could not be read", {
             description: "Try a standard MP3, WAV, AIFF, M4A or OGG file.",
           });
+          return false;
         }
       },
       updateSampler: (trackId, patch) =>

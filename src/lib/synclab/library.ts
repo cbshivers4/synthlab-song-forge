@@ -40,9 +40,12 @@ function openDb(): Promise<IDBDatabase> {
 async function tx<T>(mode: IDBTransactionMode, run: (s: IDBObjectStore) => IDBRequest<T>): Promise<T> {
   const db = await openDb();
   return new Promise((resolve, reject) => {
-    const req = run(db.transaction(STORE, mode).objectStore(STORE));
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
+    // Resolve only once the transaction has committed, so "saved" really means stored.
+    const transaction = db.transaction(STORE, mode);
+    const req = run(transaction.objectStore(STORE));
+    transaction.oncomplete = () => resolve(req.result);
+    transaction.onabort = () => reject(transaction.error ?? req.error ?? new Error("Saving on this computer was cancelled."));
+    transaction.onerror = () => reject(transaction.error ?? req.error);
   });
 }
 

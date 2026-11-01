@@ -94,7 +94,8 @@ function BpmInput({ bpm, onChange }: { bpm: number; onChange: (bpm: number) => v
 }
 import { IdeaRecorder } from "@/components/studio/IdeaRecorder";
 import { PhonePages } from "./PhonePages";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { importAudioToSampler, AUDIO_IMPORT_ACCEPT } from "@/lib/synclab/import-audio";
 import { SkipBack } from "lucide-react";
 import synclabLogoAsset from "@/assets/synclab-logo-neon.jpg.asset.json";
 const synclabLogo = synclabLogoAsset.url;
@@ -103,7 +104,8 @@ export function TopBar() {
   const isMobile = useIsMobile();
   const transportSkin = useSkin("transport");
   const transportDrop = useImageDrop("transport");
-  const { transport, setTransport, togglePlay, toggleRecord, stop, addTrack, setPanel, panel } = useStudio();
+  const { transport, setTransport, togglePlay, toggleRecord, stop, addTrack, setPanel, panel, loadSample, removeTrack } = useStudio();
+  const importInput = useRef<HTMLInputElement>(null);
 
   const bpb = getBeatsPerBar();
   const ciTotal = (transport.countInBars ?? 1) * bpb;
@@ -500,9 +502,21 @@ export function TopBar() {
               >
                 <SlidersHorizontal className="size-4" /> MIX
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => toast("Import instrumental", { description: "Drop a file on the timeline to analyse BPM, key and structure." })}>
+              <Button variant="ghost" size="sm" title="Import an audio file onto a new sampler channel" onClick={() => importInput.current?.click()}>
                 <Import className="size-4" /> IMPORT
               </Button>
+              <input
+                ref={importInput}
+                type="file"
+                accept={AUDIO_IMPORT_ACCEPT}
+                className="hidden"
+                aria-label="Import audio file"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  e.target.value = "";
+                  if (file) void importAudioToSampler({ addTrack, setPanel, loadSample, removeTrack }, file);
+                }}
+              />
               <Button variant="ghost" size="sm" onClick={openExport}>
                 <Download className="size-4" /> EXPORT
               </Button>

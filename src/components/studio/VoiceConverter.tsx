@@ -79,7 +79,7 @@ export function VoiceConverter() {
     audioRef.current?.pause();
     const a = new Audio(preview.url);
     audioRef.current = a;
-    void a.play();
+    a.play().catch((e: unknown) => toast.error("Couldn't play the preview", { description: e instanceof Error ? e.message : "Tap Listen again." }));
   };
 
   const pv = usePreviewTrack();

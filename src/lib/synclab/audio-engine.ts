@@ -1,4 +1,5 @@
 import { nativeInsertMode } from "./native-insert";
+import { lfoHz } from "./synth-timing";
 import { centerOneSided } from "./one-sided-audio";
 import { buildCreativeFx, isCreativeKind } from "./creative-fx";
 import { phasedHarmonics } from "./oscillator-phase";
@@ -2002,12 +2003,13 @@ export class SyncLabEngine {
 
   /** Decodes a dropped audio file, keeps the buffer and returns its display data. */
   async loadSampleFile(file: File | Blob, name: string) {
-    if (file instanceof File && /\.(mp3|mp4)$/i.test(file.name)) {
-      void import("./media-library").then(({ retainMediaInBackground }) => retainMediaInBackground(file, file.name));
-    }
     const ctx = this.init();
     const raw = await (file as File).arrayBuffer();
     const buf = await ctx.decodeAudioData(raw.slice(0));
+    // Only files that really decode are kept in the account library.
+    if (file instanceof File && /\.(mp3|mp4)$/i.test(file.name)) {
+      void import("./media-library").then(({ retainMediaInBackground }) => retainMediaInBackground(file, file.name));
+    }
     const url = URL.createObjectURL(file);
     this.sampleBuffers.set(url, this.centered(buf));
     const data = buf.getChannelData(0);
@@ -2787,7 +2789,7 @@ export class SyncLabEngine {
     patch.lfos.forEach((lfo, index) => {
       const o = ctx.createOscillator();
       o.type = lfo.wave;
-      o.frequency.value = lfo.rate;
+      o.frequency.value = lfoHz(lfo, this.tempo);
       const g = ctx.createGain();
       if (lfo.destination === "filter") {
         g.gain.value = lfo.amount * 2000;
@@ -2837,7 +2839,7 @@ export class SyncLabEngine {
       const cfg = patch.lfos[idx] ?? { rate: 1, wave: "sine" as const, amount: 1, on: true, destination: "filter" as const };
       const o = ctx.createOscillator();
       o.type = cfg.wave;
-      o.frequency.value = clamp(cfg.rate, 0.01, 40);
+      o.frequency.value = clamp(lfoHz(cfg, this.tempo), 0.01, 40);
       o.start(t0);
       o.stop(t0 + life);
       modOutputs.set(src, o);
@@ -2945,7 +2947,7 @@ export class SyncLabEngine {
       for (const control of lfoControls) {
         const lfo = next.lfos[control.index];
         if (!lfo) continue;
-        control.source.type = lfo.wave; glideParam(control.source.frequency, lfo.rate);
+        control.source.type = lfo.wave; glideParam(control.source.frequency, lfoHz(lfo, this.tempo));
         const scale = control.destination === "filter" ? 2000 : control.destination === "volume" ? 0.4 : control.destination === "pan" ? 1 : 50;
         glideParam(control.depth.gain, lfo.on ? lfo.amount * scale : 0);
       }
