@@ -138,4 +138,5 @@
 - [x] Phase 3: file drops at drop position, Ctrl+D clip duplicate, Ctrl/pinch zoom, undo-right-after-edit fix, per-clip colours, pan/width knobs (wheel + double-click reset), mixer peak hold
 - [x] MIDI/drum part editing: move one part, trim both edges (drums: left trim, right stretch, Alt+right trim)
 - [ ] Phase 3 not done: per-channel input selection, pre/post send switch, automation lane controls in mixer strips
-- [ ] Phases 4–8: wait for Phase 3 report
+- [ ] Phase 4: sampler, drum machine, synths — audit + fixes in progress
+- [ ] Phases 5–8: wait for Phase 4 report
