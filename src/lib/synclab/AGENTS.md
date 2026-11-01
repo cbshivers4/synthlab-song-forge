@@ -36,3 +36,4 @@ Song clock (song-clock.ts) is the scheduler's latest step + audio time; outside 
 MIDI clock (midi-clock.ts): pulses are sent from the song scheduler per scheduled step (6 per 16th, timestamped via getOutputTimestamp), Start/Continue/Stop follow transport.playing; incoming realtime bytes are split off in the shared MIDI subscription before note/CC handling and only act when Follow is on.
 Input loss/changes go through mic.ts window events (input-lost / input-changed / input-fallback); the store stops a take on loss (keeping what was recorded) and reopens the armed input, so no tool silently records from a different device.
 Reel rotation is derived from tape position via reelAngles (turns = (radius − hub)/thickness), never a looping CSS spin.
+Undo commits a pending (debounced) history step before stepping back, so Undo straight after an edit undoes exactly that edit.
