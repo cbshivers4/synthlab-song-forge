@@ -7,6 +7,11 @@ export function selectedClip(track: Track | null | undefined) {
   return track?.clips?.find((clip) => clip.id === track.activeClipId);
 }
 
+/** A copy of the clip placed so it starts exactly where the original ends (no rounding gap). */
+export function clipCopyAfter<C extends AudioClip>(clip: C, stepDur: number, newId: string): C {
+  return { ...clip, id: newId, name: `${clip.name} COPY`, start: (clip.start ?? 0) + clipSeconds(clip) / stepDur };
+}
+
 export function selectedPartBounds(track: Track | null | undefined, bpm: number, bars: number, loop?: [number, number]): [number, number] | null {
   if (!track) return null;
   const clip = selectedClip(track);
