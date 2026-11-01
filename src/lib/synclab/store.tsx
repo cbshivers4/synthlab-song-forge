@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { markTakeFailed } from "./take-status";
+import { setSongClock } from "./song-clock";
 import { drumCopySpan, materialEnd, pasteTrackContent, timelinePasteStep } from "./arrangement-edit";
 
 /** Drum/sampler tracks can hold values the browser cannot deep-copy; fall back so copy never silently fails. */
@@ -1225,6 +1226,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         lastScheduled = step % total;
         queue.push({ step: step % total, time: nextTime });
         lastStepRef.current = { step: step % total, time: nextTime, dur: stepDur };
+        setSongClock(lastStepRef.current);
         nextTime += stepDur;
         step += 1;
         if (tp.loop) {
