@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils";
 import { useIsMobile, useIsLandscapePhone } from "@/hooks/use-mobile";
 import { DrumRoll } from "./DrumRoll";
 import { DrumBulkControls } from "./DrumBulkControls";
+import { DrumChainBar } from "./DrumChainBar";
 import { markLiveHit, neighbourLiveHits } from "@/lib/synclab/live-take";
 import { PresetNavigator } from "./PresetNavigator";
 import { HardwareBypass } from "./HardwareBypass";
@@ -378,6 +379,7 @@ export function DrumMachine({ track }: { track: Track }) {
         <Button size="sm" variant="secondary" disabled={addingSamples || transport.recording} onClick={copySequence} aria-label="Copy pattern to next"><Copy className="size-4" /> Copy next</Button>
         <Button size="sm" variant="ghost" disabled={addingSamples || transport.recording} onClick={clearPattern} aria-label="Clear current pattern"><RotateCcw className="size-4" /> Clear</Button>
       </div>
+      <DrumChainBar track={track} />
 
       {(phoneView === "pads" || phoneView === "sound") && <div className="flex flex-wrap items-center gap-2" aria-label="Add bank pads">
         <Select value={padSound} onValueChange={setPadSound}>
