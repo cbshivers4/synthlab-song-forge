@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { editorPanelFor } from "@/lib/synclab/track-editor";
 import { Cpu, FlipHorizontal2, Music2, SlidersHorizontal, Speaker } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStudio, type PanelId } from "@/lib/synclab/store";
@@ -165,7 +166,7 @@ export function StudioView() {
     return () => ro.disconnect();
   }, [back, tracks.length, inserts.length + buses.length]);
   const open = (panel: PanelId, id?: string) => { if (id) select(id); setPanel(panel); };
-  const instrumentPanel = (track: Track): PanelId => track.kind === "drum" ? "drums" : track.kind === "sampler" ? "sampler" : track.kind === "audio" || track.kind === "ai-vocal" ? "mixer" : "synth";
+  const instrumentPanel = (track: Track): PanelId => track.kind === "audio" || track.kind === "ai-vocal" ? "mixer" : editorPanelFor(track) ?? "synth";
   return <div className="studio-visual flex min-h-0 flex-1 flex-col">
     <div className="flex shrink-0 flex-wrap items-center gap-3 border-b border-border bg-surface px-3 py-2 text-xs">
       <span className="font-display font-semibold">MY STUDIO</span>

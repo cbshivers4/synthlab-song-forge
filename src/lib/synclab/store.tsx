@@ -8,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { editorPanelFor, isPadSamplerTrack } from "./track-editor";
 import { markTakeFailed } from "./take-status";
 import { setSongClock } from "./song-clock";
 import { sendClockForStep, sendTransportStart, sendTransportStop } from "./midi-clock";
@@ -2058,11 +2059,12 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           // A track the user adds is armed right away (others disarm so one take goes to one place).
           // keepPanel callers (pad sampler, tape/sample exports) create channels for content, not recording.
           const autoArm = !opts?.keepPanel;
-          const t = { ...newTrack(kind, name ?? `TRACK ${ts.length + 1}`, ts.length, preset), id, ...(autoArm ? { armed: true } : {}) };
+          const base = newTrack(kind, name ?? `TRACK ${ts.length + 1}`, ts.length, preset);
+          const t = { ...base, id, ...(autoArm ? { armed: true } : {}), ...(isPadSamplerTrack(base) ? { padSampler: true } : {}) };
           setSelectedId(t.id);
           // keepPanel: the pad sampler and phone beat maker create their channel while the
           // user is playing — never navigate them away from what they are doing.
-          if (!opts?.keepPanel) setPanel(kind === "drum" ? "drums" : kind === "sampler" ? "sampler" : kind === "ai-vocal" || kind === "audio" ? null : "synth");
+          if (!opts?.keepPanel) setPanel(editorPanelFor(t));
           return [...(autoArm ? ts.map((x) => (x.armed ? { ...x, armed: false } : x)) : ts), t];
         });
         return id;

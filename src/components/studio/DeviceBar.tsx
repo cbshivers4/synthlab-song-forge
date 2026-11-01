@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { isPadSamplerTrack } from "@/lib/synclab/track-editor";
 import { effectBrand, groupByCategory } from "@/lib/synclab/effect-catalog";
 import { ChevronDown, ChevronUp, Disc3, AudioLines, Music2, Piano, Plus, Power, X } from "lucide-react";
 import { useStudio } from "@/lib/synclab/store";
@@ -14,6 +15,7 @@ import { BypassButton, HardwareBypass } from "./HardwareBypass";
 
 function instrumentModule(track: Track): { label: string; icon: React.ReactNode; panel: "synth" | "drums" | "sampler" | "piano"; tone: string } {
   if (track.kind === "drum") return { label: "Drum Machine", icon: <Disc3 className="size-3.5" />, panel: "drums", tone: "drums" };
+  if (isPadSamplerTrack(track)) return { label: "Pad Sampler", icon: <AudioLines className="size-3.5" />, panel: "pads", tone: "sampler" };
   if (track.kind === "sampler") return { label: "Sampler", icon: <AudioLines className="size-3.5" />, panel: "sampler", tone: "sampler" };
   if (track.kind === "audio" || track.kind === "ai-vocal") return { label: "Audio Track", icon: <AudioLines className="size-3.5" />, panel: "piano", tone: "audio" };
   return { label: "Synthesizer", icon: <Music2 className="size-3.5" />, panel: "synth", tone: "synth" };
