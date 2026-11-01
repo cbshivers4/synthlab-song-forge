@@ -63,12 +63,14 @@ export function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track:
   /** One tap opens the track menu; a second tap within 300 ms opens the drum roll or piano roll instead. */
   const tapTimerRef = useRef<number | null>(null);
   const openRoll = () => {
+    console.warn("DBG openRoll", track.kind);
     select(track.id);
     if (track.kind === "drum") setPanel("drums");
     else if (track.kind === "instrument" || track.kind === "midi") setPanel("piano");
     else openEditor();
   };
   const selectForEditing = () => {
+    console.warn("DBG selectForEditing", tapTimerRef.current);
     select(track.id);
     setPastePosition(null);
     if (tapTimerRef.current !== null) {
