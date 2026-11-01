@@ -4,6 +4,7 @@ import type { KeyboardEvent, PointerEvent as ReactPointerEvent, WheelEvent as Re
 import { Play, Redo2, RotateCcw, Square, Undo2, ZoomIn, ZoomOut } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { TRACK_PALETTE } from "./TrackStyle";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import {
@@ -183,6 +184,14 @@ export function ClipEditor({ track, clip, onClose }: { track: Track; clip: Audio
           <span className="font-mono text-[10px] text-muted-foreground">
             {length.toFixed(2)}s source · {(length / rate).toFixed(2)}s on the timeline
           </span>
+          <div className="flex items-center gap-1" role="group" aria-label="Clip colour">
+            <button type="button" onClick={() => set({ color: undefined })} title="Use the track colour" aria-label="Use the track colour" aria-pressed={!clip.color}
+              className={`h-6 rounded-sm border px-1.5 font-mono text-[9px] ${!clip.color ? "border-foreground" : "border-border text-muted-foreground"}`}>TRACK</button>
+            {TRACK_PALETTE.slice(0, 8).map((c) => (
+              <button key={c.id} type="button" onClick={() => set({ color: c.value })} title={`${c.name} clip`} aria-label={`${c.name} clip colour`} aria-pressed={clip.color === c.value}
+                className={`size-6 rounded-full border ${clip.color === c.value ? "ring-2 ring-foreground/70" : "border-foreground/20"}`} style={{ backgroundColor: c.value }} />
+            ))}
+          </div>
           <div className="ml-auto flex items-center gap-1">
             <Button size="icon" variant="ghost" aria-label="Undo clip edit" title="Undo clip edit" disabled={!canUndo} onClick={undo}>
               <Undo2 className="size-3.5" />
