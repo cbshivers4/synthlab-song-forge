@@ -140,7 +140,6 @@ export function DrumMachine({ track }: { track: Track }) {
     });
   };
   const hitPad = (pad: DrumPad) => {
-    if (repeatRate > 0) return; // with note repeat on, pads play from press to release instead
     getEngine().playDrum(track.id, pad, 1);
     setFocusPadId(pad.id);
     if (!transport.playing || (!tapRec && !transport.recording)) return;
@@ -662,7 +661,8 @@ export function DrumMachine({ track }: { track: Track }) {
                   tabIndex={0}
                   aria-pressed={focused}
                   onClick={() => {
-                    hitPad(pad);
+                    // With note repeat on, a press rolls from press to release instead of one hit.
+                    if (repeatRate === 0) hitPad(pad);
                   }}
                   onPointerDown={(e) => {
                     if (repeatRate <= 0 || e.button !== 0 || (e.target as HTMLElement).closest("button,[role='checkbox']")) return;
