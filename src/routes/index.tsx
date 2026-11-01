@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { usePlayStep } from "@/lib/synclab/playhead";
 import { ToolErrorBoundary } from "@/components/studio/ToolErrorBoundary";
 import { PhoneOrientation } from "@/components/studio/RotateGate";
@@ -6,7 +7,7 @@ import { TrackSettingsDialog, openTrackSettings } from "@/components/studio/Trac
 import { useShortcuts } from "@/components/studio/useShortcuts";
 import { barBeat } from "@/lib/synclab/timebase";
 import { createFileRoute } from "@tanstack/react-router";
-import { ArrowDownToLine, ArrowUpFromLine, AudioLines, AudioWaveform, Cpu, Gauge, Disc3, FileSearch, FolderOpen, Grid2x2, KeyboardMusic, Music2, NotebookPen, Palette, Piano, Radio, SlidersHorizontal, Split, Settings2, Sparkles, Waves, X } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, AudioLines, AudioWaveform, Cpu, Gauge, Disc3, FileSearch, FolderOpen, Grid2x2, KeyboardMusic, Music2, NotebookPen, Palette, Piano, Radio, SlidersHorizontal, Split, Rows2, Settings2, Sparkles, Waves, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStudio, type PanelId } from "@/lib/synclab/store";
 import { getEngine } from "@/lib/synclab/audio-engine";
@@ -35,6 +36,7 @@ import { FloatingDevice } from "@/components/studio/FloatingDevice";
 import { MenuBar } from "@/components/studio/MenuBar";
 import { ProjectCloseGuard } from "@/components/studio/ProjectCloseGuard";
 import { MidiClockFollow } from "@/components/studio/MidiClockFollow";
+import { clampTimelineHeight, setWorkspacePrefs, useWorkspacePrefs } from "@/lib/synclab/workspace-prefs";
 import { ToolsRail } from "@/components/studio/ToolsRail";
 import { Appearance } from "@/components/studio/Appearance";
 import { WelcomeScreen } from "@/components/studio/WelcomeScreen";
@@ -180,6 +182,23 @@ function DetachedPanels() {
 }
 
 /** Any crash in an open tool (or its header/notes) shows a message instead of the full-page error. */
+/** Drag bar between the timeline and the open editor in split view; the height is remembered on this device. */
+function SplitHandle() {
+  const { timelineHeight } = useWorkspacePrefs();
+  const begin = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const y0 = e.clientY, h0 = timelineHeight;
+    const move = (ev: PointerEvent) => setWorkspacePrefs({ timelineHeight: clampTimelineHeight(h0 + ev.clientY - y0, window.innerHeight) });
+    const up = () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+  };
+  return <div role="separator" aria-orientation="horizontal" aria-label="Resize timeline and editor" tabIndex={0} aria-valuenow={timelineHeight}
+    onPointerDown={begin}
+    onKeyDown={(e) => { if (e.key === "ArrowUp" || e.key === "ArrowDown") { e.preventDefault(); setWorkspacePrefs({ timelineHeight: clampTimelineHeight(timelineHeight + (e.key === "ArrowDown" ? 24 : -24), window.innerHeight) }); } }}
+    className="workspace-split-handle h-2 shrink-0 cursor-row-resize border-y border-border bg-surface-2 hover:bg-primary/40 focus-visible:bg-primary/40" />;
+}
+
 function SafePanels(props: { float: FloatState; setFloat: (f: (p: FloatState) => FloatState) => void }) {
   const { panel, setPanel } = useStudio();
   return (
@@ -190,6 +209,7 @@ function SafePanels(props: { float: FloatState; setFloat: (f: (p: FloatState) =>
 }
 
 function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: FloatState) => FloatState) => void }) {
+  const workspace = useWorkspacePrefs();
   const isMobile = useIsMobile();
   const { selected, tracks, panel, setPanel, select } = useStudio();
   const drumTrack = selected?.kind === "drum" ? selected : tracks.find((t) => t.kind === "drum");
@@ -449,6 +469,7 @@ function FloatingDevices({ float, setFloat }: { float: FloatState; setFloat: (f:
 function StudioWorkspace() {
   const isMobile = useIsMobile();
   const { panel } = useStudio();
+  const workspace = useWorkspacePrefs();
   const mobileAccessibility = useMobileAccessibility();
   const [float, setFloat] = useState<FloatState>({ synth: false, drums: false });
   const [beatMode, setBeatMode] = useState(false);
