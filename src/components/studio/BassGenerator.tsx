@@ -67,6 +67,8 @@ export function BassGenerator() {
     toast.success(`${t.label} bassline generated`, { description: `${notes.length} notes in ${NOTE_NAMES[t.tonic]} ${t.minor ? "minor" : "major"} — check the waveform, then preview or add it.` });
   };
   const activeTemplate = BASS_TEMPLATES.find((t) => t.id === template);
+  // The picture is drawn with the exact cleaned sound the track plays, not the raw preset.
+  const drawPatch = useMemo(() => cleanBassPatch(applyPreset(sound)), [sound]);
   const build = (name: string, withSound = sound) => {
     const notes = generated ?? plainLine();
     const id = addTrack("instrument", name, withSound, { keepPanel: true });
@@ -178,7 +180,7 @@ export function BassGenerator() {
           })}
         </div>
       )}
-      {generated && <PatternWaveform pattern={{ notes: generated, instrument: sound, steps: bars * barSteps }} bpm={transport.bpm} label="Generated bassline waveform · true level" trueLevel closeUp color="var(--display-cyan)" />}
+      {generated && <PatternWaveform pattern={{ notes: generated, instrument: sound, patch: drawPatch, steps: bars * barSteps }} bpm={transport.bpm} label="Generated bassline waveform · true level" trueLevel closeUp color="var(--display-cyan)" />}
       <PreviewButtons pv={pv} onPreview={() => preview()} onAdd={create} addLabel="Add bassline to timeline" />
     </section>
   );

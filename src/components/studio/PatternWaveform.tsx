@@ -3,16 +3,16 @@ import { renderGeneratedPattern, type GeneratedPattern } from "@/lib/synclab/gen
 import { GeneratedWaveform } from "./GeneratedWaveform";
 
 export function PatternWaveform({ pattern, bpm, label, trueLevel, closeUp, color }: { pattern: GeneratedPattern; bpm: number; label: string; trueLevel?: boolean; closeUp?: boolean; color?: string }) {
-  const { notes, hits, instrument, steps } = pattern;
+  const { notes, hits, instrument, steps, patch } = pattern;
   const [buffer, setBuffer] = useState<AudioBuffer | null>(null);
   const [error, setError] = useState(false);
   useEffect(() => {
     let current = true;
     setBuffer(null);
     setError(false);
-    void renderGeneratedPattern({ notes, hits, instrument, steps }, bpm).then((value) => { if (current) setBuffer(value); }).catch(() => { if (current) setError(true); });
+    void renderGeneratedPattern({ notes, hits, instrument, steps, patch }, bpm).then((value) => { if (current) setBuffer(value); }).catch(() => { if (current) setError(true); });
     return () => { current = false; };
-  }, [notes, hits, instrument, steps, bpm]);
+  }, [notes, hits, instrument, steps, patch, bpm]);
   if (buffer) return <GeneratedWaveform buffer={buffer} label={label} {...(trueLevel ? { trueLevel } : {})} {...(closeUp ? { closeUp } : {})} {...(color ? { color } : {})} />;
   return <div role="status" className="flex h-28 w-full items-center justify-center border border-border text-xs text-muted-foreground">{error ? "Waveform unavailable in this browser" : "Rendering waveform…"}</div>;
 }
