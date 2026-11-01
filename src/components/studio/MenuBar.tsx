@@ -267,7 +267,7 @@ export function MenuBar() {
       <input
         ref={importRef}
         type="file"
-        accept="audio/*,.mp3,.wav,.wave,.aif,.aiff,.m4a,.aac,.ogg,.flac,.webm"
+        accept={AUDIO_IMPORT_ACCEPT}
         multiple
         className="hidden"
         aria-label="Import audio files"

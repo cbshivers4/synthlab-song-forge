@@ -1,5 +1,5 @@
 /** Accepted by the File → Import Audio and IMPORT buttons. */
-export const AUDIO_IMPORT_ACCEPT = "audio/*,.wav,.mp3,.aif,.aiff,.flac,.ogg,.m4a";
+export const AUDIO_IMPORT_ACCEPT = "audio/*,.mp3,.wav,.wave,.aif,.aiff,.m4a,.aac,.ogg,.flac,.webm";
 
 interface ImportActions {
   addTrack: (kind: "sampler", name: string) => string;
