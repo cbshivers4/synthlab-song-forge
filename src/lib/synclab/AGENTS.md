@@ -37,3 +37,6 @@ MIDI clock (midi-clock.ts): pulses are sent from the song scheduler per schedule
 Input loss/changes go through mic.ts window events (input-lost / input-changed / input-fallback); the store stops a take on loss (keeping what was recorded) and reopens the armed input, so no tool silently records from a different device.
 Reel rotation is derived from tape position via reelAngles (turns = (radius − hub)/thickness), never a looping CSS spin.
 Undo commits a pending (debounced) history step before stepping back, so Undo straight after an edit undoes exactly that edit.
+Sampler reverse reads the mirrored window (sampleWindow) of the reversed buffer so the trimmed part plays backwards in live playback and renders alike; Normalize sets level from samplePeak over the trimmed part (max 200%), never rewriting audio.
+Note repeat (note-repeat.ts) schedules held-pad hits on the audio clock, aligned to the song grid via the song clock while playing; recorded rolls accumulate into one local step array per hold so fast hits don't overwrite each other.
+Drum pad HOLD (pad.sustain, 0..1 s) extends the full-level stage before release; unset = 0 keeps old projects sounding the same.

@@ -138,5 +138,6 @@
 - [x] Phase 3: file drops at drop position, Ctrl+D clip duplicate, Ctrl/pinch zoom, undo-right-after-edit fix, per-clip colours, pan/width knobs (wheel + double-click reset), mixer peak hold
 - [x] MIDI/drum part editing: move one part, trim both edges (drums: left trim, right stretch, Alt+right trim)
 - [ ] Phase 3 not done: per-channel input selection, pre/post send switch, automation lane controls in mixer strips
-- [ ] Phase 4: sampler, drum machine, synths — audit + fixes in progress
+- [x] Phase 4: drum HOLD wired, note repeat (hold-to-roll, 6 rates), sampler/pad knobs + Normalize, reverse plays the trimmed part, preset search, 8 Sequence presets, honest mod-matrix warnings, drum envelope knobs
+- [ ] Phase 4 not done: song pattern chaining (1–8 order), multi-sample layers, separate loop points, per-pad sends, per-track swing
 - [ ] Phases 5–8: wait for Phase 4 report
