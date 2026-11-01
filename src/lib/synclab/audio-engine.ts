@@ -3121,7 +3121,8 @@ export class SyncLabEngine {
     const env = ctx.createGain();
     const atk = Math.max(0.0005, (pad.attack ?? 0) * 0.25);
     const rel = 0.02 + (pad.release ?? 0.2) * 1.5;
-    const hold = Math.max(0.02, dec * 1.2);
+    // HOLD keeps the pad at full level for up to one extra second before its release.
+    const hold = Math.max(0.02, dec * 1.2) + Math.max(0, Math.min(1, pad.sustain ?? 0));
     env.gain.setValueAtTime(0.0001, t);
     env.gain.linearRampToValueAtTime(1, t + atk);
     env.gain.setValueAtTime(1, t + atk + hold);

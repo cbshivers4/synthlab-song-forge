@@ -66,15 +66,9 @@ function DrumInstrumentIcon({ kind, className }: { kind: DrumPad["kind"]; classN
 
 /** Labelled envelope fader with the same hardware-learning path as knobs. */
 function VSlider({ label, value, min = 0, max = 1, onChange, midiTarget }: { label: string; value: number; min?: number; max?: number; onChange: (v: number) => void; midiTarget: { id: string; param: string } }) {
-  const pct = Math.round(((value - min) / (max - min || 1)) * 100);
-  return (
-    <div className="flex w-14 flex-col items-center gap-1">
-      <Slider aria-label={label} orientation="vertical" className="h-20" min={min} max={max} step={0.01} value={[value]} onValueChange={([v = 0]) => onChange(v)} />
-      <span className="font-mono text-[10px] text-foreground">{label}</span>
-      <span className="font-mono text-[8px] text-foreground/60">{pct}</span>
-      <MidiLearnButton {...midiTarget} label={label} />
-    </div>
-  );
+  // Envelope stage as a hardware knob (drag, wheel, double-click resets), same MIDI-learn path.
+  return <Knob label={label.toUpperCase()} ariaLabel={label} size={40} min={min} max={max} step={0.01} value={value} midiTarget={midiTarget}
+    format={(v) => `${Math.round(((v - min) / (max - min || 1)) * 100)}`} onChange={onChange} />;
 }
 
 function Section({ title, active, children }: { title: string; active?: boolean; children: React.ReactNode }) {
