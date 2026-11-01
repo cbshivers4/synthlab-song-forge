@@ -71,6 +71,20 @@ export function StartScreen() {
   const [cloud, setCloud] = useState<CloudProject[]>([]);
   const [templates, setTemplates] = useState<UserTemplate[]>([]);
   const [cloudBusy, setCloudBusy] = useState<string | null>(null);
+  // Deleting always asks first: a cloud project deletes for good, a device entry only leaves the list.
+  const [confirmDel, setConfirmDel] = useState<{ kind: "cloud"; item: CloudProject } | { kind: "recent"; item: (typeof recents)[number] } | null>(null);
+  const runDelete = () => {
+    const c = confirmDel;
+    setConfirmDel(null);
+    if (!c) return;
+    if (c.kind === "recent") { removeRecent(c.item); return; }
+    const item = c.item;
+    setCloudBusy(item.id);
+    void deleteCloudProject(item)
+      .then(() => { setCloud((items) => items.filter((p) => p.id !== item.id)); toast.success("Cloud project deleted"); })
+      .catch((error: unknown) => toast.error(error instanceof Error ? error.message : "Could not delete project"))
+      .finally(() => setCloudBusy(null));
+  };
   const [favs, setFavs] = useState<string[]>(loadFavs);
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("Untitled Project");
@@ -298,13 +312,7 @@ export function StartScreen() {
                         label={`Delete ${item.name}`}
                         title="Delete"
                         danger
-                        onClick={() => {
-                          setCloudBusy(item.id);
-                          void deleteCloudProject(item)
-                            .then(() => { setCloud((items) => items.filter((p) => p.id !== item.id)); toast.success("Cloud project deleted"); })
-                            .catch((error: unknown) => toast.error(error instanceof Error ? error.message : "Could not delete project"))
-                            .finally(() => setCloudBusy(null));
-                        }}
+                        onClick={() => setConfirmDel({ kind: "cloud", item })}
                       >
                         <Trash2 className="size-3.5" />
                       </IconBtn>
@@ -337,7 +345,7 @@ export function StartScreen() {
                       <IconBtn label={`Rename ${r.name}`} title="Rename" onClick={() => openRename({ kind: "recent", item: r })}>
                         <Pencil className="size-3.5" />
                       </IconBtn>
-                      <IconBtn label={`Remove ${r.name}`} title="Remove from list" danger onClick={() => removeRecent(r)}>
+                      <IconBtn label={`Remove ${r.name}`} title="Remove from list" danger onClick={() => setConfirmDel({ kind: "recent", item: r })}>
                         <Trash2 className="size-3.5" />
                       </IconBtn>
                     </div>
@@ -469,6 +477,25 @@ export function StartScreen() {
           <DialogFooter>
             <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
             <Button className="glow" onClick={create}>OPEN STUDIO</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={confirmDel !== null} onOpenChange={(v) => { if (!v) setConfirmDel(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-display uppercase tracking-widest">
+              {confirmDel?.kind === "cloud" ? "Delete project?" : "Remove from this list?"}
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            {confirmDel?.kind === "cloud"
+              ? `“${confirmDel.item.name}” and the audio saved with it will be deleted from your cloud for good. This can't be undone.`
+              : `“${confirmDel?.item.name ?? ""}” will be removed from your recent sessions on this device.`}
+          </p>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setConfirmDel(null)}>Keep it</Button>
+            <Button variant="destructive" onClick={runDelete}>{confirmDel?.kind === "cloud" ? "Delete forever" : "Remove"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
