@@ -61,3 +61,4 @@ Modular Tech uses definition-driven controls and narrow/wide hardware decks; eac
 Mute/solo presses record as per-track switch events in the scheduler's reachStep during timeline or tape takes (replace semantics) and replay only at recorded presses, so manual presses still work between them.
 The "My Computer" file list is one shared ComputerFiles component used by the desktop left menu and the phone/narrow navigation bar, so both stay in sync.
 Desktop workspace layout prefs (split view + timeline height in workspace-prefs.ts, timeline zoom, rail collapse/sections) are device-only localStorage, never project data; full-workspace editors stay the default and split view is opt-in.
+Every paid AI server function reserves a use with reserveAiUse (src/lib/ai-quota.ts → consume_ai_use RPC) before calling the provider and refunds on provider failure, so the per-user daily limit is enforced server-side, never in the browser.
