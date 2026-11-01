@@ -1,7 +1,8 @@
 import { getPlayStep, usePlayStep } from "@/lib/synclab/playhead";
 import { useEffect, useRef, useState } from "react";
 import { useDrumEditorView } from "@/lib/synclab/drum-editor-view";
-import { stepsPerBar, getBeatsPerBar } from "@/lib/synclab/timebase";
+import { stepsPerBar, getBeatsPerBar, stepSeconds } from "@/lib/synclab/timebase";
+import { NOTE_REPEAT_RATES, startNoteRepeat } from "@/lib/synclab/note-repeat";
 import { SkinControls, skinBackground, useImageDrop } from "@/components/studio/SkinControls";
 import { useSkin } from "@/lib/synclab/skins";
 import { ChevronLeft, ChevronRight, Copy, Plus, RotateCcw, Save, Sparkles, Trash2, Upload } from "lucide-react";
@@ -114,7 +115,32 @@ export function DrumMachine({ track }: { track: Track }) {
   const [selectedPads, setSelectedPads] = useState<string[]>([]);
   const sampleInput = useRef<HTMLInputElement>(null);
   const pads = [...(track.pads ?? [])].sort((a, b) => PAD_ORDER.indexOf(a.kind) - PAD_ORDER.indexOf(b.kind));
+  // Note repeat: hold a pad and it rolls at the chosen rate (on the song grid while it plays).
+  const [repeatRate, setRepeatRate] = useState<number>(0);
+  const repeatStop = useRef<(() => void) | null>(null);
+  const latest = useRef({ track, transport, tapRec });
+  latest.current = { track, transport, tapRec };
+  const stopRepeat = () => { repeatStop.current?.(); repeatStop.current = null; };
+  useEffect(() => stopRepeat, []);
+  const startRepeat = (pad: DrumPad) => {
+    stopRepeat();
+    const engine = getEngine();
+    const ctx = engine.init();
+    setFocusPadId(pad.id);
+    let steps: number[] | null = null; // this hold's hits, so fast rolls never overwrite each other
+    repeatStop.current = startNoteRepeat(ctx, repeatRate, stepSeconds(transport.bpm), (time, step) => {
+      const { track: tr, transport: tp, tapRec: rec } = latest.current;
+      const cur = tr.pads?.find((p) => p.id === pad.id) ?? pad;
+      engine.playDrum(tr.id, cur, 1, time);
+      if (step === null || !tp.playing || (!rec && !tp.recording)) return;
+      const total = cur.steps.length || tr.steps || 16;
+      steps ??= [...cur.steps];
+      steps[((step % total) + total) % total] = 1;
+      updatePad(tr.id, pad.id, { steps: [...steps] });
+    });
+  };
   const hitPad = (pad: DrumPad) => {
+    if (repeatRate > 0) return; // with note repeat on, pads play from press to release instead
     getEngine().playDrum(track.id, pad, 1);
     setFocusPadId(pad.id);
     if (!transport.playing || (!tapRec && !transport.recording)) return;
@@ -373,6 +399,14 @@ export function DrumMachine({ track }: { track: Track }) {
       </div>}
 
       {/* Step sequencer */}
+      <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Note repeat">
+        <span className="label-xs">NOTE REPEAT</span>
+        <Button size="sm" variant={repeatRate === 0 ? "default" : "outline"} className="h-8 px-2 font-mono text-[10px]" aria-pressed={repeatRate === 0} onClick={() => { stopRepeat(); setRepeatRate(0); }}>OFF</Button>
+        {NOTE_REPEAT_RATES.map((r) => (
+          <Button key={r.label} size="sm" variant={repeatRate === r.steps ? "default" : "outline"} className="h-8 px-2 font-mono text-[10px]" aria-pressed={repeatRate === r.steps} onClick={() => setRepeatRate(r.steps)}>{r.label}</Button>
+        ))}
+        <span className="font-mono text-[10px] text-muted-foreground">{repeatRate > 0 ? "Hold a pad to roll it" + (tapRec || transport.recording ? " — rolls are recorded on the grid" : "") : "Hold-to-roll is off"}</span>
+      </div>
       {phoneView !== 'roll' && <DrumBulkControls track={track} />}
       {isMobile && (phoneView === "roll" || phoneView === "pads") && <div className="grid grid-cols-2 gap-2" aria-label="Drum playback">
         <Button variant="secondary" className="h-12" onClick={transport.playing ? stop : togglePlay}>{transport.playing ? "Stop beat" : "Play beat"}</Button>
@@ -630,6 +664,14 @@ export function DrumMachine({ track }: { track: Track }) {
                   onClick={() => {
                     hitPad(pad);
                   }}
+                  onPointerDown={(e) => {
+                    if (repeatRate <= 0 || e.button !== 0 || (e.target as HTMLElement).closest("button,[role='checkbox']")) return;
+                    (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+                    startRepeat(pad);
+                  }}
+                  onPointerUp={stopRepeat}
+                  onPointerCancel={stopRepeat}
+                  onLostPointerCapture={stopRepeat}
                   onKeyDown={(e) => {
                     if (e.target !== e.currentTarget) return;
                     if (e.key === "Enter" || e.key === " ") {
