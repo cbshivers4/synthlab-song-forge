@@ -552,20 +552,21 @@ function SynthTrackEditor({ track }: { track: Track }) {
                     ))}
                   </SelectContent>
                 </Select>
-                <div className="w-40">
-                  <Slider
-                    min={-1}
-                    max={1}
-                    step={0.01}
-                    value={[r.amount]}
-                    onValueChange={([v = 0]) =>
-                      set({ modMatrix: matrix.map((x) => (x.id === r.id ? { ...x, amount: v } : x)) })
-                    }
-                  />
-                </div>
-                <span className="w-12 font-mono text-[10px] text-primary">{r.amount.toFixed(2)}</span>
+                <Knob
+                  label="AMOUNT"
+                  ariaLabel={`Route ${r.source} to ${r.dest} amount`}
+                  layout="inline"
+                  size={34}
+                  min={-1}
+                  max={1}
+                  step={0.01}
+                  defaultValue={0}
+                  value={r.amount}
+                  format={(v) => (v > 0 ? `+${v.toFixed(2)}` : v.toFixed(2))}
+                  onChange={(v) => set({ modMatrix: matrix.map((x) => (x.id === r.id ? { ...x, amount: v } : x)) })}
+                />
                 {FIXED_ONLY.includes(r.dest) && !["velocity", "keytrack", "random", "macro1", "macro2", "macro3", "macro4"].includes(r.source) && (
-                  <span className="font-mono text-[9px] text-muted-foreground">set per note, not moving</span>
+                  <span role="status" className="font-mono text-[9px] text-destructive">no effect: {r.dest} only takes velocity, key, random or a macro</span>
                 )}
                 <Button
                   size="icon"
