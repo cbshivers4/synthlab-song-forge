@@ -131,3 +131,48 @@ export function cleanBassPatch(p: import("./types").SynthPatch): import("./types
   if (sum > 0.8) q.oscillators = q.oscillators.map((o) => (o.on ? { ...o, level: (o.level * 0.8) / sum } : o));
   return q;
 }
+
+/** Small repeatable random generator so the same variation number always gives the same bassline. */
+function seeded(seed: number) {
+  let a = (seed * 2654435761) >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/**
+ * Regenerate: a new take on the same bassline. Variation 0 returns the notes unchanged.
+ * Each bar keeps its first (root) note; other notes may move to the octave, fifth or the key's third,
+ * and short ghost notes can fill one-step gaps. Notes never leave their bar or overlap.
+ */
+export function varyBass(notes: MidiNote[], variation: number, minor: boolean, barSteps: number): MidiNote[] {
+  if (!variation) return notes;
+  const rnd = seeded(variation);
+  const third = minor ? 3 : 4;
+  const moves = [0, 7, 12, third, minor ? 10 : 9];
+  const sorted = [...notes].sort((a, b) => a.step - b.step);
+  const rootOf = new Map<number, number>();
+  for (const n of sorted) { const bar = Math.floor(n.step / barSteps); if (!rootOf.has(bar)) rootOf.set(bar, n.pitch); }
+  const out: MidiNote[] = sorted.map((n) => {
+    const bar = Math.floor(n.step / barSteps);
+    const root = rootOf.get(bar)!;
+    if (n.step === bar * barSteps || n.step === sorted.find((m) => Math.floor(m.step / barSteps) === bar)!.step) return { ...n };
+    if (rnd() < 0.4) return { ...n, pitch: root + moves[Math.floor(rnd() * moves.length)]!, velocity: Math.min(1, Math.max(0.5, n.velocity + (rnd() - 0.5) * 0.2)) };
+    return { ...n };
+  });
+  const taken = new Set<number>();
+  for (const n of out) for (let s = n.step; s < n.step + n.length; s++) taken.add(s);
+  let k = 0;
+  for (const n of [...out]) {
+    const s = n.step + n.length;
+    const bar = Math.floor(n.step / barSteps);
+    if (Math.floor(s / barSteps) !== bar || taken.has(s) || rnd() >= 0.2) continue;
+    taken.add(s);
+    out.push({ id: `${n.id}-ghost-${variation}-${k++}`, step: s, length: 1, pitch: rootOf.get(bar)!, velocity: 0.55 });
+  }
+  return out.sort((a, b) => a.step - b.step);
+}
