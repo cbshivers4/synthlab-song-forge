@@ -246,7 +246,7 @@ export function LiveLooperView() {
             <Button size="sm" variant={looper.source === "output" ? "default" : "secondary"} disabled={capturing} onClick={() => looper.setSource("output")}>App output</Button>
           </div>
         </div>
-        <span className="ml-auto font-mono text-xs text-muted-foreground">{looper.mode === "sync" ? `${looper.bars} ${looper.bars === 1 ? "BAR" : "BARS"} · ${transport.bpm} BPM` : "FREE LENGTH"}</span>
+        <span className="ml-auto font-mono text-xs text-muted-foreground">{looper.mode === "sync" ? `${looper.bars} ${looper.bars === 1 ? "BAR" : "BARS"} · ${transport.bpm} BPM${looper.songLocked ? " · ON SONG BARS" : transport.playing ? " · STARTS ON NEXT SONG BAR" : ""}` : "FREE LENGTH"}</span>
       </div>
       <div className="looper-pad-grid grid grid-cols-4 gap-x-2 gap-y-4">
         {looper.slots.map((slot) => <LoopDonut key={slot.index} slot={slot} send={send} />)}
@@ -256,7 +256,7 @@ export function LiveLooperView() {
         <Button variant="secondary" onClick={() => looper.stopAll()}><Square className="size-4" /> Stop all</Button>
         <Button variant="secondary" onClick={() => looper.clearAll()}><Trash2 className="size-4" /> Clear all</Button>
       </div>
-       <p className="text-xs text-muted-foreground">Start on sound: tap a loop and it waits — recording begins the moment your input crosses the threshold (first loop only; it replaces the pre-count). The pre-count clicks before the first loop only and recording starts on GO; later loops wait for the next cycle instead. The first loop sets the shared cycle. Later recordings wait for the next cycle. Free length closes on a second tap; sync closes after the selected bars. Overdub adds one mic cycle. Loops play outside the song master effects to prevent app-output capture feeding back into itself. Loops remain in this session until cleared; send them to the timeline to include them in your project. Input delay depends on your browser and audio interface; use headphones when recording.</p>
+       <p className="text-xs text-muted-foreground">Start on sound: tap a loop and it waits — recording begins the moment your input crosses the threshold (first loop only; it replaces the pre-count). The pre-count clicks before the first loop only and recording starts on GO; later loops wait for the next cycle instead. In Sync mode with the song playing, the first loop starts on the next song bar line (count-in bars = bars to wait) so loops line up with the song; tempo changes after recording don't stretch existing loops. Undo removes the last overdub. The first loop sets the shared cycle. Later recordings wait for the next cycle. Free length closes on a second tap; sync closes after the selected bars. Overdub adds one mic cycle. Loops play outside the song master effects to prevent app-output capture feeding back into itself. Loops remain in this session until cleared; send them to the timeline to include them in your project. Input delay depends on your browser and audio interface; use headphones when recording.</p>
     </div>
   );
 }
