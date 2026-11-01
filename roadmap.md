@@ -133,5 +133,6 @@
 - [x] Phase 1: audit + fixes (synth LFO/arp sync & swing, import success/failure, desktop menu commands, honest update message, Save As/close-save with failed takes, device-library commit, drum lane double-click, capture/preview cleanup); clear track verified staying on Edit (desktop + phone)
 - [x] Drum pad samples always saved as the project's own cloud copy; unreadable old samples no longer block opening
 - [ ] Phase 1 leftover: dormant Generate Stem/Separate Stems error wording (both Coming Soon)
-- [ ] Phase 2: audio engine & recording — audit + fixes in progress (autosave/crash recovery excluded: manual-save-only rule)
+- [x] Phase 2: looper undo + song-bar sync + true rings, reel rotation from tape position, input loss/change handling, MIDI clock send/follow, honest sample-rate display (autosave/crash recovery excluded: manual-save-only rule)
+- [ ] Phase 2 not done (needs decisions/hardware): interface inputs beyond 1/2, loopback latency calibration, selectable sample rate/buffer (browser-limited), MIDI-note loops in looper
 - [ ] Phases 3–8: wait for Phase 2 report
