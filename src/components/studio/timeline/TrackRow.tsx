@@ -946,6 +946,8 @@ export function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track:
             size="sm"
             variant={track.muted ? "secondary" : "ghost"}
             className="h-6 px-2 text-[10px]"
+            aria-label={`Mute ${track.name}`}
+            aria-pressed={!!track.muted}
             onClick={() => updateTrack(track.id, { muted: !track.muted })}
           >
             {track.muted ? <VolumeX className="size-3" /> : <Volume2 className="size-3" />} M
@@ -954,6 +956,8 @@ export function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track:
             size="sm"
             variant={track.solo ? "default" : "ghost"}
             className="h-6 px-2 text-[10px]"
+            aria-label={`Solo ${track.name}`}
+            aria-pressed={!!track.solo}
             onClick={() => updateTrack(track.id, { solo: !track.solo })}
           >
             <Headphones className="size-3" /> S

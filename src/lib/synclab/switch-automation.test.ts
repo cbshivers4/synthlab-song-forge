@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { switchEdge, switchStateAt, writeSwitchStep } from './switch-automation';
+import { manualSwitchPatch, switchEdge, switchStateAt, writeSwitchStep } from './switch-automation';
 
 describe('recorded mute/solo', () => {
   it('records a mute press during a take with its step and replays it', () => {
@@ -23,5 +23,20 @@ describe('recorded mute/solo', () => {
     expect(switchEdge(events, -1, 0)).toBe(true);
     expect(switchEdge(events, 3, 4)).toBe(false);
     expect(switchEdge(events, 7, 8)).toBe(true);
+  });
+});
+
+describe('hand-pressed mute/solo', () => {
+  it('a mute press outside a take clears recorded mute presses so the mute stays', () => {
+    expect(manualSwitchPatch({ muted: true }, false)).toEqual({ muted: true, muteEvents: undefined });
+  });
+  it('a solo press outside a take clears only recorded solo presses', () => {
+    expect(manualSwitchPatch({ solo: true }, false)).toEqual({ solo: true, soloEvents: undefined });
+  });
+  it('presses during a take are left for the recorder', () => {
+    expect(manualSwitchPatch({ muted: true }, true)).toEqual({ muted: true });
+  });
+  it('changes that are not mute/solo keep recorded presses', () => {
+    expect(manualSwitchPatch({ volume: 0.5 } as { volume: number; muted?: boolean }, false)).toEqual({ volume: 0.5 });
   });
 });

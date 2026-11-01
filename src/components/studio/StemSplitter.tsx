@@ -84,12 +84,12 @@ export function StemSplitter() {
   const stopAudio = () => { audioRef.current?.pause(); audioRef.current = null; setPlayingId(null); };
   useEffect(() => () => stopAudio(), []);
 
-  const run = async () => {
+  const run = async (useMode: "ai" | "device" = mode) => {
     if (!source) return;
     const ids = STEMS.filter((s) => picked[s.id]).map((s) => s.id);
     if (!ids.length) { toast("Pick at least one stem"); return; }
     if (source.buffer.duration > MAX_STEM_SECONDS) { toast("Song too long", { description: "Separate up to 6 minutes at a time." }); return; }
-    if (mode === "ai") { await runAi(ids); return; }
+    if (useMode === "ai") { await runAi(ids); return; }
     if (!isStereo(source.buffer) && (picked.vocals || picked.instrumental)) {
       toast("This audio is mono", { description: "Vocals are found by their centre position in a stereo mix, so a mono file will leave them mixed with other sounds." });
     }
@@ -177,7 +177,12 @@ export function StemSplitter() {
       else toast.error("The separator returned no stems");
     } catch (e) {
       const msg = e instanceof Error ? e.message : "";
-      toast.error("Couldn't separate this song", { description: /unauthor|401|jwt|session/i.test(msg) ? "Sign in to use AI stem separation." : msg || undefined });
+      const serviceDown = /credit|billing|402|busy|429|unavailable/i.test(msg);
+      const description = /unauthor|401|jwt|session/i.test(msg) ? "Sign in to use AI stem separation." : serviceDown ? `${msg} Your AI use was given back. You can separate on this device for free instead.` : msg;
+      toast.error("Couldn't separate this song", {
+        ...(description ? { description } : {}),
+        ...(serviceDown ? { duration: 15000, action: { label: "Separate on this device", onClick: () => { setMode("device"); void run("device"); } } } : {}),
+      });
     } finally {
       setBusy(null);
       setProgress(null);

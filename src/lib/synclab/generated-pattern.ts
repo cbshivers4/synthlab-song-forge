@@ -1,11 +1,13 @@
 import { SyncLabEngine } from "./audio-engine";
 import { applyPreset, defaultPads } from "./presets";
-import type { MidiNote } from "./types";
+import type { MidiNote, SynthPatch } from "./types";
 
 export interface GeneratedPattern {
   notes?: Pick<MidiNote, "step" | "length" | "pitch" | "velocity">[] | undefined;
   hits?: { step: number; kind: string; velocity: number }[] | undefined;
   instrument?: string | undefined;
+  /** Exact sound to draw with (e.g. the cleaned bass patch); otherwise the named preset. */
+  patch?: SynthPatch | undefined;
   steps: number;
 }
 
@@ -32,7 +34,7 @@ class PatternEngine extends SyncLabEngine {
 
 export async function renderGeneratedPattern(pattern: GeneratedPattern, bpm: number): Promise<AudioBuffer> {
   const stepSec = 60 / Math.max(1, bpm) / 4;
-  const patch = applyPreset(pattern.instrument ?? "Init Saw");
+  const patch = pattern.patch ?? applyPreset(pattern.instrument ?? "Init Saw");
   const duration = Math.min(120, pattern.steps * stepSec + Math.max(2, patch.amp.release + 0.25));
   const ctx = new OfflineAudioContext(2, Math.ceil(duration * 44100), 44100);
   const engine = new PatternEngine(ctx);
