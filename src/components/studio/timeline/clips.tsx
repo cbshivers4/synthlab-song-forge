@@ -262,7 +262,7 @@ export function Waveform({ track }: { track: Track }) {
                 onClick={(e) => {
                   e.stopPropagation();
                   updateTrack(track.id, {
-                    clips: [...clips, { ...clip, id: uid(), name: `${clip.name} COPY`, start: start + Math.round(steps) }],
+                    clips: [...clips, { ...clip, id: uid(), name: `${clip.name} COPY`, start: start + steps }],
                   });
                 }}
                 title="Duplicate clip"

@@ -10,6 +10,7 @@ import { useStudio } from "@/lib/synclab/store";
 import { uid } from "@/lib/synclab/presets";
 import type { EditTool } from "@/lib/synclab/store";
 import { clipSeconds } from "@/lib/synclab/types";
+import { clipCopyAfter } from "@/lib/synclab/workflow";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { parseMidiFile } from "@/lib/synclab/midi-file";
 import { GRID_OPTIONS, RazorIcon, SNAP_OPTIONS, setCutFree, useCutFree } from "./shared";
