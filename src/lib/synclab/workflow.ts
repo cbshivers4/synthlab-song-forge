@@ -1,4 +1,4 @@
-import { clipSeconds, type Track } from './types';
+import { clipSeconds, type AudioClip, type Track } from './types';
 import { songSteps, stepSeconds } from './timebase';
 import { regionAt, unrollNotes, cutNotesAt, deleteRegion } from './note-cuts';
 

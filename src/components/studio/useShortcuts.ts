@@ -8,9 +8,10 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { saveCloudProject } from '@/lib/synclab/cloud';
 import { QWERTY_MAP, qwertyEnabled, qwertyOctave, setQwertyEnabled, setQwertyOctave } from '@/lib/synclab/qwerty';
 import { matchShortcut } from '@/lib/synclab/shortcuts';
-import { songSteps } from '@/lib/synclab/timebase';
+import { songSteps, stepSeconds } from '@/lib/synclab/timebase';
 import { loopRegion } from '@/lib/synclab/recording-region';
-import { deleteSelectedPart, selectedClip } from '@/lib/synclab/workflow';
+import { clipCopyAfter, deleteSelectedPart, selectedClip } from '@/lib/synclab/workflow';
+import { uid } from '@/lib/synclab/presets';
 
 export function openShortcutSettings() {
   sessionStorage.setItem('synclab.settings.shortcuts', 'open');
@@ -87,7 +88,14 @@ export function useShortcuts() {
             })().catch((error: unknown) => toast.error(error instanceof Error ? error.message : 'Cloud save failed', { id }));
           }
           break;
-        case 'duplicate': if (selected) studio.duplicateTrack(selected.id); break;
+        case 'duplicate': {
+          if (!selected) break;
+          // With a clip selected, Ctrl/Cmd+D copies that clip right after itself; otherwise the whole track.
+          const clip = selectedClip(selected);
+          if (clip) studio.addClip(selected.id, clipCopyAfter(clip, stepSeconds(transport.bpm), uid()));
+          else studio.duplicateTrack(selected.id);
+          break;
+        }
         case 'copy': case 'cut': {
           if (!selected) break;
           const clip = selectedClip(selected);
