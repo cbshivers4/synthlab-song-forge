@@ -16,7 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { clipFromFile, clipFromLocalFile } from "@/lib/synclab/local-files";
-import { snapDropStep, positionLabel } from "./drop-position";
+import { snapDropStep } from "./drop-position";
 import { openTrackSettings } from "@/components/studio/TrackSettingsDialog";
 import { InsertRack } from "../mixer/InsertRack";
 import { EffectMenuItems } from "../EffectPicker";
