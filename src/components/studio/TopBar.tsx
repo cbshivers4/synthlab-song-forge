@@ -612,8 +612,8 @@ function FeatBtn({
 /** Desktop strip above the timeline: studio search and the MIDI controller inputs. */
 export function TimelineTopBar() {
   return (
-    <div className="timeline-top-bar flex shrink-0 items-center gap-2 border-b border-border bg-surface px-3 py-1.5" aria-label="Search and MIDI controllers">
-      <div className="min-w-0 w-[420px] max-w-[50%]"><StudioSearch /></div>
+    <div className="timeline-top-bar flex shrink-0 items-center gap-3 border-b-2 border-primary/50 bg-surface-2 px-4 py-2.5" aria-label="Search and MIDI controllers">
+      <div className="min-w-0 w-[560px] max-w-[55%]"><StudioSearch /></div>
       <div className="ml-auto shrink-0"><MidiControl /></div>
     </div>
   );
