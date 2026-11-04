@@ -1,3 +1,4 @@
+import { TEST_MODE, TEST_MODE_MESSAGE } from "./test-mode";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
@@ -186,6 +187,7 @@ async function restoreSession(session: CloudSession): Promise<CloudSession> {
 }
 
 export async function listCloudProjects(): Promise<CloudProject[]> {
+  if (TEST_MODE) return [];
   const { data, error } = await supabase.from("cloud_projects").select("id,name,bpm,musical_key,time_signature,template,opened_at,updated_at,session").order("updated_at", { ascending: false });
   if (error) throw error;
   return data.map((row) => {
@@ -195,6 +197,7 @@ export async function listCloudProjects(): Promise<CloudProject[]> {
 }
 
 export async function saveCloudProject(project: Omit<CloudProject, "updatedAt" | "session">, session: CloudSession) {
+  if (TEST_MODE) throw new Error(TEST_MODE_MESSAGE);
   const userId = await currentUserId();
   const id = project.id || crypto.randomUUID();
   const prepared = await prepareSession(session, userId, id);
@@ -214,6 +217,7 @@ export async function saveCloudProject(project: Omit<CloudProject, "updatedAt" |
 }
 
 export async function loadCloudProject(id: string): Promise<CloudProject> {
+  if (TEST_MODE) throw new Error(TEST_MODE_MESSAGE);
   const { data, error } = await supabase.from("cloud_projects").select("*").eq("id", id).single();
   if (error) throw error;
   return {
@@ -230,11 +234,13 @@ export async function loadCloudProject(id: string): Promise<CloudProject> {
 }
 
 export async function renameCloudProject(id: string, name: string) {
+  if (TEST_MODE) throw new Error(TEST_MODE_MESSAGE);
   const { error } = await supabase.from("cloud_projects").update({ name }).eq("id", id);
   if (error) throw error;
 }
 
 export async function deleteCloudProject(project: CloudProject) {
+  if (TEST_MODE) throw new Error(TEST_MODE_MESSAGE);
   // Deletion reads stored paths directly; missing audio must not block removal.
   const userId = await currentUserId();
   const { data, error: readError } = await supabase.from("cloud_projects").select("session").eq("id", project.id).eq("user_id", userId).single();
@@ -265,6 +271,7 @@ export async function deleteCloudProject(project: CloudProject) {
 }
 
 export async function uploadCloudExport(blob: Blob, name: string) {
+  if (TEST_MODE) throw new Error(TEST_MODE_MESSAGE);
   const userId = await currentUserId();
   const path = `${userId}/exports/${Date.now()}-${safe(name)}`;
   const { error } = await supabase.storage.from(BUCKET).upload(path, blob, { contentType: blob.type, upsert: false });

@@ -1,3 +1,4 @@
+import "../lib/synclab/test-mode"; // must load first: blocks outside requests in ?test=1 mode
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,

@@ -1,3 +1,5 @@
+import { SkinControls, skinBackground, useImageDrop } from "@/components/studio/SkinControls";
+import { useSkin } from "@/lib/synclab/skins";
 import { getPlayStep, usePlayStep } from "@/lib/synclab/playhead";
 import { VuFace } from "./VuFace";
 import { ReelInputChannels } from "./ReelInputChannels";
@@ -44,21 +46,24 @@ function TapeMeter({ level, channel, clipped, reset }: { level: number; channel:
     <VuFace vuDb={db <= -60 ? -60 : db + 3} sub={channel} ariaLabel={`${channel} VU meter`} /><div className="flex items-center justify-between gap-2 px-2 py-1 font-mono text-[10px] text-muted-foreground"><span>{level > 0 ? `${db.toFixed(1)} dBFS` : "−∞ dBFS"}</span><Button variant="ghost" className={`h-6 px-1 text-[10px] ${clipped ? "text-destructive" : ""}`} onClick={reset} aria-label={`Reset ${channel} tape clipping`}>{clipped ? "● CLIP" : "PEAK"}</Button></div></div>;
 }
 export function ReelRecorder() {
+  const skin = useSkin("reel");
+  const skinDrop = useImageDrop("reel");
+  const skinned = !!(skin.image || skin.color);
   const recorder = getReelRecorder();
   const state = useSyncExternalStore(recorder.subscribe, recorder.getSnapshot, recorder.getSnapshot);
   const { addTrack, addClip, transport } = useStudio();
-  const [deck, setDeck] = useState<"timeline" | "tape">("timeline");
   const [look, setLook] = useState<"reel" | "simple">("reel");
-  const master = deck === "timeline";
+  // The deck is always an independent tape machine; "Song master" is only an audio source.
+  const songSource = state.source === "song";
   const fileInput = useRef<HTMLInputElement>(null);
   const [format, setFormat] = useState("wav24");
   const [quality, setQuality] = useState(320);
   const [saving, setSaving] = useState(false);
   useEffect(() => () => { void recorder.release(); }, [recorder]);
   useEffect(() => {
-    recorder.setMasterMetering(master);
+    recorder.setMasterMetering(songSource);
     return () => recorder.setMasterMetering(false);
-  }, [recorder, master]);
+  }, [recorder, songSource]);
   const rewinding = state.mode === "rewinding";
   // The tape runs on its own clock: only its own transport moves the reels, never the song transport.
   const active = rewinding || state.mode === "recording" || state.mode === "playing";
@@ -87,14 +92,10 @@ export function ReelRecorder() {
     } catch (error) { toast.error(error instanceof Error ? error.message : "Could not save tape."); }
     finally { setSaving(false); }
   };
-  /** REC on the master deck prints the song master onto tape; it never starts, stops or follows the song transport. */
-  const masterRecord = async () => {
-    if (state.source !== "song") await recorder.setSource("song");
-    await recorder.record();
-  };
-  return <section className="reel-recorder mx-auto w-full max-w-[900px]" data-deck-look={look} aria-label="Reel-to-reel recorder">
+  return <section className={`reel-recorder mx-auto w-full max-w-[900px]${skinned ? " studio-wallpaper" : ""}`} data-deck-look={look} aria-label="Reel-to-reel recorder" data-skin-panel="reel" style={skinBackground(skin)} {...skinDrop}>
+      <SkinControls skinKey="reel" image />
     <header className="tape-brand flex flex-wrap items-center justify-between gap-2 px-4 py-3"><div><h2 className="font-display text-lg font-semibold">SYNCLAB <span className="text-primary">R2R</span></h2><p className="font-mono text-[10px] text-muted-foreground">STEREO TAPE RECORDER · DETROIT</p></div><span role="status" className={`font-mono text-xs ${recording ? "text-destructive" : "text-primary"}`}>{state.busy ? "PREPARING" : saving ? "SAVING" : recording ? "RECORDING" : state.mode.toUpperCase()}</span>
-      <div className="flex gap-1" role="group" aria-label="Recorder look"><Button size="sm" variant={look === "reel" ? "default" : "outline"} aria-pressed={look === "reel"} onClick={() => setLook("reel")}>Reel-to-reel</Button><Button size="sm" variant={look === "simple" ? "default" : "outline"} aria-pressed={look === "simple"} onClick={() => { setLook("simple"); setDeck("tape"); }}>QuickTime style</Button></div></header>
+      <div className="flex gap-1" role="group" aria-label="Recorder look"><Button size="sm" variant={look === "reel" ? "default" : "outline"} aria-pressed={look === "reel"} onClick={() => setLook("reel")}>Reel-to-reel</Button><Button size="sm" variant={look === "simple" ? "default" : "outline"} aria-pressed={look === "simple"} onClick={() => setLook("simple")}>QuickTime style</Button></div></header>
     {look === "simple" ? <div className="flex flex-col items-center gap-4 border-t border-border bg-card px-4 py-6">
       <output aria-label="Recording time" className="font-mono text-4xl tabular-nums text-foreground">{clock(state.position)}</output>
       <div className="flex w-full max-w-md items-center gap-4">
@@ -118,15 +119,14 @@ export function ReelRecorder() {
       <div className="tape-display flex flex-wrap items-center justify-between gap-3"><span className="font-mono text-xs">{state.source === "song" ? "SONG MASTER" : "MIC / LINE"}</span><output aria-label="Tape counter" className="font-mono text-2xl text-primary">{clock(state.position)}</output><span aria-label="Tape length" className="font-mono text-xs text-muted-foreground">{clock(state.duration)}</span></div>
     </div>
     <div className="tape-console"><div className="tape-meter-pair grid grid-cols-2 gap-3"><TapeMeter channel="L" level={state.levelL} clipped={state.clipped} reset={recorder.resetClip} /><TapeMeter channel="R" level={state.levelR} clipped={state.clipped} reset={recorder.resetClip} /></div>
-      <div className="tape-mode-switch mt-3 flex gap-2" role="group" aria-label="Deck controls"><Button variant={master ? "default" : "outline"} className="h-10 flex-1 text-xs" aria-pressed={master} onClick={() => setDeck("timeline")}>Timeline master</Button><Button variant={!master ? "default" : "outline"} className="h-10 flex-1 text-xs" aria-pressed={!master} onClick={() => setDeck("tape")}>Tape only</Button></div>
       <div className="tape-buttons mt-3 grid grid-cols-5 gap-2">
         <Button variant={rewinding ? "default" : "outline"} className="h-14 flex-col gap-1 text-[10px]" disabled={locked || recording || !state.hasTape || state.position <= 0} onClick={() => void recorder.rewind()} title="Rewind tape — plays the tape backward at high speed" aria-label="Rewind tape"><SkipBack />REW</Button>
         <Button variant="outline" className="h-14 flex-col gap-1 text-[10px]" disabled={locked} onClick={() => void recorder.stop()} aria-label="Stop tape"><Square className="fill-current" />STOP</Button>
         <Button variant={state.mode === "playing" ? "default" : "outline"} className="h-14 flex-col gap-1 text-[10px]" disabled={locked || recording || !state.hasTape} onClick={() => void recorder.play()} aria-label={state.mode === "playing" ? "Pause tape" : "Play tape"}>{state.mode === "playing" ? <Pause /> : <Play />}{state.mode === "playing" ? "PAUSE" : "PLAY"}</Button>
         <Button variant="outline" className="h-14 flex-col gap-1 text-[10px]" disabled={locked || recording || !state.hasTape} onClick={() => void recorder.seek(state.position + 10)} title="Forward ten seconds" aria-label="Forward tape ten seconds"><SkipForward />FWD</Button>
-        <Button variant={recording ? "destructive" : "outline"} className={`h-14 flex-col gap-1 border-destructive/50 text-[10px] ${recording ? "text-destructive-foreground" : "text-destructive"}`} disabled={locked || recording} onClick={() => void (master ? masterRecord() : recorder.record())} aria-label="Record tape"><Circle className="fill-current" />REC</Button>
+        <Button variant={recording ? "destructive" : "outline"} className={`h-14 flex-col gap-1 border-destructive/50 text-[10px] ${recording ? "text-destructive-foreground" : "text-destructive"}`} disabled={locked || recording} onClick={() => void recorder.record()} aria-label="Record tape"><Circle className="fill-current" />REC</Button>
       </div>
-      {master && <p className="mt-2 text-[11px] text-muted-foreground">The tape runs on its own clock. REC prints the song master to tape; start or stop the song with the main transport whenever you like.</p>}
+      {songSource && <p className="mt-2 text-[11px] text-muted-foreground">The tape runs on its own clock. REC prints the song master to tape; start or stop the song with the main transport whenever you like.</p>}
       <input className="mt-4 w-full accent-primary" type="range" min={0} max={state.duration || 1} step={0.01} value={state.position} disabled={locked || recording || !state.hasTape} aria-label="Tape position" onChange={(e) => void recorder.seek(Number(e.target.value))} />
       <div className="tape-knobs mt-4 grid grid-cols-3 justify-items-center gap-y-4 sm:grid-cols-5">
         <Knob label="Record gain" min={-24} max={24} step={0.5} value={state.inputGain} unit=" dB" onChange={(inputGain) => recorder.configure({ inputGain })} size={52} />

@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { useApp } from "@/lib/synclab/app-state";
 import {
   WALLPANEL_PANELS,
+  defaultSharedPanels,
   imageToDataUrl,
   setSkin,
   startSkinSync,
@@ -21,7 +22,7 @@ function WallpaperSection() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   useEffect(() => startSkinSync(), []);
-  const allKeys = WALLPANEL_PANELS.map((p) => p.key);
+  const allKeys = defaultSharedPanels();
   const on = (key: SkinKey) => (shared.panels ?? allKeys).includes(key);
 
   const pick = async (f?: File) => {

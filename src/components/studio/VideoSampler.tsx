@@ -1,3 +1,5 @@
+import { SkinControls, skinBackground, useImageDrop } from "@/components/studio/SkinControls";
+import { useSkin } from "@/lib/synclab/skins";
 import { getPlayStep, usePlayStep } from "@/lib/synclab/playhead";
 import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
 import { SampleExportButtons } from "./SampleExportButtons";
@@ -26,6 +28,9 @@ const PAD_KEYS = VIDEO_PAD_KEYS;
 
 /** Video sampler: load or film a clip, chop its audio at real attacks, trigger chops as pads (video + sound), and print chops to the timeline. */
 export function VideoSampler() {
+  const skin = useSkin("video");
+  const skinDrop = useImageDrop("video");
+  const skinned = !!(skin.image || skin.color);
   const { addTrack, addClip, transport, loadSample, updateSampler, select, setPanel, midiInputId, midiInputs, enableMidi, setMidiInput } = useStudio();
   const [midiNotes, setMidiNotes] = useState<VideoPadMidiNote[]>([]);
   const [learnPad, setLearnPad] = useState<number | null>(null);
@@ -276,7 +281,8 @@ export function VideoSampler() {
     toast.success(`${name} added at the playhead`);
   };
 
-  return <section className="space-y-3" aria-label="Video sampler">
+  return <section className={`space-y-3${skinned ? " studio-wallpaper rounded-md p-3" : ""}`} aria-label="Video sampler" data-skin-panel="video" style={skinBackground(skin)} {...skinDrop}>
+      <SkinControls skinKey="video" image />
     <div className="flex items-center justify-between gap-2"><span className="label-xs">SYNCLAB · VIDEO SAMPLER</span><BypassButton name="Video Sampler" bypassed={bypassed} onToggle={() => setBypassed(value => !value)} /></div>
     <div className="overflow-hidden rounded border border-border bg-background">
       <div className="flex flex-wrap items-center gap-1" role="group" aria-label="Video size">

@@ -1,3 +1,5 @@
+import { SkinControls, skinBackground, useImageDrop } from "@/components/studio/SkinControls";
+import { useSkin } from "@/lib/synclab/skins";
 import { useEffect, useRef, useState } from "react";
 import { FileAudio, Pause, Play, Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,6 +13,9 @@ function formatTime(seconds: number) {
 }
 
 export function ReferenceAnalyzer() {
+  const skin = useSkin("reference");
+  const skinDrop = useImageDrop("reference");
+  const skinned = !!(skin.image || skin.color);
   const inputRef = useRef<HTMLInputElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const urlRef = useRef<string | null>(null);
@@ -68,7 +73,8 @@ export function ReferenceAnalyzer() {
   };
 
   return (
-    <div className="mx-auto max-w-4xl space-y-4">
+    <div className={`mx-auto max-w-4xl space-y-4${skinned ? " studio-wallpaper rounded-md p-3" : ""}`} data-skin-panel="reference" style={skinBackground(skin)} {...skinDrop}>
+      <SkinControls skinKey="reference" image />
       <audio ref={audioRef} onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onEnded={() => setPlaying(false)} />
       <input ref={inputRef} aria-label="Reference audio file" className="sr-only" type="file" accept="audio/*,.wav,.mp3,.aif,.aiff,.flac,.m4a,.ogg,.webm" onChange={(event) => void load(event.target.files?.[0])} />
       <div

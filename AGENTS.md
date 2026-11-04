@@ -56,3 +56,4 @@ Project exits use AppProvider/ProjectCloseGuard on both layouts: compare musical
 Shortcuts share studio actions and yield to controls/claimed keys to avoid doubling.
 Desktop workspace layout prefs (split view + timeline height in workspace-prefs.ts, timeline zoom, rail collapse/sections) are device-only localStorage, never project data; full-workspace editors stay the default and split view is opt-in.
 Every paid AI server function reserves a use with reserveAiUse (src/lib/ai-quota.ts → consume_ai_use RPC) before calling the provider and refunds on provider failure, so the per-user daily limit is enforced server-side, never in the browser.
+- Test mode (?test=1, lib/synclab/test-mode.ts) is read once at boot, never stored; it renders TestStages with TestPlanProvider, blocks every off-site/server request, and backend helpers early-return, so automation never touches accounts or saved data.

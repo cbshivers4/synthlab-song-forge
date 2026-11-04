@@ -1,3 +1,4 @@
+import { TEST_MODE, TEST_MODE_MESSAGE } from "./test-mode";
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
 
@@ -50,6 +51,7 @@ async function tx<T>(mode: IDBTransactionMode, run: (s: IDBObjectStore) => IDBRe
 }
 
 async function userId() {
+  if (TEST_MODE) throw new Error(TEST_MODE_MESSAGE);
   const { data } = await supabase.auth.getUser();
   if (!data.user) throw new Error("Sign in to save to the cloud.");
   return data.user.id;
@@ -58,6 +60,7 @@ async function userId() {
 const safe = (s: string) => s.replace(/[^a-zA-Z0-9._-]+/g, "-").slice(0, 60) || "item";
 
 export async function listLibrary(location: LibraryLocation): Promise<LibraryItem[]> {
+  if (TEST_MODE && location !== "device") return [];
   if (location === "device") {
     const all = await tx<LibraryItem[]>("readonly", (s) => s.getAll() as IDBRequest<LibraryItem[]>);
     return all.sort((a, b) => b.createdAt - a.createdAt);

@@ -5,6 +5,16 @@ export function loopRegion(tp: Pick<Transport, 'bars' | 'loopStart' | 'loopEnd'>
   const start = Math.max(0, Math.min(total - 1, tp.loopStart ?? 0));
   return [start, Math.min(total, Math.max(start + 1, tp.loopEnd ?? total))];
 }
+/** The step the scheduler plays after `step`: wraps inside the loop only while loop is on, otherwise at the song end. */
+export function nextPlayStep(step: number, tp: Pick<Transport, 'bars' | 'loop' | 'loopStart' | 'loopEnd'>): number {
+  const total = songSteps(tp.bars);
+  const next = step + 1;
+  if (tp.loop) {
+    const [lo, hi] = loopRegion(tp);
+    return next >= hi ? lo : next;
+  }
+  return next >= total ? 0 : next;
+}
 export function capturedNote(note: MidiNote, [start, end]: [number, number]): MidiNote | null {
   if (note.step < start || note.step >= end) return null;
   return { ...note, length: Math.min(note.length, end - note.step), recordedEnd: end };

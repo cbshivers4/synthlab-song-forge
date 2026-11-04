@@ -1,3 +1,5 @@
+import { SkinControls, skinBackground, useImageDrop } from "@/components/studio/SkinControls";
+import { useSkin } from "@/lib/synclab/skins";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Play, Plus, Split, Square, Upload } from "lucide-react";
 import { toast } from "sonner";
@@ -30,6 +32,9 @@ const AI_PARTS: Record<StemId, string[]> = { vocals: ["vocals"], drums: ["drums"
 type Source = { name: string; buffer: AudioBuffer; start: number; blob: Blob };
 
 export function StemSplitter() {
+  const skin = useSkin("stemsplit");
+  const skinDrop = useImageDrop("stemsplit");
+  const skinned = !!(skin.image || skin.color);
   const { tracks, addTrack, addClip } = useStudio();
   const inputRef = useRef<HTMLInputElement>(null);
   const [source, setSource] = useState<Source | null>(null);
@@ -207,7 +212,8 @@ export function StemSplitter() {
   };
 
   return (
-    <section className="space-y-4 rounded-md border border-border bg-surface-1 p-4">
+    <section className={`space-y-4 rounded-md border border-border bg-surface-1 p-4${skinned ? " studio-wallpaper" : ""}`} data-skin-panel="stemsplit" style={skinBackground(skin)} {...skinDrop}>
+      <SkinControls skinKey="stemsplit" image />
       <header>
         <h2 className="font-mono text-sm font-bold tracking-[0.18em]">SEPARATE STEMS</h2>
         <p className="text-xs text-muted-foreground">

@@ -1,3 +1,4 @@
+import { TEST_MODE } from "./test-mode";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -31,6 +32,17 @@ export type SkinKey =
   | "pads-keyboard"
   | "video-keyboard"
   | "keyboard"
+  | "coproducer"
+  | "stemgen"
+  | "stemsplit"
+  | "converter"
+  | "voice"
+  | "reel"
+  | "video"
+  | "hum"
+  | "bass"
+  | "mastering"
+  | "reference"
   | "shared";
 
 /** Panels that can show a wallpaper, in the order the Appearance screen lists them. */
@@ -40,6 +52,17 @@ export const WALLPANEL_PANELS: { key: SkinKey; label: string }[] = [
   { key: "synth", label: "Synth instrument" },
   { key: "live", label: "Live View" },
   { key: "looper", label: "Live Looper" },
+  { key: "coproducer", label: "AI Co-Producer" },
+  { key: "stemgen", label: "Generate Stem" },
+  { key: "stemsplit", label: "Separate Stems" },
+  { key: "converter", label: "Audio Converter" },
+  { key: "voice", label: "Convert Voice" },
+  { key: "reel", label: "Reel-to-Reel Recorder" },
+  { key: "video", label: "Video Sampler" },
+  { key: "hum", label: "Hum to Beat" },
+  { key: "bass", label: "Bass Generator" },
+  { key: "mastering", label: "Mastering" },
+  { key: "reference", label: "Reference Analyzer" },
   { key: "sample", label: "Sampler" },
   { key: "sampler", label: "Sample pads" },
   { key: "sampler-keyboard", label: "Sampler keyboard" },
@@ -47,6 +70,11 @@ export const WALLPANEL_PANELS: { key: SkinKey; label: string }[] = [
   { key: "pads-keyboard", label: "Sample pads keyboard" },
   { key: "video-keyboard", label: "Video Sampler keyboard" },
 ];
+/** Panels added after the shared picture existed: they only show it once ticked in Appearance,
+ *  so an existing "all panels" shared wallpaper never changes how they look by itself. */
+export const OPT_IN_PANELS: SkinKey[] = ["coproducer", "stemgen", "stemsplit", "converter", "voice", "reel", "video", "hum", "bass", "mastering", "reference"];
+/** Panels a shared picture covers before any tick is changed in Appearance. */
+export const defaultSharedPanels = (): SkinKey[] => WALLPANEL_PANELS.map((p) => p.key).filter((k) => !OPT_IN_PANELS.includes(k));
 export type Skins = Partial<Record<SkinKey, Skin>>;
 export type SkinPreset = { id: string; name: string; skins: Skins };
 
@@ -98,12 +126,12 @@ export function deletePreset(id: string) {
  * The picture for one panel: its own if it has one, otherwise the shared
  * picture picked in Appearance when that panel is ticked there.
  */
-function resolve(all: Skins, key: SkinKey): Skin {
+export function resolveSkin(all: Skins, key: SkinKey): Skin {
   const own = all[key] ?? {};
   if (key === "shared" || own.image) return own;
   const shared = all.shared;
   if (!shared?.image) return own;
-  if (shared.panels && !shared.panels.includes(key)) return own;
+  if (shared.panels ? !shared.panels.includes(key) : OPT_IN_PANELS.includes(key)) return own;
   return {
     ...shared,
     color: own.color,
@@ -118,7 +146,7 @@ function resolve(all: Skins, key: SkinKey): Skin {
 export function useSkin(key: SkinKey): Skin {
   const [skin, set] = useState<Skin>({});
   useEffect(() => {
-    const load = () => set(resolve(readSkins(), key));
+    const load = () => set(resolveSkin(readSkins(), key));
     load();
     window.addEventListener(EVT, load);
     return () => window.removeEventListener(EVT, load);
@@ -131,8 +159,8 @@ export function clearPanelWallpaper(key: SkinKey) {
   if (key === "shared") return;
   const all = readSkins();
   const shared = all.shared;
-  if (shared?.image && (!shared.panels || shared.panels.includes(key))) {
-    const panels = (shared.panels ?? WALLPANEL_PANELS.map((p) => p.key)).filter((p) => p !== key);
+  if (shared?.image && (shared.panels ?? defaultSharedPanels()).includes(key)) {
+    const panels = (shared.panels ?? defaultSharedPanels()).filter((p) => p !== key);
     all.shared = { ...shared, panels };
   }
   all[key] = {
@@ -161,6 +189,7 @@ export function usePresets(): SkinPreset[] {
 let timer: number | undefined;
 let pulled = false;
 function scheduleSync() {
+  if (TEST_MODE) return;
   window.clearTimeout(timer);
   timer = window.setTimeout(() => void pushToAccount(), 1200);
 }
@@ -199,6 +228,7 @@ export async function pullFromAccount() {
 }
 let started = false;
 export function startSkinSync() {
+  if (TEST_MODE) return; // no account in test mode
   if (started || typeof window === "undefined") return;
   started = true;
   void pullFromAccount();

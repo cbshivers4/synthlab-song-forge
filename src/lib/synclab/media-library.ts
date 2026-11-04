@@ -1,3 +1,4 @@
+import { TEST_MODE } from "./test-mode";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { listLibrary, saveToLibrary } from "./library";
@@ -24,6 +25,7 @@ export async function retainMedia(blob: Blob, filename: string, folder = "Upload
 }
 
 export function retainMediaInBackground(blob: Blob, filename: string, folder?: string) {
+  if (TEST_MODE) return; // nothing leaves the device in test mode
   void (async () => {
     // Skip silently when signed out — background retention is a convenience,
     // not something to nag guests about on every import/export.

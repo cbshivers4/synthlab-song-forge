@@ -1,3 +1,5 @@
+import { SkinControls, skinBackground, useImageDrop } from "@/components/studio/SkinControls";
+import { useSkin } from "@/lib/synclab/skins";
 import { useEffect, useRef, useState } from "react";
 import { Play, Sparkles, Square } from "lucide-react";
 import { toast } from "sonner";
@@ -24,6 +26,9 @@ const TEMPLATES: { group: string; items: string[] }[] = [
 const KEYS = ["", "C major", "A minor", "G major", "E minor", "D major", "B minor", "F major", "D minor", "C minor", "F minor"];
 
 export function StemGenerator() {
+  const skin = useSkin("stemgen");
+  const skinDrop = useImageDrop("stemgen");
+  const skinned = !!(skin.image || skin.color);
   const { transport, addTrack, addClip } = useStudio();
   const gen = useServerFn(generateStemFn);
   const [instrument, setInstrument] = useState("Drums");
@@ -118,7 +123,8 @@ export function StemGenerator() {
   };
 
   return (
-    <section className="space-y-4 rounded-md border border-border bg-surface-1 p-4">
+    <section className={`space-y-4 rounded-md border border-border bg-surface-1 p-4${skinned ? " studio-wallpaper" : ""}`} data-skin-panel="stemgen" style={skinBackground(skin)} {...skinDrop}>
+      <SkinControls skinKey="stemgen" image />
       <header>
         <h2 className="font-mono text-sm font-bold tracking-[0.18em]">GENERATE STEM</h2>
         <p className="text-xs text-muted-foreground">

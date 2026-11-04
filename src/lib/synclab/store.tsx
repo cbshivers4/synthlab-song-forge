@@ -20,7 +20,7 @@ function cloneTrack(t: Track): Track {
   try { return structuredClone(t); } catch { return JSON.parse(JSON.stringify(t)) as Track; }
 }
 import { createRecordingFinalizer } from "./recording-finalizer";
-import { capturedNote, loopRegion } from "./recording-region";
+import { capturedNote, loopRegion, nextPlayStep } from "./recording-region";
 import { editDrumPads, type DrumBulkEdit } from "./drum-bulk";
 import { appendDrumPad } from "./drum-banks";
 import { learnedDrumPad } from "./drum-midi";
@@ -1237,14 +1237,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         setSongClock(lastStepRef.current);
         if (engine.ctx) sendClockForStep(engine.ctx, nextTime, stepDur);
         nextTime += stepDur;
-        step += 1;
-        if (tp.loop) {
-          const lo = Math.max(0, Math.min(total - 1, tp.loopStart ?? 0));
-          const hi = Math.min(total, Math.max(lo + 1, tp.loopEnd ?? total));
-          if (step >= hi) step = lo;
-        } else if (step >= total) {
-          step = 0;
-        }
+        step = nextPlayStep(step, tp);
       }
     };
 

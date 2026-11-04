@@ -41,9 +41,9 @@ const FEATURES: { icon: React.ReactNode; title: string; body: string }[] = [
 ];
 
 const AI_TOOLS: { icon: React.ReactNode; title: string; body: string }[] = [
-  { icon: <Sparkles className="size-4" />, title: "AI Co-Producer", body: "Ask for chords, basslines, drum patterns, mixing tips or lyrics — preview them with your song, then add them to the timeline." },
-  { icon: <Wand2 className="size-4" />, title: "Generate Stem", body: "Describe a part and get a 30-second audio clip in your song's key and tempo, ready for the timeline." },
-  { icon: <AudioLines className="size-4" />, title: "Separate Stems", body: "Split a song into vocals, drums, bass and music with AI — or free on your device." },
+  { icon: <Sparkles className="size-4" />, title: "AI Co-Producer", body: "Ask for chords, basslines, drum patterns, mixing tips or lyrics, then add them to your song." },
+  { icon: <Wand2 className="size-4" />, title: "Generate Stem", body: "Describe a part and get an audio clip in your song's key and tempo." },
+  { icon: <AudioLines className="size-4" />, title: "Separate Stems", body: "Split a song into vocals, drums, bass and music." },
 ];
 
 // PLACEHOLDER audio — replace files in /public/demo with real SYNCLAB demos.
@@ -375,8 +375,8 @@ export function WelcomeScreen() {
 
       <div className="login-inner mx-auto w-full space-y-12 px-5 pb-12 sm:px-8">
         <section aria-labelledby="ai-tools">
-          <h2 id="ai-tools" className="mb-1 font-display text-2xl font-semibold">AI production tools</h2>
-          <p className="mb-4 text-sm text-muted-foreground">Included with your subscription — up to 25 AI uses a day, shared across the AI tools.</p>
+          <h2 id="ai-tools" className="mb-1 font-display text-2xl font-semibold">Coming soon</h2>
+          <p className="mb-4 text-sm text-muted-foreground">AI tools we are finishing for SYNCLAB.</p>
           <ul className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             {AI_TOOLS.map((f) => (
               <li key={f.title} className="login-auth rounded-lg border border-border p-4">
@@ -384,7 +384,7 @@ export function WelcomeScreen() {
                   <span className="text-primary">{f.icon}</span>
                   <span className="font-semibold">{f.title}</span>
                   <span className="ml-auto rounded-full border border-primary/60 px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider text-primary">
-                    AI
+                    Coming soon
                   </span>
                 </div>
                 <p className="text-sm text-muted-foreground">{f.body}</p>

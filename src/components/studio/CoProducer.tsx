@@ -1,3 +1,5 @@
+import { SkinControls, skinBackground, useImageDrop } from "@/components/studio/SkinControls";
+import { useSkin } from "@/lib/synclab/skins";
 import { useEffect, useRef, useState } from "react";
 import { Bot, Copy, Send } from "lucide-react";
 import { toast } from "sonner";
@@ -17,6 +19,9 @@ const NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 const IDEAS = ["Write me a verse and a hook", "Write lyrics about my city", "Give me a 4-bar chord progression", "Write a bassline for my song", "Make a trap drum pattern", "How can I make my mix sound bigger?"];
 
 export function CoProducer() {
+  const skin = useSkin("coproducer");
+  const skinDrop = useImageDrop("coproducer");
+  const skinned = !!(skin.image || skin.color);
   const { tracks, transport, addTrack, updateTrack } = useStudio();
   const ask = useServerFn(askCoProducerFn);
   const [msgs, setMsgs] = useState<Msg[]>([]);
@@ -113,7 +118,8 @@ export function CoProducer() {
   };
 
   return (
-    <section className="flex min-h-[420px] flex-col gap-3 rounded-md border border-border bg-surface-1 p-4">
+    <section className={`flex min-h-[420px] flex-col gap-3 rounded-md border border-border bg-surface-1 p-4${skinned ? " studio-wallpaper" : ""}`} data-skin-panel="coproducer" style={skinBackground(skin)} {...skinDrop}>
+      <SkinControls skinKey="coproducer" image />
       <header className="flex items-center gap-2">
         <Bot className="size-5 text-primary" />
         <div>

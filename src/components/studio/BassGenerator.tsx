@@ -1,3 +1,5 @@
+import { SkinControls, skinBackground, useImageDrop } from "@/components/studio/SkinControls";
+import { useSkin } from "@/lib/synclab/skins";
 import { useMemo, useState, type CSSProperties } from "react";
 import { usePreviewTrack } from "@/lib/synclab/use-preview-track";
 import { PreviewButtons } from "./PreviewButtons";
@@ -12,6 +14,9 @@ const BASS_SOUNDS = SYNTH_PRESETS.filter((p) => p.category === "Bass").map((p) =
 import { BASS_STYLES, BASS_TEMPLATES, cleanBassPatch, generateBass, riffBass, varyBass, NOTE_NAMES, PROGRESSIONS, rootsFromKey, rootsFromTracks, type BassStyle } from "@/lib/synclab/bass-gen";
 
 export function BassGenerator() {
+  const skin = useSkin("bass");
+  const skinDrop = useImageDrop("bass");
+  const skinned = !!(skin.image || skin.color);
   const { tracks, transport, addTrack, updateTrack, setTransport } = useStudio();
   const barSteps = getBeatsPerBar() * 4;
   const [style, setStyle] = useState<BassStyle>("roots");
@@ -85,7 +90,8 @@ export function BassGenerator() {
   const chip = (on: boolean) => `min-h-11 rounded-md border px-3 text-sm ${on ? "border-primary bg-primary/15 text-primary" : "border-border text-muted-foreground hover:text-foreground"}`;
 
   return (
-    <section className="bassgen-device space-y-4 rounded-md border border-border bg-surface-1 p-4">
+    <section className={`bassgen-device space-y-4 rounded-md border border-border bg-surface-1 p-4${skinned ? " studio-wallpaper" : ""}`} data-skin-panel="bass" style={skinBackground(skin)} {...skinDrop}>
+      <SkinControls skinKey="bass" image />
       <header>
         <h2 className="bassgen-brand">SYNCLAB <b>Bassline Generator</b></h2>
         <p className="text-xs text-muted-foreground">Writes a bassline from music theory — following the chords already in your song, or a key and progression you pick. No AI credits used.</p>

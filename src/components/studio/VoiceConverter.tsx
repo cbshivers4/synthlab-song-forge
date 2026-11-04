@@ -1,3 +1,5 @@
+import { SkinControls, skinBackground, useImageDrop } from "@/components/studio/SkinControls";
+import { useSkin } from "@/lib/synclab/skins";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Mic, Play, Square, Upload, Wand2 } from "lucide-react";
 import { toast } from "sonner";
@@ -20,6 +22,9 @@ async function decode(data: ArrayBuffer) {
 }
 
 export function VoiceConverter() {
+  const skin = useSkin("voice");
+  const skinDrop = useImageDrop("voice");
+  const skinned = !!(skin.image || skin.color);
   const { tracks, addTrack, addClip } = useStudio();
   const inputRef = useRef<HTMLInputElement>(null);
   const recRef = useRef<MediaRecorder | null>(null);
@@ -101,7 +106,8 @@ export function VoiceConverter() {
   };
 
   return (
-    <section className="space-y-4 rounded-md border border-border bg-surface-1 p-4">
+    <section className={`space-y-4 rounded-md border border-border bg-surface-1 p-4${skinned ? " studio-wallpaper" : ""}`} data-skin-panel="voice" style={skinBackground(skin)} {...skinDrop}>
+      <SkinControls skinKey="voice" image />
       <header>
         <h2 className="font-mono text-sm font-bold tracking-[0.18em]">CONVERT VOICE</h2>
         <p className="text-xs text-muted-foreground">

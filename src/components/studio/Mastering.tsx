@@ -1,3 +1,5 @@
+import { SkinControls, skinBackground, useImageDrop } from "@/components/studio/SkinControls";
+import { useSkin } from "@/lib/synclab/skins";
 import { useEffect, useRef, useState } from "react";
 import { Download, Gauge, Play, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -52,6 +54,9 @@ function Meter({ label, value, unit, good }: { label: string; value: number; uni
  * (BS.1770) and renders a mastered version you can compare and download.
  */
 export function Mastering() {
+  const skin = useSkin("mastering");
+  const skinDrop = useImageDrop("mastering");
+  const skinned = !!(skin.image || skin.color);
   const { transport, stop, setTransport } = useStudio();
   const { project } = useApp();
   const [settings, setSettings] = useState<MasterSettings>(MASTER_DEFAULTS);
@@ -162,7 +167,8 @@ export function Mastering() {
   const busy = phase === "capturing" || phase === "working";
 
   return (
-    <div className="space-y-4">
+    <div className={`space-y-4${skinned ? " studio-wallpaper rounded-md p-3" : ""}`} data-skin-panel="mastering" style={skinBackground(skin)} {...skinDrop}>
+      <SkinControls skinKey="mastering" image />
       <div className="flex flex-wrap items-center gap-2 rounded-sm border border-border bg-surface-2/60 p-2">
         <Gauge className="size-4 text-primary" />
         <span className="font-display text-[11px] font-semibold tracking-[0.2em]">MASTERING</span>

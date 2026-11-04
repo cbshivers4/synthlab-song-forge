@@ -1,3 +1,5 @@
+import { SkinControls, skinBackground, useImageDrop } from "@/components/studio/SkinControls";
+import { useSkin } from "@/lib/synclab/skins";
 import { useEffect, useRef, useState } from "react";
 import { Disc3, Mic, Music2, Square } from "lucide-react";
 import { toast } from "sonner";
@@ -19,6 +21,9 @@ const MAX_SEC = 30;
 const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 
 export function HumToBeat() {
+  const skin = useSkin("hum");
+  const skinDrop = useImageDrop("hum");
+  const skinned = !!(skin.image || skin.color);
   const { tracks, transport, addTrack, updateTrack, setTransport } = useStudio();
   const [mode, setMode] = useState<Mode>("beat");
   const [recording, setRecording] = useState(false);
@@ -145,7 +150,8 @@ export function HumToBeat() {
   const counts = result?.hits.reduce<Record<string, number>>((a, h) => ((a[h.kind] = (a[h.kind] ?? 0) + 1), a), {});
 
   return (
-    <section className="rounded-md border border-border bg-surface-1 p-4 space-y-4">
+    <section className={`rounded-md border border-border bg-surface-1 p-4 space-y-4${skinned ? " studio-wallpaper" : ""}`} data-skin-panel="hum" style={skinBackground(skin)} {...skinDrop}>
+      <SkinControls skinKey="hum" image />
       <header>
         <h2 className="font-mono text-sm font-bold tracking-[0.18em]">HUM TO BEAT</h2>
         <p className="text-xs text-muted-foreground">

@@ -391,3 +391,23 @@ export function PlanBadge() {
     </button>
   );
 }
+
+/**
+ * Test mode (?test=1) only: a fixed local plan with no account, trial check, checkout or server call.
+ * Local features (export to a file, mastering) work; cloud saving is refused.
+ */
+export function TestPlanProvider({ children }: { children: ReactNode }) {
+  const value = useMemo<PlanState>(() => ({
+    tier: "trial",
+    email: null,
+    trialDaysLeft: TRIAL_DAYS,
+    isPro: true,
+    subscription: null,
+    requirePro: (feature) => {
+      if (/cloud/i.test(feature)) { toast("Not available in test mode — nothing is saved or sent."); return false; }
+      return true;
+    },
+    openUpgrade: () => toast("Not available in test mode — nothing is saved or sent."),
+  }), []);
+  return <PlanContext.Provider value={value}>{children}</PlanContext.Provider>;
+}

@@ -4,12 +4,17 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { WaveformView } from "./WaveformView";
+import { SkinControls, skinBackground, useImageDrop } from "@/components/studio/SkinControls";
+import { useSkin } from "@/lib/synclab/skins";
 import { CONVERSION_FORMATS, conversionFilename, conversionSupported, convertAudio, type ConversionFormat } from "@/lib/synclab/audio-converter";
 import { canShareFile, downloadBlob, shareFile, type Capture } from "@/lib/synclab/bounce";
 import { retainMediaInBackground } from "@/lib/synclab/media-library";
 
 type Source = { name: string; capture: Capture; peaks: number[]; duration: number };
 export function AudioConverter() {
+  const skin = useSkin("converter");
+  const skinDrop = useImageDrop("converter");
+  const skinned = !!(skin.image || skin.color);
   const [source, setSource] = useState<Source | null>(null);
   const [format, setFormat] = useState<ConversionFormat>("wav");
   const [rate, setRate] = useState(44100);
@@ -64,7 +69,13 @@ export function AudioConverter() {
     } finally { if (token === generation.current) setBusy(null); }
   };
   const compressed = ["mp3", "m4a", "ogg", "opus"].includes(format);
-  return <div className="mx-auto w-full max-w-3xl space-y-4" onDragOver={e => { e.preventDefault(); }} onDrop={e => { e.preventDefault(); void load(e.dataTransfer.files[0]); }}>
+  return <div className={`mx-auto w-full max-w-3xl space-y-4${skinned ? " studio-wallpaper rounded-md p-3" : ""}`} data-skin-panel="converter" style={skinBackground(skin)} onDragOver={e => { e.preventDefault(); }} onDrop={e => {
+    // A dropped picture becomes the panel wallpaper; anything else is the audio to convert.
+    const file = e.dataTransfer.files[0];
+    if (file && /^image\/(jpeg|jpg|png|webp)$/i.test(file.type)) { void skinDrop.onDrop(e); return; }
+    e.preventDefault(); void load(file);
+  }}>
+    <SkinControls skinKey="converter" image />
     <input ref={input} type="file" accept="audio/*,.wav,.mp3,.m4a,.aac,.aiff,.aif,.flac,.ogg,.opus,.webm" aria-label="Load audio to convert" className="hidden" onChange={e => { void load(e.target.files?.[0]); e.target.value = ""; }} />
     <div className="flex flex-wrap items-center gap-3 border-b border-border pb-3">
       <FileAudio className="size-8 shrink-0 text-primary" />

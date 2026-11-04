@@ -6,7 +6,9 @@ import { useEffect, useRef, useState } from "react";
 import { TrackSettingsDialog, openTrackSettings } from "@/components/studio/TrackSettingsDialog";
 import { useShortcuts } from "@/components/studio/useShortcuts";
 import { barBeat } from "@/lib/synclab/timebase";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouterState } from "@tanstack/react-router";
+import { TEST_MODE, studioEntry } from "@/lib/synclab/test-mode";
+import { TestModeBadge, TestModeHarness, TestModeOff } from "@/components/studio/TestMode";
 import { ArrowDownToLine, ArrowUpFromLine, AudioLines, AudioWaveform, Cpu, Gauge, Disc3, FileSearch, FolderOpen, Grid2x2, KeyboardMusic, Music2, NotebookPen, Palette, Piano, Radio, SlidersHorizontal, Split, Rows2, Settings2, Sparkles, Waves, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStudio, type PanelId } from "@/lib/synclab/store";
@@ -69,7 +71,7 @@ import { Bot, Film } from "lucide-react";
 import { VideoSampler } from "@/components/studio/VideoSampler";
 import { StudioView } from "@/components/studio/StudioView";
 import { AppProvider, useApp, useMaybeApp } from "@/lib/synclab/app-state";
-import { PlanProvider } from "@/lib/synclab/plan";
+import { PlanProvider, TestPlanProvider } from "@/lib/synclab/plan";
 import { useIsMobile, useIsLandscapePhone } from "@/hooks/use-mobile";
 import { useMobileAccessibility } from "@/lib/synclab/mobile-accessibility";
 import { toast } from "sonner";
@@ -316,7 +318,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
         {panel === "audio-converter" && <AudioConverter />}
         {panel === "plugins" && <PluginRack />}{panel === "appearance" && <Appearance />}{panel === "sampler" && <Sampler />}
         {panel === "pads" && <PadSampler />}{panel === "mastering" && <Mastering />}{panel === "notes" && <NotesPanel />}
-        {panel === "reference" && <ReferenceAnalyzer />}{panel === "live" && <LiveView />}{panel === "looper" && <LiveLooperView />}{panel === "apps" && <ExternalApps />}{panel === "humbeat" && <ToolErrorBoundary name="Hum to Beat"><HumToBeat /></ToolErrorBoundary>}{panel === "stems" && <ToolErrorBoundary name="Separate Stems"><StemSplitter /></ToolErrorBoundary>}{panel === "coproducer" && <ToolErrorBoundary name="AI Co-Producer"><CoProducer /></ToolErrorBoundary>}{panel === "voice" && <ToolErrorBoundary name="Convert Voice"><VoiceConverter /></ToolErrorBoundary>}{panel === "genstem" && <ToolErrorBoundary name="Generate Stem"><StemGenerator /></ToolErrorBoundary>}{panel === "bassgen" && <ToolErrorBoundary name="Bass Generator"><BassGenerator /></ToolErrorBoundary>}
+        {panel === "reference" && <ReferenceAnalyzer />}{panel === "live" && <LiveView />}{panel === "looper" && <LiveLooperView />}{panel === "apps" && <ExternalApps />}{panel === "humbeat" && <ToolErrorBoundary name="Hum to Beat"><HumToBeat /></ToolErrorBoundary>}{panel === "stems" && <ToolErrorBoundary name="Separate Stems">{TEST_MODE ? <TestModeOff name="Separate Stems" /> : <StemSplitter />}</ToolErrorBoundary>}{panel === "coproducer" && <ToolErrorBoundary name="AI Co-Producer">{TEST_MODE ? <TestModeOff name="AI Co-Producer" /> : <CoProducer />}</ToolErrorBoundary>}{panel === "voice" && <ToolErrorBoundary name="Convert Voice"><VoiceConverter /></ToolErrorBoundary>}{panel === "genstem" && <ToolErrorBoundary name="Generate Stem">{TEST_MODE ? <TestModeOff name="Generate Stem" /> : <StemGenerator />}</ToolErrorBoundary>}{panel === "bassgen" && <ToolErrorBoundary name="Bass Generator"><BassGenerator /></ToolErrorBoundary>}
       </div></PhonePages> : <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3 pb-24 sm:pb-3">
       {panel === "reel-recorder" && <ReelRecorder />}{panel === "video-sampler" && <VideoSampler />}
       {panel === "mixer" && <Mixer />}
@@ -366,7 +368,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
       {panel === "reference" && <ReferenceAnalyzer />}
       {panel === "live" && <LiveView />}
       {panel === "looper" && <LiveLooperView />}
-      {panel === "apps" && <ExternalApps />}{panel === "humbeat" && <ToolErrorBoundary name="Hum to Beat"><HumToBeat /></ToolErrorBoundary>}{panel === "stems" && <ToolErrorBoundary name="Separate Stems"><StemSplitter /></ToolErrorBoundary>}{panel === "coproducer" && <ToolErrorBoundary name="AI Co-Producer"><CoProducer /></ToolErrorBoundary>}{panel === "voice" && <ToolErrorBoundary name="Convert Voice"><VoiceConverter /></ToolErrorBoundary>}{panel === "genstem" && <ToolErrorBoundary name="Generate Stem"><StemGenerator /></ToolErrorBoundary>}{panel === "bassgen" && <ToolErrorBoundary name="Bass Generator"><BassGenerator /></ToolErrorBoundary>}
+      {panel === "apps" && <ExternalApps />}{panel === "humbeat" && <ToolErrorBoundary name="Hum to Beat"><HumToBeat /></ToolErrorBoundary>}{panel === "stems" && <ToolErrorBoundary name="Separate Stems">{TEST_MODE ? <TestModeOff name="Separate Stems" /> : <StemSplitter />}</ToolErrorBoundary>}{panel === "coproducer" && <ToolErrorBoundary name="AI Co-Producer">{TEST_MODE ? <TestModeOff name="AI Co-Producer" /> : <CoProducer />}</ToolErrorBoundary>}{panel === "voice" && <ToolErrorBoundary name="Convert Voice"><VoiceConverter /></ToolErrorBoundary>}{panel === "genstem" && <ToolErrorBoundary name="Generate Stem">{TEST_MODE ? <TestModeOff name="Generate Stem" /> : <StemGenerator />}</ToolErrorBoundary>}{panel === "bassgen" && <ToolErrorBoundary name="Bass Generator"><BassGenerator /></ToolErrorBoundary>}
 
       </div>}
 
@@ -545,10 +547,28 @@ function Stages() {
   );
 }
 
+/** ?test=1 only: the studio with a local demo song, no sign-in, nothing saved or sent. */
+function TestStages() {
+  return (
+    <TestPlanProvider>
+      <TestModeHarness />
+      <TestModeBadge />
+      <PhoneOrientation />
+      <StudioWorkspace />
+    </TestPlanProvider>
+  );
+}
+
 function Studio() {
+  // The address is known on the server too, so ?test=1 renders a neutral frame there and on the
+  // first browser render (no sign-in screen mounts), then the test studio once the browser has read the flag.
+  const asked = useRouterState({ select: (s) => String((s.location.search as Record<string, unknown>)["test"] ?? "") === "1" });
+  const [booted, setBooted] = useState(false);
+  useEffect(() => setBooted(true), []);
   // During hot reloads the root provider can briefly be a stale module copy;
   // mount a local provider in that case instead of crashing the page.
   const app = useMaybeApp();
+  if (asked) return studioEntry(booted && TEST_MODE, "loading") === "test" ? <TestStages /> : <div className="min-h-screen bg-background" />;
   if (app) return <Stages />;
   return (
     <AppProvider>

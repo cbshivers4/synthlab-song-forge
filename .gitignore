@@ -34,3 +34,7 @@ electron-release/
 
 # Desktop offline studio copy (generated while packaging)
 build-resources/offline-studio/
+
+# Local environment overrides (never committed)
+.env.local
+.env.*.local
