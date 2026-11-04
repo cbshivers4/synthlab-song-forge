@@ -46,6 +46,9 @@ const AI_TOOLS: { icon: React.ReactNode; title: string; body: string }[] = [
   { icon: <AudioLines className="size-4" />, title: "Separate Stems", body: "Split a song into vocals, drums, bass and music." },
 ];
 
+// Hidden until real demo tracks, Detroit photo and quotes are chosen.
+const SHOW_PLACEHOLDER_SECTIONS = false;
+
 // PLACEHOLDER audio — replace files in /public/demo with real SYNCLAB demos.
 const DEMOS = [
   { title: "Demo track 1 (placeholder)", src: "/demo/demo-1.wav" },
@@ -221,10 +224,11 @@ export function WelcomeScreen() {
             <p className="mb-6 text-sm text-muted-foreground">Sign in to SYNCLAB</p>
             <div className="space-y-6">
               <div className="space-y-4">
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className={`grid grid-cols-1 gap-3 ${SHOW_PLACEHOLDER_SECTIONS ? "sm:grid-cols-2" : ""}`}>
                   <Button className="min-h-14 w-full text-base font-bold" onClick={() => setMode("signup")}>
                     START FREE TRIAL
                   </Button>
+                  {SHOW_PLACEHOLDER_SECTIONS && (
                   <Button
                     variant="outline"
                     className="min-h-14 w-full text-base font-bold"
@@ -232,6 +236,7 @@ export function WelcomeScreen() {
                   >
                     TRY THE DEMO
                   </Button>
+                  )}
                 </div>
                 <p className="text-center text-xs font-medium text-muted-foreground">
                   7-day free trial · no card required
@@ -393,6 +398,7 @@ export function WelcomeScreen() {
           </ul>
         </section>
 
+        {SHOW_PLACEHOLDER_SECTIONS && (
         <section id="demo" aria-labelledby="demo-title" className="scroll-mt-6">
           <h2 id="demo-title" className="mb-1 font-display text-2xl font-semibold">Hear the demo</h2>
           <p className="mb-4 text-sm text-muted-foreground">Made in SYNCLAB — no account needed to listen.</p>
@@ -405,7 +411,9 @@ export function WelcomeScreen() {
             ))}
           </ul>
         </section>
+        )}
 
+        {SHOW_PLACEHOLDER_SECTIONS && (
         <section aria-labelledby="detroit" className="grid grid-cols-1 items-start gap-6 md:grid-cols-2">
           <div>
             <h2 id="detroit" className="mb-2 font-display text-2xl font-semibold">
@@ -432,6 +440,7 @@ export function WelcomeScreen() {
             Photo placeholder — Detroit studio photo
           </div>
         </section>
+        )}
       </div>
     </div>
 
