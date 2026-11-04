@@ -157,7 +157,7 @@ export function TopBar() {
           />
         </div>
 
-        <div className="transport-search hidden min-w-0 sm:block sm:w-[420px]"><StudioSearch /></div>
+        {isMobile && <div className="transport-search hidden min-w-0 sm:block sm:w-[420px]"><StudioSearch /></div>}
 
         <div className="transport-glass-group transport-playback order-1 flex w-fit shrink-0 items-center gap-0.5 rounded-[3px] border border-border bg-background/70 p-0.5 sm:order-none sm:ml-auto">
           <TBtn label="RTZ" onClick={() => setTransport({ step: transport.loop ? (transport.loopStart ?? 0) : 0 })}>
@@ -387,7 +387,6 @@ export function TopBar() {
           </div></PopoverContent></Popover>
         )}
 
-        {!isMobile && <div className="order-4 shrink-0"><MidiControl /></div>}
         </div>
 
         <TransportExtras mobile={isMobile}>
@@ -607,6 +606,16 @@ function FeatBtn({
       {icon}
       {label}
     </Button>
+  );
+}
+
+/** Desktop strip above the timeline: studio search and the MIDI controller inputs. */
+export function TimelineTopBar() {
+  return (
+    <div className="timeline-top-bar flex shrink-0 items-center gap-2 border-b border-border bg-surface px-3 py-1.5" aria-label="Search and MIDI controllers">
+      <div className="min-w-0 w-[420px] max-w-[50%]"><StudioSearch /></div>
+      <div className="ml-auto shrink-0"><MidiControl /></div>
+    </div>
   );
 }
 

@@ -1,5 +1,4 @@
 import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
-import { useIsLandscapePhone } from "@/hooks/use-mobile";
 import { DeviceClock } from "./DeviceClock";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { AudioLines, ChevronLeft, ChevronRight, FolderOpen, Home, Music2, Scissors, SlidersHorizontal, Wand2, Settings2, Radio, Disc3, Grid2x2, Piano, Gauge, FileSearch, Cpu, Palette, NotebookPen, LifeBuoy, Mic, Bot, Sparkles, Film, PanelTop, Move, X, Maximize2, Minimize2, GripHorizontal } from "lucide-react";
@@ -44,7 +43,6 @@ const tools = [
 ] as const;
 
 export function PhoneStudio({ children }: { children: ReactNode }) {
-  const landscape = useIsLandscapePhone();
   const { panel, setPanel, transport, tracks, select, addTrack, stop } = useStudio();
   const { setStage, project } = useApp();
   const [room, setRoom] = useState<"edit" | "sounds" | "tools">("edit");
@@ -89,6 +87,9 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
   }, []);
   const enter = (next: typeof room) => { setTransportOpen(false); setPanel(null); setRoom(next); };
   const list = room === "sounds" ? sounds : tools;
+  const editPage = !panel && room === "edit";
+  const header = <header className="flex min-h-14 shrink-0 items-center justify-between gap-3 border-b border-border bg-surface px-3"><h1 className="min-w-0 truncate text-xs font-semibold">{project?.id ? project.name : project ? `${project.name} · not saved yet` : "Untitled song"}</h1><DeviceClock mobile /></header>;
+  const recordingStrip = transport.recording ? <PhoneRecordingPosition beatsPerBar={transport.beatsPerBar ?? 4} onStop={() => void stop()} /> : null;
   return <div ref={consoleRef} data-mixer-full={panel === "mixer" && mixerFull ? "true" : undefined} className="phone-console mobile-studio landscape-prod flex h-[100dvh] min-w-0 overflow-hidden bg-background text-foreground">
     <div className="relative shrink-0 transition-[width] duration-200 ease-out" style={{ width: railOpen ? "5rem" : "3rem" }}>
     <nav aria-label="Studio navigation" data-rail-open={railOpen} className="phone-console-rail flex h-full w-full flex-col items-center gap-2 border-r border-border bg-surface px-2 py-3">
@@ -111,21 +112,21 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
       <div className="min-h-0 flex-1 overflow-y-auto p-1"><ComputerFiles /></div>
     </aside>}
     <main className="phone-console-stage relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-      <header className="flex min-h-14 shrink-0 items-center justify-between gap-3 border-b border-border bg-surface px-3"><h1 className="min-w-0 truncate text-xs font-semibold">{project?.id ? project.name : project ? `${project.name} · not saved yet` : "Untitled song"}</h1><DeviceClock mobile /></header>
-      {transport.recording && <PhoneRecordingPosition beatsPerBar={transport.beatsPerBar ?? 4} onStop={() => void stop()} />}
+      {!editPage && header}
+      {!editPage && recordingStrip}
       {panel === "mixer" && !mixerFull && <>
         {dockHeight > 0 && <div className="docked-phone-timeline shrink-0 overflow-hidden" style={{ height: dockHeight }}><Timeline desktopStyle /></div>}
         <div role="separator" aria-orientation="horizontal" aria-label="Resize timeline and mixer" title="Drag to resize timeline and mixer" onPointerDown={startDockDrag} className="dock-splitter flex h-8 shrink-0 cursor-row-resize touch-none items-center justify-center gap-2 border-y-2 border-primary/50 bg-surface"><GripHorizontal className="size-5 text-primary" /><span className="text-[10px] font-bold uppercase tracking-widest text-primary">Drag to resize</span></div>
       </>}
-      {!panel && room === "edit" && (landscape ? (
-        // Sideways phone: the whole Edit screen scrolls as one page — title row,
-        // transport strip, ruler and every track row move together.
+      {editPage && (
+        // Edit screen: the whole screen scrolls as one page — title row,
+        // recording strip, toolbar, ruler and every track row move together.
         <div className="phone-edit-scroll min-h-0 flex-1 overflow-y-auto overscroll-y-contain">
+          {header}
+          {recordingStrip && <div className="sticky top-0 z-30">{recordingStrip}</div>}
           <Timeline desktopStyle pageScroll />
         </div>
-      ) : (
-        <Timeline desktopStyle />
-      ))}
+      )}
       {panel && children}
       {!panel && room !== "edit" && <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <header className="phone-room-header grid h-14 shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center border-b border-border px-5"><h2 className="truncate text-base font-semibold">{room === "sounds" ? "Sounds & instruments" : "Effects & tools"}</h2><span className="text-xs text-muted-foreground">SYNCLAB</span></header>

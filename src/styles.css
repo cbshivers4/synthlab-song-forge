@@ -2808,7 +2808,11 @@ body:has(.phone-console) [data-sonner-toast] button { pointer-events: auto; }
 .reel-lock { fill: var(--hardware-rubber); stroke: var(--hardware-black); stroke-width: 3; }
 .reel-recorder[data-deck-look="reel"] .tape-path { width: 85%; height: 70px; margin-top: -3%; }
 .reel-recorder[data-deck-look="reel"] .tape-path path { stroke-dasharray: none; stroke: var(--tape-media-edge); }
-.tape-head-assembly { position: relative; width: 82%; height: 90px; margin: -45px auto 0; }
+/* The tape run sits above the head block so it stays visible; light marks on the tape travel supply → take-up while it moves. */
+.reel-recorder[data-deck-look="reel"] .tape-path { position: relative; z-index: 2; }
+.tape-path .tape-motion { display: none; }
+.reel-recorder[data-deck-look="reel"] .tape-path path.tape-motion { display: block; stroke: var(--tape-deck-light); stroke-width: 2; stroke-dasharray: 6 14; opacity: 0.85; }
+.tape-head-assembly { position: relative; width: 82%; height: 76px; margin: -14px auto 0; }
 .tape-head-cover { position: absolute; inset: 12px 13% 17px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; background: var(--tape-deck-brush),var(--tape-deck-metal); border: 1px solid var(--tape-deck-groove); border-bottom: 6px solid var(--hardware-black); border-radius: 4px 4px 24px 24px; box-shadow: var(--tape-deck-bevel); z-index: 1; text-align: center; }
 .tape-head-cover span { font: 800 13px var(--font-mono); }
 .tape-head-cover strong { font: 8px var(--font-mono); }

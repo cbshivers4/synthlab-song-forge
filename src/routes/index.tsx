@@ -13,7 +13,7 @@ import { ArrowDownToLine, ArrowUpFromLine, AudioLines, AudioWaveform, Cpu, Gauge
 import { Button } from "@/components/ui/button";
 import { useStudio, type PanelId } from "@/lib/synclab/store";
 import { getEngine } from "@/lib/synclab/audio-engine";
-import { TopBar } from "@/components/studio/TopBar";
+import { TimelineTopBar, TopBar } from "@/components/studio/TopBar";
 import { Mastering } from "@/components/studio/Mastering";
 import { NotesPanel } from "@/components/studio/TrackNotes";
 import { Timeline } from "@/components/studio/Timeline";
@@ -507,6 +507,7 @@ function StudioWorkspace() {
           {isMobile && mobileView === "edit" && !panel && <TopBar />}
           {isMobile && mobileView === "create" && !panel && !beatMode && <MobileCreate onBeatMode={() => setBeatMode(true)} onMore={() => setMoreSignal((n) => n + 1)} />}
           <h1 className="sr-only">SYNCLAB Studio — browser digital audio workstation</h1>
+          {!isMobile && <TimelineTopBar />}
           <Timeline />
           {!isMobile && panel && workspace.split && <SplitHandle />}
           <SafePanels float={float} setFloat={setFloat} />

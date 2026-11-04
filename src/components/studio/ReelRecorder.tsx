@@ -114,7 +114,7 @@ export function ReelRecorder() {
     </div> : <>
 
     <div className="tape-deck" data-moving={active} data-rewinding={rewinding} style={{ "--tape-roll-time": rewinding ? "0.15s" : `${0.6 / state.speed}s` } as CSSProperties}><div className="tape-reels"><Reel moving={active} fill={1 - progress} angle={angles.supply} /><Reel moving={active} right fill={progress} angle={angles.takeUp} /></div>
-      <svg className="tape-path" viewBox="0 0 600 80" aria-hidden="true"><path d="M88 5L176 60H424L512 5" /><circle cx="176" cy="60" r="13" /><circle cx="424" cy="60" r="13" /><rect x="267" y="41" width="66" height="24" rx="3" /><path d="M286 45V60M302 45V60M318 45V60" /></svg>
+      <svg className="tape-path" viewBox="0 0 600 80" aria-hidden="true"><path d="M88 5L176 60H424L512 5" /><path className="tape-motion" d="M88 5L176 60H424L512 5" /><circle cx="176" cy="60" r="13" /><circle cx="424" cy="60" r="13" /><rect x="267" y="41" width="66" height="24" rx="3" /><path d="M286 45V60M302 45V60M318 45V60" /></svg>
       <div className="tape-head-assembly" aria-hidden="true"><span className="tape-guide left" /><div className="tape-head-cover"><span>SYNCLAB</span><strong>PRECISION STEREO HEAD</strong><small>R2R · DIRECT DRIVE</small></div><span className="tape-guide right" /><span className="tape-capstan" /></div>
       <div className="tape-display flex flex-wrap items-center justify-between gap-3"><span className="font-mono text-xs">{state.source === "song" ? "SONG MASTER" : "MIC / LINE"}</span><output aria-label="Tape counter" className="font-mono text-2xl text-primary">{clock(state.position)}</output><span aria-label="Tape length" className="font-mono text-xs text-muted-foreground">{clock(state.duration)}</span></div>
     </div>
