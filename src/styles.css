@@ -3189,3 +3189,95 @@ body:has(.phone-console) [data-sonner-toast] button { pointer-events: auto; }
 .timeline-top-bar button, .timeline-top-bar input { height: 2.75rem; font-size: 1rem; font-weight: 600; color: var(--foreground); }
 .timeline-top-bar button svg { width: 1.25rem; height: 1.25rem; }
 .timeline-top-bar > div > div { padding: 4px; }
+
+/* ============ Rotary knobs: dark machined dial, lit value ring, white pointer ============ */
+:root {
+  --knob-accent: oklch(0.8 0.09 275);
+  --knob-track: oklch(0.16 0.012 265 / 0.9);
+  --knob-body-hi: oklch(0.44 0.016 265);
+  --knob-body-lo: oklch(0.16 0.012 265);
+  --knob-cap-hi: oklch(0.33 0.014 265);
+  --knob-cap-lo: oklch(0.19 0.012 265);
+  --knob-mark: oklch(0.97 0.004 265);
+}
+.drum-hardware { --knob-accent: oklch(0.78 0.13 35); }
+.synth-hardware[data-synth-style="acid"] { --knob-accent: oklch(0.82 0.14 70); }
+.synth-hardware[data-synth-style="poly"] { --knob-accent: oklch(0.84 0.13 85); }
+.synth-hardware[data-synth-style="modular"] { --knob-accent: oklch(0.8 0.14 150); }
+.hardware-knob .hardware-knob-dial { background: none !important; box-shadow: none !important; border: 0 !important; }
+.hardware-knob-svg { pointer-events: none; }
+.hardware-knob-track, .hardware-knob-arc { fill: none; stroke-width: 6; stroke-linecap: round; }
+.hardware-knob-track { stroke: var(--knob-track); }
+.hardware-knob-arc { stroke: var(--knob-accent); filter: drop-shadow(0 0 2px color-mix(in oklab, var(--knob-accent) 70%, transparent)); }
+.hardware-knob-shadow { fill: oklch(0 0 0 / 0.5); filter: blur(2.5px); }
+.hardware-knob-body { stroke: color-mix(in oklab, var(--knob-accent) 22%, oklch(0.1 0.01 265)); stroke-width: 1.6; }
+.hardware-knob-face { stroke: oklch(1 0 0 / 0.1); stroke-width: 1; }
+.hardware-knob-body-hi { stop-color: var(--knob-body-hi); }
+.hardware-knob-body-lo { stop-color: var(--knob-body-lo); }
+.hardware-knob-cap-hi { stop-color: var(--knob-cap-hi); }
+.hardware-knob-cap-lo { stop-color: var(--knob-cap-lo); }
+.hardware-knob-mark { stroke: var(--knob-mark); stroke-width: 4.5; stroke-linecap: round; }
+.hardware-knob-label { text-transform: uppercase; letter-spacing: 0.06em; }
+
+/* ============ Effects: slate plug-in faces, each effect with its own colour ============ */
+[data-fx-skin="reverb"] { --fx-hue: 255; } [data-fx-skin="delay"] { --fx-hue: 205; } [data-fx-skin="drive"] { --fx-hue: 28; }
+[data-fx-skin="bitcrusher"] { --fx-hue: 140; } [data-fx-skin="width"] { --fx-hue: 185; } [data-fx-skin="compressor"] { --fx-hue: 62; }
+[data-fx-skin="tremolo"] { --fx-hue: 45; } [data-fx-skin="stepfilter"] { --fx-hue: 160; } [data-fx-skin="gate"] { --fx-hue: 128; }
+[data-fx-skin="gain"] { --fx-hue: 92; } [data-fx-skin="vocoder"] { --fx-hue: 110; } [data-fx-skin="resonator"] { --fx-hue: 12; }
+[data-fx-skin="phaser"] { --fx-hue: 300; } [data-fx-skin="chorus"] { --fx-hue: 228; } [data-fx-skin="autopan"] { --fx-hue: 175; }
+[data-fx-skin="transient"] { --fx-hue: 75; } [data-fx-skin="scalechord"] { --fx-hue: 332; } [data-fx-skin="limiter"] { --fx-hue: 98; }
+[data-fx-skin="filter"] { --fx-hue: 150; } [data-fx-skin="unison"] { --fx-hue: 285; } [data-fx-skin="trigate"] { --fx-hue: 120; }
+[data-fx-skin="sidechain"] { --fx-hue: 212; } [data-fx-skin="retro"] { --fx-hue: 38; } [data-fx-skin="pitchvoice"] { --fx-hue: 312; }
+[data-fx-skin="paraeq"] { --fx-hue: 85; } [data-fx-skin="modulator"] { --fx-hue: 165; } [data-fx-skin="modfx"] { --fx-hue: 345; }
+[data-fx-skin="maximizer"] { --fx-hue: 52; } [data-fx-skin="imager"] { --fx-hue: 195; } [data-fx-skin="flanger"] { --fx-hue: 322; }
+[data-fx-skin="eq"] { --fx-hue: 80; } [data-fx-skin="ensemble"] { --fx-hue: 240; } [data-fx-skin="distmatrix"] { --fx-hue: 4; }
+[data-fx-skin="demolition"] { --fx-hue: 20; } [data-fx-skin="amp"] { --fx-hue: 32; }
+:is(.fx-face, .device-module, .fx-editor, [role="dialog"]):is(.fx-face, .device-module, .fx-editor, [role="dialog"])[data-fx-skin][data-fx-skin] {
+  --fx-accent: oklch(0.8 0.11 var(--fx-hue, 275));
+  --knob-accent: var(--fx-accent);
+  --hardware-trim: var(--fx-accent);
+  --hardware-face: oklch(0.33 0.028 var(--fx-hue, 275));
+  --fx-deck: oklch(0.26 0.024 var(--fx-hue, 275));
+  --fx-section-face: oklch(0.29 0.026 var(--fx-hue, 275));
+  --fx-section-header: oklch(0.22 0.022 var(--fx-hue, 275));
+  --fx-deck-ink: oklch(0.93 0.012 var(--fx-hue, 275));
+  --foreground: oklch(0.94 0.01 var(--fx-hue, 275));
+  --muted-foreground: oklch(0.74 0.03 var(--fx-hue, 275));
+  --display-wave: var(--fx-accent);
+  background:
+    radial-gradient(120% 70% at 50% 0%, oklch(1 0 0 / 0.07), transparent 60%),
+    linear-gradient(180deg, oklch(0.37 0.03 var(--fx-hue, 275)), oklch(0.26 0.024 var(--fx-hue, 275))) !important;
+  border-radius: 14px;
+  border-color: oklch(0 0 0 / 0.45);
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.13), inset 0 0 0 1px oklch(1 0 0 / 0.04), 0 12px 28px oklch(0 0 0 / 0.5);
+  color: var(--foreground);
+}
+:is(.fx-face, .device-module, .fx-editor)[data-fx-skin][data-bypassed="true"] { --fx-accent: oklch(0.62 0.015 var(--fx-hue, 275)); }
+.fx-face:is(.fx-face, .device-module, .fx-editor, [role="dialog"])[data-fx-skin][data-fx-skin] { border-top: 3px solid var(--fx-accent); margin-block: 6px; }
+.fx-face[data-fx-skin] :is(.hardware-rack-ear, .fx-rack-vents) { display: none; }
+[data-fx-skin][role="dialog"]::before { display: none; }
+:is(.fx-face, .device-module, .fx-editor, [role="dialog"])[data-fx-skin][data-fx-skin] .fx-control-deck {
+  background: linear-gradient(180deg, oklch(0.23 0.022 var(--fx-hue, 275)), oklch(0.28 0.026 var(--fx-hue, 275))) !important;
+  border-radius: 12px;
+  border-color: oklch(0 0 0 / 0.4) !important;
+  box-shadow: inset 0 2px 6px oklch(0 0 0 / 0.38), 0 1px 0 oklch(1 0 0 / 0.06);
+}
+:is(.fx-face, .device-module, .fx-editor, [role="dialog"])[data-fx-skin][data-fx-skin] :is(.signal-screen, .fx-parameter-window) {
+  border-radius: 12px;
+  border: 1px solid oklch(0 0 0 / 0.5);
+  outline: 0;
+  box-shadow: inset 0 2px 10px oklch(0 0 0 / 0.5), 0 1px 0 oklch(1 0 0 / 0.07);
+}
+:is(.fx-face, .device-module, .fx-editor, [role="dialog"])[data-fx-skin][data-fx-skin] .fx-parameter-window { background: linear-gradient(180deg, oklch(0.36 0.05 var(--fx-hue, 275)), oklch(0.22 0.035 var(--fx-hue, 275))); color: var(--fx-accent); }
+:is(.fx-face, .device-module, .fx-editor, [role="dialog"])[data-fx-skin][data-fx-skin] .fx-nameplate { background: none; border: 0; box-shadow: none; }
+:is(.fx-face, .device-module, .fx-editor, [role="dialog"])[data-fx-skin][data-fx-skin] .fx-nameplate h3 { color: var(--foreground); text-shadow: none; letter-spacing: 0.08em; }
+:is(.fx-face, .device-module, .fx-editor, [role="dialog"])[data-fx-skin][data-fx-skin] :is(button, [role="tab"], select):not(.instrument-keyboard *):not(.modular-jack):not(.modular-swatch) {
+  border-radius: 10px;
+  border-color: oklch(0 0 0 / 0.45);
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.12), 0 2px 4px oklch(0 0 0 / 0.35);
+  text-shadow: none;
+}
+:is(.fx-face, .device-module, .fx-editor, [role="dialog"])[data-fx-skin][data-fx-skin] :is(button[aria-pressed="true"], [role="tab"][aria-selected="true"], [data-state="active"][role="tab"]) {
+  background: linear-gradient(180deg, color-mix(in oklab, var(--fx-accent) 75%, white 10%), color-mix(in oklab, var(--fx-accent) 60%, black)) !important;
+  color: oklch(0.16 0.02 var(--fx-hue, 275)) !important;
+}

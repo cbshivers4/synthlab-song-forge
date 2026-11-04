@@ -3,7 +3,7 @@ import { useSkin } from "@/lib/synclab/skins";
 import { useEffect, useRef, useState } from "react";
 import { Download, Gauge, Play, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider";
+import { Knob } from "@/components/studio/Knob";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -211,23 +211,25 @@ export function Mastering() {
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        {KNOBS.map((k) => (
-          <div key={k.key} className="rounded-sm border border-border bg-surface-2/50 p-2" title={k.hint}>
-            <div className="mb-1 flex items-center justify-between">
-              <span className="label-xs">{k.label}</span>
-              <span className="font-mono text-[10px] text-muted-foreground">{fmt(settings[k.key] as number, k.unit)}</span>
+      <div className="space-y-3">
+        <div className="mastering-knobs flex flex-wrap justify-center gap-x-4 gap-y-3 rounded-md border border-border bg-surface-2/50 p-3">
+          {KNOBS.map((k) => (
+            <div key={k.key} title={k.hint}>
+              <Knob
+                label={k.label}
+                value={settings[k.key] as number}
+                min={k.min}
+                max={k.max}
+                step={k.step}
+                size={60}
+                className="w-20"
+                format={(v) => fmt(v, k.unit)}
+                onChange={(v) => set(k.key, v)}
+                onCommit={() => capture && void runMaster(capture)}
+              />
             </div>
-            <Slider
-              min={k.min}
-              max={k.max}
-              step={k.step}
-              value={[settings[k.key] as number]}
-              onValueChange={([v]) => set(k.key, v ?? 0)}
-              onValueCommit={() => capture && void runMaster(capture)}
-            />
-          </div>
-        ))}
+          ))}
+        </div>
         <div className="flex items-center justify-between rounded-sm border border-border bg-surface-2/50 p-2">
           <div>
             <div className="label-xs">Dither</div>

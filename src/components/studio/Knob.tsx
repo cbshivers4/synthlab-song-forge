@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useId, useRef } from "react";
 import { canvasPoint } from "@/lib/synclab/canvas-point";
 import { MidiLearnButton } from "./MidiLearn";
 import { cn } from "@/lib/utils";
@@ -22,6 +22,20 @@ interface KnobProps {
   /** Accessible name when the visible label is short (e.g. "PAN"). */
   ariaLabel?: string | undefined;
   className?: string | undefined;
+  /** Called once a gesture finishes (pointer released, key released, wheel settled). */
+  onCommit?: (() => void) | undefined;
+}
+
+/** Point on the dial ring; 0° is straight up, clockwise positive. */
+const ringPoint = (deg: number, r: number) => {
+  const a = (deg * Math.PI) / 180;
+  return `${(50 + r * Math.sin(a)).toFixed(2)} ${(50 - r * Math.cos(a)).toFixed(2)}`;
+};
+/** SVG arc between two dial angles (degrees). */
+export function knobArc(from: number, to: number, r = 44) {
+  const [a, b] = from <= to ? [from, to] : [to, from];
+  if (b - a < 0.01) return "";
+  return `M ${ringPoint(a, r)} A ${r} ${r} 0 ${b - a > 180 ? 1 : 0} 1 ${ringPoint(b, r)}`;
 }
 
 /** Snaps to the step grid without floating-point drift. */
@@ -32,11 +46,16 @@ export function knobStep(value: number, min: number, max: number, step: number) 
 }
 
 /**
- * Physical-style rotary knob shared by instruments, effects and the mixer.
+ * Rotary knob shared by instruments, effects, mastering and the mixer: a dark machined dial with a
+ * lit value ring (accent from --knob-accent) and a white pointer.
  * Drag up/down (Shift = fine), mouse wheel, arrow / Page keys, Home or double-click to reset.
  */
-export function Knob({ label, value, min = 0, max = 1, step = 0.01, unit = "", size = 44, onChange, midiTarget, defaultValue, format, layout = "stack", ariaLabel, className }: KnobProps) {
+export function Knob({ label, value, min = 0, max = 1, step = 0.01, unit = "", size = 44, onChange, midiTarget, defaultValue, format, layout = "stack", ariaLabel, className, onCommit }: KnobProps) {
+  const gid = useId().replace(/:/g, "");
   const start = useRef<{ y: number; v: number } | null>(null);
+  const commitRef = useRef(onCommit);
+  commitRef.current = onCommit;
+  const wheelTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dial = useRef<HTMLDivElement>(null);
   const latest = useRef({ value, min, max, step, onChange });
   latest.current = { value, min, max, step, onChange };
@@ -68,13 +87,18 @@ export function Knob({ label, value, min = 0, max = 1, step = 0.01, unit = "", s
       const { value: v, min: lo, max: hi, step: st, onChange: change } = latest.current;
       const ticks = Math.max(1, Math.round((hi - lo) / st / 100));
       change(knobStep(v + (e.deltaY < 0 ? 1 : -1) * st * ticks * (e.shiftKey ? 0.25 : 1), lo, hi, st));
+      if (wheelTimer.current) clearTimeout(wheelTimer.current);
+      wheelTimer.current = setTimeout(() => commitRef.current?.(), 350);
     };
     el.addEventListener("wheel", onWheel, { passive: false });
-    return () => el.removeEventListener("wheel", onWheel);
+    return () => { el.removeEventListener("wheel", onWheel); if (wheelTimer.current) clearTimeout(wheelTimer.current); };
   }, []);
 
-  const pct = (value - min) / (max - min || 1);
+  const pct = Math.min(1, Math.max(0, (value - min) / (max - min || 1)));
   const angle = -135 + pct * 270;
+  // Bipolar controls (pan, ±dB) light the ring from their centre; others from the minimum.
+  const origin = defaultValue !== undefined && defaultValue > min && defaultValue < max ? -135 + ((defaultValue - min) / (max - min)) * 270 : -135;
+  const lit = knobArc(origin, angle);
   const display = format ? format(value) : `${max - min > 40 ? Math.round(value) : Number(value.toFixed(2))}${unit}`;
   const reset = () => { if (defaultValue !== undefined) onChange(defaultValue); };
 
@@ -91,9 +115,10 @@ export function Knob({ label, value, min = 0, max = 1, step = 0.01, unit = "", s
       title={defaultValue !== undefined ? `${ariaLabel ?? label}: drag, scroll or use arrow keys · double-click to reset` : undefined}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
-      onPointerUp={() => (start.current = null)}
+      onPointerUp={() => { if (start.current) commitRef.current?.(); start.current = null; }}
       onPointerCancel={() => (start.current = null)}
-      onDoubleClick={reset}
+      onDoubleClick={() => { reset(); commitRef.current?.(); }}
+      onKeyUp={(e) => { if (/^(Arrow|Page|Home)/.test(e.key)) commitRef.current?.(); }}
       onKeyDown={(e) => {
         const big = step * Math.max(1, Math.round((max - min) / step / 10));
         if (e.key === "ArrowUp" || e.key === "ArrowRight") onChange(knobStep(value + step, min, max, step));
@@ -107,13 +132,24 @@ export function Knob({ label, value, min = 0, max = 1, step = 0.01, unit = "", s
       className="hardware-knob-dial relative shrink-0 cursor-ns-resize touch-none rounded-full"
       style={{ width: size, height: size }}
     >
-      <svg className="hardware-knob-scale absolute inset-0 size-full" viewBox="0 0 100 100" aria-hidden="true">
-        {Array.from({ length: 11 }, (_, i) => <line key={i} x1="50" y1="3" x2="50" y2={i % 5 === 0 ? "12" : "8"} transform={`rotate(${-135 + i * 27} 50 50)`} />)}
+      <svg className="hardware-knob-svg absolute inset-0 size-full overflow-visible" viewBox="0 0 100 100" aria-hidden="true">
+        <defs>
+          <radialGradient id={`kb${gid}`} cx="38%" cy="30%" r="80%">
+            <stop offset="0" className="hardware-knob-body-hi" />
+            <stop offset="1" className="hardware-knob-body-lo" />
+          </radialGradient>
+          <linearGradient id={`kc${gid}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" className="hardware-knob-cap-hi" />
+            <stop offset="1" className="hardware-knob-cap-lo" />
+          </linearGradient>
+        </defs>
+        <path className="hardware-knob-track" d={knobArc(-135, 135)} />
+        {lit && <path className="hardware-knob-arc" d={lit} />}
+        <circle className="hardware-knob-shadow" cx="50" cy="53" r="33" />
+        <circle className="hardware-knob-body" cx="50" cy="50" r="33" fill={`url(#kb${gid})`} />
+        <circle className="hardware-knob-face" cx="50" cy="50" r="26" fill={`url(#kc${gid})`} />
+        <line className="hardware-knob-mark" x1="50" y1="40" x2="50" y2="25" transform={`rotate(${angle} 50 50)`} />
       </svg>
-      <div className="hardware-knob-grip absolute inset-[17%] rounded-full">
-        <div className="hardware-knob-cap absolute inset-[12%] rounded-full" />
-        <div className="hardware-knob-pointer absolute inset-0" style={{ transform: `rotate(${angle}deg)` }}><i /></div>
-      </div>
     </div>
   );
 
