@@ -3281,3 +3281,27 @@ body:has(.phone-console) [data-sonner-toast] button { pointer-events: auto; }
   background: linear-gradient(180deg, color-mix(in oklab, var(--fx-accent) 75%, white 10%), color-mix(in oklab, var(--fx-accent) 60%, black)) !important;
   color: oklch(0.16 0.02 var(--fx-hue, 275)) !important;
 }
+/* Knob names on the dark Spec 4 oscillator panels stay readable. */
+.synth-hardware[data-synth-style="spec4"] .synth-osc-module .hardware-knob-label,
+.synth-hardware[data-synth-style="spec4"] .synth-osc-module .hardware-knob button { color: var(--hardware-ink); }
+/* Effect sections and knob names: readable light ink on every slate face. */
+:is(.fx-face, .device-module, .fx-editor, [role="dialog"])[data-fx-skin] :is(.fx-section, .fx-workbench-footer, .fx-control-deck) {
+  --hardware-ink: oklch(0.94 0.01 var(--fx-hue, 275));
+  --foreground: oklch(0.94 0.01 var(--fx-hue, 275));
+  --muted-foreground: oklch(0.74 0.03 var(--fx-hue, 275));
+  color: var(--foreground) !important;
+}
+:is(.fx-face, .device-module, .fx-editor, [role="dialog"])[data-fx-skin] .fx-section {
+  background: linear-gradient(180deg, oklch(0.25 0.022 var(--fx-hue, 275)), oklch(0.29 0.026 var(--fx-hue, 275))) !important;
+  border-color: oklch(0 0 0 / 0.4) !important;
+  border-radius: 12px;
+  box-shadow: inset 0 2px 6px oklch(0 0 0 / 0.35), 0 1px 0 oklch(1 0 0 / 0.06) !important;
+}
+:is(.fx-face, .device-module, .fx-editor, [role="dialog"])[data-fx-skin] .fx-section h4 {
+  background: oklch(0.2 0.02 var(--fx-hue, 275)) !important;
+  border-color: oklch(0 0 0 / 0.35) !important;
+  color: var(--foreground) !important;
+  letter-spacing: 0.12em;
+}
+:is(.fx-face, .device-module, .fx-editor, [role="dialog"])[data-fx-skin] :is(.hardware-knob-label, .hardware-knob-value) { color: var(--foreground) !important; }
+:is(.fx-face, .device-module, .fx-editor, [role="dialog"])[data-fx-skin] .hardware-knob-value { opacity: 0.8; }

@@ -70,6 +70,7 @@ export function StemGenerator() {
         how = "AI separated the " + part + " part" + (part === "other" ? " (everything except drums, bass and vocals)" : "") + "; other instruments in that group can remain.";
         announceAiUse();
       } catch (e) {
+        announceAiUse(); // the server gives the clean-up use back when separation fails
         const msg = e instanceof Error ? e.message : "";
         const want = part === "drums" ? ["drums"] : part === "vocals" ? ["vocals"] : part === "bass" ? ["bass"] : ["drums", "bass", "vocals"];
         const parts = await separateStems(raw, want as Parameters<typeof separateStems>[1]);

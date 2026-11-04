@@ -41,9 +41,19 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: import("@tanstack/react-router").ErrorComponentProps) {
   console.error(error);
   const router = useRouter();
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  // Old and new app code mixed after an update (page left open across a publish): a fresh load fixes it.
+  const stale = /is not a function|dynamically imported module|Importing a module script failed|ChunkLoadError|Loading chunk/i.test(message);
   useEffect(() => {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
-  }, [error]);
+    if (!stale) return;
+    // Reload once by itself; if it happens again within a minute, leave the buttons to the user.
+    const last = Number(sessionStorage.getItem("synclab-stale-reload") || 0);
+    if (Date.now() - last > 60_000) {
+      sessionStorage.setItem("synclab-stale-reload", String(Date.now()));
+      window.location.reload();
+    }
+  }, [error, stale]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -52,7 +62,9 @@ function ErrorComponent({ error, reset }: import("@tanstack/react-router").Error
           This page didn't load
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong on our end. You can try refreshing or head back home.
+          {stale
+            ? "SYNCLAB was updated while this page was open. Reloading loads the new version."
+            : "Something went wrong on our end. You can try refreshing or head back home."}
         </p>
         <p className="mt-3 break-words rounded-md border border-border bg-muted/40 px-3 py-2 font-mono text-xs text-muted-foreground">
           Details: {error instanceof Error ? error.message || error.name : String(error ?? "Unknown error")}
@@ -60,6 +72,7 @@ function ErrorComponent({ error, reset }: import("@tanstack/react-router").Error
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
             onClick={() => {
+              if (stale) { window.location.reload(); return; }
               router.invalidate();
               reset();
             }}

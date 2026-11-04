@@ -223,6 +223,7 @@ export function Mastering() {
                 step={k.step}
                 size={60}
                 className="w-20"
+                defaultValue={k.unit === "dB" ? 0 : k.key === "width" ? 1 : undefined}
                 format={(v) => fmt(v, k.unit)}
                 onChange={(v) => set(k.key, v)}
                 onCommit={() => capture && void runMaster(capture)}
