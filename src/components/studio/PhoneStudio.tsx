@@ -85,6 +85,28 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
     window.addEventListener("synclab:mixer-full", onMixerFull);
     return () => { window.removeEventListener("synclab:mixer-full", onMixerFull); document.documentElement.classList.remove("phone-console-active"); };
   }, []);
+  // Edit screen: divide the track area's height between the visible rows so
+  // every track fits without scrolling (rows never go below touch size).
+  const editRef = useRef<HTMLDivElement>(null);
+  const editPageOpen = !panel && room === "edit";
+  useEffect(() => {
+    const root = editRef.current;
+    if (!editPageOpen || !root) return;
+    const fit = () => {
+      const scroller = root.querySelector<HTMLElement>("#timeline-scroll");
+      if (!scroller) return;
+      const rows = Math.max(1, root.querySelectorAll("[data-track-row]").length);
+      const drop = root.querySelector<HTMLElement>("[data-new-channel-drop]")?.offsetHeight ?? 30;
+      const h = Math.floor((scroller.clientHeight - drop - 2) / rows) - 1;
+      root.style.setProperty("--fit-row-h", `${Math.max(56, Math.min(140, h))}px`);
+    };
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(root);
+    const mo = new MutationObserver(fit);
+    mo.observe(root, { childList: true, subtree: true });
+    return () => { ro.disconnect(); mo.disconnect(); };
+  }, [editPageOpen, tracks.length]);
   const enter = (next: typeof room) => { setTransportOpen(false); setPanel(null); setRoom(next); };
   const list = room === "sounds" ? sounds : tools;
   const editPage = !panel && room === "edit";
@@ -119,12 +141,12 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
         <div role="separator" aria-orientation="horizontal" aria-label="Resize timeline and mixer" title="Drag to resize timeline and mixer" onPointerDown={startDockDrag} className="dock-splitter flex h-8 shrink-0 cursor-row-resize touch-none items-center justify-center gap-2 border-y-2 border-primary/50 bg-surface"><GripHorizontal className="size-5 text-primary" /><span className="text-[10px] font-bold uppercase tracking-widest text-primary">Drag to resize</span></div>
       </>}
       {editPage && (
-        // Edit screen: the whole screen scrolls as one page — title row,
-        // recording strip, toolbar, ruler and every track row move together.
-        <div className="phone-edit-scroll min-h-0 flex-1 overflow-y-auto overscroll-y-contain">
-          {header}
-          {recordingStrip && <div className="sticky top-0 z-30">{recordingStrip}</div>}
-          <Timeline desktopStyle pageScroll />
+        // Edit screen fits the phone: compact title, toolbars and ruler stay
+        // put and the track rows share the remaining height.
+        <div ref={editRef} className="phone-edit-fit flex min-h-0 flex-1 flex-col overflow-hidden">
+          <header className="flex shrink-0 items-center justify-between gap-3 border-b border-border bg-surface px-3"><h1 className="min-w-0 truncate text-xs font-semibold">{project?.id ? project.name : project ? `${project.name} · not saved yet` : "Untitled song"}</h1><DeviceClock inline /></header>
+          {recordingStrip}
+          <Timeline desktopStyle />
         </div>
       )}
       {panel && children}

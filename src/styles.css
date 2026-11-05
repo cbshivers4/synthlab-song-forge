@@ -3460,3 +3460,69 @@ body:has(.phone-console) [data-sonner-toast] button { pointer-events: auto; }
 .bassgen-flag { border-radius: 3px; border: 1px solid var(--border); color: var(--muted-foreground); }
 .bassgen-flag:disabled { opacity: 0.3; }
 .bassgen-flag.is-on { background: var(--bass-teal); color: var(--background); border-color: transparent; }
+
+/* ===== Sideways phone Edit screen fits without page scrolling =====
+   Compact chrome; track rows share the remaining height via --fit-row-h. */
+.phone-console .phone-edit-fit > header { min-height: 30px; height: 30px; }
+.phone-console .phone-edit-fit .arrangement-timeline { min-height: 0 !important; flex: 1 1 0; overflow: hidden; }
+.phone-console .phone-edit-fit .workflow-bar button,
+.phone-console .phone-edit-fit .workflow-bar [role="combobox"] { min-height: 26px !important; height: 26px !important; padding-block: 0; }
+.phone-console .phone-edit-fit .workflow-bar > div { min-height: 0; padding-block: 1px; }
+.phone-console .phone-edit-fit .arrangement-timeline[data-desktop-style="true"] .timeline-edit-toolbar { min-height: 30px; padding-block: 1px; }
+.phone-console .phone-edit-fit .timeline-edit-toolbar button,
+.phone-console .phone-edit-fit .timeline-edit-toolbar [role="combobox"] { min-height: 26px !important; height: 26px !important; }
+.phone-console .phone-edit-fit .mobile-timeline > .shrink-0 > div > .sticky { height: 24px; }
+.phone-console .phone-edit-fit .mobile-timeline > .shrink-0 > div > div:not(.sticky) { max-height: 24px; min-height: 0; overflow: hidden; }
+.phone-console .phone-edit-fit .mobile-timeline > .shrink-0 > div > div:not(.sticky) button { min-height: 20px !important; height: 20px !important; }
+.phone-console .phone-edit-fit #timeline-scroll { min-height: 0; flex: 1 1 0; }
+.phone-console .phone-edit-fit [data-new-channel-drop] { min-height: 16px; }
+.phone-console .phone-edit-fit [data-timeline-track-rows] > div > .relative.flex,
+.phone-console .phone-edit-fit .arrangement-timeline [data-track-row] { height: var(--fit-row-h, 140px) !important; min-height: 0 !important; }
+.phone-console .phone-edit-fit .mobile-timeline .lane-grid { min-height: 0; }
+.phone-console .phone-edit-fit .arrangement-timeline[data-desktop-style="true"] .track-touch-header { padding-block: 2px; overflow: hidden; display: flex; flex-direction: column; justify-content: center; gap: 1px; }
+.phone-console .phone-edit-fit .arrangement-timeline[data-desktop-style="true"] .track-touch-header > * { margin-top: 0 !important; }
+.phone-console .phone-edit-fit .arrangement-timeline[data-desktop-style="true"] .track-touch-header > div:first-child { min-height: 24px; height: 24px; }
+.phone-console .phone-edit-fit .track-touch-header > div:first-child button { min-height: 24px; height: 24px; }
+.phone-console .phone-edit-fit .arrangement-timeline[data-desktop-style="true"] .timeline-track-actions,
+.phone-console .phone-edit-fit .arrangement-timeline[data-desktop-style="true"] .timeline-track-actions > button { height: 24px; min-height: 24px; padding-bottom: 0; }
+.phone-console .phone-edit-fit .arrangement-timeline > section, .phone-console .phone-edit-fit .arrangement-timeline > div:last-child button { min-height: 0; }
+.phone-console .phone-edit-fit .channel-menu-trigger { width: 32px !important; height: 24px !important; min-width: 32px; min-height: 24px !important; flex: 0 0 32px; }
+.phone-console .phone-edit-fit .channel-menu-trigger svg { width: 18px; height: 18px; }
+.phone-console .phone-edit-fit .arrangement-timeline[data-desktop-style="true"] .track-touch-header > div:nth-child(3) { height: 12px; min-height: 0; overflow: hidden; }
+.phone-console .phone-edit-fit .arrangement-timeline[data-desktop-style="true"] .track-touch-header > div:last-child { height: 6px; min-height: 0; overflow: hidden; }
+.phone-console .phone-edit-fit [data-new-channel-drop] { display: flex; align-items: center; min-height: 0; }
+.phone-console .phone-edit-fit [data-new-channel-drop] > div:first-child { padding-top: 0; }
+.phone-console .phone-edit-fit [data-new-channel-drop] > div:first-child button { min-height: 28px !important; height: 28px !important; }
+.phone-console .phone-edit-fit [data-new-channel-drop] > .m-2 { margin-block: 2px; padding-block: 4px; flex: 1; }
+/* Fit rows: name on top; actions and volume share the second row; meter is a thin strip. */
+.phone-console .phone-edit-fit .mobile-timeline { --timeline-header-width: 360px !important; }
+.phone-console .phone-edit-fit .arrangement-timeline[data-desktop-style="true"] .track-touch-header { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-auto-rows: auto; align-content: center; column-gap: 6px; row-gap: 1px; }
+.phone-console .phone-edit-fit .arrangement-timeline[data-desktop-style="true"] .track-touch-header > div:first-child { grid-column: 1 / -1; }
+.phone-console .phone-edit-fit .arrangement-timeline[data-desktop-style="true"] .timeline-track-actions { grid-column: 1; overflow: visible; gap: 0; }
+.phone-console .phone-edit-fit .arrangement-timeline[data-desktop-style="true"] .timeline-track-actions > button { padding-inline: 5px; }
+.phone-console .phone-edit-fit .arrangement-timeline[data-desktop-style="true"] .track-touch-header > div:nth-child(3) { grid-column: 2; height: 24px; display: flex; align-items: center; }
+.phone-console .phone-edit-fit .arrangement-timeline[data-desktop-style="true"] .track-touch-header > div:last-child { grid-column: 1 / -1; height: 4px; }
+.phone-console .phone-edit-fit .arrangement-timeline[data-desktop-style="true"] .track-touch-header > div:nth-child(3) > span:first-child { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.phone-console .phone-edit-fit .arrangement-timeline[data-desktop-style="true"] .track-touch-header > div:nth-child(3) > :not(span:first-child) { flex: 1; min-width: 0; }
+/* Sideways phone drum roll: every control row is one slim line so the grid gets the rest. */
+.phone-console .drum-machine:has(.drum-roll-fit) { grid-template-columns: minmax(0,1fr) 220px; grid-template-rows: 30px 30px 30px 30px 30px minmax(0,1fr); }
+.phone-console .drum-machine:has(.drum-roll-fit) > div:first-child { grid-column: 2; grid-row: 1; min-height: 0; height: 30px; }
+.phone-console .drum-machine:has(.drum-roll-fit) > div:first-child > .label-xs { display: none; }
+.phone-console .drum-machine:has(.drum-roll-fit) > div:first-child button { height: 30px !important; min-height: 30px !important; }
+.phone-console .drum-machine:has(.drum-roll-fit) > [role="tablist"] { grid-column: 1; grid-row: 1; }
+.phone-console .drum-machine:has(.drum-roll-fit) > .drum-patterns { grid-row: 2; flex-wrap: nowrap; overflow: hidden; }
+.phone-console .drum-machine:has(.drum-roll-fit) > .drum-patterns > div { flex-wrap: nowrap; }
+.phone-console .drum-machine:has(.drum-roll-fit) > .drum-chain { grid-column: 1 / -1; grid-row: 4; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; gap: 4px; scrollbar-width: none; }
+.phone-console .drum-machine:has(.drum-roll-fit) > .drum-chain > *, .phone-console .drum-machine:has(.drum-roll-fit) > .drum-chain > div, .phone-console .drum-machine:has(.drum-roll-fit) > .drum-chain > ol { flex-shrink: 0; flex-wrap: nowrap; white-space: nowrap; }
+.phone-console .drum-machine:has(.drum-roll-fit) > .drum-chain button { height: 28px !important; min-height: 28px !important; min-width: 28px; }
+.phone-console .drum-machine:has(.drum-roll-fit) > .drum-chain label { height: 28px; }
+.phone-console .drum-machine:has(.drum-roll-fit) > [aria-label="Note repeat"] { grid-column: 1 / -1; grid-row: 5; flex-wrap: nowrap; overflow: hidden; }
+.phone-console .drum-machine:has(.drum-roll-fit) > [aria-label="Note repeat"] > * { flex-shrink: 0; white-space: nowrap; }
+.phone-console .drum-machine:has(.drum-roll-fit) > [aria-label="Note repeat"] button { height: 28px !important; min-height: 28px !important; }
+.phone-console .drum-machine:has(.drum-roll-fit) > .drum-roll-fit { grid-row: 6; }
+/* Phone tool screens: slimmer title rows give the instruments more room. */
+.phone-console .phone-console-stage > header { min-height: 34px; height: 34px; }
+.phone-console .phone-console-stage > header > div[aria-label^="Device clock"] { flex-direction: row; gap: 8px; padding-block: 0; }
+.phone-console .phone-console-stage > header > div[aria-label^="Device clock"] > span:first-child { font-size: 14px; }
+.phone-console .phone-tool-panel > div:first-of-type { min-height: 40px; height: 40px; }
+.phone-console .phone-tool-panel > div:first-of-type button { height: 36px; min-height: 36px; }
