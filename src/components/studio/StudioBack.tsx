@@ -58,15 +58,13 @@ export function StudioBack() {
     if (!box || !scroll) return;
     const phoneQuery = window.matchMedia("(max-width: 767px), (orientation: landscape) and (max-width: 1100px) and (max-height: 600px)");
     const measure = () => {
-      // Fit shrinks the rear room to the screen height while widening its layout,
-      // so it fills the full view like the front room without scrolling.
+      // Match the front room: fill the full width of the view and let the
+      // height overflow into the scroll area, instead of shrinking the whole
+      // rear room to fit both dimensions (which made it smaller than the front).
       const phone = true;
       const height = box.offsetHeight;
-      // On phones, widen the rear layout to the screen's shape so after fitting it fills the view edge to edge like the front.
-      const prevWidth = box.offsetWidth || scroll.clientWidth;
-      const aspectWidth = height > 0 && scroll.clientHeight > 0 ? Math.round(scroll.clientWidth * height / scroll.clientHeight * (prevWidth / Math.max(1, prevWidth))) : scroll.clientWidth;
-      const base = phoneQuery.matches ? Math.min(2400, Math.max(760, scroll.clientWidth, aspectWidth)) : scroll.clientWidth;
-      const scale = overview && height > 0 ? Math.min(1, scroll.clientWidth / base, scroll.clientHeight / height) : 1;
+      const base = Math.max(760, scroll.clientWidth);
+      const scale = overview && height > 0 ? Math.min(1, scroll.clientWidth / base) : 1;
       const width = base;
       setView(previous => previous.phone === phone && Math.abs(previous.width - width) < 12 && previous.height === height && Math.abs(previous.scale - scale) < .001 ? previous : { phone, width, height, scale });
     };
@@ -280,8 +278,8 @@ export function StudioBack() {
         </DialogContent>
       </Dialog>
       <div ref={scrollRef} className="studio-back-scroll relative min-h-0 flex-1 overflow-auto" tabIndex={0} aria-label="Studio rear room">
-      <img src={roomImage} alt="" className="studio-back-room-image" />
       <div className="studio-back-canvas" style={view.phone ? { marginInline: "auto", width: view.width * view.scale, height: view.height * view.scale } : undefined}>
+      <img src={roomImage} alt="" className="studio-back-room-image" />
       <div ref={boxRef} className="studio-back-rack relative" data-fit={view.phone ? "phone" : undefined} style={view.phone ? { width: view.width, position: "absolute", left: 0, top: 0, minHeight: 0, transform: `scale(${view.scale})`, transformOrigin: "top left" } : undefined} aria-label="Back of the studio rack — audio cable routing">
                 <div className="studio-room-brand font-display">SYNCLAB<span>CREATE. RECORD. PRODUCE. FINISH. · BACK</span></div>
         <div className="studio-rear-desk">

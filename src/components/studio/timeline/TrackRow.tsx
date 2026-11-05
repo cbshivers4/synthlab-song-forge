@@ -530,7 +530,7 @@ export function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track:
           selectForEditing();
         }}
       >
-        <div className="flex min-w-0 items-center gap-1">
+        <div className="flex min-w-0 flex-wrap items-center gap-1">
           <input
             type="checkbox"
             checked={isSelected}
@@ -586,11 +586,12 @@ export function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track:
               <span className="truncate">{index + 1}. {track.name}</span>
             </Button>
           )}
+          {isMobile && <div className="h-0 w-full" aria-hidden="true" />}
           {editorPanel && (
             <Button
               size="icon"
               variant="ghost"
-              className="size-6 shrink-0 touch-manipulation"
+              className={`${isMobile ? "size-8" : "size-6"} shrink-0 touch-manipulation`}
               aria-label={editorLabel}
               title={editorLabel}
               onClick={(e) => { e.stopPropagation(); openTrackEditor(); }}
@@ -601,7 +602,7 @@ export function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track:
           <TrackNotes track={track} className="ml-auto" />
           <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
             <DropdownMenuTrigger asChild>
-              <Button size="icon" variant="ghost" className="channel-menu-trigger size-6 shrink-0 touch-manipulation" aria-label="Track menu" title={`${track.name} channel menu`} onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
+              <Button size="icon" variant="ghost" className={`channel-menu-trigger ${isMobile ? "size-8" : "size-6"} shrink-0 touch-manipulation`} aria-label="Track menu" title={`${track.name} channel menu`} onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
                 <MoreVertical className="size-4" />
               </Button>
             </DropdownMenuTrigger>
