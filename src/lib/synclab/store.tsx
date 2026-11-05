@@ -47,6 +47,7 @@ import { isLiveParam, laneReads, laneWrites, liveValue, movedLiveParams, valueAt
 import { padNote } from "./drum-notes";
 import { markLiveHit, isLiveHit, clearLiveHits, neighbourLiveHits } from "./live-take";
 import { keyDown, keyUp } from "./active-keys";
+import { arpLiveRelease, stopLiveArps } from "./live-arp";
 import { controllerAutoMap } from "./controller-profiles";
 import type { CloudSession } from "./cloud";
 import type {
@@ -985,7 +986,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           keyDown(pitch, 30000);
           setMidiLearning(true);
           engine.syncMixIfChanged(tracksRef.current);
-          triggerNote(engine, target, pitch, 0.6, Math.max(0.15, velocity));
+          triggerNote(engine, target, pitch, 0.6, Math.max(0.15, velocity), undefined, 30);
           if (tp.recording && target.recording) {
             const pitches = processMidiThroughPlugins(pitch, target.plugins);
             const at = heardStepPos();
@@ -1007,6 +1008,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           }
         } else {
           keyUp(pitch);
+          for (const p of processMidiThroughPlugins(pitch + (target.octave ?? 0) * 12, target.plugins)) arpLiveRelease(target.id, p);
           setMidiLearning(false);
           const held = heldRef.current.get(heldKey);
           if (!held) return;
@@ -2527,7 +2529,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           void endRecording();
         }
       },
-      stop: () => endRecording(true),
+      stop: () => { stopLiveArps(); return endRecording(true); },
       changeInstrument: (trackId, preset) =>
         setTracks((ts) =>
           ts.map((t) =>

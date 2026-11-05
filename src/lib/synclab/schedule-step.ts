@@ -1,7 +1,8 @@
 import { chainedPads } from "./drum-chain";
 import { arpHitOffset, arpStepSeconds } from "./synth-timing";
+import { arpLiveNote } from "./live-arp";
 import type { getEngine } from "./audio-engine";
-import { clipRate, laneValueAt, type Track, type Transport } from "./types";
+import { clipRate, laneValueAt, type SynthPatch, type Track, type Transport } from "./types";
 import { songSteps, stepSeconds, stepsPerBar, STEPS_PER_BEAT } from "./timebase";
 import { playbackPreferences } from "./preferences";
 import { processMidiThroughPlugins } from "./plugins";
@@ -23,7 +24,7 @@ export interface ScheduleLive {
 export const OFFLINE_LIVE: ScheduleLive = { lastScheduled: null, pickupClip: () => false, liveHit: () => false, skipNote: () => false };
 
 /** Plays one note: a sampler channel uses its loaded file, everything else the synth. */
-export function triggerNote(engine: Engine, t: Track, midi: number, dur: number, vel: number, when?: number) {
+export function triggerNote(engine: Engine, t: Track, midi: number, dur: number, vel: number, when?: number, hold_?: number) {
   if (t.kind === "sampler" && t.sampler) {
     const s = t.sampler;
     const chops = s.slices ?? [];
@@ -39,7 +40,15 @@ export function triggerNote(engine: Engine, t: Track, midi: number, dur: number,
     engine.playSample(t.id, s, shifted, dur, vel, when);
     return;
   }
-  if (t.patch) for (const pitch of processMidiThroughPlugins(midi + (t.octave ?? 0) * 12, t.plugins)) engine.playNote(t.id, t.patch, pitch, dur, vel, when);
+  if (!t.patch) return;
+  const pitches = processMidiThroughPlugins(midi + (t.octave ?? 0) * 12, t.plugins);
+  // Hand-played notes (no scheduled time) go through the live arpeggiator when ARP is on;
+  // a quick tap still runs at least four arp steps so it is audible.
+  if (when === undefined && t.patch.arp?.on && !t.patch.modular) {
+    const hold = hold_ ?? Math.max(dur, 4 * arpStepSeconds(t.patch.arp, 60 / Math.max(20, engine.tempo || 120) / 4));
+    if (pitches.every((p) => arpLiveNote(engine, t.id, t.patch as SynthPatch, p, hold, vel))) return;
+  }
+  for (const pitch of pitches) engine.playNote(t.id, t.patch, pitch, dur, vel, when);
 }
 
 /**
