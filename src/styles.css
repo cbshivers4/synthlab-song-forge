@@ -1021,7 +1021,6 @@ html[data-reduce-motion] *, html[data-reduce-motion] *::before, html[data-reduce
     max-height: calc(100dvw - 16px) !important;
   }
   .phone-sideways-default .min-h-screen { min-height: 100dvw; }
-  .phone-sideways-default .phone-console.phone-entry .phone-page-viewport > div > .mx-auto.grid.login-inner { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .phone-sideways-default .spin-logo { width: min(30dvh, 190px); }
 }
 /* Name editors remain screen-aligned above native keyboards. */
@@ -1165,29 +1164,112 @@ body:has(.name-editor-dialog) [data-sonner-toast] { visibility: hidden; }
 .phone-sound-tile[data-sound-family="2"] { --tile-accent: var(--amber); }
 .phone-sound-tile[data-sound-family="3"] { --tile-accent: var(--chart-5); }
 .phone-sound-icon { color: var(--tile-accent); background: color-mix(in oklab, var(--tile-accent) 12%, var(--background)); }
-.login-screen { isolation: isolate; position: relative; }
+/* ============ Login screen: everything on one screen, no scrolling ============
+   --ls is a length (px) that tracks the shorter viewport axis, so the same screen
+   shrinks onto short viewports — the sideways phone canvas is only ~390px tall —
+   instead of scrolling. Sizes are written calc(<number> * var(--ls)). */
+.login-screen {
+  --ls: clamp(0.8px, calc(min(100dvw, 100dvh) / 780), 1.18px);
+  height: calc(100dvh - var(--banner-h, 0px));
+  isolation: isolate;
+  position: relative;
+}
+/* The test-payments strip sits above every screen; the login screen gives it room
+   instead of pushing its own bottom edge off the viewport. */
+body:has(.payment-test-banner) { --banner-h: 24px; }
+.payment-test-banner { height: 24px; box-sizing: border-box; }
+/* The body is only rotated on portrait phones, so the sideways height follows the
+   same query the rotation itself uses. */
+@media (orientation: portrait) and (max-width: 767px) and (pointer: coarse), (orientation: portrait) and (max-width: 600px) {
+  .phone-sideways-default .phone-console.phone-entry .login-screen { height: calc(100dvw - var(--banner-h, 0px)); }
+}
 .login-screen::after { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--login-overlay); }
 .login-photo { position: absolute; inset: 0; z-index: -2; height: 100%; width: 100%; object-fit: cover; }
-.login-screen .login-inner { max-width: 1000px; }
 .login-screen .login-auth { background: color-mix(in oklab, var(--background) 90%, transparent); border-color: var(--border); backdrop-filter: blur(20px); }
-.phone-console.phone-entry .phone-page-viewport .login-screen .login-brand-copy { display: block; }
-.phone-console.phone-entry .phone-page-viewport .login-screen .login-photo { width: 100%; height: 100%; }
-.phone-console.phone-entry .phone-page-viewport .login-screen .login-inner { padding: 16px; }
 
-/* Login brand mark — the neon square leads every layout, sized deliberately per form factor. */
-.login-logo { width: 208px; height: 208px; margin-bottom: 20px; }
-@media (max-width: 1023px) { .login-logo { width: 176px; height: 176px; margin-bottom: 18px; } }
+.login-inner { max-width: 1180px; gap: calc(12 * var(--ls)); padding: calc(16 * var(--ls)) calc(20 * var(--ls)); }
+.login-head { display: flex; align-items: center; gap: calc(16 * var(--ls)); }
+.login-logo { width: calc(104 * var(--ls)); height: calc(104 * var(--ls)); flex: none; border-radius: calc(12 * var(--ls)); }
+.login-tagline { font-size: calc(27 * var(--ls)); }
+.login-kicker { font-size: calc(12 * var(--ls)); color: var(--muted-foreground); }
 
+.login-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, calc(392 * var(--ls))); gap: calc(18 * var(--ls)); }
+.login-side { display: flex; flex-direction: column; gap: calc(12 * var(--ls)); min-height: 0; }
 
-/* Phone: the mark fills its column instead of floating, and the brand line stays with it. */
-.phone-console.phone-entry .phone-page-viewport > div > .mx-auto.grid > div:first-child > img.login-logo { width: 168px; height: 168px; margin-bottom: 18px; }
-.phone-console.phone-entry .phone-page-viewport > div > .mx-auto.grid > div:first-child > .login-brand-copy { display: block; }
+.login-features { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: calc(7 * var(--ls)) calc(16 * var(--ls)); }
+.login-feature { display: flex; align-items: flex-start; gap: calc(7 * var(--ls)); min-width: 0; }
+.login-feature-dot { margin-top: calc(5 * var(--ls)); width: calc(6 * var(--ls)); height: calc(6 * var(--ls)); flex: none; rotate: 45deg; background: var(--primary); }
+.login-feature-title { display: block; font-size: calc(12.5 * var(--ls)); font-weight: 600; line-height: 1.25; }
+.login-feature-body { display: block; font-size: calc(10.5 * var(--ls)); line-height: 1.3; color: var(--muted-foreground); }
 
-/* Phone portrait: stack the mark above the sign-in card, centred, so it is never stranded. */
-@media (orientation: portrait) {
-  .phone-console.phone-entry .phone-page-viewport > div > .mx-auto.grid.login-inner { grid-template-columns: minmax(0, 1fr); gap: 20px; }
-  .phone-console.phone-entry .phone-page-viewport > div > .mx-auto.grid > div:first-child.login-brand { align-items: center; text-align: center; }
-  .phone-console.phone-entry .phone-page-viewport > div > .mx-auto.grid > div:first-child > img.login-logo { width: 184px; height: 184px; margin-bottom: 16px; }
+.login-soon-title { display: flex; align-items: baseline; gap: calc(8 * var(--ls)); margin-bottom: calc(6 * var(--ls)); font-size: calc(13 * var(--ls)); font-weight: 600; }
+.login-soon-note { font-size: calc(10 * var(--ls)); font-weight: 400; color: var(--muted-foreground); }
+.login-soon-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: calc(8 * var(--ls)); }
+.login-soon-card { padding: calc(8 * var(--ls)); border-radius: calc(8 * var(--ls)); }
+.login-soon-head { display: flex; align-items: center; gap: calc(6 * var(--ls)); font-size: calc(11 * var(--ls)); }
+.login-soon-icon { display: flex; flex: none; }
+.login-soon-badge { margin-left: auto; flex: none; border: 1px solid color-mix(in oklab, var(--primary) 60%, transparent); border-radius: 999px; padding: 0 calc(6 * var(--ls)); font-family: var(--font-mono); font-size: calc(8.5 * var(--ls)); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--primary); }
+.login-soon-body { font-size: calc(10 * var(--ls)); line-height: 1.3; color: var(--muted-foreground); }
+
+.login-signin { display: flex; flex-direction: column; justify-content: center; gap: calc(8 * var(--ls)); min-height: 0; overflow-y: auto; padding: calc(16 * var(--ls)); border-radius: calc(10 * var(--ls)); }
+.login-auth-title { font-family: var(--font-display); font-size: calc(19 * var(--ls)); font-weight: 600; }
+.login-auth-note { margin-top: calc(-4 * var(--ls)); font-size: calc(11 * var(--ls)); color: var(--muted-foreground); }
+.login-btn-primary { min-height: calc(46 * var(--ls)); font-size: calc(15 * var(--ls)); font-weight: 700; }
+.login-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: calc(8 * var(--ls)); }
+.login-btn-oauth { min-height: calc(38 * var(--ls)); gap: calc(6 * var(--ls)); padding-inline: calc(8 * var(--ls)); font-size: calc(10.5 * var(--ls)); font-weight: 700; }
+.login-oauth-icon { width: calc(15 * var(--ls)); height: calc(15 * var(--ls)); flex: none; }
+.login-divider { position: relative; display: flex; align-items: center; justify-content: center; font-size: calc(9 * var(--ls)); font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted-foreground); }
+.login-divider::before { content: ""; position: absolute; left: 0; right: 0; border-top: 1px solid var(--border); }
+.login-divider > span { position: relative; }
+.login-fine { font-size: calc(10.5 * var(--ls)); text-align: center; color: var(--muted-foreground); }
+.login-link { height: auto; padding: 0; font-size: calc(10.5 * var(--ls)); color: var(--muted-foreground); text-decoration: underline; text-underline-offset: 2px; }
+/* Email and password sit side by side when the card is wide enough for both. */
+.login-form-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: calc(8 * var(--ls)); }
+.login-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: calc(4 * var(--ls)) calc(14 * var(--ls)); border-top: 1px solid var(--border); padding-top: calc(8 * var(--ls)); font-size: calc(10 * var(--ls)); }
+.login-legal { gap: calc(4 * var(--ls)) calc(14 * var(--ls)); font-size: inherit; }
+
+/* Phone: the sideways canvas is short, so the same screen is drawn smaller. */
+.phone-console.phone-entry .login-screen { --ls: clamp(0.68px, calc(min(100dvw, 100dvh) / 430), 1px); }
+.phone-console.phone-entry .login-inner { padding: calc(9 * var(--ls)) calc(12 * var(--ls)); gap: calc(9 * var(--ls)); }
+.phone-console.phone-entry .login-logo { width: calc(50 * var(--ls)); height: calc(50 * var(--ls)); border-radius: calc(8 * var(--ls)); }
+.phone-console.phone-entry .login-tagline { font-size: calc(19 * var(--ls)); }
+.phone-console.phone-entry .login-kicker { font-size: calc(10 * var(--ls)); }
+.phone-console.phone-entry .login-cols { grid-template-columns: minmax(0, 1fr) minmax(0, calc(300 * var(--ls))); gap: calc(12 * var(--ls)); }
+.phone-console.phone-entry .login-side { gap: calc(5 * var(--ls)); }
+.phone-console.phone-entry .login-features { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: calc(4 * var(--ls)) calc(9 * var(--ls)); }
+.phone-console.phone-entry .login-feature-title { font-size: calc(9.5 * var(--ls)); }
+.phone-console.phone-entry .login-feature-body { font-size: calc(8.2 * var(--ls)); }
+.phone-console.phone-entry .login-soon-title { font-size: calc(10.5 * var(--ls)); margin-bottom: calc(4 * var(--ls)); }
+.phone-console.phone-entry .login-soon-note { font-size: calc(8.5 * var(--ls)); }
+.phone-console.phone-entry .login-soon-body { font-size: calc(8.2 * var(--ls)); }
+.phone-console.phone-entry .login-soon-card { padding: calc(5 * var(--ls)); }
+.phone-console.phone-entry .login-signin { padding: calc(9 * var(--ls)); gap: calc(2 * var(--ls)); }
+.phone-console.phone-entry .login-auth-title { font-size: calc(12 * var(--ls)); }
+.phone-console.phone-entry .login-auth-note { font-size: calc(9 * var(--ls)); margin-top: calc(-2 * var(--ls)); }
+.phone-console.phone-entry .login-btn-primary { min-height: calc(32 * var(--ls)); font-size: calc(12 * var(--ls)); }
+.phone-console.phone-entry .login-btn-oauth { min-height: calc(28 * var(--ls)); font-size: calc(8.4 * var(--ls)); }
+.phone-console.phone-entry .login-btn-form { min-height: calc(28 * var(--ls)); font-size: calc(9 * var(--ls)); }
+.phone-console.phone-entry .login-divider { font-size: calc(7 * var(--ls)); }
+.phone-console.phone-entry .login-divider > span { padding: 0 calc(5 * var(--ls)); }
+.phone-console.phone-entry .login-fine { font-size: calc(8 * var(--ls)); }
+/* The console's 48px touch floor would blow the sign-in card past one screen;
+   text links stay smaller but still tappable. */
+.phone-console.phone-entry .login-link { min-height: 16px; font-size: calc(8 * var(--ls)); }
+.phone-console.phone-entry .login-foot { padding-top: calc(5 * var(--ls)); font-size: calc(8 * var(--ls)); }
+/* Very short phone canvases (under ~370px tall): the feature list keeps its own
+   scroll so the sign-in card, trial terms and legal line stay fully visible. */
+@media (orientation: portrait) and (max-width: 370px), (max-height: 370px) {
+  .phone-console.phone-entry .login-side { overflow-y: auto; }
+}
+/* While the email/password form is open on a phone, the card drops the trial CTA,
+   the browser note and the divider so the whole form stays on one screen. */
+@media (orientation: portrait) and (max-width: 430px), (max-height: 400px) {
+  .phone-console.phone-entry .login-form { padding-top: 0; }
+  .phone-console.phone-entry .login-form-fields input { min-height: calc(24 * var(--ls)); }
+  .phone-console.phone-entry .login-signin:has(.login-form) .login-trial,
+  .phone-console.phone-entry .login-signin:has(.login-form) .login-trial-note,
+  .phone-console.phone-entry .login-signin:has(.login-form) .login-browser-note,
+  .phone-console.phone-entry .login-signin:has(.login-form) .login-divider { display: none; }
 }
 
 

@@ -63,7 +63,7 @@ const QUOTES = [
 ];
 
 const GOOGLE_ICON = (
-  <svg className="size-5" viewBox="0 0 24 24" aria-hidden>
+  <svg className="login-oauth-icon" viewBox="0 0 24 24" aria-hidden>
     <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
     <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
     <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05" />
@@ -72,7 +72,7 @@ const GOOGLE_ICON = (
 );
 
 const APPLE_ICON = (
-  <svg className="size-5 fill-current" viewBox="0 0 24 24" aria-hidden>
+  <svg className="login-oauth-icon fill-current" viewBox="0 0 24 24" aria-hidden>
     <path d="M17.05 20.28c-.98.95-2.05 1.79-3.72 1.79-1.63 0-2.21-1.02-4.14-1.02-1.97 0-2.64 1-4.04 1-1.59 0-2.73-1.58-3.72-3.01-2.02-2.92-3.57-8.25-1.5-11.83.99-1.77 2.81-2.89 4.81-2.89 1.54 0 2.62.91 3.73.91 1.05 0 2.51-1.09 4.38-1.09 1.29 0 3.16.48 4.39 2.09-3.48 1.94-2.92 6.51.59 7.94-.91 2.29-2.29 4.67-3.78 6.11zM13 1c0 2.1-1.63 4.2-3.75 4.2-.2 0-.41-.02-.6-.05.15-2.31 1.87-4.15 3.55-5.15.35-.2.57-.28.8-.28V1z" />
   </svg>
 );
@@ -175,102 +175,125 @@ export function WelcomeScreen() {
   };
 
   return (
-    <div className="login-screen min-h-[100dvh] overflow-y-auto bg-background text-foreground">
+    <div className="login-screen flex h-[100dvh] flex-col overflow-hidden bg-background text-foreground">
       <img src={studioPhoto} alt="" className="login-photo" />
-      <div className="login-inner mx-auto grid w-full grid-cols-1 items-center gap-8 px-5 py-8 sm:px-8 sm:py-12 md:grid-cols-2 lg:gap-16">
-        {/* Brand & features side */}
-        <div className="login-brand flex min-w-0 flex-col items-start text-left">
+      <div className="login-inner mx-auto flex min-h-0 w-full flex-1 flex-col">
+        {/* Brand line: the mark, the tagline and where it comes from, all in one row. */}
+        <header className="login-head shrink-0">
           <img src={synclabLogoAsset.url} alt="SYNCLAB" className="login-logo rounded-xl border border-border object-cover" />
-
-
-          <div className="login-brand-copy mb-5 space-y-4">
+          <div className="login-head-copy min-w-0">
             <h1 className="sr-only">SYNCLAB — CREATE. RECORD. PRODUCE. FINISH.</h1>
-            <p className="font-display text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl">
+            <p className="login-tagline font-display font-extrabold leading-tight tracking-tight">
+              CREATE. RECORD. PRODUCE. <span className="text-primary">FINISH.</span>
+            </p>
+            <p className="login-kicker">Detroit Electronic Sound Design</p>
+          </div>
+        </header>
 
-              CREATE. RECORD.
-              <br />
-              PRODUCE.{" "}
-              <span className="text-primary">FINISH.</span>
-            </p>
-            <p className="max-w-md text-sm text-muted-foreground">
-              Detroit Electronic Sound Design
-            </p>
+        {/* Two columns: everything the studio does, and the way in. */}
+        <div className="login-cols min-h-0 flex-1">
+          <div className="login-side min-w-0">
+            <ul className="login-features">
+              {FEATURES.map((f) => (
+                <li key={f.title} className="login-feature">
+                  <span aria-hidden className="login-feature-dot" />
+                  <span className="min-w-0">
+                    <span className="login-feature-title">{f.title}</span>
+                    <span className="login-feature-body">{f.body}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+
+            <section aria-labelledby="ai-tools" className="login-soon">
+              <h2 id="ai-tools" className="login-soon-title">
+                Coming soon
+                <span className="login-soon-note">AI tools we are finishing for SYNCLAB.</span>
+              </h2>
+              <ul className="login-soon-grid">
+                {AI_TOOLS.map((f) => (
+                  <li key={f.title} className="login-auth login-soon-card">
+                    <span className="login-soon-head">
+                      <span className="login-soon-icon text-primary">{f.icon}</span>
+                      <span className="min-w-0 font-semibold">{f.title}</span>
+                      <span className="login-soon-badge">Coming soon</span>
+                    </span>
+                    <p className="login-soon-body">{f.body}</p>
+                  </li>
+                ))}
+              </ul>
+            </section>
+
+            {SHOW_PLACEHOLDER_SECTIONS && (
+              <section id="demo" aria-labelledby="demo-title" className="login-soon">
+                <h2 id="demo-title" className="login-soon-title">
+                  Hear the demo
+                  <span className="login-soon-note">Made in SYNCLAB — no account needed to listen.</span>
+                </h2>
+                <ul className="login-soon-grid">
+                  {DEMOS.map((d) => (
+                    <li key={d.src} className="login-auth login-soon-card">
+                      <div className="login-soon-body font-semibold">{d.title}</div>
+                      <audio controls preload="none" src={d.src} className="w-full" />
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
+            {SHOW_PLACEHOLDER_SECTIONS && (
+              <section aria-labelledby="detroit" className="login-soon">
+                <h2 id="detroit" className="login-soon-title">
+                  Built in <span className="text-primary">Detroit</span>
+                </h2>
+                <p className="login-soon-body">
+                  SYNCLAB is made in Detroit, Michigan — the city that gave the world techno. It’s built by a
+                  producer for producers: the sound of the machines that shaped the city, in a studio that opens in your browser.
+                </p>
+                <ul className="login-soon-grid">
+                  {QUOTES.map((q, i) => (
+                    <li key={i} className="login-soon-card border-l-2 border-primary pl-3">
+                      <p className="login-soon-body italic">“{q.quote}”</p>
+                      <p className="login-soon-note">— {q.who}</p>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
           </div>
 
-          <ul className="hidden w-full grid-cols-2 gap-x-4 gap-y-3 md:grid">
-            {FEATURES.map((f) => (
-              <li key={f.title} className="group flex items-start gap-3">
-                <span
-                  aria-hidden
-                  className="mt-[7px] size-1.5 shrink-0 rotate-45 bg-primary transition-colors group-hover:bg-foreground"
-                />
-                <div className="min-w-0 text-sm leading-snug">
-                  <div className="font-semibold text-foreground">{f.title}</div>
-                  <div className="text-muted-foreground">{f.body}</div>
-                </div>
-              </li>
-            ))}
-          </ul>
+          {/* Sign-in card */}
+          <div className="login-auth login-signin min-w-0">
+            <h2 className="login-auth-title">Your studio awaits.</h2>
+            <p className="login-auth-note">Sign in to SYNCLAB</p>
 
-          <footer className="mt-6 hidden w-full border-t border-border pt-6 font-mono text-[10px] uppercase text-muted-foreground/50 sm:block">
-            SYNCLAB · Detroit Electronic Sound Design
-          </footer>
-        </div>
+            <Button className="login-btn-primary login-trial w-full" onClick={() => setMode("signup")}>
+              START FREE TRIAL
+            </Button>
+            <p className="login-fine login-trial-note">7-day free trial · no card required</p>
+            <p className="login-fine login-browser-note">Works in Chrome, Edge, Safari and Firefox. Best on desktop.</p>
 
-        {/* Auth side */}
-        <div className="min-w-0">
-          <div className="login-auth overflow-hidden rounded-lg border border-border p-5 sm:p-7">
-            <h2 className="mb-1 font-display text-2xl font-semibold">Your studio awaits.</h2>
-            <p className="mb-6 text-sm text-muted-foreground">Sign in to SYNCLAB</p>
-            <div className="space-y-6">
-              <div className="space-y-4">
-                <div className={`grid grid-cols-1 gap-3 ${SHOW_PLACEHOLDER_SECTIONS ? "sm:grid-cols-2" : ""}`}>
-                  <Button className="min-h-14 w-full text-base font-bold" onClick={() => setMode("signup")}>
-                    START FREE TRIAL
-                  </Button>
-                  {SHOW_PLACEHOLDER_SECTIONS && (
-                  <Button
-                    variant="outline"
-                    className="min-h-14 w-full text-base font-bold"
-                    onClick={() => document.getElementById("demo")?.scrollIntoView({ behavior: "smooth" })}
-                  >
-                    TRY THE DEMO
-                  </Button>
-                  )}
-                </div>
-                <p className="text-center text-xs font-medium text-muted-foreground">
-                  7-day free trial · no card required
-                </p>
-                <p className="text-center text-[11px] text-muted-foreground">
-                  Works in Chrome, Edge, Safari and Firefox. Best on desktop.
-                </p>
-              </div>
+            <div className="login-divider">
+              <span className="rounded-full border border-border bg-background px-3 py-0.5">or secure login</span>
+            </div>
 
-              <div className="relative py-2">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t border-border" />
-                </div>
-                <div className="relative flex justify-center text-[10px] font-bold uppercase tracking-widest">
-                  <span className="rounded-full border border-border bg-background px-4 py-1 text-muted-foreground">or secure login</span>
-                </div>
-              </div>
+            <div className="login-row">
+              <Button variant="outline" className="login-btn-oauth" onClick={() => void oauth("google")}>
+                <span className="flex items-center">{GOOGLE_ICON}</span>
+                CONTINUE WITH GOOGLE
+              </Button>
+              <Button variant="secondary" className="login-btn-oauth" onClick={() => void oauth("apple")}>
+                <span className="flex items-center">{APPLE_ICON}</span>
+                CONTINUE WITH APPLE
+              </Button>
+            </div>
 
-              <div className="space-y-3">
-                <Button variant="outline" className="relative min-h-12 w-full font-bold" onClick={() => void oauth("google")}>
-                  <span className="absolute left-5 flex items-center">{GOOGLE_ICON}</span>
-                  CONTINUE WITH GOOGLE
-                </Button>
-                <Button variant="secondary" className="relative min-h-12 w-full font-bold" onClick={() => void oauth("apple")}>
-                  <span className="absolute left-5 flex items-center">{APPLE_ICON}</span>
-                  CONTINUE WITH APPLE
-                </Button>
-              </div>
-
-              {mode ? (
-                <form onSubmit={submit} className="space-y-3 pt-2">
-                  <h2 className="font-mono text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                    {mode === "signup" ? "Create your account" : mode === "forgot" ? "Reset your password" : mode === "magic" ? "Sign in with an email link" : "Sign in"}
-                  </h2>
+            {mode ? (
+              <form onSubmit={submit} className="login-form space-y-2 pt-1">
+                <h2 className="font-mono text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                  {mode === "signup" ? "Create your account" : mode === "forgot" ? "Reset your password" : mode === "magic" ? "Sign in with an email link" : "Sign in"}
+                </h2>
+                <div className="login-form-fields">
                   <Input
                     type="email"
                     required
@@ -290,159 +313,61 @@ export function WelcomeScreen() {
                       onChange={(e) => setPassword(e.target.value)}
                     />
                   )}
-                  <Button type="submit" className="w-full" disabled={busy}>
-                    {busy ? "WORKING…" : mode === "signup" ? "CREATE ACCOUNT" : mode === "forgot" ? "SEND RESET LINK" : mode === "magic" ? "SEND SIGN-IN LINK" : "SIGN IN"}
-                  </Button>
-                  {mode === "signin" && (
-                    <Button
-                      variant="link"
-                      type="button"
-                      className="w-full text-center text-xs text-muted-foreground"
-                      onClick={() => setMode("forgot")}
-                    >
-                      Forgot password?
-                    </Button>
-                  )}
-                  {mode === "forgot" && (
-                    <Button
-                      variant="link"
-                      type="button"
-                      className="w-full text-center text-xs text-muted-foreground"
-                      onClick={() => setMode("signin")}
-                    >
-                      Back to sign in
-                    </Button>
-                  )}
-                  {mode === "magic" && (
-                    <Button
-                      variant="link"
-                      type="button"
-                      className="w-full text-center text-xs text-muted-foreground"
-                      onClick={() => setMode("signin")}
-                    >
-                      Back to sign in
-                    </Button>
-                  )}
-                  {mode !== "forgot" && mode !== "magic" && (
-                    <Button
-                      variant="link"
-                      type="button"
-                      className="min-h-11 w-full text-center text-xs text-muted-foreground"
-                      onClick={() => setMode(mode === "signup" ? "signin" : "signup")}
-                    >
-                      {mode === "signup" ? "Already have an account? Sign in" : "New here? Create an account"}
-                    </Button>
-                  )}
-                </form>
-              ) : (
-                <div className="flex flex-col gap-4 pt-4">
-                  <Button
-                    variant="outline"
-                    className="min-h-12 w-full font-bold"
-                    onClick={() => setMode("signin")}
-                  >
-                    SIGN IN
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    className="min-h-11 w-full text-sm font-semibold text-muted-foreground"
-                    onClick={() => setMode("signup")}
-                  >
-                    CREATE ACCOUNT
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    className="min-h-11 w-full text-xs font-semibold text-muted-foreground underline underline-offset-2"
-                    onClick={() => setMode("magic")}
-                  >
-                    Email me a sign-in link instead
-                  </Button>
                 </div>
-              )}
-            </div>
-            <p className="mt-4 text-center text-xs text-muted-foreground">
-              Free for 7 days, then $19.95/month or $149/year.
-            </p>
-            <p className="mt-1 text-center text-xs text-muted-foreground">
-              Your projects stay saved if you don’t subscribe.
-            </p>
-            <LegalFooter className="mt-3" />
-            <Button variant="link"
-              type="button"
-              onClick={() => openHelp("help")}
-              className="mt-2 text-[11px] text-muted-foreground underline underline-offset-2 hover:text-foreground"
-            >
-              SYNCLAB Help Center
-            </Button>
+                <Button type="submit" className="login-btn-form w-full" disabled={busy}>
+                  {busy ? "WORKING…" : mode === "signup" ? "CREATE ACCOUNT" : mode === "forgot" ? "SEND RESET LINK" : mode === "magic" ? "SEND SIGN-IN LINK" : "SIGN IN"}
+                </Button>
+                {mode === "signin" && (
+                  <Button variant="link" type="button" className="login-link" onClick={() => setMode("forgot")}>
+                    Forgot password?
+                  </Button>
+                )}
+                {(mode === "forgot" || mode === "magic") && (
+                  <Button variant="link" type="button" className="login-link" onClick={() => setMode("signin")}>
+                    Back to sign in
+                  </Button>
+                )}
+                {mode !== "forgot" && mode !== "magic" && (
+                  <Button variant="link" type="button" className="login-link" onClick={() => setMode(mode === "signup" ? "signin" : "signup")}>
+                    {mode === "signup" ? "Already have an account? Sign in" : "New here? Create an account"}
+                  </Button>
+                )}
+              </form>
+            ) : (
+              <div className="login-row">
+                <Button variant="outline" className="login-btn-oauth" onClick={() => setMode("signin")}>
+                  SIGN IN
+                </Button>
+                <Button variant="ghost" className="login-btn-oauth" onClick={() => setMode("signup")}>
+                  CREATE ACCOUNT
+                </Button>
+              </div>
+            )}
+
+            {!mode && (
+              <Button variant="link" className="login-link" onClick={() => setMode("magic")}>
+                Email me a sign-in link instead
+              </Button>
+            )}
+
+            <p className="login-fine">Free for 7 days, then $19.95/month or $149/year.</p>
+            <p className="login-fine">Your projects stay saved if you don’t subscribe.</p>
           </div>
         </div>
-      </div>
 
-      <div className="login-inner mx-auto w-full space-y-12 px-5 pb-12 sm:px-8">
-        <section aria-labelledby="ai-tools">
-          <h2 id="ai-tools" className="mb-1 font-display text-2xl font-semibold">Coming soon</h2>
-          <p className="mb-4 text-sm text-muted-foreground">AI tools we are finishing for SYNCLAB.</p>
-          <ul className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            {AI_TOOLS.map((f) => (
-              <li key={f.title} className="login-auth rounded-lg border border-border p-4">
-                <div className="mb-2 flex items-center gap-2">
-                  <span className="text-primary">{f.icon}</span>
-                  <span className="font-semibold">{f.title}</span>
-                  <span className="ml-auto rounded-full border border-primary/60 px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider text-primary">
-                    Coming soon
-                  </span>
-                </div>
-                <p className="text-sm text-muted-foreground">{f.body}</p>
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        {SHOW_PLACEHOLDER_SECTIONS && (
-        <section id="demo" aria-labelledby="demo-title" className="scroll-mt-6">
-          <h2 id="demo-title" className="mb-1 font-display text-2xl font-semibold">Hear the demo</h2>
-          <p className="mb-4 text-sm text-muted-foreground">Made in SYNCLAB — no account needed to listen.</p>
-          <ul className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            {DEMOS.map((d) => (
-              <li key={d.src} className="login-auth rounded-lg border border-border p-4">
-                <div className="mb-2 text-sm font-semibold">{d.title}</div>
-                <audio controls preload="none" src={d.src} className="w-full" />
-              </li>
-            ))}
-          </ul>
-        </section>
-        )}
-
-        {SHOW_PLACEHOLDER_SECTIONS && (
-        <section aria-labelledby="detroit" className="grid grid-cols-1 items-start gap-6 md:grid-cols-2">
-          <div>
-            <h2 id="detroit" className="mb-2 font-display text-2xl font-semibold">
-              Built in <span className="text-primary">Detroit</span>
-            </h2>
-            <p className="mb-4 text-sm text-muted-foreground">
-              SYNCLAB is made in Detroit, Michigan — the city that gave the world techno. It’s built by a
-              producer for producers: the sound of the machines that shaped the city, in a studio that opens in your browser.
-            </p>
-            <ul className="space-y-3">
-              {QUOTES.map((q, i) => (
-                <li key={i} className="border-l-2 border-primary pl-3">
-                  <p className="text-sm italic">“{q.quote}”</p>
-                  <p className="font-mono text-[10px] uppercase text-muted-foreground">— {q.who}</p>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div
-            role="img"
-            aria-label="Photo placeholder"
-            className="flex aspect-video w-full items-center justify-center rounded-lg border border-dashed border-border font-mono text-xs uppercase text-muted-foreground"
+        {/* Legal + help: one thin line along the bottom. */}
+        <footer className="login-foot shrink-0">
+          <LegalFooter className="login-legal" />
+          <Button
+            variant="link"
+            type="button"
+            onClick={() => openHelp("help")}
+            className="login-link login-help"
           >
-            Photo placeholder — Detroit studio photo
-          </div>
-        </section>
-        )}
+            SYNCLAB Help Center
+          </Button>
+        </footer>
       </div>
     </div>
-
   );
 }
