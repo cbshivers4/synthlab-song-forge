@@ -21,6 +21,7 @@ import { getEngine } from "@/lib/synclab/audio-engine";
 import { clipRate } from "@/lib/synclab/types";
 import type { AudioClip, Track } from "@/lib/synclab/types";
 import { toast } from "sonner";
+import { beatLines, firstTransient, fitSpeedToBars, snapSteps } from "@/lib/synclab/audio-quantize";
 
 type LoopSnapMode = "off" | "beat" | "bar" | "zero";
 
@@ -66,6 +67,36 @@ export function ClipEditor({ track, clip, onClose }: { track: Track; clip: Audio
   }, [clip.url]);
 
   const set = (patch: Partial<AudioClip>) => updateClip(track.id, clip.id, patch);
+  const bpb = transport.beatsPerBar ?? 4;
+  const grid = transport.quantize ?? 4;
+  const clipStart = clip.start ?? 0;
+  const lines = useMemo(() => beatLines(clipStart, length, rate, transport.bpm, bpb), [clipStart, length, rate, transport.bpm, bpb]);
+  const snapStart = () => {
+    const next = snapSteps(clipStart, grid);
+    set({ start: next });
+    toast.success("Clip start on the grid", { description: `Moved to bar ${Math.floor(next / (bpb * 4)) + 1}, beat ${Math.floor((next % (bpb * 4)) / 4) + 1}.` });
+  };
+  const hitOnBeat = () => {
+    const audio = zeroCrossData.current;
+    if (!audio) {
+      toast("Audio still loading", { description: "Try again in a second." });
+      return;
+    }
+    const hit = firstTransient(audio.samples, audio.sampleRate, offset, offset + length);
+    if (hit == null) {
+      toast("No clear hit found", { description: "This clip is too quiet to find its first beat." });
+      return;
+    }
+    const nextLength = Math.max(0.05, offset + length - hit);
+    const next = snapSteps(clipStart, grid);
+    set({ offset: hit, length: nextLength, start: next, fadeIn: Math.min(fadeIn, 0.004) });
+    toast.success("First hit lined up with the beat", { description: `Trimmed ${((hit - offset) * 1000).toFixed(0)} ms before the first hit and snapped the clip to the grid.` });
+  };
+  const fitBars = () => {
+    const r = fitSpeedToBars(length, rate, speed, transport.bpm, bpb);
+    set({ speed: r.speed });
+    toast.success(`Fitted to ${r.bars} bar${r.bars === 1 ? "" : "s"}`, { description: `Speed ${r.speed.toFixed(3)}×. In the browser this also shifts pitch slightly.` });
+  };
 
   const peaks = clip.peaks.length > 1 ? clip.peaks : [0, 0];
   const trimPeak = useMemo(() => {
@@ -217,9 +248,18 @@ export function ClipEditor({ track, clip, onClose }: { track: Track; clip: Audio
           fadeOut={fadeOut}
           zoomTrim={zoomTrim}
           zoom={waveZoom}
+          beats={lines}
           onZoomChange={setWaveZoom}
           onChange={set}
         />
+
+        <div className="flex flex-wrap items-center gap-2 rounded-[3px] border border-primary/50 bg-surface-2 px-2 py-2" role="group" aria-label="Quantize to beat">
+          <span className="font-mono text-[10px] font-bold tracking-wider text-primary">QUANTIZE TO BEAT</span>
+          <Button size="sm" variant="secondary" className="h-7 font-mono text-[10px]" onClick={hitOnBeat} title="Trim the silence before the first hit and put the clip on the grid">FIRST HIT ON BEAT</Button>
+          <Button size="sm" variant="secondary" className="h-7 font-mono text-[10px]" onClick={snapStart} title="Move the clip start to the nearest grid line">SNAP START TO GRID</Button>
+          <Button size="sm" variant="secondary" className="h-7 font-mono text-[10px]" onClick={fitBars} title="Change speed so the clip lasts whole bars at the song tempo">FIT TO BARS</Button>
+          <span className="font-mono text-[9px] text-muted-foreground">{transport.bpm} BPM · grid {grid >= 16 ? `${grid / 16} bar` : `1/${16 / grid}`} · lines on the waveform are the song's beats</span>
+        </div>
 
         <div className="flex flex-wrap items-center gap-2 rounded-[3px] border border-border bg-surface-2 px-2 py-2">
           <Toggle on={loopAudition} onClick={() => setLoopAudition((value) => !value)} label="LOOP AUDITION" />
@@ -441,9 +481,11 @@ function InteractiveWaveform({
   fadeOut,
   zoomTrim,
   zoom,
+  beats,
   onZoomChange,
   onChange,
 }: {
+  beats: { at: number; bar: boolean }[];
   clip: AudioClip;
   peaks: number[];
   offset: number;
@@ -616,6 +658,13 @@ function InteractiveWaveform({
             gain={clip.gain ?? 1}
           />
 
+          {beats.map((b, i) => (
+            <div
+              key={i}
+              className={`pointer-events-none absolute inset-y-0 w-px ${b.bar ? "bg-primary/70" : "bg-foreground/25"}`}
+              style={{ left: `${leftPct + (b.at / visibleDuration) * (zoomTrim ? 100 : (visibleDuration / dur) * 100)}%` }}
+            />
+          ))}
           <div className="pointer-events-none absolute inset-y-0 left-0 bg-surface-2/75" style={{ width: `${leftPct}%` }} />
           <div
             className="pointer-events-none absolute inset-y-0 bg-surface-2/75"
