@@ -1240,7 +1240,7 @@ body:has(.payment-test-banner) { --banner-h: 24px; }
 .phone-console.phone-entry .login-kicker { font-size: calc(10 * var(--ls)); }
 .phone-console.phone-entry .login-cols { grid-template-columns: minmax(0, 1fr) minmax(0, calc(300 * var(--ls))); gap: calc(12 * var(--ls)); }
 .phone-console.phone-entry .login-side { gap: calc(5 * var(--ls)); }
-.phone-console.phone-entry .login-features { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: calc(4 * var(--ls)) calc(9 * var(--ls)); }
+.phone-console.phone-entry .login-features { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: calc(5 * var(--ls)) calc(10 * var(--ls)); }
 .phone-console.phone-entry .login-feature-title { font-size: calc(11 * var(--ls)); }
 .phone-console.phone-entry .login-feature-body { font-size: calc(9.5 * var(--ls)); }
 .phone-console.phone-entry .login-soon-title { font-size: calc(10.5 * var(--ls)); margin-bottom: calc(4 * var(--ls)); }
