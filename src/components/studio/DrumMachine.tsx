@@ -686,9 +686,6 @@ export function DrumMachine({ track }: { track: Track }) {
                     focused && "is-lit",
                   )}
                 >
-                  <span aria-hidden className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                    <DrumInstrumentIcon kind={pad.kind} className="size-[52%]" />
-                  </span>
                   <span className="relative min-w-0">
                     <span className="pad-manage-controls flex items-center justify-between gap-1" onClick={e => e.stopPropagation()}>
                       <Checkbox aria-label={`Select pad ${pad.name}`} checked={selectedPads.includes(pad.id)} onCheckedChange={checked => setSelectedPads(ids => checked ? [...ids.filter(id => id !== pad.id), pad.id] : ids.filter(id => id !== pad.id))} />
