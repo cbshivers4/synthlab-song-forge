@@ -35,7 +35,7 @@ Paste content at the playhead onto the selected or explicit channel, preserving 
 Synth selection opens piano roll. Pin sampler waveform above Stretch/chops to keep cuts visible; PCM slices use previewNote for gate/choke.
 Transport stays mounted: phone overlay and timeline use separate layout/paint containment with shared resize visibility; desktop transport stays below the workspace.
 Phone shares desktop audio/state and native scrolling. AppProvider scopes phone tokens to the document; desktop prefs stay separate.
-Phone Edit owns vertical arrangement scrolling: its page-scroll timeline must not flex-shrink; the independently scrollable rail permits both pan axes so native gestures work on the rotated canvas.
+Phone Edit fits the screen without page scrolling: PhoneStudio divides the track area height into rows (--fit-row-h, touch-size minimum) and sideways DrumRoll pages its rows instead of scrolling; the rail still permits both pan axes for the rotated canvas.
 Phone entry and workspace use a CSS sideways body canvas on portrait phone viewports, including body portals; use canvas-relative viewport sizing instead of JS innerHeight overrides so splash, dialogs and timeline stay in the same frame without requiring unsupported orientation locks.
 Sideways DrumRoll fits a flex-height panel using equal grid row tracks; selected-instrument note knobs use editInstrumentNotes for One note/All notes, preserving other pads, empty steps and loop boundaries rather than global pad sound changes.
 Drum snap is session-only for new step writes, never existing hits.

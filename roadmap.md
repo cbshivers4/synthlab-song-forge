@@ -150,3 +150,10 @@
 - [x] Phase 7: whole-song range, stems + one-track export, MIDI export, cancel, choose save folder, export history, delete confirmations, project-owned copies of sampler/clip/pad audio
 - [ ] Phase 7 not done: autosave/recovery (manual-save rule), Video Sampler video isn't saved in cloud projects, device-list entries are only shortcuts (not separate saved copies)
 - [x] Phase 8: full QA pass (399 tests, 0 type errors, 3-min session memory steady, 60 fps, 22 tools error-free, phone recording, 0 dependency advisories); completion report delivered
+
+## Phone fit-to-screen (sideways)
+- [x] Edit screen fits without scrolling
+- [x] Drum machine → Drum roll tab fits (rows paged)
+- [ ] Drum Play pads / Sound / Kit tabs
+- [ ] Synth, Touch Synth, Sampler, Sample pads, Sound library, Live View, Live Looper
+- [ ] Mixer, Studio View, Reel-to-Reel, Video Sampler, Bass Generator, Mastering, Plugins, Settings, Audio Converter
