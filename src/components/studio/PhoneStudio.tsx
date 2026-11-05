@@ -87,7 +87,8 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
     return () => { window.removeEventListener("synclab:mixer-full", onMixerFull); document.documentElement.classList.remove("phone-console-active"); };
   }, []);
   // Edit screen: divide the track area's height between the visible rows so
-  // every track fits without scrolling (rows never go below touch size).
+  // tracks fill the screen; rows never shrink below the height the four-line
+  // track header needs, so extra tracks scroll instead of overlapping.
   const editRef = useRef<HTMLDivElement>(null);
   const editPageOpen = !panel && room === "edit";
   useEffect(() => {
@@ -99,7 +100,7 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
       const rows = Math.max(1, root.querySelectorAll("[data-track-row]").length);
       const drop = root.querySelector<HTMLElement>("[data-new-channel-drop]")?.offsetHeight ?? 30;
       const h = Math.floor((scroller.clientHeight - drop - 2) / rows) - 1;
-      root.style.setProperty("--fit-row-h", `${Math.max(52, Math.min(140, h))}px`);
+      root.style.setProperty("--fit-row-h", `${Math.max(118, Math.min(140, h))}px`);
     };
     fit();
     const ro = new ResizeObserver(fit);
