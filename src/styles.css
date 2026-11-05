@@ -1223,6 +1223,8 @@ body:has(.payment-test-banner) { --banner-h: 24px; }
 .login-divider > span { position: relative; }
 .login-fine { font-size: calc(10.5 * var(--ls)); text-align: center; color: var(--muted-foreground); }
 .login-link { height: auto; padding: 0; font-size: calc(10.5 * var(--ls)); color: var(--muted-foreground); text-decoration: underline; text-underline-offset: 2px; }
+/* Two links inside the sign-in form each need their own line. */
+.login-form .login-link { display: block; width: 100%; text-align: center; }
 /* Email and password sit side by side when the card is wide enough for both. */
 .login-form-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: calc(8 * var(--ls)); }
 .login-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: calc(4 * var(--ls)) calc(14 * var(--ls)); border-top: 1px solid var(--border); padding-top: calc(8 * var(--ls)); font-size: calc(10 * var(--ls)); }
@@ -1265,6 +1267,7 @@ body:has(.payment-test-banner) { --banner-h: 24px; }
    the browser note and the divider so the whole form stays on one screen. */
 @media (orientation: portrait) and (max-width: 430px), (max-height: 400px) {
   .phone-console.phone-entry .login-form { padding-top: 0; }
+  .phone-console.phone-entry .login-form > * { margin-block-start: calc(2 * var(--ls)) !important; margin-block-end: calc(2 * var(--ls)) !important; }
   .phone-console.phone-entry .login-form-fields input { min-height: calc(24 * var(--ls)); }
   .phone-console.phone-entry .login-signin:has(.login-form) .login-trial,
   .phone-console.phone-entry .login-signin:has(.login-form) .login-trial-note,
