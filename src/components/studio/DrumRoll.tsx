@@ -48,13 +48,6 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
   const gridRef = useRef<HTMLDivElement>(null);
   const rowRefs = useRef(new Map<string, HTMLDivElement>());
   const [visibleRows, setVisibleRows] = useState([1, rows.length]);
-  // Sideways phones page the rows (like hardware banks) so the grid always fits without scrolling.
-  const [fitRowsPer, setFitRowsPer] = useState(rows.length);
-  const [rowPage, setRowPage] = useState(0);
-  const rowsPer = fit ? Math.max(1, Math.min(rows.length, fitRowsPer)) : rows.length;
-  const rowPages = Math.max(1, Math.ceil(rows.length / rowsPer));
-  const rowStart = Math.min(rowPage, rowPages - 1) * rowsPer;
-  const rowEnd = Math.min(rows.length, rowStart + rowsPer);
   const [widePhone, setWidePhone] = useState(false);
   const [full, setFull] = useState(initialFull);
   useEffect(() => { const query = window.matchMedia("(min-width: 480px)"); const read = () => setWidePhone(query.matches); read(); query.addEventListener("change", read); return () => query.removeEventListener("change", read); }, []);
@@ -134,21 +127,6 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
     return () => { cancelAnimationFrame(id); observer.disconnect(); };
   }, [isMobile, track.id, rows.length, selected]);
 
-  useEffect(() => {
-    const el = gridRef.current;
-    if (!fit || !el) return;
-    const measure = () => setFitRowsPer(Math.max(3, Math.floor((el.clientHeight - 24) / 28)));
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [fit]);
-  useEffect(() => {
-    if (!fit || !selected) return;
-    const index = rows.findIndex(({ pad }) => pad.id === selected);
-    if (index >= 0 && (index < rowStart || index >= rowEnd)) setRowPage(Math.floor(index / rowsPer));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fit, selected, rowsPer]);
   const write = (pad: DrumPad, patch: Partial<DrumPad>) => {
     if (patch.steps && transport.loop) {
       const region = loopRegion(transport);
@@ -331,11 +309,7 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
         >
           CLEAR ALL
         </Button>
-        {fit && rowPages > 1 && <div className="drum-row-pages flex items-center gap-1" role="group" aria-label="Drum rows">
-          <Button size="sm" variant="outline" className="h-7 px-2" aria-label="Previous drum rows" disabled={rowStart === 0} onClick={() => setRowPage(Math.max(0, Math.floor(rowStart / rowsPer) - 1))}><ChevronLeft className="size-4 rotate-90" /></Button>
-          <span className="whitespace-nowrap font-mono text-[11px]" aria-live="polite">Rows {rowStart + 1}–{rowEnd} / {rows.length}</span>
-          <Button size="sm" variant="outline" className="h-7 px-2" aria-label="Next drum rows" disabled={rowEnd >= rows.length} onClick={() => setRowPage(Math.min(rowPages - 1, Math.floor(rowStart / rowsPer) + 1))}><ChevronRight className="size-4 rotate-90" /></Button>
-        </div>}
+        {fit && <span className="whitespace-nowrap font-mono text-[11px]" aria-label="Visible drum rows" aria-live="polite">Rows {visibleRows[0]}–{visibleRows[1]} / {rows.length}</span>}
         {!fit && <Button size="sm" variant={full ? "secondary" : "ghost"} className="h-7 gap-1 text-[10px]" aria-pressed={full} onClick={() => setFull((f) => !f)}>
           {full ? <Minimize2 className="size-3" /> : <Maximize2 className="size-3" />} {full ? "PAGED VIEW" : "FULL VIEW"}
         </Button>}
@@ -363,7 +337,7 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
       </div>}
 
       <div ref={gridRef} onScroll={readRows} aria-label="Drum roll grid" className={`overflow-auto rounded-[2px] border border-border bg-background ${full ? "max-h-[78dvh]" : isMobile ? "max-h-[45dvh] touch-pan-y" : ""}`}>
-        <div className={fit ? "drum-fit-rows" : isMobile && !full ? "w-full" : isMobile ? "" : "min-w-[640px]"} style={fit ? { gridTemplateRows: `24px repeat(${rowEnd - rowStart}, minmax(0, 1fr))`, ["--drum-fit-rows" as string]: rowEnd - rowStart } : isMobile && full ? { minWidth: 212 + total * (50 * view.zoom) } : undefined}>
+        <div className={fit ? "drum-fit-rows" : isMobile && !full ? "w-full" : isMobile ? "" : "min-w-[640px]"} style={fit ? { gridTemplateRows: `24px repeat(${rows.length}, minmax(30px, 1fr))`, ["--drum-fit-rows" as string]: rows.length } : isMobile && full ? { minWidth: 212 + total * (50 * view.zoom) } : undefined}>
           {/* bar numbers */}
           <div className="sticky top-0 z-10 flex border-b border-border bg-surface-2">
             <div className="drum-roll-label-header w-32 shrink-0 border-r border-border px-2 py-0.5 font-mono text-[8px] uppercase tracking-widest text-muted-foreground">
@@ -379,7 +353,6 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
           </div>
 
           {rows.map(({ pad, note }, rowIndex) => {
-            if (fit && (rowIndex < rowStart || rowIndex >= rowEnd)) return null;
             const steps = rowSteps(pad);
             const isSel = selected === pad.id;
             return (

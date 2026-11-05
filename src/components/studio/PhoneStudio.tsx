@@ -7,6 +7,7 @@ import { useStudio, type PanelId } from "@/lib/synclab/store";
 import { useApp } from "@/lib/synclab/app-state";
 import { TopBar } from "./TopBar";
 import { Timeline } from "./Timeline";
+import { AddTrackMenu } from "./AddTrackMenu";
 import { PhonePages } from "./PhonePages";
 import { ComputerFiles } from "./ComputerFiles";
 import { requestBluetoothSettings } from "./Settings";
@@ -144,7 +145,7 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
         // Edit screen fits the phone: compact title, toolbars and ruler stay
         // put and the track rows share the remaining height.
         <div ref={editRef} className="phone-edit-fit flex min-h-0 flex-1 flex-col overflow-hidden">
-          <header className="flex shrink-0 items-center justify-between gap-3 border-b border-border bg-surface px-3"><h1 className="min-w-0 truncate text-xs font-semibold">{project?.id ? project.name : project ? `${project.name} · not saved yet` : "Untitled song"}</h1><DeviceClock inline /></header>
+          <header className="flex shrink-0 items-center justify-between gap-2 border-b border-border bg-surface px-3 py-1"><h1 className="min-w-0 truncate text-xs font-semibold">{project?.id ? project.name : project ? `${project.name} · not saved yet` : "Untitled song"}</h1><AddTrackMenu size="sm" /><DeviceClock inline /></header>
           {recordingStrip}
           <Timeline desktopStyle />
         </div>

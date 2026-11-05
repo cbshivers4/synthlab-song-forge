@@ -3402,6 +3402,10 @@ body:has(.phone-console) [data-sonner-toast] button { pointer-events: auto; }
 /* Rear room mirrors the front room's proportions: one row of instruments, a
    wide mixing desk with all inputs in one row, compact units. */
 .studio-back-rack .studio-rear-desk { grid-template-columns: 110px minmax(0, 1fr) 110px; gap: 18px; max-width: 1000px; }
+/* Sideways phone fit: let the desk and floor rows stretch the full widened
+   rack so the back room fills the screen edge to edge like the front room. */
+.studio-back-rack[data-fit="phone"] .studio-rear-desk,
+.studio-back-rack[data-fit="phone"] .studio-rear-floor { max-width: none; }
 .studio-back-rack .studio-rear-monitor .studio-back-unit { min-height: 0; }
 .studio-back-rack .studio-rear-speaker-stand { height: 48px; }
 .studio-back-rack .studio-back-mixing .studio-back-jacks { grid-template-columns: repeat(auto-fit, minmax(54px, 1fr)); }

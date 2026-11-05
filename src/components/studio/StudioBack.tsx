@@ -282,7 +282,7 @@ export function StudioBack() {
       <div ref={scrollRef} className="studio-back-scroll relative min-h-0 flex-1 overflow-auto" tabIndex={0} aria-label="Studio rear room">
       <img src={roomImage} alt="" className="studio-back-room-image" />
       <div className="studio-back-canvas" style={view.phone ? { marginInline: "auto", width: view.width * view.scale, height: view.height * view.scale } : undefined}>
-      <div ref={boxRef} className="studio-back-rack relative" style={view.phone ? { width: view.width, position: "absolute", left: 0, top: 0, minHeight: 0, transform: `scale(${view.scale})`, transformOrigin: "top left" } : undefined} aria-label="Back of the studio rack — audio cable routing">
+      <div ref={boxRef} className="studio-back-rack relative" data-fit={view.phone ? "phone" : undefined} style={view.phone ? { width: view.width, position: "absolute", left: 0, top: 0, minHeight: 0, transform: `scale(${view.scale})`, transformOrigin: "top left" } : undefined} aria-label="Back of the studio rack — audio cable routing">
                 <div className="studio-room-brand font-display">SYNCLAB<span>CREATE. RECORD. PRODUCE. FINISH. · BACK</span></div>
         <div className="studio-rear-desk">
           <div className="studio-rear-monitor">{unit("monitor-l", "MONITOR L", "LEFT · MASTER FEED", jack({ device: "monitor-l", port: "in" }, false, "LEFT IN", true))}<div className="studio-rear-speaker-stand" /></div>
