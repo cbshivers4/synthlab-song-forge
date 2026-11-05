@@ -24,7 +24,7 @@ export function Mixer({ phonePage = 0, phoneChannels, phoneControlPage = "levels
   useEffect(() => {
     const el = stripsRef.current;
     if (!el || !el.closest(".phone-console")) return;
-    el.dataset.phoneFit = "true";
+    el.setAttribute("data-phone-fit", "true");
     let frame = 0;
     const fit = () => {
       cancelAnimationFrame(frame);
