@@ -1091,8 +1091,11 @@ body:has(.name-editor-dialog) [data-sonner-toast] { visibility: hidden; }
 .phone-console .mx-phone .phone-mix-channel > div.h-\[120px\] { height: 48px; }
 .phone-console .mobile-timeline { min-height: 0; --timeline-header-width: 294px; }
 .phone-console .mobile-timeline > .shrink-0 { flex-shrink: 0; }
-.phone-console #timeline-scroll { overflow: auto; touch-action: pan-x pan-y; }
-.phone-console [data-timeline-track-rows] > div > .relative.flex { min-height: 140px; }
+.phone-console #timeline-scroll { overflow: auto; touch-action: pan-x pan-y; scrollbar-gutter: stable; scrollbar-width: thin; scrollbar-color: var(--primary) var(--surface); }
+.phone-console #timeline-scroll::-webkit-scrollbar { width: 12px; height: 12px; }
+.phone-console #timeline-scroll::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 6px; border: 2px solid var(--surface); }
+.phone-console #timeline-scroll::-webkit-scrollbar-track { background: var(--surface); }
+.phone-console [data-timeline-track-rows] > div > .relative.flex { min-height: 176px; }
 .phone-console .phone-page-viewport > .mobile-timeline { height: 100%; }
 .phone-console .mobile-timeline > .shrink-0 > div > .sticky { height: 40px; }
 .phone-console .mobile-timeline > .shrink-0 > div > .sticky > div:first-child { flex-direction: row; align-items: center; }
@@ -1100,13 +1103,13 @@ body:has(.name-editor-dialog) [data-sonner-toast] { visibility: hidden; }
 .phone-edit-menu .timeline-edit-toolbar { display: flex !important; }
 .phone-edit-menu button { min-height: 48px; }
 .phone-console .track-touch-header { padding-block: 3px; }
-.phone-console [data-timeline-track-rows] > div > .relative.flex { height: 140px; }
-.phone-console .track-touch-header > div:first-child { height: 32px; }
+.phone-console [data-timeline-track-rows] > div > .relative.flex { height: 176px; }
+.phone-console .track-touch-header > div:first-child { height: auto; min-height: 60px; align-content: start; }
 .phone-console .track-touch-header > div:first-child button { min-height: 28px; height: 28px; }
 .phone-console .track-touch-header .timeline-track-actions { height: 48px; }
 .phone-console .track-touch-header > div:nth-child(3) { height: 16px; }
 .phone-console .track-touch-header > div:last-child { height: 28px; min-height: 0; }
-.phone-console .mobile-timeline .lane-grid { min-height: 140px; }
+.phone-console .mobile-timeline .lane-grid { min-height: 176px; }
 .phone-console .phone-tool-panel .phone-page-controls, .phone-console .phone-page-controls { padding-bottom: 0; }
 .phone-console .phone-tool-panel .phone-page-controls { min-height: 56px; }
 .phone-console .phone-entry { padding: 0; }
@@ -1128,7 +1131,7 @@ body:has(.name-editor-dialog) [data-sonner-toast] { visibility: hidden; }
 .phone-console .mobile-timeline #timeline-scroll > div > .m-2 { display: none; }
 .phone-console .phone-mix-control-page { display: none; }
 .phone-console .mx-phone .mobile-mixer-strips > .bg-surface { height: 100%; }
-.phone-console .phone-page-viewport > .mobile-timeline .lane-grid { height: 140px; }
+.phone-console .phone-page-viewport > .mobile-timeline .lane-grid { height: 176px; }
 .phone-console .phone-timeline-heading { height: 48px; }
 .phone-console .phone-page-controls { height: 48px; padding-inline: 8px; }
 .phone-console .phone-tool-panel .phone-page-controls { min-height: 48px; }
