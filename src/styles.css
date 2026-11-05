@@ -3553,3 +3553,11 @@ body:has(.phone-console) [data-sonner-toast] button { pointer-events: auto; }
   .phone-console .drum-machine .drum-roll-fit .drum-fit-rows { grid-template-rows: 24px repeat(var(--drum-fit-rows, 5), minmax(0, 1fr)) !important; height: 100%; }
 }
 .phone-console .drum-machine:has(.drum-roll-fit) > .drum-sequences > .label-xs { display: none; }
+
+/* Phone mixer: strips shrink together (--mx-fit, measured in Mixer.tsx) so the whole console fits without scrolling. */
+.mobile-mixer-strips[data-phone-fit="true"] { overflow: hidden; align-items: flex-start; }
+.mobile-mixer-strips[data-phone-fit="true"] > * { zoom: var(--mx-fit, 1); flex-shrink: 0; }
+/* Phone Edit: narrower track headers and a slimmer song lane give the timeline more room. */
+.phone-console .phone-edit-fit .mobile-timeline { --timeline-header-width: 300px !important; }
+.phone-console .phone-edit-fit .timeline-track-actions > button { padding-inline: 3px !important; }
+.phone-console .phone-edit-fit .song-lane-controls { padding-block: 0; }

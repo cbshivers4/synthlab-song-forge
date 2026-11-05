@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { Maximize2, Minimize2, Palette, Sliders, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -19,6 +19,29 @@ export function Mixer({ phonePage = 0, phoneChannels, phoneControlPage = "levels
   const { tracks, selectedId, select, setPanel, buses, setBus, vcas, setVca, auxReturns, setAuxReturn, updateTrack, addTrack } = useStudio();
   const levels = useMeters(tracks);
   const [narrow, setNarrow] = useState(false);
+  // Phone: shrink every strip uniformly so the whole mixer fits the screen without scrolling.
+  const stripsRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = stripsRef.current;
+    if (!el || !el.closest(".phone-console")) return;
+    el.dataset.phoneFit = "true";
+    let frame = 0;
+    const fit = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        el.style.setProperty("--mx-fit", "1");
+        const kids = Array.from(el.children) as HTMLElement[];
+        const h = Math.max(1, ...kids.map((k) => k.scrollHeight));
+        const w = kids.reduce((sum, k) => sum + k.offsetWidth, 0) || 1;
+        const z = Math.max(0.3, Math.min(1, (el.clientHeight - 2) / h, (el.clientWidth - 2) / w));
+        el.style.setProperty("--mx-fit", z.toFixed(3));
+      });
+    };
+    fit();
+    const ro = new ResizeObserver(fit); ro.observe(el);
+    const mo = new MutationObserver(fit); mo.observe(el, { childList: true });
+    return () => { cancelAnimationFrame(frame); ro.disconnect(); mo.disconnect(); };
+  }, []);
   // Timeline tracks are always mirrored in the mixer. Extra routing strips open on request.
   const [showBuses, setShowBuses] = useState(false);
   const [showVcas, setShowVcas] = useState(false);
@@ -293,7 +316,7 @@ export function Mixer({ phonePage = 0, phoneChannels, phoneControlPage = "levels
           </div>
         </div>
       ) : (
-        <div className="mobile-mixer-strips flex overflow-x-auto" role="region" aria-label="Mixer channels" tabIndex={0}>
+        <div ref={stripsRef} className="mobile-mixer-strips flex overflow-x-auto" role="region" aria-label="Mixer channels" tabIndex={0}>
           {!isMobile && <LabelRail />}
           {(isMobile && phoneChannels != null ? tracks.slice(phonePage * phoneChannels, (phonePage + 1) * phoneChannels) : tracks).map((t) => (
             <Strip

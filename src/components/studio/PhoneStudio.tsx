@@ -98,7 +98,7 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
       const rows = Math.max(1, root.querySelectorAll("[data-track-row]").length);
       const drop = root.querySelector<HTMLElement>("[data-new-channel-drop]")?.offsetHeight ?? 30;
       const h = Math.floor((scroller.clientHeight - drop - 2) / rows) - 1;
-      root.style.setProperty("--fit-row-h", `${Math.max(56, Math.min(140, h))}px`);
+      root.style.setProperty("--fit-row-h", `${Math.max(48, Math.min(140, h))}px`);
     };
     fit();
     const ro = new ResizeObserver(fit);
