@@ -10,7 +10,7 @@ import { useStudio } from "@/lib/synclab/store";
 import { getBeatsPerBar } from "@/lib/synclab/timebase";
 import { SYNTH_PRESETS, applyPreset } from "@/lib/synclab/presets";
 import { BassStepEditor } from "./BassStepEditor";
-import { BASS_PATTERN_PRESETS, patternToNotes, type BassPattern } from "@/lib/synclab/bass-pattern";
+import { BASS_PATTERN_PRESETS, patternToNotes, filterHalf, type BassPattern, type BeatHalf } from "@/lib/synclab/bass-pattern";
 import { getEngine } from "@/lib/synclab/audio-engine";
 
 const BASS_SOUNDS = SYNTH_PRESETS.filter((p) => p.category === "Bass").map((p) => p.name);
@@ -45,7 +45,10 @@ export function BassGenerator() {
 
   const [mode, setMode] = useState<"auto" | "write">("auto");
   const [pattern, setPattern] = useState<BassPattern>(() => BASS_PATTERN_PRESETS[0]!.steps);
-  const written = useMemo(() => (mode === "write" ? patternToNotes(pattern, roots, barSteps, octave, minor) : null), [mode, pattern, roots, barSteps, octave, minor]);
+  const [half, setHalf] = useState<BeatHalf>("both");
+  const [target, setTarget] = useState("new");
+  const synthTracks = tracks.filter((t) => t.kind === "instrument");
+  const written = useMemo(() => (mode === "write" ? patternToNotes(filterHalf(pattern, half), roots, barSteps, octave, minor) : null), [mode, pattern, half, roots, barSteps, octave, minor]);
   const pv = usePreviewTrack();
   const label = BASS_STYLES.find((s) => s.id === style)!.label.toUpperCase();
   const [template, setTemplate] = useState<string | null>(null);
@@ -88,6 +91,14 @@ export function BassGenerator() {
   };
   const preview = (withSound?: string) => pv.start((n) => build(n(`BASS · ${label}`), withSound ?? sound).id);
   const create = () => {
+    const dest = synthTracks.find((t) => t.id === target);
+    if (dest) {
+      pv.stop();
+      const notes = generated ?? plainLine();
+      updateTrack(dest.id, { steps: bars * barSteps, notes });
+      toast.success(`Bassline sent to ${dest.name}`, { description: `${notes.length} notes, played by that track's own sound.` });
+      return;
+    }
     if (pv.keep(`BASS · ${label}`)) { toast.success("Bassline added"); return; }
     const { notes } = build(`BASS · ${label}`);
     toast.success("Bassline added", { description: `${notes.length} notes — edit them in the piano roll.` });
@@ -178,7 +189,7 @@ export function BassGenerator() {
         <button type="button" role="radio" aria-checked={mode === "write"} className={chip(mode === "write")} onClick={() => setMode("write")}>Write my own notes</button>
       </div>
       {mode === "write" && (
-        <BassStepEditor pattern={pattern} onChange={setPattern} tonic={useSong ? (roots[0] ?? tonic) : tonic} minor={minor}
+        <BassStepEditor pattern={pattern} onChange={setPattern} tonic={useSong ? (roots[0] ?? tonic) : tonic} minor={minor} half={half} onHalf={setHalf}
           onAudition={(semis) => { const e = getEngine(); e.init(); e.playNote("bassgen-audition", drawPatch, 12 * (octave + 1) + (useSong ? (roots[0] ?? tonic) : tonic) + semis, 0.25, 0.85); }} />
       )}
 
@@ -202,7 +213,14 @@ export function BassGenerator() {
         </div>
       )}
       {generated && <PatternWaveform pattern={{ notes: generated, instrument: sound, patch: drawPatch, steps: bars * barSteps }} bpm={transport.bpm} label="Generated bassline waveform" closeUp color="var(--display-cyan)" />}
-      <PreviewButtons pv={pv} onPreview={() => preview()} onAdd={create} addLabel="Add bassline to timeline" />
+      <label className="flex flex-wrap items-center gap-2 text-sm">
+        <span className="font-mono text-xs font-bold tracking-widest text-muted-foreground">SEND TO</span>
+        <select aria-label="Send bassline to" value={target} onChange={(e) => setTarget(e.target.value)} className="min-h-11 rounded-md border border-border bg-surface-2 px-3 text-sm">
+          <option value="new">New bass track ({sound})</option>
+          {synthTracks.map((t) => <option key={t.id} value={t.id}>{t.name} — replaces its notes</option>)}
+        </select>
+      </label>
+      <PreviewButtons pv={pv} onPreview={() => preview()} onAdd={create} addLabel={target === "new" ? "Add bassline to timeline" : "Send notes to track"} />
     </section>
   );
 }

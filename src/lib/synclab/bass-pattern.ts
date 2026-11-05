@@ -73,3 +73,17 @@ export function randomPattern(n: number, rand = Math.random): BassPattern {
     return { degree: pool[Math.floor(rand() * pool.length)] as number, accent: strong || rand() > 0.75, tie: rand() > 0.85 };
   });
 }
+
+/** Shifts the whole pattern left (negative) or right (positive) by whole steps, wrapping around. */
+export function shiftPattern(p: BassPattern, by: number): BassPattern {
+  const n = p.length;
+  return p.map((_, i) => p[(((i - by) % n) + n) % n] ?? null);
+}
+
+/** Reason-style halves: on-beat steps are the quarter-note downbeats (1, 5, 9, 13…), off-beat is everything else. */
+export type BeatHalf = "both" | "on" | "off";
+export const isOnBeat = (i: number) => i % 4 === 0;
+export function filterHalf(p: BassPattern, half: BeatHalf): BassPattern {
+  if (half === "both") return p;
+  return p.map((s, i) => (isOnBeat(i) === (half === "on") ? s : null));
+}

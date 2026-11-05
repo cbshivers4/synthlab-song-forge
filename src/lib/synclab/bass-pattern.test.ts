@@ -18,3 +18,16 @@ describe("bass step patterns", () => {
     expect(degreeSemis(7, true)).toBe(12);
   });
 });
+
+import { shiftPattern, filterHalf } from "./bass-pattern";
+describe("bass pattern shift and halves", () => {
+  const p = [{ degree: 0, accent: true, tie: false }, null, { degree: 7, accent: false, tie: false }, null, { degree: 3, accent: false, tie: false }, null, null, null];
+  it("shift right by 1 wraps", () => {
+    expect(shiftPattern(p, 1)[1]?.degree).toBe(0);
+    expect(shiftPattern(p, -1)[7]?.degree).toBe(0);
+  });
+  it("on-beat keeps steps 1 and 5 only; off-beat keeps the rest", () => {
+    expect(filterHalf(p, "on").map((s) => s?.degree ?? null)).toEqual([0, null, null, null, 3, null, null, null]);
+    expect(filterHalf(p, "off").map((s) => s?.degree ?? null)).toEqual([null, null, 7, null, null, null, null, null]);
+  });
+});

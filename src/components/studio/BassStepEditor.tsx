@@ -1,4 +1,4 @@
-import { BASS_PATTERN_PRESETS, DEGREE_ROWS, degreeSemis, randomPattern, resizePattern, type BassPattern } from "@/lib/synclab/bass-pattern";
+import { BASS_PATTERN_PRESETS, DEGREE_ROWS, degreeSemis, randomPattern, resizePattern, shiftPattern, isOnBeat, type BassPattern, type BeatHalf } from "@/lib/synclab/bass-pattern";
 import { NOTE_NAMES } from "@/lib/synclab/bass-gen";
 import { Button } from "@/components/ui/button";
 
@@ -8,10 +8,12 @@ interface Props {
   tonic: number;
   minor: boolean;
   onAudition: (semis: number) => void;
+  half: BeatHalf;
+  onHalf: (h: BeatHalf) => void;
 }
 
 /** Step grid where you place every bass note yourself: tap a cell to set that step's note. */
-export function BassStepEditor({ pattern, onChange, tonic, minor, onAudition }: Props) {
+export function BassStepEditor({ pattern, onChange, tonic, minor, onAudition, half, onHalf }: Props) {
   const set = (i: number, v: BassPattern[number]) => onChange(pattern.map((s, j) => (j === i ? v : s)));
   const rows = Array.from({ length: DEGREE_ROWS }, (_, r) => DEGREE_ROWS - 1 - r);
   const cols = `2.5rem repeat(${pattern.length}, minmax(0, 1fr))`;
@@ -32,6 +34,19 @@ export function BassStepEditor({ pattern, onChange, tonic, minor, onAudition }: 
         </select>
         <Button variant="secondary" size="sm" className="min-h-11" onClick={() => onChange(randomPattern(pattern.length))}>Randomize</Button>
         <Button variant="secondary" size="sm" className="min-h-11" onClick={() => onChange(pattern.map(() => null))}>Clear</Button>
+        <span className="flex items-center gap-1" role="group" aria-label="Shift pattern">
+          <Button variant="secondary" size="sm" className="min-h-11" aria-label="Shift left" onClick={() => onChange(shiftPattern(pattern, -1))}>◀</Button>
+          <span className="font-mono text-[10px] text-muted-foreground">SHIFT</span>
+          <Button variant="secondary" size="sm" className="min-h-11" aria-label="Shift right" onClick={() => onChange(shiftPattern(pattern, 1))}>▶</Button>
+        </span>
+        <span className="flex items-center gap-1" role="radiogroup" aria-label="Beat half">
+          {(["both", "on", "off"] as const).map((h) => (
+            <button key={h} type="button" role="radio" aria-checked={half === h} onClick={() => onHalf(h)}
+              className={`min-h-11 rounded-md border px-2 text-xs ${half === h ? "border-primary bg-primary/15 text-primary" : "border-border text-muted-foreground"}`}>
+              {h === "both" ? "Both" : h === "on" ? "On-beat" : "Off-beat"}
+            </button>
+          ))}
+        </span>
         <span className="text-xs text-muted-foreground">Tap a square to place a note. Tap it again to remove it. Use A for accent and the arrow to tie into the next step.</span>
       </div>
       <div className="overflow-x-auto">
@@ -46,7 +61,8 @@ export function BassStepEditor({ pattern, onChange, tonic, minor, onAudition }: 
                 return (
                   <button key={i} type="button" aria-label={`Step ${i + 1} ${NOTE_NAMES[(tonic + degreeSemis(deg, minor)) % 12]}`} aria-pressed={on}
                     onClick={() => { if (on) set(i, null); else { set(i, { degree: deg, accent: st?.accent ?? false, tie: st?.tie ?? false }); onAudition(degreeSemis(deg, minor)); } }}
-                    className={`bassgen-step h-5 ${on ? "is-on" : ""}${deg % 7 === 0 ? " is-root" : ""}${i % 4 === 0 ? " is-beat" : ""}`} />
+                    className={`bassgen-step h-5 ${on ? "is-on" : ""}${deg % 7 === 0 ? " is-root" : ""}${i % 4 === 0 ? " is-beat" : ""}`}
+                    style={half !== "both" && isOnBeat(i) !== (half === "on") ? { opacity: 0.3 } : undefined} />
                 );
               })}
             </div>
