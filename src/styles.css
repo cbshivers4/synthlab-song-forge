@@ -1061,7 +1061,9 @@ body:has(.name-editor-dialog) [data-sonner-toast] { visibility: hidden; }
 .phone-console .login-photo { display: block; }
 .phone-console .login-screen { background: transparent; }
 .phone-console .login-screen::after { background: color-mix(in oklab, #15191c 86%, transparent); }
-.phone-console .login-screen .login-auth { background: color-mix(in oklab, #15191c 88%, transparent); backdrop-filter: blur(18px); }
+.phone-console .login-screen { --muted-foreground: color-mix(in oklab, var(--foreground) 82%, transparent); }
+.login-screen .login-feature-title, .login-screen .login-soon-title { color: var(--foreground); }
+.login-screen .login-auth { background: color-mix(in oklab, #15191c 88%, transparent); backdrop-filter: blur(18px); }
 .phone-console h1, .phone-console h2, .phone-console h3 { font-family: "Sora", sans-serif; letter-spacing: 0; }
 .phone-console-stage > .studio-topbar, .phone-console-stage > .studio-topbar > div { background-image: none !important; background-color: var(--surface); }
 .phone-console .transport-layout { min-height: 64px; padding: 4px 12px !important; }
@@ -1231,7 +1233,7 @@ body:has(.payment-test-banner) { --banner-h: 24px; }
 .login-legal { gap: calc(4 * var(--ls)) calc(14 * var(--ls)); font-size: inherit; }
 
 /* Phone: the sideways canvas is short, so the same screen is drawn smaller. */
-.phone-console.phone-entry .login-screen { --ls: clamp(0.68px, calc(min(100dvw, 100dvh) / 430), 1px); }
+.phone-console.phone-entry .login-screen { --ls: clamp(0.8px, calc(min(100dvw, 100dvh) / 430), 1px); }
 .phone-console.phone-entry .login-inner { padding: calc(9 * var(--ls)) calc(12 * var(--ls)); gap: calc(9 * var(--ls)); }
 .phone-console.phone-entry .login-logo { width: calc(50 * var(--ls)); height: calc(50 * var(--ls)); border-radius: calc(8 * var(--ls)); }
 .phone-console.phone-entry .login-tagline { font-size: calc(19 * var(--ls)); }
@@ -1239,25 +1241,25 @@ body:has(.payment-test-banner) { --banner-h: 24px; }
 .phone-console.phone-entry .login-cols { grid-template-columns: minmax(0, 1fr) minmax(0, calc(300 * var(--ls))); gap: calc(12 * var(--ls)); }
 .phone-console.phone-entry .login-side { gap: calc(5 * var(--ls)); }
 .phone-console.phone-entry .login-features { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: calc(4 * var(--ls)) calc(9 * var(--ls)); }
-.phone-console.phone-entry .login-feature-title { font-size: calc(9.5 * var(--ls)); }
-.phone-console.phone-entry .login-feature-body { font-size: calc(8.2 * var(--ls)); }
+.phone-console.phone-entry .login-feature-title { font-size: calc(11 * var(--ls)); }
+.phone-console.phone-entry .login-feature-body { font-size: calc(9.5 * var(--ls)); }
 .phone-console.phone-entry .login-soon-title { font-size: calc(10.5 * var(--ls)); margin-bottom: calc(4 * var(--ls)); }
-.phone-console.phone-entry .login-soon-note { font-size: calc(8.5 * var(--ls)); }
-.phone-console.phone-entry .login-soon-body { font-size: calc(8.2 * var(--ls)); }
+.phone-console.phone-entry .login-soon-note { font-size: calc(9.5 * var(--ls)); }
+.phone-console.phone-entry .login-soon-body { font-size: calc(9.5 * var(--ls)); }
 .phone-console.phone-entry .login-soon-card { padding: calc(5 * var(--ls)); }
 .phone-console.phone-entry .login-signin { padding: calc(9 * var(--ls)); gap: calc(2 * var(--ls)); }
 .phone-console.phone-entry .login-auth-title { font-size: calc(12 * var(--ls)); }
-.phone-console.phone-entry .login-auth-note { font-size: calc(9 * var(--ls)); margin-top: calc(-2 * var(--ls)); }
+.phone-console.phone-entry .login-auth-note { font-size: calc(10 * var(--ls)); margin-top: calc(-2 * var(--ls)); }
 .phone-console.phone-entry .login-btn-primary { min-height: calc(32 * var(--ls)); font-size: calc(12 * var(--ls)); }
-.phone-console.phone-entry .login-btn-oauth { min-height: calc(28 * var(--ls)); font-size: calc(8.4 * var(--ls)); }
+.phone-console.phone-entry .login-btn-oauth { min-height: calc(28 * var(--ls)); font-size: calc(10 * var(--ls)); }
 .phone-console.phone-entry .login-btn-form { min-height: calc(28 * var(--ls)); font-size: calc(9 * var(--ls)); }
 .phone-console.phone-entry .login-divider { font-size: calc(7 * var(--ls)); }
 .phone-console.phone-entry .login-divider > span { padding: 0 calc(5 * var(--ls)); }
-.phone-console.phone-entry .login-fine { font-size: calc(8 * var(--ls)); }
+.phone-console.phone-entry .login-fine { font-size: calc(9.5 * var(--ls)); }
 /* The console's 48px touch floor would blow the sign-in card past one screen;
    text links stay smaller but still tappable. */
-.phone-console.phone-entry .login-link { min-height: 16px; font-size: calc(8 * var(--ls)); }
-.phone-console.phone-entry .login-foot { padding-top: calc(5 * var(--ls)); font-size: calc(8 * var(--ls)); }
+.phone-console.phone-entry .login-link { min-height: 16px; font-size: calc(9.5 * var(--ls)); }
+.phone-console.phone-entry .login-foot { padding-top: calc(5 * var(--ls)); font-size: calc(9.5 * var(--ls)); }
 /* Very short phone canvases (under ~370px tall): the feature list keeps its own
    scroll so the sign-in card, trial terms and legal line stay fully visible. */
 @media (orientation: portrait) and (max-width: 370px), (max-height: 370px) {
@@ -1918,6 +1920,7 @@ body:has(.payment-test-banner) { --banner-h: 24px; }
 /* Rear panels share studio surface tokens; columns remain independent on phones. */
 .studio-back { background: var(--background); }
 .studio-back-scroll { isolation: isolate; }
+.studio-back-view-controls { display: flex; }
 .studio-back-canvas { position: relative; }
 .studio-back-view-controls { display: none; }
 .studio-back-rack { display: flex; flex-direction: column; gap: 36px; padding: 18px 28px 100px; min-width: 760px; min-height: 100%; isolation: isolate; }
@@ -3390,3 +3393,8 @@ body:has(.phone-console) [data-sonner-toast] button { pointer-events: auto; }
 }
 :is(.fx-face, .device-module, .fx-editor, [role="dialog"])[data-fx-skin] :is(.hardware-knob-label, .hardware-knob-value) { color: var(--foreground) !important; }
 :is(.fx-face, .device-module, .fx-editor, [role="dialog"])[data-fx-skin] .hardware-knob-value { opacity: 0.8; }
+/* Phone: feature titles only (bigger, readable) so the list fits without scrolling. */
+@media (max-height: 470px), (orientation: portrait) and (max-width: 470px) {
+  .phone-console.phone-entry .login-feature-body { display: none; }
+  .phone-console.phone-entry .login-features { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: calc(6 * var(--ls)) calc(9 * var(--ls)); }
+}

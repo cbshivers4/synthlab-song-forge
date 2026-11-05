@@ -58,11 +58,12 @@ export function StudioBack() {
     if (!box || !scroll) return;
     const phoneQuery = window.matchMedia("(max-width: 767px), (orientation: landscape) and (max-width: 1100px) and (max-height: 600px)");
     const measure = () => {
-      const phone = phoneQuery.matches;
+      // Fit shrinks the whole rear room (desktop and phone) so it fits without scrolling.
+      const phone = phoneQuery.matches || overview;
       const width = Math.max(760, scroll.clientWidth);
       const height = box.offsetHeight;
-      const scale = phone && overview && height > 0
-        ? Math.min(1, scroll.clientWidth / width)
+      const scale = overview && height > 0
+        ? Math.min(1, scroll.clientWidth / width, scroll.clientHeight / height)
         : 1;
       setView(previous => previous.phone === phone && previous.width === width && previous.height === height && Math.abs(previous.scale - scale) < .001 ? previous : { phone, width, height, scale });
     };
@@ -276,8 +277,8 @@ export function StudioBack() {
         </DialogContent>
       </Dialog>
       <div ref={scrollRef} className="studio-back-scroll min-h-0 flex-1 overflow-auto" tabIndex={0} aria-label="Studio rear room">
-      <div className="studio-back-canvas" style={view.phone ? { width: view.width * view.scale, height: view.height * view.scale } : undefined}>
-      <div ref={boxRef} className="studio-back-rack relative" style={view.phone ? { width: view.width, transform: `scale(${view.scale})`, transformOrigin: "top left" } : undefined} aria-label="Back of the studio rack — audio cable routing">
+      <div className="studio-back-canvas" style={view.phone ? { marginInline: "auto", width: view.width * view.scale, height: view.height * view.scale } : undefined}>
+      <div ref={boxRef} className="studio-back-rack relative" style={view.phone ? { width: view.width, position: "absolute", left: 0, top: 0, minHeight: 0, transform: `scale(${view.scale})`, transformOrigin: "top left" } : undefined} aria-label="Back of the studio rack — audio cable routing">
         <img src={roomImage} alt="" className="studio-back-room-image" />
         <div className="studio-room-brand font-display">SYNCLAB<span>STUDIO · BACK</span></div>
         <div className="studio-rear-desk">
