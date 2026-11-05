@@ -3558,6 +3558,25 @@ body:has(.phone-console) [data-sonner-toast] button { pointer-events: auto; }
 .mobile-mixer-strips[data-phone-fit="true"] { overflow: hidden; align-items: flex-start; }
 .mobile-mixer-strips[data-phone-fit="true"] > * { zoom: var(--mx-fit, 1); flex-shrink: 0; }
 /* Phone Edit: narrower track headers and a slimmer song lane give the timeline more room. */
-.phone-console .phone-edit-fit .mobile-timeline { --timeline-header-width: 300px !important; }
+.phone-console .phone-edit-fit .mobile-timeline { --timeline-header-width: 258px !important; }
 .phone-console .phone-edit-fit .timeline-track-actions > button { padding-inline: 3px !important; }
 .phone-console .phone-edit-fit .song-lane-controls { padding-block: 0; }
+/* Phone Studio View back: toolbar and cable list float over the room so the rear view gets the same full area as the front. */
+.phone-console .studio-back { position: relative; }
+.phone-console .studio-back-toolbar { position: absolute; top: 0; left: 0; right: 0; z-index: 5; background: transparent; border: 0; padding: 2px 4px; pointer-events: none; }
+.phone-console .studio-back-toolbar > * { pointer-events: auto; }
+.phone-console .studio-back-toolbar button { height: 28px !important; min-height: 28px !important; background: color-mix(in oklab, var(--surface) 85%, transparent); }
+.phone-console .studio-back-cables.is-closed { position: absolute; bottom: 0; left: 0; z-index: 5; border: 0; background: color-mix(in oklab, var(--surface) 85%, transparent); padding: 0 4px; }
+.phone-console .studio-back-cables.is-closed button { height: 26px; width: auto; }
+/* Phone Edit track header: three lines (name / buttons / volume) in a narrow column. */
+.phone-console .phone-edit-fit .arrangement-timeline[data-desktop-style="true"] .track-touch-header { grid-template-columns: minmax(0, 1fr); row-gap: 0; }
+.phone-console .phone-edit-fit .arrangement-timeline[data-desktop-style="true"] .timeline-track-actions { grid-column: 1; min-width: 0; justify-content: space-between; }
+.phone-console .phone-edit-fit .arrangement-timeline[data-desktop-style="true"] .track-touch-header > div:nth-child(3) { grid-column: 1; height: 18px; }
+.phone-console .phone-edit-fit .arrangement-timeline[data-desktop-style="true"] .track-touch-header { padding-block: 1px; grid-template-rows: 18px 20px 14px; align-content: center; }
+.phone-console .phone-edit-fit .arrangement-timeline[data-desktop-style="true"] .track-touch-header > div:first-child,
+.phone-console .phone-edit-fit .arrangement-timeline[data-desktop-style="true"] .track-touch-header > div:first-child button { height: 18px !important; min-height: 18px !important; }
+.phone-console .phone-edit-fit .arrangement-timeline[data-desktop-style="true"] .track-touch-header > div:first-child svg { max-height: 16px; }
+.phone-console .phone-edit-fit .arrangement-timeline[data-desktop-style="true"] .timeline-track-actions,
+.phone-console .phone-edit-fit .arrangement-timeline[data-desktop-style="true"] .timeline-track-actions > button { height: 20px !important; min-height: 20px !important; padding-inline: 2px !important; font-size: 10px; }
+.phone-console .phone-edit-fit .arrangement-timeline[data-desktop-style="true"] .track-touch-header > div:nth-child(3) { height: 14px; }
+.phone-console .phone-edit-fit .channel-menu-trigger { height: 18px !important; min-height: 18px !important; }

@@ -61,11 +61,14 @@ export function StudioBack() {
       // Fit shrinks the rear room to the screen height while widening its layout,
       // so it fills the full view like the front room without scrolling.
       const phone = true;
-      const base = phoneQuery.matches ? Math.max(760, scroll.clientWidth) : scroll.clientWidth;
       const height = box.offsetHeight;
+      // On phones, widen the rear layout to the screen's shape so after fitting it fills the view edge to edge like the front.
+      const prevWidth = box.offsetWidth || scroll.clientWidth;
+      const aspectWidth = height > 0 && scroll.clientHeight > 0 ? Math.round(scroll.clientWidth * height / scroll.clientHeight * (prevWidth / Math.max(1, prevWidth))) : scroll.clientWidth;
+      const base = phoneQuery.matches ? Math.min(2400, Math.max(760, scroll.clientWidth, aspectWidth)) : scroll.clientWidth;
       const scale = overview && height > 0 ? Math.min(1, scroll.clientWidth / base, scroll.clientHeight / height) : 1;
       const width = base;
-      setView(previous => previous.phone === phone && previous.width === width && previous.height === height && Math.abs(previous.scale - scale) < .001 ? previous : { phone, width, height, scale });
+      setView(previous => previous.phone === phone && Math.abs(previous.width - width) < 12 && previous.height === height && Math.abs(previous.scale - scale) < .001 ? previous : { phone, width, height, scale });
     };
     measure();
     const observer = new ResizeObserver(measure);

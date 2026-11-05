@@ -156,7 +156,8 @@ export function StudioView() {
       const avail = room.clientHeight, natural = content.offsetHeight;
       if (!avail || !natural) return;
       const ratio = avail / natural;
-      const next = ratio >= 0.97 ? 1 : ratio >= 0.6 ? ratio : 1;
+      const phone = !!room.closest(".phone-console");
+      const next = ratio >= 0.97 ? 1 : ratio >= (phone ? 0.25 : 0.6) ? ratio : 1;
       setFit((prev) => (Math.abs(prev - next) < 0.004 ? prev : next));
     };
     measure();
@@ -178,7 +179,7 @@ export function StudioView() {
     </div>
     {back ? <StudioBack /> : <>
     <StudioSpeakerDrive root={roomRef} />
-    <div ref={roomRef} className="studio-room relative min-h-[540px] flex-1 overflow-auto" data-studio-fit={fit < 1 ? "true" : undefined}>
+    <div ref={roomRef} className="studio-room relative min-h-[540px] flex-1 [.phone-console_&]:min-h-0 overflow-auto" data-studio-fit={fit < 1 ? "true" : undefined}>
       <img src={roomImage} width={1536} height={1024} alt="Graphite music studio with acoustic wall panels" className="pointer-events-none absolute inset-0 h-full w-full object-cover" />
       <div ref={contentRef} className="studio-room-content relative" style={fit < 1 ? { transform: `scale(${fit})`, transformOrigin: "top center" } : undefined}>
         <div className="studio-room-brand font-display">SYNCLAB<span>CREATE. RECORD. PRODUCE. FINISH.</span></div>
