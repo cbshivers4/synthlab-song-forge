@@ -189,7 +189,7 @@ export function BassGenerator() {
         <button type="button" role="radio" aria-checked={mode === "write"} className={chip(mode === "write")} onClick={() => setMode("write")}>Write my own notes</button>
       </div>
       {mode === "write" && (
-        <BassStepEditor pattern={pattern} onChange={setPattern} tonic={useSong ? (roots[0] ?? tonic) : tonic} minor={minor} half={half} onHalf={setHalf}
+        <BassStepEditor pattern={pattern} onChange={setPattern} half={half} onHalf={setHalf} tonic={useSong ? (roots[0] ?? tonic) : tonic} minor={minor} half={half} onHalf={setHalf}
           onAudition={(semis) => { const e = getEngine(); e.init(); e.playNote("bassgen-audition", drawPatch, 12 * (octave + 1) + (useSong ? (roots[0] ?? tonic) : tonic) + semis, 0.25, 0.85); }} />
       )}
 
