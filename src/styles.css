@@ -1195,7 +1195,7 @@ body:has(.payment-test-banner) { --banner-h: 24px; }
 .login-tagline { font-size: calc(27 * var(--ls)); }
 .login-kicker { font-size: calc(12 * var(--ls)); color: var(--muted-foreground); }
 
-.login-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, calc(392 * var(--ls))); gap: calc(18 * var(--ls)); }
+.login-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, calc(392 * var(--ls))); gap: calc(40 * var(--ls)); }
 .login-side { display: flex; flex-direction: column; gap: calc(12 * var(--ls)); min-height: 0; }
 
 .login-features { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: calc(7 * var(--ls)) calc(16 * var(--ls)); }
@@ -1238,7 +1238,7 @@ body:has(.payment-test-banner) { --banner-h: 24px; }
 .phone-console.phone-entry .login-logo { width: calc(50 * var(--ls)); height: calc(50 * var(--ls)); border-radius: calc(8 * var(--ls)); }
 .phone-console.phone-entry .login-tagline { font-size: calc(19 * var(--ls)); }
 .phone-console.phone-entry .login-kicker { font-size: calc(10 * var(--ls)); }
-.phone-console.phone-entry .login-cols { grid-template-columns: minmax(0, 1fr) minmax(0, calc(300 * var(--ls))); gap: calc(12 * var(--ls)); }
+.phone-console.phone-entry .login-cols { grid-template-columns: minmax(0, 1fr) minmax(0, calc(300 * var(--ls))); gap: calc(28 * var(--ls)); }
 .phone-console.phone-entry .login-side { gap: calc(5 * var(--ls)); }
 .phone-console.phone-entry .login-features { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: calc(5 * var(--ls)) calc(10 * var(--ls)); }
 .phone-console.phone-entry .login-feature-title { font-size: calc(11 * var(--ls)); }
