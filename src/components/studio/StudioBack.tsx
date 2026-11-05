@@ -58,13 +58,13 @@ export function StudioBack() {
     if (!box || !scroll) return;
     const phoneQuery = window.matchMedia("(max-width: 767px), (orientation: landscape) and (max-width: 1100px) and (max-height: 600px)");
     const measure = () => {
-      // Fit shrinks the whole rear room (desktop and phone) so it fits without scrolling.
-      const phone = phoneQuery.matches || overview;
-      const width = Math.max(760, scroll.clientWidth);
+      // Fit shrinks the rear room to the screen height while widening its layout,
+      // so it fills the full view like the front room without scrolling.
+      const phone = true;
+      const base = phoneQuery.matches ? Math.max(760, scroll.clientWidth) : scroll.clientWidth;
       const height = box.offsetHeight;
-      const scale = overview && height > 0
-        ? Math.min(1, scroll.clientWidth / width, scroll.clientHeight / height)
-        : 1;
+      const scale = overview && height > 0 ? Math.min(1, scroll.clientWidth / base, scroll.clientHeight / height) : 1;
+      const width = base;
       setView(previous => previous.phone === phone && previous.width === width && previous.height === height && Math.abs(previous.scale - scale) < .001 ? previous : { phone, width, height, scale });
     };
     measure();
@@ -276,11 +276,11 @@ export function StudioBack() {
           <Button className="min-h-11" disabled={!source || !target} onClick={() => { if (source && target) connect(target.jack, source.jack); }}><Plus className="size-4" />Connect cable</Button>
         </DialogContent>
       </Dialog>
-      <div ref={scrollRef} className="studio-back-scroll min-h-0 flex-1 overflow-auto" tabIndex={0} aria-label="Studio rear room">
+      <div ref={scrollRef} className="studio-back-scroll relative min-h-0 flex-1 overflow-auto" tabIndex={0} aria-label="Studio rear room">
+      <img src={roomImage} alt="" className="studio-back-room-image" />
       <div className="studio-back-canvas" style={view.phone ? { marginInline: "auto", width: view.width * view.scale, height: view.height * view.scale } : undefined}>
       <div ref={boxRef} className="studio-back-rack relative" style={view.phone ? { width: view.width, position: "absolute", left: 0, top: 0, minHeight: 0, transform: `scale(${view.scale})`, transformOrigin: "top left" } : undefined} aria-label="Back of the studio rack — audio cable routing">
-        <img src={roomImage} alt="" className="studio-back-room-image" />
-        <div className="studio-room-brand font-display">SYNCLAB<span>STUDIO · BACK</span></div>
+                <div className="studio-room-brand font-display">SYNCLAB<span>CREATE. RECORD. PRODUCE. FINISH. · BACK</span></div>
         <div className="studio-rear-desk">
           <div className="studio-rear-monitor">{unit("monitor-l", "MONITOR L", "LEFT · MASTER FEED", jack({ device: "monitor-l", port: "in" }, false, "LEFT IN", true))}<div className="studio-rear-speaker-stand" /></div>
           <div className="studio-rear-console studio-back-mixing">{unit("master", "MIXING DESK", `${tracks.length} CHANNEL INPUTS · MASTER OUTPUT`, <>{tracks.map(t => jack(masterIn(t), false, t.name))}{jack({ device: "master", port: "out" }, true, "MASTER OUT")}</>)}<div className="studio-table-top" /><div className="studio-desk-legs" /></div>
