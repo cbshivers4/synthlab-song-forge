@@ -3450,3 +3450,13 @@ body:has(.phone-console) [data-sonner-toast] button { pointer-events: auto; }
 .arrangement-workspace .timeline-edit-toolbar .h-8 { height: 38px; }
 .arrangement-workspace .timeline-edit-toolbar .h-6 { height: 30px; }
 .arrangement-workspace .timeline-edit-toolbar .tool-label { font-size: 11px; }
+
+/* Bass Generator: write-your-own step editor */
+.bassgen-step { border-radius: 2px; background: oklch(0.24 0.03 215); }
+.bassgen-step.is-beat { background: oklch(0.28 0.035 215); }
+.bassgen-step.is-root { box-shadow: inset 0 -1px 0 oklch(0.4 0.05 200); }
+.bassgen-step:hover { background: oklch(0.34 0.05 200); }
+.bassgen-step.is-on { background: var(--bass-teal); box-shadow: 0 0 6px var(--bass-teal); }
+.bassgen-flag { border-radius: 3px; border: 1px solid var(--border); color: var(--muted-foreground); }
+.bassgen-flag:disabled { opacity: 0.3; }
+.bassgen-flag.is-on { background: var(--bass-teal); color: var(--background); border-color: transparent; }

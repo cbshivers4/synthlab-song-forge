@@ -9,6 +9,9 @@ import { Button } from "@/components/ui/button";
 import { useStudio } from "@/lib/synclab/store";
 import { getBeatsPerBar } from "@/lib/synclab/timebase";
 import { SYNTH_PRESETS, applyPreset } from "@/lib/synclab/presets";
+import { BassStepEditor } from "./BassStepEditor";
+import { BASS_PATTERN_PRESETS, patternToNotes, type BassPattern } from "@/lib/synclab/bass-pattern";
+import { getEngine } from "@/lib/synclab/audio-engine";
 
 const BASS_SOUNDS = SYNTH_PRESETS.filter((p) => p.category === "Bass").map((p) => p.name);
 import { BASS_STYLES, BASS_TEMPLATES, cleanBassPatch, generateBass, riffBass, varyBass, NOTE_NAMES, PROGRESSIONS, rootsFromKey, rootsFromTracks, type BassStyle } from "@/lib/synclab/bass-gen";
@@ -40,6 +43,9 @@ export function BassGenerator() {
     return detected.map((r) => (r === null ? last : (last = r)));
   }, [useSong, detected, tonic, minor, prog, bars]);
 
+  const [mode, setMode] = useState<"auto" | "write">("auto");
+  const [pattern, setPattern] = useState<BassPattern>(() => BASS_PATTERN_PRESETS[0]!.steps);
+  const written = useMemo(() => (mode === "write" ? patternToNotes(pattern, roots, barSteps, octave, minor) : null), [mode, pattern, roots, barSteps, octave, minor]);
   const pv = usePreviewTrack();
   const label = BASS_STYLES.find((s) => s.id === style)!.label.toUpperCase();
   const [template, setTemplate] = useState<string | null>(null);
@@ -48,7 +54,7 @@ export function BassGenerator() {
   const plainLine = () => (riffOf ? riffBass(roots, riffOf, barSteps, octave) : generateBass(roots, style, barSteps, octave));
   const signature = `${roots.join(",")}|${style}|${octave}|${barSteps}|${riffOf ? template : ""}`;
   const [made, setMade] = useState<{ notes: ReturnType<typeof generateBass>; signature: string } | null>(null);
-  const generated = made && made.signature === signature ? made.notes : null;
+  const generated = written ?? (made && made.signature === signature ? made.notes : null);
   const [variation, setVariation] = useState(0);
   const generate = () => {
     // Pressing again with the same settings makes a new variation; changing settings starts from the plain line.
@@ -167,11 +173,20 @@ export function BassGenerator() {
         <p className="text-xs text-muted-foreground">Pick a sound, then press Preview to hear your bassline with it. Changing the sound while previewing switches it right away.</p>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2" role="radiogroup" aria-label="How to make the bassline">
+        <button type="button" role="radio" aria-checked={mode === "auto"} className={chip(mode === "auto")} onClick={() => setMode("auto")}>Generate for me</button>
+        <button type="button" role="radio" aria-checked={mode === "write"} className={chip(mode === "write")} onClick={() => setMode("write")}>Write my own notes</button>
+      </div>
+      {mode === "write" && (
+        <BassStepEditor pattern={pattern} onChange={setPattern} tonic={useSong ? (roots[0] ?? tonic) : tonic} minor={minor}
+          onAudition={(semis) => { const e = getEngine(); e.init(); e.playNote("bassgen-audition", drawPatch, 12 * (octave + 1) + (useSong ? (roots[0] ?? tonic) : tonic) + semis, 0.25, 0.85); }} />
+      )}
+
+      <div className={`flex flex-wrap items-center gap-2${mode === "write" ? " hidden" : ""}`}>
         <Button size="lg" className="min-h-12" onClick={generate}>{generated ? "Regenerate (new variation)" : "Generate bassline"}</Button>
         {generated && <span className="font-mono text-xs text-muted-foreground">{generated.length} notes ready</span>}
       </div>
-      {generated && (
+      {generated && mode === "auto" && (
         <div className="bassgen-grid" role="img" aria-label={`Generated bassline: ${generated.length} notes over ${bars} bars`}>
           {Array.from({ length: bars * barSteps }, (_, i) => {
             const note = generated.find((n) => i >= n.step && i < n.step + n.length);
