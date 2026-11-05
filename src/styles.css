@@ -3530,8 +3530,9 @@ body:has(.phone-console) [data-sonner-toast] button { pointer-events: auto; }
 .phone-console .phone-console-stage > header > div[aria-label^="Device clock"] > span:first-child { font-size: 14px; }
 .phone-console .phone-tool-panel > div:first-of-type { min-height: 40px; height: 40px; }
 .phone-console .phone-tool-panel > div:first-of-type button { height: 36px; min-height: 36px; }
-/* Sideways phone drum roll fits the screen: rows are paged instead of scrolled.
-   Banks, pattern chain and note repeat live on the Play pads / Sound / Kit tabs. */
+/* Sideways phone drum roll fits the screen: all rows stay in one grid that
+   scrolls inside itself, so the page never scrolls. Banks, pattern chain and
+   note repeat live on the Play pads / Sound / Kit tabs. */
 .phone-console .drum-machine[data-phone-view="roll"]:has(.drum-roll-fit) > :is(.drum-patterns, .drum-chain, [aria-label="Note repeat"], .drum-skin) { display: none !important; }
 .phone-console .phone-tool-panel:has(.drum-roll-fit) .phone-page-viewport { overflow: hidden !important; display: flex !important; flex-direction: column; }
 .phone-console .phone-editor-content:has(.drum-roll-fit) { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 4px; }
@@ -3542,9 +3543,8 @@ body:has(.phone-console) [data-sonner-toast] button { pointer-events: auto; }
 .phone-console .drum-roll-fit > .drum-fit-bulk { grid-column: 1; grid-row: 1; align-self: center; }
 .phone-console .drum-roll-fit > .drum-roll-toolbar { grid-column: 2; grid-row: 1; overflow: hidden; padding: 1px 2px; }
 .phone-console .drum-roll-fit > :not(.drum-fit-bulk):not(.drum-roll-toolbar) { grid-column: 1 / -1; }
-.phone-console .drum-roll-fit [aria-label="Drum roll grid"] { grid-row: 2; min-height: 0 !important; height: auto; flex: none !important; overflow: hidden !important; }
-.phone-console .drum-roll-fit .drum-fit-rows { height: 100%; min-height: 0 !important; grid-auto-rows: auto !important; }
-.phone-console .drum-roll-fit .drum-row-pages { margin-left: auto; }
+.phone-console .drum-roll-fit [aria-label="Drum roll grid"] { grid-row: 2; min-height: 0 !important; height: auto; flex: none !important; overflow-x: hidden !important; overflow-y: auto !important; overscroll-behavior: contain; }
+.phone-console .drum-roll-fit .drum-fit-rows { min-height: 100%; grid-auto-rows: auto !important; }
 .phone-console .drum-roll-fit:has(.drum-note-dock) { grid-template-columns: auto minmax(0,1fr) 180px !important; }
 .phone-console .drum-roll-fit:has(.drum-note-dock) > [aria-label="Drum roll grid"] { grid-column: 1 / 3 !important; }
 .phone-console .drum-machine:has(.drum-roll-fit) { grid-template-columns: minmax(0,1fr) 200px !important; }
@@ -3554,7 +3554,7 @@ body:has(.phone-console) [data-sonner-toast] button { pointer-events: auto; }
 .phone-console .drum-machine:has(.drum-roll-fit) > .drum-sequences { gap: 3px; }
 .phone-console .drum-machine:has(.drum-roll-fit) > .drum-sequences button { padding-inline: 6px; }
 @media (max-height: 420px), (orientation: portrait) and (max-width: 420px) {
-  .phone-console .drum-machine .drum-roll-fit .drum-fit-rows { grid-template-rows: 24px repeat(var(--drum-fit-rows, 5), minmax(0, 1fr)) !important; height: 100%; }
+  .phone-console .drum-machine .drum-roll-fit .drum-fit-rows { grid-template-rows: 24px repeat(var(--drum-fit-rows, 17), minmax(34px, 1fr)) !important; min-height: 100%; }
 }
 .phone-console .drum-machine:has(.drum-roll-fit) > .drum-sequences > .label-xs { display: none; }
 

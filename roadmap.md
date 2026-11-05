@@ -152,8 +152,9 @@
 - [x] Phase 8: full QA pass (399 tests, 0 type errors, 3-min session memory steady, 60 fps, 22 tools error-free, phone recording, 0 dependency advisories); completion report delivered
 
 ## Phone fit-to-screen (sideways)
-- [x] Edit screen fits without scrolling
-- [x] Drum machine → Drum roll tab fits (rows paged)
+- [x] Edit screen fits without scrolling; Add track menu pinned in the Edit header
+- [x] Drum machine → Drum roll tab fits; all rows in one internally scrolling grid (paging removed per Christopher)
+- [x] Studio View front and back both fill the screen edge to edge (back desk/floor rows uncapped on phone fit)
 - [ ] Drum Play pads / Sound / Kit tabs
 - [ ] Synth, Touch Synth, Sampler, Sample pads, Sound library, Live View, Live Looper
 - [ ] Mixer, Studio View, Reel-to-Reel, Video Sampler, Bass Generator, Mastering, Plugins, Settings, Audio Converter
