@@ -376,8 +376,8 @@ export function DrumMachine({ track }: { track: Track }) {
         <div className="flex flex-wrap gap-1">
           {DRUM_PATTERN_LABELS.map((number, index) => <Button key={number} size="sm" variant={activeSequence === index ? "default" : "secondary"} className="h-8 w-8 p-0 font-mono" aria-label={`Pattern ${number}`} aria-pressed={activeSequence === index} disabled={addingSamples || transport.recording} onClick={() => switchSequence(index)}>{number}</Button>)}
         </div>
-        <Button size="sm" variant="secondary" disabled={addingSamples || transport.recording} onClick={copySequence} aria-label="Copy pattern to next"><Copy className="size-4" /> Copy next</Button>
-        <Button size="sm" variant="ghost" disabled={addingSamples || transport.recording} onClick={clearPattern} aria-label="Clear current pattern"><RotateCcw className="size-4" /> Clear</Button>
+        <Button size="sm" variant="secondary" disabled={addingSamples || transport.recording} onClick={copySequence} aria-label="Copy pattern to next" title="Copy this pattern to the next one"><Copy className="size-4" /> <span className="seq-btn-text">Copy next</span></Button>
+        <Button size="sm" variant="ghost" disabled={addingSamples || transport.recording} onClick={clearPattern} aria-label="Clear current pattern" title="Clear this pattern"><RotateCcw className="size-4" /> <span className="seq-btn-text">Clear</span></Button>
       </div>
       <DrumChainBar track={track} />
 

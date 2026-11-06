@@ -3600,3 +3600,55 @@ body:has(.phone-console) [data-sonner-toast] button { pointer-events: auto; }
 .phone-console .phone-edit-fit .arrangement-timeline[data-desktop-style="true"] .track-touch-header > div:last-child:not(.timeline-width-handle) { flex: none; height: 4px !important; }
 .phone-console .phone-edit-fit .arrangement-timeline[data-desktop-style="true"] .timeline-track-actions > button { gap: 2px; padding-inline: 3px !important; }
 .phone-console .phone-edit-fit .arrangement-timeline[data-desktop-style="true"] .timeline-track-actions > button svg { width: 11px; height: 11px; }
+
+/* Phone mixer — big controls: finger-sized strips that fill the screen height. */
+.phone-touch-strips { background: var(--mx-a, var(--mixer-desk)); touch-action: pan-x; scrollbar-width: thin; }
+.touch-mix-channel { background: color-mix(in oklab, var(--mixer-channel-color) 26%, var(--mixer-desk)); }
+.touch-mix-master { background: color-mix(in oklab, var(--mixer-output-accent) 18%, var(--mixer-desk)); border-left: 3px solid var(--mixer-output-accent); box-shadow: -6px 0 14px rgb(0 0 0 / 0.45); }
+.touch-mix-channel .touch-mix-fader [role="slider"] { width: 2.25rem; height: 1.75rem; }
+.touch-mix-meter > div > div:first-child { display: none; }
+.touch-mix-channel .touch-mix-fader[data-orientation="vertical"] > span:first-child { width: 6px; background: var(--mixer-edge); }
+.touch-mix-channel .touch-mix-pan [role="slider"] { background: var(--mixer-fader-light); border-color: var(--mixer-edge); }
+/* Full-desk strip shown in the "More" window keeps its real size. */
+.mx-console-dialog { --mx-a: var(--mixer-desk); background: var(--mixer-desk); border-radius: 6px; }
+@media (orientation: portrait) and (max-width: 767px) and (pointer: coarse), (orientation: portrait) and (max-width: 600px) {
+  .phone-sideways-default .phone-strip-dialog { max-height: calc(100dvw - 16px); max-width: calc(100dvh - 16px); }
+}
+/* Phone full desk: header rows grow to their buttons so the menu and gain never sit on top of each other. */
+.phone-console .mx-console .mx-channel > .mx-row-head { height: auto; min-height: 28px; flex-wrap: wrap; row-gap: 2px; padding-block: 2px; }
+.phone-console .mx-console .mx-channel > .mx-row-head > button { min-height: 0; min-width: 0; }
+.phone-console .mx-console .mx-channel > .mx-row-head [aria-label$="channel menu"] { width: 28px; height: 24px; }
+
+/* Big fingers: knobs catch touches around the dial, and menus get finger-sized rows. */
+.phone-console .hardware-knob-dial::before { content: ""; position: absolute; inset: -10px; border-radius: 9999px; }
+html.phone-console-active [role="menuitem"],
+html.phone-console-active [role="menuitemradio"],
+html.phone-console-active [role="menuitemcheckbox"],
+html.phone-console-active [role="option"] { min-height: 44px; font-size: 15px; }
+.touch-mix-channel .touch-mix-fader[data-orientation="vertical"] { flex-direction: column; }
+/* Note names on the keys: every key on phones like a printed keyboard; desktop keeps the octave Cs only. */
+.instrument-keyboard .keyboard-note-name:not([data-octave-c]) { display: none; }
+.phone-console .instrument-keyboard .keyboard-note-name { display: block; font-size: 12px; font-weight: 700; }
+.phone-console .instrument-keyboard .keyboard-sharp-name { font-size: 10px; }
+.phone-console .instrument-keyboard .keyboard-sharp-letter { bottom: 18px; }
+
+/* Sideways phone drum roll: compact rows sized to their buttons, so tabs, patterns and Play/Tap REC never sit on each other. */
+.phone-console .drum-machine:has(.drum-roll-fit) { grid-template-columns: minmax(0,1fr) 188px !important; grid-template-rows: 40px 40px minmax(0,1fr) !important; row-gap: 4px; }
+.phone-console .drum-machine:has(.drum-roll-fit) > [role="tablist"] button,
+.phone-console .drum-machine:has(.drum-roll-fit) > div:first-child button { height: 40px !important; min-height: 40px !important; }
+.phone-console .drum-machine:has(.drum-roll-fit) > div:first-child { height: 40px; }
+.phone-console .drum-machine:has(.drum-roll-fit) > .drum-sequences { overflow: hidden; align-items: center; }
+.phone-console .drum-machine:has(.drum-roll-fit) > .drum-sequences button { height: 38px !important; min-height: 38px !important; min-width: 34px !important; width: auto; padding-inline: 4px; }
+.phone-console .drum-machine:has(.drum-roll-fit) > .drum-sequences .seq-btn-text { display: none; }
+.phone-console .drum-machine:has(.drum-roll-fit) > [aria-label="Drum playback"] { gap: 4px; }
+.phone-console .drum-machine:has(.drum-roll-fit) > [aria-label="Drum playback"] button { height: 38px !important; min-height: 38px !important; padding-inline: 4px; }
+.phone-console .drum-roll-fit > .drum-roll-toolbar { overflow-x: auto !important; scrollbar-width: none; }
+.phone-console .drum-roll-fit > .drum-roll-toolbar > * { flex-shrink: 0; }
+
+/* Sideways phone pads: four big squares across, so pads are easy to hit away from their small edge buttons. */
+.phone-console .drum-machine[data-sideways="true"] .drum-pad-grid { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; grid-auto-rows: auto !important; gap: 10px; }
+.phone-console .drum-machine[data-sideways="true"] .drum-pad-grid > [role="button"] { aspect-ratio: 1 / 1; padding: 8px; }
+.phone-console .drum-machine[data-sideways="true"] .drum-pad-grid .pad-manage-controls [role="checkbox"] { width: 20px; height: 20px; }
+.phone-console .drum-machine[data-sideways="true"] .drum-pad-grid > [role="button"] > span:first-child > span:nth-child(2) { font-size: 13px; margin-top: 2px; }
+.phone-console .performance-pad-grid { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; grid-auto-rows: auto !important; gap: 10px; }
+.phone-console .performance-pad-grid > button { aspect-ratio: 1 / 1; height: auto; }

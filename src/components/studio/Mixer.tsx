@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { BusStrip, ControlStrip } from "./mixer/BusStrips";
 import { MasterStrip } from "./mixer/MasterStrip";
-import { PhoneEqButton, PhoneFxMenu } from "./mixer/PhoneMixer";
+import { PhoneEqButton, PhoneFxMenu, PhoneTouchStrips } from "./mixer/PhoneMixer";
 import { Strip } from "./mixer/Strip";
 import { AUX_IDS, BUS_STRIPS, CONSOLE_STYLES, type ConsoleStyle, type ConsoleStyleId, LabelRail, SOLID_PRESETS, VCA_IDS, accentInk, fracToDb, useMeters } from "./mixer/shared";
 
@@ -19,6 +19,12 @@ export function Mixer({ phonePage = 0, phoneChannels, phoneControlPage = "levels
   const { tracks, selectedId, select, setPanel, buses, setBus, vcas, setVca, auxReturns, setAuxReturn, updateTrack, addTrack } = useStudio();
   const levels = useMeters(tracks);
   const [narrow, setNarrow] = useState(false);
+  // Phones and tablets default to finger-sized strips; the full desk stays one tap away (device preference).
+  const [touchPref, setTouchPref] = useState(true);
+  useEffect(() => { try { if (window.localStorage.getItem("synclab.mixer.touch") === "0") setTouchPref(false); } catch { /* ignore */ } }, []);
+  const setTouch = (on: boolean) => { setTouchPref(on); try { window.localStorage.setItem("synclab.mixer.touch", on ? "1" : "0"); } catch { /* ignore */ } };
+  const touchStrips = mobileDevice && touchPref;
+  const noTracks = tracks.length === 0;
   // Phone: shrink every strip uniformly so the whole mixer fits the screen without scrolling.
   const stripsRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -41,7 +47,7 @@ export function Mixer({ phonePage = 0, phoneChannels, phoneControlPage = "levels
     const ro = new ResizeObserver(fit); ro.observe(el);
     const mo = new MutationObserver(fit); mo.observe(el, { childList: true });
     return () => { cancelAnimationFrame(frame); ro.disconnect(); mo.disconnect(); };
-  }, []);
+  }, [touchStrips, noTracks]);
   // Timeline tracks are always mirrored in the mixer. Extra routing strips open on request.
   const [showBuses, setShowBuses] = useState(false);
   const [showVcas, setShowVcas] = useState(false);
@@ -113,6 +119,11 @@ export function Mixer({ phonePage = 0, phoneChannels, phoneControlPage = "levels
     >
       {/* console toolbar */}
       <div className="mx-console-toolbar flex min-h-10 items-center gap-3 overflow-x-auto border-b border-border px-3 py-2">
+        {mobileDevice && (
+          <Button variant="secondary" className="h-10 shrink-0 px-3 text-sm font-bold" aria-pressed={!touchStrips} onClick={() => setTouch(!touchStrips)} title={touchStrips ? "Show the full mixing desk (gain, EQ, inserts, sends on every channel)" : "Show big, finger-sized channel controls"}>
+            {touchStrips ? "Full desk" : "Big controls"}
+          </Button>
+        )}
         {mobileDevice && (() => { const st = tracks.find((x) => x.id === selectedId); return st ? <Popover><PopoverTrigger asChild><Button variant="outline" size="sm" className="shrink-0" aria-label="Mixer MIDI Learn">MIDI Learn</Button></PopoverTrigger><PopoverContent className="w-[min(88vw,520px)]"><MidiLearnStrip id={st.id} label={`${st.name} channel — move a knob/fader after tapping`} /></PopoverContent></Popover> : null; })()}
         {isMobile ? (
           <>
@@ -315,6 +326,8 @@ export function Mixer({ phonePage = 0, phoneChannels, phoneControlPage = "levels
             ))}
           </div>
         </div>
+      ) : touchStrips ? (
+        <PhoneTouchStrips levels={levels} />
       ) : (
         <div ref={stripsRef} className="mobile-mixer-strips flex overflow-x-auto" role="region" aria-label="Mixer channels" tabIndex={0}>
           {!isMobile && <LabelRail />}

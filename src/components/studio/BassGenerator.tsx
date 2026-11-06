@@ -1,6 +1,6 @@
 import { SkinControls, skinBackground, useImageDrop } from "@/components/studio/SkinControls";
 import { useSkin } from "@/lib/synclab/skins";
-import { useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { usePreviewTrack } from "@/lib/synclab/use-preview-track";
 import { PreviewButtons } from "./PreviewButtons";
 import { PatternWaveform } from "./PatternWaveform";
@@ -89,6 +89,17 @@ export function BassGenerator() {
     updateTrack(id, { steps: bars * barSteps, notes, patch: cleanBassPatch(applyPreset(withSound)) });
     return { id, notes };
   };
+  // A new pattern while previewing plays straight away, so what you hear is what gets added.
+  const { previewing, update: updatePreview } = pv;
+  const sentToPreview = useRef<{ notes: unknown } | null>(null);
+  useEffect(() => {
+    if (!previewing) { sentToPreview.current = null; return; }
+    // The first pass records what the preview started with; later passes push regenerated notes.
+    if (sentToPreview.current === null) { sentToPreview.current = { notes: generated }; return; }
+    if (!generated || sentToPreview.current.notes === generated) return;
+    sentToPreview.current = { notes: generated };
+    updatePreview({ notes: generated, steps: bars * barSteps });
+  }, [previewing, generated, bars, barSteps, updatePreview]);
   const preview = (withSound?: string) => pv.start((n) => build(n(`BASS · ${label}`), withSound ?? sound).id);
   const create = () => {
     const dest = synthTracks.find((t) => t.id === target);

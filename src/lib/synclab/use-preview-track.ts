@@ -48,8 +48,13 @@ export function usePreviewTrack() {
     return true;
   }, [updateTrack]);
 
+  /** Change the track being auditioned (e.g. a regenerated pattern) without restarting playback. */
+  const update = useCallback((patch: Parameters<typeof updateTrack>[1]) => {
+    if (idRef.current) updateTrack(idRef.current, patch);
+  }, [updateTrack]);
+
   // Leaving the panel discards an un-kept preview.
   useEffect(() => () => { if (idRef.current) removeRef.current(idRef.current); }, []);
 
-  return { previewing: previewId !== null, start, stop, keep };
+  return { previewing: previewId !== null, start, stop, keep, update };
 }

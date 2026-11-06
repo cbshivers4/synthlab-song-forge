@@ -96,10 +96,57 @@ export function SynthEditor({ track }: { track: Track }) {
           </TabsTrigger>
         ))}
       </TabsList>
+      <SynthModelPicker current={track} synthTracks={synthTracks} />
       <TabsContent value={track.id} className="min-w-0">
         <SynthTrackEditor key={track.id} track={track} />
       </TabsContent>
     </Tabs>
+  );
+}
+
+/** The four synth models. Each opens its channel, or adds one (with notes) when the song has none yet. */
+const SYNTH_MODELS = [
+  { style: "spec4", label: "Spec 4", name: "INSTRUMENT", preset: "Cybotron Lead" },
+  { style: "acid", label: "Acid Bass", name: "ACID BASS", preset: "TD-3 Acid Saw" },
+  { style: "poly", label: "Poly Synth", name: "POLY SYNTH", preset: "Poly Synth Brass" },
+  { style: "modular", label: "Modular Tech", name: "MODULAR TECH", preset: "Modular Tech Empty Rack" },
+] as const;
+type SynthStyle = (typeof SYNTH_MODELS)[number]["style"];
+
+function synthStyleOf(track: Pick<Track, "name" | "patch">): SynthStyle {
+  const patch = track.patch;
+  if (patch?.modular) return "modular";
+  if (patch?.name.startsWith("TD-3") || /ACID/i.test(track.name)) return "acid";
+  if (patch?.name.startsWith("Poly Synth") || /POLY/i.test(track.name)) return "poly";
+  return "spec4";
+}
+
+function SynthModelPicker({ current, synthTracks }: { current: Track; synthTracks: Track[] }) {
+  const { addTrack, select } = useStudio();
+  const currentStyle = synthStyleOf(current);
+  return (
+    <div className="synth-model-picker mt-1 flex flex-wrap items-center gap-1" role="group" aria-label="Synth models">
+      <span className="label-xs mr-1">SYNTHS</span>
+      {SYNTH_MODELS.map((m) => {
+        const existing = synthTracks.find((t) => synthStyleOf(t) === m.style);
+        const active = currentStyle === m.style;
+        return (
+          <Button
+            key={m.style}
+            type="button"
+            size="sm"
+            variant={active ? "default" : "secondary"}
+            className="min-h-10 gap-1.5 px-3"
+            aria-pressed={active}
+            title={existing ? `Open ${existing.name}` : `Add a ${m.label} channel to the song`}
+            onClick={() => (existing ? select(existing.id) : addTrack("instrument", m.name, m.preset))}
+          >
+            {!existing && <Plus className="size-4" aria-hidden="true" />}
+            {m.label}
+          </Button>
+        );
+      })}
+    </div>
   );
 }
 
@@ -114,7 +161,7 @@ function SynthTrackEditor({ track }: { track: Track }) {
   const modEnv = patch.modEnv ?? { attack: 0.01, decay: 0.3, sustain: 0.4, release: 0.3 };
   const macros = patch.macros ?? [0, 0, 0, 0];
   const matrix = patch.modMatrix ?? [];
-  const synthStyle = patch.modular ? "modular" : patch.name.startsWith("TD-3") || /ACID/i.test(track.name) ? "acid" : patch.name.startsWith("Poly Synth") || /POLY/i.test(track.name) ? "poly" : "spec4";
+  const synthStyle = synthStyleOf(track);
   const presetGroups = (() => {
     const all = [
       ...SYNTH_PRESETS.filter((x) => presetMatchesSynth(x.category, synthStyle)).map((x) => ({ name: x.name, category: x.category })),

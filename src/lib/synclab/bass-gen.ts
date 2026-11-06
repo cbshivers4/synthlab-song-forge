@@ -183,29 +183,52 @@ function seeded(seed: number) {
   };
 }
 
+/** Rhythm cells (in 16th steps) used to break long held notes into a new groove. */
+const RHYTHM_CELLS: number[][] = [[4, 4, 4, 4], [6, 2, 6, 2], [3, 3, 2, 3, 3, 2], [8, 4, 4], [2, 2, 4, 2, 2, 4], [4, 2, 2, 4, 4], [6, 6, 4], [3, 1, 2, 2, 3, 1, 4]];
+
+const shape = (list: MidiNote[]) => list.map((n) => `${n.step}:${n.length}:${n.pitch}`).join(",");
+
 /**
- * Regenerate: a new take on the same bassline. Variation 0 returns the notes unchanged.
- * Each bar keeps its first (root) note; other notes may move to the octave, fifth or the key's third,
- * and short ghost notes can fill one-step gaps. Notes never leave their bar or overlap.
+ * Regenerate: a new take on the same bassline. Variation 0 returns the notes unchanged; every other
+ * variation number gives a different line (the same number always gives the same line).
+ * Each bar keeps its first (root) note; long held notes can be broken into a new rhythm, other notes
+ * may move to the octave, fifth or the key's third, and short ghost notes can fill one-step gaps.
+ * Notes never leave their bar or overlap.
  */
 export function varyBass(notes: MidiNote[], variation: number, minor: boolean, barSteps: number): MidiNote[] {
-  if (!variation) return notes;
+  if (!variation || notes.length === 0) return notes;
   const rnd = seeded(variation);
   const third = minor ? 3 : 4;
   const moves = [0, 7, 12, third, minor ? 10 : 9];
   const sorted = [...notes].sort((a, b) => a.step - b.step);
   const rootOf = new Map<number, number>();
   for (const n of sorted) { const bar = Math.floor(n.step / barSteps); if (!rootOf.has(bar)) rootOf.set(bar, n.pitch); }
-  const out: MidiNote[] = sorted.map((n) => {
+  const bars = Math.max(1, rootOf.size);
+  // Sparse lines (one held note per bar) always get a new rhythm, otherwise most held notes do.
+  const splitChance = sorted.length <= bars ? 1 : 0.6;
+  let k = 0;
+  const split: MidiNote[] = [];
+  for (const n of sorted) {
+    if (n.length < 4 || rnd() >= splitChance) { split.push({ ...n }); continue; }
+    const root = rootOf.get(Math.floor(n.step / barSteps))!;
+    const cell = RHYTHM_CELLS[Math.floor(rnd() * RHYTHM_CELLS.length)]!;
+    let at = 0;
+    for (let i = 0; at < n.length; i = (i + 1) % cell.length) {
+      const len = Math.min(cell[i]!, n.length - at);
+      const pitch = at === 0 ? n.pitch : rnd() < 0.5 ? root + moves[Math.floor(rnd() * moves.length)]! : n.pitch;
+      split.push({ id: `${n.id}-v${variation}-${k++}`, step: n.step + at, length: len, pitch, velocity: at === 0 ? n.velocity : 0.7 + rnd() * 0.15 });
+      at += len;
+    }
+  }
+  const out: MidiNote[] = split.map((n) => {
     const bar = Math.floor(n.step / barSteps);
     const root = rootOf.get(bar)!;
-    if (n.step === bar * barSteps || n.step === sorted.find((m) => Math.floor(m.step / barSteps) === bar)!.step) return { ...n };
+    if (n.step === bar * barSteps || n.step === split.find((m) => Math.floor(m.step / barSteps) === bar)!.step) return n;
     if (rnd() < 0.4) return { ...n, pitch: root + moves[Math.floor(rnd() * moves.length)]!, velocity: Math.min(1, Math.max(0.5, n.velocity + (rnd() - 0.5) * 0.2)) };
-    return { ...n };
+    return n;
   });
   const taken = new Set<number>();
   for (const n of out) for (let s = n.step; s < n.step + n.length; s++) taken.add(s);
-  let k = 0;
   for (const n of [...out]) {
     const s = n.step + n.length;
     const bar = Math.floor(n.step / barSteps);
@@ -213,5 +236,24 @@ export function varyBass(notes: MidiNote[], variation: number, minor: boolean, b
     taken.add(s);
     out.push({ id: `${n.id}-ghost-${variation}-${k++}`, step: s, length: 1, pitch: rootOf.get(bar)!, velocity: 0.55 });
   }
-  return out.sort((a, b) => a.step - b.step);
+  out.sort((a, b) => a.step - b.step);
+  // Never hand back the same line: nudge one later note to another chord tone.
+  if (shape(out) === shape(sorted)) {
+    const later = out.filter((n) => n.step % barSteps !== 0 && n.step !== out.find((m) => Math.floor(m.step / barSteps) === Math.floor(n.step / barSteps))!.step);
+    const pick = later[variation % Math.max(1, later.length)];
+    if (pick) {
+      const root = rootOf.get(Math.floor(pick.step / barSteps))!;
+      const options = moves.map((m) => root + m).filter((p) => p !== pick.pitch);
+      pick.pitch = options[variation % options.length]!;
+    } else {
+      const longest = out.reduce((a, b) => (b.length > a.length ? b : a));
+      if (longest.length >= 2) {
+        const half = Math.floor(longest.length / 2);
+        longest.length -= half;
+        out.push({ id: `${longest.id}-v${variation}-${k++}`, step: longest.step + longest.length, length: half, pitch: longest.pitch + 7, velocity: 0.7 });
+        out.sort((a, b) => a.step - b.step);
+      }
+    }
+  }
+  return out;
 }

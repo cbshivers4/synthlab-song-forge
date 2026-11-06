@@ -359,11 +359,9 @@ export function Keyboard({ track, onPlay, disabled = false, skinKey = "keyboard"
               aria-label={label(midi)}
             >
               {typing && Object.entries(QWERTY_MAP).map(([key, offset]) => (typingOctave + 1) * 12 + offset === midi ? <span key={key} className="absolute bottom-5 left-1/2 -translate-x-1/2 font-mono text-xs keyboard-key-label">{key.toUpperCase()}</span> : null)}
-              {midi % 12 === 0 && (
-                <span className="absolute bottom-1 left-1/2 -translate-x-1/2 font-mono text-[9px] font-medium keyboard-key-label">
-                  {label(midi)}
-                </span>
-              )}
+              <span data-octave-c={midi % 12 === 0 || undefined} className="keyboard-note-name absolute bottom-1 left-1/2 -translate-x-1/2 whitespace-nowrap font-mono text-[9px] font-medium keyboard-key-label">
+                {midi % 12 === 0 ? label(midi) : NOTE_NAMES[midi % 12]}
+              </span>
             </Button>
           ))}
         </div>
@@ -380,7 +378,8 @@ export function Keyboard({ track, onPlay, disabled = false, skinKey = "keyboard"
             style={{ left: `calc(${(pos / whiteCount) * 100}% + ${100 / whiteCount * 0.72}%)`, width: `${(100 / whiteCount) * 0.62}%` }}
             aria-label={label(midi)}
           >
-            {typing && Object.entries(QWERTY_MAP).map(([key, offset]) => (typingOctave + 1) * 12 + offset === midi ? <span key={key} className="absolute bottom-2 left-1/2 -translate-x-1/2 font-mono text-xs keyboard-key-label">{key.toUpperCase()}</span> : null)}
+            {typing && Object.entries(QWERTY_MAP).map(([key, offset]) => (typingOctave + 1) * 12 + offset === midi ? <span key={key} className="keyboard-sharp-letter absolute bottom-2 left-1/2 -translate-x-1/2 font-mono text-xs keyboard-key-label">{key.toUpperCase()}</span> : null)}
+            <span className="keyboard-note-name keyboard-sharp-name absolute bottom-1 left-1/2 -translate-x-1/2 whitespace-nowrap font-mono text-[8px] font-medium keyboard-key-label">{NOTE_NAMES[midi % 12]?.replace("#", "♯")}</span>
           </Button>
         ))}
         </div>
