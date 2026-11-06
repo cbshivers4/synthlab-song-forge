@@ -1,8 +1,8 @@
-import { useRef, type CSSProperties } from "react";
+import { useRef, type CSSProperties, type ReactNode } from "react";
 import { Settings2 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select } from "@/components/ui/select";
 import { useStudio } from "@/lib/synclab/store";
 import { TrackIcon } from "@/components/studio/TrackStyle";
@@ -11,7 +11,7 @@ import type { AuxId, BusId, BusState, Track, VcaId } from "@/lib/synclab/types";
 import { cn } from "@/lib/utils";
 import { clearClip } from "@/lib/synclab/clip-monitor";
 import { TimelineHScrollbar } from "../timeline/HScrollbar";
-import { FxMenu, VcaAssign } from "./BusStrips";
+import { VcaAssign } from "./BusStrips";
 import { InsertRack } from "./InsertRack";
 import { PhoneChannelControls } from "./PhoneChannelControls";
 import { BUS_COLOR, FADER_CAP, Meter, toDb } from "./shared";
@@ -20,38 +20,32 @@ import { BUS_COLOR, FADER_CAP, Meter, toDb } from "./shared";
 export function PhoneFxMenu() {
   const { tracks, selectedId, addPlugin, removePlugin, togglePluginBypass, setPluginParam } = useStudio();
   const track = tracks.find((t) => t.id === selectedId);
+  if (!track) {
+    return (
+      <button type="button" disabled title="Select a channel first" className="flex h-9 items-center gap-1.5 rounded-sm border border-border bg-surface px-3 font-mono text-[10px] uppercase tracking-wider text-foreground disabled:opacity-40">
+        <Settings2 className="size-4" /> Add effects
+      </button>
+    );
+  }
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          disabled={!track}
-          title={track ? `Add effects to ${track.name}` : "Select a channel first"}
-          className="flex h-9 items-center gap-1.5 rounded-sm border border-border bg-surface px-3 font-mono text-[10px] uppercase tracking-wider text-foreground hover:text-primary disabled:opacity-40"
-        >
+    <PhoneFxWindow
+      title={`${track.name} — effects`}
+      trigger={
+        <button type="button" title={`Add effects to ${track.name}`} className="flex h-9 items-center gap-1.5 rounded-sm border border-border bg-surface px-3 font-mono text-[10px] uppercase tracking-wider text-foreground hover:text-primary">
           <Settings2 className="size-4" /> Add effects
         </button>
-      </PopoverTrigger>
-      <PopoverContent
-        align="end"
-        className="max-h-[70vh] w-[min(92vw,360px)] overflow-y-auto p-3"
-        onInteractOutside={(e) => { if ((e.target as HTMLElement | null)?.closest?.("[role=dialog]")) e.preventDefault(); }}
-      >
-        {track ? (
-          <InsertRack
-            title={`${track.name} — inserts`}
-            midiId={track.id}
-            list={track.plugins ?? []}
-            onAdd={(def) => addPlugin(track.id, def)}
-            onRemove={(id) => removePlugin(track.id, id)}
-            onBypass={(id) => togglePluginBypass(track.id, id)}
-            onParam={(id, p, v) => setPluginParam(track.id, id, p, v)}
-          />
-        ) : (
-          <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Tap a channel first, then add effects here.</p>
-        )}
-      </PopoverContent>
-    </Popover>
+      }
+    >
+      <InsertRack
+        title={`${track.name} — inserts`}
+        midiId={track.id}
+        list={track.plugins ?? []}
+        onAdd={(def) => addPlugin(track.id, def)}
+        onRemove={(id) => removePlugin(track.id, id)}
+        onBypass={(id) => togglePluginBypass(track.id, id)}
+        onParam={(id, p, v) => setPluginParam(track.id, id, p, v)}
+      />
+    </PhoneFxWindow>
   );
 }
 
@@ -189,7 +183,7 @@ function TouchRouteChannel({ kind, id, color, state, level, onChange, memberCoun
             {kind === "VCA" ? (
               <VcaAssign id={id as VcaId} memberCount={memberCount} short className="h-full text-[10px] font-bold" />
             ) : (
-              <FxMenu target={kind === "BUS" ? `bus:${id}` : `send:${id}`} label="FX" />
+              <PhoneRouteFxMenu target={kind === "BUS" ? `bus:${id}` : `send:${id}`} name={name} />
             )}
           </div>
           <PhoneChannelControls target={kind === "BUS" ? { kind: "bus", id: id as BusId } : kind === "VCA" ? { kind: "vca", id: id as VcaId } : { kind: "aux", id: id as AuxId }} label={name} />
@@ -276,14 +270,34 @@ function TouchChannel({ track, level, selected, index }: { track?: Track | undef
   );
 }
 
-/** Phone mixer channel header: effects & EQ menu for one track (no desktop strip). */
+/** Phone effects window: a centred window sized to the sideways screen, so the whole list fits and scrolls. */
+function PhoneFxWindow({ trigger, title, headerExtra, children }: { trigger: ReactNode; title: string; headerExtra?: ReactNode; children: ReactNode }) {
+  return (
+    <Dialog>
+      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      <DialogContent className="phone-strip-dialog phone-fx-dialog flex max-h-[88dvh] w-[min(96vw,640px)] max-w-[96vw] flex-col gap-2 overflow-hidden p-3">
+        <DialogHeader className="space-y-0">
+          <div className="flex items-center gap-2 pr-10">
+            <DialogTitle className="min-w-0 flex-1 truncate font-mono text-sm uppercase tracking-wider">{title}</DialogTitle>
+            {headerExtra}
+          </div>
+          <DialogDescription className="sr-only">Add, open, bypass or remove effects for {title}</DialogDescription>
+        </DialogHeader>
+        <div className="phone-fx-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1">{children}</div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/** Phone mixer channel header: effects & EQ window for one track (no desktop strip). */
 function PhoneChannelFxMenu({ track }: { track: Track }) {
   const { addPlugin, removePlugin, togglePluginBypass, setPluginParam, installedPlugins } = useStudio();
   const eq = track.plugins?.find((p) => p.kind === "eq");
   const count = track.plugins?.length ?? 0;
   return (
-    <Popover>
-      <PopoverTrigger asChild>
+    <PhoneFxWindow
+      title={`${track.name} — effects & EQ`}
+      trigger={
         <button
           type="button"
           aria-label={`Effects and EQ for ${track.name}`}
@@ -293,42 +307,61 @@ function PhoneChannelFxMenu({ track }: { track: Track }) {
           <Settings2 className="size-5" />
           <span>{count > 0 ? `FX ${count}` : "FX"}</span>
         </button>
-      </PopoverTrigger>
-      <PopoverContent
-        align="end"
-        className="max-h-[min(55dvh,420px)] w-[min(92vw,360px)] overflow-y-auto p-3"
-        onInteractOutside={(e) => { if ((e.target as HTMLElement | null)?.closest?.("[role=dialog]")) e.preventDefault(); }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="sticky top-0 z-10 mb-2 flex items-center justify-between gap-2 bg-popover pb-2">
-          <span className="truncate font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-            {track.name} — effects & EQ
-          </span>
-          <button
-            type="button"
-            disabled={!!eq}
-            title={eq ? `${track.name} already has a Channel EQ` : `Add a 3-band EQ to ${track.name}`}
-            onClick={() => {
-              const def = installedPlugins.find((d) => d.kind === "eq") ?? BUILT_IN_PLUGINS.find((d) => d.kind === "eq");
-              if (def) addPlugin(track.id, def);
-            }}
-            className={`shrink-0 rounded-sm border px-2 py-1 font-mono text-[9px] uppercase tracking-wider disabled:opacity-70 ${
-              eq ? "border-primary/60 text-primary" : "border-border text-foreground hover:text-primary"
-            }`}
-          >
-            {eq ? "EQ on" : "+ EQ"}
-          </button>
-        </div>
-        <InsertRack
-          title={`${track.name} — inserts`}
-          midiId={track.id}
-          list={track.plugins ?? []}
-          onAdd={(def) => addPlugin(track.id, def)}
-          onRemove={(id) => removePlugin(track.id, id)}
-          onBypass={(id) => togglePluginBypass(track.id, id)}
-          onParam={(id, p, v) => setPluginParam(track.id, id, p, v)}
-        />
-      </PopoverContent>
-    </Popover>
+      }
+      headerExtra={
+        <button
+          type="button"
+          disabled={!!eq}
+          title={eq ? `${track.name} already has a Channel EQ` : `Add a 3-band EQ to ${track.name}`}
+          onClick={() => {
+            const def = installedPlugins.find((d) => d.kind === "eq") ?? BUILT_IN_PLUGINS.find((d) => d.kind === "eq");
+            if (def) addPlugin(track.id, def);
+          }}
+          className={`h-11 shrink-0 rounded-md border px-3 font-mono text-xs font-bold uppercase tracking-wider disabled:opacity-70 ${
+            eq ? "border-primary/60 text-primary" : "border-border text-foreground hover:text-primary"
+          }`}
+        >
+          {eq ? "EQ on" : "+ EQ"}
+        </button>
+      }
+    >
+      <InsertRack
+        title={`${track.name} — inserts`}
+        midiId={track.id}
+        list={track.plugins ?? []}
+        onAdd={(def) => addPlugin(track.id, def)}
+        onRemove={(id) => removePlugin(track.id, id)}
+        onBypass={(id) => togglePluginBypass(track.id, id)}
+        onParam={(id, p, v) => setPluginParam(track.id, id, p, v)}
+      />
+    </PhoneFxWindow>
+  );
+}
+
+/** Bus and effect-return strips: the same full-size effects window. */
+function PhoneRouteFxMenu({ target, name }: { target: string; name: string }) {
+  const { fxChains, addFxPlugin, removeFxPlugin, toggleFxBypass, setFxParam } = useStudio();
+  const list = fxChains[target] ?? [];
+  return (
+    <PhoneFxWindow
+      title={`${name} — effects`}
+      trigger={
+        <button type="button" aria-label={`Effects for ${name}`} title={`Effects for ${name}`} className={cn("font-mono font-bold uppercase", list.length > 0 ? "bg-primary/20 text-primary" : "bg-surface text-foreground")}>
+          <Settings2 className="size-4" />
+          <span>{list.length > 0 ? `FX ${list.length}` : "FX"}</span>
+        </button>
+      }
+    >
+      <InsertRack
+        title={`${name} effects`}
+        midiId={target}
+        midiPrefix="fx"
+        list={list}
+        onAdd={(def) => addFxPlugin(target, def)}
+        onRemove={(id) => removeFxPlugin(target, id)}
+        onBypass={(id) => toggleFxBypass(target, id)}
+        onParam={(id, p, v) => setFxParam(target, id, p, v)}
+      />
+    </PhoneFxWindow>
   );
 }

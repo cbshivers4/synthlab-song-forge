@@ -205,18 +205,7 @@ function TrackEffects({ t }: { t: Track }) {
   const { updateTrack, addPlugin, removePlugin, togglePluginBypass, setPluginParam } = useStudio();
   return (
     <Panel>
-      <Section title="Insert effects">
-        <InsertRack
-          title={`${t.name} — inserts`}
-          midiId={t.id}
-          list={t.plugins ?? []}
-          onAdd={(def) => addPlugin(t.id, def)}
-          onRemove={(id) => removePlugin(t.id, id)}
-          onBypass={(id) => togglePluginBypass(t.id, id)}
-          onParam={(id, p, v) => setPluginParam(t.id, id, p, v)}
-        />
-      </Section>
-      <Section title="Sends to effect returns">
+      <Section title="Sends to effect returns" className="col-span-full">
         <div className="flex items-center justify-around gap-2">
           {SEND_KEYS.map(([key, name]) => (
             <Knob
@@ -231,6 +220,17 @@ function TrackEffects({ t }: { t: Track }) {
             />
           ))}
         </div>
+      </Section>
+      <Section title="Insert effects" className="col-span-full">
+        <InsertRack
+          title={`${t.name} — inserts`}
+          midiId={t.id}
+          list={t.plugins ?? []}
+          onAdd={(def) => addPlugin(t.id, def)}
+          onRemove={(id) => removePlugin(t.id, id)}
+          onBypass={(id) => togglePluginBypass(t.id, id)}
+          onParam={(id, p, v) => setPluginParam(t.id, id, p, v)}
+        />
       </Section>
     </Panel>
   );

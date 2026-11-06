@@ -3629,7 +3629,17 @@ body:has(.phone-console) [data-sonner-toast] button { pointer-events: auto; }
   .phone-sideways-default .phone-strip-dialog { max-height: calc(100dvw - 16px); max-width: calc(100dvh - 16px); }
   .phone-sideways-default .phone-mixer-menu { width: min(calc(100dvh - 24px), 760px); }
   .phone-sideways-default .phone-channel-controls { width: min(calc(100dvh - 16px), 760px); }
+  .phone-sideways-default .phone-fx-dialog { width: min(calc(100dvh - 16px), 640px); }
+  /* Effect editors opened from the phone mixer fit the turned screen and scroll inside. */
+  .phone-sideways-default .fx-editor { max-height: calc(100dvw - 16px) !important; max-width: calc(100dvh - 16px) !important; width: calc(100dvh - 16px) !important; overscroll-behavior: contain; }
 }
+/* Phone effects window: finger-sized rows and add buttons. */
+.phone-fx-dialog .phone-fx-scroll { touch-action: pan-x pan-y; }
+.phone-channel-controls [role="tabpanel"] { touch-action: pan-x pan-y; }
+:is(.phone-fx-dialog .phone-fx-scroll, .phone-channel-controls [role="tabpanel"]) [role="group"] button { min-height: 44px; font-size: 12px; }
+:is(.phone-fx-dialog .phone-fx-scroll, .phone-channel-controls [role="tabpanel"]) [role="group"] > div { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+:is(.phone-fx-dialog .phone-fx-scroll, .phone-channel-controls [role="tabpanel"]) [role="group"] > p { font-size: 10px; margin-top: 10px; }
+:is(.phone-fx-dialog .phone-fx-scroll, .phone-channel-controls [role="tabpanel"]) .insert-row button { min-height: 44px; min-width: 44px; font-size: 12px; }
 .phone-mixer-menu { width: min(96vw, 760px); }
 /* Phone full desk: header rows grow to their buttons so the menu and gain never sit on top of each other. */
 .phone-console .mx-console .mx-channel > .mx-row-head { height: auto; min-height: 28px; flex-wrap: wrap; row-gap: 2px; padding-block: 2px; }
@@ -3644,11 +3654,13 @@ html.phone-console-active [role="menuitemcheckbox"],
 html.phone-console-active [role="option"] { min-height: 44px; font-size: 15px; }
 .touch-mix-channel .touch-mix-fader[data-orientation="vertical"] { flex-direction: column; }
 /* Note names on every key like a printed piano chart: big letters on white keys, flat over sharp on black keys (phone and desktop). */
-.instrument-keyboard .keyboard-natural-name { font-family: var(--font-sans, system-ui), sans-serif; font-size: clamp(12px, 1.6vw, 20px); font-weight: 600; }
-.instrument-keyboard .keyboard-octave-num { font-size: 0.55em; font-weight: 600; margin-left: 1px; opacity: 0.75; bottom: 0; }
-.instrument-keyboard .keyboard-sharp-name { font-family: var(--font-sans, system-ui), sans-serif; font-size: clamp(9px, 1vw, 13px); font-weight: 600; gap: 3px; }
-.phone-console .instrument-keyboard .keyboard-natural-name { font-size: 14px; font-weight: 700; }
-.phone-console .instrument-keyboard .keyboard-sharp-name { font-size: 10px; gap: 2px; }
+/* Labels scale with each key (container units), so letters stay big and centred at any keyboard width, phone or desktop. */
+.instrument-keyboard .keyboard-keybed .keyboard-key { container-type: size; }
+.instrument-keyboard .keyboard-natural-name { bottom: 7cqh; font-family: var(--font-sans, system-ui), sans-serif; font-size: min(58cqw, 24cqh); font-weight: 500; }
+.instrument-keyboard .keyboard-sharp-name { top: 22cqh; font-family: var(--font-sans, system-ui), sans-serif; font-size: min(40cqw, 19cqh); font-weight: 500; gap: 8cqh; }
+.instrument-keyboard .keyboard-natural-letter { bottom: calc(9cqh + min(58cqw, 24cqh)); font-size: min(22cqw, 9cqh); opacity: 0.55; }
+.instrument-keyboard .keyboard-sharp-letter { bottom: 4cqh; font-size: min(26cqw, 10cqh); opacity: 0.6; }
+.phone-console .instrument-keyboard .keyboard-keybed { height: 9rem; }
 
 /* Sideways phone drum roll: compact rows sized to their buttons, so tabs, patterns and Play/Tap REC never sit on each other. */
 .phone-console .drum-machine:has(.drum-roll-fit) { grid-template-columns: minmax(0,1fr) 188px !important; grid-template-rows: 40px 40px minmax(0,1fr) !important; row-gap: 4px; }

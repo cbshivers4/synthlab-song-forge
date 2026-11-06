@@ -53,7 +53,7 @@ export function InsertRack({
       <div className="space-y-1">
         {list.length === 0 && <div className="font-mono text-[9px] text-muted-foreground">No effects</div>}
         {list.map((p) => (
-          <div key={p.id} className="rounded-md border border-border bg-surface-2/50 px-2 py-1.5">
+          <div key={p.id} className="insert-row rounded-md border border-border bg-surface-2/50 px-2 py-1.5">
             <div className="flex items-center gap-1.5">
               <BypassButton name={p.name} bypassed={p.bypass} onToggle={() => onBypass(p.id)} />
               <button className="flex-1 truncate text-left font-mono text-[11px] uppercase" onClick={() => setOpen(open === p.id ? null : p.id)}>

@@ -339,7 +339,7 @@ export function Keyboard({ track, onPlay, disabled = false, skinKey = "keyboard"
 
       <div
         onWheel={(e) => slideTo(octave + (e.deltaY > 0 ? -1 : 1))}
-         className="relative h-36 w-full min-w-0 select-none overflow-hidden rounded-[3px] border border-border bg-background"
+         className="keyboard-keybed relative h-48 w-full min-w-0 select-none overflow-hidden rounded-[3px] border border-border bg-background"
         style={{ touchAction: "none" }}
         data-keyboard-keys
       >
@@ -360,10 +360,9 @@ export function Keyboard({ track, onPlay, disabled = false, skinKey = "keyboard"
               className="keyboard-key keyboard-natural relative h-full min-w-0 flex-1 rounded-b-[3px] p-0 transition-colors"
               aria-label={label(midi)}
             >
-              {typing && Object.entries(QWERTY_MAP).map(([key, offset]) => (typingOctave + 1) * 12 + offset === midi ? <span key={key} className="keyboard-natural-letter absolute bottom-7 left-1/2 -translate-x-1/2 font-mono text-xs keyboard-key-label">{key.toUpperCase()}</span> : null)}
-              <span data-octave-c={midi % 12 === 0 || undefined} className="keyboard-note-name keyboard-natural-name absolute bottom-1 left-1/2 flex -translate-x-1/2 items-baseline whitespace-nowrap leading-none keyboard-key-label">
+              {typing && Object.entries(QWERTY_MAP).map(([key, offset]) => (typingOctave + 1) * 12 + offset === midi ? <span key={key} className="keyboard-natural-letter absolute left-1/2 -translate-x-1/2 font-mono keyboard-key-label">{key.toUpperCase()}</span> : null)}
+              <span aria-hidden className="keyboard-note-name keyboard-natural-name absolute left-1/2 -translate-x-1/2 whitespace-nowrap leading-none keyboard-key-label">
                 {NOTE_NAMES[midi % 12]}
-                {midi % 12 === 0 && <sub className="keyboard-octave-num">{Math.floor(midi / 12) - 1}</sub>}
               </span>
             </Button>
           ))}
@@ -378,11 +377,12 @@ export function Keyboard({ track, onPlay, disabled = false, skinKey = "keyboard"
             data-in-scale={inScale(midi)}
             data-active={litKeys.has(midi)}
             className="keyboard-key keyboard-sharp absolute top-0 z-10 h-[58%] min-w-0 rounded-b-[3px] p-0 transition-colors"
-            style={{ left: `calc(${(pos / whiteCount) * 100}% + ${100 / whiteCount * 0.72}%)`, width: `${(100 / whiteCount) * 0.62}%` }}
+            // Centred on the line between the two white keys it sits between (C♯ over C|D), like a real piano.
+            style={{ left: `${((pos - 0.33) / whiteCount) * 100}%`, width: `${(100 / whiteCount) * 0.66}%` }}
             aria-label={label(midi)}
           >
-            {typing && Object.entries(QWERTY_MAP).map(([key, offset]) => (typingOctave + 1) * 12 + offset === midi ? <span key={key} className="keyboard-sharp-letter absolute bottom-2 left-1/2 -translate-x-1/2 font-mono text-xs keyboard-key-label">{key.toUpperCase()}</span> : null)}
-            <span className="keyboard-note-name keyboard-sharp-name absolute left-1/2 top-[18%] flex -translate-x-1/2 flex-col items-center whitespace-nowrap leading-none keyboard-key-label">
+            {typing && Object.entries(QWERTY_MAP).map(([key, offset]) => (typingOctave + 1) * 12 + offset === midi ? <span key={key} className="keyboard-sharp-letter absolute left-1/2 -translate-x-1/2 font-mono keyboard-key-label">{key.toUpperCase()}</span> : null)}
+            <span aria-hidden className="keyboard-note-name keyboard-sharp-name absolute left-1/2 flex -translate-x-1/2 flex-col items-center whitespace-nowrap leading-none keyboard-key-label">
               <span>{FLAT_NAMES[midi % 12]}</span>
               <span>{NOTE_NAMES[midi % 12]?.replace("#", "♯")}</span>
             </span>
