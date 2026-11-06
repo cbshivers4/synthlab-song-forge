@@ -99,13 +99,13 @@ export function BusStrip({
 }
 
 /** Picks which tracks a VCA fader scales; a VCA with no members has nothing to control. */
-function VcaAssign({ id, memberCount }: { id: VcaId; memberCount: number }) {
+export function VcaAssign({ id, memberCount, className, short }: { id: VcaId; memberCount: number; className?: string; short?: boolean }) {
   const { tracks, updateTrack } = useStudio();
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant={memberCount ? "outline" : "secondary"} size="sm" className="h-7 w-full font-mono text-[9px]" aria-label={`Assign tracks to VCA ${id}`}>
-          {memberCount ? `${memberCount} TRACK${memberCount > 1 ? "S" : ""}` : "ASSIGN TRACKS"}
+        <Button variant={memberCount ? "outline" : "secondary"} size="sm" className={cn("h-7 w-full font-mono text-[9px]", className)} aria-label={`Assign tracks to VCA ${id}`} title={`Choose which tracks VCA ${id} controls`}>
+          {short ? (memberCount ? `${memberCount} TR` : "SET") : memberCount ? `${memberCount} TRACK${memberCount > 1 ? "S" : ""}` : "ASSIGN TRACKS"}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-56 p-2">
@@ -159,16 +159,19 @@ export function ControlStrip({ kind, name, state, onChange, memberCount, level }
   );
 }
 
-export function FxMenu({ target, label }: { target: string; label: string }) {
+export function FxMenu({ target, label, className }: { target: string; label: string; className?: string }) {
   const { fxChains, addFxPlugin, removeFxPlugin, toggleFxBypass, setFxParam } = useStudio();
   const list = fxChains[target] ?? [];
   return (
     <Popover>
       <PopoverTrigger asChild>
         <button
+          type="button"
+          title={`${label} — ${target.split(":")[1] ?? target}`}
           className={cn(
             "flex h-7 w-full items-center justify-center gap-1.5 rounded-md font-mono text-[10px] uppercase tracking-wider transition-colors",
-            list.length > 0 ? "bg-primary/20 text-primary" : "bg-surface text-muted-foreground hover:text-foreground"
+            list.length > 0 ? "bg-primary/20 text-primary" : "bg-surface text-muted-foreground hover:text-foreground",
+            className,
           )}
         >
           <Settings2 className="size-3.5" /> {label}

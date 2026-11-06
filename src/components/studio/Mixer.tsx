@@ -6,24 +6,50 @@ import { useStudio } from "@/lib/synclab/store";
 import { MidiLearnStrip } from "./MidiLearn";
 import { QuickNotes } from "@/components/studio/QuickNotes";
 import { cn } from "@/lib/utils";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useIsLandscapePhone, useIsMobile } from "@/hooks/use-mobile";
 import { BusStrip, ControlStrip } from "./mixer/BusStrips";
+import { DeskPicker } from "./mixer/DeskPicker";
 import { MasterStrip } from "./mixer/MasterStrip";
-import { PhoneEqButton, PhoneFxMenu, PhoneTouchStrips } from "./mixer/PhoneMixer";
+import { PhoneEqButton, PhoneFxMenu, PhoneTouchStrips, type TouchStripSize } from "./mixer/PhoneMixer";
+import { PhoneMixerMenu, type RouteKind } from "./mixer/PhoneMixerMenu";
 import { Strip } from "./mixer/Strip";
-import { AUX_IDS, BUS_STRIPS, CONSOLE_STYLES, type ConsoleStyle, type ConsoleStyleId, LabelRail, SOLID_PRESETS, VCA_IDS, accentInk, fracToDb, useMeters } from "./mixer/shared";
+import { AUX_IDS, BUS_STRIPS, CONSOLE_STYLES, type ConsoleStyle, type ConsoleStyleId, LabelRail, VCA_IDS, accentInk, fracToDb, useMeters } from "./mixer/shared";
+
+const PHONE_VIEW_KEY = "synclab.mixer.phoneView";
 
 export function Mixer({ phonePage = 0, phoneChannels, phoneControlPage = "levels", desktopLayout = false }: { phonePage?: number; phoneChannels?: number; phoneControlPage?: "levels" | "performance"; desktopLayout?: boolean }) {
   const mobileDevice = useIsMobile();
+  // Sideways phone workspace: only the big-control mixer (no full desk), with its own menu.
+  const phone = useIsLandscapePhone() && mobileDevice;
   const isMobile = mobileDevice && !desktopLayout;
   const { tracks, selectedId, select, setPanel, buses, setBus, vcas, setVca, auxReturns, setAuxReturn, updateTrack, addTrack } = useStudio();
   const levels = useMeters(tracks);
   const [narrow, setNarrow] = useState(false);
-  // Phones and tablets default to finger-sized strips; the full desk stays one tap away (device preference).
+  // Tablets default to finger-sized strips; the full desk stays one tap away (device preference).
   const [touchPref, setTouchPref] = useState(true);
   useEffect(() => { try { if (window.localStorage.getItem("synclab.mixer.touch") === "0") setTouchPref(false); } catch { /* ignore */ } }, []);
   const setTouch = (on: boolean) => { setTouchPref(on); try { window.localStorage.setItem("synclab.mixer.touch", on ? "1" : "0"); } catch { /* ignore */ } };
-  const touchStrips = mobileDevice && touchPref;
+  const touchStrips = phone || (mobileDevice && touchPref);
+  // Phone view preferences (device-only): which routing strips show and how wide channels are.
+  const [phoneView, setPhoneView] = useState<{ show: Record<RouteKind, boolean>; size: TouchStripSize }>({ show: { bus: true, vca: true, aux: true }, size: "normal" });
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(PHONE_VIEW_KEY);
+      if (!raw) return;
+      const v = JSON.parse(raw) as Partial<{ show: Partial<Record<RouteKind, boolean>>; size: TouchStripSize }>;
+      setPhoneView((prev) => ({
+        show: { bus: v.show?.bus ?? prev.show.bus, vca: v.show?.vca ?? prev.show.vca, aux: v.show?.aux ?? prev.show.aux },
+        size: v.size === "narrow" || v.size === "wide" || v.size === "normal" ? v.size : prev.size,
+      }));
+    } catch { /* ignore */ }
+  }, []);
+  const updatePhoneView = (patch: Partial<{ show: Record<RouteKind, boolean>; size: TouchStripSize }>) => {
+    setPhoneView((prev) => {
+      const next = { ...prev, ...patch };
+      try { window.localStorage.setItem(PHONE_VIEW_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  };
   const noTracks = tracks.length === 0;
   // Phone: shrink every strip uniformly so the whole mixer fits the screen without scrolling.
   const stripsRef = useRef<HTMLDivElement>(null);
@@ -95,8 +121,16 @@ export function Mixer({ phonePage = 0, phoneChannels, phoneControlPage = "levels
     desk.id === "solid" ? { a: solid, b: solid, c: solid } : { a: desk.a, b: desk.b, c: desk.c };
   const soloed = tracks.some((t) => t.solo);
   const muted = tracks.some((t) => t.muted);
+  const clearSolo = () => tracks.forEach((t) => t.solo && updateTrack(t.id, { solo: false }));
+  const unmuteAll = () => tracks.forEach((t) => t.muted && updateTrack(t.id, { muted: false }));
   // Only show bus strips that actually have channels routed to them.
   const activeBuses = BUS_STRIPS.filter((id) => tracks.some((t) => t.bus === id));
+  const show = phone ? phoneView.show : { bus: showBuses, vca: showVcas, aux: showAux };
+  const routing = {
+    buses: show.bus ? (counts.bus === 0 ? activeBuses : BUS_STRIPS.slice(0, counts.bus)) : [],
+    vcas: show.vca ? VCA_IDS.slice(0, counts.vca) : [],
+    aux: show.aux ? AUX_IDS.slice(0, counts.aux) : [],
+  };
   return (
     <div
       className={cn("mx-console flex flex-col overflow-hidden border border-border bg-surface shadow-panel", isMobile && "mx-phone", mobileDevice && "mx-phone-master")}
@@ -119,13 +153,44 @@ export function Mixer({ phonePage = 0, phoneChannels, phoneControlPage = "levels
     >
       {/* console toolbar */}
       <div className="mx-console-toolbar flex min-h-10 items-center gap-3 overflow-x-auto border-b border-border px-3 py-2">
-        {mobileDevice && (
+        {mobileDevice && !phone && (
           <Button variant="secondary" className="h-10 shrink-0 px-3 text-sm font-bold" aria-pressed={!touchStrips} onClick={() => setTouch(!touchStrips)} title={touchStrips ? "Show the full mixing desk (gain, EQ, inserts, sends on every channel)" : "Show big, finger-sized channel controls"}>
             {touchStrips ? "Full desk" : "Big controls"}
           </Button>
         )}
-        {mobileDevice && (() => { const st = tracks.find((x) => x.id === selectedId); return st ? <Popover><PopoverTrigger asChild><Button variant="outline" size="sm" className="shrink-0" aria-label="Mixer MIDI Learn">MIDI Learn</Button></PopoverTrigger><PopoverContent className="w-[min(88vw,520px)]"><MidiLearnStrip id={st.id} label={`${st.name} channel — move a knob/fader after tapping`} /></PopoverContent></Popover> : null; })()}
-        {isMobile ? (
+        {mobileDevice && !phone && (() => { const st = tracks.find((x) => x.id === selectedId); return st ? <Popover><PopoverTrigger asChild><Button variant="outline" size="sm" className="shrink-0" aria-label="Mixer MIDI Learn">MIDI Learn</Button></PopoverTrigger><PopoverContent className="w-[min(88vw,520px)]"><MidiLearnStrip id={st.id} label={`${st.name} channel — move a knob/fader after tapping`} /></PopoverContent></Popover> : null; })()}
+        {phone ? (
+          <>
+            <PhoneMixerMenu
+              show={phoneView.show}
+              setShow={(k, on) => updatePhoneView({ show: { ...phoneView.show, [k]: on } })}
+              counts={counts}
+              setCount={setCount}
+              size={phoneView.size}
+              setSize={(size) => updatePhoneView({ size })}
+              soloed={soloed}
+              muted={muted}
+              clearSolo={clearSolo}
+              unmuteAll={unmuteAll}
+              outDb={fracToDb(levels.master)}
+              desk={<DeskPicker styleId={styleId} setStyleId={setStyleId} solid={solid} setSolid={setSolid} large />}
+            />
+            <span className="font-display text-xs font-bold uppercase tracking-widest text-primary">Mixer</span>
+            <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{tracks.length} ch</span>
+            <div className="phone-mixer-quick flex shrink-0 items-center gap-1.5" role="group" aria-label="Show routing channels">
+              {([["bus", "Buses"], ["vca", "VCA"], ["aux", "Aux"]] as const).map(([k, label]) => (
+                <Button key={k} variant={phoneView.show[k] ? "default" : "outline"} className="h-11 min-w-14 px-3 text-xs font-bold" aria-pressed={phoneView.show[k]} onClick={() => updatePhoneView({ show: { ...phoneView.show, [k]: !phoneView.show[k] } })}>
+                  {label}
+                </Button>
+              ))}
+            </div>
+            <Button variant="outline" className="h-11 shrink-0 px-3 text-xs font-bold" disabled={!soloed} onClick={clearSolo}>Clear solo</Button>
+            <Button variant="outline" className="h-11 shrink-0 gap-1 px-3 text-xs font-bold" disabled={!muted} onClick={unmuteAll}><VolumeX className="size-4" /> Unmute</Button>
+            <div className="ml-auto flex shrink-0 items-center gap-2">
+              <QuickNotes label />
+            </div>
+          </>
+        ) : isMobile ? (
           <>
             <span className="font-display text-xs font-bold uppercase tracking-widest text-primary">Mixer</span>
             <div className="ml-auto flex shrink-0 items-center gap-2">
@@ -190,66 +255,12 @@ export function Mixer({ phonePage = 0, phoneChannels, phoneControlPage = "levels
               <div className="px-2 py-1 font-mono text-[8px] uppercase tracking-widest text-muted-foreground">
                 Console desk
               </div>
-              {CONSOLE_STYLES.map((s) => (
-                <button
-                  key={s.id}
-                  onClick={() => setStyleId(s.id)}
-                  className={cn(
-                    "flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left transition-colors hover:bg-surface-2",
-                    s.id === styleId && "bg-surface-2"
-                  )}
-                >
-                  <span
-                    className="h-7 w-5 shrink-0 rounded-[2px] border border-black/60"
-                    style={{
-                      background: s.id === "solid" ? solid : `linear-gradient(180deg, ${s.a}, ${s.b} 45%, ${s.c})`,
-                      boxShadow: `inset 0 2px 0 0 ${s.accent}`,
-                    }}
-                  />
-                  <span className="min-w-0">
-                    <span className="block font-mono text-[10px] uppercase tracking-wider text-foreground">{s.name}</span>
-                    <span className="block truncate text-[10px] text-muted-foreground">{s.desc}</span>
-                  </span>
-                </button>
-              ))}
-              {styleId === "solid" && (
-                <div className="mt-1 border-t border-border px-2 pb-2 pt-2">
-                  <div className="font-mono text-[8px] uppercase tracking-widest text-muted-foreground">
-                    Solid colour
-                  </div>
-                  <div className="mt-1.5 grid grid-cols-8 gap-1">
-                    {SOLID_PRESETS.map((p) => (
-                      <button
-                        key={p.hex}
-                        title={p.name}
-                        aria-label={`${p.name} solid colour`}
-                        onClick={() => setSolid(p.hex)}
-                        className={cn(
-                          "h-6 w-full rounded-[3px] border transition-transform hover:scale-105",
-                          solid.toLowerCase() === p.hex ? "border-primary ring-1 ring-primary" : "border-black/60"
-                        )}
-                        style={{ background: p.hex }}
-                      />
-                    ))}
-                  </div>
-                  <label className="mt-2 flex items-center gap-2">
-                    <span className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">Custom</span>
-                    <input
-                      type="color"
-                      value={/^#[0-9a-fA-F]{6}$/.test(solid) ? solid : "#1a1b1e"}
-                      onChange={(e) => setSolid(e.target.value)}
-                      title="Pick any solid colour"
-                      aria-label="Custom mixer colour"
-                      className="h-7 w-full cursor-pointer rounded-[3px] border border-border bg-surface p-0.5"
-                    />
-                  </label>
-                </div>
-              )}
+              <DeskPicker styleId={styleId} setStyleId={setStyleId} solid={solid} setSolid={setSolid} />
             </PopoverContent>
           </Popover>
 
           <button
-            onClick={() => tracks.forEach((t) => t.solo && updateTrack(t.id, { solo: false }))}
+            onClick={clearSolo}
             disabled={!soloed}
             className={cn(
               "flex h-6 items-center gap-1 rounded-sm px-2 font-mono text-[9px] uppercase tracking-wider transition-colors",
@@ -259,7 +270,7 @@ export function Mixer({ phonePage = 0, phoneChannels, phoneControlPage = "levels
             Clear solo
           </button>
           <button
-            onClick={() => tracks.forEach((t) => t.muted && updateTrack(t.id, { muted: false }))}
+            onClick={unmuteAll}
             disabled={!muted}
             className={cn(
               "flex h-6 items-center gap-1 rounded-sm px-2 font-mono text-[9px] uppercase tracking-wider transition-colors",
@@ -327,7 +338,7 @@ export function Mixer({ phonePage = 0, phoneChannels, phoneControlPage = "levels
           </div>
         </div>
       ) : touchStrips ? (
-        <PhoneTouchStrips levels={levels} />
+        <PhoneTouchStrips levels={levels} routing={routing} size={phone ? phoneView.size : "normal"} />
       ) : (
         <div ref={stripsRef} className="mobile-mixer-strips flex overflow-x-auto" role="region" aria-label="Mixer channels" tabIndex={0}>
           {!isMobile && <LabelRail />}

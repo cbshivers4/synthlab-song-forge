@@ -1190,7 +1190,10 @@ body:has(.payment-test-banner) { --banner-h: 24px; }
    same query the rotation itself uses. */
 @media (orientation: portrait) and (max-width: 767px) and (pointer: coarse), (orientation: portrait) and (max-width: 600px) {
   .phone-sideways-default .phone-console.phone-entry .login-screen { height: calc(100dvw - var(--banner-h, 0px)); }
+  /* The studio also leaves room for the strip, so its bottom edge (mixer scroll bar, transport) stays on screen. */
+  .phone-sideways-default body:has(.payment-test-banner) .phone-console.mobile-studio { height: calc(100dvw - var(--banner-h, 0px)); }
 }
+body:has(.payment-test-banner) .phone-console.mobile-studio { height: calc(100dvh - var(--banner-h, 0px)); }
 .login-screen::after { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--login-overlay); }
 .login-photo { position: absolute; inset: 0; z-index: -2; height: 100%; width: 100%; object-fit: cover; }
 .login-screen .login-auth { background: color-mix(in oklab, var(--background) 90%, transparent); border-color: var(--border); backdrop-filter: blur(20px); }
@@ -3610,11 +3613,23 @@ body:has(.phone-console) [data-sonner-toast] button { pointer-events: auto; }
 .touch-mix-meter > div > div:first-child { display: none; }
 .touch-mix-channel .touch-mix-fader[data-orientation="vertical"] > span:first-child { width: 6px; background: var(--mixer-edge); }
 .touch-mix-channel .touch-mix-pan [role="slider"] { background: var(--mixer-fader-light); border-color: var(--mixer-edge); }
+/* Channel width from the phone mixer menu; the scroll bar below reaches every channel, bus, VCA and aux. */
+.phone-touch-strips[data-strip-size="narrow"] > .touch-mix-channel:not(.touch-mix-master) { min-width: 106px; max-width: 120px; }
+.phone-touch-strips[data-strip-size="narrow"] > .touch-mix-channel .w-11 { width: 2.25rem; }
+.phone-touch-strips[data-strip-size="narrow"] > .touch-mix-channel .touch-mix-fader { width: 1.875rem; }
+.phone-touch-strips[data-strip-size="wide"] > .touch-mix-channel:not(.touch-mix-master) { min-width: 156px; max-width: 220px; }
+.touch-mix-route { background: color-mix(in oklab, var(--mixer-channel-color) 16%, var(--mixer-desk)); border-top: 3px solid var(--mixer-channel-color); }
+.mixer-hscroll-row { padding: 4px 6px; gap: 6px; background: var(--mx-a, var(--surface)); }
+.mixer-hscroll-row .timeline-hscroll { height: 30px; border-radius: 10px; }
+.mixer-hscroll-row .timeline-hscroll-zoom { width: 44px; height: 30px; font-size: 13px; }
+.phone-console .mixer-hscroll-row .timeline-hscroll-zoom { min-height: 0 !important; min-width: 0 !important; }
 /* Full-desk strip shown in the "More" window keeps its real size. */
 .mx-console-dialog { --mx-a: var(--mixer-desk); background: var(--mixer-desk); border-radius: 6px; }
 @media (orientation: portrait) and (max-width: 767px) and (pointer: coarse), (orientation: portrait) and (max-width: 600px) {
   .phone-sideways-default .phone-strip-dialog { max-height: calc(100dvw - 16px); max-width: calc(100dvh - 16px); }
+  .phone-sideways-default .phone-mixer-menu { width: min(calc(100dvh - 24px), 760px); }
 }
+.phone-mixer-menu { width: min(96vw, 760px); }
 /* Phone full desk: header rows grow to their buttons so the menu and gain never sit on top of each other. */
 .phone-console .mx-console .mx-channel > .mx-row-head { height: auto; min-height: 28px; flex-wrap: wrap; row-gap: 2px; padding-block: 2px; }
 .phone-console .mx-console .mx-channel > .mx-row-head > button { min-height: 0; min-width: 0; }
