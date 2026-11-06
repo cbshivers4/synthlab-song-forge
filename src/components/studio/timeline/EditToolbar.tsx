@@ -227,7 +227,7 @@ export function EditToolbar() {
       <Button size="sm" variant="ghost" className="size-8 shrink-0 p-0" aria-label="Redo" title="Redo (⌘⇧Z / Ctrl+Y)" onClick={redo}>
         <Redo2 className="size-3.5" />
       </Button>
-      <Button size="sm" variant="outline" className="h-8 shrink-0 gap-1 px-2 text-[10px]" aria-label="Open mixer" title="Mixer" onClick={() => setPanel("mixer")}><Settings2 className="size-3.5" />Mixer</Button>
+      <Button size="sm" variant="outline" className="h-8 shrink-0 gap-1 px-2 text-[10px]" aria-label="Open mixer" title="Mixer" onClick={() => setPanel("mixer")}><Settings2 className="size-3.5" /><span className="tool-text">Mixer</span></Button>
       <Button size="sm" variant="ghost" className="arrangement-tool size-8 shrink-0 p-0" aria-label="Open sound library" title="Sound library" onClick={() => setPanel("browser")}><FolderOpen className="size-3.5" /></Button>
       <Button size="sm" variant="ghost" className="arrangement-tool size-8 shrink-0 p-0" aria-label="Open effects rack" title="Effects rack" onClick={() => setPanel("plugins")}><Settings2 className="size-3.5" /></Button>
       <div className="mx-1 h-4 w-px bg-border" />

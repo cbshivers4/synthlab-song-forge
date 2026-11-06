@@ -1,4 +1,6 @@
 import { TimelineVScrollbar } from "./timeline/VScrollbar";
+import { TimelineHScrollbar } from "./timeline/HScrollbar";
+import { HEADER_WIDTH, clampHeaderWidth } from "./timeline/header-width";
 import { getPlayStep, subscribePlayStep } from "@/lib/synclab/playhead";
 import { Fragment, useEffect, useRef, useState, type CSSProperties } from "react";
 import { songSteps } from "@/lib/synclab/timebase";
@@ -107,13 +109,22 @@ export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandl
     el.addEventListener("wheel", onWheel, { passive: false });
     return () => el.removeEventListener("wheel", onWheel);
   }, []);
-  const [headerWidth, setHeaderWidth] = useState(294);
-  const widthLoaded = useRef(false);
+  // Track-name column width: remembered on this device, separately for phone and desktop.
+  const widthPrefs = phone ? HEADER_WIDTH.phone : HEADER_WIDTH.desktop;
+  const [headerWidth, setHeaderWidthRaw] = useState<number>(HEADER_WIDTH.desktop.initial);
+  const setHeaderWidth = (width: number) => setHeaderWidthRaw(clampHeaderWidth(width, phone));
+  const widthKey = useRef<string | null>(null);
   useEffect(() => {
-    try { const saved = Number(localStorage.getItem("synclab.timeline.headerWidth")); if (saved >= 220 && saved <= 600) setHeaderWidth(saved); } catch { /* storage unavailable */ }
-    widthLoaded.current = true;
-  }, []);
-  useEffect(() => { if (widthLoaded.current) { try { localStorage.setItem("synclab.timeline.headerWidth", String(headerWidth)); } catch { /* storage unavailable */ } } }, [headerWidth]);
+    let width: number = widthPrefs.initial;
+    try { const saved = Number(localStorage.getItem(widthPrefs.key)); if (saved >= widthPrefs.min && saved <= widthPrefs.max) width = saved; } catch { /* storage unavailable */ }
+    widthKey.current = null;
+    setHeaderWidthRaw(width);
+  }, [widthPrefs]);
+  useEffect(() => {
+    // Skip the pass that just loaded the saved width.
+    if (widthKey.current !== widthPrefs.key) { widthKey.current = widthPrefs.key; return; }
+    try { localStorage.setItem(widthPrefs.key, String(headerWidth)); } catch { /* storage unavailable */ }
+  }, [headerWidth, widthPrefs]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const timelineHeaderRef = useRef<HTMLDivElement>(null);
   const rowsRef = useRef<HTMLDivElement>(null);
@@ -298,7 +309,7 @@ export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandl
         )}
         </div>
       </div>
-      {!phonePaged && <TimelineOverview scrollRef={scrollRef} zoom={zoom} setZoom={setZoom} />}
+      {!phonePaged && (phone ? <TimelineHScrollbar scrollRef={scrollRef} zoom={zoom} setZoom={setZoom} /> : <TimelineOverview scrollRef={scrollRef} zoom={zoom} setZoom={setZoom} />)}
       {phone && <TimelineVScrollbar scrollRef={scrollRef} />}
     </section>
   );

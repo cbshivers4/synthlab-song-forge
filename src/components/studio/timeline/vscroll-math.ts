@@ -14,3 +14,20 @@ export function scrollTopForThumb(thumbOffset: number, scrollHeight: number, cli
   const max = Math.max(0, scrollHeight - clientHeight);
   return (Math.min(room, Math.max(0, thumbOffset)) / room) * max;
 }
+
+/** Thumb size/position on a bar of any length (e.g. a horizontal bar narrower than the scroll area). */
+export function thumbOnBar(scrollPos: number, scrollSize: number, clientSize: number, barLength: number, minThumb = 48) {
+  const bar = Math.max(1, barLength);
+  const size = Math.min(bar, Math.max(minThumb, (bar * clientSize) / Math.max(1, scrollSize)));
+  const max = Math.max(0, scrollSize - clientSize);
+  const offset = max > 0 ? (Math.min(max, Math.max(0, scrollPos)) / max) * (bar - size) : 0;
+  return { size, offset };
+}
+
+/** Scroll position for a thumb dragged to `thumbOffset` along a bar of `barLength`. */
+export function scrollForThumbOnBar(thumbOffset: number, scrollSize: number, clientSize: number, barLength: number, minThumb = 48) {
+  const { size } = thumbOnBar(0, scrollSize, clientSize, barLength, minThumb);
+  const room = Math.max(1, barLength - size);
+  const max = Math.max(0, scrollSize - clientSize);
+  return (Math.min(room, Math.max(0, thumbOffset)) / room) * max;
+}

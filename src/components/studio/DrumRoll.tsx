@@ -8,6 +8,7 @@ import { usePlayStep } from "@/lib/synclab/playhead";
  * the drum name and the MIDI note the pad sends, instead of melodic note names.
  */
 import { useEffect, useRef, useState } from "react";
+import { TimelineVScrollbar } from "./timeline/VScrollbar";
 import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -336,7 +337,9 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
         <div className="truncate font-mono text-xs text-primary" aria-label="Selected drum position">{selected ? `Row ${rows.findIndex(({ pad }) => pad.id === selected) + 1} · ${pads.find((pad) => pad.id === selected)?.name ?? "Drum"} · Step ${Math.min(total, view.step + 1)}` : "No step selected"}</div>
       </div>}
 
-      <div ref={gridRef} onScroll={readRows} aria-label="Drum roll grid" className={`overflow-auto rounded-[2px] border border-border bg-background ${full ? "max-h-[78dvh]" : isMobile ? "max-h-[45dvh] touch-pan-y" : ""}`}>
+      <div className={fit ? "drum-roll-grid-wrap" : "contents"}>
+      {/* Sideways phone: both pan axes (the canvas is rotated, so one-axis panning blocks the swipe), plus a visible scroll bar. */}
+      <div ref={gridRef} id={fit ? "drum-roll-scroll" : undefined} onScroll={readRows} aria-label="Drum roll grid" className={`overflow-auto rounded-[2px] border border-border bg-background ${fit ? "" : "mb-1.5 "}${full ? "max-h-[78dvh]" : fit ? "" : isMobile ? "max-h-[45dvh] touch-pan-y" : ""}`}>
         <div className={fit ? "drum-fit-rows" : isMobile && !full ? "w-full" : isMobile ? "" : "min-w-[640px]"} style={fit ? { gridTemplateRows: `24px repeat(${rows.length}, minmax(34px, 1fr))`, ["--drum-fit-rows" as string]: rows.length } : isMobile && full ? { minWidth: 212 + total * (50 * view.zoom) } : undefined}>
           {/* bar numbers */}
           <div className="sticky top-0 z-10 flex border-b border-border bg-surface-2">
@@ -488,6 +491,8 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
             );
           })}
         </div>
+      </div>
+      {fit && <TimelineVScrollbar scrollRef={gridRef} controls="drum-roll-scroll" label="Scroll drum rows up and down" />}
       </div>
 
       {(() => {

@@ -12,6 +12,9 @@ import { SYNTH_PRESETS, applyPreset } from "@/lib/synclab/presets";
 import { BassStepEditor } from "./BassStepEditor";
 import { BASS_PATTERN_PRESETS, patternToNotes, filterHalf, type BassPattern, type BeatHalf } from "@/lib/synclab/bass-pattern";
 import { getEngine } from "@/lib/synclab/audio-engine";
+import { useLoopPreview } from "@/lib/synclab/use-loop-preview";
+import { useIsLandscapePhone } from "@/hooks/use-mobile";
+import { Play, Square } from "lucide-react";
 
 const BASS_SOUNDS = SYNTH_PRESETS.filter((p) => p.category === "Bass").map((p) => p.name);
 import { BASS_STYLES, BASS_TEMPLATES, cleanBassPatch, generateBass, riffBass, varyBass, NOTE_NAMES, PROGRESSIONS, rootsFromKey, rootsFromTracks, type BassStyle } from "@/lib/synclab/bass-gen";
@@ -101,7 +104,24 @@ export function BassGenerator() {
     updatePreview({ notes: generated, steps: bars * barSteps });
   }, [previewing, generated, bars, barSteps, updatePreview]);
   const preview = (withSound?: string) => pv.start((n) => build(n(`BASS · ${label}`), withSound ?? sound).id);
+  // Phone: Preview plays only the bassline, looped — the song on the timeline stays silent.
+  const phone = useIsLandscapePhone();
+  const solo = useLoopPreview();
+  const soloNotes = generated ?? plainLine();
+  const soloKey = `${JSON.stringify(soloNotes)}|${sound}|${bars}|${barSteps}|${transport.bpm}`;
+  const soloPlayed = useRef("");
+  const playSolo = () => {
+    soloPlayed.current = soloKey;
+    void solo.play({ notes: soloNotes, patch: drawPatch, steps: bars * barSteps }, transport.bpm)
+      .catch(() => toast.error("Preview unavailable", { description: "This browser couldn't play the bassline preview." }));
+  };
+  useEffect(() => {
+    // A new pattern or sound while the solo preview loops switches straight away.
+    if (!solo.playing || soloPlayed.current === soloKey) return;
+    playSolo();
+  });
   const create = () => {
+    solo.stop();
     const dest = synthTracks.find((t) => t.id === target);
     if (dest) {
       pv.stop();
@@ -231,7 +251,16 @@ export function BassGenerator() {
           {synthTracks.map((t) => <option key={t.id} value={t.id}>{t.name} — replaces its notes</option>)}
         </select>
       </label>
-      <PreviewButtons pv={pv} onPreview={() => preview()} onAdd={create} addLabel={target === "new" ? "Add bassline to timeline" : "Send notes to track"} />
+      {phone ? (
+        <div className="flex flex-wrap gap-2">
+          {solo.playing
+            ? <Button size="lg" variant="destructive" className="min-h-12" onClick={solo.stop}><Square className="size-4 fill-current" /> Stop preview</Button>
+            : <Button size="lg" variant="secondary" className="min-h-12" onClick={playSolo} title="Plays only the bassline, looped — your song stays silent"><Play className="size-4" /> Preview bass only</Button>}
+          <Button size="lg" className="min-h-12" onClick={create}>{target === "new" ? "Add bassline to timeline" : "Send notes to track"}</Button>
+        </div>
+      ) : (
+        <PreviewButtons pv={pv} onPreview={() => preview()} onAdd={create} addLabel={target === "new" ? "Add bassline to timeline" : "Send notes to track"} />
+      )}
     </section>
   );
 }

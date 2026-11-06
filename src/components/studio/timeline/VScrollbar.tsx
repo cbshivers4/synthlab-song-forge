@@ -7,7 +7,7 @@ import { thumbGeometry, scrollTopForThumb } from "./vscroll-math";
  * scrollbars (or ignore styling), so this draws a finger-sized bar beside the tracks: drag the
  * thumb, or tap the bar to jump there. It only moves the timeline's own scroll position.
  */
-export function TimelineVScrollbar({ scrollRef }: { scrollRef: RefObject<HTMLDivElement | null> }) {
+export function TimelineVScrollbar({ scrollRef, controls = "timeline-scroll", label = "Scroll tracks up and down" }: { scrollRef: RefObject<HTMLDivElement | null>; controls?: string; label?: string }) {
   const barRef = useRef<HTMLDivElement>(null);
   const thumbRef = useRef<HTMLDivElement>(null);
   const drag = useRef<{ y: number; top: number } | null>(null);
@@ -50,8 +50,8 @@ export function TimelineVScrollbar({ scrollRef }: { scrollRef: RefObject<HTMLDiv
       className="timeline-vscroll"
       role="scrollbar"
       aria-orientation="vertical"
-      aria-controls="timeline-scroll"
-      aria-label="Scroll tracks up and down"
+      aria-controls={controls}
+      aria-label={label}
       aria-valuemin={0}
       aria-valuemax={100}
       aria-valuenow={0}

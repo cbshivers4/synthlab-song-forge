@@ -42,7 +42,7 @@ export function WorkflowBar() {
       <div className="flex shrink-0 items-center gap-2">
         <Timer className="size-3.5 shrink-0 text-muted-foreground" />
         <Select value={transport.countIn ? String(transport.countInBars ?? 1) : '0'} onValueChange={(value) => setTransport({ countIn: value !== '0', ...(value !== '0' ? { countInBars: Number(value) } : {}) })} disabled={active}>
-          <SelectTrigger aria-label="Recording count-in" className="h-8 w-32 shrink-0 text-[11px]"><SelectValue /></SelectTrigger>
+          <SelectTrigger aria-label="Recording count-in" className="h-8 w-32 shrink-0 text-[11px]"><SelectValue>{transport.countIn ? <><span className="wf-count-long">Count-in {transport.countInBars ?? 1} {(transport.countInBars ?? 1) === 1 ? 'bar' : 'bars'}</span><span className="wf-count-short"><Timer className="size-3.5" />{transport.countInBars ?? 1}</span></> : <><span className="wf-count-long">Count-in off</span><span className="wf-count-short"><Timer className="size-3.5" />Off</span></>}</SelectValue></SelectTrigger>
           <SelectContent><SelectItem value="0">Count-in off</SelectItem>{[1, 2, 4].map((bars) => <SelectItem key={bars} value={String(bars)}>Count-in {bars} {bars === 1 ? 'bar' : 'bars'}</SelectItem>)}</SelectContent>
         </Select>
         <Button size="icon" variant={transport.metronome ? 'default' : 'ghost'} className="size-8 shrink-0" aria-label="Recording metronome" aria-pressed={!!transport.metronome} title="Metronome" onClick={() => setTransport({ metronome: !transport.metronome })}><Metronome className="size-3.5" /></Button>
