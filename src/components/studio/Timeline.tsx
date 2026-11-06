@@ -1,3 +1,4 @@
+import { TimelineVScrollbar } from "./timeline/VScrollbar";
 import { getPlayStep, subscribePlayStep } from "@/lib/synclab/playhead";
 import { Fragment, useEffect, useRef, useState, type CSSProperties } from "react";
 import { songSteps } from "@/lib/synclab/timebase";
@@ -294,6 +295,7 @@ export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandl
         </div>
       </div>
       {!phonePaged && <TimelineOverview scrollRef={scrollRef} zoom={zoom} setZoom={setZoom} />}
+      {phone && <TimelineVScrollbar scrollRef={scrollRef} />}
     </section>
   );
 }

@@ -151,7 +151,7 @@ export function Ruler() {
 
   return (
     <div className="sticky top-0 z-10 flex border-b border-border bg-surface-2/70 backdrop-blur">
-      <div className="relative z-20 flex w-[var(--timeline-header-width)] shrink-0 flex-col justify-center gap-1 border-r border-border bg-surface-2 px-2 py-1 sm:px-3" style={{ transform: "translateX(var(--timeline-scroll-x, 0px))" }}>
+      <div className="relative z-40 flex w-[var(--timeline-header-width)] shrink-0 flex-col justify-center gap-1 border-r border-border bg-surface-2 px-2 py-1 sm:px-3" style={{ transform: "translateX(var(--timeline-scroll-x, 0px))" }}>
         <div className="flex items-center gap-2">
           <span className="font-display text-[11px] font-semibold tracking-[0.2em]">TIMELINE</span>
           <span className="label-xs ml-auto">

@@ -507,7 +507,7 @@ export function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track:
       onDragLeave={() => setDropping(false)}
       onDrop={onDrop}
     >
-      <div className="w-1 shrink-0" style={{ background: track.color, opacity: isSelected ? 1 : 0.65 }} />
+      <div className="track-color-stripe sticky left-0 z-[35] w-1 shrink-0" style={{ background: track.color, opacity: isSelected ? 1 : 0.65 }} />
       <div
         className="track-touch-header relative min-w-0 w-[calc(var(--timeline-header-width)_-_4px)] shrink-0 space-y-1 border-r border-border bg-surface px-2 py-1.5"
         onPointerDown={startPhoneGesture}
@@ -1254,8 +1254,7 @@ export function FolderRow({
   return (
     <div className="flex border-b border-border bg-surface-2/60">
       <div
-        className="relative z-20 flex w-[var(--timeline-header-width)] shrink-0 items-center gap-1.5 border-r border-border px-2 py-1 sm:px-3"
-        style={{ transform: "translateX(var(--timeline-scroll-x, 0px))" }}
+        className="sticky left-0 z-[35] flex w-[var(--timeline-header-width)] shrink-0 items-center gap-1.5 border-r border-border bg-surface-2 px-2 py-1 sm:px-3"
       >
         <button
           type="button"
