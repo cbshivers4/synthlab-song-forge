@@ -3711,3 +3711,5 @@ html.phone-console-active [role="option"] { min-height: 44px; font-size: 15px; }
 .phone-console .phone-edit-fit .timeline-edit-toolbar > button.size-8 { width: 27px; }
 .phone-console .phone-edit-fit .workflow-row-top [aria-label="Recording mode"] svg { display: none; }
 .phone-console .timeline-hscroll-zoom { min-height: 0 !important; min-width: 0 !important; }
+.phone-console .phone-edit-fit .timeline-edit-toolbar > button:not(.size-8) { gap: 1px; }
+.phone-console .phone-edit-fit .timeline-edit-toolbar > button:not(.size-8) > svg:last-child:not(:first-child) { width: 10px; height: 10px; }

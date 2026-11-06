@@ -170,3 +170,10 @@
 - [x] Edit screen: ruler stays aligned when using the horizontal scroll bar
 - [x] Synth screen: pick any synth type, not only Acid Bass
 - [x] SYNCPADS bigger so delete/mute buttons aren't hit by accident
+
+## Nov 6 (2) — Phone follow-up (Christopher)
+- [x] Bass Generator phone preview plays only the bassline (song stays silent, no extra track)
+- [x] Edit screen: touch-sized horizontal scroll bar with zoom − / +, ruler follows
+- [x] Edit screen: transport/record row and tool rows no longer cut off (wrap/compact instead of clipping)
+- [x] Drum roll: every drum row reachable with its own side scroll bar
+- [x] Edit screen: track name area resizable (drag the teal edge; 120–420px on phone, remembered on the device)

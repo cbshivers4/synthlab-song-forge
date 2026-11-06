@@ -119,7 +119,8 @@ export function BassGenerator() {
     // A new pattern or sound while the solo preview loops switches straight away.
     if (!solo.playing || soloPlayed.current === soloKey) return;
     playSolo();
-  });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- soloKey captures every input playSolo reads
+  }, [soloKey, solo.playing]);
   const create = () => {
     solo.stop();
     const dest = synthTracks.find((t) => t.id === target);
