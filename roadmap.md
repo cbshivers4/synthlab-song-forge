@@ -160,13 +160,13 @@
 - [ ] Mixer, Studio View, Reel-to-Reel, Video Sampler, Bass Generator, Mastering, Plugins, Settings, Audio Converter
 
 ## Nov 6 — Phone fixes (Christopher, sideways phone)
-- [ ] Pad Sampler pads bigger, still square
-- [ ] Keyboard shows note names on every key (C D E… and sharps) like a real keyboard
-- [ ] Mixer: kick fader can be raised from the bottom; channel top no longer overlaps controls
-- [ ] Knobs and menus easier for big fingers on phone
-- [ ] Edit screen and drum machine top rows no longer overlap controls
-- [ ] Bass Generator generates a new pattern each time
-- [ ] Edit screen: visible vertical scroll bar (Android hides styled scrollbars)
-- [ ] Edit screen: ruler stays aligned when using the horizontal scroll bar
-- [ ] Synth screen: pick any synth type, not only Acid Bass
-- [ ] SYNCPADS bigger so delete/mute buttons aren't hit by accident
+- [x] Pad Sampler pads bigger, still square
+- [x] Keyboard shows note names on every key (C D E… and sharps) like a real keyboard
+- [x] Mixer: kick fader can be raised from the bottom; channel top no longer overlaps controls
+- [x] Knobs and menus easier for big fingers on phone
+- [x] Edit screen and drum machine top rows no longer overlap controls
+- [x] Bass Generator generates a new pattern each time
+- [x] Edit screen: visible vertical scroll bar (Android hides styled scrollbars)
+- [x] Edit screen: ruler stays aligned when using the horizontal scroll bar
+- [x] Synth screen: pick any synth type, not only Acid Bass
+- [x] SYNCPADS bigger so delete/mute buttons aren't hit by accident

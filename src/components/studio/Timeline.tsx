@@ -154,6 +154,8 @@ export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandl
       header.style.width = `${arrangement.offsetWidth}px`;
       header.style.transform = `translateX(${-viewport.scrollLeft}px)`;
       header.style.setProperty("--timeline-scroll-x", `${viewport.scrollLeft}px`);
+      // Rows use it to keep the playhead from drawing over the pinned track names.
+      viewport.style.setProperty("--timeline-scroll-x", `${viewport.scrollLeft}px`);
     };
     sync();
     viewport.addEventListener("scroll", sync, { passive: true });
@@ -220,7 +222,9 @@ export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandl
             </Fragment>
           );
         })}
-        <SongPlayhead totalSteps={totalSteps} onDragStart={dragSongPlayhead} onMove={(step) => setTransport({ step })} />
+        <div className="pointer-events-none absolute inset-0 z-30" style={{ clipPath: "inset(0 0 0 calc(var(--timeline-header-width) + var(--timeline-scroll-x, 0px) - 2px))" }}>
+          <SongPlayhead totalSteps={totalSteps} onDragStart={dragSongPlayhead} onMove={(step) => setTransport({ step })} />
+        </div>
         </div>
         <div data-new-channel-drop className="min-h-28 transition-colors">
         <div className="flex items-center gap-3 px-2 pt-2">
