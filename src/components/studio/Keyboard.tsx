@@ -14,6 +14,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Palette } from "lucide-react";
 
 const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+/** Black keys carry both names, flat above sharp, like a printed piano-key chart. */
+const FLAT_NAMES: Record<number, string> = { 1: "D♭", 3: "E♭", 6: "G♭", 8: "A♭", 10: "B♭" };
 const BLACK = new Set([1, 3, 6, 8, 10]);
 const SCALES: Record<string, number[]> = {
   Major: [0, 2, 4, 5, 7, 9, 11],
@@ -358,9 +360,10 @@ export function Keyboard({ track, onPlay, disabled = false, skinKey = "keyboard"
               className="keyboard-key keyboard-natural relative h-full min-w-0 flex-1 rounded-b-[3px] p-0 transition-colors"
               aria-label={label(midi)}
             >
-              {typing && Object.entries(QWERTY_MAP).map(([key, offset]) => (typingOctave + 1) * 12 + offset === midi ? <span key={key} className="absolute bottom-5 left-1/2 -translate-x-1/2 font-mono text-xs keyboard-key-label">{key.toUpperCase()}</span> : null)}
-              <span data-octave-c={midi % 12 === 0 || undefined} className="keyboard-note-name absolute bottom-1 left-1/2 -translate-x-1/2 whitespace-nowrap font-mono text-[9px] font-medium keyboard-key-label">
-                {midi % 12 === 0 ? label(midi) : NOTE_NAMES[midi % 12]}
+              {typing && Object.entries(QWERTY_MAP).map(([key, offset]) => (typingOctave + 1) * 12 + offset === midi ? <span key={key} className="keyboard-natural-letter absolute bottom-7 left-1/2 -translate-x-1/2 font-mono text-xs keyboard-key-label">{key.toUpperCase()}</span> : null)}
+              <span data-octave-c={midi % 12 === 0 || undefined} className="keyboard-note-name keyboard-natural-name absolute bottom-1 left-1/2 flex -translate-x-1/2 items-baseline whitespace-nowrap leading-none keyboard-key-label">
+                {NOTE_NAMES[midi % 12]}
+                {midi % 12 === 0 && <sub className="keyboard-octave-num">{Math.floor(midi / 12) - 1}</sub>}
               </span>
             </Button>
           ))}
@@ -379,7 +382,10 @@ export function Keyboard({ track, onPlay, disabled = false, skinKey = "keyboard"
             aria-label={label(midi)}
           >
             {typing && Object.entries(QWERTY_MAP).map(([key, offset]) => (typingOctave + 1) * 12 + offset === midi ? <span key={key} className="keyboard-sharp-letter absolute bottom-2 left-1/2 -translate-x-1/2 font-mono text-xs keyboard-key-label">{key.toUpperCase()}</span> : null)}
-            <span className="keyboard-note-name keyboard-sharp-name absolute bottom-1 left-1/2 -translate-x-1/2 whitespace-nowrap font-mono text-[8px] font-medium keyboard-key-label">{NOTE_NAMES[midi % 12]?.replace("#", "♯")}</span>
+            <span className="keyboard-note-name keyboard-sharp-name absolute left-1/2 top-[18%] flex -translate-x-1/2 flex-col items-center whitespace-nowrap leading-none keyboard-key-label">
+              <span>{FLAT_NAMES[midi % 12]}</span>
+              <span>{NOTE_NAMES[midi % 12]?.replace("#", "♯")}</span>
+            </span>
           </Button>
         ))}
         </div>

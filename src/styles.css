@@ -3628,6 +3628,7 @@ body:has(.phone-console) [data-sonner-toast] button { pointer-events: auto; }
 @media (orientation: portrait) and (max-width: 767px) and (pointer: coarse), (orientation: portrait) and (max-width: 600px) {
   .phone-sideways-default .phone-strip-dialog { max-height: calc(100dvw - 16px); max-width: calc(100dvh - 16px); }
   .phone-sideways-default .phone-mixer-menu { width: min(calc(100dvh - 24px), 760px); }
+  .phone-sideways-default .phone-channel-controls { width: min(calc(100dvh - 16px), 760px); }
 }
 .phone-mixer-menu { width: min(96vw, 760px); }
 /* Phone full desk: header rows grow to their buttons so the menu and gain never sit on top of each other. */
@@ -3642,11 +3643,12 @@ html.phone-console-active [role="menuitemradio"],
 html.phone-console-active [role="menuitemcheckbox"],
 html.phone-console-active [role="option"] { min-height: 44px; font-size: 15px; }
 .touch-mix-channel .touch-mix-fader[data-orientation="vertical"] { flex-direction: column; }
-/* Note names on the keys: every key on phones like a printed keyboard; desktop keeps the octave Cs only. */
-.instrument-keyboard .keyboard-note-name:not([data-octave-c]) { display: none; }
-.phone-console .instrument-keyboard .keyboard-note-name { display: block; font-size: 12px; font-weight: 700; }
-.phone-console .instrument-keyboard .keyboard-sharp-name { font-size: 10px; }
-.phone-console .instrument-keyboard .keyboard-sharp-letter { bottom: 18px; }
+/* Note names on every key like a printed piano chart: big letters on white keys, flat over sharp on black keys (phone and desktop). */
+.instrument-keyboard .keyboard-natural-name { font-family: var(--font-sans, system-ui), sans-serif; font-size: clamp(12px, 1.6vw, 20px); font-weight: 600; }
+.instrument-keyboard .keyboard-octave-num { font-size: 0.55em; font-weight: 600; margin-left: 1px; opacity: 0.75; bottom: 0; }
+.instrument-keyboard .keyboard-sharp-name { font-family: var(--font-sans, system-ui), sans-serif; font-size: clamp(9px, 1vw, 13px); font-weight: 600; gap: 3px; }
+.phone-console .instrument-keyboard .keyboard-natural-name { font-size: 14px; font-weight: 700; }
+.phone-console .instrument-keyboard .keyboard-sharp-name { font-size: 10px; gap: 2px; }
 
 /* Sideways phone drum roll: compact rows sized to their buttons, so tabs, patterns and Play/Tap REC never sit on each other. */
 .phone-console .drum-machine:has(.drum-roll-fit) { grid-template-columns: minmax(0,1fr) 188px !important; grid-template-rows: 40px 40px minmax(0,1fr) !important; row-gap: 4px; }

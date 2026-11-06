@@ -74,6 +74,31 @@ function MasterChain({ color, className }: { color: string; className?: string }
   );
 }
 
+/** One master-bus effect's parameters; the first move adds that effect to the master chain. Shared by desk and phone views. */
+export function useMasterFx(kind: "eq" | "width") {
+  const { fxChains, addFxPlugin, setFxParam, installedPlugins } = useStudio();
+  const inst = (fxChains["bus:master"] ?? []).find((p) => p.kind === kind);
+  const pending = useRef<[string, number] | null>(null);
+  useEffect(() => {
+    const wanted = pending.current;
+    if (!inst || !wanted) return;
+    pending.current = null;
+    setFxParam("bus:master", inst.id, wanted[0], wanted[1]);
+  }, [inst, setFxParam]);
+  const set = (id: string, value: number) => {
+    if (inst) {
+      setFxParam("bus:master", inst.id, id, value);
+      return;
+    }
+    const def = installedPlugins.find((d) => d.kind === kind) ?? BUILT_IN_PLUGINS.find((d) => d.kind === kind);
+    if (!def) return;
+    pending.current = [id, value];
+    addFxPlugin("bus:master", def);
+  };
+  const get = (id: string, fallback: number) => inst?.params.find((p) => p.id === id)?.value ?? fallback;
+  return { inst, set, get };
+}
+
 /** Master 3-band EQ — the same controls and markings every channel strip carries. */
 function MasterEq({ color }: { color: string }) {
   const { fxChains, addFxPlugin, setFxParam, installedPlugins } = useStudio();

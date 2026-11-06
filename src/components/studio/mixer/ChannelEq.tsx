@@ -8,13 +8,12 @@ import type { PluginInstance, Track } from "@/lib/synclab/types";
 import { cn } from "@/lib/utils";
 import { ROW } from "./shared";
 
-/** Always-visible 3-band channel EQ. Creates a real Channel EQ insert on first use. */
-export function ChannelEq({ t }: { t: Track }) {
+/** A track's Channel EQ bands; the first move creates the real Channel EQ insert. Shared by desk and phone views. */
+export function useTrackEq(t: Track) {
   const { updateTrack, setPluginParam, installedPlugins } = useStudio();
   const pendingEq = useRef<PluginInstance | null>(null);
   const eq = (t.plugins ?? []).find((p) => p.kind === "eq") ?? pendingEq.current;
   useEffect(() => { pendingEq.current = null; }, [t.plugins]);
-  const bands = [["high", "High"], ["mid", "Mid"], ["low", "Low"]] as const;
   const setBand = (id: string, value: number) => {
     const current = eq ?? pendingEq.current;
     if (current) {
@@ -28,6 +27,14 @@ export function ChannelEq({ t }: { t: Track }) {
     pendingEq.current = instance;
     updateTrack(t.id, { plugins: [...(t.plugins ?? []), instance] });
   };
+  const band = (id: string) => eq?.params.find((param) => param.id === id)?.value ?? 0;
+  return { eq, setBand, band };
+}
+
+/** Always-visible 3-band channel EQ. Creates a real Channel EQ insert on first use. */
+export function ChannelEq({ t }: { t: Track }) {
+  const { eq, setBand } = useTrackEq(t);
+  const bands = [["high", "High"], ["mid", "Mid"], ["low", "Low"]] as const;
   return (
     <div
       className={cn(ROW.eq, "mx-channel-eq flex flex-col gap-1 border-b border-border/60 px-1.5 py-1")}

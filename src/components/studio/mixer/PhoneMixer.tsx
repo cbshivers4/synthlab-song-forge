@@ -1,9 +1,8 @@
 import { useRef, type CSSProperties } from "react";
-import { MoreHorizontal, Settings2 } from "lucide-react";
+import { Settings2 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select } from "@/components/ui/select";
 import { useStudio } from "@/lib/synclab/store";
 import { TrackIcon } from "@/components/studio/TrackStyle";
@@ -14,8 +13,7 @@ import { clearClip } from "@/lib/synclab/clip-monitor";
 import { TimelineHScrollbar } from "../timeline/HScrollbar";
 import { FxMenu, VcaAssign } from "./BusStrips";
 import { InsertRack } from "./InsertRack";
-import { MasterStrip } from "./MasterStrip";
-import { Strip } from "./Strip";
+import { PhoneChannelControls } from "./PhoneChannelControls";
 import { BUS_COLOR, FADER_CAP, Meter, toDb } from "./shared";
 
 /** Phone mixer: add effects to the selected channel from one menu. */
@@ -194,6 +192,7 @@ function TouchRouteChannel({ kind, id, color, state, level, onChange, memberCoun
               <FxMenu target={kind === "BUS" ? `bus:${id}` : `send:${id}`} label="FX" />
             )}
           </div>
+          <PhoneChannelControls target={kind === "BUS" ? { kind: "bus", id: id as BusId } : kind === "VCA" ? { kind: "vca", id: id as VcaId } : { kind: "aux", id: id as AuxId }} label={name} />
         </div>
       </div>
       <div className="flex h-11 shrink-0 items-center justify-center border-t border-border px-1 text-center font-mono text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
@@ -262,7 +261,7 @@ function TouchChannel({ track, level, selected, index }: { track?: Track | undef
           ) : (
             <Button variant="outline" className={TOUCH_BTN} onClick={() => clearClip("master")} aria-label="Reset master clip light">CLIP</Button>
           )}
-          <StripDetails track={track} index={index} level={level} />
+          <PhoneChannelControls target={track ? { kind: "track", track, index } : { kind: "master" }} label={track ? track.name : "Master"} />
         </div>
       </div>
       {track ? (
@@ -274,27 +273,6 @@ function TouchChannel({ track, level, selected, index }: { track?: Track | undef
         <div className="flex h-11 shrink-0 items-center justify-center border-t border-border font-mono text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Main out</div>
       )}
     </section>
-  );
-}
-
-/** "More": the channel's complete desk strip at full size, in a window that fits the sideways screen. */
-function StripDetails({ track, index, level }: { track?: Track | undefined; index: number; level: number }) {
-  const { selectedId, select } = useStudio();
-  const name = track?.name ?? "MASTER";
-  return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button variant="outline" className={TOUCH_BTN} aria-label={`More controls for ${name}`} title="Gain, EQ, inserts, sends and routing">
-          <MoreHorizontal className="size-5" />
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="phone-strip-dialog max-h-[88dvh] w-auto max-w-[96vw] overflow-y-auto p-3">
-        <DialogHeader><DialogTitle className="truncate pr-8">{track ? `${index + 1}. ${name}` : name} — all controls</DialogTitle></DialogHeader>
-        <div className="mx-console mx-console-dialog flex justify-center" data-console="studiopro">
-          {track ? <Strip t={track} index={index} narrow={false} level={level} selected={track.id === selectedId} onSelect={() => select(track.id)} /> : <MasterStrip level={level} />}
-        </div>
-      </DialogContent>
-    </Dialog>
   );
 }
 
