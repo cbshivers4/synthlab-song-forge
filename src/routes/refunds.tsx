@@ -22,8 +22,9 @@ function RefundsRoute() {
   return (
     <LegalPage title="Refund Policy" updated="21 September 2026">
       <p>
-        SYNCLAB is operated by <strong>Christopher Shivers</strong>. Every plan starts with a 7-day
-        free trial, so you can test the studio before paying anything.
+        SYNCLAB is operated by <strong>Christopher Shivers</strong>. Every plan starts with a 14-day
+        free trial. A card is required to start it, but nothing is charged during the trial — cancel
+        before day 14 and you won't be charged at all.
       </p>
 
       <h2>30-day money-back guarantee</h2>

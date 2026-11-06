@@ -38,7 +38,8 @@ export const changePlan = createServerFn({ method: "POST" })
       method: "PATCH",
       body: JSON.stringify({
         items: [{ price_id: newPriceId, quantity: 1 }],
-        proration_billing_mode: "prorated_immediately",
+        // Nothing has been charged during the free trial, so the new plan simply starts when it ends.
+        proration_billing_mode: sub.status === "trialing" ? "do_not_bill" : "prorated_immediately",
       }),
     });
     if (!res.ok) {

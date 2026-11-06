@@ -8,12 +8,12 @@ export const Route = createFileRoute("/pricing")({
       {
         name: "description",
         content:
-          "SYNCLAB pricing: 7-day free trial, then Pro at $19.95 per month or $149 per year. Cancel anytime.",
+          "SYNCLAB pricing: 14-day free trial, then Pro at $9.95 per month or $119.40 per year. Cancel before day 14 and pay nothing.",
       },
       { property: "og:title", content: "Pricing — SYNCLAB" },
       {
         property: "og:description",
-        content: "7-day free trial, then $19.95/month or $149/year for SYNCLAB Pro.",
+        content: "14-day free trial, then $9.95/month or $119.40/year for SYNCLAB Pro.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -26,11 +26,18 @@ const FREE = [
   "Full studio: timeline, unlimited tracks, recording",
   "Instruments, drum machine, piano roll, sampler",
   "Mixer, effects, automation, arrangement sections",
-  "Local project saving on this device",
+  "Projects can't be saved in the free version",
+];
+
+const TRIAL = [
+  "Everything in Pro for 14 days",
+  "Card required to start — nothing is charged during the trial",
+  "Cancel before day 14 and you won't be charged",
+  "After 14 days your chosen plan starts automatically",
 ];
 
 const PRO = [
-  "Everything in the free trial, forever",
+  "Save your projects to your account",
   "Export finished tracks as WAV and MP3",
   "Save mastered files from the mastering suite",
   "Cloud project saving and sync across devices",
@@ -67,16 +74,16 @@ function PricingRoute() {
       <main className="mx-auto max-w-5xl px-5 py-12">
         <h1 className="text-4xl font-bold tracking-tight">Simple pricing</h1>
         <p className="mt-3 max-w-xl text-sm text-muted-foreground">
-          Start with a 7-day free trial — no card required. After that, keep making music for
-          $19.95 a month, or save with the yearly plan. Cancel anytime; you keep Pro until the end of
-          the period you paid for.
+          Try everything free for 14 days. A card is required to start the trial, and if you cancel
+          before day 14 you won't be charged. After that it's $9.95 a month or $119.40 a year. Without
+          a trial or plan you can still make music in the free version, but you can't save projects.
         </p>
 
-        <div className="mt-10 grid gap-6 md:grid-cols-3">
+        <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-xl border border-border/70 p-6">
-            <h2 className="text-lg font-semibold">Free trial</h2>
+            <h2 className="text-lg font-semibold">Free version</h2>
             <p className="mt-2 text-3xl font-bold">
-              $0 <span className="text-base font-normal text-muted-foreground">/ 7 days</span>
+              $0 <span className="text-base font-normal text-muted-foreground">/ no saving</span>
             </p>
             <ul className="mt-5 space-y-2">
               {FREE.map((f) => (
@@ -85,10 +92,22 @@ function PricingRoute() {
             </ul>
           </div>
 
+          <div className="rounded-xl border border-border/70 p-6">
+            <h2 className="text-lg font-semibold">Free trial</h2>
+            <p className="mt-2 text-3xl font-bold">
+              $0 <span className="text-base font-normal text-muted-foreground">/ 14 days</span>
+            </p>
+            <ul className="mt-5 space-y-2">
+              {TRIAL.map((f) => (
+                <Check key={f}>{f}</Check>
+              ))}
+            </ul>
+          </div>
+
           <div className="rounded-xl border-2 border-primary p-6">
             <h2 className="text-lg font-semibold">Pro — monthly</h2>
             <p className="mt-2 text-3xl font-bold">
-              $19.95 <span className="text-base font-normal text-muted-foreground">/ month</span>
+              $9.95 <span className="text-base font-normal text-muted-foreground">/ month</span>
             </p>
             <ul className="mt-5 space-y-2">
               {PRO.map((f) => (
@@ -100,9 +119,9 @@ function PricingRoute() {
           <div className="rounded-xl border border-border/70 p-6">
             <h2 className="text-lg font-semibold">Pro — yearly</h2>
             <p className="mt-2 text-3xl font-bold">
-              $149 <span className="text-base font-normal text-muted-foreground">/ year</span>
+              $119.40 <span className="text-base font-normal text-muted-foreground">/ year</span>
             </p>
-            <p className="mt-1 text-xs text-primary">Two months free vs. monthly</p>
+            <p className="mt-1 text-xs text-primary">One payment a year</p>
             <ul className="mt-5 space-y-2">
               {PRO.map((f) => (
                 <Check key={f}>{f}</Check>

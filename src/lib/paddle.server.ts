@@ -31,8 +31,8 @@ export async function paddleFetch(env: PaddleEnv, path: string, init: RequestIni
  * price ids, which differ between the test and live environments.
  */
 export const PRICE_CATALOG: Record<string, { interval: "month" | "year"; amount: string; currency: string }> = {
-  synclab_monthly: { interval: "month", amount: "1995", currency: "USD" },
-  synclab_yearly: { interval: "year", amount: "14900", currency: "USD" },
+  synclab_monthly: { interval: "month", amount: "995", currency: "USD" },
+  synclab_yearly: { interval: "year", amount: "11940", currency: "USD" },
 };
 
 /** Resolve a human-readable price id to the environment-specific internal price id. */
@@ -53,9 +53,16 @@ export async function resolveInternalPriceId(env: PaddleEnv, priceId: string): P
     }>;
   };
   const prices = json.data ?? [];
-  // Prefer the catalog external id when present; fall back to interval+amount match.
+  // Older prices can still be active under the same id (they keep billing existing customers),
+  // so new checkouts pick the one with the current amount (and its 14-day trial) first.
+  const sameAmount = (p: (typeof prices)[number]) =>
+    p.billing_cycle?.interval === expected.interval &&
+    p.unit_price?.amount === expected.amount &&
+    p.unit_price?.currency_code === expected.currency;
+  const current = prices.find((p) => p.import_meta?.external_id === priceId && sameAmount(p));
   const byExternalId = prices.find((p) => p.import_meta?.external_id === priceId);
   const match =
+    current ??
     byExternalId ??
     prices.find(
       (p) =>

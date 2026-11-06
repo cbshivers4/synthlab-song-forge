@@ -238,7 +238,7 @@ export const KNOWLEDGE_BASE: Article[] = [
     body: [
       "Set the export flags on the timeline to choose a region, or export the whole song.",
       "Choose WAV for quality or MP3 for sharing. Progress is shown while it renders.",
-      "Exporting, saving mastered files and cloud saving are Pro features after the 7-day trial.",
+      "Saving projects, exporting and saving mastered files need the 14-day free trial (card required, cancel before day 14 to pay nothing) or a plan: $9.95/month or $119.40/year.",
     ],
   },
   {

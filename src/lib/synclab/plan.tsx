@@ -8,37 +8,26 @@ import { cn } from "@/lib/utils";
 import { getPaddleEnvironment, getPaddlePriceId, initializePaddle, onPaddleCheckoutCompleted } from "@/lib/paddle";
 import { changePlan, createPortalLink } from "@/utils/payments.functions";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
+import { PLAN_PRICES, TRIAL_DAYS, canSave, planTier, subscriptionIsActive, type SubscriptionRow, type Tier } from "./plan-tier";
 
-/** Accounts that get SYNCLAB free forever (the app's founder/owner). */
-const FOUNDER_EMAILS = ["christophershivers@synclabsapp.com", "cbshivers@gmail.com"];
+const PRO_KEY = "synclab.pro"; // optimistic unlock right after checkout, until the payment record lands
+const RECEIPT_MS = 2 * 60 * 60 * 1000;
 
-const TRIAL_DAYS = 7;
-const TRIAL_KEY = "synclab.trialStart";
-const PRO_KEY = "synclab.pro"; // optimistic unlock until the webhook lands
+const PRICE_IDS = { monthly: PLAN_PRICES.monthly.id, yearly: PLAN_PRICES.yearly.id } as const;
 
-const PRICE_IDS = { monthly: "synclab_monthly", yearly: "synclab_yearly" } as const;
-
-export type Tier = "founder" | "pro" | "trial" | "expired";
-
-interface SubscriptionRow {
-  paddle_subscription_id: string;
-  price_id: string;
-  status: string;
-  current_period_end: string | null;
-  cancel_at_period_end: boolean;
-}
+export type { Tier };
 
 interface PlanState {
   tier: Tier;
   email: string | null;
-  /** Days left in the free trial (0 when expired). */
+  /** Days left in the 14-day free trial (0 when not trialing). */
   trialDaysLeft: number;
-  /** True when the account may use pro features (export, mastering, cloud save). */
+  /** True when the account may save projects, export and save mastered files. */
   isPro: boolean;
-  /** The current paid plan, when one exists. */
+  /** The current trial or paid plan, when one exists. */
   subscription: SubscriptionRow | null;
   /**
-   * Returns true when the feature may proceed. Otherwise it opens the upgrade
+   * Returns true when the feature may proceed. Otherwise it opens the trial / plan
    * dialog and returns false.
    */
   requirePro: (featureLabel: string) => boolean;
@@ -47,30 +36,19 @@ interface PlanState {
 
 const PlanContext = createContext<PlanState | null>(null);
 
-function trialStart(): number {
-  try {
-    const raw = localStorage.getItem(TRIAL_KEY);
-    if (raw) return Number(raw) || Date.now();
-    const now = Date.now();
-    localStorage.setItem(TRIAL_KEY, String(now));
-    return now;
-  } catch {
-    return Date.now();
-  }
-}
-
 function hasProReceipt(): boolean {
   try {
-    return localStorage.getItem(PRO_KEY) === "1";
+    const at = Number(localStorage.getItem(PRO_KEY));
+    return Number.isFinite(at) && at > 0 && Date.now() - at < RECEIPT_MS;
   } catch {
     return false;
   }
 }
 
-/** Optimistic unlock right after checkout completes; the webhook is the source of truth. */
+/** Optimistic unlock right after checkout completes; the payment record is the source of truth. */
 export function markProPaid() {
   try {
-    localStorage.setItem(PRO_KEY, "1");
+    localStorage.setItem(PRO_KEY, String(Date.now()));
   } catch {
     /* storage unavailable */
   }
@@ -95,15 +73,7 @@ function writeCachedSubscription(uid: string, sub: SubscriptionRow | null) {
   }
 }
 
-/** Active means usable now: paid/current, or canceled but still inside the paid period. */
-export function subscriptionIsActive(sub: SubscriptionRow | null): boolean {
-  if (!sub) return false;
-  const periodEnd = sub.current_period_end ? new Date(sub.current_period_end).getTime() : null;
-  const inPeriod = periodEnd === null || periodEnd > Date.now();
-  if (["active", "trialing", "past_due"].includes(sub.status)) return inPeriod;
-  if (sub.status === "canceled") return inPeriod; // access until the paid period ends
-  return false;
-}
+export { subscriptionIsActive };
 
 export function PlanProvider({ children }: { children: ReactNode }) {
   const [userId, setUserId] = useState<string | null>(null);
@@ -113,6 +83,8 @@ export function PlanProvider({ children }: { children: ReactNode }) {
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [blockedFeature, setBlockedFeature] = useState<string | null>(null);
   const [checkoutBusy, setCheckoutBusy] = useState(false);
+  /** Account whose plan record has been read (so the trial offer never flashes before it loads). */
+  const [loadedFor, setLoadedFor] = useState<string | null>(null);
 
   useEffect(() => {
     void supabase.auth.getUser().then(({ data, error }) => {
@@ -143,10 +115,12 @@ export function PlanProvider({ children }: { children: ReactNode }) {
     if (error) {
       // No connection: use the last plan this device saw for this account.
       setSubscription(readCachedSubscription(uid));
+      setLoadedFor(uid);
       return;
     }
     setSubscription((data as SubscriptionRow | null) ?? null);
     writeCachedSubscription(uid, (data as SubscriptionRow | null) ?? null);
+    setLoadedFor(uid);
   }, [env]);
 
   useEffect(() => {
@@ -175,7 +149,7 @@ export function PlanProvider({ children }: { children: ReactNode }) {
       markProPaid();
       setReceipt(true);
       setUpgradeOpen(false);
-      toast.success("Welcome to SYNCLAB Pro", { description: "Export, mastering and cloud saving are unlocked." });
+      toast.success("Your 14-day free trial has started", { description: "Saving, export and mastering are unlocked. You won't be charged if you cancel before day 14." });
       if (userId) void loadSubscription(userId);
     });
   }, [userId, loadSubscription]);
@@ -187,7 +161,7 @@ export function PlanProvider({ children }: { children: ReactNode }) {
     if (url.searchParams.get("upgraded") === "1") {
       markProPaid();
       setReceipt(true);
-      toast.success("Welcome to SYNCLAB Pro", { description: "Export, mastering and cloud saving are unlocked." });
+      toast.success("Your 14-day free trial has started", { description: "Saving, export and mastering are unlocked. You won't be charged if you cancel before day 14." });
       if (userId) void loadSubscription(userId);
       url.searchParams.delete("upgraded");
       window.history.replaceState(null, "", url.toString());
@@ -196,20 +170,27 @@ export function PlanProvider({ children }: { children: ReactNode }) {
 
   const subActive = subscriptionIsActive(subscription);
 
-  const { tier, trialDaysLeft } = useMemo(() => {
-    if (email && FOUNDER_EMAILS.includes(email)) return { tier: "founder" as Tier, trialDaysLeft: TRIAL_DAYS };
-    if (subActive || receipt) return { tier: "pro" as Tier, trialDaysLeft: TRIAL_DAYS };
-    const elapsedDays = (Date.now() - trialStart()) / 86_400_000;
-    const left = Math.max(0, TRIAL_DAYS - elapsedDays);
-    return { tier: left > 0 ? ("trial" as Tier) : ("expired" as Tier), trialDaysLeft: Math.ceil(left) };
-  }, [email, subActive, receipt]);
+  const { tier, trialDaysLeft } = useMemo(() => planTier(email, subscription, receipt), [email, subscription, receipt]);
 
-  const isPro = tier !== "expired";
+  const isPro = canSave(tier);
 
   const openUpgrade = useCallback((featureLabel?: string) => {
     setBlockedFeature(featureLabel ?? null);
     setUpgradeOpen(true);
   }, []);
+
+  // Free accounts see the 14-day trial offer once per visit after signing in.
+  useEffect(() => {
+    if (tier !== "free" || !userId || loadedFor !== userId) return;
+    try {
+      const key = `synclab.trialOffer.${userId}`;
+      if (sessionStorage.getItem(key)) return;
+      sessionStorage.setItem(key, "1");
+    } catch {
+      return;
+    }
+    openUpgrade();
+  }, [tier, userId, loadedFor, openUpgrade]);
 
   const requirePro = useCallback(
     (featureLabel: string) => {
@@ -285,20 +266,20 @@ export function PlanProvider({ children }: { children: ReactNode }) {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 font-display uppercase tracking-widest">
-              <Crown className="size-4 text-amber-400" /> Upgrade to SYNCLAB Pro
+              <Crown className="size-4 text-amber-400" /> {subActive ? "Your SYNCLAB plan" : "Try SYNCLAB free for 14 days"}
             </DialogTitle>
             <DialogDescription>
-              {blockedFeature
-                ? `${blockedFeature} is part of SYNCLAB Pro.`
-                : "Your free trial has ended."}{" "}
-              The studio itself stays open — everything you made keeps playing.
+              {blockedFeature && !isPro ? `${blockedFeature} needs the free trial or a plan. ` : ""}
+              {subActive
+                ? "Switch between monthly and yearly, or manage billing below."
+                : "Add a card to start your 14-day free trial. Cancel any time before day 14 and you won't be charged. The free version lets you make music, but you can't save your projects."}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-2 sm:grid-cols-2">
             {(
               [
-                { id: "monthly" as const, name: "Monthly", price: "$19.95", per: "per month, cancel anytime" },
-                { id: "yearly" as const, name: "Yearly", price: "$149", per: "per year — two months free" },
+                { id: "monthly" as const, name: "Monthly", price: PLAN_PRICES.monthly.label, per: subActive ? "per month" : "per month after 14 free days" },
+                { id: "yearly" as const, name: "Yearly", price: PLAN_PRICES.yearly.label, per: subActive ? "per year" : "per year after 14 free days" },
               ]
             ).map((p) => (
               <button
@@ -319,22 +300,24 @@ export function PlanProvider({ children }: { children: ReactNode }) {
             ))}
           </div>
           <ul className="space-y-1 font-mono text-[10px] text-muted-foreground">
+            <li>· Save your projects to your account</li>
             <li>· Export &amp; share finished WAV / MP3 files</li>
             <li>· Mastering with loudness-matched presets</li>
-            <li>· Save projects and exports to your cloud</li>
-            <li>· Cancel anytime — you keep Pro until the paid period ends</li>
+            <li>· {TRIAL_DAYS} days free, then billed automatically — cancel before day {TRIAL_DAYS} to pay nothing</li>
             <li>· Taxes handled for you worldwide by our payment partner</li>
           </ul>
-          <Button onClick={() => void subscribe("monthly")} disabled={checkoutBusy} className="w-full">
-            <Sparkles className="size-4" /> Start Pro — $19.95/mo
-          </Button>
+          {!subActive && (
+            <Button onClick={() => void subscribe("monthly")} disabled={checkoutBusy} className="w-full">
+              <Sparkles className="size-4" /> Start 14-day free trial
+            </Button>
+          )}
           {subscription && subActive && (
             <Button variant="outline" onClick={() => void manageBilling()} className="w-full">
-              Manage billing / cancel
+              {subscription?.status === "trialing" ? "Manage billing / cancel trial" : "Manage billing / cancel"}
             </Button>
           )}
           <p className="text-center font-mono text-[9px] text-muted-foreground">
-            Secure checkout by Paddle · cancel anytime
+            Secure checkout by Paddle · card required for the trial
           </p>
         </DialogContent>
       </Dialog>
@@ -377,7 +360,7 @@ export function PlanBadge() {
       <button
         onClick={() => openUpgrade()}
         className="rounded-sm border border-border bg-surface-2 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-widest text-muted-foreground hover:text-foreground"
-        title="Free trial — tap to see Pro plans"
+        title={subscription?.cancel_at_period_end ? "Trial cancelled — you won't be charged" : "Free trial — billing starts when it ends"}
       >
         Trial · {trialDaysLeft}d left
       </button>
@@ -385,9 +368,10 @@ export function PlanBadge() {
   return (
     <button
       onClick={() => openUpgrade()}
-      className="flex items-center gap-1 rounded-sm border border-red-500/60 bg-red-500/15 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-widest text-red-300"
+      className="flex items-center gap-1 rounded-sm border border-primary/60 bg-primary/15 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-widest text-primary"
+      title="Free version — projects can't be saved. Tap to start the 14-day free trial."
     >
-      <Crown className="size-3" /> Trial ended
+      <Crown className="size-3" /> Free · Start trial
     </button>
   );
 }

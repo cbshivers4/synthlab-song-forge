@@ -10,7 +10,7 @@ buses, sends, VCA groups and mastering, and finish the song — then export it.
 - **Version:** 1.0.0
 - **Desktop app id:** `com.synclab.vocalforge`
 - **Publisher:** Christopher Shivers, Detroit, Michigan — christophershivers@synclabsapp.com
-- **Payments:** Paddle (merchant of record). 7-day free trial, then $19.95/month or $149/year.
+- **Payments:** Paddle (merchant of record). 14-day free trial (card required; cancel before day 14 and nothing is charged), then $9.95/month or $119.40/year. Free version: no project saving.
   The founder account keeps lifetime access.
 
 ## What is in the repo

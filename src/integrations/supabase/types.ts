@@ -299,6 +299,7 @@ export type Database = {
     }
     Functions: {
       ai_uses_left: { Args: { _daily_limit?: number }; Returns: number }
+      can_save_projects: { Args: { _user_id: string }; Returns: boolean }
       consume_ai_use: {
         Args: { _daily_limit?: number; _tool: string }
         Returns: Json

@@ -270,7 +270,7 @@ export function WelcomeScreen() {
             <Button className="login-btn-primary login-trial w-full" onClick={() => setMode("signup")}>
               START FREE TRIAL
             </Button>
-            <p className="login-fine login-trial-note">7-day free trial · no card required</p>
+            <p className="login-fine login-trial-note">14-day free trial · card on file · cancel free</p>
             <p className="login-fine login-browser-note">Works in Chrome, Edge, Safari and Firefox. Best on desktop.</p>
 
             <div className="login-divider">
@@ -350,8 +350,8 @@ export function WelcomeScreen() {
               </Button>
             )}
 
-            <p className="login-fine">Free for 7 days, then $19.95/month or $149/year.</p>
-            <p className="login-fine">Your projects stay saved if you don’t subscribe.</p>
+            <p className="login-fine">Free for 14 days, then $9.95/month or $119.40/year.</p>
+            <p className="login-fine">Free version: make music, but projects can’t be saved.</p>
           </div>
         </div>
 

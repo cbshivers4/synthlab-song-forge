@@ -196,6 +196,14 @@ export async function listCloudProjects(): Promise<CloudProject[]> {
   });
 }
 
+/** The free version can't save: the account refuses the write, so say why in plain words. */
+function saveError(error: { code?: string; message?: string }) {
+  if (error.code === "42501" || /row-level security/i.test(error.message ?? "")) {
+    return new Error("Saving projects needs the 14-day free trial or a SYNCLAB plan. Your song is still open — start the trial to save it.");
+  }
+  return error;
+}
+
 export async function saveCloudProject(project: Omit<CloudProject, "updatedAt" | "session">, session: CloudSession) {
   if (TEST_MODE) throw new Error(TEST_MODE_MESSAGE);
   const userId = await currentUserId();
@@ -212,7 +220,7 @@ export async function saveCloudProject(project: Omit<CloudProject, "updatedAt" |
     opened_at: new Date(project.openedAt).toISOString(),
     session: prepared as unknown as Json,
   }).select("id,updated_at").single();
-  if (error) throw error;
+  if (error) throw saveError(error);
   return { id: data.id, updatedAt: new Date(data.updated_at).getTime() };
 }
 
@@ -236,7 +244,7 @@ export async function loadCloudProject(id: string): Promise<CloudProject> {
 export async function renameCloudProject(id: string, name: string) {
   if (TEST_MODE) throw new Error(TEST_MODE_MESSAGE);
   const { error } = await supabase.from("cloud_projects").update({ name }).eq("id", id);
-  if (error) throw error;
+  if (error) throw saveError(error);
 }
 
 export async function deleteCloudProject(project: CloudProject) {
