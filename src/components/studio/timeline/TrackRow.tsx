@@ -1,3 +1,4 @@
+import { faderGain, faderPosition } from "@/lib/synclab/fader-taper";
 import { getPlayStep } from "@/lib/synclab/playhead";
 import { editorPanelFor } from "@/lib/synclab/track-editor";
 import { deleteSelectedPart, selectedPartBounds } from '@/lib/synclab/workflow';
@@ -1062,11 +1063,11 @@ export function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track:
           </Select>}
           <Slider
             className="w-16"
-            value={[track.volume]}
+            value={[faderPosition(track.volume)]}
             min={0}
             max={1}
-            step={0.01}
-            onValueChange={([v = 0]) => updateTrack(track.id, { volume: v })}
+            step={0.001}
+            onValueChange={([v = 0]) => updateTrack(track.id, { volume: faderGain(v) })}
           />
           {track.vca && <VcaLevel track={track} />}
         </div>

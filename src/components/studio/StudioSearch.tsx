@@ -22,7 +22,7 @@ const PANELS: { id: Exclude<PanelId, null>; label: string }[] = [
   { id: "keys", label: "Keyboard" },
   { id: "sampler", label: "Sampler" },
   { id: "pads", label: "Pad Sampler" },
-  { id: "plugins", label: "Plugins (VST)" },
+  { id: "plugins", label: "FX Rack" },
   { id: "browser", label: "Browser" },
   { id: "appearance", label: "Appearance & Themes" },
   { id: "settings", label: "Settings" },

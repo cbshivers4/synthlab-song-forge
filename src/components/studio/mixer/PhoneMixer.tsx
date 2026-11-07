@@ -1,3 +1,4 @@
+import { faderGain, faderPosition } from "@/lib/synclab/fader-taper";
 import { useRef, type CSSProperties, type ReactNode } from "react";
 import { Settings2 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
@@ -159,12 +160,12 @@ function TouchRouteChannel({ kind, id, color, state, level, onChange, memberCoun
               aria-valuetext={volume === 0 ? "Silent" : `${toDb(volume).toFixed(1)} decibels`}
               orientation="vertical"
               className={cn("touch-mix-fader h-full w-9 shrink-0", FADER_CAP)}
-              value={[volume]}
+              value={[faderPosition(volume)]}
               min={0}
-              max={1.2}
-              step={0.01}
+              max={1}
+              step={0.001}
               onDoubleClick={() => onChange({ volume: 1 })}
-              onValueChange={([v = 0]) => onChange({ volume: v })}
+              onValueChange={([v = 0]) => onChange({ volume: faderGain(v) })}
             />
             <span className="touch-mix-meter flex h-full shrink-0"><Meter id={meterId} level={state.muted ? 0 : level} tall /></span>
           </div>
@@ -235,12 +236,12 @@ function TouchChannel({ track, level, selected, index }: { track?: Track | undef
               aria-valuetext={volume === 0 ? "Silent" : `${toDb(volume).toFixed(1)} decibels`}
               orientation="vertical"
               className={cn("touch-mix-fader h-full w-9 shrink-0", FADER_CAP)}
-              value={[volume]}
+              value={[faderPosition(volume)]}
               min={0}
-              max={track ? 1.2 : 1.5}
-              step={0.01}
+              max={1}
+              step={0.001}
               onDoubleClick={() => (track ? updateTrack(track.id, { volume: 0.8 }) : setBus("master", { volume: 1 }))}
-              onValueChange={([v = 0]) => (track ? updateTrack(track.id, { volume: v }) : setBus("master", { volume: v }))}
+              onValueChange={([v = 0]) => (track ? updateTrack(track.id, { volume: faderGain(v) }) : setBus("master", { volume: faderGain(v) }))}
             />
             <span className="touch-mix-meter flex h-full shrink-0"><Meter id={track?.id ?? "master"} level={level} tall /></span>
           </div>

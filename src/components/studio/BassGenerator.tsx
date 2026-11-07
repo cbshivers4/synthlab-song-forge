@@ -216,17 +216,16 @@ export function BassGenerator() {
         <p className="text-xs text-muted-foreground">Pick a sound, then press Preview to hear your bassline with it. Changing the sound while previewing switches it right away.</p>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2" role="radiogroup" aria-label="How to make the bassline">
-        <button type="button" role="radio" aria-checked={mode === "auto"} className={chip(mode === "auto")} onClick={() => setMode("auto")}>Generate for me</button>
-        <button type="button" role="radio" aria-checked={mode === "write"} className={chip(mode === "write")} onClick={() => setMode("write")}>Write my own notes</button>
+      <div className="flex flex-wrap items-center gap-2">
+        <button type="button" aria-pressed={mode === "write"} className={chip(mode === "write")} onClick={() => setMode(mode === "write" ? "auto" : "write")}>Write my own notes</button>
       </div>
       {mode === "write" && (
         <BassStepEditor pattern={pattern} onChange={setPattern} tonic={useSong ? (roots[0] ?? tonic) : tonic} minor={minor} half={half} onHalf={setHalf}
           onAudition={(semis) => { const e = getEngine(); e.init(); e.playNote("bassgen-audition", drawPatch, 12 * (octave + 1) + (useSong ? (roots[0] ?? tonic) : tonic) + semis, 0.25, 0.85); }} />
       )}
 
-      <div className={`flex flex-wrap items-center gap-2${mode === "write" ? " hidden" : ""}`}>
-        <Button size="lg" className="min-h-12" onClick={generate}>{generated ? "Regenerate (new variation)" : "Generate bassline"}</Button>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button size="lg" className="min-h-12" onClick={() => { setMode("auto"); generate(); }}>{generated && mode === "auto" ? "Regenerate (new variation)" : "Generate bassline"}</Button>
         {generated && <span className="font-mono text-xs text-muted-foreground">{generated.length} notes ready</span>}
       </div>
       {generated && mode === "auto" && (

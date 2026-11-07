@@ -424,7 +424,7 @@ export function TopBar() {
                   <FolderOpen className="mr-2 size-4" /> Browser
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setPanel("plugins")}>
-                  <Cpu className="mr-2 size-4" /> Plugins
+                  <Cpu className="mr-2 size-4" /> FX Rack
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setPanel("drums")}>
                   <Disc3 className="mr-2 size-4" /> Drums
@@ -478,7 +478,7 @@ export function TopBar() {
                 size="sm"
                 onClick={() => setPanel(panel === "plugins" ? null : "plugins")}
               >
-                <Cpu className="size-4" /> PLUGINS
+                <Cpu className="size-4" /> FX RACK
               </Button>
               <Button
                 variant={panel === "drums" ? "secondary" : "ghost"}

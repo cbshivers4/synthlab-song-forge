@@ -58,7 +58,7 @@ const TOOLS: Tool[] = [
   { id: "beat", label: "Pad Sampler", icon: <Grid2x2 className="size-4" />, panel: "pads", drag: { kind: "sampler", name: "Pad Sampler" } },
   { id: "chop", label: "Sample Chopper", icon: <Scissors className="size-4" />, panel: "pads", advanced: true },
   { id: "sampler", label: "Sampler", icon: <AudioLines className="size-4" />, panel: "sampler", drag: { kind: "sampler", name: "Sampler" } },
-  { id: "plugins", label: "Plugins", icon: <Cpu className="size-4" />, panel: "plugins" },
+  { id: "plugins", label: "FX Rack", icon: <Cpu className="size-4" />, panel: "plugins" },
   { id: "mixer", label: "Mixer", icon: <SlidersHorizontal className="size-4" />, panel: "mixer" },
   { id: "notes", label: "Track Notes", icon: <NotebookPen className="size-4" />, panel: "notes", advanced: true },
   { id: "master", label: "Mastering", icon: <Gauge className="size-4" />, panel: "mastering" },
@@ -89,7 +89,7 @@ const SECTIONS: Section[] = [
   { id: "synths", label: "Synthesizers", tools: ["synth", "touch", "acid", "poly", "modular"].map(tool) },
   { id: "instruments", label: "Instruments", tools: ["coproducer", "genstem", "bassgen", "drums", "beat", "chop", "sampler"].map(tool) },
   { id: "mix", label: "Mix & Master", tools: ["mixer", "master", "stems", "voice"].map(tool) },
-  { id: "plugins", label: "Plugins", tools: ["plugins"].map(tool) },
+  { id: "plugins", label: "FX Rack", tools: ["plugins"].map(tool) },
   // Everything that reaches outside the song itself lives under Other Apps.
   { id: "apps", label: "Other Apps", tools: ["apps", "reference", "notes"].map(tool) },
 ];
@@ -201,7 +201,7 @@ export function ToolsRail() {
     setClosedSections((s) => ({ ...s, [id]: !s[id] }));
 
 
-  /** Plugin files dropped straight onto the Plugins entry in this rail. */
+  /** Plugin files dropped straight onto the FX Rack entry in this rail. */
   const dropPlugins = (files: File[]) => {
     const defs = defsFromFiles(files, installedPlugins.map((d) => d.name));
     setPanel("plugins");
@@ -225,7 +225,7 @@ export function ToolsRail() {
         key={t.id}
         title={
           t.id === "plugins"
-            ? "Plugins — drop your VST3 / AU / CLAP files here"
+            ? "FX Rack — drop your VST3 / AU / CLAP files here"
             : t.drag
               ? `${t.label} — drag onto the timeline to add a channel`
               : t.label
@@ -361,7 +361,7 @@ export function ToolsRail() {
                       <ComputerFiles />
                     )}
 
-                    {/* My Plugins lives inside the Plugins section */}
+                    {/* My Plugins lives inside the FX Rack section */}
                     {s.id === "plugins" && (
                       <div className="pt-1.5">
                         <div className="px-2 pb-1 font-mono text-[9px] tracking-[0.18em] text-muted-foreground/70">
@@ -369,7 +369,7 @@ export function ToolsRail() {
                         </div>
                         {availableEffects(installedPlugins).length === 0 ? (
                           <p className="px-2 text-[10px] leading-snug text-muted-foreground/80">
-                            None yet — drop your VST3 / AU / CLAP files on "Plugins" above or open it to scan a folder.
+                            None yet — drop your VST3 / AU / CLAP files on "FX Rack" above or open it to scan a folder.
                           </p>
                         ) : (
                           groupByCategory(availableEffects(installedPlugins)).map(([category, defs]) => <div key={category} role="group" aria-label={category}>

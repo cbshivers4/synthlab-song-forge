@@ -1,3 +1,4 @@
+import { faderTickPosition } from "@/lib/synclab/fader-taper";
 import { dbColor, LEVEL_RED, mixerDbToFraction, mixerFractionToDb, mixerSegmentDb } from "@/lib/synclab/level-colors";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { Knob } from "../Knob";
@@ -38,6 +39,20 @@ function dbToFrac(db: number) {
 
 export function fracToDb(frac: number) {
   return mixerFractionToDb(frac);
+}
+
+/** dB marks beside a fader, placed on the same console taper the fader uses. */
+export function FaderScale() {
+  return (
+    <div className="relative my-2 w-4 shrink-0" aria-hidden>
+      {DB_TICKS.map((db) => (
+        <div key={db} className="absolute right-0 flex translate-y-1/2 items-center gap-0.5" style={{ bottom: `${faderTickPosition(db) * 100}%` }}>
+          <span className={cn("font-mono text-[7px] leading-none", db > 0 ? "text-destructive" : "text-muted-foreground")}>{db > 0 ? `+${db}` : db}</span>
+          <span className="h-px w-1 bg-border" />
+        </div>
+      ))}
+    </div>
+  );
 }
 
 /** Real post-fader signal readings; one shared 20 fps refresh for every strip. */

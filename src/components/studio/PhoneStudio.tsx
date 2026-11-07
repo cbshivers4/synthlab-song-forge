@@ -37,7 +37,7 @@ const tools = [
   { label: "Bass Generator", icon: Music2, panel: "bassgen" },
   { label: "Convert Voice", icon: Mic, panel: "voice" },
   { label: "Generate Stem", icon: Sparkles, panel: "genstem" },
-  { label: "Plugins", icon: Cpu, panel: "plugins" },
+  { label: "FX Rack", icon: Cpu, panel: "plugins" },
   { label: "Mastering", icon: Gauge, panel: "mastering" }, { label: "Reference", icon: FileSearch, panel: "reference" },
   { label: "Phone settings", icon: Settings2, panel: "settings" }, { label: "Appearance", icon: Palette, panel: "appearance" },
   { label: "Track notes", icon: NotebookPen, panel: "notes" }, { label: "Other apps", icon: AudioLines, panel: "apps" },

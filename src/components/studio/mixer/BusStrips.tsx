@@ -1,3 +1,4 @@
+import { FADER_MAX_GAIN, faderGain, faderPosition } from "@/lib/synclab/fader-taper";
 import { type CSSProperties } from "react";
 import { ChevronRight, Settings2, Sliders, Waves } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
@@ -37,7 +38,7 @@ export function BusStrip({
       <div className={cn(ROW.head, "flex items-center justify-between border-b border-black/50 px-1.5 font-mono text-[8px] uppercase tracking-widest text-muted-foreground")} style={{ background: tint(16) }}>
         <Screw />
         <ChevronRight className="size-3.5 shrink-0" aria-hidden />
-        <div className="mx-header-gain"><Knob label={`${id} bus gain`} value={state.volume} min={0} max={1.2} step={0.01} size={30} onChange={(volume) => onChange({ volume })} midiTarget={{ id: `bus:${id}`, param: "volume" }} /></div>
+        <div className="mx-header-gain"><Knob label={`${id} bus gain`} value={state.volume} min={0} max={FADER_MAX_GAIN} step={0.01} size={30} onChange={(volume) => onChange({ volume })} midiTarget={{ id: `bus:${id}`, param: "volume" }} /></div>
       </div>
       {advanced && (
         <div className={cn(ROW.scope, "border-b border-border/60 p-[3px]")}>
@@ -65,11 +66,11 @@ export function BusStrip({
           aria-label={`${id} bus volume`}
           orientation="vertical"
           className={cn("h-full w-8", FADER_CAP)}
-          value={[state.volume]}
+          value={[faderPosition(state.volume)]}
           min={0}
-          max={1.2}
-          step={0.01}
-          onValueChange={([v = 0]) => onChange({ volume: v })}
+          max={1}
+          step={0.001}
+          onValueChange={([v = 0]) => onChange({ volume: faderGain(v) })}
         />
         <MidiLearnButton id={`bus:${id}`} param="volume" label={`${id} bus level`} />
         <Meter id={`bus:${id}`} level={level} tall />
@@ -136,7 +137,7 @@ export function ControlStrip({ kind, name, state, onChange, memberCount, level }
   return (
     <div className="mx-routing-strip flex w-[116px] shrink-0 flex-col border-r border-border bg-surface-2/70">
       <div className={cn(ROW.name, "flex items-center justify-center border-b border-border font-mono text-[11px] font-bold tracking-wider", aux ? "text-primary" : "text-accent-foreground")}>{kind} {name}</div>
-      <div className={cn(ROW.head, "flex items-center justify-end gap-1.5 border-b border-border px-1.5")}><ChevronRight className="size-3.5 shrink-0" aria-hidden /><div className="mx-header-gain"><Knob label={`${kind} ${name} gain`} value={state.volume} min={0} max={1.2} step={0.01} size={30} onChange={(volume) => onChange({ volume })} midiTarget={{ id: `${aux ? "aux" : "vca"}:${name}`, param: "volume" }} /></div></div>
+      <div className={cn(ROW.head, "flex items-center justify-end gap-1.5 border-b border-border px-1.5")}><ChevronRight className="size-3.5 shrink-0" aria-hidden /><div className="mx-header-gain"><Knob label={`${kind} ${name} gain`} value={state.volume} min={0} max={FADER_MAX_GAIN} step={0.01} size={30} onChange={(volume) => onChange({ volume })} midiTarget={{ id: `${aux ? "aux" : "vca"}:${name}`, param: "volume" }} /></div></div>
        <div className={cn(ROW.eq, "flex items-center justify-center gap-1 border-b border-border/60")}><MidiLearnButton id={`${aux ? "aux" : "vca"}:${name}`} param="volume" label={`${kind} ${name} level`} /><MidiLearnButton id={`${aux ? "aux" : "vca"}:${name}`} param="mute" label={`${kind} ${name} mute`} /></div>
       {advanced && <div className={cn(ROW.scope, "flex items-center justify-center border-b border-border/60 font-mono text-[9px] text-muted-foreground")}>{aux ? "FX RETURN" : `${memberCount ?? 0} CHANNELS`}</div>}
       <div className={cn(ROW.devices, "flex items-center border-b border-border/60 p-2")}>
@@ -147,7 +148,7 @@ export function ControlStrip({ kind, name, state, onChange, memberCount, level }
       <div className={cn(ROW.io, "flex items-center justify-center border-b border-border/60 font-mono text-[9px] uppercase text-muted-foreground")}>{aux ? "Master" : "Assigned channels"}</div>
       <div className={cn(ROW.pan, "border-b border-border/60")} />
       <div className={cn(ROW.fader, "flex items-stretch justify-center gap-2 border-b border-border/60 py-1")}>
-        <Slider aria-label={`${kind} ${name} level`} orientation="vertical" className={cn("h-full w-8", FADER_CAP)} value={[state.volume]} min={0} max={1.2} step={0.01} onValueChange={([value = 0]) => onChange({ volume: value })} />
+        <Slider aria-label={`${kind} ${name} level`} orientation="vertical" className={cn("h-full w-8", FADER_CAP)} value={[faderPosition(state.volume)]} min={0} max={1} step={0.001} onValueChange={([value = 0]) => onChange({ volume: faderGain(value) })} />
         <Meter id={`${aux ? "aux" : "vca"}:${name}`} level={level} tall />
       </div>
       <div className={cn(ROW.readout, "flex items-center justify-between gap-1 border-b border-border/60 px-1 font-mono text-[9px] text-muted-foreground")}><span>{toDb(state.volume).toFixed(1)}</span><span>{fracToDb(level).toFixed(0)}</span><ClipLed id={`${aux ? "aux" : "vca"}:${name}`} compact /></div>

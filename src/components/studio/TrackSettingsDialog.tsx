@@ -3,6 +3,7 @@
  * mute/solo, MIDI channel and octave. Opened from anywhere with
  * openTrackSettings(trackId); every control writes straight to the track.
  */
+import { faderGain, faderPosition } from "@/lib/synclab/fader-taper";
 import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -65,7 +66,7 @@ export function TrackSettingsDialog() {
             </div>
             <div className="space-y-1">
               <div className="flex justify-between"><span className="label-xs">Volume</span><span className="font-mono text-xs">{Math.round(track.volume * 100)}%</span></div>
-              <Slider value={[track.volume]} min={0} max={1.2} step={0.01} onValueChange={([v = 0]) => set({ volume: v })} />
+              <Slider value={[faderPosition(track.volume)]} min={0} max={1} step={0.001} onValueChange={([v = 0]) => set({ volume: faderGain(v) })} />
             </div>
             <div className="space-y-1">
               <div className="flex justify-between"><span className="label-xs">Pan</span><span className="font-mono text-xs">{track.pan === 0 ? "C" : track.pan < 0 ? `L${Math.round(-track.pan * 100)}` : `R${Math.round(track.pan * 100)}`}</span></div>

@@ -1,3 +1,4 @@
+import { faderGain, faderPosition } from "@/lib/synclab/fader-taper";
 import { availableEffects } from "@/lib/synclab/effect-catalog";
 import { EffectPicker } from "../EffectPicker";
 import { useEffect, useRef, type CSSProperties } from "react";
@@ -15,7 +16,7 @@ import { clearClip, peakHoldDb, peakHoldText, useClipped } from "@/lib/synclab/c
 import { Scope } from "../Scope";
 import { FxMenu } from "./BusStrips";
 import { EqCurve } from "./ChannelEq";
-import { BUS_COLOR, ClipLed, DB_TICKS, FADER_CAP, Meter, PANEL, ROW, Screw, fracToDb, toDb } from "./shared";
+import { BUS_COLOR, ClipLed, FADER_CAP, FaderScale, Meter, PANEL, ROW, Screw, fracToDb, toDb } from "./shared";
 
 /** Master insert chain with one-tap mastering effects (limiter first). */
 function MasterChain({ color, className }: { color: string; className?: string }) {
@@ -294,27 +295,18 @@ export function MasterStrip({ level: peak }: { level: number }) {
         className={cn(ROW.fader, "flex items-stretch justify-center gap-1 border-b border-border/60 py-1")}
         style={{ "--primary": color } as CSSProperties}
       >
-        <div className="flex flex-col justify-between py-1">
-          {DB_TICKS.map((db) => (
-            <div key={db} className="flex items-center gap-0.5">
-              <span className="font-mono text-[7px] leading-none text-muted-foreground">
-                {db > 0 ? `+${db}` : db}
-              </span>
-              <span className="h-px w-1 bg-border" />
-            </div>
-          ))}
-        </div>
+        <FaderScale />
         <Slider
           aria-label="Master volume"
           aria-valuetext={master.volume === 0 ? "Silent" : `${toDb(master.volume).toFixed(1)} decibels`}
           orientation="vertical"
           className={cn("h-full w-8", FADER_CAP)}
-          value={[master.volume]}
+          value={[faderPosition(master.volume)]}
           min={0}
-          max={1.2}
-          step={0.01}
+          max={1}
+          step={0.001}
           onDoubleClick={() => setBus("master", { volume: 1 })}
-          onValueChange={([v = 0]) => setBus("master", { volume: v })}
+          onValueChange={([v = 0]) => setBus("master", { volume: faderGain(v) })}
         />
         <Meter id="master" level={peak} tall />
         <Meter id="master" level={peak} tall />

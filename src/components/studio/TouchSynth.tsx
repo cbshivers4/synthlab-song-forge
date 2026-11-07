@@ -1,6 +1,6 @@
 import { getPlayStep, usePlayStep } from "@/lib/synclab/playhead";
 import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
-import { useEffect, useRef, useState, type PointerEvent } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react';
 import { ArrowRightToLine, ChevronLeft, ChevronRight, Circle, Eraser, Hand, ListMusic, Pencil, Play, Square } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -8,14 +8,18 @@ import { Knob } from './Knob';
 import { useStudio } from '@/lib/synclab/store';
 import { applyPreset } from '@/lib/synclab/presets';
 import { getEngine } from '@/lib/synclab/audio-engine';
-import { laneById, loopsToNotes, placeLoopNote, eraseLoopNote, touchPitch, touchCutoff, TOUCH_LANES, TOUCH_LOOP_STEPS, TOUCH_SCALES, TOUCH_SOUNDS, type TouchLoops } from '@/lib/synclab/touch-synth';
+import { laneById, touchDrumAt, touchDrumColor, TOUCH_DRUM, TOUCH_DRUM_COLUMNS, TOUCH_DRUM_LABELS, loopsToNotes, placeLoopNote, eraseLoopNote, touchPitch, touchCutoff, TOUCH_LANES, TOUCH_LOOP_STEPS, TOUCH_SCALES, TOUCH_SOUNDS, type TouchLoops } from '@/lib/synclab/touch-synth';
 import type { Track } from '@/lib/synclab/types';
 import { genreLoops, loadGenreLoops, TOUCH_LOOP_GENRES, TOUCH_LOOP_LIBRARY } from '@/lib/synclab/touch-loop-library';
 import { PresetNavigator } from './PresetNavigator';
 import { HardwareBypass } from './HardwareBypass';
 
+/** Colour display order: kick, closed hat, open hat, snare, clap. */
+const DRUM_DISPLAY = [TOUCH_DRUM.kick, TOUCH_DRUM.closedHat, TOUCH_DRUM.openHat, TOUCH_DRUM.snare, TOUCH_DRUM.clap];
+/** Loop editor rows, top to bottom. */
+const DRUM_ROWS = [TOUCH_DRUM.kick, TOUCH_DRUM.closedHat, TOUCH_DRUM.openHat, TOUCH_DRUM.snare, TOUCH_DRUM.clap, TOUCH_DRUM.tom];
 const KEYS = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
-const drumPad = (kind: string) => ({ id: `touch-${kind}`, name: kind, kind: kind as 'kick', volume: 1, pan: 0, pitch: 0, decay: .4, muted: false, solo: false, steps: [] as number[] });
+const drumPad = (kind: string) => ({ id: `touch-${kind}`, name: kind, kind: kind as 'kick', volume: 1, pan: 0, pitch: 0, decay: kind === 'openhat' ? .55 : .4, muted: false, solo: false, steps: [] as number[] });
 
 export function TouchSynth({ track }: { track: Track }) {
   const { previewNote, updatePatch, transport, updateTrack } = useStudio();
@@ -35,6 +39,16 @@ export function TouchSynth({ track }: { track: Track }) {
   const marker = useRef<HTMLDivElement>(null);
   const playhead = useRef<HTMLDivElement>(null);
   const lastMove = useRef(0);
+  const root = useRef<HTMLElement>(null);
+  const litTimers = useRef(new Map<Element, number>());
+  /** Lights a drum's pad cell and colour-display window for a moment when it actually plays. */
+  const flashDrum = (drum: number) => {
+    root.current?.querySelectorAll(`[data-drum="${drum}"]`).forEach((el) => {
+      el.setAttribute('data-lit', '');
+      window.clearTimeout(litTimers.current.get(el));
+      litTimers.current.set(el, window.setTimeout(() => el.removeAttribute('data-lit'), 140));
+    });
+  };
   const [active, setActive] = useState(false);
   const [recording, setRecording] = useState(false);
   const [playingLoops, setPlayingLoops] = useState(false);
@@ -87,9 +101,11 @@ export function TouchSynth({ track }: { track: Track }) {
     if (!s.track.patch) return;
     if (s.lane.drums) {
       const kinds = s.lane.drums;
-      const kind = kinds[Math.max(0, Math.min(kinds.length - 1, Math.round(pitch)))] ?? 'kick';
+      const drum = Math.max(0, Math.min(kinds.length - 1, Math.round(pitch)));
+      const kind = kinds[drum] ?? 'kick';
       getEngine().playDrum(s.track.id, drumPad(kind), .9);
-      setReadout(kind.toUpperCase());
+      flashDrum(drum);
+      setReadout(TOUCH_DRUM_LABELS[drum] ?? kind.toUpperCase());
       return;
     }
     const cutoff = touchCutoff(pos.current.y);
@@ -103,7 +119,7 @@ export function TouchSynth({ track }: { track: Track }) {
     const s = latest.current;
     if (!s.track.patch) return;
     const pitch = s.lane.drums
-      ? Math.round(pos.current.x * (s.lane.drums.length - 1))
+      ? touchDrumAt(pos.current.x, pos.current.y)
       : touchPitch(pos.current.x, s.settings.root, s.settings.octave, s.settings.scale);
     const length = (60 / s.transport.bpm / s.settings.rate) * s.settings.gate;
     playHit(pitch, length);
@@ -126,8 +142,9 @@ export function TouchSynth({ track }: { track: Track }) {
         for (const n of cur.loops[l.id] ?? []) {
           if (n.step !== step) continue;
           if (l.drums) {
-            const kind = l.drums[Math.max(0, Math.min(l.drums.length - 1, Math.round(n.pitch)))] ?? 'kick';
-            getEngine().playDrum(cur.track.id, drumPad(kind), n.vel);
+            const drum = Math.max(0, Math.min(l.drums.length - 1, Math.round(n.pitch)));
+            getEngine().playDrum(cur.track.id, drumPad(l.drums[drum] ?? 'kick'), n.vel);
+            flashDrum(drum);
           } else if (cur.track.patch) {
             const patch = { ...applyPreset(cur.settings.sounds?.[l.id] ?? l.sound), voiceMode: 'poly' as const, arp: { ...cur.track.patch.arp, on: false } };
             cur.previewNote(cur.track.id, n.pitch, n.length * stepDur, false, patch);
@@ -192,7 +209,7 @@ export function TouchSynth({ track }: { track: Track }) {
   const laneNotes = loops[lane.id] ?? [];
   const pitchCount = (TOUCH_SCALES[settings.scale]?.length ?? 5) * 2 + 1;
   const pitches = lane.drums
-    ? lane.drums.map((_, i) => i).reverse()
+    ? DRUM_ROWS.filter((i) => i < (lane.drums?.length ?? 0))
     : Array.from({ length: pitchCount }, (_, i) => touchPitch((pitchCount - 1 - i) / (pitchCount - 1), settings.root, settings.octave, settings.scale));
   const editCell = (step: number, pitch: number) => {
     const s = latest.current;
@@ -204,7 +221,8 @@ export function TouchSynth({ track }: { track: Track }) {
     if (index < 0 && editMode === 'draw') playHit(pitch, 60 / s.transport.bpm / s.settings.rate * s.settings.gate);
   };
   const totalNotes = TOUCH_LANES.reduce((n, l) => n + (loops[l.id]?.length ?? 0), 0);
-  return <section className="min-w-0 space-y-3" aria-label="Touch synth">
+  const drumNotes = loops['drums'] ?? [];
+  return <section ref={root} className="min-w-0 space-y-3" aria-label="Touch synth">
     <header className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-2">
       <h3 className="flex items-center gap-2 font-display text-lg font-bold text-primary"><Hand className="size-5" /> SYNCLAB TOUCH</h3>
       <HardwareBypass track={track} name="Touch Synth" />
@@ -256,23 +274,37 @@ export function TouchSynth({ track }: { track: Track }) {
         <Select value={String(settings.root)} onValueChange={v => save({ root: Number(v) })}><SelectTrigger aria-label="Touch key" className="w-20"><SelectValue /></SelectTrigger><SelectContent>{KEYS.map((k, i) => <SelectItem key={k} value={String(i)}>{k}</SelectItem>)}</SelectContent></Select>
         <Select value={settings.scale} onValueChange={scale => save({ scale })}><SelectTrigger aria-label="Touch scale" className="w-48"><SelectValue /></SelectTrigger><SelectContent>{Object.keys(TOUCH_SCALES).map(scale => <SelectItem key={scale} value={scale}>{scale}</SelectItem>)}</SelectContent></Select>
       </>}
-      {lane.drums && <span className="self-center font-mono text-xs text-muted-foreground">LEFT → RIGHT: {lane.drums.map((d) => d.toUpperCase()).join(' · ')}</span>}
+      {lane.drums && <span className="self-center font-mono text-xs text-muted-foreground">KICK · HI-HAT (CLOSED BOTTOM / OPEN TOP) · SNARE · CLAP</span>}
     </div>
+    {lane.drums && <div className="touch-drum-display grid grid-cols-5 gap-1 rounded-md p-1.5" role="group" aria-label="Drum colour display">
+      {DRUM_DISPLAY.map((drum) => <div key={drum} data-drum={drum} className="touch-drum-led flex min-w-0 flex-col items-center justify-center rounded-sm px-1 py-1.5 font-mono" style={{ '--drum-color': touchDrumColor(drum) } as CSSProperties}>
+        <span className="block max-w-full truncate text-[10px] font-bold">{TOUCH_DRUM_LABELS[drum]}</span>
+        <span className="block text-[9px] opacity-80">{drumNotes.filter((n) => Math.round(n.pitch) === drum).length} hits</span>
+      </div>)}
+    </div>}
     <div className="grid min-w-0 gap-4 sm:grid-cols-[minmax(0,1fr)_auto]">
       <div role="slider" tabIndex={0} aria-label="Touch performance pad" aria-valuemin={0} aria-valuemax={1} aria-valuenow={pos.current.x} aria-valuetext={readout}
         className="relative h-64 w-full touch-none select-none overflow-hidden rounded-md border-2 bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         style={{ borderColor: `${lane.color}88` }}
-        onPointerDown={e => { if (pointer.current !== null) return; e.preventDefault(); e.currentTarget.focus(); pointer.current = e.pointerId; e.currentTarget.setPointerCapture(e.pointerId); move(e); setActive(true); trigger(); }}
+        onPointerDown={e => { if (pointer.current !== null) return; e.preventDefault(); e.currentTarget.focus({ preventScroll: true }); pointer.current = e.pointerId; e.currentTarget.setPointerCapture(e.pointerId); move(e); setActive(true); trigger(); }}
         onPointerMove={e => { if (pointer.current === e.pointerId) move(e); }} onPointerUp={stopPad} onPointerCancel={stopPad} onLostPointerCapture={stopPad} onBlur={stopPad}
         onKeyDown={e => { if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', ' '].includes(e.key)) return; e.preventDefault(); e.stopPropagation(); if (e.repeat) return; pos.current = { x: Math.max(0, Math.min(1, pos.current.x + (e.key === 'ArrowRight' ? .08 : e.key === 'ArrowLeft' ? -.08 : 0))), y: Math.max(0, Math.min(1, pos.current.y + (e.key === 'ArrowUp' ? .1 : e.key === 'ArrowDown' ? -.1 : 0))) }; if (timer.current) clearTimeout(timer.current); trigger(); }}>
-        <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden="true">{[20,40,60,80].map(v => <path key={v} d={`M ${v} 0 V 100 M 0 ${v} H 100`} stroke="var(--border)" strokeWidth=".3" />)}</svg>
-        {TOUCH_LANES.map((l) => (loops[l.id] ?? []).map((n, i) => {
+        {lane.drums
+          ? <div className="pointer-events-none absolute inset-0 grid grid-cols-4" aria-hidden="true">
+            {TOUCH_DRUM_COLUMNS.map((col) => <div key={col.label} className="flex min-w-0 flex-col border-r border-border last:border-r-0">
+              {col.cells.map((drum) => <div key={drum} data-drum={drum} className="touch-drum-cell flex min-h-0 flex-1 items-end justify-center border-b border-border/70 pb-2 text-center font-mono text-xs font-bold last:border-b-0" style={{ '--drum-color': col.color } as CSSProperties}>{TOUCH_DRUM_LABELS[drum]}</div>)}
+            </div>)}
+          </div>
+          : <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden="true">{[20,40,60,80].map(v => <path key={v} d={`M ${v} 0 V 100 M 0 ${v} H 100`} stroke="var(--border)" strokeWidth=".3" />)}</svg>}
+        {!lane.drums && TOUCH_LANES.map((l) => (loops[l.id] ?? []).map((n, i) => {
           const y = l.drums ? 1 - n.pitch / Math.max(1, (l.drums?.length ?? 1) - 1) : 1 - (n.pitch % 24) / 24;
           return <span key={`${l.id}-${i}`} aria-hidden="true" className="pointer-events-none absolute size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full" style={{ left: `${(n.step / TOUCH_LOOP_STEPS) * 100}%`, top: `${y * 100}%`, background: l.color, boxShadow: `0 0 8px ${l.color}` }} />;
         }))}
-        <div ref={playhead} aria-hidden="true" className={`pointer-events-none absolute inset-y-0 w-0.5 bg-foreground/70 ${playingLoops ? '' : 'hidden'}`} style={{ left: '0%' }} />
-        <span className="pointer-events-none absolute left-3 top-3 font-mono text-xs text-muted-foreground">{lane.drums ? 'DRUMS' : 'TONE ↑'}</span>
-        <span className="pointer-events-none absolute bottom-3 right-3 font-mono text-xs text-muted-foreground">{lane.drums ? 'KICK → TOM' : 'PITCH →'}</span>
+        <div ref={playhead} aria-hidden="true" className={`pointer-events-none absolute inset-y-0 w-0.5 bg-foreground/70 ${playingLoops && !lane.drums ? '' : 'hidden'}`} style={{ left: '0%' }} />
+        {!lane.drums && <>
+          <span className="pointer-events-none absolute left-3 top-3 font-mono text-xs text-muted-foreground">TONE ↑</span>
+          <span className="pointer-events-none absolute bottom-3 right-3 font-mono text-xs text-muted-foreground">PITCH →</span>
+        </>}
         <div ref={marker} className={`pointer-events-none absolute left-1/2 top-1/2 size-6 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 ${active ? '' : 'opacity-60'}`} style={{ borderColor: lane.color, background: active ? lane.color : `${lane.color}33` }} />
       </div>
       <div className="flex flex-wrap items-start gap-3 sm:w-40">
@@ -292,7 +324,7 @@ export function TouchSynth({ track }: { track: Track }) {
         <div className="min-w-[1040px]">
           <div className="flex h-6"><span className="w-16 shrink-0" />{Array.from({ length: TOUCH_LOOP_STEPS }, (_, step) => <span key={step} className="w-[30px] shrink-0 text-center font-mono text-[10px] text-muted-foreground">{step + 1}</span>)}</div>
           {pitches.map(pitch => <div key={pitch} className="flex h-[30px]">
-            <span className="flex w-16 shrink-0 items-center px-1 font-mono text-[10px] text-muted-foreground">{lane.drums ? lane.drums[pitch]?.toUpperCase() : `${KEYS[pitch % 12]}${Math.floor(pitch / 12) - 1}`}</span>
+            <span className="flex w-16 shrink-0 items-center px-1 font-mono text-[10px] text-muted-foreground">{lane.drums ? TOUCH_DRUM_LABELS[pitch] : `${KEYS[pitch % 12]}${Math.floor(pitch / 12) - 1}`}</span>
             {Array.from({ length: TOUCH_LOOP_STEPS }, (_, step) => {
               const filled = laneNotes.some(n => n.step === step && n.pitch === pitch);
               return <Button key={step} variant="ghost" aria-label={`${filled ? 'Erase' : 'Place'} ${lane.label} note ${pitch} at step ${step + 1}`} aria-pressed={filled} onClick={() => editCell(step, pitch)} className="h-[30px] w-[30px] shrink-0 rounded-none border border-border p-0" style={{ color: lane.color }}>

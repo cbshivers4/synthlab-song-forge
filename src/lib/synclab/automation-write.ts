@@ -6,10 +6,10 @@ export const LIVE_PARAMS = ["volume", "pan", "sendReverb", "sendDelay"] as const
 type LiveParam = (typeof LIVE_PARAMS)[number];
 export const isLiveParam = (param: AutomationParam): param is LiveParam => (LIVE_PARAMS as readonly string[]).includes(param);
 
-/** The control's current value in lane units: volume/sends 0..1.2, pan -1..1. */
+/** The control's current value in lane units: volume 0..2 (+6 dB), sends 0..1.2, pan -1..1. */
 export function liveValue(track: Pick<Track, "volume" | "pan" | "sends">, param: LiveParam): number {
   const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, Number.isFinite(v) ? v : 0));
-  if (param === "volume") return clamp(track.volume, 0, 1.2);
+  if (param === "volume") return clamp(track.volume, 0, 2);
   if (param === "pan") return clamp(track.pan, -1, 1);
   if (param === "sendReverb") return clamp(track.sends?.reverb ?? 0, 0, 1.2);
   return clamp(track.sends?.delay ?? 0, 0, 1.2);

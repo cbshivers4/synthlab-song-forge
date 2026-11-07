@@ -1,3 +1,4 @@
+import { FADER_MAX_GAIN } from "@/lib/synclab/fader-taper";
 import { useState, type CSSProperties, type ReactNode } from "react";
 import { ChevronLeft, ChevronRight, MoreHorizontal, NotebookPen, Palette, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -416,7 +417,7 @@ function RoutePanel({ kind, id, color }: { kind: "bus" | "aux"; id: BusId | AuxI
         <Panel>
           <Section title={`${name} level`}>
             <div className="flex items-center justify-around gap-3">
-              <Knob label="Level" ariaLabel={`${name} level`} value={state.volume} min={0} max={1.2} step={0.01} defaultValue={1} format={(v) => (v === 0 ? "-∞" : `${toDb(v).toFixed(1)}`)} size={KNOB} onChange={(v) => change({ volume: v })} midiTarget={{ id: meterId, param: "volume" }} />
+              <Knob label="Level" ariaLabel={`${name} level`} value={state.volume} min={0} max={FADER_MAX_GAIN} step={0.01} defaultValue={1} format={(v) => (v === 0 ? "-∞" : `${toDb(v).toFixed(1)}`)} size={KNOB} onChange={(v) => change({ volume: v })} midiTarget={{ id: meterId, param: "volume" }} />
             </div>
             <div className="mt-2 grid grid-cols-2 gap-1.5">
               <BigButton onClick={() => change({ volume: 1 })}>Unity 0 dB</BigButton>
@@ -503,7 +504,7 @@ function VcaPanel({ id }: { id: VcaId }) {
         <Panel>
           <Section title={`VCA ${id} level`}>
             <div className="flex items-center justify-around gap-3">
-              <Knob label="Level" ariaLabel={`VCA ${id} level`} value={state.volume} min={0} max={1.2} step={0.01} defaultValue={1} format={(v) => (v === 0 ? "-∞" : `${toDb(v).toFixed(1)}`)} size={KNOB} onChange={(v) => setVca(id, { volume: v })} midiTarget={{ id: `vca:${id}`, param: "volume" }} />
+              <Knob label="Level" ariaLabel={`VCA ${id} level`} value={state.volume} min={0} max={FADER_MAX_GAIN} step={0.01} defaultValue={1} format={(v) => (v === 0 ? "-∞" : `${toDb(v).toFixed(1)}`)} size={KNOB} onChange={(v) => setVca(id, { volume: v })} midiTarget={{ id: `vca:${id}`, param: "volume" }} />
             </div>
             <div className="mt-2 grid grid-cols-2 gap-1.5">
               <BigButton onClick={() => setVca(id, { volume: 1 })}>Unity 0 dB</BigButton>

@@ -177,3 +177,9 @@
 - [x] Edit screen: transport/record row and tool rows no longer cut off (wrap/compact instead of clipping)
 - [x] Drum roll: every drum row reachable with its own side scroll bar
 - [x] Edit screen: track name area resizable (drag the teal edge; 120–420px on phone, remembered on the device)
+
+## Nov 7 — Bass Generator, mixer loudness, FX Rack, Touch Synth drums (Christopher)
+- [x] Bass Generator: "Generate for me" removed; Generate bassline + Write my own notes remain
+- [x] Mixer faders: dB taper with up to +6 dB boost (was +1.6 dB) on desktop/phone tracks, buses, master and MIDI CC; printed dB scale beside faders
+- [x] "Plugins" renamed "FX Rack" in menus, rail, phone and search
+- [x] Touch Synth drums: four columns (kick · closed/open hat · snare · clap) with colour display and lit pads

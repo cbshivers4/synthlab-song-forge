@@ -3742,3 +3742,24 @@ html.phone-console-active [role="option"] { min-height: 44px; font-size: 15px; }
 .phone-console .timeline-hscroll-zoom { min-height: 0 !important; min-width: 0 !important; }
 .phone-console .phone-edit-fit .timeline-edit-toolbar > button:not(.size-8) { gap: 1px; }
 .phone-console .phone-edit-fit .timeline-edit-toolbar > button:not(.size-8) > svg:last-child:not(:first-child) { width: 10px; height: 10px; }
+
+/* Touch Synth drum lane: four coloured sound columns and a lit colour display. */
+.touch-drum-cell,
+.touch-drum-led {
+  color: var(--drum-color);
+  background: color-mix(in oklab, var(--drum-color) 20%, var(--hardware-black));
+  transition: background-color 140ms ease-out, color 140ms ease-out, box-shadow 140ms ease-out;
+}
+.touch-drum-display {
+  background: var(--hardware-black);
+  border: 1px solid var(--border);
+  box-shadow: inset 0 0 12px color-mix(in oklab, var(--hardware-black) 60%, transparent);
+}
+.touch-drum-led { border: 1px solid color-mix(in oklab, var(--drum-color) 45%, transparent); }
+.touch-drum-cell[data-lit],
+.touch-drum-led[data-lit] {
+  color: var(--hardware-black);
+  background: var(--drum-color);
+  box-shadow: 0 0 14px var(--drum-color), inset 0 0 10px color-mix(in oklab, var(--hardware-black) 30%, transparent);
+  transition-duration: 0ms;
+}

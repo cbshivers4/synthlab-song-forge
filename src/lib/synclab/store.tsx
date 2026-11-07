@@ -1,3 +1,4 @@
+import { faderGain } from "./fader-taper";
 import {
   createContext,
   useCallback,
@@ -706,7 +707,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             if ((hit.param === "solo" || hit.param === "mute" || hit.param === "arm") && v < 0.5) return; // toggle on press only
             setTracks((ts) => ts.map((t) => {
               if (t.id !== track.id) return t;
-              if (hit.param === "volume") return { ...t, volume: v * 1.2 };
+              if (hit.param === "volume") return { ...t, volume: faderGain(v) };
               if (hit.param === "pan") return { ...t, pan: v * 2 - 1 };
               if (hit.param === "solo") return { ...t, ...manualSwitchPatch({ solo: !t.solo }, isTakingSwitches()) };
               if (hit.param === "mute") return { ...t, ...manualSwitchPatch({ muted: !t.muted }, isTakingSwitches()) };
@@ -730,7 +731,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
            if (target.id.startsWith("bus:") || target.id.startsWith("vca:") || target.id.startsWith("aux:")) {
              const [kind, id] = target.id.split(":");
              if (!id || !["volume", "mute"].includes(target.param)) return;
-             const patch = target.param === "volume" ? { volume: ccRange(v, 0, 1.2) } : { muted: v >= 0.5 };
+             const patch = target.param === "volume" ? { volume: faderGain(v) } : { muted: v >= 0.5 };
              if (kind === "bus" && ["drums", "synths", "vocals", "fx", "master"].includes(id))
                setBuses((b) => ({ ...b, [id]: { ...b[id as BusId], ...patch } }));
              if (kind === "vca" && ["A", "B", "C", "D"].includes(id))
@@ -740,7 +741,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
              return;
            }
           if (target.id === "master") {
-            if (target.param === "volume") setBuses((b) => ({ ...b, master: { ...b.master, volume: v * 1.2 } }));
+            if (target.param === "volume") setBuses((b) => ({ ...b, master: { ...b.master, volume: faderGain(v) } }));
             else if (target.param === "gain") setBuses((b) => ({ ...b, master: { ...b.master, gain: ccRange(v, 0, 2, 0.01) } }));
             else if (target.param === "mute" && v >= 0.5) setBuses((b) => ({ ...b, master: { ...b.master, muted: !b.master.muted } }));
             return;
@@ -844,7 +845,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             ts.map((t) =>
                t.id === target.id && ["volume", "pan", "mute", "solo", "gain"].includes(target.param)
                 ? target.param === "volume"
-                  ? { ...t, volume: v * 1.2 }
+                  ? { ...t, volume: faderGain(v) }
                   : target.param === "gain"
                     ? { ...t, gain: ccRange(v, 0, 2, 0.01) }
                     : target.param === "pan"

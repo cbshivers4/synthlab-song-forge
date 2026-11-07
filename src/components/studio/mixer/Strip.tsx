@@ -1,3 +1,4 @@
+import { faderGain, faderPosition } from "@/lib/synclab/fader-taper";
 import { availableEffects } from "@/lib/synclab/effect-catalog";
 import { EffectPicker } from "../EffectPicker";
 import { type CSSProperties } from "react";
@@ -18,7 +19,7 @@ import { clearClip, peakHoldDb, peakHoldText, useClipped } from "@/lib/synclab/c
 import { Scope } from "../Scope";
 import { ChannelEq } from "./ChannelEq";
 import { DeviceSlots, SendsMenu } from "./InsertRack";
-import { BUSES, BUS_COLOR, ChannelGain, ClipLed, ColorDot, DB_TICKS, FADER_CAP, KindIcon, Meter, PANEL, ROW, SEND_KEYS, VCA_IDS, fracToDb, toDb } from "./shared";
+import { BUSES, BUS_COLOR, ChannelGain, ClipLed, ColorDot, FADER_CAP, FaderScale, KindIcon, Meter, PANEL, ROW, SEND_KEYS, VCA_IDS, fracToDb, toDb } from "./shared";
 
 const panText = (p: number) => (Math.abs(p) < 0.005 ? "C" : p < 0 ? `L${Math.round(-p * 100)}` : `R${Math.round(p * 100)}`);
 
@@ -261,27 +262,18 @@ export function Strip({
         style={{ "--primary": t.color } as CSSProperties}
       >
         {!narrow && (
-          <div className="flex flex-col justify-between py-1">
-            {DB_TICKS.map((db) => (
-              <div key={db} className="flex items-center gap-0.5">
-                <span className="font-mono text-[7px] leading-none text-muted-foreground">
-                  {db > 0 ? `+${db}` : db}
-                </span>
-                <span className="h-px w-1 bg-border" />
-              </div>
-            ))}
-          </div>
+          <FaderScale />
         )}
         <Slider
           aria-label={`${t.name} volume`} aria-valuetext={t.volume === 0 ? "Silent" : `${toDb(t.volume).toFixed(1)} decibels`}
           orientation="vertical"
           className={cn("h-full w-8", FADER_CAP)}
-          value={[t.volume]}
+          value={[faderPosition(t.volume)]}
           min={0}
-          max={1.2}
-          step={0.01}
+          max={1}
+          step={0.001}
           onDoubleClick={() => updateTrack(t.id, { volume: 0.8 })}
-          onValueChange={([v = 0]) => updateTrack(t.id, { volume: v })}
+          onValueChange={([v = 0]) => updateTrack(t.id, { volume: faderGain(v) })}
         />
         {vcaState && (
           <div className="relative w-2 shrink-0 rounded-sm bg-surface-2" title={`After VCA ${t.vca}: ${toDb(effective).toFixed(1)} dB`} aria-label={`Level after VCA ${t.vca}`}>

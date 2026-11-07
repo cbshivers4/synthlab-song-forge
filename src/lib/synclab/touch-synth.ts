@@ -24,13 +24,41 @@ export interface TouchLane {
 
 /** iKaossilator-style lanes: drums, bass, chords, melody and stabs/arps. */
 export const TOUCH_LANES: readonly TouchLane[] = [
-  { id: 'drums', label: 'DRUMS', color: '#f97316', sound: 'TR-909', octave: 2, drums: ['kick', 'snare', 'hat', 'clap', 'tom'] },
+  { id: 'drums', label: 'DRUMS', color: '#f97316', sound: 'TR-909', octave: 2, drums: ['kick', 'snare', 'hat', 'clap', 'tom', 'openhat'] },
   { id: 'bass', label: 'BASS', color: '#22d3ee', sound: 'Sub Bass', octave: 2 },
   { id: 'poly', label: 'POLY LOOPS', color: '#a78bfa', sound: 'Warehouse Pad', octave: 3 },
   { id: 'melody', label: 'MELODY', color: '#4ade80', sound: 'Soft Flute', octave: 4 },
   { id: 'stabs', label: 'STABS / ARP', color: '#f472b6', sound: 'Metro Pluck', octave: 3 },
 ];
 export const TOUCH_LOOP_STEPS = 32;
+/** Drum indexes into the drums lane list. Saved loops store these indexes, so new drums are only ever appended. */
+export const TOUCH_DRUM = { kick: 0, snare: 1, closedHat: 2, clap: 3, tom: 4, openHat: 5 } as const;
+export const TOUCH_DRUM_LABELS: readonly string[] = ['KICK', 'SNARE', 'CLOSED HAT', 'CLAP', 'TOM', 'OPEN HAT'];
+
+/**
+ * Performance pad columns, left → right: each column plays only its own sound.
+ * Column 2 is the hi-hat: bottom half closed, top half open. Cells are listed top first.
+ */
+export const TOUCH_DRUM_COLUMNS: readonly { label: string; color: string; cells: readonly number[] }[] = [
+  { label: 'KICK', color: '#f97316', cells: [TOUCH_DRUM.kick] },
+  { label: 'HI-HAT', color: '#facc15', cells: [TOUCH_DRUM.openHat, TOUCH_DRUM.closedHat] },
+  { label: 'SNARE', color: '#38bdf8', cells: [TOUCH_DRUM.snare] },
+  { label: 'CLAP', color: '#e879f9', cells: [TOUCH_DRUM.clap] },
+];
+const TOM_COLOR = '#4ade80';
+
+/** Which drum a touch at x (0 left..1 right) and y (0 bottom..1 top) plays. */
+export function touchDrumAt(x: number, y: number): number {
+  const cols = TOUCH_DRUM_COLUMNS.length;
+  const col = TOUCH_DRUM_COLUMNS[Math.max(0, Math.min(cols - 1, Math.floor(Math.max(0, Math.min(1, x)) * cols)))]!;
+  if (col.cells.length === 1) return col.cells[0]!;
+  const fromTop = 1 - Math.max(0, Math.min(1, y));
+  return col.cells[Math.min(col.cells.length - 1, Math.floor(fromTop * col.cells.length))]!;
+}
+
+/** Display colour of a drum, matching its pad column. */
+export const touchDrumColor = (drum: number) => TOUCH_DRUM_COLUMNS.find((c) => c.cells.includes(drum))?.color ?? TOM_COLOR;
+
 export const laneById = (id: string) => TOUCH_LANES.find((l) => l.id === id) ?? { id: 'bass', label: 'BASS', color: '#22d3ee', sound: 'Sub Bass', octave: 2 };
 
 /** Grid edits replace only an identical lane/step/pitch, leaving every other note intact. */

@@ -477,10 +477,10 @@ export class SyncLabEngine {
     // The master fader controls the complete mix, including every bus and FX return.
     // The "master" routing bus stays at unity so direct tracks are not attenuated twice.
     if (id === "master") {
-      this.master?.gain.setTargetAtTime(muted ? 0 : 0.85 * clamp(volume, 0, 1.5) * clamp(gain, 0, 2), this.ctx.currentTime, 0.02);
+      this.master?.gain.setTargetAtTime(muted ? 0 : 0.85 * clamp(volume, 0, 2) * clamp(gain, 0, 2), this.ctx.currentTime, 0.02);
       return;
     }
-    this.busNode(id).gain.setTargetAtTime(muted ? 0 : clamp(volume, 0, 1.5), this.ctx.currentTime, 0.02);
+    this.busNode(id).gain.setTargetAtTime(muted ? 0 : clamp(volume, 0, 2), this.ctx.currentTime, 0.02);
     // Sends leave the track before the subgroup, so follow its fader/mute too.
     for (const track of this.mixTracks) {
       if ((track.bus ?? "master") !== id) continue;
@@ -492,7 +492,7 @@ export class SyncLabEngine {
   private syncTrackSends(ch: ChannelStrip, track: Track, time: number) {
     if (!this.ctx) return;
     const bus = this.busStates[track.bus ?? "master"];
-    const scale = track.bus === "master" || !bus ? 1 : bus.muted ? 0 : clamp(bus.volume, 0, 1.5);
+    const scale = track.bus === "master" || !bus ? 1 : bus.muted ? 0 : clamp(bus.volume, 0, 2);
     const sends = track.sends ?? { reverb: 0, delay: 0, chorus: 0 };
     ch.sendReverb.gain.setTargetAtTime(clamp(sends.reverb * scale, 0, 1.5), time, 0.02);
     ch.sendDelay.gain.setTargetAtTime(clamp(sends.delay * scale, 0, 1.5), time, 0.02);
@@ -503,7 +503,7 @@ export class SyncLabEngine {
     this.auxStates[id] = { volume, muted };
     const node = this.auxReturns.get(id);
     if (!node || !this.ctx) return;
-    node.gain.setTargetAtTime(muted ? 0 : clamp(volume, 0, 1.5), this.ctx.currentTime, 0.02);
+    node.gain.setTargetAtTime(muted ? 0 : clamp(volume, 0, 2), this.ctx.currentTime, 0.02);
   }
 
   setVcaStates(states: Record<string, { volume: number; muted: boolean }>, tracks: Track[]) {
@@ -1576,15 +1576,15 @@ export class SyncLabEngine {
       const group = this.trackVcas.get(trackId);
       const vca = group ? this.vcaStates[group] : undefined;
       ch.gain.gain.setTargetAtTime(this.trackAudible.get(trackId) !== false && !vca?.muted
-        ? clamp(v["volume"] * (vca?.volume ?? 1), 0, 1.5) : 0, t, 0.02);
+        ? clamp(v["volume"] * (vca?.volume ?? 1), 0, 2) : 0, t, 0.02);
       for (const send of [ch.synthReverbScale, ch.synthChorusScale]) {
         send.gain.setTargetAtTime(this.trackAudible.get(trackId) !== false && !vca?.muted
-          ? clamp(v["volume"] * (vca?.volume ?? 1), 0, 1.5) : 0, t, 0.02);
+          ? clamp(v["volume"] * (vca?.volume ?? 1), 0, 2) : 0, t, 0.02);
       }
     }
     if (v["pan"] !== undefined) ch.pan.pan.setTargetAtTime(clamp(v["pan"], -1, 1), t, 0.02);
     const bus = this.busStates[ch.bus];
-    const sendScale = ch.bus === "master" || !bus ? 1 : bus.muted ? 0 : clamp(bus.volume, 0, 1.5);
+    const sendScale = ch.bus === "master" || !bus ? 1 : bus.muted ? 0 : clamp(bus.volume, 0, 2);
     if (v["sendReverb"] !== undefined) ch.sendReverb.gain.setTargetAtTime(clamp(v["sendReverb"] * sendScale, 0, 1.5), t, 0.02);
     if (v["sendDelay"] !== undefined) ch.sendDelay.gain.setTargetAtTime(clamp(v["sendDelay"] * sendScale, 0, 1.5), t, 0.02);
     for (const [key, normalized] of Object.entries(v)) {
@@ -1634,7 +1634,7 @@ export class SyncLabEngine {
       ch.trim.gain.setTargetAtTime(clamp(t.gain ?? 1, 0, 2), this.ctx.currentTime, 0.02);
       ch.gain.gain.setTargetAtTime(audible && !vca?.muted ? t.volume * (vca?.volume ?? 1) : 0, this.ctx.currentTime, 0.02);
       for (const send of [ch.synthReverbScale, ch.synthChorusScale]) {
-        send.gain.setTargetAtTime(audible && !vca?.muted ? clamp(t.volume * (vca?.volume ?? 1), 0, 1.5) : 0, this.ctx.currentTime, 0.02);
+        send.gain.setTargetAtTime(audible && !vca?.muted ? clamp(t.volume * (vca?.volume ?? 1), 0, 2) : 0, this.ctx.currentTime, 0.02);
       }
       ch.pan.pan.setTargetAtTime(clamp(t.pan, -1, 1), this.ctx.currentTime, 0.02);
       const bus = t.bus ?? "master";
