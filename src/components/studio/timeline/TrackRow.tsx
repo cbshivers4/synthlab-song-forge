@@ -336,7 +336,10 @@ export function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track:
   const startPhoneGesture = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!isMobile || e.pointerType === "mouse") return;
     const target = e.target as HTMLElement;
-    if (target.closest("button,input,textarea,select,[role='slider'],[role='combobox'],[contenteditable]")) return;
+    // Touches inside the track menu reach here through the React portal; swiping the menu must
+    // scroll it, never mute/solo/move this track.
+    if (!e.currentTarget.contains(target)) return;
+    if (target.closest("button,input,textarea,select,[role='slider'],[role='combobox'],[role='menu'],[contenteditable]")) return;
     const gesture = { ...canvasPoint(e.clientX, e.clientY), timer: null as number | null, moved: false };
     gesture.timer = window.setTimeout(() => {
       suppressClickRef.current = true;

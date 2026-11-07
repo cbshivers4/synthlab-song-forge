@@ -15,6 +15,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { StudioProvider } from "@/lib/synclab/store";
 import { AppProvider } from "@/lib/synclab/app-state";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { installSidewaysModalScroll } from "@/lib/sideways-scroll";
 
 function NotFoundComponent() {
   return (
@@ -142,6 +143,7 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  useEffect(() => { installSidewaysModalScroll(); }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

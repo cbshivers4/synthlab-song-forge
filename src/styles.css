@@ -1016,6 +1016,8 @@ html[data-reduce-motion] *, html[data-reduce-motion] *::before, html[data-reduce
     transform: none !important;
     z-index: 60 !important;
   }
+  /* Rotated canvas: menus take touch drags themselves (lib/sideways-scroll) so their lists scroll. */
+  .phone-sideways-default [role="menu"] { touch-action: none !important; overscroll-behavior: contain; }
   .phone-sideways-default .timeline-channel-menu {
     width: 280px;
     max-height: calc(100dvw - 16px) !important;
