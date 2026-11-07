@@ -31,7 +31,7 @@ export type PhoneChannelTarget =
   | { kind: "vca"; id: VcaId }
   | { kind: "aux"; id: AuxId };
 
-const BIG = "min-h-12 rounded-md border px-3 font-mono text-xs font-bold uppercase tracking-wider transition-colors disabled:opacity-40";
+const BIG = "min-h-12 min-w-0 rounded-md border px-3 font-mono leading-tight [overflow-wrap:anywhere] text-xs font-bold uppercase tracking-wider transition-colors disabled:opacity-40";
 const OFF = "border-border bg-surface text-foreground hover:border-primary/60";
 const ON = "border-primary bg-primary text-primary-foreground";
 const KNOB = 56;
@@ -243,9 +243,9 @@ function TrackRouting({ t }: { t: Track }) {
   return (
     <Panel>
       <Section title="Output — where this channel goes">
-        <div className="grid grid-cols-3 gap-1.5">
+        <div className="grid grid-cols-2 gap-1.5">
           {BUSES.map((b) => (
-            <BigButton key={b} on={t.bus === b} onClick={() => updateTrack(t.id, { bus: b })} aria-label={`Send ${t.name} to ${b}`} style={t.bus === b ? undefined : { borderLeft: `4px solid ${BUS_COLOR[b]}` }}>
+            <BigButton key={b} className="px-2" on={t.bus === b} onClick={() => updateTrack(t.id, { bus: b })} aria-label={`Send ${t.name} to ${b}`} style={t.bus === b ? undefined : { borderLeft: `4px solid ${BUS_COLOR[b]}` }}>
               {b}
             </BigButton>
           ))}
