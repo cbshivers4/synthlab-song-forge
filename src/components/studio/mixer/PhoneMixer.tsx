@@ -11,6 +11,7 @@ import { BUILT_IN_PLUGINS } from "@/lib/synclab/plugins";
 import type { AuxId, BusId, BusState, Track, VcaId } from "@/lib/synclab/types";
 import { cn } from "@/lib/utils";
 import { clearClip } from "@/lib/synclab/clip-monitor";
+import { RenameTrackButton } from "../RenameTrackButton";
 import { TimelineHScrollbar } from "../timeline/HScrollbar";
 import { VcaAssign } from "./BusStrips";
 import { InsertRack } from "./InsertRack";
@@ -216,17 +217,19 @@ function TouchChannel({ track, level, selected, index }: { track?: Track | undef
         selected && "ring-2 ring-inset ring-primary",
       )}
     >
-      <button
-        type="button"
-        onClick={() => track && select(track.id)}
-        title={name}
-        aria-label={track ? `Select ${name} mixer channel` : "Master channel"}
-        className="touch-mix-name flex h-10 !min-h-0 shrink-0 items-center gap-1.5 px-2 text-left"
-        style={{ background: color ?? "var(--mixer-output-accent)", color: INK }}
-      >
-        {track ? <TrackIcon track={track} className="size-4 shrink-0" /> : null}
-        <span className="min-w-0 flex-1 truncate text-sm font-bold uppercase">{track ? `${index + 1}. ${name}` : name}</span>
-      </button>
+      <div className="touch-mix-name flex h-10 shrink-0 items-stretch" style={{ background: color ?? "var(--mixer-output-accent)", color: INK }}>
+        <button
+          type="button"
+          onClick={() => track && select(track.id)}
+          title={name}
+          aria-label={track ? `Select ${name} mixer channel` : "Master channel"}
+          className="flex h-10 !min-h-0 min-w-0 flex-1 items-center gap-1.5 pl-2 pr-1 text-left"
+        >
+          {track ? <TrackIcon track={track} className="size-4 shrink-0" /> : null}
+          <span className="min-w-0 flex-1 truncate text-sm font-bold uppercase">{track ? `${index + 1}. ${name}` : name}</span>
+        </button>
+        {track && <RenameTrackButton track={track} className="h-10 !min-h-0 w-9 rounded-none hover:bg-black/15" />}
+      </div>
       <div className="flex min-h-0 flex-1 gap-1.5 p-1.5">
         <div className="flex min-w-0 flex-1 flex-col items-center gap-1">
           <span className="font-mono text-xs font-bold leading-none text-foreground">{volume === 0 ? "-∞" : toDb(volume).toFixed(1)}</span>

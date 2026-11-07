@@ -13,6 +13,7 @@ import { useApp } from "@/lib/synclab/app-state";
 import { MidiLearnBlock } from "../MidiLearn";
 import { TrackNotes } from "@/components/studio/TrackNotes";
 import { TrackIcon } from "@/components/studio/TrackStyle";
+import { RenameTrackButton } from "@/components/studio/RenameTrackButton";
 import type { BusId, Track, VcaId } from "@/lib/synclab/types";
 import { cn } from "@/lib/utils";
 import { clearClip, peakHoldDb, peakHoldText, useClipped } from "@/lib/synclab/clip-monitor";
@@ -134,6 +135,7 @@ export function Strip({
         >
           {t.name}
         </Button>
+        <RenameTrackButton track={t} className="size-5 text-foreground" />
         <button
           onClick={(e) => { e.stopPropagation(); clearClip(t.id); }}
           title="Clip indicator — click to reset"

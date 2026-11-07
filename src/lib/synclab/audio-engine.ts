@@ -1,3 +1,4 @@
+import { meterWindowSize } from "./meter-window";
 import { nativeInsertMode } from "./native-insert";
 import { lfoHz } from "./synth-timing";
 import { centerOneSided } from "./one-sided-audio";
@@ -515,12 +516,34 @@ export class SyncLabEngine {
     return this.peakOf(this.analyser);
   }
 
+  /** Long-window peak taps beside each meter/scope analyser, so short hits between 20 fps reads still register. */
+  private peakTaps = new WeakMap<AnalyserNode, AnalyserNode>();
+  private peakSink: GainNode | null = null;
+  private peakBuf: Float32Array<ArrayBuffer> | null = null;
+
   private peakOf(node: AnalyserNode | null | undefined) {
-    if (!node) return 0;
-    const data = new Float32Array(node.fftSize);
-    node.getFloatTimeDomainData(data);
+    const ctx = this.ctx;
+    if (!node || !ctx) return 0;
+    let tap = this.peakTaps.get(node);
+    if (!tap) {
+      tap = ctx.createAnalyser();
+      tap.fftSize = meterWindowSize(ctx.sampleRate);
+      tap.smoothingTimeConstant = 0;
+      if (!this.peakSink || this.peakSink.context !== ctx) {
+        // Silent pull so every browser keeps processing the dead-end taps.
+        this.peakSink = ctx.createGain();
+        this.peakSink.gain.value = 0;
+        this.peakSink.connect(ctx.destination);
+      }
+      node.connect(tap);
+      tap.connect(this.peakSink);
+      this.peakTaps.set(node, tap);
+    }
+    if (!this.peakBuf || this.peakBuf.length !== tap.fftSize) this.peakBuf = new Float32Array(tap.fftSize);
+    const data = this.peakBuf;
+    tap.getFloatTimeDomainData(data);
     let peak = 0;
-    for (let i = 0; i < data.length; i++) peak = Math.max(peak, Math.abs(data[i] ?? 0));
+    for (let i = 0; i < data.length; i++) { const a = Math.abs(data[i]!); if (a > peak) peak = a; }
     return peak;
   }
 

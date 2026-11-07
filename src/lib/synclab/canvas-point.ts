@@ -22,25 +22,23 @@ export function canvasPoint(clientX: number, clientY: number) {
   return rotateSidewaysPoint(clientX, clientY, window.innerWidth);
 }
 
-/** Element rect in layout space (getBoundingClientRect is screen-space when rotated). */
-export function canvasRect(el: HTMLElement | SVGSVGElement) {
+/** Pure mapping: an element's screen-space bounding box -> its rect in the rotated layout space. */
+export function rotateSidewaysRect(r: { left: number; top: number; right: number; bottom: number }, screenWidth: number) {
+  const a = rotateSidewaysPoint(r.left, r.top, screenWidth);
+  const b = rotateSidewaysPoint(r.right, r.bottom, screenWidth);
+  const left = Math.min(a.x, b.x), right = Math.max(a.x, b.x);
+  const top = Math.min(a.y, b.y), bottom = Math.max(a.y, b.y);
+  return { left, top, right, bottom, width: right - left, height: bottom - top };
+}
+
+/**
+ * Element rect in the same layout space as canvasPoint. Derived from the live
+ * bounding box (not offsetTop sums), so scrolled panels and lists stay accurate.
+ */
+export function canvasRect(el: Element) {
   const r = el.getBoundingClientRect();
   if (!sidewaysCanvas()) {
     return { left: r.left, top: r.top, right: r.right, bottom: r.bottom, width: r.width, height: r.height };
   }
-  if (!(el instanceof HTMLElement)) {
-    // SVG elements have no offset layout; the rotated bbox swaps the axes.
-    return { left: 0, top: 0, right: r.height, bottom: r.width, width: r.height, height: r.width };
-  }
-  let left = 0;
-  let top = 0;
-  let node: HTMLElement | null = el;
-  while (node) {
-    left += node.offsetLeft;
-    top += node.offsetTop;
-    node = node.offsetParent as HTMLElement | null;
-  }
-  const width = el.offsetWidth;
-  const height = el.offsetHeight;
-  return { left, top, right: left + width, bottom: top + height, width, height };
+  return rotateSidewaysRect(r, window.innerWidth);
 }

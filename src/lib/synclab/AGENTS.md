@@ -48,3 +48,5 @@ MIDI export (midi-export.ts) collects notes by running scheduleStep against a no
 Cloud saves store sampler, clip and pad-sampler audio as the project's own copy (ownedMediaPlan), like drum pads, so duplicates survive deletion of the original.
 Mix faders store linear gain (0–2) but move on the shared dB taper in fader-taper.ts (0 dB near 80% throw, +6 dB at the top); every fader, volume slider and MIDI CC volume converts through faderGain/faderPosition so screen, controllers and automation agree.
 Touch Synth drum lane keeps legacy loop indices (kick 0, snare 1, hat 2, clap 3, tom 4) and appends new sounds (openhat 5) so saved loops and MIDI exports keep their pitches; the pad maps four sound columns via touchDrumAt.
+canvasRect maps the live getBoundingClientRect through the same rotation as canvasPoint (rotateSidewaysRect), never offsetTop sums, so taps inside scrolled panels on the sideways phone land where the finger is.
+Level meters (engine peakOf) read a separate long-window peak analyser per meter node sized by meterWindowSize to cover the 20 fps poll gap; short drum transients otherwise fall between reads. Scope analysers keep their own short windows.

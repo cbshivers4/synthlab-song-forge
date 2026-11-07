@@ -589,6 +589,19 @@ export function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track:
             </Button>
           )}
           {isMobile && <div className="h-0 w-full" aria-hidden="true" />}
+          {!renaming && (
+            <Button
+              size="icon"
+              variant="ghost"
+              className={`${isMobile ? "size-8" : "size-6"} shrink-0 touch-manipulation`}
+              aria-label={`Rename ${track.name}`}
+              title="Rename this instrument / channel"
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => { e.stopPropagation(); beginRename(); }}
+            >
+              <Pencil className="size-3.5" />
+            </Button>
+          )}
           {editorPanel && (
             <Button
               size="icon"

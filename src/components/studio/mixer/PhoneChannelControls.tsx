@@ -13,6 +13,7 @@ import { Scope } from "../Scope";
 import { MidiLearnBlock } from "../MidiLearn";
 import { TrackNotes } from "../TrackNotes";
 import { TrackStylePicker } from "../TrackStyle";
+import { RenameTrackButton } from "../RenameTrackButton";
 import { EqCurve, useTrackEq } from "./ChannelEq";
 import { InsertRack } from "./InsertRack";
 import { useMasterFx } from "./MasterStrip";
@@ -278,12 +279,10 @@ function TrackChannel({ t, index }: { t: Track; index: number }) {
   return (
     <Panel>
       <Section title="Name, colour & notes">
-        <input
-          aria-label={`${t.name} channel name`}
-          value={t.name}
-          onChange={(e) => updateTrack(t.id, { name: e.target.value })}
-          className="h-12 w-full rounded-md border border-border bg-surface px-3 font-mono text-sm font-bold uppercase"
-        />
+        <RenameTrackButton track={t} className="h-12 w-full justify-start rounded-md border border-border bg-surface px-3 font-mono text-sm font-bold uppercase">
+          <span className="min-w-0 flex-1 truncate text-left">{t.name}</span>
+          <span className="shrink-0 text-xs text-muted-foreground">RENAME</span>
+        </RenameTrackButton>
         <div className="mt-2 grid grid-cols-2 gap-1.5">
           <TrackStylePicker track={t}>
             <BigButton className="flex items-center justify-center gap-2"><Palette className="size-4" /> Colour & icon</BigButton>
