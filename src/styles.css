@@ -3597,7 +3597,9 @@ body:has(.phone-console) [data-sonner-toast] button { pointer-events: auto; }
 .phone-console .phone-edit-fit .arrangement-timeline[data-desktop-style="true"] .track-touch-header { display: flex !important; flex-direction: column; justify-content: center; gap: 3px; padding-block: 3px; overflow: hidden; grid-template-rows: none; }
 .phone-console .phone-edit-fit .arrangement-timeline[data-desktop-style="true"] .track-touch-header > div:first-child { height: auto !important; min-height: 0 !important; flex: none; row-gap: 3px; flex-wrap: wrap; }
 .phone-console .phone-edit-fit .arrangement-timeline[data-desktop-style="true"] .track-touch-header > div:first-child button { height: 24px !important; min-height: 24px !important; }
-.phone-console .phone-edit-fit .arrangement-timeline[data-desktop-style="true"] .track-touch-header > div:first-child .channel-menu-trigger { width: 32px !important; }
+.phone-console .phone-edit-fit .arrangement-timeline[data-desktop-style="true"] .track-touch-header > div:first-child .channel-menu-trigger { width: 44px !important; flex-basis: 44px; margin-left: 4px; }
+/* Holding a finger on the track name area never selects text or pops the phone's Copy bubble. */
+.phone-console .track-touch-header { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 .phone-console .phone-edit-fit .arrangement-timeline[data-desktop-style="true"] .timeline-track-actions { flex: none; height: 24px !important; min-height: 24px !important; overflow-x: auto; overflow-y: hidden; justify-content: flex-start; gap: 2px; scrollbar-width: none; }
 .phone-console .phone-edit-fit .arrangement-timeline[data-desktop-style="true"] .timeline-track-actions > button { height: 24px !important; min-height: 24px !important; padding-inline: 4px !important; font-size: 10px; }
 .phone-console .phone-edit-fit .arrangement-timeline[data-desktop-style="true"] .track-touch-header > div:nth-child(3) { flex: none; height: 18px !important; min-height: 0; overflow: hidden; }

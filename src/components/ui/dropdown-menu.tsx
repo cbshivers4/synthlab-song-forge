@@ -5,6 +5,57 @@ import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
 import { Check, ChevronRight, Circle } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { GHOST_TAP_WINDOW_MS, shouldBlockMenuClick } from "@/lib/ghost-tap";
+
+type GuardProps = {
+  onPointerDownCapture?: React.PointerEventHandler<HTMLDivElement> | undefined;
+  onPointerUpCapture?: React.PointerEventHandler<HTMLDivElement> | undefined;
+  onClickCapture?: React.MouseEventHandler<HTMLDivElement> | undefined;
+};
+
+/**
+ * Stops the finger that opened a menu from also choosing the item that appears under it
+ * when it lifts (phone menus open on touch-down). Choices must start with a press inside.
+ */
+function useGhostTapGuard<T extends HTMLDivElement>(forwarded: React.ForwardedRef<T>, props: GuardProps) {
+  const state = React.useRef({ downInside: false, blockUntil: 0 });
+  const ref = React.useCallback((node: T | null) => {
+    // The menu panel mounts fresh each time it opens: start with no press inside.
+    if (node) state.current = { downInside: false, blockUntil: 0 };
+    if (typeof forwarded === "function") forwarded(node);
+    else if (forwarded) forwarded.current = node;
+  }, [forwarded]);
+  const handlers = {
+    onPointerDownCapture: (e: React.PointerEvent<HTMLDivElement>) => {
+      state.current.downInside = true;
+      props.onPointerDownCapture?.(e);
+    },
+    onPointerUpCapture: (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!state.current.downInside && e.pointerType !== "mouse") {
+        state.current.blockUntil = performance.now() + GHOST_TAP_WINDOW_MS;
+        e.stopPropagation();
+        return;
+      }
+      props.onPointerUpCapture?.(e);
+    },
+    onClickCapture: (e: React.MouseEvent<HTMLDivElement>) => {
+      const native = e.nativeEvent as MouseEvent & { pointerType?: string };
+      if (shouldBlockMenuClick({
+        downInside: state.current.downInside,
+        detail: native.detail,
+        pointerType: native.pointerType ?? "",
+        now: performance.now(),
+        blockUntil: state.current.blockUntil,
+      })) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+      props.onClickCapture?.(e);
+    },
+  };
+  return { ref, handlers };
+}
 
 const DropdownMenu = DropdownMenuPrimitive.Root;
 
@@ -42,7 +93,9 @@ DropdownMenuSubTrigger.displayName = DropdownMenuPrimitive.SubTrigger.displayNam
 const DropdownMenuSubContent = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.SubContent>,
   React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.SubContent>
->(({ className, ...props }, ref) => (
+>(({ className, ...props }, forwardedRef) => {
+  const { ref, handlers } = useGhostTapGuard(forwardedRef, props);
+  return (
   <DropdownMenuPrimitive.SubContent
     ref={ref}
     className={cn(
@@ -50,14 +103,18 @@ const DropdownMenuSubContent = React.forwardRef<
       className,
     )}
     {...props}
+    {...handlers}
   />
-));
+  );
+});
 DropdownMenuSubContent.displayName = DropdownMenuPrimitive.SubContent.displayName;
 
 const DropdownMenuContent = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Content>
->(({ className, sideOffset = 4, ...props }, ref) => (
+>(({ className, sideOffset = 4, ...props }, forwardedRef) => {
+  const { ref, handlers } = useGhostTapGuard(forwardedRef, props);
+  return (
   <DropdownMenuPrimitive.Portal>
     <DropdownMenuPrimitive.Content
       ref={ref}
@@ -68,9 +125,11 @@ const DropdownMenuContent = React.forwardRef<
         className,
       )}
       {...props}
+      {...handlers}
     />
   </DropdownMenuPrimitive.Portal>
-));
+  );
+});
 DropdownMenuContent.displayName = DropdownMenuPrimitive.Content.displayName;
 
 const DropdownMenuItem = React.forwardRef<
