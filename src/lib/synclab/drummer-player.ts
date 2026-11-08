@@ -39,7 +39,8 @@ class DrummerPlayer {
   private lastTime = 0;
   private cache = new Map<number, DrumHit[]>();
   private forced = new Map<number, BarOptions>();
-  private queued = { fill: false, brk: false, crash: false };
+  /** bars a pressed Fill / Break / Crash lands on (null = nothing waiting) */
+  private queued: { fill: number | null; fillAt: number; brk: number | null; crash: number | null } = { fill: null, fillAt: 0, brk: null, crash: null };
   private captured = new Map<number, DrumHit[]>();
   private shown = { bar: 0, step: 0, time: 0 };
   private listeners = new Set<() => void>();
@@ -78,17 +79,17 @@ class DrummerPlayer {
     this.timer = null;
     this.running = false;
     this.following = false;
-    this.queued = { fill: false, brk: false, crash: false };
+    this.queued = { fill: null, fillAt: 0, brk: null, crash: null };
     this.emit();
   }
 
   toggle() { if (this.running) this.stop(); else this.start(); }
 
   /** Fill now: the current bar ends with a fill if there is still room, otherwise the next one. */
-  fill() { this.queued.fill = true; this.place("fill"); this.emit(); }
+  fill() { this.place("fill"); this.emit(); }
   /** Drop the drums out for the next bar; they come back in with a crash. */
-  breakNext() { this.queued.brk = true; this.place("brk"); this.emit(); }
-  crashNext() { this.queued.crash = true; this.place("crash"); this.emit(); }
+  breakNext() { this.place("brk"); this.emit(); }
+  crashNext() { this.place("crash"); this.emit(); }
 
   /** Settings changed: bars from the one playing now are generated again for the next steps. */
   invalidate() {
@@ -101,7 +102,7 @@ class DrummerPlayer {
     const bar = this.shown.bar;
     return {
       running: this.running, following: this.following, bar, step: this.shown.step,
-      fillQueued: this.queued.fill, breakQueued: this.queued.brk, crashQueued: this.queued.crash,
+      fillQueued: this.queued.fill !== null, breakQueued: this.queued.brk !== null, crashQueued: this.queued.crash !== null,
       hits: this.cache.get(bar) ?? (this.track?.drummer ? genBar(this.track.drummer, bar, this.spb, barOptions(this.track.drummer, bar)) : []),
       captured: this.captured.size,
     };
@@ -128,15 +129,18 @@ class DrummerPlayer {
       this.forced.set(target, { ...this.forced.get(target), fill: true });
       this.forced.set(target + 1, { ...this.forced.get(target + 1), crash: true });
       this.cache.delete(target); this.cache.delete(target + 1);
+      this.queued.fill = target; this.queued.fillAt = this.spb - fillLen;
     } else if (kind === "brk") {
       const target = this.barOf(this.nextStep) + 1;
       this.forced.set(target, { ...this.forced.get(target), silent: true });
       this.forced.set(target + 1, { ...this.forced.get(target + 1), crash: true });
       this.cache.delete(target); this.cache.delete(target + 1);
+      this.queued.brk = target;
     } else {
       const target = this.barOf(this.nextStep) + (this.nextStep % this.spb === 0 ? 0 : 1);
       this.forced.set(target, { ...this.forced.get(target), crash: true });
       this.cache.delete(target);
+      this.queued.crash = target;
     }
     void bar;
   }
@@ -150,9 +154,6 @@ class DrummerPlayer {
     if (!settings) return [];
     const forced = this.forced.get(bar);
     const opts = { ...barOptions(settings, bar), ...forced };
-    if (forced?.fill) this.queued.fill = false;
-    if (forced?.silent) this.queued.brk = false;
-    if (forced?.crash && !forced.fill && !forced.silent) this.queued.crash = false;
     const hits = genBar(settings, bar, this.spb, opts);
     this.cache.set(bar, hits);
     // keep the caches small during long sessions
@@ -202,9 +203,14 @@ class DrummerPlayer {
       if (s === 0 || !this.captured.has(bar)) this.captured.set(bar, []);
       this.captured.get(bar)!.push(...hits.filter((h) => h.step === s));
     }
+    const q = this.queued;
+    const landed = (q.fill !== null && (bar > q.fill || (bar === q.fill && s >= q.fillAt))) || (q.brk !== null && bar >= q.brk) || (q.crash !== null && bar >= q.crash);
+    if (q.fill !== null && (bar > q.fill || (bar === q.fill && s >= q.fillAt))) q.fill = null;
+    if (q.brk !== null && bar >= q.brk) q.brk = null;
+    if (q.crash !== null && bar >= q.crash) q.crash = null;
     const prevBar = this.shown.bar;
     this.shown = { bar, step: s, time };
-    if (bar !== prevBar || s === 0) setTimeout(() => this.emit(), Math.max(0, (time - (getEngine().ctx?.currentTime ?? time)) * 1000));
+    if (bar !== prevBar || s === 0 || landed) setTimeout(() => this.emit(), Math.max(0, (time - (getEngine().ctx?.currentTime ?? time)) * 1000));
     if (t.muted || t.deviceBypassed) return;
     const swung = time + (s % 2 === 1 ? Math.min(0.9, Math.max(0, this.swing)) * 0.5 * dur : 0);
     const engine = getEngine();

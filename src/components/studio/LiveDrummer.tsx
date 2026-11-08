@@ -1,3 +1,4 @@
+import { useIsLandscapePhone } from "@/hooks/use-mobile";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 import { toast } from "sonner";
 import { Drum, Play, Square, Sparkles, Zap, PauseCircle, Disc } from "lucide-react";
@@ -98,8 +99,8 @@ function DrummerHeader({ name }: { name?: string }) {
 
 function GenrePicker({ group, setGroup, current, onPick }: { group: GenreGroup; setGroup: (g: GenreGroup) => void; current: string | null; onPick: (id: string) => void }) {
   return (
-    <div className="space-y-2">
-      <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="Genre groups">
+    <div className="drummer-picker space-y-2">
+      <div className="drummer-tabs flex flex-wrap gap-1.5" role="tablist" aria-label="Genre groups">
         {GENRE_GROUPS.map((g) => (
           <button key={g} type="button" role="tab" aria-selected={group === g} onClick={() => setGroup(g)}
             className={`drummer-chip ${group === g ? "is-on" : ""}`}>{g} <span className="opacity-60">{DRUM_GENRES.filter((x) => x.group === g).length}</span></button>
@@ -126,6 +127,11 @@ interface DeskProps {
 }
 
 function DrummerDesk({ track, drummers, snap, group, setGroup, update, updateTrack, addTrack, transport, setTransport, onNew }: DeskProps) {
+  const phone = useIsLandscapePhone();
+  const knobSize = phone ? 40 : 54;
+  // Sideways phone: the desk splits into Play / Styles / Print pages so each fits the screen without scrolling.
+  const [tab, setTab] = useState<"play" | "styles" | "print">("play");
+  const show = (t: "play" | "styles" | "print") => !phone || tab === t;
   const settings = track.drummer!;
   const genre = genreById(settings.genre);
   const player = getDrummer();
@@ -161,12 +167,24 @@ function DrummerDesk({ track, drummers, snap, group, setGroup, update, updateTra
     toast.success(source === "performance" ? "Performance printed" : "Groove printed", { description: `${count} bar${count === 1 ? "" : "s"} of ${genre.label} on a new drum track from bar ${first + 1} — edit it in the drum roll. The live drummer stopped so you don't hear it twice.` });
   };
 
+  const timeKit = (
+    <div className="drummer-timekit flex flex-col gap-1.5">
+      <span className="font-mono text-[10px] font-bold tracking-widest text-muted-foreground">TIME ON</span>
+      <div className="flex gap-1">
+        {(["hat", "ride"] as const).map((k) => <button key={k} type="button" aria-pressed={settings.timekeeper === k} onClick={() => update({ timekeeper: k })} className={`drummer-chip ${settings.timekeeper === k ? "is-on" : ""}`}>{k === "hat" ? "Hi-hat" : "Ride"}</button>)}
+      </div>
+      <select aria-label="Drum kit" value={kit} onChange={(e) => loadKit(e.target.value as DrumKitId)} className="min-h-11 rounded-md border border-border bg-surface-2 px-2 text-sm">
+        {DRUM_KITS.map((k) => <option key={k.id} value={k.id}>{k.name}</option>)}
+      </select>
+    </div>
+  );
+
   const swingHint = Math.abs((transport.swing ?? 0) - genre.swing) > 0.05;
   const tempoHint = transport.bpm !== genre.bpm;
 
   return (
     <section className="drummer-device space-y-3 rounded-md border border-border p-3" style={{ "--drummer-accent": "var(--primary)" } as CSSProperties}>
-      <DrummerHeader name={track.name} />
+      <div className="drummer-head"><DrummerHeader name={track.name} /></div>
       {drummers.length > 1 && (
         <label className="flex flex-wrap items-center gap-2 text-xs">
           <span className="font-mono font-bold tracking-widest text-muted-foreground">DRUMMER</span>
@@ -176,6 +194,16 @@ function DrummerDesk({ track, drummers, snap, group, setGroup, update, updateTra
         </label>
       )}
 
+      {phone && (
+        <div className="drummer-pages" role="tablist" aria-label="Live Drummer pages">
+          {([["play", "Play"], ["styles", `Styles · ${genre.label}`], ["print", "Print to timeline"]] as const).map(([id, label]) => (
+            <button key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => setTab(id)} className={`drummer-chip ${tab === id ? "is-on" : ""}`}>{label}</button>
+          ))}
+        </div>
+      )}
+      {show("play") && (<>
+      <div className="drummer-main">
+      <div className="drummer-left">
       <div className="drummer-display" aria-live="polite">
         <span className="drummer-display-genre">{genre.label.toUpperCase()}</span>
         <span className="drummer-display-meta">
@@ -199,42 +227,39 @@ function DrummerDesk({ track, drummers, snap, group, setGroup, update, updateTra
 
       <GrooveDisplay snap={snap} spb={spb} playing={playing} pads={track.pads ?? []} />
 
-      <div className="drummer-controls">
-        <IntensityPad complexity={settings.complexity} loudness={settings.loudness} onChange={(complexity, loudness) => update({ complexity, loudness })} />
-        <div className="drummer-knobs">
-          <Knob label="FILLS" value={settings.fills} onChange={(v) => update({ fills: v })} format={(v) => (v <= 0.02 ? "OFF" : v <= 0.4 ? "8 BARS" : v <= 0.75 ? "4 BARS" : "2 BARS")} size={54} />
-          <Knob label="FEEL" value={settings.humanize} onChange={(v) => update({ humanize: v })} format={(v) => (v < 0.2 ? "TIGHT" : v < 0.6 ? "NATURAL" : "LOOSE")} size={54} />
-          <Knob label="SWING" value={transport.swing ?? 0} min={0} max={0.6} onChange={(v) => setTransport({ swing: v })} format={(v) => `${Math.round(v * 100)}%`} size={54} />
-          <div className="flex flex-col gap-1.5">
-            <span className="font-mono text-[10px] font-bold tracking-widest text-muted-foreground">TIME ON</span>
-            <div className="flex gap-1">
-              {(["hat", "ride"] as const).map((k) => <button key={k} type="button" aria-pressed={settings.timekeeper === k} onClick={() => update({ timekeeper: k })} className={`drummer-chip ${settings.timekeeper === k ? "is-on" : ""}`}>{k === "hat" ? "Hi-hat" : "Ride"}</button>)}
-            </div>
-            <select aria-label="Drum kit" value={kit} onChange={(e) => loadKit(e.target.value as DrumKitId)} className="min-h-11 rounded-md border border-border bg-surface-2 px-2 text-sm">
-              {DRUM_KITS.map((k) => <option key={k.id} value={k.id}>{k.name}</option>)}
-            </select>
-          </div>
-        </div>
-      </div>
-      <p className="text-[11px] text-muted-foreground">Swing is the song's swing, so the drummer, your drum machine and printed parts all shuffle together.</p>
-
-      <div className="flex flex-wrap gap-1.5" aria-label="Drum pieces">
+      <div className="drummer-pieces flex flex-wrap gap-1.5" aria-label="Drum pieces">
         {PIECES.map((p) => (
           <button key={p.id} type="button" aria-pressed={settings.pieces[p.id] !== false} onClick={() => update({ pieces: { ...settings.pieces, [p.id]: settings.pieces[p.id] === false } })}
             className={`drummer-chip ${settings.pieces[p.id] !== false ? "is-on" : ""}`}>{p.label}</button>
         ))}
       </div>
+      {phone && timeKit}
+      </div>
 
-      {(tempoHint || swingHint) && (
-        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+      <div className="drummer-controls">
+        <IntensityPad complexity={settings.complexity} loudness={settings.loudness} onChange={(complexity, loudness) => update({ complexity, loudness })} />
+        <div className="drummer-knobs">
+          <Knob label="FILLS" value={settings.fills} onChange={(v) => update({ fills: v })} format={(v) => (v <= 0.02 ? "OFF" : v <= 0.4 ? "8 BARS" : v <= 0.75 ? "4 BARS" : "2 BARS")} size={knobSize} />
+          <Knob label="FEEL" value={settings.humanize} onChange={(v) => update({ humanize: v })} format={(v) => (v < 0.2 ? "TIGHT" : v < 0.6 ? "NATURAL" : "LOOSE")} size={knobSize} />
+          <Knob label="SWING" value={transport.swing ?? 0} min={0} max={0.6} onChange={(v) => setTransport({ swing: v })} format={(v) => `${Math.round(v * 100)}%`} size={knobSize} />
+          {!phone && timeKit}
+        </div>
+      </div>
+      </div>
+      <p className="drummer-note text-[11px] text-muted-foreground">Swing is the song's swing, so the drummer, your drum machine and printed parts all shuffle together.</p>
+      </>)}
+
+      {show("styles") && (tempoHint || swingHint) && (
+        <div className="drummer-hint flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
           {genre.label} usually plays at {genre.bpm} BPM{genre.swing ? ` with ${Math.round(genre.swing * 100)}% swing` : ", straight"}.
           {tempoHint && <Button size="sm" variant="outline" onClick={() => setTransport({ bpm: genre.bpm })}>Use {genre.bpm} BPM</Button>}
           {swingHint && <Button size="sm" variant="outline" onClick={() => setTransport({ swing: genre.swing })}>Use {Math.round(genre.swing * 100)}% swing</Button>}
         </div>
       )}
 
-      <GenrePicker group={group} setGroup={setGroup} current={settings.genre} onPick={pickGenre} />
+      {show("styles") && <GenrePicker group={group} setGroup={setGroup} current={settings.genre} onPick={pickGenre} />}
 
+      {show("print") && (<>
       <div className="drummer-print">
         <span className="font-mono text-xs font-bold tracking-widest text-muted-foreground">PRINT TO TIMELINE</span>
         <select aria-label="Bars to print" value={bars} onChange={(e) => setBars(Number(e.target.value))} className="min-h-11 rounded-md border border-border bg-surface-2 px-2 text-sm">
@@ -248,10 +273,11 @@ function DrummerDesk({ track, drummers, snap, group, setGroup, update, updateTra
           Print my performance{snap.captured ? ` (${snap.captured} bar${snap.captured === 1 ? "" : "s"})` : ""}
         </Button>
       </div>
-      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-        Printed parts go on a new drum track you can edit in the drum roll. Want another drummer?
+      <div className="drummer-foot flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+        <span className="drummer-note">Printed parts go on a new drum track you can edit in the drum roll. Want another drummer?</span>
         <Button size="sm" variant="ghost" onClick={() => onNew(settings.genre)}>Add another drummer</Button>
       </div>
+      </>)}
     </section>
   );
 }

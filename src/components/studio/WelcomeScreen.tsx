@@ -10,7 +10,6 @@ import {
   SlidersHorizontal,
   Sparkles,
   Wand2,
-  Cpu,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -32,10 +31,10 @@ const FEATURES: { icon: React.ReactNode; title: string; body: string }[] = [
   { icon: <Disc3 className="size-4" />, title: "Reel-to-Reel Recorder", body: "16 input channels with analog meters, mute and solo, tape saturation and WAV/MP3 export." },
   { icon: <SlidersHorizontal className="size-4" />, title: "Pro Mixer & Effects Rack", body: "Buses, sends, VCA groups, aux returns and rack effects with live scopes, plus guitar and bass amps and stompbox pedals." },
   { icon: <Mic className="size-4" />, title: "Hum to Beat & Convert Voice", body: "Beatbox a rhythm or hum a melody into notes, and restyle recorded vocals with 21 voice templates." },
-  { icon: <Cpu className="size-4" />, title: "Granular Synth", body: "Turn built-in textures or your own sample into shimmering grain clouds, frozen pads and stutters." },
+  { icon: <Disc3 className="size-4" />, title: "DJ Decks", body: "Two decks with beat-matching Sync, hot cues, loops, EQ, filter and crossfader — record your set to MP3 or WAV." },
   { icon: <Scissors className="size-4" />, title: "Video Sampler", body: "Chop video to pads, trigger clips from keys or MIDI, and record straight from your camera." },
   { icon: <Piano className="size-4" />, title: "External MIDI & MIDI Learn", body: "Play your hardware synths and drum machines from your tracks, and map any knob, fader or pad on your controller." },
-  { icon: <Music2 className="size-4" />, title: "Bass Generator", body: "Genre templates with their own bass riffs, any key and chord progression, a new variation every press." },
+  { icon: <Music2 className="size-4" />, title: "Live Drummer & Bass Generator", body: "A session drummer in 39 styles who takes fills on cue, plus genre basslines in any key — print both to your song." },
   { icon: <Download className="size-4" />, title: "Pro Export", body: "Full mix, every track as stems, or one track — WAV, MP3, FLAC up to 96 kHz, plus MIDI files." },
   { icon: <SlidersHorizontal className="size-4" />, title: "Desktop & Phone", body: "A full desktop DAW with split view, and a touch studio on your phone — the same projects on both." },
 ];

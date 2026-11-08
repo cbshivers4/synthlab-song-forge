@@ -194,3 +194,11 @@
 - [x] Remove the owner's personal name from customer-facing pages; contact email info@synclabsapp.com
 - [x] Update login page features
 - [x] Granular synth
+
+## Nov 8 (3) — Live Drummer, DJ Decks (Christopher)
+- [x] Live Drummer: 39 styles (Electronic, Hip-Hop & R&B, Band, World & Latin), simple↔complex / soft↔loud pad, fills, feel, swing, hat/ride, kit, piece mutes
+- [x] Jam live (Play, Fill, Break, Crash, New variation) on its own or locked to the song's bars; print a groove or the recorded performance to an editable drum track
+- [x] DJ Decks: two decks, BPM detection, Sync, pitch/nudge, cue + 4 hot cues, loops, 3-band EQ, filter, crossfader; load files, local files or the current song
+- [x] Record the DJ mix and save as WAV or MP3
+- [x] Phone sideways layouts fit without scrolling (drummer split into Play / Styles / Print pages)
+- [x] Login features updated

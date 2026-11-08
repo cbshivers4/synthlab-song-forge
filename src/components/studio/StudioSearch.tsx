@@ -35,6 +35,8 @@ const PANELS: { id: Exclude<PanelId, null>; label: string }[] = [
   { id: "voice", label: "Convert Voice" },
   { id: "genstem", label: "Generate Stem" },
   { id: "bassgen", label: "Bass Generator" },
+  { id: "drummer", label: "Live Drummer" },
+  { id: "dj", label: "DJ Decks" },
 ];
 
 export function StudioSearch() {

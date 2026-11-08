@@ -388,6 +388,8 @@ export function MenuBar() {
           <MenubarContent>
             <MenubarItem onClick={() => setPanel("live")}>Live View</MenubarItem>
             <MenubarItem onClick={() => setPanel("looper")}>Live Looper</MenubarItem>
+            <MenubarItem onClick={() => setPanel("drummer")}>Live Drummer</MenubarItem>
+            <MenubarItem onClick={() => setPanel("dj")}>DJ Decks</MenubarItem>
             <MenubarItem onClick={() => setPanel("mixer")}>Mixer</MenubarItem>
             <MenubarItem onClick={() => setPanel("reference")}>Reference Analyzer</MenubarItem>
             <MenubarSeparator />

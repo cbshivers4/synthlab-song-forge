@@ -21,7 +21,7 @@ import {
   Waves,
   Square,
 } from "lucide-react";
-import { Film, Sparkles } from "lucide-react";
+import { Drum, Film, Sparkles } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { getLocalFile, getPreviewAnalyser, onPreviewChange, stopPreview } from "@/lib/synclab/local-files";
 import { ComputerFiles } from "./ComputerFiles";
@@ -71,6 +71,8 @@ const TOOLS: Tool[] = [
   { id: "voice", label: "Convert Voice", icon: <Waves className="size-4" />, panel: "voice" },
   { id: "genstem", label: "Generate Stem", icon: <Music2 className="size-4" />, panel: "genstem" },
   { id: "bassgen", label: "Bass Generator", icon: <Music2 className="size-4" />, panel: "bassgen" },
+  { id: "drummer", label: "Live Drummer", icon: <Drum className="size-4" />, panel: "drummer" },
+  { id: "dj", label: "DJ Decks", icon: <Disc3 className="size-4" />, panel: "dj" },
   { id: "apps", label: "Other Apps", icon: <AppWindow className="size-4" />, panel: "apps" },
   { id: "reference", label: "Reference Analyzer", icon: <FileSearch className="size-4" />, panel: "reference" },
 
@@ -86,9 +88,9 @@ interface Section {
 
 const SECTIONS: Section[] = [
   { id: "files", label: "Files", tools: ["audio-converter"].map(tool) },
-  { id: "perform", label: "Perform", tools: ["studio-view", "reel-recorder", "video-sampler", "live", "looper", "humbeat"].map(tool) },
+  { id: "perform", label: "Perform", tools: ["studio-view", "reel-recorder", "video-sampler", "live", "looper", "dj", "humbeat"].map(tool) },
   { id: "synths", label: "Synthesizers", tools: ["synth", "touch", "acid", "poly", "modular", "granular"].map(tool) },
-  { id: "instruments", label: "Instruments", tools: ["coproducer", "genstem", "bassgen", "drums", "beat", "chop", "sampler"].map(tool) },
+  { id: "instruments", label: "Instruments", tools: ["coproducer", "genstem", "bassgen", "drummer", "drums", "beat", "chop", "sampler"].map(tool) },
   { id: "mix", label: "Mix & Master", tools: ["mixer", "master", "stems", "voice"].map(tool) },
   { id: "plugins", label: "FX Rack", tools: ["plugins"].map(tool) },
   // Everything that reaches outside the song itself lives under Other Apps.

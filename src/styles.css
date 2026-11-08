@@ -3844,3 +3844,222 @@ html.phone-console-active [role="option"] { min-height: 44px; font-size: 15px; }
 .granular-section { border-radius: 8px; border: 1px solid var(--granular-edge); background: oklch(0.15 0.015 45 / 0.85); padding: 8px 6px 10px; box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.08); }
 .granular-section h4 { margin-bottom: 8px; text-align: center; font-family: var(--font-mono, monospace); font-size: 11px; font-weight: 800; letter-spacing: 0.22em; color: var(--granular-label); border-bottom: 1px solid var(--granular-edge); padding-bottom: 4px; }
 .granular-synth .hardware-knob, .granular-synth [data-knob] { --hardware-scale: var(--granular-label); }
+
+/* ---------------- Live Drummer: lacquered shell face with brass hardware ---------------- */
+.drummer-device {
+  --drum-shell: oklch(0.22 0.05 25); --drum-shell-2: oklch(0.16 0.035 25); --drum-brass: oklch(0.8 0.13 80); --drum-brass-deep: oklch(0.62 0.12 70);
+  --drum-screen: oklch(0.14 0.02 60); --drum-cell: oklch(0.24 0.03 40);
+  background: linear-gradient(180deg, var(--drum-shell), var(--drum-shell-2)); border: 1px solid oklch(0.32 0.05 30); border-top: 4px solid var(--drum-brass);
+  --primary: var(--drum-brass); --primary-foreground: oklch(0.18 0.03 60); --neon: var(--drum-brass); box-shadow: var(--hardware-case-shadow);
+}
+.drummer-brand { font-family: var(--font-display); font-size: 22px; letter-spacing: 0.02em; }
+.drummer-brand b { color: var(--drum-brass); }
+.drummer-display { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; background: var(--drum-screen); border: 2px solid var(--hardware-rubber); border-radius: 4px; padding: 8px 12px; box-shadow: var(--hardware-pressed-shadow); }
+.drummer-display-genre { font-family: var(--font-display); font-size: 22px; color: var(--drum-brass); }
+.drummer-display-meta { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em; color: var(--hardware-silver); }
+.drummer-display-flags { margin-left: auto; display: flex; gap: 6px; }
+.drummer-display-flags b { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.14em; padding: 1px 6px; border-radius: 3px; background: var(--drum-brass); color: var(--primary-foreground); }
+.drummer-perform { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.drummer-perform button { font-weight: 700; letter-spacing: 0.04em; }
+.drummer-perform button[aria-pressed="true"]:not(.drummer-play) { outline: 2px solid var(--drum-brass); }
+.drummer-grid { display: grid; gap: 3px; background: var(--drum-screen); border: 2px solid var(--hardware-rubber); border-radius: 4px; padding: 6px; }
+.drummer-grid-row { display: grid; grid-template-columns: 44px repeat(var(--drummer-steps, 16), minmax(0, 1fr)); gap: 2px; align-items: center; }
+.drummer-grid-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; color: var(--hardware-silver); }
+.drummer-cell { height: 16px; border-radius: 2px; background: var(--drum-cell); }
+.drummer-cell.is-beat { box-shadow: inset 2px 0 0 oklch(0.34 0.04 40); }
+.drummer-cell.is-on { background: color-mix(in oklab, var(--drum-brass) calc(var(--cell-level, 1) * 100%), var(--drum-cell)); }
+.drummer-cell.is-now { outline: 1px solid var(--playhead); }
+.drummer-cell.is-on.is-now { background: var(--playhead); }
+.drummer-controls { display: grid; grid-template-columns: minmax(180px, 280px) 1fr; gap: 12px; align-items: center; }
+.drummer-knobs { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
+.drummer-xy-wrap { width: 100%; }
+.drummer-xy { position: relative; aspect-ratio: 4 / 3; width: 100%; border-radius: 6px; border: 2px solid var(--hardware-rubber); touch-action: none; cursor: crosshair;
+  background: radial-gradient(circle at 100% 0%, color-mix(in oklab, var(--drum-brass) 38%, transparent), transparent 70%), linear-gradient(180deg, oklch(0.2 0.03 40), var(--drum-screen)); }
+.drummer-xy:focus-visible { outline: 2px solid var(--drum-brass); outline-offset: 2px; }
+.drummer-xy-dot { position: absolute; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; background: var(--drum-brass); box-shadow: 0 0 0 3px oklch(0.18 0.03 60), 0 0 14px var(--drum-brass); pointer-events: none; }
+.drummer-xy-label { position: absolute; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.14em; color: var(--hardware-silver); pointer-events: none; }
+.drummer-xy-label.is-top { top: 4px; left: 50%; transform: translateX(-50%); }
+.drummer-xy-label.is-bottom { bottom: 4px; left: 50%; transform: translateX(-50%); }
+.drummer-xy-label.is-left { left: 6px; top: 50%; transform: translateY(-50%); }
+.drummer-xy-label.is-right { right: 6px; top: 50%; transform: translateY(-50%); }
+.drummer-chip { min-height: 40px; padding: 0 12px; border-radius: 6px; border: 1px solid oklch(0.38 0.04 40); color: var(--muted-foreground); font-size: 13px; }
+.drummer-chip.is-on, .drummer-chip[aria-pressed="true"] { border-color: var(--drum-brass); color: var(--drum-brass); background: color-mix(in oklab, var(--drum-brass) 14%, transparent); }
+.drummer-genres { display: grid; grid-template-columns: repeat(auto-fill, minmax(124px, 1fr)); gap: 6px; }
+.drummer-genre { min-height: 52px; padding: 6px 8px; text-align: left; border-radius: 6px; border: 1px solid oklch(0.36 0.04 40); background: oklch(0.19 0.03 30); }
+.drummer-genre:hover { border-color: var(--drum-brass-deep); }
+.drummer-genre.is-on { border-color: var(--drum-brass); background: color-mix(in oklab, var(--drum-brass) 18%, oklch(0.19 0.03 30)); }
+.drummer-print { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; border-top: 1px solid oklch(0.32 0.04 30); padding-top: 10px; }
+.phone-console .drummer-perform { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.phone-console .drummer-perform button { min-height: 52px; padding-inline: 4px; font-size: 13px; }
+.phone-console .drummer-controls { grid-template-columns: 220px 1fr; }
+
+/* ---------------- DJ Decks: black battle-mixer look, Serato-style 3-band waveforms ---------------- */
+.dj-device {
+  --dj-a: oklch(0.74 0.14 230); --dj-b: oklch(0.76 0.16 55);
+  --dj-low: oklch(0.62 0.21 25); --dj-mid: oklch(0.74 0.18 145); --dj-high: oklch(0.7 0.15 250);
+  --dj-grid: oklch(1 0 0 / 0.22); --dj-loop: oklch(0.85 0.16 90 / 0.18); --dj-overview: oklch(0.8 0.06 220); --dj-overview-played: oklch(0.8 0.06 220 / 0.35);
+  --dj-cue-1: oklch(0.65 0.22 25); --dj-cue-2: oklch(0.82 0.16 85); --dj-cue-3: oklch(0.74 0.17 150); --dj-cue-4: oklch(0.68 0.16 280);
+  --dj-panel: oklch(0.15 0.005 260); --dj-panel-2: oklch(0.2 0.006 260);
+  background: linear-gradient(180deg, var(--dj-panel-2), var(--dj-panel)); border: 1px solid oklch(0.3 0.01 260); box-shadow: var(--hardware-case-shadow);
+}
+.dj-brand { font-family: var(--font-display); font-size: 22px; }
+.dj-brand b { background: linear-gradient(90deg, var(--dj-a), var(--dj-b)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.dj-waves { display: grid; gap: 2px; background: oklch(0.08 0 0); border: 2px solid var(--hardware-rubber); border-radius: 4px; padding: 2px; }
+.dj-wave { position: relative; height: 72px; }
+.dj-wave-canvas { display: block; width: 100%; height: 100%; }
+.dj-wave-tag { position: absolute; left: 4px; top: 2px; z-index: 1; font-family: var(--font-display); font-size: 13px; color: var(--dj-a); }
+.dj-wave[data-deck="B"] .dj-wave-tag { color: var(--dj-b); }
+.dj-console { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 8px; align-items: stretch; }
+.dj-deck { display: flex; flex-direction: column; gap: 6px; min-width: 0; padding: 8px; border-radius: 6px; background: oklch(0.12 0.004 260); border: 1px solid oklch(0.28 0.01 260); border-top: 3px solid var(--dj-a); }
+.dj-deck[data-deck="B"] { border-top-color: var(--dj-b); }
+.dj-deck.is-over { outline: 2px dashed var(--dj-a); }
+.dj-deck[data-deck="B"].is-over { outline-color: var(--dj-b); }
+.dj-deck-head { display: flex; align-items: center; gap: 8px; }
+.dj-deck-letter { font-family: var(--font-display); font-size: 26px; line-height: 1; color: var(--dj-a); }
+.dj-deck[data-deck="B"] .dj-deck-letter { color: var(--dj-b); }
+.dj-bpm { display: flex; flex-direction: column; align-items: flex-end; font-family: var(--font-mono); }
+.dj-bpm b { font-size: 20px; line-height: 1.1; }
+.dj-bpm span { font-size: 10px; color: var(--muted-foreground); }
+.dj-overview { display: block; width: 100%; height: 34px; background: oklch(0.08 0 0); border-radius: 3px; cursor: pointer; touch-action: none; }
+.dj-deck-body { display: flex; gap: 8px; min-height: 0; }
+.dj-deck-controls { display: flex; flex: 1; flex-direction: column; gap: 6px; min-width: 0; }
+.dj-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.dj-btn { min-height: 40px; padding-inline: 10px; font-weight: 700; }
+.dj-play { min-width: 64px; background: var(--dj-a); color: oklch(0.12 0 0); }
+.dj-deck[data-deck="B"] .dj-play { background: var(--dj-b); }
+.dj-play[aria-pressed="true"] { box-shadow: 0 0 14px var(--dj-a); }
+.dj-deck[data-deck="B"] .dj-play[aria-pressed="true"] { box-shadow: 0 0 14px var(--dj-b); }
+.dj-label { font-family: var(--font-mono); font-size: 10px; font-weight: 700; letter-spacing: 0.14em; color: var(--muted-foreground); }
+.dj-hotcue-wrap { position: relative; display: inline-flex; }
+.dj-hotcue { min-width: 44px; min-height: 40px; border-radius: 5px; border: 1px solid oklch(0.34 0.01 260); background: oklch(0.2 0.006 260); font-family: var(--font-mono); font-weight: 700; }
+.dj-hotcue.is-set[data-cue="1"] { background: var(--dj-cue-1); color: oklch(0.12 0 0); }
+.dj-hotcue.is-set[data-cue="2"] { background: var(--dj-cue-2); color: oklch(0.12 0 0); }
+.dj-hotcue.is-set[data-cue="3"] { background: var(--dj-cue-3); color: oklch(0.12 0 0); }
+.dj-hotcue.is-set[data-cue="4"] { background: var(--dj-cue-4); color: oklch(0.12 0 0); }
+.dj-hotcue-clear { position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; border-radius: 50%; font-size: 12px; line-height: 16px; background: oklch(0.3 0.01 260); color: var(--foreground); }
+.dj-loop { min-width: 36px; min-height: 36px; border-radius: 5px; border: 1px solid oklch(0.34 0.01 260); font-family: var(--font-mono); font-size: 12px; }
+.dj-loop.is-on { background: var(--dj-cue-2); color: oklch(0.12 0 0); border-color: transparent; }
+.dj-loop.is-exit { color: var(--dj-cue-2); }
+.dj-pitch { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 64px; }
+.dj-vfader { height: 120px !important; width: 28px !important; flex-direction: column; }
+.dj-nudge, .dj-range { min-width: 28px; min-height: 32px; padding: 0 6px; border-radius: 4px; border: 1px solid oklch(0.34 0.01 260); font-family: var(--font-mono); font-size: 11px; }
+.dj-mixer { display: flex; flex-direction: column; gap: 8px; padding: 8px; border-radius: 6px; background: oklch(0.1 0.003 260); border: 1px solid oklch(0.28 0.01 260); }
+.dj-mixer-channels { display: flex; gap: 10px; justify-content: center; }
+.dj-channel { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.dj-channel[data-deck="A"] > .dj-label:first-child { color: var(--dj-a); }
+.dj-channel[data-deck="B"] > .dj-label:first-child { color: var(--dj-b); }
+.dj-channel.is-master { justify-content: flex-start; }
+.dj-fader-row { display: flex; align-items: stretch; gap: 4px; }
+.dj-meter { --dj-meter: 0; position: relative; width: 8px; height: 120px; border-radius: 2px; overflow: hidden;
+  background: linear-gradient(0deg, oklch(0.32 0.06 145) 0 70%, oklch(0.36 0.07 85) 70% 88%, oklch(0.34 0.08 25) 88%); }
+.dj-meter::after { content: ""; position: absolute; inset: 0; background: oklch(0.08 0 0); transform-origin: top; transform: scaleY(calc(1 - var(--dj-meter))); }
+.dj-meter::before { content: ""; position: absolute; inset: 0; background: linear-gradient(0deg, var(--dj-mid) 0 70%, var(--dj-cue-2) 70% 88%, var(--dj-low) 88%); }
+.dj-meter.is-master { height: 160px; }
+.dj-xfader { display: flex; align-items: center; gap: 8px; }
+.dj-xfader-slider { flex: 1; min-width: 120px; }
+.dj-rec { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.dj-rec-on { animation: dj-rec-pulse 1.2s ease-in-out infinite; }
+@keyframes dj-rec-pulse { 50% { opacity: 0.7; } }
+.phone-console .dj-wave { height: 54px; }
+.phone-console .dj-console { gap: 4px; }
+.phone-console .dj-deck { padding: 6px; }
+.phone-console .dj-vfader { height: 96px !important; }
+.phone-console .dj-meter { height: 96px; }
+.phone-console .dj-meter.is-master { height: 120px; }
+@media (max-width: 1100px) { .dj-console { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .dj-mixer { grid-column: 1 / -1; order: 3; } }
+/* Sideways phone: decks left and right of a compact mixer, so the whole DJ set fits the screen. */
+.phone-console .dj-device { padding: 6px; gap: 4px; }
+.phone-console .dj-device > * + * { margin-top: 4px !important; }
+.phone-console .dj-brand { font-size: 15px; }
+.phone-console .dj-device header { flex-wrap: nowrap; }
+.phone-console .dj-device header .dj-rec { margin-left: auto; flex-wrap: nowrap; }
+.phone-console .dj-wave { height: 34px; }
+.phone-console .dj-console { grid-template-columns: minmax(0, 1fr) 200px minmax(0, 1fr); gap: 4px; }
+.phone-console .dj-console .dj-mixer { grid-column: auto; order: 0; }
+.phone-console .dj-deck { padding: 5px; gap: 4px; }
+.phone-console .dj-deck-letter { font-size: 18px; }
+.phone-console .dj-deck-head p { font-size: 11px; }
+.phone-console .dj-bpm b { font-size: 15px; }
+.phone-console .dj-overview { height: 20px; }
+.phone-console .dj-btn { min-height: 36px; padding-inline: 8px; font-size: 12px; }
+.phone-console .dj-btn-text { display: none; }
+.phone-console .dj-hotcue { min-width: 36px; min-height: 34px; }
+.phone-console .dj-loop { min-width: 30px; min-height: 30px; font-size: 11px; }
+.phone-console .dj-row { gap: 3px; }
+.phone-console .dj-row .dj-label { display: none; }
+.phone-console .dj-pitch { width: 44px; }
+.phone-console .dj-pitch .dj-label { font-size: 8px; letter-spacing: 0.06em; }
+.phone-console .dj-vfader { height: 78px !important; }
+.phone-console .dj-meter { height: 78px; }
+.phone-console .dj-meter.is-master { height: 48px; }
+.phone-console .dj-mixer.is-phone { padding: 4px; gap: 4px; }
+.dj-knob-row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); justify-items: center; border-left: 3px solid var(--dj-a); padding-left: 2px; }
+.dj-knob-row[data-deck="B"] { border-left-color: var(--dj-b); }
+.dj-knob { width: 36px !important; gap: 2px !important; }
+.dj-knob .hardware-knob-value { display: none; }
+.dj-phone-faders { display: flex; justify-content: space-around; align-items: flex-end; }
+.phone-console .dj-xfader { gap: 4px; }
+.phone-console .dj-xfader-slider { min-width: 0; }
+.phone-console .dj-footnote { font-size: 10px; line-height: 1.25; }
+.dj-pitch-opts { display: flex; gap: 3px; }
+.phone-console .dj-deck-controls { flex-direction: row; flex-wrap: wrap; align-content: flex-start; gap: 3px; }
+.phone-console .dj-deck-controls .dj-row { display: contents; }
+.phone-console .dj-halve { display: none; }
+.phone-console .dj-play { min-width: 52px; }
+.phone-console .dj-wave { height: 30px; }
+.phone-console .dj-overview { height: 16px; }
+.phone-console .dj-footnote { display: none; }
+.phone-console .dj-rec { gap: 4px; }
+.phone-console .dj-rec .dj-btn { min-height: 34px; }
+.phone-console .dj-range, .phone-console .dj-nudge { min-height: 28px; min-width: 20px; padding: 0 3px; font-size: 10px; }
+.dj-mixer.is-phone .dj-rec { justify-content: center; flex-wrap: wrap; }
+.dj-mixer.is-phone .dj-rec .dj-btn { min-height: 32px; padding-inline: 6px; }
+.dj-mixer.is-phone .dj-rec-status { font-size: 10px; }
+/* Live Drummer layout: one column on desktop; on a sideways phone the controls sit beside the groove so it all fits. */
+.drummer-main, .drummer-left { display: grid; gap: 12px; min-width: 0; }
+.phone-console .drummer-device { padding: 6px; }
+.phone-console .drummer-device > * + * { margin-top: 5px !important; }
+.phone-console .drummer-head, .phone-console .drummer-note { display: none; }
+.phone-console .drummer-main { grid-template-columns: minmax(0, 1fr) 290px; gap: 6px; align-items: start; }
+.phone-console .drummer-left { gap: 5px; }
+.phone-console .drummer-display { padding: 3px 8px; gap: 2px 10px; }
+.phone-console .drummer-display-genre { font-size: 16px; }
+.phone-console .drummer-display-meta { font-size: 10px; letter-spacing: 0.06em; }
+.phone-console .drummer-perform { gap: 4px; }
+.phone-console .drummer-perform button { min-height: 44px !important; height: 44px; font-size: 12px; gap: 4px; }
+.phone-console .drummer-perform button svg { width: 16px; height: 16px; }
+.phone-console .drummer-grid { padding: 3px; gap: 2px; }
+.phone-console .drummer-grid-row { grid-template-columns: 34px repeat(var(--drummer-steps, 16), minmax(0, 1fr)); }
+.phone-console .drummer-grid-label { font-size: 8px; }
+.phone-console .drummer-cell { height: 11px; }
+.phone-console .drummer-chip { min-height: 34px; padding: 0 8px; font-size: 12px; }
+.phone-console .drummer-pieces { gap: 4px; }
+.phone-console .drummer-controls { grid-template-columns: 1fr; gap: 4px; }
+.phone-console .drummer-xy { aspect-ratio: 2 / 1; }
+.phone-console .drummer-knobs { gap: 6px; justify-content: space-between; }
+.phone-console .drummer-knobs select { min-height: 34px; font-size: 12px; }
+.phone-console .drummer-picker > * + * { margin-top: 4px !important; }
+.phone-console .drummer-tabs { gap: 4px; }
+.phone-console .drummer-genres { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 4px; }
+.phone-console .drummer-genre { min-height: 36px; padding: 2px 6px; }
+.phone-console .drummer-genre .text-sm { font-size: 12px; }
+.phone-console .drummer-print { padding-top: 5px; gap: 5px; }
+.phone-console .drummer-print > span { display: none; }
+.phone-console .drummer-print select, .phone-console .drummer-print button { min-height: 38px; font-size: 12px; }
+.phone-console .drummer-hint, .phone-console .drummer-foot { gap: 4px; }
+.phone-console .drummer-hint button, .phone-console .drummer-foot button { min-height: 32px; }
+.phone-console .dj-loop::before { content: "↻"; margin-right: 1px; opacity: 0.7; }
+.phone-console .dj-wave { height: 26px; }
+.drummer-pages { display: grid; grid-template-columns: 1fr 2fr 1.4fr; gap: 4px; }
+.drummer-pages .drummer-chip { min-height: 34px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.phone-console .drummer-xy { aspect-ratio: 5 / 2; }
+.phone-console .drummer-timekit { flex-direction: row; align-items: center; flex-wrap: wrap; gap: 4px; }
+.phone-console .drummer-timekit select { min-height: 34px; font-size: 12px; }
+.phone-console .drummer-print { border-top: 0; }
+.phone-console .drummer-note { display: inline; }
+.phone-console .drummer-main .drummer-note, .phone-console .drummer-device > .drummer-note { display: none; }
+.phone-console .drummer-pages .drummer-chip { min-height: 32px; height: 32px; }
+.phone-console .drummer-device > * + * { margin-top: 4px !important; }
+.phone-console .drummer-perform button { min-height: 40px !important; height: 40px; }
+.phone-console .dj-device { padding: 3px 4px; }
+.phone-console .dj-device > * + * { margin-top: 3px !important; }

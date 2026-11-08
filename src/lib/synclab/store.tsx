@@ -227,6 +227,8 @@ export type PanelId =
   | "audio-converter"
   | "genstem"
   | "bassgen"
+  | "drummer"
+  | "dj"
   | "reel-recorder"
   | "video-sampler"
   | "studio-view"
