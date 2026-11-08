@@ -4063,3 +4063,26 @@ html.phone-console-active [role="option"] { min-height: 44px; font-size: 15px; }
 .phone-console .drummer-perform button { min-height: 40px !important; height: 40px; }
 .phone-console .dj-device { padding: 3px 4px; }
 .phone-console .dj-device > * + * { margin-top: 3px !important; }
+/* Sign-in provider buttons: one per row so the full label and logo always fit.
+   Google button follows Google's dark theme (fixed brand colours, not app theme colours). */
+:root { --google-btn-bg: #131314; --google-btn-border: #8E918F; --google-btn-fg: #E3E3E3; }
+.login-provider-row { grid-template-columns: minmax(0, 1fr); gap: calc(6 * var(--ls)); }
+.login-screen .login-btn-provider {
+  display: flex; align-items: center; justify-content: center; gap: calc(10 * var(--ls));
+  min-height: calc(38 * var(--ls)); padding: 0 calc(12 * var(--ls));
+  font-family: "Google Sans", var(--font-sans); font-weight: 500; font-size: calc(14 * var(--ls)); line-height: calc(20 * var(--ls));
+  letter-spacing: 0; text-transform: none; white-space: nowrap; overflow: hidden;
+}
+.login-provider-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.login-screen .login-btn-google, .login-screen .login-btn-google:hover { background: var(--google-btn-bg); border: 1px solid var(--google-btn-border); color: var(--google-btn-fg); }
+.login-screen .login-btn-google:hover { filter: brightness(1.15); }
+.login-google-icon, .login-btn-provider .login-oauth-icon { width: calc(18 * var(--ls)); height: calc(18 * var(--ls)); flex: none; }
+.phone-console.phone-entry .login-btn-provider { min-height: calc(30 * var(--ls)); }
+.phone-console.phone-entry .login-btn-provider { min-height: calc(26 * var(--ls)); font-size: calc(13 * var(--ls)); line-height: calc(18 * var(--ls)); }
+.phone-console.phone-entry .login-provider-row { gap: calc(4 * var(--ls)); }
+.phone-console.phone-entry .login-signin { gap: calc(6 * var(--ls)); }
+.login-screen .login-btn-provider { height: auto; padding-block: calc(4 * var(--ls)); }
+/* Sideways phone sign-in card: keep every line inside the box (centre safely so the title is never clipped). */
+.phone-console.phone-entry .login-signin { justify-content: safe center; gap: calc(4 * var(--ls)); }
+.phone-console.phone-entry .login-btn-oauth { height: auto; min-height: calc(26 * var(--ls)); padding-block: calc(4 * var(--ls)); }
+@media (max-width: 420px) { .phone-console.phone-entry .login-auth-note { display: none; } }
