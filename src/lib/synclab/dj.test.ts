@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { beatPhase, crossfade, detectBpm, eqDb, filterFor, phaseShift, snapToBeat, syncRate, wavFromPcm16 } from "./dj";
+import { beatPhase, crossfade, detectBpm, eqDb, filterFor, phaseShift, phonesBlend, phonesRoute, snapToBeat, speedFactor, syncRate, wavFromPcm16 } from "./dj";
 
 function clickTrack(bpm: number, seconds: number, sr = 22050, offset = 0.1) {
   const out = new Float32Array(Math.floor(seconds * sr));
@@ -61,5 +61,31 @@ describe("DJ sync and mixing maths", () => {
     const v = new DataView(await blob.arrayBuffer());
     expect(v.getUint32(24, true)).toBe(48000);
     expect(v.getUint16(22, true)).toBe(2);
+  });
+});
+
+describe("DJ headphone cue", () => {
+  it("MIXING fully left is only the cued decks, fully right only the master", () => {
+    const [c0, m0] = phonesBlend(0);
+    expect(c0).toBeCloseTo(1); expect(m0).toBeCloseTo(0);
+    const [c1, m1] = phonesBlend(1);
+    expect(c1).toBeCloseTo(0); expect(m1).toBeCloseTo(1);
+  });
+  it("MIXING in the middle keeps both at equal power", () => {
+    const [c, m] = phonesBlend(0.5);
+    expect(c).toBeCloseTo(Math.SQRT1_2); expect(m).toBeCloseTo(Math.SQRT1_2);
+  });
+  it("a second output is only used when the browser can pick one and one is chosen", () => {
+    expect(phonesRoute("device", true, "usb-phones")).toBe("device");
+    expect(phonesRoute("device", false, "usb-phones")).toBe("off");
+    expect(phonesRoute("device", true, null)).toBe("off");
+    expect(phonesRoute("split", false, null)).toBe("split");
+  });
+});
+
+describe("DJ turntable speed", () => {
+  it("45 RPM plays 1.35x faster than 33", () => {
+    expect(speedFactor(33)).toBe(1);
+    expect(speedFactor(45)).toBeCloseTo(1.35);
   });
 });

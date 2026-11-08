@@ -1,7 +1,8 @@
 import { Mp3Encoder } from "@breezystack/lamejs";
 import { getEngine } from "./audio-engine";
 import { findCoverArt } from "./cover-art";
-import { bandWave, beatPhase, crossfade, detectBpm, eqDb, filterFor, phaseShift, snapToBeat, syncRate, wavFromPcm16, type BandWave } from "./dj";
+import { bandWave, beatPhase, crossfade, detectBpm, eqDb, filterFor, phaseShift, phonesBlend, phonesRoute, snapToBeat, speedFactor, syncRate, wavFromPcm16, type BandWave, type PhonesMode } from "./dj";
+import { isAppleMobile } from "./mic";
 
 /**
  * DJ decks: two players, a 3-band EQ + filter per channel, channel faders, an equal-power
@@ -58,8 +59,21 @@ export interface DeckState {
   /** picture on the record label: from the file's cover art or one you picked (object URL) */
   art: string | null;
   artFrom: "file" | "you" | null;
+  /** headphone CUE button: this deck is in the headphones (pre-fader, so you can hear it with its fader down) */
+  phones: boolean;
+  /** turntable speed button */
+  rpm: 33 | 45;
 }
-export interface MixState { crossfader: number; master: number; recording: boolean; recSeconds: number; hasMix: boolean; recLimit: number }
+export interface MixState {
+  crossfader: number; master: number; recording: boolean; recSeconds: number; hasMix: boolean; recLimit: number;
+  /** headphone output: off, MONO SPLIT on the one output, or a second output device */
+  phonesMode: PhonesMode; phonesDevice: string | null; phonesMix: number; phonesLevel: number; phonesError: string | null;
+}
+
+/** A second output (USB headphones, a DJ interface) can be chosen where the browser lets a page pick outputs. */
+export function canPickPhonesDevice() {
+  return typeof HTMLMediaElement !== "undefined" && typeof (HTMLMediaElement.prototype as unknown as { setSinkId?: unknown }).setSinkId === "function" && !isAppleMobile();
+}
 
 const REC_LIMIT = 30 * 60;
 const captureCode = `class DjCapture extends AudioWorkletProcessor {
@@ -83,10 +97,12 @@ class Deck {
   private nudge = 0;
   readonly trim: GainNode; readonly low: BiquadFilterNode; readonly mid: BiquadFilterNode; readonly high: BiquadFilterNode;
   readonly filter: BiquadFilterNode; readonly fader: GainNode; readonly xfade: GainNode; readonly meter: StereoMeter;
+  /** pre-fader tap into the headphone bus (open while CUE is lit) */
+  readonly phonesSend: GainNode;
 
-  constructor(private ctx: AudioContext, id: DeckId, out: AudioNode, private onChange: () => void) {
+  constructor(private ctx: AudioContext, id: DeckId, out: AudioNode, cueOut: AudioNode, private onChange: () => void) {
     this.state = { id, name: null, loading: false, error: null, duration: 0, bpm: 0, firstBeat: 0, playing: false, pitch: 0, range: 0.08, cue: 0,
-      hotCues: [null, null, null, null], loop: null, gain: 1, eq: { high: 0.5, mid: 0.5, low: 0.5 }, filter: 0.5, fader: 0.85, art: null, artFrom: null };
+      hotCues: [null, null, null, null], loop: null, gain: 1, eq: { high: 0.5, mid: 0.5, low: 0.5 }, filter: 0.5, fader: 0.85, art: null, artFrom: null, phones: false, rpm: 33 };
     this.trim = ctx.createGain();
     this.low = ctx.createBiquadFilter(); this.low.type = "lowshelf"; this.low.frequency.value = 250;
     this.mid = ctx.createBiquadFilter(); this.mid.type = "peaking"; this.mid.frequency.value = 1100; this.mid.Q.value = 0.8;
@@ -98,10 +114,27 @@ class Deck {
     this.trim.connect(this.low).connect(this.mid).connect(this.high).connect(this.filter).connect(this.fader);
     this.fader.connect(this.meter.input);
     this.fader.connect(this.xfade).connect(out);
+    this.phonesSend = ctx.createGain(); this.phonesSend.gain.value = 0;
+    this.filter.connect(this.phonesSend).connect(cueOut);
   }
 
-  get rate() { return (1 + this.state.pitch) * (1 + this.nudge); }
-  get effectiveBpm() { return this.state.bpm * (1 + this.state.pitch); }
+  get rate() { return (1 + this.state.pitch) * (1 + this.nudge) * speedFactor(this.state.rpm); }
+  get effectiveBpm() { return this.state.bpm * (1 + this.state.pitch) * speedFactor(this.state.rpm); }
+
+  /** Headphone CUE on/off for this deck. */
+  setPhones(on: boolean) {
+    this.state = { ...this.state, phones: on };
+    this.phonesSend.gain.setTargetAtTime(on ? 1 : 0, this.ctx.currentTime, 0.01);
+    this.onChange();
+  }
+  /** 33 / 45 speed buttons: like the turntable, tempo and key change together. */
+  setRpm(rpm: 33 | 45) {
+    if (rpm === this.state.rpm) return;
+    const pos = this.position();
+    this.state = { ...this.state, rpm };
+    this.reanchor(pos);
+    this.onChange();
+  }
 
   position(): number {
     if (!this.buffer) return 0;
@@ -198,7 +231,7 @@ class Deck {
   /** Match tempo to the other deck and line the beats up. */
   sync(other: Deck) {
     if (!this.buffer || !other.buffer || !(this.state.bpm > 0) || !(other.state.bpm > 0)) return false;
-    const rate = syncRate(this.state.bpm, other.effectiveBpm, this.state.range);
+    const rate = syncRate(this.state.bpm * speedFactor(this.state.rpm), other.effectiveBpm, this.state.range);
     this.setPitch(rate - 1);
     if (this.state.playing && other.state.playing) {
       const shift = phaseShift(this.position(), this.state.firstBeat, this.state.bpm, beatPhase(other.position(), other.state.firstBeat, other.state.bpm));
@@ -305,7 +338,13 @@ class DjMixer {
   readonly A: Deck; readonly B: Deck;
   private bus: GainNode; private out: GainNode;
   readonly masterMeter: StereoMeter;
-  private mix: MixState = { crossfader: 0, master: 0.9, recording: false, recSeconds: 0, hasMix: false, recLimit: REC_LIMIT };
+  private mix: MixState = { crossfader: 0, master: 0.9, recording: false, recSeconds: 0, hasMix: false, recLimit: REC_LIMIT,
+    phonesMode: "off", phonesDevice: null, phonesMix: 0, phonesLevel: 0.8, phonesError: null };
+  // headphone path: cued decks + master → MIXING → LEVEL, then off / split / second device
+  private cueBus: GainNode; private phCue: GainNode; private phMaster: GainNode; private phLevel: GainNode;
+  private splitL: GainNode; private splitR: GainNode; private splitMerge: ChannelMergerNode;
+  private phStream: MediaStreamAudioDestinationNode | null = null;
+  private phAudio: HTMLAudioElement | null = null;
   private listeners = new Set<() => void>();
   private recNode: AudioWorkletNode | null = null;
   private recSilent: GainNode | null = null;
@@ -323,10 +362,66 @@ class DjMixer {
     this.bus.connect(this.out);
     this.out.connect(this.ctx.destination);
     this.out.connect(this.masterMeter.input);
+    const c = this.ctx;
+    this.cueBus = c.createGain();
+    this.phCue = c.createGain(); this.phMaster = c.createGain(); this.phLevel = c.createGain();
+    this.cueBus.connect(this.phCue).connect(this.phLevel);
+    this.out.connect(this.phMaster).connect(this.phLevel);
+    // MONO SPLIT: left ear = headphone mix, right ear = master, both folded to mono
+    const mono = (g: GainNode) => { g.channelCount = 1; g.channelCountMode = "explicit"; g.channelInterpretation = "speakers"; return g; };
+    this.splitL = mono(c.createGain()); this.splitR = mono(c.createGain());
+    this.splitMerge = c.createChannelMerger(2);
+    this.splitL.connect(this.splitMerge, 0, 0); this.splitR.connect(this.splitMerge, 0, 1);
+    this.applyPhonesLevels();
     const changed = () => this.emit();
-    this.A = new Deck(this.ctx, "A", this.bus, changed);
-    this.B = new Deck(this.ctx, "B", this.bus, changed);
+    this.A = new Deck(this.ctx, "A", this.bus, this.cueBus, changed);
+    this.B = new Deck(this.ctx, "B", this.bus, this.cueBus, changed);
     this.applyCrossfader();
+  }
+
+  setPhonesMix(v: number) { this.mix = { ...this.mix, phonesMix: Math.max(0, Math.min(1, v)) }; this.applyPhonesLevels(); this.emit(); }
+  setPhonesLevel(v: number) { this.mix = { ...this.mix, phonesLevel: Math.max(0, Math.min(1.5, v)) }; this.applyPhonesLevels(); this.emit(); }
+  private applyPhonesLevels() {
+    const t = this.ctx.currentTime;
+    const [cue, master] = phonesBlend(this.mix.phonesMix);
+    this.phCue.gain.setTargetAtTime(cue, t, 0.01);
+    this.phMaster.gain.setTargetAtTime(master, t, 0.01);
+    this.phLevel.gain.setTargetAtTime(this.mix.phonesLevel, t, 0.01);
+    this.splitR.gain.setTargetAtTime(this.mix.phonesLevel, t, 0.01);
+  }
+
+  /** Choose where the headphones go. Call from a tap so a second output can start playing. */
+  async setPhonesMode(mode: PhonesMode, deviceId: string | null = this.mix.phonesDevice) {
+    this.mix = { ...this.mix, phonesMode: mode, phonesDevice: deviceId, phonesError: null };
+    const want = phonesRoute(mode, canPickPhonesDevice(), deviceId);
+    this.unroute();
+    try {
+      if (want === "split") {
+        this.out.disconnect(this.ctx.destination);
+        this.phLevel.connect(this.splitL);
+        this.out.connect(this.splitR);
+        this.splitMerge.connect(this.ctx.destination);
+      } else if (want === "device" && deviceId) {
+        this.phStream ??= this.ctx.createMediaStreamDestination();
+        this.phLevel.connect(this.phStream);
+        const el = (this.phAudio ??= new Audio());
+        el.srcObject = this.phStream.stream;
+        await (el as HTMLAudioElement & { setSinkId: (id: string) => Promise<void> }).setSinkId(deviceId);
+        await el.play();
+      }
+    } catch (e) {
+      this.unroute();
+      this.mix = { ...this.mix, phonesMode: "off", phonesError: (e as Error)?.message || "That output couldn't be opened." };
+    }
+    this.emit();
+  }
+  private unroute() {
+    const off = (a: AudioNode, b: AudioNode) => { try { a.disconnect(b); } catch { /* not connected */ } };
+    off(this.phLevel, this.splitL); off(this.out, this.splitR); off(this.splitMerge, this.ctx.destination);
+    // the speakers always get the master back (connecting twice is harmless)
+    this.out.connect(this.ctx.destination);
+    if (this.phStream) off(this.phLevel, this.phStream);
+    if (this.phAudio) { this.phAudio.pause(); this.phAudio.srcObject = null; }
   }
 
   deck(id: DeckId) { return id === "A" ? this.A : this.B; }

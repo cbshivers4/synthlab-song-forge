@@ -181,3 +181,25 @@ export function wavFromPcm16(chunks: Int16Array[], sampleRate: number): Blob {
   v.setUint32(28, sampleRate * 4, true); v.setUint16(32, 4, true); v.setUint16(34, 16, true); w(36, "data"); v.setUint32(40, samples * 2, true);
   return new Blob([header, ...(chunks as unknown as BlobPart[])], { type: "audio/wav" });
 }
+
+/** Headphone MIXING knob 0 (only the cued decks) … 1 (only the master), equal power: [cue gain, master gain]. */
+export function phonesBlend(mix: number): [number, number] {
+  const t = Math.max(0, Math.min(1, mix));
+  return [Math.cos((t * Math.PI) / 2), Math.sin((t * Math.PI) / 2)];
+}
+
+/** 45 RPM plays a 33⅓ record 1.35× faster (tempo and key together, like the real thing). */
+export function speedFactor(rpm: 33 | 45) { return rpm === 45 ? 45 / (100 / 3) : 1; }
+
+/**
+ * Where the headphone (cue) signal goes:
+ *  - "off": nothing; the speakers play the master only
+ *  - "split": one output carries both — left ear = headphone mix, right ear = master (MONO SPLIT)
+ *  - "device": the headphone mix plays on a second output device, the master stays on the speakers
+ * A device can only be used when the browser can choose outputs and one is picked.
+ */
+export type PhonesMode = "off" | "split" | "device";
+export function phonesRoute(mode: PhonesMode, canPickDevice: boolean, deviceId: string | null): PhonesMode {
+  if (mode === "device") return canPickDevice && deviceId ? "device" : "off";
+  return mode;
+}

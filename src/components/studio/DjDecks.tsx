@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 import { toast } from "sonner";
-import { Disc3, FolderOpen, ListMusic, Music2, Pause, Play, Circle, Square, Download, Trash2, RefreshCcw, ImagePlus } from "lucide-react";
-import synclabLogoAsset from "@/assets/synclab-logo-neon.jpg.asset.json";
+import { Disc3, FolderOpen, Headphones, ListMusic, Music2, Pause, Play, Circle, Square, Download, Trash2, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Knob } from "./Knob";
@@ -16,27 +15,14 @@ import { canShareFile, downloadBlob, encodeWav, shareFile } from "@/lib/synclab/
 import { songSteps } from "@/lib/synclab/timebase";
 import { useIsLandscapePhone } from "@/hooks/use-mobile";
 import { DJ_TRACK_DRAG, DjPlaylist, loadPlaylistTrack } from "./DjPlaylist";
+import { Turntable } from "./DjTurntable";
+import { PhonesPanel, PhonesSheet, togglePhonesCue } from "./DjPhones";
+import { useFrame } from "./dj-frame";
 
 /** Re-render on any deck/mixer change. */
 function useDjVersion() {
   const dj = getDj();
   return useSyncExternalStore((fn) => dj.subscribe(fn), () => dj.version, () => 0);
-}
-
-/** 30 fps while anything plays; the moving waveforms and clocks read the decks directly. */
-function useFrame(active: boolean, draw: () => void) {
-  const ref = useRef(draw);
-  ref.current = draw;
-  // also redraw after every change (a track loaded, a cue set) while stopped
-  useEffect(() => { ref.current(); });
-  useEffect(() => {
-    ref.current();
-    if (!active) return;
-    let raf = 0, last = 0;
-    const loop = (t: number) => { if (t - last > 32) { last = t; ref.current(); } raf = requestAnimationFrame(loop); };
-    raf = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(raf);
-  }, [active]);
 }
 
 const cssVar = (el: Element, name: string, fallback: string) => getComputedStyle(el).getPropertyValue(name).trim() || fallback;
@@ -54,6 +40,7 @@ function DjDesk() {
   const anyPlaying = dj.A.state.playing || dj.B.state.playing;
   const phone = useIsLandscapePhone();
   const [listOpen, setListOpen] = useState(false);
+  const [phonesOpen, setPhonesOpen] = useState(false);
   return (
     <section className="dj-device relative space-y-2 rounded-md border border-border p-2 sm:p-3" aria-label="DJ decks">
       {!phone && (
@@ -69,14 +56,15 @@ function DjDesk() {
       </div>
       <div className="dj-console">
         <DeckPanel id="A" />
-        <MixerPanel active={anyPlaying} onPlaylist={() => setListOpen(true)} />
+        <MixerPanel active={anyPlaying} onPlaylist={() => setListOpen(true)} onPhones={() => setPhonesOpen(true)} />
         <DeckPanel id="B" />
       </div>
       {!phone && <RecordPanel />}
       {!phone && <DjPlaylist />}
       {phone && listOpen && <DjPlaylist sheet onClose={() => setListOpen(false)} />}
+      {phone && phonesOpen && <PhonesSheet onClose={() => setPhonesOpen(false)} />}
       <p className="dj-footnote text-[11px] text-muted-foreground">
-        Pitch changes tempo and key together, like a turntable. Headphone cueing needs a second audio output, which browsers don't give a web page — everything plays through your main speakers.
+        Press a channel's orange CUE to hear that deck in your headphones before the crowd does (even with its fader down). MONO SPLIT works with headphones on one output: cue in the left ear, master in the right. 2ND OUT sends the headphones to USB headphones or a DJ interface while the speakers keep the master (Chrome or Edge on a computer). Pitch and 45 RPM change tempo and key together, like a turntable.
       </p>
     </section>
   );
@@ -244,13 +232,13 @@ function DeckPanel({ id }: { id: DeckId }) {
           <p className="font-mono text-[11px] text-muted-foreground">{s.name ? `${clock(pos)} / -${clock(s.duration - pos)}` : "MP3 · WAV · AAC · FLAC"}</p>
         </div>
         <div className="dj-bpm" title="Detected tempo × pitch">
-          <b>{s.bpm ? (s.bpm * (1 + s.pitch)).toFixed(1) : "—"}</b>
+          <b>{s.bpm ? deck.effectiveBpm.toFixed(1) : "—"}</b>
           <span>{s.pitch >= 0 ? "+" : ""}{pct}%</span>
         </div>
       </div>
       <Overview id={id} />
       <div className="dj-deck-body">
-        {phone ? <div className="dj-turntable-col"><Turntable id={id} />{loadRow}</div> : <Turntable id={id} />}
+        {phone ? <div className="dj-turntable-col"><Turntable id={id} compact />{loadRow}</div> : <Turntable id={id} />}
         <div className="dj-deck-controls">
           {!phone && loadRow}
           <div className="dj-row">
@@ -279,6 +267,7 @@ function DeckPanel({ id }: { id: DeckId }) {
         </div>
         <div className="dj-pitch">
           <span className="dj-label">PITCH</span>
+          <span className="dj-pitch-zero" data-on={Math.abs(s.pitch) < 0.0005 ? "1" : "0"} title={Math.abs(s.pitch) < 0.0005 ? "Pitch at 0 %" : `Pitch ${pct}%`} aria-hidden />
           <Slider orientation="vertical" className="dj-vfader" min={-s.range} max={s.range} step={0.001} value={[s.pitch]} onValueChange={([v = 0]) => deck.setPitch(v)} aria-label={`Deck ${id} pitch`} />
           <div className="flex gap-1">
             <button type="button" className="dj-nudge" aria-label="Nudge slower" onPointerDown={() => deck.setNudge(-0.04)} onPointerUp={() => deck.setNudge(0)} onPointerLeave={() => deck.setNudge(0)} onPointerCancel={() => deck.setNudge(0)}>−</button>
@@ -295,61 +284,10 @@ function DeckPanel({ id }: { id: DeckId }) {
   );
 }
 
-/** 33⅓ RPM: the record turns 200° for every second of the track (pitch speeds both up alike). */
-const DEG_PER_SEC = (100 / 3 / 60) * 360;
-
-/**
- * A turntable per deck. The record's angle and the tone arm's travel are worked out from the
- * deck's real play position, so it turns only while the deck plays and stops dead on pause.
- * The label shows the file's cover picture, or one you choose by tapping the label.
- */
-function Turntable({ id }: { id: DeckId }) {
-  const deck = getDj().deck(id);
-  const s = deck.state;
-  const platter = useRef<HTMLDivElement>(null);
-  const arm = useRef<HTMLDivElement>(null);
-  const pic = useRef<HTMLInputElement>(null);
-  useFrame(s.playing, () => {
-    const pos = deck.position();
-    if (platter.current) platter.current.style.transform = `rotate(${((pos * DEG_PER_SEC) % 360).toFixed(1)}deg)`;
-    if (arm.current) {
-      const dur = deck.buffer?.duration ?? 0;
-      arm.current.style.transform = `rotate(${dur > 0 ? (18 + (pos / dur) * 20).toFixed(2) : 0}deg)`;
-    }
-  });
-  const choose = (f: File | undefined) => { if (f && f.type.startsWith("image/")) deck.setArt(f); };
-  const labelTitle = s.art ? (s.artFrom === "file" ? "Cover picture from the file — tap to choose your own" : "Your picture — tap to change it") : "Tap to put a picture on this record";
-  return (
-    <div className="dj-turntable" data-deck={id} data-playing={s.playing ? "1" : "0"} data-loaded={s.name ? "1" : "0"}>
-      <div className="dj-plinth">
-        <div className="dj-platter-rim" aria-hidden />
-        <div ref={platter} className="dj-platter">
-          <div className="dj-vinyl" aria-hidden={!s.name}>
-            <button type="button" className="dj-record-label" onClick={() => pic.current?.click()} title={labelTitle} aria-label={`Deck ${id} record picture — ${labelTitle}`}>
-              {s.art ? <img src={s.art} alt="" draggable={false} /> : (
-                <span className="dj-record-blank">
-                  <img src={synclabLogoAsset.url} alt="" draggable={false} />
-                  <b>{id}</b>
-                </span>
-              )}
-            </button>
-          </div>
-          <span className="dj-spindle" aria-hidden />
-        </div>
-        <span className="dj-sheen" aria-hidden />
-        <div ref={arm} className="dj-tonearm" aria-hidden><span className="dj-tonearm-head" /></div>
-        <span className="dj-power-led" aria-hidden title={s.playing ? "Spinning" : "Stopped"} />
-        <button type="button" className="dj-pic-btn" onClick={() => pic.current?.click()} aria-label={`Choose a picture for the deck ${id} record`} title="Choose a record picture"><ImagePlus className="size-3.5" /></button>
-      </div>
-      <input ref={pic} type="file" accept="image/*" className="hidden" onChange={(e) => { choose(e.target.files?.[0]); e.target.value = ""; }} />
-    </div>
-  );
-}
-
 const meterPos = (v: number) => Math.min(1, Math.max(0, (20 * Math.log10(Math.max(1e-5, v)) + 48) / 54));
 const METER_TICKS = [6, 0, -6, -12, -24, -48];
 
-function MixerPanel({ onPlaylist }: { active: boolean; onPlaylist: () => void }) {
+function MixerPanel({ onPlaylist, onPhones }: { active: boolean; onPlaylist: () => void; onPhones: () => void }) {
   const dj = getDj();
   const meters = useRef<Record<string, HTMLElement | null>>({});
   const hold = useRef<Record<string, { v: number; at: number; clipAt: number }>>({});
@@ -395,31 +333,50 @@ function MixerPanel({ onPlaylist }: { active: boolean; onPlaylist: () => void })
     </div>
   );
   const phone = useIsLandscapePhone();
+  const cueBtn = (id: DeckId) => (
+    <button type="button" className="djm-cue" data-deck={id} aria-pressed={dj.deck(id).state.phones}
+      onClick={() => togglePhonesCue(id, phone ? onPhones : undefined)} aria-label={`Deck ${id} headphone cue`} title="Hear this deck in your headphones">CUE</button>
+  );
   const knobs = (id: DeckId) => {
     const deck = dj.deck(id);
     const s = deck.state;
-    const k = phone ? { size: 26, className: "dj-knob" } : { size: 34 };
+    const k = phone ? { size: 26, className: "dj-knob" } : { size: 34, className: "djm-knob" };
+    if (!phone) {
+      return (
+        <>
+          <Knob label="TRIM" value={s.gain} min={0} max={2} onChange={(v) => deck.setGain(v)} defaultValue={1} size={34} className="djm-knob is-trim" format={(v) => `${(20 * Math.log10(Math.max(0.01, v))).toFixed(1)}dB`} ariaLabel={`Deck ${id} trim`} />
+          <div className="djm-eq">
+            <Knob label="HI" value={s.eq.high} onChange={(v) => deck.setEq("high", v)} defaultValue={0.5} {...k} format={eqLabel} ariaLabel={`Deck ${id} high EQ`} />
+            <Knob label="MID" value={s.eq.mid} onChange={(v) => deck.setEq("mid", v)} defaultValue={0.5} {...k} format={eqLabel} ariaLabel={`Deck ${id} mid EQ`} />
+            <Knob label="LOW" value={s.eq.low} onChange={(v) => deck.setEq("low", v)} defaultValue={0.5} {...k} format={eqLabel} ariaLabel={`Deck ${id} low EQ`} />
+          </div>
+          <Knob label="COLOR · FILTER" value={s.filter} onChange={(v) => deck.setFilter(v)} defaultValue={0.5} size={42} className="djm-knob is-color" format={(v) => (Math.abs(v - 0.5) < 0.03 ? "OFF" : v < 0.5 ? "LOW PASS" : "HIGH PASS")} ariaLabel={`Deck ${id} filter`} />
+        </>
+      );
+    }
     return (
       <>
         <Knob label="GAIN" value={s.gain} min={0} max={2} onChange={(v) => deck.setGain(v)} defaultValue={1} {...k} format={(v) => `${(20 * Math.log10(Math.max(0.01, v))).toFixed(1)}dB`} ariaLabel={`Deck ${id} gain`} />
         <Knob label="HI" value={s.eq.high} onChange={(v) => deck.setEq("high", v)} defaultValue={0.5} {...k} format={eqLabel} ariaLabel={`Deck ${id} high EQ`} />
         <Knob label="MID" value={s.eq.mid} onChange={(v) => deck.setEq("mid", v)} defaultValue={0.5} {...k} format={eqLabel} ariaLabel={`Deck ${id} mid EQ`} />
         <Knob label="LOW" value={s.eq.low} onChange={(v) => deck.setEq("low", v)} defaultValue={0.5} {...k} format={eqLabel} ariaLabel={`Deck ${id} low EQ`} />
-        <Knob label={phone ? "FILT" : "FILTER"} value={s.filter} onChange={(v) => deck.setFilter(v)} defaultValue={0.5} {...k} format={(v) => (Math.abs(v - 0.5) < 0.03 ? "OFF" : v < 0.5 ? "LP" : "HP")} ariaLabel={`Deck ${id} filter`} />
+        <Knob label="FILT" value={s.filter} onChange={(v) => deck.setFilter(v)} defaultValue={0.5} {...k} format={(v) => (Math.abs(v - 0.5) < 0.03 ? "OFF" : v < 0.5 ? "LP" : "HP")} ariaLabel={`Deck ${id} filter`} />
+        {cueBtn(id)}
       </>
     );
   };
-  const fader = (id: DeckId) => (
+  const fader = (id: DeckId, withMeter = true) => (
     <div className="dj-fader-row">
-      {meter(id)}
+      {withMeter && meter(id)}
+      {!withMeter && <FaderScale />}
       <Slider orientation="vertical" className="dj-vfader" min={0} max={1} step={0.01} value={[dj.deck(id).state.fader]} onValueChange={([v = 0]) => dj.deck(id).setFader(v)} aria-label={`Deck ${id} volume`} />
     </div>
   );
   const xfader = (
     <div className="dj-xfader">
-      <span className="dj-label">A</span>
-      <Slider min={-1} max={1} step={0.01} value={[dj.state.crossfader]} onValueChange={([v = 0]) => dj.setCrossfader(v)} aria-label="Crossfader" className="dj-xfader-slider" />
-      <span className="dj-label">B</span>
+      <span className="dj-label">{phone ? "A" : "◀ A"}</span>
+      <div className="djm-xgrill"><Slider min={-1} max={1} step={0.01} value={[dj.state.crossfader]} onValueChange={([v = 0]) => dj.setCrossfader(v)} aria-label="Crossfader" className="dj-xfader-slider" /></div>
+      <span className="dj-label">{phone ? "B" : "B ▶"}</span>
       <button type="button" className="dj-range" onClick={() => dj.setCrossfader(0)} title="Centre the crossfader">◆</button>
     </div>
   );
@@ -431,7 +388,7 @@ function MixerPanel({ onPlaylist }: { active: boolean; onPlaylist: () => void })
         <div className="dj-phone-faders">
           {fader("A")}
           <div className="flex flex-col items-center gap-1">
-            <Knob label="MASTER" value={dj.state.master} min={0} max={1.2} onChange={(v) => dj.setMaster(v)} defaultValue={0.9} size={26} className="dj-knob" format={(v) => `${Math.round(v * 100)}%`} />
+            <Knob label="MASTER" value={dj.state.master} min={0} max={1.2} onChange={(v) => dj.setMaster(v)} defaultValue={0.9} size={26} className="dj-knob is-wide" format={(v) => `${Math.round(v * 100)}%`} />
             {meter("M")}
           </div>
           {fader("B")}
@@ -440,31 +397,45 @@ function MixerPanel({ onPlaylist }: { active: boolean; onPlaylist: () => void })
         <div className="dj-phone-bottom">
           <RecordPanel />
           <Button variant="secondary" className="dj-btn dj-pl-open" onClick={onPlaylist} aria-label="Open the playlist"><ListMusic className="size-4" />List</Button>
+          <Button variant="secondary" className="dj-btn dj-pl-open" onClick={onPhones} aria-label="Headphones" data-on={dj.state.phonesMode !== "off" ? "1" : "0"}><Headphones className="size-4" /></Button>
         </div>
       </div>
     );
   }
-  const channel = (id: DeckId) => {
-    return (
-      <div className="dj-channel" data-deck={id}>
-        <span className="dj-label">{id}</span>
-        {knobs(id)}
-        {fader(id)}
-      </div>
-    );
-  };
+  const channel = (id: DeckId) => (
+    <div className="djm-ch" data-deck={id}>
+      {knobs(id)}
+      {cueBtn(id)}
+      <span className="djm-num">{id === "A" ? 1 : 2}</span>
+      {fader(id, false)}
+    </div>
+  );
   return (
-    <div className="dj-mixer">
-      <div className="dj-mixer-channels">
+    <div className="dj-mixer djm">
+      <span className="djm-screw is-tl" aria-hidden /><span className="djm-screw is-tr" aria-hidden /><span className="djm-screw is-bl" aria-hidden /><span className="djm-screw is-br" aria-hidden />
+      <div className="djm-top">
         {channel("A")}
-        <div className="dj-channel is-master">
-          <span className="dj-label">MASTER</span>
-          <Knob label="LEVEL" value={dj.state.master} min={0} max={1.2} onChange={(v) => dj.setMaster(v)} defaultValue={0.9} size={34} format={(v) => `${Math.round(v * 100)}%`} />
-          {meter("M", true)}
+        <div className="djm-center">
+          <Knob label="MASTER LEVEL" value={dj.state.master} min={0} max={1.2} onChange={(v) => dj.setMaster(v)} defaultValue={0.9} size={36} className="djm-knob" format={(v) => `${Math.round(v * 100)}%`} />
+          <div className="djm-bridge" aria-label="Level meters">
+            <div className="djm-bridge-head" aria-hidden><span>CH1</span><span>MASTER</span><span>CH2</span></div>
+            <div className="djm-bridge-meters">{meter("A")}{meter("M", true)}{meter("B")}</div>
+          </div>
+          <PhonesPanel />
         </div>
         {channel("B")}
       </div>
       {xfader}
+      <span className="djm-model" aria-hidden>SYNCLAB · 2 CHANNEL DJ MIXER</span>
+    </div>
+  );
+}
+
+/** Printed 10…0 fader scale beside a channel fader. */
+function FaderScale() {
+  return (
+    <div className="djm-fscale" aria-hidden>
+      {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0].map((n) => <span key={n}>{n}</span>)}
     </div>
   );
 }

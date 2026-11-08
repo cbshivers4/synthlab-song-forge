@@ -220,3 +220,9 @@
 - [x] Save named playlists on this device (with a copy of their music), reopen, rename, delete (with confirmation); unsaved-changes warning
 - [x] Phone: List button opens the playlist over the whole DJ screen
 - [ ] Try on a real phone and after a real reload (test mode keeps playlists in memory only)
+
+## Nov 8 (7) — DJ headphones, turntables, mixer look (Christopher)
+- [x] Headphone CUE on each channel (pre-fader): MONO SPLIT on one output (left = cue, right = master) or a second output device (Chrome/Edge on a computer); MIXING and LEVEL knobs
+- [x] Silver direct-drive turntables: strobe-dotted platter, tone arm with counterweight, working START·STOP and 33/45 buttons, green pitch-zero light
+- [x] Black two-channel club mixer face: TRIM, HI/MID/LOW, COLOR filter, orange CUE, centre meter bridge, headphone section, scaled faders, slotted crossfader
+- [ ] Try with real headphones and a real second output (not checked: headless browser has no output devices)

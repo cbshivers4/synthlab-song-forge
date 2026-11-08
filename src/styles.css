@@ -4120,25 +4120,33 @@ html.phone-console-active [role="option"] { min-height: 44px; font-size: 15px; }
 .phone-console .drummer-perform button { min-height: 40px !important; height: 40px; }
 .phone-console .dj-device { padding: 3px 4px; }
 .phone-console .dj-device > * + * { margin-top: 3px !important; }
-/* ---- DJ turntables: plinth, strobe-dotted platter, vinyl grooves, picture label, tone arm ---- */
+/* ---- DJ turntables: silver direct-drive deck (strobe-dotted platter, tone arm with counterweight, START·STOP, 33/45).
+   Every size is in cqw of the plinth, so the same drawing scales from desktop to the small sideways-phone deck. ---- */
 .dj-device {
-  --tt-plinth: oklch(0.2 0.004 260); --tt-plinth-2: oklch(0.13 0.003 260); --tt-metal: oklch(0.72 0.01 260); --tt-metal-dark: oklch(0.45 0.01 260);
-  --tt-vinyl: oklch(0.12 0 0); --tt-groove: oklch(0.2 0 0); --tt-led: oklch(0.62 0.21 25);
+  --tt-silver-hi: oklch(0.92 0.004 250); --tt-silver: oklch(0.8 0.005 250); --tt-silver-lo: oklch(0.6 0.006 250); --tt-ink: oklch(0.22 0.005 250);
+  --tt-edge: oklch(0.84 0.004 250); --tt-dot: oklch(0.3 0.004 250); --tt-mat: oklch(0.13 0 0);
+  --tt-metal: oklch(0.8 0.006 250); --tt-metal-dark: oklch(0.46 0.008 250);
+  --tt-vinyl: oklch(0.12 0 0); --tt-groove: oklch(0.2 0 0); --tt-led: oklch(0.62 0.22 25); --tt-zero: oklch(0.78 0.2 145);
 }
 .dj-deck-body { display: grid; grid-template-columns: minmax(0, 1fr) 64px; grid-template-areas: "table pitch" "controls controls"; gap: 8px; }
 .dj-turntable { grid-area: table; display: flex; justify-content: center; min-width: 0; }
 .dj-deck-controls { grid-area: controls; }
 .dj-pitch { grid-area: pitch; }
-.dj-plinth { position: relative; width: 100%; max-width: 300px; aspect-ratio: 5 / 4; border-radius: 10px;
-  background: linear-gradient(160deg, var(--tt-plinth), var(--tt-plinth-2)); border: 1px solid oklch(0.3 0.01 260);
-  box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.08), 0 4px 12px oklch(0 0 0 / 0.5); }
-.dj-platter-rim, .dj-platter { position: absolute; top: 6%; left: 4%; width: 74%; aspect-ratio: 1; border-radius: 50%; }
-.dj-platter-rim { background: repeating-conic-gradient(var(--tt-metal) 0 2deg, var(--tt-metal-dark) 2deg 6deg); box-shadow: 0 2px 6px oklch(0 0 0 / 0.6); }
-.dj-platter { will-change: transform; }
-.dj-vinyl { position: absolute; inset: 3.5%; border-radius: 50%;
+.dj-plinth { --arm-start: 31deg; --arm-sweep: 22deg; position: relative; container-type: inline-size; width: 100%; max-width: 320px; aspect-ratio: 453 / 353; border-radius: 1.6cqw;
+  background: repeating-linear-gradient(90deg, oklch(1 0 0 / 0.05) 0 1px, transparent 1px 3px), linear-gradient(165deg, var(--tt-silver-hi), var(--tt-silver) 45%, var(--tt-silver-lo));
+  border: 1px solid var(--tt-silver-lo); box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.6), inset 0 -2px 0 oklch(0 0 0 / 0.25), 0 6px 14px oklch(0 0 0 / 0.55); }
+.dj-platter { position: absolute; left: 4cqw; top: 5cqw; width: 66cqw; aspect-ratio: 1; border-radius: 50%; will-change: transform;
+  background: radial-gradient(circle closest-side, var(--tt-mat) 0 90%, var(--tt-edge) 90.5% 100%); box-shadow: 0 0.8cqw 1.6cqw oklch(0 0 0 / 0.55), 0 0 0 0.4cqw var(--tt-silver-lo); }
+/* the strobe dots on the platter edge: two rows, they turn with the platter */
+.dj-strobe { position: absolute; inset: 0; border-radius: 50%; pointer-events: none;
+  background: repeating-conic-gradient(var(--tt-dot) 0 1.3deg, transparent 1.3deg 3.6deg);
+  -webkit-mask: radial-gradient(circle closest-side, transparent 0 96%, black 96.5% 99.4%, transparent 99.6%); mask: radial-gradient(circle closest-side, transparent 0 96%, black 96.5% 99.4%, transparent 99.6%); }
+.dj-strobe.is-inner { background: repeating-conic-gradient(var(--tt-dot) 0 1.2deg, transparent 1.2deg 3.25deg);
+  -webkit-mask: radial-gradient(circle closest-side, transparent 0 91.5%, black 92% 95%, transparent 95.2%); mask: radial-gradient(circle closest-side, transparent 0 91.5%, black 92% 95%, transparent 95.2%); }
+.dj-vinyl { position: absolute; inset: 9%; border-radius: 50%;
   background: radial-gradient(circle, transparent 0 31%, var(--tt-vinyl) 31% 33%, transparent 33%),
     repeating-radial-gradient(circle, var(--tt-vinyl) 0 1.4px, var(--tt-groove) 1.6px 2.2px);
-  box-shadow: inset 0 0 0 2px oklch(0.05 0 0); }
+  box-shadow: inset 0 0 0 2px oklch(0.05 0 0), 0 0 0 1px oklch(0 0 0 / 0.6); }
 /* a groove highlight that turns with the record so you can see it spin */
 .dj-vinyl::after { content: ""; position: absolute; inset: 0; border-radius: 50%;
   background: conic-gradient(from 20deg, transparent 0 8deg, oklch(1 0 0 / 0.1) 12deg, transparent 18deg 190deg, oklch(1 0 0 / 0.06) 196deg, transparent 204deg); pointer-events: none; }
@@ -4149,19 +4157,57 @@ html.phone-console-active [role="option"] { min-height: 44px; font-size: 15px; }
 .dj-record-blank { position: relative; display: block; width: 100%; height: 100%; }
 .dj-record-blank img { position: absolute; inset: 14%; width: 72%; height: 72%; border-radius: 50%; }
 .dj-record-blank b { position: absolute; left: 50%; bottom: 2%; transform: translateX(-50%); font-family: var(--font-display); font-size: 10px; line-height: 1; color: oklch(0.12 0 0); }
-.dj-spindle { position: absolute; top: calc(50% - 3px); left: calc(50% - 3px); width: 6px; height: 6px; border-radius: 50%; background: var(--tt-metal); z-index: 2; pointer-events: none; }
-.dj-sheen { position: absolute; top: 6%; left: 4%; width: 74%; aspect-ratio: 1; border-radius: 50%; pointer-events: none; z-index: 2;
-  background: linear-gradient(135deg, oklch(1 0 0 / 0.1), transparent 40%, transparent 60%, oklch(1 0 0 / 0.05)); }
-.dj-tonearm { position: absolute; top: 9%; right: 9%; width: 6px; height: 64%; transform-origin: 50% 0; transform: rotate(0deg); z-index: 3; pointer-events: none;
-  background: linear-gradient(90deg, var(--tt-metal-dark), var(--tt-metal), var(--tt-metal-dark)); border-radius: 3px; transition: transform 0.4s ease; }
+.dj-spindle { position: absolute; top: calc(50% - 1.1cqw); left: calc(50% - 1.1cqw); width: 2.2cqw; height: 2.2cqw; border-radius: 50%; z-index: 2; pointer-events: none;
+  background: radial-gradient(circle at 35% 35%, var(--tt-silver-hi), var(--tt-silver-lo)); }
+.dj-sheen { position: absolute; left: 4cqw; top: 5cqw; width: 66cqw; aspect-ratio: 1; border-radius: 50%; pointer-events: none; z-index: 2;
+  background: linear-gradient(135deg, oklch(1 0 0 / 0.12), transparent 40%, transparent 60%, oklch(1 0 0 / 0.05)); }
+/* strobe illuminator: lights red while the platter turns */
+.dj-strobe-light { position: absolute; left: 3cqw; top: 60cqw; width: 5.5cqw; aspect-ratio: 1; border-radius: 50%; z-index: 3;
+  background: radial-gradient(circle at 40% 35%, oklch(0.45 0.08 25), oklch(0.2 0.04 25)); box-shadow: 0 0 0 0.6cqw var(--tt-silver-lo), inset 0 0 0 0.3cqw oklch(0 0 0 / 0.5); }
+.dj-turntable[data-playing="1"] .dj-strobe-light { background: radial-gradient(circle at 40% 35%, oklch(0.85 0.12 30), var(--tt-led)); box-shadow: 0 0 0 0.6cqw var(--tt-silver-lo), 0 0 2.4cqw var(--tt-led); }
+/* tone arm: pivot base with the counterweight behind it, arm swinging in from the arm rest */
+.dj-arm-base { position: absolute; left: 77.5cqw; top: 6.5cqw; width: 17cqw; aspect-ratio: 1; border-radius: 50%; z-index: 3;
+  background: radial-gradient(circle, var(--tt-silver-hi) 0 18%, var(--tt-silver-lo) 19% 24%, var(--tt-silver) 25% 60%, var(--tt-silver-lo) 61% 64%, var(--tt-silver-hi) 65% 100%);
+  box-shadow: 0 0.6cqw 1.2cqw oklch(0 0 0 / 0.35), inset 0 0 0 1px oklch(0 0 0 / 0.2); }
+.dj-counterweight { position: absolute; left: 50%; top: 50%; width: 5.5cqw; aspect-ratio: 1; border-radius: 50%; transform: translate(-50%, -50%); z-index: 2;
+  background: radial-gradient(circle at 35% 35%, var(--tt-silver-hi), var(--tt-silver-lo)); box-shadow: 0 0 0 0.4cqw var(--tt-ink); }
+.dj-tonearm { --arm-p: 0; position: absolute; left: 50%; top: 50%; width: 1.6cqw; height: 46cqw; margin-left: -0.8cqw; transform-origin: 50% 0; transform: rotate(0deg); z-index: 1; pointer-events: none;
+  background: linear-gradient(90deg, var(--tt-metal-dark), var(--tt-silver-hi), var(--tt-metal-dark)); border-radius: 1cqw; transition: transform 0.5s ease; }
+.dj-turntable[data-loaded="1"] .dj-tonearm { transform: rotate(calc(var(--arm-start) + var(--arm-p) * var(--arm-sweep))); }
 .dj-turntable[data-playing="1"] .dj-tonearm { transition: none; }
-.dj-tonearm::before { content: ""; position: absolute; top: -9px; left: 50%; width: 18px; height: 18px; margin-left: -9px; border-radius: 50%; background: radial-gradient(circle, var(--tt-metal) 0 35%, var(--tt-metal-dark) 36%); }
-.dj-tonearm-head { position: absolute; bottom: -8px; left: -4px; width: 14px; height: 14px; border-radius: 2px; background: var(--tt-metal); transform: rotate(18deg); }
-.dj-power-led { position: absolute; left: 6%; bottom: 6%; width: 7px; height: 7px; border-radius: 50%; background: oklch(0.3 0.04 25); }
-.dj-turntable[data-playing="1"] .dj-power-led { background: var(--tt-led); box-shadow: 0 0 6px var(--tt-led); }
-.dj-pic-btn { min-width: 0 !important; min-height: 0 !important; position: absolute; right: 4%; bottom: 4%; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 5px; border: 1px solid oklch(0.34 0.01 260); background: oklch(0.18 0.004 260); color: var(--muted-foreground); z-index: 4; }
-.dj-pic-btn:hover { color: var(--foreground); }
-
+/* the counterweight at the back of the arm */
+.dj-tonearm::before { content: ""; position: absolute; left: 50%; top: -11cqw; width: 6.5cqw; height: 9cqw; margin-left: -3.25cqw; border-radius: 0.8cqw;
+  background: repeating-linear-gradient(0deg, transparent 0 0.9cqw, oklch(0 0 0 / 0.18) 0.9cqw 1.1cqw), linear-gradient(90deg, var(--tt-metal-dark), var(--tt-silver-hi) 45%, var(--tt-metal-dark)); }
+.dj-tonearm-head { position: absolute; bottom: -4.5cqw; left: -2.6cqw; width: 5cqw; height: 7cqw; border-radius: 0.6cqw; transform: rotate(24deg);
+  background: linear-gradient(180deg, var(--tt-ink), oklch(0.08 0 0)); box-shadow: 1.6cqw -0.6cqw 0 -1cqw var(--tt-silver-hi); }
+.dj-armrest { position: absolute; left: 84.5cqw; top: 58cqw; width: 3.4cqw; height: 4.4cqw; border-radius: 0.6cqw; z-index: 2; background: var(--tt-ink); box-shadow: 0 0 0 0.4cqw var(--tt-silver-lo); }
+.dj-startstop { position: absolute; left: 2.5cqw; top: 68.5cqw; width: 13cqw; height: 7cqw; min-width: 0 !important; min-height: 0 !important; padding: 0; z-index: 4;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 0.6cqw; line-height: 1;
+  font-family: var(--font-mono); font-size: max(7px, 2cqw); font-weight: 700; letter-spacing: 0.04em; color: var(--tt-ink);
+  background: linear-gradient(180deg, var(--tt-silver-hi), var(--tt-silver-lo)); border: 1px solid var(--tt-silver-lo); box-shadow: 0 0.4cqw 0 oklch(0 0 0 / 0.35); }
+.dj-startstop:active, .dj-startstop[aria-pressed="true"] { transform: translateY(0.3cqw); box-shadow: 0 0.1cqw 0 oklch(0 0 0 / 0.35); }
+.dj-startstop:disabled { opacity: 0.6; }
+.dj-rpm { position: absolute; left: 17cqw; top: 70cqw; display: flex; gap: 1cqw; z-index: 4; }
+.dj-rpm-btn { min-width: 0 !important; min-height: 0 !important; width: 6.5cqw; height: 5cqw; padding: 0; border-radius: 0.5cqw; font-family: var(--font-mono); font-size: max(7px, 2cqw); font-weight: 700; color: var(--tt-ink);
+  background: linear-gradient(180deg, var(--tt-silver-hi), var(--tt-silver-lo)); border: 1px solid var(--tt-silver-lo); }
+.dj-rpm-btn[aria-pressed="true"] { color: oklch(0.12 0 0); box-shadow: inset 0 -0.8cqw 0 -0.4cqw var(--tt-led), 0 0 1.2cqw color-mix(in oklab, var(--tt-led) 60%, transparent); }
+.dj-badge { position: absolute; right: 3.5cqw; top: 66cqw; display: flex; flex-direction: column; align-items: flex-end; line-height: 1; color: var(--tt-ink); pointer-events: none; }
+.dj-badge b { font-family: var(--font-display); font-size: max(8px, 3.4cqw); letter-spacing: 0.04em; }
+.dj-badge small { font-family: var(--font-mono); font-size: max(5px, 1.4cqw); letter-spacing: 0.08em; opacity: 0.75; }
+.dj-pic-btn { min-width: 0 !important; min-height: 0 !important; position: absolute; right: 2cqw; bottom: 2cqw; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 5px; z-index: 4;
+  border: 1px solid var(--tt-silver-lo); background: linear-gradient(180deg, var(--tt-silver-hi), var(--tt-silver)); color: var(--tt-ink); }
+.dj-pic-btn:hover { background: var(--tt-silver-hi); }
+/* pitch: silver slot with the green "0" light that is lit only at 0 % */
+.dj-pitch { padding: 4px 2px; border-radius: 6px; background: linear-gradient(165deg, var(--tt-silver), var(--tt-silver-lo)); border: 1px solid var(--tt-silver-lo); }
+.dj-pitch .dj-label { color: var(--tt-ink); }
+.dj-pitch-zero { width: 8px; height: 8px; border-radius: 50%; background: oklch(0.35 0.05 145); box-shadow: inset 0 0 0 1px oklch(0 0 0 / 0.4); }
+.dj-pitch-zero[data-on="1"] { background: var(--tt-zero); box-shadow: 0 0 6px var(--tt-zero); }
+.dj-pitch .dj-vfader > span:first-child { width: 6px; height: 100%; flex-grow: 1; border-radius: 3px; background: oklch(0.12 0 0); box-shadow: inset 0 1px 2px oklch(0 0 0 / 0.7); }
+.dj-pitch .dj-vfader > span:first-child > span { background: transparent; }
+.dj-pitch .dj-vfader [role="slider"] { width: 26px; height: 16px; border-radius: 3px; border: 1px solid oklch(0.1 0 0);
+  background: linear-gradient(180deg, oklch(0.3 0 0), oklch(0.12 0 0)); box-shadow: inset 0 -2px 0 oklch(0.05 0 0), 0 2px 3px oklch(0 0 0 / 0.5); position: relative; }
+.dj-pitch .dj-vfader [role="slider"]::after { content: ""; position: absolute; left: 3px; right: 3px; top: 50%; height: 2px; margin-top: -1px; background: var(--tt-silver-hi); }
+.dj-pitch .dj-nudge, .dj-pitch .dj-range { color: var(--tt-ink); border-color: var(--tt-silver-lo); background: linear-gradient(180deg, var(--tt-silver-hi), var(--tt-silver)); }
 /* ---- DJ L/R meters: segmented LED ladders with peak hold and clip lights ---- */
 .dj-meter-host, .dj-lr { display: flex; flex-direction: column; align-items: center; gap: 2px; }
 .dj-lr { --dj-lr-h: 120px; }
@@ -4186,20 +4232,23 @@ html.phone-console-active [role="option"] { min-height: 44px; font-size: 15px; }
 .phone-console .dj-lr-bar { width: 5px; }
 .phone-console .dj-lr-clips i, .phone-console .dj-lr-legend span { width: 5px; }
 .phone-console .dj-lr-legend { font-size: 7px; }
-/* Sideways phone: small turntable at the left of each deck's buttons */
+/* Sideways phone: small turntable at the left of each deck's buttons (squarer plinth, same drawing) */
 .phone-console .dj-deck-body { grid-template-columns: 104px minmax(0, 1fr) 44px; grid-template-areas: "table controls pitch"; gap: 4px; }
 .phone-console .dj-turntable-col { grid-area: table; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .phone-console .dj-turntable-col .dj-row { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; }
 .phone-console .dj-turntable-col .dj-btn { padding-inline: 0; }
-.phone-console .dj-plinth { aspect-ratio: 1 / 1.04; border-radius: 6px; }
+.phone-console .dj-plinth { --arm-start: 20deg; --arm-sweep: 22deg; aspect-ratio: 1 / 1.04; border-radius: 6px; }
 .phone-console .dj-hotcue { min-width: 32px; }
-.phone-console .dj-platter-rim, .phone-console .dj-platter, .phone-console .dj-sheen { top: 5%; left: 4%; width: 86%; }
-.phone-console .dj-tonearm { right: 4%; top: 8%; width: 4px; height: 60%; }
-.phone-console .dj-tonearm::before { width: 12px; height: 12px; margin-left: -6px; top: -6px; }
-.phone-console .dj-tonearm-head { width: 9px; height: 9px; left: -3px; bottom: -6px; }
-.phone-console .dj-pic-btn { width: 22px; height: 22px; right: 2%; bottom: 2%; }
+.phone-console .dj-platter, .phone-console .dj-sheen { left: 3cqw; top: 4cqw; width: 80cqw; }
+.phone-console .dj-arm-base { left: 80cqw; top: 3cqw; width: 18cqw; }
+.phone-console .dj-tonearm { height: 60cqw; width: 2.4cqw; margin-left: -1.2cqw; }
+.phone-console .dj-armrest { left: 87cqw; top: 70cqw; }
+.phone-console .dj-strobe-light { left: 3cqw; top: 88cqw; width: 8cqw; }
+.phone-console .dj-pic-btn { width: 22px; height: 22px; right: 2cqw; bottom: 2cqw; }
 .phone-console .dj-record-blank b { font-size: 8px; }
-
+.phone-console .dj-pitch { padding: 2px 1px; }
+.phone-console .dj-pitch-zero { width: 6px; height: 6px; }
+.phone-console .dj-pitch .dj-vfader [role="slider"] { width: 22px; height: 14px; }
 /* ---- Live Drummer drum set: one setup per genre group, finish colour per style (--kit-hue) ---- */
 .kit-view { --kit-hue: 25; position: relative; border-radius: 4px; border: 2px solid var(--hardware-rubber); padding: 4px 6px 2px;
   background: radial-gradient(ellipse at 50% 0%, oklch(0.26 0.03 var(--kit-hue) / 0.6), transparent 70%), var(--drum-screen); }
@@ -4343,3 +4392,90 @@ html.phone-console-active [role="option"] { min-height: 44px; font-size: 15px; }
 .amproom-shop-swatch { width: 14px; height: 30px; border-radius: 4px; background: linear-gradient(180deg, oklch(0.55 0.12 var(--fx-hue)), oklch(0.3 0.07 var(--fx-hue))); flex-shrink: 0; }
 .phone-console .amproom-pedal { width: 96px; }
 .amproom-shop { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); }
+
+/* ---- DJ mixer: black two-channel club-mixer face (TRIM / 3-band EQ / COLOR, orange CUE, centre meter bridge,
+   HEADPHONES section, long faders with printed scale, slotted crossfader). Presentation only. ---- */
+.dj-device { --djm-face: oklch(0.13 0 0); --djm-face-2: oklch(0.09 0 0); --djm-ink: oklch(0.93 0 0); --djm-line: oklch(0.85 0 0 / 0.32); --djm-cue: oklch(0.78 0.17 55); --djm-cue-off: oklch(0.36 0.07 55); }
+.dj-mixer.djm { position: relative; gap: 6px; padding: 16px 12px 22px; border-radius: 8px; background: linear-gradient(180deg, var(--djm-face), var(--djm-face-2));
+  border: 1px solid oklch(0.32 0 0); box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.08), 0 6px 16px oklch(0 0 0 / 0.6);
+  --knob-body-hi: oklch(0.34 0 0); --knob-body-lo: oklch(0.07 0 0); --knob-cap-hi: oklch(0.24 0 0); --knob-cap-lo: oklch(0.09 0 0); --knob-mark: oklch(0.98 0 0); --knob-accent: oklch(0.95 0 0); }
+.djm .djm-knob .hardware-knob-track { stroke: oklch(0.88 0 0); stroke-width: 3.2; stroke-dasharray: 0.01 10.8; }
+.djm .djm-knob .hardware-knob-arc { display: none; }
+.djm .djm-knob .hardware-knob-body { stroke: oklch(0 0 0); }
+.djm .djm-knob .hardware-knob-label { color: var(--djm-ink); font-weight: 700; }
+.djm .djm-knob .hardware-knob-value { font-size: 9px; color: oklch(0.7 0 0); }
+.djm .djm-knob.is-trim { --knob-body-hi: oklch(0.86 0 0); --knob-body-lo: oklch(0.52 0 0); --knob-cap-hi: oklch(0.8 0 0); --knob-cap-lo: oklch(0.6 0 0); --knob-mark: oklch(0.12 0 0); }
+.djm .djm-knob.is-color { --knob-body-hi: oklch(0.94 0 0); --knob-body-lo: oklch(0.42 0 0); --knob-cap-hi: oklch(0.22 0 0); --knob-cap-lo: oklch(0.06 0 0); width: 74px; }
+.djm .djm-knob.is-color .hardware-knob-arc { display: inline; stroke: oklch(0.95 0 0); stroke-width: 4; }
+.djm .djm-knob.is-color .hardware-knob-track { stroke-dasharray: none; stroke: oklch(0.3 0 0); stroke-width: 4; }
+.djm-top { display: grid; grid-template-columns: 74px auto 74px; justify-content: center; gap: 6px; }
+.djm-ch { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.djm-eq { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 2px 0; border-block: 1px solid var(--djm-line); }
+.djm-center { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 156px; padding-inline: 8px; border-inline: 1px solid var(--djm-line); }
+.djm-cue { min-width: 48px; min-height: 26px; padding: 0 6px; border-radius: 3px; font-family: var(--font-mono); font-size: 11px; font-weight: 800; letter-spacing: 0.06em;
+  color: oklch(0.14 0 0); background: var(--djm-cue-off); border: 1px solid oklch(0 0 0 / 0.6); box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.15); }
+.djm-cue[aria-pressed="true"] { background: var(--djm-cue); box-shadow: 0 0 12px color-mix(in oklab, var(--djm-cue) 75%, transparent), inset 0 1px 0 oklch(1 0 0 / 0.4); }
+.djm-num { font-family: var(--font-display); font-size: 26px; line-height: 1; color: var(--djm-ink); }
+.djm .dj-fader-row { gap: 5px; }
+.djm .dj-vfader { height: 136px !important; width: 34px !important; }
+.djm .dj-vfader > span:first-child, .dj-mixer.is-phone .dj-vfader > span:first-child { width: 5px; height: 100%; flex-grow: 1; border-radius: 2px; background: oklch(0.04 0 0); box-shadow: inset 0 1px 2px oklch(0 0 0 / 0.8), 0 0 0 1px oklch(0.3 0 0); }
+.djm .dj-vfader > span:first-child > span, .dj-mixer.is-phone .dj-vfader > span:first-child > span { background: transparent; }
+.djm .dj-vfader [role="slider"], .dj-mixer.is-phone .dj-vfader [role="slider"] { position: relative; width: 32px; height: 16px; border-radius: 2px; border: 1px solid oklch(0 0 0);
+  background: linear-gradient(180deg, oklch(0.36 0 0), oklch(0.14 0 0) 55%, oklch(0.22 0 0)); box-shadow: 0 2px 4px oklch(0 0 0 / 0.6); }
+.djm .dj-vfader [role="slider"]::after, .dj-mixer.is-phone .dj-vfader [role="slider"]::after { content: ""; position: absolute; left: 3px; right: 3px; top: 50%; height: 2px; margin-top: -1px; background: var(--djm-ink); }
+.djm-fscale { display: flex; flex-direction: column; justify-content: space-between; height: 136px; padding-block: 6px; font-family: var(--font-mono); font-size: 8px; line-height: 1; color: oklch(0.82 0 0); text-align: right; }
+.djm-bridge { display: flex; flex-direction: column; gap: 3px; padding: 5px 6px 4px; border-radius: 3px; background: oklch(0.05 0 0); border: 1px solid oklch(0.3 0 0); box-shadow: inset 0 0 6px oklch(0 0 0 / 0.9); }
+.djm-bridge-head { display: grid; grid-template-columns: 1fr 1.4fr 1fr; text-align: center; font-family: var(--font-mono); font-size: 8px; font-weight: 700; letter-spacing: 0.06em; color: oklch(0.85 0 0); }
+.djm-bridge-head span:nth-child(2) { color: var(--dj-low); }
+.djm-bridge-meters { display: flex; align-items: flex-end; justify-content: center; gap: 6px; }
+.djm .dj-lr, .djm .dj-lr.is-master { --dj-lr-h: 112px; }
+.djm .dj-lr-bars { border-color: oklch(0.2 0 0); }
+.djm-phones { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 100%; padding-top: 5px; border-top: 1px solid var(--djm-line); }
+.djm-legend { display: inline-flex; align-items: center; gap: 4px; font-family: var(--font-mono); font-size: 9px; font-weight: 800; letter-spacing: 0.12em; color: var(--djm-ink); }
+.djm-phones-modes { display: flex; gap: 2px; }
+.djm-switch { min-height: 24px; padding: 0 5px; border-radius: 2px; font-family: var(--font-mono); font-size: 8px; font-weight: 700; letter-spacing: 0.04em; white-space: nowrap;
+  color: oklch(0.75 0 0); background: oklch(0.18 0 0); border: 1px solid oklch(0.38 0 0); }
+.djm-switch[aria-checked="true"] { color: oklch(0.1 0 0); background: var(--djm-ink); border-color: var(--djm-ink); }
+.djm-switch:disabled { opacity: 0.35; }
+.djm-phones-dev { display: flex; flex-direction: column; align-items: stretch; gap: 2px; width: 100%; }
+.djm-phones-dev select { width: 100%; min-height: 28px; padding: 0 4px; border-radius: 3px; font-size: 11px; color: var(--foreground); background: oklch(0.16 0 0); border: 1px solid oklch(0.38 0 0); }
+.djm-link { font-size: 10px; color: var(--primary); text-decoration: underline; }
+.djm-phones-knobs { display: flex; justify-content: center; gap: 4px; }
+.djm-phones-note { max-width: 150px; font-size: 9px; line-height: 1.25; text-align: center; color: oklch(0.7 0 0); }
+.djm .dj-xfader { gap: 6px; padding-top: 6px; border-top: 1px solid var(--djm-line); }
+.djm .dj-xfader .dj-label { color: var(--djm-ink); font-size: 11px; }
+.djm-xgrill { flex: 1; min-width: 0; padding: 10px 6px; background: repeating-linear-gradient(90deg, oklch(0.75 0 0 / 0.45) 0 1px, transparent 1px 9px) center / 100% 70% no-repeat; }
+.dj-mixer.is-phone .djm-xgrill { padding: 6px 2px; }
+.djm-xgrill .dj-xfader-slider { min-width: 0; }
+.djm-xgrill .dj-xfader-slider > span:first-child { height: 6px; border-radius: 2px; background: oklch(0.04 0 0); box-shadow: 0 0 0 1px oklch(0.3 0 0); }
+.djm-xgrill .dj-xfader-slider > span:first-child > span { background: transparent; }
+.djm-xgrill [role="slider"] { position: relative; width: 16px; height: 30px; border-radius: 2px; border: 1px solid oklch(0 0 0);
+  background: linear-gradient(90deg, oklch(0.3 0 0), oklch(0.12 0 0) 55%, oklch(0.2 0 0)); box-shadow: 0 2px 4px oklch(0 0 0 / 0.6); }
+.djm-xgrill [role="slider"]::after { content: ""; position: absolute; top: 3px; bottom: 3px; left: 50%; width: 2px; margin-left: -1px; background: var(--djm-ink); }
+.dj-mixer.is-phone .djm-xgrill [role="slider"] { height: 24px; }
+.djm-screw { position: absolute; width: 9px; height: 9px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, oklch(0.55 0 0), oklch(0.2 0 0)); }
+.djm-screw::after { content: ""; position: absolute; left: 1px; right: 1px; top: 50%; height: 1px; background: oklch(0.08 0 0); transform: rotate(35deg); }
+.djm-screw.is-tl { left: 5px; top: 5px; } .djm-screw.is-tr { right: 5px; top: 5px; } .djm-screw.is-bl { left: 5px; bottom: 5px; } .djm-screw.is-br { right: 5px; bottom: 5px; }
+.djm-model { position: absolute; right: 18px; bottom: 5px; font-family: var(--font-mono); font-size: 8px; letter-spacing: 0.12em; color: oklch(0.85 0 0 / 0.7); }
+/* sideways phone mixer: same black face, CUE beside each channel's knobs */
+.dj-mixer.is-phone { background: linear-gradient(180deg, var(--djm-face), var(--djm-face-2)); border-color: oklch(0.32 0 0); }
+.dj-knob-row { grid-template-columns: repeat(5, minmax(0, 1fr)) auto; align-items: center; }
+.phone-console .dj-knob { width: 30px !important; }
+.dj-knob-row .djm-cue { min-width: 28px; min-height: 26px; padding: 0 2px; font-size: 9px; }
+.dj-phone-bottom .dj-pl-open[data-on="1"] { color: var(--djm-cue); }
+.dj-device > .dj-phones-sheet { position: absolute; inset: 0; z-index: 30; display: flex; flex-direction: column; gap: 6px; padding: 6px 8px; border-radius: 6px;
+  background: linear-gradient(180deg, var(--djm-face), var(--djm-face-2)); box-shadow: 0 0 0 1px var(--border); }
+.dj-phones-sheet-head { display: flex; align-items: center; justify-content: space-between; }
+.dj-phones-sheet-head b { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; }
+.dj-phones-sheet-body { display: grid; flex: 1; grid-template-columns: 180px minmax(0, 1fr); gap: 10px; align-items: start; min-height: 0; overflow-y: auto; }
+.dj-phones-cues { display: grid; gap: 8px; }
+.djm-cue.is-big { min-height: 56px; font-size: 16px; }
+.djm-phones.is-big { border-top: 0; padding-top: 0; gap: 8px; }
+.djm-phones.is-big .djm-switch { min-height: 44px; padding: 0 12px; font-size: 12px; }
+.djm-phones.is-big .djm-phones-dev select { min-height: 44px; font-size: 13px; }
+.djm-phones.is-big .djm-phones-note { max-width: none; font-size: 12px; }
+.djm-phones.is-big .djm-legend { display: none; }
+.dj-mixer.is-phone .djm-xgrill { padding: 0 2px; background-size: 100% 80%; }
+.dj-mixer.is-phone .djm-xgrill [role="slider"] { width: 14px; height: 20px; }
+.phone-console .dj-knob.is-wide { width: 44px !important; }
+.phone-console .dj-knob-row .djm-cue { min-height: 38px !important; height: 38px; }
