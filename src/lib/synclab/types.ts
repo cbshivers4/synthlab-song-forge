@@ -525,6 +525,8 @@ export interface Track {
   clipView?: "wave" | "notes" | undefined;
   recording?: boolean;
   automation?: AutomationLane[] | undefined;
+  /** Live Drummer settings: this drum channel is played by the session drummer (see drummer.ts). */
+  drummer?: import("./drummer").DrummerSettings | undefined;
   /** Mute / solo presses recorded during a take, replayed during playback. */
   muteEvents?: import("./switch-automation").SwitchEvent[] | undefined;
   soloEvents?: import("./switch-automation").SwitchEvent[] | undefined;
