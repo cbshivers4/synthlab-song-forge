@@ -7,6 +7,7 @@ const ROLES: DrumRole[] = ["kick", "snare", "clap", "rim", "hat", "openhat", "ri
 describe("drum set picture", () => {
   it("each genre group has its own kind of set", () => {
     expect(kitLayoutFor("Band").style).toBe("band");
+    expect(kitLayoutFor("Rock").style).toBe("rock");
     expect(kitLayoutFor("Electronic").style).toBe("electronic");
     expect(kitLayoutFor("Hip-Hop & R&B").style).toBe("pads");
     expect(kitLayoutFor("World & Latin").style).toBe("latin");
@@ -18,6 +19,12 @@ describe("drum set picture", () => {
 
   it("every style used by a genre lights a piece of that genre's set", () => {
     for (const genre of DRUM_GENRES) for (const role of Object.keys(genre.lanes) as DrumRole[]) expect(pieceForRole(kitLayoutFor(genre.group), role)).not.toBeNull();
+  });
+
+  it("rock styles have their own group and play on the rock kit", () => {
+    const rock = DRUM_GENRES.filter((g) => g.group === "Rock").map((g) => g.id);
+    for (const id of ["rock", "classic-rock", "hard-rock", "punk", "metal", "grunge"]) expect(rock).toContain(id);
+    expect(GENRE_GROUPS).toContain("Rock");
   });
 
   it("genres in the same group get different finishes", () => {

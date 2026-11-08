@@ -21,7 +21,7 @@ import {
   Waves,
   Square,
 } from "lucide-react";
-import { Drum, Film, Sparkles } from "lucide-react";
+import { Drum, Film, Guitar, Sparkles } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { getLocalFile, getPreviewAnalyser, onPreviewChange, stopPreview } from "@/lib/synclab/local-files";
 import { ComputerFiles } from "./ComputerFiles";
@@ -73,6 +73,7 @@ const TOOLS: Tool[] = [
   { id: "bassgen", label: "Bass Generator", icon: <Music2 className="size-4" />, panel: "bassgen" },
   { id: "drummer", label: "Live Drummer", icon: <Drum className="size-4" />, panel: "drummer" },
   { id: "dj", label: "DJ Decks", icon: <Disc3 className="size-4" />, panel: "dj" },
+  { id: "amprig", label: "Amps & Pedals", icon: <Guitar className="size-4" />, panel: "amprig" },
   { id: "apps", label: "Other Apps", icon: <AppWindow className="size-4" />, panel: "apps" },
   { id: "reference", label: "Reference Analyzer", icon: <FileSearch className="size-4" />, panel: "reference" },
 
@@ -92,6 +93,7 @@ const SECTIONS: Section[] = [
   { id: "synths", label: "Synthesizers", tools: ["synth", "touch", "acid", "poly", "modular", "granular"].map(tool) },
   { id: "instruments", label: "Instruments", tools: ["coproducer", "genstem", "bassgen", "drummer", "drums", "beat", "chop", "sampler"].map(tool) },
   { id: "mix", label: "Mix & Master", tools: ["mixer", "master", "stems", "voice"].map(tool) },
+  { id: "amps", label: "Amps & Pedals", tools: ["amprig"].map(tool) },
   { id: "plugins", label: "FX Rack", tools: ["plugins"].map(tool) },
   // Everything that reaches outside the song itself lives under Other Apps.
   { id: "apps", label: "Other Apps", tools: ["apps", "reference", "notes"].map(tool) },

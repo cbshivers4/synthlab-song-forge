@@ -14,7 +14,7 @@ import { requestBluetoothSettings } from "./Settings";
 import { openHelp } from "./HelpCenter";
 import { openExport } from "./ExportDialog";
 import logo from "@/assets/synclab-logo-neon.jpg.asset.json";
-import { Drum, Hand } from "lucide-react";
+import { Drum, Guitar, Hand } from "lucide-react";
 import { recordingPosition } from "@/lib/synclab/recording-display";
 import { usePlayStep } from "@/lib/synclab/playhead";
 
@@ -25,6 +25,7 @@ const sounds = [
   { label: "Sound library", icon: FolderOpen, panel: "browser" },
   { label: "Live View", icon: Radio, panel: "live" }, { label: "Live Looper", icon: Disc3, panel: "looper" },
   { label: "Live Drummer", icon: Drum, panel: "drummer" }, { label: "DJ Decks", icon: Disc3, panel: "dj" },
+  { label: "Amps & Pedals", icon: Guitar, panel: "amprig" },
 ] as const;
 const tools = [
   { label: "Audio Converter", icon: AudioLines, panel: "audio-converter" },
@@ -121,7 +122,7 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
       {railOpen && <>
       <Button variant="ghost" className="size-16 shrink-0 p-0" aria-label="Projects" onClick={() => setStage("start")}><img src={logo.url} alt="SYNCLAB" className="size-16 rounded-md object-cover" /></Button>
       <div className="my-auto flex shrink-0 flex-col gap-3">
-        {[{ label: "EDIT", icon: AudioLines, active: !panel && room === "edit", run: () => enter("edit") }, { label: "MIX", icon: SlidersHorizontal, active: panel === "mixer", run: () => setPanel("mixer") }, { label: "SOUNDS", icon: Music2, active: room === "sounds" || ["synth", "sampler", "pads", "drums", "browser", "keys", "live", "looper", "drummer", "dj"].includes(panel ?? ""), run: () => enter("sounds") }, { label: "TOOLS", icon: Wand2, active: room === "tools", run: () => enter("tools") }, { label: "FILES", icon: FolderOpen, active: filesOpen, run: () => setFilesOpen((o) => !o) }].map(({ label, icon: Icon, active, run }) => <Button key={label} variant="ghost" aria-pressed={active} className={`phone-room-button h-16 w-16 shrink-0 flex-col gap-1 px-0 text-[10px] font-bold ${active ? "bg-primary/15 text-primary" : "text-muted-foreground"}`} onClick={run}><Icon className="size-6" />{label}</Button>)}
+        {[{ label: "EDIT", icon: AudioLines, active: !panel && room === "edit", run: () => enter("edit") }, { label: "MIX", icon: SlidersHorizontal, active: panel === "mixer", run: () => setPanel("mixer") }, { label: "SOUNDS", icon: Music2, active: room === "sounds" || ["synth", "sampler", "pads", "drums", "browser", "keys", "live", "looper", "drummer", "dj", "amprig"].includes(panel ?? ""), run: () => enter("sounds") }, { label: "TOOLS", icon: Wand2, active: room === "tools", run: () => enter("tools") }, { label: "FILES", icon: FolderOpen, active: filesOpen, run: () => setFilesOpen((o) => !o) }].map(({ label, icon: Icon, active, run }) => <Button key={label} variant="ghost" aria-pressed={active} className={`phone-room-button h-16 w-16 shrink-0 flex-col gap-1 px-0 text-[10px] font-bold ${active ? "bg-primary/15 text-primary" : "text-muted-foreground"}`} onClick={run}><Icon className="size-6" />{label}</Button>)}
       </div>
       <Button variant="ghost" size="icon" className="size-12 shrink-0" aria-label="Home and projects" onClick={() => setStage("start")}><Home /></Button>
       </>}

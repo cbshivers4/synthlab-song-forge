@@ -12,7 +12,7 @@ export type DrumRole =
   | "kick" | "snare" | "clap" | "rim" | "hat" | "openhat" | "ride" | "crash"
   | "tomHi" | "tomMid" | "tomLo" | "shaker" | "conga" | "congaLo" | "cowbell" | "clave" | "tamb" | "perc";
 
-export type GenreGroup = "Electronic" | "Hip-Hop & R&B" | "Band" | "World & Latin";
+export type GenreGroup = "Electronic" | "Hip-Hop & R&B" | "Rock" | "Band" | "World & Latin";
 export type FillStyle = "toms" | "snare" | "trap" | "perc" | "break";
 
 export interface DrumGenre {
@@ -101,19 +101,51 @@ export const DRUM_GENRES: DrumGenre[] = [
     kick: ["X.......x.X.....", "......x........x"], clap: ["....X.......X..."], hat: ["x.x.x.x.x.x.x.x.", ".g.g.g.g.g.g.g.g"], shaker: ["", "g.g.g.g.g.g.g.g."], cowbell: ["", "........o......."],
   }),
 
-  // ---- Band styles
-  g("rock", "Rock", "Band", 120, 0, "rock", "toms", {
+  // ---- Rock (its own group, played on a rock kit)
+  g("rock", "Rock", "Rock", 120, 0, "rock", "toms", {
     kick: ["X.....x.X.......", ".......x......x."], snare: ["....X.......X..."], hat: ["x.x.x.x.x.x.x.x.", ".g.g.g.g.g.g.g.g"], openhat: ["", "..............o."],
   }, { crossStick: true, ghosts: true }),
+  g("classic-rock", "Classic Rock", "Rock", 118, 0, "rock", "toms", {
+    kick: ["X.......X.X.....", "......x.......x."], snare: ["....X.......X..."], hat: ["x.x.x.x.x.x.x.x."], crash: ["", "X..............."],
+  }, { ghosts: true }),
+  g("hard-rock", "Hard Rock", "Rock", 132, 0, "rock", "toms", {
+    kick: ["X.X.....X.X.....", "......x.......xx"], snare: ["....X.......X..."], openhat: ["x.x.x.x.x.x.x.x."], crash: ["", "X.......X......."],
+  }),
+  g("punk", "Punk", "Rock", 180, 0, "rock", "toms", {
+    kick: ["X...X...X...X...", "..x.......x....."], snare: ["..X...X...X...X."], crash: ["", "x...x...x...x..."], hat: ["x.x.x.x.x.x.x.x."],
+  }),
+  g("pop-punk", "Pop Punk", "Rock", 172, 0, "rock", "toms", {
+    kick: ["X.X...X.X.X...X.", "...x.......x...."], snare: ["....X.......X..."], hat: ["x.x.x.x.x.x.x.x."], crash: ["", "X.......X......."],
+  }),
+  g("metal", "Metal", "Rock", 160, 0, "rock", "toms", {
+    kick: ["X.x.X.x.X.x.X.x.", ".x.x.x.x.x.x.x.x"], snare: ["....X.......X..."], ride: ["x.x.x.x.x.x.x.x."], crash: ["", "x.......x......."],
+  }),
+  g("double-kick", "Double-Kick Metal", "Rock", 180, 0, "rock", "toms", {
+    kick: ["XxXxXxXxXxXxXxXx"], snare: ["....X.......X..."], crash: ["X...x...X...x...", "..x...x...x...x."],
+  }),
+  g("grunge", "Grunge", "Rock", 100, 0, "rock", "toms", {
+    kick: ["X.....X...X.....", ".......x......x."], snare: ["....X.......X..."], openhat: ["x.x.x.x.x.x.x.x."], crash: ["", "X..............."],
+  }, { ghosts: true }),
+  g("indie-rock", "Indie Rock", "Rock", 128, 0, "rock", "toms", {
+    kick: ["X...X...X...X..."], snare: ["....X.......X..."], hat: ["x.x.x.x.x.x.x.x.", ".g.g.g.g.g.g.g.g"], tamb: ["", "..o...o...o...o."],
+  }),
+  g("half-time-rock", "Half-Time Rock", "Rock", 140, 0, "rock", "toms", {
+    kick: ["X.........X.....", "......x.......x."], snare: ["........X......."], ride: ["x.x.x.x.x.x.x.x."], crash: ["", "X..............."],
+  }),
+  g("rock-ballad", "Rock Ballad", "Rock", 72, 0, "rock", "toms", {
+    kick: ["X.......X.x.....", "......g........g"], snare: ["....X.......X..."], hat: ["x.x.x.x.x.x.x.x."], ride: ["", "o...o...o...o..."],
+  }, { crossStick: true }),
+  g("surf-rock", "Surf Rock", "Rock", 160, 0, "rock", "toms", {
+    kick: ["X.......X......."], snare: ["....X.......X..."], tomLo: ["", "x.x.x.x.x.x.x.x."], hat: ["x.x.x.x.x.x.x.x."], crash: ["", "............o..."],
+  }),
+
+  // ---- Band styles
   g("pop", "Pop", "Band", 110, 0, "acoustic", "toms", {
     kick: ["X.......X.x.....", "......x........x"], snare: ["....X.......X..."], hat: ["x.o.x.o.x.o.x.o."], tamb: ["", "....o.......o..."],
   }, { crossStick: true }),
-  g("punk", "Punk", "Band", 180, 0, "rock", "toms", {
-    kick: ["X...X...X...X...", "..x.......x....."], snare: ["..X...X...X...X."], crash: ["", "x...x...x...x..."], hat: ["x.x.x.x.x.x.x.x."],
-  }),
-  g("metal", "Metal", "Band", 160, 0, "rock", "toms", {
-    kick: ["X.x.X.x.X.x.X.x.", ".x.x.x.x.x.x.x.x"], snare: ["....X.......X..."], ride: ["x.x.x.x.x.x.x.x."], crash: ["", "x.......x......."],
-  }),
+  g("second-line", "Second Line", "Band", 100, 0.2, "acoustic", "snare", {
+    kick: ["X..X..X.X..X....", "...........x..x."], snare: ["g.gX..g.g.gX..g.", ".g.....g.g.....g"], crash: ["", "..........X....."],
+  }, { ghosts: true }),
   g("blues-shuffle", "Blues Shuffle", "Band", 96, 0, "acoustic", "toms", {
     kick: ["X.......X.......", "...g.......g...."], snare: ["....X.......X...", ".......g.......g"], hat: ["x..ox..ox..ox..o"],
   }, { crossStick: true, ghosts: true }),
@@ -163,7 +195,7 @@ export const DRUM_GENRES: DrumGenre[] = [
   }),
 ];
 
-export const GENRE_GROUPS: GenreGroup[] = ["Electronic", "Hip-Hop & R&B", "Band", "World & Latin"];
+export const GENRE_GROUPS: GenreGroup[] = ["Electronic", "Hip-Hop & R&B", "Rock", "Band", "World & Latin"];
 export const genreById = (id: string) => DRUM_GENRES.find((x) => x.id === id) ?? DRUM_GENRES[0]!;
 
 export type DrumPiece = "kick" | "snare" | "hats" | "cymbals" | "toms" | "perc";

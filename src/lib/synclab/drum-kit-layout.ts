@@ -3,10 +3,10 @@ import type { DrumRole, GenreGroup } from "./drummer";
 /**
  * The drum set picture on the Live Drummer: one setup per genre group (acoustic band kit,
  * electronic kit, hip-hop beat-pad station, Latin percussion set). Each piece lists the drummer
- * roles it plays, so the picture lights the piece the drummer hits, and tapping a piece plays
+ * roles it plays (the rock kit is a bigger black-sparkle setup in front of an amp wall), so the picture lights the piece the drummer hits, and tapping a piece plays
  * its first role through the drummer's own channel. Pure data, shared by the picture and tests.
  */
-export type KitStyle = "band" | "electronic" | "pads" | "latin";
+export type KitStyle = "band" | "rock" | "electronic" | "pads" | "latin";
 export type PieceShape = "cymbal" | "hat" | "drum" | "kick" | "tower" | "hexpad" | "cympad" | "sqpad" | "beatpad" | "conga" | "bongos" | "cowbell" | "tamb" | "shaker" | "clave";
 
 export interface KitPiece {
@@ -38,6 +38,23 @@ const BAND: KitLayout = {
     p("hats", "Hi-hat", "hat", ["hat", "openhat"], 24, 62, 44, 10),
     p("snare", "Snare", "drum", ["snare", "rim", "clap"], 74, 80, 50, 18),
     p("tamb", "Tambourine", "tamb", ["tamb", "shaker"], 294, 104, 24),
+  ],
+};
+
+// Rock kit: bigger kick, two rack toms high over the kick, deep floor tom, crash and ride up high.
+const ROCK: KitLayout = {
+  style: "rock", name: "Rock kit",
+  pieces: [
+    p("kick", "Kick", "kick", ["kick"], 160, 96, 84),
+    p("crash", "Crash", "cymbal", ["crash"], 58, 18, 84, 18),
+    p("ride", "Ride", "cymbal", ["ride"], 266, 24, 90, 20),
+    p("cowbell", "Cowbell", "cowbell", ["cowbell", "clave", "perc"], 214, 12, 18, 14),
+    p("tomHi", "Rack tom 1", "drum", ["tomHi", "conga"], 132, 38, 42, 22),
+    p("tomMid", "Rack tom 2", "drum", ["tomMid", "congaLo"], 190, 38, 46, 24),
+    p("tomLo", "Floor tom", "drum", ["tomLo"], 248, 78, 58, 44),
+    p("hats", "Hi-hat", "hat", ["hat", "openhat"], 22, 60, 44, 10),
+    p("snare", "Snare", "drum", ["snare", "rim", "clap"], 78, 80, 52, 18),
+    p("tamb", "Tambourine", "tamb", ["tamb", "shaker"], 300, 108, 22),
   ],
 };
 
@@ -89,7 +106,7 @@ const LATIN: KitLayout = {
   ],
 };
 
-const BY_GROUP: Record<GenreGroup, KitLayout> = { Band: BAND, Electronic: ELECTRONIC, "Hip-Hop & R&B": PADS, "World & Latin": LATIN };
+const BY_GROUP: Record<GenreGroup, KitLayout> = { Band: BAND, Rock: ROCK, Electronic: ELECTRONIC, "Hip-Hop & R&B": PADS, "World & Latin": LATIN };
 
 export function kitLayoutFor(group: GenreGroup): KitLayout { return BY_GROUP[group]; }
 

@@ -209,3 +209,8 @@
 - [x] Live Drummer drum set that changes with the genre (acoustic, electronic, beat pads, Latin percussion; own colour per style); pieces light up as they play and play when tapped
 - [x] Preview the drummer alone (song pauses) or play with the song
 - [ ] Listen on a real phone (not checked: real speakers / real phone)
+
+## Nov 8 (5) — Rock drummer, Amp Room (Christopher)
+- [x] Live Drummer: Rock is its own genre group (12 styles: Rock, Classic, Hard, Punk, Pop Punk, Metal, Double-Kick Metal, Grunge, Indie, Half-Time, Ballad, Surf) on a rock kit with an amp wall; Band gains Second Line
+- [x] Amp Room: separate area for guitar/bass amps and effect pedals (pedalboard, amp stack, signal flow, add/stomp/edit, new guitar/bass track, arm + hear me)
+- [ ] Listen to the rock styles and play a real guitar through the Amp Room (not checked: no listening test, no real instrument)

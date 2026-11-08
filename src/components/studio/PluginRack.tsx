@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { availableEffects, effectBrand, groupByCategory } from "@/lib/synclab/effect-catalog";
-import { Cpu, FolderSearch, Plus, Trash2, Upload } from "lucide-react";
+import { Cpu, FolderSearch, Guitar, Plus, Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -63,6 +63,7 @@ export function PluginRack() {
     installPlugin,
     uninstallPlugin,
     addPlugin,
+    setPanel,
   } = useStudio();
   const [name, setName] = useState("");
   const [vendor, setVendor] = useState("");
@@ -164,6 +165,7 @@ export function PluginRack() {
         <p className="label-xs mb-1.5">ADD EFFECT · {track.name}</p>
         {groupByCategory(availableEffects(installedPlugins)).map(([category, defs]) => <div key={category} role="group" aria-label={category}>
         <p className="label-xs mt-2 mb-1 text-muted-foreground">{category.toUpperCase()}</p>
+        {category === "Amps & Pedals" && <Button size="sm" variant="secondary" className="mb-1 h-9 w-full gap-1.5 text-[11px]" onClick={() => setPanel("amprig")}><Guitar className="size-3.5" />Open the Amp Room</Button>}
         <div className="plugin-rack-browser-list">
           {defs.map((d) => (
             <div

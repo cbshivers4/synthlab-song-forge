@@ -25,7 +25,7 @@ import {
   Pause,
   Square,
 } from "lucide-react";
-import { Drum, Film } from "lucide-react";
+import { Drum, Film, Guitar } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { useStudio, type PanelId } from "@/lib/synclab/store";
@@ -55,6 +55,7 @@ export function MobileNav({ onBeatMode, view, setView, moreSignal = 0, landscape
     { label: "Live Looper", icon: <Disc3 />, panel: "looper" },
     { label: "Live Drummer", icon: <Drum />, panel: "drummer" },
     { label: "DJ Decks", icon: <Disc3 />, panel: "dj" },
+    { label: "Amps & Pedals", icon: <Guitar />, panel: "amprig" },
     { label: "Hum to Beat", icon: <Mic />, panel: "humbeat" },
     { label: "Separate Stems", icon: <Scissors />, panel: "stems" },
     { label: "AI Co-Producer", icon: <Bot />, panel: "coproducer" },

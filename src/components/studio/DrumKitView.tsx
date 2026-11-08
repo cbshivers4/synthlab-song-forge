@@ -60,6 +60,7 @@ export function DrumKitView({ track, genre, settings }: { track: Track; genre: D
         <rect className="kit-floor" x="0" y={KIT_VIEWBOX.h - 10} width={KIT_VIEWBOX.w} height="10" rx="3" />
         {layout.style === "pads" && <PadStation label={genre.label} />}
         {layout.style === "electronic" && <EModule label={genre.label} />}
+        {layout.style === "rock" && <AmpWall />}
         {layout.pieces.map((piece) => {
           const off = piece.roles.every((r) => settings.pieces[PIECE_OF[r]] === false);
           const can = playable.has(piece.id);
@@ -197,6 +198,21 @@ function PadStation({ label }: { label: string }) {
     {[0, 1, 2].map((i) => <circle key={i} className="kit-station-knob" cx={38 + i * 32} cy="76" r="9" />)}
     {[0, 1, 2, 3].map((i) => <rect key={i} className="kit-station-btn" x={24 + i * 24} y="98" width="18" height="10" rx="2" />)}
   </>);
+}
+
+/** Rock kit backdrop: a wall of speaker cabinets behind the drums (decoration, not playable). */
+function AmpWall() {
+  return (
+    <g aria-hidden="true" className="kit-ampwall">
+      {[0, 1, 2, 3].map((i) => (
+        <g key={i}>
+          <rect className="kit-cab" x={8 + i * 78} y="56" width="72" height="70" rx="3" />
+          <rect className="kit-cab-grille" x={13 + i * 78} y="61" width="62" height="60" rx="2" />
+          <text className="kit-cab-logo" x={44 + i * 78} y="70" textAnchor="middle">SYNCLAB</text>
+        </g>
+      ))}
+    </g>
+  );
 }
 
 function EModule({ label }: { label: string }) {

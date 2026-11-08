@@ -33,3 +33,21 @@ describe("lead / bass guitar amps and effect pedals", () => {
     expect(wahFrequency(1)).toBeCloseTo(2200, 3);
   });
 });
+
+describe("Amp Room signal order", async () => {
+  const { insertRigDevice, rigDevices, otherInserts } = await import("./guitar-rig");
+  const { instantiate } = await import("./plugins");
+  const def = (kind: string) => BUILT_IN_PLUGINS.find(d => d.kind === kind)!;
+  it("puts a new pedal before the amp, like guitar → pedals → amp", () => {
+    const eq = instantiate(def("eq")), amp = instantiate(def("leadamp")), drive = instantiate(def("overdrive"));
+    const chain = insertRigDevice([eq, amp], drive);
+    expect(chain.map(p => p.kind)).toEqual(["eq", "overdrive", "leadamp"]);
+  });
+  it("adds an amp after the pedals and lists only rig devices with their real slot", () => {
+    const reverb = instantiate(def("reverb")), fuzz = instantiate(def("fuzz")), amp = instantiate(def("bassamp"));
+    const chain = insertRigDevice([fuzz, reverb], amp);
+    expect(chain.map(p => p.kind)).toEqual(["fuzz", "bassamp", "reverb"]);
+    expect(rigDevices(chain).map(x => [x.plugin.kind, x.index])).toEqual([["fuzz", 0], ["bassamp", 1]]);
+    expect(otherInserts(chain)).toBe(1);
+  });
+});

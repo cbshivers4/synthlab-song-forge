@@ -37,6 +37,7 @@ const PANELS: { id: Exclude<PanelId, null>; label: string }[] = [
   { id: "bassgen", label: "Bass Generator" },
   { id: "drummer", label: "Live Drummer" },
   { id: "dj", label: "DJ Decks" },
+  { id: "amprig", label: "Amps & Pedals (Amp Room)" },
 ];
 
 export function StudioSearch() {

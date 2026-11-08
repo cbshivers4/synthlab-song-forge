@@ -63,13 +63,14 @@ import { HumToBeat } from "@/components/studio/HumToBeat";
 import { BassGenerator } from "@/components/studio/BassGenerator";
 import { LiveDrummer, DrummerBridge } from "@/components/studio/LiveDrummer";
 import { DjDecks } from "@/components/studio/DjDecks";
+import { AmpRoom } from "@/components/studio/AmpRoom";
 import { VoiceConverter } from "@/components/studio/VoiceConverter";
 import { AudioConverter } from "@/components/studio/AudioConverter";
 import { CoProducer } from "@/components/studio/CoProducer";
 import { StemGenerator } from "@/components/studio/StemGenerator";
 import { StemSplitter } from "@/components/studio/StemSplitter";
 import { ReelRecorder } from "@/components/studio/ReelRecorder";
-import { Bot, Film } from "lucide-react";
+import { Bot, Film, Guitar } from "lucide-react";
 import { VideoSampler } from "@/components/studio/VideoSampler";
 import { StudioView } from "@/components/studio/StudioView";
 import { AppProvider, useApp, useMaybeApp } from "@/lib/synclab/app-state";
@@ -250,6 +251,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
     bassgen: { title: "BASS GENERATOR", icon: <AudioLines className="size-4" /> },
     drummer: { title: "LIVE DRUMMER", icon: <Disc3 className="size-4" /> },
     dj: { title: "DJ DECKS", icon: <Disc3 className="size-4" /> },
+    amprig: { title: "AMPS & PEDALS", icon: <Guitar className="size-4" /> },
     "reel-recorder": { title: "REEL-TO-REEL RECORDER", icon: <Disc3 className="size-4" /> },
     "video-sampler": { title: "VIDEO SAMPLER", icon: <Film className="size-4" /> },
     "studio-view": { title: "STUDIO VIEW", icon: <Music2 className="size-4" /> },
@@ -322,7 +324,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
         {panel === "audio-converter" && <AudioConverter />}
         {panel === "plugins" && <PluginRack />}{panel === "appearance" && <Appearance />}{panel === "sampler" && <Sampler />}
         {panel === "pads" && <PadSampler />}{panel === "mastering" && <Mastering />}{panel === "notes" && <NotesPanel />}
-        {panel === "reference" && <ReferenceAnalyzer />}{panel === "live" && <LiveView />}{panel === "looper" && <LiveLooperView />}{panel === "apps" && <ExternalApps />}{panel === "humbeat" && <ToolErrorBoundary name="Hum to Beat"><HumToBeat /></ToolErrorBoundary>}{panel === "stems" && <ToolErrorBoundary name="Separate Stems">{TEST_MODE ? <TestModeOff name="Separate Stems" /> : <StemSplitter />}</ToolErrorBoundary>}{panel === "coproducer" && <ToolErrorBoundary name="AI Co-Producer">{TEST_MODE ? <TestModeOff name="AI Co-Producer" /> : <CoProducer />}</ToolErrorBoundary>}{panel === "voice" && <ToolErrorBoundary name="Convert Voice"><VoiceConverter /></ToolErrorBoundary>}{panel === "genstem" && <ToolErrorBoundary name="Generate Stem">{TEST_MODE ? <TestModeOff name="Generate Stem" /> : <StemGenerator />}</ToolErrorBoundary>}{panel === "bassgen" && <ToolErrorBoundary name="Bass Generator"><BassGenerator /></ToolErrorBoundary>}{panel === "drummer" && <ToolErrorBoundary name="Live Drummer"><LiveDrummer /></ToolErrorBoundary>}{panel === "dj" && <ToolErrorBoundary name="DJ Decks"><DjDecks /></ToolErrorBoundary>}
+        {panel === "reference" && <ReferenceAnalyzer />}{panel === "live" && <LiveView />}{panel === "looper" && <LiveLooperView />}{panel === "apps" && <ExternalApps />}{panel === "humbeat" && <ToolErrorBoundary name="Hum to Beat"><HumToBeat /></ToolErrorBoundary>}{panel === "stems" && <ToolErrorBoundary name="Separate Stems">{TEST_MODE ? <TestModeOff name="Separate Stems" /> : <StemSplitter />}</ToolErrorBoundary>}{panel === "coproducer" && <ToolErrorBoundary name="AI Co-Producer">{TEST_MODE ? <TestModeOff name="AI Co-Producer" /> : <CoProducer />}</ToolErrorBoundary>}{panel === "voice" && <ToolErrorBoundary name="Convert Voice"><VoiceConverter /></ToolErrorBoundary>}{panel === "genstem" && <ToolErrorBoundary name="Generate Stem">{TEST_MODE ? <TestModeOff name="Generate Stem" /> : <StemGenerator />}</ToolErrorBoundary>}{panel === "bassgen" && <ToolErrorBoundary name="Bass Generator"><BassGenerator /></ToolErrorBoundary>}{panel === "drummer" && <ToolErrorBoundary name="Live Drummer"><LiveDrummer /></ToolErrorBoundary>}{panel === "dj" && <ToolErrorBoundary name="DJ Decks"><DjDecks /></ToolErrorBoundary>}{panel === "amprig" && <ToolErrorBoundary name="Amp Room"><AmpRoom /></ToolErrorBoundary>}
       </div></PhonePages> : <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3 pb-24 sm:pb-3">
       {panel === "reel-recorder" && <ReelRecorder />}{panel === "video-sampler" && <VideoSampler />}
       {panel === "mixer" && <Mixer />}
@@ -372,7 +374,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
       {panel === "reference" && <ReferenceAnalyzer />}
       {panel === "live" && <LiveView />}
       {panel === "looper" && <LiveLooperView />}
-      {panel === "apps" && <ExternalApps />}{panel === "humbeat" && <ToolErrorBoundary name="Hum to Beat"><HumToBeat /></ToolErrorBoundary>}{panel === "stems" && <ToolErrorBoundary name="Separate Stems">{TEST_MODE ? <TestModeOff name="Separate Stems" /> : <StemSplitter />}</ToolErrorBoundary>}{panel === "coproducer" && <ToolErrorBoundary name="AI Co-Producer">{TEST_MODE ? <TestModeOff name="AI Co-Producer" /> : <CoProducer />}</ToolErrorBoundary>}{panel === "voice" && <ToolErrorBoundary name="Convert Voice"><VoiceConverter /></ToolErrorBoundary>}{panel === "genstem" && <ToolErrorBoundary name="Generate Stem">{TEST_MODE ? <TestModeOff name="Generate Stem" /> : <StemGenerator />}</ToolErrorBoundary>}{panel === "bassgen" && <ToolErrorBoundary name="Bass Generator"><BassGenerator /></ToolErrorBoundary>}{panel === "drummer" && <ToolErrorBoundary name="Live Drummer"><LiveDrummer /></ToolErrorBoundary>}{panel === "dj" && <ToolErrorBoundary name="DJ Decks"><DjDecks /></ToolErrorBoundary>}
+      {panel === "apps" && <ExternalApps />}{panel === "humbeat" && <ToolErrorBoundary name="Hum to Beat"><HumToBeat /></ToolErrorBoundary>}{panel === "stems" && <ToolErrorBoundary name="Separate Stems">{TEST_MODE ? <TestModeOff name="Separate Stems" /> : <StemSplitter />}</ToolErrorBoundary>}{panel === "coproducer" && <ToolErrorBoundary name="AI Co-Producer">{TEST_MODE ? <TestModeOff name="AI Co-Producer" /> : <CoProducer />}</ToolErrorBoundary>}{panel === "voice" && <ToolErrorBoundary name="Convert Voice"><VoiceConverter /></ToolErrorBoundary>}{panel === "genstem" && <ToolErrorBoundary name="Generate Stem">{TEST_MODE ? <TestModeOff name="Generate Stem" /> : <StemGenerator />}</ToolErrorBoundary>}{panel === "bassgen" && <ToolErrorBoundary name="Bass Generator"><BassGenerator /></ToolErrorBoundary>}{panel === "drummer" && <ToolErrorBoundary name="Live Drummer"><LiveDrummer /></ToolErrorBoundary>}{panel === "dj" && <ToolErrorBoundary name="DJ Decks"><DjDecks /></ToolErrorBoundary>}{panel === "amprig" && <ToolErrorBoundary name="Amp Room"><AmpRoom /></ToolErrorBoundary>}
 
       </div>}
 

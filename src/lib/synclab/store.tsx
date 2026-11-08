@@ -36,6 +36,7 @@ import { openInOwnTab } from "./mic";
 import { TRACK_COLORS, applyPreset, defaultPads, defaultPatch, uid } from "./presets";
 import { moveClipToNewIn, moveTrackToIndexIn, moveTrackToNewIn } from "./track-move";
 import { BUILT_IN_PLUGINS, instantiate, processMidiThroughPlugins, withDefaultParams } from "./plugins";
+import { insertRigDevice } from "./guitar-rig";
 import { getMidiAccess, listInputs, listOutputs, midiSupported, midiUnsupportedMessage, subscribe, type MidiPortInfo } from "./midi";
 import { getPadBank, setPadBank } from "./pad-session";
 import { getLooper } from "./live-looper";
@@ -229,6 +230,7 @@ export type PanelId =
   | "bassgen"
   | "drummer"
   | "dj"
+  | "amprig"
   | "reel-recorder"
   | "video-sampler"
   | "studio-view"
@@ -357,7 +359,8 @@ interface StudioApi extends StudioState {
   installedPlugins: PluginDef[];
   installPlugin: (def: PluginDef) => void;
   uninstallPlugin: (defId: string) => void;
-  addPlugin: (trackId: string, def: PluginDef) => void;
+  /** Inserts an effect and returns its instance id. `rig` places pedals before the first amp, like a guitar signal chain. */
+  addPlugin: (trackId: string, def: PluginDef, opts?: { rig?: boolean; quiet?: boolean }) => string;
   removePlugin: (trackId: string, instanceId: string) => void;
   togglePluginBypass: (trackId: string, instanceId: string) => void;
   movePlugin: (trackId: string, instanceId: string, dir: -1 | 1) => void;
@@ -2840,10 +2843,11 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       installedPlugins,
       installPlugin: (d) => setInstalledPlugins((ps) => [...ps.filter((x) => x.id !== d.id), d]),
       uninstallPlugin: (defId) => setInstalledPlugins((ps) => ps.filter((x) => x.id !== defId)),
-      addPlugin: (trackId, d) => {
+      addPlugin: (trackId, d, opts) => {
         const inst = instantiate(d);
-        setTracks((ts) => ts.map((t) => (t.id === trackId ? { ...t, plugins: [...(t.plugins ?? []), inst] } : t)));
-        toast.success(`${d.name} inserted`, { description: `${d.vendor} · ${d.format}` });
+        setTracks((ts) => ts.map((t) => (t.id === trackId ? { ...t, plugins: opts?.rig ? insertRigDevice(t.plugins ?? [], inst) : [...(t.plugins ?? []), inst] } : t)));
+        if (!opts?.quiet) toast.success(`${d.name} inserted`, { description: `${d.vendor} · ${d.format}` });
+        return inst.id;
       },
       removePlugin: (trackId, instanceId) =>
         setTracks((ts) =>
