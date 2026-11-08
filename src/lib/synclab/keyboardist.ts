@@ -49,7 +49,7 @@ export function keysPatch(id: KeysSoundId): SynthPatch {
   p.voiceMode = "poly";
   p.glide = 0;
   if (!s.sustained && s.id !== "synth") p.unison = { ...p.unison, voices: 1, detune: 0, width: 0 };
-  p.fx = { ...p.fx, distortion: s.id === "clav" ? Math.min(p.fx.distortion, 0.12) : 0, saturation: 0, bitcrush: 0, flanger: 0, phaser: 0, delay: 0 };
+  p.fx = { ...p.fx, distortion: 0, saturation: 0, bitcrush: 0, flanger: 0, phaser: 0, delay: 0 };
   // Headroom: the session player stacks chords, bass and runs (up to ~10 keys at once), so each
   // key gets a fixed, quiet level instead of a lead-synth level. No drive, and a clean voice path
   // (no saturation stage) except the clavinet's small bite, so full chords never fold over or clip.
@@ -57,7 +57,7 @@ export function keysPatch(id: KeysSoundId): SynthPatch {
   // style plays hundreds of keys a minute (that overload is what made dense styles crackle or drop
   // out). Space comes from the shared chorus/reverb sends and the channel's FX rack instead.
   p.drive = 0;
-  p.clean = s.id !== "clav";
+  p.clean = true;
   p.lightVoices = true;
   p.resonance = Math.min(p.resonance, 2);
   // Gentler velocity response, so soft comping stays audible while accents still lift.
@@ -77,7 +77,7 @@ export const KEYS_PATCH_REV = 4;
 
 /** Summed oscillator level per key for each sound (bright/sustained sounds sit lower). */
 const KEYS_VOICE_LEVEL: Partial<Record<KeysSoundId, number>> = {
-  grand: 0.42, rhodes: 0.42, wurli: 0.42, organ: 0.4, clav: 0.16, deep: 0.42, strings: 0.45, pad: 0.45, synth: 0.36,
+  grand: 0.3, rhodes: 0.3, wurli: 0.36, organ: 0.4, clav: 0.4, deep: 0.3, strings: 0.38, pad: 0.45, synth: 0.32,
 };
 
 export interface KeysStyle {
@@ -400,6 +400,8 @@ function leftTone(settings: KeysSettings, chord: Chord, ch: string): number[] {
 
 const clamp01 = (v: number) => Math.max(0, Math.min(1, Number.isFinite(v) ? v : 0));
 const clampVel = (v: number) => Math.max(0.05, Math.min(1, v));
+/** Keys struck at once before each is softened (a full chord plus its bass note). */
+const STACK_KEYS = 5;
 
 /** Picks base or busy character for a step (busy notes fade in with complexity). */
 function lineChar(base: string, busy: string, s: number, cx: number, seed: number, phrase: number, hand: string): string {
@@ -512,7 +514,16 @@ export function genKeysBar(settings: KeysSettings, bar: number, stepsPerBar = 16
     const prev = best.get(key);
     if (!prev || n.vel > prev.vel) best.set(key, prev ? { ...n, length: Math.max(n.length, prev.length) } : n);
   }
-  return [...best.values()].sort((a, b) => a.step - b.step || a.pitch - b.pitch);
+  // Big stacks (hits, octave-doubled stabs, a fill landing on the comping) are balanced so the
+  // keys struck together never add up past a normal full chord: above STACK_KEYS each key is
+  // played a little softer. Live and printed parts share this, so they sound the same.
+  const stacks = new Map<number, number>();
+  for (const n of best.values()) { const at = Math.round(n.step * 100); stacks.set(at, (stacks.get(at) ?? 0) + 1); }
+  const out = [...best.values()].map((n) => {
+    const count = stacks.get(Math.round(n.step * 100)) ?? 1;
+    return count > STACK_KEYS ? { ...n, vel: Math.round(clampVel(n.vel * Math.pow(STACK_KEYS / count, 0.6)) * 1000) / 1000 } : n;
+  });
+  return out.sort((a, b) => a.step - b.step || a.pitch - b.pitch);
 }
 
 /** Walking bass: a note on every beat — roots on chord changes, chord tones between, a chromatic step into the next chord. */

@@ -139,11 +139,24 @@ describe("keys sounds leave headroom for full chords", () => {
       expect(sum, s.id).toBeLessThanOrEqual(0.45);
       expect(p.drive ?? 0, s.id).toBe(0);
       expect(p.fx.saturation ?? 0, s.id).toBe(0);
-      if (s.id !== "clav") expect(p.clean, s.id).toBe(true);
+      expect(p.clean, s.id).toBe(true);
       // no per-key echo/flanger/phaser: dense styles would build hundreds of effect nodes and drop out
       expect(p.fx.delay, s.id).toBe(0);
       expect(p.fx.flanger ?? 0, s.id).toBe(0);
       expect(p.fx.phaser ?? 0, s.id).toBe(0);
+    }
+  });
+});
+
+describe("keys struck together stay balanced", () => {
+  it("never stacks more than a full chord's worth of level on one beat, even at full complexity and loudness", () => {
+    for (const st of KEYS_STYLES) {
+      const s = { ...defaultKeys(st.id), complexity: 1, loudness: 1, fills: 1 };
+      for (const { notes } of keysBars(s, 0, 8, 16)) {
+        const at = new Map<number, number>();
+        for (const n of notes) at.set(Math.round(n.step * 100), (at.get(Math.round(n.step * 100)) ?? 0) + n.vel);
+        for (const sum of at.values()) expect(sum, st.id).toBeLessThanOrEqual(5.5);
+      }
     }
   });
 });
