@@ -49,9 +49,27 @@ export function keysPatch(id: KeysSoundId): SynthPatch {
   p.voiceMode = "poly";
   p.glide = 0;
   if (!s.sustained && s.id !== "synth") p.unison = { ...p.unison, voices: 1, detune: 0, width: 0 };
-  p.fx = { ...p.fx, distortion: s.id === "clav" ? p.fx.distortion : 0, delay: Math.min(p.fx.delay, 0.08) };
+  p.fx = { ...p.fx, distortion: s.id === "clav" ? Math.min(p.fx.distortion, 0.12) : 0, saturation: 0, bitcrush: 0, delay: Math.min(p.fx.delay, 0.08) };
+  // Headroom: the session player stacks chords, bass and runs (up to ~10 keys at once), so each
+  // key gets a fixed, quiet level instead of a lead-synth level. No drive, and a clean voice path
+  // (no saturation stage) except the clavinet's small bite, so full chords never fold over or clip.
+  p.drive = 0;
+  p.clean = s.id !== "clav";
+  p.resonance = Math.min(p.resonance, 2);
+  const on = p.oscillators.filter((o) => o.on);
+  const sum = on.reduce((t, o) => t + o.level, 0) || 1;
+  const scale = (KEYS_VOICE_LEVEL[s.id] ?? 0.3) / sum;
+  p.oscillators = p.oscillators.map((o) => ({ ...o, level: Math.round(o.level * scale * 1000) / 1000 }));
   return p;
 }
+
+/** Bump when keysPatch's levels change, so Live Keys tracks made earlier pick up the new sound. */
+export const KEYS_PATCH_REV = 2;
+
+/** Summed oscillator level per key for each sound (bright/sustained sounds sit lower). */
+const KEYS_VOICE_LEVEL: Partial<Record<KeysSoundId, number>> = {
+  grand: 0.3, rhodes: 0.32, wurli: 0.3, organ: 0.2, clav: 0.24, deep: 0.3, strings: 0.18, pad: 0.2, synth: 0.26,
+};
 
 export interface KeysStyle {
   id: string;
