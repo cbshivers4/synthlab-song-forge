@@ -11,7 +11,7 @@ import { EffectWorkbench, effectFamily } from "./EffectWorkbench";
 import { ProEq } from "./ProEq";
 import { VocoderPanel } from "./VocoderPanel";
 import { EffectPresetMenu } from "./EffectPresetMenu";
-import { effectBrand, effectCategory } from "@/lib/synclab/effect-catalog";
+import { effectBrand, effectCategory, effectForm } from "@/lib/synclab/effect-catalog";
 import { BypassButton } from "./HardwareBypass";
 
 const meterListeners = new Set<() => void>();
@@ -64,7 +64,7 @@ export function RackEffect({ trackId, plugin: p, index, count }: { trackId: stri
   const { togglePluginBypass, movePlugin, removePlugin, setPluginParam } = useStudio();
   const [expanded, setExpanded] = useState(true);
   const readoutParam = p.params.find(param => ["time", "cutoff", "threshold", "drive", "decay", "rate"].includes(param.id)) ?? p.params[0];
-  return <section aria-label={`${p.name} rack module`} data-fx-family={effectFamily(p)} data-fx-kind={p.kind} data-fx-skin={p.kind} data-fx-variant={p.name.toLowerCase().includes("echo") ? "echo" : undefined} data-bypassed={p.bypass} className="fx-face hardware-device relative border-y border-border bg-surface">
+  return <section aria-label={`${p.name} rack module`} data-fx-family={effectFamily(p)} data-fx-kind={p.kind} data-fx-skin={p.kind} data-fx-form={effectForm(p.kind)} data-fx-variant={p.name.toLowerCase().includes("echo") ? "echo" : undefined} data-bypassed={p.bypass} className="fx-face hardware-device relative border-y border-border bg-surface">
     <div className="hardware-rack-ear pointer-events-none absolute inset-y-0 left-0 flex w-3 flex-col justify-between border-r border-border py-3 sm:w-5">
       {[0, 1].map((s) => <span key={s} className="hardware-rack-screw mx-auto size-2 rounded-full" />)}
     </div>
@@ -86,7 +86,7 @@ export function RackEffect({ trackId, plugin: p, index, count }: { trackId: stri
       </header>
       <EffectPresetMenu plugin={p} onParam={(id, value) => setPluginParam(trackId, p.id, id, value)} />
        <div className="fx-output-strip mx-2 py-1"><RackMeter plugin={p} /></div>
-      {expanded && (p.kind === "paraeq" ? <div className="min-w-0 border-t border-border p-2"><ProEq trackId={trackId} plugin={p} /></div> : p.kind === "eq" ? <div className="min-w-0 space-y-2 border-t border-border p-2"><EffectDisplay plugin={p} height={200} onParam={(id, value) => setPluginParam(trackId, p.id, id, value)} /><div className="flex flex-wrap justify-center gap-2">{p.params.filter(param => param.id !== "low" && param.id !== "mid" && param.id !== "high").map(param => <Knob key={param.id} label={param.name} value={param.value} min={param.min} max={param.max} step={1} unit={param.unit ? ` ${param.unit}` : ""} size={48} onChange={value => setPluginParam(trackId, p.id, param.id, value)} midiTarget={{ id: trackId, param: `plugin:${p.id}:${param.id}` }} />)}</div></div> : p.kind === "vocoder" ? <div className="fx-control-deck"><VocoderPanel trackId={trackId} plugin={p} /></div> : <EffectWorkbench plugin={p} midiId={trackId} onParam={(id, value) => setPluginParam(trackId, p.id, id, value)} />)}
+      {expanded && (p.kind === "paraeq" ? <div className="min-w-0 border-t border-border p-2"><ProEq trackId={trackId} plugin={p} /></div> : p.kind === "eq" ? <div className="min-w-0 space-y-2 border-t border-border p-2"><EffectDisplay plugin={p} height={200} onParam={(id, value) => setPluginParam(trackId, p.id, id, value)} /><div className="flex flex-wrap justify-center gap-2">{p.params.filter(param => param.id !== "low" && param.id !== "mid" && param.id !== "high").map(param => <Knob key={param.id} label={param.name} value={param.value} min={param.min} max={param.max} step={1} unit={param.unit ? ` ${param.unit}` : ""} size={48} onChange={value => setPluginParam(trackId, p.id, param.id, value)} midiTarget={{ id: trackId, param: `plugin:${p.id}:${param.id}` }} />)}</div></div> : p.kind === "vocoder" ? <div className="fx-control-deck"><VocoderPanel trackId={trackId} plugin={p} /></div> : <EffectWorkbench plugin={p} midiId={trackId} onBypass={() => togglePluginBypass(trackId, p.id)} onParam={(id, value) => setPluginParam(trackId, p.id, id, value)} />)}
     </div>
   </section>;
 }

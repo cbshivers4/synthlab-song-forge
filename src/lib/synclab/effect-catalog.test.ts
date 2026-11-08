@@ -17,7 +17,7 @@ describe("complete hardware effect catalog", () => {
     expect(list.filter(def => def.id === factory.id)).toHaveLength(1);
     expect(list.find(def => def.id === custom.id)).toEqual(custom);
   });
-  it("places every factory device in exactly one of the nine categories", () => {
+  it("places every factory device in exactly one of the ten categories", () => {
     const groups = groupByCategory(availableEffects([]));
     expect(groups.map(([category]) => category)).toEqual([...EFFECT_CATEGORIES]);
     expect(groups.flatMap(([, defs]) => defs).map(def => def.id).sort()).toEqual(BUILT_IN_PLUGINS.map(def => def.id).sort());

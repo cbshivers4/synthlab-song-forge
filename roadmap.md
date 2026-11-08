@@ -183,3 +183,8 @@
 - [x] Mixer faders: dB taper with up to +6 dB boost (was +1.6 dB) on desktop/phone tracks, buses, master and MIDI CC; printed dB scale beside faders
 - [x] "Plugins" renamed "FX Rack" in menus, rail, phone and search
 - [x] Touch Synth drums: four columns (kick · closed/open hat · snare · clap) with colour display and lit pads
+
+## Nov 8 — Guitar rig (Christopher)
+- [x] Lead Guitar Amp (Clean/Crunch/Lead channels, mid boost, tone stack, master, 3 cabinets, mic) and Bass Guitar Amp (compressor, drive above 250 Hz, 4-band EQ, contour, 3 cabinets, DI/amp blend)
+- [x] Ten pedals: overdrive, fuzz, wah (pedal/auto/envelope), octave, analog delay, spring reverb, compressor, clean boost, vibe, rotary speaker — stompbox look with working footswitch
+- [x] New "Amps & Pedals" category in every effect list; 15 presets each

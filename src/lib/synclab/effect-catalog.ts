@@ -1,5 +1,6 @@
 import type { PluginDef, PluginInstance, PluginKind } from "./types";
 import { BUILT_IN_PLUGINS } from "./plugins";
+import { AMP_KINDS, PEDAL_KINDS } from "./creative-fx";
 
 /** Saved projects may predate newer devices; menus always include the current factory catalog. */
 export function availableEffects(installed: PluginDef[]): PluginDef[] {
@@ -9,7 +10,7 @@ export function availableEffects(installed: PluginDef[]): PluginDef[] {
 
 /** Browser categories for every effect device. */
 export const EFFECT_CATEGORIES = [
-  "EQ & Filter", "Dynamics", "Distortion & Saturation", "Delay & Reverb", "Modulation",
+  "EQ & Filter", "Dynamics", "Distortion & Saturation", "Amps & Pedals", "Delay & Reverb", "Modulation",
   "Pitch & Voice", "Stereo & Imaging", "Rhythm & Gate", "Utility",
 ] as const;
 export type EffectCategory = (typeof EFFECT_CATEGORIES)[number];
@@ -17,13 +18,16 @@ export type EffectCategory = (typeof EFFECT_CATEGORIES)[number];
 const CATEGORY: Record<PluginKind, EffectCategory> = {
   eq: "EQ & Filter", paraeq: "EQ & Filter", filter: "EQ & Filter", resonator: "EQ & Filter",
   compressor: "Dynamics", limiter: "Dynamics", gate: "Dynamics", transient: "Dynamics", maximizer: "Dynamics",
-  drive: "Distortion & Saturation", bitcrusher: "Distortion & Saturation", demolition: "Distortion & Saturation", distmatrix: "Distortion & Saturation", amp: "Distortion & Saturation", retro: "Distortion & Saturation",
+  drive: "Distortion & Saturation", bitcrusher: "Distortion & Saturation", demolition: "Distortion & Saturation", distmatrix: "Distortion & Saturation", retro: "Distortion & Saturation",
   delay: "Delay & Reverb", reverb: "Delay & Reverb",
   chorus: "Modulation", flanger: "Modulation", phaser: "Modulation", tremolo: "Modulation", modulator: "Modulation", modfx: "Modulation", ensemble: "Modulation", unison: "Modulation",
   vocoder: "Pitch & Voice", pitchvoice: "Pitch & Voice", scalechord: "Pitch & Voice",
   width: "Stereo & Imaging", autopan: "Stereo & Imaging", imager: "Stereo & Imaging",
   stepfilter: "Rhythm & Gate", trigate: "Rhythm & Gate", sidechain: "Rhythm & Gate",
   gain: "Utility",
+  amp: "Amps & Pedals", leadamp: "Amps & Pedals", bassamp: "Amps & Pedals",
+  overdrive: "Amps & Pedals", fuzz: "Amps & Pedals", wah: "Amps & Pedals", octaver: "Amps & Pedals", analogdelay: "Amps & Pedals",
+  springverb: "Amps & Pedals", pedalcomp: "Amps & Pedals", boost: "Amps & Pedals", univibe: "Amps & Pedals", rotary: "Amps & Pedals",
 };
 export const effectCategory = (kind: PluginKind): EffectCategory => CATEGORY[kind] ?? "Utility";
 
@@ -41,8 +45,19 @@ const BRANDS: Record<string, string> = {
   "Demolition Unit": "Wrecking Ball Demolisher", "Pitch & Voice Synth": "Shapeshifter Voice", "Maximizer": "Loudness Overdrive",
   "Stereo Imager": "Panorama Imager", "Unison Expander": "Army of Eight", "Guitar & Bass Amp": "Eight Mile Amp Stack",
   "Chorus Ensemble": "Symphony Ensemble", "Sidechain Pump": "Pump Station", "Distortion Matrix": "Chaos Matrix",
+  "Lead Guitar Amp": "Rouge Lead 100", "Bass Guitar Amp": "Motown Low End 800", "Overdrive Pedal": "Green Light Screamer",
+  "Fuzz Pedal": "Big Wheel Fuzz", "Wah Pedal": "Belle Isle Wah", "Octave Pedal": "Sub Basement Octaver",
+  "Analog Delay Pedal": "Bucket Brigade Echo", "Spring Reverb Pedal": "Boulevard Spring Tank", "Compressor Pedal": "Squeeze Box Comp",
+  "Clean Boost Pedal": "Afterburner Boost", "Vibe Pedal": "Lamp Light Vibe", "Rotary Speaker": "Whirlwind Rotary",
 };
 export const effectBrand = (plugin: Pick<PluginInstance | PluginDef, "name">) => BRANDS[plugin.name] ?? plugin.name;
+
+/** Physical form: stompbox pedals and amp heads get their own enclosures; everything else is a rack unit. */
+export function effectForm(kind: PluginKind): "pedal" | "amp" | undefined {
+  if ((PEDAL_KINDS as readonly string[]).includes(kind)) return "pedal";
+  if ((AMP_KINDS as readonly string[]).includes(kind)) return "amp";
+  return undefined;
+}
 
 /** Where each device places its display window, so units do not share one layout. */
 const POSITIONS = ["left", "right", "top", "bottom", "center"] as const;

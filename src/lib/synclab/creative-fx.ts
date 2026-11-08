@@ -8,7 +8,12 @@ import type { PluginInstance, PluginParam } from "./types";
 export const CREATIVE_KINDS = [
   "modulator", "modfx", "retro", "trigate", "demolition", "pitchvoice", "maximizer",
   "imager", "unison", "amp", "ensemble", "sidechain", "distmatrix",
+  // Guitar rig: two dedicated amps and ten stompbox pedals.
+  "leadamp", "bassamp", "overdrive", "fuzz", "wah", "octaver", "analogdelay", "springverb", "pedalcomp", "boost", "univibe", "rotary",
 ] as const;
+/** Stompbox pedals render as pedal enclosures with a footswitch; amps as amp heads. */
+export const PEDAL_KINDS: readonly CreativeKind[] = ["overdrive", "fuzz", "wah", "octaver", "analogdelay", "springverb", "pedalcomp", "boost", "univibe", "rotary"];
+export const AMP_KINDS: readonly CreativeKind[] = ["amp", "leadamp", "bassamp"];
 export type CreativeKind = (typeof CREATIVE_KINDS)[number];
 export const isCreativeKind = (kind: string): kind is CreativeKind => (CREATIVE_KINDS as readonly string[]).includes(kind);
 
@@ -28,12 +33,28 @@ export const CREATIVE_PARAMS: Record<CreativeKind, () => PluginParam[]> = {
   ensemble: () => [p("rate", "Chorus Rate", 0.6, 0.1, 2, "Hz"), p("depth", "Chorus Depth", 0.6, 0, 1), p("vibrato", "Vibrato Rate", 6, 2, 9, "Hz"), p("vibDepth", "Vibrato Depth", 0.2, 0, 1), p("spread", "Spread", 0.8, 0, 1), p("mix", "Mix", 0.6, 0, 1)],
   sidechain: () => [p("tempo", "Tempo", 124, 60, 200, "BPM"), p("division", "Division", 0, 0, 3), p("depth", "Depth", 0.8, 0, 1), p("release", "Release", 0.5, 0.05, 0.95), p("curve", "Curve", 2, 0.5, 4), p("output", "Output", 0, -12, 6, "dB")],
   distmatrix: () => [p("drive", "Drive", 0.5, 0, 1), p("tube", "Tube", 0.7, 0, 1), p("fuzz", "Fuzz", 0, 0, 1), p("fold", "Fold", 0, 0, 1), p("rect", "Rectify", 0, 0, 1), p("tone", "Tone", 8000, 500, 18000, "Hz"), p("mix", "Mix", 1, 0, 1), p("output", "Output", -6, -24, 6, "dB")],
+  leadamp: () => [p("channel", "Clean/Crunch/Lead", 1, 0, 2), p("gain", "Gain", 0.5, 0, 1), p("boost", "Mid Boost", 0, 0, 1), p("bass", "Bass", 0, -12, 12, "dB"), p("mid", "Middle", 0, -12, 12, "dB"), p("treble", "Treble", 0, -12, 12, "dB"), p("presence", "Presence", 0, -12, 12, "dB"), p("master", "Master", 0.4, 0, 1), p("cabinet", "Cab 1x12/2x12/4x12", 2, 0, 2), p("mic", "Mic On/Off Axis", 0.3, 0, 1), p("output", "Output", -8, -24, 6, "dB")],
+  bassamp: () => [p("comp", "Compressor", 0.3, 0, 1), p("gain", "Gain", 0.3, 0, 1), p("drive", "Drive", 0, 0, 1), p("bass", "Bass", 0, -12, 12, "dB"), p("lomid", "Low Mid", 0, -12, 12, "dB"), p("himid", "High Mid", 0, -12, 12, "dB"), p("treble", "Treble", 0, -12, 12, "dB"), p("contour", "Contour", 0, 0, 1), p("cabinet", "Cab 8x10/4x10/1x15", 0, 0, 2), p("blend", "DI ↔ Amp", 0.5, 0, 1), p("output", "Output", -6, -24, 6, "dB")],
+  overdrive: () => [p("drive", "Drive", 0.5, 0, 1), p("tone", "Tone", 0.5, 0, 1), p("output", "Level", -6, -24, 6, "dB")],
+  fuzz: () => [p("sustain", "Sustain", 0.6, 0, 1), p("tone", "Tone", 0.5, 0, 1), p("bias", "Bias Gate", 0, 0, 1), p("output", "Volume", -10, -30, 6, "dB")],
+  wah: () => [p("mode", "Pedal/Auto/Envelope", 0, 0, 2), p("pedal", "Pedal", 0.5, 0, 1), p("rate", "Auto Rate", 1.5, 0.1, 8, "Hz"), p("sense", "Sensitivity", 0.5, 0, 1), p("resonance", "Resonance", 5, 1, 15, "Q"), p("mix", "Mix", 1, 0, 1)],
+  octaver: () => [p("sub1", "Sub −1 Oct", 0.7, 0, 1), p("sub2", "Sub −2 Oct", 0, 0, 1), p("up", "Octave Up", 0, 0, 1), p("dry", "Dry", 0.8, 0, 1), p("tone", "Tone", 4000, 300, 12000, "Hz")],
+  analogdelay: () => [p("time", "Time", 300, 40, 600, "ms"), p("repeats", "Repeats", 0.4, 0, 0.95), p("mod", "Mod", 0.2, 0, 1), p("tone", "Tone", 2800, 800, 8000, "Hz"), p("mix", "Mix", 0.35, 0, 1)],
+  springverb: () => [p("dwell", "Dwell", 0.4, 0, 1), p("decay", "Decay", 2, 0.5, 4, "s"), p("tone", "Tone", 4000, 1000, 10000, "Hz"), p("mix", "Mix", 0.3, 0, 1)],
+  pedalcomp: () => [p("sustain", "Sustain", 0.5, 0, 1), p("attack", "Attack", 0.3, 0, 1), p("mix", "Blend", 1, 0, 1), p("output", "Level", 0, -12, 12, "dB")],
+  boost: () => [p("boost", "Boost", 8, 0, 20, "dB"), p("treble", "Treble", 0, 0, 1), p("output", "Level", 0, -12, 6, "dB")],
+  univibe: () => [p("mode", "Chorus/Vibrato", 0, 0, 1), p("speed", "Speed", 2, 0.3, 10, "Hz"), p("intensity", "Intensity", 0.6, 0, 1), p("output", "Volume", 0, -12, 6, "dB")],
+  rotary: () => [p("speed", "Slow/Fast", 0, 0, 1), p("accel", "Ramp Time", 0.8, 0.2, 3, "s"), p("drive", "Drive", 0.2, 0, 1), p("balance", "Drum ↔ Horn", 0.5, 0, 1), p("spread", "Mic Spread", 0.8, 0, 1), p("output", "Output", 0, -12, 6, "dB")],
 };
 
 export const CREATIVE_DEVICES: [name: string, kind: CreativeKind][] = [
   ["FX Modulator", "modulator"], ["Mod Engine", "modfx"], ["Retro Transformer", "retro"], ["Triple Filter Gate", "trigate"],
   ["Demolition Unit", "demolition"], ["Pitch & Voice Synth", "pitchvoice"], ["Maximizer", "maximizer"], ["Stereo Imager", "imager"],
   ["Unison Expander", "unison"], ["Guitar & Bass Amp", "amp"], ["Chorus Ensemble", "ensemble"], ["Sidechain Pump", "sidechain"], ["Distortion Matrix", "distmatrix"],
+  ["Lead Guitar Amp", "leadamp"], ["Bass Guitar Amp", "bassamp"],
+  ["Overdrive Pedal", "overdrive"], ["Fuzz Pedal", "fuzz"], ["Wah Pedal", "wah"], ["Octave Pedal", "octaver"],
+  ["Analog Delay Pedal", "analogdelay"], ["Spring Reverb Pedal", "springverb"], ["Compressor Pedal", "pedalcomp"],
+  ["Clean Boost Pedal", "boost"], ["Vibe Pedal", "univibe"], ["Rotary Speaker", "rotary"],
 ];
 
 type R = [string, Record<string, number>];
@@ -51,7 +72,38 @@ export const CREATIVE_RECIPES: Record<CreativeKind, R[]> = {
   ensemble: [["String Machine", { rate: 0.6, vibDepth: 0.3, mix: 0.7 }], ["Classic Poly", { rate: 0.4, vibDepth: 0, depth: 0.5 }], ["Dreamy Wide", { spread: 1, depth: 0.9, rate: 0.3 }], ["Vibrato Organ", { vibDepth: 0.7, vibrato: 7 }], ["Subtle Ensemble", { mix: 0.35, depth: 0.4 }], ["Seasick Strings", { rate: 1.5, depth: 1, vibDepth: 0.4 }], ["Mono Ensemble", { spread: 0, mix: 0.5 }], ["Fast Shimmer", { rate: 2, vibrato: 9, vibDepth: 0.5 }], ["Slow Swirl", { rate: 0.1, depth: 0.8 }], ["Pad Haze", { mix: 0.9, depth: 0.7, vibrato: 4, vibDepth: 0.2 }]],
   sidechain: [["Four on Floor", { division: 0, depth: 0.85 }], ["Eighth Pump", { division: 1, depth: 0.7, release: 0.6 }], ["Half Note Swell", { division: 2, depth: 0.9, curve: 1 }], ["Bar Duck", { division: 3, release: 0.8 }], ["Gentle Breath", { depth: 0.4, release: 0.7 }], ["Hard Duck", { depth: 1, release: 0.3, curve: 3 }], ["House 126", { tempo: 126, depth: 0.8 }], ["Techno 132", { tempo: 132, depth: 0.9, curve: 2.5 }], ["Hip Hop 90", { tempo: 90, division: 0, release: 0.4 }], ["DnB 174", { tempo: 174, division: 1, depth: 0.6 }]],
   distmatrix: [["Warm Tube", { tube: 1, drive: 0.3 }], ["Fuzz Box", { tube: 0, fuzz: 1, drive: 0.8 }], ["Wave Folder", { tube: 0, fold: 1, drive: 0.6 }], ["Octave Rectifier", { tube: 0, rect: 1 }], ["Tube + Fuzz", { tube: 0.6, fuzz: 0.6 }], ["Folded Rect", { tube: 0, fold: 0.7, rect: 0.7 }], ["Everything", { tube: 0.5, fuzz: 0.5, fold: 0.5, rect: 0.5, drive: 0.7 }], ["Dark Crunch", { tube: 0.8, tone: 2500, drive: 0.7 }], ["Parallel Grit", { fuzz: 0.7, mix: 0.4 }], ["Bright Fold", { tube: 0.2, fold: 0.8, tone: 15000 }]],
+  leadamp: [["Clean Sparkle", { channel: 0, gain: 0.3, treble: 4, presence: 3, cabinet: 1, mic: 0.2 }], ["Motor City Crunch", { channel: 1, gain: 0.6, mid: 3, cabinet: 1 }], ["Classic Rock Stack", { channel: 1, gain: 0.8, bass: 2, treble: 2, master: 0.6 }], ["Searing Lead", { channel: 2, gain: 0.7, boost: 0.6, mid: 4, presence: 3 }], ["Modern Metal", { channel: 2, gain: 1, mid: -6, bass: 5, treble: 4, mic: 0.1 }], ["Blues Breaker", { channel: 1, gain: 0.5, boost: 0.5, mid: 5, treble: -2, cabinet: 1 }], ["Jazz Box Warm", { channel: 0, gain: 0.15, treble: -5, bass: 3, mic: 0.8, cabinet: 0 }], ["Funk Chicken Pick", { channel: 0, gain: 0.25, treble: 6, mid: -3, presence: 5, cabinet: 0 }], ["Singing Sustain", { channel: 2, gain: 0.85, boost: 0.8, master: 0.7, mid: 2, mic: 0.5 }], ["Dark Doom", { channel: 2, gain: 0.9, treble: -6, bass: 6, presence: -4, mic: 0.9 }]],
+  bassamp: [["Motown Thump", { comp: 0.5, bass: 4, treble: -6, cabinet: 2, blend: 0.7 }], ["Modern Slap", { contour: 0.7, treble: 6, bass: 4, comp: 0.6, cabinet: 1 }], ["Rock Pick Growl", { gain: 0.6, drive: 0.4, himid: 4 }], ["Fuzz Bass Riot", { drive: 1, gain: 0.8, himid: 6, blend: 0.85 }], ["Clean DI", { blend: 0, comp: 0.4 }], ["Reggae Dub Deep", { bass: 8, treble: -10, lomid: 3, cabinet: 2, comp: 0.5 }], ["Funk Fingerstyle", { comp: 0.7, lomid: 3, himid: 2, treble: 2, cabinet: 1 }], ["Detroit Techno Sub", { bass: 6, lomid: -4, contour: 0.4, blend: 0.3 }], ["Vintage Tube Warm", { gain: 0.7, treble: -3, cabinet: 2, blend: 0.9 }], ["Metal Clank", { drive: 0.6, himid: 8, treble: 5, contour: 0.5 }]],
+  overdrive: [["Light Edge", { drive: 0.2, tone: 0.6, output: -3 }], ["Texas Blues", { drive: 0.55, tone: 0.45 }], ["Mid Push Lead", { drive: 0.8, tone: 0.55, output: -8 }], ["Dark Smooth", { drive: 0.6, tone: 0.2 }], ["Bright Bite", { drive: 0.5, tone: 0.9 }], ["Full Gain", { drive: 1, output: -10 }], ["Clean Boost Mode", { drive: 0, tone: 0.7, output: 0 }], ["Bass Grit", { drive: 0.4, tone: 0.3, output: -4 }], ["Crunchy Rhythm", { drive: 0.7, tone: 0.65, output: -7 }], ["Vocal Warmth", { drive: 0.12, tone: 0.4, output: -2 }]],
+  fuzz: [["Classic Muff", { sustain: 0.7 }], ["Wall of Fuzz", { sustain: 1, tone: 0.4, output: -12 }], ["Sputter Gate", { bias: 0.7 }], ["Dying Battery", { sustain: 0.8, bias: 0.45, tone: 0.35 }], ["Scooped Stoner", { sustain: 0.9, output: -12 }], ["Bright Buzz", { sustain: 0.5, tone: 0.9 }], ["Dark Velvet", { sustain: 0.65, tone: 0.1 }], ["Mild Fuzz", { sustain: 0.25, tone: 0.55, output: -6 }], ["Octave Snarl", { sustain: 0.85, bias: 0.25, tone: 0.7 }], ["Synth Bass Fuzz", { sustain: 0.75, tone: 0.2, bias: 0.15 }]],
+  wah: [["Heel Down Dark", { pedal: 0.05 }], ["Toe Down Scream", { pedal: 0.95 }], ["Cocked Wah", { pedal: 0.6, resonance: 8 }], ["Slow Auto Wah", { mode: 1, rate: 0.5 }], ["Funky Auto Wah", { mode: 1, rate: 4, resonance: 7 }], ["Envelope Quack", { mode: 2, sense: 0.6, resonance: 8, pedal: 0.2 }], ["Bass Envelope", { mode: 2, sense: 0.8, resonance: 4, pedal: 0.1 }], ["Talk Box Style", { mode: 1, rate: 2, resonance: 12 }], ["Subtle Sweep", { mode: 1, rate: 1, mix: 0.5 }], ["Sensitive Funk", { mode: 2, sense: 1, resonance: 10, pedal: 0.15 }]],
+  octaver: [["Sub Octave Bass", { sub1: 1, dry: 0.6, tone: 1500 }], ["Two Down Monster", { sub1: 0.6, sub2: 0.8, dry: 0.4 }], ["Octave Up Ring", { up: 0.9, dry: 0.5, sub1: 0 }], ["Full Organ", { sub1: 0.6, sub2: 0.4, up: 0.5, dry: 0.7 }], ["Dry Plus Sub", { sub1: 0.4, dry: 1 }], ["Synth Bass Floor", { sub1: 0.9, sub2: 0.5, dry: 0.2, tone: 900 }], ["Bright Up", { up: 0.6, sub1: 0.2, tone: 9000 }], ["Sub Only", { sub1: 1, dry: 0 }], ["Lead Thickener", { sub1: 0.35, up: 0.3, dry: 0.9 }], ["Dark Rumble", { sub2: 1, sub1: 0.3, tone: 600, dry: 0.5 }]],
+  analogdelay: [["Slapback", { time: 90, repeats: 0.1 }], ["Rockabilly", { time: 120, repeats: 0.25, mix: 0.4 }], ["Quarter Repeat", { time: 450, repeats: 0.45 }], ["Ambient Wash", { time: 580, repeats: 0.8, mix: 0.45, mod: 0.5 }], ["Self Oscillate", { time: 250, repeats: 0.95, mix: 0.5 }], ["Warbly Chorus Echo", { time: 60, repeats: 0.3, mod: 1, mix: 0.4 }], ["Dark Dub", { time: 380, repeats: 0.7, tone: 1200 }], ["Bright Repeats", { time: 320, repeats: 0.5, tone: 7000 }], ["Short Doubler", { time: 40, repeats: 0, mix: 0.3 }], ["Lead Trail", { time: 420, repeats: 0.35, mix: 0.25, mod: 0.3 }]],
+  springverb: [["Surf Splash", { dwell: 0.9, decay: 3, mix: 0.55 }], ["Amp Drip", { dwell: 0.5, decay: 2.2, mix: 0.35 }], ["Small Tank", { decay: 0.9, mix: 0.25 }], ["Dark Spring", { tone: 1800, decay: 2.5 }], ["Bright Boing", { tone: 9000, dwell: 0.7 }], ["Dub Spring", { decay: 4, mix: 0.5, tone: 2500 }], ["Subtle Air", { mix: 0.15, decay: 1.5 }], ["Crashing Tank", { dwell: 1, decay: 3.5, mix: 0.6, tone: 6000 }], ["Vocal Spring", { decay: 1.6, mix: 0.22, tone: 5000, dwell: 0.2 }], ["Drum Spring", { decay: 1.2, dwell: 0.6, tone: 3500 }]],
+  pedalcomp: [["Country Squash", { sustain: 0.8, attack: 0.1 }], ["Funk Snap", { sustain: 0.6, attack: 0.5 }], ["Transparent", { sustain: 0.3, mix: 0.6 }], ["Infinite Sustain", { sustain: 1, attack: 0.2, output: -3 }], ["Parallel Squeeze", { sustain: 0.9, mix: 0.5 }], ["Bass Even", { sustain: 0.55, attack: 0.6 }], ["Gentle Level", { sustain: 0.2 }], ["Clean Chime", { sustain: 0.7, attack: 0.8, mix: 0.7 }], ["Lead Push", { sustain: 0.65, output: 3 }], ["Slap Control", { sustain: 0.75, attack: 0 }]],
+  boost: [["Clean Lift", { boost: 6 }], ["Solo Boost", { boost: 12, output: -2 }], ["Treble Booster", { boost: 14, treble: 1, output: -4 }], ["Edge of Breakup", { boost: 20, output: -8 }], ["Bright Lift", { treble: 0.5 }], ["Level Match", { boost: 3 }], ["Vocal Presence", { boost: 4, treble: 0.3 }], ["Drive Pusher", { boost: 16, treble: 0.2, output: -6 }], ["Fat Push", { boost: 10 }], ["Cut Through", { boost: 9, treble: 0.8, output: -2 }]],
+  univibe: [["Machine Gun Vibe", { speed: 1.2, intensity: 0.8 }], ["Fast Chorale", { speed: 6, intensity: 0.5 }], ["Slow Swirl", { speed: 0.5, intensity: 0.9 }], ["Vibrato Wobble", { mode: 1, speed: 5 }], ["Seasick Vibrato", { mode: 1, speed: 1.5, intensity: 1 }], ["Subtle Throb", { speed: 2.5, intensity: 0.3 }], ["Organ Throb", { speed: 4, intensity: 0.7 }], ["Deep Pulse", { speed: 0.8, intensity: 1, output: -1 }], ["Light Shimmer", { speed: 8, intensity: 0.25 }], ["Fast Vibrato", { mode: 1, speed: 9, intensity: 0.4 }]],
+  rotary: [["Slow Chorale", { spread: 1 }], ["Fast Tremolo", { speed: 1 }], ["Gospel Organ", { speed: 1, drive: 0.5, balance: 0.6 }], ["Rock Overdrive Spin", { speed: 1, drive: 0.9, output: -4 }], ["Gentle Drift", { balance: 0.4, spread: 0.5 }], ["Horn Only", { balance: 1, speed: 1 }], ["Drum Only", { balance: 0 }], ["Quick Ramp", { speed: 1, accel: 0.25 }], ["Lazy Ramp", { speed: 1, accel: 2.8 }], ["Narrow Cabinet", { speed: 1, spread: 0.2 }]],
 };
+
+/** Cabinet voicings shared by the amps and their tone displays: [low cut, high cut, resonance Hz, resonance dB]. */
+export const LEAD_CABS = [[90, 6200, 110, 3], [80, 5200, 100, 4], [70, 4300, 90, 6]] as const;
+export const BASS_CABS = [[40, 4500, 70, 4], [50, 5500, 90, 3], [32, 3000, 55, 5]] as const;
+/** Normalised soft clip: unity peak at full scale, slope k near zero. */
+export const softClip = (x: number, k: number) => Math.tanh(k * x) / Math.tanh(k);
+/** Overdrive pedal: clean signal plus the clipped high-passed part (display uses the same law). */
+export const overdriveTransfer = (x: number, drive: number) => (x + 0.7 * softClip(x, 1 + drive * 60)) / 1.7;
+/** Fuzz pedal: first gain stage, bias dead-zone gate, then a hard second stage. */
+export function fuzzTransfer(x: number, sustain: number, bias: number) {
+  const a = softClip(x, 1 + sustain * 60);
+  const g = bias * 0.5;
+  const gated = Math.abs(a) <= g ? 0 : Math.sign(a) * (Math.abs(a) - g) / (1 - g);
+  const k = 1 + sustain * 20;
+  return Math.sign(gated) * (1 - Math.exp(-Math.abs(gated) * k)) / (1 - Math.exp(-k));
+}
+/** Wah centre frequency for a pedal position 0..1 (heel 350 Hz → toe 2.2 kHz). */
+export const wahFrequency = (pedal: number) => 350 * Math.pow(2200 / 350, clamp(pedal, 0, 1));
+const WAH_RANGE = 1200 * Math.log2(2200 / 350);
 
 export interface FxHelpers {
   val: (id: string, fallback: number) => number;
@@ -127,8 +179,47 @@ export function duckShape(phase: number, depth: number, release: number, power: 
   return 1 - depth * Math.pow(1 - rec, power);
 }
 
+/** Fourier series of one LFO cycle (DC removed), so custom shapes run on the audio clock. */
+function periodicLfo(ctx: BaseAudioContext, fn: (phase01: number) => number) {
+  const N = 256, H = 32;
+  const samples = Array.from({ length: N }, (_, i) => fn(i / N));
+  const re = new Float32Array(H), im = new Float32Array(H);
+  for (let k = 1; k < H; k++) { let a = 0, b = 0; for (let i = 0; i < N; i++) { const ph = 2 * Math.PI * k * i / N; a += samples[i]! * Math.cos(ph); b += samples[i]! * Math.sin(ph); } re[k] = 2 * a / N; im[k] = 2 * b / N; }
+  return ctx.createPeriodicWave(re, im, { disableNormalization: true });
+}
+
+/** Spring tank impulse: dispersive descending chirps at each round trip over a diffuse tail. */
+export function springImpulse(ctx: BaseAudioContext, seconds: number) {
+  const sr = ctx.sampleRate; const len = Math.max(1, Math.floor(sr * seconds));
+  const buf = ctx.createBuffer(2, len, sr);
+  for (let ch = 0; ch < 2; ch++) {
+    const data = buf.getChannelData(ch);
+    const trip = [0.0335, 0.0412][ch]!;
+    let seed = 99991 + ch * 7919;
+    for (let i = 0; i < len; i++) {
+      seed = (seed * 16807) % 2147483647;
+      data[i] = (seed / 2147483647 * 2 - 1) * 0.06 * Math.exp(-6.9 * (i / sr) / seconds);
+    }
+    for (let k = 0; k * trip < seconds; k++) {
+      const start = Math.floor((k * trip + 0.003 * ch) * sr);
+      const L = Math.floor(0.018 * sr * (1 + Math.min(k, 20) * 0.1));
+      const amp = Math.exp(-6.9 * k * trip / seconds) * (k % 2 ? -0.8 : 0.9);
+      let phase = 0;
+      for (let j = 0; j < L && start + j < len; j++) {
+        const u = j / L;
+        phase += 2 * Math.PI * (4200 * (1 - u) + 180 * u) / sr;
+        data[start + j]! += amp * Math.sin(phase) * Math.sin(Math.PI * u);
+      }
+    }
+  }
+  return buf;
+}
+
 export function buildCreativeFx(ctx: BaseAudioContext, pl: PluginInstance, h: FxHelpers): { input: GainNode; output: GainNode } {
-  const { val, live } = h;
+  // Live edits update this map so callbacks that combine several knobs read the newest values.
+  const current = new Map<string, number>();
+  const val = (id: string, fallback: number) => current.get(id) ?? h.val(id, fallback);
+  const live = (id: string, fn: (v: number, t: number) => void) => h.live(id, (v, t) => { current.set(id, v); fn(v, t); });
   const input = ctx.createGain();
   const output = ctx.createGain();
   const wet = ctx.createGain();
@@ -140,6 +231,9 @@ export function buildCreativeFx(ctx: BaseAudioContext, pl: PluginInstance, h: Fx
   };
   const outLevel = (node: GainNode, fallback = 0) => { node.gain.value = db(val("output", fallback)); live("output", (v, t) => glide(node.gain, db(v), t)); };
   const start = (...o: (OscillatorNode | AudioBufferSourceNode)[]) => o.forEach(x => x.start(ctx.currentTime + 0.005));
+  const put = (prm: AudioParam, v: number, t?: number) => { if (t === undefined) prm.value = v; else glide(prm, v, t); };
+  const bq = (type: BiquadFilterType, freq: number, q?: number) => { const b = ctx.createBiquadFilter(); b.type = type; b.frequency.value = freq; if (q !== undefined) b.Q.value = q; return b; };
+  const chain = (...nodes: (AudioNode | AudioParam)[]) => { for (let i = 0; i < nodes.length - 1; i++) (nodes[i] as AudioNode).connect(nodes[i + 1] as never); };
 
   switch (pl.kind) {
     case "modulator": {
@@ -414,6 +508,264 @@ export function buildCreativeFx(ctx: BaseAudioContext, pl: PluginInstance, h: Fx
       live("drive", (v, t) => glide(pre.gain, 1 + v * 12, t));
       live("tone", (v, t) => glide(tone.frequency, v, t));
       mix(1);
+      break;
+    }
+    case "leadamp": {
+      const chan = clamp(Math.round(val("channel", 1)), 0, 2);
+      const cab = LEAD_CABS[clamp(Math.round(val("cabinet", 2)), 0, 2)]!;
+      const hp = bq("highpass", 90);
+      const boostEq = bq("peaking", 720, 0.9);
+      const s1 = ctx.createWaveShaper(); s1.oversample = "4x";
+      const couple = bq("highpass", chan === 2 ? 180 : 120);
+      const s2 = ctx.createWaveShaper(); s2.oversample = "4x";
+      const trim = ctx.createGain();
+      const setGain = () => {
+        const g = val("gain", 0.5), b = val("boost", 0);
+        const k1 = 1 + g * [2, 10, 30][chan]! + b * 6, k2 = 1 + g * [0.5, 3, 8][chan]!;
+        s1.curve = curve(x => x >= 0 ? softClip(x, k1 * 1.15) : softClip(x, k1 * 0.85) * 0.92);
+        s2.curve = curve(x => softClip(x, k2));
+        trim.gain.value = [1, 0.75, 0.6][chan]!;
+      };
+      setGain();
+      boostEq.gain.value = val("boost", 0) * 9;
+      const bass = bq("lowshelf", 100), mid = bq("peaking", 650, 0.7), treble = bq("highshelf", 3000);
+      for (const [id, b] of [["bass", bass], ["mid", mid], ["treble", treble]] as const) { b.gain.value = val(id, 0); live(id, (v, t) => glide(b.gain, v, t)); }
+      const power = ctx.createWaveShaper(); power.oversample = "2x";
+      const setMaster = (m: number) => { power.curve = curve(x => softClip(x, 1 + m * 5)); };
+      setMaster(val("master", 0.4));
+      const presence = bq("highshelf", 4500); presence.gain.value = val("presence", 0);
+      const cabHp = bq("highpass", cab[0]), cabLp = bq("lowpass", cab[1]), cabLp2 = bq("lowpass", cab[1] * 1.3), cabRes = bq("peaking", cab[2], 2); cabRes.gain.value = cab[3];
+      const cone = bq("peaking", 2500, 1.2); cone.gain.value = 2;
+      const mic = bq("highshelf", 3500); mic.gain.value = 3 - val("mic", 0.3) * 11;
+      const post = ctx.createGain(); outLevel(post, -8);
+      chain(input, hp, boostEq, s1, couple, s2, trim, bass, mid, treble, power, presence, cabHp, cabLp, cabLp2, cabRes, cone, mic, post, wet);
+      wet.gain.value = 1; dry.gain.value = 0;
+      live("gain", () => setGain());
+      live("boost", (v, t) => { glide(boostEq.gain, v * 9, t); setGain(); });
+      live("master", v => setMaster(v));
+      live("presence", (v, t) => glide(presence.gain, v, t));
+      live("mic", (v, t) => glide(mic.gain, 3 - v * 11, t));
+      break;
+    }
+    case "bassamp": {
+      const cab = BASS_CABS[clamp(Math.round(val("cabinet", 0)), 0, 2)]!;
+      const comp = ctx.createDynamicsCompressor(); comp.knee.value = 6; comp.attack.value = 0.005; comp.release.value = 0.15;
+      const setComp = (c: number, t?: number) => { put(comp.threshold, -6 - c * 30, t); put(comp.ratio, 1 + c * 9, t); };
+      setComp(val("comp", 0.3));
+      const di = ctx.createGain(), amp = ctx.createGain();
+      const setBlend = (b: number, t?: number) => { put(di.gain, 1 - b, t); put(amp.gain, b, t); };
+      setBlend(val("blend", 0.5));
+      const tube = ctx.createWaveShaper(); tube.oversample = "2x";
+      const setTube = (g: number) => { tube.curve = curve(x => x >= 0 ? softClip(x, 1 + g * 4) : softClip(x, (1 + g * 4) * 0.8)); };
+      setTube(val("gain", 0.3));
+      // Bass overdrive only distorts above 250 Hz so the low end stays solid.
+      const lows = bq("lowpass", 250, -3.0103), highs = bq("highpass", 250, -3.0103);
+      const grit = ctx.createWaveShaper(); grit.oversample = "4x";
+      const setDrive = (d: number) => { grit.curve = curve(x => softClip(x, 1 + d * 40)); };
+      setDrive(val("drive", 0));
+      const sum = ctx.createGain();
+      const bass = bq("lowshelf", 60), lomid = bq("peaking", 250, 1), himid = bq("peaking", 1000, 1), treble = bq("highshelf", 3000);
+      for (const [id, b] of [["bass", bass], ["lomid", lomid], ["himid", himid], ["treble", treble]] as const) { b.gain.value = val(id, 0); live(id, (v, t) => glide(b.gain, v, t)); }
+      const contour = bq("peaking", 500, 0.6); contour.gain.value = -val("contour", 0) * 12;
+      const cabHp = bq("highpass", cab[0]), cabLp = bq("lowpass", cab[1]), cabRes = bq("peaking", cab[2], 1.8); cabRes.gain.value = cab[3];
+      const post = ctx.createGain(); outLevel(post, -6);
+      input.connect(comp); comp.connect(di); di.connect(post);
+      comp.connect(tube); tube.connect(lows); tube.connect(highs); lows.connect(sum); highs.connect(grit); grit.connect(sum);
+      chain(sum, bass, lomid, himid, treble, contour, cabHp, cabLp, cabRes, amp, post, wet);
+      wet.gain.value = 1; dry.gain.value = 0;
+      live("comp", (v, t) => setComp(v, t)); live("blend", (v, t) => setBlend(v, t));
+      live("gain", v => setTube(v)); live("drive", v => setDrive(v));
+      live("contour", (v, t) => glide(contour.gain, -v * 12, t));
+      break;
+    }
+    case "overdrive": {
+      const clipped = ctx.createGain(); clipped.gain.value = 0.7;
+      const hp = bq("highpass", 720);
+      const clip = ctx.createWaveShaper(); clip.oversample = "4x";
+      const setDrive = (d: number) => { clip.curve = curve(x => softClip(x, 1 + d * 60)); };
+      setDrive(val("drive", 0.5));
+      const sum = ctx.createGain(); sum.gain.value = 1 / 1.7;
+      const fixed = bq("lowpass", 5600);
+      const tone = bq("lowpass", 600 * Math.pow(10, val("tone", 0.5) * 1.1));
+      input.connect(sum); chain(input, hp, clip, clipped, sum); chain(sum, fixed, tone, wet);
+      outLevel(output, -6);
+      wet.gain.value = 1; dry.gain.value = 0;
+      live("drive", v => setDrive(v));
+      live("tone", (v, t) => glide(tone.frequency, 600 * Math.pow(10, v * 1.1), t));
+      break;
+    }
+    case "fuzz": {
+      const hp = bq("highpass", 120);
+      const stage = ctx.createWaveShaper(); stage.oversample = "4x";
+      const shape = () => { const s = val("sustain", 0.6), b = val("bias", 0); stage.curve = curve(x => fuzzTransfer(x, s, b)); };
+      shape();
+      const lo = bq("lowpass", 1000, -3.0103), hi = bq("highpass", 1000, -3.0103);
+      const loG = ctx.createGain(), hiG = ctx.createGain();
+      const setTone = (v: number, t?: number) => { put(loG.gain, 1 - v, t); put(hiG.gain, v, t); };
+      setTone(val("tone", 0.5));
+      chain(input, hp, stage); stage.connect(lo); stage.connect(hi); lo.connect(loG); hi.connect(hiG); loG.connect(wet); hiG.connect(wet);
+      outLevel(output, -10);
+      wet.gain.value = 1.4; dry.gain.value = 0;
+      live("sustain", () => shape()); live("bias", () => shape());
+      live("tone", (v, t) => setTone(v, t));
+      break;
+    }
+    case "wah": {
+      const mode = clamp(Math.round(val("mode", 0)), 0, 2);
+      const f = bq("bandpass", 350, val("resonance", 5));
+      const base = (pedal: number) => pedal * WAH_RANGE * (mode === 2 ? 0.4 : 1);
+      f.detune.value = base(val("pedal", 0.5));
+      const makeup = ctx.createGain(); makeup.gain.value = 2.4;
+      chain(input, f, makeup, wet);
+      if (mode === 1) {
+        const lfo = ctx.createOscillator(); lfo.frequency.value = val("rate", 1.5);
+        const depth = ctx.createGain(); depth.gain.value = WAH_RANGE / 2;
+        lfo.connect(depth); depth.connect(f.detune);
+        live("rate", (v, t) => glide(lfo.frequency, v, t));
+        start(lfo);
+      } else if (mode === 2) {
+        // Envelope follower: rectify, smooth, then open the filter as you play harder.
+        const rect = ctx.createWaveShaper(); rect.curve = curve(x => Math.abs(x));
+        const smooth = bq("lowpass", 8);
+        const env = ctx.createGain(); env.gain.value = val("sense", 0.5) * WAH_RANGE * 4;
+        chain(input, rect, smooth, env, f.detune);
+        live("sense", (v, t) => glide(env.gain, v * WAH_RANGE * 4, t));
+      }
+      live("pedal", (v, t) => glide(f.detune, base(v), t));
+      live("resonance", (v, t) => glide(f.Q, v, t));
+      mix(1);
+      break;
+    }
+    case "octaver": {
+      const track = bq("lowpass", 900);
+      const sub1 = ctx.createGain(), sub2 = ctx.createGain(), up = ctx.createGain(), direct = ctx.createGain();
+      input.connect(track);
+      shifter(ctx, track, sub1, -12); shifter(ctx, track, sub2, -24);
+      const upHp = bq("highpass", 250); const rect = ctx.createWaveShaper(); rect.curve = curve(x => Math.abs(x) * 2); rect.oversample = "2x";
+      const dc = bq("highpass", 60);
+      chain(input, upHp, rect, dc, up);
+      input.connect(direct);
+      const tone = bq("lowpass", val("tone", 4000));
+      for (const [id, g, fb] of [["sub1", sub1, 0.7], ["sub2", sub2, 0], ["up", up, 0], ["dry", direct, 0.8]] as const) {
+        g.gain.value = val(id, fb); g.connect(tone); live(id, (v, t) => glide(g.gain, v, t));
+      }
+      tone.connect(wet); wet.gain.value = 1; dry.gain.value = 0;
+      live("tone", (v, t) => glide(tone.frequency, v, t));
+      break;
+    }
+    case "analogdelay": {
+      const d = ctx.createDelay(1.2); d.delayTime.value = val("time", 300) / 1000;
+      const lp = bq("lowpass", val("tone", 2800)), hp = bq("highpass", 120);
+      const sat = ctx.createWaveShaper(); sat.curve = curve(x => softClip(x, 1.5));
+      const fb = ctx.createGain(); fb.gain.value = val("repeats", 0.4);
+      const lfo = ctx.createOscillator(); lfo.type = "triangle"; lfo.frequency.value = 0.7;
+      const modAmt = ctx.createGain(); modAmt.gain.value = val("mod", 0.2) * 0.002;
+      lfo.connect(modAmt); modAmt.connect(d.delayTime);
+      chain(input, d, lp, hp, sat, wet); sat.connect(fb); fb.connect(d);
+      live("time", (v, t) => d.delayTime.setTargetAtTime(v / 1000, t, 0.08));
+      live("repeats", (v, t) => glide(fb.gain, v, t));
+      live("mod", (v, t) => glide(modAmt.gain, v * 0.002, t));
+      live("tone", (v, t) => glide(lp.frequency, v, t));
+      mix(0.35); start(lfo);
+      break;
+    }
+    case "springverb": {
+      const hp = bq("highpass", 200);
+      const dwell = ctx.createWaveShaper(); dwell.oversample = "2x";
+      const setDwell = (v: number) => { dwell.curve = curve(x => softClip(x, 1 + v * 4)); };
+      setDwell(val("dwell", 0.4));
+      const tank = ctx.createConvolver(); tank.buffer = springImpulse(ctx, val("decay", 2));
+      const tone = bq("lowpass", val("tone", 4000));
+      chain(input, hp, dwell, tank, tone, wet);
+      live("dwell", v => setDwell(v));
+      live("tone", (v, t) => glide(tone.frequency, v, t));
+      mix(0.3);
+      break;
+    }
+    case "pedalcomp": {
+      const comp = ctx.createDynamicsCompressor(); comp.knee.value = 8;
+      const makeup = ctx.createGain();
+      const apply = (t?: number) => {
+        const s = val("sustain", 0.5), a = val("attack", 0.3);
+        put(comp.threshold, -12 - s * 38, t); put(comp.ratio, 3 + s * 17, t);
+        put(comp.attack, 0.001 + a * 0.03, t); put(comp.release, 0.18 + s * 0.3, t);
+        put(makeup.gain, db(s * 15) / 4, t);
+      };
+      apply();
+      // The pick attack still snaps through, but a soft ceiling stops it jumping far past full scale.
+      const ceiling = ctx.createWaveShaper(); ceiling.curve = curve(x => 1.1 * Math.tanh(x * 4 / 1.1)); ceiling.oversample = "2x";
+      chain(input, comp, makeup, ceiling, wet);
+      outLevel(output, 0);
+      live("sustain", (_v, t) => apply(t)); live("attack", (_v, t) => apply(t));
+      mix(1);
+      break;
+    }
+    case "boost": {
+      const ls = bq("lowshelf", 150), hs = bq("highshelf", 2200);
+      const setTreble = (v: number, t?: number) => { put(hs.gain, v * 12, t); put(ls.gain, -v * 8, t); };
+      setTreble(val("treble", 0));
+      // Headroom: clean at normal levels, rounds off only very hot peaks like a real boost.
+      const pre = ctx.createGain(); pre.gain.value = db(val("boost", 8)) / 8;
+      const head = ctx.createWaveShaper(); head.curve = curve(x => 2 * Math.tanh(x * 4)); head.oversample = "2x";
+      chain(input, ls, hs, pre, head, wet);
+      outLevel(output, 0);
+      wet.gain.value = 1; dry.gain.value = 0;
+      live("treble", (v, t) => setTreble(v, t));
+      live("boost", (v, t) => glide(pre.gain, db(v) / 8, t));
+      break;
+    }
+    case "univibe": {
+      const vibrato = val("mode", 0) >= 0.5;
+      const stages = [180, 420, 950, 2100].map(fr => bq("allpass", fr, 0.6));
+      // Lamp-and-photocell LFO: brightens quickly, fades slowly.
+      const lamp = ctx.createOscillator(); lamp.setPeriodicWave(periodicLfo(ctx, ph => Math.pow((1 - Math.cos(2 * Math.PI * ph)) / 2, 1.8) * 2 - 1));
+      lamp.frequency.value = val("speed", 2);
+      const amt = ctx.createGain(); amt.gain.value = val("intensity", 0.6) * 1500;
+      lamp.connect(amt); stages.forEach(s => amt.connect(s.detune));
+      chain(input, ...stages, wet);
+      if (vibrato) { wet.gain.value = 1; dry.gain.value = 0; } else { wet.gain.value = 0.6; dry.gain.value = 0.6; }
+      outLevel(output, 0);
+      live("speed", (v, t) => glide(lamp.frequency, v, t));
+      live("intensity", (v, t) => glide(amt.gain, v * 1500, t));
+      start(lamp);
+      break;
+    }
+    case "rotary": {
+      const drive = ctx.createWaveShaper(); drive.oversample = "2x";
+      const setDrive = (v: number) => { drive.curve = curve(x => softClip(x, 1 + v * 6)); };
+      setDrive(val("drive", 0.2));
+      const lo = bq("lowpass", 800, -3.0103), hi = bq("highpass", 800, -3.0103);
+      const hornLfo = ctx.createOscillator(), drumLfo = ctx.createOscillator();
+      const rotor = (src: BiquadFilterNode, lfo: OscillatorNode, am: number, dop: number) => {
+        const d = ctx.createDelay(0.05); d.delayTime.value = 0.004;
+        const dAmt = ctx.createGain(); dAmt.gain.value = dop; lfo.connect(dAmt); dAmt.connect(d.delayTime);
+        const vca = ctx.createGain(); vca.gain.value = 1 - am;
+        const aAmt = ctx.createGain(); aAmt.gain.value = am; lfo.connect(aAmt); aAmt.connect(vca.gain);
+        const pan = ctx.createStereoPanner(); const pAmt = ctx.createGain(); lfo.connect(pAmt); pAmt.connect(pan.pan);
+        const level = ctx.createGain();
+        chain(src, d, vca, pan, level, wet);
+        return { pAmt, level };
+      };
+      const horn = rotor(hi, hornLfo, 0.25, 0.0009), drum = rotor(lo, drumLfo, 0.2, 0.0004);
+      const setSpread = (s: number, t?: number) => { put(horn.pAmt.gain, s, t); put(drum.pAmt.gain, s * 0.5, t); };
+      const setBalance = (b: number, t?: number) => { put(horn.level.gain, Math.min(1, b * 2), t); put(drum.level.gain, Math.min(1, (1 - b) * 2), t); };
+      setSpread(val("spread", 0.8)); setBalance(val("balance", 0.5));
+      // Horn and drum speed up and slow down at their own rates, like a real cabinet.
+      const setSpeed = (fast: boolean, t?: number) => {
+        const [hf, df] = fast ? [6.8, 5.9] : [0.83, 0.7];
+        const ramp = val("accel", 0.8) / 3;
+        if (t === undefined) { hornLfo.frequency.value = hf; drumLfo.frequency.value = df; }
+        else { hornLfo.frequency.setTargetAtTime(hf, t, ramp); drumLfo.frequency.setTargetAtTime(df, t, ramp * 1.6); }
+      };
+      setSpeed(val("speed", 0) >= 0.5);
+      input.connect(drive); drive.connect(lo); drive.connect(hi);
+      wet.gain.value = 0.6; dry.gain.value = 0;
+      outLevel(output, 0);
+      live("speed", (v, t) => setSpeed(v >= 0.5, t));
+      live("accel", () => undefined);
+      live("drive", v => setDrive(v));
+      live("spread", (v, t) => setSpread(v, t)); live("balance", (v, t) => setBalance(v, t));
+      start(hornLfo, drumLfo);
       break;
     }
   }

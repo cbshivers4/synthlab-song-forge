@@ -6,6 +6,7 @@ import { Knob } from "./Knob";
 import { Button } from "@/components/ui/button";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import type { PluginInstance, PluginKind } from "@/lib/synclab/types";
+import { BASS_CABS, LEAD_CABS, fuzzTransfer, overdriveTransfer, wahFrequency } from "@/lib/synclab/creative-fx";
 
 /**
  * Visual display for an effect: draws what the processor is actually doing
@@ -263,6 +264,71 @@ const SHAPES: Partial<Record<PluginKind, Shape>> = {
     curve: (g) => sweep((t) => 0.18 + (((Math.floor(t * 12) + Math.round(g("root"))) % 12) / 12) * 0.65),
     marks: (g) => [g("root") / 11],
     readout: (g) => `ROOT ${Math.round(g("root"))} · SCALE ${Math.round(g("scale")) + 1} · CHORD ${Math.round(g("chord")) + 1} · INV ${Math.round(g("inversion"))}`,
+  },
+  leadamp: {
+    title: "TONE STACK + CABINET",
+    xLabel: "20 Hz → 20 kHz",
+    yLabel: "±24 dB",
+    xParam: "mid",
+    yParam: "treble",
+    curve: (g) => {
+      const cab = LEAD_CABS[Math.max(0, Math.min(2, Math.round(g("cabinet"))))]!;
+      return freqAxis((f) => shelf(f, 100, g("bass"), false) + peak(f, 650, g("mid"), 0.7) + shelf(f, 3000, g("treble"), true) + shelf(f, 4500, g("presence"), true)
+        + shelf(f, 3500, 3 - g("mic") * 11, true) + peak(f, cab[2], cab[3], 2) + passFilter(f, cab[1], 1, 0) + passFilter(f, cab[0], 1, 1));
+    },
+    readout: (g) => `${["CLEAN", "CRUNCH", "LEAD"][Math.round(g("channel"))] ?? "CRUNCH"} · GAIN ${(g("gain") * 100).toFixed(0)}% · CAB ${["1x12", "2x12", "4x12"][Math.round(g("cabinet"))] ?? "4x12"} · MASTER ${(g("master") * 100).toFixed(0)}%`,
+  },
+  bassamp: {
+    title: "BASS TONE + CABINET",
+    xLabel: "20 Hz → 20 kHz",
+    yLabel: "±24 dB",
+    xParam: "lomid",
+    yParam: "bass",
+    curve: (g) => {
+      const cab = BASS_CABS[Math.max(0, Math.min(2, Math.round(g("cabinet"))))]!;
+      const amp = (f: number) => shelf(f, 60, g("bass"), false) + peak(f, 250, g("lomid"), 1) + peak(f, 1000, g("himid"), 1) + shelf(f, 3000, g("treble"), true)
+        + peak(f, 500, -g("contour") * 12, 0.6) + peak(f, cab[2], cab[3], 1.8) + passFilter(f, cab[1], 1, 0) + passFilter(f, cab[0], 1, 1);
+      const b = g("blend");
+      return freqAxis((f) => 20 * Math.log10(Math.max(1e-4, (1 - b) + b * Math.pow(10, amp(f) / 20))));
+    },
+    readout: (g) => `COMP ${(g("comp") * 100).toFixed(0)}% · DRIVE ${(g("drive") * 100).toFixed(0)}% · CAB ${["8x10", "4x10", "1x15"][Math.round(g("cabinet"))] ?? "8x10"} · AMP ${(g("blend") * 100).toFixed(0)}%`,
+  },
+  overdrive: {
+    title: "CLIPPING CURVE",
+    xLabel: "input",
+    yLabel: "output",
+    xParam: "drive",
+    yParam: "output",
+    curve: (g) => sweep((t) => 0.5 + overdriveTransfer((t - 0.5) * 2, g("drive")) * 0.46),
+    readout: (g) => `DRIVE ${(g("drive") * 100).toFixed(0)}% · TONE ${(g("tone") * 100).toFixed(0)}% · LEVEL ${g("output").toFixed(1)} dB`,
+  },
+  fuzz: {
+    title: "FUZZ TRANSFER",
+    xLabel: "input",
+    yLabel: "output",
+    xParam: "sustain",
+    yParam: "bias",
+    curve: (g) => sweep((t) => 0.5 + fuzzTransfer((t - 0.5) * 2, g("sustain"), g("bias")) * 0.46),
+    readout: (g) => `SUSTAIN ${(g("sustain") * 100).toFixed(0)}% · TONE ${(g("tone") * 100).toFixed(0)}% · GATE ${(g("bias") * 100).toFixed(0)}%`,
+  },
+  wah: {
+    title: "WAH SWEEP",
+    xLabel: "20 Hz → 20 kHz",
+    yLabel: "±24 dB",
+    xParam: "pedal",
+    yParam: "resonance",
+    curve: (g) => freqAxis((f) => peak(f, wahFrequency(g("pedal")), 4 + g("resonance"), Math.max(0.6, g("resonance") / 4)) - 8),
+    marks: (g) => [logX(wahFrequency(g("pedal")))],
+    readout: (g) => `${["PEDAL", "AUTO", "ENVELOPE"][Math.round(g("mode"))] ?? "PEDAL"} · ${Math.round(wahFrequency(g("pedal")))} Hz · Q ${g("resonance").toFixed(1)}`,
+  },
+  boost: {
+    title: "BOOST RESPONSE",
+    xLabel: "20 Hz → 20 kHz",
+    yLabel: "±24 dB",
+    xParam: "treble",
+    yParam: "boost",
+    curve: (g) => freqAxis((f) => g("boost") - 6 + shelf(f, 150, -g("treble") * 8, false) + shelf(f, 2200, g("treble") * 12, true)),
+    readout: (g) => `BOOST +${g("boost").toFixed(1)} dB · TREBLE ${(g("treble") * 100).toFixed(0)}% · LEVEL ${g("output").toFixed(1)} dB`,
   },
   transient: {
     title: "TRANSIENT ENVELOPE",

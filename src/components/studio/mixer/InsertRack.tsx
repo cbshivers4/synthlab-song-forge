@@ -1,4 +1,4 @@
-import { availableEffects, effectBrand, groupByCategory } from "@/lib/synclab/effect-catalog";
+import { availableEffects, effectBrand, effectForm, groupByCategory } from "@/lib/synclab/effect-catalog";
 import { useState } from "react";
 import { Power, Settings2, Trash2, Waves } from "lucide-react";
 import { Knob } from "../Knob";
@@ -65,7 +65,7 @@ export function InsertRack({
               </button>
             </div>
             <Dialog open={open === p.id} onOpenChange={(o) => setOpen(o ? p.id : null)}>
-              <DialogContent data-fx-family={effectFamily(p)} data-fx-skin={p.kind} data-fx-variant={p.name.toLowerCase().includes("echo") ? "echo" : undefined} className="fx-editor max-h-[86vh] w-[min(97vw,58rem)] max-w-none overflow-y-auto">
+              <DialogContent data-fx-family={effectFamily(p)} data-fx-skin={p.kind} data-fx-form={effectForm(p.kind)} data-bypassed={p.bypass} data-fx-variant={p.name.toLowerCase().includes("echo") ? "echo" : undefined} className="fx-editor max-h-[86vh] w-[min(97vw,58rem)] max-w-none overflow-y-auto">
                 <DialogHeader className="fx-editor-header">
                   <DialogTitle className="flex flex-wrap items-center gap-2 font-mono uppercase tracking-wider">
                     <BypassButton name={p.name} bypassed={p.bypass} onToggle={() => onBypass(p.id)} />
@@ -78,7 +78,7 @@ export function InsertRack({
                 ) : p.kind === "vocoder" && isTrack ? (
                   <VocoderPanel trackId={midiId} plugin={p} />
                 ) : (
-                <EffectWorkbench plugin={p} midiId={midiId} midiPrefix={midiPrefix} onParam={(id, value) => onParam(p.id, id, value)} />
+                <EffectWorkbench plugin={p} midiId={midiId} midiPrefix={midiPrefix} onBypass={() => onBypass(p.id)} onParam={(id, value) => onParam(p.id, id, value)} />
                 )}
               </DialogContent>
             </Dialog>

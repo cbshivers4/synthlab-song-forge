@@ -22,7 +22,7 @@ Live sound edits use engine-owned, expiring voice handles through syncSoundContr
 - Latency: heardStepPos subtracts outputDelay(ctx); mic takes use alignedTake with the device-local input offset (latency.ts); live notes call syncMixIfChanged so per-note work stays minimal.
 
 Interface takes recorded on one side only (left-only or right-only stereo) are centred when decoded into sampleBuffers via centerOneSided, so samples/clips play from both speakers; real stereo is untouched.
-Creative hardware effects (creative-fx.ts) each build their own real signal path between one input and one output node (insert size 2), with their own params, 10 recipes and CSS skin; stereo matrices must upmix mono before splitting.
+Creative hardware effects (creative-fx.ts) each build their own real signal path between one input and one output node (insert size 2), with their own params, 10 recipes and CSS skin; stereo matrices must upmix mono before splitting. Amps and stompbox pedals are creative kinds too: PEDAL_KINDS/AMP_KINDS drive effectForm (data-fx-form enclosure; pedal footswitch reuses plugin bypass), and live callbacks read the newest sibling knob values through buildCreativeFx's local value map.
 
 Scheduler: the frame loop calls reachStep for every heard step in order (never only the latest), so punch markers, automation writes and recorded mute presses survive stalls.
 Count-in clicks are scheduled on the AudioContext clock just ahead of time (cancellable); the visible countdown follows the audio clock, not a beat-length interval.

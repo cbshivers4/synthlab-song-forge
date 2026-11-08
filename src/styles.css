@@ -3780,3 +3780,50 @@ html.phone-console-active [role="option"] { min-height: 44px; font-size: 15px; }
 .track-settings-scroll::-webkit-scrollbar { display: none; }
 .track-settings-scroll-wrap:has(.timeline-vscroll:not([hidden])) > .track-settings-scroll { margin-right: 30px; }
 .track-settings-scroll-wrap > .timeline-vscroll { width: 24px; border-radius: 6px; }
+
+/* ============ Amps & Pedals: own colours, stompbox enclosures and amp heads ============ */
+[data-fx-skin="leadamp"] { --fx-hue: 40; } [data-fx-skin="bassamp"] { --fx-hue: 215; } [data-fx-skin="overdrive"] { --fx-hue: 145; }
+[data-fx-skin="fuzz"] { --fx-hue: 70; } [data-fx-skin="wah"] { --fx-hue: 10; } [data-fx-skin="octaver"] { --fx-hue: 265; }
+[data-fx-skin="analogdelay"] { --fx-hue: 190; } [data-fx-skin="springverb"] { --fx-hue: 232; } [data-fx-skin="pedalcomp"] { --fx-hue: 105; }
+[data-fx-skin="boost"] { --fx-hue: 28; } [data-fx-skin="univibe"] { --fx-hue: 292; } [data-fx-skin="rotary"] { --fx-hue: 52; }
+/* Stompbox: thick rounded die-cast enclosure with a hammered finish in the pedal's colour. */
+:is(.fx-face, .device-module, .fx-editor, [role="dialog"])[data-fx-skin][data-fx-skin][data-fx-form="pedal"] {
+  background:
+    radial-gradient(90% 60% at 28% 12%, oklch(1 0 0 / 0.16), transparent 55%),
+    repeating-radial-gradient(circle at 40% 40%, oklch(1 0 0 / 0.035) 0 2px, transparent 2px 6px),
+    linear-gradient(165deg, oklch(0.44 0.09 var(--fx-hue)), oklch(0.27 0.06 var(--fx-hue))) !important;
+  border: 3px solid oklch(0.16 0.02 var(--fx-hue)) !important;
+  border-top: 3px solid oklch(0.16 0.02 var(--fx-hue)) !important;
+  border-radius: 24px;
+  box-shadow: inset 0 2px 0 oklch(1 0 0 / 0.22), inset 0 -5px 0 oklch(0 0 0 / 0.35), 0 16px 30px oklch(0 0 0 / 0.55);
+}
+[data-fx-form="pedal"] .fx-workbench-footer { border-radius: 0 0 16px 16px; }
+.fx-pedal-switch { grid-column: 1 / -1; display: flex; align-items: center; justify-content: center; gap: 16px; padding: 10px 8px 6px; }
+.fx-pedal-led { width: 14px; height: 14px; border-radius: 9999px; background: oklch(0.32 0.06 25); box-shadow: inset 0 1px 2px oklch(0 0 0 / 0.6); }
+.fx-pedal-led[data-on="true"] { background: oklch(0.68 0.24 25); box-shadow: 0 0 10px oklch(0.68 0.24 25), inset 0 -1px 2px oklch(0 0 0 / 0.3); }
+.fx-pedal-state { min-width: 34px; font-family: var(--font-mono, monospace); font-size: 11px; letter-spacing: 0.14em; color: var(--foreground); }
+[data-fx-form="pedal"] .fx-workbench .fx-footswitch.fx-footswitch.fx-footswitch {
+  width: 68px; height: 68px; border-radius: 9999px !important; cursor: pointer;
+  background: radial-gradient(circle at 36% 30%, var(--hardware-silver-light), var(--hardware-silver) 45%, var(--hardware-silver-dark)) !important;
+  border: 5px solid var(--hardware-black) !important;
+  box-shadow: 0 0 0 3px var(--hardware-silver-dark), 0 6px 10px oklch(0 0 0 / 0.55), inset 0 -3px 4px oklch(0 0 0 / 0.3) !important;
+  transition: transform 80ms ease;
+}
+[data-fx-form="pedal"] .fx-workbench .fx-footswitch.fx-footswitch.fx-footswitch:active { transform: scale(0.94); }
+/* Amp head: textured black tolex, gold piping and a grille-cloth strip. */
+:is(.fx-face, .device-module, .fx-editor, [role="dialog"])[data-fx-skin][data-fx-skin][data-fx-form="amp"] {
+  background:
+    repeating-linear-gradient(45deg, oklch(0.16 0.004 var(--fx-hue)) 0 2px, oklch(0.2 0.006 var(--fx-hue)) 2px 4px),
+    oklch(0.18 0.005 var(--fx-hue)) !important;
+  border: 3px solid oklch(0.72 0.11 85) !important;
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 2px oklch(0 0 0 / 0.6), 0 14px 28px oklch(0 0 0 / 0.55);
+}
+[data-fx-form="amp"] .fx-controls-bank { border-top: 3px solid oklch(0.72 0.11 85); border-radius: 10px; }
+[data-fx-form="amp"] .fx-workbench::after {
+  content: ""; grid-column: 1 / -1; height: 38px; border-radius: 8px; border: 2px solid oklch(0.1 0.004 var(--fx-hue));
+  background:
+    repeating-linear-gradient(45deg, oklch(0.32 0.03 var(--fx-hue) / 0.9) 0 1px, transparent 1px 4px),
+    repeating-linear-gradient(-45deg, oklch(0.32 0.03 var(--fx-hue) / 0.9) 0 1px, transparent 1px 4px),
+    oklch(0.14 0.01 var(--fx-hue));
+}
