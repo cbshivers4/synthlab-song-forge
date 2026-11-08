@@ -49,13 +49,22 @@ export function keysPatch(id: KeysSoundId): SynthPatch {
   p.voiceMode = "poly";
   p.glide = 0;
   if (!s.sustained && s.id !== "synth") p.unison = { ...p.unison, voices: 1, detune: 0, width: 0 };
-  p.fx = { ...p.fx, distortion: s.id === "clav" ? Math.min(p.fx.distortion, 0.12) : 0, saturation: 0, bitcrush: 0, delay: Math.min(p.fx.delay, 0.08) };
+  p.fx = { ...p.fx, distortion: s.id === "clav" ? Math.min(p.fx.distortion, 0.12) : 0, saturation: 0, bitcrush: 0, flanger: 0, phaser: 0, delay: 0 };
   // Headroom: the session player stacks chords, bass and runs (up to ~10 keys at once), so each
   // key gets a fixed, quiet level instead of a lead-synth level. No drive, and a clean voice path
   // (no saturation stage) except the clavinet's small bite, so full chords never fold over or clip.
+  // No per-key echo/flanger/phaser either: every key would build its own effect nodes, and a busy
+  // style plays hundreds of keys a minute (that overload is what made dense styles crackle or drop
+  // out). Space comes from the shared chorus/reverb sends and the channel's FX rack instead.
   p.drive = 0;
   p.clean = s.id !== "clav";
+  p.lightVoices = true;
   p.resonance = Math.min(p.resonance, 2);
+  // Gentler velocity response, so soft comping stays audible while accents still lift.
+  p.velocitySens = 0.6;
+  // Pads and strings speak quickly enough to be heard on a chord change, and their tails don't
+  // pile up dozens of voices.
+  if (s.sustained) p.amp = { ...p.amp, attack: Math.min(p.amp.attack, 0.25), release: Math.min(p.amp.release, 1.2) };
   const on = p.oscillators.filter((o) => o.on);
   const sum = on.reduce((t, o) => t + o.level, 0) || 1;
   const scale = (KEYS_VOICE_LEVEL[s.id] ?? 0.3) / sum;
@@ -64,11 +73,11 @@ export function keysPatch(id: KeysSoundId): SynthPatch {
 }
 
 /** Bump when keysPatch's levels change, so Live Keys tracks made earlier pick up the new sound. */
-export const KEYS_PATCH_REV = 2;
+export const KEYS_PATCH_REV = 4;
 
 /** Summed oscillator level per key for each sound (bright/sustained sounds sit lower). */
 const KEYS_VOICE_LEVEL: Partial<Record<KeysSoundId, number>> = {
-  grand: 0.3, rhodes: 0.32, wurli: 0.3, organ: 0.3, clav: 0.24, deep: 0.3, strings: 0.3, pad: 0.28, synth: 0.26,
+  grand: 0.42, rhodes: 0.42, wurli: 0.42, organ: 0.4, clav: 0.16, deep: 0.42, strings: 0.45, pad: 0.45, synth: 0.36,
 };
 
 export interface KeysStyle {

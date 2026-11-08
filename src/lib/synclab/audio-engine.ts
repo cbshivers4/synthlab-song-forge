@@ -2571,6 +2571,24 @@ export class SyncLabEngine {
     this.pitchMod(trackId).depth.gain.setTargetAtTime(clamp(amount, 0, 1) * 60, when ?? ctx.currentTime, 0.02);
   }
 
+  /** One looping white-noise buffer per context, shared by every voice (no per-note buffer filling on the main thread). */
+  private noiseBuffers = new WeakMap<BaseAudioContext, AudioBuffer>();
+  private noiseSource(ctx: BaseAudioContext, t0: number, life: number): AudioBufferSourceNode {
+    let buf = this.noiseBuffers.get(ctx);
+    if (!buf) {
+      buf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      this.noiseBuffers.set(ctx, buf);
+    }
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.loop = true;
+    src.start(t0, Math.random() * 1.9);
+    src.stop(t0 + life);
+    return src;
+  }
+
   playNote(trackId: string, patch: SynthPatch, midi: number, duration: number, velocity = 1, when?: number) {
     const ctx = this.init();
     const t0 = when ?? ctx.currentTime;
@@ -2691,8 +2709,11 @@ export class SyncLabEngine {
       shaper.connect(crusher);
       tail = crusher;
     }
+    // Flanger, phaser and echo are parallel wet paths: a voice only builds the ones its patch uses
+    // (amount > 0), so dense chords don't run hundreds of silent delay/allpass nodes. Raising one
+    // from zero applies from the next note; held notes keep live control of paths they have.
     const flanger = patch.fx.flanger ?? 0;
-    {
+    if (flanger > 0) {
       const d = ctx.createDelay(0.02);
       d.delayTime.value = 0.004;
       const lfo = ctx.createOscillator();
@@ -2711,7 +2732,7 @@ export class SyncLabEngine {
       wet.connect(voiceOut);
     }
     const phaser = patch.fx.phaser ?? 0;
-    {
+    if (phaser > 0) {
       let node: AudioNode = tail;
       for (let i = 0; i < 4; i++) {
         const ap = ctx.createBiquadFilter();
@@ -2730,7 +2751,7 @@ export class SyncLabEngine {
 
     /** Per-voice echo nodes, released once the echo has died away. */
     const echoNodes: AudioNode[] = [];
-    {
+    if (patch.fx.delay > 0) {
       const delay = ctx.createDelay(1.5);
       echoNodes.push(delay);
       delay.delayTime.value = 0.28;
@@ -2774,8 +2795,13 @@ export class SyncLabEngine {
     const glide = patch.glide ?? 0;
     const doGlide = glide > 0 && prevMidi !== undefined && (patch.glideMode !== "legato" || mode !== "poly");
 
+    const light = patch.lightVoices === true;
+    const fmAny = fixedMod("fmAmount") > 0;
+    const ringCarrier = patch.oscillators.some((x, j) => j > 0 && x.on && x.ring);
     patch.oscillators.forEach((osc, oi) => {
-      // Keep muted oscillators available for live level/on edits.
+      // Keep muted oscillators available for live level/on edits — unless the patch asks for light
+      // voices, where a switched-off oscillator that isn't a ring carrier or FM source is skipped.
+      if (light && !osc.on && !(oi === 0 && ringCarrier) && !((osc.fm ?? 0) > 0 || fmAny)) return;
 
       for (let u = 0; u < voices; u++) {
         const spread = voices === 1 ? 0 : (u / (voices - 1) - 0.5) * 2;
@@ -2787,14 +2813,8 @@ export class SyncLabEngine {
         p.connect(filterIn);
 
         if (osc.wave === "noise") {
-          const len = Math.ceil(ctx.sampleRate * life);
-          const buf = ctx.createBuffer(1, len, ctx.sampleRate);
-          const d = buf.getChannelData(0);
-          for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
-          const src = ctx.createBufferSource();
-          src.buffer = buf;
+          const src = this.noiseSource(ctx, t0, life);
           src.connect(g);
-          src.start(t0);
           nodes.push(src);
           oscControls.push({ index: oi, spread, source: src, gain: g, pan: p });
           oscNodes[oi]!.push(null);
@@ -2873,19 +2893,13 @@ export class SyncLabEngine {
     });
 
     let noiseGain: GainNode | undefined;
-    {
-      const len = Math.ceil(ctx.sampleRate * life);
-      const buf = ctx.createBuffer(1, len, ctx.sampleRate);
-      const d = buf.getChannelData(0);
-      for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
-      const src = ctx.createBufferSource();
-      src.buffer = buf;
+    if (!light || patch.noise > 0 || !nodes.length) {
+      const src = this.noiseSource(ctx, t0, life);
       const g = ctx.createGain();
       g.gain.value = patch.noise * 0.4 * velocity;
       noiseGain = g;
       src.connect(g);
       g.connect(filterIn);
-      src.start(t0);
       nodes.push(src);
     }
 
@@ -2893,6 +2907,7 @@ export class SyncLabEngine {
     const lfoControls: { index: number; source: OscillatorNode; depth: GainNode; destination: string }[] = [];
     const runningMods: { stop: (t: number) => void }[] = [];
     patch.lfos.forEach((lfo, index) => {
+      if (light && !lfo.on) return;
       const o = ctx.createOscillator();
       o.type = lfo.wave;
       o.frequency.value = lfoHz(lfo, this.tempo);

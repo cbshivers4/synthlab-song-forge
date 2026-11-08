@@ -210,6 +210,13 @@ class KeysPlayer {
     }
     if (this.following) { this.stop(); return; }
     const dur = 60 / Math.max(20, this.bpm) / 4;
+    // After a stall (busy page, background tab) skip the steps that are already late instead of
+    // firing them all at once: a pile of late chords lands together as one loud, distorted burst.
+    while (this.nextTime < now - 0.03) {
+      this.lastTime = Math.max(this.lastTime, this.nextTime);
+      this.nextTime += dur;
+      this.nextStep++;
+    }
     while (this.nextTime < now + LOOKAHEAD) {
       if (this.nextTime > this.lastTime + 1e-4) this.play(this.nextStep, this.nextTime, dur, false);
       this.lastTime = Math.max(this.lastTime, this.nextTime);

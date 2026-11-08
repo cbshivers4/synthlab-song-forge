@@ -136,10 +136,14 @@ describe("keys sounds leave headroom for full chords", () => {
     for (const s of KEYS_SOUNDS) {
       const p = keysPatch(s.id);
       const sum = p.oscillators.filter((o) => o.on).reduce((t, o) => t + o.level, 0);
-      expect(sum, s.id).toBeLessThanOrEqual(0.33);
+      expect(sum, s.id).toBeLessThanOrEqual(0.45);
       expect(p.drive ?? 0, s.id).toBe(0);
       expect(p.fx.saturation ?? 0, s.id).toBe(0);
       if (s.id !== "clav") expect(p.clean, s.id).toBe(true);
+      // no per-key echo/flanger/phaser: dense styles would build hundreds of effect nodes and drop out
+      expect(p.fx.delay, s.id).toBe(0);
+      expect(p.fx.flanger ?? 0, s.id).toBe(0);
+      expect(p.fx.phaser ?? 0, s.id).toBe(0);
     }
   });
 });

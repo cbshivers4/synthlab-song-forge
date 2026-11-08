@@ -123,6 +123,11 @@ export interface SynthPatch {
   analog?: number;
   /** Clean voice: skips the always-on voice saturation stage (used for generated basslines). */
   clean?: boolean;
+  /**
+   * Light voices: each note only builds the oscillators, LFOs and noise the patch has switched on
+   * (used by session players that stack many keys). Switching one on applies from the next note.
+   */
+  lightVoices?: boolean;
   /** Modular Tech Synth patch; when set the voice is built from these modules and cables. */
   modular?: import("./modular").ModularPatch | undefined;
   /** Granular Synth patch; when set the voice is a grain cloud read from a source sound. */
