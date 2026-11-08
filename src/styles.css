@@ -3767,3 +3767,10 @@ html.phone-console-active [role="option"] { min-height: 44px; font-size: 15px; }
   box-shadow: 0 0 14px var(--drum-color), inset 0 0 10px color-mix(in oklab, var(--hardware-black) 30%, transparent);
   transition-duration: 0ms;
 }
+
+/* Live Looper: loops scroll inside their own area with the shared teal bar on the right (TimelineVScrollbar). */
+.looper-scroll { max-height: min(72dvh, 820px); touch-action: pan-y; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.looper-scroll::-webkit-scrollbar { display: none; }
+.looper-scroll-wrap:has(.timeline-vscroll:not([hidden])) > .looper-scroll { margin-right: 28px; }
+.looper-scroll-wrap > .timeline-vscroll { width: 24px; border-radius: 6px; }
+.phone-console .looper-scroll { max-height: calc(min(100dvh, 100dvw) * 0.6); }

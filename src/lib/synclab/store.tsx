@@ -725,7 +725,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
            }
            if (target.id.startsWith("looper:") && target.param === "volume") {
              const index = Number(target.id.slice(7));
-             if (Number.isInteger(index) && index >= 0 && index < 8) getLooper().setVolume(index, ccRange(v, 0, 1.2));
+             if (Number.isInteger(index) && index >= 0 && index < getLooper().slots.length) getLooper().setVolume(index, ccRange(v, 0, 1.2));
              return;
            }
            if (target.id.startsWith("bus:") || target.id.startsWith("vca:") || target.id.startsWith("aux:")) {

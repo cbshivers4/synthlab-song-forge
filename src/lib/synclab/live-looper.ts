@@ -27,13 +27,27 @@ export interface LoopSlot {
   muted: boolean;
   reversed: boolean;
   color: string;
+  /** user-given loop name ("" = default "LOOP n") */
+  name: string;
   /** loop as it was before each overdub, newest last (Undo restores it) */
   history: { buffer: AudioBuffer; reversed: boolean }[];
 }
 
 type Chunk = { t: number; l: Float32Array; r: Float32Array };
 
-const SLOTS = 8;
+/** loops shown when the looper first opens */
+export const DEFAULT_LOOPS = 8;
+/** most loops you can add */
+export const MAX_LOOPS = 32;
+export const MAX_LOOP_NAME = 32;
+/** Display name for a loop: its own name, or "LOOP n". */
+export function loopName(slot: Pick<LoopSlot, "index" | "name">) {
+  return slot.name.trim() || `LOOP ${slot.index + 1}`;
+}
+/** Clean a typed loop name: single line, trimmed, length-limited. */
+export function cleanLoopName(raw: string) {
+  return raw.replace(/[\r\n\t]+/g, " ").replace(/\s+/g, " ").trim().slice(0, MAX_LOOP_NAME);
+}
 /** overdubs that can be undone per loop */
 const UNDO_DEPTH = 8;
 const BLOCK = 2048;
@@ -98,13 +112,35 @@ export class LiveLooper {
     limit.attack.value = 0.002; limit.release.value = 0.12;
     this.bus.connect(limit).connect(this.ctx.destination);
     let savedColors: string[] = [];
+    let savedNames: string[] = [];
+    let count = DEFAULT_LOOPS;
     try {
       const stored = window.localStorage.getItem("synclab.looper.colors");
       savedColors = stored ? JSON.parse(stored) as string[] : [];
+      const names = window.localStorage.getItem("synclab.looper.names");
+      savedNames = names ? (JSON.parse(names) as unknown[]).map((n) => typeof n === "string" ? cleanLoopName(n) : "") : [];
+      const c = Number(window.localStorage.getItem("synclab.looper.count"));
+      if (Number.isInteger(c) && c >= 1 && c <= MAX_LOOPS) count = c;
     } catch { /* use the professional default palette */ }
-    this.slots = Array.from({ length: SLOTS }, (_, index) => ({
+    this.slots = Array.from({ length: count }, (_, index) => this.makeSlot(index, savedColors[index], savedNames[index]));
+    try {
+      const pc = Number(window.localStorage.getItem("synclab.looper.precount"));
+      const raw = window.localStorage.getItem("synclab.looper.precount");
+      if (raw === null) this.precount = 1;
+      else if ([1, 2, 4].includes(pc)) this.precount = pc;
+      const th = window.localStorage.getItem("synclab.looper.threshold");
+      if (th && th !== "off" && Number.isFinite(Number(th))) this.threshold = Math.max(-60, Math.min(0, Number(th)));
+    } catch { /* */ }
+    for (let i = 0; i < count; i++) {
+      this.gains.push(this.makeGain());
+      this.sources.push(null);
+    }
+  }
+
+  private makeSlot(index: number, color?: string, name?: string): LoopSlot {
+    return {
       index,
-      state: "empty" as SlotState,
+      state: "empty",
       buffer: null,
       volume: 0.9,
       start: 0,
@@ -114,23 +150,68 @@ export class LiveLooper {
       muted: false,
       reversed: false,
       history: [],
-      color: savedColors[index] ?? DEFAULT_COLORS[index] ?? "oklch(0.78 0.16 195)",
-    }));
+      name: name ?? "",
+      color: color ?? DEFAULT_COLORS[index % DEFAULT_COLORS.length] ?? "oklch(0.78 0.16 195)",
+    };
+  }
+  private makeGain() {
+    const g = this.ctx.createGain();
+    g.gain.value = 0.9;
+    g.connect(this.bus);
+    return g;
+  }
+  private saveLayout() {
     try {
-      const pc = Number(window.localStorage.getItem("synclab.looper.precount"));
-      const raw = window.localStorage.getItem("synclab.looper.precount");
-      if (raw === null) this.precount = 1;
-      else if ([1, 2, 4].includes(pc)) this.precount = pc;
-      const th = window.localStorage.getItem("synclab.looper.threshold");
-      if (th && th !== "off" && Number.isFinite(Number(th))) this.threshold = Math.max(-60, Math.min(0, Number(th)));
-    } catch { /* */ }
-    for (let i = 0; i < SLOTS; i++) {
-      const g = this.ctx.createGain();
-      g.gain.value = 0.9;
-      g.connect(this.bus);
-      this.gains.push(g);
+      window.localStorage.setItem("synclab.looper.count", String(this.slots.length));
+      window.localStorage.setItem("synclab.looper.names", JSON.stringify(this.slots.map((s) => s.name)));
+      window.localStorage.setItem("synclab.looper.colors", JSON.stringify(this.slots.map((s) => s.color)));
+    } catch { /* storage full or blocked: names still apply for this session */ }
+  }
+
+  get canAddLoop() { return this.slots.length < MAX_LOOPS; }
+
+  /** Adds empty loops at the end (up to MAX_LOOPS). Returns how many were added. */
+  addLoops(n = 1) {
+    let added = 0;
+    while (added < n && this.slots.length < MAX_LOOPS) {
+      this.slots.push(this.makeSlot(this.slots.length));
+      this.gains.push(this.makeGain());
       this.sources.push(null);
+      added++;
     }
+    if (added) { this.saveLayout(); this.emit(); }
+    return added;
+  }
+
+  /** A loop can be removed when another loop remains and it isn't capturing audio. */
+  canRemove(i: number) {
+    const s = this.slots[i];
+    return !!s && this.slots.length > 1 && s.state !== "armed" && s.state !== "recording" && !s.overdubbing;
+  }
+
+  /** Deletes a loop (its audio too); later loops move up one place. */
+  removeLoop(i: number) {
+    if (!this.canRemove(i)) return;
+    this.clear(i);
+    // let the 15 ms stop fade finish before unplugging, so removing a playing loop doesn't click
+    const gain = this.gains[i]!;
+    window.setTimeout(() => { try { gain.disconnect(); } catch { /* */ } }, 80);
+    this.slots.splice(i, 1);
+    this.gains.splice(i, 1);
+    this.sources.splice(i, 1);
+    this.slots.forEach((slot, index) => { slot.index = index; });
+    this.saveLayout();
+    this.emit();
+  }
+
+  setName(i: number, raw: string) {
+    const slot = this.slots[i];
+    if (!slot) return;
+    const name = cleanLoopName(raw);
+    if (name === slot.name) return;
+    slot.name = name;
+    this.saveLayout();
+    this.emit();
   }
 
   subscribe(cb: () => void) {
@@ -534,7 +615,7 @@ export class LiveLooper {
     const slot = this.slots[i];
     if (!slot || !/^(#[0-9a-fA-F]{6}|oklch\(.+\))$/.test(color)) return;
     slot.color = color;
-    window.localStorage.setItem("synclab.looper.colors", JSON.stringify(this.slots.map((item) => item.color)));
+    this.saveLayout();
     this.emit();
   }
 
@@ -650,13 +731,13 @@ export class LiveLooper {
   }
 
   stopAll() {
-    for (let i = 0; i < SLOTS; i++) if (this.slots[i]!.state === "playing") this.stop(i);
+    for (let i = 0; i < this.slots.length; i++) if (this.slots[i]!.state === "playing") this.stop(i);
   }
   playAll() {
-    for (let i = 0; i < SLOTS; i++) if (this.slots[i]!.state === "stopped") this.play(i);
+    for (let i = 0; i < this.slots.length; i++) if (this.slots[i]!.state === "stopped") this.play(i);
   }
   clearAll() {
-    for (let i = 0; i < SLOTS; i++) this.clear(i);
+    for (let i = 0; i < this.slots.length; i++) this.clear(i);
   }
 
   /** WAV of a loop, for sending to the timeline. */

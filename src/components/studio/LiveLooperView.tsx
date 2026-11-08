@@ -1,12 +1,14 @@
 import { getPlayStep, usePlayStep } from "@/lib/synclab/playhead";
-import { useEffect, useMemo, useReducer } from "react";
-import { ArrowDownToLine, Circle, Mic, Play, RotateCcw, Square, Trash2, Undo2, Volume2, VolumeX } from "lucide-react";
+import { useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { ArrowDownToLine, Circle, Mic, Pencil, Play, Plus, RotateCcw, Square, Trash2, Undo2, Volume2, VolumeX, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { useStudio } from "@/lib/synclab/store";
 import { getEngine } from "@/lib/synclab/audio-engine";
-import { getLooper, type LoopSlot } from "@/lib/synclab/live-looper";
+import { getLooper, loopName, MAX_LOOPS, MAX_LOOP_NAME, type LoopSlot } from "@/lib/synclab/live-looper";
+import { NameEditDialog } from "./NameEditDialog";
+import { TimelineVScrollbar } from "./timeline/VScrollbar";
 import { getBeatsPerBar } from "@/lib/synclab/timebase";
 import { cn } from "@/lib/utils";
 import { TRACK_PALETTE } from "./TrackStyle";
@@ -20,9 +22,54 @@ const labels: Record<LoopSlot["state"], string> = {
 };
 const polar = (angle: number, radius: number) => ({ x: 100 + Math.cos(angle) * radius, y: 100 + Math.sin(angle) * radius });
 
+/** Loop name plate: tap to rename (shared dialog, so typing also works on the sideways phone). */
+function LoopNamePlate({ slot }: { slot: LoopSlot }) {
+  const looper = getLooper();
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState(slot.name);
+  const name = loopName(slot);
+  return (
+    <div className="flex w-full max-w-72 items-center gap-1">
+      <button
+        type="button"
+        className="looper-name flex h-10 min-w-0 flex-1 touch-manipulation items-center gap-1.5 rounded-md border border-border bg-surface-2 px-2 text-left hover:bg-accent"
+        style={{ borderLeft: `4px solid ${slot.color}` }}
+        title="Rename this loop"
+        aria-label={`Rename ${name}`}
+        onClick={() => { setDraft(slot.name || name); setOpen(true); }}
+      >
+        <span className="min-w-0 flex-1 truncate font-display text-sm font-bold uppercase tracking-wide text-foreground">{name}</span>
+        <Pencil className="size-3.5 shrink-0 text-muted-foreground" />
+      </button>
+      <Button
+        type="button" variant="ghost" size="icon" className="size-10 shrink-0 text-muted-foreground hover:text-destructive"
+        disabled={!looper.canRemove(slot.index)}
+        title={looper.slots.length <= 1 ? "Keep at least one loop" : "Remove this loop"}
+        aria-label={`Remove ${name}`}
+        onClick={() => {
+          if (slot.buffer && !window.confirm(`Remove ${name}? Its recording will be deleted.`)) return;
+          looper.removeLoop(slot.index);
+        }}
+      >
+        <X className="size-4" />
+      </Button>
+      <NameEditDialog
+        open={open}
+        title="Name this loop"
+        label={`Loop name (up to ${MAX_LOOP_NAME} letters)`}
+        value={draft}
+        onChange={(v) => setDraft(v.slice(0, MAX_LOOP_NAME))}
+        onClose={() => setOpen(false)}
+        onSave={() => { looper.setName(slot.index, draft); setOpen(false); }}
+      />
+    </div>
+  );
+}
+
 function LoopDonut({ slot, send }: { slot: LoopSlot; send: (i: number) => void }) {
   const looper = getLooper();
   const [, tick] = useReducer((n: number) => n + 1, 0);
+  const name = loopName(slot);
   useEffect(() => {
     if (!["armed", "recording", "playing"].includes(slot.state)) return;
     let frame = 0;
@@ -79,10 +126,11 @@ function LoopDonut({ slot, send }: { slot: LoopSlot; send: (i: number) => void }
   }
   return (
     <div className="flex min-w-0 flex-col items-center gap-2 border-b border-border pb-4">
+      <LoopNamePlate slot={slot} />
       <Button
         type="button" variant="ghost"
         className="relative aspect-square h-auto w-full max-w-36 rounded-full p-0 text-foreground hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-primary"
-        aria-label={`Loop ${slot.index + 1}: ${slot.state === "recording" && slot.recEnd === null ? "close recording" : labels[slot.state]}`}
+        aria-label={`${name}: ${slot.state === "recording" && slot.recEnd === null ? "close recording" : labels[slot.state]}`}
         onClick={() => void looper.tap(slot.index).catch((error) => toast.error("Couldn't start the looper", { description: error instanceof Error ? error.message : undefined }))}
       >
          <svg className="absolute inset-0 !h-full !w-full overflow-visible" viewBox="0 0 200 200" aria-hidden="true">
@@ -110,7 +158,7 @@ function LoopDonut({ slot, send }: { slot: LoopSlot; send: (i: number) => void }
           <span className={cn("font-mono text-[10px] uppercase", slot.state === "recording" ? "text-destructive" : "text-muted-foreground")}>{slot.overdubbing ? "DUB" : slot.state === "armed" && looper.isWaitingForSignal ? "PLAY TO START" : labels[slot.state]}</span>
         </span>
       </Button>
-      <div className="flex w-full max-w-72 flex-wrap items-center justify-center gap-1" aria-label={`Loop ${slot.index + 1} color`}>
+      <div className="flex w-full max-w-72 flex-wrap items-center justify-center gap-1" aria-label={`${name} color`}>
         {TRACK_PALETTE.slice(slot.index % 3, slot.index % 3 + 6).map((color) => (
           <Button
             key={color.id}
@@ -127,26 +175,26 @@ function LoopDonut({ slot, send }: { slot: LoopSlot; send: (i: number) => void }
         ))}
         <label className="relative flex size-7 cursor-pointer items-center justify-center rounded-full border border-border bg-surface-2" title="Custom loop color">
           <span className="size-4 rounded-full" style={{ backgroundColor: slot.color }} />
-          <input className="absolute inset-0 cursor-pointer opacity-0" type="color" aria-label={`Custom color for loop ${slot.index + 1}`} onChange={(event) => looper.setColor(slot.index, event.target.value)} />
+          <input className="absolute inset-0 cursor-pointer opacity-0" type="color" aria-label={`Custom color for ${name}`} onChange={(event) => looper.setColor(slot.index, event.target.value)} />
         </label>
       </div>
       <div className="flex w-full max-w-72 items-center gap-2 px-1">
         <Volume2 className="size-4 shrink-0 text-muted-foreground" />
-        <Slider value={[slot.volume]} min={0} max={1.2} step={0.01} onValueChange={(v) => looper.setVolume(slot.index, v[0] ?? 0)} aria-label={`Loop ${slot.index + 1} volume`} />
-        <MidiLearnButton id={`looper:${slot.index}`} param="volume" label={`Loop ${slot.index + 1} volume`} />
+        <Slider value={[slot.volume]} min={0} max={1.2} step={0.01} onValueChange={(v) => looper.setVolume(slot.index, v[0] ?? 0)} aria-label={`${name} volume`} />
+        <MidiLearnButton id={`looper:${slot.index}`} param="volume" label={`${name} volume`} />
       </div>
       <div className="grid w-full max-w-72 grid-cols-3 items-center justify-center gap-1 [&>button]:w-full [&>button]:min-w-0 [&>button]:px-1">
-        <Button size="sm" variant={slot.state === "armed" ? "default" : "secondary"} className="h-10 px-2 font-mono text-[10px]" disabled={slot.state !== "empty" && slot.state !== "armed"} aria-label={`${slot.state === "armed" ? "Disarm" : "Arm"} loop ${slot.index + 1}`} title="Arm: uses the pre-count / start-on-sound / next cycle" onClick={() => void looper.tap(slot.index).catch((error) => toast.error("Couldn't start the looper", { description: error instanceof Error ? error.message : undefined }))}>ARM</Button>
-        <Button size="sm" variant={slot.state === "recording" ? "destructive" : "secondary"} className="h-10 px-2 font-mono text-[10px]" disabled={slot.state !== "empty" && !(slot.state === "recording" && slot.recEnd === null)} aria-label={`Record loop ${slot.index + 1}`} title="Record with the pre-count (1 bar if pre-count is Off). In Free mode tap again to close the loop." onClick={() => void (slot.state === "recording" ? looper.tap(slot.index) : looper.recordCounted(slot.index)).catch((error) => toast.error("Couldn't start the looper", { description: error instanceof Error ? error.message : undefined }))}><Circle className="size-3 fill-current text-destructive" /> REC</Button>
-        <Button size="icon" variant="secondary" className="size-10" disabled={!slot.buffer} aria-label={`Loop ${slot.index + 1} ${slot.state === "playing" ? "stop" : "play"}`} title="Play / stop" onClick={() => slot.state === "playing" ? looper.stop(slot.index) : looper.play(slot.index)}>{slot.state === "playing" ? <Square className="size-4" /> : <Play className="size-4" />}</Button>
-        <Button size="icon" variant="secondary" className="size-10" disabled={slot.state !== "playing" || slot.overdubbing || looper.source === "output"} aria-label={`Overdub loop ${slot.index + 1}`} title={looper.source === "output" ? "Overdub uses mic / interface only to prevent feedback" : "Overdub one cycle"} onClick={() => void looper.overdub(slot.index).catch((error) => toast.error("Overdub failed", { description: error instanceof Error ? error.message : undefined }))}><Circle className="size-4" /></Button>
-        <Button size="icon" variant="secondary" className="size-10" disabled={!slot.buffer} aria-label={`${slot.muted ? "Unmute" : "Mute"} loop ${slot.index + 1}`} title={slot.muted ? "Unmute" : "Mute"} onClick={() => looper.toggleMute(slot.index)}>{slot.muted ? <VolumeX className="size-4 text-destructive" /> : <Volume2 className="size-4" />}</Button>
-        <Button size="icon" variant="secondary" className="size-10" disabled={!slot.buffer || slot.overdubbing} aria-label={`${slot.reversed ? "Restore" : "Reverse"} loop ${slot.index + 1}`} title={slot.reversed ? "Restore direction" : "Reverse"} onClick={() => looper.toggleReverse(slot.index)}><RotateCcw className={cn("size-4", slot.reversed && "text-primary")} /></Button>
+        <Button size="sm" variant={slot.state === "armed" ? "default" : "secondary"} className="h-10 px-2 font-mono text-[10px]" disabled={slot.state !== "empty" && slot.state !== "armed"} aria-label={`${slot.state === "armed" ? "Disarm" : "Arm"} ${name}`} title="Arm: uses the pre-count / start-on-sound / next cycle" onClick={() => void looper.tap(slot.index).catch((error) => toast.error("Couldn't start the looper", { description: error instanceof Error ? error.message : undefined }))}>ARM</Button>
+        <Button size="sm" variant={slot.state === "recording" ? "destructive" : "secondary"} className="h-10 px-2 font-mono text-[10px]" disabled={slot.state !== "empty" && !(slot.state === "recording" && slot.recEnd === null)} aria-label={`Record ${name}`} title="Record with the pre-count (1 bar if pre-count is Off). In Free mode tap again to close the loop." onClick={() => void (slot.state === "recording" ? looper.tap(slot.index) : looper.recordCounted(slot.index)).catch((error) => toast.error("Couldn't start the looper", { description: error instanceof Error ? error.message : undefined }))}><Circle className="size-3 fill-current text-destructive" /> REC</Button>
+        <Button size="icon" variant="secondary" className="size-10" disabled={!slot.buffer} aria-label={`${name} ${slot.state === "playing" ? "stop" : "play"}`} title="Play / stop" onClick={() => slot.state === "playing" ? looper.stop(slot.index) : looper.play(slot.index)}>{slot.state === "playing" ? <Square className="size-4" /> : <Play className="size-4" />}</Button>
+        <Button size="icon" variant="secondary" className="size-10" disabled={slot.state !== "playing" || slot.overdubbing || looper.source === "output"} aria-label={`Overdub ${name}`} title={looper.source === "output" ? "Overdub uses mic / interface only to prevent feedback" : "Overdub one cycle"} onClick={() => void looper.overdub(slot.index).catch((error) => toast.error("Overdub failed", { description: error instanceof Error ? error.message : undefined }))}><Circle className="size-4" /></Button>
+        <Button size="icon" variant="secondary" className="size-10" disabled={!slot.buffer} aria-label={`${slot.muted ? "Unmute" : "Mute"} ${name}`} title={slot.muted ? "Unmute" : "Mute"} onClick={() => looper.toggleMute(slot.index)}>{slot.muted ? <VolumeX className="size-4 text-destructive" /> : <Volume2 className="size-4" />}</Button>
+        <Button size="icon" variant="secondary" className="size-10" disabled={!slot.buffer || slot.overdubbing} aria-label={`${slot.reversed ? "Restore" : "Reverse"} ${name}`} title={slot.reversed ? "Restore direction" : "Reverse"} onClick={() => looper.toggleReverse(slot.index)}><RotateCcw className={cn("size-4", slot.reversed && "text-primary")} /></Button>
       </div>
       <div className="flex w-full max-w-72 gap-1">
-        <Button variant="outline" className="h-10 flex-1" disabled={!slot.buffer} onClick={() => send(slot.index)} aria-label={`Send loop ${slot.index + 1} to timeline`}><ArrowDownToLine className="size-4" /> Timeline</Button>
-        <Button variant="outline" size="icon" className="size-10" disabled={!looper.canUndo(slot.index) || slot.overdubbing || slot.state === "armed" || slot.state === "recording"} onClick={() => looper.undo(slot.index)} aria-label={`Undo last overdub on loop ${slot.index + 1}`} title="Undo last overdub"><Undo2 className="size-4" /></Button>
-        <Button variant="outline" size="icon" className="size-10" disabled={slot.state === "empty"} onClick={() => looper.clear(slot.index)} aria-label={`Clear loop ${slot.index + 1}`} title="Clear"><Trash2 className="size-4" /></Button>
+        <Button variant="outline" className="h-10 flex-1" disabled={!slot.buffer} onClick={() => send(slot.index)} aria-label={`Send ${name} to timeline`}><ArrowDownToLine className="size-4" /> Timeline</Button>
+        <Button variant="outline" size="icon" className="size-10" disabled={!looper.canUndo(slot.index) || slot.overdubbing || slot.state === "armed" || slot.state === "recording"} onClick={() => looper.undo(slot.index)} aria-label={`Undo last overdub on ${name}`} title="Undo last overdub"><Undo2 className="size-4" /></Button>
+        <Button variant="outline" size="icon" className="size-10" disabled={slot.state === "empty"} onClick={() => looper.clear(slot.index)} aria-label={`Clear ${name}`} title="Clear"><Trash2 className="size-4" /></Button>
       </div>
     </div>
   );
@@ -193,6 +241,7 @@ export function LiveLooperView() {
     else void looper.recordCounted(i).catch(fail);
   });
   const LOOP_ACTIONS = ["Toggle", "Start", "Stop", "Record"];
+  const loopScroll = useRef<HTMLDivElement>(null);
   const [, rerender] = useReducer((n: number) => n + 1, 0);
   useEffect(() => looper.subscribe(rerender), [looper]);
   useEffect(() => { looper.bpm = transport.bpm; }, [looper, transport.bpm]);
@@ -202,7 +251,8 @@ export function LiveLooperView() {
     const blob = looper.wav(i);
     if (!blob) return;
     try {
-      const name = `LIVE LOOP ${i + 1}`;
+      const slot = looper.slots[i];
+      const name = slot?.name.trim() ? slot.name.trim().toUpperCase() : `LIVE LOOP ${i + 1}`;
       const res = await getEngine().loadSampleFile(blob, name);
       const trackId = addTrack("audio", name);
       addClip(trackId, { id: crypto.randomUUID(), name, peaks: res.peaks, duration: res.duration, url: res.url, start: getPlayStep(), offset: 0, length: res.duration, gain: 1 });
@@ -248,8 +298,19 @@ export function LiveLooperView() {
         </div>
         <span className="ml-auto font-mono text-xs text-muted-foreground">{looper.mode === "sync" ? `${looper.bars} ${looper.bars === 1 ? "BAR" : "BARS"} · ${transport.bpm} BPM${looper.songLocked ? " · ON SONG BARS" : transport.playing ? " · STARTS ON NEXT SONG BAR" : ""}` : "FREE LENGTH"}</span>
       </div>
-      <div className="looper-pad-grid grid grid-cols-4 gap-x-2 gap-y-4">
-        {looper.slots.map((slot) => <LoopDonut key={slot.index} slot={slot} send={send} />)}
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="font-mono text-xs uppercase text-muted-foreground">{looper.slots.length} / {MAX_LOOPS} loops</span>
+        <Button size="sm" variant="secondary" className="h-10" disabled={!looper.canAddLoop} onClick={() => { looper.addLoops(1); requestAnimationFrame(() => { const el = loopScroll.current; if (el) el.scrollTop = el.scrollHeight; }); }}><Plus className="size-4" /> Add loop</Button>
+        <Button size="sm" variant="secondary" className="h-10" disabled={!looper.canAddLoop} onClick={() => { looper.addLoops(4); requestAnimationFrame(() => { const el = loopScroll.current; if (el) el.scrollTop = el.scrollHeight; }); }}><Plus className="size-4" /> Add 4 loops</Button>
+        <span className="text-xs text-muted-foreground">Tap a loop's name to rename it. Controller pads play the first 8 loops.</span>
+      </div>
+      <div className="looper-scroll-wrap relative">
+        <div ref={loopScroll} id="looper-scroll" className="looper-scroll overflow-y-auto overscroll-contain">
+          <div className="looper-pad-grid grid grid-cols-4 gap-x-2 gap-y-4">
+            {looper.slots.map((slot) => <LoopDonut key={slot.index} slot={slot} send={send} />)}
+          </div>
+        </div>
+        <TimelineVScrollbar scrollRef={loopScroll} controls="looper-scroll" label="Scroll loops up and down" />
       </div>
       <div className="flex flex-wrap gap-2 border-t border-border pt-4">
         <Button variant="secondary" onClick={() => looper.playAll()}><Play className="size-4" /> Play all</Button>
