@@ -21,6 +21,8 @@ import { toast } from "sonner";
 import { MidiLearnStrip } from "./MidiLearn";
 import { PitchWheels } from "./PitchWheels";
 import { ModularSynth } from "./ModularSynth";
+import { GranularSynth } from "./GranularSynth";
+import { defaultGranular } from "@/lib/synclab/granular";
 import { AcidSequencer } from "./AcidSequencer";
 import { PresetNavigator } from "./PresetNavigator";
 import { HardwareBypass } from "./HardwareBypass";
@@ -110,11 +112,13 @@ const SYNTH_MODELS = [
   { style: "acid", label: "Acid Bass", name: "ACID BASS", preset: "TD-3 Acid Saw" },
   { style: "poly", label: "Poly Synth", name: "POLY SYNTH", preset: "Poly Synth Brass" },
   { style: "modular", label: "Modular Tech", name: "MODULAR TECH", preset: "Modular Tech Empty Rack" },
+  { style: "granular", label: "Granular", name: "GRANULAR SYNTH", preset: "Granular Glass Cloud" },
 ] as const;
 type SynthStyle = (typeof SYNTH_MODELS)[number]["style"];
 
 function synthStyleOf(track: Pick<Track, "name" | "patch">): SynthStyle {
   const patch = track.patch;
+  if (patch?.granular) return "granular";
   if (patch?.modular) return "modular";
   if (patch?.name.startsWith("TD-3") || /ACID/i.test(track.name)) return "acid";
   if (patch?.name.startsWith("Poly Synth") || /POLY/i.test(track.name)) return "poly";
@@ -188,7 +192,7 @@ function SynthTrackEditor({ track }: { track: Track }) {
   const drop = useImageDrop("synth");
   return (
     <div className="studio-wallpaper hardware-device synth-hardware space-y-4 rounded-md p-3" data-studio-panel="synth" data-synth-style={synthStyle} style={skinBackground(skin)} {...drop}>
-      <div className="synth-badge" aria-hidden>{patch.modular ? "MODULAR TECH SYNTH" : patch.name.startsWith("TD-3") || /ACID/i.test(track.name) ? "ACID BASS · TD-3 STYLE" : patch.name.startsWith("Poly Synth") || /POLY/i.test(track.name) ? "POLY SYNTH · 8 VOICE" : "SPEC 4 · ANALOG MODELING SYNTH"}</div>
+      <div className="synth-badge" aria-hidden>{patch.granular ? "GRANULAR SYNTH · GRAIN CLOUD" : patch.modular ? "MODULAR TECH SYNTH" : patch.name.startsWith("TD-3") || /ACID/i.test(track.name) ? "ACID BASS · TD-3 STYLE" : patch.name.startsWith("Poly Synth") || /POLY/i.test(track.name) ? "POLY SYNTH · 8 VOICE" : "SPEC 4 · ANALOG MODELING SYNTH"}</div>
       <SkinControls skinKey="synth" image />
       <MidiLearnStrip id={track.id} label={`${track.name} — every knob below also has its own MIDI button`} />
       <div className="synth-preset-deck flex flex-wrap items-center gap-2">
@@ -241,6 +245,7 @@ function SynthTrackEditor({ track }: { track: Track }) {
         <Button
           variant="outline"
           onClick={() => {
+            if (patch.granular) { updatePatch(track.id, { granular: defaultGranular() }); toast.success("Granular Synth initialized", { description: "Glass Pad source with a gentle grain cloud — shape it into your own sound, then SAVE PRESET." }); return; }
             if (patch.modular) { updatePatch(track.id, { modular: initModularPatch() }); toast.success("Modular patch initialized", { description: "One VCO, filter, envelope and amp patched to the output — build your new patch from here." }); return; }
             updatePatch(track.id, { ...defaultPatch("Init Saw"), modular: undefined });
             toast.success("Synth initialized", { description: "Blank starting patch — shape it into your own sound, then SAVE PRESET." });
@@ -251,8 +256,8 @@ function SynthTrackEditor({ track }: { track: Track }) {
       </div>
 
       <PitchWheels trackId={track.id} />
-      {(patch.name.startsWith("TD-3") || /ACID/i.test(track.name)) && <AcidSequencer track={track} />}
-      {patch.modular ? <ModularSynth track={track} /> : (
+      {(patch.name.startsWith("TD-3") || /ACID/i.test(track.name)) && !patch.granular && <AcidSequencer track={track} />}
+      {patch.granular ? <GranularSynth track={track} /> : patch.modular ? <ModularSynth track={track} /> : (
       <Tabs defaultValue={/^touch synth$/i.test(track.name) ? "touch" : "oscillators"} className="synth-console-tabs min-w-0">
         <TabsList aria-label="Synth features" className="flex h-auto w-full flex-wrap justify-start gap-1">
           <TabsTrigger value="oscillators">Oscillators</TabsTrigger>
@@ -903,10 +908,12 @@ export function presetMatchesSynth(category: string, style: string): boolean {
   const acid = c === "acid bass" || c === "acid";
   const poly = c === "poly synth";
   const modular = c === "modular tech";
+  const granular = c === "granular";
+  if (style === "granular") return granular;
   if (style === "acid") return acid;
   if (style === "poly") return poly;
   if (style === "modular") return modular;
-  return !acid && !poly && !modular;
+  return !acid && !poly && !modular && !granular;
 }
 
 /** Type to find a preset by name or category (e.g. "bass", "pad", "arp"); click a match to load and hear it. */

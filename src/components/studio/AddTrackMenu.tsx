@@ -1,4 +1,4 @@
-import { AudioLines, Disc3, Mic, Music2, Piano, Plus, Waves } from "lucide-react";
+import { AudioLines, Cable, Disc3, Mic, Music2, Piano, Plus, Sparkles, Waves } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useStudio } from "@/lib/synclab/store";
 import { INSTRUMENTS } from "@/lib/synclab/presets";
+import { openTrackSettings } from "@/components/studio/TrackSettingsDialog";
 
 export function AddTrackMenu({ size = "default" }: { size?: "default" | "sm" }) {
   const { addTrack } = useStudio();
@@ -37,6 +38,9 @@ export function AddTrackMenu({ size = "default" }: { size?: "default" | "sm" }) 
         <DropdownMenuItem onClick={() => addTrack("instrument", "MODULAR TECH", "Modular Tech Empty Rack")}>
           <Waves className="size-4" /> Modular Tech Synth — patch cables
         </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => addTrack("instrument", "GRANULAR SYNTH", "Granular Glass Cloud")}>
+          <Sparkles className="size-4" /> Granular Synth — grain clouds, your samples
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={() => addTrack("drum", "DRUM MACHINE")}>
           <Disc3 className="size-4" /> Drum machine
         </DropdownMenuItem>
@@ -45,6 +49,9 @@ export function AddTrackMenu({ size = "default" }: { size?: "default" | "sm" }) 
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => addTrack("midi", "MIDI", "Deep Keys")}>
           <Piano className="size-4" /> MIDI channel
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => { const id = addTrack("midi", "EXT SYNTH", "Deep Keys"); if (id) window.setTimeout(() => openTrackSettings(id), 50); }}>
+          <Cable className="size-4" /> External MIDI instrument — hardware synth
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuLabel className="label-xs">Instrument browser</DropdownMenuLabel>

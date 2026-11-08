@@ -4,7 +4,8 @@ import { AppWindow, Cable, Mic, Monitor, Music2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStudio } from "@/lib/synclab/store";
 import { listAudioDevices, setPreferredInput, type AudioDeviceInfo } from "@/lib/synclab/mic";
-import { getOutputAccess, getRoutes, listOutputs, onRoutesChange, sendTestNote, setRoute } from "@/lib/synclab/external-midi";
+import { getOutputAccess, listOutputs } from "@/lib/synclab/external-midi";
+import { ExternalInstrument, midiUnavailableMessage } from "@/components/studio/ExternalInstrument";
 
 const VIRTUAL = /blackhole|loopback|soundflower|vb-?cable|virtual/i;
 
@@ -13,13 +14,11 @@ export function ExternalApps() {
   const { tracks } = useStudio();
   const [inputs, setInputs] = useState<AudioDeviceInfo[]>([]);
   const [outs, setOuts] = useState<{ id: string; name: string }[]>([]);
-  const [routes, setRoutesState] = useState(getRoutes());
   const [level, setLevel] = useState(0);
   const [listenId, setListenId] = useState<string | null>(null);
   const [views, setViews] = useState<{ id: string; stream: MediaStream; label: string }[]>([]);
   const stopRef = useRef<() => void>(() => {});
 
-  useEffect(() => onRoutesChange(() => setRoutesState({ ...getRoutes() })), []);
   // Latest captures, so closing the panel stops window captures added after it opened.
   const viewsRef = useRef(views);
   viewsRef.current = views;
@@ -34,10 +33,10 @@ export function ExternalApps() {
 
   const scanMidi = async () => {
     const a = await getOutputAccess();
-    if (!a) { toast.error("MIDI isn't available", { description: "Use Chrome, Edge or the SYNCLAB desktop app." }); return; }
+    if (!a) { toast.error("MIDI isn't available", { description: midiUnavailableMessage() }); return; }
     const list = listOutputs();
     setOuts(list);
-    if (!list.length) toast.message("No MIDI outputs", { description: "On a Mac, open Audio MIDI Setup → MIDI Studio → IAC Driver and tick 'Device is online'." });
+    if (!list.length) toast.message("No MIDI outputs", { description: "Connect your instrument and switch it on. For Mac apps, turn on the IAC Driver in Audio MIDI Setup." });
   };
 
   const listen = async (d: AudioDeviceInfo) => {
@@ -116,37 +115,22 @@ export function ExternalApps() {
       </section>
 
       <section className="space-y-2 rounded-md border border-border bg-surface/50 p-3">
-        <h3 className="flex items-center gap-2 text-sm font-semibold"><Cable className="size-4 text-primary" /> 2. Play an app from your tracks</h3>
+        <h3 className="flex items-center gap-2 text-sm font-semibold"><Cable className="size-4 text-primary" /> 2. Play external instruments and apps</h3>
         <ol className="list-decimal space-y-0.5 pl-5 text-xs text-muted-foreground">
-          <li>Open Audio MIDI Setup → Window → Show MIDI Studio → IAC Driver, and tick "Device is online".</li>
-          <li>In the other app, pick IAC Driver as its MIDI input.</li>
-          <li>Choose a track below. Its notes (playback, keyboard, recording) go to the app instead of SYNCLAB's synth.</li>
+          <li>Hardware synth or drum machine: connect it by USB or through a MIDI interface and switch it on. Set it to receive on the channel you pick below.</li>
+          <li>Another app on a Mac: open Audio MIDI Setup → Window → Show MIDI Studio → IAC Driver, tick "Device is online", and pick IAC Driver as the app's MIDI input.</li>
+          <li>Choose a track below. Its notes (playback, keyboard, recording) go to the instrument instead of SYNCLAB's sound.</li>
         </ol>
         <Button size="sm" variant="secondary" onClick={() => void scanMidi()}>Find MIDI outputs</Button>
         {outs.length > 0 && (
-          <div className="space-y-1">
-            {noteTracks.length === 0 && <p className="text-xs text-muted-foreground">Add a synth or MIDI track first.</p>}
-            {noteTracks.map((t) => {
-              const r = routes[t.id];
-              return (
-                <div key={t.id} className="flex flex-wrap items-center gap-2 rounded border border-border px-2 py-1 text-xs">
-                  <Music2 className="size-3.5 text-muted-foreground" />
-                  <span className="min-w-0 flex-1 truncate">{t.name}</span>
-                  <select aria-label={`MIDI output for ${t.name}`} className="h-6 rounded border border-border bg-background px-1" value={r?.portId ?? ""} onChange={(e) => setRoute(t.id, e.target.value ? { portId: e.target.value, channel: r?.channel ?? 1 } : null)}>
-                    <option value="">SYNCLAB synth</option>
-                    {outs.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
-                  </select>
-                  {r && (
-                    <>
-                      <select aria-label="MIDI channel" className="h-6 rounded border border-border bg-background px-1" value={r.channel} onChange={(e) => setRoute(t.id, { ...r, channel: Number(e.target.value) })}>
-                        {Array.from({ length: 16 }, (_, i) => <option key={i} value={i + 1}>Ch {i + 1}</option>)}
-                      </select>
-                      <Button size="sm" variant="ghost" className="h-6 text-[11px]" onClick={() => sendTestNote(r.portId, r.channel)}>Test note</Button>
-                    </>
-                  )}
-                </div>
-              );
-            })}
+          <div className="space-y-2">
+            {noteTracks.length === 0 && <p className="text-xs text-muted-foreground">Add a synth or MIDI track first (Add track → External MIDI instrument).</p>}
+            {noteTracks.map((t) => (
+              <div key={t.id} className="space-y-1">
+                <div className="flex items-center gap-2 text-xs font-semibold"><Music2 className="size-3.5 text-muted-foreground" /> {t.name}</div>
+                <ExternalInstrument track={t} compact />
+              </div>
+            ))}
           </div>
         )}
       </section>

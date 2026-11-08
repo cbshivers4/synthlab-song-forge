@@ -3827,3 +3827,20 @@ html.phone-console-active [role="option"] { min-height: 44px; font-size: 15px; }
     repeating-linear-gradient(-45deg, oklch(0.32 0.03 var(--fx-hue) / 0.9) 0 1px, transparent 1px 4px),
     oklch(0.14 0.01 var(--fx-hue));
 }
+
+/* Granular Synth: smoked-copper anodised panel, black grain display with red source trace and hot grains. */
+.studio-wallpaper[data-synth-style="granular"] { --granular-face: oklch(0.24 0.025 50); --granular-face-2: oklch(0.19 0.02 45); --granular-edge: oklch(0.55 0.09 55); --granular-label: oklch(0.86 0.07 70); }
+[data-synth-style="granular"] { --lcd-hi: oklch(0.36 0.09 45); --lcd-lo: oklch(0.17 0.05 40); --lcd-ink: oklch(0.86 0.15 60); --lcd-bezel: oklch(0.5 0.06 55); --knob-accent: oklch(0.74 0.16 55); }
+.granular-synth { padding: 12px; border-radius: 10px; border: 1px solid var(--granular-edge); background:
+  repeating-linear-gradient(90deg, oklch(1 0 0 / 0.025) 0 1px, transparent 1px 3px),
+  linear-gradient(180deg, var(--granular-face), var(--granular-face-2));
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.12), 0 8px 24px oklch(0 0 0 / 0.45); color: var(--granular-label); }
+.granular-synth .label-xs { color: var(--granular-label); }
+.granular-display { position: relative; border-radius: 8px; border: 2px solid oklch(0.12 0.01 40); background: oklch(0.08 0.005 30); box-shadow: inset 0 0 18px oklch(0 0 0 / 0.8), 0 0 0 1px var(--granular-edge);
+  --granular-ink: oklch(0.63 0.22 27); --granular-dim: oklch(0.45 0.16 27 / 0.7); --granular-hot: oklch(0.93 0.1 70); }
+.granular-display-head { display: flex; justify-content: space-between; gap: 8px; padding: 6px 10px 0; font-family: var(--font-mono, monospace); font-size: 10px; letter-spacing: 0.16em; color: oklch(0.7 0.18 27); text-transform: uppercase; }
+.granular-canvas { display: block; width: 100%; height: 132px; cursor: crosshair; touch-action: none; }
+.granular-empty { position: absolute; inset: auto 0 10px; text-align: center; font-size: 11px; color: oklch(0.7 0.12 27); }
+.granular-section { border-radius: 8px; border: 1px solid var(--granular-edge); background: oklch(0.15 0.015 45 / 0.85); padding: 8px 6px 10px; box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.08); }
+.granular-section h4 { margin-bottom: 8px; text-align: center; font-family: var(--font-mono, monospace); font-size: 11px; font-weight: 800; letter-spacing: 0.22em; color: var(--granular-label); border-bottom: 1px solid var(--granular-edge); padding-bottom: 4px; }
+.granular-synth .hardware-knob, .granular-synth [data-knob] { --hardware-scale: var(--granular-label); }

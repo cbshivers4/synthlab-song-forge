@@ -18,7 +18,7 @@ export function LegalFooter({ className = "" }: { className?: string }) {
           {l.label}
         </Link>
       ))}
-      <span className="opacity-60">© {new Date().getFullYear()} Christopher Shivers</span>
+      <span className="opacity-60">© {new Date().getFullYear()} SYNCLAB</span>
     </div>
   );
 }

@@ -125,6 +125,8 @@ export interface SynthPatch {
   clean?: boolean;
   /** Modular Tech Synth patch; when set the voice is built from these modules and cables. */
   modular?: import("./modular").ModularPatch | undefined;
+  /** Granular Synth patch; when set the voice is a grain cloud read from a source sound. */
+  granular?: import("./granular").GranularPatch | undefined;
   fx: {
     distortion: number;
     saturation?: number;

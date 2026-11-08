@@ -20,7 +20,7 @@ import { usePlayStep } from "@/lib/synclab/playhead";
 
 const sounds = [
   { label: "Drum Machine", icon: Disc3, panel: "drums" }, { label: "Synth", icon: Piano, panel: "synth" },
-  { label: "Touch Synth", icon: Hand, panel: "synth" },
+  { label: "Touch Synth", icon: Hand, panel: "synth" }, { label: "Granular Synth", icon: Sparkles, panel: "synth" },
   { label: "Sampler", icon: Scissors, panel: "sampler" }, { label: "Sample pads", icon: Grid2x2, panel: "pads" },
   { label: "Sound library", icon: FolderOpen, panel: "browser" },
   { label: "Live View", icon: Radio, panel: "live" }, { label: "Live Looper", icon: Disc3, panel: "looper" },
@@ -159,6 +159,11 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
             const found = tracks.find((track) => /^touch synth$/i.test(track.name) && track.patch && !track.patch.modular);
             if (found) select(found.id);
             else addTrack("instrument", "TOUCH SYNTH", "Cybotron Lead");
+          }
+          if (label === "Granular Synth") {
+            const found = tracks.find((track) => track.patch?.granular);
+            if (found) select(found.id);
+            else addTrack("instrument", "GRANULAR SYNTH", "Granular Glass Cloud");
           }
           if (label === "Drum Machine" && !tracks.some((track) => track.kind === "drum")) {
             addTrack("drum", "DRUM MACHINE", undefined, { keepPanel: true });

@@ -138,7 +138,7 @@ export function HelpCenter() {
       setUserId(u?.id ?? null);
       // The founder signs in with Gmail but handles support from the SYNCLAB address.
       const account = (u?.email ?? "").toLowerCase();
-      const replyEmail = account === "cbshivers@gmail.com" ? "christophershivers@synclabsapp.com" : (u?.email ?? "");
+      const replyEmail = account === "cbshivers@gmail.com" ? "info@synclabsapp.com" : (u?.email ?? "");
       setEmail((prev) => (prev && prev.toLowerCase() !== "cbshivers@gmail.com" ? prev : replyEmail));
       void isSupportAdmin(u?.id).then(setAdmin);
     });
@@ -390,7 +390,7 @@ export function HelpCenter() {
                 <p className="text-xs tracking-[0.25em] uppercase">{SYNCLAB_TAGLINE}</p>
               </div>
               <p>Version {SYNCLAB_VERSION} · Web edition</p>
-              <p>© {new Date().getFullYear()} Christopher Shivers. All rights reserved.</p>
+              <p>© {new Date().getFullYear()} SYNCLAB. All rights reserved.</p>
               <p>
                 Built-in instruments, effects, separation and mastering run on your device using Web
                 Audio. Native VST3/AU plugin hosting, low-latency device control and local file

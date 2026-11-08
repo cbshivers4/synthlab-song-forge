@@ -21,7 +21,7 @@ describe('desktop window trust rules', () => {
   });
   it('only web and email links are handed to the operating system', () => {
     expect(security.isSafeExternal('https://example.com')).toBe(true);
-    expect(security.isSafeExternal('mailto:christophershivers@synclabsapp.com')).toBe(true);
+    expect(security.isSafeExternal('mailto:info@synclabsapp.com')).toBe(true);
     expect(security.isSafeExternal('file:///etc/passwd')).toBe(false);
     expect(security.isSafeExternal('smb://server/share')).toBe(false);
   });

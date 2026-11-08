@@ -1,4 +1,5 @@
 import { kitExtraPads } from "./vintage-drums";
+import { GRANULAR_PRESETS, defaultGranular } from "./granular";
 import { MODULAR_PRESETS } from "./modular";
 import type { DrumKitId, DrumPad, OscillatorParams, SynthPatch, TrackKind } from "./types";
 
@@ -1175,6 +1176,7 @@ export const starterNotesFor = (preset?: string) => {
 
 SYNTH_PRESETS.push(
   ...MODULAR_PRESETS.map((m) => ({ name: m.name, category: "Modular Tech", mutate: (p: SynthPatch) => { p.modular = structuredClone(m.modular); p.voiceMode = "poly"; } })),
+  ...GRANULAR_PRESETS.map((g) => ({ name: g.name, category: "Granular", mutate: (p: SynthPatch) => { p.granular = { ...defaultGranular(), ...g.set }; p.voiceMode = "poly"; p.arp = { ...p.arp, on: false }; } })),
 );
 
 export const applyPreset = (name: string): SynthPatch => {

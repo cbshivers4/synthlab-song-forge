@@ -52,15 +52,17 @@ export function useCutFree() {
     () => true,
   );
 }
-/** The four synths a note track can load; the style test matches SynthEditor's panel styling. */
+/** The synths a note track can load; the style test matches SynthEditor's panel styling. */
 export const SYNTH_CHOICES = [
   { style: "spec4", label: "Spec 4 Synth", preset: "Cybotron Lead" },
   { style: "acid", label: "Acid Bass (TD-3)", preset: "TD-3 Acid Saw" },
   { style: "poly", label: "Poly Synth", preset: "Poly Synth Brass" },
   { style: "modular", label: "Modular Tech Synth", preset: "Modular Tech Empty Rack" },
+  { style: "granular", label: "Granular Synth", preset: "Granular Glass Cloud" },
 ] as const;
 export const synthStyleOf = (t: Track) =>
-  t.patch?.modular ? "modular"
+  t.patch?.granular ? "granular"
+  : t.patch?.modular ? "modular"
   : t.patch?.name.startsWith("TD-3") || /ACID/i.test(t.name) ? "acid"
   : t.patch?.name.startsWith("Poly Synth") || /POLY/i.test(t.name) ? "poly"
   : "spec4";

@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useStudio } from "@/lib/synclab/store";
 import { hexToOklch, oklchToHex } from "@/components/studio/TrackStyle";
 import { TimelineVScrollbar } from "@/components/studio/timeline/VScrollbar";
+import { ExternalInstrument } from "@/components/studio/ExternalInstrument";
 
 const EVENT = "synclab:track-settings";
 const COLORS = ["#f0a03c", "#ef4444", "#22c55e", "#3b82f6", "#a855f7", "#ec4899", "#14b8a6", "#eab308"];
@@ -82,7 +83,7 @@ export function TrackSettingsDialog() {
             {instrument && (
               <div className="grid grid-cols-2 gap-3">
                 <label className="space-y-1">
-                  <span className="label-xs">MIDI channel</span>
+                  <span className="label-xs">MIDI in channel</span>
                   <Select value={String(track.midiChannel ?? 0)} onValueChange={(v) => set({ midiChannel: v === "0" ? undefined : Number(v) })}>
                     <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
                     <SelectContent>
@@ -102,6 +103,7 @@ export function TrackSettingsDialog() {
                 </label>
               </div>
             )}
+            {(track.kind === "instrument" || track.kind === "midi") && <ExternalInstrument track={track} compact />}
           </div>
           <TimelineVScrollbar scrollRef={scrollRef} controls="track-settings-scroll" label="Scroll track settings up and down" />
           </div>

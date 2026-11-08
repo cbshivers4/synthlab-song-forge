@@ -79,6 +79,8 @@ import { wsolaStretch } from "./stretch";
 import { encodeWav } from "./bounce";
 import { alignedTake, getInputLatencyMs, outputDelay } from "./latency";
 import { addCut, cutNotesAt, deleteRegion, regionAt, unrollNotes } from "./note-cuts";
+import { GRANULAR_KNOBS } from "./granular";
+import { externalNoteOff, externalNoteOn, isExternal, restoreExternalRoutes, sendExternalBend, sendExternalCc } from "./external-midi";
 
 /** A persistent hardware CC destination. Namespaced parameters identify device controls. */
 /** A recorded instrument/drum take normally plays back as printed audio, which
@@ -429,6 +431,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     setPlayStep(transport.step);
   }, [transport.step]);
 
+  // Tracks routed to external MIDI instruments on this device reconnect at start-up.
+  useEffect(() => { restoreExternalRoutes(); }, []);
+
   const tracksRef = useRef(tracks);
   tracksRef.current = tracks;
   const transportRef = useRef(transport);
@@ -700,7 +705,15 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             // Korg 8-channel mixer: faders, knobs and S/M/R buttons follow track order automatically.
             const portName = midiInputsRef.current.find((p) => p.id === inputId)?.name;
             const hit = controllerAutoMap(portName, msg.cc);
-            if (!hit) return;
+            if (!hit) {
+              // Unmapped knobs, mod wheel and sustain pedal play the external instrument the keyboard is playing.
+              const ch0 = msg.channel + 1;
+              const ext = tracksRef.current.find((t) => isExternal(t.id) && t.midiChannel === ch0)
+                ?? tracksRef.current.find((t) => isExternal(t.id) && t.armed && (t.midiChannel == null || t.midiChannel === ch0))
+                ?? tracksRef.current.find((t) => isExternal(t.id) && t.id === selectedIdRef.current);
+              if (ext) sendExternalCc(ext.id, msg.cc, msg.value);
+              return;
+            }
             const track = tracksRef.current[hit.strip];
             if (!track) return;
             const v = msg.value;
@@ -755,6 +768,11 @@ export function StudioProvider({ children }: { children: ReactNode }) {
                if (path.length === 1 && synthRanges[field]) {
                  const [min, max, step] = synthRanges[field];
                  return liveSound({ ...t, patch: { ...patch, [field]: ccRange(v, min, max, step) } });
+               }
+               if (field === "granular" && path[1] && patch.granular) {
+                 const knob = GRANULAR_KNOBS.find((k) => k.id === path[1]);
+                 if (!knob) return t;
+                 return liveSound({ ...t, patch: { ...patch, granular: { ...patch.granular, [knob.id]: ccRange(v, knob.min, knob.max, knob.step) } } });
                }
                if (field === "macro" && path[1] && /^[0-3]$/.test(path[1])) {
                  const macros = [...(patch.macros ?? [0, 0, 0, 0])];
@@ -915,7 +933,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             tracksRef.current.find((t) => t.patch && t.midiChannel === ch0) ??
             tracksRef.current.find((t) => t.patch && t.armed && (t.midiChannel == null || t.midiChannel === ch0)) ??
             tracksRef.current.find((t) => t.patch && t.id === selectedIdRef.current);
-          if (pbTarget) getEngine().setPitchBend(pbTarget.id, bendCents(msg.value, playbackPreferences().pitchBendRange));
+          if (pbTarget && !sendExternalBend(pbTarget.id, msg.value)) getEngine().setPitchBend(pbTarget.id, bendCents(msg.value, playbackPreferences().pitchBendRange));
           return;
         }
         const { type, pitch, velocity } = msg;
@@ -987,7 +1005,12 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           keyDown(pitch, 30000);
           setMidiLearning(true);
           engine.syncMixIfChanged(tracksRef.current);
-          triggerNote(engine, target, pitch, 0.6, Math.max(0.15, velocity), undefined, 30);
+          if (isExternal(target.id) && !target.patch?.arp?.on) {
+            // External instruments hold the note until the key is released, like a real keyboard.
+            const anySolo = tracksRef.current.some((t) => t.solo);
+            const audible = !target.muted && !target.deviceBypassed && (!anySolo || target.solo);
+            if (audible) for (const p of processMidiThroughPlugins(pitch + (target.octave ?? 0) * 12, target.plugins)) externalNoteOn(target.id, p, Math.max(0.15, velocity));
+          } else triggerNote(engine, target, pitch, 0.6, Math.max(0.15, velocity), undefined, 30);
           if (tp.recording && target.recording) {
             const pitches = processMidiThroughPlugins(pitch, target.plugins);
             const at = heardStepPos();
@@ -1009,7 +1032,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           }
         } else {
           keyUp(pitch);
-          for (const p of processMidiThroughPlugins(pitch + (target.octave ?? 0) * 12, target.plugins)) arpLiveRelease(target.id, p);
+          for (const p of processMidiThroughPlugins(pitch + (target.octave ?? 0) * 12, target.plugins)) { arpLiveRelease(target.id, p); externalNoteOff(target.id, p); }
           setMidiLearning(false);
           const held = heldRef.current.get(heldKey);
           if (!held) return;

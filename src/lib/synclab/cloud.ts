@@ -112,7 +112,15 @@ async function prepareSession(session: CloudSession, userId: string, projectId: 
     };
     const pads = track.pads ? await Promise.all(track.pads.map(upPad)) : undefined;
     const drumPatterns = track.drumPatterns ? await Promise.all(track.drumPatterns.map(bank => Promise.all((bank ?? []).map(upPad)))) : undefined;
-    return { ...track, clips, sampler, pads, drumPatterns };
+    // A Granular Synth's own sample is copied into the project like a Sampler's.
+    let patch = track.patch;
+    const gran = patch?.granular;
+    if (patch && gran && (gran.sampleUrl || gran.sampleCloudPath)) {
+      const name = gran.sampleName ?? "granular";
+      const stored = await storeOwned(gran.sampleUrl, gran.sampleCloudPath, `${userId}/${projectId}/samples/${track.id}-granular-${safe(name)}`, prefix, name, mediaFailed);
+      patch = { ...patch, granular: { ...gran, sampleCloudPath: stored.cloudPath, sampleUrl: stored.url ?? "" } };
+    }
+    return { ...track, clips, sampler, pads, drumPatterns, patch };
   }));
   const padBank: Record<number, SavedPad> = {};
   for (const [key, pad] of Object.entries(session.padBank)) {
@@ -172,6 +180,9 @@ async function restoreSession(session: CloudSession): Promise<CloudSession> {
     sampler: track.sampler
       ? { ...track.sampler, url: track.sampler.cloudPath ? await signedUrl(track.sampler.cloudPath) : track.sampler.url }
       : undefined,
+    patch: track.patch?.granular?.sampleCloudPath
+      ? { ...track.patch, granular: { ...track.patch.granular, sampleUrl: await signedUrl(track.patch.granular.sampleCloudPath) } }
+      : track.patch,
     recording: false,
   })));
   const padBank: Record<number, SavedPad> = {};

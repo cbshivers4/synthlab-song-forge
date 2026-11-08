@@ -8,7 +8,7 @@ export const Route = createFileRoute("/terms")({
       {
         name: "description",
         content:
-          "The terms that govern your use of SYNCLAB, the browser-based Detroit music studio by Christopher Shivers.",
+          "The terms that govern your use of SYNCLAB, the browser-based music studio from Detroit, Michigan.",
       },
       { property: "og:title", content: "Terms & Conditions — SYNCLAB" },
       {
@@ -26,9 +26,9 @@ function TermsRoute() {
   return (
     <LegalPage title="Terms & Conditions" updated="21 September 2026">
       <p>
-        SYNCLAB is operated by <strong>Christopher Shivers</strong> ("SYNCLAB", "we", "us"), a sole
-        trader based in Detroit, Michigan, United States. These terms form an agreement between you
-        and Christopher Shivers. Questions: <strong>christophershivers@synclabsapp.com</strong>.
+        SYNCLAB ("SYNCLAB", "we", "us") is a sole proprietorship based in Detroit, Michigan, United
+        States. These terms form an agreement between you and SYNCLAB. Questions:{" "}
+        <strong>info@synclabsapp.com</strong>.
       </p>
 
       <h2>1. Acceptance</h2>
@@ -74,7 +74,7 @@ function TermsRoute() {
       </p>
       <p>
         Rights holders may report infringing material to{" "}
-        <strong>christophershivers@synclabsapp.com</strong>; we
+        <strong>info@synclabsapp.com</strong>; we
         will review takedown requests and may remove content or suspend accounts for repeated
         infringement.
       </p>
@@ -82,7 +82,7 @@ function TermsRoute() {
       <h2>6. Our intellectual property</h2>
       <p>
         SYNCLAB, including its software, audio engine, presets, documentation, name and branding,
-        remains the property of Christopher Shivers. Nothing in these terms transfers ownership to
+        remains the property of SYNCLAB. Nothing in these terms transfers ownership to
         you.
       </p>
 

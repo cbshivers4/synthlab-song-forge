@@ -7,10 +7,11 @@ import { phasedHarmonics } from "./oscillator-phase";
 import { envelopePoints } from "./live-envelope";
 import { renderVintageDrum } from "./vintage-drums";
 import { playModularVoice } from "./modular";
+import { GRANULAR_ROOT, builtInSource, playGranularVoice, warmBuiltInSource, type GranularPatch, type GranularVoice } from "./granular";
 import { MODULAR_SCOPE_TYPES, attachModularScope, modularScopeId } from './modular-scopes';
 import { playbackPreferences } from "./preferences";
 import { encodeWav } from "./bounce";
-import { sendExternalNote } from "./external-midi";
+import { isExternal, sendExternalNote, stopExternalNotes } from "./external-midi";
 import { keysSnapshot, subscribeKeys } from "./active-keys";
 import type { DrumKitId, DrumPad, PluginInstance, SynthPatch, Track } from "./types";
 import { getInputChannel, getInputGainDb, getOutputDevice, isAppleMobile, openMicOrThrow, outputRoutingHint, preferredRecordingMime, releaseMic } from "./mic";
@@ -1711,6 +1712,12 @@ export class SyncLabEngine {
   /** Fade queued transport/preview channels instead of leaving scheduled notes behind. */
   silenceChannels(ids: string[]) {
     this.transportGen++;
+    stopExternalNotes(ids);
+    for (const id of ids) {
+      const now = this.ctx?.currentTime ?? 0;
+      for (const v of this.granularVoices.get(id) ?? []) v.stop(now);
+      this.granularVoices.delete(id);
+    }
     for (const id of ids) {
       this.stopSamples(id);
       const now = this.ctx?.currentTime ?? 0;
@@ -1723,6 +1730,44 @@ export class SyncLabEngine {
       this.modularGates.delete(id);
       this.removeChannel(id);
     }
+  }
+
+  /* ---------------- granular synth ---------------- */
+  private granularVoices = new Map<string, Set<GranularVoice>>();
+  /** Newest knob values per track, read by held grain clouds every few milliseconds. */
+  private granularLive = new Map<string, GranularPatch>();
+  /** Grains really scheduled on the live context, for the synth's display. */
+  private granularActivity = new Map<string, { position: number; at: number; length: number; reverse: boolean }[]>();
+
+  /** Grains sounding right now on a track (read position 0..1 and how far through each grain is). */
+  granularGrains(trackId: string): { position: number; progress: number; reverse: boolean }[] {
+    const now = this.ctx?.currentTime ?? 0;
+    const log = this.granularActivity.get(trackId);
+    if (!log) return [];
+    return log.filter((g) => g.at <= now && g.at + g.length >= now).map((g) => ({ position: g.position, progress: (now - g.at) / g.length, reverse: g.reverse }));
+  }
+
+  private playGranular(trackId: string, dest: AudioNode, g: GranularPatch, midi: number, duration: number, velocity: number, t0: number) {
+    const ctx = this.ctx as BaseAudioContext | null;
+    if (!ctx) return;
+    this.granularLive.set(trackId, g);
+    let buffer: AudioBuffer | undefined;
+    let root = GRANULAR_ROOT;
+    if (g.source === "sample") {
+      if (!g.sampleUrl) return;
+      buffer = this.sampleBuffers.get(g.sampleUrl);
+      root = g.sampleRoot ?? 60;
+      if (!buffer) { void this.ensureBuffer(g.sampleUrl); return; } // first press loads it
+    } else buffer = builtInSource(ctx, g.source);
+    const live = !(typeof OfflineAudioContext !== "undefined" && ctx instanceof OfflineAudioContext);
+    const log = live ? (this.granularActivity.get(trackId) ?? []) : null;
+    if (log) this.granularActivity.set(trackId, log);
+    const voice = playGranularVoice(ctx, dest, buffer, root, g, () => this.granularLive.get(trackId) ?? g, midi, duration, velocity, t0,
+      log ? (position, at, length, reverse) => { log.push({ position, at, length, reverse }); if (log.length > 160) log.splice(0, log.length - 160); } : undefined);
+    const set = this.granularVoices.get(trackId) ?? new Set<GranularVoice>();
+    set.add(voice);
+    this.granularVoices.set(trackId, set);
+    setTimeout(() => { set.delete(voice); }, Math.max(0, voice.end - ctx.currentTime) * 1000 + 300);
   }
 
   /* ---------------- pulse wave cache ---------------- */
@@ -2460,6 +2505,7 @@ export class SyncLabEngine {
   syncSoundControls(tracks: Track[]) {
     const ctx = this.ctx;
     if (!ctx) return;
+    for (const t of tracks) if (t.patch?.granular) { this.granularLive.set(t.id, t.patch.granular); warmBuiltInSource(ctx, t.patch.granular.source); }
     const now = ctx.currentTime;
     const byId = new Map(tracks.map(track => [track.id, track]));
     for (const [id, voices] of this.liveVoices) {
@@ -2528,8 +2574,17 @@ export class SyncLabEngine {
   playNote(trackId: string, patch: SynthPatch, midi: number, duration: number, velocity = 1, when?: number) {
     const ctx = this.init();
     const t0 = when ?? ctx.currentTime;
-    if (sendExternalNote(trackId, midi, duration, velocity, t0 - ctx.currentTime)) return;
+    // External MIDI instruments only play live: exports (offline renders) can't reach hardware,
+    // and a muted/soloed-out channel sends nothing.
+    if (isExternal(trackId) && !(typeof OfflineAudioContext !== "undefined" && ctx instanceof OfflineAudioContext)) {
+      if (this.trackAudible.get(trackId) !== false) sendExternalNote(trackId, midi, duration, velocity, t0 - ctx.currentTime);
+      return;
+    }
     const ch = this.playbackChannel(trackId);
+    if (patch.granular) {
+      this.playGranular(trackId, ch.input, patch.granular, midi, duration, velocity, t0);
+      return;
+    }
     if (patch.modular) {
       // Each modular voice runs through its own gate so Stop/silence can always cut it.
       const gate = ctx.createGain();
@@ -3366,6 +3421,7 @@ export const getEngine = () => {
     "setAuxReturn",
     "getMasterChannel",
     "syncSoundControls",
+    "granularGrains",
   ];
   if (!current || required.some((m) => typeof current[m] !== "function")) {
     engineGlobal.__synclabEngine = new SyncLabEngine();

@@ -22,7 +22,7 @@ function RefundsRoute() {
   return (
     <LegalPage title="Refund Policy" updated="21 September 2026">
       <p>
-        SYNCLAB is operated by <strong>Christopher Shivers</strong>. Every plan starts with a 14-day
+        Every SYNCLAB plan starts with a 14-day
         free trial. A card is required to start it, but nothing is charged during the trial — cancel
         before day 14 and you won't be charged at all.
       </p>
@@ -40,7 +40,7 @@ function RefundsRoute() {
           paddle.net
         </a>{" "}
         with the email address you used at checkout, or email us at{" "}
-        <strong>christophershivers@synclabsapp.com</strong> and we will arrange it with Paddle for
+        <strong>info@synclabsapp.com</strong> and we will arrange it with Paddle for
         you.
       </p>
 

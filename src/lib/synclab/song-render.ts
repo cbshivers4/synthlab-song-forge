@@ -51,6 +51,7 @@ export function songAudioUrls(tracks: Track[]): string[] {
   for (const t of tracks) {
     for (const c of t.clips ?? []) if (c.url) urls.add(c.url);
     if (t.sampler?.url) urls.add(t.sampler.url);
+    if (t.patch?.granular?.source === "sample" && t.patch.granular.sampleUrl) urls.add(t.patch.granular.sampleUrl);
     for (const p of t.pads ?? []) if (p.sampleUrl) urls.add(p.sampleUrl);
   }
   return [...urls];

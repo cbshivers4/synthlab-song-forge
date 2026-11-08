@@ -8,7 +8,7 @@ export const Route = createFileRoute("/privacy")({
       {
         name: "description",
         content:
-          "How SYNCLAB, operated by Christopher Shivers, collects, uses, shares and protects your personal data.",
+          "How SYNCLAB collects, uses, shares and protects your personal data.",
       },
       { property: "og:title", content: "Privacy Notice — SYNCLAB" },
       { property: "og:description", content: "How SYNCLAB handles your personal data." },
@@ -23,10 +23,9 @@ function PrivacyRoute() {
   return (
     <LegalPage title="Privacy Notice" updated="21 September 2026">
       <p>
-        SYNCLAB is operated by <strong>Christopher Shivers</strong> (Detroit, Michigan, USA), trading
-        as SYNCLAB. We are the <strong>data controller</strong> for the personal data described
+        SYNCLAB is based in Detroit, Michigan, USA. We are the <strong>data controller</strong> for the personal data described
         here, which means we decide why and how it is used. Contact:{" "}
-        <strong>christophershivers@synclabsapp.com</strong>.
+        <strong>info@synclabsapp.com</strong>.
       </p>
 
       <h2>What we collect and why</h2>
@@ -102,7 +101,7 @@ function PrivacyRoute() {
       <p>
         Depending on where you live, you may request access to your data, correction, deletion,
         restriction, portability, or object to processing based on legitimate interests, and withdraw
-        consent at any time. Email <strong>christophershivers@synclabsapp.com</strong> and we will
+        consent at any time. Email <strong>info@synclabsapp.com</strong> and we will
         respond within one month. UK/EEA users also have the right to complain to their local data
         protection
         authority.

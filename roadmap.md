@@ -188,3 +188,9 @@
 - [x] Lead Guitar Amp (Clean/Crunch/Lead channels, mid boost, tone stack, master, 3 cabinets, mic) and Bass Guitar Amp (compressor, drive above 250 Hz, 4-band EQ, contour, 3 cabinets, DI/amp blend)
 - [x] Ten pedals: overdrive, fuzz, wah (pedal/auto/envelope), octave, analog delay, spring reverb, compressor, clean boost, vibe, rotary speaker — stompbox look with working footswitch
 - [x] New "Amps & Pedals" category in every effect list; 15 presets each
+
+## Nov 8 (2) — Christopher
+- [x] External MIDI instruments (hardware synths/drum machines through MIDI out, held notes, Stop silences, mute respected, audio return)
+- [x] Remove the owner's personal name from customer-facing pages; contact email info@synclabsapp.com
+- [x] Update login page features
+- [x] Granular synth
