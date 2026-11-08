@@ -4086,3 +4086,10 @@ html.phone-console-active [role="option"] { min-height: 44px; font-size: 15px; }
 .phone-console.phone-entry .login-signin { justify-content: safe center; gap: calc(4 * var(--ls)); }
 .phone-console.phone-entry .login-btn-oauth { height: auto; min-height: calc(26 * var(--ls)); padding-block: calc(4 * var(--ls)); }
 @media (max-width: 420px) { .phone-console.phone-entry .login-auth-note { display: none; } }
+/* Coming soon cards: when the name and badge don't fit on one line, the badge drops below instead of covering the name. */
+.login-soon-head { flex-wrap: wrap; row-gap: calc(3 * var(--ls)); }
+.login-soon-name { flex: 1 1 auto; overflow-wrap: anywhere; }
+/* Sideways phone: icon + name on the first line, badge always on its own line, so every card lines up and nothing covers the name. */
+.phone-console.phone-entry .login-soon-head { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: calc(5 * var(--ls)); row-gap: calc(3 * var(--ls)); }
+.phone-console.phone-entry .login-soon-badge { grid-column: 1 / -1; justify-self: start; margin-left: 0; }
+.phone-console.phone-entry .login-soon-name { overflow-wrap: normal; }

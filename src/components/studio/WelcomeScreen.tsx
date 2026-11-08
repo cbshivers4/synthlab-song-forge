@@ -209,7 +209,7 @@ export function WelcomeScreen() {
                   <li key={f.title} className="login-auth login-soon-card">
                     <span className="login-soon-head">
                       <span className="login-soon-icon text-primary">{f.icon}</span>
-                      <span className="min-w-0 font-semibold">{f.title}</span>
+                      <span className="login-soon-name font-semibold">{f.title}</span>
                       <span className="login-soon-badge">Coming soon</span>
                     </span>
                     <p className="login-soon-body">{f.body}</p>
