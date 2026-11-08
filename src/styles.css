@@ -3960,6 +3960,63 @@ html.phone-console-active [role="option"] { min-height: 44px; font-size: 15px; }
 .dj-rec { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .dj-rec-on { animation: dj-rec-pulse 1.2s ease-in-out infinite; }
 @keyframes dj-rec-pulse { 50% { opacity: 0.7; } }
+
+/* DJ playlist: saved lists on the left, the open list on the right; a full-desk sheet on sideways phones */
+.dj-playlist { display: flex; flex-direction: column; gap: 6px; padding: 8px; border-radius: 6px; background: oklch(0.11 0.004 260); border: 1px solid oklch(0.28 0.01 260); }
+.dj-playlist.is-over { outline: 2px dashed var(--primary); outline-offset: -2px; }
+.dj-pl-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.dj-pl-title { display: flex; flex: 1; flex-direction: column; min-width: 140px; line-height: 1.15; }
+.dj-pl-title b { font-size: 14px; }
+.dj-pl-title small { font-family: var(--font-mono); font-size: 11px; color: var(--muted-foreground); }
+.dj-pl-dot { display: inline-block; width: 8px; height: 8px; margin-left: 6px; border-radius: 50%; background: var(--dj-cue-2); vertical-align: middle; }
+.dj-pl-actions { display: flex; flex-wrap: wrap; gap: 4px; }
+.dj-pl-btn { min-height: 38px; gap: 6px; font-weight: 700; }
+.dj-pl-delete { color: var(--destructive); }
+.dj-pl-confirm { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 5px; background: color-mix(in oklab, var(--destructive) 14%, transparent); border: 1px solid color-mix(in oklab, var(--destructive) 45%, transparent); font-size: 13px; }
+.dj-pl-confirm > span { flex: 1; min-width: 180px; }
+.dj-pl-body { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 8px; min-height: 0; }
+.dj-pl-saved { display: flex; flex-direction: column; gap: 4px; min-height: 0; overflow-y: auto; max-height: 260px; padding-right: 2px; }
+.dj-pl-saved ul { display: flex; flex-direction: column; gap: 4px; }
+.dj-pl-saved-item { display: flex; width: 100%; flex-direction: column; align-items: flex-start; min-height: 44px; padding: 5px 8px; border-radius: 5px; text-align: left; border: 1px solid oklch(0.3 0.01 260); background: oklch(0.16 0.005 260); }
+.dj-pl-saved-item b { max-width: 100%; font-size: 13px; }
+.dj-pl-saved-item small { font-family: var(--font-mono); font-size: 10px; color: var(--muted-foreground); }
+.dj-pl-saved-item[aria-current="true"] { border-color: var(--primary); background: color-mix(in oklab, var(--primary) 16%, transparent); }
+.dj-pl-empty { font-size: 12px; color: var(--muted-foreground); }
+.dj-pl-empty.is-drop button { width: 100%; min-height: 64px; padding: 8px; border-radius: 6px; border: 1px dashed oklch(0.36 0.01 260); color: var(--muted-foreground); font-size: 13px; }
+.dj-pl-list-wrap { position: relative; min-width: 0; min-height: 0; }
+.dj-pl-scroll { max-height: 260px; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; scrollbar-width: none; }
+.dj-pl-scroll::-webkit-scrollbar { display: none; }
+.dj-pl-list-wrap:has(.timeline-vscroll:not([hidden])) > .dj-pl-scroll { margin-right: 28px; }
+.dj-pl-list-wrap > .timeline-vscroll { width: 24px; border-radius: 6px; }
+.dj-pl-list { display: flex; flex-direction: column; gap: 3px; }
+.dj-pl-row { display: flex; align-items: center; gap: 6px; min-height: 44px; padding: 3px 4px 3px 8px; border-radius: 5px; background: oklch(0.15 0.005 260); border: 1px solid oklch(0.25 0.01 260); cursor: grab; }
+.dj-pl-row[data-on] { border-color: oklch(0.42 0.02 260); }
+.dj-pl-num { width: 22px; flex-shrink: 0; font-family: var(--font-mono); font-size: 11px; color: var(--muted-foreground); text-align: right; }
+.dj-pl-name { flex: 1; min-width: 0; font-size: 13px; font-weight: 600; }
+.dj-pl-time { flex-shrink: 0; width: 44px; font-family: var(--font-mono); font-size: 11px; color: var(--muted-foreground); text-align: right; }
+.dj-pl-ondeck { flex-shrink: 0; padding: 1px 5px; border-radius: 3px; font-family: var(--font-mono); font-size: 10px; font-weight: 700; color: oklch(0.12 0 0); background: var(--dj-a); }
+.dj-pl-ondeck[data-deck="B"] { background: var(--dj-b); }
+.dj-pl-load { flex-shrink: 0; min-width: 40px; min-height: 36px; border-radius: 5px; font-family: var(--font-display); font-size: 15px; border: 1px solid var(--dj-a); color: var(--dj-a); }
+.dj-pl-load[data-deck="B"] { border-color: var(--dj-b); color: var(--dj-b); }
+.dj-pl-load:active { background: var(--dj-a); color: oklch(0.12 0 0); }
+.dj-pl-load[data-deck="B"]:active { background: var(--dj-b); }
+.dj-pl-icon { display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center; min-width: 34px; min-height: 36px; border-radius: 5px; color: var(--muted-foreground); }
+.dj-pl-icon:disabled { opacity: 0.3; }
+.dj-pl-icon.is-remove:hover { color: var(--destructive); }
+.dj-phone-bottom { display: flex; align-items: center; justify-content: center; gap: 6px; }
+.dj-mixer.is-phone .dj-phone-bottom .dj-pl-open { min-height: 32px; padding-inline: 8px; gap: 4px; }
+/* sideways phone: the playlist covers the whole desk while open */
+.dj-device > .dj-playlist.is-sheet { position: absolute; inset: 0; z-index: 30; margin: 0 !important; padding: 6px; gap: 4px; box-shadow: 0 0 0 1px var(--border); }
+.dj-playlist.is-sheet .dj-pl-head { flex-wrap: nowrap; gap: 6px; }
+.dj-playlist.is-sheet .dj-pl-title { min-width: 0; }
+.dj-playlist.is-sheet .dj-pl-actions { flex-wrap: nowrap; }
+.dj-playlist.is-sheet .dj-pl-btn { min-height: 44px; padding-inline: 8px; font-size: 12px; }
+.dj-playlist.is-sheet .dj-pl-body { flex: 1; grid-template-columns: 170px minmax(0, 1fr); }
+.dj-playlist.is-sheet .dj-pl-saved, .dj-playlist.is-sheet .dj-pl-scroll { max-height: none; height: 100%; }
+.dj-playlist.is-sheet .dj-pl-list-wrap { height: 100%; }
+.dj-playlist.is-sheet .dj-pl-row { min-height: 48px; }
+.dj-playlist.is-sheet .dj-pl-load { min-width: 48px; min-height: 42px; }
+.dj-playlist.is-sheet .dj-pl-icon { min-width: 40px; min-height: 42px; }
 .phone-console .dj-wave { height: 54px; }
 .phone-console .dj-console { gap: 4px; }
 .phone-console .dj-deck { padding: 6px; }

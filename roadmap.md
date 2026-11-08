@@ -214,3 +214,9 @@
 - [x] Live Drummer: Rock is its own genre group (12 styles: Rock, Classic, Hard, Punk, Pop Punk, Metal, Double-Kick Metal, Grunge, Indie, Half-Time, Ballad, Surf) on a rock kit with an amp wall; Band gains Second Line
 - [x] Amp Room: separate area for guitar/bass amps and effect pedals (pedalboard, amp stack, signal flow, add/stomp/edit, new guitar/bass track, arm + hear me)
 - [ ] Listen to the rock styles and play a real guitar through the Amp Room (not checked: no listening test, no real instrument)
+
+## Nov 8 (6) — DJ playlists (Christopher)
+- [x] DJ Decks playlist: add music (button or drag from computer / left menu), reorder, remove, load any track on deck A or B (buttons or drag onto a deck)
+- [x] Save named playlists on this device (with a copy of their music), reopen, rename, delete (with confirmation); unsaved-changes warning
+- [x] Phone: List button opens the playlist over the whole DJ screen
+- [ ] Try on a real phone and after a real reload (test mode keeps playlists in memory only)

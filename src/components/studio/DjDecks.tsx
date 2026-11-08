@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 import { toast } from "sonner";
-import { Disc3, FolderOpen, Music2, Pause, Play, Circle, Square, Download, Trash2, RefreshCcw, ImagePlus } from "lucide-react";
+import { Disc3, FolderOpen, ListMusic, Music2, Pause, Play, Circle, Square, Download, Trash2, RefreshCcw, ImagePlus } from "lucide-react";
 import synclabLogoAsset from "@/assets/synclab-logo-neon.jpg.asset.json";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -15,6 +15,7 @@ import { renderSong } from "@/lib/synclab/song-render";
 import { canShareFile, downloadBlob, encodeWav, shareFile } from "@/lib/synclab/bounce";
 import { songSteps } from "@/lib/synclab/timebase";
 import { useIsLandscapePhone } from "@/hooks/use-mobile";
+import { DJ_TRACK_DRAG, DjPlaylist, loadPlaylistTrack } from "./DjPlaylist";
 
 /** Re-render on any deck/mixer change. */
 function useDjVersion() {
@@ -52,8 +53,9 @@ function DjDesk() {
   const dj = getDj();
   const anyPlaying = dj.A.state.playing || dj.B.state.playing;
   const phone = useIsLandscapePhone();
+  const [listOpen, setListOpen] = useState(false);
   return (
-    <section className="dj-device space-y-2 rounded-md border border-border p-2 sm:p-3" aria-label="DJ decks">
+    <section className="dj-device relative space-y-2 rounded-md border border-border p-2 sm:p-3" aria-label="DJ decks">
       {!phone && (
         <header className="flex flex-wrap items-center gap-2">
           <Disc3 className="size-5 text-primary" />
@@ -67,10 +69,12 @@ function DjDesk() {
       </div>
       <div className="dj-console">
         <DeckPanel id="A" />
-        <MixerPanel active={anyPlaying} />
+        <MixerPanel active={anyPlaying} onPlaylist={() => setListOpen(true)} />
         <DeckPanel id="B" />
       </div>
       {!phone && <RecordPanel />}
+      {!phone && <DjPlaylist />}
+      {phone && listOpen && <DjPlaylist sheet onClose={() => setListOpen(false)} />}
       <p className="dj-footnote text-[11px] text-muted-foreground">
         Pitch changes tempo and key together, like a turntable. Headphone cueing needs a second audio output, which browsers don't give a web page — everything plays through your main speakers.
       </p>
@@ -209,6 +213,7 @@ function DeckPanel({ id }: { id: DeckId }) {
     try {
       const raw = e.dataTransfer.getData("application/synclab") || e.dataTransfer.getData("text/plain");
       const v = JSON.parse(raw) as { type?: string; id?: string };
+      if (v?.type === DJ_TRACK_DRAG && v.id) { void loadPlaylistTrack(id, v.id); return; }
       const local = v?.type === "localfile" && v.id ? getLocalFile(v.id) : null;
       if (local) void loadFile(local.file);
     } catch { /* not a file */ }
@@ -344,7 +349,7 @@ function Turntable({ id }: { id: DeckId }) {
 const meterPos = (v: number) => Math.min(1, Math.max(0, (20 * Math.log10(Math.max(1e-5, v)) + 48) / 54));
 const METER_TICKS = [6, 0, -6, -12, -24, -48];
 
-function MixerPanel(_props: { active: boolean }) {
+function MixerPanel({ onPlaylist }: { active: boolean; onPlaylist: () => void }) {
   const dj = getDj();
   const meters = useRef<Record<string, HTMLElement | null>>({});
   const hold = useRef<Record<string, { v: number; at: number; clipAt: number }>>({});
@@ -432,7 +437,10 @@ function MixerPanel(_props: { active: boolean }) {
           {fader("B")}
         </div>
         {xfader}
-        <RecordPanel />
+        <div className="dj-phone-bottom">
+          <RecordPanel />
+          <Button variant="secondary" className="dj-btn dj-pl-open" onClick={onPlaylist} aria-label="Open the playlist"><ListMusic className="size-4" />List</Button>
+        </div>
       </div>
     );
   }
