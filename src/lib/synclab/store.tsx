@@ -229,6 +229,7 @@ export type PanelId =
   | "genstem"
   | "bassgen"
   | "drummer"
+  | "livekeys"
   | "dj"
   | "amprig"
   | "reel-recorder"

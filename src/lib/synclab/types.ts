@@ -527,6 +527,8 @@ export interface Track {
   automation?: AutomationLane[] | undefined;
   /** Live Drummer settings: this drum channel is played by the session drummer (see drummer.ts). */
   drummer?: import("./drummer").DrummerSettings | undefined;
+  /** Live Keys settings: this instrument channel is played by the session keyboard player (see keyboardist.ts). */
+  keyboardist?: import("./keyboardist").KeysSettings | undefined;
   /** Mute / solo presses recorded during a take, replayed during playback. */
   muteEvents?: import("./switch-automation").SwitchEvent[] | undefined;
   soloEvents?: import("./switch-automation").SwitchEvent[] | undefined;

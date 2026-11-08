@@ -3893,6 +3893,46 @@ html.phone-console-active [role="option"] { min-height: 44px; font-size: 15px; }
 .phone-console .drummer-perform button { min-height: 52px; padding-inline: 4px; font-size: 13px; }
 .phone-console .drummer-controls { grid-template-columns: 220px 1fr; }
 
+/* ---------------- Live Keys: ebony case with ivory trim and a red felt strip; instrument follows the sound ---------------- */
+.keys-device {
+  --drum-shell: oklch(0.2 0.012 270); --drum-shell-2: oklch(0.14 0.01 270); --drum-brass: oklch(0.88 0.07 88); --drum-brass-deep: oklch(0.7 0.08 80);
+  --drum-screen: oklch(0.12 0.01 260); --drum-cell: oklch(0.23 0.012 270); --keys-felt: oklch(0.48 0.17 25);
+  border-top-color: var(--keys-felt);
+}
+.keys-display { align-items: center; }
+.keys-chord { font-family: var(--font-display); font-size: 26px; line-height: 1; color: var(--hardware-silver); }
+.keys-chord small { font-size: 14px; color: var(--muted-foreground); }
+.keys-setup { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: flex-end; }
+.keys-field { display: flex; flex-direction: column; gap: 4px; }
+.keys-field > span { font-family: var(--font-mono); font-size: 10px; font-weight: 700; letter-spacing: 0.16em; color: var(--muted-foreground); }
+.keys-rig {
+  --rig-case: oklch(0.12 0.005 270); --rig-case-2: oklch(0.2 0.008 270); --rig-ink: oklch(0.86 0.09 85); --rig-white: oklch(0.96 0.012 90); --rig-white-edge: oklch(0.78 0.015 90);
+  --rig-black: oklch(0.13 0.005 270); --rig-lit: oklch(0.78 0.16 65); --rig-felt: var(--keys-felt);
+  border-radius: 6px; padding: 6px 8px 8px; background: linear-gradient(180deg, var(--rig-case-2), var(--rig-case)); border: 2px solid var(--hardware-rubber); box-shadow: var(--hardware-case-shadow);
+}
+.keys-rig[data-look="ep"] { --rig-case: oklch(0.16 0.004 260); --rig-case-2: oklch(0.72 0.01 260); --rig-ink: oklch(0.2 0.01 260); --rig-felt: oklch(0.42 0.14 25); }
+.keys-rig[data-look="wurli"] { --rig-case: oklch(0.7 0.05 80); --rig-case-2: oklch(0.86 0.05 85); --rig-ink: oklch(0.3 0.04 60); --rig-felt: oklch(0.45 0.12 30); }
+.keys-rig[data-look="organ"] { --rig-case: oklch(0.3 0.07 45); --rig-case-2: oklch(0.42 0.09 50); --rig-ink: oklch(0.9 0.05 85); --rig-white: oklch(0.93 0.03 85); --rig-felt: oklch(0.2 0.02 40); }
+.keys-rig[data-look="clav"] { --rig-case: oklch(0.14 0.01 40); --rig-case-2: oklch(0.36 0.06 55); --rig-ink: oklch(0.9 0.04 85); --rig-felt: oklch(0.55 0.15 60); }
+.keys-rig[data-look="synth"] { --rig-case: oklch(0.13 0.01 250); --rig-case-2: oklch(0.22 0.02 250); --rig-ink: oklch(0.82 0.13 200); --rig-lit: oklch(0.8 0.14 200); --rig-felt: oklch(0.72 0.14 200); }
+.keys-rig-top { display: flex; align-items: center; gap: 8px; padding: 0 2px 5px; border-bottom: 3px solid var(--rig-felt); margin-bottom: 4px; }
+.keys-rig-name { font-family: var(--font-display); font-size: 13px; letter-spacing: 0.14em; color: var(--rig-ink); }
+.keys-rig-hint { margin-left: auto; font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.1em; color: color-mix(in oklab, var(--rig-ink) 65%, transparent); }
+.keys-rig-led { width: 8px; height: 8px; border-radius: 50%; background: oklch(0.3 0.03 25); box-shadow: inset 0 0 2px oklch(0 0 0 / 0.6); }
+.keys-rig-led.is-on { background: oklch(0.68 0.22 25); box-shadow: 0 0 6px oklch(0.68 0.22 25); }
+.keys-board { position: relative; display: flex; height: 104px; user-select: none; -webkit-user-select: none; touch-action: manipulation; }
+.keys-white { position: relative; flex: 1 1 0; min-width: 0; padding: 0; background: linear-gradient(180deg, var(--rig-white) 80%, var(--rig-white-edge)); border: 1px solid oklch(0.3 0.01 90 / 0.6); border-top: 0; border-radius: 0 0 4px 4px; transition: background 60ms; }
+.keys-white span { position: absolute; bottom: 4px; left: 0; right: 0; text-align: center; font-family: var(--font-mono); font-size: 8px; font-weight: 700; color: oklch(0.35 0.01 90); pointer-events: none; }
+.keys-black { position: absolute; top: 0; z-index: 1; padding: 0; width: calc(100% / var(--keys-whites) * 0.62); left: calc(var(--keys-at) * 100% / var(--keys-whites) - (100% / var(--keys-whites) * 0.31)); height: 62%;
+  background: linear-gradient(180deg, oklch(0.3 0.005 270), var(--rig-black) 30%); border: 1px solid oklch(0 0 0); border-radius: 0 0 3px 3px; box-shadow: 0 2px 2px oklch(0 0 0 / 0.5); transition: background 60ms; }
+.keys-white.is-lit { background: linear-gradient(180deg, color-mix(in oklab, var(--rig-lit) 70%, var(--rig-white)), var(--rig-lit)); }
+.keys-black.is-lit { background: var(--rig-lit); }
+.keys-rig[data-look="organ"] .keys-white { border-radius: 0; }
+.phone-console .keys-board { height: 64px; }
+.phone-console .keys-rig { padding: 3px 4px 4px; }
+.phone-console .keys-rig-hint { display: none; }
+.phone-console .keys-chord { font-size: 20px; }
+
 /* ---------------- DJ Decks: black battle-mixer look, Serato-style 3-band waveforms ---------------- */
 .dj-device {
   --dj-a: oklch(0.74 0.14 230); --dj-b: oklch(0.76 0.16 55);
@@ -4302,6 +4342,11 @@ html.phone-console-active [role="option"] { min-height: 44px; font-size: 15px; }
 .kit-cab { fill: oklch(0.13 0.004 260); stroke: oklch(0.72 0.11 85 / 0.7); stroke-width: 1; }
 .kit-cab-grille { fill: oklch(0.2 0.01 60); opacity: 0.55; }
 .kit-cab-logo { fill: oklch(0.82 0.08 85 / 0.7); font-family: var(--font-display); font-size: 6px; letter-spacing: 0.12em; }
+/* jazz bop kit: warm wood-grain shells on a club stage under a spotlight */
+.kit-view[data-kit="jazz"] { background: radial-gradient(ellipse at 50% 100%, oklch(0.42 0.09 70 / 0.5), transparent 65%), var(--drum-screen); }
+.kit-curtain { fill: oklch(0.24 0.08 20 / 0.55); }
+.kit-spot { fill: oklch(0.8 0.1 85 / 0.14); }
+[data-kit="jazz"] .kit-shell { fill: oklch(0.5 0.1 calc(var(--kit-hue) * 0.15 + 40)); stroke: oklch(0.32 0.07 45); }
 .drummer-perform { grid-template-columns: repeat(6, minmax(0, 1fr)); }
 .phone-console .drummer-perform { grid-template-columns: repeat(6, minmax(0, 1fr)); }
 .phone-console .kit-view { padding: 2px 4px 0; }

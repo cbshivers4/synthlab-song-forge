@@ -36,6 +36,7 @@ const PANELS: { id: Exclude<PanelId, null>; label: string }[] = [
   { id: "genstem", label: "Generate Stem" },
   { id: "bassgen", label: "Bass Generator" },
   { id: "drummer", label: "Live Drummer" },
+  { id: "livekeys", label: "Live Keys (keyboard player)" },
   { id: "dj", label: "DJ Decks" },
   { id: "amprig", label: "Amps & Pedals (Amp Room)" },
 ];

@@ -54,6 +54,7 @@ export function MobileNav({ onBeatMode, view, setView, moreSignal = 0, landscape
     { label: "Live View", icon: <Radio />, panel: "live" },
     { label: "Live Looper", icon: <Disc3 />, panel: "looper" },
     { label: "Live Drummer", icon: <Drum />, panel: "drummer" },
+    { label: "Live Keys", icon: <Piano />, panel: "livekeys" },
     { label: "DJ Decks", icon: <Disc3 />, panel: "dj" },
     { label: "Amps & Pedals", icon: <Guitar />, panel: "amprig" },
     { label: "Hum to Beat", icon: <Mic />, panel: "humbeat" },

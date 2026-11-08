@@ -12,7 +12,7 @@ export type DrumRole =
   | "kick" | "snare" | "clap" | "rim" | "hat" | "openhat" | "ride" | "crash"
   | "tomHi" | "tomMid" | "tomLo" | "shaker" | "conga" | "congaLo" | "cowbell" | "clave" | "tamb" | "perc";
 
-export type GenreGroup = "Electronic" | "Hip-Hop & R&B" | "Rock" | "Band" | "World & Latin";
+export type GenreGroup = "Electronic" | "Hip-Hop & R&B" | "Rock" | "Jazz" | "Band" | "World & Latin";
 export type FillStyle = "toms" | "snare" | "trap" | "perc" | "break";
 
 export interface DrumGenre {
@@ -139,6 +139,38 @@ export const DRUM_GENRES: DrumGenre[] = [
     kick: ["X.......X......."], snare: ["....X.......X..."], tomLo: ["", "x.x.x.x.x.x.x.x."], hat: ["x.x.x.x.x.x.x.x."], crash: ["", "............o..."],
   }),
 
+  // ---- Jazz (its own group, played on a small bop kit; skip notes sit on the "a" of the beat)
+  g("jazz-swing", "Jazz Swing", "Jazz", 140, 0, "jazz", "snare", {
+    ride: ["X..xX...X..xX..."], hat: ["....x.......x..."], kick: ["g...g...g...g...", "......g.......g."], snare: ["", "...g...g..g...g."],
+  }, { ghosts: true }),
+  g("bebop", "Bebop", "Jazz", 220, 0, "jazz", "snare", {
+    ride: ["X...x..xX...x..x"], hat: ["....x.......x..."], kick: ["", "..........g....."], snare: ["", "......g...g..g.."],
+  }, { ghosts: true }),
+  g("hard-bop", "Hard Bop", "Jazz", 160, 0, "jazz", "toms", {
+    ride: ["X...x..xX...x..x"], hat: ["....x.......x..."], kick: ["g...g...g...g...", "...........x...."], snare: ["...........g....", ".g....g...g....g"], crash: ["", "X..............."],
+  }, { ghosts: true }),
+  g("cool-jazz", "Cool Jazz", "Jazz", 120, 0, "jazz", "snare", {
+    ride: ["x...x..xx...x..x"], hat: ["....x.......x..."], kick: ["g...g...g...g..."], snare: ["", "..g.....g.g....."],
+  }, { ghosts: true }),
+  g("brush-ballad", "Brush Ballad", "Jazz", 60, 0, "jazz", "snare", {
+    snare: ["o.g.o.g.o.g.o.g.", ".g.g.g.g.g.g.g.g"], hat: ["....x.......x..."], kick: ["g.......g......."], ride: ["", "x...x...x...x..."],
+  }),
+  g("big-band", "Big Band", "Jazz", 180, 0, "jazz", "toms", {
+    ride: ["X...x..xX...x..x"], hat: ["....X.......X..."], kick: ["X...x...X...x...", "......x.......x."], snare: ["....x.......x...", "......g..g...g.."], crash: ["", "X..............."],
+  }, { ghosts: true }),
+  g("latin-jazz", "Latin Jazz", "Jazz", 180, 0, "jazz", "perc", {
+    ride: ["x.x.x.x.x.x.x.x."], clave: ["x..x...x..x.x..."], kick: ["...x......x.....", "......x........."], snare: ["", ".g.....g......g."], conga: ["", "..x.xx....x.xx.."],
+  }),
+  g("jazz-funk", "Jazz Funk", "Jazz", 100, 0.1, "jazz", "snare", {
+    kick: ["X.....x...X..x..", "...x......x....."], snare: ["....X..g.g..X..g", ".g.....g.......g"], hat: ["x.x.x.x.x.x.x.x.", ".g.g.g.g.g.g.g.g"], openhat: ["", "..............o."],
+  }, { ghosts: true }),
+  g("fusion", "Fusion", "Jazz", 112, 0, "jazz", "toms", {
+    kick: ["X..x..x...x..x..", "......x.x......."], snare: ["....X.......X..g", "..g....g.g....g."], ride: ["x.x.x.x.x.x.x.x.", "..o...o...o...o."], crash: ["", "X..............."],
+  }, { ghosts: true }),
+  g("two-beat", "Dixieland Two-Beat", "Jazz", 190, 0, "jazz", "snare", {
+    kick: ["X.......X......."], snare: ["....x.......x...", "..g...g...g...g."], hat: ["....x.......x..."], ride: ["x.x.x.x.x.x.x.x."],
+  }),
+
   // ---- Band styles
   g("pop", "Pop", "Band", 110, 0, "acoustic", "toms", {
     kick: ["X.......X.x.....", "......x........x"], snare: ["....X.......X..."], hat: ["x.o.x.o.x.o.x.o."], tamb: ["", "....o.......o..."],
@@ -149,9 +181,9 @@ export const DRUM_GENRES: DrumGenre[] = [
   g("blues-shuffle", "Blues Shuffle", "Band", 96, 0, "acoustic", "toms", {
     kick: ["X.......X.......", "...g.......g...."], snare: ["....X.......X...", ".......g.......g"], hat: ["x..ox..ox..ox..o"],
   }, { crossStick: true, ghosts: true }),
-  g("jazz-swing", "Jazz Swing", "Band", 140, 0, "jazz", "snare", {
-    ride: ["X..xX...X..xX..."], hat: ["....x.......x..."], kick: ["g...g...g...g...", "......g.......g."], snare: ["", "...g...g..g...g."],
-  }, { ghosts: true }),
+  g("ska", "Ska", "Band", 150, 0, "acoustic", "snare", {
+    kick: ["X.......X.......", "......x........."], snare: ["....X.......X..."], hat: ["..x...x...x...x.", "x...x...x...x..."], crash: ["", "X..............."],
+  }, { crossStick: true }),
   g("gospel", "Gospel Chops", "Band", 100, 0.15, "acoustic", "toms", {
     kick: ["X..x..x.X..x....", ".........x....x."], snare: ["....X..g..g.X...", ".g.....g.g.....g"], hat: ["x.x.x.x.x.x.x.x.", ".g.g.g.g.g.g.g.g"],
   }, { ghosts: true }),
@@ -195,7 +227,7 @@ export const DRUM_GENRES: DrumGenre[] = [
   }),
 ];
 
-export const GENRE_GROUPS: GenreGroup[] = ["Electronic", "Hip-Hop & R&B", "Rock", "Band", "World & Latin"];
+export const GENRE_GROUPS: GenreGroup[] = ["Electronic", "Hip-Hop & R&B", "Rock", "Jazz", "Band", "World & Latin"];
 export const genreById = (id: string) => DRUM_GENRES.find((x) => x.id === id) ?? DRUM_GENRES[0]!;
 
 export type DrumPiece = "kick" | "snare" | "hats" | "cymbals" | "toms" | "perc";

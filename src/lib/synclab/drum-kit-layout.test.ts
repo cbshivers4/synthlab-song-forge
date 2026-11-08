@@ -8,6 +8,7 @@ describe("drum set picture", () => {
   it("each genre group has its own kind of set", () => {
     expect(kitLayoutFor("Band").style).toBe("band");
     expect(kitLayoutFor("Rock").style).toBe("rock");
+    expect(kitLayoutFor("Jazz").style).toBe("jazz");
     expect(kitLayoutFor("Electronic").style).toBe("electronic");
     expect(kitLayoutFor("Hip-Hop & R&B").style).toBe("pads");
     expect(kitLayoutFor("World & Latin").style).toBe("latin");
@@ -25,6 +26,13 @@ describe("drum set picture", () => {
     const rock = DRUM_GENRES.filter((g) => g.group === "Rock").map((g) => g.id);
     for (const id of ["rock", "classic-rock", "hard-rock", "punk", "metal", "grunge"]) expect(rock).toContain(id);
     expect(GENRE_GROUPS).toContain("Rock");
+  });
+
+  it("jazz styles have their own group and play on the jazz kit", () => {
+    const jazz = DRUM_GENRES.filter((g) => g.group === "Jazz");
+    for (const id of ["jazz-swing", "bebop", "brush-ballad", "big-band", "latin-jazz"]) expect(jazz.map((g) => g.id)).toContain(id);
+    expect(jazz.every((g) => g.kit === "jazz")).toBe(true);
+    expect(GENRE_GROUPS).toContain("Jazz");
   });
 
   it("genres in the same group get different finishes", () => {

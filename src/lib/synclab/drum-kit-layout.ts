@@ -6,7 +6,7 @@ import type { DrumRole, GenreGroup } from "./drummer";
  * roles it plays (the rock kit is a bigger black-sparkle setup in front of an amp wall), so the picture lights the piece the drummer hits, and tapping a piece plays
  * its first role through the drummer's own channel. Pure data, shared by the picture and tests.
  */
-export type KitStyle = "band" | "rock" | "electronic" | "pads" | "latin";
+export type KitStyle = "band" | "rock" | "jazz" | "electronic" | "pads" | "latin";
 export type PieceShape = "cymbal" | "hat" | "drum" | "kick" | "tower" | "hexpad" | "cympad" | "sqpad" | "beatpad" | "conga" | "bongos" | "cowbell" | "tamb" | "shaker" | "clave";
 
 export interface KitPiece {
@@ -58,6 +58,22 @@ const ROCK: KitLayout = {
   ],
 };
 
+// Jazz bop kit: small kick, one rack tom, a big ride on the right, on a club stage under a spotlight.
+const JAZZ: KitLayout = {
+  style: "jazz", name: "Bop kit",
+  pieces: [
+    p("kick", "Kick", "kick", ["kick"], 158, 104, 62),
+    p("crash", "Crash", "cymbal", ["crash"], 64, 26, 70, 16),
+    p("ride", "Ride", "cymbal", ["ride"], 252, 26, 104, 22),
+    p("cowbell", "Woodblock", "cowbell", ["cowbell", "clave", "perc"], 210, 66, 16, 12),
+    p("tomHi", "Rack tom", "drum", ["tomHi", "tomMid", "conga"], 150, 54, 40, 20),
+    p("tomLo", "Floor tom", "drum", ["tomLo", "congaLo"], 236, 84, 50, 38),
+    p("hats", "Hi-hat", "hat", ["hat", "openhat"], 26, 64, 42, 10),
+    p("snare", "Snare", "drum", ["snare", "rim", "clap"], 84, 82, 48, 16),
+    p("tamb", "Shaker", "shaker", ["shaker", "tamb"], 296, 112, 26, 10),
+  ],
+};
+
 const ELECTRONIC: KitLayout = {
   style: "electronic", name: "Electronic kit",
   pieces: [
@@ -106,7 +122,7 @@ const LATIN: KitLayout = {
   ],
 };
 
-const BY_GROUP: Record<GenreGroup, KitLayout> = { Band: BAND, Rock: ROCK, Electronic: ELECTRONIC, "Hip-Hop & R&B": PADS, "World & Latin": LATIN };
+const BY_GROUP: Record<GenreGroup, KitLayout> = { Band: BAND, Rock: ROCK, Jazz: JAZZ, Electronic: ELECTRONIC, "Hip-Hop & R&B": PADS, "World & Latin": LATIN };
 
 export function kitLayoutFor(group: GenreGroup): KitLayout { return BY_GROUP[group]; }
 

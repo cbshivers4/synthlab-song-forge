@@ -61,6 +61,7 @@ export function DrumKitView({ track, genre, settings }: { track: Track; genre: D
         {layout.style === "pads" && <PadStation label={genre.label} />}
         {layout.style === "electronic" && <EModule label={genre.label} />}
         {layout.style === "rock" && <AmpWall />}
+        {layout.style === "jazz" && <JazzStage />}
         {layout.pieces.map((piece) => {
           const off = piece.roles.every((r) => settings.pieces[PIECE_OF[r]] === false);
           const can = playable.has(piece.id);
@@ -211,6 +212,17 @@ function AmpWall() {
           <text className="kit-cab-logo" x={44 + i * 78} y="70" textAnchor="middle">SYNCLAB</text>
         </g>
       ))}
+    </g>
+  );
+}
+
+/** Jazz club stage: a warm spotlight and a curtain behind the bop kit. */
+function JazzStage() {
+  return (
+    <g aria-hidden="true" className="kit-jazzstage">
+      {Array.from({ length: 16 }, (_, i) => <rect key={i} className="kit-curtain" x={i * 20} y="0" width="12" height={KIT_VIEWBOX.h - 10} rx="6" />)}
+      <ellipse className="kit-spot" cx="160" cy="118" rx="150" ry="22" />
+      <text className="kit-cab-logo" x="160" y="10" textAnchor="middle">SYNCLAB JAZZ CLUB</text>
     </g>
   );
 }

@@ -34,7 +34,7 @@ const FEATURES: { icon: React.ReactNode; title: string; body: string }[] = [
   { icon: <Disc3 className="size-4" />, title: "DJ Decks", body: "Two decks with beat-matching Sync, hot cues, loops, EQ, filter and crossfader — record your set to MP3 or WAV." },
   { icon: <Scissors className="size-4" />, title: "Video Sampler", body: "Chop video to pads, trigger clips from keys or MIDI, and record straight from your camera." },
   { icon: <Piano className="size-4" />, title: "External MIDI & MIDI Learn", body: "Play your hardware synths and drum machines from your tracks, and map any knob, fader or pad on your controller." },
-  { icon: <Music2 className="size-4" />, title: "Live Drummer & Bass Generator", body: "A session drummer in 39 styles who takes fills on cue, plus genre basslines in any key — print both to your song." },
+  { icon: <Music2 className="size-4" />, title: "Live Drummer & Live Keys", body: "A session drummer in 59 styles and a keyboard player in 51 — jazz, rock, gospel, hip-hop and more — who take fills on cue and print to your song." },
   { icon: <Download className="size-4" />, title: "Pro Export", body: "Full mix, every track as stems, or one track — WAV, MP3, FLAC up to 96 kHz, plus MIDI files." },
   { icon: <SlidersHorizontal className="size-4" />, title: "Desktop & Phone", body: "A full desktop DAW with split view, and a touch studio on your phone — the same projects on both." },
 ];

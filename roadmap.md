@@ -235,3 +235,5 @@
 ## Nov 8 (9) — DJ tone arm and scratching (Christopher)
 - [x] Pick up the tone arm and set it down anywhere on the record to play from there (silent while lifted)
 - [x] Turning the record by hand now sounds: forwards and backwards at the hand's speed; held still = silent
+
+- [x] Live Keys: session keyboard player (52 styles in Jazz, Rock, Blues & Gospel, Hip-Hop & R&B, Electronic, Pop & Country, World & Latin) with key/chords/sound/range, runs, breaks, hits, lit keyboard and print to timeline; Jazz group (10 styles, bop kit) added to the Live Drummer. Tests pass; not listened to or tried on a real phone.

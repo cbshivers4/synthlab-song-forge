@@ -332,7 +332,7 @@ function GrooveDisplay({ snap, spb, playing, pads }: { snap: DrummerSnapshot; sp
 }
 
 /** Logic-style pad: left ↔ right is simple ↔ complex, bottom ↔ top is soft ↔ loud. */
-function IntensityPad({ complexity, loudness, onChange }: { complexity: number; loudness: number; onChange: (c: number, l: number) => void }) {
+export function IntensityPad({ complexity, loudness, onChange }: { complexity: number; loudness: number; onChange: (c: number, l: number) => void }) {
   const ref = useRef<HTMLDivElement>(null);
   const drag = useRef(false);
   const move = (e: React.PointerEvent) => {
