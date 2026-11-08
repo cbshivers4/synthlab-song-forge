@@ -225,6 +225,29 @@ export function scrubBoost(speed: number, natural = 3) {
   return Math.min(12, Math.max(1, Math.abs(speed) / natural));
 }
 
+/**
+ * Scratch speed from how fast the hand moves the record (track-seconds per second, any sign):
+ * 0 below a slow crawl (the record is being held still, so it's silent), capped at 4× so
+ * quick flicks sound like a fast wind rather than a squeal.
+ */
+export function scratchRate(velocity: number) {
+  const s = Math.abs(velocity);
+  if (!Number.isFinite(s) || s < 0.03) return 0;
+  return Math.min(4, s);
+}
+
+/**
+ * Tone arm placed by hand: the arm swings from the pivot, so its angle says where the needle sits.
+ * `pointerDeg` is the screen angle from the pivot to the finger (atan2, y down); the arm hangs
+ * straight down at rotation 0, `start` is its angle over the record's outer edge (track start) and
+ * `sweep` how far it swings to the label (track end). Returns 0…1 through the track.
+ */
+export function armFraction(pointerDeg: number, start: number, sweep: number) {
+  const rot = angleDelta(0, pointerDeg - 90);
+  if (!(sweep > 0)) return 0;
+  return Math.max(0, Math.min(1, (rot - start) / sweep));
+}
+
 /** New play position after a grab move of `delta` seconds (already in track time), kept inside the track. */
 export function scrubTo(pos: number, delta: number, dt: number, duration: number) {
   const boost = dt > 0 ? scrubBoost(delta / dt) : 1;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { angleDelta, beatPhase, crossfade, DEG_PER_SEC, scrubBoost, scrubTo, detectBpm, eqDb, filterFor, phaseShift, phonesBlend, phonesRoute, snapToBeat, speedFactor, syncRate, wavFromPcm16 } from "./dj";
+import { angleDelta, armFraction, beatPhase, crossfade, DEG_PER_SEC, scrubBoost, scrubTo, scratchRate, detectBpm, eqDb, filterFor, phaseShift, phonesBlend, phonesRoute, snapToBeat, speedFactor, syncRate, wavFromPcm16 } from "./dj";
 
 function clickTrack(bpm: number, seconds: number, sr = 22050, offset = 0.1) {
   const out = new Float32Array(Math.floor(seconds * sr));
@@ -111,5 +111,25 @@ describe("back to the start: grabbing the record and the waveform", () => {
   it("winding back never goes before the beginning or past the end", () => {
     expect(scrubTo(5, -20, 0.01, 200)).toBe(0);
     expect(scrubTo(195, 20, 0.01, 200)).toBeCloseTo(199.99, 6);
+  });
+});
+
+describe("tone arm and scratching", () => {
+  // desktop plinth: arm rests at 31° over the outer edge and swings 22° to the label
+  it("arm over the outer edge is the start, over the label is the end, halfway is the middle", () => {
+    expect(armFraction(90 + 31, 31, 22)).toBe(0);
+    expect(armFraction(90 + 53, 31, 22)).toBe(1);
+    expect(armFraction(90 + 42, 31, 22)).toBeCloseTo(0.5, 6);
+  });
+  it("swinging the arm off the record clamps to the start or the end", () => {
+    expect(armFraction(90, 31, 22)).toBe(0);
+    expect(armFraction(180, 31, 22)).toBe(1);
+  });
+  it("record held still is silent; scratch speed follows the hand in either direction, capped at 4x", () => {
+    expect(scratchRate(0)).toBe(0);
+    expect(scratchRate(0.01)).toBe(0);
+    expect(scratchRate(1)).toBe(1);
+    expect(scratchRate(-0.5)).toBe(0.5);
+    expect(scratchRate(-30)).toBe(4);
   });
 });

@@ -231,3 +231,7 @@
 - [x] ⏮ button on each deck: back to the beginning (keeps playing if playing)
 - [x] Drag the top waveform: right winds back, left moves ahead; quick swipes travel further (up to 12×)
 - [x] Grab and turn the record: backwards winds back, forwards moves ahead; sound holds while held and plays on when released; tapping the label still picks a picture
+
+## Nov 8 (9) — DJ tone arm and scratching (Christopher)
+- [x] Pick up the tone arm and set it down anywhere on the record to play from there (silent while lifted)
+- [x] Turning the record by hand now sounds: forwards and backwards at the hand's speed; held still = silent

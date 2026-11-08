@@ -4175,6 +4175,14 @@ html.phone-console-active [role="option"] { min-height: 44px; font-size: 15px; }
   background: linear-gradient(90deg, var(--tt-metal-dark), var(--tt-silver-hi), var(--tt-metal-dark)); border-radius: 1cqw; transition: transform 0.5s ease; }
 .dj-turntable[data-loaded="1"] .dj-tonearm { transform: rotate(calc(var(--arm-start) + var(--arm-p) * var(--arm-sweep))); }
 .dj-turntable[data-playing="1"] .dj-tonearm { transition: none; }
+.dj-turntable[data-arm-held="1"] .dj-tonearm { transition: none; }
+/* the part of the tone arm you grab: lower arm and head, wide enough for a fingertip, turns with the arm */
+.dj-arm-grab { position: absolute; left: 50%; bottom: -6cqw; width: max(28px, 10cqw); height: max(28px, 15cqw); transform: translateX(-50%); border-radius: 2cqw; pointer-events: auto; touch-action: none; outline: none; }
+.dj-arm-grab[data-grab="0"] { pointer-events: none; }
+.dj-arm-grab[data-grab="1"] { cursor: grab; }
+.dj-arm-grab[data-grab="1"]:active { cursor: grabbing; }
+.dj-arm-grab:focus-visible { box-shadow: 0 0 0 2px var(--ring); }
+.dj-turntable[data-arm-held="1"] .dj-tonearm-head { filter: drop-shadow(0 1.2cqw 1cqw oklch(0 0 0 / 0.6)); }
 /* the counterweight at the back of the arm */
 .dj-tonearm::before { content: ""; position: absolute; left: 50%; top: -11cqw; width: 6.5cqw; height: 9cqw; margin-left: -3.25cqw; border-radius: 0.8cqw;
   background: repeating-linear-gradient(0deg, transparent 0 0.9cqw, oklch(0 0 0 / 0.18) 0.9cqw 1.1cqw), linear-gradient(90deg, var(--tt-metal-dark), var(--tt-silver-hi) 45%, var(--tt-metal-dark)); }

@@ -2,6 +2,7 @@ import { Mp3Encoder } from "@breezystack/lamejs";
 import { getEngine } from "./audio-engine";
 import { findCoverArt } from "./cover-art";
 import { bandWave, beatPhase, crossfade, detectBpm, eqDb, filterFor, phaseShift, phonesBlend, phonesRoute, snapToBeat, speedFactor, syncRate, wavFromPcm16, type BandWave, type PhonesMode } from "./dj";
+import { ScratchVoice } from "./dj-scratch";
 import { isAppleMobile } from "./mic";
 
 /**
@@ -146,6 +147,7 @@ class Deck {
 
   async load(blob: Blob, name: string) {
     this.stopSource();
+    this.scratch?.stop(); this.scratch = null; this.held = null;
     this.releaseArt();
     this.state = { ...this.state, name, loading: true, error: null, playing: false, loop: null, hotCues: [null, null, null, null], cue: 0, art: null, artFrom: null };
     this.onChange();
@@ -212,18 +214,30 @@ class Deck {
   /** ⏮ Back to the very beginning of the track. Keeps playing if it was playing, stays stopped if not. */
   toStart() { this.seek(0); }
 
-  /** Hand on the record / waveform: the sound holds while you move it; letting go plays on if it was playing. */
+  /**
+   * Hand on the record, the waveform or the tone arm. Letting go plays on if it was playing.
+   * `sound`: true for the record — you hear it move forwards or backwards at your hand's speed
+   * (ScratchVoice). The waveform and a lifted tone arm move silently.
+   */
   private held: boolean | null = null;
+  private scratch: ScratchVoice | null = null;
   get isHeld() { return this.held != null; }
-  grab() {
+  grab(opts: { sound?: boolean } = {}) {
     if (!this.buffer || this.held != null) return;
     this.held = this.state.playing;
     if (this.state.playing) this.pause();
+    if (opts.sound) this.scratch = new ScratchVoice(this.ctx, this.buffer, this.trim, this.position());
   }
-  dragTo(pos: number) { if (this.held != null) this.seek(pos); }
+  dragTo(pos: number) {
+    if (this.held == null) return;
+    this.seek(pos);
+    this.scratch?.moveTo(this.position());
+  }
   release() {
     const was = this.held;
     this.held = null;
+    this.scratch?.stop();
+    this.scratch = null;
     if (was) this.play();
   }
 

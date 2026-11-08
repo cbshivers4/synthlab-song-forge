@@ -3,7 +3,7 @@ import { ImagePlus } from "lucide-react";
 import synclabLogoAsset from "@/assets/synclab-logo-neon.jpg.asset.json";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { getDj, type DeckId } from "@/lib/synclab/dj-engine";
-import { angleDelta, DEG_PER_SEC, scrubTo } from "@/lib/synclab/dj";
+import { angleDelta, armFraction, DEG_PER_SEC, scrubTo } from "@/lib/synclab/dj";
 import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
 import { useFrame } from "./dj-frame";
 
@@ -12,9 +12,11 @@ import { useFrame } from "./dj-frame";
  * record with a picture label, tone arm with counterweight, START·STOP and 33/45 speed buttons.
  * The record angle and the tone arm's travel come from the deck's real play position, so it turns
  * only while the deck plays and stops dead on pause. Every button here works.
- * Grab the record and turn it: backwards winds the track back (fast spins travel further, so a
- * couple of spins reach the beginning), forwards moves ahead. The sound holds while your hand is on
- * the record and plays on from the new spot when you let go, if the deck was playing.
+ * Grab the record and turn it: you hear it move forwards or backwards at your hand's speed
+ * (ScratchVoice; fast spins travel further, so a couple of spins reach the beginning). Holding it
+ * still is silent; letting go plays on from the new spot if the deck was playing.
+ * Pick up the tone arm and set it down anywhere on the record to play from that spot (outer edge =
+ * start, near the label = end); the music is silent while the arm is lifted.
  */
 export function Turntable({ id, compact = false }: { id: DeckId; compact?: boolean }) {
   const deck = getDj().deck(id);
@@ -50,7 +52,7 @@ export function Turntable({ id, compact = false }: { id: DeckId; compact?: boole
       g.on = true; g.moved = true;
       (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
       unlock();
-      deck.grab();
+      deck.grab({ sound: true });
     }
     const a = angleAt(e);
     const d = angleDelta(g.angle, a);
@@ -68,6 +70,43 @@ export function Turntable({ id, compact = false }: { id: DeckId; compact?: boole
   const swallowClick = (e: React.MouseEvent) => {
     if (spin.current?.moved) { e.preventDefault(); e.stopPropagation(); }
     spin.current = null;
+  };
+  // the tone arm: pick it up and set the needle down anywhere on the record (outer edge = start,
+  // near the label = end). Like lifting a real needle, the music is silent while the arm is up.
+  const armBase = useRef<HTMLDivElement>(null);
+  const armDrag = useRef<number | null>(null);
+  const armAt = (e: React.PointerEvent) => {
+    const base = armBase.current, plinth = base?.parentElement;
+    if (!base || !plinth || !deck.buffer) return null;
+    const r = canvasRect(base);
+    const p = canvasPoint(e.clientX, e.clientY);
+    const cs = getComputedStyle(plinth);
+    const start = parseFloat(cs.getPropertyValue("--arm-start")) || 0;
+    const sweep = parseFloat(cs.getPropertyValue("--arm-sweep")) || 1;
+    const deg = (Math.atan2(p.y - (r.top + r.height / 2), p.x - (r.left + r.width / 2)) * 180) / Math.PI;
+    return armFraction(deg, start, sweep);
+  };
+  const placeArm = (e: React.PointerEvent) => {
+    const f = armAt(e);
+    if (f == null || !deck.buffer) return;
+    arm.current?.style.setProperty("--arm-p", f.toFixed(4));
+    deck.dragTo(f * deck.buffer.duration);
+  };
+  const onArmDown = (e: React.PointerEvent) => {
+    if (!deck.buffer || (e.pointerType === "mouse" && e.button !== 0)) return;
+    e.stopPropagation();
+    (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+    unlock();
+    armDrag.current = e.pointerId;
+    deck.grab();
+    arm.current?.closest(".dj-turntable")?.setAttribute("data-arm-held", "1");
+  };
+  const onArmMove = (e: React.PointerEvent) => { if (armDrag.current === e.pointerId) placeArm(e); };
+  const onArmUp = (e: React.PointerEvent) => {
+    if (armDrag.current !== e.pointerId) return;
+    armDrag.current = null;
+    arm.current?.closest(".dj-turntable")?.removeAttribute("data-arm-held");
+    deck.release();
   };
   const choose = (f: File | undefined) => { if (f && f.type.startsWith("image/")) deck.setArt(f); };
   const labelTitle = s.art ? (s.artFrom === "file" ? "Cover picture from the file — tap to choose your own" : "Your picture — tap to change it") : "Tap to put a picture on this record";
@@ -92,9 +131,23 @@ export function Turntable({ id, compact = false }: { id: DeckId; compact?: boole
         </div>
         <span className="dj-sheen" aria-hidden />
         <span className="dj-strobe-light" aria-hidden title={s.playing ? "Spinning" : "Stopped"} />
-        <div className="dj-arm-base" aria-hidden>
-          <span className="dj-counterweight" />
-          <div ref={arm} className="dj-tonearm"><span className="dj-tonearm-head" /></div>
+        <div ref={armBase} className="dj-arm-base">
+          <span className="dj-counterweight" aria-hidden />
+          <div ref={arm} className="dj-tonearm">
+            <span className="dj-tonearm-head" aria-hidden />
+            <span className="dj-arm-grab" role="slider" tabIndex={s.name ? 0 : -1} aria-label={`Deck ${id} tone arm — drag onto the record to play from that spot`}
+              aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(deck.buffer && s.duration ? (deck.position() / s.duration) * 100 : 0)}
+              aria-disabled={!s.name} data-grab={s.name ? "1" : "0"}
+              title={s.name ? "Pick up the tone arm and set it down anywhere on the record — the outer edge is the start, near the label is the end" : undefined}
+              onPointerDown={onArmDown} onPointerMove={onArmMove} onPointerUp={onArmUp} onPointerCancel={onArmUp}
+              onKeyDown={(e) => {
+                if (!deck.buffer || !s.duration) return;
+                const step = e.key === "ArrowRight" || e.key === "ArrowDown" ? 5 : e.key === "ArrowLeft" || e.key === "ArrowUp" ? -5 : 0;
+                if (!step) return;
+                e.preventDefault();
+                deck.seek(deck.position() + step);
+              }} />
+          </div>
         </div>
         <span className="dj-armrest" aria-hidden />
         {!compact && (
