@@ -209,6 +209,24 @@ class Deck {
     this.onChange();
   }
 
+  /** ⏮ Back to the very beginning of the track. Keeps playing if it was playing, stays stopped if not. */
+  toStart() { this.seek(0); }
+
+  /** Hand on the record / waveform: the sound holds while you move it; letting go plays on if it was playing. */
+  private held: boolean | null = null;
+  get isHeld() { return this.held != null; }
+  grab() {
+    if (!this.buffer || this.held != null) return;
+    this.held = this.state.playing;
+    if (this.state.playing) this.pause();
+  }
+  dragTo(pos: number) { if (this.held != null) this.seek(pos); }
+  release() {
+    const was = this.held;
+    this.held = null;
+    if (was) this.play();
+  }
+
   hotCue(i: number) {
     const at = this.state.hotCues[i];
     if (at == null) { const cues = [...this.state.hotCues]; cues[i] = this.position(); this.state = { ...this.state, hotCues: cues }; this.onChange(); return; }

@@ -226,3 +226,8 @@
 - [x] Silver direct-drive turntables: strobe-dotted platter, tone arm with counterweight, working START·STOP and 33/45 buttons, green pitch-zero light
 - [x] Black two-channel club mixer face: TRIM, HI/MID/LOW, COLOR filter, orange CUE, centre meter bridge, headphone section, scaled faders, slotted crossfader
 - [ ] Try with real headphones and a real second output (not checked: headless browser has no output devices)
+
+## Nov 8 (8) — DJ back to the start (Christopher)
+- [x] ⏮ button on each deck: back to the beginning (keeps playing if playing)
+- [x] Drag the top waveform: right winds back, left moves ahead; quick swipes travel further (up to 12×)
+- [x] Grab and turn the record: backwards winds back, forwards moves ahead; sound holds while held and plays on when released; tapping the label still picks a picture

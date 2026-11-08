@@ -4479,3 +4479,9 @@ html.phone-console-active [role="option"] { min-height: 44px; font-size: 15px; }
 .dj-mixer.is-phone .djm-xgrill [role="slider"] { width: 14px; height: 20px; }
 .phone-console .dj-knob.is-wide { width: 44px !important; }
 .phone-console .dj-knob-row .djm-cue { min-height: 38px !important; height: 38px; }
+/* DJ: grab the record or the top waveform to wind back / move ahead */
+.dj-platter[data-grab="1"] { cursor: grab; touch-action: none; }
+.dj-platter[data-grab="1"]:active { cursor: grabbing; }
+.dj-wave[data-grab="1"] { cursor: ew-resize; touch-action: none; }
+.dj-tostart { padding-inline: 8px; }
+.phone-console .dj-tostart { min-width: 36px; padding-inline: 0; }

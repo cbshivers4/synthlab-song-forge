@@ -203,3 +203,30 @@ export function phonesRoute(mode: PhonesMode, canPickDevice: boolean, deviceId: 
   if (mode === "device") return canPickDevice && deviceId ? "device" : "off";
   return mode;
 }
+
+/** 33⅓ RPM: the record turns 200° for every second of the track. */
+export const DEG_PER_SEC = (100 / 3 / 60) * 360;
+
+/** Smallest signed difference between two angles in degrees (−180…180), so crossing ±180° doesn't jump. */
+export function angleDelta(from: number, to: number) {
+  let d = (to - from) % 360;
+  if (d > 180) d -= 360;
+  if (d < -180) d += 360;
+  return d;
+}
+
+/**
+ * Grabbing the record or the waveform: slow moves follow your finger exactly, fast flicks travel
+ * further (up to 12×) so you can wind a whole track back to the start in a couple of spins/swipes.
+ * `speed` is how fast you moved in seconds-of-track per second; `natural` is the speed (also in
+ * seconds-of-track per second) above which the boost starts.
+ */
+export function scrubBoost(speed: number, natural = 3) {
+  return Math.min(12, Math.max(1, Math.abs(speed) / natural));
+}
+
+/** New play position after a grab move of `delta` seconds (already in track time), kept inside the track. */
+export function scrubTo(pos: number, delta: number, dt: number, duration: number) {
+  const boost = dt > 0 ? scrubBoost(delta / dt) : 1;
+  return Math.max(0, Math.min(Math.max(0, duration - 0.01), pos + delta * boost));
+}

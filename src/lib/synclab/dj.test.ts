@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { beatPhase, crossfade, detectBpm, eqDb, filterFor, phaseShift, phonesBlend, phonesRoute, snapToBeat, speedFactor, syncRate, wavFromPcm16 } from "./dj";
+import { angleDelta, beatPhase, crossfade, DEG_PER_SEC, scrubBoost, scrubTo, detectBpm, eqDb, filterFor, phaseShift, phonesBlend, phonesRoute, snapToBeat, speedFactor, syncRate, wavFromPcm16 } from "./dj";
 
 function clickTrack(bpm: number, seconds: number, sr = 22050, offset = 0.1) {
   const out = new Float32Array(Math.floor(seconds * sr));
@@ -87,5 +87,29 @@ describe("DJ turntable speed", () => {
   it("45 RPM plays 1.35x faster than 33", () => {
     expect(speedFactor(33)).toBe(1);
     expect(speedFactor(45)).toBeCloseTo(1.35);
+  });
+});
+
+describe("back to the start: grabbing the record and the waveform", () => {
+  it("crosses the ±180° seam without jumping", () => {
+    expect(angleDelta(170, -170)).toBe(20);
+    expect(angleDelta(-170, 170)).toBe(-20);
+    expect(angleDelta(10, 40)).toBe(30);
+  });
+  it("one turn of the record is 1.8 seconds of track at 33⅓", () => {
+    expect(360 / DEG_PER_SEC).toBeCloseTo(1.8, 5);
+  });
+  it("slow moves follow the finger exactly", () => {
+    expect(scrubBoost(1)).toBe(1);
+    expect(scrubTo(30, -0.5, 0.5, 200)).toBeCloseTo(29.5, 6);
+  });
+  it("fast flicks travel further, capped at 12×", () => {
+    expect(scrubBoost(30)).toBe(10);
+    expect(scrubBoost(1000)).toBe(12);
+    expect(scrubTo(60, -2, 0.02, 200)).toBeCloseTo(36, 6);
+  });
+  it("winding back never goes before the beginning or past the end", () => {
+    expect(scrubTo(5, -20, 0.01, 200)).toBe(0);
+    expect(scrubTo(195, 20, 0.01, 200)).toBeCloseTo(199.99, 6);
   });
 });

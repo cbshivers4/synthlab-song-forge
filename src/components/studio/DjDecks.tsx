@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 import { toast } from "sonner";
-import { Disc3, FolderOpen, Headphones, ListMusic, Music2, Pause, Play, Circle, Square, Download, Trash2, RefreshCcw } from "lucide-react";
+import { Disc3, FolderOpen, SkipBack, Headphones, ListMusic, Music2, Pause, Play, Circle, Square, Download, Trash2, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Knob } from "./Knob";
@@ -8,7 +8,7 @@ import { useStudio } from "@/lib/synclab/store";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
 import { getDj, type DeckId } from "@/lib/synclab/dj-engine";
-import { clock } from "@/lib/synclab/dj";
+import { clock, scrubTo } from "@/lib/synclab/dj";
 import { getLocalFile } from "@/lib/synclab/local-files";
 import { renderSong } from "@/lib/synclab/song-render";
 import { canShareFile, downloadBlob, encodeWav, shareFile } from "@/lib/synclab/bounce";
@@ -129,10 +129,36 @@ function ScrollingWave({ id, active }: { id: DeckId; active: boolean }) {
     g.fillStyle = head;
     g.fillRect(Math.round(w / 2) - 1, 0, 2, h);
   });
+  // drag the waveform like a record: right winds back (a quick swipe goes further), left moves ahead
+  const drag = useRef<{ id: number; x: number; t: number } | null>(null);
+  const SPAN = 8;
+  const onDown = (e: React.PointerEvent) => {
+    if (!deck.buffer || (e.pointerType === "mouse" && e.button !== 0)) return;
+    (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+    void getEngine().init().resume?.();
+    drag.current = { id: e.pointerId, x: canvasPoint(e.clientX, e.clientY).x, t: e.timeStamp };
+    deck.grab();
+  };
+  const onMove = (e: React.PointerEvent) => {
+    const d = drag.current;
+    if (!d || d.id !== e.pointerId || !deck.buffer || !canvas.current) return;
+    const x = canvasPoint(e.clientX, e.clientY).x;
+    const pxPerSec = Math.max(1, canvasRect(canvas.current).width) / SPAN;
+    const dt = Math.max(0.001, (e.timeStamp - d.t) / 1000);
+    const delta = -(x - d.x) / pxPerSec;
+    d.x = x; d.t = e.timeStamp;
+    if (delta) deck.dragTo(scrubTo(deck.position(), delta, dt, deck.buffer.duration));
+  };
+  const onUp = (e: React.PointerEvent) => {
+    if (!drag.current || drag.current.id !== e.pointerId) return;
+    drag.current = null;
+    deck.release();
+  };
   return (
-    <div className="dj-wave" data-deck={id}>
+    <div className="dj-wave" data-deck={id} data-grab={deck.state.name ? "1" : "0"} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
+      title={deck.state.name ? "Drag the waveform: right winds back toward the start, left moves ahead" : undefined}>
       <span className="dj-wave-tag">{id}</span>
-      <canvas ref={canvas} className="dj-wave-canvas" aria-label={`Deck ${id} waveform`} />
+      <canvas ref={canvas} className="dj-wave-canvas" aria-label={`Deck ${id} waveform — drag to move through the track`} />
     </div>
   );
 }
@@ -242,6 +268,8 @@ function DeckPanel({ id }: { id: DeckId }) {
         <div className="dj-deck-controls">
           {!phone && loadRow}
           <div className="dj-row">
+            <Button className="dj-btn dj-tostart" variant="outline" disabled={!s.name || s.loading} onClick={() => { unlock(); deck.toStart(); }}
+              aria-label={`Deck ${id} back to the beginning`} title="Back to the beginning of the track"><SkipBack className="size-4 fill-current" /></Button>
             <Button className="dj-btn dj-cue" variant="outline" disabled={!s.name} onClick={() => { unlock(); deck.cue(); }} title="Stopped: set the cue here. Playing: back to the cue">CUE</Button>
             <Button className="dj-btn dj-play" disabled={!s.name || s.loading} aria-pressed={s.playing} onClick={() => { unlock(); deck.toggle(); }}>
               {s.playing ? <Pause className="size-5 fill-current" /> : <Play className="size-5 fill-current" />}
