@@ -216,6 +216,9 @@ function DeckPanel({ id }: { id: DeckId }) {
     try {
       const cap = await renderSong({ tracks, transport, buses, vcas, auxReturns, fxChains, startStep: 0, lengthSteps: steps, tail: 2, sampleRate: 44100 });
       if (!cap) throw new Error("This browser can't render the song offline.");
+      let peak = 0;
+      for (let i = 0; i < cap.left.length; i += 4) peak = Math.max(peak, Math.abs(cap.left[i]!), Math.abs(cap.right[i]!));
+      if (peak < 1e-4) throw new Error("Your song is silent so far — add some notes, drums or audio to the timeline first, or load a music file with the folder button.");
       await deck.load(encodeWav(cap, 2), "This song");
       toast.success("Your song is on deck " + id, { id: id0 });
     } catch (e) { toast.error("Couldn't load the song", { id: id0, description: (e as Error).message }); }

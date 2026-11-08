@@ -237,3 +237,5 @@
 - [x] Turning the record by hand now sounds: forwards and backwards at the hand's speed; held still = silent
 
 - [x] Live Keys: session keyboard player (52 styles in Jazz, Rock, Blues & Gospel, Hip-Hop & R&B, Electronic, Pop & Country, World & Latin) with key/chords/sound/range, runs, breaks, hits, lit keyboard and print to timeline; Jazz group (10 styles, bop kit) added to the Live Drummer. Tests pass; not listened to or tried on a real phone.
+
+- [x] Small sideways phones: Live Drummer, Live Keys and DJ Decks controls no longer overlap (two rows of performance buttons, full-width Live Keys keyboard, DJ deck buttons below the turntable and pitch). Test phone at 360×601 and 412×915: zero overlapping controls; Alone preview makes sound on drummer and keys; a loaded track plays on deck A. "This song" now warns when the song is silent instead of loading silence. Real-phone check pending.

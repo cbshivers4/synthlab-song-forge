@@ -4543,10 +4543,10 @@ html.phone-console-active [role="option"] { min-height: 44px; font-size: 15px; }
    own width (container queries) so buttons, labels and faders never sit on top of each other. Bigger
    phones keep the wider layouts above. ---- */
 .phone-console .drummer-device { container: live-desk / inline-size; }
+.phone-console .drummer-perform { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .phone-console .drummer-perform button { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 @container live-desk (max-width: 760px) {
   .phone-console .drummer-main { grid-template-columns: minmax(0, 1fr) minmax(0, 0.74fr); }
-  .phone-console .drummer-perform { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .phone-console .drummer-perform button { min-height: 38px !important; height: 38px; padding-inline: 2px; font-size: 12px; }
   .phone-console .drummer-display-meta { font-size: 9px; letter-spacing: 0.04em; }
   .phone-console .drummer-knobs { gap: 2px; }
@@ -4574,7 +4574,7 @@ html.phone-console-active [role="option"] { min-height: 44px; font-size: 15px; }
 }
 /* Small sideways phone: the Live Keys keyboard gets the full width under the controls so each key is wide enough to read and tap. */
 @container live-desk (max-width: 760px) {
-  .phone-console .keys-device .drummer-main { grid-template-areas: "left pad" "left knobs" "rig rig"; align-items: start; }
+  .phone-console .keys-device .drummer-main { grid-template-areas: "left pad" "left knobs" "left ." "rig rig"; grid-template-rows: auto auto 1fr auto; align-items: start; }
   .phone-console .keys-device .drummer-left { grid-area: left; }
   .phone-console .keys-device .drummer-controls { display: contents; }
   .phone-console .keys-device .drummer-controls > .keys-rig { grid-area: rig; }
