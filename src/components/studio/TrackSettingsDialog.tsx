@@ -4,7 +4,7 @@
  * openTrackSettings(trackId); every control writes straight to the track.
  */
 import { faderGain, faderPosition } from "@/lib/synclab/fader-taper";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useStudio } from "@/lib/synclab/store";
 import { hexToOklch, oklchToHex } from "@/components/studio/TrackStyle";
+import { TimelineVScrollbar } from "@/components/studio/timeline/VScrollbar";
 
 const EVENT = "synclab:track-settings";
 const COLORS = ["#f0a03c", "#ef4444", "#22c55e", "#3b82f6", "#a855f7", "#ec4899", "#14b8a6", "#eab308"];
@@ -31,16 +32,18 @@ export function TrackSettingsDialog() {
   const track = tracks.find((t) => t.id === id);
   const set = (patch: Parameters<typeof updateTrack>[1]) => track && updateTrack(track.id, patch);
   const instrument = track && track.kind !== "audio";
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   return (
     <Dialog open={Boolean(track)} onOpenChange={(open) => !open && setId(null)}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
+      <DialogContent className="phone-strip-dialog track-settings-dialog flex max-h-[88dvh] max-w-md flex-col gap-3 overflow-hidden">
+        <DialogHeader className="shrink-0 pr-8">
           <DialogTitle>Track settings</DialogTitle>
           <DialogDescription>Changes apply to this channel right away.</DialogDescription>
         </DialogHeader>
         {track && (
-          <div className="space-y-4">
+          <div className="track-settings-scroll-wrap relative flex min-h-0 flex-1 flex-col">
+          <div ref={scrollRef} id="track-settings-scroll" className="track-settings-scroll min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain pb-1">
             <label className="block space-y-1">
               <span className="label-xs">Name</span>
               <Input value={track.name} onChange={(e) => set({ name: e.target.value })} />
@@ -99,6 +102,8 @@ export function TrackSettingsDialog() {
                 </label>
               </div>
             )}
+          </div>
+          <TimelineVScrollbar scrollRef={scrollRef} controls="track-settings-scroll" label="Scroll track settings up and down" />
           </div>
         )}
       </DialogContent>

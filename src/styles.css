@@ -3774,3 +3774,9 @@ html.phone-console-active [role="option"] { min-height: 44px; font-size: 15px; }
 .looper-scroll-wrap:has(.timeline-vscroll:not([hidden])) > .looper-scroll { margin-right: 28px; }
 .looper-scroll-wrap > .timeline-vscroll { width: 24px; border-radius: 6px; }
 .phone-console .looper-scroll { max-height: calc(min(100dvh, 100dvw) * 0.6); }
+
+/* Track settings window: its own scroll area with the teal side bar, so every setting is reachable on phones. */
+.track-settings-scroll { touch-action: pan-y; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.track-settings-scroll::-webkit-scrollbar { display: none; }
+.track-settings-scroll-wrap:has(.timeline-vscroll:not([hidden])) > .track-settings-scroll { margin-right: 30px; }
+.track-settings-scroll-wrap > .timeline-vscroll { width: 24px; border-radius: 6px; }
