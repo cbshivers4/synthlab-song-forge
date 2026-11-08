@@ -12,7 +12,7 @@ import { getEngine } from "@/lib/synclab/audio-engine";
 import { uid } from "@/lib/synclab/presets";
 import { getKeysPlayer, type KeysSnapshot } from "@/lib/synclab/keyboardist-player";
 import {
-  KEYS_GROUPS, KEYS_PROGRESSIONS, KEYS_SOUNDS, KEYS_STYLES, NOTE_NAMES, defaultKeys, keysBars, keysPatch, keysStyleById, keysToNotes, soundById,
+  KEYS_GROUPS, KEYS_PATCH_REV, KEYS_PROGRESSIONS, KEYS_SOUNDS, KEYS_STYLES, NOTE_NAMES, defaultKeys, keysBars, keysPatch, keysStyleById, keysToNotes, soundById,
   type KeysGroup, type KeysSettings, type KeysSoundId,
 } from "@/lib/synclab/keyboardist";
 import type { Track } from "@/lib/synclab/types";
@@ -30,9 +30,17 @@ export function chooseKeys(id: string) { chosenId = id; choiceListeners.forEach(
 
 /** Always mounted: keeps the keyboard player pointed at its channel and the song tempo/swing. */
 export function KeysBridge() {
-  const { transport } = useStudio();
+  const { transport, tracks, updateTrack } = useStudio();
   const track = useKeysTrack();
   useEffect(() => { getKeysPlayer().sync(track, transport.bpm, transport.swing ?? 0, stepsPerBar()); }, [track, transport.bpm, transport.swing, transport.beatsPerBar]);
+  // Live Keys players made before a sound-level fix get the corrected sound once (their style,
+  // key, chords and settings stay as they are).
+  useEffect(() => {
+    for (const t of tracks) {
+      const k = t.keyboardist;
+      if (k && (k.patchRev ?? 0) < KEYS_PATCH_REV) updateTrack(t.id, { patch: keysPatch(k.sound), keyboardist: { ...k, patchRev: KEYS_PATCH_REV } });
+    }
+  }, [tracks, updateTrack]);
   return null;
 }
 
@@ -149,11 +157,11 @@ function KeysDesk({ track, players, snap, group, setGroup, update, updateTrack, 
 
   const pickStyle = (id: string) => {
     const next = keysStyleById(id);
-    update({ style: id, tonic: next.tonic, prog: "", sound: next.sound });
+    update({ style: id, tonic: next.tonic, prog: "", sound: next.sound, patchRev: KEYS_PATCH_REV });
     updateTrack(track.id, { patch: keysPatch(next.sound), name: trackName(next.label) });
   };
   const pickSound = (id: KeysSoundId) => {
-    update({ sound: id });
+    update({ sound: id, patchRev: KEYS_PATCH_REV });
     updateTrack(track.id, { patch: keysPatch(id) });
   };
 

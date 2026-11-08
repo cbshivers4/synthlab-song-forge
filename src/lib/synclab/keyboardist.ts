@@ -68,7 +68,7 @@ export const KEYS_PATCH_REV = 2;
 
 /** Summed oscillator level per key for each sound (bright/sustained sounds sit lower). */
 const KEYS_VOICE_LEVEL: Partial<Record<KeysSoundId, number>> = {
-  grand: 0.3, rhodes: 0.32, wurli: 0.3, organ: 0.2, clav: 0.24, deep: 0.3, strings: 0.18, pad: 0.2, synth: 0.26,
+  grand: 0.3, rhodes: 0.32, wurli: 0.3, organ: 0.3, clav: 0.24, deep: 0.3, strings: 0.3, pad: 0.28, synth: 0.26,
 };
 
 export interface KeysStyle {
@@ -248,6 +248,8 @@ export interface KeysSettings {
   /** "" = the style's own chords, otherwise a KEYS_PROGRESSIONS id */
   prog: string;
   sound: KeysSoundId;
+  /** KEYS_PATCH_REV the track's sound was built with (missing = before the headroom fix) */
+  patchRev?: number;
   /** 0 simple … 1 complex */
   complexity: number;
   /** 0 soft … 1 loud */
@@ -265,7 +267,7 @@ export interface KeysSettings {
 
 export const defaultKeys = (styleId = "medium-swing"): KeysSettings => {
   const s = keysStyleById(styleId);
-  return { style: s.id, tonic: s.tonic, prog: "", sound: s.sound, complexity: 0.45, loudness: 0.6, fills: 0.5, humanize: 0.35, range: 0, hands: { left: true, right: true }, seed: 1 };
+  return { style: s.id, tonic: s.tonic, prog: "", sound: s.sound, patchRev: KEYS_PATCH_REV, complexity: 0.45, loudness: 0.6, fills: 0.5, humanize: 0.35, range: 0, hands: { left: true, right: true }, seed: 1 };
 };
 
 export type Hand = "L" | "R";

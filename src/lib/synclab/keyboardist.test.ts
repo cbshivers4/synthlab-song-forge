@@ -130,3 +130,16 @@ describe("printing the keys to the timeline", () => {
     expect(notes.every((n) => n.recordedEnd === 96)).toBe(true);
   });
 });
+
+describe("keys sounds leave headroom for full chords", () => {
+  it("keeps every key quiet and undriven so stacked chords don't clip", () => {
+    for (const s of KEYS_SOUNDS) {
+      const p = keysPatch(s.id);
+      const sum = p.oscillators.filter((o) => o.on).reduce((t, o) => t + o.level, 0);
+      expect(sum, s.id).toBeLessThanOrEqual(0.33);
+      expect(p.drive ?? 0, s.id).toBe(0);
+      expect(p.fx.saturation ?? 0, s.id).toBe(0);
+      if (s.id !== "clav") expect(p.clean, s.id).toBe(true);
+    }
+  });
+});
