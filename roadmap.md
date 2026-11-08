@@ -202,3 +202,10 @@
 - [x] Record the DJ mix and save as WAV or MP3
 - [x] Phone sideways layouts fit without scrolling (drummer split into Play / Styles / Print pages)
 - [x] Login features updated
+
+## Nov 8 (4) — Turntables, DJ meters, drum sets (Christopher)
+- [x] Two turntables on the DJ decks; record turns with the deck, tone arm follows the track; label shows the file's cover picture or a picture you choose
+- [x] Left/right meters for deck A, deck B and master on the DJ mixer (peak hold, clip lights)
+- [x] Live Drummer drum set that changes with the genre (acoustic, electronic, beat pads, Latin percussion; own colour per style); pieces light up as they play and play when tapped
+- [x] Preview the drummer alone (song pauses) or play with the song
+- [ ] Listen on a real phone (not checked: real speakers / real phone)

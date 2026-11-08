@@ -1,5 +1,6 @@
 import { Mp3Encoder } from "@breezystack/lamejs";
 import { getEngine } from "./audio-engine";
+import { findCoverArt } from "./cover-art";
 import { bandWave, beatPhase, crossfade, detectBpm, eqDb, filterFor, phaseShift, snapToBeat, syncRate, wavFromPcm16, type BandWave } from "./dj";
 
 /**
@@ -10,6 +11,31 @@ import { bandWave, beatPhase, crossfade, detectBpm, eqDb, filterFor, phaseShift,
  * what you hear from the decks.
  */
 export type DeckId = "A" | "B";
+
+/** Left/right peak meter: mono sources are spread to both sides first so both meters move. */
+class StereoMeter {
+  readonly input: GainNode;
+  private l: AnalyserNode; private r: AnalyserNode;
+  private buf = new Float32Array(2048);
+  constructor(ctx: AudioContext) {
+    this.input = ctx.createGain();
+    this.input.channelCount = 2; this.input.channelCountMode = "explicit"; this.input.channelInterpretation = "speakers";
+    const split = ctx.createChannelSplitter(2);
+    // 2048 samples cover the ~33 ms between screen frames, so short drum hits are never missed
+    this.l = ctx.createAnalyser(); this.l.fftSize = 2048;
+    this.r = ctx.createAnalyser(); this.r.fftSize = 2048;
+    this.input.connect(split);
+    split.connect(this.l, 0); split.connect(this.r, 1);
+  }
+  /** Peak sample level of the left and right side (1 = 0 dBFS). */
+  levels(): [number, number] { return [this.peak(this.l), this.peak(this.r)]; }
+  private peak(a: AnalyserNode) {
+    a.getFloatTimeDomainData(this.buf);
+    let p = 0;
+    for (let i = 0; i < this.buf.length; i++) { const v = Math.abs(this.buf[i]!); if (v > p) p = v; }
+    return p;
+  }
+}
 export interface DeckState {
   id: DeckId;
   name: string | null;
@@ -29,6 +55,9 @@ export interface DeckState {
   eq: { high: number; mid: number; low: number };
   filter: number;
   fader: number;
+  /** picture on the record label: from the file's cover art or one you picked (object URL) */
+  art: string | null;
+  artFrom: "file" | "you" | null;
 }
 export interface MixState { crossfader: number; master: number; recording: boolean; recSeconds: number; hasMix: boolean; recLimit: number }
 
@@ -53,11 +82,11 @@ class Deck {
   private offset = 0;
   private nudge = 0;
   readonly trim: GainNode; readonly low: BiquadFilterNode; readonly mid: BiquadFilterNode; readonly high: BiquadFilterNode;
-  readonly filter: BiquadFilterNode; readonly fader: GainNode; readonly xfade: GainNode; readonly meter: AnalyserNode;
+  readonly filter: BiquadFilterNode; readonly fader: GainNode; readonly xfade: GainNode; readonly meter: StereoMeter;
 
   constructor(private ctx: AudioContext, id: DeckId, out: AudioNode, private onChange: () => void) {
     this.state = { id, name: null, loading: false, error: null, duration: 0, bpm: 0, firstBeat: 0, playing: false, pitch: 0, range: 0.08, cue: 0,
-      hotCues: [null, null, null, null], loop: null, gain: 1, eq: { high: 0.5, mid: 0.5, low: 0.5 }, filter: 0.5, fader: 0.85 };
+      hotCues: [null, null, null, null], loop: null, gain: 1, eq: { high: 0.5, mid: 0.5, low: 0.5 }, filter: 0.5, fader: 0.85, art: null, artFrom: null };
     this.trim = ctx.createGain();
     this.low = ctx.createBiquadFilter(); this.low.type = "lowshelf"; this.low.frequency.value = 250;
     this.mid = ctx.createBiquadFilter(); this.mid.type = "peaking"; this.mid.frequency.value = 1100; this.mid.Q.value = 0.8;
@@ -65,9 +94,9 @@ class Deck {
     this.filter = ctx.createBiquadFilter(); this.filter.type = "allpass";
     this.fader = ctx.createGain(); this.fader.gain.value = this.state.fader ** 2;
     this.xfade = ctx.createGain();
-    this.meter = ctx.createAnalyser(); this.meter.fftSize = 1024;
+    this.meter = new StereoMeter(ctx);
     this.trim.connect(this.low).connect(this.mid).connect(this.high).connect(this.filter).connect(this.fader);
-    this.fader.connect(this.meter);
+    this.fader.connect(this.meter.input);
     this.fader.connect(this.xfade).connect(out);
   }
 
@@ -84,10 +113,15 @@ class Deck {
 
   async load(blob: Blob, name: string) {
     this.stopSource();
-    this.state = { ...this.state, name, loading: true, error: null, playing: false, loop: null, hotCues: [null, null, null, null], cue: 0 };
+    this.releaseArt();
+    this.state = { ...this.state, name, loading: true, error: null, playing: false, loop: null, hotCues: [null, null, null, null], cue: 0, art: null, artFrom: null };
     this.onChange();
     try {
-      const buf = await this.ctx.decodeAudioData(await blob.arrayBuffer());
+      const bytes = await blob.arrayBuffer();
+      // read the cover picture before the decoder takes the bytes
+      const cover = findCoverArt(new Uint8Array(bytes));
+      if (cover) this.state = { ...this.state, art: URL.createObjectURL(new Blob([cover.data.slice().buffer as ArrayBuffer], { type: cover.mime })), artFrom: "file" };
+      const buf = await this.ctx.decodeAudioData(bytes);
       const chans = Array.from({ length: buf.numberOfChannels }, (_, c) => buf.getChannelData(c));
       const mono = new Float32Array(buf.length);
       for (const ch of chans) for (let i = 0; i < ch.length; i++) mono[i] = (mono[i] ?? 0) + (ch[i] ?? 0) / chans.length;
@@ -208,12 +242,16 @@ class Deck {
   }
   setFader(v: number) { this.state = { ...this.state, fader: v }; this.fader.gain.setTargetAtTime(v * v, this.ctx.currentTime, 0.01); this.onChange(); }
 
-  level(data: Float32Array<ArrayBuffer>) {
-    this.meter.getFloatTimeDomainData(data);
-    let p = 0;
-    for (const v of data) p = Math.max(p, Math.abs(v));
-    return p;
+  /** Left/right level after EQ, filter and channel fader. */
+  levels(): [number, number] { return this.meter.levels(); }
+
+  /** Put your own picture on the record label (null puts back the file's picture, if any). */
+  setArt(image: Blob | null) {
+    this.releaseArt();
+    this.state = { ...this.state, art: image ? URL.createObjectURL(image) : null, artFrom: image ? "you" : null };
+    this.onChange();
   }
+  private releaseArt() { if (this.state.art) URL.revokeObjectURL(this.state.art); }
 
   private reanchor(pos: number) {
     this.offset = pos;
@@ -266,7 +304,7 @@ class DjMixer {
   readonly ctx: AudioContext;
   readonly A: Deck; readonly B: Deck;
   private bus: GainNode; private out: GainNode;
-  readonly masterMeter: AnalyserNode;
+  readonly masterMeter: StereoMeter;
   private mix: MixState = { crossfader: 0, master: 0.9, recording: false, recSeconds: 0, hasMix: false, recLimit: REC_LIMIT };
   private listeners = new Set<() => void>();
   private recNode: AudioWorkletNode | null = null;
@@ -281,10 +319,10 @@ class DjMixer {
     this.bus = this.ctx.createGain();
     this.out = this.ctx.createGain();
     this.out.gain.value = this.mix.master;
-    this.masterMeter = this.ctx.createAnalyser(); this.masterMeter.fftSize = 1024;
+    this.masterMeter = new StereoMeter(this.ctx);
     this.bus.connect(this.out);
     this.out.connect(this.ctx.destination);
-    this.out.connect(this.masterMeter);
+    this.out.connect(this.masterMeter.input);
     const changed = () => this.emit();
     this.A = new Deck(this.ctx, "A", this.bus, changed);
     this.B = new Deck(this.ctx, "B", this.bus, changed);

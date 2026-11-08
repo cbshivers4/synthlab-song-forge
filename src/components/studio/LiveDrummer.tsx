@@ -1,7 +1,7 @@
 import { useIsLandscapePhone } from "@/hooks/use-mobile";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 import { toast } from "sonner";
-import { Drum, Play, Square, Sparkles, Zap, PauseCircle, Disc } from "lucide-react";
+import { Drum, Play, Square, Sparkles, Zap, PauseCircle, Disc, Music2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Knob } from "./Knob";
 import { useStudio } from "@/lib/synclab/store";
@@ -15,6 +15,7 @@ import {
   type DrumPiece, type DrumRole, type DrummerSettings, type GenreGroup,
 } from "@/lib/synclab/drummer";
 import type { DrumKitId, Track } from "@/lib/synclab/types";
+import { DrumKitView } from "./DrumKitView";
 
 const PIECES: { id: DrumPiece; label: string }[] = [
   { id: "kick", label: "Kick" }, { id: "snare", label: "Snare / Clap" }, { id: "hats", label: "Hats / Ride" },
@@ -58,7 +59,7 @@ function useDrummerState(): DrummerSnapshot {
 }
 
 export function LiveDrummer() {
-  const { tracks, addTrack, updateTrack, transport, setTransport } = useStudio();
+  const { tracks, addTrack, updateTrack, transport, setTransport, togglePlay, pause } = useStudio();
   const track = useDrummerTrack();
   const drummers = tracks.filter((t) => t.drummer);
   const [group, setGroup] = useState<GenreGroup>(() => (track?.drummer ? genreById(track.drummer.genre).group : "Electronic"));
@@ -70,7 +71,7 @@ export function LiveDrummer() {
     const id = addTrack("drum", "LIVE DRUMMER", undefined, { keepPanel: true });
     updateTrack(id, { steps: spb, pads: defaultPads(spb, genre.kit), drummer: defaultDrummer(genreId), name: `DRUMMER · ${genre.label}`.slice(0, 40) });
     chooseDrummer(id);
-    toast.success(`${genre.label} drummer joined the session`, { description: "Press Play to hear them — they follow your song when it plays." });
+    toast.success(`${genre.label} drummer joined the session`, { description: "Preview them alone, or play them along with your song." });
   };
 
   if (!track?.drummer) {
@@ -84,7 +85,7 @@ export function LiveDrummer() {
   }
   return <DrummerDesk track={track} drummers={drummers} snap={snap} group={group} setGroup={setGroup}
     update={(patch) => updateTrack(track.id, { drummer: { ...track.drummer!, ...patch } })}
-    updateTrack={updateTrack} addTrack={addTrack} transport={transport} setTransport={setTransport} onNew={bringIn} />;
+    updateTrack={updateTrack} addTrack={addTrack} transport={transport} setTransport={setTransport} togglePlay={togglePlay} pause={pause} onNew={bringIn} />;
 }
 
 function DrummerHeader({ name }: { name?: string }) {
@@ -123,10 +124,11 @@ interface DeskProps {
   update: (patch: Partial<DrummerSettings>) => void;
   updateTrack: ReturnType<typeof useStudio>["updateTrack"]; addTrack: ReturnType<typeof useStudio>["addTrack"];
   transport: ReturnType<typeof useStudio>["transport"]; setTransport: ReturnType<typeof useStudio>["setTransport"];
+  togglePlay: () => void; pause: () => void;
   onNew: (genre: string) => void;
 }
 
-function DrummerDesk({ track, drummers, snap, group, setGroup, update, updateTrack, addTrack, transport, setTransport, onNew }: DeskProps) {
+function DrummerDesk({ track, drummers, snap, group, setGroup, update, updateTrack, addTrack, transport, setTransport, togglePlay, pause, onNew }: DeskProps) {
   const phone = useIsLandscapePhone();
   const knobSize = phone ? 40 : 54;
   // Sideways phone: the desk splits into Play / Styles / Print pages so each fits the screen without scrolling.
@@ -140,6 +142,21 @@ function DrummerDesk({ track, drummers, snap, group, setGroup, update, updateTra
   const [bars, setBars] = useState(8);
   const [startAt, setStartAt] = useState<"start" | "playhead">("start");
   const playing = snap.running && player.trackId === track.id;
+
+  /** Just the drummer: the song pauses so you hear them on their own. */
+  const previewAlone = () => {
+    chooseDrummer(track.id);
+    if (transport.recording) { toast("Stop recording first", { description: "Preview alone pauses your song, which would end the take." }); return; }
+    if (transport.playing) { pause(); toast("Song paused", { description: "You're hearing the drummer on their own. Press Play with song to bring the song back in." }); }
+    player.stop();
+    player.start("alone");
+  };
+  /** Drummer and song together, locked to the song's bars. */
+  const playWithSong = () => {
+    chooseDrummer(track.id);
+    if (!transport.playing) togglePlay();
+    if (!player.snapshot().running) player.start("song");
+  };
 
   const pickGenre = (id: string) => {
     const next = genreById(id);
@@ -207,7 +224,7 @@ function DrummerDesk({ track, drummers, snap, group, setGroup, update, updateTra
       <div className="drummer-display" aria-live="polite">
         <span className="drummer-display-genre">{genre.label.toUpperCase()}</span>
         <span className="drummer-display-meta">
-          {playing ? (snap.following ? "WITH SONG" : "JAMMING") : "READY"} · BAR {snap.bar + 1} · {transport.bpm} BPM · {DRUM_KITS.find((k) => k.id === kit)?.name ?? kit}
+          {playing ? (snap.waiting ? "STARTING SONG…" : snap.following ? "WITH SONG" : "ALONE") : "READY"} · BAR {snap.bar + 1} · {transport.bpm} BPM · {DRUM_KITS.find((k) => k.id === kit)?.name ?? kit}
         </span>
         <span className="drummer-display-flags">
           {snap.fillQueued && <b>FILL</b>}{snap.breakQueued && <b>BREAK</b>}{snap.crashQueued && <b>CRASH</b>}
@@ -215,16 +232,26 @@ function DrummerDesk({ track, drummers, snap, group, setGroup, update, updateTra
       </div>
 
       <div className="drummer-perform">
-        <Button size="lg" className="drummer-play min-h-14" variant={playing ? "destructive" : "default"} onClick={() => { chooseDrummer(track.id); player.toggle(); }}
-          aria-pressed={playing} title="Plays on its own at the song tempo; when your song is playing it locks to the song's bars">
-          {playing ? <Square className="size-5 fill-current" /> : <Play className="size-5 fill-current" />}{playing ? "Stop" : "Play"}
+        {playing ? (
+          <Button size="lg" className="drummer-play min-h-14" variant="destructive" onClick={() => player.stop()} aria-label="Stop the drummer">
+            <Square className="size-5 fill-current" />Stop
+          </Button>
+        ) : (
+          <Button size="lg" className="drummer-play min-h-14" onClick={previewAlone} title="Hear only the drummer, at the song tempo — your song pauses if it's playing">
+            <Play className="size-5 fill-current" />{phone ? "Alone" : "Preview alone"}
+          </Button>
+        )}
+        <Button size="lg" variant={snap.following || snap.waiting ? "default" : "secondary"} className="drummer-with-song min-h-14" aria-pressed={playing && (snap.following || snap.waiting)}
+          disabled={playing && (snap.following || snap.waiting)} onClick={playWithSong} title="Start your song and the drummer together, locked to the song's bars">
+          <Music2 className="size-5" />{phone ? "With song" : "Play with song"}
         </Button>
         <Button size="lg" variant="secondary" className="min-h-14" disabled={!playing} onClick={() => player.fill()} aria-pressed={snap.fillQueued}><Zap className="size-5" />Fill</Button>
         <Button size="lg" variant="secondary" className="min-h-14" disabled={!playing} onClick={() => player.breakNext()} aria-pressed={snap.breakQueued}><PauseCircle className="size-5" />Break</Button>
         <Button size="lg" variant="secondary" className="min-h-14" disabled={!playing} onClick={() => player.crashNext()} aria-pressed={snap.crashQueued}><Disc className="size-5" />Crash</Button>
-        <Button size="lg" variant="outline" className="min-h-14" onClick={() => update({ seed: settings.seed + 1 })}><Sparkles className="size-5" />New variation</Button>
+        <Button size="lg" variant="outline" className="min-h-14" onClick={() => update({ seed: settings.seed + 1 })}><Sparkles className="size-5" />{phone ? "Variation" : "New variation"}</Button>
       </div>
 
+      {!phone && <DrumKitView track={track} genre={genre} settings={settings} />}
       <GrooveDisplay snap={snap} spb={spb} playing={playing} pads={track.pads ?? []} />
 
       <div className="drummer-pieces flex flex-wrap gap-1.5" aria-label="Drum pieces">
@@ -237,6 +264,7 @@ function DrummerDesk({ track, drummers, snap, group, setGroup, update, updateTra
       </div>
 
       <div className="drummer-controls">
+        {phone && <DrumKitView track={track} genre={genre} settings={settings} />}
         <IntensityPad complexity={settings.complexity} loudness={settings.loudness} onChange={(complexity, loudness) => update({ complexity, loudness })} />
         <div className="drummer-knobs">
           <Knob label="FILLS" value={settings.fills} onChange={(v) => update({ fills: v })} format={(v) => (v <= 0.02 ? "OFF" : v <= 0.4 ? "8 BARS" : v <= 0.75 ? "4 BARS" : "2 BARS")} size={knobSize} />

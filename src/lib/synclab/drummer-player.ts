@@ -1,6 +1,6 @@
 import { getEngine } from "./audio-engine";
 import { activeSongClock } from "./song-clock";
-import { barOptions, genBar, padForRole, type BarOptions, type DrumHit, type DrummerSettings } from "./drummer";
+import { barOptions, genBar, padForRole, type BarOptions, type DrumHit, type DrumRole, type DrummerSettings } from "./drummer";
 import type { Track } from "./types";
 
 /**
@@ -13,6 +13,8 @@ import type { Track } from "./types";
 export interface DrummerSnapshot {
   running: boolean;
   following: boolean;
+  /** started with "Play with song" and waiting for the song to start */
+  waiting: boolean;
   bar: number;
   step: number;
   fillQueued: boolean;
@@ -25,6 +27,9 @@ export interface DrummerSnapshot {
 }
 
 const LOOKAHEAD = 0.12;
+/** "Play with song" gives up if the song hasn't started within this many seconds. */
+const SONG_WAIT = 3;
+export type DrummerStart = "alone" | "song";
 
 class DrummerPlayer {
   private track: Track | null = null;
@@ -34,6 +39,11 @@ class DrummerPlayer {
   private timer: ReturnType<typeof setInterval> | null = null;
   private running = false;
   private following = false;
+  /** "alone": ignore the song until it has stopped once (pausing it takes a moment to land) */
+  private ignoreSong = false;
+  /** "song": wait for the song clock, never free-run */
+  private waitSince: number | null = null;
+  private hitListeners = new Set<(role: DrumRole, vel: number) => void>();
   private nextStep = 0;
   private nextTime = 0;
   private lastTime = 0;
@@ -59,11 +69,17 @@ class DrummerPlayer {
 
   get trackId() { return this.track?.id ?? null; }
 
-  start() {
+  /**
+   * "alone" previews the drummer by itself at the song tempo (it only locks to the song if you
+   * start the song afterwards); "song" waits for the song and plays locked to its bars.
+   */
+  start(mode: DrummerStart = "alone") {
     if (this.running || !this.track?.drummer) return;
     const ctx = getEngine().init();
     this.running = true;
     this.following = false;
+    this.ignoreSong = mode === "alone";
+    this.waitSince = mode === "song" ? ctx.currentTime : null;
     this.cache.clear();
     this.forced.clear();
     this.nextStep = 0;
@@ -79,6 +95,8 @@ class DrummerPlayer {
     this.timer = null;
     this.running = false;
     this.following = false;
+    this.ignoreSong = false;
+    this.waitSince = null;
     this.queued = { fill: null, fillAt: 0, brk: null, crash: null };
     this.emit();
   }
@@ -101,7 +119,7 @@ class DrummerPlayer {
   snapshot(): DrummerSnapshot {
     const bar = this.shown.bar;
     return {
-      running: this.running, following: this.following, bar, step: this.shown.step,
+      running: this.running, following: this.following, waiting: this.running && this.waitSince !== null, bar, step: this.shown.step,
       fillQueued: this.queued.fill !== null, breakQueued: this.queued.brk !== null, crashQueued: this.queued.crash !== null,
       hits: this.cache.get(bar) ?? (this.track?.drummer ? genBar(this.track.drummer, bar, this.spb, barOptions(this.track.drummer, bar)) : []),
       captured: this.captured.size,
@@ -116,6 +134,8 @@ class DrummerPlayer {
   clearPerformance() { this.captured.clear(); this.emit(); }
 
   subscribe(fn: () => void) { this.listeners.add(fn); return () => void this.listeners.delete(fn); }
+  /** Called as each hit is heard (for the drum set picture). */
+  onHit(fn: (role: DrumRole, vel: number) => void) { this.hitListeners.add(fn); return () => void this.hitListeners.delete(fn); }
   private emit() { this.listeners.forEach((l) => l()); }
 
   /** Put a queued fill/break/crash on the right bar relative to what is playing now. */
@@ -167,7 +187,16 @@ class DrummerPlayer {
     const ctx = engine.ctx;
     if (!ctx || !this.running) return;
     const now = ctx.currentTime;
-    const song = activeSongClock(now);
+    let song = activeSongClock(now);
+    if (song && this.ignoreSong) song = null;
+    else if (!song) this.ignoreSong = false;
+    if (this.waitSince !== null) {
+      if (!song) {
+        if (now - this.waitSince > SONG_WAIT) this.stop();
+        return;
+      }
+      this.waitSince = null;
+    }
     if (song) {
       if (!this.following) { this.following = true; this.cache.clear(); this.emit(); }
       const steps: { step: number; time: number }[] = [];
@@ -222,6 +251,10 @@ class DrummerPlayer {
       const pad = target.pitch ? { ...target.pad, pitch: target.pad.pitch + target.pitch } : target.pad;
       const n = Math.max(1, Math.min(4, h.retrig ?? 1));
       for (let k = 0; k < n; k++) engine.playDrum(t.id, pad, h.vel * (n > 1 ? 0.75 + 0.25 * (k / n) : 1), swung + (k * dur) / n);
+      if (this.hitListeners.size) {
+        const role = h.role, vel = h.vel;
+        setTimeout(() => this.hitListeners.forEach((l) => l(role, vel)), Math.max(0, (swung - (engine.ctx?.currentTime ?? swung)) * 1000));
+      }
     }
   }
 }

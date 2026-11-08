@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 import { toast } from "sonner";
-import { Disc3, FolderOpen, Music2, Pause, Play, Circle, Square, Download, Trash2, RefreshCcw } from "lucide-react";
+import { Disc3, FolderOpen, Music2, Pause, Play, Circle, Square, Download, Trash2, RefreshCcw, ImagePlus } from "lucide-react";
+import synclabLogoAsset from "@/assets/synclab-logo-neon.jpg.asset.json";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Knob } from "./Knob";
@@ -214,6 +215,19 @@ function DeckPanel({ id }: { id: DeckId }) {
   };
   const pos = deck.position();
   const pct = (s.pitch * 100).toFixed(1);
+  const phone = useIsLandscapePhone();
+  const loadRow = (
+    <div className="dj-row">
+              <Button variant="secondary" className="dj-btn" onClick={() => fileRef.current?.click()} aria-label={`Load a track on deck ${id}`}><FolderOpen className="size-4" /><span className="dj-btn-text">Load</span></Button>
+              <Button variant="secondary" className="dj-btn" onClick={() => void loadSong()} aria-label={`Put this song on deck ${id}`} title="Render the song you're making and put it on this deck"><Music2 className="size-4" /><span className="dj-btn-text">This song</span></Button>
+              {s.bpm > 0 && (
+                <>
+                  <Button variant="ghost" className="dj-btn dj-halve" onClick={() => deck.setBpm(s.bpm / 2)} title="Detected tempo is double — halve it">½</Button>
+                  <Button variant="ghost" className="dj-btn dj-halve" onClick={() => deck.setBpm(s.bpm * 2)} title="Detected tempo is half — double it">×2</Button>
+                </>
+              )}
+            </div>
+  );
   const syncNow = () => { if (!deck.sync(dj.other(id))) toast("Load both decks first", { description: "Sync matches this deck's tempo and beats to the other deck." }); };
 
   return (
@@ -231,17 +245,9 @@ function DeckPanel({ id }: { id: DeckId }) {
       </div>
       <Overview id={id} />
       <div className="dj-deck-body">
+        {phone ? <div className="dj-turntable-col"><Turntable id={id} />{loadRow}</div> : <Turntable id={id} />}
         <div className="dj-deck-controls">
-          <div className="dj-row">
-            <Button variant="secondary" className="dj-btn" onClick={() => fileRef.current?.click()} aria-label={`Load a track on deck ${id}`}><FolderOpen className="size-4" /><span className="dj-btn-text">Load</span></Button>
-            <Button variant="secondary" className="dj-btn" onClick={() => void loadSong()} aria-label={`Put this song on deck ${id}`} title="Render the song you're making and put it on this deck"><Music2 className="size-4" /><span className="dj-btn-text">This song</span></Button>
-            {s.bpm > 0 && (
-              <>
-                <Button variant="ghost" className="dj-btn dj-halve" onClick={() => deck.setBpm(s.bpm / 2)} title="Detected tempo is double — halve it">½</Button>
-                <Button variant="ghost" className="dj-btn dj-halve" onClick={() => deck.setBpm(s.bpm * 2)} title="Detected tempo is half — double it">×2</Button>
-              </>
-            )}
-          </div>
+          {!phone && loadRow}
           <div className="dj-row">
             <Button className="dj-btn dj-cue" variant="outline" disabled={!s.name} onClick={() => { unlock(); deck.cue(); }} title="Stopped: set the cue here. Playing: back to the cue">CUE</Button>
             <Button className="dj-btn dj-play" disabled={!s.name || s.loading} aria-pressed={s.playing} onClick={() => { unlock(); deck.toggle(); }}>
@@ -284,17 +290,105 @@ function DeckPanel({ id }: { id: DeckId }) {
   );
 }
 
-function MixerPanel({ active }: { active: boolean }) {
-  const dj = getDj();
-  const meters = useRef<Record<string, HTMLSpanElement | null>>({});
-  const data = useRef(new Float32Array(1024));
-  useFrame(active, () => {
-    const set = (k: string, v: number) => { const el = meters.current[k]; if (el) el.style.setProperty("--dj-meter", String(Math.min(1, Math.max(0, (20 * Math.log10(Math.max(1e-5, v)) + 48) / 54)))); };
-    set("A", dj.A.level(data.current)); set("B", dj.B.level(data.current));
-    dj.masterMeter.getFloatTimeDomainData(data.current);
-    let p = 0; for (const v of data.current) p = Math.max(p, Math.abs(v));
-    set("M", p);
+/** 33⅓ RPM: the record turns 200° for every second of the track (pitch speeds both up alike). */
+const DEG_PER_SEC = (100 / 3 / 60) * 360;
+
+/**
+ * A turntable per deck. The record's angle and the tone arm's travel are worked out from the
+ * deck's real play position, so it turns only while the deck plays and stops dead on pause.
+ * The label shows the file's cover picture, or one you choose by tapping the label.
+ */
+function Turntable({ id }: { id: DeckId }) {
+  const deck = getDj().deck(id);
+  const s = deck.state;
+  const platter = useRef<HTMLDivElement>(null);
+  const arm = useRef<HTMLDivElement>(null);
+  const pic = useRef<HTMLInputElement>(null);
+  useFrame(s.playing, () => {
+    const pos = deck.position();
+    if (platter.current) platter.current.style.transform = `rotate(${((pos * DEG_PER_SEC) % 360).toFixed(1)}deg)`;
+    if (arm.current) {
+      const dur = deck.buffer?.duration ?? 0;
+      arm.current.style.transform = `rotate(${dur > 0 ? (18 + (pos / dur) * 20).toFixed(2) : 0}deg)`;
+    }
   });
+  const choose = (f: File | undefined) => { if (f && f.type.startsWith("image/")) deck.setArt(f); };
+  const labelTitle = s.art ? (s.artFrom === "file" ? "Cover picture from the file — tap to choose your own" : "Your picture — tap to change it") : "Tap to put a picture on this record";
+  return (
+    <div className="dj-turntable" data-deck={id} data-playing={s.playing ? "1" : "0"} data-loaded={s.name ? "1" : "0"}>
+      <div className="dj-plinth">
+        <div className="dj-platter-rim" aria-hidden />
+        <div ref={platter} className="dj-platter">
+          <div className="dj-vinyl" aria-hidden={!s.name}>
+            <button type="button" className="dj-record-label" onClick={() => pic.current?.click()} title={labelTitle} aria-label={`Deck ${id} record picture — ${labelTitle}`}>
+              {s.art ? <img src={s.art} alt="" draggable={false} /> : (
+                <span className="dj-record-blank">
+                  <img src={synclabLogoAsset.url} alt="" draggable={false} />
+                  <b>{id}</b>
+                </span>
+              )}
+            </button>
+          </div>
+          <span className="dj-spindle" aria-hidden />
+        </div>
+        <span className="dj-sheen" aria-hidden />
+        <div ref={arm} className="dj-tonearm" aria-hidden><span className="dj-tonearm-head" /></div>
+        <span className="dj-power-led" aria-hidden title={s.playing ? "Spinning" : "Stopped"} />
+        <button type="button" className="dj-pic-btn" onClick={() => pic.current?.click()} aria-label={`Choose a picture for the deck ${id} record`} title="Choose a record picture"><ImagePlus className="size-3.5" /></button>
+      </div>
+      <input ref={pic} type="file" accept="image/*" className="hidden" onChange={(e) => { choose(e.target.files?.[0]); e.target.value = ""; }} />
+    </div>
+  );
+}
+
+const meterPos = (v: number) => Math.min(1, Math.max(0, (20 * Math.log10(Math.max(1e-5, v)) + 48) / 54));
+const METER_TICKS = [6, 0, -6, -12, -24, -48];
+
+function MixerPanel(_props: { active: boolean }) {
+  const dj = getDj();
+  const meters = useRef<Record<string, HTMLElement | null>>({});
+  const hold = useRef<Record<string, { v: number; at: number; clipAt: number }>>({});
+  // Meters run at 20 fps the whole time the mixer is open, so they also fall back to silence after Stop.
+  useEffect(() => {
+    const set = (k: string, peak: number, now: number) => {
+      const el = meters.current[k];
+      if (!el) return;
+      const v = meterPos(peak);
+      const h = (hold.current[k] ??= { v: 0, at: 0, clipAt: -1e9 });
+      if (v >= h.v || now - h.at > 900) { h.v = v >= h.v ? v : Math.max(v, h.v - 0.03); if (v >= h.v) h.at = now; }
+      if (peak >= 1) h.clipAt = now;
+      el.style.setProperty("--lvl", v.toFixed(3));
+      el.style.setProperty("--hold", h.v.toFixed(3));
+      const clip = meters.current[`${k}c`];
+      if (clip) clip.dataset["on"] = now - h.clipAt < 1200 ? "1" : "0";
+    };
+    const id = setInterval(() => {
+      const now = performance.now();
+      const [al, ar] = dj.A.levels(), [bl, br] = dj.B.levels(), [ml, mr] = dj.masterMeter.levels();
+      set("AL", al, now); set("AR", ar, now); set("BL", bl, now); set("BR", br, now); set("ML", ml, now); set("MR", mr, now);
+    }, 50);
+    return () => clearInterval(id);
+  }, [dj]);
+  const meter = (k: "A" | "B" | "M", scale = false) => (
+    <div className={`dj-lr${k === "M" ? " is-master" : ""}`} role="img" aria-label={`${k === "M" ? "Master" : `Deck ${k}`} left and right level`}>
+      <div className="dj-lr-clips">
+        <i ref={(el) => { meters.current[`${k}Lc`] = el; }} title="Left clipping" />
+        <i ref={(el) => { meters.current[`${k}Rc`] = el; }} title="Right clipping" />
+      </div>
+      <div className="dj-lr-body">
+        {scale && (
+          <div className="dj-lr-scale" aria-hidden>
+            {METER_TICKS.map((db) => <span key={db} style={{ bottom: `${((db + 48) / 54) * 100}%` }}>{db > 0 ? `+${db}` : db}</span>)}
+          </div>
+        )}
+        <div className="dj-lr-bars">
+          <span className="dj-lr-bar" ref={(el) => { meters.current[`${k}L`] = el; }} />
+          <span className="dj-lr-bar" ref={(el) => { meters.current[`${k}R`] = el; }} />
+        </div>
+      </div>
+      <div className="dj-lr-legend" aria-hidden><span>L</span><span>R</span></div>
+    </div>
+  );
   const phone = useIsLandscapePhone();
   const knobs = (id: DeckId) => {
     const deck = dj.deck(id);
@@ -312,7 +406,7 @@ function MixerPanel({ active }: { active: boolean }) {
   };
   const fader = (id: DeckId) => (
     <div className="dj-fader-row">
-      <span className="dj-meter" ref={(el) => { meters.current[id] = el; }} aria-hidden />
+      {meter(id)}
       <Slider orientation="vertical" className="dj-vfader" min={0} max={1} step={0.01} value={[dj.deck(id).state.fader]} onValueChange={([v = 0]) => dj.deck(id).setFader(v)} aria-label={`Deck ${id} volume`} />
     </div>
   );
@@ -333,7 +427,7 @@ function MixerPanel({ active }: { active: boolean }) {
           {fader("A")}
           <div className="flex flex-col items-center gap-1">
             <Knob label="MASTER" value={dj.state.master} min={0} max={1.2} onChange={(v) => dj.setMaster(v)} defaultValue={0.9} size={26} className="dj-knob" format={(v) => `${Math.round(v * 100)}%`} />
-            <span className="dj-meter is-master" ref={(el) => { meters.current["M"] = el; }} aria-hidden />
+            {meter("M")}
           </div>
           {fader("B")}
         </div>
@@ -358,7 +452,7 @@ function MixerPanel({ active }: { active: boolean }) {
         <div className="dj-channel is-master">
           <span className="dj-label">MASTER</span>
           <Knob label="LEVEL" value={dj.state.master} min={0} max={1.2} onChange={(v) => dj.setMaster(v)} defaultValue={0.9} size={34} format={(v) => `${Math.round(v * 100)}%`} />
-          <span className="dj-meter is-master" ref={(el) => { meters.current["M"] = el; }} aria-hidden />
+          {meter("M", true)}
         </div>
         {channel("B")}
       </div>

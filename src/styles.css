@@ -4063,6 +4063,128 @@ html.phone-console-active [role="option"] { min-height: 44px; font-size: 15px; }
 .phone-console .drummer-perform button { min-height: 40px !important; height: 40px; }
 .phone-console .dj-device { padding: 3px 4px; }
 .phone-console .dj-device > * + * { margin-top: 3px !important; }
+/* ---- DJ turntables: plinth, strobe-dotted platter, vinyl grooves, picture label, tone arm ---- */
+.dj-device {
+  --tt-plinth: oklch(0.2 0.004 260); --tt-plinth-2: oklch(0.13 0.003 260); --tt-metal: oklch(0.72 0.01 260); --tt-metal-dark: oklch(0.45 0.01 260);
+  --tt-vinyl: oklch(0.12 0 0); --tt-groove: oklch(0.2 0 0); --tt-led: oklch(0.62 0.21 25);
+}
+.dj-deck-body { display: grid; grid-template-columns: minmax(0, 1fr) 64px; grid-template-areas: "table pitch" "controls controls"; gap: 8px; }
+.dj-turntable { grid-area: table; display: flex; justify-content: center; min-width: 0; }
+.dj-deck-controls { grid-area: controls; }
+.dj-pitch { grid-area: pitch; }
+.dj-plinth { position: relative; width: 100%; max-width: 300px; aspect-ratio: 5 / 4; border-radius: 10px;
+  background: linear-gradient(160deg, var(--tt-plinth), var(--tt-plinth-2)); border: 1px solid oklch(0.3 0.01 260);
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.08), 0 4px 12px oklch(0 0 0 / 0.5); }
+.dj-platter-rim, .dj-platter { position: absolute; top: 6%; left: 4%; width: 74%; aspect-ratio: 1; border-radius: 50%; }
+.dj-platter-rim { background: repeating-conic-gradient(var(--tt-metal) 0 2deg, var(--tt-metal-dark) 2deg 6deg); box-shadow: 0 2px 6px oklch(0 0 0 / 0.6); }
+.dj-platter { will-change: transform; }
+.dj-vinyl { position: absolute; inset: 3.5%; border-radius: 50%;
+  background: radial-gradient(circle, transparent 0 31%, var(--tt-vinyl) 31% 33%, transparent 33%),
+    repeating-radial-gradient(circle, var(--tt-vinyl) 0 1.4px, var(--tt-groove) 1.6px 2.2px);
+  box-shadow: inset 0 0 0 2px oklch(0.05 0 0); }
+/* a groove highlight that turns with the record so you can see it spin */
+.dj-vinyl::after { content: ""; position: absolute; inset: 0; border-radius: 50%;
+  background: conic-gradient(from 20deg, transparent 0 8deg, oklch(1 0 0 / 0.1) 12deg, transparent 18deg 190deg, oklch(1 0 0 / 0.06) 196deg, transparent 204deg); pointer-events: none; }
+.dj-record-label { position: absolute; inset: 33%; min-width: 0 !important; min-height: 0 !important; border-radius: 50%; overflow: hidden; padding: 0; z-index: 1;
+  background: var(--dj-a); box-shadow: 0 0 0 2px oklch(0.08 0 0); cursor: pointer; }
+.dj-turntable[data-deck="B"] .dj-record-label { background: var(--dj-b); }
+.dj-record-label img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; user-select: none; }
+.dj-record-blank { position: relative; display: block; width: 100%; height: 100%; }
+.dj-record-blank img { position: absolute; inset: 14%; width: 72%; height: 72%; border-radius: 50%; }
+.dj-record-blank b { position: absolute; left: 50%; bottom: 2%; transform: translateX(-50%); font-family: var(--font-display); font-size: 10px; line-height: 1; color: oklch(0.12 0 0); }
+.dj-spindle { position: absolute; top: calc(50% - 3px); left: calc(50% - 3px); width: 6px; height: 6px; border-radius: 50%; background: var(--tt-metal); z-index: 2; pointer-events: none; }
+.dj-sheen { position: absolute; top: 6%; left: 4%; width: 74%; aspect-ratio: 1; border-radius: 50%; pointer-events: none; z-index: 2;
+  background: linear-gradient(135deg, oklch(1 0 0 / 0.1), transparent 40%, transparent 60%, oklch(1 0 0 / 0.05)); }
+.dj-tonearm { position: absolute; top: 9%; right: 9%; width: 6px; height: 64%; transform-origin: 50% 0; transform: rotate(0deg); z-index: 3; pointer-events: none;
+  background: linear-gradient(90deg, var(--tt-metal-dark), var(--tt-metal), var(--tt-metal-dark)); border-radius: 3px; transition: transform 0.4s ease; }
+.dj-turntable[data-playing="1"] .dj-tonearm { transition: none; }
+.dj-tonearm::before { content: ""; position: absolute; top: -9px; left: 50%; width: 18px; height: 18px; margin-left: -9px; border-radius: 50%; background: radial-gradient(circle, var(--tt-metal) 0 35%, var(--tt-metal-dark) 36%); }
+.dj-tonearm-head { position: absolute; bottom: -8px; left: -4px; width: 14px; height: 14px; border-radius: 2px; background: var(--tt-metal); transform: rotate(18deg); }
+.dj-power-led { position: absolute; left: 6%; bottom: 6%; width: 7px; height: 7px; border-radius: 50%; background: oklch(0.3 0.04 25); }
+.dj-turntable[data-playing="1"] .dj-power-led { background: var(--tt-led); box-shadow: 0 0 6px var(--tt-led); }
+.dj-pic-btn { min-width: 0 !important; min-height: 0 !important; position: absolute; right: 4%; bottom: 4%; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 5px; border: 1px solid oklch(0.34 0.01 260); background: oklch(0.18 0.004 260); color: var(--muted-foreground); z-index: 4; }
+.dj-pic-btn:hover { color: var(--foreground); }
+
+/* ---- DJ L/R meters: segmented LED ladders with peak hold and clip lights ---- */
+.dj-meter-host, .dj-lr { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.dj-lr { --dj-lr-h: 120px; }
+.dj-lr.is-master { --dj-lr-h: 150px; }
+.dj-lr-body { display: flex; align-items: stretch; gap: 3px; }
+.dj-lr-bars { display: flex; gap: 2px; height: var(--dj-lr-h); padding: 2px; border-radius: 3px; background: oklch(0.06 0 0); border: 1px solid oklch(0.26 0.01 260); }
+.dj-lr-bar { --lvl: 0; --hold: 0; position: relative; display: block; width: 7px; height: 100%; overflow: hidden;
+  background: linear-gradient(0deg, oklch(0.26 0.05 145) 0 70%, oklch(0.3 0.06 85) 70% 88.9%, oklch(0.3 0.08 25) 88.9%);
+  -webkit-mask: repeating-linear-gradient(0deg, black 0 3px, transparent 3px 4px); mask: repeating-linear-gradient(0deg, black 0 3px, transparent 3px 4px); }
+.dj-lr-bar::before { content: ""; position: absolute; inset: 0; background: linear-gradient(0deg, var(--dj-mid) 0 70%, var(--dj-cue-2) 70% 88.9%, var(--dj-low) 88.9%);
+  clip-path: inset(calc((1 - var(--lvl)) * 100%) 0 0 0); }
+.dj-lr-bar::after { content: ""; position: absolute; left: 0; right: 0; height: 3px; bottom: calc(var(--hold) * 100% - 3px); background: var(--foreground); }
+.dj-lr-clips { display: flex; gap: 2px; padding: 0 2px; }
+.dj-lr-clips i { display: block; width: 7px; height: 4px; border-radius: 1px; background: oklch(0.28 0.06 25); }
+.dj-lr-clips i[data-on="1"] { background: var(--dj-low); box-shadow: 0 0 5px var(--dj-low); }
+.dj-lr-legend { display: flex; gap: 2px; padding: 0 2px; font-family: var(--font-mono); font-size: 8px; font-weight: 700; line-height: 1; color: var(--muted-foreground); }
+.dj-lr-legend span { width: 7px; text-align: center; }
+.dj-lr-scale { position: relative; width: 16px; height: var(--dj-lr-h); margin-top: 3px; }
+.dj-lr-scale span { position: absolute; right: 0; transform: translateY(50%); font-family: var(--font-mono); font-size: 7px; line-height: 1; color: var(--muted-foreground); }
+.phone-console .dj-lr { --dj-lr-h: 70px; }
+.phone-console .dj-lr.is-master { --dj-lr-h: 40px; }
+.phone-console .dj-lr-bar { width: 5px; }
+.phone-console .dj-lr-clips i, .phone-console .dj-lr-legend span { width: 5px; }
+.phone-console .dj-lr-legend { font-size: 7px; }
+/* Sideways phone: small turntable at the left of each deck's buttons */
+.phone-console .dj-deck-body { grid-template-columns: 104px minmax(0, 1fr) 44px; grid-template-areas: "table controls pitch"; gap: 4px; }
+.phone-console .dj-turntable-col { grid-area: table; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.phone-console .dj-turntable-col .dj-row { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; }
+.phone-console .dj-turntable-col .dj-btn { padding-inline: 0; }
+.phone-console .dj-plinth { aspect-ratio: 1 / 1.04; border-radius: 6px; }
+.phone-console .dj-hotcue { min-width: 32px; }
+.phone-console .dj-platter-rim, .phone-console .dj-platter, .phone-console .dj-sheen { top: 5%; left: 4%; width: 86%; }
+.phone-console .dj-tonearm { right: 4%; top: 8%; width: 4px; height: 60%; }
+.phone-console .dj-tonearm::before { width: 12px; height: 12px; margin-left: -6px; top: -6px; }
+.phone-console .dj-tonearm-head { width: 9px; height: 9px; left: -3px; bottom: -6px; }
+.phone-console .dj-pic-btn { width: 22px; height: 22px; right: 2%; bottom: 2%; }
+.phone-console .dj-record-blank b { font-size: 8px; }
+
+/* ---- Live Drummer drum set: one setup per genre group, finish colour per style (--kit-hue) ---- */
+.kit-view { --kit-hue: 25; position: relative; border-radius: 4px; border: 2px solid var(--hardware-rubber); padding: 4px 6px 2px;
+  background: radial-gradient(ellipse at 50% 0%, oklch(0.26 0.03 var(--kit-hue) / 0.6), transparent 70%), var(--drum-screen); }
+.kit-svg { display: block; width: 100%; height: auto; max-height: 230px; overflow: visible; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+.kit-caption { display: block; text-align: right; font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.1em; color: var(--muted-foreground); }
+.kit-floor { fill: oklch(0.18 0.01 var(--kit-hue)); }
+.kit-piece { cursor: pointer; transform-box: fill-box; transform-origin: center; outline: none; }
+.kit-piece[data-shape="cymbal"], .kit-piece[data-shape="hat"], .kit-piece[data-shape="cympad"] { transform-origin: center; }
+.kit-piece:focus-visible { filter: drop-shadow(0 0 3px var(--drum-brass)); }
+.kit-piece.is-off { opacity: 0.32; }
+.kit-piece.is-empty { opacity: 0.2; cursor: default; }
+.kit-stand { stroke: oklch(0.62 0.01 260); stroke-width: 1.6; }
+.kit-metal { fill: oklch(0.74 0.12 85); stroke: oklch(0.52 0.1 75); stroke-width: 0.8; }
+.kit-metal-ring { fill: none; stroke: oklch(0.62 0.1 80); stroke-width: 0.6; }
+.kit-bell { fill: oklch(0.82 0.12 88); }
+.kit-shell { fill: oklch(0.48 0.16 var(--kit-hue)); stroke: oklch(0.3 0.1 var(--kit-hue)); stroke-width: 0.8; }
+.kit-head { fill: oklch(0.93 0.01 90); }
+.kit-skin { fill: oklch(0.86 0.04 75); }
+.kit-head-front { fill: oklch(0.2 0.04 var(--kit-hue)); }
+.kit-hoop { fill: none; stroke: oklch(0.78 0.01 260); stroke-width: 1.2; }
+.kit-lug { stroke: oklch(0.8 0.01 260); stroke-width: 1; }
+.kit-logo { fill: oklch(0.85 0.1 var(--kit-hue)); font-family: var(--font-display); letter-spacing: 0.08em; }
+.kit-jingle { fill: oklch(0.8 0.01 260); }
+.kit-wood { fill: oklch(0.55 0.1 60); stroke: oklch(0.38 0.08 55); stroke-width: 0.6; }
+/* electronic kit: black rubber pads with LED edges in the style's colour */
+.kit-rubber { fill: oklch(0.17 0.005 260); stroke: oklch(0.1 0 0); stroke-width: 0.8; }
+.kit-mesh { fill: oklch(0.26 0.01 260); }
+.kit-led-ring { fill: none; stroke: oklch(0.74 0.18 var(--kit-hue)); stroke-width: 1.6; }
+.kit-pad-label { fill: oklch(0.9 0 0); font-family: var(--font-mono); font-size: 7px; font-weight: 700; letter-spacing: 0.04em; pointer-events: none; }
+/* hip-hop beat-pad station */
+.kit-station { fill: oklch(0.24 0.01 var(--kit-hue)); stroke: oklch(0.34 0.02 var(--kit-hue)); }
+.kit-beatpad { fill: oklch(0.36 0.06 var(--kit-hue)); stroke: oklch(0.2 0.02 var(--kit-hue)); stroke-width: 1; }
+.kit-station-knob { fill: oklch(0.14 0 0); stroke: oklch(0.5 0.01 260); }
+.kit-station-btn { fill: oklch(0.32 0.01 260); }
+.kit-screen { fill: oklch(0.2 0.06 160); stroke: oklch(0.1 0 0); }
+.kit-screen-text { fill: oklch(0.85 0.14 160); font-family: var(--font-mono); font-size: 8px; font-weight: 700; letter-spacing: 0.06em; }
+.kit-screen-sub { fill: oklch(0.65 0.1 160); font-family: var(--font-mono); font-size: 6px; letter-spacing: 0.2em; }
+.drummer-perform { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.phone-console .drummer-perform { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.phone-console .kit-view { padding: 2px 4px 0; }
+.phone-console .kit-svg { max-height: 112px; }
+.phone-console .kit-caption { display: none; }
 /* Sign-in provider buttons: one per row so the full label and logo always fit.
    Google button follows Google's dark theme (fixed brand colours, not app theme colours). */
 :root { --google-btn-bg: #131314; --google-btn-border: #8E918F; --google-btn-fg: #E3E3E3; }
@@ -4093,3 +4215,8 @@ html.phone-console-active [role="option"] { min-height: 44px; font-size: 15px; }
 .phone-console.phone-entry .login-soon-head { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: calc(5 * var(--ls)); row-gap: calc(3 * var(--ls)); }
 .phone-console.phone-entry .login-soon-badge { grid-column: 1 / -1; justify-self: start; margin-left: 0; }
 .phone-console.phone-entry .login-soon-name { overflow-wrap: normal; }
+/* the turntables need a little height on sideways phones; the scrolling waveforms give it */
+.phone-console .dj-waves .dj-wave { height: 22px; }
+.phone-console .dj-record-label { inset: 27%; }
+/* room for the drum set on the sideways phone Play page */
+.phone-console .drummer-controls .drummer-xy { aspect-ratio: 7 / 2; }
