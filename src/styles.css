@@ -4538,3 +4538,46 @@ html.phone-console-active [role="option"] { min-height: 44px; font-size: 15px; }
 .dj-wave[data-grab="1"] { cursor: ew-resize; touch-action: none; }
 .dj-tostart { padding-inline: 8px; }
 .phone-console .dj-tostart { min-width: 36px; padding-inline: 0; }
+
+/* ---- Small sideways phones (≈ 600 px long side): Live Drummer, Live Keys and DJ Decks re-flow by their
+   own width (container queries) so buttons, labels and faders never sit on top of each other. Bigger
+   phones keep the wider layouts above. ---- */
+.phone-console .drummer-device { container: live-desk / inline-size; }
+.phone-console .drummer-perform button { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+@container live-desk (max-width: 760px) {
+  .phone-console .drummer-main { grid-template-columns: minmax(0, 1fr) minmax(0, 0.74fr); }
+  .phone-console .drummer-perform { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .phone-console .drummer-perform button { min-height: 38px !important; height: 38px; padding-inline: 2px; font-size: 12px; }
+  .phone-console .drummer-display-meta { font-size: 9px; letter-spacing: 0.04em; }
+  .phone-console .drummer-knobs { gap: 2px; }
+  .phone-console .drummer-knobs > * { min-width: 0; }
+  .phone-console .drummer-pages { grid-template-columns: 1fr 1.6fr 1.4fr; }
+}
+.phone-console .dj-device { container: dj-desk / inline-size; }
+@container dj-desk (max-width: 780px) {
+  .phone-console .dj-console { grid-template-columns: minmax(0, 1fr) 176px minmax(0, 1fr); gap: 3px; }
+  .phone-console .dj-deck { padding: 4px; }
+  .phone-console .dj-deck-body { grid-template-columns: minmax(0, 1fr) 38px; grid-template-areas: "table pitch" "controls controls"; gap: 4px; }
+  .phone-console .dj-pitch { width: 38px; }
+  .phone-console .dj-deck-controls { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 3px; }
+  .phone-console .dj-deck-controls .dj-btn, .phone-console .dj-deck-controls .dj-hotcue-wrap, .phone-console .dj-deck-controls .dj-loop { min-width: 0; width: 100%; padding-inline: 0; }
+  .phone-console .dj-deck-controls .dj-hotcue { min-width: 0; width: 100%; }
+  .phone-console .dj-deck-controls .dj-play { min-width: 0; }
+  .phone-console .dj-deck-head { min-width: 0; }
+  .phone-console .dj-deck-head p { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .phone-console .dj-mixer.is-phone { min-width: 0; padding: 3px; }
+  .phone-console .dj-knob-row { gap: 0; }
+}
+@container dj-desk (max-width: 780px) {
+  .phone-console .dj-deck-controls .dj-sync { font-size: 10px; gap: 0; }
+  .phone-console .dj-deck-controls .dj-sync svg { display: none; }
+}
+/* Small sideways phone: the Live Keys keyboard gets the full width under the controls so each key is wide enough to read and tap. */
+@container live-desk (max-width: 760px) {
+  .phone-console .keys-device .drummer-main { grid-template-areas: "left pad" "left knobs" "rig rig"; align-items: start; }
+  .phone-console .keys-device .drummer-left { grid-area: left; }
+  .phone-console .keys-device .drummer-controls { display: contents; }
+  .phone-console .keys-device .drummer-controls > .keys-rig { grid-area: rig; }
+  .phone-console .keys-device .drummer-controls > .drummer-xy-wrap { grid-area: pad; }
+  .phone-console .keys-device .drummer-controls > .drummer-knobs { grid-area: knobs; }
+}
