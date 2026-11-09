@@ -330,8 +330,8 @@ function SynthTrackEditor({ track }: { track: Track }) {
         {/* Oscillators + noise */}
         <div className="grid min-w-0 gap-3 lg:grid-cols-2">
           {patch.oscillators.map((osc, i) => (
-            <div key={i} className="synth-osc-module rounded-[3px] border border-border bg-surface/80">
-              <div className="flex flex-wrap items-center gap-2 border-b border-border px-2 py-1">
+            <div key={i} className="synth-osc-module synth-card rounded-[3px] border border-border bg-surface/80">
+              <div className="flex flex-wrap items-center gap-2 synth-card-head border-b border-border px-2 py-1">
                 <span className={`size-1.5 rounded-full ${osc.on ? "bg-primary" : "bg-muted-foreground/40"}`} />
                 <span className="font-mono text-[10px] font-semibold uppercase tracking-widest">Osc {i + 1}</span>
                 <div className="ml-auto flex gap-0.5">
@@ -371,8 +371,8 @@ function SynthTrackEditor({ track }: { track: Track }) {
               </div>
             </div>
           ))}
-          <div className="rounded-[3px] border border-border bg-surface/80">
-            <div className="flex items-center gap-2 border-b border-border px-2 py-1">
+          <div className="synth-card rounded-[3px] border border-border bg-surface/80">
+            <div className="flex items-center gap-2 synth-card-head border-b border-border px-2 py-1">
               <span className={`size-1.5 rounded-full ${patch.noise > 0 ? "bg-primary" : "bg-muted-foreground/40"}`} />
               <span className="font-mono text-[10px] font-semibold uppercase tracking-widest">Noise</span>
             </div>
@@ -384,8 +384,8 @@ function SynthTrackEditor({ track }: { track: Track }) {
         </TabsContent>
 
         <TabsContent value="filters" className="space-y-3 pt-3">
-          <div className="rounded-[3px] border border-border bg-surface/80">
-            <div className="flex items-center gap-2 border-b border-border px-2 py-1">
+          <div className="synth-card rounded-[3px] border border-border bg-surface/80">
+            <div className="flex items-center gap-2 synth-card-head border-b border-border px-2 py-1">
               <span className="size-1.5 rounded-full bg-primary" />
               <span className="font-mono text-[10px] font-semibold uppercase tracking-widest">Filter</span>
               <Select value={patch.filterType} onValueChange={(v) => set({ filterType: v as BiquadFilterType })}>
@@ -431,8 +431,8 @@ function SynthTrackEditor({ track }: { track: Track }) {
         <TabsContent value="lfos" className="pt-3">
           <div className="grid min-w-0 gap-3 lg:grid-cols-2">
           {patch.lfos.map((lfo, i) => (
-            <div key={i} className="rounded-[3px] border border-border bg-surface/80">
-              <div className="flex items-center gap-2 border-b border-border px-2 py-1">
+            <div key={i} className="synth-card rounded-[3px] border border-border bg-surface/80">
+              <div className="flex items-center gap-2 synth-card-head border-b border-border px-2 py-1">
                 <span className={`size-1.5 rounded-full ${lfo.on ? "bg-primary" : "bg-muted-foreground/40"}`} />
                 <span className="font-mono text-[10px] font-semibold uppercase tracking-widest">LFO {i + 1}</span>
                 <div className="ml-auto flex gap-0.5">
@@ -473,8 +473,8 @@ function SynthTrackEditor({ track }: { track: Track }) {
         {/* Envelope graphs */}
         <TabsContent value="envelopes" className="pt-3">
         <div className="grid min-w-0 gap-3 lg:grid-cols-3">
-          <div className="rounded-[3px] border border-border bg-surface/80">
-            <div className="border-b border-border px-2 py-1"><span className="font-mono text-[10px] font-semibold uppercase tracking-widest">Amp Env</span></div>
+          <div className="synth-card rounded-[3px] border border-border bg-surface/80">
+            <div className="synth-card-head border-b border-border px-2 py-1"><span className="font-mono text-[10px] font-semibold uppercase tracking-widest">Amp Env</span></div>
             <div className="space-y-1 p-2">
               <EnvelopeGraph env={patch.amp} />
               <div className="flex flex-wrap gap-2">
@@ -484,8 +484,8 @@ function SynthTrackEditor({ track }: { track: Track }) {
               </div>
             </div>
           </div>
-          <div className="rounded-[3px] border border-border bg-surface/80">
-            <div className="border-b border-border px-2 py-1"><span className="font-mono text-[10px] font-semibold uppercase tracking-widest">Env 2 · Filter</span></div>
+          <div className="synth-card rounded-[3px] border border-border bg-surface/80">
+            <div className="synth-card-head border-b border-border px-2 py-1"><span className="font-mono text-[10px] font-semibold uppercase tracking-widest">Env 2 · Filter</span></div>
             <div className="space-y-1 p-2">
               <EnvelopeGraph env={patch.filterEnv} />
               <div className="flex flex-wrap gap-2">
@@ -496,8 +496,8 @@ function SynthTrackEditor({ track }: { track: Track }) {
               </div>
             </div>
           </div>
-          <div className="rounded-[3px] border border-border bg-surface/80">
-            <div className="border-b border-border px-2 py-1"><span className="font-mono text-[10px] font-semibold uppercase tracking-widest">Env 3 · Mod</span></div>
+          <div className="synth-card rounded-[3px] border border-border bg-surface/80">
+            <div className="synth-card-head border-b border-border px-2 py-1"><span className="font-mono text-[10px] font-semibold uppercase tracking-widest">Env 3 · Mod</span></div>
             <div className="space-y-1 p-2">
               <EnvelopeGraph env={modEnv} />
               <div className="flex flex-wrap gap-2">
@@ -513,8 +513,8 @@ function SynthTrackEditor({ track }: { track: Track }) {
 
         {/* Global column */}
         <TabsContent value="global" className="pt-3">
-        <div className="rounded-[3px] border border-border bg-surface/80">
-          <div className="border-b border-border px-2 py-1"><span className="font-mono text-[10px] font-semibold uppercase tracking-widest">Global</span></div>
+        <div className="synth-card rounded-[3px] border border-border bg-surface/80">
+          <div className="synth-card-head border-b border-border px-2 py-1"><span className="font-mono text-[10px] font-semibold uppercase tracking-widest">Global</span></div>
           <div className="flex flex-wrap items-end gap-3 p-2">
             <div className="flex gap-1">
               {(["poly", "mono", "legato"] as const).map((mode) => (
