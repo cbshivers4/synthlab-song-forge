@@ -4045,11 +4045,15 @@ html.phone-console-active [role="option"] { min-height: 44px; font-size: 15px; }
 .dj-pl-icon.is-remove:hover { color: var(--destructive); }
 .dj-phone-bottom { display: flex; align-items: center; justify-content: center; gap: 6px; }
 .dj-mixer.is-phone .dj-phone-bottom .dj-pl-open { min-height: 32px; padding-inline: 8px; gap: 4px; }
-/* sideways phone: the playlist covers the whole desk while open */
+/* sideways phone: the playlist covers the visible panel area while open (portalled host) */
+.dj-device.dj-sheet-host { position: absolute; inset: 0; z-index: 40; padding: 0 !important; border: 0; border-radius: 0; box-shadow: none; }
+.dj-sheet-host > .dj-playlist.is-sheet { border-radius: 0; }
 .dj-device > .dj-playlist.is-sheet { position: absolute; inset: 0; z-index: 30; margin: 0 !important; padding: 6px; gap: 4px; box-shadow: 0 0 0 1px var(--border); }
-.dj-playlist.is-sheet .dj-pl-head { flex-wrap: nowrap; gap: 6px; }
+.dj-playlist.is-sheet .dj-pl-head { flex-wrap: wrap; gap: 4px 6px; }
 .dj-playlist.is-sheet .dj-pl-title { min-width: 0; }
-.dj-playlist.is-sheet .dj-pl-actions { flex-wrap: nowrap; }
+/* phone page: name + Close on the first line, the five playlist buttons share the full second line */
+.dj-playlist.is-sheet .dj-pl-actions { order: 3; display: grid; width: 100%; grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.dj-playlist.is-sheet .dj-pl-actions .dj-pl-btn { min-width: 0; padding-inline: 4px; gap: 4px; }
 .dj-playlist.is-sheet .dj-pl-btn { min-height: 44px; padding-inline: 8px; font-size: 12px; }
 .dj-playlist.is-sheet .dj-pl-body { flex: 1; grid-template-columns: 170px minmax(0, 1fr); }
 .dj-playlist.is-sheet .dj-pl-saved, .dj-playlist.is-sheet .dj-pl-scroll { max-height: none; height: 100%; }

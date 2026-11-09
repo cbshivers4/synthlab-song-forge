@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode, type RefObject } from "react";
+import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { Disc3, FolderOpen, SkipBack, Headphones, ListMusic, Music2, Pause, Play, Circle, Square, Download, Trash2, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,17 @@ function useDjVersion() {
   return useSyncExternalStore((fn) => dj.subscribe(fn), () => dj.version, () => 0);
 }
 
+/**
+ * Sideways phone: the playlist / headphone pages cover the visible panel area (not the top of the
+ * tall, scrolled desk) so their header buttons are always on screen. Falls back to in-place render.
+ */
+function PhoneSheet({ anchor, children }: { anchor: RefObject<HTMLElement | null>; children: ReactNode }) {
+  const [host, setHost] = useState<HTMLElement | null>(null);
+  useLayoutEffect(() => { setHost(anchor.current?.closest<HTMLElement>(".phone-pages") ?? null); }, [anchor]);
+  if (!host) return <>{children}</>;
+  return createPortal(<div className="dj-device dj-sheet-host">{children}</div>, host);
+}
+
 const cssVar = (el: Element, name: string, fallback: string) => getComputedStyle(el).getPropertyValue(name).trim() || fallback;
 
 /** The decks' audio is created in the browser only, after the panel has mounted. */
@@ -41,8 +53,9 @@ function DjDesk() {
   const phone = useIsLandscapePhone();
   const [listOpen, setListOpen] = useState(false);
   const [phonesOpen, setPhonesOpen] = useState(false);
+  const deskRef = useRef<HTMLElement>(null);
   return (
-    <section className="dj-device relative space-y-2 rounded-md border border-border p-2 sm:p-3" aria-label="DJ decks">
+    <section ref={deskRef} className="dj-device relative space-y-2 rounded-md border border-border p-2 sm:p-3" aria-label="DJ decks">
       {!phone && (
         <header className="flex flex-wrap items-center gap-2">
           <Disc3 className="size-5 text-primary" />
@@ -61,8 +74,8 @@ function DjDesk() {
       </div>
       {!phone && <RecordPanel />}
       {!phone && <DjPlaylist />}
-      {phone && listOpen && <DjPlaylist sheet onClose={() => setListOpen(false)} />}
-      {phone && phonesOpen && <PhonesSheet onClose={() => setPhonesOpen(false)} />}
+      {phone && listOpen && <PhoneSheet anchor={deskRef}><DjPlaylist sheet onClose={() => setListOpen(false)} /></PhoneSheet>}
+      {phone && phonesOpen && <PhoneSheet anchor={deskRef}><PhonesSheet onClose={() => setPhonesOpen(false)} /></PhoneSheet>}
       <p className="dj-footnote text-[11px] text-muted-foreground">
         Press a channel's orange CUE to hear that deck in your headphones before the crowd does (even with its fader down). MONO SPLIT works with headphones on one output: cue in the left ear, master in the right. 2ND OUT sends the headphones to USB headphones or a DJ interface while the speakers keep the master (Chrome or Edge on a computer). Pitch and 45 RPM change tempo and key together, like a turntable.
       </p>
@@ -427,7 +440,7 @@ function MixerPanel({ onPlaylist, onPhones }: { active: boolean; onPlaylist: () 
         {xfader}
         <div className="dj-phone-bottom">
           <RecordPanel />
-          <Button variant="secondary" className="dj-btn dj-pl-open" onClick={onPlaylist} aria-label="Open the playlist"><ListMusic className="size-4" />List</Button>
+          <Button variant="secondary" className="dj-btn dj-pl-open" onClick={onPlaylist} aria-label="Open the playlist — add, save and delete music"><ListMusic className="size-4" />Playlist</Button>
           <Button variant="secondary" className="dj-btn dj-pl-open" onClick={onPhones} aria-label="Headphones" data-on={dj.state.phonesMode !== "off" ? "1" : "0"}><Headphones className="size-4" /></Button>
         </div>
       </div>

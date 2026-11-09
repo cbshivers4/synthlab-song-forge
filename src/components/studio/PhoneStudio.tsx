@@ -1,7 +1,7 @@
 import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
 import { DeviceClock } from "./DeviceClock";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { AudioLines, ChevronLeft, ChevronRight, FolderOpen, Home, Music2, Scissors, SlidersHorizontal, Wand2, Settings2, Radio, Disc3, Grid2x2, Piano, Gauge, FileSearch, Cpu, Palette, NotebookPen, LifeBuoy, Mic, Bot, Sparkles, Film, PanelTop, Move, X, Maximize2, Minimize2, GripHorizontal } from "lucide-react";
+import { AudioLines, ChevronLeft, ChevronRight, FolderOpen, Home, Music2, Scissors, SlidersHorizontal, Wand2, Settings2, Radio, Disc3, Piano, Gauge, FileSearch, Cpu, Palette, NotebookPen, LifeBuoy, Mic, Bot, Sparkles, Film, PanelTop, Move, X, Maximize2, Minimize2, GripHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStudio, type PanelId } from "@/lib/synclab/store";
 import { useApp } from "@/lib/synclab/app-state";
@@ -14,14 +14,13 @@ import { requestBluetoothSettings } from "./Settings";
 import { openHelp } from "./HelpCenter";
 import { openExport } from "./ExportDialog";
 import logo from "@/assets/synclab-logo-neon.jpg.asset.json";
-import { Drum, Guitar, Hand } from "lucide-react";
+import { Drum, Guitar } from "lucide-react";
 import { recordingPosition } from "@/lib/synclab/recording-display";
 import { usePlayStep } from "@/lib/synclab/playhead";
 
 const sounds = [
   { label: "Drum Machine", icon: Disc3, panel: "drums" }, { label: "Synth", icon: Piano, panel: "synth" },
-  { label: "Touch Synth", icon: Hand, panel: "synth" }, { label: "Granular Synth", icon: Sparkles, panel: "synth" },
-  { label: "Sampler", icon: Scissors, panel: "sampler" }, { label: "Sample pads", icon: Grid2x2, panel: "pads" },
+  { label: "Sampler", icon: Scissors, panel: "sampler" },
   { label: "Sound library", icon: FolderOpen, panel: "browser" },
   { label: "Live View", icon: Radio, panel: "live" }, { label: "Live Looper", icon: Disc3, panel: "looper" },
   { label: "Live Drummer", icon: Drum, panel: "drummer" }, { label: "Live Keys", icon: Piano, panel: "livekeys" }, { label: "DJ Decks", icon: Disc3, panel: "dj" },
@@ -157,16 +156,6 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
       {!panel && room !== "edit" && <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <header className="phone-room-header grid h-14 shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center border-b border-border px-5"><h2 className="truncate text-base font-semibold">{room === "sounds" ? "Sounds & instruments" : "Effects & tools"}</h2><span className="text-xs text-muted-foreground">SYNCLAB</span></header>
         <div className="phone-room-grid grid min-h-0 flex-1 auto-rows-[minmax(8.75rem,1fr)] grid-cols-4 gap-2 overflow-auto p-2.5">{list.map(({ label, icon: Icon, panel: next }, index) => <Button key={label} variant="outline" data-sound-family={index % 4} className="phone-sound-tile h-full min-h-[8.75rem] min-w-0 flex-col gap-2.5 whitespace-normal text-center text-sm leading-tight" onClick={() => {
-          if (label === "Touch Synth") {
-            const found = tracks.find((track) => /^touch synth$/i.test(track.name) && track.patch && !track.patch.modular);
-            if (found) select(found.id);
-            else addTrack("instrument", "TOUCH SYNTH", "Cybotron Lead");
-          }
-          if (label === "Granular Synth") {
-            const found = tracks.find((track) => track.patch?.granular);
-            if (found) select(found.id);
-            else addTrack("instrument", "GRANULAR SYNTH", "Granular Glass Cloud");
-          }
           if (label === "Drum Machine" && !tracks.some((track) => track.kind === "drum")) {
             addTrack("drum", "DRUM MACHINE", undefined, { keepPanel: true });
           }

@@ -1,3 +1,5 @@
+import { isPadSamplerTrack } from "@/lib/synclab/track-editor";
+import { SamplerModelPicker } from "./SamplerModelPicker";
 import { WaveformZoom, waveformFraction, useWaveformDetail } from "./WaveformZoom";
 import { SampleExportButtons } from "./SampleExportButtons";
 import { HardwareBypass } from "./HardwareBypass";
@@ -183,7 +185,9 @@ export function Sampler() {
 
   const samplerTracks = tracks.filter((t) => t.kind === "sampler");
   const track =
-    selected?.kind === "sampler" ? selected : samplerTracks.find((t) => t.sampler) ?? samplerTracks[0] ?? null;
+    selected?.kind === "sampler" && !isPadSamplerTrack(selected) ? selected
+    : samplerTracks.find((t) => t.sampler && !isPadSamplerTrack(t)) ?? samplerTracks.find((t) => !isPadSamplerTrack(t))
+    ?? (selected?.kind === "sampler" ? selected : samplerTracks.find((t) => t.sampler) ?? samplerTracks[0] ?? null);
 
   const resample = async (t: Track) => {
     if (!t.sampler) return;
@@ -524,6 +528,7 @@ export function Sampler() {
   return (
     <div className="studio-wallpaper sampler-device hardware-device space-y-3 rounded-md p-3" data-studio-panel="sample" style={skinBackground(skin)} {...drop}>
       <div className="flex items-center justify-between gap-2"><span className="sampler-badge" aria-hidden>SAMPLE ONE · SYNCLAB SAMPLER</span><HardwareBypass track={track} name="Sampler" /></div>
+      <SamplerModelPicker current="sampler" />
       <details className="text-xs text-muted-foreground">
         <summary className="cursor-pointer py-2">Sampler colors & wallpaper</summary>
         <SkinControls skinKey="sample" image />

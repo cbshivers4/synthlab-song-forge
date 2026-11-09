@@ -1,3 +1,4 @@
+import { SamplerModelPicker } from "./SamplerModelPicker";
 import { WaveformZoom, waveformFraction, useWaveformDetail } from "./WaveformZoom";
 import { SampleExportButtons } from "./SampleExportButtons";
 import { BypassButton } from "./HardwareBypass";
@@ -512,6 +513,7 @@ export function PadSampler() {
 
   return (
     <div className="studio-wallpaper space-y-3 rounded-md p-3" data-studio-panel="pads" {...drop}>
+      <SamplerModelPicker current="pads" />
       <SkinControls skinKey="sampler" image padColor colorLabel="Around pads" />
       <div className="flex flex-wrap items-center gap-2">
         <Grid2x2 className="size-4 text-primary" />

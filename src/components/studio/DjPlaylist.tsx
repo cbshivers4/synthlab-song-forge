@@ -127,13 +127,13 @@ export function DjPlaylist({ sheet = false, onClose }: { sheet?: boolean; onClos
           <b className="truncate" title={s.displayName}>{s.displayName}{s.dirty && <i className="dj-pl-dot" aria-label="unsaved changes" />}</b>
           <small>{s.tracks.length} track{s.tracks.length === 1 ? "" : "s"}{total > 0 && ` · ${clock(total).replace(/\.\d$/, "")}`} · {status}</small>
         </div>
+        {sheet && <Button size="sm" variant="ghost" className="dj-pl-btn dj-pl-close" onClick={onClose} aria-label="Close playlist"><X className="size-4" />Close</Button>}
         <div className="dj-pl-actions">
           <Button size="sm" variant="secondary" className="dj-pl-btn" onClick={() => fileRef.current?.click()}><FilePlus2 className="size-4" />Add music</Button>
           <Button size="sm" variant="secondary" className="dj-pl-btn" disabled={busy} onClick={() => guard(() => s.newPlaylist())}><Plus className="size-4" />New</Button>
           <Button size="sm" className="dj-pl-btn" disabled={busy || !s.tracks.length || (!!s.current && !s.dirty)} onClick={onSave}><Save className="size-4" />{busy ? "Saving…" : "Save"}</Button>
           <Button size="sm" variant="secondary" className="dj-pl-btn" disabled={busy || !s.current} onClick={() => { setDraft(s.name); setNaming("rename"); }} aria-label="Rename playlist"><Pencil className="size-4" />Rename</Button>
           <Button size="sm" variant="outline" className="dj-pl-btn dj-pl-delete" disabled={busy || (!s.current && !s.tracks.length)} onClick={onDelete} aria-label={s.current ? "Delete playlist" : "Clear playlist"}><Trash2 className="size-4" />{s.current ? "Delete" : "Clear"}</Button>
-          {sheet && <Button size="sm" variant="ghost" className="dj-pl-btn" onClick={onClose} aria-label="Close playlist"><X className="size-4" />Close</Button>}
         </div>
       </header>
 
