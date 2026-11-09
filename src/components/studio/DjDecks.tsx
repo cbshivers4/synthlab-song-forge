@@ -287,7 +287,17 @@ function DeckPanel({ id }: { id: DeckId }) {
             <Button className="dj-btn dj-tostart" variant="outline" disabled={!s.name || s.loading} onClick={() => { unlock(); deck.toStart(); }}
               aria-label={`Deck ${id} back to the beginning`} title="Back to the beginning of the track"><SkipBack className="size-4 fill-current" /></Button>
             <Button className="dj-btn dj-cue" variant="outline" disabled={!s.name} onClick={() => { unlock(); deck.cue(); }} title="Stopped: set the cue here. Playing: back to the cue">CUE</Button>
-            <Button className="dj-btn dj-play" disabled={!s.name || s.loading} aria-pressed={s.playing} onClick={() => { unlock(); deck.toggle(); }}>
+            <Button className="dj-btn dj-play" data-empty={!s.name || s.loading ? "1" : undefined} aria-pressed={s.playing} aria-label={s.playing ? `Pause deck ${id}` : `Play deck ${id}`}
+              onClick={() => {
+                unlock();
+                if (s.loading) { toast("Deck " + id + " is still loading the track", { description: "Press Play again in a moment." }); return; }
+                if (!s.name) {
+                  // An empty deck has nothing to play: say so and offer the file picker right from the message.
+                  toast("Deck " + id + " has no music on it yet", { description: "Load a music file (folder button), put your song on it (♪ button) or pick one from the Playlist.", action: { label: "Load a file", onClick: () => fileRef.current?.click() } });
+                  return;
+                }
+                deck.toggle();
+              }}>
               {s.playing ? <Pause className="size-5 fill-current" /> : <Play className="size-5 fill-current" />}
             </Button>
             <Button className="dj-btn dj-sync" variant="outline" disabled={!s.name} onClick={syncNow}><RefreshCcw className="size-4" />SYNC</Button>

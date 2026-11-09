@@ -4611,3 +4611,9 @@ html.phone-console-active [role="option"] { min-height: 44px; font-size: 15px; }
   box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--primary-foreground) 25%, transparent); }
 .phone-console .timeline-hscroll-row.is-timeline .timeline-hscroll > .timeline-hscroll-thumb::after { top: 8px; bottom: 8px; width: 10px; margin-left: -5px; }
 .phone-console .timeline-hscroll-row.is-timeline .timeline-hscroll-zoom { width: 40px; height: 34px; font-size: 16px; }
+
+/* DJ Decks: an empty deck's Play looks unlit (tapping it explains how to load music). Phone master meter is tall and wide so the mix level is easy to read. */
+.dj-play[data-empty="1"] { opacity: 0.45; box-shadow: none; }
+.phone-console .dj-lr.is-master { --dj-lr-h: 170px; }
+.phone-console .dj-lr.is-master .dj-lr-bar, .phone-console .dj-lr.is-master .dj-lr-clips i, .phone-console .dj-lr.is-master .dj-lr-legend span { width: 9px; }
+.phone-console .dj-lr.is-master .dj-lr-legend { font-size: 9px; }

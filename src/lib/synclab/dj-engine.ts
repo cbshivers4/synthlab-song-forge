@@ -176,6 +176,8 @@ class Deck {
 
   play() {
     if (!this.buffer || this.state.playing) return;
+    // phones suspend or interrupt the sound (lock screen, calls, other apps): wake it so Play is always heard
+    if (this.ctx.state !== "running") void this.ctx.resume().catch(() => undefined);
     this.startSource(this.offset);
     this.state = { ...this.state, playing: true };
     this.onChange();
