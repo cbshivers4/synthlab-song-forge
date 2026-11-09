@@ -4894,3 +4894,43 @@ html.phone-console-active [role="option"] { min-height: 44px; font-size: 15px; }
 .synth-hardware.synth-hardware[data-synth-style] .synth-fav-key[aria-pressed="true"] .synth-fav-num { background: oklch(0 0 0 / 0.18); }
 .synth-hardware.synth-hardware[data-synth-style] .synth-fav-clear:not(#synth-look) { background: var(--look-field); color: var(--look-ink); border-color: var(--look-edge); }
 .synth-hardware[data-synth-style="acid"] .synth-fav-key[data-empty]:not(#synth-look) { color: var(--look-ink) !important; }
+
+/* Desktop DJ track list under the scrolling waveforms: six playlist rows at a time (track, artist, time, BPM, load A/B). */
+.dj-browser { --dj-br-row: 30px; display: flex; flex-direction: column; gap: 0; border-radius: 4px; background: oklch(0.1 0.003 260); border: 2px solid var(--hardware-rubber); overflow: hidden; }
+.dj-browser-head { display: flex; align-items: center; gap: 8px; min-height: 32px; padding: 3px 6px 3px 8px; background: oklch(0.16 0.005 260); border-bottom: 1px solid oklch(0.26 0.01 260); color: var(--primary); }
+.dj-browser[data-open="0"] .dj-browser-head { border-bottom: 0; }
+.dj-browser-name { min-width: 0; max-width: 40%; font-size: 13px; color: var(--foreground); }
+.dj-browser-count { margin-right: auto; font-family: var(--font-mono); font-size: 11px; color: var(--muted-foreground); white-space: nowrap; }
+.dj-browser-btn { display: inline-flex; align-items: center; gap: 4px; min-height: 26px; padding: 0 8px; border-radius: 4px; border: 1px solid oklch(0.34 0.01 260); background: oklch(0.2 0.006 260); color: var(--foreground); font-size: 12px; font-weight: 600; white-space: nowrap; }
+.dj-browser-btn:hover { border-color: var(--primary); }
+.dj-browser-cols, .dj-browser-row { display: grid; grid-template-columns: 30px minmax(0, 2.2fr) minmax(0, 1.4fr) 58px 58px 84px; align-items: center; gap: 8px; padding: 0 8px; }
+.dj-browser-cols { min-height: 22px; font-family: var(--font-mono); font-size: 10px; font-weight: 700; letter-spacing: 0.08em; color: var(--muted-foreground); background: oklch(0.13 0.004 260); border-bottom: 1px solid oklch(0.24 0.01 260); }
+.dj-browser .is-num { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.dj-browser .is-load { display: flex; justify-content: flex-end; gap: 4px; }
+.dj-browser-wrap { position: relative; min-width: 0; }
+.dj-browser-scroll { height: calc(6 * var(--dj-br-row)); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; }
+.dj-browser-scroll::-webkit-scrollbar { display: none; }
+.dj-browser-wrap:has(.timeline-vscroll:not([hidden])) > .dj-browser-scroll { margin-right: 22px; }
+.dj-browser-wrap > .timeline-vscroll { width: 18px; border-radius: 4px; }
+.dj-browser-list { display: flex; flex-direction: column; }
+.dj-browser-row { height: var(--dj-br-row); font-size: 13px; cursor: grab; border-bottom: 1px solid oklch(0.2 0.006 260); }
+.dj-browser-row:nth-child(even) { background: oklch(0.125 0.004 260); }
+.dj-browser-row:hover { background: oklch(0.19 0.008 260); }
+.dj-browser-row[aria-selected="true"] { background: color-mix(in oklab, var(--primary) 22%, oklch(0.14 0.005 260)); }
+.dj-browser-row[data-on] .dj-browser-title { color: var(--foreground); }
+.dj-browser-num { font-family: var(--font-mono); font-size: 11px; color: var(--muted-foreground); text-align: right; }
+.dj-browser-title { font-weight: 600; color: oklch(0.92 0 0); }
+.dj-browser-artist { color: oklch(0.78 0.01 260); }
+.dj-browser-bpm { color: oklch(0.88 0.12 85); font-weight: 700; }
+.dj-browser-ondeck { display: inline-block; margin-right: 5px; padding: 0 4px; border-radius: 3px; font-style: normal; font-family: var(--font-display); font-size: 11px; line-height: 16px; color: oklch(0.12 0 0); background: var(--dj-a); vertical-align: 1px; }
+.dj-browser-ondeck[data-deck="B"] { background: var(--dj-b); }
+.dj-browser-load { min-width: 36px; height: 24px; border-radius: 4px; font-family: var(--font-display); font-size: 13px; line-height: 1; border: 1px solid var(--dj-a); color: var(--dj-a); background: transparent; }
+.dj-browser-load[data-deck="B"] { border-color: var(--dj-b); color: var(--dj-b); }
+.dj-browser-load:hover, .dj-browser-load:active { background: var(--dj-a); color: oklch(0.12 0 0); }
+.dj-browser-load[data-deck="B"]:hover, .dj-browser-load[data-deck="B"]:active { background: var(--dj-b); }
+.dj-browser-load:disabled { opacity: 0.5; }
+.dj-browser-empty { display: grid; place-items: center; width: 100%; height: 100%; padding: 8px; font-size: 13px; color: var(--muted-foreground); }
+
+/* Sideways phone: the two scrolling waveforms are tall enough to read beats, cues and the playhead (the desk scrolls). */
+.phone-console .dj-device .dj-waves .dj-wave { height: 48px; }
+.phone-console .dj-device .dj-wave-tag { font-size: 14px; }

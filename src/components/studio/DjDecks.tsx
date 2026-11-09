@@ -18,6 +18,7 @@ import { songSteps } from "@/lib/synclab/timebase";
 import { useIsLandscapePhone } from "@/hooks/use-mobile";
 import { DJ_TRACK_DRAG, DjPlaylist, loadPlaylistTrack } from "./DjPlaylist";
 import { Turntable } from "./DjTurntable";
+import { DjTrackBrowser } from "./DjTrackBrowser";
 import { PhonesPanel, PhonesSheet, togglePhonesCue } from "./DjPhones";
 import { useFrame } from "./dj-frame";
 
@@ -68,6 +69,7 @@ function DjDesk() {
         <ScrollingWave id="A" active={anyPlaying} />
         <ScrollingWave id="B" active={anyPlaying} />
       </div>
+      {!phone && <DjTrackBrowser />}
       <div className="dj-console">
         <DeckPanel id="A" />
         <MixerPanel active={anyPlaying} onPlaylist={() => setListOpen(true)} onPhones={() => setPhonesOpen(true)} />

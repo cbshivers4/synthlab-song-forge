@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { getDj, type DeckId } from "@/lib/synclab/dj-engine";
 import { clock } from "@/lib/synclab/dj";
 import { getPlaylists } from "@/lib/synclab/dj-playlist-store";
+import { getTrackInfo } from "@/lib/synclab/dj-track-info";
 import { MAX_PLAYLIST_NAME, playlistSeconds, type PlaylistTrack } from "@/lib/synclab/dj-playlist";
 import { getLocalFile } from "@/lib/synclab/local-files";
 import { getEngine } from "@/lib/synclab/audio-engine";
@@ -19,6 +20,15 @@ function usePlaylists() {
   return s;
 }
 
+/** The name a deck shows for a playlist entry: the song title from its tags when known, else the file name. */
+export const deckLabel = (t: PlaylistTrack) => getTrackInfo().get(t.key)?.title ?? t.name;
+
+/** True while `deck` still holds this playlist entry (not something loaded onto it since). */
+export const isOnDeck = (deckId: DeckId, t: PlaylistTrack) => {
+  const name = getDj().deck(deckId).state.name;
+  return getPlaylists().onDeck[deckId] === t.id && (name === deckLabel(t) || name === t.name);
+};
+
 /** Puts a playlist entry on a deck (used by the row buttons and by dragging a row onto a deck). */
 export async function loadPlaylistTrack(deckId: DeckId, trackId: string) {
   const s = getPlaylists();
@@ -28,10 +38,11 @@ export async function loadPlaylistTrack(deckId: DeckId, trackId: string) {
   const blob = await s.audioFor(t);
   if (!blob) { toast.error(`Couldn't find the music for ${t.name}`, { description: "Remove it from the playlist and add the file again." }); return; }
   const deck = getDj().deck(deckId);
-  await deck.load(blob, t.name);
+  await deck.load(blob, deckLabel(t));
   if (deck.state.error) { toast.error(deck.state.error); return; }
   s.markOnDeck(deckId, t.id);
   if (deck.state.duration) s.setDuration(t.key, deck.state.duration);
+  if (deck.state.bpm) getTrackInfo().setDeckBpm(t.key, deck.state.bpm);
 }
 
 type Confirm = { message: string; yes: string; run: () => void | Promise<void> };
@@ -42,7 +53,6 @@ type Confirm = { message: string; yes: string; run: () => void | Promise<void> }
  */
 export function DjPlaylist({ sheet = false, onClose }: { sheet?: boolean; onClose?: () => void }) {
   const s = usePlaylists();
-  const dj = getDj();
   const fileRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const [over, setOver] = useState(false);
@@ -109,8 +119,7 @@ export function DjPlaylist({ sheet = false, onClose }: { sheet?: boolean; onClos
 
   const total = playlistSeconds(s.tracks);
   const status = s.current ? (s.dirty ? "Unsaved changes" : "Saved on this device") : s.tracks.length ? "Not saved yet" : "New playlist";
-  const deckName = (id: DeckId) => dj.deck(id).state.name;
-  const onDeck = (t: PlaylistTrack): DeckId[] => (["A", "B"] as DeckId[]).filter((d) => s.onDeck[d] === t.id && deckName(d) === t.name);
+  const onDeck = (t: PlaylistTrack): DeckId[] => (["A", "B"] as DeckId[]).filter((d) => isOnDeck(d, t));
 
   return (
     <section
