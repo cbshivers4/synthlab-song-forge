@@ -11,6 +11,7 @@ import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
 import { getDj, type DeckId } from "@/lib/synclab/dj-engine";
 import { clock, djSilenceReason, scrubTo } from "@/lib/synclab/dj";
 import { getLocalFile } from "@/lib/synclab/local-files";
+import { borrowActiveMic, getOutputDevice } from "@/lib/synclab/mic";
 import { renderSong } from "@/lib/synclab/song-render";
 import { canShareFile, downloadBlob, encodeWav, shareFile } from "@/lib/synclab/bounce";
 import { songSteps } from "@/lib/synclab/timebase";
@@ -277,13 +278,22 @@ function DeckPanel({ id }: { id: DeckId }) {
     else toast.error("The phone still won't start the sound", { description: "Close other apps that play sound or use the microphone, check the phone isn't on silent, then reload SYNCLAB." });
   };
   /** Shortly after Play, check the music really reaches the speakers and say exactly what's blocking it if not. */
-  const checkSound = (clock0: number) => {
-    window.setTimeout(() => {
+  const checkSound = (clock0: number, pos0: number, retried = false) => {
+    window.setTimeout(async () => {
       if (!deck.state.playing) return;
       const ctx = dj.ctx;
-      const moving = ctx.currentTime - clock0 > 0.3;
+      let moving = ctx.currentTime - clock0 > 0.3;
+      // A stuck phone sound clock gets one automatic restart before we bother you with it.
+      if ((ctx.state !== "running" || !moving) && !retried) {
+        try { if (ctx.state === "running") await ctx.suspend(); await ctx.resume(); } catch { /* reported on the next check */ }
+        checkSound(ctx.currentTime, deck.position(), true);
+        return;
+      }
+      moving = ctx.currentTime - clock0 > 0.3;
       const [ml, mr] = dj.masterMeter.levels();
+      const [dl, dr] = deck.levels();
       const peak = Math.max(ml, mr);
+      const deckPeak = Math.max(dl, dr);
       const st = deck.state;
       const reason = djSilenceReason({ deck: id, gain: st.gain, fader: st.fader, filter: st.filter, eq: st.eq, crossfader: dj.state.crossfader, master: dj.state.master });
       let outcome = "ok";
@@ -304,8 +314,15 @@ function DeckPanel({ id }: { id: DeckId }) {
         outcome = "silent_audio";
         toast(`Deck ${id} is playing, but this part of the track is silent`, { description: "Some files start with silence. Drag the waveform or the needle further into the song." });
       }
-      window.__lovableEvents?.track?.("project.dj_play_check", { outcome, ctx_state: ctx.state, clock_moving: moving, master_db: peak > 0 ? Math.round(20 * Math.log10(peak)) : -120, sideways_layout: phone });
-    }, 900);
+      const db = (v: number) => (v > 0 ? Math.max(-120, Math.round(20 * Math.log10(v))) : -120);
+      const lat = ctx as AudioContext & { outputLatency?: number };
+      window.__lovableEvents?.track?.("project.dj_play_check", {
+        outcome, ctx_state: ctx.state, clock_moving: moving, master_db: db(peak), sideways_layout: phone,
+        deck_db: db(deckPeak), track_moving: deck.position() - pos0 > 0.2, retried, sample_rate: ctx.sampleRate,
+        base_latency_ms: Math.round((ctx.baseLatency ?? 0) * 1000), output_latency_ms: Math.round((lat.outputLatency ?? 0) * 1000),
+        mic_open: !!borrowActiveMic(), output_device_saved: !!getOutputDevice(), track_seconds: Math.round(st.duration), page_visible: document.visibilityState === "visible",
+      });
+    }, retried ? 700 : 900);
   };
   const syncNow = () => { if (!deck.sync(dj.other(id))) toast("Load both decks first", { description: "Sync matches this deck's tempo and beats to the other deck." }); };
 
@@ -342,8 +359,9 @@ function DeckPanel({ id }: { id: DeckId }) {
                 }
                 const starting = !s.playing;
                 const clock0 = dj.ctx.currentTime;
+                const pos0 = deck.position();
                 deck.toggle();
-                if (starting) checkSound(clock0);
+                if (starting) checkSound(clock0, pos0);
               }}>
               {s.playing ? <Pause className="size-5 fill-current" /> : <Play className="size-5 fill-current" />}
             </Button>

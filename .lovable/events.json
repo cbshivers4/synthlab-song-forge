@@ -2,7 +2,7 @@
   "schema_version": 1,
   "events": {
     "project.dj_play_check": {
-      "event_schema_version": 1,
+      "event_schema_version": 2,
       "description": "Just under a second after Play on a DJ deck: whether the sound really reached the speakers, and what blocked it if not.",
       "privacy": {
         "contains_pii": false,
@@ -32,6 +32,36 @@
             "type": "number"
           },
           "sideways_layout": {
+            "type": "boolean"
+          },
+          "deck_db": {
+            "type": "number"
+          },
+          "track_moving": {
+            "type": "boolean"
+          },
+          "retried": {
+            "type": "boolean"
+          },
+          "sample_rate": {
+            "type": "number"
+          },
+          "base_latency_ms": {
+            "type": "number"
+          },
+          "output_latency_ms": {
+            "type": "number"
+          },
+          "mic_open": {
+            "type": "boolean"
+          },
+          "output_device_saved": {
+            "type": "boolean"
+          },
+          "track_seconds": {
+            "type": "number"
+          },
+          "page_visible": {
             "type": "boolean"
           }
         }
