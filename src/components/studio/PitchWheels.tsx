@@ -62,7 +62,7 @@ export function PitchWheels({ trackId }: { trackId: string }) {
               type="button"
               aria-pressed={range === r}
               onClick={() => setRange(r)}
-              className={`rounded-[3px] border px-2 py-1 font-mono text-[10px] ${range === r ? "border-primary text-primary" : "border-border text-muted-foreground"}`}
+              className={`rounded-[3px] border px-2 py-1 font-mono text-[10px] ${range === r ? "border-primary bg-primary font-bold text-primary-foreground" : "border-border text-muted-foreground"}`}
             >
               ±{r}
             </button>

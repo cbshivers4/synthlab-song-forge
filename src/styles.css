@@ -2601,7 +2601,7 @@ body:has(.phone-console) [data-sonner-toast] button { pointer-events: auto; }
 .synth-hardware .hardware-knob-pointer i { background: var(--hardware-dark-ink); height: 36%; }
 .synth-hardware .hardware-knob-value { padding: 1px 5px; background: var(--hardware-black); color: var(--primary); border: 1px solid var(--hardware-rubber-edge); border-radius: 2px; }
 .synth-hardware[data-synth-style="spec4"] { --surface: var(--instrument-graphite); --surface-2: var(--instrument-graphite-hi); --foreground: var(--hardware-ink); --muted-foreground: var(--hardware-silver); --hardware-scale: var(--primary); }
-.synth-hardware[data-synth-style="spec4"] .synth-console-tabs > [role="tabpanel"]:not([data-state="inactive"]) { padding: 12px; border: 1px solid var(--hardware-black); background: var(--hardware-brush), var(--instrument-silver-face); --foreground: var(--hardware-dark-ink); --muted-foreground: var(--hardware-rubber-edge); --surface: var(--instrument-silver); --surface-2: var(--instrument-silver-hi); --background: var(--instrument-silver-hi); --border: var(--hardware-silver-dark); }
+.synth-hardware[data-synth-style="spec4"] .synth-console-tabs > [role="tabpanel"]:not([data-state="inactive"]) { padding: 12px; border: 1px solid var(--hardware-black); }
 .synth-hardware[data-synth-style="spec4"] .synth-osc-module { --foreground: var(--hardware-ink); --muted-foreground: var(--hardware-silver); --border: var(--hardware-rubber-edge); }
 .synth-hardware[data-synth-style="acid"] { border-inline: 8px solid var(--hardware-rubber); }
 .synth-hardware[data-synth-style="acid"]:not([style*="background-image"]) { background-image: var(--hardware-brush), var(--instrument-silver-face); }
@@ -4625,3 +4625,18 @@ html.phone-console-active [role="option"] { min-height: 44px; font-size: 15px; }
 .phone-console .dj-lr.is-master { --dj-lr-h: 170px; }
 .phone-console .dj-lr.is-master .dj-lr-bar, .phone-console .dj-lr.is-master .dj-lr-clips i, .phone-console .dj-lr.is-master .dj-lr-legend span { width: 9px; }
 .phone-console .dj-lr.is-master .dj-lr-legend { font-size: 9px; }
+
+/* Synth legibility: each synth face pairs its panel colour with matching lettering so every word reads clearly.
+   Acid Bass is a silver TD-3 face with dark ink; the other synths are dark faces with light ink. */
+.synth-hardware[data-synth-style]:not([data-synth-style="acid"]) { --primary-foreground: oklch(0.14 0.01 260); }
+.synth-hardware .synth-console-tabs [role="tab"][data-state="active"],
+.synth-hardware .synth-preset-deck button.bg-primary { color: var(--primary-foreground) !important; }
+.synth-hardware .hardware-knob-label { font-size: 10px; font-weight: 700; letter-spacing: 0.04em; }
+.synth-hardware .synth-console-tabs [role="tabpanel"] .text-\[9px\] { font-size: 10px; }
+.synth-hardware[data-synth-style]:not([data-synth-style="acid"]) .synth-console-tabs > [role="tabpanel"]:not([data-state="inactive"]) {
+  --foreground: oklch(0.94 0.004 260); --muted-foreground: oklch(0.78 0.008 260);
+}
+.synth-hardware[data-synth-style]:not([data-synth-style="acid"]) .synth-console-tabs > [role="tabpanel"]:not([data-state="inactive"]) .hardware-knob-label { color: var(--foreground); }
+.synth-hardware[data-synth-style="acid"] { --muted-foreground: oklch(0.3 0.01 250); --primary-foreground: oklch(0.99 0 0); }
+.synth-hardware[data-synth-style="acid"]:not([style*="background-image"]) { background: linear-gradient(180deg, oklch(0.84 0.006 250), oklch(0.72 0.01 250)) !important; }
+.synth-hardware[data-synth-style="acid"] .synth-console-tabs > [role="tabpanel"]:not([data-state="inactive"]) { background: var(--acid-panel) !important; border-color: var(--acid-edge) !important; }

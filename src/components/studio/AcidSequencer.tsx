@@ -44,7 +44,7 @@ export function AcidSequencer({ track }: { track: Track }) {
   };
 
   const btn = (active: boolean) =>
-    `rounded-[3px] border px-2 py-1 font-mono text-[10px] ${active ? "border-primary bg-primary/15 text-primary" : "border-border text-muted-foreground hover:text-foreground"}`;
+    `rounded-[3px] border px-2 py-1 font-mono text-[10px] ${active ? "border-primary bg-primary font-bold text-primary-foreground" : "border-border text-muted-foreground hover:text-foreground"}`;
 
   return (
     <div className="space-y-3 rounded-md border border-border bg-surface/70 p-3" aria-label="TD-3 step sequencer">
@@ -74,10 +74,10 @@ export function AcidSequencer({ track }: { track: Track }) {
             } ${playStep === i ? "bg-primary/25" : s.on ? "bg-surface-2" : "bg-surface"}`}
           >
             <span className="text-muted-foreground">{i + 1}</span>
-            <span className={s.on ? "text-foreground" : "text-muted-foreground/50"}>{s.on ? noteName(s.pitch) : "—"}</span>
+            <span className={s.on ? "text-foreground" : "text-muted-foreground"}>{s.on ? noteName(s.pitch) : "—"}</span>
             <span className="flex gap-0.5">
-              <span className={s.accent ? "text-primary" : "text-muted-foreground/30"}>A</span>
-              <span className={s.slide ? "text-primary" : "text-muted-foreground/30"}>S</span>
+              <span className={s.accent ? "font-bold text-primary" : "text-muted-foreground/60"}>A</span>
+              <span className={s.slide ? "font-bold text-primary" : "text-muted-foreground/60"}>S</span>
             </span>
           </button>
         ))}
