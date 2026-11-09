@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { angleDelta, armFraction, beatPhase, crossfade, DEG_PER_SEC, scrubBoost, scrubTo, scratchRate, detectBpm, eqDb, filterFor, phaseShift, phonesBlend, phonesRoute, snapToBeat, speedFactor, syncRate, wavFromPcm16 } from "./dj";
+import { angleDelta, armFraction, beatPhase, crossfade, djSilenceReason, DEG_PER_SEC, scrubBoost, scrubTo, scratchRate, detectBpm, eqDb, filterFor, phaseShift, phonesBlend, phonesRoute, snapToBeat, speedFactor, syncRate, wavFromPcm16 } from "./dj";
 
 function clickTrack(bpm: number, seconds: number, sr = 22050, offset = 0.1) {
   const out = new Float32Array(Math.floor(seconds * sr));
@@ -131,5 +131,22 @@ describe("tone arm and scratching", () => {
     expect(scratchRate(1)).toBe(1);
     expect(scratchRate(-0.5)).toBe(0.5);
     expect(scratchRate(-30)).toBe(4);
+  });
+});
+
+describe("why a playing deck is silent", () => {
+  const ok = { deck: "A" as const, gain: 1, fader: 0.85, filter: 0.5, eq: { high: 0.5, mid: 0.5, low: 0.5 }, crossfader: 0, master: 0.9 };
+  it("default controls let the sound through", () => { expect(djSilenceReason(ok)).toBeNull(); });
+  it("names the GAIN knob when it is all the way down", () => { expect(djSilenceReason({ ...ok, gain: 0 })).toMatch(/GAIN/); });
+  it("names the volume fader when it is all the way down", () => { expect(djSilenceReason({ ...ok, fader: 0 })).toMatch(/volume fader/); });
+  it("crossfader fully on B silences deck A but not deck B", () => {
+    expect(djSilenceReason({ ...ok, crossfader: 1 })).toMatch(/crossfader.*deck B/);
+    expect(djSilenceReason({ ...ok, deck: "B", crossfader: 1 })).toBeNull();
+  });
+  it("names MASTER, all-killed EQ and a fully turned filter", () => {
+    expect(djSilenceReason({ ...ok, master: 0 })).toMatch(/MASTER/);
+    expect(djSilenceReason({ ...ok, eq: { high: 0, mid: 0, low: 0 } })).toMatch(/EQ/);
+    expect(djSilenceReason({ ...ok, filter: 0 })).toMatch(/FILT/);
+    expect(djSilenceReason({ ...ok, filter: 0.3 })).toBeNull();
   });
 });

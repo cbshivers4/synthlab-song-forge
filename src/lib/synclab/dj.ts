@@ -134,6 +134,27 @@ export function filterFor(v: number): { type: "lowpass" | "highpass" | "off"; fr
   return { type: "highpass", freq: 30 * Math.pow(8000 / 30, (x - 0.53) / 0.47) };
 }
 
+/** The controls that decide whether a playing deck reaches the speakers. */
+export interface DeckLevels {
+  deck: "A" | "B";
+  gain: number; fader: number; filter: number;
+  eq: { high: number; mid: number; low: number };
+  crossfader: number; master: number;
+}
+/** Which mixer control is keeping a playing deck silent at the speakers (plain words), or null when sound can get through. */
+export function djSilenceReason(c: DeckLevels): string | null {
+  const other = c.deck === "A" ? "B" : "A";
+  if (c.gain < 0.05) return `Deck ${c.deck}'s GAIN knob is turned all the way down.`;
+  if (c.fader < 0.05) return `Deck ${c.deck}'s volume fader is all the way down.`;
+  const [a, b] = crossfade(c.crossfader);
+  if ((c.deck === "A" ? a : b) < 0.05) return `The crossfader is all the way over to deck ${other}.`;
+  if (c.master < 0.05) return "The MASTER knob is turned all the way down.";
+  if (c.eq.high <= 0.02 && c.eq.mid <= 0.02 && c.eq.low <= 0.02) return `All three of deck ${c.deck}'s EQ knobs (HI, MID, LOW) are turned all the way down.`;
+  const f = filterFor(c.filter);
+  if ((f.type === "lowpass" && f.freq < 150) || (f.type === "highpass" && f.freq > 6000)) return `Deck ${c.deck}'s FILT knob is turned all the way to one side.`;
+  return null;
+}
+
 export interface BandWave { peak: Float32Array; low: Float32Array; mid: Float32Array; high: Float32Array; perSecond: number }
 
 /** Three-band levels per column, `perSecond` columns per second of audio. */

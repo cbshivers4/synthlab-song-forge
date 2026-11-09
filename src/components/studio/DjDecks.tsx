@@ -9,7 +9,7 @@ import { useStudio } from "@/lib/synclab/store";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
 import { getDj, type DeckId } from "@/lib/synclab/dj-engine";
-import { clock, scrubTo } from "@/lib/synclab/dj";
+import { clock, djSilenceReason, scrubTo } from "@/lib/synclab/dj";
 import { getLocalFile } from "@/lib/synclab/local-files";
 import { renderSong } from "@/lib/synclab/song-render";
 import { canShareFile, downloadBlob, encodeWav, shareFile } from "@/lib/synclab/bounce";
@@ -263,6 +263,50 @@ function DeckPanel({ id }: { id: DeckId }) {
               )}
             </div>
   );
+  /** Wake the phone's sound inside a tap; if its clock is stuck (common after headphones/Bluetooth change), stop and restart it. */
+  const wakeSound = async () => {
+    const ctx = getEngine().init();
+    try { await ctx.resume(); } catch { /* reported below */ }
+    const t0 = ctx.currentTime;
+    await new Promise((r) => setTimeout(r, 300));
+    if (ctx.state !== "running" || ctx.currentTime - t0 < 0.1) {
+      try { await ctx.suspend(); await ctx.resume(); } catch { /* reported below */ }
+      await new Promise((r) => setTimeout(r, 300));
+    }
+    if (ctx.state === "running") toast.success("Sound is on", { description: `Deck ${id} should be playing now.` });
+    else toast.error("The phone still won't start the sound", { description: "Close other apps that play sound or use the microphone, check the phone isn't on silent, then reload SYNCLAB." });
+  };
+  /** Shortly after Play, check the music really reaches the speakers and say exactly what's blocking it if not. */
+  const checkSound = (clock0: number) => {
+    window.setTimeout(() => {
+      if (!deck.state.playing) return;
+      const ctx = dj.ctx;
+      const moving = ctx.currentTime - clock0 > 0.3;
+      const [ml, mr] = dj.masterMeter.levels();
+      const peak = Math.max(ml, mr);
+      const st = deck.state;
+      const reason = djSilenceReason({ deck: id, gain: st.gain, fader: st.fader, filter: st.filter, eq: st.eq, crossfader: dj.state.crossfader, master: dj.state.master });
+      let outcome = "ok";
+      if (ctx.state !== "running" || !moving) {
+        outcome = ctx.state !== "running" ? `ctx_${ctx.state}` : "clock_stuck";
+        toast.error("Your phone hasn't started the sound", { description: "The deck is ready but the phone is holding the sound back. Tap Turn sound on.", duration: 12000, action: { label: "Turn sound on", onClick: () => void wakeSound() } });
+      } else if (reason) {
+        outcome = "controls";
+        toast.error(reason, { description: `That's why deck ${id} is silent.`, duration: 12000, action: { label: "Fix it", onClick: () => {
+          if (st.gain < 0.05) deck.setGain(1);
+          if (st.fader < 0.05) deck.setFader(0.85);
+          if (st.eq.high <= 0.02 && st.eq.mid <= 0.02 && st.eq.low <= 0.02) { deck.setEq("high", 0.5); deck.setEq("mid", 0.5); deck.setEq("low", 0.5); }
+          deck.setFilter(0.5);
+          if (dj.state.master < 0.05) dj.setMaster(0.9);
+          if (djSilenceReason({ deck: id, gain: deck.state.gain, fader: deck.state.fader, filter: deck.state.filter, eq: deck.state.eq, crossfader: dj.state.crossfader, master: dj.state.master })) dj.setCrossfader(0);
+        } } });
+      } else if (peak < 1e-4) {
+        outcome = "silent_audio";
+        toast(`Deck ${id} is playing, but this part of the track is silent`, { description: "Some files start with silence. Drag the waveform or the needle further into the song." });
+      }
+      window.__lovableEvents?.track?.("project.dj_play_check", { outcome, ctx_state: ctx.state, clock_moving: moving, master_db: peak > 0 ? Math.round(20 * Math.log10(peak)) : -120, sideways_layout: phone });
+    }, 900);
+  };
   const syncNow = () => { if (!deck.sync(dj.other(id))) toast("Load both decks first", { description: "Sync matches this deck's tempo and beats to the other deck." }); };
 
   return (
@@ -296,7 +340,10 @@ function DeckPanel({ id }: { id: DeckId }) {
                   toast("Deck " + id + " has no music on it yet", { description: "Load a music file (folder button), put your song on it (♪ button) or pick one from the Playlist.", action: { label: "Load a file", onClick: () => fileRef.current?.click() } });
                   return;
                 }
+                const starting = !s.playing;
+                const clock0 = dj.ctx.currentTime;
                 deck.toggle();
+                if (starting) checkSound(clock0);
               }}>
               {s.playing ? <Pause className="size-5 fill-current" /> : <Play className="size-5 fill-current" />}
             </Button>
