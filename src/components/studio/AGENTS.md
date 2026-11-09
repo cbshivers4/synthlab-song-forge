@@ -104,3 +104,6 @@ The docked phone transport scrolls inside its own region with TimelineVScrollbar
 Phone studio renders the shared MenuBar with `phone` (menus only, no title/clock) above every phone screen, so phone and desktop share one set of File…Help actions; Menubar content uses the sideways popper and ghost-tap guard like other menus.
 
 Synth looks are driven by per-style `--look-*` tokens on `.synth-hardware[data-synth-style]` (tail of styles.css, `:not(#synth-look)` to outrank older legibility rules); SynthEditor tags cards with `synth-card`/`synth-card-head` so skins change presentation only and every control, patch and canvas keeps working.
+
+Each synth model's face is painted from scoped `--look-*` tokens on `.synth-hardware[data-synth-style]` (one look per model, from the owner's reference pictures); add per-model styling as tokens or rules under that scope rather than editing shared controls, so every knob and button keeps working.
+Synth favorite preset keys (FavoritePresetKeys + lib/synclab/preset-favorites.ts) are device-only localStorage per synth model, never project data; filled keys load through the same selectPreset callback as the preset window so loading, auditioning and MIDI stay on one path.

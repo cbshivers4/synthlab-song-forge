@@ -4869,3 +4869,28 @@ html.phone-console-active [role="option"] { min-height: 44px; font-size: 15px; }
 }
 .synth-hardware.synth-hardware[data-synth-style="granular"] .granular-section h4:not(#synth-look) { color: oklch(0.2 0.01 260); border-bottom-color: var(--granular-edge); }
 .synth-hardware.synth-hardware[data-synth-style="granular"] .granular-synth .hardware-knob-label:not(#synth-look) { color: oklch(0.2 0.01 260) !important; }
+
+/* Poly Synth / Surge: buttons sitting on the blue section bars read as dark chips with white
+   lettering (selected = orange with dark lettering), and the bar titles are larger. */
+.synth-hardware.synth-hardware[data-synth-style="poly"] .synth-card-head span:not(.rounded-full):not(#synth-look) { font-size: 12px; letter-spacing: 0.12em; text-shadow: 0 1px 0 oklch(0.2 0.1 258); }
+.synth-hardware.synth-hardware[data-synth-style="poly"] .synth-card-head :is(.synth-head-key, [role="combobox"]):not(#synth-look) {
+  background: oklch(0.18 0 0) !important; color: oklch(0.98 0 0) !important; border: 1px solid oklch(0.1 0 0) !important;
+  font-size: 11px !important; font-weight: 700; line-height: 1.2; padding: 3px 7px; text-shadow: none;
+}
+.synth-hardware.synth-hardware[data-synth-style="poly"] .synth-card-head [role="combobox"]:not(#synth-look) { height: 28px; }
+.synth-hardware.synth-hardware[data-synth-style="poly"] .synth-card-head [role="combobox"] *:not(#synth-look) { color: inherit !important; font-size: inherit; text-shadow: none; }
+.synth-hardware.synth-hardware[data-synth-style="poly"] .synth-card-head .synth-head-key.border-primary:not(#synth-look) { background: var(--primary) !important; color: var(--primary-foreground) !important; border-color: oklch(0.45 0.14 55) !important; }
+.synth-hardware.synth-hardware[data-synth-style="poly"] .synth-card-head .synth-head-key:not(.border-primary):hover:not(#synth-look) { background: oklch(0.28 0 0) !important; }
+
+/* Favorite preset keys on every synth face, painted from that synth's look tokens. */
+.synth-hardware.synth-hardware[data-synth-style] .synth-fav-strip { background: var(--look-deck); border: 1px solid var(--look-edge); border-radius: var(--look-radius); padding: 8px; }
+.synth-hardware.synth-hardware[data-synth-style] .synth-fav-title:not(#synth-look) { color: var(--look-ink) !important; }
+.synth-hardware.synth-hardware[data-synth-style] .synth-fav-key:not(#synth-look) { background: var(--look-btn) !important; color: var(--look-btn-ink) !important; border-color: var(--look-edge) !important; box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.1), 0 2px 0 var(--look-edge); }
+.synth-hardware.synth-hardware[data-synth-style] .synth-fav-key[data-empty]:not(#synth-look) { background: transparent !important; border-style: dashed !important; color: color-mix(in oklab, var(--look-ink) 70%, transparent) !important; box-shadow: none; }
+.synth-hardware.synth-hardware[data-synth-style] .synth-fav-key[data-missing]:not(#synth-look) span:last-child { text-decoration: line-through; opacity: 0.75; }
+.synth-hardware.synth-hardware[data-synth-style] .synth-fav-key[data-editing]:not(#synth-look) { outline: 1px dashed var(--primary); outline-offset: 1px; }
+.synth-hardware.synth-hardware[data-synth-style] .synth-fav-key[aria-pressed="true"]:not(#synth-look) { background: var(--primary) !important; color: var(--primary-foreground) !important; border-color: var(--primary) !important; }
+.synth-hardware.synth-hardware[data-synth-style] .synth-fav-num { display: grid; place-items: center; min-width: 20px; height: 20px; border-radius: 2px; background: oklch(0 0 0 / 0.3); color: inherit; }
+.synth-hardware.synth-hardware[data-synth-style] .synth-fav-key[aria-pressed="true"] .synth-fav-num { background: oklch(0 0 0 / 0.18); }
+.synth-hardware.synth-hardware[data-synth-style] .synth-fav-clear:not(#synth-look) { background: var(--look-field); color: var(--look-ink); border-color: var(--look-edge); }
+.synth-hardware[data-synth-style="acid"] .synth-fav-key[data-empty]:not(#synth-look) { color: var(--look-ink) !important; }

@@ -26,6 +26,7 @@ import { defaultGranular } from "@/lib/synclab/granular";
 import { AcidSequencer } from "./AcidSequencer";
 import { PresetNavigator } from "./PresetNavigator";
 import { HardwareBypass } from "./HardwareBypass";
+import { FavoritePresetKeys } from "./FavoritePresetKeys";
 
 const WAVES: OscWave[] = ["sine", "triangle", "sawtooth", "square", "pulse", "noise", "wavetable"];
 
@@ -272,6 +273,7 @@ function SynthTrackEditor({ track }: { track: Track }) {
           Initialize
         </Button>
       </div>
+      <FavoritePresetKeys model={synthStyle} current={patch.name} available={presetGroups.flatMap((g) => g.items)} onSelect={selectPreset} />
 
       <PitchWheels trackId={track.id} />
       {(patch.name.startsWith("TD-3") || /ACID/i.test(track.name)) && !patch.granular && <AcidSequencer track={track} />}
@@ -340,7 +342,7 @@ function SynthTrackEditor({ track }: { track: Track }) {
                       key={w}
                       title={w}
                       onClick={() => set({ oscillators: patch.oscillators.map((o, j) => (j === i ? { ...o, wave: w } : o)) })}
-                      className={`rounded-[2px] border px-1.5 py-0.5 font-mono text-[8px] uppercase ${osc.wave === w ? "border-primary bg-primary/20 text-primary" : "border-border text-muted-foreground hover:text-foreground"}`}
+                      className={`synth-head-key rounded-[2px] border px-1.5 py-0.5 font-mono text-[8px] uppercase ${osc.wave === w ? "border-primary bg-primary/20 text-primary" : "border-border text-muted-foreground hover:text-foreground"}`}
                     >
                       {w === "sawtooth" ? "saw" : w === "triangle" ? "tri" : w === "wavetable" ? "wt" : w.slice(0, 4)}
                     </button>
@@ -441,7 +443,7 @@ function SynthTrackEditor({ track }: { track: Track }) {
                       key={w}
                       title={w}
                       onClick={() => set({ lfos: patch.lfos.map((l, j) => (j === i ? { ...l, wave: w } : l)) })}
-                      className={`rounded-[2px] border px-1.5 py-0.5 font-mono text-[8px] uppercase ${lfo.wave === w ? "border-primary bg-primary/20 text-primary" : "border-border text-muted-foreground hover:text-foreground"}`}
+                      className={`synth-head-key rounded-[2px] border px-1.5 py-0.5 font-mono text-[8px] uppercase ${lfo.wave === w ? "border-primary bg-primary/20 text-primary" : "border-border text-muted-foreground hover:text-foreground"}`}
                     >
                       {w === "triangle" ? "tri" : w === "sawtooth" ? "saw" : w.slice(0, 4)}
                     </button>
