@@ -427,15 +427,22 @@ function MixerPanel({ onPlaylist, onPhones }: { active: boolean; onPlaylist: () 
   if (phone) {
     return (
       <div className="dj-mixer is-phone">
-        <div className="dj-knob-row" data-deck="A" role="group" aria-label="Deck A controls"><span className="dj-row-tag" aria-hidden>A</span>{knobs("A")}</div>
-        <div className="dj-knob-row" data-deck="B" role="group" aria-label="Deck B controls"><span className="dj-row-tag" aria-hidden>B</span>{knobs("B")}</div>
-        <div className="dj-phone-faders">
-          <div className="dj-phone-ch" data-deck="A"><span className="dj-row-tag" aria-hidden>A</span>{fader("A")}</div>
-          <div className="flex flex-col items-center gap-1">
+        {/* Like a real two-channel DJ mixer: the left strip is all Deck A (left turntable), the right strip is all Deck B, master in the middle. */}
+        <div className="dj-phone-strips">
+          <div className="dj-phone-strip" data-deck="A" role="group" aria-label="Deck A controls (left turntable)">
+            <span className="dj-row-tag" aria-hidden>A</span>
+            {knobs("A")}
+            {fader("A")}
+          </div>
+          <div className="dj-phone-master">
             <Knob label="MASTER" value={dj.state.master} min={0} max={1.2} onChange={(v) => dj.setMaster(v)} defaultValue={0.9} size={26} className="dj-knob is-wide" format={(v) => `${Math.round(v * 100)}%`} />
             {meter("M")}
           </div>
-          <div className="dj-phone-ch" data-deck="B">{fader("B")}<span className="dj-row-tag" aria-hidden>B</span></div>
+          <div className="dj-phone-strip" data-deck="B" role="group" aria-label="Deck B controls (right turntable)">
+            <span className="dj-row-tag" aria-hidden>B</span>
+            {knobs("B")}
+            {fader("B")}
+          </div>
         </div>
         {xfader}
         <div className="dj-phone-bottom">
