@@ -76,8 +76,8 @@ export function AcidSequencer({ track }: { track: Track }) {
             <span className="text-muted-foreground">{i + 1}</span>
             <span className={s.on ? "text-foreground" : "text-muted-foreground"}>{s.on ? noteName(s.pitch) : "—"}</span>
             <span className="flex gap-0.5">
-              <span className={s.accent ? "font-bold text-primary" : "text-muted-foreground/60"}>A</span>
-              <span className={s.slide ? "font-bold text-primary" : "text-muted-foreground/60"}>S</span>
+              <span className={s.accent ? "font-bold text-primary" : "text-muted-foreground"}>A</span>
+              <span className={s.slide ? "font-bold text-primary" : "text-muted-foreground"}>S</span>
             </span>
           </button>
         ))}

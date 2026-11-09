@@ -4632,7 +4632,7 @@ html.phone-console-active [role="option"] { min-height: 44px; font-size: 15px; }
 .synth-hardware .synth-console-tabs [role="tab"][data-state="active"],
 .synth-hardware .synth-preset-deck button.bg-primary { color: var(--primary-foreground) !important; }
 .synth-hardware .hardware-knob-label { font-size: 10px; font-weight: 700; letter-spacing: 0.04em; }
-.synth-hardware .synth-console-tabs [role="tabpanel"] .text-\[9px\] { font-size: 10px; }
+.synth-hardware .text-\[9px\] { font-size: 10px; }
 .synth-hardware[data-synth-style]:not([data-synth-style="acid"]) .synth-console-tabs > [role="tabpanel"]:not([data-state="inactive"]) {
   --foreground: oklch(0.94 0.004 260); --muted-foreground: oklch(0.78 0.008 260);
 }
@@ -4640,3 +4640,5 @@ html.phone-console-active [role="option"] { min-height: 44px; font-size: 15px; }
 .synth-hardware[data-synth-style="acid"] { --muted-foreground: oklch(0.3 0.01 250); --primary-foreground: oklch(0.99 0 0); }
 .synth-hardware[data-synth-style="acid"]:not([style*="background-image"]) { background: linear-gradient(180deg, oklch(0.84 0.006 250), oklch(0.72 0.01 250)) !important; }
 .synth-hardware[data-synth-style="acid"] .synth-console-tabs > [role="tabpanel"]:not([data-state="inactive"]) { background: var(--acid-panel) !important; border-color: var(--acid-edge) !important; }
+.bassgen-device { --background: oklch(0.97 0.002 250); --input: var(--bass-edge); --accent: var(--bass-panel-2); --accent-foreground: var(--bass-ink); }
+.synth-hardware[data-synth-style="acid"] .text-primary { color: oklch(0.5 0.19 30); font-weight: 700; }
