@@ -102,3 +102,5 @@ PhonePages takes a `scrollbar` flag that adds the shared TimelineVScrollbar besi
 The docked phone transport scrolls inside its own region with TimelineVScrollbar, and its rows wrap instead of scrolling sideways, because phone browsers hide native scrollbars and hidden overflow looked cut off.
 
 Phone studio renders the shared MenuBar with `phone` (menus only, no title/clock) above every phone screen, so phone and desktop share one set of File…Help actions; Menubar content uses the sideways popper and ghost-tap guard like other menus.
+
+Synth looks are driven by per-style `--look-*` tokens on `.synth-hardware[data-synth-style]` (tail of styles.css, `:not(#synth-look)` to outrank older legibility rules); SynthEditor tags cards with `synth-card`/`synth-card-head` so skins change presentation only and every control, patch and canvas keeps working.
