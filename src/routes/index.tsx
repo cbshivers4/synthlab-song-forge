@@ -19,7 +19,7 @@ import { NotesPanel } from "@/components/studio/TrackNotes";
 import { Timeline } from "@/components/studio/Timeline";
 import { Mixer } from "@/components/studio/Mixer";
 import { DetachedWindow, popOutPanel, setDetached, useDetached, type DetachId } from "@/components/studio/MixerWindow";
-import { SynthEditor } from "@/components/studio/SynthEditor";
+import { AddSynthTrack, SynthEditor } from "@/components/studio/SynthEditor";
 import { DrumMachine } from "@/components/studio/DrumMachine";
 import { PianoRoll } from "@/components/studio/PianoRoll";
 import { DrumRoll } from "@/components/studio/DrumRoll";
@@ -319,7 +319,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
       {panel === "studio-view" ? <StudioView /> : isMobile ? <PhonePages name={current.title}><div className="phone-editor-content min-h-0 space-y-3 p-3">
         {panel === "reel-recorder" && <ReelRecorder />}{panel === "video-sampler" && <VideoSampler />}
         {panel === "mixer" && <Mixer desktopLayout />}
-        {panel === "synth" && (synthTrack ? <SynthEditor track={synthTrack} /> : <p>Select an instrument track.</p>)}
+        {panel === "synth" && (synthTrack ? <SynthEditor track={synthTrack} /> : <AddSynthTrack />)}
         {panel === "drums" && (drumTrack ? <DrumMachine track={drumTrack} /> : <AddDrumTrack />)}
         {panel === "piano" && (selected?.kind === "drum" ? <DrumRoll track={selected} /> : pianoTrack ? <PianoRoll track={pianoTrack} /> : drumTrack ? <DrumRoll track={drumTrack} /> : <p>Select an instrument, MIDI or drum track.</p>)}
         {panel === "settings" && <Settings />}{panel === "keys" && <Keyboard />}{panel === "browser" && <Browser />}
@@ -337,7 +337,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
             <SynthEditor track={synthTrack} />
           </>
         ) : (
-          <p className="text-sm text-muted-foreground">Add an instrument track to open the synthesizer.</p>
+          <AddSynthTrack />
         ))}
       {panel === "drums" &&
         (drumTrack ? (

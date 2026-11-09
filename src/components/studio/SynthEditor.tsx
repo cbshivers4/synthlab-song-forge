@@ -125,9 +125,9 @@ function synthStyleOf(track: Pick<Track, "name" | "patch">): SynthStyle {
   return "spec4";
 }
 
-function SynthModelPicker({ current, synthTracks }: { current: Track; synthTracks: Track[] }) {
+function SynthModelPicker({ current, synthTracks, touch = false }: { current?: Track; synthTracks: Track[]; touch?: boolean }) {
   const { addTrack, select } = useStudio();
-  const currentStyle = synthStyleOf(current);
+  const currentStyle = current ? synthStyleOf(current) : null;
   return (
     <div className="synth-model-picker mt-1 flex flex-wrap items-center gap-1" role="group" aria-label="Synth models">
       <span className="label-xs mr-1">SYNTHS</span>
@@ -150,6 +150,24 @@ function SynthModelPicker({ current, synthTracks }: { current: Track; synthTrack
           </Button>
         );
       })}
+      {touch && (
+        <Button type="button" size="sm" variant="secondary" className="min-h-10 gap-1.5 px-3" title="Add a Touch Synth channel to the song"
+          onClick={() => { const found = synthTracks.find((t) => /^touch synth$/i.test(t.name) && !t.patch?.modular && !t.patch?.granular); if (found) select(found.id); else addTrack("instrument", "TOUCH SYNTH", "Cybotron Lead"); }}>
+          <Plus className="size-4" aria-hidden="true" />Touch Synth
+        </Button>
+      )}
+    </div>
+  );
+}
+
+/** Empty song: every synth (and the Touch Synth) can be added straight from the synth section. */
+export function AddSynthTrack() {
+  const { tracks } = useStudio();
+  const synthTracks = tracks.filter((item) => (item.kind === "instrument" || item.kind === "midi") && item.patch);
+  return (
+    <div className="space-y-2">
+      <p className="text-sm text-muted-foreground">Pick a synth to add it to the song. The Touch Synth is also a tab inside Spec 4, Acid Bass and Poly Synth.</p>
+      <SynthModelPicker synthTracks={synthTracks} touch />
     </div>
   );
 }
