@@ -37,6 +37,7 @@ Transport stays mounted: phone overlay and timeline use separate layout/paint co
 Phone shares desktop audio/state and native scrolling. AppProvider scopes phone tokens to the document; desktop prefs stay separate.
 Phone Edit fits the screen without page scrolling: PhoneStudio divides the track area height into rows (--fit-row-h, touch-size minimum) and keeps an Add track menu in the Edit header; sideways DrumRoll shows all rows in one grid that scrolls inside itself (minmax(34px,1fr) rows, never page buttons); the rail still permits both pan axes for the rotated canvas.
 Phone entry and workspace use a CSS sideways body canvas on portrait phone viewports, including body portals; use canvas-relative viewport sizing instead of JS innerHeight overrides so splash, dialogs and timeline stay in the same frame without requiring unsupported orientation locks.
+Shared Popover/Select/DropdownMenu content uses lib/sideways-popper on the sideways canvas to place pop-ups beside their trigger in canvas space, because Radix measures screen-space rects and would draw them off-screen.
 Sideways DrumRoll fits a flex-height panel using equal grid row tracks; selected-instrument note knobs use editInstrumentNotes for One note/All notes, preserving other pads, empty steps and loop boundaries rather than global pad sound changes.
 Drum snap is session-only for new step writes, never existing hits.
 Drum banks use pure helpers preserving IDs/samples; per-bank rhythm snapshots materialize hits into existing pads so editors/playback share state without changing sounds.

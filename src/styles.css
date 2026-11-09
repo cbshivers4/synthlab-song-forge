@@ -1016,6 +1016,14 @@ html[data-reduce-motion] *, html[data-reduce-motion] *::before, html[data-reduce
     transform: none !important;
     z-index: 60 !important;
   }
+  /* Other pop-ups are placed beside their button in canvas space by lib/sideways-popper. */
+  .phone-sideways-default [data-radix-popper-content-wrapper][data-sideways-placed] {
+    left: 0 !important;
+    top: 0 !important;
+    transform: translate(var(--sw-x), var(--sw-y)) !important;
+  }
+  .phone-sideways-default [data-radix-popper-content-wrapper][data-sideways-placed] > * { max-height: var(--sw-max-h) !important; }
+  .phone-sideways-default [data-radix-popper-content-wrapper][data-sideways-tall] > * { overflow-y: auto !important; overscroll-behavior: contain; }
   /* Rotated canvas: menus take touch drags themselves (lib/sideways-scroll) so their lists scroll. */
   .phone-sideways-default [role="menu"] { touch-action: none !important; overscroll-behavior: contain; }
   .phone-sideways-default .timeline-channel-menu {

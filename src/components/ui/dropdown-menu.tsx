@@ -6,6 +6,7 @@ import { Check, ChevronRight, Circle } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { GHOST_TAP_WINDOW_MS, shouldBlockMenuClick } from "@/lib/ghost-tap";
+import { useSidewaysPopper } from "@/lib/sideways-popper";
 
 type GuardProps = {
   onPointerDownCapture?: React.PointerEventHandler<HTMLDivElement> | undefined;
@@ -94,7 +95,8 @@ const DropdownMenuSubContent = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.SubContent>,
   React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.SubContent>
 >(({ className, ...props }, forwardedRef) => {
-  const { ref, handlers } = useGhostTapGuard(forwardedRef, props);
+  const placed = useSidewaysPopper(forwardedRef, { side: "right", align: "start", sideOffset: props.sideOffset ?? 0 });
+  const { ref, handlers } = useGhostTapGuard(placed, props);
   return (
   <DropdownMenuPrimitive.SubContent
     ref={ref}
@@ -113,7 +115,8 @@ const DropdownMenuContent = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Content>
 >(({ className, sideOffset = 4, ...props }, forwardedRef) => {
-  const { ref, handlers } = useGhostTapGuard(forwardedRef, props);
+  const placed = useSidewaysPopper(forwardedRef, { side: props.side, align: props.align, sideOffset });
+  const { ref, handlers } = useGhostTapGuard(placed, props);
   return (
   <DropdownMenuPrimitive.Portal>
     <DropdownMenuPrimitive.Content
