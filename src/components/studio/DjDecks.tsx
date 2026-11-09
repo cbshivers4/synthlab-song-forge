@@ -379,7 +379,7 @@ function MixerPanel({ onPlaylist, onPhones }: { active: boolean; onPlaylist: () 
   const phone = useIsLandscapePhone();
   const cueBtn = (id: DeckId) => (
     <button type="button" className="djm-cue" data-deck={id} aria-pressed={dj.deck(id).state.phones}
-      onClick={() => togglePhonesCue(id, phone ? onPhones : undefined)} aria-label={`Deck ${id} headphone cue`} title="Hear this deck in your headphones">CUE</button>
+      onClick={() => togglePhonesCue(id, phone ? onPhones : undefined)} aria-label={`Deck ${id} headphone cue`} title="Hear this deck in your headphones">{phone ? <>CUE<b className="dj-cue-deck">{id}</b></> : "CUE"}</button>
   );
   const knobs = (id: DeckId) => {
     const deck = dj.deck(id);
@@ -427,15 +427,15 @@ function MixerPanel({ onPlaylist, onPhones }: { active: boolean; onPlaylist: () 
   if (phone) {
     return (
       <div className="dj-mixer is-phone">
-        <div className="dj-knob-row" data-deck="A">{knobs("A")}</div>
-        <div className="dj-knob-row" data-deck="B">{knobs("B")}</div>
+        <div className="dj-knob-row" data-deck="A" role="group" aria-label="Deck A controls"><span className="dj-row-tag" aria-hidden>A</span>{knobs("A")}</div>
+        <div className="dj-knob-row" data-deck="B" role="group" aria-label="Deck B controls"><span className="dj-row-tag" aria-hidden>B</span>{knobs("B")}</div>
         <div className="dj-phone-faders">
-          {fader("A")}
+          <div className="dj-phone-ch" data-deck="A"><span className="dj-row-tag" aria-hidden>A</span>{fader("A")}</div>
           <div className="flex flex-col items-center gap-1">
             <Knob label="MASTER" value={dj.state.master} min={0} max={1.2} onChange={(v) => dj.setMaster(v)} defaultValue={0.9} size={26} className="dj-knob is-wide" format={(v) => `${Math.round(v * 100)}%`} />
             {meter("M")}
           </div>
-          {fader("B")}
+          <div className="dj-phone-ch" data-deck="B">{fader("B")}<span className="dj-row-tag" aria-hidden>B</span></div>
         </div>
         {xfader}
         <div className="dj-phone-bottom">

@@ -4585,3 +4585,18 @@ html.phone-console-active [role="option"] { min-height: 44px; font-size: 15px; }
   .phone-console .keys-device .drummer-controls > .drummer-xy-wrap { grid-area: pad; }
   .phone-console .keys-device .drummer-controls > .drummer-knobs { grid-area: knobs; }
 }
+
+/* Phone DJ mixer: every knob row, CUE and channel fader carries its deck letter and colour, so it is obvious which turntable each control belongs to. */
+.dj-mixer.is-phone .dj-knob-row { --deck: var(--dj-a); grid-template-columns: 16px repeat(5, minmax(0, 1fr)) auto; gap: 0; padding: 2px 2px 2px 0; border-left: 0; border-radius: 4px;
+  background: color-mix(in oklab, var(--deck) 16%, transparent); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--deck) 55%, transparent); }
+.dj-mixer.is-phone [data-deck="B"] { --deck: var(--dj-b); }
+.dj-mixer.is-phone .dj-phone-ch { --deck: var(--dj-a); display: flex; flex-direction: column; align-items: stretch; gap: 2px; }
+.dj-mixer.is-phone .dj-row-tag { display: grid; place-items: center; align-self: stretch; min-width: 16px; border-radius: 3px; background: var(--deck); color: oklch(0.12 0 0);
+  font-family: var(--font-display); font-size: 13px; font-weight: 800; line-height: 1; }
+.dj-mixer.is-phone .dj-phone-ch .dj-row-tag { order: -1; align-self: stretch; height: 15px; font-size: 11px; }
+.dj-mixer.is-phone .dj-knob-row .dj-knob { width: 26px !important; }
+.dj-mixer.is-phone .dj-knob-row .hardware-knob-label { color: var(--deck); font-weight: 700; }
+.dj-mixer.is-phone .dj-knob-row .djm-cue { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; min-width: 26px; line-height: 1;
+  border: 1px solid var(--deck); }
+.dj-mixer.is-phone .dj-cue-deck { font-family: var(--font-display); font-size: 12px; color: var(--deck); }
+.dj-mixer.is-phone .djm-cue[aria-pressed="true"] .dj-cue-deck { color: oklch(0.12 0 0); }
