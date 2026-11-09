@@ -316,7 +316,7 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
           </Button>
         </div>
       </div>
-      {panel === "studio-view" ? <StudioView /> : isMobile ? <PhonePages name={current.title}><div className="phone-editor-content min-h-0 space-y-3 p-3">
+      {panel === "studio-view" ? <StudioView /> : isMobile ? <PhonePages name={current.title} scrollbar={panel === "drummer" || panel === "livekeys" || panel === "dj"}><div className="phone-editor-content min-h-0 space-y-3 p-3">
         {panel === "reel-recorder" && <ReelRecorder />}{panel === "video-sampler" && <VideoSampler />}
         {panel === "mixer" && <Mixer desktopLayout />}
         {panel === "synth" && (synthTrack ? <SynthEditor track={synthTrack} /> : <AddSynthTrack />)}

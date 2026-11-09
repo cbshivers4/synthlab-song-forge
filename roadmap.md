@@ -241,3 +241,5 @@
 - [x] Small sideways phones: Live Drummer, Live Keys and DJ Decks controls no longer overlap (two rows of performance buttons, full-width Live Keys keyboard, DJ deck buttons below the turntable and pitch). Test phone at 360×601 and 412×915: zero overlapping controls; Alone preview makes sound on drummer and keys; a loaded track plays on deck A. "This song" now warns when the song is silent instead of loading silence. Real-phone check pending.
 
 - [ ] Phone DJ Decks silent on the owner's Android phone: Play now reports what blocks the sound (phone holding sound back / a control turned down) and logs project.dj_play_check — waiting on the owner to retry on the published app.
+
+- [x] Phone Live Drummer, Live Keys and DJ Decks: wide teal side scroll bar scrolls the page without touching knobs/faders (sits under the DJ playlist/headphone sheets). Tested at 360×669 with drags; real-phone check pending.
