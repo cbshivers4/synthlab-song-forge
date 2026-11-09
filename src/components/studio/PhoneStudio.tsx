@@ -9,6 +9,7 @@ import { TopBar } from "./TopBar";
 import { Timeline } from "./Timeline";
 import { AddTrackMenu } from "./AddTrackMenu";
 import { PhonePages } from "./PhonePages";
+import { TimelineVScrollbar } from "./timeline/VScrollbar";
 import { ComputerFiles } from "./ComputerFiles";
 import { requestBluetoothSettings } from "./Settings";
 import { openHelp } from "./HelpCenter";
@@ -91,6 +92,7 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
   // tracks fill the screen; rows never shrink below the height the four-line
   // track header needs, so extra tracks scroll instead of overlapping.
   const editRef = useRef<HTMLDivElement>(null);
+  const transportScrollRef = useRef<HTMLDivElement>(null);
   const editPageOpen = !panel && room === "edit";
   useEffect(() => {
     const root = editRef.current;
@@ -164,9 +166,13 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
         <footer className="phone-room-footer grid h-14 shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-t border-border px-4"><Button variant="ghost" className="h-12 justify-start" onClick={() => { requestBluetoothSettings(); setPanel("settings"); }}><Radio />Bluetooth & audio</Button><div className="flex gap-1"><Button variant="outline" className="h-12" onClick={() => openExport()}>Export</Button><Button variant="outline" size="icon" className="size-12" aria-label="Help" onClick={() => openHelp("help")}><LifeBuoy /></Button></div></footer>
       </div>}
       {/* Docked transport: sits below the workspace so it never covers the mixer or timeline */}
-      <div id="phone-transport-overlay" hidden={!transportOpen} className="max-h-[45%] shrink-0 overflow-auto border-t border-border bg-background shadow-lg">
-        <div className="flex h-12 items-center justify-between border-b border-border bg-surface px-3"><span className="text-sm font-semibold">Transport</span><Button variant="ghost" size="icon" className="size-12" aria-label="Close transport" onClick={() => setTransportOpen(false)}><X /></Button></div>
-        <TopBar />
+      <div id="phone-transport-overlay" hidden={!transportOpen} className="flex max-h-[45%] shrink-0 flex-col overflow-hidden border-t border-border bg-background shadow-lg">
+        <div className="flex h-12 shrink-0 items-center justify-between border-b border-border bg-surface px-3"><span className="text-sm font-semibold">Transport</span><Button variant="ghost" size="icon" className="size-12" aria-label="Close transport" onClick={() => setTransportOpen(false)}><X /></Button></div>
+        {/* Teal side bar scrolls the transport without dragging across its sliders and buttons. */}
+        <div className="phone-transport-scroll-wrap relative flex min-h-0 flex-1 flex-col">
+          <div ref={transportScrollRef} id="phone-transport-scroll" className="phone-transport-scroll min-h-0 flex-1 overflow-y-auto overflow-x-hidden"><TopBar /></div>
+          <TimelineVScrollbar scrollRef={transportScrollRef} controls="phone-transport-scroll" label="Scroll transport up and down" />
+        </div>
       </div>
     </main>
   </div>;

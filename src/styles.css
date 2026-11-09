@@ -1442,10 +1442,9 @@ body:has(.payment-test-banner) .phone-console.mobile-studio { height: calc(100dv
 .phone-console .phone-rhythm-controls select { min-height: 28px; }
 .phone-console .phone-rhythm-controls [role="slider"] { touch-action: none; }
 .phone-console .phone-transport-signals {
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  touch-action: pan-x;
-  scrollbar-width: thin;
+  /* Wrap Audio/MIDI under the meter instead of hiding them past the right edge. */
+  flex-wrap: wrap;
+  overflow-x: visible;
   padding-top: 2px;
   gap: 6px;
 }
@@ -1915,6 +1914,11 @@ body:has(.payment-test-banner) .phone-console.mobile-studio { height: calc(100dv
 .timeline-width-handle::after { content: ""; position: absolute; inset-block: 0; right: 0; width: 1px; background: color-mix(in oklab, var(--foreground) 22%, transparent); }
 .timeline-height-handle::after { content: ""; position: absolute; inset-inline: 0; bottom: 0; height: 1px; background: color-mix(in oklab, var(--foreground) 22%, transparent); }
 .phone-console #phone-transport-overlay { isolation: isolate; contain: inline-size layout; }
+/* Transport scrolls inside itself with the teal side bar; phone browsers hide native scrollbars. */
+.phone-transport-scroll { overscroll-behavior: contain; scrollbar-width: none; }
+.phone-transport-scroll::-webkit-scrollbar { display: none; }
+.phone-transport-scroll-wrap:has(> .timeline-vscroll:not([hidden])) > .phone-transport-scroll { margin-right: 34px; }
+.phone-transport-scroll-wrap > .timeline-vscroll { width: 30px; border-radius: 6px; }
 
 /* Bottom transport console: one playback/position row, a distinct range row, rhythm and live signal. */
 .phone-console #phone-transport-overlay > div:first-child { height: 32px; min-height: 32px; }
@@ -1928,6 +1932,10 @@ body:has(.payment-test-banner) .phone-console.mobile-studio { height: calc(100dv
 .phone-console .transport-glass[data-phone-transport="true"] .phone-loop-group { background: var(--background); border: 1px solid var(--border); border-radius: 3px; }
 .phone-console .transport-glass[data-phone-transport="true"] .phone-rhythm-controls { grid-column: 1 / -1; grid-row: 3; overflow-x: auto; flex-wrap: nowrap; min-height: 36px; background: var(--background); border: 1px solid var(--border); border-radius: 3px; padding: 0 8px; }
 .phone-console .transport-glass[data-phone-transport="true"] .phone-transport-signals { grid-row: 4; padding-top: 2px; }
+/* Small phones: loop range and tempo/meter/swing wrap onto a second line instead of hiding past the edge. */
+.phone-console .transport-glass[data-phone-transport="true"] .phone-loop-controls,
+.phone-console .transport-glass[data-phone-transport="true"] .phone-rhythm-controls { flex-wrap: wrap; overflow-x: visible; row-gap: 4px; }
+.phone-console .transport-glass[data-phone-transport="true"] .phone-rhythm-controls { padding-block: 2px; }
 @container (max-width: 580px) {
   .phone-console .transport-glass[data-phone-transport="true"] .transport-glass-display { grid-column: 1 / -1; grid-row: 2; }
   .phone-console .transport-glass[data-phone-transport="true"] .phone-loop-controls { grid-row: 3; }
