@@ -4602,3 +4602,12 @@ html.phone-console-active [role="option"] { min-height: 44px; font-size: 15px; }
 .dj-mixer.is-phone .dj-cue-deck { font-family: var(--font-display); font-size: 13px; color: var(--deck); }
 .dj-mixer.is-phone .djm-cue[aria-pressed="true"] .dj-cue-deck { color: oklch(0.12 0 0); }
 .dj-mixer.is-phone .dj-phone-strip .dj-fader-row { margin-top: 2px; }
+
+/* Phone Edit: the sideways (left-right) timeline scroll bar is as easy to grab as the up-down one — a tall finger-sized bar and thumb,
+   and the whole row height (not just the thin track) catches the finger. */
+.phone-console .timeline-hscroll-row.is-timeline { padding: 0 4px; gap: 6px; }
+.phone-console .timeline-hscroll-row.is-timeline .timeline-hscroll { height: 34px; border-radius: 10px; margin-block: 2px; }
+.phone-console .timeline-hscroll-row.is-timeline .timeline-hscroll > .timeline-hscroll-thumb { top: 3px; bottom: 3px; border-radius: 8px;
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--primary-foreground) 25%, transparent); }
+.phone-console .timeline-hscroll-row.is-timeline .timeline-hscroll > .timeline-hscroll-thumb::after { top: 8px; bottom: 8px; width: 10px; margin-left: -5px; }
+.phone-console .timeline-hscroll-row.is-timeline .timeline-hscroll-zoom { width: 40px; height: 34px; font-size: 16px; }

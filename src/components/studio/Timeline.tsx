@@ -309,7 +309,7 @@ export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandl
         )}
         </div>
       </div>
-      {!phonePaged && (phone ? <TimelineHScrollbar scrollRef={scrollRef} zoom={zoom} setZoom={setZoom} /> : <TimelineOverview scrollRef={scrollRef} zoom={zoom} setZoom={setZoom} />)}
+      {!phonePaged && (phone ? <TimelineHScrollbar scrollRef={scrollRef} zoom={zoom} setZoom={setZoom} className="is-timeline" /> : <TimelineOverview scrollRef={scrollRef} zoom={zoom} setZoom={setZoom} />)}
       {phone && <TimelineVScrollbar scrollRef={scrollRef} />}
     </section>
   );
