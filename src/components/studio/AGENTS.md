@@ -100,3 +100,5 @@ Sampler and Pad Sampler switch through SamplerModelPicker (like SynthModelPicker
 Synth text colours follow the face: Acid Bass is a silver face with dark ink and every other synth is a dark face with light ink (the "Synth legibility" block at the end of styles.css), so older silver-panel token overrides must never re-tint text on dark panels.
 PhonePages takes a `scrollbar` flag that adds the shared TimelineVScrollbar beside its viewport for control-dense pages (Live Drummer, Live Keys, DJ Decks), so phone users can scroll without dragging across knobs; the bar stays below DJ sheets (z-index 30 < 40).
 The docked phone transport scrolls inside its own region with TimelineVScrollbar, and its rows wrap instead of scrolling sideways, because phone browsers hide native scrollbars and hidden overflow looked cut off.
+
+Phone studio renders the shared MenuBar with `phone` (menus only, no title/clock) above every phone screen, so phone and desktop share one set of File…Help actions; Menubar content uses the sideways popper and ghost-tap guard like other menus.

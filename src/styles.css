@@ -4654,3 +4654,9 @@ html.phone-console-active [role="option"] { min-height: 44px; font-size: 15px; }
 /* Live Drummer, Live Keys and DJ Decks on phones: a wide teal side bar scrolls the page so fingers never have to drag across knobs or faders. It sits under the DJ playlist/headphone sheets. */
 .phone-pages[data-side-scroll]:has(> .timeline-vscroll:not([hidden])) > .phone-page-viewport { margin-right: 34px; }
 .phone-pages[data-side-scroll] > .timeline-vscroll { width: 30px; z-index: 30; border-radius: 6px; }
+
+/* Phone File … Help menu row: all twelve names fit across the screen; on narrow
+   phones the names shrink a little instead of hiding Settings/Window/Help. */
+.phone-menubar { container-type: inline-size; }
+.phone-menubar .phone-menubar-trigger { font-size: 12px; padding-inline: 4px; }
+@container (max-width: 600px) { .phone-menubar .phone-menubar-trigger { font-size: 11px; padding-inline: 3px; } }

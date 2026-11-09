@@ -39,7 +39,8 @@ import { openShortcutSettings } from "./useShortcuts";
 import { qwertyEnabled, setQwertyEnabled } from "@/lib/synclab/qwerty";
 
 import { stepsPerBar } from "@/lib/synclab/timebase";
-export function MenuBar() {
+/** Desktop top menu bar; `phone` renders the same menus as a compact touch row for the phone studio. */
+export function MenuBar({ phone = false }: { phone?: boolean } = {}) {
   const {
     setPanel,
     addTrack,
@@ -267,8 +268,9 @@ export function MenuBar() {
   });
 
 
+  const trig = phone ? "phone-menubar-trigger min-h-10 shrink-0 touch-manipulation font-semibold" : "text-xs";
   return (
-    <div className="flex min-h-11 items-center gap-2 overflow-x-auto border-b border-border bg-surface/70 px-2 [scrollbar-width:none]">
+    <div className={phone ? "phone-menubar flex h-11 shrink-0 items-center overflow-x-auto overflow-y-hidden border-b border-border bg-surface px-0.5 [scrollbar-width:none]" : "flex min-h-11 items-center gap-2 overflow-x-auto border-b border-border bg-surface/70 px-2 [scrollbar-width:none]"}>
       <input
         ref={importRef}
         type="file"
@@ -295,9 +297,9 @@ export function MenuBar() {
           e.target.value = "";
         }}
       />
-      <Menubar className="h-10 min-w-max border-0 bg-transparent p-0 [&_[role=menuitem]]:min-h-11 [&_[role=menuitem]]:touch-manipulation">
+      <Menubar className={`h-10 min-w-max border-0 bg-transparent p-0 [&_[role=menuitem]]:min-h-11 [&_[role=menuitem]]:touch-manipulation ${phone ? "space-x-0" : ""}`}>
         <MenubarMenu>
-          <MenubarTrigger className="min-h-10 touch-manipulation px-3 text-xs">File</MenubarTrigger>
+          <MenubarTrigger className={phone ? trig : "min-h-10 touch-manipulation px-3 text-xs"}>File</MenubarTrigger>
           <MenubarContent>
             <MenubarItem onClick={() => setStage("start")}>New Project</MenubarItem>
             <MenubarItem onClick={() => setStage("start")}>Open Project</MenubarItem>
@@ -337,7 +339,7 @@ export function MenuBar() {
         </MenubarMenu>
 
         <MenubarMenu>
-          <MenubarTrigger className="text-xs">Edit</MenubarTrigger>
+          <MenubarTrigger className={trig}>Edit</MenubarTrigger>
           <MenubarContent>
             <MenubarItem disabled={!canUndo} onClick={undo}>
               Undo <MenubarShortcut>⌘Z</MenubarShortcut>
@@ -384,7 +386,7 @@ export function MenuBar() {
         </MenubarMenu>
 
         <MenubarMenu>
-          <MenubarTrigger className="text-xs">View</MenubarTrigger>
+          <MenubarTrigger className={trig}>View</MenubarTrigger>
           <MenubarContent>
             <MenubarItem onClick={() => setPanel("live")}>Live View</MenubarItem>
             <MenubarItem onClick={() => setPanel("looper")}>Live Looper</MenubarItem>
@@ -402,7 +404,7 @@ export function MenuBar() {
         </MenubarMenu>
 
         <MenubarMenu>
-          <MenubarTrigger className="text-xs">Track</MenubarTrigger>
+          <MenubarTrigger className={trig}>Track</MenubarTrigger>
           <MenubarContent>
             <MenubarItem onClick={() => addTrack("audio", "AUDIO")}>Add Audio Track</MenubarItem>
             <MenubarItem onClick={() => addTrack("instrument", "INSTRUMENT", "Cybotron Lead")}>Add Instrument</MenubarItem>
@@ -413,7 +415,7 @@ export function MenuBar() {
         </MenubarMenu>
 
         <MenubarMenu>
-          <MenubarTrigger className="text-xs">Clip</MenubarTrigger>
+          <MenubarTrigger className={trig}>Clip</MenubarTrigger>
           <MenubarContent>
             <MenubarItem onClick={splitAtPlayhead}>
               Split at Playhead <MenubarShortcut>S</MenubarShortcut>
@@ -431,7 +433,7 @@ export function MenuBar() {
         </MenubarMenu>
 
         <MenubarMenu>
-          <MenubarTrigger className="text-xs">Audio</MenubarTrigger>
+          <MenubarTrigger className={trig}>Audio</MenubarTrigger>
           <MenubarContent>
             <MenubarItem onClick={togglePlay}>{transport.playing ? "Pause" : "Play"}</MenubarItem>
             <MenubarItem onClick={stop}>Stop</MenubarItem>
@@ -445,7 +447,7 @@ export function MenuBar() {
         </MenubarMenu>
 
         <MenubarMenu>
-          <MenubarTrigger className="text-xs">Transport</MenubarTrigger>
+          <MenubarTrigger className={trig}>Transport</MenubarTrigger>
           <MenubarContent className="max-h-[80vh] overflow-y-auto">
             <MenubarItem onClick={togglePlay}>{transport.playing ? "Pause" : "Start"} <MenubarShortcut>Space</MenubarShortcut></MenubarItem>
             <MenubarItem onClick={stop}>Stop</MenubarItem>
@@ -476,7 +478,7 @@ export function MenuBar() {
         </MenubarMenu>
 
         <MenubarMenu>
-          <MenubarTrigger className="text-xs">MIDI</MenubarTrigger>
+          <MenubarTrigger className={trig}>MIDI</MenubarTrigger>
           <MenubarContent>
             <MenubarItem onClick={() => setPanel("piano")}>Piano Roll</MenubarItem>
             <MenubarItem onClick={() => setPanel("keys")}>Virtual Keyboard</MenubarItem>
@@ -493,7 +495,7 @@ export function MenuBar() {
         </MenubarMenu>
 
         <MenubarMenu>
-          <MenubarTrigger className="text-xs">Tools</MenubarTrigger>
+          <MenubarTrigger className={trig}>Tools</MenubarTrigger>
           <MenubarContent>
             <MenubarItem onClick={() => setPanel("synth")}>Synthesizer</MenubarItem>
             <MenubarItem onClick={() => setPanel("drums")}>Drum Machine</MenubarItem>
@@ -506,7 +508,7 @@ export function MenuBar() {
         </MenubarMenu>
 
         <MenubarMenu>
-          <MenubarTrigger className="text-xs">Settings</MenubarTrigger>
+          <MenubarTrigger className={trig}>Settings</MenubarTrigger>
           <MenubarContent>
             <MenubarItem onClick={() => setPanel("settings")}>Preferences</MenubarItem>
             <MenubarItem onClick={() => { requestBluetoothSettings(); setPanel("settings"); }}>Bluetooth devices</MenubarItem>
@@ -515,15 +517,15 @@ export function MenuBar() {
         </MenubarMenu>
 
         <MenubarMenu>
-          <MenubarTrigger className="text-xs">Window</MenubarTrigger>
+          <MenubarTrigger className={trig}>Window</MenubarTrigger>
           <MenubarContent>
-            <MenubarItem onClick={() => setPanel("mixer")}>Mixer (pop out from its header)</MenubarItem>
+            <MenubarItem onClick={() => setPanel("mixer")}>{phone ? "Mixer" : "Mixer (pop out from its header)"}</MenubarItem>
             <MenubarItem onClick={() => setPanel(null)}>Close Editor</MenubarItem>
           </MenubarContent>
         </MenubarMenu>
 
         <MenubarMenu>
-          <MenubarTrigger className="text-xs">Help</MenubarTrigger>
+          <MenubarTrigger className={trig}>Help</MenubarTrigger>
           <MenubarContent>
             <MenubarItem onClick={() => openHelp("help")}>SYNCLAB Help Center</MenubarItem>
             <MenubarItem onClick={() => openHelp("support")}>Contact SYNCLAB Support</MenubarItem>
@@ -549,6 +551,7 @@ export function MenuBar() {
           </MenubarContent>
         </MenubarMenu>
       </Menubar>
+      {!phone && <>
       <button
         type="button"
         onClick={() => setPanel("live")}
@@ -565,6 +568,7 @@ export function MenuBar() {
         {project ? `${project.key} · ${project.timeSig}` : ""} · {mode} mode
       </span>
       <div className="ml-2 shrink-0"><DeviceClock /></div>
+      </>}
 
       <Dialog open={saveAsOpen} onOpenChange={setSaveAsOpen}>
         <DialogContent className="sm:max-w-sm">

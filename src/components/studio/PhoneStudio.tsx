@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useStudio, type PanelId } from "@/lib/synclab/store";
 import { useApp } from "@/lib/synclab/app-state";
 import { TopBar } from "./TopBar";
+import { MenuBar } from "./MenuBar";
 import { Timeline } from "./Timeline";
 import { AddTrackMenu } from "./AddTrackMenu";
 import { PhonePages } from "./PhonePages";
@@ -139,6 +140,8 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
       <div className="min-h-0 flex-1 overflow-y-auto p-1"><ComputerFiles /></div>
     </aside>}
     <main className="phone-console-stage relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+      {/* Same File … Help menus as the computer version, on every phone screen. */}
+      <MenuBar phone />
       {!editPage && header}
       {!editPage && recordingStrip}
       {panel === "mixer" && !mixerFull && <>

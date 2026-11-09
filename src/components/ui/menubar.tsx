@@ -3,6 +3,8 @@ import * as MenubarPrimitive from "@radix-ui/react-menubar";
 import { Check, ChevronRight, Circle } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { useSidewaysPopper } from "@/lib/sideways-popper";
+import { useGhostTapGuard } from "@/components/ui/dropdown-menu";
 
 function MenubarMenu({ ...props }: React.ComponentProps<typeof MenubarPrimitive.Menu>) {
   return <MenubarPrimitive.Menu {...props} />;
@@ -93,7 +95,12 @@ MenubarSubContent.displayName = MenubarPrimitive.SubContent.displayName;
 const MenubarContent = React.forwardRef<
   React.ElementRef<typeof MenubarPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof MenubarPrimitive.Content>
->(({ className, align = "start", alignOffset = -4, sideOffset = 8, ...props }, ref) => (
+>(({ className, align = "start", alignOffset = -4, sideOffset = 8, ...props }, forwardedRef) => {
+  // Sideways phone canvas: place the menu beside its button in canvas space and
+  // stop the opening tap from also choosing the item under the finger.
+  const placed = useSidewaysPopper(forwardedRef, { side: props.side, align, sideOffset });
+  const { ref, handlers } = useGhostTapGuard(placed, props);
+  return (
   <MenubarPrimitive.Portal>
     <MenubarPrimitive.Content
       ref={ref}
@@ -105,9 +112,11 @@ const MenubarContent = React.forwardRef<
         className,
       )}
       {...props}
+      {...handlers}
     />
   </MenubarPrimitive.Portal>
-));
+  );
+});
 MenubarContent.displayName = MenubarPrimitive.Content.displayName;
 
 const MenubarItem = React.forwardRef<

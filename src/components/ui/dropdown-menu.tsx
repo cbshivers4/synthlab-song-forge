@@ -18,7 +18,7 @@ type GuardProps = {
  * Stops the finger that opened a menu from also choosing the item that appears under it
  * when it lifts (phone menus open on touch-down). Choices must start with a press inside.
  */
-function useGhostTapGuard<T extends HTMLDivElement>(forwarded: React.ForwardedRef<T>, props: GuardProps) {
+export function useGhostTapGuard<T extends HTMLDivElement>(forwarded: React.ForwardedRef<T>, props: GuardProps) {
   const state = React.useRef({ downInside: false, blockUntil: 0 });
   const ref = React.useCallback((node: T | null) => {
     // The menu panel mounts fresh each time it opens: start with no press inside.
