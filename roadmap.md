@@ -252,3 +252,7 @@
 - [x] Synth preset window opens a categorized browser: sound types, styles, My Presets, search; stays open while auditioning (all five synths, phone sheet)
 - [x] Desktop mixer docks under the timeline like Studio Pro: drag bar to resize, F3 shows/hides, Full view option
 - [ ] Try on the owner's computer and phone after publishing
+
+## Nov 11 — Expand every scope (Christopher)
+- [x] Every device scope opens a big Spectrum Analyzer window like the Studio One reference (source menu, Follow Selection, Analyzer, peak hold, scope view; phone full screen)
+- [ ] Try on the owner's computer and phone after publishing

@@ -32,3 +32,9 @@ export function useIsLandscapePhone() {
   }, []);
   return on;
 }
+
+/** Synchronous phone check (phone, tablet touch or sideways phone canvas) for UI that only renders after a tap. */
+export function phoneLayoutNow(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia(MOBILE_QUERY).matches || window.matchMedia(PHONE_WORKSPACE_QUERY).matches;
+}

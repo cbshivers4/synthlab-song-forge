@@ -6,7 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { useStudio } from "@/lib/synclab/store";
-import { useIsLandscapePhone, useIsMobile } from "@/hooks/use-mobile";
+import { phoneLayoutNow } from "@/hooks/use-mobile";
 import { canvasPoint, canvasRect, sidewaysCanvas } from "@/lib/synclab/canvas-point";
 import { readModularScope } from "@/lib/synclab/modular-scopes";
 import { peakOf } from "@/lib/synclab/level-colors";
@@ -27,9 +27,8 @@ const layout = () => (sidewaysCanvas() ? { w: window.innerHeight, h: window.inne
 export function ScopeWindow() {
   const win = useScopeWindow();
   const { tracks, selectedId } = useStudio();
-  const mobile = useIsMobile();
-  const landscapePhone = useIsLandscapePhone();
-  const isMobile = mobile || landscapePhone;
+  // Read at render: the window only renders after a tap, so there is no server/client mismatch.
+  const isMobile = win.open && phoneLayoutNow();
   const [analyzer, setAnalyzer] = useState(true);
   const [peakHold, setPeakHold] = useState(true);
   const [box, setBox] = useState(() => ({ x: 96, y: 80, w: 780, h: 440 }));

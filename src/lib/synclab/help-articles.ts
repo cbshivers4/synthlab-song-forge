@@ -471,7 +471,7 @@ export const KNOWLEDGE_BASE: Article[] = [
       "Each effect has its own presets (15 each for the hardware-style units) and a BYPASS button.",
     ],
     can: [
-      "Stack effects on any track, bus or the master, with live scopes and meters.",
+      "Stack effects on any track, bus or the master, with live scopes and meters. Press a scope's corner button to open it big — see “Expanding a scope”.",
       "Bypass any instrument or effect without losing its settings.",
       "Turn knobs while the song plays or records. The sound changes smoothly, and reverb tails keep ringing when you change Decay.",
     ],
@@ -479,6 +479,25 @@ export const KNOWLEDGE_BASE: Article[] = [
       "Flipping a switch that changes how an effect is built — a mode, type or cabinet selector, phaser stages, or any Vocoder control — rebuilds that effect with a very short crossfade.",
       "A very slow phone or computer can still fall behind if it's busy for longer than about a third of a second.",
       "These are SYNCLAB's own effects. Your own VST/AU plugins can't run in the browser — see “Desktop app and plugins”.",
+    ],
+  },
+  {
+    id: "scope-window", category: "Mixing & effects", title: "Expanding a scope (Spectrum Analyzer)",
+    tags: "scope spectrum analyzer analyser oscilloscope expand big window frequency follow selection peak hold",
+    body: [
+      "Every scope has a small expand button in its corner — on effects, mixer channels, buses, the master, the transport bar, the Pro EQ and the Modular Tech modules. Press it to open the big Spectrum Analyzer window on the same signal.",
+      "The window shows frequencies from 20 Hz to 20 kHz and real levels from 0 dB down to −96 dB. Switch between Spectrum and Scope (the waveform) at the top. Pick any channel, bus, effect or the Master Section from the menu at the bottom, or tick Follow Selection to watch whichever channel you select.",
+      "On a computer, drag the title bar to move it and the bottom-right corner to resize it. On a phone it fills the screen. Press × or Esc to close.",
+    ],
+    can: [
+      "See the full frequency picture of any channel, bus, effect or the master while the song plays or records, without changing the sound.",
+      "Turn Analyzer off, keep a Peak hold line, and point at the graph to read the frequency and level under your finger or mouse.",
+    ],
+    cant: [
+      "The Scope view zooms quiet signals so you can see their shape; the dB numbers always show the true level.",
+      "A bypassed effect has no output of its own to show — pick the channel instead.",
+      "Modular Tech module taps only show the waveform, not the spectrum. The sampler's recording waveform is not part of this window.",
+      "Only one big window opens at a time.",
     ],
   },
   {
