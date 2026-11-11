@@ -14,6 +14,7 @@ import { Slider } from "@/components/ui/slider";
 import { Knob } from "./Knob";
 import { useStudio } from "@/lib/synclab/store";
 import { SYNTH_PRESETS, defaultPatch, applyPreset } from "@/lib/synclab/presets";
+import { orderPresetGroups, presetCategoryLabel, presetMatchesSynth } from "@/lib/synclab/preset-categories";
 import { initModularPatch } from "@/lib/synclab/modular";
 import type { EnvelopeParams, LfoWave, ModDest, ModSource, OscWave, SynthPatch, Track } from "@/lib/synclab/types";
 import { uid } from "@/lib/synclab/presets";
@@ -187,7 +188,7 @@ function SynthTrackEditor({ track }: { track: Track }) {
   const synthStyle = synthStyleOf(track);
   const presetGroups = (() => {
     const all = [
-      ...SYNTH_PRESETS.filter((x) => presetMatchesSynth(x.category, synthStyle)).map((x) => ({ name: x.name, category: x.category })),
+      ...SYNTH_PRESETS.filter((x) => presetMatchesSynth(x.category, synthStyle)).map((x) => ({ name: x.name, category: presetCategoryLabel(x.category) })),
       ...userPresets.map((x) => ({ name: x.name, category: "My Presets" })),
     ];
     const order: string[] = [];
@@ -199,7 +200,7 @@ function SynthTrackEditor({ track }: { track: Track }) {
       }
       map.get(x.category)!.push(x.name);
     });
-    return order.map((category) => ({ category, items: map.get(category)! }));
+    return orderPresetGroups(order.map((category) => ({ category, items: map.get(category)! })));
   })();
 
   const selectPreset = (name: string) => {
@@ -923,18 +924,6 @@ function ChordScale({ trackId, onPlay }: { trackId: string; onPlay: (midi: numbe
 
 
 /** Each synth's preset window lists only presets made for that instrument. */
-export function presetMatchesSynth(category: string, style: string): boolean {
-  const c = category.toLowerCase();
-  const acid = c === "acid bass" || c === "acid";
-  const poly = c === "poly synth";
-  const modular = c === "modular tech";
-  const granular = c === "granular";
-  if (style === "granular") return granular;
-  if (style === "acid") return acid;
-  if (style === "poly") return poly;
-  if (style === "modular") return modular;
-  return !acid && !poly && !modular && !granular;
-}
 
 /** Type to find a preset by name or category (e.g. "bass", "pad", "arp"); click a match to load and hear it. */
 function PresetSearch({ groups, onSelect }: { groups: { category: string; items: string[] }[]; onSelect: (name: string) => void }) {

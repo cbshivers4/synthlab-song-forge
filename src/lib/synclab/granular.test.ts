@@ -49,8 +49,8 @@ describe("Granular Synth", () => {
     }
   });
 
-  it("has 15 presets that each load a grain cloud", () => {
-    expect(GRANULAR_PRESETS).toHaveLength(15);
+  it("has 33 presets that each load a grain cloud", () => {
+    expect(GRANULAR_PRESETS).toHaveLength(33);
     for (const p of GRANULAR_PRESETS) expect(applyPreset(p.name).granular, p.name).toBeTruthy();
   });
 });

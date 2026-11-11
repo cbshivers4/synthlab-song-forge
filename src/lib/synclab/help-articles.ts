@@ -243,6 +243,7 @@ export const KNOWLEDGE_BASE: Article[] = [
     body: [
       "Spec 4, Acid Bass (TD-3), Poly Synth, Modular Tech Synth and Granular Synth each have their own look and sound. Controls are grouped into tabs.",
       "Use the preset window or the ◀ ▶ arrows to browse presets; each preview plays a short note.",
+      "Spec 4 and Poly Synth presets are sorted into Arpeggio, Bass, Brass, FX, Keyboard, Lead, Organ, Pad, Percussive, Sequence, Strings, Synth, Template and Woodwind (Spec 4 also keeps its genre groups). Acid Bass has a Clean Bass group with no distortion, and Granular Synth has 33 grain presets.",
       "Favorite preset keys: tap an empty key or Add current to store the preset you're on, tap a filled key to load it, and use Edit to replace or clear keys.",
     ],
     can: [
@@ -253,6 +254,8 @@ export const KNOWLEDGE_BASE: Article[] = [
     cant: [
       "Favorite keys are saved on each device, so your phone and computer keep separate lists.",
       "Changing a sound affects the next notes you play, not a note that is already held.",
+      "Brass, strings, woodwind and organ presets are synth imitations, not recorded instruments.",
+      "Clean Bass presets only stay clean until you turn up DRIVE or DIST yourself.",
     ],
   },
   {

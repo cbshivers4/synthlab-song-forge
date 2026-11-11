@@ -13,7 +13,7 @@ import { openMic, preferredRecordingMime, releaseMic } from "@/lib/synclab/mic";
 import { alignToStart, analyseBeatbox, analyseMelody, shapeMelody, type BeatHit, type HumNote } from "@/lib/synclab/hum-to-beat";
 import { SYNTH_PRESETS } from "@/lib/synclab/presets";
 
-const MELODY_SOUNDS = SYNTH_PRESETS.filter((p) => /lead|keys|pluck|bell|pad|brass|string|arp/i.test(p.category)).map((p) => p.name).slice(0, 24);
+const MELODY_SOUNDS = SYNTH_PRESETS.filter((p) => /lead|key|pluck|bell|pad|brass|string|arp|organ|woodwind|percussive/i.test(p.category)).map((p) => p.name).slice(0, 24);
 import { stepsPerBar } from "@/lib/synclab/timebase";
 
 type Mode = "beat" | "melody";
