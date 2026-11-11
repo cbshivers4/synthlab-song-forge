@@ -33,11 +33,25 @@ export function voiceSaturate(input: number, amount: number): number {
 }
 
 /** WaveShaper curve: index i covers real input (2i/(n-1) - 1) / VOICE_SHAPER_IN. */
-export function voiceSaturationCurve(amount: number): Float32Array {
+export function voiceSaturationCurve(amount: number): Float32Array<ArrayBuffer> {
   const curve = new Float32Array(POINTS);
   for (let i = 0; i < POINTS; i++) {
     const x = ((i * 2) / (POINTS - 1) - 1) / VOICE_SHAPER_IN;
     curve[i] = voiceSaturate(x, amount);
   }
   return curve;
+}
+
+/**
+ * Gain into the voice shaper. Narrow band-pass voices (talk box, choir, oboe) lose most of their
+ * harmonics, so they get make-up that grows with resonance instead of relying on heavy saturation.
+ */
+export function voiceInputGain(patch: Pick<SynthPatch, "filterType" | "resonance">): number {
+  const bp = patch.filterType === "bandpass" ? Math.min(4, Math.max(1, Math.sqrt(Math.max(1, patch.resonance)))) : 1;
+  return VOICE_SHAPER_IN * bp;
+}
+
+/** Per-copy level for unison: detuned copies add up by roughly √n, so dividing by n made big stacks too quiet. */
+export function unisonCopyScale(voices: number): number {
+  return 1 / Math.pow(Math.max(1, voices), 0.75);
 }

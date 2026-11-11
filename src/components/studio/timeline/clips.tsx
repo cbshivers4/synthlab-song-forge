@@ -17,7 +17,52 @@ import { ClipEditor } from "@/components/studio/ClipEditor";
 import { clipRate, clipSeconds } from "@/lib/synclab/types";
 import { visibleClipPeaks } from "@/lib/synclab/clip-peaks";
 import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
-import { DrumHitWave, EMPTY_PEAKS, NOTE_NAMES, PartMenu } from "./shared";
+import { DrumHitWave, EMPTY_PEAKS, NOTE_NAMES, PartMenu, type PartMove } from "./shared";
+import { neighbourPartTarget, partFamily } from "@/lib/synclab/track-move";
+
+/** Track id of the timeline lane under a canvas point (hit-tests lane bounds, not the floating block). */
+function laneTrackAt(x: number, y: number): string | undefined {
+  for (const lane of document.querySelectorAll<HTMLElement>("[data-lane-track]")) {
+    const r = canvasRect(lane);
+    if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return lane.dataset["laneTrack"];
+  }
+  return undefined;
+}
+/** Dashed outline on the channel a dragged block would land on. */
+function markDropRow(id: string | undefined) {
+  document.querySelectorAll<HTMLElement>("[data-track-row]").forEach((row) => row.classList.toggle("track-drop-target", !!id && row.dataset["trackRow"] === id));
+}
+
+/** Sends one note block / beat part to another channel, with the menu's "To track above/below" entries. */
+function usePartMoves(track: Track) {
+  const { tracks, movePartToTrack } = useStudio();
+  const live = useRef(tracks);
+  live.current = tracks;
+  const family = partFamily(track);
+  /** True when the pointer is over another channel that can take this block. */
+  const canTake = (destId: string | undefined) => {
+    if (!destId || destId === track.id) return false;
+    const dest = live.current.find((t) => t.id === destId);
+    return !!dest && !!family && partFamily(dest) === family;
+  };
+  const sendPart = (destId: string, a: number, b: number, to: number) => {
+    const dest = live.current.find((t) => t.id === destId);
+    if (!dest) return false;
+    if (!canTake(destId)) {
+      toast.error(`Can't move this block to ${dest.name}`, { description: family === "drums" ? "Beat parts move between drum tracks." : "Note blocks move between synth, MIDI and sampler tracks that show notes." });
+      return false;
+    }
+    const r = movePartToTrack(track.id, destId, a, b, to);
+    if (!r) return false;
+    toast.success(`Block moved to ${dest.name}`, r.unmatched ? { description: `${r.unmatched} hits had no matching drum on ${dest.name} and were left out.` } : undefined);
+    return true;
+  };
+  const moves = (a: number, b: number): PartMove[] => ([-1, 1] as const).flatMap((dir) => {
+    const dest = neighbourPartTarget(live.current, track.id, dir);
+    return dest ? [{ dir, label: `${dir < 0 ? "track above" : "track below"} · ${dest.name}`, onClick: () => { sendPart(dest.id, a, b, a); } }] : [];
+  });
+  return { sendPart, moves, canTake };
+}
 
 /** Audio lane: every clip sits at its own bar position and can be moved, trimmed and dragged between tracks. */
 export function Waveform({ track }: { track: Track }) {
@@ -302,6 +347,7 @@ export function Waveform({ track }: { track: Track }) {
 
 function MidiClip({ track }: { track: Track }) {
   const { setPanel, select, transport, updateTrack } = useStudio();
+  const partMoves = usePartMoves(track);
   const notes = track.notes ?? [];
   const cuts = track.cuts ?? [];
   /** Drag the pattern to any grid position: every note shifts by the same
@@ -318,8 +364,16 @@ function MidiClip({ track }: { track: Track }) {
     const orig = notes.map((n) => ({ id: n.id, step: n.step, recordedEnd: n.recordedEnd }));
     const el = e.currentTarget as HTMLElement;
     el.setPointerCapture(e.pointerId);
+    const y0 = canvasPoint(e.clientX, e.clientY).y;
+    let over: string | undefined;
     const onMove = (ev: PointerEvent) => {
-      const raw = (canvasPoint(ev.clientX, ev.clientY).x - x0) / Math.max(1, perStep);
+      const pt = canvasPoint(ev.clientX, ev.clientY);
+      // Drag up or down onto another channel to move the whole part there.
+      over = Math.abs(pt.y - y0) > 12 ? laneTrackAt(pt.x, pt.y) : undefined;
+      markDropRow(partMoves.canTake(over) ? over : undefined);
+      el.style.transform = partMoves.canTake(over) ? `translateY(${pt.y - y0}px)` : "";
+      el.style.zIndex = partMoves.canTake(over) ? "50" : "";
+      const raw = (pt.x - x0) / Math.max(1, perStep);
       let d = grid > 0 ? Math.round(raw / grid) * grid : Math.round(raw * 100) / 100;
       const minStep = Math.min(...orig.map((o) => o.step));
       if (minStep + d < 0) d = -minStep;
@@ -339,6 +393,9 @@ function MidiClip({ track }: { track: Track }) {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
       el.style.transform = "";
+      el.style.zIndex = "";
+      markDropRow(undefined);
+      if (over && over !== track.id) partMoves.sendPart(over, 0, total, 0);
     };
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
@@ -364,16 +421,29 @@ function MidiClip({ track }: { track: Track }) {
     const x0 = canvasPoint(e.clientX, e.clientY).x;
     const [lo, hi] = regionRoom(notes, cuts, total, [a, b]);
     let d = 0;
+    let free = 0;
+    const y0 = canvasPoint(e.clientX, e.clientY).y;
+    let over: string | undefined;
     try { el.setPointerCapture(e.pointerId); } catch { /* released */ }
     const onMove = (ev: PointerEvent) => {
-      d = Math.max(lo - a, Math.min(hi - b, snapDelta((canvasPoint(ev.clientX, ev.clientY).x - x0) / Math.max(0.0001, perStep))));
-      el.style.transform = `translateX(${d * perStep}px)`;
+      const pt = canvasPoint(ev.clientX, ev.clientY);
+      free = Math.max(-a, Math.min(total - b, snapDelta((pt.x - x0) / Math.max(0.0001, perStep))));
+      d = Math.max(lo - a, Math.min(hi - b, free));
+      // Up or down onto another channel: the block floats there and lands where you let go.
+      over = Math.abs(pt.y - y0) > 12 ? laneTrackAt(pt.x, pt.y) : undefined;
+      const crossing = partMoves.canTake(over);
+      markDropRow(crossing ? over : undefined);
+      el.style.transform = crossing ? `translate(${free * perStep}px, ${pt.y - y0}px)` : `translateX(${d * perStep}px)`;
+      el.style.zIndex = crossing ? "50" : "";
     };
     const onUp = () => {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
       window.removeEventListener("pointercancel", onUp);
       el.style.transform = "";
+      el.style.zIndex = "";
+      markDropRow(undefined);
+      if (over && over !== track.id) { partMoves.sendPart(over, a, b, a + free); return; }
       if (Math.abs(d) < 0.001) return;
       const r = moveNoteRegion(track.notes ?? [], track.cuts, total, [a, b], d);
       updateTrack(track.id, { notes: r.notes, cuts: r.cuts, activeRegion: r.activeRegion });
@@ -460,7 +530,7 @@ function MidiClip({ track }: { track: Track }) {
         <span className="min-w-0 flex-1 truncate font-mono text-[9px] font-semibold">{track.name}</span>
 
       </div>
-      {active && <PartMenu label={`${track.name} part`} onDelete={() => { const patch = deleteSelectedPart(track, transport.bpm, transport.bars, transport.loop ? loopRegion(transport) : undefined); if (patch) updateTrack(track.id, patch); toast.success("Part deleted"); }} />}
+      {active && <PartMenu label={`${track.name} part`} moves={partMoves.moves(a, b)} onDelete={() => { const patch = deleteSelectedPart(track, transport.bpm, transport.bars, transport.loop ? loopRegion(transport) : undefined); if (patch) updateTrack(track.id, patch); toast.success("Part deleted"); }} />}
       <div className="relative min-h-0 flex-1">
         {Array.from({ length: rows }).map((_, r) => <div key={r} className="arrangement-note-grid absolute inset-x-0 border-t" style={{ top: `${r / rows * 100}%` }} />)}
         {Array.from({ length: reps }).flatMap((_, rep) => regionNotes.map((n) => {
@@ -503,6 +573,7 @@ export function VcaLevel({ track }: { track: Track }) {
 
 function DrumClip({ track }: { track: Track }) {
   const { setPanel, select, transport, updateTrack } = useStudio();
+  const partMoves = usePartMoves(track);
   /** Drag the pattern along the grid: every pad's hits rotate by the same
    *  snapped step amount, so the whole beat shifts to a new grid position. */
   const beginPatternDrag = (e: React.PointerEvent) => {
@@ -565,10 +636,25 @@ function DrumClip({ track }: { track: Track }) {
       .filter(([x, y]) => (x !== a || y !== b) && track.pads?.some((p) => p.steps.slice(Math.floor(x), Math.ceil(y)).some((v) => v > 0)));
     const edges = others.flatMap(([x, y]) => [y, x - (b - a)]);
     let to = a;
+    let freeTo = a;
+    const y0 = canvasPoint(e.clientX, e.clientY).y;
+    let over: string | undefined;
     const target = e.currentTarget as HTMLElement;
     try { target.setPointerCapture(e.pointerId); } catch { /* pointer already released */ }
     const onMove = (ev: PointerEvent) => {
-      const raw = a + (canvasPoint(ev.clientX, ev.clientY).x - x0) / Math.max(0.0001, perStep);
+      const pt = canvasPoint(ev.clientX, ev.clientY);
+      const raw = a + (pt.x - x0) / Math.max(0.0001, perStep);
+      // Up or down onto another drum track: the part floats there and lands on the grid where you let go.
+      over = Math.abs(pt.y - y0) > 12 ? laneTrackAt(pt.x, pt.y) : undefined;
+      if (partMoves.canTake(over)) {
+        freeTo = Math.max(0, Math.min(total - (b - a), Math.round(raw / grid) * grid));
+        markDropRow(over);
+        target.style.transform = `translate(${(freeTo - a) * perStep}px, ${pt.y - y0}px)`;
+        target.style.zIndex = "50";
+        return;
+      }
+      markDropRow(undefined);
+      target.style.zIndex = "";
       const near = edges.reduce<number | null>((best, edge) => Math.abs(edge - raw) <= bar / 4 && (best == null || Math.abs(edge - raw) < Math.abs(best - raw)) ? edge : best, null);
       let next = Math.max(0, near ?? Math.round(raw / grid) * grid);
       // Never drop a part on top of another one: butt it against the closest free edge instead.
@@ -584,6 +670,9 @@ function DrumClip({ track }: { track: Track }) {
       window.removeEventListener("pointerup", onUp);
       window.removeEventListener("pointercancel", onUp);
       target.style.transform = "";
+      target.style.zIndex = "";
+      markDropRow(undefined);
+      if (over && over !== track.id) { partMoves.sendPart(over, a, b, freeTo); return; }
       if (Math.abs(to - a) < 0.5) return;
       updateTrack(track.id, moveDrumPart(track, a, b, to));
     };
@@ -687,7 +776,7 @@ function DrumClip({ track }: { track: Track }) {
             <span className="min-w-0 flex-1 truncate font-mono text-[9px] font-semibold">{track.name} · {track.drumChain?.on && track.drumChain.items.length ? `CHAIN ${track.drumChain.items.map((i) => `${i.slot + 1}×${i.bars}`).join(" → ")}` : `${hits} HITS`}</span>
 
           </div>
-          {active && <PartMenu label={`${track.name} beat part`} onDelete={() => { const patch = deleteSelectedPart(track, transport.bpm, transport.bars, transport.loop ? loopRegion(transport) : undefined); if (patch) updateTrack(track.id, patch);
+          {active && <PartMenu label={`${track.name} beat part`} moves={partMoves.moves(a, b)} onDelete={() => { const patch = deleteSelectedPart(track, transport.bpm, transport.bars, transport.loop ? loopRegion(transport) : undefined); if (patch) updateTrack(track.id, patch);
                 toast.success("Beat part deleted"); }} />}
           <div className="relative min-h-0 flex-1"><DrumHitWave pads={part} steps={hi - lo} total={hi - lo} tone="text-[var(--arrangement-ink)]" /></div>
           <div

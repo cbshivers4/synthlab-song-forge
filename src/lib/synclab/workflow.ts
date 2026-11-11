@@ -1,10 +1,16 @@
 import { clipSeconds, type AudioClip, type Track } from './types';
 import { songSteps, stepSeconds } from './timebase';
 import { regionAt, unrollNotes, cutNotesAt, deleteRegion } from './note-cuts';
+import { timelineUsesWaveform } from './timeline-content';
 
-/** Only an explicitly selected audio clip is an editing target. */
+/**
+ * Only an explicitly selected audio clip that the lane is showing is an editing target. A channel
+ * showing its notes/drum parts can still hold an older recorded take; tapping a note block must
+ * never delete that hidden take instead of the block.
+ */
 export function selectedClip(track: Track | null | undefined) {
-  return track?.clips?.find((clip) => clip.id === track.activeClipId);
+  if (!track || !timelineUsesWaveform(track)) return undefined;
+  return track.clips?.find((clip) => clip.id === track.activeClipId);
 }
 
 /** A copy of the clip placed so it starts exactly where the original ends (no rounding gap). */
@@ -18,7 +24,9 @@ export function selectedPartBounds(track: Track | null | undefined, bpm: number,
   if (clip) return [clip.start ?? 0, (clip.start ?? 0) + clipSeconds(clip) / stepSeconds(bpm)];
   if (track.activeRegion == null) return null;
   const raw = regionAt(track.cuts, songSteps(bars), track.activeRegion);
-  const region: [number, number] = loop ? [Math.max(raw[0], loop[0]), Math.min(raw[1], loop[1])] : raw;
+  // A cut block is exactly what the timeline draws, so it is deleted whole wherever the loop is;
+  // only an uncut, song-long pattern is narrowed to the loop so other bars survive.
+  const region: [number, number] = loop && !track.cuts?.length ? [Math.max(raw[0], loop[0]), Math.min(raw[1], loop[1])] : raw;
   if (region[1] <= region[0]) return null;
   if (track.patternRegion) return [Math.max(region[0], track.patternRegion[0]), Math.min(region[1], track.patternRegion[1])];
   const notes = track.notes ?? [];

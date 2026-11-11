@@ -34,7 +34,7 @@ import { getEngine } from "./audio-engine";
 import { stepsPerBar, setBeatsPerBar, getBeatsPerBar, STEPS_PER_BEAT, songSteps, stepSeconds, barsForSteps } from "./timebase";
 import { openInOwnTab } from "./mic";
 import { TRACK_COLORS, applyPreset, defaultPads, defaultPatch, uid } from "./presets";
-import { moveClipToNewIn, moveTrackToIndexIn, moveTrackToNewIn } from "./track-move";
+import { moveClipToNewIn, movePartBetweenTracks, moveTrackToIndexIn, moveTrackToNewIn } from "./track-move";
 import { BUILT_IN_PLUGINS, instantiate, processMidiThroughPlugins, withDefaultParams } from "./plugins";
 import { insertRigDevice } from "./guitar-rig";
 import { getMidiAccess, listInputs, listOutputs, midiSupported, midiUnsupportedMessage, subscribe, type MidiPortInfo } from "./midi";
@@ -307,6 +307,8 @@ interface StudioApi extends StudioState {
   duplicateTrack: (id: string) => void;
   moveTrack: (id: string, dir: -1 | 1) => void;
   moveTrackToIndex: (id: string, index: number) => void;
+  /** Move one note block / beat part [a, b) onto another channel at step `to`; null when it can't go there. */
+  movePartToTrack: (srcId: string, destId: string, a: number, b: number, to: number) => { unmatched: number } | null;
   moveTrackToNew: (id: string) => void;
   moveClipToNew: (trackId: string, clipId: string, sourceStart: number) => void;
   clipboardName: string | null;
@@ -2272,6 +2274,15 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           return next;
         }),
       moveTrackToIndex: (id, index) => setTracks((ts) => moveTrackToIndexIn(ts, id, index)),
+      movePartToTrack: (srcId, destId, a, b, to) => {
+        const r = movePartBetweenTracks(tracksRef.current, srcId, destId, a, b, to, songSteps(transportRef.current.bars));
+        if (!r) return null;
+        tracksRef.current = r.tracks;
+        setTracks(r.tracks);
+        setSelectedId(destId);
+        setSelectedIds([destId]);
+        return { unmatched: r.unmatched };
+      },
       moveClipToNew: (trackId, clipId, sourceStart) => {
         setTracks((ts) => {
           const result = moveClipToNewIn(ts, trackId, clipId, sourceStart, stepSeconds(transportRef.current.bpm));

@@ -1,14 +1,14 @@
 import { faderGain, faderPosition } from "@/lib/synclab/fader-taper";
 import { getPlayStep } from "@/lib/synclab/playhead";
 import { editorPanelFor } from "@/lib/synclab/track-editor";
-import { deleteSelectedPart, selectedPartBounds } from '@/lib/synclab/workflow';
+import { deleteSelectedPart, selectedClip, selectedPartBounds } from '@/lib/synclab/workflow';
 import { loopRegion } from "@/lib/synclab/recording-region";
 import { materialEnd } from "@/lib/synclab/arrangement-edit";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { stepsPerBar, songSteps, stepSeconds, positionLabel } from "@/lib/synclab/timebase";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { NameEditDialog } from "../NameEditDialog";
-import { ArrowDownToLine, ArrowLeftToLine, ArrowRightToLine, ClipboardPaste, Grid3x3, Sliders, Pencil, Scissors, Waves, ChevronDown, ChevronUp, Copy, Disc3, Download, Eraser, Eye, EyeOff, Headphones, Mic, MoreVertical, Repeat, Music2, Piano, Settings2, Snowflake, Trash2, Volume2, VolumeX, X, Circle, Plus, Folder, FolderOpen } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowDownToLine, ArrowLeftToLine, ArrowRightToLine, ClipboardPaste, Grid3x3, Sliders, Pencil, Scissors, Waves, ChevronDown, ChevronUp, Copy, Disc3, Download, Eraser, Eye, EyeOff, Headphones, Mic, MoreVertical, Repeat, Music2, Piano, Settings2, Snowflake, Trash2, Volume2, VolumeX, X, Circle, Plus, Folder, FolderOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
@@ -19,6 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { clipFromFile, clipFromLocalFile } from "@/lib/synclab/local-files";
 import { snapDropStep } from "./drop-position";
+import { neighbourPartTarget } from "@/lib/synclab/track-move";
 import { openTrackSettings } from "@/components/studio/TrackSettingsDialog";
 import { InsertRack } from "../mixer/InsertRack";
 import { EffectMenuItems } from "../EffectPicker";
@@ -88,8 +89,9 @@ export function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track:
   const isSelected = selectedId === track.id || selectedIds.includes(track.id);
 
   const clips = track.clips ?? [];
-  const activeClip = clips.find((c) => c.id === track.activeClipId);
-  const fileClip = activeClip ?? (clips.length === 1 ? clips[0] : undefined);
+  // Only a clip the lane actually shows can be the menu's edit target (a hidden take on a notes view is not).
+  const activeClip = selectedClip(track);
+  const fileClip = clips.find((c) => c.id === track.activeClipId) ?? (clips.length === 1 ? clips[0] : undefined);
   const hasFileSource = Boolean(fileClip || track.sampler);
   const makeAudioFile = async (channels: 1 | 2) => {
     if (makingFile || !hasFileSource) return;
@@ -618,7 +620,8 @@ export function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track:
             </Button>
           )}
           <TrackNotes track={track} className="ml-auto" />
-          <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
+          {/* Not modal: a tapped block's own quick menu (Delete / move to another track) must stay clickable while this is open. */}
+          <DropdownMenu modal={false} open={menuOpen} onOpenChange={setMenuOpen}>
             <DropdownMenuTrigger asChild>
               <Button size="icon" variant="ghost" className={`channel-menu-trigger ${isMobile ? "size-8" : "size-6"} shrink-0 touch-manipulation`} aria-label="Track menu" title={`${track.name} channel menu`} onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
                 <MoreVertical className="size-4" />
@@ -649,6 +652,18 @@ export function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track:
                   if (patch) updateTrack(track.id, patch);
                 }
               }}><Trash2 className="size-4" /> Delete selected part</DropdownMenuItem>
+              {!activeClip && (() => {
+                const part = selectedPartBounds(track, fileStudio.transport.bpm, fileStudio.transport.bars, fileStudio.transport.loop ? loopRegion(fileStudio.transport) : undefined);
+                if (!part) return null;
+                return ([-1, 1] as const).map((dir) => {
+                  const dest = neighbourPartTarget(allTracks, track.id, dir);
+                  if (!dest) return null;
+                  return <DropdownMenuItem key={dir} onClick={() => {
+                    const r = fileStudio.movePartToTrack(track.id, dest.id, part[0], part[1], part[0]);
+                    if (r) toast.success(`Part moved to ${dest.name}`, r.unmatched ? { description: `${r.unmatched} hits had no matching drum on ${dest.name} and were left out.` } : undefined);
+                  }}>{dir < 0 ? <ArrowUp className="size-4" /> : <ArrowDown className="size-4" />} Move part to {dest.name}</DropdownMenuItem>;
+                });
+              })()}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={beginRename}>Rename</DropdownMenuItem>
               <EffectMenuItems effects={availableEffects(installedPlugins)} onAdd={def => { addPlugin(track.id, def); toast.success(`${def.name} added to ${track.name}`); }} />

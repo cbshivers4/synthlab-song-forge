@@ -36,4 +36,18 @@ describe('selected-part workflow', () => {
   it('keeps selected drum parts inside loop-bounded edits', () => {
     expect(selectedPartBounds(track({ kind: 'drum', activeRegion: 24, cuts: [24], patternRegion: [16, 32] }), 120, 4)).toEqual([24, 32]);
   });
+  it('deletes the tapped note block, not a hidden recorded take on the same channel', () => {
+    const notes = [{ id: 'a', step: 0, length: 1, pitch: 60, velocity: 1 }, { id: 'b', step: 20, length: 1, pitch: 62, velocity: 1 }];
+    const t = track({ kind: 'instrument', steps: 64, notes, cuts: [16], activeRegion: 16, activeClipId: 'take', printedAudio: false, clips: [{ id: 'take', name: 'TAKE 1', duration: 2, peaks: [] }] });
+    expect(selectedClip(t)).toBeUndefined();
+    const patch = deleteSelectedPart(t, 120, 4);
+    expect(patch?.clips).toBeUndefined();
+    expect(patch?.notes?.map(n => n.id)).toEqual(['a']);
+  });
+  it('deletes a whole cut block even when it sits outside the loop markers', () => {
+    const notes = [{ id: 'a', step: 0, length: 1, pitch: 60, velocity: 1 }, { id: 'b', step: 40, length: 1, pitch: 62, velocity: 1 }];
+    const t = track({ kind: 'instrument', steps: 64, notes, cuts: [32], activeRegion: 32 });
+    const patch = deleteSelectedPart(t, 120, 4, [0, 16]);
+    expect(patch?.notes?.map(n => n.id)).toEqual(['a']);
+  });
 });

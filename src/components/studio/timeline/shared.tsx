@@ -3,11 +3,11 @@ import { memo, useEffect, useMemo, useRef, useState, useSyncExternalStore } from
 import { createPortal } from "react-dom";
 import { stepsPerBar, getBeatsPerBar } from "@/lib/synclab/timebase";
 import { snapCut } from "@/lib/synclab/note-cuts";
-import { Scissors, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Scissors, Trash2 } from "lucide-react";
 import synclabLogoAsset from "@/assets/synclab-logo-neon.jpg.asset.json";
 import { Button } from "@/components/ui/button";
 import type { AutomationParam, BusId, Track } from "@/lib/synclab/types";
-import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
+import { canvasPoint, canvasRect, sidewaysCanvas } from "@/lib/synclab/canvas-point";
 import { Lane } from "./clips";
 
 export const synclabLogo = synclabLogoAsset.url;
@@ -213,7 +213,8 @@ export function RazorIcon({ className }: { className?: string }) {
 }
 
 /** Selecting a clip/part pops up this small menu instead of a permanent delete button. */
-export function PartMenu({ label, onDelete }: { label: string; onDelete: () => void }) {
+export type PartMove = { label: string; dir: -1 | 1; onClick: () => void };
+export function PartMenu({ label, onDelete, moves = [] }: { label: string; onDelete: () => void; moves?: PartMove[] }) {
   const anchor = useRef<HTMLSpanElement>(null);
   const menu = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState<{ left: number; top: number } | null>(null);
@@ -221,8 +222,13 @@ export function PartMenu({ label, onDelete }: { label: string; onDelete: () => v
     const clip = anchor.current?.closest(".arrangement-clip");
     if (!clip) return;
     const open = () => {
-      const rect = clip.getBoundingClientRect();
-      setPosition({ left: Math.max(4, Math.min(window.innerWidth - 100, rect.left + 4)), top: Math.max(4, Math.min(window.innerHeight - 48, rect.top + 20)) });
+      // Layout-space rect: on the sideways phone canvas the menu (portaled into the rotated body)
+      // must be placed in canvas coordinates, or it lands in a corner far from the block.
+      const rect = canvasRect(clip);
+      const side = sidewaysCanvas();
+      const w = side ? window.innerHeight : window.innerWidth;
+      const h = side ? window.innerWidth : window.innerHeight;
+      setPosition({ left: Math.max(4, Math.min(w - 232, Math.max(0, rect.left) + 4)), top: Math.max(4, Math.min(h - 112, rect.top + 20)) });
     };
     open();
     clip.addEventListener("click", open);
@@ -245,6 +251,13 @@ export function PartMenu({ label, onDelete }: { label: string; onDelete: () => v
         className="gap-1.5 font-mono text-[10px] font-semibold hover:bg-destructive hover:text-destructive-foreground">
         <Trash2 className="size-3" /> Delete
       </Button>
+      {moves.map((move) => (
+        <Button key={move.dir} type="button" role="menuitem" variant="ghost" size="sm" onClick={() => { setPosition(null); move.onClick(); }}
+          className="max-w-56 justify-start gap-1.5 font-mono text-[10px] font-semibold" title={`Move this block to ${move.label}`}>
+          {move.dir < 0 ? <ArrowUp className="size-3 shrink-0" /> : <ArrowDown className="size-3 shrink-0" />}
+          <span className="truncate">To {move.label}</span>
+        </Button>
+      ))}
     </div>, document.body)}
   </>;
 }

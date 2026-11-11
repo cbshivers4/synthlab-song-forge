@@ -1,4 +1,4 @@
-import { VOICE_SHAPER_IN, voiceDriveAmount, voiceSaturationCurve } from "./voice-saturation";
+import { unisonCopyScale, voiceDriveAmount, voiceInputGain, voiceSaturationCurve } from "./voice-saturation";
 import { meterWindowSize } from "./meter-window";
 import { nativeInsertMode } from "./native-insert";
 import { lfoHz } from "./synth-timing";
@@ -373,7 +373,7 @@ export class SyncLabEngine {
     if (!curve) { curve = voiceSaturationCurve(Number(key)); this.voiceCurves.set(key, curve); }
     return curve;
   }
-  private voiceCurves = new Map<string, Float32Array>();
+  private voiceCurves = new Map<string, Float32Array<ArrayBuffer>>();
 
   private distortionCurve(amount: number) {
     const key = clamp(amount, 0, 1).toFixed(2);
@@ -2817,7 +2817,7 @@ export class SyncLabEngine {
 
     // Scaled into the curve's ±4 range so loud/resonant voices are never hard-clipped (see voice-saturation.ts).
     const shaperIn = ctx.createGain();
-    shaperIn.gain.value = VOICE_SHAPER_IN;
+    shaperIn.gain.value = voiceInputGain(patch);
     const shaper = ctx.createWaveShaper();
     shaper.curve = this.voiceCurve(patch);
     shaperIn.connect(shaper);
@@ -2958,7 +2958,7 @@ export class SyncLabEngine {
       for (let u = 0; u < voices; u++) {
         const spread = voices === 1 ? 0 : (u / (voices - 1) - 0.5) * 2;
         const g = ctx.createGain();
-        g.gain.value = (osc.on ? (osc.level * levelMod) / voices : 0) * velocity;
+        g.gain.value = (osc.on ? osc.level * levelMod * unisonCopyScale(voices) : 0) * velocity;
         const p = ctx.createStereoPanner();
         p.pan.value = clamp(osc.pan + spread * patch.unison.width, -1, 1);
         g.connect(p);
@@ -3188,6 +3188,7 @@ export class SyncLabEngine {
       }
       filter.type = next.filterType;
       glideParam(filter.Q, clamp(next.resonance * (1 + fixedMod("resonance")), 0, 30));
+      if (next.filterType !== old.filterType || next.resonance !== old.resonance) glideParam(shaperIn.gain, voiceInputGain(next));
       if (next.drive !== old.drive || next.fx.distortion !== old.fx.distortion || next.fx.saturation !== old.fx.saturation || next.clean !== old.clean)
         shaper.curve = this.voiceCurve(next);
       if (filter2 && next.filter2) {
@@ -3198,7 +3199,7 @@ export class SyncLabEngine {
       for (const control of oscControls) {
         const osc = next.oscillators[control.index];
         if (!osc) continue;
-        glideParam(control.gain.gain, osc.on ? osc.level * levelMod / voices * velocity : 0);
+        glideParam(control.gain.gain, osc.on ? osc.level * levelMod * unisonCopyScale(voices) * velocity : 0);
         glideParam(control.pan.pan, clamp(osc.pan + control.spread * next.unison.width, -1, 1));
         if (control.source instanceof OscillatorNode) {
           const source = control.source;

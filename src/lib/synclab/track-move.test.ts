@@ -107,3 +107,47 @@ describe('moveClipToNewIn', () => {
     expect(moveClipToNewIn(tracks, 'a', 'missing', 0, 0.125)).toEqual({ tracks, movedId: null });
   });
 });
+
+describe("moving one block to another track", () => {
+  const note = (id: string, step: number) => ({ id, step, length: 1, pitch: 60, velocity: 0.9 });
+  it("moves only the chosen note block to the track below and keeps the others", async () => {
+    const { movePartBetweenTracks } = await import("./track-move");
+    const tracks = [
+      track("a", { steps: 64, notes: [note("x", 0), note("y", 20)], cuts: [16] }),
+      track("b", { steps: 64, notes: [note("z", 40)] }),
+    ];
+    const r = movePartBetweenTracks(tracks, "a", "b", 16, 64, 16, 64)!;
+    expect(r.tracks[0]!.notes!.map((n) => n.step)).toEqual([0]);
+    expect(r.tracks[1]!.notes!.map((n) => n.step).sort((p, q) => p - q)).toEqual([20, 40]);
+    expect(r.tracks[1]!.activeRegion).toBe(16);
+  });
+  it("lands the block at the new bar when dragged sideways as well", async () => {
+    const { movePartBetweenTracks } = await import("./track-move");
+    const tracks = [track("a", { steps: 64, notes: [note("x", 0)], cuts: [16] }), track("b", { steps: 64, notes: [] })];
+    const r = movePartBetweenTracks(tracks, "a", "b", 0, 16, 32, 64)!;
+    expect(r.tracks[1]!.notes!.map((n) => n.step)).toEqual([32]);
+    expect(r.tracks[0]!.notes).toEqual([]);
+  });
+  it("moves a beat part onto the matching drums of another drum track", async () => {
+    const { movePartBetweenTracks } = await import("./track-move");
+    const pad = (id: string, kind: "kick" | "snare", steps: number[]) => ({ id, name: kind, kind, volume: 1, pan: 0, pitch: 0, decay: 1, muted: false, solo: false, steps });
+    const tracks = [
+      track("d1", { kind: "drum", steps: 16, pads: [pad("k1", "kick", [1, 0, 0, 0]), pad("s1", "snare", [0, 0, 1, 0])], cuts: [16] }),
+      track("d2", { kind: "drum", steps: 16, pads: [pad("s2", "snare", [0, 0, 0, 0]), pad("k2", "kick", [0, 0, 0, 0])] }),
+    ];
+    const r = movePartBetweenTracks(tracks, "d1", "d2", 16, 32, 16, 64)!;
+    const [src, dest] = r.tracks;
+    expect(src!.pads![0]!.steps[16]).toBe(0);
+    expect(src!.pads![0]!.steps[0]).toBe(1);
+    expect(dest!.pads!.find((p) => p.kind === "kick")!.steps[16]).toBe(1);
+    expect(dest!.pads!.find((p) => p.kind === "snare")!.steps[18]).toBe(1);
+    expect(r.unmatched).toBe(0);
+  });
+  it("never moves a note block onto a drum track", async () => {
+    const { movePartBetweenTracks, neighbourPartTarget } = await import("./track-move");
+    const tracks = [track("a", { notes: [note("x", 0)] }), track("d", { kind: "drum", pads: [] }), track("c", { notes: [] })];
+    expect(movePartBetweenTracks(tracks, "a", "d", 0, 16, 0, 64)).toBeNull();
+    expect(neighbourPartTarget(tracks, "a", 1)?.id).toBe("c");
+    expect(neighbourPartTarget(tracks, "a", -1)).toBeNull();
+  });
+});
