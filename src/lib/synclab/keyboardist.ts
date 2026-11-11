@@ -69,11 +69,13 @@ export function keysPatch(id: KeysSoundId): SynthPatch {
   const sum = on.reduce((t, o) => t + o.level, 0) || 1;
   const scale = (KEYS_VOICE_LEVEL[s.id] ?? 0.3) / sum;
   p.oscillators = p.oscillators.map((o) => ({ ...o, level: Math.round(o.level * scale * 1000) / 1000 }));
+  // Piano-engine sounds (grand, electric pianos): the piano layer takes the same per-key level.
+  if (p.piano) p.piano = { ...p.piano, level: KEYS_VOICE_LEVEL[s.id] ?? 0.3 };
   return p;
 }
 
 /** Bump when keysPatch's levels change, so Live Keys tracks made earlier pick up the new sound. */
-export const KEYS_PATCH_REV = 4;
+export const KEYS_PATCH_REV = 5;
 
 /** Summed oscillator level per key for each sound (bright/sustained sounds sit lower). */
 const KEYS_VOICE_LEVEL: Partial<Record<KeysSoundId, number>> = {

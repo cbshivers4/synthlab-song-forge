@@ -2,6 +2,7 @@ import { kitExtraPads } from "./vintage-drums";
 import { GRANULAR_PRESETS, defaultGranular } from "./granular";
 import { MODULAR_PRESETS } from "./modular";
 import { ACID_CLEAN_DEFS, POLY_CATEGORY_PREFIX, POLY_DEFS, POLY_EXISTING_CATEGORY, SPEC4_DEFS } from "./preset-library";
+import { ARP_DESIGNS, PIANO_DESIGNS, applyArpDesign, applyPiano } from "./sound-designs";
 import type { DrumKitId, DrumPad, OscillatorParams, SynthPatch, TrackKind } from "./types";
 
 export const uid = () => Math.random().toString(36).slice(2, 10);
@@ -1187,6 +1188,24 @@ SYNTH_PRESETS.push(
   ...MODULAR_PRESETS.map((m) => ({ name: m.name, category: "Modular Tech", mutate: (p: SynthPatch) => { p.modular = structuredClone(m.modular); p.voiceMode = "poly"; } })),
   ...GRANULAR_PRESETS.map((g) => ({ name: g.name, category: "Granular", mutate: (p: SynthPatch) => { p.granular = { ...defaultGranular(), ...g.set }; p.voiceMode = "poly"; p.arp = { ...p.arp, on: false }; } })),
 );
+
+// Real pianos (modelled piano engine) and a groove of its own for every arp/sequence preset.
+for (const [name, d] of Object.entries(PIANO_DESIGNS)) {
+  if (d.fresh) SYNTH_PRESETS.push({ name, category: d.poly ? POLY_CATEGORY_PREFIX + "Piano" : "Piano", mutate: (p: SynthPatch) => applyPiano(p, d) });
+}
+for (const def of SYNTH_PRESETS) {
+  const piano = PIANO_DESIGNS[def.name];
+  if (piano && !piano.fresh) {
+    const base = def.mutate;
+    def.mutate = (p: SynthPatch) => { base(p); applyPiano(p, piano); };
+    if (!piano.poly) def.category = "Piano"; // Poly Synth keeps them under Keyboard too, so that group stays full
+  }
+  const arp = ARP_DESIGNS[def.name];
+  if (arp) {
+    const base = def.mutate;
+    def.mutate = (p: SynthPatch) => { base(p); applyArpDesign(p, arp); };
+  }
+}
 
 export const applyPreset = (name: string): SynthPatch => {
   const base = defaultPatch(name);

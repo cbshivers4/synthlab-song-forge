@@ -47,7 +47,7 @@ export type PresetBrowserIndex = {
 };
 
 /** Old group names that are really sound types. */
-const TYPE_ALIASES: Record<string, string> = { Pluck: "Pluck", Plucks: "Pluck", Bells: "Bell", Stabs: "Stab", Acid: "Acid Bass", "Acid Bass": "Acid Bass", "Clean Bass": "Clean Bass" };
+const TYPE_ALIASES: Record<string, string> = { Piano: "Piano", Pluck: "Pluck", Plucks: "Pluck", Bells: "Bell", Stabs: "Stab", Acid: "Acid Bass", "Acid Bass": "Acid Bass", "Clean Bass": "Clean Bass" };
 
 /** First match wins: what a preset sounds like, read from its name. */
 const TYPE_RULES: [RegExp, string][] = [

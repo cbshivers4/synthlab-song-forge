@@ -244,23 +244,29 @@ export const KNOWLEDGE_BASE: Article[] = [
   // ───────────── Synths & keys ─────────────
   {
     id: "synths", category: "Synths & keys", title: "The five synths",
-    tags: "synth spec 4 acid bass poly modular granular presets preset browser categories sound type style favorites arpeggiator xy tabs",
+    tags: "synth spec 4 acid bass poly modular granular presets preset browser categories sound type style favorites arpeggiator arp rhythm note pattern sequence chord piano grand rhodes wurlitzer electric piano xy tabs",
     body: [
       "Spec 4, Acid Bass (TD-3), Poly Synth, Modular Tech Synth and Granular Synth each have their own look and sound. Controls are grouped into tabs.",
       "Click the preset window to open the preset browser. The left side lists sound types (Bass, Lead, Pad, Strings, Choir…) with how many sounds each has, then Styles (genres like Detroit Techno or Rave) and My Presets. Click a type to see its sounds on the right, and click a sound to load and hear it. The browser stays open so you can try the next one; press Done or click outside to close it.",
       "Type in Find to search every preset by name or type. The ◀ ▶ arrows step through presets in the browser's order.",
       "Every preset sits in one sound type. Spec 4 and Poly Synth use Arpeggio, Bass, Brass, FX, Keyboard, Lead, Organ, Pad, Percussive, Sequence, Strings, Synth, Template and Woodwind, plus Bell, Pluck, Stab and Vocal. Acid Bass splits into Acid Bass and Clean Bass (no distortion), with Electro and Techno styles. Granular Synth sorts its 33 grain sounds into Bell, Choir, Drone, FX, Keyboard, Pad, Pluck, Rhythmic and Texture. Modular Tech patches are sorted by sound too.",
       "Favorite preset keys: tap an empty key or Add current to store the preset you're on, tap a filled key to load it, and use Edit to replace or clear keys.",
+      "Pianos: the Piano sound type (and Keyboard on Poly Synth) has grand, bright, felt, upright, honky-tonk, tine electric (Rhodes-style), reed electric (Wurlitzer-style) and toy pianos. They come from the Piano engine on the Oscillators tab, which models struck strings or electric-piano tines and reeds: notes ring and fade like a real piano, and harder playing sounds brighter. You can switch it on in any Spec 4 or Poly Synth sound and mix it with the oscillators.",
+      "Arpeggiator tab: besides direction, octaves, gate and swing you pick a RATE (1/4 to 1/64, with dotted and triplet speeds), a RHYTHM (where notes, accents, holds and rests fall) and a NOTE PATTERN (a riff laid over the keys you hold, so one key can play a whole line). Direction 'chord' plays all held keys together on each hit. Every arpeggio and sequence preset has its own speed, rhythm and riff.",
     ],
     can: [
       "Play from a MIDI keyboard, the on-screen keys or your computer keys.",
       "Use the arpeggiator and X-Y pads; every move matches the knobs and saved presets.",
+      "Hold a chord on an arp preset and it plays the chord one note at a time, in the song, in exports and when you play live.",
+      "Play the modelled pianos softly for a mellow tone or hard for a bright, punchy one.",
       "Save your own presets.",
     ],
     cant: [
       "Favorite keys are saved on each device, so your phone and computer keep separate lists.",
       "Changing a sound affects the next notes you play, not a note that is already held.",
-      "Brass, strings, woodwind and organ presets are synth imitations, not recorded instruments.",
+      "Brass, strings, woodwind and organ presets are synth imitations, not recorded instruments. The pianos are modelled (built from maths), not recorded samples, so they are close to a real piano but not identical, and the built-in synths have no sustain pedal yet.",
+      "Since November 11, songs that already use an arp sound different: held chords are now arpeggiated note by note during playback (before, the whole chord repeated). Arp presets you loaded before then keep their old settings until you load the preset again.",
+      "The first time you play a piano note in a new range it can take a moment longer while that range is prepared; the common range is prepared in the background when a piano sound is loaded.",
       "Presets in the same sound type (for example five brass sounds) are variations, so they can sound close to each other. The Template presets are plain starting sounds and are meant to sound basic.",
       "Since November 11 the synths' built-in warmth is much lighter so each preset keeps its own character. Synth parts sound a little quieter and less squashed than before; turn up DRIVE or DIST for grit.",
       "Clean Bass presets only stay clean until you turn up DRIVE or DIST yourself.",

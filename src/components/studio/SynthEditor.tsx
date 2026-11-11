@@ -29,6 +29,8 @@ import { AcidSequencer } from "./AcidSequencer";
 import { PresetNavigator } from "./PresetNavigator";
 import { HardwareBypass } from "./HardwareBypass";
 import { FavoritePresetKeys } from "./FavoritePresetKeys";
+import { ARP_NOTE_PATTERNS, ARP_RHYTHMS } from "@/lib/synclab/arp-pattern";
+import { PIANO_MODELS, type PianoModel } from "@/lib/synclab/piano-voice";
 
 const WAVES: OscWave[] = ["sine", "triangle", "sawtooth", "square", "pulse", "noise", "wavetable"];
 
@@ -300,6 +302,42 @@ function SynthTrackEditor({ track }: { track: Track }) {
           </div>
         </TabsContent>
         <TabsContent value="oscillators" className="pt-3">
+        {/* Piano engine: modelled piano layer that plays through the same filter/envelope/effects */}
+        <div className="synth-osc-module synth-card mb-3 rounded-[3px] border border-border bg-surface/80" aria-label="Piano engine">
+          <div className="flex flex-wrap items-center gap-2 synth-card-head border-b border-border px-2 py-1">
+            <span className={`size-1.5 rounded-full ${patch.piano ? "bg-primary" : "bg-muted-foreground/40"}`} />
+            <span className="font-mono text-[10px] font-semibold uppercase tracking-widest">Piano engine</span>
+            <div className="ml-auto flex flex-wrap gap-0.5">
+              {PIANO_MODELS.map((m) => (
+                <button
+                  key={m.id}
+                  title={m.label}
+                  onClick={() => set({ piano: { model: m.id as PianoModel, level: patch.piano?.level ?? 1 } })}
+                  className={`synth-head-key rounded-[2px] border px-1.5 py-0.5 font-mono text-[8px] uppercase ${patch.piano?.model === m.id ? "border-primary bg-primary/20 text-primary" : "border-border text-muted-foreground hover:text-foreground"}`}
+                >
+                  {m.short}
+                </button>
+              ))}
+            </div>
+            <Switch
+              checked={!!patch.piano}
+              onCheckedChange={(v) => set({ piano: v ? { model: patch.piano?.model ?? "grand", level: 1 } : undefined })}
+              aria-label="Piano engine on"
+            />
+          </div>
+          <div className="flex flex-wrap items-end gap-3 p-2">
+            {patch.piano ? (
+              <>
+                <Knob label="LEVEL" min={0} max={1.5} value={patch.piano.level} onChange={(v) => set({ piano: { ...patch.piano!, level: v } })} />
+                <p className="max-w-sm font-mono text-[10px] text-muted-foreground">
+                  {PIANO_MODELS.find((m) => m.id === patch.piano?.model)?.label}: modelled strings or tines, brighter the harder you play. Mix it with the oscillators or play it alone.
+                </p>
+              </>
+            ) : (
+              <p className="font-mono text-[10px] text-muted-foreground">Off. Pick a piano above to add a modelled grand, upright or electric piano to this sound.</p>
+            )}
+          </div>
+        </div>
         {/* Oscillators + noise */}
         <div className="grid min-w-0 gap-3 lg:grid-cols-2">
           {patch.oscillators.map((osc, i) => (
@@ -671,9 +709,9 @@ function SynthTrackEditor({ track }: { track: Track }) {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {["up", "down", "updown", "random", "alternate"].map((d) => (
+                {["up", "down", "updown", "random", "alternate", "chord"].map((d) => (
                   <SelectItem key={d} value={d}>
-                    {d}
+                    {d === "chord" ? "chord (all keys)" : d}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -687,14 +725,19 @@ function SynthTrackEditor({ track }: { track: Track }) {
               onChange={(v) => set({ arp: { ...patch.arp, octaves: Math.round(v) } })}
             />
             <Knob label="GATE" value={patch.arp.gate} onChange={(v) => set({ arp: { ...patch.arp, gate: v } })} />
-            <Knob
-              label="RATE"
-              min={0.5}
-              max={4}
-              step={0.5}
-              value={patch.arp.rate}
-              onChange={(v) => set({ arp: { ...patch.arp, rate: v } })}
-            />
+            <label className="flex flex-col gap-1">
+              <span className="label-xs">RATE</span>
+              <Select
+                value={ARP_RATES.find((r) => Math.abs(r.rate - patch.arp.rate) < 0.01)?.label ?? "custom"}
+                onValueChange={(v) => { const r = ARP_RATES.find((x) => x.label === v); if (r) set({ arp: { ...patch.arp, rate: r.rate } }); }}
+              >
+                <SelectTrigger className="w-28" aria-label="Arp rate"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {ARP_RATES.map((r) => <SelectItem key={r.label} value={r.label}>{r.label}</SelectItem>)}
+                  {!ARP_RATES.some((r) => Math.abs(r.rate - patch.arp.rate) < 0.01) && <SelectItem value="custom">{patch.arp.rate.toFixed(2)}× 1/16</SelectItem>}
+                </SelectContent>
+              </Select>
+            </label>
             <Knob
               label="SWING"
               value={patch.arp.swing ?? 0}
@@ -708,6 +751,35 @@ function SynthTrackEditor({ track }: { track: Track }) {
               />
             </label>
           </div>
+          <div className="panel mt-3 flex flex-wrap items-end gap-4 p-3">
+            <label className="flex flex-col gap-1">
+              <span className="label-xs">RHYTHM</span>
+              <Select
+                value={ARP_RHYTHMS.find((r) => r.steps === (patch.arp.rhythm ?? ""))?.id ?? "custom"}
+                onValueChange={(v) => { const r = ARP_RHYTHMS.find((x) => x.id === v); if (r) set({ arp: { ...patch.arp, rhythm: r.steps || undefined } }); }}
+              >
+                <SelectTrigger className="w-40" aria-label="Arp rhythm"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {ARP_RHYTHMS.map((r) => <SelectItem key={r.id} value={r.id}>{r.label}</SelectItem>)}
+                  {!ARP_RHYTHMS.some((r) => r.steps === (patch.arp.rhythm ?? "")) && <SelectItem value="custom">Custom</SelectItem>}
+                </SelectContent>
+              </Select>
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="label-xs">NOTE PATTERN</span>
+              <Select
+                value={ARP_NOTE_PATTERNS.find((n) => n.notes.join(",") === (patch.arp.notes ?? []).join(","))?.id ?? "custom"}
+                onValueChange={(v) => { const n = ARP_NOTE_PATTERNS.find((x) => x.id === v); if (n) set({ arp: { ...patch.arp, notes: n.notes.length ? [...n.notes] : undefined } }); }}
+              >
+                <SelectTrigger className="w-44" aria-label="Arp note pattern"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {ARP_NOTE_PATTERNS.map((n) => <SelectItem key={n.id} value={n.id}>{n.label}</SelectItem>)}
+                  {!ARP_NOTE_PATTERNS.some((n) => n.notes.join(",") === (patch.arp.notes ?? []).join(",")) && <SelectItem value="custom">Custom</SelectItem>}
+                </SelectContent>
+              </Select>
+            </label>
+            <ArpRhythmStrip steps={patch.arp.rhythm ?? ""} notes={patch.arp.notes ?? []} />
+          </div>
         </TabsContent>
 
         <TabsContent value="chords" className="pt-3">
@@ -716,6 +788,41 @@ function SynthTrackEditor({ track }: { track: Track }) {
       </Tabs>
       )}
       {showKeyboard && <div className="min-w-0 border-t border-border pt-3" aria-label="Synth keyboard"><Keyboard track={track} skinKey="synth-keyboard" /></div>}
+    </div>
+  );
+}
+
+const ARP_RATES = [
+  { label: "1/4", rate: 0.25 },
+  { label: "1/8 dotted", rate: 1 / 3 },
+  { label: "1/8", rate: 0.5 },
+  { label: "1/16 dotted", rate: 0.667 },
+  { label: "1/8 triplet", rate: 0.75 },
+  { label: "1/16", rate: 1 },
+  { label: "1/16 triplet", rate: 1.5 },
+  { label: "1/32", rate: 2 },
+  { label: "1/32 triplet", rate: 3 },
+  { label: "1/64", rate: 4 },
+];
+
+/** The arp's rhythm as lit steps (bright = accent, dim = held), with the note-pattern offsets below. */
+function ArpRhythmStrip({ steps, notes }: { steps: string; notes: number[] }) {
+  const cells = (steps || "x".repeat(16)).split("");
+  return (
+    <div className="min-w-0" aria-label="Arp rhythm steps">
+      <div className="flex gap-0.5">
+        {cells.map((c, i) => (
+          <span
+            key={i}
+            title={c === "X" ? "Accent" : c === "x" ? "Note" : c === "-" ? "Hold" : "Rest"}
+            data-step={c === "X" ? "accent" : c === "x" ? "note" : c === "-" ? "hold" : "rest"}
+            className="arp-step h-4 w-3"
+          />
+        ))}
+      </div>
+      <p className="mt-1 font-mono text-[10px] text-muted-foreground">
+        {notes.length ? `Notes: ${notes.map((n) => (n > 0 ? `+${n}` : `${n}`)).join(" ")}` : "Notes: the keys you hold"}
+      </p>
     </div>
   );
 }

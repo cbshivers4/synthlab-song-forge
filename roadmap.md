@@ -268,3 +268,8 @@
 - [x] Measured every effect and preset on the same beat and chords; Tape Echo/Stereo Delay, Pulse Grid, Harmonic Body, Analog Filter, Mod Engine and Stereo Imager made distinct
 - [ ] Bit Crusher's character presets barely change the sound — strengthen next
 - [ ] Owner listens on the published app
+
+## Nov 11 — Distinct arps/sequences and real pianos (Christopher)
+- [x] Every arp/sequence preset gets its own rate, rhythm and riff (shared live/song/export arp)
+- [x] Song playback arpeggiates held chords; chord mode for stab sequences
+- [x] Modelled piano engine (grand, bright, felt, upright, honky-tonk, tine EP, reed EP, toy) + Piano presets; Live Keys pianos use it

@@ -3149,7 +3149,8 @@ export class SyncLabEngine {
       pmSum.connect(src.detune);
       src.addEventListener("ended", () => { try { pmSum.disconnect(src.detune); } catch { /* already gone */ } });
       const g = ctx.createGain();
-      g.gain.value = clamp(pz.level, 0, 1.5) * levelMod * velocity;
+      // ×2: piano level 1 is as loud as oscillators summing to level 1
+      g.gain.value = clamp(pz.level, 0, 1.5) * 2 * levelMod * velocity;
       // a miked piano: low keys lean left, high keys right
       const pan = ctx.createStereoPanner();
       pan.pan.value = clamp(((midi - 64) / 64) * 0.35, -0.4, 0.4);

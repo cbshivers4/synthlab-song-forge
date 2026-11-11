@@ -5053,3 +5053,9 @@ html.phone-console-active [role="option"] { min-height: 44px; font-size: 15px; }
 }
 .scope-expand-btn:hover { color: var(--foreground); }
 .phone-sideways-default .scope-expand-btn, [data-touch-console] .scope-expand-btn { width: 28px; height: 28px; }
+
+/* Arp rhythm strip: lit steps survive every synth skin's span overrides */
+.arp-step.arp-step.arp-step { border: 1px solid var(--border) !important; border-radius: 2px; background: transparent !important; }
+.arp-step.arp-step.arp-step[data-step="accent"] { border-color: var(--primary) !important; background: var(--primary) !important; }
+.arp-step.arp-step.arp-step[data-step="note"] { border-color: color-mix(in oklab, var(--primary) 70%, transparent) !important; background: color-mix(in oklab, var(--primary) 45%, transparent) !important; }
+.arp-step.arp-step.arp-step[data-step="hold"] { border-color: color-mix(in oklab, var(--primary) 40%, transparent) !important; background: color-mix(in oklab, var(--primary) 18%, transparent) !important; }

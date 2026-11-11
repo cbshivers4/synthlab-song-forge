@@ -154,9 +154,9 @@ export interface SynthPatch {
     swing?: number;
     sync?: boolean;
     /** step rhythm: X accent, x note, - hold, . rest (see arp-pattern.ts); empty = every step */
-    rhythm?: string;
+    rhythm?: string | undefined;
     /** semitone offsets laid over the walk through the held keys */
-    notes?: number[];
+    notes?: number[] | undefined;
   };
 }
 
