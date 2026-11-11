@@ -5,6 +5,7 @@
  */
 import type { SynthPatch } from "./types";
 import { arpStepSeconds } from "./synth-timing";
+import { arpHit, arpSequence as walk } from "./arp-pattern";
 
 export interface ArpEngine {
   ctx: AudioContext | null;
@@ -27,19 +28,8 @@ const pools = new Map<string, Pool>();
 let orderSeq = 0;
 
 /** Ordered list of pitches the arp walks through for the currently held notes. */
-export function arpSequence(pitches: number[], arp: SynthPatch["arp"], playedOrder?: number[]): number[] {
-  if (pitches.length === 0) return [];
-  void playedOrder;
-  const base = [...pitches].sort((a, b) => a - b);
-  const oct = Math.max(1, Math.round(arp.octaves || 1));
-  const up: number[] = [];
-  for (let o = 0; o < oct; o++) for (const p of base) up.push(p + o * 12);
-  switch (arp.direction) {
-    case "down": return [...up].reverse();
-    case "updown": return up.length > 2 ? [...up, ...up.slice(1, -1).reverse()] : up;
-    case "alternate": return up.flatMap((p, i) => (i === 0 ? [p] : [p, up[0] as number]));
-    default: return up;
-  }
+export function arpSequence(pitches: number[], arp: SynthPatch["arp"], _playedOrder?: number[]): number[] {
+  return walk(pitches, arp);
 }
 
 function tick(trackId: string) {
@@ -59,15 +49,14 @@ function tick(trackId: string) {
   while (pool.next < now + 0.1) {
     const live = [...pool.held.entries()].filter(([, h]) => h.until > pool.next);
     if (live.length === 0) break;
-    const played = [...live].sort((a, b) => a[1].order - b[1].order).map(([p]) => p);
-    const seq = arpSequence(live.map(([p]) => p), arp, played);
-    const pitch = arp.direction === "random"
-      ? (seq[Math.floor(Math.random() * seq.length)] as number)
-      : (seq[pool.index % seq.length] as number);
-    const vel = Math.max(...live.map(([, h]) => h.vel));
-    const swing = Math.min(1, Math.max(0, arp.swing ?? 0));
-    const at = pool.next + (pool.seq % 2 === 1 ? swing * step * 0.5 : 0);
-    pool.engine.playNote(trackId, pool.patch, pitch, Math.max(0.02, step * Math.max(0.05, arp.gate || 0.5)), vel, at);
+    const hit = arpHit(arp, live.map(([p]) => p), pool.index);
+    if (hit) {
+      const vel = Math.max(...live.map(([, h]) => h.vel)) * hit.accent;
+      const swing = Math.min(1, Math.max(0, arp.swing ?? 0));
+      const at = pool.next + (pool.seq % 2 === 1 ? swing * step * 0.5 : 0);
+      const gate = Math.max(0.05, arp.gate || 0.5);
+      for (const pitch of hit.pitches) pool.engine.playNote(trackId, pool.patch, pitch, Math.max(0.02, step * (hit.length - 1 + gate)), vel, at);
+    }
     pool.index++;
     pool.seq++;
     pool.next += step;

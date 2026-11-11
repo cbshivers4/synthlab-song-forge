@@ -9,6 +9,7 @@ import { phasedHarmonics } from "./oscillator-phase";
 import { envelopePoints } from "./live-envelope";
 import { renderVintageDrum } from "./vintage-drums";
 import { playModularVoice } from "./modular";
+import { pianoBuffer, warmPiano } from "./piano-voice";
 import { GRANULAR_ROOT, builtInSource, playGranularVoice, warmBuiltInSource, type GranularPatch, type GranularVoice } from "./granular";
 import { MODULAR_SCOPE_TYPES, attachModularScope, modularScopeId } from './modular-scopes';
 import { playbackPreferences } from "./preferences";
@@ -2744,6 +2745,7 @@ export class SyncLabEngine {
     const ctx = this.ctx;
     if (!ctx) return;
     for (const t of tracks) if (t.patch?.granular) { this.granularLive.set(t.id, t.patch.granular); warmBuiltInSource(ctx, t.patch.granular.source); }
+    for (const t of tracks) if (t.patch?.piano) warmPiano(t.patch.piano.model);
     const now = ctx.currentTime;
     const byId = new Map(tracks.map(track => [track.id, track]));
     for (const [id, voices] of this.liveVoices) {
@@ -3133,6 +3135,31 @@ export class SyncLabEngine {
         depth.connect(target.frequency);
       });
     });
+
+    /* ---- piano engine layer: modelled struck strings / tine / reed, through the same filter and envelope ---- */
+    const pz = patch.piano;
+    if (pz && pz.level > 0) {
+      const { buffer, root } = pianoBuffer(ctx, pz.model, midi, velocity);
+      const src = ctx.createBufferSource();
+      src.buffer = buffer;
+      const rate = 2 ** ((midi - root) / 12);
+      src.playbackRate.value = rate;
+      src.detune.setValueAtTime(fixedMod("pitch") * 1200 + drift * 4, t0);
+      const pmSum = this.pitchMod(trackId).sum;
+      pmSum.connect(src.detune);
+      src.addEventListener("ended", () => { try { pmSum.disconnect(src.detune); } catch { /* already gone */ } });
+      const g = ctx.createGain();
+      g.gain.value = clamp(pz.level, 0, 1.5) * levelMod * velocity;
+      // a miked piano: low keys lean left, high keys right
+      const pan = ctx.createStereoPanner();
+      pan.pan.value = clamp(((midi - 64) / 64) * 0.35, -0.4, 0.4);
+      src.connect(g);
+      g.connect(pan);
+      pan.connect(filterIn);
+      src.start(t0);
+      src.stop(t0 + Math.min(life, buffer.duration / rate + 0.01));
+      nodes.push(src);
+    }
 
     let noiseGain: GainNode | undefined;
     if (!light || patch.noise > 0 || !nodes.length) {

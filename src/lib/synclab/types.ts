@@ -132,6 +132,8 @@ export interface SynthPatch {
   modular?: import("./modular").ModularPatch | undefined;
   /** Granular Synth patch; when set the voice is a grain cloud read from a source sound. */
   granular?: import("./granular").GranularPatch | undefined;
+  /** Piano engine layer (struck strings / tine / reed); plays through the voice's filter, envelope and effects. */
+  piano?: import("./piano-voice").PianoEngine | undefined;
   fx: {
     distortion: number;
     saturation?: number;
@@ -146,11 +148,15 @@ export interface SynthPatch {
   arp: {
     on: boolean;
     rate: number; // steps per note
-    direction: "up" | "down" | "updown" | "random" | "alternate";
+    direction: "up" | "down" | "updown" | "random" | "alternate" | "chord";
     octaves: number;
     gate: number;
     swing?: number;
     sync?: boolean;
+    /** step rhythm: X accent, x note, - hold, . rest (see arp-pattern.ts); empty = every step */
+    rhythm?: string;
+    /** semitone offsets laid over the walk through the held keys */
+    notes?: number[];
   };
 }
 

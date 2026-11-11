@@ -1,5 +1,6 @@
 import { chainedPads } from "./drum-chain";
-import { arpHitOffset, arpStepSeconds } from "./synth-timing";
+import { arpStepSeconds } from "./synth-timing";
+import { arpHit } from "./arp-pattern";
 import { arpLiveNote } from "./live-arp";
 import type { getEngine } from "./audio-engine";
 import { clipRate, laneValueAt, type SynthPatch, type Track, type Transport } from "./types";
@@ -162,36 +163,59 @@ export function scheduleStep(engine: Engine, list: Track[], tp: Transport, n: nu
       if (bend != null) engine.setPitchBend(t.id, bend * 200, swung);
       const mod = laneValueAt(t.modLane, s);
       if (mod != null) engine.setModWheel(t.id, mod, swung);
+      if (t.patch.arp.on) {
+        scheduleArpStep(engine, t, n, s, len, when, swung, stepDur, live);
+        continue;
+      }
       for (const note of t.notes) {
         const step0 = Math.floor(note.step);
         // notes played live into this take were already heard — don't double them
         if (live.skipNote(note.id)) continue;
         if (step0 % len !== s || (note.recordedEnd != null && (n < step0 || n >= note.recordedEnd))) continue;
-        const dur = (note.length * stepDur) / (t.patch.arp.on ? 2 : 1);
-        const octShift = (t.octave ?? 0) * 12;
-        if (t.patch.arp.on) {
-          const arp = t.patch.arp;
-          const oct = Math.max(1, Math.round(arp.octaves));
-          const rate = Math.max(0.25, arp.rate || 1);
-          const arpStep = arpStepSeconds(arp, stepDur);
-          const hits = Math.max(1, Math.round((note.length * stepDur) / arpStep));
-          const up = Array.from({ length: oct }, (_, k) => k);
-          const seq = arp.direction === "down" ? [...up].reverse()
-            : arp.direction === "updown" ? (oct > 1 ? [...up, ...up.slice(1, -1).reverse()] : up)
-            : arp.direction === "alternate" ? up.flatMap((k) => (k === 0 ? [0] : [k, 0]))
-            : up;
-          for (let i = 0; i < hits; i++) {
-            const k = arp.direction === "random" ? Math.floor(Math.random() * oct) : seq[i % seq.length] ?? 0;
-            engine.playNote(t.id, t.patch, note.pitch + octShift + k * 12, arpStep * arp.gate, note.velocity, swung + arpHitOffset(i, arpStep, arp.swing));
-          }
-        } else {
-          engine.playNote(t.id, t.patch, note.pitch + octShift, dur, note.velocity, swung + (note.step - step0) * stepDur);
-        }
+        engine.playNote(t.id, t.patch, note.pitch + (t.octave ?? 0) * 12, note.length * stepDur, note.velocity, swung + (note.step - step0) * stepDur);
       }
     }
   }
   if (tp.metronome && (tp.recording || playbackPreferences().clickWhilePlaying) && n % STEPS_PER_BEAT === 0) {
     const downbeat = n % stepsPerBar() === 0;
     engine.playClick(downbeat, when);
+  }
+}
+
+/**
+ * Song-playback arpeggiator for one step: every arp tick inside this step walks the notes held at
+ * that moment (a chord is arpeggiated, not repeated), through the shared rhythm/note pattern.
+ * Ticks count from the newest held note's start, so a pattern restarts with each new chord.
+ */
+function scheduleArpStep(engine: Engine, t: Track, n: number, s: number, len: number, when: number, swung: number, stepDur: number, live: ScheduleLive) {
+  const patch = t.patch as SynthPatch;
+  const arp = patch.arp;
+  const arpStep = arpStepSeconds(arp, stepDur);
+  const perStep = stepDur / arpStep; // arp ticks per song step
+  const octShift = (t.octave ?? 0) * 12;
+  const first = Math.ceil(n * perStep - 1e-6);
+  const last = Math.ceil((n + 1) * perStep - 1e-6);
+  for (let k = first; k < last; k++) {
+    const pos = k / perStep; // absolute song step of this tick
+    const loopPos = s + (pos - n);
+    const held: { pitch: number; vel: number; start: number }[] = [];
+    for (const note of t.notes ?? []) {
+      const step0 = Math.floor(note.step);
+      if (note.recordedEnd != null && (n < step0 || n >= note.recordedEnd)) continue;
+      const since = (((loopPos - (step0 % len)) % len) + len) % len;
+      if (since >= note.length - 1e-6) continue;
+      if (live.skipNote(note.id)) continue;
+      held.push({ pitch: note.pitch, vel: note.velocity, start: pos - since });
+    }
+    if (held.length === 0) continue;
+    const chordStart = Math.max(...held.map((h) => h.start));
+    const tick = Math.round((pos - chordStart) * perStep);
+    const hit = arpHit(arp, held.map((h) => h.pitch), tick);
+    if (!hit) continue;
+    const base = pos === n ? swung : when + (pos - n) * stepDur;
+    const swingPush = tick % 2 === 1 ? Math.min(1, Math.max(0, arp.swing ?? 0)) * arpStep * 0.5 : 0;
+    const vel = Math.max(...held.map((h) => h.vel)) * hit.accent;
+    const dur = arpStep * (hit.length - 1 + Math.max(0.05, arp.gate || 0.5));
+    for (const pitch of hit.pitches) engine.playNote(t.id, patch, pitch + octShift, dur, vel, base + swingPush);
   }
 }
