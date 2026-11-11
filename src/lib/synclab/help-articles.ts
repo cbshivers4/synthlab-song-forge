@@ -276,6 +276,7 @@ export const KNOWLEDGE_BASE: Article[] = [
     can: [
       "Make clean (undistorted) basslines and edit every step.",
       "Send the pattern to the timeline.",
+      "Generate, preview and add basslines while your song is playing or recording — nothing stops. Pressing Generate again during a preview swaps in the new line in time, without jumping back to the start.",
     ],
     cant: ["It writes bass patterns only; it doesn't make drums or chords."],
   },
@@ -287,9 +288,12 @@ export const KNOWLEDGE_BASE: Article[] = [
     ],
     can: [
       "Play along with your song, change style while it plays, and print an editable part.",
+      "Print while the song plays or records: the printed part takes over on the next beat with no gap. If the part you print doesn't cover where the song is, the player keeps playing until you stop it.",
+      "Press Play with song while previewing alone and the player locks onto the song's beat.",
       "Keep playing while you switch panels.",
     ],
     cant: [
+      "Preview alone pauses your song (and is blocked while recording), because it plays the keys on their own.",
       "It plays the chords you set; it doesn't listen to your audio to work out the chords.",
       "Parts printed before an update keep their older sound — print again to hear the new one.",
     ],
@@ -354,9 +358,14 @@ export const KNOWLEDGE_BASE: Article[] = [
     ],
     can: [
       "Audition single drum pieces by tapping them.",
+      "Print while the song plays or records: the printed part takes over on the next beat with no gap. If the part you print doesn't cover where the song is, the drummer keeps playing until you stop it.",
+      "Press Play with song while previewing alone and the drummer locks onto the song's beat.",
       "Keep playing while you switch panels.",
     ],
-    cant: ["It follows your song's tempo; it doesn't listen to your audio to follow a live player."],
+    cant: [
+      "Preview alone pauses your song (and is blocked while recording), because it plays the drummer on their own.",
+      "It follows your song's tempo; it doesn't listen to your audio to follow a live player.",
+    ],
   },
   {
     id: "hum-to-beat", category: "Drums & beats", title: "Hum to Beat",
@@ -453,8 +462,11 @@ export const KNOWLEDGE_BASE: Article[] = [
     can: [
       "Stack effects on any track, bus or the master, with live scopes and meters.",
       "Bypass any instrument or effect without losing its settings.",
+      "Turn knobs while the song plays or records. The sound changes smoothly, and reverb tails keep ringing when you change Decay.",
     ],
     cant: [
+      "Flipping a switch that changes how an effect is built — a mode, type or cabinet selector, phaser stages, or any Vocoder control — rebuilds that effect with a very short crossfade.",
+      "A very slow phone or computer can still fall behind if it's busy for longer than about a third of a second.",
       "These are SYNCLAB's own effects. Your own VST/AU plugins can't run in the browser — see “Desktop app and plugins”.",
     ],
   },

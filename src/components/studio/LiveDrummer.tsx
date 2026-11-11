@@ -1,5 +1,5 @@
 import { useIsLandscapePhone } from "@/hooks/use-mobile";
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 import { toast } from "sonner";
 import { Drum, Play, Square, Sparkles, Zap, PauseCircle, Disc, Music2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -142,6 +142,16 @@ function DrummerDesk({ track, drummers, snap, group, setGroup, update, updateTra
   const [bars, setBars] = useState(8);
   const [startAt, setStartAt] = useState<"start" | "playhead">("start");
   const playing = snap.running && player.trackId === track.id;
+  // Printing while the song plays: the live player keeps going until the printed track is in the
+  // song, then hands over in that same update, so the beat never drops out or doubles.
+  const { tracks: allTracks } = useStudio();
+  const handOff = useRef<string | null>(null);
+  useLayoutEffect(() => {
+    const id = handOff.current;
+    if (!id || !allTracks.some((t) => t.id === id)) return;
+    handOff.current = null;
+    player.finish();
+  }, [allTracks, player]);
 
   /** Just the drummer: the song pauses so you hear them on their own. */
   const previewAlone = () => {
@@ -156,6 +166,7 @@ function DrummerDesk({ track, drummers, snap, group, setGroup, update, updateTra
     chooseDrummer(track.id);
     if (!transport.playing) togglePlay();
     if (!player.snapshot().running) player.start("song");
+    else player.followSong();
   };
 
   const pickGenre = (id: string) => {
@@ -172,16 +183,23 @@ function DrummerDesk({ track, drummers, snap, group, setGroup, update, updateTra
     const startBar = startAt === "playhead" ? Math.floor(getPlayStep() / spb) : 0;
     const list = source === "performance" ? perf : grooveBars(settings, startBar, bars, spb);
     if (!list.length) { toast("Nothing captured yet", { description: "Play the drummer along with your song first, then print the performance." }); return; }
-    player.stop();
     const pads = (track.pads ?? []).map((p) => ({ ...p, id: crypto.randomUUID() }));
     const { pads: written, steps } = writeHitsToPads(pads, list, spb);
     const first = list[0]!.bar, last = list[list.length - 1]!.bar;
     const id = addTrack("drum", `DRUMS · ${genre.label}`.slice(0, 40), undefined, { keepPanel: true });
+    // Hand over only if the printed part carries on from here; otherwise the live player keeps the
+    // beat going (stop it yourself when you only want the printed part).
+    const nowBar = Math.floor(getPlayStep() / spb);
+    const loopEndBar = transport.loop && (transport.loopEnd ?? 0) > 0 ? Math.ceil((transport.loopEnd ?? 0) / spb) : Infinity;
+    const nextBar = nowBar + 1 >= loopEndBar ? Math.floor((transport.loopStart ?? 0) / spb) : nowBar + 1;
+    const covers = (b: number) => b >= first && b <= last;
+    const handsOver = !transport.playing || (covers(nowBar) && covers(nextBar));
+    if (handsOver) handOff.current = id;
     updateTrack(id, { pads: written, steps, patternRegion: [first * spb, (last + 1) * spb], ...(track.plugins?.length ? { plugins: structuredClone(track.plugins) } : {}) });
     if (last + 1 > (transport.bars ?? 0)) setTransport({ bars: last + 1 });
     if (source === "performance") player.clearPerformance();
     const count = last - first + 1;
-    toast.success(source === "performance" ? "Performance printed" : "Groove printed", { description: `${count} bar${count === 1 ? "" : "s"} of ${genre.label} on a new drum track from bar ${first + 1} — edit it in the drum roll. The live drummer stopped so you don't hear it twice.` });
+    toast.success(source === "performance" ? "Performance printed" : "Groove printed", { description: `${count} bar${count === 1 ? "" : "s"} of ${genre.label} on a new drum track from bar ${first + 1} — edit it in the drum roll. ${handsOver ? "The live drummer handed over to it so you don't hear it twice." : "The live drummer keeps playing so your beat doesn't stop — press Stop on it when you only want the printed part."}` });
   };
 
   const timeKit = (

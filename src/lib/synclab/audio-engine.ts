@@ -854,6 +854,33 @@ export class SyncLabEngine {
       live(pl, "mix", (v, t) => { const x = clamp(v, 0, 1); glide(wet.gain, x, t); glide(dry.gain, 1 - x, t); });
     };
     for (const k of [...this.liveParams.keys()]) if (k.startsWith(`${targetId}:`)) this.liveParams.delete(k);
+    /** Heavy live changes (new reverb impulse) run at most every `ms` while a knob is dragged, plus once at the end. */
+    const throttled = (fn: (v: number) => void, ms = 140) => {
+      let timer: ReturnType<typeof setTimeout> | null = null;
+      let pending: number | null = null;
+      const run = (v: number) => {
+        if (timer) { pending = v; return; }
+        fn(v);
+        timer = setTimeout(() => { timer = null; if (pending !== null) { const next = pending; pending = null; run(next); } }, ms);
+      };
+      return run;
+    };
+    /** Swap a convolver's impulse while playing: the old one stops taking input but rings out its tail. */
+    const swapConvolver = (from: AudioNode, to: AudioNode, first: ConvolverNode, make: (v: number) => AudioBuffer, ringSec: (v: number) => number, initial: number) => {
+      let current = first;
+      let ring = ringSec(initial);
+      return throttled((v: number) => {
+        const next = ctx.createConvolver();
+        next.buffer = make(v);
+        next.connect(to);
+        from.connect(next);
+        const old = current;
+        current = next;
+        try { from.disconnect(old); } catch { /* already gone */ }
+        setTimeout(() => { try { old.disconnect(); } catch { /* already gone */ } }, ring * 1000 + 250);
+        ring = ringSec(v);
+      });
+    };
 
 
     for (const pl of active) {
@@ -900,9 +927,23 @@ export class SyncLabEngine {
             f.Q.value = clamp(val(pl, `b${i}q`, 1), 0.1, 18);
             f.gain.value = on ? clamp(val(pl, `b${i}gain`, 0), -30, 30) : 0;
             bands.push(f);
+            // Every band control updates the running filter, so sweeping an EQ never rebuilds it.
+            const band = { on: val(pl, `b${i}on`, 0), type: val(pl, `b${i}type`, 2), gain: val(pl, `b${i}gain`, 0) };
+            const applyBand = (t: number) => {
+              const isOn = band.on >= 0.5;
+              const kind = types[clamp(Math.round(band.type), 0, 5)] ?? "peaking";
+              const nextType = isOn ? kind : "peaking";
+              if (f.type !== nextType) f.type = nextType;
+              glide(f.gain, isOn ? clamp(band.gain, -30, 30) : 0, t);
+            };
+            live(pl, `b${i}on`, (v, t) => { band.on = v; applyBand(t); });
+            live(pl, `b${i}type`, (v, t) => { band.type = v; applyBand(t); });
+            live(pl, `b${i}gain`, (v, t) => { band.gain = v; applyBand(t); });
+            live(pl, `b${i}freq`, (v, t) => glide(f.frequency, clamp(v, 20, 20000), t));
+            live(pl, `b${i}q`, (v, t) => glide(f.Q, clamp(v, 0.1, 18), t));
           }
           const out = ctx.createGain();
-          out.gain.value = dbToGain(val(pl, "output", 0));
+          dbLive(pl, "output", out);
           const spectrum = ctx.createAnalyser();
           spectrum.fftSize = 2048;
           spectrum.smoothingTimeConstant = 0.72;
@@ -1064,6 +1105,8 @@ export class SyncLabEngine {
           live(pl, "mix", (v, t) => glide(wet.gain, clamp(v, 0, 1), t));
           live(pl, "lowcut", (v, t) => glide(rHp.frequency, clamp(v, 20, 1000), t));
           live(pl, "tone", (v, t) => glide(rLp.frequency, clamp(v, 800, 18000), t));
+          const decay = (v: number) => clamp(v, 0.2, 8);
+          live(pl, "decay", swapConvolver(pre, rHp, conv, (v) => makeImpulse(ctx, decay(v)), decay, val(pl, "decay", 1.8)));
           nodes.push(inNode, pre, conv, rHp, rLp, wet, out);
           break;
         }
@@ -1443,16 +1486,19 @@ export class SyncLabEngine {
             if (t === undefined) smooth.frequency.value = f; else glide(smooth.frequency, f, t);
           };
           setSmooth();
+          // The threshold scales the envelope into a fixed opening curve, so it can move while playing.
+          const sense = ctx.createGain(); sense.gain.value = 1.6 / thr;
           const open = ctx.createWaveShaper();
           const oc = new Float32Array(2049);
-          for (let i = 0; i < oc.length; i++) { const x = Math.abs((i / 1024) - 1) * 1.6; oc[i] = x >= thr ? 1 : Math.pow(x / thr, 4); }
+          for (let i = 0; i < oc.length; i++) oc[i] = Math.pow(Math.abs((i / 1024) - 1), 4);
           open.curve = oc;
+          live(pl, "threshold", (v, t) => glide(sense.gain, 1.6 / Math.pow(10, clamp(v, -80, 0) / 20), t));
           input.connect(vca);
           const floor = (db: number) => (db <= -79.5 ? 0 : dbToGain(clamp(db, -80, 0)));
           const span = ctx.createGain();
           const setRange = (db: number, t?: number) => { const f = floor(db); if (t === undefined) { vca.gain.value = f; span.gain.value = 1 - f; } else { glide(vca.gain, f, t); glide(span.gain, 1 - f, t); } };
           setRange(val(pl, "range", -80));
-          input.connect(rect); rect.connect(smooth); smooth.connect(open); open.connect(span); span.connect(vca.gain);
+          input.connect(rect); rect.connect(smooth); smooth.connect(sense); sense.connect(open); open.connect(span); span.connect(vca.gain);
           const gOut = ctx.createGain(); dbLive(pl, "output", gOut); vca.connect(gOut);
           live(pl, "attack", (_v, t) => setSmooth(t));
           live(pl, "release", (_v, t) => setSmooth(t));
@@ -1479,27 +1525,46 @@ export class SyncLabEngine {
           wet.connect(out);
           input.connect(dry);
           dry.connect(out);
-          const count = Math.round(val(pl, "steps", 16));
-          const stepValues = Array.from({ length: count }, (_, i) => val(pl, `s${i + 1}`, 0.5));
-          const harmonics = 32;
-          const real = new Float32Array(harmonics + 1);
-          const imag = new Float32Array(harmonics + 1);
-          for (let h = 1; h <= harmonics; h++) {
-            for (let i = 0; i < count; i++) {
-              const swing = i % 2 === 1 ? clamp(val(pl, "swing", 0), 0, 0.6) : 0;
-              const phase = (2 * Math.PI * h * (i + 0.5 + swing)) / count;
-              real[h] = (real[h] ?? 0) + ((stepValues[i] ?? 0.5) * Math.cos(phase) * 2) / count;
-              imag[h] = (imag[h] ?? 0) - ((stepValues[i] ?? 0.5) * Math.sin(phase) * 2) / count;
+          // Live state: every control (steps included) updates the running sequencer, never rebuilding it.
+          const sf = { steps: val(pl, "steps", 16), swing: val(pl, "swing", 0), rate: val(pl, "rate", 8), cutoff, depth: val(pl, "depth", 0.85), smooth: val(pl, "smooth", 0.03) };
+          const sv = Array.from({ length: 32 }, (_, i) => val(pl, `s${i + 1}`, 0.5));
+          const stepWave = () => {
+            const count = Math.max(1, Math.round(sf.steps));
+            const harmonics = 32;
+            const real = new Float32Array(harmonics + 1);
+            const imag = new Float32Array(harmonics + 1);
+            for (let h = 1; h <= harmonics; h++) {
+              for (let i = 0; i < count; i++) {
+                const swing = i % 2 === 1 ? clamp(sf.swing, 0, 0.6) : 0;
+                const phase = (2 * Math.PI * h * (i + 0.5 + swing)) / count;
+                const v = sv[i] ?? 0.5;
+                real[h] = (real[h] ?? 0) + (v * Math.cos(phase) * 2) / count;
+                imag[h] = (imag[h] ?? 0) - (v * Math.sin(phase) * 2) / count;
+              }
             }
-          }
+            return ctx.createPeriodicWave(real, imag);
+          };
+          const seqRate = () => clamp(sf.rate, 0.5, 32) / Math.max(1, Math.round(sf.steps));
+          const smoothHz = () => { const sec = clamp(sf.smooth, 0, 0.24); return sec <= 0.001 ? 20000 : clamp(1 / (2 * Math.PI * sec), 0.5, 20000); };
           const sequencer = ctx.createOscillator();
-          sequencer.setPeriodicWave(ctx.createPeriodicWave(real, imag));
-          sequencer.frequency.value = clamp(val(pl, "rate", 8), 0.5, 32) / count;
+          sequencer.setPeriodicWave(stepWave());
+          sequencer.frequency.value = seqRate();
           const depth = ctx.createGain();
-          depth.gain.value = cutoff * clamp(val(pl, "depth", 0.85), 0, 1);
+          depth.gain.value = cutoff * clamp(sf.depth, 0, 1);
           const smoothing = ctx.createBiquadFilter(); smoothing.type = "lowpass";
-          const smoothSec = clamp(val(pl, "smooth", 0.03), 0, 0.24);
-          smoothing.frequency.value = smoothSec <= 0.001 ? 20000 : clamp(1 / (2 * Math.PI * smoothSec), 0.5, 20000);
+          smoothing.frequency.value = smoothHz();
+          const setCutoff = (t: number) => { const c = clamp(sf.cutoff, 80, 18000); glide(filter.frequency, c, t); glide(depth.gain, c * clamp(sf.depth, 0, 1), t); };
+          live(pl, "cutoff", (v, t) => { sf.cutoff = v; setCutoff(t); });
+          live(pl, "depth", (v, t) => { sf.depth = v; setCutoff(t); });
+          live(pl, "resonance", (v, t) => glide(filter.Q, clamp(v, 0.1, 20), t));
+          live(pl, "mix", (v, t) => { const m = clamp(v, 0, 1); glide(wet.gain, m, t); glide(dry.gain, 1 - m, t); });
+          live(pl, "mode", (v) => { const m = Math.round(v); filter.type = m === 1 ? "highpass" : m === 2 ? "bandpass" : "lowpass"; });
+          live(pl, "rate", (v, t) => { sf.rate = v; glide(sequencer.frequency, seqRate(), t); });
+          live(pl, "smooth", (v, t) => { sf.smooth = v; glide(smoothing.frequency, smoothHz(), t); });
+          const reshape = (t: number) => { sequencer.setPeriodicWave(stepWave()); glide(sequencer.frequency, seqRate(), t); };
+          live(pl, "steps", (v, t) => { sf.steps = v; reshape(t); });
+          live(pl, "swing", (v, t) => { sf.swing = v; reshape(t); });
+          for (let i = 0; i < 32; i++) live(pl, `s${i + 1}`, (v, t) => { sv[i] = v; reshape(t); });
           sequencer.connect(smoothing);
           smoothing.connect(depth);
           depth.connect(filter.frequency);
@@ -1524,6 +1589,7 @@ export class SyncLabEngine {
           const root = 440 * Math.pow(2, (val(pl, "root", 48) - 69) / 12);
           const spread = val(pl, "spread", 0.35);
           const ratios = [1, Math.pow(2, 7 / 12), 2, Math.pow(2, 16 / 12)];
+          const rz = { root: val(pl, "root", 48), spread, decay: val(pl, "decay", 1.8), damping: val(pl, "damping", 0.45) };
           const filters: BiquadFilterNode[] = [];
           const gains: GainNode[] = [];
           for (let i = 0; i < ratios.length; i++) {
@@ -1541,10 +1607,19 @@ export class SyncLabEngine {
           }
           wet.connect(out);
           bind(pl, "mix", wet.gain, 0, 0.65);
+          const retune = (t: number) => {
+            const r = 440 * Math.pow(2, (rz.root - 69) / 12);
+            filters.forEach((f, i) => { glide(f.frequency, clamp(r * (ratios[i] ?? 1) * (1 + (i - 1.5) * rz.spread * 0.025), 30, 16000), t); glide(f.Q, 8 + rz.decay * 5, t); });
+            gains.forEach((g, i) => glide(g.gain, (1 - rz.damping * (i / ratios.length)) / ratios.length, t));
+          };
+          for (const key of ["root", "spread", "decay", "damping"] as const) live(pl, key, (v, t) => { rz[key] = v; retune(t); });
+          live(pl, "mix", (v, t) => { const m = clamp(v, 0, 1); glide(dry.gain, 1 - m, t); glide(wet.gain, m * 0.65, t); });
           nodes.push(input, dry, wet, ...filters, ...gains, out);
           break;
         }
         case "scalechord": {
+          // Changes notes, not audio: its controls never need the audio path rebuilt.
+          for (const prm of pl.params) live(pl, prm.id, () => {});
           nodes.push(ctx.createGain());
           break;
         }
@@ -1577,6 +1652,17 @@ export class SyncLabEngine {
           bind(pl, "attack", compressor.ratio, 1, 20);
           bind(pl, "sustain", compressor.release, 0.05, 0.7);
           bind(pl, "mix", wet.gain, 0, 1.5);
+          const tr = { attack, sustain, mix, sensitivity: val(pl, "sensitivity", 0.55), output: val(pl, "output", 0) };
+          const reshape = (t: number) => {
+            const a = tr.attack, su = tr.sustain, m = clamp(tr.mix, 0, 1);
+            glide(dry.gain, 1 - m, t);
+            glide(compressor.threshold, -10 - tr.sensitivity * 36, t);
+            glide(compressor.ratio, a >= 0 ? 1 + a * 10 : 1 + Math.abs(a) * 18, t);
+            glide(compressor.attack, a >= 0 ? 0.03 : 0.001, t);
+            glide(compressor.release, clamp(0.08 + (su + 1) * 0.3, 0.05, 0.7), t);
+            glide(wet.gain, dbToGain(tr.output + Math.max(0, a) * 5 + su * 3) * m, t);
+          };
+          for (const key of ["attack", "sustain", "mix", "sensitivity", "output"] as const) live(pl, key, (v, t) => { tr[key] = v; reshape(t); });
           nodes.push(input, dry, compressor, wet, out);
           break;
         }

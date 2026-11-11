@@ -26,7 +26,8 @@ export interface DrummerSnapshot {
   captured: number;
 }
 
-const LOOKAHEAD = 0.12;
+/** Seconds queued ahead on the audio clock, so a busy page never makes the player stumble. */
+const LOOKAHEAD = 0.3;
 /** "Play with song" gives up if the song hasn't started within this many seconds. */
 const SONG_WAIT = 3;
 export type DrummerStart = "alone" | "song";
@@ -102,6 +103,20 @@ class DrummerPlayer {
   }
 
   toggle() { if (this.running) this.stop(); else this.start(); }
+
+  /**
+   * Hand over to a printed part: queue every step the song has already scheduled, then stop.
+   * Called in the same commit that adds the printed track, so no step is missed or doubled.
+   */
+  finish() { if (this.running) this.tick(); this.stop(); }
+
+  /** Already playing alone: lock onto the song (which is starting) instead of carrying on unsynced. */
+  followSong() {
+    if (!this.running || this.following) return;
+    this.ignoreSong = false;
+    this.waitSince = getEngine().ctx?.currentTime ?? 0;
+    this.emit();
+  }
 
   /** Fill now: the current bar ends with a fill if there is still room, otherwise the next one. */
   fill() { this.place("fill"); this.emit(); }
@@ -211,6 +226,12 @@ class DrummerPlayer {
     }
     if (this.following) { this.stop(); return; }
     const dur = 60 / Math.max(20, this.bpm) / 4;
+    // After a stall, skip steps that are already late instead of firing them all at once.
+    while (this.nextTime < now - 0.05) {
+      this.lastTime = Math.max(this.lastTime, this.nextTime);
+      this.nextTime += dur;
+      this.nextStep++;
+    }
     while (this.nextTime < now + LOOKAHEAD) {
       if (this.nextTime > this.lastTime + 1e-4) this.play(this.nextStep, this.nextTime, dur, false);
       this.lastTime = Math.max(this.lastTime, this.nextTime);

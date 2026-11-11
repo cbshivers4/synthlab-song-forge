@@ -28,7 +28,8 @@ export interface KeysSnapshot {
   captured: number;
 }
 
-const LOOKAHEAD = 0.12;
+/** Seconds queued ahead on the audio clock, so a busy page never makes the player stumble. */
+const LOOKAHEAD = 0.3;
 const SONG_WAIT = 3;
 export type KeysStart = "alone" | "song";
 
@@ -100,6 +101,20 @@ class KeysPlayer {
   }
 
   toggle() { if (this.running) this.stop(); else this.start(); }
+
+  /**
+   * Hand over to a printed part: queue every step the song has already scheduled, then stop.
+   * Called in the same commit that adds the printed track, so no step is missed or doubled.
+   */
+  finish() { if (this.running) this.tick(); this.stop(); }
+
+  /** Already playing alone: lock onto the song (which is starting) instead of carrying on unsynced. */
+  followSong() {
+    if (!this.running || this.following) return;
+    this.ignoreSong = false;
+    this.waitSince = getEngine().ctx?.currentTime ?? 0;
+    this.emit();
+  }
   /** Fill now: the current bar ends with a run if there is still room, otherwise the next one. */
   fill() { this.place("fill"); this.emit(); }
   /** Lay out for the next bar, coming back in with a big chord. */

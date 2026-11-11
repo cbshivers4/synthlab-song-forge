@@ -472,18 +472,27 @@ export function buildCreativeFx(ctx: BaseAudioContext, pl: PluginInstance, h: Fx
       break;
     }
     case "sidechain": {
-      const beats = [1, 0.5, 2, 4][clamp(Math.round(val("division", 0)), 0, 3)]!;
-      const depth = val("depth", 0.8), rel = val("release", 0.5), pw = val("curve", 2);
-      const N = 256, H = 48; const samples = Array.from({ length: N }, (_, i) => duckShape(i / N, depth, rel, pw));
-      const mean = samples.reduce((a, b) => a + b, 0) / N;
-      const re = new Float32Array(H), im = new Float32Array(H);
-      for (let k = 1; k < H; k++) { let a = 0, b = 0; for (let i = 0; i < N; i++) { const ph = 2 * Math.PI * k * i / N; a += samples[i]! * Math.cos(ph); b += samples[i]! * Math.sin(ph); } re[k] = 2 * a / N; im[k] = 2 * b / N; }
-      const osc = ctx.createOscillator(); osc.setPeriodicWave(ctx.createPeriodicWave(re, im, { disableNormalization: true }));
-      osc.frequency.value = val("tempo", 124) / 60 / beats;
-      const vca = ctx.createGain(); vca.gain.value = mean; osc.connect(vca.gain);
+      // Every control reshapes the running ducker, so turning a knob never restarts the pump.
+      const sc = { division: val("division", 0), depth: val("depth", 0.8), release: val("release", 0.5), curve: val("curve", 2), tempo: val("tempo", 124) };
+      const beatsOf = () => [1, 0.5, 2, 4][clamp(Math.round(sc.division), 0, 3)]!;
+      const N = 256, H = 48;
+      const duck = () => {
+        const samples = Array.from({ length: N }, (_, i) => duckShape(i / N, sc.depth, sc.release, sc.curve));
+        const mean = samples.reduce((a, b) => a + b, 0) / N;
+        const re = new Float32Array(H), im = new Float32Array(H);
+        for (let k = 1; k < H; k++) { let a = 0, b = 0; for (let i = 0; i < N; i++) { const ph = 2 * Math.PI * k * i / N; a += samples[i]! * Math.cos(ph); b += samples[i]! * Math.sin(ph); } re[k] = 2 * a / N; im[k] = 2 * b / N; }
+        return { mean, wave: ctx.createPeriodicWave(re, im, { disableNormalization: true }) };
+      };
+      const first = duck();
+      const osc = ctx.createOscillator(); osc.setPeriodicWave(first.wave);
+      osc.frequency.value = sc.tempo / 60 / beatsOf();
+      const vca = ctx.createGain(); vca.gain.value = first.mean; osc.connect(vca.gain);
       const post = ctx.createGain(); outLevel(post);
       input.connect(vca); vca.connect(post); post.connect(wet); wet.gain.value = 1; dry.gain.value = 0;
-      live("tempo", (v, t) => glide(osc.frequency, v / 60 / beats, t));
+      const reshape = (t: number) => { const d = duck(); osc.setPeriodicWave(d.wave); glide(vca.gain, d.mean, t); };
+      live("tempo", (v, t) => { sc.tempo = v; glide(osc.frequency, v / 60 / beatsOf(), t); });
+      live("division", (v, t) => { sc.division = v; glide(osc.frequency, sc.tempo / 60 / beatsOf(), t); });
+      for (const key of ["depth", "release", "curve"] as const) live(key, (v, t) => { sc[key] = v; reshape(t); });
       start(osc);
       break;
     }
@@ -631,6 +640,9 @@ export function buildCreativeFx(ctx: BaseAudioContext, pl: PluginInstance, h: Fx
         chain(input, rect, smooth, env, f.detune);
         live("sense", (v, t) => glide(env.gain, v * WAH_RANGE * 4, t));
       }
+      // Rate/Sense only act in their own mode; elsewhere moving them changes nothing, so no rebuild.
+      if (mode !== 1) live("rate", () => {});
+      if (mode !== 2) live("sense", () => {});
       live("pedal", (v, t) => glide(f.detune, base(v), t));
       live("resonance", (v, t) => glide(f.Q, v, t));
       mix(1);
@@ -677,6 +689,19 @@ export function buildCreativeFx(ctx: BaseAudioContext, pl: PluginInstance, h: Fx
       const tank = ctx.createConvolver(); tank.buffer = springImpulse(ctx, val("decay", 2));
       const tone = bq("lowpass", val("tone", 4000));
       chain(input, hp, dwell, tank, tone, wet);
+      // New decay: a fresh spring takes the input while the old one rings out (no cut-off tail).
+      let springNow = tank, ring = val("decay", 2), springTimer: ReturnType<typeof setTimeout> | null = null, springNext: number | null = null;
+      const respring = (v: number) => {
+        if (springTimer) { springNext = v; return; }
+        const next = ctx.createConvolver(); next.buffer = springImpulse(ctx, v);
+        next.connect(tone); dwell.connect(next);
+        const old = springNow; springNow = next;
+        try { dwell.disconnect(old); } catch { /* already gone */ }
+        setTimeout(() => { try { old.disconnect(); } catch { /* already gone */ } }, ring * 1000 + 300);
+        ring = v;
+        springTimer = setTimeout(() => { springTimer = null; if (springNext !== null) { const n = springNext; springNext = null; respring(n); } }, 140);
+      };
+      live("decay", (v) => respring(v));
       live("dwell", v => setDwell(v));
       live("tone", (v, t) => glide(tone.frequency, v, t));
       mix(0.3);

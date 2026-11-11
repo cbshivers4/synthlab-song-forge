@@ -255,7 +255,7 @@ export function BassGenerator() {
         <div className="flex flex-wrap gap-2">
           {solo.playing
             ? <Button size="lg" variant="destructive" className="min-h-12" onClick={solo.stop}><Square className="size-4 fill-current" /> Stop preview</Button>
-            : <Button size="lg" variant="secondary" className="min-h-12" onClick={playSolo} title="Plays only the bassline, looped — your song stays silent"><Play className="size-4" /> Preview bass only</Button>}
+            : <Button size="lg" variant="secondary" className="min-h-12" onClick={playSolo} title="Plays only the bassline, looped — it doesn't start your song, and stays in time with it if the song is already playing"><Play className="size-4" /> Preview bass only</Button>}
           <Button size="lg" className="min-h-12" onClick={create}>{target === "new" ? "Add bassline to timeline" : "Send notes to track"}</Button>
         </div>
       ) : (

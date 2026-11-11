@@ -7,7 +7,7 @@ import { getPlayStep } from "@/lib/synclab/playhead";
 import { BASS_TEMPLATES, PROGRESSIONS, cleanBassPatch, riffBass, rootsFromKey } from "@/lib/synclab/bass-gen";
 import { applyPreset } from "@/lib/synclab/presets";
 import { TEST_MODE, TEST_MODE_MESSAGE } from "@/lib/synclab/test-mode";
-import type { DrumPad, MidiNote } from "@/lib/synclab/types";
+import type { DrumPad, MidiNote, Track } from "@/lib/synclab/types";
 
 // Test mode only (?test=1). This file must never import account, payment, cloud or backend modules.
 
@@ -118,6 +118,10 @@ export function TestModeHarness() {
       seek: (step: number) => ref.current.setTransport({ step: Math.max(0, Math.floor(step)) }),
       // Recording checks: add a microphone channel, arm channels, set the count-in and read takes.
       addAudioTrack: () => ref.current.addTrack("audio", "VOCAL", undefined, { keepPanel: true }),
+      // Same call every knob, fader and pad edit goes through.
+      update: (trackId: string, patch: Partial<Track>) => ref.current.updateTrack(trackId, patch),
+      setPanel: (panel: Parameters<typeof ref.current.setPanel>[0]) => ref.current.setPanel(panel),
+      getTrack: (trackId: string) => ref.current.tracks.find((t) => t.id === trackId) ?? null,
       arm: (trackId: string, on: boolean) => ref.current.updateTrack(trackId, { armed: !!on }),
       setCountIn: (bars: number) => ref.current.setTransport({ countIn: bars > 0, countInBars: Math.max(1, Math.floor(bars) || 1) }),
       getClips: (trackId: string) => (ref.current.tracks.find((t) => t.id === trackId)?.clips ?? []).map((c) => ({ name: c.name, start: c.start, offset: c.offset, length: c.length, duration: c.duration })),

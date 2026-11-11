@@ -1,5 +1,5 @@
 import { useIsLandscapePhone } from "@/hooks/use-mobile";
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 import { toast } from "sonner";
 import { Piano, Play, Square, Sparkles, Zap, PauseCircle, Music2, Disc } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -141,6 +141,16 @@ function KeysDesk({ track, players, snap, group, setGroup, update, updateTrack, 
   const [bars, setBars] = useState(8);
   const [startAt, setStartAt] = useState<"start" | "playhead">("start");
   const playing = snap.running && player.trackId === track.id;
+  // Printing while the song plays: the live player keeps going until the printed track is in the
+  // song, then hands over in that same update, so the beat never drops out or doubles.
+  const { tracks: allTracks } = useStudio();
+  const handOff = useRef<string | null>(null);
+  useLayoutEffect(() => {
+    const id = handOff.current;
+    if (!id || !allTracks.some((t) => t.id === id)) return;
+    handOff.current = null;
+    player.finish();
+  }, [allTracks, player]);
 
   const previewAlone = () => {
     chooseKeys(track.id);
@@ -153,6 +163,7 @@ function KeysDesk({ track, players, snap, group, setGroup, update, updateTrack, 
     chooseKeys(track.id);
     if (!transport.playing) togglePlay();
     if (!player.snapshot().running) player.start("song");
+    else player.followSong();
   };
 
   const pickStyle = (id: string) => {
@@ -170,10 +181,17 @@ function KeysDesk({ track, players, snap, group, setGroup, update, updateTrack, 
     const startBar = startAt === "playhead" ? Math.floor(getPlayStep() / spb) : 0;
     const list = source === "performance" ? perf : keysBars(settings, startBar, bars, spb);
     if (!list.length || !list.some((b) => b.notes.length)) { toast("Nothing captured yet", { description: "Play the keyboard player along with your song first, then print the performance." }); return; }
-    player.stop();
     const { notes, steps } = keysToNotes(list, spb);
     const first = list[0]!.bar, last = list[list.length - 1]!.bar;
     const id = addTrack("instrument", trackName(style.label), sound.preset, { keepPanel: true });
+    // Hand over only if the printed part carries on from here; otherwise the live player keeps the
+    // beat going (stop it yourself when you only want the printed part).
+    const nowBar = Math.floor(getPlayStep() / spb);
+    const loopEndBar = transport.loop && (transport.loopEnd ?? 0) > 0 ? Math.ceil((transport.loopEnd ?? 0) / spb) : Infinity;
+    const nextBar = nowBar + 1 >= loopEndBar ? Math.floor((transport.loopStart ?? 0) / spb) : nowBar + 1;
+    const covers = (b: number) => b >= first && b <= last;
+    const handsOver = !transport.playing || (covers(nowBar) && covers(nextBar));
+    if (handsOver) handOff.current = id;
     updateTrack(id, {
       notes: notes.map((n) => ({ ...n, id: uid() })), steps,
       ...(track.patch ? { patch: structuredClone(track.patch) } : {}),
@@ -183,7 +201,7 @@ function KeysDesk({ track, players, snap, group, setGroup, update, updateTrack, 
     if (last + 1 > (transport.bars ?? 0)) setTransport({ bars: last + 1 });
     if (source === "performance") player.clearPerformance();
     const count = last - first + 1;
-    toast.success(source === "performance" ? "Performance printed" : "Part printed", { description: `${count} bar${count === 1 ? "" : "s"} of ${style.label} on a new instrument track from bar ${first + 1} — edit it in the piano roll. The live player stopped so you don't hear it twice.` });
+    toast.success(source === "performance" ? "Performance printed" : "Part printed", { description: `${count} bar${count === 1 ? "" : "s"} of ${style.label} on a new instrument track from bar ${first + 1} — edit it in the piano roll. ${handsOver ? "The live player handed over to it so you don't hear it twice." : "The live player keeps playing so the music doesn't stop — press Stop on it when you only want the printed part."}` });
   };
 
   const swingHint = Math.abs((transport.swing ?? 0) - style.swing) > 0.05;

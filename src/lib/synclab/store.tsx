@@ -98,6 +98,11 @@ function liveSound(t: Track): Track {
   return { ...t, printedAudio: false };
 }
 
+/** Seconds of song audio queued ahead on the audio clock (see the scheduler). */
+const SCHEDULE_AHEAD = 0.3;
+/** A step this late (s) is still played; later ones are skipped so a stall never bursts notes. */
+const LATE_OK = 0.05;
+
 export interface MidiTarget {
   id: string;
   param: string;
@@ -1131,7 +1136,10 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     for (const t of tracksRef.current)
       for (const c of t.clips ?? []) if (c.url) void engine.ensureBuffer(c.url);
 
-    const LOOKAHEAD = 0.14; // seconds of audio scheduled in advance
+    // Seconds of audio scheduled in advance. Generous on purpose: a busy page (dragging a knob,
+    // adding a track, generating a part) can block the main thread for a few hundred ms, and
+    // everything already handed to the audio clock keeps playing on time through that.
+    const LOOKAHEAD = SCHEDULE_AHEAD;
     const TICK = 20; // ms between scheduler passes
     let step = transportRef.current.step ?? 0;
     // After a count-in the song starts exactly on its downbeat; otherwise as soon as possible.
@@ -1264,13 +1272,22 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     const pump = () => {
       if (cancelled) return;
       const now = ctx.currentTime;
-      // a suspended or stalled context can leave us far behind; resync instead of
-      // firing a burst of late notes
-      if (nextTime < now - 0.25) {
-        nextTime = now + 0.04;
-        step = transportRef.current.step ?? step;
+      // After a stall longer than the look-ahead, steps that are already too late are skipped
+      // along the song grid (never rescheduled from the heard step, which would play the steps
+      // already queued a second time). They still reach the playhead so punch/automation run.
+      if (nextTime < now - LATE_OK) {
+        let skipped = 0;
+        while (nextTime < now - LATE_OK && skipped < 4096) {
+          const tp = transportRef.current;
+          const total = songSteps(tp.bars);
+          queue.push({ step: step % total, time: nextTime });
+          if (queue.length > 64) queue.shift();
+          nextTime += stepSeconds(tp.bpm);
+          step = nextPlayStep(step, tp);
+          skipped += 1;
+        }
+        if (nextTime < now - LATE_OK) nextTime = now + 0.02;
         lastScheduled = null;
-        queue.length = 0;
       }
       while (nextTime < now + LOOKAHEAD) {
         const tp = transportRef.current;
