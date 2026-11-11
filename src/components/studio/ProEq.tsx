@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { ExpandScopeButton } from "./ExpandScopeButton";
 import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
 import { EqGrid } from "./EqGrid";
 import { Knob } from "./Knob";
@@ -213,7 +214,7 @@ export function ProEq({ trackId, plugin }: { trackId: string; plugin: PluginInst
 
   return (
     <div className="eq-workstation effect-response-window space-y-3" data-effect-window="paraeq" aria-label="SYNCLAB Pro EQ">
-      <header className="eq-titlebar"><span>SYNCLAB <strong>PRO EQ</strong></span><span>8 BAND · PARAMETRIC</span></header>
+      <header className="eq-titlebar"><span>SYNCLAB <strong>PRO EQ</strong></span><span className="flex items-center gap-2">8 BAND · PARAMETRIC<ExpandScopeButton scopeId={plugin.id} view="spectrum" /></span></header>
       <div
         ref={boxRef}
         onPointerMove={move}

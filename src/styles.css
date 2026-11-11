@@ -5001,3 +5001,55 @@ html.phone-console-active [role="option"] { min-height: 44px; font-size: 15px; }
 .dj-hw.is-sheet .dj-hw-groups { grid-template-columns: repeat(3, minmax(180px, 1fr)); }
 .dj-hw.is-sheet .dj-hw-action { min-height: 40px; }
 .dj-hw.is-sheet .dj-hw-btn { min-height: 34px; padding: 0 10px; font-size: 13px; }
+
+/* ---- Expanded scope window (Studio One "Spectrum EQ window" reference) ---- */
+.scope-window {
+  --scope-panel: oklch(0.16 0.004 260);
+  --scope-titlebar: oklch(0.2 0.004 260);
+  --scope-ink: oklch(0.86 0.004 260);
+  --scope-ink-dim: oklch(0.7 0.004 260);
+  --scope-grid: oklch(0.42 0.004 260);
+  --scope-grid-minor: oklch(0.27 0.004 260);
+  --scope-trace: oklch(0.82 0.13 210);
+  --scope-fill: oklch(0.82 0.13 210 / 0.22);
+  --scope-hold: oklch(0.86 0.15 90 / 0.8);
+  --scope-bar: oklch(0.6 0.03 230);
+  --scope-bar-ink: oklch(0.98 0 0);
+  --scope-field: oklch(0.36 0.02 240);
+  background: var(--scope-panel);
+  color: var(--scope-ink);
+  border: 1px solid var(--scope-grid);
+  border-radius: 6px;
+  box-shadow: 0 24px 60px oklch(0 0 0 / 0.65), inset 0 1px 0 oklch(1 0 0 / 0.06);
+}
+.scope-window[data-phone="true"] { left: 6px; top: 6px; width: calc(100dvw - 12px); height: calc(100dvh - 12px); }
+.phone-sideways-default .scope-window[data-phone="true"] { width: calc(100dvh - 12px); height: calc(100dvw - 12px); }
+.scope-window-titlebar { height: 34px; background: var(--scope-titlebar); border-bottom: 1px solid var(--scope-grid-minor); cursor: grab; user-select: none; }
+.scope-window[data-phone="true"] .scope-window-titlebar { cursor: default; }
+.scope-window-close { border-radius: 9999px; color: var(--scope-ink); }
+.scope-window-tab { color: var(--scope-ink-dim); }
+.scope-window-tab[aria-pressed="true"] { color: var(--scope-trace); background: var(--scope-field); }
+.scope-window-body { background: var(--scope-panel); }
+.scope-window-canvas { background: var(--display-black); }
+.scope-window-label { font: 11px/1 var(--font-mono, ui-monospace, monospace); color: var(--scope-ink); white-space: nowrap; }
+.scope-window-status { color: var(--scope-ink); background: color-mix(in oklab, var(--scope-panel) 88%, transparent); border: 1px solid var(--scope-grid-minor); }
+.scope-window-cursor { background: var(--scope-field); color: var(--scope-bar-ink); border-radius: 2px; }
+.scope-window-readout { color: var(--scope-ink-dim); }
+.scope-window-options [role="checkbox"] { border-color: var(--scope-ink-dim); }
+.scope-window-bar { background: var(--scope-bar); color: var(--scope-bar-ink); border-top: 1px solid var(--scope-grid); }
+.scope-window-bar [role="checkbox"] { border-color: var(--scope-bar-ink); }
+.scope-window-source { background: var(--scope-field); color: var(--scope-bar-ink); border-color: transparent; }
+.scope-window-resize { background: linear-gradient(135deg, transparent 50%, var(--scope-grid) 50%); }
+.scope-window[data-phone="true"] .scope-window-close,
+.scope-window[data-phone="true"] .scope-window-tab { min-height: 40px; min-width: 40px; }
+.scope-window[data-phone="true"] .scope-window-source { height: 40px; }
+.scope-window[data-phone="true"] [role="checkbox"] { width: 22px; height: 22px; }
+.scope-window[data-phone="true"] .scope-window-options { width: 7.5rem; }
+
+.scope-expand-btn {
+  width: 18px; height: 18px; border-radius: 3px; z-index: 2;
+  color: var(--muted-foreground);
+  background: color-mix(in oklab, var(--background) 70%, transparent);
+}
+.scope-expand-btn:hover { color: var(--foreground); }
+.phone-sideways-default .scope-expand-btn, [data-touch-console] .scope-expand-btn { width: 28px; height: 28px; }

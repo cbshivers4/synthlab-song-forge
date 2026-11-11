@@ -180,6 +180,8 @@ export class SyncLabEngine {
   private masterL: AnalyserNode | null = null;
   private masterR: AnalyserNode | null = null;
   private masterBufs = new Map<string, Float32Array>();
+  /** One high-resolution branch analyser for the expanded scope window; never feeds back into the mix. */
+  private detail: { id: string; source: AnalyserNode; node: AnalyserNode; wave: Float32Array; spec: Float32Array } | null = null;
   private resumeListenersInstalled = false;
   private unlockMedia: HTMLAudioElement | null = null;
   private mediaUnlocked = false;
@@ -592,6 +594,38 @@ export class SyncLabEngine {
     const data = new Float32Array(an.frequencyBinCount);
     an.getFloatFrequencyData(data);
     return data;
+  }
+
+  /**
+   * Live detail data for the expanded scope window: an 8192-point analyser branched off the
+   * same post-insert / channel / bus / master tap the small scopes read. The branch is a dead
+   * end (analysers are pulled automatically), so it never changes what you hear. When the
+   * channel is rebuilt the branch follows the new tap.
+   */
+  getDetailScope(scopeId: string, kind: "wave" | "spectrum"): Float32Array | null {
+    const source = this.pluginScopes.get(scopeId);
+    const ctx = this.ctx;
+    if (!source || !ctx) { if (this.detail && this.detail.id !== scopeId) this.releaseDetailScope(); return null; }
+    if (!this.detail || this.detail.id !== scopeId || this.detail.source !== source) {
+      this.releaseDetailScope();
+      const node = ctx.createAnalyser();
+      node.fftSize = 8192;
+      node.smoothingTimeConstant = 0.72;
+      source.connect(node);
+      this.detail = { id: scopeId, source, node, wave: new Float32Array(node.fftSize), spec: new Float32Array(node.frequencyBinCount) };
+    }
+    const d = this.detail;
+    if (kind === "wave") { d.node.getFloatTimeDomainData(d.wave as Float32Array<ArrayBuffer>); return d.wave; }
+    d.node.getFloatFrequencyData(d.spec as Float32Array<ArrayBuffer>);
+    return d.spec;
+  }
+
+  /** Disconnect only the expanded-window branch; the source tap keeps its other connections. */
+  releaseDetailScope() {
+    const d = this.detail;
+    this.detail = null;
+    if (!d) return;
+    try { d.source.disconnect(d.node); } catch { /* source already rebuilt */ }
   }
 
   /** Output waveform of one effect insert, or null when that effect is not running. */

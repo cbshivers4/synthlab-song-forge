@@ -4,6 +4,7 @@ import { getEngine } from "@/lib/synclab/audio-engine";
 import { Button } from "@/components/ui/button";
 import { waveformDisplayGain } from "@/lib/synclab/signal-display";
 import type { PluginKind } from "@/lib/synclab/types";
+import { ExpandScopeButton } from "./ExpandScopeButton";
 
 type Mode = "wave" | "spectrum";
 
@@ -107,6 +108,7 @@ export function Scope({
 
   if (compact) {
     return (
+      <div className="scope-expand-host relative w-full">
       <Button variant="ghost"
         type="button"
         onClick={(e) => {
@@ -123,6 +125,8 @@ export function Scope({
           {mode === "wave" ? "SCOPE" : "SPEC"}
         </span>
       </Button>
+      <ExpandScopeButton scopeId={scopeId} view={mode === "wave" ? "wave" : "spectrum"} className="absolute right-0.5 top-0.5" />
+      </div>
     );
   }
 
@@ -141,6 +145,7 @@ export function Scope({
             {m === "wave" ? "SCOPE" : "SPECTRUM"}
           </Button>
         ))}
+        <ExpandScopeButton scopeId={scopeId} view={mode === "wave" ? "wave" : "spectrum"} />
       </div>
     </div>
   );

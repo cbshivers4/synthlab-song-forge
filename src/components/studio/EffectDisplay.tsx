@@ -1,4 +1,5 @@
 import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
+import { ExpandScopeButton } from "./ExpandScopeButton";
 import { levelColor, peakOf, spectrumColor, dbColor, LEVEL_GREEN, LEVEL_ORANGE, LEVEL_RED } from "@/lib/synclab/level-colors";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { EqGrid } from "./EqGrid";
@@ -525,6 +526,7 @@ export function EffectDisplay({
           {isStepFilter ? "STEP FILTER" : isChannelEq ? "BASS / MIDS / HIGHS" : xP?.name ?? ""}
           {!isChannelEq && yP ? ` · ${yP.name}` : ""}
         </span>
+        <ExpandScopeButton scopeId={plugin.id} view="spectrum" />
       </div>
       <div
         ref={boxRef}

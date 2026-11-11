@@ -2,6 +2,8 @@ import { levelColor, peakOf, spectrumColor, dbColor, LEVEL_GREEN, LEVEL_ORANGE, 
 import { useEffect, useRef, useState } from "react";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { waveformDisplayGain } from "@/lib/synclab/signal-display";
+import { ExpandScopeButton } from "./ExpandScopeButton";
+import { MASTER_SOURCE } from "@/lib/synclab/scope-window";
 
 type ScopeMode = "osc" | "spectrum";
 type ScopeChan = "stereo" | "left" | "right";
@@ -241,6 +243,7 @@ export function MasterMeter() {
               </button>
             ))}
           </span>
+          <ExpandScopeButton source={MASTER_SOURCE} view={mode === "osc" ? "wave" : "spectrum"} />
         </div>
         <canvas ref={scopeRef} className="h-8 w-full" aria-label="Master oscilloscope and spectrum" role="img" />
       </div>

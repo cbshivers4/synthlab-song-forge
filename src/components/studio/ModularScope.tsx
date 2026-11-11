@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { modularScopeId, readModularScope } from '@/lib/synclab/modular-scopes';
 import { waveformDisplayGain } from '@/lib/synclab/signal-display';
+import { ExpandScopeButton } from './ExpandScopeButton';
 
 export function ModularScope({ trackId, moduleId, label }: { trackId: string; moduleId: string; label: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -33,5 +34,5 @@ export function ModularScope({ trackId, moduleId, label }: { trackId: string; mo
     draw(); const timer = window.setInterval(draw, 50);
     return () => window.clearInterval(timer);
   }, [trackId, moduleId]);
-  return <div className="modular-scope-window"><span>OUT · SCOPE</span><canvas ref={canvasRef} role="img" aria-label={`${label} live output scope`} /></div>;
+  return <div className="modular-scope-window relative"><span>OUT · SCOPE</span><ExpandScopeButton source={{ id: modularScopeId(trackId, moduleId), label, kind: 'modular' }} view="wave" className="absolute right-0.5 top-0.5" /><canvas ref={canvasRef} role="img" aria-label={`${label} live output scope`} /></div>;
 }

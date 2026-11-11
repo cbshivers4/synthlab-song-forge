@@ -35,6 +35,7 @@ import { DeviceBar } from "@/components/studio/DeviceBar";
 import { QuickNotes } from "@/components/studio/QuickNotes";
 import { HardwareWindow } from "@/components/studio/HardwareWindow";
 import { FloatingDevice } from "@/components/studio/FloatingDevice";
+import { ScopeWindow } from "@/components/studio/ScopeWindow";
 import { MenuBar } from "@/components/studio/MenuBar";
 import { ProjectCloseGuard } from "@/components/studio/ProjectCloseGuard";
 import { MidiClockFollow } from "@/components/studio/MidiClockFollow";
@@ -540,7 +541,7 @@ function StudioWorkspace() {
   }, [isMobile, mobileAccessibility]);
   if (isMobile) return <>
     <PhoneStudio><SafePanels float={float} setFloat={setFloat} /></PhoneStudio>
-    <TrackSettingsDialog /><DeviceSetup /><ExportDialog /><MidiClockFollow /><DrummerBridge /><KeysBridge />
+    <TrackSettingsDialog /><DeviceSetup /><ExportDialog /><MidiClockFollow /><DrummerBridge /><KeysBridge /><ScopeWindow />
   </>;
   return (
     <div className={`arrangement-workspace flex h-[100dvh] flex-col overflow-hidden ${landscape ? "landscape-prod" : ""} ${landscape && landscapeTools ? "landscape-tools" : ""} ${isMobile ? "mobile-studio" : ""} ${isMobile && mobileAccessibility.extraLargeControls ? "mobile-controls-xl" : ""} ${isMobile && mobileAccessibility.increasedText ? "mobile-text-xl" : ""} ${isMobile && mobileAccessibility.highContrast ? "mobile-high-contrast" : ""}`}>
@@ -571,6 +572,7 @@ function StudioWorkspace() {
       {!isMobile && <TopBar />}
       {landscape ? null : isMobile ? <MobileNav onBeatMode={() => setBeatMode(true)} view={mobileView} setView={setMobileView} moreSignal={moreSignal} /> : <StatusBar />}
       <FloatingDevices float={float} setFloat={setFloat} />
+      <ScopeWindow />
       <DeviceSetup />
       <ExportDialog />
       {isMobile && beatMode && !panel && <MobileBeat onClose={() => setBeatMode(false)} />}
