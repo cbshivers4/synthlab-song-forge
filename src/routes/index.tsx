@@ -565,6 +565,7 @@ function TestStages() {
       <TestModeHarness />
       <TestModeBadge />
       <PhoneOrientation />
+      <HelpCenter />
       <StudioWorkspace />
     </TestPlanProvider>
   );

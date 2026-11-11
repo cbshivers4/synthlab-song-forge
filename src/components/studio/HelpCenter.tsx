@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { BookOpen, Bug, Info, LifeBuoy, Search, Settings2 } from "lucide-react";
+import { BookOpen, Bug, Check, Info, LifeBuoy, Search, Settings2, X } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -17,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useMaybeApp } from "@/lib/synclab/app-state";
 import {
   EMPTY_SETTINGS,
+  HELP_CATEGORIES,
   KNOWLEDGE_BASE,
   SYNCLAB_NAME,
   SYNCLAB_TAGLINE,
@@ -27,6 +28,8 @@ import {
   saveSupportSettings,
   searchArticles,
   submitTicket,
+  type Article,
+  type HelpCategory,
   type SupportSettings,
 } from "@/lib/synclab/support";
 
@@ -110,6 +113,7 @@ export function HelpCenter() {
 
   const [query, setQuery] = useState("");
   const [openArticle, setOpenArticle] = useState<string | null>(null);
+  const [helpCat, setHelpCat] = useState<HelpCategory | "All">("All");
 
   const [category, setCategory] = useState(SUPPORT_CATEGORIES[0]!);
   const [pCategory, setPCategory] = useState(PROBLEM_CATEGORIES[0]!);
@@ -150,7 +154,14 @@ export function HelpCenter() {
     [open, projectName],
   );
 
-  const articles = useMemo(() => searchArticles(query), [query]);
+  const articles = useMemo(
+    () => searchArticles(query).filter((a) => helpCat === "All" || a.category === helpCat),
+    [query, helpCat],
+  );
+  const grouped = useMemo(
+    () => HELP_CATEGORIES.map((c) => ({ c, list: articles.filter((a) => a.category === c) })).filter((g) => g.list.length),
+    [articles],
+  );
 
   const send = useCallback(
     async (kind: "support" | "problem") => {
@@ -253,41 +264,39 @@ export function HelpCenter() {
                 <Search className="pointer-events-none absolute top-2.5 left-2.5 size-4 text-muted-foreground" />
                 <Input
                   value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search the knowledge base — recording, MIDI, VST, sampler, time stretch…"
+                  onChange={(e) => { setQuery(e.target.value); setHelpCat("All"); }}
+                  placeholder="Search help — recording, DJ, flam, MIDI, export, phone…"
                   className="pl-8"
                   aria-label="Search the knowledge base"
                 />
               </div>
+              <div className="flex flex-wrap gap-1.5" role="group" aria-label="Help categories">
+                {(["All", ...HELP_CATEGORIES] as const).map((c) => (
+                  <Chip key={c} active={helpCat === c} onClick={() => { setHelpCat(helpCat === c ? "All" : c); setOpenArticle(null); }}>
+                    {c === "All" ? `All (${KNOWLEDGE_BASE.length})` : c}
+                  </Chip>
+                ))}
+              </div>
               {articles.length === 0 && (
                 <p className="py-6 text-center text-sm text-muted-foreground">
-                  Nothing matched that. Try another word, or contact SYNCLAB Support.
+                  Nothing matched that. Try another word or category, or contact SYNCLAB Support.
                 </p>
               )}
-              <div className="space-y-1.5">
-                {articles.map((a) => {
-                  const isOpen = openArticle === a.id;
-                  return (
-                    <div key={a.id} className="rounded-md border border-border">
-                      <button
-                        type="button"
-                        onClick={() => setOpenArticle(isOpen ? null : a.id)}
-                        className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left text-sm font-semibold"
-                      >
-                        {a.title}
-                        <span className="text-xs text-muted-foreground">{isOpen ? "−" : "+"}</span>
-                      </button>
-                      {isOpen && (
-                        <div className="space-y-2 border-t border-border px-3 py-3 text-sm text-muted-foreground">
-                          {a.body.map((p, i) => (
-                            <p key={i}>{p}</p>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+              {grouped.map(({ c, list }) => (
+                <section key={c} className="space-y-1.5" aria-label={c}>
+                  <h3 className="pt-1 text-[11px] font-bold tracking-[0.2em] text-primary uppercase">
+                    {c} <span className="text-muted-foreground">· {list.length}</span>
+                  </h3>
+                  {list.map((a) => (
+                    <HelpArticle
+                      key={a.id}
+                      a={a}
+                      open={openArticle === a.id}
+                      onToggle={() => setOpenArticle(openArticle === a.id ? null : a.id)}
+                    />
+                  ))}
+                </section>
+              ))}
               {settings.knowledge_base_url && (
                 <a
                   className="inline-block text-xs underline"
@@ -393,8 +402,8 @@ export function HelpCenter() {
               <p>© {new Date().getFullYear()} SYNCLAB. All rights reserved.</p>
               <p>
                 Built-in instruments, effects, separation and mastering run on your device using Web
-                Audio. Native VST3/AU plugin hosting, low-latency device control and local file
-                access arrive with SYNCLAB Desktop.
+                Audio. SYNCLAB Desktop adds real Save/Open on your own drive; it can list your
+                VST3/AU/CLAP plugins but can't run them yet.
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <a className="underline" href={settings.terms_url || "/terms"}>Terms</a>
@@ -435,6 +444,48 @@ export function HelpCenter() {
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function HelpArticle({ a, open, onToggle }: { a: Article; open: boolean; onToggle: () => void }) {
+  return (
+    <div className="rounded-md border border-border">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left text-sm font-semibold"
+      >
+        {a.title}
+        <span className="text-xs text-muted-foreground">{open ? "−" : "+"}</span>
+      </button>
+      {open && (
+        <div className="space-y-3 border-t border-border px-3 py-3 text-sm">
+          <div className="space-y-1.5 text-muted-foreground">
+            <h4 className="text-[11px] font-bold tracking-[0.15em] text-foreground uppercase">How to use it</h4>
+            {a.body.map((p, i) => <p key={i}>{p}</p>)}
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-md border border-border bg-primary/5 p-2.5">
+              <h4 className="mb-1.5 text-[11px] font-bold tracking-[0.15em] text-primary uppercase">What you can do</h4>
+              <ul className="space-y-1">
+                {a.can.map((p, i) => (
+                  <li key={i} className="flex gap-1.5 text-muted-foreground"><Check className="mt-0.5 size-3.5 shrink-0 text-primary" aria-hidden />{p}</li>
+                ))}
+              </ul>
+            </div>
+            <div className="rounded-md border border-border bg-destructive/5 p-2.5">
+              <h4 className="mb-1.5 text-[11px] font-bold tracking-[0.15em] text-destructive uppercase">What you can't do</h4>
+              <ul className="space-y-1">
+                {a.cant.map((p, i) => (
+                  <li key={i} className="flex gap-1.5 text-muted-foreground"><X className="mt-0.5 size-3.5 shrink-0 text-destructive" aria-hidden />{p}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 

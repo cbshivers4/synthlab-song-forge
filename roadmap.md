@@ -246,3 +246,4 @@
 
 - [x] Drum machine Flam, Roll and Mutate work on the chosen drum
 - [x] DJ Decks hardware controller: Pioneer DDJ-400/FLX4 layout, Learn for others, button lights
+- [x] Help Center: every feature in categories with can / can't lists
