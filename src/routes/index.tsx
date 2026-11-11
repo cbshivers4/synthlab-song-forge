@@ -38,7 +38,7 @@ import { FloatingDevice } from "@/components/studio/FloatingDevice";
 import { MenuBar } from "@/components/studio/MenuBar";
 import { ProjectCloseGuard } from "@/components/studio/ProjectCloseGuard";
 import { MidiClockFollow } from "@/components/studio/MidiClockFollow";
-import { clampTimelineHeight, setWorkspacePrefs, useWorkspacePrefs } from "@/lib/synclab/workspace-prefs";
+import { DEFAULT_MIXER_SHARE, clampMixerHeight, clampTimelineHeight, setWorkspacePrefs, useWorkspacePrefs } from "@/lib/synclab/workspace-prefs";
 import { ToolsRail } from "@/components/studio/ToolsRail";
 import { Appearance } from "@/components/studio/Appearance";
 import { WelcomeScreen } from "@/components/studio/WelcomeScreen";
@@ -207,6 +207,25 @@ function SplitHandle() {
     className="workspace-split-handle h-2 shrink-0 cursor-row-resize border-y border-border bg-surface-2 hover:bg-primary/40 focus-visible:bg-primary/40" />;
 }
 
+/** Drag bar above the docked mixer (Studio Pro style): drag up for a taller mixer, down for more timeline. */
+function MixerDockHandle() {
+  const { mixerHeight } = useWorkspacePrefs();
+  const current = () => mixerHeight || Math.round(window.innerHeight * DEFAULT_MIXER_SHARE);
+  const begin = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const y0 = e.clientY, h0 = current();
+    const move = (ev: PointerEvent) => setWorkspacePrefs({ mixerHeight: clampMixerHeight(h0 - (ev.clientY - y0), window.innerHeight) });
+    const up = () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+  };
+  return <div role="separator" aria-orientation="horizontal" aria-label="Resize timeline and mixer" title="Drag to resize the mixer" tabIndex={0} aria-valuenow={current()}
+    onPointerDown={begin}
+    onDoubleClick={() => setWorkspacePrefs({ mixerHeight: 0 })}
+    onKeyDown={(e) => { if (e.key === "ArrowUp" || e.key === "ArrowDown") { e.preventDefault(); setWorkspacePrefs({ mixerHeight: clampMixerHeight(current() + (e.key === "ArrowUp" ? 24 : -24), window.innerHeight) }); } }}
+    className="mixer-dock-handle h-2 shrink-0 cursor-row-resize border-y border-border bg-surface-2 hover:bg-primary/40 focus-visible:bg-primary/40" />;
+}
+
 function SafePanels(props: { float: FloatState; setFloat: (f: (p: FloatState) => FloatState) => void }) {
   const { panel, setPanel } = useStudio();
   return (
@@ -303,7 +322,14 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
               Pop out
             </Button>
           )}
-          {!isMobile && (
+          {!isMobile && panel === "mixer" && (
+            <Button size="sm" variant={workspace.mixerDock ? "secondary" : "ghost"} className="h-11 gap-1.5 px-2 font-mono text-[10px] tracking-widest uppercase sm:h-7"
+              aria-pressed={workspace.mixerDock} title={workspace.mixerDock ? "Give the mixer the whole workspace" : "Dock the mixer under the timeline (F3 shows or hides it)"}
+              onClick={() => setWorkspacePrefs({ mixerDock: !workspace.mixerDock })}>
+              <Rows2 className="size-3.5" /> {workspace.mixerDock ? "Full view" : "Dock under timeline"}
+            </Button>
+          )}
+          {!isMobile && panel !== "mixer" && (
             <Button size="sm" variant={workspace.split ? "secondary" : "ghost"} className="h-11 gap-1.5 px-2 font-mono text-[10px] tracking-widest uppercase sm:h-7"
               aria-pressed={workspace.split} title={workspace.split ? "Give the editor the whole workspace" : "Show the timeline above this editor (drag the bar between them to resize)"}
               onClick={() => setWorkspacePrefs({ split: !workspace.split })}>
@@ -327,9 +353,20 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
         {panel === "plugins" && <PluginRack />}{panel === "appearance" && <Appearance />}{panel === "sampler" && <Sampler />}
         {panel === "pads" && <PadSampler />}{panel === "mastering" && <Mastering />}{panel === "notes" && <NotesPanel />}
         {panel === "reference" && <ReferenceAnalyzer />}{panel === "live" && <LiveView />}{panel === "looper" && <LiveLooperView />}{panel === "apps" && <ExternalApps />}{panel === "humbeat" && <ToolErrorBoundary name="Hum to Beat"><HumToBeat /></ToolErrorBoundary>}{panel === "stems" && <ToolErrorBoundary name="Separate Stems">{TEST_MODE ? <TestModeOff name="Separate Stems" /> : <StemSplitter />}</ToolErrorBoundary>}{panel === "coproducer" && <ToolErrorBoundary name="AI Co-Producer">{TEST_MODE ? <TestModeOff name="AI Co-Producer" /> : <CoProducer />}</ToolErrorBoundary>}{panel === "voice" && <ToolErrorBoundary name="Convert Voice"><VoiceConverter /></ToolErrorBoundary>}{panel === "genstem" && <ToolErrorBoundary name="Generate Stem">{TEST_MODE ? <TestModeOff name="Generate Stem" /> : <StemGenerator />}</ToolErrorBoundary>}{panel === "bassgen" && <ToolErrorBoundary name="Bass Generator"><BassGenerator /></ToolErrorBoundary>}{panel === "drummer" && <ToolErrorBoundary name="Live Drummer"><LiveDrummer /></ToolErrorBoundary>}{panel === "livekeys" && <ToolErrorBoundary name="Live Keys"><LiveKeys /></ToolErrorBoundary>}{panel === "dj" && <ToolErrorBoundary name="DJ Decks"><DjDecks /></ToolErrorBoundary>}{panel === "amprig" && <ToolErrorBoundary name="Amp Room"><AmpRoom /></ToolErrorBoundary>}
-      </div></PhonePages> : <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3 pb-24 sm:pb-3">
+      </div></PhonePages> : <div className="editor-body min-h-0 flex-1 space-y-3 overflow-y-auto p-3 pb-24 sm:pb-3">
       {panel === "reel-recorder" && <ReelRecorder />}{panel === "video-sampler" && <VideoSampler />}
-      {panel === "mixer" && <Mixer />}
+      {panel === "mixer" && <Mixer dockControls={workspace.mixerDock ? (
+        <span className="mixer-dock-controls ml-1 flex shrink-0 items-center gap-1 border-l border-border pl-2">
+          <Button size="sm" variant="ghost" className="h-6 gap-1 px-2 font-mono text-[9px] uppercase tracking-wider" title="Open the mixer in its own window — drag it to your second monitor"
+            onClick={() => { if (popOutPanel("mixer")) setPanel(null); else toast.error("Window blocked", { description: "Allow pop-ups for SYNCLAB in your browser, then try Pop out again." }); }}>
+            <ArrowUpFromLine className="size-3" /> Pop out
+          </Button>
+          <Button size="sm" variant="ghost" className="h-6 gap-1 px-2 font-mono text-[9px] uppercase tracking-wider" title="Give the mixer the whole workspace" onClick={() => setWorkspacePrefs({ mixerDock: false })}>
+            <Rows2 className="size-3" /> Full view
+          </Button>
+          <Button size="icon" variant="ghost" className="size-6" aria-label="Close mixer" title="Hide the mixer (F3)" onClick={() => setPanel(null)}><X className="size-3.5" /></Button>
+        </span>
+      ) : undefined} />}
       {panel === "synth" &&
         (synthTrack ? (
           <>
@@ -483,6 +520,8 @@ function StudioWorkspace() {
   const { panel } = useStudio();
   const workspace = useWorkspacePrefs();
   const mobileAccessibility = useMobileAccessibility();
+  // Studio Pro layout: on a computer the mixer docks under the timeline unless the user chose Full view.
+  const mixerDock = !isMobile && panel === "mixer" && workspace.mixerDock;
   const [float, setFloat] = useState<FloatState>({ synth: false, drums: false });
   const [beatMode, setBeatMode] = useState(false);
   const [mobileView, setMobileView] = useState<"create" | "edit">("create");
@@ -509,15 +548,17 @@ function StudioWorkspace() {
       <div className="flex min-h-0 flex-1">
         {!isMobile && <ToolsRail />}
         {landscape && <MobileNav landscape toolsOpen={landscapeTools} onToggleTools={() => setLandscapeTools((v) => !v)} onBeatMode={() => setBeatMode(true)} view={mobileView} setView={setMobileView} moreSignal={moreSignal} />}
-        <main data-panel-full={!isMobile && panel && !workspace.split ? "true" : undefined} data-panel-split={!isMobile && panel && workspace.split ? "true" : undefined}
-          style={!isMobile && panel && workspace.split ? ({ "--split-timeline-h": `${workspace.timelineHeight}px` } as CSSProperties) : undefined}
+        <main data-panel-full={!isMobile && panel && !workspace.split && !mixerDock ? "true" : undefined} data-panel-split={!isMobile && panel && workspace.split && !mixerDock ? "true" : undefined}
+          data-mixer-dock={mixerDock ? "true" : undefined}
+          style={mixerDock ? ({ "--dock-mixer-h": workspace.mixerHeight ? `${workspace.mixerHeight}px` : `${DEFAULT_MIXER_SHARE * 100}dvh` } as CSSProperties) : !isMobile && panel && workspace.split ? ({ "--split-timeline-h": `${workspace.timelineHeight}px` } as CSSProperties) : undefined}
           className="relative flex min-h-0 min-w-0 flex-1 flex-col">
           {isMobile && mobileView === "edit" && !panel && <TopBar />}
           {isMobile && mobileView === "create" && !panel && !beatMode && <MobileCreate onBeatMode={() => setBeatMode(true)} onMore={() => setMoreSignal((n) => n + 1)} />}
           <h1 className="sr-only">SYNCLAB Studio — browser digital audio workstation</h1>
           {!isMobile && <TimelineTopBar />}
           <Timeline />
-          {!isMobile && panel && workspace.split && <SplitHandle />}
+          {!isMobile && panel && workspace.split && !mixerDock && <SplitHandle />}
+          {mixerDock && <MixerDockHandle />}
           <SafePanels float={float} setFloat={setFloat} />
           <DetachedPanels />
           {/* The device strip steps out for tools that own the whole workspace: mixer and studio view. */}

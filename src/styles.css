@@ -1024,6 +1024,15 @@ html[data-reduce-motion] *, html[data-reduce-motion] *::before, html[data-reduce
   }
   .phone-sideways-default [data-radix-popper-content-wrapper][data-sideways-placed] > * { max-height: var(--sw-max-h) !important; }
   .phone-sideways-default [data-radix-popper-content-wrapper][data-sideways-tall] > * { overflow-y: auto !important; overscroll-behavior: contain; }
+  /* Synth preset browser: a near full-screen sheet on the sideways canvas so categories and presets both have room. */
+  .phone-sideways-default [data-radix-popper-content-wrapper]:has(> .preset-browser) {
+    position: fixed !important;
+    left: 8px !important;
+    top: 8px !important;
+    transform: none !important;
+    z-index: 60 !important;
+  }
+  .phone-sideways-default [data-radix-popper-content-wrapper] > .preset-browser.preset-browser { width: calc(100dvh - 16px); height: calc(100dvw - 16px); max-height: calc(100dvw - 16px); }
   /* Rotated canvas: menus take touch drags themselves (lib/sideways-scroll) so their lists scroll. */
   .phone-sideways-default [role="menu"] { touch-action: none !important; overscroll-behavior: contain; }
   .phone-sideways-default .timeline-channel-menu {
@@ -2035,6 +2044,21 @@ main[data-panel-full="true"] > .phone-tool-panel { flex: 1 1 auto; min-height: 0
 /* Desktop split view: the timeline keeps a resizable height above the open editor. */
 main[data-panel-split="true"] > .arrangement-timeline { flex: 0 0 var(--split-timeline-h, 300px); min-height: 0; overflow: hidden; }
 main[data-panel-split="true"] > .phone-tool-panel { flex: 1 1 auto; min-height: 0; overflow: auto; }
+/* Desktop docked mixer (Studio Pro reference): the timeline keeps the top, the console fills a resizable bottom dock. */
+main[data-mixer-dock="true"] > .arrangement-timeline { flex: 1 1 0; min-height: 160px; overflow: hidden; }
+main[data-mixer-dock="true"] > .phone-tool-panel { flex: 0 1 var(--dock-mixer-h, 46dvh); min-height: 0; overflow: hidden; border-top-width: 0; }
+/* The window header steps aside; Pop out / Full view / Close sit at the end of the console toolbar instead. */
+main[data-mixer-dock="true"] > .phone-tool-panel > .editor-panel-header { display: none; }
+main[data-mixer-dock="true"] > .phone-tool-panel > .editor-body { display: flex; flex-direction: column; padding: 0; overflow: hidden; }
+main[data-mixer-dock="true"] .mx-learn-row { display: none; }
+main[data-mixer-dock="true"] .mx-console:not(.mx-phone) { flex: 1 1 auto; min-height: 0; border-width: 0; }
+main[data-mixer-dock="true"] .mx-console:not(.mx-phone) .mobile-mixer-strips { flex: 1 1 auto; }
+main[data-mixer-dock="true"] .mx-console:not(.mx-phone) .mx-output-dock { display: flex; }
+/* Every strip stretches to the dock; the fader row takes whatever height is left so faders grow when the dock is dragged taller. */
+/* Docked strips keep Studio Pro's small-console rows (name, gain, inserts, sends, pan, fader, buttons); EQ, output routing,
+   scope and icon rows stay in Full view. Every strip kind shares this template so the rows still line up across the desk. */
+main[data-mixer-dock="true"] .mx-console:not(.mx-phone) :is(.mx-channel, .mx-master, .mx-routing-strip) { grid-template-rows: 26px 68px 46px 0 26px 0 0 30px minmax(84px, 1fr) 20px 50px 0 0; }
+main[data-mixer-dock="true"] .mx-console:not(.mx-phone) :is(.mx-channel, .mx-master, .mx-routing-strip) > :is(.mx-row-eq, .mx-row-send-bars, .mx-row-routing, .mx-row-scope, .mx-row-icon) { display: none !important; }
 /* Full-workspace desktop mixer: roomy rows that fit their controls and tall faders */
 main[data-panel-full="true"] .mx-console:not(.mx-phone) { flex: 1 1 auto; min-height: 0; }
 main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-row-head { height: 34px; }

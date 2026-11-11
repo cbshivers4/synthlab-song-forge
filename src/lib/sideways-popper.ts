@@ -70,6 +70,8 @@ function attach(node: HTMLElement, getOpts: () => Opts) {
   if (!wrapper?.hasAttribute("data-radix-popper-content-wrapper")) return undefined;
   // The track menu keeps its own centred sideways layout (styles.css).
   if (node.classList.contains("timeline-channel-menu")) return undefined;
+  // The synth preset browser fills the sideways screen instead (styles.css), so its lists have room.
+  if (node.classList.contains("preset-browser")) return undefined;
   let raf = 0;
   const clear = () => {
     wrapper.removeAttribute("data-sideways-placed");

@@ -128,6 +128,7 @@ export function useShortcuts() {
         case 'shortcuts': openShortcutSettings(); studio.setPanel('settings'); break;
         case 'instrument': studio.setPanel(selected?.kind === 'drum' ? 'drums' : selected?.kind === 'sampler' ? 'sampler' : 'synth'); break;
         case 'closePanel': studio.setPanel(null); break;
+        case 'toggleMixer': studio.setPanel(studio.panel === 'mixer' ? null : 'mixer'); break;
         default: studio.setPanel(action); break;
       }
     };

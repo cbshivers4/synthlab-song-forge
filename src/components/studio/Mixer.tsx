@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { Maximize2, Minimize2, Palette, Sliders, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -17,7 +17,7 @@ import { AUX_IDS, BUS_STRIPS, CONSOLE_STYLES, type ConsoleStyle, type ConsoleSty
 
 const PHONE_VIEW_KEY = "synclab.mixer.phoneView";
 
-export function Mixer({ phonePage = 0, phoneChannels, phoneControlPage = "levels", desktopLayout = false }: { phonePage?: number; phoneChannels?: number; phoneControlPage?: "levels" | "performance"; desktopLayout?: boolean }) {
+export function Mixer({ phonePage = 0, phoneChannels, phoneControlPage = "levels", desktopLayout = false, dockControls }: { phonePage?: number; phoneChannels?: number; phoneControlPage?: "levels" | "performance"; desktopLayout?: boolean; /** Pop out / Full view / Close when the mixer is docked under the timeline (its window header is hidden then). */ dockControls?: ReactNode }) {
   const mobileDevice = useIsMobile();
   // Sideways phone workspace: only the big-control mixer (no full desk), with its own menu.
   const phone = useIsLandscapePhone() && mobileDevice;
@@ -301,12 +301,13 @@ export function Mixer({ phonePage = 0, phoneChannels, phoneControlPage = "levels
         <span className="flex h-6 items-center gap-1 rounded-sm bg-surface px-2 font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
             <Palette className="size-3" /> Out {fracToDb(levels.master).toFixed(0)} dB
           </span>
+          {dockControls}
         </div>
           </>
         )}
       </div>
 
-      {!mobileDevice && (() => { const st = tracks.find((x) => x.id === selectedId); return st ? <div className="px-2 py-1"><MidiLearnStrip id={st.id} label={`${st.name} channel — move a knob/fader after tapping`} /></div> : null; })()}
+      {!mobileDevice && (() => { const st = tracks.find((x) => x.id === selectedId); return st ? <div className="mx-learn-row px-2 py-1"><MidiLearnStrip id={st.id} label={`${st.name} channel — move a knob/fader after tapping`} /></div> : null; })()}
       {tracks.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 px-6 py-14 text-center">
           <Sliders className="size-7 text-muted-foreground/60" />

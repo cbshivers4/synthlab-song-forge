@@ -129,6 +129,43 @@ export const GRANULAR_PRESETS: { name: string; set: Partial<GranularPatch> }[] =
   { name: "Granular Slow Motion Strings", set: { source: "strings", scan: 0.01, size: 450, density: 9, spray: 0.1, attack: 1.5, release: 3, cutoff: 3000 } },
 ];
 
+/** Sound type for each grain preset, so the preset browser can sort them (Pad, Choir, Bell, Texture…). */
+export const GRANULAR_PRESET_TYPES: Record<string, string> = {
+  "Granular Glass Cloud": "Pad",
+  "Granular Frozen Choir": "Choir",
+  "Granular Detroit Dust": "Texture",
+  "Granular Shimmer Rise": "FX",
+  "Granular Reverse Bells": "Bell",
+  "Granular Stutter Keys": "Rhythmic",
+  "Granular Wind Tunnel": "Texture",
+  "Granular Bell Swarm": "Bell",
+  "Granular Choir Drift": "Choir",
+  "Granular Octave Mist": "Pad",
+  "Granular Pluck Grain": "Pluck",
+  "Granular Deep Drone": "Drone",
+  "Granular Bitter Ice": "Texture",
+  "Granular Tape Wobble": "Texture",
+  "Granular Breath Pad": "Pad",
+  "Granular Frozen Glass Pad": "Pad",
+  "Granular Rain Drops": "Rhythmic",
+  "Granular Ghost Choir": "Choir",
+  "Granular Cloud Strings": "Pad",
+  "Granular Glitch Stutter": "Rhythmic",
+  "Granular Sub Texture": "Drone",
+  "Granular Octave Choir": "Choir",
+  "Granular Wind Chimes": "Bell",
+  "Granular Dust Storm": "Texture",
+  "Granular Tape Stretch": "Texture",
+  "Granular Reverse Swell": "FX",
+  "Granular Metallic Swarm": "Texture",
+  "Granular Soft Keys": "Keyboard",
+  "Granular Breath Voices": "Choir",
+  "Granular Scanning Bells": "Bell",
+  "Granular Low Choir Freeze": "Choir",
+  "Granular Shattered Glass": "FX",
+  "Granular Slow Motion Strings": "Pad",
+};
+
 export function granularFromPreset(name: string): GranularPatch | null {
   const p = GRANULAR_PRESETS.find((x) => x.name === name);
   return p ? { ...defaultGranular(), ...p.set } : null;

@@ -9,12 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Knob } from "./Knob";
 import { useStudio } from "@/lib/synclab/store";
 import { SYNTH_PRESETS, defaultPatch, applyPreset } from "@/lib/synclab/presets";
-import { orderPresetGroups, presetCategoryLabel, presetMatchesSynth } from "@/lib/synclab/preset-categories";
+import { presetBrowserIndex, presetMatchesSynth } from "@/lib/synclab/preset-categories";
+import { PresetBrowser } from "./PresetBrowser";
 import { initModularPatch } from "@/lib/synclab/modular";
 import type { EnvelopeParams, LfoWave, ModDest, ModSource, OscWave, SynthPatch, Track } from "@/lib/synclab/types";
 import { uid } from "@/lib/synclab/presets";
@@ -23,7 +24,7 @@ import { MidiLearnStrip } from "./MidiLearn";
 import { PitchWheels } from "./PitchWheels";
 import { ModularSynth } from "./ModularSynth";
 import { GranularSynth } from "./GranularSynth";
-import { defaultGranular } from "@/lib/synclab/granular";
+import { GRANULAR_PRESET_TYPES, defaultGranular } from "@/lib/synclab/granular";
 import { AcidSequencer } from "./AcidSequencer";
 import { PresetNavigator } from "./PresetNavigator";
 import { HardwareBypass } from "./HardwareBypass";
@@ -186,22 +187,11 @@ function SynthTrackEditor({ track }: { track: Track }) {
   const macros = patch.macros ?? [0, 0, 0, 0];
   const matrix = patch.modMatrix ?? [];
   const synthStyle = synthStyleOf(track);
-  const presetGroups = (() => {
-    const all = [
-      ...SYNTH_PRESETS.filter((x) => presetMatchesSynth(x.category, synthStyle)).map((x) => ({ name: x.name, category: presetCategoryLabel(x.category) })),
-      ...userPresets.map((x) => ({ name: x.name, category: "My Presets" })),
-    ];
-    const order: string[] = [];
-    const map = new Map<string, string[]>();
-    all.forEach((x) => {
-      if (!map.has(x.category)) {
-        map.set(x.category, []);
-        order.push(x.category);
-      }
-      map.get(x.category)!.push(x.name);
-    });
-    return orderPresetGroups(order.map((category) => ({ category, items: map.get(category)! })));
-  })();
+  const presetIndex = presetBrowserIndex(
+    SYNTH_PRESETS.filter((x) => presetMatchesSynth(x.category, synthStyle)),
+    userPresets.map((x) => x.name),
+    GRANULAR_PRESET_TYPES,
+  );
 
   const selectPreset = (name: string) => {
     const selectedPatch = userPresets.find(p => p.name === name) ?? applyPreset(name);
@@ -217,29 +207,9 @@ function SynthTrackEditor({ track }: { track: Track }) {
       <MidiLearnStrip id={track.id} label={`${track.name} — every knob below also has its own MIDI button`} />
       <div className="synth-preset-deck flex flex-wrap items-center gap-2">
         <HardwareBypass track={track} />
-        <PresetNavigator label="synth preset" options={presetGroups.flatMap(g => g.items)} current={patch.name} onSelect={selectPreset}>
-        <Select value={patch.name} onValueChange={selectPreset}>
-          <SelectTrigger className="synth-preset-window w-72" aria-label="Preset window">
-            <span className="synth-preset-tag" aria-hidden>PRESET</span>
-            <SelectValue placeholder="Browse presets" />
-          </SelectTrigger>
-          <SelectContent className="max-h-[420px]">
-            {presetGroups.map((g) => (
-              <SelectGroup key={g.category}>
-                <SelectLabel className="font-mono text-[10px] uppercase tracking-widest text-primary">
-                  {g.category}
-                </SelectLabel>
-                {g.items.map((name) => (
-                  <SelectItem key={name} value={name}>
-                    {name}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            ))}
-          </SelectContent>
-        </Select>
+        <PresetNavigator label="synth preset" options={presetIndex.order} current={patch.name} onSelect={selectPreset}>
+          <PresetBrowser index={presetIndex} current={patch.name} onSelect={selectPreset} />
         </PresetNavigator>
-        <PresetSearch groups={presetGroups} onSelect={selectPreset} />
         <Input
           value={presetName}
           onChange={(e) => setPresetName(e.target.value)}
@@ -274,7 +244,7 @@ function SynthTrackEditor({ track }: { track: Track }) {
           Initialize
         </Button>
       </div>
-      <FavoritePresetKeys model={synthStyle} current={patch.name} available={presetGroups.flatMap((g) => g.items)} onSelect={selectPreset} />
+      <FavoritePresetKeys model={synthStyle} current={patch.name} available={presetIndex.order} onSelect={selectPreset} />
 
       <PitchWheels trackId={track.id} />
       {(patch.name.startsWith("TD-3") || /ACID/i.test(track.name)) && !patch.granular && <AcidSequencer track={track} />}
@@ -918,41 +888,6 @@ function ChordScale({ trackId, onPlay }: { trackId: string; onPlay: (midi: numbe
         </div>
         <p className="label-xs">Plays through this synth patch on track {trackId.slice(0, 4)} · chord size, inversion, spread and strum shape the voicing.</p>
       </div>
-    </div>
-  );
-}
-
-
-/** Each synth's preset window lists only presets made for that instrument. */
-
-/** Type to find a preset by name or category (e.g. "bass", "pad", "arp"); click a match to load and hear it. */
-function PresetSearch({ groups, onSelect }: { groups: { category: string; items: string[] }[]; onSelect: (name: string) => void }) {
-  const [query, setQuery] = useState("");
-  const q = query.trim().toLowerCase();
-  const matches = q
-    ? groups.flatMap((g) => g.items.filter((name) => name.toLowerCase().includes(q) || g.category.toLowerCase().includes(q)).map((name) => ({ name, category: g.category }))).slice(0, 14)
-    : [];
-  return (
-    <div className="relative">
-      <input
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        onKeyDown={(e) => { if (e.key === "Escape") setQuery(""); if (e.key === "Enter" && matches[0]) { onSelect(matches[0].name); setQuery(""); } }}
-        placeholder="Find preset…"
-        aria-label="Find preset"
-        className="h-9 w-40 rounded-sm border border-input bg-background px-2 font-mono text-xs text-foreground"
-      />
-      {q && (
-        <div role="listbox" aria-label="Matching presets" className="absolute left-0 top-10 z-50 max-h-72 w-64 overflow-auto rounded-md border border-border bg-popover p-1 shadow-lg">
-          {matches.length === 0 ? <p className="px-2 py-1.5 text-xs text-muted-foreground">No preset matches “{query}”.</p> : matches.map((m) => (
-            <button key={`${m.category}:${m.name}`} type="button" role="option" aria-selected={false}
-              onClick={() => { onSelect(m.name); setQuery(""); }}
-              className="flex w-full items-center justify-between gap-2 rounded-sm px-2 py-1.5 text-left text-xs hover:bg-accent">
-              <span className="truncate">{m.name}</span><span className="shrink-0 font-mono text-[9px] uppercase text-muted-foreground">{m.category}</span>
-            </button>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
