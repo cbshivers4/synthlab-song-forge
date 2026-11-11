@@ -247,3 +247,8 @@
 - [x] Drum machine Flam, Roll and Mutate work on the chosen drum
 - [x] DJ Decks hardware controller: Pioneer DDJ-400/FLX4 layout, Learn for others, button lights
 - [x] Help Center: every feature in categories with can / can't lists
+
+## Nov 11 — Preset categories and docked mixer (Christopher)
+- [x] Synth preset window opens a categorized browser: sound types, styles, My Presets, search; stays open while auditioning (all five synths, phone sheet)
+- [x] Desktop mixer docks under the timeline like Studio Pro: drag bar to resize, F3 shows/hides, Full view option
+- [ ] Try on the owner's computer and phone after publishing

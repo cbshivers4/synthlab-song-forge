@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Check, ChevronDown, Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import type { PresetBrowserIndex } from "@/lib/synclab/preset-categories";
@@ -98,7 +99,10 @@ export function PresetBrowser({ index, current, onSelect }: { index: PresetBrows
             </div>
           </div>
         </div>
-        <p className="border-t border-border px-3 py-1.5 text-[10px] text-muted-foreground">Click a sound to load and hear it — the browser stays open so you can try the next one.</p>
+        <div className="flex items-center gap-2 border-t border-border px-3 py-1.5">
+          <p className="min-w-0 flex-1 text-[10px] text-muted-foreground">Click a sound to load and hear it — the browser stays open so you can try the next one.</p>
+          <Button type="button" size="sm" variant="secondary" className="preset-browser-done h-7 shrink-0 px-3 text-xs" onClick={() => setOpen(false)}>Done</Button>
+        </div>
       </PopoverContent>
     </Popover>
   );

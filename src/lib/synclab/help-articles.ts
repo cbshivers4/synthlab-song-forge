@@ -239,11 +239,12 @@ export const KNOWLEDGE_BASE: Article[] = [
   // ───────────── Synths & keys ─────────────
   {
     id: "synths", category: "Synths & keys", title: "The five synths",
-    tags: "synth spec 4 acid bass poly modular granular presets favorites arpeggiator xy tabs",
+    tags: "synth spec 4 acid bass poly modular granular presets preset browser categories sound type style favorites arpeggiator xy tabs",
     body: [
       "Spec 4, Acid Bass (TD-3), Poly Synth, Modular Tech Synth and Granular Synth each have their own look and sound. Controls are grouped into tabs.",
-      "Use the preset window or the ◀ ▶ arrows to browse presets; each preview plays a short note.",
-      "Spec 4 and Poly Synth presets are sorted into Arpeggio, Bass, Brass, FX, Keyboard, Lead, Organ, Pad, Percussive, Sequence, Strings, Synth, Template and Woodwind (Spec 4 also keeps its genre groups). Acid Bass has a Clean Bass group with no distortion, and Granular Synth has 33 grain presets.",
+      "Click the preset window to open the preset browser. The left side lists sound types (Bass, Lead, Pad, Strings, Choir…) with how many sounds each has, then Styles (genres like Detroit Techno or Rave) and My Presets. Click a type to see its sounds on the right, and click a sound to load and hear it. The browser stays open so you can try the next one; press Done or click outside to close it.",
+      "Type in Find to search every preset by name or type. The ◀ ▶ arrows step through presets in the browser's order.",
+      "Every preset sits in one sound type. Spec 4 and Poly Synth use Arpeggio, Bass, Brass, FX, Keyboard, Lead, Organ, Pad, Percussive, Sequence, Strings, Synth, Template and Woodwind, plus Bell, Pluck, Stab and Vocal. Acid Bass splits into Acid Bass and Clean Bass (no distortion), with Electro and Techno styles. Granular Synth sorts its 33 grain sounds into Bell, Choir, Drone, FX, Keyboard, Pad, Pluck, Rhythmic and Texture. Modular Tech patches are sorted by sound too.",
       "Favorite preset keys: tap an empty key or Add current to store the preset you're on, tap a filled key to load it, and use Edit to replace or clear keys.",
     ],
     can: [
@@ -256,6 +257,7 @@ export const KNOWLEDGE_BASE: Article[] = [
       "Changing a sound affects the next notes you play, not a note that is already held.",
       "Brass, strings, woodwind and organ presets are synth imitations, not recorded instruments.",
       "Clean Bass presets only stay clean until you turn up DRIVE or DIST yourself.",
+      "Older genre-group presets are sorted into a sound type by their name, so a few may sit in a type you wouldn't pick; their genre is still listed under Style.",
     ],
   },
   {
@@ -444,16 +446,22 @@ export const KNOWLEDGE_BASE: Article[] = [
   // ───────────── Mixing & effects ─────────────
   {
     id: "mixer", category: "Mixing & effects", title: "Mixer, buses, VCAs and returns",
-    tags: "mixer bus send return fader pan mute solo eq routing vca aux gain meters",
+    tags: "mixer bus send return fader pan mute solo eq routing vca aux gain meters dock studio pro f3 full view",
     body: [
       "Each channel has a GAIN knob, EQ, sends, pan, mute, solo and a fader. Buses group channels, VCAs move several faders at once, and returns hold shared effects.",
+      "On a computer the mixer opens docked under the timeline, like Studio Pro. Drag the bar between them to give the mixer or the timeline more room (double-click the bar to reset it). Press F3 to show or hide the mixer.",
+      "Full view (at the right end of the mixer's top bar) gives the mixer the whole screen with every row; Dock under timeline in its header puts it back. Your choice and the docked height are remembered on that computer.",
       "On phone, swipe sideways through channels and use ⋯ for each channel's menu.",
     ],
     can: [
       "Route tracks to buses and sends; learn mixer controls to a MIDI controller.",
       "Read true levels on the meters; the red zone means clipping.",
     ],
-    cant: ["A VCA scales the channels it controls without moving their own faders."],
+    cant: [
+      "A VCA scales the channels it controls without moving their own faders.",
+      "The docked mixer shows the main rows (gain, inserts, sends, pan, fader, mute/solo). Channel EQ, output routing and the channel scope are only in Full view.",
+      "On a short screen the docked channels scroll up and down if they don't fit; drag the bar up for taller faders.",
+    ],
   },
   {
     id: "effects", category: "Mixing & effects", title: "Effects and the FX Rack",

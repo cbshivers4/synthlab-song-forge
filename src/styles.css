@@ -1033,6 +1033,8 @@ html[data-reduce-motion] *, html[data-reduce-motion] *::before, html[data-reduce
     z-index: 60 !important;
   }
   .phone-sideways-default [data-radix-popper-content-wrapper] > .preset-browser.preset-browser { width: calc(100dvh - 16px); height: calc(100dvw - 16px); max-height: calc(100dvw - 16px); }
+  .phone-sideways-default .preset-browser :is(.preset-browser-cat, [role="option"]) { min-height: 40px; font-size: 13px; }
+  .phone-sideways-default .preset-browser .preset-browser-done { height: 40px; min-width: 88px; font-size: 14px; }
   /* Rotated canvas: menus take touch drags themselves (lib/sideways-scroll) so their lists scroll. */
   .phone-sideways-default [role="menu"] { touch-action: none !important; overscroll-behavior: contain; }
   .phone-sideways-default .timeline-channel-menu {
