@@ -476,6 +476,7 @@ export const KNOWLEDGE_BASE: Article[] = [
     body: [
       "Add effects from the FX Rack, the mixer or a track menu, or drag one onto a track in the timeline. Effects are sorted by category.",
       "Each effect has its own presets (15 each for the hardware-style units) and a BYPASS button.",
+      "Effects that work alike each have their own character: Stereo Delay bounces echoes left and right, Tape Echo has up to three tape heads, wow & flutter and tape saturation, Mod Engine swirls between the speakers, Stereo Imager's Stereoize widens even mono sounds, Analog Filter has an analog drive, and Harmonic Body rings for as long as its Decay knob says.",
     ],
     can: [
       "Stack effects on any track, bus or the master, with live scopes and meters. Press a scope's corner button to open it big — see “Expanding a scope”.",
@@ -486,6 +487,7 @@ export const KNOWLEDGE_BASE: Article[] = [
       "Flipping a switch that changes how an effect is built — a mode, type or cabinet selector, phaser stages, or any Vocoder control — rebuilds that effect with a very short crossfade.",
       "A very slow phone or computer can still fall behind if it's busy for longer than about a third of a second.",
       "These are SYNCLAB's own effects. Your own VST/AU plugins can't run in the browser — see “Desktop app and plugins”.",
+      "Channel EQ, Pro-EQ 8, Utility Gain and Stereo Width start flat, so they change nothing until you turn a knob or pick a preset. Stereo Width can't widen a mono sound — use Stereo Imager's Stereoize for that.",
     ],
   },
   {

@@ -259,19 +259,30 @@ export function buildCreativeFx(ctx: BaseAudioContext, pl: PluginInstance, h: Fx
       break;
     }
     case "modfx": {
+      // Stereo quadrature engine: the left and right delay lines sweep in opposite directions, so
+      // the movement swirls across the speakers (unlike the mono Studio Chorus / Jet Flanger).
       const mode = clamp(Math.round(val("mode", 0)), 0, 2);
       const base = [0.018, 0.003, 0.006][mode]!, span = [0.006, 0.0025, 0.004][mode]!;
-      const d = ctx.createDelay(0.1); d.delayTime.value = base;
-      const fb = ctx.createGain(); fb.gain.value = mode === 2 ? 0 : val("feedback", 0.2);
-      const tone = ctx.createBiquadFilter(); tone.type = "lowpass"; tone.frequency.value = val("tone", 9000);
+      const up = ctx.createGain(); up.channelCount = 2; up.channelCountMode = "explicit"; up.channelInterpretation = "speakers";
+      const split = ctx.createChannelSplitter(2), merge = ctx.createChannelMerger(2);
+      input.connect(up); up.connect(split);
       const lfo = ctx.createOscillator(); lfo.frequency.value = val("rate", 0.8);
       const depth = ctx.createGain(); depth.gain.value = val("depth", 0.5) * span;
-      lfo.connect(depth); depth.connect(d.delayTime);
-      input.connect(d); d.connect(tone); tone.connect(fb); fb.connect(d); tone.connect(wet);
+      const invert = ctx.createGain(); invert.gain.value = -1;
+      lfo.connect(depth); depth.connect(invert);
+      const lines = [0, 1].map((ch) => {
+        const d = ctx.createDelay(0.1); d.delayTime.value = base;
+        const fb = ctx.createGain(); fb.gain.value = mode === 2 ? 0 : val("feedback", 0.2);
+        const tone = ctx.createBiquadFilter(); tone.type = "lowpass"; tone.frequency.value = val("tone", 9000);
+        (ch === 0 ? depth : invert).connect(d.delayTime);
+        split.connect(d, ch); d.connect(tone); tone.connect(fb); fb.connect(d); tone.connect(merge, 0, ch);
+        return { fb, tone };
+      });
+      merge.connect(wet);
       live("rate", (v, t) => glide(lfo.frequency, v, t));
       live("depth", (v, t) => glide(depth.gain, v * span, t));
-      live("feedback", (v, t) => glide(fb.gain, mode === 2 ? 0 : v, t));
-      live("tone", (v, t) => glide(tone.frequency, v, t));
+      live("feedback", (v, t) => lines.forEach(l => glide(l.fb.gain, mode === 2 ? 0 : v, t)));
+      live("tone", (v, t) => lines.forEach(l => glide(l.tone.frequency, v, t)));
       if (mode === 2) { wet.gain.value = 1; dry.gain.value = 1 - val("mix", 0.5); live("mix", (v, t) => glide(dry.gain, 1 - v, t)); }
       else mix(0.5);
       start(lfo);
@@ -396,15 +407,15 @@ export function buildCreativeFx(ctx: BaseAudioContext, pl: PluginInstance, h: Fx
       // Stereoize: a short delayed copy of the highs goes in as side signal (+L / −R), so even a
       // mono sound spreads out while the mono sum stays unchanged. Lows stay centred.
       const mono = ctx.createGain(); mono.channelCount = 1; mono.channelCountMode = "explicit"; mono.channelInterpretation = "speakers";
-      const sHp = bq("highpass", Math.max(300, val("crossover", 250)), 0.7);
+      const sHp = ctx.createBiquadFilter(); sHp.type = "highpass"; sHp.frequency.value = Math.max(300, val("crossover", 250)); sHp.Q.value = 0.7;
       const haas = ctx.createDelay(0.05); haas.delayTime.value = 0.013;
-      const sAmt = ctx.createGain(); sAmt.gain.value = val("stereoize", 0.4) * 0.6;
+      const sAmt = ctx.createGain(); sAmt.gain.value = val("stereoize", 0.4) * 1.2;
       const sNeg = ctx.createGain(); sNeg.gain.value = -1;
       const sMerge = ctx.createChannelMerger(2);
       input.connect(mono); chain(mono, sHp, haas, sAmt);
       sAmt.connect(sMerge, 0, 0); sAmt.connect(sNeg); sNeg.connect(sMerge, 0, 1);
       sMerge.connect(post);
-      live("stereoize", (v, t) => glide(sAmt.gain, clamp(v, 0, 1) * 0.6, t));
+      live("stereoize", (v, t) => glide(sAmt.gain, clamp(v, 0, 1) * 1.2, t));
       post.connect(wet); wet.gain.value = 1; dry.gain.value = 0;
       live("crossover", (v, t) => { [lo1, lo, hi1, hi].forEach(b => glide(b.frequency, v, t)); glide(sHp.frequency, Math.max(300, v), t); });
       live("lowWidth", (v, t) => setLo(v, t)); live("highWidth", (v, t) => setHi(v, t));

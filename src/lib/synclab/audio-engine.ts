@@ -70,7 +70,7 @@ export const midiToFreq = (n: number) => 440 * Math.pow(2, (n - 69) / 12);
 /** Band Q that makes a resonator band ring for about `decay` seconds (60 dB) at `hz`. */
 export const resonatorQ = (hz: number, decay: number) => clamp((Math.PI * hz * Math.max(0.1, decay)) / 6.9, 8, 420);
 /** Narrower bands catch less energy, so louder rings get matching make-up; higher bands are damped. */
-export const resonatorGain = (q: number, damping: number, i: number, count: number) => ((1 - damping * (i / count)) / count) * Math.sqrt(q / 8);
+export const resonatorGain = (q: number, damping: number, i: number, count: number) => ((1 - damping * (i / count)) / count) * Math.sqrt(q / 8) * 2;
 
 export function peakInWindow(channels: Float32Array[], start: number, end: number): number {
   let peak = 0;
@@ -1020,7 +1020,22 @@ export class SyncLabEngine {
           live(pl, "type", (v) => { const m = Math.round(v); f.type = m === 1 ? "highpass" : m === 2 ? "bandpass" : "lowpass"; });
           const fIn = ctx.createGain(), fWet = ctx.createGain(), fDry = ctx.createGain(), fOut = ctx.createGain();
           dbLive(pl, "input", fIn); dbLive(pl, "output", fOut); mixLive(pl, fWet, fDry);
-          fIn.connect(f); f.connect(fWet); fWet.connect(fOut); fIn.connect(fDry); fDry.connect(fOut);
+          // Analog drive: the signal is pushed into a soft-clipping stage before the filter, like a
+          // hardware filter's input transistor, so it thickens and the resonance growls when pushed.
+          const fClean = ctx.createGain(), fPush = ctx.createGain(), fShaper = ctx.createWaveShaper(), fShaped = ctx.createGain();
+          const softCurve = new Float32Array(1025);
+          for (let i = 0; i < softCurve.length; i++) softCurve[i] = Math.tanh((i / 512 - 1) * 4);
+          fShaper.curve = softCurve;
+          const setDrive = (v: number, t?: number) => {
+            const d = clamp(v, 0, 1), g = 1 + d * 9;
+            const set = (prm: AudioParam, x: number) => (t === undefined ? (prm.value = x) : glide(prm, x, t));
+            set(fClean.gain, 1 - d); set(fPush.gain, g); set(fShaped.gain, d / Math.sqrt(g));
+          };
+          setDrive(val(pl, "drive", 0.3));
+          live(pl, "drive", (v, t) => setDrive(v, t));
+          fIn.connect(fClean); fClean.connect(f);
+          fIn.connect(fPush); fPush.connect(fShaper); fShaper.connect(fShaped); fShaped.connect(f);
+          f.connect(fWet); fWet.connect(fOut); fIn.connect(fDry); fDry.connect(fOut);
           nodes.push(fIn, f, fWet, fDry, fOut);
           break;
         }

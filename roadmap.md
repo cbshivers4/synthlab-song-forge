@@ -263,3 +263,8 @@
 - [x] Deleting a tapped block removes that block: hidden recorded takes are no longer deleted instead, cut blocks outside the loop delete whole, and the block's Delete is clickable while the track menu is open
 - [ ] Owner listens to the presets and tries moving/deleting blocks on the published app
 
+
+## Nov 11 — Every effect sounds different (Christopher)
+- [x] Measured every effect and preset on the same beat and chords; Tape Echo/Stereo Delay, Pulse Grid, Harmonic Body, Analog Filter, Mod Engine and Stereo Imager made distinct
+- [ ] Bit Crusher's character presets barely change the sound — strengthen next
+- [ ] Owner listens on the published app

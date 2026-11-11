@@ -43,12 +43,13 @@ export const PARAMS_BY_KIND: Record<PluginKind, () => PluginParam[]> = {
       ];
     }).concat([p("output", "Output", 0, -24, 24, "dB")]),
   filter: () => [
-    p("cutoff", "Cutoff", 8000, 60, 18000, "Hz"),
-    p("resonance", "Resonance", 1, 0.1, 20, "Q"),
+    p("cutoff", "Cutoff", 2600, 60, 18000, "Hz"),
+    p("resonance", "Resonance", 3, 0.1, 20, "Q"),
     p("type", "Mode", 0, 0, 2, ""),
     p("input", "Input", 0, -18, 18, "dB"),
     p("mix", "Mix", 1, 0, 1, ""),
     p("output", "Output", 0, -18, 12, "dB"),
+    p("drive", "Analog Drive", 0.3, 0, 1, ""),
   ],
   drive: () => [
     p("drive", "Drive", 0.3, 0, 1, ""),
