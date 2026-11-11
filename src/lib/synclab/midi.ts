@@ -82,6 +82,17 @@ export function claimMidiNotes(consumer: (msg: MidiMessage) => boolean): () => v
   return () => { noteConsumers.delete(consumer); };
 }
 
+/**
+ * Whole-controller consumers (DJ Decks hardware): they see every raw note/CC from an input, with its
+ * port name, before MIDI Thru, note routing or mappings, and return true to keep it for themselves.
+ */
+export type RawMidi = { status: number; d1: number; d2: number; inputId: string; portName: string };
+const controllerConsumers = new Set<(msg: RawMidi) => boolean>();
+export function claimControllerMidi(consumer: (msg: RawMidi) => boolean): () => void {
+  controllerConsumers.add(consumer);
+  return () => { controllerConsumers.delete(consumer); };
+}
+
 /** Subscribe to one input id, or all inputs when id is "all". Returns an unsubscribe fn. */
 export function subscribe(a: AnyAccess | null, id: string, handler: (msg: MidiMessage, inputId?: string) => void): () => void {
   const ports = Array.from(a?.inputs.values() ?? []).filter((p) => midiInputEnabled(id, p.id));
@@ -100,6 +111,10 @@ export function subscribe(a: AnyAccess | null, id: string, handler: (msg: MidiMe
       const prev = lastNote.get(key);
       lastNote.set(key, now);
       if (prev != null && now - prev < 25) return;
+    }
+    if (controllerConsumers.size && cmd >= 0x80 && cmd <= 0xe0) {
+      const portName = ports.find((p) => p.id === inputId)?.name ?? virtualPorts.get(inputId) ?? "";
+      for (const consumer of controllerConsumers) if (consumer({ status, d1, d2, inputId, portName: portName || "" })) return;
     }
     if (cmd === 0x90 || cmd === 0x80) {
       const prefs = playbackPreferences();

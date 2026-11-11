@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
-import { Disc3, FolderOpen, SkipBack, Headphones, ListMusic, Music2, Pause, Play, Circle, Square, Download, Trash2, RefreshCcw } from "lucide-react";
+import { Cable, Disc3, FolderOpen, SkipBack, Headphones, ListMusic, Music2, Pause, Play, Circle, Square, Download, Trash2, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Knob } from "./Knob";
@@ -19,6 +19,9 @@ import { useIsLandscapePhone } from "@/hooks/use-mobile";
 import { DJ_TRACK_DRAG, DjPlaylist, loadPlaylistTrack } from "./DjPlaylist";
 import { Turntable } from "./DjTurntable";
 import { DjTrackBrowser } from "./DjTrackBrowser";
+import { DjController } from "./DjController";
+import { getDjMidi } from "@/lib/synclab/dj-midi";
+import { getPlaylists } from "@/lib/synclab/dj-playlist-store";
 import { PhonesPanel, PhonesSheet, togglePhonesCue } from "./DjPhones";
 import { useFrame } from "./dj-frame";
 
@@ -55,7 +58,18 @@ function DjDesk() {
   const phone = useIsLandscapePhone();
   const [listOpen, setListOpen] = useState(false);
   const [phonesOpen, setPhonesOpen] = useState(false);
+  const [hwOpen, setHwOpen] = useState(false);
   const deskRef = useRef<HTMLElement>(null);
+  // DJ controller hardware: LOAD buttons load the row the Browse knob (or a click) selected; button lights follow the decks
+  useEffect(() => {
+    const midi = getDjMidi();
+    midi.loader = (deck, index) => { const t = getPlaylists().tracks[index]; if (t) void loadPlaylistTrack(deck, t.id); else toast("Add music to the playlist first", { description: "The controller's LOAD buttons load the selected track from the playlist." }); };
+    const lights = () => void midi.syncLights();
+    lights();
+    const offDj = dj.subscribe(lights);
+    const offMidi = midi.subscribe(lights);
+    return () => { offDj(); offMidi(); midi.loader = null; };
+  }, [dj]);
   return (
     <section ref={deskRef} className="dj-device relative space-y-2 rounded-md border border-border p-2 sm:p-3" aria-label="DJ decks">
       {!phone && (
@@ -72,13 +86,15 @@ function DjDesk() {
       {!phone && <DjTrackBrowser />}
       <div className="dj-console">
         <DeckPanel id="A" />
-        <MixerPanel active={anyPlaying} onPlaylist={() => setListOpen(true)} onPhones={() => setPhonesOpen(true)} />
+        <MixerPanel active={anyPlaying} onPlaylist={() => setListOpen(true)} onPhones={() => setPhonesOpen(true)} onHardware={() => setHwOpen(true)} />
         <DeckPanel id="B" />
       </div>
       {!phone && <RecordPanel />}
+      {!phone && <DjController />}
       {!phone && <DjPlaylist />}
       {phone && listOpen && <PhoneSheet anchor={deskRef}><DjPlaylist sheet onClose={() => setListOpen(false)} /></PhoneSheet>}
       {phone && phonesOpen && <PhoneSheet anchor={deskRef}><PhonesSheet onClose={() => setPhonesOpen(false)} /></PhoneSheet>}
+      {phone && hwOpen && <PhoneSheet anchor={deskRef}><DjController sheet onClose={() => setHwOpen(false)} /></PhoneSheet>}
       <p className="dj-footnote text-[11px] text-muted-foreground">
         Press a channel's orange CUE to hear that deck in your headphones before the crowd does (even with its fader down). MONO SPLIT works with headphones on one output: cue in the left ear, master in the right. 2ND OUT sends the headphones to USB headphones or a DJ interface while the speakers keep the master (Chrome or Edge on a computer). Pitch and 45 RPM change tempo and key together, like a turntable.
       </p>
@@ -408,7 +424,7 @@ function DeckPanel({ id }: { id: DeckId }) {
 const meterPos = (v: number) => Math.min(1, Math.max(0, (20 * Math.log10(Math.max(1e-5, v)) + 48) / 54));
 const METER_TICKS = [6, 0, -6, -12, -24, -48];
 
-function MixerPanel({ onPlaylist, onPhones }: { active: boolean; onPlaylist: () => void; onPhones: () => void }) {
+function MixerPanel({ onPlaylist, onPhones, onHardware }: { active: boolean; onPlaylist: () => void; onPhones: () => void; onHardware: () => void }) {
   const dj = getDj();
   const meters = useRef<Record<string, HTMLElement | null>>({});
   const hold = useRef<Record<string, { v: number; at: number; clipAt: number }>>({});
@@ -526,6 +542,7 @@ function MixerPanel({ onPlaylist, onPhones }: { active: boolean; onPlaylist: () 
           <RecordPanel />
           <Button variant="secondary" className="dj-btn dj-pl-open" onClick={onPlaylist} aria-label="Open the playlist — add, save and delete music"><ListMusic className="size-4" />Playlist</Button>
           <Button variant="secondary" className="dj-btn dj-pl-open" onClick={onPhones} aria-label="Headphones" data-on={dj.state.phonesMode !== "off" ? "1" : "0"}><Headphones className="size-4" /></Button>
+          <Button variant="secondary" className="dj-btn dj-pl-open" onClick={onHardware} aria-label="DJ controller hardware"><Cable className="size-4" /></Button>
         </div>
       </div>
     );

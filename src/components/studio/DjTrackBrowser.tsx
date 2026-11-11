@@ -8,6 +8,7 @@ import { getTrackInfo } from "@/lib/synclab/dj-track-info";
 import { splitArtistTitle } from "@/lib/synclab/track-tags";
 import type { PlaylistTrack } from "@/lib/synclab/dj-playlist";
 import { DJ_TRACK_DRAG, isOnDeck, loadPlaylistTrack } from "./DjPlaylist";
+import { getDjMidi } from "@/lib/synclab/dj-midi";
 import { TimelineVScrollbar } from "./timeline/VScrollbar";
 
 const OPEN_KEY = "synclab.dj.trackBrowser.open";
@@ -24,7 +25,10 @@ export function DjTrackBrowser() {
   useSyncExternalStore((fn) => info.subscribe(fn), () => info.version, () => 0);
   const dj = getDj();
   const [open, setOpen] = useState(true);
-  const [selected, setSelected] = useState<string | null>(null);
+  // the selected row is shared with a DJ controller's Browse knob and LOAD buttons
+  const midi = getDjMidi();
+  useSyncExternalStore((fn) => midi.subscribe(fn), () => midi.version, () => 0);
+  const selected = s.tracks[midi.cursor]?.id ?? null;
   const [loading, setLoading] = useState<DeckId | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -50,6 +54,11 @@ export function DjTrackBrowser() {
     if (r.added) toast.success(`Added ${r.added} track${r.added === 1 ? "" : "s"} to ${s.displayName}`);
     else toast("Nothing added", { description: r.duplicates ? "Those tracks are already in the list." : "Pick MP3, WAV, AAC or FLAC files." });
   };
+  // keep the row the controller points at in view
+  useEffect(() => {
+    if (midi.cursor < 0) return;
+    listRef.current?.querySelectorAll<HTMLElement>(".dj-browser-row")[midi.cursor]?.scrollIntoView({ block: "nearest" });
+  }, [midi.cursor]);
   const onDeck = (t: PlaylistTrack) => (["A", "B"] as DeckId[]).filter((d) => isOnDeck(d, t));
 
   return (
@@ -91,7 +100,7 @@ export function DjTrackBrowser() {
                       : ti?.scan === "failed" ? "Couldn't measure this file's tempo" : "Measuring the tempo…";
                     return (
                       <li key={t.id} className="dj-browser-row" data-on={decks.join("") || undefined} aria-selected={selected === t.id} draggable
-                        onClick={() => setSelected(t.id)}
+                        onClick={() => midi.setCursor(i)}
                         onDragStart={(e) => { e.dataTransfer.setData("application/synclab", JSON.stringify({ type: DJ_TRACK_DRAG, id: t.id })); e.dataTransfer.effectAllowed = "copy"; }}>
                         <span className="dj-browser-num">{i + 1}</span>
                         <span className="dj-browser-title truncate" title={title}>

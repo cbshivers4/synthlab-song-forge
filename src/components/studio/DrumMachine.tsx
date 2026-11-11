@@ -1,6 +1,6 @@
 import { getPlayStep, usePlayStep } from "@/lib/synclab/playhead";
 import { useEffect, useRef, useState } from "react";
-import { useDrumEditorView } from "@/lib/synclab/drum-editor-view";
+import { peekDrumEditorView, useDrumEditorView } from "@/lib/synclab/drum-editor-view";
 import { stepsPerBar, getBeatsPerBar, stepSeconds } from "@/lib/synclab/timebase";
 import { NOTE_REPEAT_RATES, startNoteRepeat } from "@/lib/synclab/note-repeat";
 import { SkinControls, skinBackground, useImageDrop } from "@/components/studio/SkinControls";
@@ -29,6 +29,9 @@ import { DrumChainBar } from "./DrumChainBar";
 import { markLiveHit, neighbourLiveHits } from "@/lib/synclab/live-take";
 import { PresetNavigator } from "./PresetNavigator";
 import { HardwareBypass } from "./HardwareBypass";
+import { flamPad, mutateDrumPad, rollPad } from "./drum-fill-actions";
+import { HitMarks } from "./DrumHitMarks";
+import { hasFlam, rollSize } from "@/lib/synclab/drum-fills";
 
 const PRESET_KEY = "synclab.drumPresets.v1";
 type DrumPreset = { name: string; pads: Partial<DrumPad>[] };
@@ -171,6 +174,12 @@ export function DrumMachine({ track }: { track: Track }) {
     switchSequence(next, true);
   };
   const focusPad = pads.find((p) => p.id === focusPadId) ?? pads[0];
+  // computer: the Sound page edits the drum last picked in the drum roll
+  useEffect(() => {
+    if (isMobile || phoneView !== "sound") return;
+    const picked = peekDrumEditorView(track.id).padId;
+    if (picked && pads.some((p) => p.id === picked)) setFocusPadId(picked);
+  }, [isMobile, phoneView, track.id]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!isMobile || !ready || !view.padId) return;
     setFocusPadId(view.padId);
@@ -225,12 +234,7 @@ export function DrumMachine({ track }: { track: Track }) {
     updatePad(track.id, pad.id, { [key]: values });
   };
 
-  const mutate = (pad: DrumPad) => {
-    const amount = pad.mutation ?? 0.2;
-    updatePad(track.id, pad.id, {
-      steps: pad.steps.map((value) => Math.random() < amount ? (value > 0 ? (Math.random() < 0.35 ? 0 : Math.max(0.25, Math.min(1, value + (Math.random() - 0.5) * 0.4))) : (Math.random() < 0.28 ? 0.55 : 0)) : value),
-    });
-  };
+  const fillCtx = { track, transport, updatePad, updateTrack };
 
   // click cycles: off -> ghost -> normal -> accent
   const cycleStep = (padId: string, steps: number[], i: number) => {
@@ -245,14 +249,6 @@ export function DrumMachine({ track }: { track: Track }) {
         steps: p.steps.map((v) => (v > 0 ? Math.min(1, Math.max(0.2, v + (Math.random() - 0.5) * 0.3)) : v)),
       }),
     );
-
-  const flam = (padId: string, steps: number[]) =>
-    updatePad(track.id, padId, {
-      steps: steps.map((v, i) => (v === 0 && (steps[i - 1] ?? 0) > 0 ? 0.3 : v)),
-    });
-
-  const roll = (padId: string, steps: number[]) =>
-    updatePad(track.id, padId, { steps: steps.map((v, i) => (i % 2 === 0 ? v : Math.max(v, 0.45))) });
 
   const kit = (pads[0]?.kit ?? "909") as DrumKitId;
   const addSoundPad = () => {
@@ -450,7 +446,7 @@ export function DrumMachine({ track }: { track: Track }) {
                        updateView({ padId: pad.id, step: i, start: stepStart });
                      }}
                     title={v > 0 ? `velocity ${Math.round(v * 100)}%` : "empty"}
-                    className="h-6 min-w-0 flex-1 rounded-[3px] border p-0 transition-all"
+                    className="relative h-6 min-w-0 flex-1 rounded-[3px] border p-0 transition-all"
                     style={{
                       minWidth: isMobile ? undefined : 12,
                       borderColor:
@@ -465,7 +461,7 @@ export function DrumMachine({ track }: { track: Track }) {
                               : "color-mix(in oklab, var(--surface-2) 90%, transparent)"
                             : "color-mix(in oklab, var(--surface) 80%, transparent)",
                     }}
-                  >{isMobile ? i + 1 : null}</Button>;
+                  >{isMobile ? i + 1 : null}<HitMarks pad={pad} i={i} /></Button>;
                 })}
               </div>
             </div>
@@ -800,10 +796,10 @@ export function DrumMachine({ track }: { track: Track }) {
                   Pads in the same group cut each other off — like closed and open hats.
                 </p>
               </div>
-              <div className="flex flex-wrap gap-1">
-                <Button size="sm" variant="ghost" className="h-6 px-1.5 text-[10px]" onClick={() => flam(focusPad.id, focusPad.steps)}>Flam</Button>
-                <Button size="sm" variant="ghost" className="h-6 px-1.5 text-[10px]" onClick={() => roll(focusPad.id, focusPad.steps)}>Roll</Button>
-                <Button size="sm" variant="secondary" className="h-6 px-1.5 text-[10px]" onClick={() => mutate(focusPad)}>Mutate</Button>
+              <div className="drum-fill-tools flex flex-wrap items-center gap-1.5">
+                <Button size="sm" variant={hasFlam(focusPad) ? "default" : "secondary"} aria-pressed={hasFlam(focusPad)} className="h-8 px-3 text-xs font-bold" title="Double stroke on every hit of this drum — press again to turn off" onClick={() => flamPad(fillCtx, focusPad)}>Flam</Button>
+                <Button size="sm" variant={rollSize(focusPad) > 1 ? "default" : "secondary"} aria-pressed={rollSize(focusPad) > 1} className="h-8 px-3 text-xs font-bold" title="Roll every hit: ×2, ×3, ×4, then off" onClick={() => rollPad(fillCtx, focusPad)}>{rollSize(focusPad) > 1 ? `Roll ×${rollSize(focusPad)}` : "Roll"}</Button>
+                <Button size="sm" variant="secondary" className="h-8 px-3 text-xs font-bold" title="Change a few hits of this drum — the MUTATE knob sets how many" onClick={() => mutateDrumPad(fillCtx, focusPad)}>Mutate</Button>
                 <label className="cursor-pointer rounded-md px-1.5 py-0.5 text-[10px] text-muted-foreground hover:text-foreground">
                   Load sample
                   <input

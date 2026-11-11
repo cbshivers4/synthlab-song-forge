@@ -243,3 +243,6 @@
 - [ ] Phone DJ Decks silent on the owner's Android phone: Play now reports what blocks the sound (phone holding sound back / a control turned down) and logs project.dj_play_check — waiting on the owner to retry on the published app.
 
 - [x] Phone Live Drummer, Live Keys and DJ Decks: wide teal side scroll bar scrolls the page without touching knobs/faders (sits under the DJ playlist/headphone sheets). Tested at 360×669 with drags; real-phone check pending.
+
+- [x] Drum machine Flam, Roll and Mutate work on the chosen drum
+- [x] DJ Decks hardware controller: Pioneer DDJ-400/FLX4 layout, Learn for others, button lights

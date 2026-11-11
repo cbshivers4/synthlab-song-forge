@@ -25,6 +25,9 @@ import { toast } from "sonner";
 import { loopRegion } from "@/lib/synclab/recording-region";
 import { useDrumEditorView } from "@/lib/synclab/drum-editor-view";
 import { DrumBulkControls } from "./DrumBulkControls";
+import { flamPad, mutateDrumPad, rollPad } from "./drum-fill-actions";
+import { HitMarks } from "./DrumHitMarks";
+import { hasFlam, rollSize } from "@/lib/synclab/drum-fills";
 
 const VELOCITIES = [0, 0.35, 0.7, 1] as const;
 
@@ -221,6 +224,7 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
   const setProbability = (pad: DrumPad, pct: number) =>
     write(pad, { probability: rowSteps(pad).map((v) => (v > 0 ? pct / 100 : 1)) });
 
+  const fillCtx = { track, transport, updatePad, updateTrack };
   const tools = (pad: DrumPad) => {
     const steps = rowSteps(pad);
     return {
@@ -230,9 +234,10 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
         write(pad, {
           steps: steps.map((v) => (v > 0 ? Math.min(1, Math.max(0.2, v + (Math.random() - 0.5) * 0.3)) : 0)),
         }),
-      flam: () => write(pad, { steps: steps.map((v, i) => (v === 0 && (steps[i - 1] ?? 0) > 0 ? 0.3 : v)) }),
+      flam: () => flamPad(fillCtx, pad),
       fill: (every: number, offset = 0) => write(pad, { steps: steps.map((_, i) => (i % every === offset ? 0.7 : 0)) }),
-      roll: () => write(pad, { steps: steps.map((v, i) => (i % 2 === 0 ? v : Math.max(v, 0.45))) }),
+      roll: () => rollPad(fillCtx, pad),
+      mutate: () => mutateDrumPad(fillCtx, pad),
       repeat: () => write(pad, { steps: steps.map((v, i) => (v > 0 ? v : i % 4 === 0 ? 0.6 : 0)) }),
     };
   };
@@ -443,6 +448,7 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
                           }}
                         >
                            {isMobile && <span className={`font-mono text-xs ${i % view.snap === 0 ? "text-primary" : "text-muted-foreground"}`}>{i + 1}</span>}
+                          <HitMarks pad={pad} i={i} />
                           {v > 0 && chance < 1 && (
                             <span className="absolute inset-x-0 bottom-0 block h-[2px] bg-background/70" />
                           )}
@@ -465,8 +471,9 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
                       [
                         ["ACCENT", tools(pad).accent],
                         ["HUMANIZE", tools(pad).humanize],
-                        ["FLAM", tools(pad).flam],
-                        ["ROLL", tools(pad).roll],
+                        [hasFlam(pad) ? "FLAM ✓" : "FLAM", tools(pad).flam],
+                        [rollSize(pad) > 1 ? `ROLL ×${rollSize(pad)}` : "ROLL", tools(pad).roll],
+                        ["MUTATE", tools(pad).mutate],
                         ["NOTE REPEAT", tools(pad).repeat],
                         ["CLEAR", tools(pad).clear],
                       ] as const

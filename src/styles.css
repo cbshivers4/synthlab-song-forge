@@ -4934,3 +4934,44 @@ html.phone-console-active [role="option"] { min-height: 44px; font-size: 15px; }
 /* Sideways phone: the two scrolling waveforms are tall enough to read beats, cues and the playhead (the desk scrolls). */
 .phone-console .dj-device .dj-waves .dj-wave { height: 48px; }
 .phone-console .dj-device .dj-wave-tag { font-size: 14px; }
+
+/* Flam / roll marks on drum steps */
+.drum-hit-marks { position: absolute; top: 1px; right: 2px; display: flex; gap: 2px; pointer-events: none; font-family: var(--font-mono, ui-monospace, monospace); font-size: 9px; line-height: 1; }
+.drum-hit-marks b { padding: 0 2px; border-radius: 2px; background: color-mix(in oklab, var(--background) 72%, transparent); color: var(--foreground); font-weight: 700; }
+
+/* DJ Decks: hardware controller section */
+.dj-hw-status { min-width: 0; font-size: 12px; font-weight: 600; color: var(--foreground); }
+.dj-phones-sheet-head .dj-hw-status { margin-left: 6px; font-weight: 500; color: var(--muted-foreground); }
+.dj-hw-led { display: inline-block; width: 8px; height: 8px; flex-shrink: 0; border-radius: 50%; background: oklch(0.3 0.01 260); box-shadow: inset 0 0 0 1px oklch(0.4 0.01 260); }
+.dj-hw-led[data-live="1"], .dj-hw-activity[data-live="1"] .dj-hw-led { background: var(--primary); box-shadow: 0 0 8px var(--primary); }
+.dj-hw-body { display: flex; flex-direction: column; gap: 8px; padding: 8px; font-size: 12px; }
+.dj-hw-note { font-size: 11px; line-height: 1.4; color: var(--muted-foreground); }
+.dj-hw-row-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 4px; }
+.dj-hw-row-head > b { font-size: 12px; color: var(--primary); letter-spacing: 0.04em; }
+.dj-hw-ports ul { display: flex; flex-direction: column; gap: 4px; }
+.dj-hw-port { display: flex; align-items: center; gap: 8px; min-height: 32px; padding: 2px 8px; border-radius: 4px; background: oklch(0.15 0.004 260); border: 1px solid oklch(0.26 0.01 260); }
+.dj-hw-port[data-on="1"] { border-color: color-mix(in oklab, var(--primary) 60%, transparent); }
+.dj-hw-tag { flex-shrink: 0; padding: 1px 6px; border-radius: 3px; font-size: 10px; font-weight: 700; letter-spacing: 0.04em; background: oklch(0.22 0.01 260); color: var(--muted-foreground); }
+.dj-hw-tag[data-kind="ready"] { background: color-mix(in oklab, var(--primary) 22%, transparent); color: var(--primary); }
+.dj-hw-activity { display: flex; align-items: center; gap: 8px; min-height: 30px; padding: 4px 8px; border-radius: 4px; background: oklch(0.12 0.004 260); border: 1px dashed oklch(0.3 0.01 260); }
+.dj-hw-activity small { color: var(--muted-foreground); }
+.dj-hw-link { margin-left: 6px; text-decoration: underline; color: var(--primary); }
+.dj-hw-opts { display: flex; flex-wrap: wrap; gap: 6px 16px; }
+.dj-hw-opts label { display: inline-flex; align-items: center; gap: 6px; }
+.dj-hw-groups { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.dj-hw-group { min-width: 0; border-radius: 4px; border: 1px solid oklch(0.26 0.01 260); background: oklch(0.13 0.004 260); }
+.dj-hw-group h4 { padding: 3px 8px; font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; border-bottom: 1px solid oklch(0.24 0.01 260); color: var(--foreground); }
+.dj-hw-group[data-deck="A"] h4 { color: var(--dj-a, var(--primary)); }
+.dj-hw-group[data-deck="B"] h4 { color: var(--dj-b, var(--primary)); }
+.dj-hw-group ul { max-height: 260px; overflow-y: auto; }
+.dj-hw-action { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; align-items: center; gap: 4px; min-height: 28px; padding: 1px 6px; border-bottom: 1px solid oklch(0.2 0.006 260); }
+.dj-hw-action[data-learning="1"] { background: color-mix(in oklab, var(--primary) 18%, transparent); }
+.dj-hw-key { font-family: var(--font-mono); font-size: 10px; color: var(--muted-foreground); white-space: nowrap; }
+.dj-hw-btn { min-height: 22px; padding: 0 7px; border-radius: 3px; border: 1px solid oklch(0.34 0.01 260); background: oklch(0.2 0.006 260); font-size: 11px; font-weight: 600; color: var(--foreground); }
+.dj-hw-btn:hover, .dj-hw-btn[aria-pressed="true"] { border-color: var(--primary); color: var(--primary); }
+.dj-hw-btn.is-x { padding: 0 4px; }
+.dj-hw.is-sheet { background: var(--surface); }
+.dj-hw-scroll { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.dj-hw.is-sheet .dj-hw-groups { grid-template-columns: repeat(3, minmax(180px, 1fr)); }
+.dj-hw.is-sheet .dj-hw-action { min-height: 40px; }
+.dj-hw.is-sheet .dj-hw-btn { min-height: 34px; padding: 0 10px; font-size: 13px; }
