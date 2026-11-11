@@ -245,7 +245,7 @@ export function PartMenu({ label, onDelete, moves = [] }: { label: string; onDel
     <span ref={anchor} />
     {position && createPortal(<div ref={menu} role="menu" data-part-quick-menu aria-label={`${label} actions`}
       style={position}
-      className="fixed z-50 flex flex-col rounded-md border border-border bg-popover p-0.5 text-popover-foreground shadow-lg"
+      className="fixed z-[70] flex flex-col rounded-md border border-border bg-popover p-0.5 text-popover-foreground shadow-lg"
       onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
       <Button type="button" role="menuitem" variant="ghost" size="sm" onClick={() => { setPosition(null); onDelete(); }}
         className="gap-1.5 font-mono text-[10px] font-semibold hover:bg-destructive hover:text-destructive-foreground">

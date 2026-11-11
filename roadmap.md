@@ -256,3 +256,10 @@
 ## Nov 11 — Expand every scope (Christopher)
 - [x] Every device scope opens a big Spectrum Analyzer window like the Studio One reference (source menu, Follow Selection, Analyzer, peak hold, scope view; phone full screen)
 - [ ] Try on the owner's computer and phone after publishing
+
+## Nov 11 — Presets, moving blocks, deleting blocks (Christopher)
+- [x] Synth presets no longer sound alike: built-in voice warmth made light (it squashed every preset into one tone); voice/choir and big unison presets get level make-up
+- [x] Move a note block or beat part to another track: drag it up/down onto the lane, or To track above/below in the block menu / Move part to… in the track menu
+- [x] Deleting a tapped block removes that block: hidden recorded takes are no longer deleted instead, cut blocks outside the loop delete whole, and the block's Delete is clickable while the track menu is open
+- [ ] Owner listens to the presets and tries moving/deleting blocks on the published app
+
