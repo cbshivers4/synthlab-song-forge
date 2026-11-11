@@ -15,6 +15,7 @@ import type { Track } from "@/lib/synclab/types";
 import { WaveformView } from "@/components/studio/WaveformView";
 import { ClipEditor } from "@/components/studio/ClipEditor";
 import { clipRate, clipSeconds } from "@/lib/synclab/types";
+import { visibleClipPeaks } from "@/lib/synclab/clip-peaks";
 import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
 import { DrumHitWave, EMPTY_PEAKS, NOTE_NAMES, PartMenu } from "./shared";
 
@@ -235,7 +236,7 @@ export function Waveform({ track }: { track: Track }) {
         const left = (start / total) * 100;
         const width = Math.min(100 - left, (steps / total) * 100);
         const active = clip.id === track.activeClipId;
-        const peaks = clip.peaks.length > 0 ? clip.peaks : EMPTY_PEAKS;
+        const peaks = clip.peaks.length > 0 ? visibleClipPeaks(clip) : EMPTY_PEAKS;
         return (
           <div
             key={clip.id}

@@ -162,7 +162,7 @@ export function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track:
     const cut = Math.max(1, Math.round(activeClip.peaks.length * playFrac));
     const peaks = side === "left" ? activeClip.peaks.slice(cut) : activeClip.peaks.slice(0, cut);
     const duration = activeClip.duration * (side === "left" ? 1 - playFrac : playFrac);
-    writeClips(clips.map((c) => (c.id === activeClip.id ? { ...c, peaks, duration } : c)));
+    writeClips(clips.map((c) => (c.id === activeClip.id ? { ...c, peaks, duration, peaksSpan: undefined } : c)));
     toast.success(side === "left" ? "Start trimmed" : "End trimmed");
   };
 

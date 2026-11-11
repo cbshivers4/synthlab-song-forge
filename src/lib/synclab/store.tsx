@@ -79,6 +79,7 @@ import { clipRate, clipSeconds, laneValueAt, SECTION_COLORS } from "./types";
 import { wsolaStretch } from "./stretch";
 import { encodeWav } from "./bounce";
 import { alignedTake, getInputLatencyMs, outputDelay, preRollTake } from "./latency";
+import { peaksSpanOf } from "./clip-peaks";
 import { addCut, cutNotesAt, deleteRegion, regionAt, unrollNotes } from "./note-cuts";
 import { GRANULAR_KNOBS } from "./granular";
 import { externalNoteOff, externalNoteOn, isExternal, restoreExternalRoutes, sendExternalBend, sendExternalCc } from "./external-midi";
@@ -1787,10 +1788,10 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         const offset = c.offset ?? 0;
         const fileLen = c.length ?? Math.max(0, c.duration - offset);
         const cutFile = Math.min(fileLen, posIn * stepDur * rate);
-        const f = cutFile / Math.max(1e-6, fileLen);
-        const cut = Math.max(1, Math.min(c.peaks.length - 1, Math.round(c.peaks.length * f)));
-        const first = { ...c, id: `${c.id}-a${stamp}`, name: `${c.name} A`, peaks: c.peaks.slice(0, cut), length: cutFile, fadeOut: 0 } as AudioClip;
-        const second = { ...c, id: `${c.id}-b${stamp}`, name: `${c.name} B`, peaks: c.peaks.slice(cut), start: start + posIn, offset: offset + cutFile, length: fileLen - cutFile, fadeIn: 0 } as AudioClip;
+        // Both pieces keep the source peaks; the timeline draws each piece's own offset/length window.
+        const peaksSpan = peaksSpanOf(c);
+        const first = { ...c, id: `${c.id}-a${stamp}`, name: `${c.name} A`, peaksSpan, length: cutFile, fadeOut: 0 } as AudioClip;
+        const second = { ...c, id: `${c.id}-b${stamp}`, name: `${c.name} B`, peaksSpan, start: start + posIn, offset: offset + cutFile, length: fileLen - cutFile, fadeIn: 0 } as AudioClip;
         const [a, b2] = c.reverse ? [{ ...first, offset: offset + (fileLen - cutFile) }, { ...second, offset }] : [first, second];
         leftIds.push(a.id); rightIds.push(b2.id);
         newActive = b2.id;

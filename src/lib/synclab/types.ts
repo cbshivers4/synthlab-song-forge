@@ -264,6 +264,8 @@ export interface AudioClip {
   /** Own clip colour; falls back to the track colour when unset. */
   color?: string | undefined;
   peaks: number[];
+  /** source-file seconds the peaks cover; defaults to the whole file */
+  peaksSpan?: [number, number] | undefined;
   duration: number;
   /** timeline position in steps (1 step = 1/16 note) */
   start?: number;
