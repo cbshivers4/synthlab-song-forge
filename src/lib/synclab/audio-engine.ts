@@ -1,3 +1,4 @@
+import { VOICE_SHAPER_IN, voiceDriveAmount, voiceSaturationCurve } from "./voice-saturation";
 import { meterWindowSize } from "./meter-window";
 import { nativeInsertMode } from "./native-insert";
 import { lfoHz } from "./synth-timing";
@@ -367,10 +368,12 @@ export class SyncLabEngine {
    * but still distort once DRIVE / DISTORTION / SATURATION are turned up, so those knobs keep working.
    */
   private voiceCurve(patch: SynthPatch) {
-    const amount = patch.fx.distortion + (patch.fx.saturation ?? 0) * 0.6 + (patch.drive ?? 0) * 0.8;
-    if (patch.clean) return amount > 0 ? this.distortionCurve(Math.min(1.5, amount)) : null;
-    return this.distortionCurve(Math.min(1.5, 0.05 + amount));
+    const key = voiceDriveAmount(patch).toFixed(2);
+    let curve = this.voiceCurves.get(key);
+    if (!curve) { curve = voiceSaturationCurve(Number(key)); this.voiceCurves.set(key, curve); }
+    return curve;
   }
+  private voiceCurves = new Map<string, Float32Array>();
 
   private distortionCurve(amount: number) {
     const key = clamp(amount, 0, 1).toFixed(2);
@@ -2812,8 +2815,12 @@ export class SyncLabEngine {
     filter.frequency.value = cutoffBase;
     filterIn.connect(filter);
 
+    // Scaled into the curve's ±4 range so loud/resonant voices are never hard-clipped (see voice-saturation.ts).
+    const shaperIn = ctx.createGain();
+    shaperIn.gain.value = VOICE_SHAPER_IN;
     const shaper = ctx.createWaveShaper();
     shaper.curve = this.voiceCurve(patch);
+    shaperIn.connect(shaper);
 
     const f2 = patch.filter2;
     let filter2: BiquadFilterNode | null = null;
@@ -2824,14 +2831,14 @@ export class SyncLabEngine {
       filter2.frequency.value = clamp(f2.cutoff * Math.pow(2, fixedMod("cutoff2") * 4), 40, 18000);
       if (f2.routing === "series") {
         filter.connect(filter2);
-        filter2.connect(shaper);
+        filter2.connect(shaperIn);
       } else {
         filterIn.connect(filter2);
-        filter2.connect(shaper);
-        filter.connect(shaper);
+        filter2.connect(shaperIn);
+        filter.connect(shaperIn);
       }
     } else {
-      filter.connect(shaper);
+      filter.connect(shaperIn);
     }
 
     // flanger / phaser colouring before the voice output
