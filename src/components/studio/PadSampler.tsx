@@ -19,7 +19,9 @@ import {
   Upload,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { openMic, openInOwnTab, preferredRecordingMime, releaseMic } from "@/lib/synclab/mic";
+import { openInOwnTab } from "@/lib/synclab/mic";
+import { openSampleSource, recordStream, SOURCE_LABEL, useSampleSource, deviceSystemSupport, systemConnected, connectSystemAudio, type SampleSource } from "@/lib/synclab/sample-sources";
+import { SampleSourcePicker } from "./SampleSourcePicker";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { useStudio } from "@/lib/synclab/store";
@@ -213,7 +215,8 @@ export function PadSampler() {
   const [trackId, setTrackId] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const targetRef = useRef<number>(0);
-  const recRef = useRef<{ rec: MediaRecorder; stream: MediaStream; chunks: Blob[]; pad: number } | null>(null);
+  const recRef = useRef<{ stop: () => Promise<Blob>; release: () => void; pad: number; source: SampleSource } | null>(null);
+  const { source: chosenSource } = useSampleSource();
   const holdRef = useRef<{ pad: number; active: boolean } | null>(null);
   const voiceTrackRef = useRef<string | null>(null);
   const padsRef = useRef(pads);
@@ -262,9 +265,9 @@ export function PadSampler() {
   useEffect(() => () => {
     const current = recRef.current;
     if (!current) return;
-    if (current.rec.state !== "inactive") current.rec.stop();
-    releaseMic(current.stream);
     recRef.current = null;
+    void current.stop();
+    current.release();
   }, []);
 
   /** The mixer channel every pad plays through. */
@@ -433,49 +436,57 @@ export function PadSampler() {
     });
   };
 
-  /* record straight into a pad from the microphone */
+  /** The source to record from: a saved "Computer sound" choice falls back to the mic where sharing is impossible. */
+  const recSource = (): SampleSource => (chosenSource === "system" && !deviceSystemSupport().ok ? "mic" : chosenSource);
+
+  /* record straight into a pad from the chosen source (mic, computer sound or SYNCLAB's own mix) */
   const startMic = async (i: number) => {
-    const res = await openMic(undefined, "pad-sampler");
+    const which = recSource();
+    const res = await openSampleSource(which, "pad-sampler");
     if ("error" in res) {
-      toast.error("Microphone not available", {
+      toast.error(`${SOURCE_LABEL[which]} not available`, {
         description: res.error,
         duration: 9000,
         ...(res.canOpenTab ? { action: { label: "Open in tab", onClick: openInOwnTab } } : {}),
       });
       return;
     }
-    const stream = res.stream;
-    const mimeType = preferredRecordingMime();
-    const rec = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
-    const chunks: Blob[] = [];
-    rec.ondataavailable = (e) => e.data.size > 0 && chunks.push(e.data);
-    rec.start(200);
-    recRef.current = { rec, stream, chunks, pad: i };
+    const { stop } = recordStream(res.stream);
+    recRef.current = { stop, release: res.release, pad: i, source: which };
     setMicOn(true);
-    setRecStream(stream);
+    setRecStream(res.stream);
   };
 
   const stopMic = async () => {
     const r = recRef.current;
     if (!r) return;
-    const blob: Blob = await new Promise((resolve) => {
-      r.rec.onstop = () => resolve(new Blob(r.chunks, { type: r.rec.mimeType || "audio/webm" }));
-      r.rec.stop();
-    });
-    releaseMic(r.stream);
     recRef.current = null;
+    const blob = await r.stop();
+    r.release();
     setMicOn(false);
     setRecStream(null);
     if (!blob.size) return;
     ensureTrack();
-    const loaded = await getEngine().loadSampleFile(blob, `REC ${r.pad + 1}`);
-    setPadBank({ ...getPadBank(), [r.pad]: makePad(loaded) });
+    const prefix = r.source === "system" ? "PC" : r.source === "studio" ? "MIX" : "REC";
+    try {
+      const loaded = await getEngine().loadSampleFile(blob, `${prefix} ${r.pad + 1}`);
+      setPadBank({ ...getPadBank(), [r.pad]: makePad(loaded) });
+    } catch {
+      toast.error("That recording couldn't be read", { description: "Try recording a little longer, then try again." });
+    }
     // Stay on the pad grid — only open the pad's detail view when the user taps the pad.
   };
 
   /** press and hold a pad to record into it, release to stop */
   const beginHold = async (i: number) => {
     if (recRef.current || holdRef.current) return;
+    if (recSource() === "system" && !systemConnected()) {
+      // The share picker would interrupt the hold — connect first, then hold again to record.
+      const c = await connectSystemAudio();
+      if (c.ok) toast.success("Computer sound connected", { description: "Now hold a pad to record what's playing." });
+      else toast.error("Computer sound not connected", { description: c.error, duration: 10000, ...(c.canOpenTab ? { action: { label: "Open in tab", onClick: openInOwnTab } } : {}) });
+      return;
+    }
     holdRef.current = { pad: i, active: true };
     setRecPad(i);
     await startMic(i);
@@ -612,7 +623,7 @@ export function PadSampler() {
       <div className="flex flex-wrap gap-1.5">
         {[
           [Upload, "Drag & drop audio"],
-          [Mic, "Sample the mic"],
+          [Mic, "Sample mic · computer · SYNCLAB"],
           [Scissors, "Slice to pads"],
           [Grid2x2, "4 banks · 64 pads"],
           [Play, "16-step patterns"],
@@ -633,10 +644,12 @@ export function PadSampler() {
         })}
       </div>
 
-      {/* live monitor: shows the microphone while recording, or the pad you are playing */}
+      <SampleSourcePicker disabled={micOn} />
+
+      {/* live monitor: shows the input while recording, or the pad you are playing */}
       <div className="signal-screen relative h-24 overflow-hidden rounded-md border border-border sm:h-20">
         {recStream ? (
-          <LiveWave stream={recStream} color="hsl(0 85% 62%)" label="Live microphone waveform" />
+          <LiveWave stream={recStream} color="hsl(0 85% 62%)" label="Live recording waveform" />
         ) : monitorPad ? (
           <>
             <WaveformView peaks={monitorPad.pad.peaks} color="var(--display-wave)" label={`${monitorPad.pad.name} waveform`} />
@@ -649,7 +662,7 @@ export function PadSampler() {
           </span>
         )}
         <span className="absolute left-2 top-1.5 font-mono text-[9px] tracking-widest text-white/70">
-          {recStream ? "RECORDING" : monitorPad ? monitorPad.pad.name : "MONITOR"}
+          {recStream ? `RECORDING · ${SOURCE_LABEL[recRef.current?.source ?? recSource()].toUpperCase()}` : monitorPad ? monitorPad.pad.name : "MONITOR"}
         </span>
       </div>
 
@@ -907,7 +920,7 @@ export function PadSampler() {
                 className="h-7 gap-1.5"
                 onClick={() => (micOn ? void stopMic() : void startMic(sel))}
               >
-                <Mic className="size-3.5" /> {micOn ? "Stop sampling" : "Sample mic"}
+                <Mic className="size-3.5" /> {micOn ? "Stop sampling" : `Sample ${SOURCE_LABEL[recSource()].toLowerCase()}`}
               </Button>
               <Button
                 size="sm"

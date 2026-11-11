@@ -6,7 +6,11 @@ import { HardwareBypass } from "./HardwareBypass";
 import { captureFromUrl } from "@/lib/synclab/sample-export";
 import { centerOneSided } from "@/lib/synclab/one-sided-audio";
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
-import { AudioLines, Piano, Play, RotateCcw, Scissors, Square, Trash2, Upload } from "lucide-react";
+import { AudioLines, Circle, Piano, Play, RotateCcw, Scissors, Square, Trash2, Upload } from "lucide-react";
+import { LiveWave } from "./LiveWave";
+import { SampleSourcePicker } from "./SampleSourcePicker";
+import { openInOwnTab } from "@/lib/synclab/mic";
+import { deviceSystemSupport, openSampleSource, recordStream, recordingExt, SOURCE_LABEL, useSampleSource, type SampleSource } from "@/lib/synclab/sample-sources";
 import { Keyboard } from "./Keyboard";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -30,7 +34,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 const noteName = (m: number) => `${NOTE_NAMES[((m % 12) + 12) % 12]}${Math.floor(m / 12) - 1}`;
-const AUDIO_RE = /\.(mp3|wav|wave|aif|aiff|m4a|aac|ogg|flac|webm)$/i;
+const AUDIO_RE = /\.(mp3|wav|wave|aif|aiff|m4a|aac|ogg|flac|webm|mp4|mov)$/i;
 /** every chop gets its own colour so a sliced sample reads at a glance */
 const chopColor = (i: number) => `hsl(${(187 + i * 27) % 360} 85% 56%)`;
 
@@ -350,8 +354,8 @@ export function Sampler() {
 
   const take = async (file: File | undefined) => {
     if (!file) return;
-    if (!file.type.startsWith("audio") && !AUDIO_RE.test(file.name)) {
-      toast.error("That is not an audio file", { description: "Drop an MP3, WAV, AIFF, M4A, OGG or FLAC file." });
+    if (!file.type.startsWith("audio") && !/^video\/(mp4|quicktime)$/.test(file.type) && !AUDIO_RE.test(file.name)) {
+      toast.error("That is not an audio file", { description: "Drop an MP3, WAV, AIFF, M4A, OGG, FLAC or a phone screen recording (MP4/MOV)." });
       return;
     }
     let id = track?.id;
@@ -360,6 +364,50 @@ export function Sampler() {
       select(id);
     }
     await loadSample(id, file);
+  };
+
+  /* Koala-style sampling: record the mic, computer sound or SYNCLAB's own mix straight into the sampler. */
+  const { source: chosenSource } = useSampleSource();
+  const [recOn, setRecOn] = useState(false);
+  const [recStream, setRecStream] = useState<MediaStream | null>(null);
+  const [recSecs, setRecSecs] = useState(0);
+  const recRef = useRef<{ stop: () => Promise<Blob>; release: () => void; source: SampleSource; mime: string; started: number } | null>(null);
+  const recSource = (): SampleSource => (chosenSource === "system" && !deviceSystemSupport().ok ? "mic" : chosenSource);
+  useEffect(() => {
+    if (!recOn) return;
+    const id = window.setInterval(() => setRecSecs(recRef.current ? (performance.now() - recRef.current.started) / 1000 : 0), 200);
+    return () => window.clearInterval(id);
+  }, [recOn]);
+  useEffect(() => () => {
+    const r = recRef.current;
+    recRef.current = null;
+    if (r) { void r.stop(); r.release(); }
+  }, []);
+  const startRecording = async () => {
+    if (recRef.current) return;
+    const which = recSource();
+    const res = await openSampleSource(which, "sampler");
+    if ("error" in res) {
+      toast.error(`${SOURCE_LABEL[which]} not available`, { description: res.error, duration: 10000, ...(res.canOpenTab ? { action: { label: "Open in tab", onClick: openInOwnTab } } : {}) });
+      return;
+    }
+    const r = recordStream(res.stream);
+    recRef.current = { stop: r.stop, release: res.release, source: which, mime: r.mimeType, started: performance.now() };
+    setRecSecs(0);
+    setRecStream(res.stream);
+    setRecOn(true);
+  };
+  const stopRecording = async () => {
+    const r = recRef.current;
+    if (!r) return;
+    recRef.current = null;
+    const blob = await r.stop();
+    r.release();
+    setRecOn(false);
+    setRecStream(null);
+    if (!blob.size) { toast.error("Nothing was recorded", { description: "Record for at least a moment, then press Stop." }); return; }
+    const base = r.source === "system" ? "PC SAMPLE" : r.source === "studio" ? "MIX SAMPLE" : "MIC SAMPLE";
+    await take(new File([blob], `${base}.${recordingExt(r.mime)}`, { type: blob.type || r.mime }));
   };
 
   const s = track?.sampler;
@@ -557,13 +605,37 @@ export function Sampler() {
           ref={fileRef}
           type="file"
           aria-label="Load sampler audio"
-          accept="audio/*,.mp3,.wav,.aiff,.aif,.m4a,.ogg,.flac"
+          accept="audio/*,video/mp4,video/quicktime,.mp3,.wav,.aiff,.aif,.m4a,.ogg,.flac,.mp4,.mov"
           className="hidden"
           onChange={(e) => {
             void take(e.target.files?.[0]);
             e.target.value = "";
           }}
         />
+      </div>
+
+      <div className="space-y-2" aria-label="Record a sample">
+        <SampleSourcePicker disabled={recOn} />
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant={recOn ? "destructive" : "default"}
+            className="min-h-11 gap-2 sm:min-h-9"
+            aria-pressed={recOn}
+            onClick={() => (recOn ? void stopRecording() : void startRecording())}
+          >
+            {recOn ? <Square className="size-4" /> : <Circle className="size-4" />}
+            {recOn ? `Stop · ${recSecs.toFixed(1)}s` : `Record ${SOURCE_LABEL[recSource()].toLowerCase()}`}
+          </Button>
+          <span className="text-[11px] text-muted-foreground">
+            {recOn ? "Recording… press Stop to load it into the sampler." : track?.sampler ? "A new recording replaces the sample on this sampler channel." : "The recording lands on a new sampler channel."}
+          </span>
+        </div>
+        {recOn && recStream && (
+          <div className="signal-screen relative h-16 overflow-hidden rounded-md border border-border">
+            <LiveWave stream={recStream} color="hsl(0 85% 62%)" label="Live recording waveform" />
+            <span className="absolute left-2 top-1 font-mono text-[9px] tracking-widest text-white/70">REC · {SOURCE_LABEL[recRef.current?.source ?? recSource()].toUpperCase()}</span>
+          </div>
+        )}
       </div>
 
       {samplerTracks.length > 1 && (

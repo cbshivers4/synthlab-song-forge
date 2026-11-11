@@ -30,6 +30,10 @@ describe('desktop window trust rules', () => {
     expect(security.allowPermission('midi', 'https://evil.example.com/', APP)).toBe(false);
     expect(security.allowPermission('geolocation', 'https://synclab-app.lovable.app/', APP)).toBe(false);
   });
+  it('computer-sound sharing is granted to SYNCLAB pages only', () => {
+    expect(security.allowPermission('display-capture', 'https://synclabsapp.com/', APP)).toBe(true);
+    expect(security.allowPermission('display-capture', 'https://evil.example.com/', APP)).toBe(false);
+  });
   it('native file actions answer SYNCLAB pages and its pop-out panels only', () => {
     expect(security.isTrustedSender('https://synclab-app.lovable.app/', 'https://synclab-app.lovable.app', APP)).toBe(true);
     expect(security.isTrustedSender('about:blank', 'https://synclab-app.lovable.app', APP)).toBe(true);

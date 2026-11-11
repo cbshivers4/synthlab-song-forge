@@ -13,7 +13,7 @@
  * Run:      npm run desktop:dev
  * Package:  npm run desktop:package -- --platform=darwin --arch=arm64
  */
-const { app, BrowserWindow, ipcMain, dialog, shell, session, systemPreferences, net } = require("electron");
+const { app, BrowserWindow, ipcMain, dialog, shell, session, systemPreferences, net, desktopCapturer } = require("electron");
 const path = require("path");
 const fs = require("fs/promises");
 const crypto = require("crypto");
@@ -207,6 +207,21 @@ app.whenReady().then(async () => {
     if (details.resourceType !== "mainFrame" || !security.isAppUrl(details.url, APP_URL)) return callback({});
     callback({ responseHeaders: { ...details.responseHeaders, "Content-Security-Policy": [security.CONTENT_SECURITY_POLICY] } });
   });
+  // "Computer sound" sampling: SYNCLAB pages may record what the computer plays (loopback audio).
+  // The screen picture is only the carrier the browser API requires; the studio discards it.
+  if (typeof session.defaultSession.setDisplayMediaRequestHandler === "function") {
+    session.defaultSession.setDisplayMediaRequestHandler((request, callback) => {
+      const url = request.frame?.url || "";
+      const origin = request.securityOrigin || request.frame?.origin || "";
+      if (!security.isTrustedSender(url, origin, APP_URL)) return callback({});
+      desktopCapturer.getSources({ types: ["screen"] }).then((sources) => {
+        const screen = sources[0];
+        if (!screen) return callback({});
+        const loopback = request.audioRequested && (process.platform === "win32" || process.platform === "darwin");
+        callback(loopback ? { video: screen, audio: "loopback" } : { video: screen });
+      }).catch(() => callback({}));
+    });
+  }
   // Older/newer Electron versions differ here; a missing API must never stop the window from opening.
   if (typeof session.defaultSession.setBluetoothDevicePermissionHandler === "function") {
     session.defaultSession.setBluetoothDevicePermissionHandler(details => security.isAppUrl(details.origin, APP_URL));

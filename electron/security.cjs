@@ -45,7 +45,7 @@ function isSafeExternal(url) {
 }
 
 /** Permissions the studio needs, granted only to SYNCLAB's own pages. */
-const STUDIO_PERMISSIONS = new Set(["media", "audioCapture", "midi", "midiSysex", "speaker-selection"]);
+const STUDIO_PERMISSIONS = new Set(["media", "audioCapture", "midi", "midiSysex", "speaker-selection", "display-capture"]);
 function allowPermission(permission, requestingUrl, appUrl) {
   return STUDIO_PERMISSIONS.has(permission) && isAppUrl(requestingUrl, appUrl);
 }
