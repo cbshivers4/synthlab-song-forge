@@ -1,5 +1,6 @@
 import type { PluginInstance, PluginKind, PluginParam } from "./types";
-import { PARAMS_BY_KIND, withDefaultParams } from "./plugins";
+import { PARAMS_BY_KIND, deviceParams, withDefaultParams } from "./plugins";
+import { isTapeEcho } from "./device-params";
 import { CREATIVE_KINDS, CREATIVE_RECIPES } from "./creative-fx";
 
 export interface EffectPreset { id: string; name: string; values: Record<string, number> }
@@ -29,7 +30,7 @@ const RECIPES: Record<PluginKind, Recipe[]> = {
   transient: [["Drum Punch", { attack: 0.65, sustain: -0.2 }], ["Soft Attack", { attack: -0.5, sustain: 0.15 }], ["Tight Percussion", { attack: 0.4, sustain: -0.65 }], ["Long Sustain", { attack: 0.15, sustain: 0.6, mix: 0.65 }]],
   ...Object.fromEntries(CREATIVE_KINDS.map(k => [k, []])) as unknown as Record<(typeof CREATIVE_KINDS)[number], Recipe[]>,
 };
-const TAPE_RECIPES: Recipe[] = [["Vintage Slap", { time: 110, feedback: 0.18, tone: 4200, mix: 0.2 }], ["Dub Tape", { time: 540, feedback: 0.7, tone: 2800, lowcut: 200, mix: 0.35 }], ["Warm Repeats", { time: 360, feedback: 0.4, tone: 5000, mix: 0.25 }], ["Long Tape Trail", { time: 800, feedback: 0.6, tone: 3200, mix: 0.3 }]];
+const TAPE_RECIPES: Recipe[] = [["Vintage Slap", { time: 110, feedback: 0.18, tone: 4200, mix: 0.2, heads: 1, wow: 0.2, saturation: 0.35 }], ["Dub Tape", { time: 540, feedback: 0.7, tone: 2800, lowcut: 200, mix: 0.35, heads: 3, wow: 0.45, saturation: 0.6 }], ["Warm Repeats", { time: 360, feedback: 0.4, tone: 5000, mix: 0.25, heads: 2, wow: 0.3, saturation: 0.5 }], ["Long Tape Trail", { time: 800, feedback: 0.6, tone: 3200, mix: 0.3, heads: 1, wow: 0.55, saturation: 0.4 }]];
 
 // Append recipes to preserve existing factory IDs and saved parameter matches.
 const MORE_RECIPES: Record<PluginKind, Recipe[]> = {
@@ -212,12 +213,12 @@ const MORE_RECIPES: Record<PluginKind, Recipe[]> = {
   ...CREATIVE_RECIPES,
 };
 const MORE_TAPE_RECIPES: Recipe[] = [
-  ["Motor City Slap", { time: 85, feedback: 0.22, tone: 3600, mix: 0.18, lowcut: 120 }],
-  ["Dark Dub Feedback", { time: 680, feedback: 0.8, tone: 1800, lowcut: 350, mix: 0.4, output: -3 }],
-  ["Worn Vocal Echo", { time: 290, feedback: 0.28, tone: 3200, lowcut: 180, mix: 0.22 }],
-  ["Warm Guitar Trail", { time: 440, feedback: 0.45, tone: 4800, lowcut: 100, mix: 0.28 }],
-  ["Tape Space Wash", { time: 1150, feedback: 0.68, tone: 2500, lowcut: 240, mix: 0.48, output: -2 }],
-  ["Percussion Tape Bounce", { time: 165, feedback: 0.5, tone: 5800, lowcut: 450, mix: 0.26 }],
+  ["Motor City Slap", { time: 85, feedback: 0.22, tone: 3600, mix: 0.18, lowcut: 120, heads: 1, wow: 0.15, saturation: 0.55 }],
+  ["Dark Dub Feedback", { time: 680, feedback: 0.8, tone: 1800, lowcut: 350, mix: 0.4, output: -3, heads: 2, wow: 0.5, saturation: 0.7 }],
+  ["Worn Vocal Echo", { time: 290, feedback: 0.28, tone: 3200, lowcut: 180, mix: 0.22, heads: 1, wow: 0.7, saturation: 0.4 }],
+  ["Warm Guitar Trail", { time: 440, feedback: 0.45, tone: 4800, lowcut: 100, mix: 0.28, heads: 2, wow: 0.25, saturation: 0.45 }],
+  ["Tape Space Wash", { time: 1150, feedback: 0.68, tone: 2500, lowcut: 240, mix: 0.48, output: -2, heads: 3, wow: 0.6, saturation: 0.5 }],
+  ["Percussion Tape Bounce", { time: 165, feedback: 0.5, tone: 5800, lowcut: 450, mix: 0.26, heads: 3, wow: 0.1, saturation: 0.3 }],
 ];
 
 const KEEP = new Set(["output", "gain", "ceiling", "makeup", "input"]);
@@ -239,8 +240,8 @@ function characterRecipes(kind: PluginKind): Recipe[] {
 }
 
 export function effectPresets(plugin: Pick<PluginInstance, "kind" | "name">): EffectPreset[] {
-  const defaults = Object.fromEntries(PARAMS_BY_KIND[plugin.kind]().map(p => [p.id, p.value]));
-  const tapeEcho = plugin.kind === "delay" && plugin.name.toLowerCase().includes("echo");
+  const defaults = Object.fromEntries(deviceParams(plugin.kind, plugin.name).map(p => [p.id, p.value]));
+  const tapeEcho = isTapeEcho(plugin);
   const recipes = tapeEcho ? [...TAPE_RECIPES, ...MORE_TAPE_RECIPES] : [...RECIPES[plugin.kind], ...MORE_RECIPES[plugin.kind]];
   return [["Default", {}] as Recipe, ...recipes, ...characterRecipes(plugin.kind)].slice(0, 15).map(([name, values], index) => ({ id: `${plugin.kind}:${name}:${index}`, name, values: { ...defaults, ...values } }));
 }

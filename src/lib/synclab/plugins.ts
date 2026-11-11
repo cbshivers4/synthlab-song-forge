@@ -1,6 +1,7 @@
 import type { PluginDef, PluginInstance, PluginKind, PluginParam } from "./types";
 import { uid } from "./presets";
 import { CREATIVE_DEVICES, CREATIVE_KINDS, CREATIVE_PARAMS } from "./creative-fx";
+import { deviceExtras } from "./device-params";
 
 const p = (id: string, name: string, value: number, min: number, max: number, unit?: string): PluginParam => ({
   id,
@@ -202,8 +203,11 @@ const def = (name: string, vendor: string, format: PluginDef["format"], kind: Pl
   vendor,
   format,
   kind,
-  params: PARAMS_BY_KIND[kind](),
+  params: deviceParams(kind, name),
 });
+
+/** A device's full control set: its kind's knobs plus any knobs only that device has. */
+export const deviceParams = (kind: PluginKind, name?: string): PluginParam[] => [...PARAMS_BY_KIND[kind](), ...deviceExtras({ kind, name })];
 
 export const BUILT_IN_PLUGINS: PluginDef[] = [
   def("Channel EQ", "SYNCLAB", "Built-in", "eq"),
@@ -376,8 +380,8 @@ export function defsFromFiles(files: File[], existingNames: string[] = []): Plug
 }
 
 /** Fills in knobs added after a device was saved, so older projects show every control. */
-export function withDefaultParams<T extends { kind: PluginKind; params: PluginParam[] }>(pl: T): PluginParam[] {
-  const defaults = PARAMS_BY_KIND[pl.kind]?.() ?? [];
+export function withDefaultParams<T extends { kind: PluginKind; name?: string; params: PluginParam[] }>(pl: T): PluginParam[] {
+  const defaults = PARAMS_BY_KIND[pl.kind] ? deviceParams(pl.kind, pl.name) : [];
   const missing = defaults.filter((d) => !pl.params.some((x) => x.id === d.id));
   return missing.length ? [...pl.params, ...missing] : pl.params;
 }

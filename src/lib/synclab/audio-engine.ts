@@ -4,6 +4,7 @@ import { nativeInsertMode } from "./native-insert";
 import { lfoHz } from "./synth-timing";
 import { centerOneSided } from "./one-sided-audio";
 import { buildCreativeFx, isCreativeKind } from "./creative-fx";
+import { deviceDefault } from "./device-params";
 import { phasedHarmonics } from "./oscillator-phase";
 import { envelopePoints } from "./live-envelope";
 import { renderVintageDrum } from "./vintage-drums";
@@ -66,6 +67,11 @@ const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
 export const midiToFreq = (n: number) => 440 * Math.pow(2, (n - 69) / 12);
 
 /** Loudest absolute value inside a 0..1 window of some channels. */
+/** Band Q that makes a resonator band ring for about `decay` seconds (60 dB) at `hz`. */
+export const resonatorQ = (hz: number, decay: number) => clamp((Math.PI * hz * Math.max(0.1, decay)) / 6.9, 8, 420);
+/** Narrower bands catch less energy, so louder rings get matching make-up; higher bands are damped. */
+export const resonatorGain = (q: number, damping: number, i: number, count: number) => ((1 - damping * (i / count)) / count) * Math.sqrt(q / 8);
+
 export function peakInWindow(channels: Float32Array[], start: number, end: number): number {
   let peak = 0;
   for (const data of channels) {
@@ -1061,30 +1067,82 @@ export class SyncLabEngine {
           break;
         }
         case "delay": {
+          // Stereo Delay bounces repeats left/right (ping-pong); Tape Echo adds extra playback heads,
+          // wow & flutter and tape saturation in the loop. Other delays keep a plain stereo echo.
+          const knob = (id: string, fallback: number) => val(pl, id, deviceDefault(pl, id, fallback));
           const inNode = ctx.createGain();
-          const d = ctx.createDelay(2);
-          d.delayTime.value = clamp(val(pl, "time", 320) / 1000, 0.01, 2);
-          const fb = ctx.createGain();
-          fb.gain.value = clamp(val(pl, "feedback", 0.35), 0, 0.92);
-          const wet = ctx.createGain();
-          wet.gain.value = clamp(val(pl, "mix", 0.25), 0, 1);
+          inNode.channelCount = 2; inNode.channelCountMode = "explicit"; inNode.channelInterpretation = "speakers";
           const out = ctx.createGain();
           inNode.connect(out);
-          inNode.connect(d);
-          const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = clamp(val(pl, "tone", 12000), 800, 18000);
-          const hp = ctx.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = clamp(val(pl, "lowcut", 40), 20, 2000);
-          d.connect(lp); lp.connect(hp);
-          hp.connect(fb);
-          fb.connect(d);
-          hp.connect(wet);
-          wet.connect(out);
+          const split = ctx.createChannelSplitter(2);
+          const merge = ctx.createChannelMerger(2);
+          inNode.connect(split);
+          const time = () => clamp(knob("time", 320) / 1000, 0.01, 1.2);
+          const dl = { fb: clamp(knob("feedback", 0.35), 0, 0.92), ping: clamp(knob("pingpong", 0), 0, 1), heads: Math.round(clamp(knob("heads", 1), 1, 3)), wow: clamp(knob("wow", 0), 0, 1), sat: clamp(knob("saturation", 0), 0, 1) };
+          const wet = ctx.createGain();
+          wet.gain.value = clamp(knob("mix", 0.25), 0, 1);
+          const satCurve = new Float32Array(1025);
+          for (let i = 0; i < satCurve.length; i++) { const x = (i / 512 - 1) * 4; satCurve[i] = Math.tanh(x); }
+          const wowLfo = ctx.createOscillator(); wowLfo.frequency.value = 0.55;
+          const flutterLfo = ctx.createOscillator(); flutterLfo.frequency.value = 6.8;
+          const wowDepth = ctx.createGain(), flutterDepth = ctx.createGain();
+          wowLfo.connect(wowDepth); flutterLfo.connect(flutterDepth);
+          const sides = [0, 1].map((ch) => {
+            const feed = ctx.createGain(), cross = ctx.createGain();
+            const d = ctx.createDelay(4); d.delayTime.value = time();
+            const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = clamp(knob("tone", 12000), 800, 18000);
+            const hp = ctx.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = clamp(knob("lowcut", 40), 20, 2000);
+            const clean = ctx.createGain(), drive = ctx.createGain(), shaper = ctx.createWaveShaper(), shaped = ctx.createGain(), post = ctx.createGain();
+            shaper.curve = satCurve;
+            d.connect(lp); lp.connect(hp);
+            hp.connect(clean); clean.connect(post);
+            hp.connect(drive); drive.connect(shaper); shaper.connect(shaped); shaped.connect(post);
+            const self = ctx.createGain(), other = ctx.createGain();
+            post.connect(self);
+            // Extra tape heads read the same echo one and two delay-times later.
+            const h2 = ctx.createDelay(4), h3 = ctx.createDelay(4), g2 = ctx.createGain(), g3 = ctx.createGain();
+            h2.delayTime.value = time(); h3.delayTime.value = time();
+            post.connect(h2); h2.connect(h3); h2.connect(g2); h3.connect(g3);
+            const sum = ctx.createGain();
+            post.connect(sum); g2.connect(sum); g3.connect(sum);
+            sum.connect(merge, 0, ch);
+            wowDepth.connect(d.delayTime); flutterDepth.connect(d.delayTime);
+            split.connect(feed, ch);
+            feed.connect(d); cross.connect(d);
+            return { feed, cross, d, lp, hp, clean, drive, shaped, self, other, post, h2, h3, g2, g3 };
+          });
+          const [L, Rt] = sides as [typeof sides[0], typeof sides[0]];
+          // Feedback matrix: each side feeds itself (1 - ping) and the other side (ping).
+          L.post.connect(L.other); L.other.connect(Rt.d); Rt.post.connect(Rt.other); Rt.other.connect(L.d);
+          L.self.connect(L.d); Rt.self.connect(Rt.d);
+          // Ping-pong starts every echo on the left from the mono sum, so repeats alternate sides.
+          split.connect(L.cross, 1);
+          merge.connect(wet); wet.connect(out);
+          const apply = (t?: number) => {
+            const p = dl.ping, fb = dl.fb, s = dl.sat, g = 1 + s * 5;
+            const set = (prm: AudioParam, v: number) => (t === undefined ? (prm.value = v) : glide(prm, v, t));
+            set(L.feed.gain, 1 - p * 0.5); set(L.cross.gain, p * 0.5); set(Rt.feed.gain, 1 - p); set(Rt.cross.gain, 0);
+            for (const sd of sides) {
+              set(sd.self.gain, fb * (1 - p)); set(sd.other.gain, fb * p);
+              set(sd.clean.gain, 1 - s); set(sd.drive.gain, g); set(sd.shaped.gain, s / g);
+              set(sd.g2.gain, dl.heads >= 2 ? 0.7 : 0); set(sd.g3.gain, dl.heads >= 3 ? 0.5 : 0);
+            }
+            set(wowDepth.gain, dl.wow * 0.0035); set(flutterDepth.gain, dl.wow * 0.0004);
+          };
+          apply();
+          wowLfo.start(); flutterLfo.start();
+          (out as unknown as { _keep?: AudioNode[] })._keep = [wowLfo, flutterLfo];
           dbLive(pl, "output", out);
-          live(pl, "time", (v, t) => d.delayTime.setTargetAtTime(clamp(v / 1000, 0.01, 2), t, 0.05));
-          live(pl, "feedback", (v, t) => glide(fb.gain, clamp(v, 0, 0.92), t));
+          live(pl, "time", (v, t) => { const sec = clamp(v / 1000, 0.01, 1.2); for (const sd of sides) for (const d of [sd.d, sd.h2, sd.h3]) d.delayTime.setTargetAtTime(sec, t, 0.05); });
+          live(pl, "feedback", (v, t) => { dl.fb = clamp(v, 0, 0.92); apply(t); });
+          live(pl, "pingpong", (v, t) => { dl.ping = clamp(v, 0, 1); apply(t); });
+          live(pl, "heads", (v, t) => { dl.heads = Math.round(clamp(v, 1, 3)); apply(t); });
+          live(pl, "wow", (v, t) => { dl.wow = clamp(v, 0, 1); apply(t); });
+          live(pl, "saturation", (v, t) => { dl.sat = clamp(v, 0, 1); apply(t); });
           live(pl, "mix", (v, t) => glide(wet.gain, clamp(v, 0, 1), t));
-          live(pl, "tone", (v, t) => glide(lp.frequency, clamp(v, 800, 18000), t));
-          live(pl, "lowcut", (v, t) => glide(hp.frequency, clamp(v, 20, 2000), t));
-          nodes.push(inNode, d, lp, hp, fb, wet, out);
+          live(pl, "tone", (v, t) => { for (const sd of sides) glide(sd.lp.frequency, clamp(v, 800, 18000), t); });
+          live(pl, "lowcut", (v, t) => { for (const sd of sides) glide(sd.hp.frequency, clamp(v, 20, 2000), t); });
+          nodes.push(inNode, L.d, L.lp, L.hp, Rt.d, wet, out);
           break;
         }
         case "width": {
@@ -1589,18 +1647,29 @@ export class SyncLabEngine {
                 imag[h] = (imag[h] ?? 0) - (v * Math.sin(phase) * 2) / count;
               }
             }
-            return ctx.createPeriodicWave(real, imag);
+            // Unnormalized, so the wave swings by the real step heights (minus their average).
+            return ctx.createPeriodicWave(real, imag, { disableNormalization: true });
           };
           const seqRate = () => clamp(sf.rate, 0.5, 32) / Math.max(1, Math.round(sf.steps));
           const smoothHz = () => { const sec = clamp(sf.smooth, 0, 0.24); return sec <= 0.001 ? 20000 : clamp(1 / (2 * Math.PI * sec), 0.5, 20000); };
           const sequencer = ctx.createOscillator();
           sequencer.setPeriodicWave(stepWave());
           sequencer.frequency.value = seqRate();
+          // Each step pulls the cutoff down in pitch: a full step stays at Cutoff, an empty one drops
+          // up to five octaves (× Depth), so the grid is clearly heard even with a bright cutoff.
+          const GRID_CENTS = 6000;
           const depth = ctx.createGain();
-          depth.gain.value = cutoff * clamp(sf.depth, 0, 1);
+          const floor = ctx.createConstantSource();
+          const stepMean = () => { const count = Math.max(1, Math.round(sf.steps)); let sum = 0; for (let i = 0; i < count; i++) sum += sv[i] ?? 0.5; return sum / count; };
+          const setDepth = (t?: number) => {
+            const cents = GRID_CENTS * clamp(sf.depth, 0, 1);
+            const offset = cents * (stepMean() - 1);
+            if (t === undefined) { depth.gain.value = cents; floor.offset.value = offset; } else { glide(depth.gain, cents, t); glide(floor.offset, offset, t); }
+          };
+          setDepth();
           const smoothing = ctx.createBiquadFilter(); smoothing.type = "lowpass";
           smoothing.frequency.value = smoothHz();
-          const setCutoff = (t: number) => { const c = clamp(sf.cutoff, 80, 18000); glide(filter.frequency, c, t); glide(depth.gain, c * clamp(sf.depth, 0, 1), t); };
+          const setCutoff = (t: number) => { glide(filter.frequency, clamp(sf.cutoff, 80, 18000), t); setDepth(t); };
           live(pl, "cutoff", (v, t) => { sf.cutoff = v; setCutoff(t); });
           live(pl, "depth", (v, t) => { sf.depth = v; setCutoff(t); });
           live(pl, "resonance", (v, t) => glide(filter.Q, clamp(v, 0.1, 20), t));
@@ -1608,15 +1677,17 @@ export class SyncLabEngine {
           live(pl, "mode", (v) => { const m = Math.round(v); filter.type = m === 1 ? "highpass" : m === 2 ? "bandpass" : "lowpass"; });
           live(pl, "rate", (v, t) => { sf.rate = v; glide(sequencer.frequency, seqRate(), t); });
           live(pl, "smooth", (v, t) => { sf.smooth = v; glide(smoothing.frequency, smoothHz(), t); });
-          const reshape = (t: number) => { sequencer.setPeriodicWave(stepWave()); glide(sequencer.frequency, seqRate(), t); };
+          const reshape = (t: number) => { sequencer.setPeriodicWave(stepWave()); glide(sequencer.frequency, seqRate(), t); setDepth(t); };
           live(pl, "steps", (v, t) => { sf.steps = v; reshape(t); });
           live(pl, "swing", (v, t) => { sf.swing = v; reshape(t); });
           for (let i = 0; i < 32; i++) live(pl, `s${i + 1}`, (v, t) => { sv[i] = v; reshape(t); });
           sequencer.connect(smoothing);
           smoothing.connect(depth);
-          depth.connect(filter.frequency);
+          depth.connect(filter.detune);
+          floor.connect(filter.detune);
           sequencer.start();
-          (out as unknown as { _keep?: AudioNode[] })._keep = [sequencer, smoothing, depth];
+          floor.start();
+          (out as unknown as { _keep?: AudioNode[] })._keep = [sequencer, smoothing, depth, floor];
           bind(pl, "cutoff", filter.frequency, 80, 18000, true);
           bind(pl, "resonance", filter.Q, 0.1, 20);
           bind(pl, "mix", wet.gain, 0, 1);
@@ -1643,9 +1714,9 @@ export class SyncLabEngine {
             const filter = ctx.createBiquadFilter();
             filter.type = "bandpass";
             filter.frequency.value = clamp(root * (ratios[i] ?? 1) * (1 + (i - 1.5) * spread * 0.025), 30, 16000);
-            filter.Q.value = 8 + val(pl, "decay", 1.8) * 5;
+            filter.Q.value = resonatorQ(filter.frequency.value, val(pl, "decay", 1.8));
             const gain = ctx.createGain();
-            gain.gain.value = (1 - val(pl, "damping", 0.45) * (i / ratios.length)) / ratios.length;
+            gain.gain.value = resonatorGain(filter.Q.value, val(pl, "damping", 0.45), i, ratios.length);
             input.connect(filter);
             filter.connect(gain);
             gain.connect(wet);
@@ -1656,8 +1727,12 @@ export class SyncLabEngine {
           bind(pl, "mix", wet.gain, 0, 0.65);
           const retune = (t: number) => {
             const r = 440 * Math.pow(2, (rz.root - 69) / 12);
-            filters.forEach((f, i) => { glide(f.frequency, clamp(r * (ratios[i] ?? 1) * (1 + (i - 1.5) * rz.spread * 0.025), 30, 16000), t); glide(f.Q, 8 + rz.decay * 5, t); });
-            gains.forEach((g, i) => glide(g.gain, (1 - rz.damping * (i / ratios.length)) / ratios.length, t));
+            filters.forEach((f, i) => {
+              const hz = clamp(r * (ratios[i] ?? 1) * (1 + (i - 1.5) * rz.spread * 0.025), 30, 16000);
+              const q = resonatorQ(hz, rz.decay);
+              glide(f.frequency, hz, t); glide(f.Q, q, t);
+              const g = gains[i]; if (g) glide(g.gain, resonatorGain(q, rz.damping, i, ratios.length), t);
+            });
           };
           for (const key of ["root", "spread", "decay", "damping"] as const) live(pl, key, (v, t) => { rz[key] = v; retune(t); });
           live(pl, "mix", (v, t) => { const m = clamp(v, 0, 1); glide(dry.gain, 1 - m, t); glide(wet.gain, m * 0.65, t); });
