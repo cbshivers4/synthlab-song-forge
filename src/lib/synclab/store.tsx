@@ -78,7 +78,7 @@ import type {
 import { clipRate, clipSeconds, laneValueAt, SECTION_COLORS } from "./types";
 import { wsolaStretch } from "./stretch";
 import { encodeWav } from "./bounce";
-import { alignedTake, getInputLatencyMs, outputDelay } from "./latency";
+import { alignedTake, getInputLatencyMs, outputDelay, preRollTake } from "./latency";
 import { addCut, cutNotesAt, deleteRegion, regionAt, unrollNotes } from "./note-cuts";
 import { GRANULAR_KNOBS } from "./granular";
 import { externalNoteOff, externalNoteOn, isExternal, restoreExternalRoutes, sendExternalBend, sendExternalCc } from "./external-midi";
@@ -458,6 +458,13 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   /** timeline step where the current take started, so the clip lands there */
   const recStartStepRef = useRef(0);
   const recAudioStartRef = useRef<number | null>(null);
+  /** Step and audio-clock time the song actually started (set by the scheduler), for lining takes up. */
+  const songStartRef = useRef<{ step: number; time: number } | null>(null);
+  /** Audio-clock time the next playback start must land on (the count-in's downbeat). */
+  const startAtRef = useRef<number | null>(null);
+  /** The mic / channel-print recorder was started before the song, so its lead-in is trimmed. */
+  const micPreRollRef = useRef(false);
+  const printPreRollRef = useRef(false);
   /** punch recording hooks, filled in once the record helpers exist */
   const punchRef = useRef<{ start: (at: number) => void; stop: () => void } | null>(null);
   /** loop wraps during the current microphone take; each wrap starts another pass */
@@ -1127,7 +1134,14 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     const LOOKAHEAD = 0.14; // seconds of audio scheduled in advance
     const TICK = 20; // ms between scheduler passes
     let step = transportRef.current.step ?? 0;
+    // After a count-in the song starts exactly on its downbeat; otherwise as soon as possible.
+    const wanted = startAtRef.current;
+    startAtRef.current = null;
     let nextTime = ctx.currentTime + 0.06;
+    if (wanted != null && wanted > nextTime && wanted - nextTime < 1) nextTime = wanted;
+    songStartRef.current = { step, time: nextTime };
+    // a stale clock from the last run must not place notes played before the downbeat
+    lastStepRef.current = null;
     let cancelled = false;
     let lastScheduled: number | null = null;
     /** steps already handed to the audio clock, drained by the visual loop */
@@ -1401,6 +1415,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       (t) => t.recording && (t.kind === "audio" || t.kind === "ai-vocal" || t.kind === "sampler"),
     );
     let result: Awaited<ReturnType<typeof engine.stopInputRecording>> = null;
+    const recStartedAt = engine.recStartedAt;
+    const preRoll = micPreRollRef.current;
+    micPreRollRef.current = false;
     try {
       result = await engine.stopInputRecording();
     } catch (err) {
@@ -1416,11 +1433,21 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     // place the take where the recorder truly began (heard position), minus mic input delay
     const measured = recAudioStartRef.current;
     recAudioStartRef.current = null;
-    const aligned = alignedTake(
-      measured ?? snapRecStart(recStartStepRef.current, transportRef.current.snap),
-      result.duration,
-      getInputLatencyMs() / 1000,
-    );
+    const song = songStartRef.current;
+    if (preRoll && measured == null && !song) {
+      // Stopped during the count-in: the song never started, so there is no take.
+      updateTrack(target.id, { recording: false });
+      return;
+    }
+    // The recorder ran before the song started (count-in / opened before playback):
+    // skip the lead-in so what was sung on beat 1 sits on beat 1.
+    const aligned = preRoll && measured == null && song && song.time >= recStartedAt
+      ? preRollTake(song.step, song.time + outputDelay(engine.ctx), recStartedAt, result.duration, getInputLatencyMs() / 1000)
+      : alignedTake(
+        measured ?? snapRecStart(recStartStepRef.current, transportRef.current.snap),
+        result.duration,
+        getInputLatencyMs() / 1000,
+      );
     const clip: AudioClip = {
       id: uid(),
       name: `TAKE ${takeNo}`,
@@ -1509,6 +1536,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       setTracks((ts) => ts.map((t) => t.id === held.trackId ? { ...t, notes: (t.notes ?? []).map((n) => held.ids.includes(n.id) ? { ...n, length } : n) } : t));
     }
     let landed = false;
+    const printStartedAt = engine.trackRecStartedAt;
+    const printPreRoll = printPreRollRef.current;
+    printPreRollRef.current = false;
     try {
       const result = await engine.stopTrackRecording();
       if (!result) return;
@@ -1520,16 +1550,23 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       // Replace mode: older notes under the new take are removed, so the part
       // is exactly what was just played (overdub keeps them).
       const replacedIds = replacedNoteIdsRef.current;
+      // The print started just before the song: trim that lead-in so the waveform lines up with the notes.
+      const song = songStartRef.current;
+      const pre = printPreRoll && song && song.time >= printStartedAt
+        ? preRollTake(song.step, song.time, printStartedAt, result.duration, 0)
+        : null;
+      const s0 = pre ? pre.start : snapRecStart(recStartStepRef.current, transportRef.current.snap);
+      const lead = pre ? pre.offset : 0;
       const clip: AudioClip = {
         id: uid(), name: `${target.name} TAKE ${(target.clips?.length ?? 0) + 1}`,
         peaks: result.peaks, duration: result.duration, url: result.url,
-        start: snapRecStart(recStartStepRef.current, transportRef.current.snap), offset: 0,
+        start: s0, offset: lead,
         // a looped take never runs past the loop end (its tail would overlap the next pass)
         length: (() => {
           const tpl = transportRef.current;
-          const s0 = snapRecStart(recStartStepRef.current, tpl.snap);
-          if (!tpl.loop || (tpl.loopEnd ?? 0) <= s0) return result.duration;
-          return Math.min(result.duration, ((tpl.loopEnd ?? 0) - s0) * stepDur);
+          const playable = Math.max(0, result.duration - lead);
+          if (!tpl.loop || (tpl.loopEnd ?? 0) <= s0) return playable;
+          return Math.min(playable, ((tpl.loopEnd ?? 0) - s0) * stepDur);
         })(),
         gain: 1,
       };
@@ -1609,6 +1646,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           replacedNoteIdsRef.current = tpr.overdub && !tpr.replace
             ? new Set()
             : new Set((note.notes ?? []).filter((n) => n.step >= at && n.step < to).map((n) => n.id));
+          printPreRollRef.current = false;
           try {
             engine.startTrackRecording(note.id);
           } catch (err) {
@@ -1621,6 +1659,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         }
         recStartStepRef.current = at;
         loopPassesRef.current = 0;
+        micPreRollRef.current = false;
         const generation = recordingGenerationRef.current;
         updateTrack(target.id, { recording: true });
         pendingInputStartRef.current = engine.startInputRecording(target.id, transportRef.current.monitor ?? false)
@@ -2425,48 +2464,72 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         // (channel print + editable notes), not like a microphone input.
         const isNote = (t: Track) => t.kind === "instrument" || t.kind === "midi" || t.kind === "drum" || t.kind === "sampler";
         const isAudio = (t: Track) => t.kind === "audio" || t.kind === "ai-vocal";
-        // Pressing REC during a count-in cancels it.
+        // Pressing REC during a count-in cancels it (and throws away the mic lead-in).
         if (countInTimerRef.current != null) {
           window.clearInterval(countInTimerRef.current);
           countInTimerRef.current = null;
+          recordingGenerationRef.current += 1;
           setTransportState((s) => ({ ...s, countInLeft: null }));
+          if (micPreRollRef.current) {
+            micPreRollRef.current = false;
+            const drop = () => {
+              if (transportRef.current.recording || countInTimerRef.current != null) return;
+              engine.cancelInputRecording();
+            };
+            drop();
+            void Promise.resolve(pendingInputStartRef.current).then(drop);
+            setTracks((ts) => ts.map((t) => (t.recording ? { ...t, recording: false } : t)));
+          }
           return;
         }
         if (!transportRef.current.recording) {
+          songStartRef.current = null;
+          startAtRef.current = null;
+          micPreRollRef.current = false;
+          printPreRollRef.current = false;
+          const selectedTrack = tracksRef.current.find((t) => t.id === selectedIdRef.current);
+          // Auto-arm the selected channel so pressing record always has a target.
+          let armedAudio = tracksRef.current.find((t) => t.armed && isAudio(t));
+          let armedNote = tracksRef.current.find((t) => t.armed && isNote(t));
+          if (!armedAudio && !armedNote && selectedTrack) {
+            if (isAudio(selectedTrack)) armedAudio = selectedTrack;
+            else if (isNote(selectedTrack)) armedNote = selectedTrack;
+            if (armedAudio || armedNote) updateTrack(selectedTrack.id, { armed: true });
+          }
+          const generation = recordingGenerationRef.current;
+          // The microphone recorder starts now — before the count-in or the song — so the
+          // first beat is never lost while the input opens; its lead-in is trimmed off later.
+          let micReady: Promise<boolean> = Promise.resolve(true);
+          if (armedAudio) {
+            const target = armedAudio;
+            loopPassesRef.current = 0;
+            recAudioStartRef.current = null;
+            micPreRollRef.current = !transportRef.current.playing;
+            updateTrack(target.id, { recording: true });
+            micReady = engine.startInputRecording(target.id, transportRef.current.monitor ?? false)
+              .then(() => {
+                if (generation !== recordingGenerationRef.current) return false;
+                // Only when the song was already rolling (recording on the fly): place it where it was heard.
+                recAudioStartRef.current = transportRef.current.playing ? heardStepPos() : null;
+                updateTrack(target.id, { recording: true });
+                return true;
+              }, (err: unknown) => {
+                micPreRollRef.current = false;
+                updateTrack(target.id, { recording: false });
+                setTransportState(state => ({ ...state, recording: false }));
+                toast.error("Microphone unavailable", { description: err instanceof Error ? err.message : undefined });
+                return false;
+              });
+            pendingInputStartRef.current = micReady.then(() => undefined);
+          }
           const begin = () => {
             const tp = transportRef.current;
             const [lo, hi] = loopRegion(tp);
             const step = tp.step < lo || tp.step >= hi ? lo : tp.step;
             transportRef.current = { ...tp, loop: true, step };
             setTransportState((s) => ({ ...s, loop: true, step }));
-            const selectedTrack = tracksRef.current.find((t) => t.id === selectedIdRef.current);
-            // Auto-arm the selected channel so pressing record always has a target.
-            let armedAudio = tracksRef.current.find((t) => t.armed && isAudio(t));
-            let armedNote = tracksRef.current.find((t) => t.armed && isNote(t));
-            if (!armedAudio && !armedNote && selectedTrack) {
-              if (isAudio(selectedTrack)) armedAudio = selectedTrack;
-              else if (isNote(selectedTrack)) armedNote = selectedTrack;
-              if (armedAudio || armedNote) updateTrack(selectedTrack.id, { armed: true });
-            }
-            if (armedAudio) {
-              const target = armedAudio;
-              loopPassesRef.current = 0;
-              recStartStepRef.current = transportRef.current.step ?? 0;
-              const generation = recordingGenerationRef.current;
-              updateTrack(target.id, { recording: true });
-              pendingInputStartRef.current = engine.startInputRecording(target.id, transportRef.current.monitor ?? false)
-                .then(() => {
-                  if (generation !== recordingGenerationRef.current) return;
-                  recAudioStartRef.current = transportRef.current.playing ? heardStepPos() : null;
-                  updateTrack(target.id, { recording: true });
-                }).catch((err: unknown) => {
-                  updateTrack(target.id, { recording: false });
-                  setTransportState(state => ({ ...state, recording: false }));
-                  toast.error("Microphone unavailable", { description: err instanceof Error ? err.message : undefined });
-                });
-            }
+            recStartStepRef.current = step;
             if (armedNote) {
-              recStartStepRef.current = transportRef.current.step ?? 0;
               {
                 const tpr = transportRef.current;
                 const from = tpr.loop ? (tpr.loopStart ?? 0) : recStartStepRef.current;
@@ -2485,9 +2548,12 @@ export function StudioProvider({ children }: { children: ReactNode }) {
               if (otherSolo) {
                 toast.warning("Another track is soloed", { description: `${armedNote.name} is silenced by solo and would record a flat line — un-solo the other track.` });
               }
+              // Printing starts just before the song does; that lead-in is trimmed when the take lands.
+              printPreRollRef.current = !transportRef.current.playing;
               try {
                 engine.startTrackRecording(armedNote.id);
               } catch (err) {
+                printPreRollRef.current = false;
                 toast.error("Could not record this channel", { description: err instanceof Error ? err.message : undefined });
                 return;
               }
@@ -2514,6 +2580,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             let left = ciBars * bpb;
             // Hold the transport during the count-in, even if it was already rolling.
             setTransportState((s) => ({ ...s, playing: false, paused: true, countInLeft: left }));
+            transportRef.current = { ...transportRef.current, playing: false };
+            if (armedAudio) micPreRollRef.current = true;
             // Clicks are timed on the audio clock (scheduled just ahead, so cancelling stops them),
             // keeping the count-in steady when the page is busy; countdown and haptics follow.
             const ctx = engine.init();
@@ -2521,8 +2589,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             const t0 = ctx.currentTime + 0.05;
             const total = left;
             let nextClick = 0;
-            const scheduleClicks = () => {
-              while (nextClick < total && t0 + nextClick * beatSec < ctx.currentTime + 0.12) {
+            const scheduleClicks = (horizon = 0.12) => {
+              while (nextClick < total && t0 + nextClick * beatSec < ctx.currentTime + horizon) {
                 if (transportRef.current.countInClick !== false) engine.playClick(nextClick % bpb === 0, t0 + nextClick * beatSec);
                 nextClick += 1;
               }
@@ -2535,16 +2603,25 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             };
             buzz(true);
             const startAt = t0 + total * beatSec;
+            // Start the song a moment early so it is set up in time to land exactly on the downbeat.
+            const START_EARLY = 0.3;
             const tick = () => {
               scheduleClicks();
-              const remaining = Math.ceil((startAt - ctx.currentTime) / beatSec - 1e-6);
-              if (remaining <= 0) {
+              const ahead = startAt - ctx.currentTime;
+              if (ahead <= START_EARLY) {
                 if (countInTimerRef.current != null) window.clearInterval(countInTimerRef.current);
                 countInTimerRef.current = null;
-                setTransportState((s) => ({ ...s, countInLeft: null }));
+                scheduleClicks(START_EARLY + 0.1);
+                startAtRef.current = startAt;
+                const gen = recordingGenerationRef.current;
                 begin();
+                // the last count number stays up until the downbeat itself
+                window.setTimeout(() => {
+                  if (gen === recordingGenerationRef.current) setTransportState((s) => (s.countInLeft != null ? { ...s, countInLeft: null } : s));
+                }, Math.max(0, ahead * 1000));
                 return;
               }
+              const remaining = Math.ceil(ahead / beatSec - 1e-6);
               if (remaining !== left) {
                 left = remaining;
                 buzz(left % bpb === 0);
@@ -2552,6 +2629,14 @@ export function StudioProvider({ children }: { children: ReactNode }) {
               }
             };
             countInTimerRef.current = window.setInterval(tick, 10);
+            return;
+          }
+          // No count-in: wait for the microphone to be listening before the song starts.
+          if (armedAudio && !transportRef.current.playing) {
+            void micReady.then((ok) => {
+              if (generation !== recordingGenerationRef.current) return;
+              if (ok || armedNote) begin();
+            });
             return;
           }
           begin();

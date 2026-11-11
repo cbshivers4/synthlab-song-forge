@@ -96,7 +96,8 @@ export const KNOWLEDGE_BASE: Article[] = [
     tags: "recording microphone vocals input monitor arm punch take count-in overdub replace",
     body: [
       "Add an audio track and press ARM. SYNCLAB opens your microphone so you can see the input level before you record. New tracks you add are armed for you.",
-      "Press REC in the transport. With Count-in on, the bars you chose click first, then recording starts.",
+      "Press REC in the transport. With Count-in on, the bars you chose click first and the song starts exactly on the next beat 1. Your microphone is already listening during the count-in, so you can come in right on the first beat.",
+      "Without a count-in, SYNCLAB waits until the microphone is listening (usually a split second) before the song starts, so the first beat is never cut off.",
       "Loop recording keeps every pass as its own take so you can pick the best one; punch in/out limits recording to the loop.",
     ],
     can: [

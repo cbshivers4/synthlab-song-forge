@@ -116,6 +116,11 @@ export function TestModeHarness() {
       setLoop: (on: boolean) => ref.current.setTransport({ loop: !!on }),
       record: () => { if (!ref.current.transport.recording) ref.current.toggleRecord(); },
       seek: (step: number) => ref.current.setTransport({ step: Math.max(0, Math.floor(step)) }),
+      // Recording checks: add a microphone channel, arm channels, set the count-in and read takes.
+      addAudioTrack: () => ref.current.addTrack("audio", "VOCAL", undefined, { keepPanel: true }),
+      arm: (trackId: string, on: boolean) => ref.current.updateTrack(trackId, { armed: !!on }),
+      setCountIn: (bars: number) => ref.current.setTransport({ countIn: bars > 0, countInBars: Math.max(1, Math.floor(bars) || 1) }),
+      getClips: (trackId: string) => (ref.current.tracks.find((t) => t.id === trackId)?.clips ?? []).map((c) => ({ name: c.name, start: c.start, offset: c.offset, length: c.length, duration: c.duration })),
       // Same calls as the Mixer's M and S buttons.
       setMute: (trackId: string, on: boolean) => ref.current.updateTrack(trackId, { muted: !!on }),
       setSolo: (trackId: string, on: boolean) => ref.current.updateTrack(trackId, { solo: !!on }),

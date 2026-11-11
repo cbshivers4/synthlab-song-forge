@@ -1808,6 +1808,9 @@ export class SyncLabEngine {
     return this.trackRecorder?.recorder.state === "recording";
   }
 
+  /** Audio-clock time the current channel print started, so the take can be lined up with the song. */
+  trackRecStartedAt = 0;
+
   /** Print an instrument or drum channel directly, without capturing the rest of the song. */
   startTrackRecording(trackId: string) {
     if (this.trackRecorder) return;
@@ -1821,6 +1824,7 @@ export class SyncLabEngine {
       const chunks: Blob[] = [];
       recorder.ondataavailable = (event) => { if (event.data.size) chunks.push(event.data); };
       recorder.start(40);
+      this.trackRecStartedAt = ctx.currentTime;
       this.trackRecorder = { recorder, destination, source, trackId, chunks };
     } catch (error) {
       source.disconnect(destination);
@@ -1972,6 +1976,17 @@ export class SyncLabEngine {
     } finally {
       this.recordingStart = null;
     }
+  }
+
+  /** Throw away a microphone take that never reached the song (record cancelled during the count-in). */
+  cancelInputRecording() {
+    const rec = this.recorder;
+    if (!rec) return;
+    this.recorder = null;
+    rec.ondataavailable = null;
+    try { if (rec.state !== "inactive") rec.stop(); } catch { /* already stopped */ }
+    this.recChunks = [];
+    if (!this.monitorTrackId) this.stopInputMonitoring();
   }
 
   /** Live input gain in dB (-24..+24), applied before metering, monitoring and recording. */

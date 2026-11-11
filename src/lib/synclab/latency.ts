@@ -47,3 +47,16 @@ export function alignedTake(startStep: number, duration: number, inputSec: numbe
   const offset = Math.max(0, Math.min(duration, inputSec));
   return { start: Math.max(0, startStep), offset, length: Math.max(0, duration - offset) };
 }
+
+/**
+ * Where a take belongs when its recorder was already running before the song started
+ * (it is opened during the count-in, or just before playback, so beat 1 is never missed).
+ * `songHeardAt` is the audio-clock time step `songStep` reached the speakers (or, for a
+ * channel print, the time it was produced); the audio recorded before that is skipped via
+ * the clip offset, plus `inputSec` of microphone delay for mic takes.
+ */
+export function preRollTake(songStep: number, songHeardAt: number, recStartedAt: number, duration: number, inputSec: number) {
+  const lead = Math.max(0, songHeardAt - recStartedAt);
+  const offset = Math.max(0, Math.min(duration, lead + inputSec));
+  return { start: Math.max(0, songStep), offset, length: Math.max(0, duration - offset) };
+}
