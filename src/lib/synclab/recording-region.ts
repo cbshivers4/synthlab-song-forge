@@ -15,6 +15,15 @@ export function nextPlayStep(step: number, tp: Pick<Transport, 'bars' | 'loop' |
   }
   return next >= total ? 0 : next;
 }
+/**
+ * Length (in steps, quarter-step resolution) of a note you heard for `seconds` live.
+ * A recorded note keeps that length, so the take rings out like the note you played
+ * instead of being chopped to one step. A held key may make it longer, never shorter.
+ */
+export function heardNoteSteps(seconds: number, stepDur: number, heldSteps = 0): number {
+  const live = stepDur > 0 ? Math.round((seconds / stepDur) * 4) / 4 : 0;
+  return Math.max(0.25, live, heldSteps);
+}
 export function capturedNote(note: MidiNote, [start, end]: [number, number]): MidiNote | null {
   if (note.step < start || note.step >= end) return null;
   return { ...note, length: Math.min(note.length, end - note.step), recordedEnd: end };

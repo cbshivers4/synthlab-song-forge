@@ -21,7 +21,7 @@ function cloneTrack(t: Track): Track {
   try { return structuredClone(t); } catch { return JSON.parse(JSON.stringify(t)) as Track; }
 }
 import { createRecordingFinalizer } from "./recording-finalizer";
-import { capturedNote, loopRegion, nextPlayStep } from "./recording-region";
+import { capturedNote, heardNoteSteps, loopRegion, nextPlayStep } from "./recording-region";
 import { editDrumPads, type DrumBulkEdit } from "./drum-bulk";
 import { appendDrumPad } from "./drum-banks";
 import { learnedDrumPad } from "./drum-midi";
@@ -112,6 +112,11 @@ function synthTake(t: Track): boolean {
 const SCHEDULE_AHEAD = 0.3;
 /** A step this late (s) is still played; later ones are skipped so a stall never bursts notes. */
 const LATE_OK = 0.05;
+
+/** How long a tapped on-screen / typing-key note sounds live (and records). */
+const PREVIEW_NOTE_SECONDS = 0.35;
+/** How long a MIDI-keyboard note sounds live on a built-in synth (and the shortest it records). */
+const LIVE_MIDI_NOTE_SECONDS = 0.6;
 
 export interface MidiTarget {
   id: string;
@@ -1043,7 +1048,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             const anySolo = tracksRef.current.some((t) => t.solo);
             const audible = !target.muted && !target.deviceBypassed && (!anySolo || target.solo);
             if (audible) for (const p of processMidiThroughPlugins(pitch + (target.octave ?? 0) * 12, target.plugins)) externalNoteOn(target.id, p, Math.max(0.15, velocity));
-          } else triggerNote(engine, target, pitch, 0.6, Math.max(0.15, velocity), undefined, 30);
+          } else triggerNote(engine, target, pitch, LIVE_MIDI_NOTE_SECONDS, Math.max(0.15, velocity), undefined, 30);
           if (tp.recording && target.recording) {
             const pitches = processMidiThroughPlugins(pitch, target.plugins);
             const at = heardStepPos();
@@ -1051,7 +1056,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
               const note = capturedNote({
               id: uid(),
               step: at,
-              length: 1,
+              length: heardNoteSteps(LIVE_MIDI_NOTE_SECONDS, stepDur),
               pitch: recordedPitch,
               velocity: Math.max(0.15, velocity),
               }, tp.loop ? loopRegion(tp) : [0, songSteps(tp.bars)]);
@@ -1076,7 +1081,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           const regionEnd = tp.loop && (tp.loopEnd ?? 0) > (tp.loopStart ?? 0)
             ? (tp.loopEnd ?? 0)
             : Number.POSITIVE_INFINITY;
-          const steps = Math.max(0.25, Math.min(elapsed, regionEnd - held.startStep));
+          // never shorter than the note you heard, so the take keeps its ring-out
+          const steps = Math.max(0.25, Math.min(heardNoteSteps(LIVE_MIDI_NOTE_SECONDS, stepDur, elapsed), regionEnd - held.startStep));
           setTracks((ts) =>
             ts.map((t) =>
               t.id === held.trackId
@@ -2045,7 +2051,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const api: StudioApi = useMemo(() => {
     const selected = tracks.find((t) => t.id === selectedId) ?? null;
     /** Writes a note into the armed recording track without sounding it. */
-    const capture = (trackId: string, midi: number, velocity: number) => {
+    const capture = (trackId: string, midi: number, velocity: number, seconds = PREVIEW_NOTE_SECONDS) => {
       const tp = transportRef.current;
       const t = tracksRef.current.find((x) => x.id === trackId);
       if (!t || !tp.recording || !t.recording) return;
@@ -2053,7 +2059,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       // stamp the true sub-step position you heard, so the take keeps the
       // player's timing — quantize then has something real to snap
       const stepPos = heardStepPos();
-      const note = capturedNote({ id: uid(), step: Math.max(0, stepPos), length: 1, pitch: midi, velocity }, tp.loop ? loopRegion(tp) : [0, songSteps(tp.bars)]);
+      // the note keeps the length it sounded live, so playback isn't chopped short (gated)
+      const length = heardNoteSteps(seconds, stepSeconds(tp.bpm));
+      const note = capturedNote({ id: uid(), step: Math.max(0, stepPos), length, pitch: midi, velocity }, tp.loop ? loopRegion(tp) : [0, songSteps(tp.bars)]);
       if (!note) return;
       recordedNoteIdsRef.current.set(note.id, getEngine().ctx?.currentTime ?? 0);
       setTracks((ts) => ts.map((x) => (x.id === t.id ? { ...x, notes: [...(x.notes ?? []), note] } : x)));
@@ -3029,7 +3037,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             };
           }),
         ),
-      previewNote: (trackId, midi, duration = 0.35, shouldCapture = true, patch) => {
+      previewNote: (trackId, midi, duration = PREVIEW_NOTE_SECONDS, shouldCapture = true, patch) => {
         const t = tracksRef.current.find((x) => x.id === trackId);
         const engine = getEngine();
         engine.init();
@@ -3037,7 +3045,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         if (t) triggerNote(engine, previewTrack(t, patch), midi, duration, 0.9);
         keyDown(midi);
         // Notes played on screen are captured while the transport records.
-        if (t && shouldCapture) capture(t.id, midi, 0.9);
+        if (t && shouldCapture) capture(t.id, midi, 0.9, duration);
       },
       captureNote: (trackId, midi, velocity = 0.9) => {
         capture(trackId, midi, velocity);

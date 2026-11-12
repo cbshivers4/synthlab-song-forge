@@ -63,3 +63,18 @@ describe('cutting on a synth channel', () => {
     expect(patch.notes?.map((n) => n.id)).toEqual(['out']);
   });
 });
+
+describe('recorded note length matches what you heard', () => {
+  it('a tapped key (0.35 s) records about 3 steps at 120 BPM, not a gated single step', async () => {
+    const { heardNoteSteps } = await import('./recording-region');
+    expect(heardNoteSteps(0.35, 0.125)).toBe(2.75);
+  });
+  it('a MIDI key held longer than it sounded records the held length', async () => {
+    const { heardNoteSteps } = await import('./recording-region');
+    expect(heardNoteSteps(0.6, 0.125, 12)).toBe(12);
+  });
+  it('a quick MIDI tap still records the 0.6 s you heard', async () => {
+    const { heardNoteSteps } = await import('./recording-region');
+    expect(heardNoteSteps(0.6, 0.125, 0.25)).toBe(4.75);
+  });
+});
