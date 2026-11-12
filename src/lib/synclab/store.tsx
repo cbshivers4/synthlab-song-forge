@@ -45,7 +45,7 @@ import { manualSwitchPatch, switchEdge, switchStateAt, writeSwitchStep } from ".
 import { scheduleStep as scheduleSongStep, triggerNote } from "./schedule-step";
 import { shownPassIndex, splitLoopPasses } from "./loop-takes";
 import { getPlayStep, setPlayStep } from "./playhead";
-import { removeTakeAndMaterial } from "./workflow";
+import { cutTrackMaterial, removeTakeAndMaterial } from "./workflow";
 import { isLiveParam, laneReads, laneWrites, liveValue, movedLiveParams, valueAt, writePoint } from "./automation-write";
 import { padNote } from "./drum-notes";
 import { markLiveHit, isLiveHit, clearLiveHits, neighbourLiveHits } from "./live-take";
@@ -2451,15 +2451,15 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       cutTrack: (id) => {
         const src = tracksRef.current.find((t) => t.id === id);
         if (!src) return;
-        clipboardRef.current = cloneTrack(src);
+        // Cut takes the material, never the channel: the instrument stays so you can keep playing it.
+        const tp = transportRef.current;
+        const { clipboard, patch } = cutTrackMaterial(src, tp.bpm, tp.bars, tp.loop ? loopRegion(tp) : undefined);
+        clipboardRef.current = clipboard;
         clipClipboardRef.current = null;
         setClipClipboardName(null);
         setClipboardName(src.name);
-        getEngine().removeChannel(id);
-        setTracks((ts) => ts.filter((t) => t.id !== id));
-        setSelectedId((s) => (s === id ? null : s));
-        setSelectedIds((s) => s.filter((x) => x !== id));
-        toast("Cut", { description: `${src.name} removed and placed on the clipboard.` });
+        setTracks((ts) => ts.map((t) => (t.id === id ? { ...t, ...patch } : t)));
+        toast("Cut", { description: `${src.name} kept its channel — the cut part is on the clipboard.` });
       },
       pasteTrack: (targetId, destinationStep) => {
         const src = clipboardRef.current;
@@ -2510,13 +2510,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         setClipClipboardName(clip.name);
         clipboardRef.current = null;
         setClipboardName(null);
-        setTracks((ts) =>
-          ts.map((t) =>
-            t.id === trackId
-              ? { ...t, clips: (t.clips ?? []).filter((c) => c.id !== clipId), activeClipId: t.activeClipId === clipId ? undefined : t.activeClipId }
-              : t,
-          ),
-        );
+        // a recorded take takes its notes/hits with it, exactly like Delete, so no MIDI is left behind
+        const tp = transportRef.current;
+        setTracks((ts) => ts.map((t) => (t.id === trackId ? { ...t, ...removeTakeAndMaterial(t, clipId, tp.bpm, tp.bars) } : t)));
         toast("Clip cut", { description: `${clip.name} — paste it at the playhead with ⌘V / Ctrl+V.` });
       },
       pasteClip: (atEnd, targetId, destinationStep) => {

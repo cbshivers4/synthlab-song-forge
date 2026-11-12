@@ -75,3 +75,43 @@ export function removeTakeAndMaterial(track: Track, clipId: string, bpm: number,
   const part: [number, number] = [from, from + clipSeconds(clip) / stepSeconds(bpm)];
   return { ...base, ...eraseMaterial(track, part, bars), ...(clips.length ? {} : { printedAudio: false }) };
 }
+
+/**
+ * Cut on a channel never removes the channel itself (only an explicit Delete track does).
+ * With a selected part the clipboard holds just that part's material and only that part is
+ * erased; otherwise every clip, note and drum hit goes to the clipboard and the channel is
+ * left empty, keeping its instrument, sound, effects and mixer settings.
+ */
+export function cutTrackMaterial(track: Track, bpm: number, bars: number, loop?: [number, number]): { clipboard: Track; patch: Partial<Track> } {
+  const clone = structuredCloneSafe(track);
+  const clip = selectedClip(track);
+  const part = clip ? null : selectedPartBounds(track, bpm, bars, loop);
+  if (part) {
+    const total = songSteps(bars);
+    const expanded = unrollNotes(track.notes ?? [], track.steps || total, total);
+    const split = cutNotesAt(cutNotesAt(expanded, part[0]).notes, part[1]).notes;
+    const inside = split.filter((note) => note.step >= part[0] && note.step < part[1]);
+    const hasHits = !!track.pads?.some((pad) => pad.steps.some((v) => v > 0));
+    const clipboard: Track = {
+      ...clone, clips: [], activeClipId: undefined, cuts: undefined, activeRegion: undefined, printedAudio: false,
+      notes: inside.map((note) => ({ ...note, recordedEnd: note.recordedEnd != null ? Math.min(note.recordedEnd, part[1]) : part[1] })),
+      steps: Math.max(1, Math.ceil(part[1] - part[0])),
+      ...(hasHits ? { patternRegion: part } : {}),
+    };
+    return { clipboard, patch: eraseMaterial(track, part, bars) };
+  }
+  return {
+    clipboard: clone,
+    patch: {
+      clips: [],
+      notes: track.notes ? [] : track.notes,
+      pads: track.pads?.map((pad) => ({ ...pad, steps: pad.steps.map(() => 0) })),
+      drumPatterns: track.drumPatterns?.map((pattern) => pattern.map((pad) => ({ ...pad, steps: pad.steps.map(() => 0) }))),
+      activeClipId: undefined, cuts: undefined, activeRegion: undefined, printedAudio: false, recording: false,
+    },
+  };
+}
+
+function structuredCloneSafe(t: Track): Track {
+  try { return structuredClone(t); } catch { return JSON.parse(JSON.stringify(t)) as Track; }
+}

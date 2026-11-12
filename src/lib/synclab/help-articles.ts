@@ -101,6 +101,7 @@ export const KNOWLEDGE_BASE: Article[] = [
       "Loop recording keeps every pass as its own take so you can pick the best one; punch in/out limits recording to the loop.",
       "Recording a synth captures the notes you play. With Overdub on, recording keeps going round the loop and everything you played keeps playing, so you can layer pass after pass. When you stop, the waveform block is drawn from your notes.",
       "Deleting a recorded synth or drum block also deletes the notes or hits underneath it. Undo brings them back.",
+      "Cutting a recorded block (CUT or ⌘X / Ctrl+X) also takes the notes or hits underneath it. Cut never removes the instrument itself — only Delete track does.",
     ],
     can: [
       "Record microphone and interface inputs, with takes and loop recording.",

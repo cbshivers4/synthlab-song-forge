@@ -60,7 +60,7 @@ function buildMenu(win) {
         item("Undo", "edit:undo"),
         item("Redo", "edit:redo"),
         { type: "separator" },
-        item("Cut Track", "edit:cut"),
+        item("Cut", "edit:cut"),
         item("Copy Track", "edit:copy"),
         item("Paste Track", "edit:paste"),
         item("Duplicate Track", "edit:duplicate"),

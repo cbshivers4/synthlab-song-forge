@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { OFFLINE_LIVE, scheduleStep } from './schedule-step';
-import { removeTakeAndMaterial } from './workflow';
+import { cutTrackMaterial, removeTakeAndMaterial } from './workflow';
 import { defaultPatch } from './presets';
 import type { Track, Transport } from './types';
 
@@ -44,5 +44,22 @@ describe('recorded synth notes', () => {
     const t = synth({ steps: 32, notes: [note('p', 4)] });
     for (let n = 0; n < 128; n++) scheduleStep(engine as never, [t], tp, n, n * 0.125, { ...OFFLINE_LIVE, lastScheduled: n ? n - 1 : null });
     expect(engine.playNote).toHaveBeenCalledTimes(4);
+  });
+});
+
+describe('cutting on a synth channel', () => {
+  it('cutting the MIDI block keeps the channel and its sound, emptying only the notes', () => {
+    const t = synth({ notes: [note('a', 4, 128), note('b', 100, 128)] });
+    const { clipboard, patch } = cutTrackMaterial(t, 120, 8);
+    expect(patch.notes).toEqual([]);
+    expect(patch.patch).toBeUndefined();
+    expect('id' in patch).toBe(false);
+    expect(clipboard.notes?.map((n) => n.id)).toEqual(['a', 'b']);
+  });
+  it('cutting a selected part only removes that part', () => {
+    const t = synth({ cuts: [64], activeRegion: 0, notes: [note('in', 4, 128), note('out', 100, 128)] });
+    const { clipboard, patch } = cutTrackMaterial(t, 120, 8);
+    expect(clipboard.notes?.map((n) => n.id)).toEqual(['in']);
+    expect(patch.notes?.map((n) => n.id)).toEqual(['out']);
   });
 });

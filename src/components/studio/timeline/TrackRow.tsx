@@ -732,7 +732,7 @@ export function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track:
               </DropdownMenuSubContent></DropdownMenuSub>
               <DropdownMenuSub><DropdownMenuSubTrigger>Clipboard &amp; arrange</DropdownMenuSubTrigger><DropdownMenuSubContent>
               <DropdownMenuItem onClick={() => cutTrack(track.id)}>
-                <Scissors className="size-4" /> Cut track
+                <Scissors className="size-4" /> Cut track content
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => copyTrack(track.id)}>
                 <Copy className="size-4" /> Copy track

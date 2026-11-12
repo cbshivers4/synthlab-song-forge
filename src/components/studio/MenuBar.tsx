@@ -349,7 +349,7 @@ export function MenuBar({ phone = false }: { phone?: boolean } = {}) {
             </MenubarItem>
             <MenubarSeparator />
             <MenubarItem onClick={needTrack((id) => cutTrack(id))}>
-              Cut Track <MenubarShortcut>⌘X</MenubarShortcut>
+              Cut <MenubarShortcut>⌘X</MenubarShortcut>
             </MenubarItem>
             <MenubarItem onClick={needTrack((id) => copyTrack(id))}>
               Copy Track <MenubarShortcut>⌘C</MenubarShortcut>
