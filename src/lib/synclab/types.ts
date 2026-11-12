@@ -554,6 +554,8 @@ export interface Transport {
   recording: boolean;
   paused?: boolean;
   overdub?: boolean;
+  /** recorded notes snap to the quantize grid as they are captured; on unless false */
+  snapRecording?: boolean;
   /** audio takes remove the older takes they overlap */
   replace?: boolean;
   punchIn?: number | null;

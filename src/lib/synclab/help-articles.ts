@@ -100,6 +100,7 @@ export const KNOWLEDGE_BASE: Article[] = [
       "Without a count-in, SYNCLAB waits until the microphone is listening (usually a split second) before the song starts, so the first beat is never cut off.",
       "Loop recording keeps every pass as its own take so you can pick the best one; punch in/out limits recording to the loop.",
       "Recording a synth captures the notes you play. With Overdub on, recording keeps going round the loop and everything you played keeps playing, so you can layer pass after pass. When you stop, the waveform block is drawn from your notes.",
+      "Snap (on by default, next to Overdub) puts each recorded note on the nearest grid line, using the Quantize grid, so the take and its waveform start right on the beat. Turn Snap off to keep your exact timing.",
       "Deleting a recorded synth or drum block also deletes the notes or hits underneath it. Undo brings them back.",
       "Cutting a recorded block (CUT or ⌘X / Ctrl+X) also takes the notes or hits underneath it. Cut never removes the instrument itself — only Delete track does.",
     ],

@@ -21,7 +21,7 @@ function cloneTrack(t: Track): Track {
   try { return structuredClone(t); } catch { return JSON.parse(JSON.stringify(t)) as Track; }
 }
 import { createRecordingFinalizer } from "./recording-finalizer";
-import { capturedNote, heardNoteSteps, loopRegion, nextPlayStep } from "./recording-region";
+import { capturedNote, heardNoteSteps, loopRegion, nextPlayStep, snapRecordedStep } from "./recording-region";
 import { editDrumPads, type DrumBulkEdit } from "./drum-bulk";
 import { appendDrumPad } from "./drum-banks";
 import { learnedDrumPad } from "./drum-midi";
@@ -1051,7 +1051,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           } else triggerNote(engine, target, pitch, LIVE_MIDI_NOTE_SECONDS, Math.max(0.15, velocity), undefined, 30);
           if (tp.recording && target.recording) {
             const pitches = processMidiThroughPlugins(pitch, target.plugins);
-            const at = heardStepPos();
+            const heard = heardStepPos();
+            const at = tp.snapRecording === false ? heard : snapRecordedStep(heard, tp.quantize ?? 1, tp.loop ? loopRegion(tp) : [0, songSteps(tp.bars)], tp.loop);
             const notes: MidiNote[] = pitches.flatMap((recordedPitch) => {
               const note = capturedNote({
               id: uid(),
@@ -2058,7 +2059,10 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       if (t.kind !== "instrument" && t.kind !== "midi" && t.kind !== "sampler") return;
       // stamp the true sub-step position you heard, so the take keeps the
       // player's timing — quantize then has something real to snap
-      const stepPos = heardStepPos();
+      const heard = heardStepPos();
+      // Snap rec (on by default) puts the note on the nearest grid line, so the take
+      // and its waveform start on the beat instead of just before or after it.
+      const stepPos = tp.snapRecording === false ? heard : snapRecordedStep(heard, tp.quantize ?? 1, tp.loop ? loopRegion(tp) : [0, songSteps(tp.bars)], tp.loop);
       // the note keeps the length it sounded live, so playback isn't chopped short (gated)
       const length = heardNoteSteps(seconds, stepSeconds(tp.bpm));
       const note = capturedNote({ id: uid(), step: Math.max(0, stepPos), length, pitch: midi, velocity }, tp.loop ? loopRegion(tp) : [0, songSteps(tp.bars)]);

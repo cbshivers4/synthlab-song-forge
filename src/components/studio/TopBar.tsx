@@ -13,6 +13,7 @@ import {
   Import,
   KeyboardMusic,
   Layers,
+  Magnet,
   Mic,
   Minus,
   Music2,
@@ -357,6 +358,12 @@ export function TopBar() {
               icon={<Layers className="size-3.5" />}
               active={transport.overdub}
               onClick={() => setTransport({ overdub: !transport.overdub })}
+            />
+            <FeatBtn
+              label="SNAP NOTES"
+              icon={<Magnet className="size-3.5" />}
+              active={transport.snapRecording !== false}
+              onClick={() => setTransport({ snapRecording: transport.snapRecording === false })}
             />
             <FeatBtn
               label="REPLACE"

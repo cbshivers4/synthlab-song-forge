@@ -1,5 +1,5 @@
 import { getPlayStep, usePlayStep } from "@/lib/synclab/playhead";
-import { Circle, ClipboardMinus, ClipboardPaste, Copy, Layers, Metronome, Mic, Piano, Play, Repeat, Square, SquareSplitHorizontal, Timer, Trash2, X } from 'lucide-react';
+import { Circle, ClipboardMinus, ClipboardPaste, Copy, Layers, Magnet, Metronome, Mic, Piano, Play, Repeat, Square, SquareSplitHorizontal, Timer, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -38,6 +38,7 @@ export function WorkflowBar() {
       <div role="group" aria-label="Recording mode" className="flex shrink-0 gap-0.5 border-l border-border pl-2">
         <Button size="sm" variant={!transport.overdub ? 'default' : 'ghost'} className="h-8 px-2 text-[11px]" disabled={active} aria-pressed={!transport.overdub} onClick={() => setTransport({ overdub: false, replace: true })}>Replace</Button>
         <Button size="sm" variant={transport.overdub ? 'default' : 'ghost'} className="h-8 gap-1 px-2 text-[11px]" disabled={active} aria-pressed={!!transport.overdub} onClick={() => setTransport({ overdub: true, replace: false })}><Layers className="size-3" />Overdub</Button>
+        <Button size="sm" variant={transport.snapRecording !== false ? 'default' : 'ghost'} className="h-8 gap-1 px-2 text-[11px]" disabled={active} aria-pressed={transport.snapRecording !== false} title="Snap recorded notes onto the nearest grid line (uses the Quantize grid)" onClick={() => setTransport({ snapRecording: transport.snapRecording === false })}><Magnet className="size-3" />Snap</Button>
       </div>
       <div className="flex shrink-0 items-center gap-2">
         <Timer className="size-3.5 shrink-0 text-muted-foreground" />

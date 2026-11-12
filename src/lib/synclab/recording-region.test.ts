@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { boundedRegions, capturedNote, loopRegion } from './recording-region';
+import { boundedRegions, capturedNote, loopRegion, snapRecordedStep } from './recording-region';
 import { unrollNotes } from './note-cuts';
 describe('loop recording', () => {
  const bounds: [number, number] = [16,32];
@@ -17,5 +17,21 @@ describe('loop recording', () => {
  it('bounds drum parts and cuts to markers', () => {
   expect(boundedRegions([[0,24],[24,64]],bounds)).toEqual([[16,24],[24,32]]);
   expect(loopRegion({bars:4,loopStart:16,loopEnd:32})).toEqual(bounds);
+ });
+});
+describe('snap recorded notes', () => {
+ it('moves a slightly late or early note onto the nearest 1/16 line', () => {
+  expect(snapRecordedStep(16.3, 1, [16, 32], true)).toBe(16);
+  expect(snapRecordedStep(19.7, 1, [16, 32], true)).toBe(20);
+ });
+ it('uses a coarser grid when chosen', () => {
+  expect(snapRecordedStep(17.6, 4, [16, 32], true)).toBe(16);
+  expect(snapRecordedStep(18.2, 4, [16, 32], true)).toBe(20);
+ });
+ it('wraps a note played just before the loop end to the loop start', () => {
+  expect(snapRecordedStep(31.8, 1, [16, 32], true)).toBe(16);
+ });
+ it('never snaps before the recorded region', () => {
+  expect(snapRecordedStep(15.9, 4, [16, 32], true)).toBe(16);
  });
 });

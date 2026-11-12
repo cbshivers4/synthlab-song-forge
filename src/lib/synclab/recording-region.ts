@@ -24,6 +24,17 @@ export function heardNoteSteps(seconds: number, stepDur: number, heldSteps = 0):
   const live = stepDur > 0 ? Math.round((seconds / stepDur) * 4) / 4 : 0;
   return Math.max(0.25, live, heldSteps);
 }
+/**
+ * Snap a recorded note's start to the nearest grid line (grid in steps), so a take lands
+ * on the beat instead of a little before or after it. A note snapped past the end of the
+ * recorded region wraps to its start when looping, otherwise it stays on the last line.
+ */
+export function snapRecordedStep(pos: number, grid: number, [start, end]: [number, number], wrap: boolean): number {
+  if (!(grid > 0) || !Number.isFinite(pos)) return pos;
+  let s = Math.round(pos / grid) * grid;
+  if (s >= end) s = wrap ? start : Math.max(start, Math.floor((end - 0.001) / grid) * grid);
+  return Math.max(start, s);
+}
 export function capturedNote(note: MidiNote, [start, end]: [number, number]): MidiNote | null {
   if (note.step < start || note.step >= end) return null;
   return { ...note, length: Math.min(note.length, end - note.step), recordedEnd: end };
