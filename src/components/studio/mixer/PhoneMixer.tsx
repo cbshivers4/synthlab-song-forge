@@ -17,6 +17,7 @@ import { VcaAssign } from "./BusStrips";
 import { InsertRack } from "./InsertRack";
 import { PhoneChannelControls } from "./PhoneChannelControls";
 import { BUS_COLOR, FADER_CAP, Meter, toDb } from "./shared";
+import { Scope } from "../Scope";
 
 /** Phone mixer: add effects to the selected channel from one menu. */
 export function PhoneFxMenu() {
@@ -152,6 +153,7 @@ function TouchRouteChannel({ kind, id, color, state, level, onChange, memberCoun
         <span className="shrink-0 rounded-sm border border-current px-1 font-mono text-[10px] font-bold leading-4">{kind}</span>
         <span className="min-w-0 flex-1 truncate text-sm font-bold uppercase">{id}</span>
       </div>
+      <div className="touch-mix-scope shrink-0 px-1.5 pt-1.5"><Scope scopeId={meterId} height={40} compact color={color} /></div>
       <div className="flex min-h-0 flex-1 gap-1.5 p-1.5">
         <div className="flex min-w-0 flex-1 flex-col items-center gap-1">
           <span className="font-mono text-xs font-bold leading-none text-foreground">{volume === 0 ? "-∞" : toDb(volume).toFixed(1)}</span>
@@ -230,6 +232,7 @@ function TouchChannel({ track, level, selected, index }: { track?: Track | undef
         </button>
         {track && <RenameTrackButton track={track} className="h-10 !min-h-0 w-9 rounded-none hover:bg-black/15" />}
       </div>
+      <div className="touch-mix-scope shrink-0 px-1.5 pt-1.5"><Scope scopeId={track ? `ch:${track.id}` : "master"} height={40} compact color={color ?? "var(--mixer-output-accent)"} /></div>
       <div className="flex min-h-0 flex-1 gap-1.5 p-1.5">
         <div className="flex min-w-0 flex-1 flex-col items-center gap-1">
           <span className="font-mono text-xs font-bold leading-none text-foreground">{volume === 0 ? "-∞" : toDb(volume).toFixed(1)}</span>

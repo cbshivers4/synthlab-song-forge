@@ -2057,10 +2057,10 @@ main[data-mixer-dock="true"] .mx-console:not(.mx-phone) { flex: 1 1 auto; min-he
 main[data-mixer-dock="true"] .mx-console:not(.mx-phone) .mobile-mixer-strips { flex: 1 1 auto; }
 main[data-mixer-dock="true"] .mx-console:not(.mx-phone) .mx-output-dock { display: flex; }
 /* Every strip stretches to the dock; the fader row takes whatever height is left so faders grow when the dock is dragged taller. */
-/* Docked strips keep Studio Pro's small-console rows (name, gain, inserts, sends, pan, fader, buttons); EQ, output routing,
-   scope and icon rows stay in Full view. Every strip kind shares this template so the rows still line up across the desk. */
-main[data-mixer-dock="true"] .mx-console:not(.mx-phone) :is(.mx-channel, .mx-master, .mx-routing-strip) { grid-template-rows: 26px 68px 46px 0 26px 0 0 30px minmax(84px, 1fr) 20px 50px 0 0; }
-main[data-mixer-dock="true"] .mx-console:not(.mx-phone) :is(.mx-channel, .mx-master, .mx-routing-strip) > :is(.mx-row-eq, .mx-row-send-bars, .mx-row-routing, .mx-row-scope, .mx-row-icon) { display: none !important; }
+/* Docked strips keep Studio Pro's small-console rows (name, gain, inserts, sends, pan, fader, buttons, scope); EQ, output routing
+   and icon rows stay in Full view. Every strip kind shares this template so the rows still line up across the desk. */
+main[data-mixer-dock="true"] .mx-console:not(.mx-phone) :is(.mx-channel, .mx-master, .mx-routing-strip) { grid-template-rows: 26px 68px 46px 0 26px 0 0 30px minmax(84px, 1fr) 20px 50px 30px 0; }
+main[data-mixer-dock="true"] .mx-console:not(.mx-phone) :is(.mx-channel, .mx-master, .mx-routing-strip) > :is(.mx-row-eq, .mx-row-send-bars, .mx-row-routing, .mx-row-icon) { display: none !important; }
 /* Full-workspace desktop mixer: roomy rows that fit their controls and tall faders */
 main[data-panel-full="true"] .mx-console:not(.mx-phone) { flex: 1 1 auto; min-height: 0; }
 main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-row-head { height: 34px; }

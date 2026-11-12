@@ -40,11 +40,9 @@ export function BusStrip({
         <ChevronRight className="size-3.5 shrink-0" aria-hidden />
         <div className="mx-header-gain"><Knob label={`${id} bus gain`} value={state.volume} min={0} max={FADER_MAX_GAIN} step={0.01} size={30} onChange={(volume) => onChange({ volume })} midiTarget={{ id: `bus:${id}`, param: "volume" }} /></div>
       </div>
-      {advanced && (
-        <div className={cn(ROW.scope, "border-b border-border/60 p-[3px]")}>
-          <Scope scopeId={`bus:${id}`} height={40} compact color={color} />
-        </div>
-      )}
+      <div className={cn(ROW.scope, "border-b border-border/60 p-[3px]")}>
+        <Scope scopeId={`bus:${id}`} height={40} compact color={color} />
+      </div>
       <div className={cn(ROW.eq, "flex items-center justify-center border-b border-border/60 font-mono text-[7px] uppercase tracking-widest text-muted-foreground")}>
         Bus FX below
       </div>
@@ -139,7 +137,9 @@ export function ControlStrip({ kind, name, state, onChange, memberCount, level }
       <div className={cn(ROW.name, "flex items-center justify-center border-b border-border font-mono text-[11px] font-bold tracking-wider", aux ? "text-primary" : "text-accent-foreground")}>{kind} {name}</div>
       <div className={cn(ROW.head, "flex items-center justify-end gap-1.5 border-b border-border px-1.5")}><ChevronRight className="size-3.5 shrink-0" aria-hidden /><div className="mx-header-gain"><Knob label={`${kind} ${name} gain`} value={state.volume} min={0} max={FADER_MAX_GAIN} step={0.01} size={30} onChange={(volume) => onChange({ volume })} midiTarget={{ id: `${aux ? "aux" : "vca"}:${name}`, param: "volume" }} /></div></div>
        <div className={cn(ROW.eq, "flex items-center justify-center gap-1 border-b border-border/60")}><MidiLearnButton id={`${aux ? "aux" : "vca"}:${name}`} param="volume" label={`${kind} ${name} level`} /><MidiLearnButton id={`${aux ? "aux" : "vca"}:${name}`} param="mute" label={`${kind} ${name} mute`} /></div>
-      {advanced && <div className={cn(ROW.scope, "flex items-center justify-center border-b border-border/60 font-mono text-[9px] text-muted-foreground")}>{aux ? "FX RETURN" : `${memberCount ?? 0} CHANNELS`}</div>}
+      <div className={cn(ROW.scope, "border-b border-border/60 p-[3px]")} title={aux ? "Return output after its effects" : `Sum of the ${memberCount ?? 0} channels on this VCA`}>
+        <Scope scopeId={`${aux ? "aux" : "vca"}:${name}`} height={40} compact color={aux ? "var(--primary)" : "var(--accent)"} />
+      </div>
       <div className={cn(ROW.devices, "flex items-center border-b border-border/60 p-2")}>
         {aux ? <FxMenu target={`send:${name}`} label="Return FX" /> : <VcaAssign id={name as VcaId} memberCount={memberCount ?? 0} />}
       </div>

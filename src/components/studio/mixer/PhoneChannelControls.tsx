@@ -510,6 +510,10 @@ function VcaPanel({ id }: { id: VcaId }) {
               <BigButton on={state.muted} onClick={() => setVca(id, { muted: !state.muted })} className={state.muted ? "border-amber-500 bg-amber-500 text-black" : undefined}>{state.muted ? "Muted" : "Mute group"}</BigButton>
             </div>
           </Section>
+          <Section title="Live signal">
+            <Scope scopeId={`vca:${id}`} height={56} compact color="oklch(0.82 0.14 70)" />
+            <p className="mt-2 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">Sum of its {members.length} channel{members.length === 1 ? "" : "s"}</p>
+          </Section>
           <Section title="What a VCA does">
             <p className="text-sm text-muted-foreground">This fader turns all its channels up or down together. Their own faders stay where they are.</p>
             <p className="mt-2 font-mono text-xs font-bold uppercase text-foreground">{members.length ? members.map((t) => t.name).join(" · ") : "No channels yet — pick some in Channels"}</p>

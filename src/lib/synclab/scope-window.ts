@@ -8,6 +8,8 @@ export type ScopeWindowState = { open: boolean; source: ScopeSource; view: Scope
 
 export const MASTER_SOURCE: ScopeSource = { id: "master", label: "Master Section" };
 export const SCOPE_BUS_IDS = ["drums", "vocals", "instruments", "synths", "fx"] as const;
+export const SCOPE_AUX_IDS = ["reverb", "delay", "chorus"] as const;
+export const SCOPE_VCA_IDS = ["A", "B", "C", "D"] as const;
 
 /** Frequency range and labels of the big analyzer (log scale, matching the reference window). */
 export const SPECTRUM_MIN_HZ = 20;
@@ -61,6 +63,8 @@ export function scopeSourceGroups(tracks: Track[]): { label: string; sources: Sc
   return [
     { label: "Main", sources: [MASTER_SOURCE] },
     { label: "Buses", sources: SCOPE_BUS_IDS.map((id) => ({ id: `bus:${id}`, label: `${id[0]!.toUpperCase()}${id.slice(1)} bus` })) },
+    { label: "Returns", sources: SCOPE_AUX_IDS.map((id) => ({ id: `aux:${id}`, label: `${id[0]!.toUpperCase()}${id.slice(1)} return` })) },
+    { label: "VCAs", sources: SCOPE_VCA_IDS.map((id) => ({ id: `vca:${id}`, label: `VCA ${id}` })) },
     { label: "Channels", sources: tracks.map((t) => ({ id: `ch:${t.id}`, label: t.name })) },
     {
       label: "Effects",

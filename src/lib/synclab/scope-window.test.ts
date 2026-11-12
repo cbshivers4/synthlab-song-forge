@@ -31,11 +31,17 @@ describe("expanded scope window", () => {
     expect(binForFreq(12000, 48000, 4096)).toBe(2048);
   });
 
-  it("lists master, buses, channels and effects as signals", () => {
+  it("lists master, buses, returns, VCAs, channels and effects as signals", () => {
     const groups = scopeSourceGroups(tracks);
-    expect(groups.map((g) => g.label)).toEqual(["Main", "Buses", "Channels", "Effects"]);
+    expect(groups.map((g) => g.label)).toEqual(["Main", "Buses", "Returns", "VCAs", "Channels", "Effects"]);
     expect(groups[0]!.sources[0]).toEqual(MASTER_SOURCE);
-    expect(groups[3]!.sources).toEqual([{ id: "p1", label: "Kick · Reverb" }]);
+    expect(groups[5]!.sources).toEqual([{ id: "p1", label: "Kick · Reverb" }]);
+  });
+
+  it("names aux return and VCA scopes for the big window", () => {
+    expect(scopeSourceFor("aux:reverb", tracks)).toEqual({ id: "aux:reverb", label: "Reverb return" });
+    expect(scopeSourceFor("vca:B", tracks)).toEqual({ id: "vca:B", label: "VCA B" });
+    expect(scopeSourceFor("bus:drums", tracks).label).toBe("Drums bus");
   });
 
   it("names a bypassed effect scope by its effect", () => {

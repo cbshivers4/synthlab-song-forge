@@ -288,6 +288,7 @@ export class SyncLabEngine {
     reverbReturn.connect(reverbMeter);
     reverbMeter.connect(master);
     this.auxMeters.set("reverb", reverbMeter);
+    this.pluginScopes.set("aux:reverb", reverbMeter);
     reverbReturn.gain.value = this.auxStates["reverb"]?.muted ? 0 : this.auxStates["reverb"]?.volume ?? 1;
     this.auxReturns.set("reverb", reverbReturn);
     this.reverb = conv;
@@ -310,6 +311,7 @@ export class SyncLabEngine {
     delayReturn.connect(delayMeter);
     delayMeter.connect(master);
     this.auxMeters.set("delay", delayMeter);
+    this.pluginScopes.set("aux:delay", delayMeter);
     delayReturn.gain.value = this.auxStates["delay"]?.muted ? 0 : this.auxStates["delay"]?.volume ?? 1;
     this.auxReturns.set("delay", delayReturn);
     this.delaySend = dSend;
@@ -336,6 +338,7 @@ export class SyncLabEngine {
     chorusReturn.connect(chorusMeter);
     chorusMeter.connect(master);
     this.auxMeters.set("chorus", chorusMeter);
+    this.pluginScopes.set("aux:chorus", chorusMeter);
     chorusReturn.gain.value = this.auxStates["chorus"]?.muted ? 0 : this.auxStates["chorus"]?.volume ?? 1;
     this.auxReturns.set("chorus", chorusReturn);
     this.chorusSend = cSend;
@@ -367,6 +370,8 @@ export class SyncLabEngine {
       meter.connect(silentSink);
       silentSink.connect(ctx.destination);
       this.vcaMeters.set(id, meter);
+      // Scope tap for the VCA strip: the summed signal of its member channels (dead-end, never heard twice).
+      this.pluginScopes.set(`vca:${id}`, meter);
     }
   }
 

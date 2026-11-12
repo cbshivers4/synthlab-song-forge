@@ -478,7 +478,7 @@ export const KNOWLEDGE_BASE: Article[] = [
     ],
     cant: [
       "A VCA scales the channels it controls without moving their own faders.",
-      "The docked mixer shows the main rows (gain, inserts, sends, pan, fader, mute/solo). Channel EQ, output routing and the channel scope are only in Full view.",
+      "The docked mixer shows the main rows (gain, inserts, sends, pan, fader, mute/solo). Channel EQ and output routing are only in Full view; every strip keeps its scope.",
       "On a short screen the docked channels scroll up and down if they don't fit; drag the bar up for taller faders.",
     ],
   },
@@ -506,7 +506,7 @@ export const KNOWLEDGE_BASE: Article[] = [
     id: "scope-window", category: "Mixing & effects", title: "Expanding a scope (Spectrum Analyzer)",
     tags: "scope spectrum analyzer analyser oscilloscope expand big window frequency follow selection peak hold",
     body: [
-      "Every scope has a small expand button in its corner — on effects, mixer channels, buses, the master, the transport bar, the Pro EQ and the Modular Tech modules. Press it to open the big Spectrum Analyzer window on the same signal.",
+      "Every scope has a small expand button in its corner — on effects, every mixer channel, bus, aux return, VCA and the master (desktop and phone, docked or full mixer), the transport bar, the Pro EQ and the Modular Tech modules. A VCA's scope shows the combined sound of the channels assigned to it. Press it to open the big Spectrum Analyzer window on the same signal.",
       "The window shows frequencies from 20 Hz to 20 kHz and real levels from 0 dB down to −96 dB. Switch between Spectrum and Scope (the waveform) at the top. Pick any channel, bus, effect or the Master Section from the menu at the bottom, or tick Follow Selection to watch whichever channel you select.",
       "On a computer, drag the title bar to move it and the bottom-right corner to resize it. On a phone it fills the screen. Press × or Esc to close.",
     ],
