@@ -1,4 +1,6 @@
 import type { PluginInstance, PluginParam } from "./types";
+import { shifter, type FxHelpers } from "./fx-dsp";
+import { STUDIO_DEVICES, STUDIO_KINDS, STUDIO_PARAMS, STUDIO_RECIPES, buildStudioFx, isStudioKind } from "./studio-fx";
 
 /**
  * Thirteen original SYNCLAB hardware-style effects. Each kind has its own real
@@ -10,10 +12,12 @@ export const CREATIVE_KINDS = [
   "imager", "unison", "amp", "ensemble", "sidechain", "distmatrix",
   // Guitar rig: two dedicated amps and ten stompbox pedals.
   "leadamp", "bassamp", "overdrive", "fuzz", "wah", "octaver", "analogdelay", "springverb", "pedalcomp", "boost", "univibe", "rotary",
+  // Studio pack: auto filter, analog delay, channel strip, dynamics, modulation, tuning, analysis and Open Air.
+  ...STUDIO_KINDS,
 ] as const;
 /** Stompbox pedals render as pedal enclosures with a footswitch; amps as amp heads. */
 export const PEDAL_KINDS: readonly CreativeKind[] = ["overdrive", "fuzz", "wah", "octaver", "analogdelay", "springverb", "pedalcomp", "boost", "univibe", "rotary"];
-export const AMP_KINDS: readonly CreativeKind[] = ["amp", "leadamp", "bassamp"];
+export const AMP_KINDS: readonly CreativeKind[] = ["amp", "leadamp", "bassamp", "mustang"];
 export type CreativeKind = (typeof CREATIVE_KINDS)[number];
 export const isCreativeKind = (kind: string): kind is CreativeKind => (CREATIVE_KINDS as readonly string[]).includes(kind);
 
@@ -44,6 +48,7 @@ export const CREATIVE_PARAMS: Record<CreativeKind, () => PluginParam[]> = {
   pedalcomp: () => [p("sustain", "Sustain", 0.5, 0, 1), p("attack", "Attack", 0.3, 0, 1), p("mix", "Blend", 1, 0, 1), p("output", "Level", 0, -12, 12, "dB")],
   boost: () => [p("boost", "Boost", 8, 0, 20, "dB"), p("treble", "Treble", 0, 0, 1), p("output", "Level", 0, -12, 6, "dB")],
   univibe: () => [p("mode", "Chorus/Vibrato", 0, 0, 1), p("speed", "Speed", 2, 0.3, 10, "Hz"), p("intensity", "Intensity", 0.6, 0, 1), p("output", "Volume", 0, -12, 6, "dB")],
+  ...STUDIO_PARAMS,
   rotary: () => [p("speed", "Slow/Fast", 0, 0, 1), p("accel", "Ramp Time", 0.8, 0.2, 3, "s"), p("drive", "Drive", 0.2, 0, 1), p("balance", "Drum ↔ Horn", 0.5, 0, 1), p("spread", "Mic Spread", 0.8, 0, 1), p("output", "Output", 0, -12, 6, "dB")],
 };
 
@@ -55,6 +60,7 @@ export const CREATIVE_DEVICES: [name: string, kind: CreativeKind][] = [
   ["Overdrive Pedal", "overdrive"], ["Fuzz Pedal", "fuzz"], ["Wah Pedal", "wah"], ["Octave Pedal", "octaver"],
   ["Analog Delay Pedal", "analogdelay"], ["Spring Reverb Pedal", "springverb"], ["Compressor Pedal", "pedalcomp"],
   ["Clean Boost Pedal", "boost"], ["Vibe Pedal", "univibe"], ["Rotary Speaker", "rotary"],
+  ...STUDIO_DEVICES,
 ];
 
 type R = [string, Record<string, number>];
@@ -83,6 +89,7 @@ export const CREATIVE_RECIPES: Record<CreativeKind, R[]> = {
   pedalcomp: [["Country Squash", { sustain: 0.8, attack: 0.1 }], ["Funk Snap", { sustain: 0.6, attack: 0.5 }], ["Transparent", { sustain: 0.3, mix: 0.6 }], ["Infinite Sustain", { sustain: 1, attack: 0.2, output: -3 }], ["Parallel Squeeze", { sustain: 0.9, mix: 0.5 }], ["Bass Even", { sustain: 0.55, attack: 0.6 }], ["Gentle Level", { sustain: 0.2 }], ["Clean Chime", { sustain: 0.7, attack: 0.8, mix: 0.7 }], ["Lead Push", { sustain: 0.65, output: 3 }], ["Slap Control", { sustain: 0.75, attack: 0 }]],
   boost: [["Clean Lift", { boost: 6 }], ["Solo Boost", { boost: 12, output: -2 }], ["Treble Booster", { boost: 14, treble: 1, output: -4 }], ["Edge of Breakup", { boost: 20, output: -8 }], ["Bright Lift", { treble: 0.5 }], ["Level Match", { boost: 3 }], ["Vocal Presence", { boost: 4, treble: 0.3 }], ["Drive Pusher", { boost: 16, treble: 0.2, output: -6 }], ["Fat Push", { boost: 10 }], ["Cut Through", { boost: 9, treble: 0.8, output: -2 }]],
   univibe: [["Machine Gun Vibe", { speed: 1.2, intensity: 0.8 }], ["Fast Chorale", { speed: 6, intensity: 0.5 }], ["Slow Swirl", { speed: 0.5, intensity: 0.9 }], ["Vibrato Wobble", { mode: 1, speed: 5 }], ["Seasick Vibrato", { mode: 1, speed: 1.5, intensity: 1 }], ["Subtle Throb", { speed: 2.5, intensity: 0.3 }], ["Organ Throb", { speed: 4, intensity: 0.7 }], ["Deep Pulse", { speed: 0.8, intensity: 1, output: -1 }], ["Light Shimmer", { speed: 8, intensity: 0.25 }], ["Fast Vibrato", { mode: 1, speed: 9, intensity: 0.4 }]],
+  ...STUDIO_RECIPES,
   rotary: [["Slow Chorale", { spread: 1 }], ["Fast Tremolo", { speed: 1 }], ["Gospel Organ", { speed: 1, drive: 0.5, balance: 0.6 }], ["Rock Overdrive Spin", { speed: 1, drive: 0.9, output: -4 }], ["Gentle Drift", { balance: 0.4, spread: 0.5 }], ["Horn Only", { balance: 1, speed: 1 }], ["Drum Only", { balance: 0 }], ["Quick Ramp", { speed: 1, accel: 0.25 }], ["Lazy Ramp", { speed: 1, accel: 2.8 }], ["Narrow Cabinet", { speed: 1, spread: 0.2 }]],
 };
 
@@ -105,10 +112,7 @@ export function fuzzTransfer(x: number, sustain: number, bias: number) {
 export const wahFrequency = (pedal: number) => 350 * Math.pow(2200 / 350, clamp(pedal, 0, 1));
 const WAH_RANGE = 1200 * Math.log2(2200 / 350);
 
-export interface FxHelpers {
-  val: (id: string, fallback: number) => number;
-  live: (id: string, fn: (v: number, t: number) => void) => void;
-}
+export type { FxHelpers } from "./fx-dsp";
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 const db = (v: number) => Math.pow(10, v / 20);
@@ -119,41 +123,6 @@ const curve = (fn: (x: number) => number, n = 2049) => {
   return c;
 };
 const LFO: OscillatorType[] = ["sine", "triangle", "square"];
-
-/** Delay-line pitch shifter: two crossfaded taps swept by phase-opposed ramps. */
-function shifter(ctx: BaseAudioContext, input: AudioNode, out: AudioNode, semis: number) {
-  const W = 0.05;
-  const H = 32;
-  const re = new Float32Array(H), imA = new Float32Array(H), imB = new Float32Array(H);
-  for (let n = 1; n < H; n++) { imA[n] = -2 / (Math.PI * n); imB[n] = imA[n]! * (n % 2 ? -1 : 1); }
-  const sawA = ctx.createPeriodicWave(re, imA, { disableNormalization: true });
-  const sawB = ctx.createPeriodicWave(re, imB, { disableNormalization: true });
-  const winRe = new Float32Array(2); const winIm = new Float32Array(2);
-  winRe[1] = -0.5; const winA = ctx.createPeriodicWave(winRe, winIm, { disableNormalization: true });
-  const winRe2 = new Float32Array(2); winRe2[1] = 0.5; const winB = ctx.createPeriodicWave(winRe2, winIm, { disableNormalization: true });
-  const oscs: OscillatorNode[] = [];
-  const amps: GainNode[] = [];
-  for (const [saw, win] of [[sawA, winA], [sawB, winB]] as const) {
-    const d = ctx.createDelay(0.2); d.delayTime.value = W / 2 + 0.002;
-    const ramp = ctx.createOscillator(); ramp.setPeriodicWave(saw);
-    const amt = ctx.createGain(); ramp.connect(amt); amt.connect(d.delayTime);
-    const vca = ctx.createGain(); vca.gain.value = 0.5;
-    const w = ctx.createOscillator(); w.setPeriodicWave(win); w.connect(vca.gain);
-    input.connect(d); d.connect(vca); vca.connect(out);
-    oscs.push(ramp, w); amps.push(amt);
-  }
-  const set = (s: number, t?: number) => {
-    const ratio = Math.pow(2, s / 12);
-    const f = Math.max(0.001, Math.abs(1 - ratio) / W);
-    const a = (ratio > 1 ? -1 : 1) * W / 2 * (Math.abs(1 - ratio) < 1e-4 ? 0 : 1);
-    for (const o of oscs) t === undefined ? (o.frequency.value = f) : glide(o.frequency, f, t);
-    for (const g of amps) t === undefined ? (g.gain.value = a) : glide(g.gain, a, t);
-  };
-  set(semis);
-  const t0 = ctx.currentTime + 0.01;
-  for (const o of oscs) o.start(t0);
-  return set;
-}
 
 /** Stereo width matrix: L' = aL + bR, R' = bL + aR. */
 function widthStage(ctx: BaseAudioContext, input: AudioNode, out: AudioNode, width: number) {
@@ -216,6 +185,7 @@ export function springImpulse(ctx: BaseAudioContext, seconds: number) {
 }
 
 export function buildCreativeFx(ctx: BaseAudioContext, pl: PluginInstance, h: FxHelpers): { input: GainNode; output: GainNode } {
+  if (isStudioKind(pl.kind)) return buildStudioFx(ctx, pl, h);
   // Live edits update this map so callbacks that combine several knobs read the newest values.
   const current = new Map<string, number>();
   const val = (id: string, fallback: number) => current.get(id) ?? h.val(id, fallback);

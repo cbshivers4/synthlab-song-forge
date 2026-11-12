@@ -5059,3 +5059,68 @@ html.phone-console-active [role="option"] { min-height: 44px; font-size: 15px; }
 .arp-step.arp-step.arp-step[data-step="accent"] { border-color: var(--primary) !important; background: var(--primary) !important; }
 .arp-step.arp-step.arp-step[data-step="note"] { border-color: color-mix(in oklab, var(--primary) 70%, transparent) !important; background: color-mix(in oklab, var(--primary) 45%, transparent) !important; }
 .arp-step.arp-step.arp-step[data-step="hold"] { border-color: color-mix(in oklab, var(--primary) 40%, transparent) !important; background: color-mix(in oklab, var(--primary) 18%, transparent) !important; }
+
+/* ── Studio effects pack: own hue and finish per device (presentation only) ── */
+[data-fx-skin="autofilter"] { --fx-hue: 140; --studio-finish: repeating-linear-gradient(90deg, oklch(1 0 0 / 0.035) 0 2px, transparent 2px 7px); }
+[data-fx-skin="analogecho"] { --fx-hue: 48; --studio-finish: repeating-linear-gradient(0deg, oklch(0.75 0.09 55 / 0.08) 0 1px, transparent 1px 3px); }
+[data-fx-skin="channelstrip"] { --fx-hue: 250; --studio-finish: linear-gradient(90deg, oklch(0.62 0.13 25 / 0.5) 0 6px, transparent 6px calc(100% - 6px), oklch(0.62 0.13 25 / 0.5) calc(100% - 6px)); }
+[data-fx-skin="stereochorus"] { --fx-hue: 205; --studio-finish: radial-gradient(circle at 15% 20%, oklch(0.85 0.1 205 / 0.12), transparent 40%), radial-gradient(circle at 85% 80%, oklch(0.85 0.1 260 / 0.1), transparent 40%); }
+[data-fx-skin="deesser"] { --fx-hue: 15; --studio-finish: repeating-linear-gradient(135deg, oklch(1 0 0 / 0.03) 0 8px, transparent 8px 16px); }
+[data-fx-skin="expander"] { --fx-hue: 110; --studio-finish: linear-gradient(0deg, oklch(0.75 0.12 110 / 0.12), transparent 35%); }
+[data-fx-skin="stereoflanger"] { --fx-hue: 330; --studio-finish: conic-gradient(from 200deg at 90% 10%, oklch(0.8 0.12 330 / 0.14), transparent 25%); }
+[data-fx-skin="multiband"] { --fx-hue: 60; --studio-finish: linear-gradient(90deg, oklch(0.7 0.12 200 / 0.1) 0 33%, oklch(0.75 0.12 90 / 0.1) 33% 66%, oklch(0.7 0.14 350 / 0.1) 66%); }
+[data-fx-skin="mustang"] { --fx-hue: 230; --studio-finish: repeating-linear-gradient(45deg, oklch(0 0 0 / 0.18) 0 2px, transparent 2px 4px); }
+[data-fx-skin="stereophaser"] { --fx-hue: 285; --studio-finish: repeating-radial-gradient(circle at 50% 120%, oklch(0.8 0.12 285 / 0.07) 0 6px, transparent 6px 14px); }
+[data-fx-skin="splitter"] { --fx-hue: 178; --studio-finish: linear-gradient(90deg, transparent 49.6%, oklch(0.8 0.1 178 / 0.25) 49.6% 50.4%, transparent 50.4%); }
+[data-fx-skin="vocaltune"] { --fx-hue: 265; --studio-finish: linear-gradient(oklch(1 0 0 / 0.04) 1px, transparent 1px) 0 0 / 100% 14px; }
+[data-fx-skin="voicefx"] { --fx-hue: 315; --studio-finish: radial-gradient(circle, oklch(1 0 0 / 0.06) 1px, transparent 1.5px) 0 0 / 9px 9px; }
+[data-fx-skin="vumeter"] { --fx-hue: 72; --studio-finish: linear-gradient(180deg, oklch(0.2 0 0 / 0.55), transparent 40%); }
+[data-fx-skin="tuner"] { --fx-hue: 158; --studio-finish: linear-gradient(180deg, oklch(0.12 0 0 / 0.6), transparent 50%); }
+[data-fx-skin="tonegen"] { --fx-hue: 95; --studio-finish: linear-gradient(oklch(1 0 0 / 0.035) 1px, transparent 1px) 0 0 / 12px 12px, linear-gradient(90deg, oklch(1 0 0 / 0.035) 1px, transparent 1px) 0 0 / 12px 12px; }
+[data-fx-skin="openair"] { --fx-hue: 220; --studio-finish: radial-gradient(140% 90% at 50% -10%, oklch(0.85 0.06 220 / 0.18), transparent 60%); }
+:is(.fx-face, .device-module, .fx-editor, [role="dialog"]):is([data-fx-skin="autofilter"], [data-fx-skin="analogecho"], [data-fx-skin="channelstrip"], [data-fx-skin="stereochorus"], [data-fx-skin="deesser"], [data-fx-skin="expander"], [data-fx-skin="stereoflanger"], [data-fx-skin="multiband"], [data-fx-skin="mustang"], [data-fx-skin="stereophaser"], [data-fx-skin="splitter"], [data-fx-skin="vocaltune"], [data-fx-skin="voicefx"], [data-fx-skin="vumeter"], [data-fx-skin="tuner"], [data-fx-skin="tonegen"], [data-fx-skin="openair"])[data-fx-skin][data-fx-skin][data-fx-skin] {
+  background:
+    var(--studio-finish),
+    radial-gradient(120% 70% at 50% 0%, oklch(1 0 0 / 0.07), transparent 60%),
+    linear-gradient(180deg, oklch(0.37 0.035 var(--fx-hue)), oklch(0.25 0.028 var(--fx-hue))) !important;
+}
+/* Analog Delay: copper face; Mustang: black tolex with chrome trim; Tuner/VU: black meter bridge. */
+:is(.fx-face, .fx-editor, [role="dialog"])[data-fx-skin="analogecho"][data-fx-skin][data-fx-skin][data-fx-skin] { --fx-accent: oklch(0.78 0.12 55); border-top-color: oklch(0.7 0.13 50); }
+:is(.fx-face, .fx-editor, [role="dialog"])[data-fx-skin="mustang"][data-fx-skin][data-fx-skin][data-fx-skin] { --fx-accent: oklch(0.88 0.02 240); border: 2px solid oklch(0.78 0.01 240 / 0.7); }
+:is(.fx-face, .fx-editor, [role="dialog"]):is([data-fx-skin="tuner"], [data-fx-skin="vumeter"])[data-fx-skin][data-fx-skin][data-fx-skin] { --fx-accent: oklch(0.85 0.16 var(--fx-hue)); }
+:is(.fx-face, .fx-editor, [role="dialog"])[data-fx-skin="channelstrip"][data-fx-skin][data-fx-skin][data-fx-skin] { border-top-width: 5px; }
+:is(.fx-face, .fx-editor, [role="dialog"])[data-fx-skin="voicefx"][data-fx-skin][data-fx-skin][data-fx-skin] { border-radius: 22px; }
+:is(.fx-face, .fx-editor, [role="dialog"])[data-fx-skin="openair"][data-fx-skin][data-fx-skin][data-fx-skin] { border-radius: 20px 20px 10px 10px; }
+
+/* Live readings (tuner, VU pair, Vocal Tune, gain reduction) */
+.fx-tuner, .fx-tune, .fx-gr, .fx-vu-pair { border-radius: 10px; border: 1px solid oklch(0 0 0 / 0.5); background: linear-gradient(180deg, oklch(0.14 0.01 var(--fx-hue, 160)), oklch(0.19 0.015 var(--fx-hue, 160))); box-shadow: inset 0 2px 10px oklch(0 0 0 / 0.6); padding: 8px 10px; margin-bottom: 6px; font-family: var(--font-mono, ui-monospace, monospace); color: var(--fx-accent, oklch(0.85 0.12 160)); }
+.fx-tuner-note { display: flex; align-items: baseline; justify-content: center; gap: 10px; }
+.fx-tuner-note b { font-size: 44px; line-height: 1; letter-spacing: 0.02em; }
+.fx-tuner-note small { font-size: 16px; opacity: 0.75; }
+.fx-tuner-flat, .fx-tuner-sharp { font-size: 20px; opacity: 0.25; }
+.fx-tuner :is(.fx-tuner-flat, .fx-tuner-sharp)[data-lit="true"] { opacity: 1; color: oklch(0.72 0.19 30); }
+.fx-tuner[data-in-tune="true"] .fx-tuner-note b { color: oklch(0.85 0.2 145); text-shadow: 0 0 14px oklch(0.85 0.2 145 / 0.6); }
+.fx-tuner[data-on="false"] .fx-tuner-note b { opacity: 0.35; }
+.fx-tuner-scale { display: grid; grid-template-columns: repeat(21, 1fr); gap: 3px; margin: 8px 0 6px; height: 18px; }
+.fx-tuner-scale i { border-radius: 2px; background: oklch(1 0 0 / 0.09); }
+.fx-tuner-scale i[data-center="true"] { background: oklch(0.85 0.2 145 / 0.3); }
+.fx-tuner-scale i[data-lit="true"] { background: oklch(0.8 0.18 70); box-shadow: 0 0 8px oklch(0.8 0.18 70 / 0.7); }
+.fx-tuner[data-in-tune="true"] .fx-tuner-scale i[data-lit="true"] { background: oklch(0.85 0.2 145); box-shadow: 0 0 10px oklch(0.85 0.2 145 / 0.8); }
+:is(.fx-tuner-read, .fx-vu-read, .fx-tune-read) { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; font-size: 11px; opacity: 0.9; }
+.fx-vu-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.fx-vu-pair .vuf { width: 100%; height: auto; }
+.fx-vu-read { grid-column: 1 / -1; }
+.fx-vu-read [data-hot="true"] { color: oklch(0.7 0.21 25); }
+.fx-tune-notes { display: flex; align-items: center; justify-content: center; gap: 18px; }
+.fx-tune-notes > div { display: grid; justify-items: center; }
+.fx-tune-notes small { font-size: 10px; opacity: 0.7; letter-spacing: 0.12em; }
+.fx-tune-notes b { font-size: 30px; line-height: 1.1; }
+.fx-tune[data-on="false"] .fx-tune-notes b { opacity: 0.35; }
+.fx-tune-bar { position: relative; height: 10px; margin: 8px 0 6px; border-radius: 5px; background: linear-gradient(90deg, oklch(0.6 0.15 25 / 0.35), oklch(0.85 0.18 145 / 0.35) 50%, oklch(0.6 0.15 25 / 0.35)); }
+.fx-tune-bar::after { content: ""; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: oklch(1 0 0 / 0.5); }
+.fx-tune-bar i { position: absolute; top: -2px; width: 6px; height: 14px; margin-left: -3px; border-radius: 3px; background: var(--fx-accent, oklch(0.85 0.12 265)); box-shadow: 0 0 8px var(--fx-accent, oklch(0.85 0.12 265)); transition: left 50ms linear; }
+.fx-gr { display: grid; gap: 4px; }
+.fx-gr-row { display: grid; grid-template-columns: 56px 1fr 64px; align-items: center; gap: 8px; font-size: 11px; }
+.fx-gr-row b { text-align: right; font-weight: 600; }
+.fx-gr-track { height: 8px; border-radius: 4px; background: oklch(1 0 0 / 0.08); overflow: hidden; display: flex; justify-content: flex-end; }
+.fx-gr-track i { display: block; height: 100%; background: linear-gradient(90deg, oklch(0.78 0.16 70), oklch(0.68 0.2 30)); }

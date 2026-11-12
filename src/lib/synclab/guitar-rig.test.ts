@@ -12,7 +12,8 @@ describe("lead / bass guitar amps and effect pedals", () => {
     expect(group.filter(d => effectForm(d.kind) === "pedal")).toHaveLength(10);
     expect(PEDAL_KINDS).toHaveLength(10);
     for (const kind of PEDAL_KINDS) expect(effectCategory(kind)).toBe("Amps & Pedals");
-    expect(BUILT_IN_PLUGINS.filter(d => effectCategory(d.kind) === "Amps & Pedals")).toHaveLength(13);
+    expect(names).toContain("Mustang Native");
+    expect(BUILT_IN_PLUGINS.filter(d => effectCategory(d.kind) === "Amps & Pedals")).toHaveLength(14);
   });
   it("amps render as amp heads and pedals as stompboxes, rack units stay racks", () => {
     expect(effectForm("leadamp")).toBe("amp");

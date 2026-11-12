@@ -4,6 +4,7 @@ import { nativeInsertMode } from "./native-insert";
 import { lfoHz } from "./synth-timing";
 import { centerOneSided } from "./one-sided-audio";
 import { buildCreativeFx, isCreativeKind } from "./creative-fx";
+import { disposeFx } from "./fx-dsp";
 import { deviceDefault } from "./device-params";
 import { phasedHarmonics } from "./oscillator-phase";
 import { envelopePoints } from "./live-envelope";
@@ -177,6 +178,8 @@ export class SyncLabEngine {
   /** Knob setters that update a running effect in place (no chain rebuild, tails keep ringing). */
   private liveParams = new Map<string, (v: number, t: number) => void>();
   private insertParamMap = new Map<string, string>();
+  /** Latest insert list per channel/bus/send, so an effect can ask for its chain to be rebuilt. */
+  private insertLists = new Map<string, PluginInstance[]>();
   private sendOut = new Map<string, AudioNode>();
   private sendFeedback = new Map<string, AudioNode>();
   private fxInserts = new Map<string, { key: string; nodes: AudioNode[]; input: GainNode }>();
@@ -758,6 +761,7 @@ export class SyncLabEngine {
     // Store edits are immutable; note/name changes retain the rack reference.
     if (this.insertInputs.get(ch) === plugins) return;
     this.insertInputs.set(ch, plugins);
+    this.insertLists.set(trackId, plugins);
     const active = plugins.filter((pl) => !pl.bypass);
     const key = JSON.stringify(active.map((pl) => [pl.kind, pl.params.map((x) => x.value)]));
     if (key === ch.insertKey) return;
@@ -784,7 +788,7 @@ export class SyncLabEngine {
     oldOut.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.015);
     window.setTimeout(() => {
       try { ch.gain.disconnect(oldOut); oldOut.disconnect(); } catch { /* already disconnected */ }
-      for (const n of oldNodes) try { n.disconnect(); } catch { /* already disconnected */ }
+      for (const n of oldNodes) { disposeFx(n); try { n.disconnect(); } catch { /* already disconnected */ } }
     }, 40);
   }
 
@@ -803,6 +807,7 @@ export class SyncLabEngine {
             ? this.sendOut.get("delay") ?? null
             : this.sendOut.get("chorus") ?? null;
     if (!source) return;
+    this.insertLists.set(targetId, plugins);
 
     const active = plugins.filter((pl) => !pl.bypass);
     const key = JSON.stringify(active.map((pl) => [pl.kind, pl.params.map((x) => x.value)]));
@@ -838,9 +843,22 @@ export class SyncLabEngine {
       prev.input.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.02);
       window.setTimeout(() => {
         try { source.disconnect(prev.input); prev.input.disconnect(); } catch { /* already detached */ }
-        for (const node of prev.nodes) try { node.disconnect(); } catch { /* already detached */ }
+        for (const node of prev.nodes) { disposeFx(node); try { node.disconnect(); } catch { /* already detached */ } }
       }, 45);
     }
+  }
+
+  /** Rebuilds one insert chain from its latest list (e.g. once an effect's worklet has loaded). */
+  rebuildInserts(targetId: string) {
+    const list = this.insertLists.get(targetId);
+    if (!list) return;
+    const fx = this.fxInserts.get(targetId);
+    if (fx) { fx.key = ""; this.setFxInserts(targetId, list); return; }
+    const ch = this.channels.get(targetId);
+    if (!ch) return;
+    ch.insertKey = "";
+    this.insertInputs.delete(ch);
+    this.setInserts(targetId, list);
   }
 
   private linkInsertChain(from: AudioNode, nodes: AudioNode[], active: PluginInstance[], to: AudioNode) {
@@ -1811,7 +1829,7 @@ export class SyncLabEngine {
         }
         default: {
           if (!isCreativeKind(pl.kind)) break;
-          const fx = buildCreativeFx(ctx, pl, { val: (id, fb) => val(pl, id, fb), live: (id, fn) => live(pl, id, fn) });
+          const fx = buildCreativeFx(ctx, pl, { val: (id, fb) => val(pl, id, fb), live: (id, fn) => live(pl, id, fn), rebuild: () => this.rebuildInserts(targetId) });
           nodes.push(fx.input, fx.output);
         }
       }
@@ -1923,6 +1941,7 @@ export class SyncLabEngine {
             try { send.disconnect(); } catch { /* already disconnected */ }
           }
           for (const node of ch.insertNodes) {
+            disposeFx(node);
             try { node.disconnect(); } catch { /* already disconnected */ }
           }
         }, 35);

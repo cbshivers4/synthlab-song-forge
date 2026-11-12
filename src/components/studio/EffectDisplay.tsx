@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import type { PluginInstance, PluginKind } from "@/lib/synclab/types";
 import { BASS_CABS, LEAD_CABS, fuzzTransfer, overdriveTransfer, wahFrequency } from "@/lib/synclab/creative-fx";
+import { MUSTANG_CAB_VOICES, OPEN_AIR_ROOMS, OPEN_AIR_SPACES, studioChoice } from "@/lib/synclab/studio-fx";
 
 /**
  * Visual display for an effect: draws what the processor is actually doing
@@ -358,6 +359,117 @@ function lfoShape(title: string, third?: string): Shape {
   };
 }
 
+/** Parameter-derived pictures for the studio effects pack (Tuner, VU Meter and Vocal Tune use live meters instead). */
+const pct = (v: number) => `${Math.round(v * 100)}%`;
+const hpCurve = (f: number, cut: number) => -24 * Math.log10(1 + Math.pow(cut / f, 4) * 0.25);
+const lpCurve = (f: number, cut: number) => -24 * Math.log10(1 + Math.pow(f / cut, 4) * 0.25);
+const VOICE_BANDS: [number, number, number, number][] = [[120, 7000, 1200, 4], [400, 3200, 1500, 6], [650, 4500, 2000, 9], [250, 4200, 1000, 4], [40, 5000, 300, 6], [160, 14000, 3000, 3], [150, 9000, 2400, 5], [500, 2800, 1800, 8], [90, 8000, 900, 4], [300, 6000, 2500, 3]];
+const STUDIO_SHAPES: Partial<Record<PluginKind, Shape>> = {
+  autofilter: {
+    title: "AUTO FILTER RESPONSE", xLabel: "20 Hz → 20 kHz", yLabel: "±24 dB", xParam: "cutoff", yParam: "resonance",
+    curve: (g) => freqAxis((f) => {
+      const m = Math.round(g("mode"));
+      if (m === 3) return -24 * Math.exp(-Math.pow(Math.log2(f / g("cutoff")) * (1 + g("resonance") * 0.3), 2));
+      return passFilter(f, g("cutoff"), g("resonance"), [0, 2, 1][m] ?? 0);
+    }),
+    marks: (g) => [logX(g("cutoff"))],
+    readout: (g) => `${studioChoice("autofilter", "mode", g("mode"))?.toUpperCase()} · ${Math.round(g("cutoff"))} Hz · LFO ${g("rate").toFixed(2)} Hz ${pct(g("depth"))} · ENV ${pct(g("env"))}`,
+  },
+  analogecho: {
+    title: "BUCKET-BRIGADE REPEATS", xLabel: "0 → 3 s", yLabel: "level", xParam: "time", yParam: "feedback",
+    curve: (g) => sweep((t) => {
+      const n = (t * 3000) / Math.max(10, g("time"));
+      const k = Math.round(n);
+      return Math.abs(n - k) < 0.025 && k > 0 ? Math.pow(g("feedback"), k - 1) * Math.pow(1 - g("age") * 0.25, k) * (0.4 + g("mix") * 0.6) : 0;
+    }),
+    readout: (g) => `TIME ${Math.round(g("time"))} ms · FEEDBACK ${pct(g("feedback"))} · AGE ${pct(g("age"))} · PING-PONG ${pct(g("pingpong"))}`,
+  },
+  channelstrip: {
+    title: "CHANNEL EQ", xLabel: "20 Hz → 20 kHz", yLabel: "±24 dB", xParam: "midFreq", yParam: "mid",
+    curve: (g) => freqAxis((f) => hpCurve(f, g("lowcut")) + shelf(f, 100, g("low"), false) + peak(f, g("midFreq"), g("mid"), 0.9) + shelf(f, 8000, g("high"), true)),
+    marks: (g) => [logX(g("lowcut")), logX(g("midFreq"))],
+    readout: (g) => `GATE ${g("gate") <= -79.5 ? "OFF" : `${Math.round(g("gate"))} dB`} · COMP ${Math.round(g("threshold"))} dB ${g("ratio").toFixed(1)}:1 · MAKEUP ${g("makeup").toFixed(1)} dB`,
+  },
+  stereochorus: { ...lfoShape("CHORUS VOICES", "mix"), readout: (g) => `${Math.round(g("voices"))} VOICES · RATE ${g("rate").toFixed(2)} Hz · DEPTH ${pct(g("depth"))} · SPREAD ${pct(g("spread"))}` },
+  stereoflanger: { ...lfoShape("FLANGER SWEEP", "feedback"), readout: (g) => `RATE ${g("rate").toFixed(2)} Hz · DEPTH ${pct(g("depth"))} · FEEDBACK ${Math.round(g("feedback") * 100)}% · ${Math.round(g("stereo"))}°` },
+  stereophaser: { ...lfoShape("PHASE SWEEP", "center"), readout: (g) => `${Math.round(g("stages"))} STAGES · RATE ${g("rate").toFixed(2)} Hz · CENTER ${Math.round(g("center"))} Hz · ${Math.round(g("stereo"))}°` },
+  deesser: {
+    title: "SIBILANCE BAND", xLabel: "20 Hz → 20 kHz", yLabel: "reduction", xParam: "freq", yParam: "range",
+    curve: (g) => freqAxis((f) => -g("range") / (1 + Math.exp(-Math.log2(f / g("freq")) * 6)) * (g("mode") >= 0.5 ? 0.6 : 1) - (g("mode") >= 0.5 ? g("range") * 0.4 : 0)),
+    marks: (g) => [logX(g("freq"))],
+    readout: (g) => `${Math.round(g("freq"))} Hz · THRESH ${Math.round(g("threshold"))} dB · UP TO -${g("range").toFixed(1)} dB · ${g("listen") >= 0.5 ? "LISTENING" : g("mode") >= 0.5 ? "WIDE" : "SPLIT"}`,
+  },
+  expander: {
+    title: "EXPANSION CURVE", xLabel: "-80 → 0 dB in", yLabel: "out", xParam: "threshold", yParam: "ratio",
+    curve: (g) => sweep((t) => {
+      const i = -80 + t * 80, th = g("threshold");
+      const o = i >= th ? i : Math.max(i - (th - i) * (g("ratio") - 1), i + g("range"));
+      return (o + 80) / 80;
+    }),
+    marks: (g) => [(g("threshold") + 80) / 80],
+    readout: (g) => `THRESH ${Math.round(g("threshold"))} dB · 1:${g("ratio").toFixed(1)} · RANGE ${Math.round(g("range"))} dB · REL ${Math.round(g("release"))} ms`,
+  },
+  multiband: {
+    title: "THREE-BAND SPLIT", xLabel: "20 Hz → 20 kHz", yLabel: "±12 dB", xParam: "lowSplit", yParam: "lowGain",
+    curve: (g) => freqAxis((f) => {
+      const a = 1 / (1 + Math.pow(f / g("lowSplit"), 4)), c = 1 / (1 + Math.pow(g("highSplit") / f, 4)), b = Math.max(0, 1 - a - c);
+      return a * g("lowGain") + b * g("midGain") + c * g("highGain");
+    }, 12),
+    marks: (g) => [logX(g("lowSplit")), logX(g("highSplit"))],
+    readout: (g) => `LOW ${Math.round(g("lowThr"))} dB ${g("lowRatio").toFixed(1)}:1 · MID ${Math.round(g("midThr"))} dB ${g("midRatio").toFixed(1)}:1 · HIGH ${Math.round(g("highThr"))} dB ${g("highRatio").toFixed(1)}:1`,
+  },
+  mustang: {
+    title: "AMP + CABINET VOICE", xLabel: "20 Hz → 20 kHz", yLabel: "±24 dB", xParam: "gain", yParam: "middle",
+    curve: (g) => freqAxis((f) => {
+      const cab = MUSTANG_CAB_VOICES[Math.max(0, Math.min(3, Math.round(g("cabinet"))))]!;
+      return shelf(f, 120, g("bass"), false) + peak(f, 700, g("middle"), 0.7) + shelf(f, 2500, g("treble"), true) + shelf(f, 4500, g("presence"), true) + hpCurve(f, cab[0]) + lpCurve(f, cab[1]) + peak(f, cab[2], cab[3], 1.2);
+    }),
+    readout: (g) => `${studioChoice("mustang", "model", g("model"))?.toUpperCase()} · GAIN ${pct(g("gain"))} · ${studioChoice("mustang", "cabinet", g("cabinet"))?.toUpperCase()} · REVERB ${pct(g("reverb"))}`,
+  },
+  splitter: {
+    title: "SPLIT POINTS", xLabel: "20 Hz → 20 kHz", yLabel: "±24 dB", xParam: "split1", yParam: "split2",
+    curve: (g) => freqAxis((f) => {
+      const m = Math.round(g("mode"));
+      const lv = (d: number) => (d <= -59.5 ? 0 : Math.pow(10, d / 20));
+      if (m !== 0) { const sum = m === 1 ? (lv(g("levelA")) + lv(g("levelB"))) / 2 : (lv(g("levelA")) + lv(g("levelB"))) / 2; return 20 * Math.log10(Math.max(0.004, sum)); }
+      const a = 1 / (1 + Math.pow(f / g("split1"), 4)), c = 1 / (1 + Math.pow(g("split2") / f, 4)), b = Math.max(0, 1 - a - c);
+      return 20 * Math.log10(Math.max(0.004, a * lv(g("levelA")) + b * lv(g("levelB")) + c * lv(g("levelC"))));
+    }),
+    marks: (g) => (Math.round(g("mode")) === 0 ? [logX(g("split1")), logX(g("split2"))] : []),
+    readout: (g) => `${studioChoice("splitter", "mode", g("mode"))?.toUpperCase()} · A ${Math.round(g("levelA"))} dB · B ${Math.round(g("levelB"))} dB${Math.round(g("mode")) === 0 ? ` · C ${Math.round(g("levelC"))} dB` : ""}`,
+  },
+  voicefx: {
+    title: "VOICE BAND", xLabel: "20 Hz → 20 kHz", yLabel: "±24 dB", xParam: "pitch", yParam: "amount",
+    curve: (g) => freqAxis((f) => {
+      const [hp, lp, pk, pd] = VOICE_BANDS[Math.max(0, Math.min(9, Math.round(g("character"))))]!;
+      return hpCurve(f, hp) + lpCurve(f, lp) + peak(f, pk, pd * g("amount"), 1.2) + shelf(f, 2500, g("tone") * 9, true) - shelf(f, 250, g("tone") * 8, false);
+    }),
+    readout: (g) => `${studioChoice("voicefx", "character", g("character"))?.toUpperCase()} · PITCH ${g("pitch") > 0 ? "+" : ""}${g("pitch").toFixed(1)} st · AMOUNT ${pct(g("amount"))}`,
+  },
+  tonegen: {
+    title: "TEST SIGNAL", xLabel: "two cycles", yLabel: "dBFS", xParam: "frequency", yParam: "level",
+    curve: (g) => sweep((t) => {
+      const w = Math.round(g("wave")), a = Math.pow(10, g("level") / 20) * 0.48, x = (t * 2) % 1;
+      const v = w === 0 ? Math.sin(2 * Math.PI * x) : w === 1 ? 1 - 4 * Math.abs(x - 0.5) : w === 2 ? 2 * x - 1 : w === 3 ? (x < 0.5 ? 1 : -1) : Math.sin(t * 731) * Math.cos(t * 1913);
+      return 0.5 + v * a;
+    }),
+    readout: (g) => `${studioChoice("tonegen", "wave", g("wave"))?.toUpperCase()}${Math.round(g("wave")) < 4 ? ` · ${Math.round(g("frequency"))} Hz` : ""} · ${Math.round(g("level"))} dBFS · INPUT ${g("thru") >= 0.5 ? "ON" : "OFF"}`,
+  },
+  openair: {
+    title: "ROOM RESPONSE", xLabel: "0 → 6 s", yLabel: "level", xParam: "size", yParam: "mix",
+    curve: (g) => sweep((t) => {
+      const room = OPEN_AIR_ROOMS[Math.max(0, Math.min(9, Math.round(g("space"))))]!;
+      const s = t * 6, pre = g("predelay") / 1000, rt = room[0] * g("size");
+      if (s < pre) return 0;
+      const e = s - pre, erEnd = (room[1] * g("size")) / 1000;
+      const early = e < erEnd ? g("early") * (0.5 + 0.5 * Math.abs(Math.sin(e * 900))) : 0;
+      return Math.max(early, Math.exp((-6.9 * e) / Math.max(0.05, rt)) * g("tail")) * (0.3 + g("mix") * 0.7);
+    }),
+    marks: (g) => [g("predelay") / 6000],
+    readout: (g) => `${OPEN_AIR_SPACES[Math.max(0, Math.min(9, Math.round(g("space"))))]?.toUpperCase()} · ${(OPEN_AIR_ROOMS[Math.max(0, Math.min(9, Math.round(g("space"))))]![0] * g("size")).toFixed(1)} s · PRE ${Math.round(g("predelay"))} ms · MIX ${pct(g("mix"))}`,
+  },
+};
+
 export function EffectDisplay({
   plugin,
   onParam,
@@ -367,7 +479,7 @@ export function EffectDisplay({
   onParam: (paramId: string, value: number) => void;
   height?: number;
 }) {
-  const shape = SHAPES[plugin.kind];
+  const shape = SHAPES[plugin.kind] ?? STUDIO_SHAPES[plugin.kind];
   const boxRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [dragging, setDragging] = useState(false);

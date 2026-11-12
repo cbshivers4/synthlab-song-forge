@@ -5,13 +5,19 @@ import { Knob } from "./Knob";
 import { EffectDisplay } from "./EffectDisplay";
 import { Scope } from "./Scope";
 import { XYPad } from "./XYPad";
+import { FxLiveMeter } from "./FxMeters";
+import { isStudioKind, studioChoice, studioStep } from "@/lib/synclab/studio-fx";
 import { Button } from "@/components/ui/button";
 import { displayPosition, effectBrand, effectCategory, effectForm } from "@/lib/synclab/effect-catalog";
 
 export function effectFamily(plugin: PluginInstance) {
   if (plugin.kind === "delay") return plugin.name.toLowerCase().includes("echo") ? "sequence" : "buffer";
   if (["modulator", "modfx", "unison", "ensemble", "imager", "wah", "univibe", "rotary"].includes(plugin.kind)) return "motion";
-  if (plugin.kind === "analogdelay") return "buffer";
+  if (plugin.kind === "analogdelay" || plugin.kind === "analogecho") return "buffer";
+  if (plugin.kind === "openair") return "space";
+  if (["channelstrip", "deesser", "expander", "multiband"].includes(plugin.kind)) return "dynamics";
+  if (["stereochorus", "stereoflanger", "stereophaser", "autofilter"].includes(plugin.kind)) return "motion";
+  if (["vumeter", "tuner", "tonegen", "splitter"].includes(plugin.kind)) return "meter";
   if (plugin.kind === "springverb") return "space";
   if (plugin.kind === "pedalcomp") return "dynamics";
   if (["trigate", "sidechain"].includes(plugin.kind)) return "sequence";
@@ -40,12 +46,13 @@ export function EffectWorkbench({ plugin, onParam, midiId, midiPrefix = "plugin"
   const output = params.filter(p => outputIds.includes(p.id));
   const core = params.filter(p => !inputIds.includes(p.id) && !outputIds.includes(p.id) && !isStep(p));
   const steps = params.filter(isStep);
-  const heading = family === "space" ? "REFLECTIONS" : family === "buffer" ? "ECHO ENGINE" : family === "dynamics" ? "ENVELOPE" : family === "sequence" ? "CLOCK & SHAPE" : family === "motion" ? "MODULATION" : "COLOR ENGINE";
+  const heading = family === "meter" ? "CONTROLS" : family === "space" ? "REFLECTIONS" : family === "buffer" ? "ECHO ENGINE" : family === "dynamics" ? "ENVELOPE" : family === "sequence" ? "CLOCK & SHAPE" : family === "motion" ? "MODULATION" : "COLOR ENGINE";
   const controls = (items: PluginParam[], title: string, section: string) => items.length > 0 && <div className={`fx-section fx-section-${section}`}>
-    <h4>{title}</h4><div className="fx-section-knobs">{items.map(p => <Knob key={p.id} label={p.name} value={p.value} min={p.min} max={p.max} step={(p.max - p.min) / 200} unit={p.unit ? ` ${p.unit}` : ""} size={section === "core" ? 52 : 44} onChange={v => onParam(p.id, v)} midiTarget={{ id: midiId, param: `${midiPrefix}:${plugin.id}:${p.id}` }} />)}</div>
+    <h4>{title}</h4><div className="fx-section-knobs">{items.map(p => <Knob key={p.id} label={p.name} value={p.value} min={p.min} max={p.max} step={studioStep(plugin.kind, p.id) ?? (p.max - p.min) / 200} unit={p.unit ? ` ${p.unit}` : ""} format={studioChoice(plugin.kind, p.id, p.value) !== undefined ? (v: number) => studioChoice(plugin.kind, p.id, v) ?? "" : undefined} size={section === "core" ? 52 : 44} onChange={v => onParam(p.id, v)} midiTarget={{ id: midiId, param: `${midiPrefix}:${plugin.id}:${p.id}` }} />)}</div>
   </div>;
-  return <div className="fx-workbench" data-display-pos={displayPosition(plugin)} data-fx-family={family} data-display-kind={plugin.kind} data-window-variant={plugin.name.toLowerCase().includes("echo") ? "tape" : undefined}>
-    <div className="fx-section fx-section-display"><h4>{family === "buffer" ? "DELAY BUFFER" : family === "space" ? "SPACE RESPONSE" : family === "sequence" ? "PATTERN RESPONSE" : "SIGNAL RESPONSE"}</h4>
+  return <div className="fx-workbench" data-display-pos={displayPosition(plugin)} data-fx-family={family} data-display-kind={plugin.kind} data-studio-fx={isStudioKind(plugin.kind) ? plugin.kind : undefined} data-window-variant={plugin.name.toLowerCase().includes("echo") ? "tape" : undefined}>
+    <div className="fx-section fx-section-display"><h4>{family === "meter" ? "LIVE READING" : family === "buffer" ? "DELAY BUFFER" : family === "space" ? "SPACE RESPONSE" : family === "sequence" ? "PATTERN RESPONSE" : "SIGNAL RESPONSE"}</h4>
+      <FxLiveMeter plugin={plugin} />
       <EffectDisplay plugin={plugin} height={112} onParam={onParam} />
       <Scope scopeId={plugin.bypass ? `bypassed:${plugin.id}` : plugin.id} height={52} effectKind={plugin.kind} />
     </div>

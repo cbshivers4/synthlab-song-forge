@@ -28,6 +28,11 @@ const CATEGORY: Record<PluginKind, EffectCategory> = {
   amp: "Amps & Pedals", leadamp: "Amps & Pedals", bassamp: "Amps & Pedals",
   overdrive: "Amps & Pedals", fuzz: "Amps & Pedals", wah: "Amps & Pedals", octaver: "Amps & Pedals", analogdelay: "Amps & Pedals",
   springverb: "Amps & Pedals", pedalcomp: "Amps & Pedals", boost: "Amps & Pedals", univibe: "Amps & Pedals", rotary: "Amps & Pedals",
+  autofilter: "EQ & Filter", analogecho: "Delay & Reverb", openair: "Delay & Reverb",
+  channelstrip: "Dynamics", deesser: "Dynamics", expander: "Dynamics", multiband: "Dynamics",
+  stereochorus: "Modulation", stereoflanger: "Modulation", stereophaser: "Modulation",
+  mustang: "Amps & Pedals", splitter: "Stereo & Imaging", vocaltune: "Pitch & Voice", voicefx: "Pitch & Voice",
+  vumeter: "Utility", tuner: "Utility", tonegen: "Utility",
 };
 export const effectCategory = (kind: PluginKind): EffectCategory => CATEGORY[kind] ?? "Utility";
 
@@ -49,6 +54,11 @@ const BRANDS: Record<string, string> = {
   "Fuzz Pedal": "Big Wheel Fuzz", "Wah Pedal": "Belle Isle Wah", "Octave Pedal": "Sub Basement Octaver",
   "Analog Delay Pedal": "Bucket Brigade Echo", "Spring Reverb Pedal": "Boulevard Spring Tank", "Compressor Pedal": "Squeeze Box Comp",
   "Clean Boost Pedal": "Afterburner Boost", "Vibe Pedal": "Lamp Light Vibe", "Rotary Speaker": "Whirlwind Rotary",
+  "Auto Filter": "Grand River Auto Filter", "Analog Delay": "Copper Line Analog Delay", "Channel Strip": "Hitsville Channel Strip",
+  "Chorus": "Lakeshore Chorus", "De-Esser": "Smooth Talk De-Esser", "Expander": "Open Door Expander", "Flanger": "Runway Flanger",
+  "Multiband Dynamics": "Tri-County Multiband", "Mustang Native": "Mustang Native Amp", "Phaser": "Spiral Staircase Phaser",
+  "Splitter": "Junction Splitter", "Vocal Tune": "True Pitch Vocal Tune", "Voice FX": "Masquerade Voice FX", "VU Meter": "Needle VU Meter",
+  "Tuner": "Dead-On Tuner", "Tone Generator": "Test Bench Tone Generator", "Open Air": "Open Air Space Designer",
 };
 export const effectBrand = (plugin: Pick<PluginInstance | PluginDef, "name">) => BRANDS[plugin.name] ?? plugin.name;
 

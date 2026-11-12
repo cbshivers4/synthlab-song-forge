@@ -12,7 +12,7 @@ import { RackEffect } from "./RackEffect";
 /** Short plain names for the pedal and amp types, shown under the brand name. */
 const TYPE: Record<string, string> = {
   overdrive: "Overdrive", fuzz: "Fuzz", wah: "Wah", octaver: "Octave", analogdelay: "Delay", springverb: "Spring reverb",
-  pedalcomp: "Compressor", boost: "Boost", univibe: "Vibe", rotary: "Rotary", amp: "Guitar & bass amp", leadamp: "Lead guitar amp", bassamp: "Bass amp",
+  pedalcomp: "Compressor", boost: "Boost", univibe: "Vibe", rotary: "Rotary", amp: "Guitar & bass amp", leadamp: "Lead guitar amp", bassamp: "Bass amp", mustang: "8-model amp",
 };
 
 const dragPayload = (d: PluginDef) => JSON.stringify({ type: "plugin", defId: d.id });

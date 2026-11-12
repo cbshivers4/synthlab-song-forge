@@ -4,6 +4,7 @@ import { laneReads, valueAt } from "./automation-write";
 import { OFFLINE_LIVE, scheduleStep } from "./schedule-step";
 import { switchStateAt } from "./switch-automation";
 import { stepSeconds } from "./timebase";
+import { ensureVocalTune } from "./vocal-tune";
 import type { PluginInstance, Track, Transport } from "./types";
 
 /** The live engine's mixer, voices and effects, built on a silent offline context. */
@@ -85,6 +86,9 @@ export async function renderSong(input: SongRenderInput): Promise<Capture | null
     ...(t.muteEvents?.length ? { muted: false } : {}),
     ...(anyRecordedSolo ? { solo: false } : {}),
   })));
+  // Vocal Tune runs in an audio worklet; load it on this context first so exports are corrected too.
+  const usesTune = [...input.tracks.flatMap((t) => t.plugins ?? []), ...Object.values(input.fxChains).flat()].some((pl) => pl.kind === "vocaltune" && !pl.bypass);
+  if (usesTune) await ensureVocalTune(ctx).catch(() => { /* no worklet support: the export carries the dry voice */ });
   for (const t of input.tracks) engine.setInserts(t.id, t.plugins ?? []);
   for (const [target, list] of Object.entries(input.fxChains)) engine.setFxInserts(target, list);
 

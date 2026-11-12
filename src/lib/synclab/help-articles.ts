@@ -483,6 +483,47 @@ export const KNOWLEDGE_BASE: Article[] = [
     ],
   },
   {
+    id: "studio-effects", category: "Mixing & effects", title: "Studio effects pack (Auto Filter to Open Air)",
+    tags: "auto filter analog delay channel strip chorus de-esser deesser expander flanger multiband dynamics mustang native amp phaser splitter vocal tune autotune voice fx vu meter tuner tone generator open air reverb",
+    body: [
+      "Add any of these from an effect menu (FX Rack, mixer insert, timeline track menu or Browser): Auto Filter, Analog Delay, Channel Strip, Chorus, De-Esser, Expander, Flanger, Multiband Dynamics, Mustang Native, Phaser, Splitter, Vocal Tune, Voice FX, VU Meter, Tuner, Tone Generator and Open Air.",
+      "Each device has its own colour and finish, its own picture of what it is doing, and 15 presets in its preset menu. Mode knobs show names (filter type, amp model, room, key and scale) instead of numbers.",
+      "Channel Strip, De-Esser, Expander and Multiband Dynamics show live gain-reduction bars. VU Meter shows two real needle meters; Tuner shows the note and how many cents sharp or flat you are.",
+      "Mustang Native also appears in the Amp Room with its eight amp models and four cabinets. Splitter splits by frequency, left/right or mid/side, with a level and pan for each part.",
+      "Tone Generator makes a real test signal (sine, triangle, saw, square, white or pink noise) at an exact dBFS level — handy for checking the Tuner, VU Meter or your speakers.",
+    ],
+    can: [
+      "Turn every knob while the song plays without the sound cutting out.",
+      "Hear the same effect in song exports as you hear live (Vocal Tune included).",
+      "Bypass, reorder, automate and MIDI-learn the knobs like every other effect.",
+    ],
+    cant: [
+      "These are SYNCLAB's own effects, not copies of other companies' plugins; Mustang Native's amp models are our own models of classic amp styles, not recordings of real amps.",
+      "Open Air uses built-in rooms calculated by SYNCLAB, not recorded impulse responses, and you can't load your own impulse files yet.",
+      "The Tuner reads one note at a time; chords will not show a reliable note.",
+    ],
+  },
+  {
+    id: "vocal-tune", category: "Mixing & effects", title: "Vocal Tune pitch correction",
+    tags: "vocal tune autotune auto-tune pitch correction key scale retune speed humanize hard tune",
+    body: [
+      "Put Vocal Tune on a vocal (or any single-note) track. Set Key and Scale to your song, then sing or play the recording.",
+      "Retune Speed sets how fast notes are pulled in: 0 ms gives the hard, robotic effect; 50–150 ms sounds natural. Humanize relaxes the correction on long held notes; Amount sets how far notes are pulled.",
+      "The display shows the note you sang, the note it was tuned to, and how much correction is being applied.",
+      "Transpose shifts the whole voice up or down in semitones. Reference moves the tuning centre (for example −32 cents for A = 432 Hz).",
+    ],
+    can: [
+      "Correct live input while you monitor, recorded vocals during playback, and song exports.",
+      "Choose Chromatic, Major, Minor, Pentatonic, Blues or Harmonic Minor scales in any key.",
+    ],
+    cant: [
+      "It corrects one voice at a time; harmonies or chords on the same track confuse the pitch detection.",
+      "There is no note-by-note graphical editing — it corrects automatically to the chosen scale.",
+      "Correction adds a few milliseconds of delay, and big shifts (several semitones) sound more processed.",
+      "Your browser must support audio worklets (all current Chrome, Edge, Safari and Firefox do); otherwise the voice passes through uncorrected.",
+    ],
+  },
+  {
     id: "effects", category: "Mixing & effects", title: "Effects and the FX Rack",
     tags: "effects fx rack plugin presets bypass reverb delay compressor eq distortion chorus maximizer imager drag",
     body: [
