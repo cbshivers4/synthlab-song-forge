@@ -72,3 +72,4 @@ Moving a note block/beat part to another channel goes through movePartBetweenTra
 
 Arpeggiator patterns (arp-pattern.ts arpHit: rhythm string, note-pattern offsets, chord direction) are the single source for the live arp and scheduleStep's chord-aware song arp, so playback, export and MIDI files agree; factory arp grooves and piano presets layer on by name via sound-designs.ts.
 Piano engine (piano-voice.ts) renders deterministic modelled PCM per model/3-semitone zone/velocity layer at 32 kHz, cached and idle-warmed, and plays as a source inside the normal synth voice (filter, amp envelope, effects), so it needs no separate routing.
+Live notes (MIDI keys, computer keys, pitch wheel) pick their channel through liveNoteTarget (live-note-target.ts): a channel set to the incoming MIDI channel first, then the recording channel while recording, otherwise the selected instrument before any other armed one, so you always hear the synth you are editing.

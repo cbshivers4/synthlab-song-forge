@@ -22,6 +22,7 @@ function cloneTrack(t: Track): Track {
 }
 import { createRecordingFinalizer } from "./recording-finalizer";
 import { capturedNote, heardNoteSteps, loopRegion, nextPlayStep, snapRecordedStep } from "./recording-region";
+import { liveNoteTarget } from "./live-note-target";
 import { editDrumPads, type DrumBulkEdit } from "./drum-bulk";
 import { appendDrumPad } from "./drum-banks";
 import { learnedDrumPad } from "./drum-midi";
@@ -967,10 +968,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         if (msg.type === "pitchbend") {
           // live pitch wheel: ±2 semitones on the track the keyboard is playing
           const ch0 = msg.channel + 1;
-          const pbTarget =
-            tracksRef.current.find((t) => t.patch && t.midiChannel === ch0) ??
-            tracksRef.current.find((t) => t.patch && t.armed && (t.midiChannel == null || t.midiChannel === ch0)) ??
-            tracksRef.current.find((t) => t.patch && t.id === selectedIdRef.current);
+          const pbTarget = liveNoteTarget(tracksRef.current, selectedIdRef.current, {
+            playable: (t) => !!t.patch, channel: ch0, recording: transportRef.current.recording,
+          });
           if (pbTarget && !sendExternalBend(pbTarget.id, msg.value)) getEngine().setPitchBend(pbTarget.id, bendCents(msg.value, playbackPreferences().pitchBendRange));
           return;
         }
@@ -1029,11 +1029,10 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         }
 
         const notable = (t: Track) => t.kind === "instrument" || t.kind === "midi" || t.kind === "sampler";
-        const target =
-          tracksRef.current.find((t) => notable(t) && t.midiChannel === ch) ??
-          tracksRef.current.find((t) => t.armed && notable(t) && hears(t)) ??
-          tracksRef.current.find((t) => t.id === selectedIdRef.current && notable(t) && hears(t)) ??
-          tracksRef.current.find((t) => notable(t) && hears(t));
+        // The synth you are on plays (not another armed channel); while recording, the recording channel.
+        const target = liveNoteTarget(tracksRef.current, selectedIdRef.current, {
+          playable: notable, channel: ch, recording: transportRef.current.recording, anyFallback: true,
+        });
         if (!target) return;
         const engine = getEngine();
         engine.init();

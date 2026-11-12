@@ -6,6 +6,7 @@ import { useApp } from '@/lib/synclab/app-state';
 import { usePlan } from '@/lib/synclab/plan';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { saveCloudProject } from '@/lib/synclab/cloud';
+import { liveNoteTarget } from '@/lib/synclab/live-note-target';
 import { QWERTY_MAP, qwertyEnabled, qwertyOctave, setQwertyEnabled, setQwertyOctave } from '@/lib/synclab/qwerty';
 import { matchShortcut } from '@/lib/synclab/shortcuts';
 import { songSteps, stepSeconds } from '@/lib/synclab/timebase';
@@ -39,7 +40,7 @@ export function useShortcuts() {
       const { selected, tracks, transport } = studio;
       if (!e.ctrlKey && !e.metaKey && !e.altKey && qwertyEnabled()) {
         const playable = (t: typeof selected) => t && ['instrument', 'midi', 'sampler'].includes(t.kind);
-        const target = tracks.find((t) => t.armed && playable(t)) ?? (playable(selected) ? selected : null);
+        const target = liveNoteTarget(tracks, selected?.id, { playable: (t) => !!playable(t), recording: transport.recording });
         const key = e.key.toLowerCase();
         const offset = QWERTY_MAP[key];
         if (target && (offset != null || key === 'z' || key === 'x')) {
