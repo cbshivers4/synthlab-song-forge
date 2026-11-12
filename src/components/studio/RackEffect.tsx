@@ -13,6 +13,7 @@ import { VocoderPanel } from "./VocoderPanel";
 import { EffectPresetMenu } from "./EffectPresetMenu";
 import { effectBrand, effectCategory, effectForm } from "@/lib/synclab/effect-catalog";
 import { BypassButton } from "./HardwareBypass";
+import { studioChoice } from "@/lib/synclab/studio-fx";
 
 const meterListeners = new Set<() => void>();
 let meterTimer: ReturnType<typeof setInterval> | undefined;
@@ -76,7 +77,7 @@ export function RackEffect({ trackId, plugin: p, index, count }: { trackId: stri
       <header className="hardware-device-header flex flex-wrap items-center gap-1 border-b border-border px-2 py-2">
         <BypassButton name={p.name} bypassed={p.bypass} onToggle={() => togglePluginBypass(trackId, p.id)} />
         <div className="fx-nameplate min-w-0 flex-1"><h3 className="break-words text-sm font-semibold">{String(index + 1).padStart(2, "0")} · {effectBrand(p)}</h3><span className="font-mono text-[9px] text-muted-foreground">SYNCLAB · {p.name} · {effectCategory(p.kind)}</span>{p.native && <p role="status" className="mt-0.5 font-mono text-[9px] text-amber">{p.native.format} desktop plugin · needs the SYNCLAB desktop plugin host · sound passes through untouched here</p>}</div>
-        {readoutParam && p.kind !== "paraeq" && <div className="fx-parameter-window" aria-label={`${p.name} ${readoutParam.name} readout`}><span>{readoutParam.name}</span><strong>{Number(readoutParam.value.toFixed(2))}<small>{readoutParam.unit}</small></strong></div>}
+        {readoutParam && p.kind !== "paraeq" && <div className="fx-parameter-window" aria-label={`${p.name} ${readoutParam.name} readout`}><span>{readoutParam.name}</span><strong>{studioChoice(p.kind, readoutParam.id, readoutParam.value) ?? Number(readoutParam.value.toFixed(2))}{studioChoice(p.kind, readoutParam.id, readoutParam.value) === undefined && <small>{readoutParam.unit}</small>}</strong></div>}
         <div className="ml-auto flex shrink-0">
           <Button size="icon" variant="ghost" className="size-10" disabled={index === 0} title="Move effect up" aria-label={`Move ${p.name} up`} onClick={() => movePlugin(trackId, p.id, -1)}><ChevronUp className="size-4" /></Button>
           <Button size="icon" variant="ghost" className="size-10" disabled={index === count - 1} title="Move effect down" aria-label={`Move ${p.name} down`} onClick={() => movePlugin(trackId, p.id, 1)}><ChevronDown className="size-4" /></Button>

@@ -5124,3 +5124,12 @@ html.phone-console-active [role="option"] { min-height: 44px; font-size: 15px; }
 .fx-gr-row b { text-align: right; font-weight: 600; }
 .fx-gr-track { height: 8px; border-radius: 4px; background: oklch(1 0 0 / 0.08); overflow: hidden; display: flex; justify-content: flex-end; }
 .fx-gr-track i { display: block; height: 100%; background: linear-gradient(90deg, oklch(0.78 0.16 70), oklch(0.68 0.2 30)); }
+/* Studio pack accents in the Devices bar and its add-effect menu */
+[data-device-kind="autofilter"], [data-device-kind="splitter"] { --device-accent: var(--chart-5); }
+[data-device-kind="analogecho"] { --device-accent: var(--chart-4); }
+[data-device-kind="openair"] { --device-accent: var(--chart-1); }
+[data-device-kind="channelstrip"], [data-device-kind="deesser"], [data-device-kind="expander"], [data-device-kind="multiband"] { --device-accent: var(--amber); }
+[data-device-kind="stereochorus"], [data-device-kind="stereoflanger"], [data-device-kind="stereophaser"], [data-device-kind="voicefx"] { --device-accent: var(--magenta); }
+[data-device-kind="vocaltune"] { --device-accent: var(--primary); }
+[data-device-kind="mustang"] { --device-accent: var(--clip-drum); }
+[data-device-kind="vumeter"], [data-device-kind="tuner"], [data-device-kind="tonegen"] { --device-accent: var(--foreground); }
