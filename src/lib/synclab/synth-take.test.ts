@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { OFFLINE_LIVE, scheduleStep } from './schedule-step';
-import { cutTrackMaterial, removeTakeAndMaterial } from './workflow';
+import { cutTrackMaterial, deleteSelectedPart, removeTakeAndMaterial } from './workflow';
 import { defaultPatch } from './presets';
 import type { Track, Transport } from './types';
 
@@ -76,5 +76,28 @@ describe('recorded note length matches what you heard', () => {
   it('a quick MIDI tap still records the 0.6 s you heard', async () => {
     const { heardNoteSteps } = await import('./recording-region');
     expect(heardNoteSteps(0.6, 0.125, 0.25)).toBe(4.75);
+  });
+});
+
+describe('cutting or deleting a whole block leaves nothing behind', () => {
+  const tpLoop: [number, number] = [0, 16];
+  it('a recorded-notes block that runs past the loop is removed whole, not just the looped bars', () => {
+    const t = synth({ activeRegion: 4, notes: [note('a', 4, 32), note('b', 20, 32)] });
+    expect(deleteSelectedPart(t, 120, 8, tpLoop)?.notes).toEqual([]);
+    const { patch, clipboard } = cutTrackMaterial(t, 120, 8, tpLoop);
+    expect(patch.notes).toEqual([]);
+    expect(clipboard.notes?.map((n) => n.step)).toEqual([4, 20]);
+  });
+  it('a note that rings past the end of a take is removed with the take', () => {
+    const take = { id: 'take', name: 'T', start: 0, offset: 0, duration: 2, length: 2, peaks: [], url: 'blob:t' }; // steps 0–16
+    const t = synth({ printedAudio: true, activeClipId: 'take', clips: [take], notes: [{ ...note('ring', 14, 32), length: 4 }] });
+    expect(removeTakeAndMaterial(t, 'take', 120, 8).notes).toEqual([]);
+  });
+  it('a drum take that starts a hair after the beat still removes the first hit', () => {
+    const take = { id: 'take', name: 'T', start: 0.03, offset: 0, duration: 1.99, length: 1.99, peaks: [], url: 'blob:t' };
+    const steps = Array.from({ length: 32 }, (_, i) => (i === 0 || i === 8 || i === 20 ? 1 : 0));
+    const t = { ...base, id: 'd', name: 'DRUMS', kind: 'drum', steps: 32, printedAudio: true, activeClipId: 'take', clips: [take], pads: [{ id: 'k', name: 'KICK', steps }] } as unknown as Track;
+    const left = removeTakeAndMaterial(t, 'take', 120, 2).pads?.[0]?.steps ?? [];
+    expect(left.map((v, i) => (v ? i : -1)).filter((i) => i >= 0)).toEqual([20]);
   });
 });

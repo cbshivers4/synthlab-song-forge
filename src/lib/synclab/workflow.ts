@@ -24,13 +24,14 @@ export function selectedPartBounds(track: Track | null | undefined, bpm: number,
   if (clip) return [clip.start ?? 0, (clip.start ?? 0) + clipSeconds(clip) / stepSeconds(bpm)];
   if (track.activeRegion == null) return null;
   const raw = regionAt(track.cuts, songSteps(bars), track.activeRegion);
-  // A cut block is exactly what the timeline draws, so it is deleted whole wherever the loop is;
-  // only an uncut, song-long pattern is narrowed to the loop so other bars survive.
-  const region: [number, number] = loop && !track.cuts?.length ? [Math.max(raw[0], loop[0]), Math.min(raw[1], loop[1])] : raw;
+  const notes = track.notes ?? [];
+  const recordedOnly = notes.length > 0 && notes.every((note) => note.recordedEnd != null) && !track.patternRegion;
+  // A cut block, or a recorded take of notes, is exactly what the timeline draws, so it is deleted
+  // whole wherever the loop is; only an uncut, song-long pattern is narrowed to the loop so other bars survive.
+  const region: [number, number] = loop && !track.cuts?.length && !recordedOnly ? [Math.max(raw[0], loop[0]), Math.min(raw[1], loop[1])] : raw;
   if (region[1] <= region[0]) return null;
   if (track.patternRegion) return [Math.max(region[0], track.patternRegion[0]), Math.min(region[1], track.patternRegion[1])];
-  const notes = track.notes ?? [];
-  if (notes.length && notes.every((note) => note.recordedEnd != null)) {
+  if (recordedOnly) {
     return [Math.max(region[0], Math.min(...notes.map((note) => note.step))), Math.min(region[1], Math.max(...notes.map((note) => note.recordedEnd ?? songSteps(bars))))];
   }
   return region;
@@ -40,23 +41,32 @@ export function selectedPartBounds(track: Track | null | undefined, bpm: number,
 export function deleteSelectedPart(track: Track | null | undefined, bpm: number, bars: number, loop?: [number, number]): Partial<Track> | null {
   if (!track) return null;
   const clip = selectedClip(track);
-  if (clip) return { clips: track.clips?.filter(c => c.id !== clip.id), activeClipId: undefined };
+  // a recorded waveform block takes the notes/hits it was made from with it
+  if (clip) return removeTakeAndMaterial(track, clip.id, bpm, bars);
   const part = selectedPartBounds(track, bpm, bars, loop);
   if (!part) return null;
   return eraseMaterial(track, part, bars);
 }
 
-/** Notes and drum hits inside [part) are erased; repeating material is expanded first so other bars survive. */
-function eraseMaterial(track: Track, part: [number, number], bars: number): Partial<Track> {
+/**
+ * Notes and drum hits inside [part) are erased; repeating material is expanded first so other bars survive.
+ * `whole` (a recorded take): every note that starts in the block goes entirely, including a ring-out past
+ * its end, and edges tolerate the sub-step offset a take can start or end at, so no sliver is left behind.
+ */
+function eraseMaterial(track: Track, part: [number, number], bars: number, whole = false): Partial<Track> {
   const total = songSteps(bars);
   const expanded = unrollNotes(track.notes ?? [], track.steps || total, total);
-  const split = cutNotesAt(cutNotesAt(expanded, part[0]).notes, part[1]).notes;
+  const from = whole ? Math.max(0, part[0] - 0.05) : part[0];
+  const notes = whole
+    ? cutNotesAt(expanded, from).notes.filter((n) => n.step < from - 0.001 || n.step >= part[1] - 0.001)
+    : deleteRegion(cutNotesAt(cutNotesAt(expanded, part[0]).notes, part[1]).notes, part);
+  const hitIn = (i: number) => whole ? i > part[0] - 0.5 && i < part[1] - 0.001 : i >= part[0] && i < part[1];
   return {
-    notes: deleteRegion(split, part), steps: total, activeRegion: undefined,
+    notes, steps: total, activeRegion: undefined,
     ...(track.pads ? { pads: track.pads.map(pad => {
       const length = Math.max(1, pad.steps.length);
       const repeat = (values: number[] | undefined) => values ? Array.from({ length: total }, (_, i) => values[i % length] ?? 0) : undefined;
-      return { ...pad, steps: Array.from({ length: total }, (_, i) => i >= part[0] && i < part[1] ? 0 : pad.steps[i % length] ?? 0), probability: repeat(pad.probability), stepPitch: repeat(pad.stepPitch), stepDecay: repeat(pad.stepDecay), flam: repeat(pad.flam), retrig: repeat(pad.retrig), glitch: repeat(pad.glitch) };
+      return { ...pad, steps: Array.from({ length: total }, (_, i) => hitIn(i) ? 0 : pad.steps[i % length] ?? 0), probability: repeat(pad.probability), stepPitch: repeat(pad.stepPitch), stepDecay: repeat(pad.stepDecay), flam: repeat(pad.flam), retrig: repeat(pad.retrig), glitch: repeat(pad.glitch) };
     }) } : {}),
   };
 }
@@ -73,7 +83,7 @@ export function removeTakeAndMaterial(track: Track, clipId: string, bpm: number,
   if (!clip || !noteKind || !timelineUsesWaveform(track)) return base;
   const from = clip.start ?? 0;
   const part: [number, number] = [from, from + clipSeconds(clip) / stepSeconds(bpm)];
-  return { ...base, ...eraseMaterial(track, part, bars), ...(clips.length ? {} : { printedAudio: false }) };
+  return { ...base, ...eraseMaterial(track, part, bars, true), ...(clips.length ? {} : { printedAudio: false }) };
 }
 
 /**

@@ -103,6 +103,7 @@ export const KNOWLEDGE_BASE: Article[] = [
       "Snap (on by default, next to Overdub) puts each recorded note on the nearest grid line, using the Quantize grid, so the take and its waveform start right on the beat. Turn Snap off to keep your exact timing.",
       "Deleting a recorded synth or drum block also deletes the notes or hits underneath it. Undo brings them back.",
       "Cutting a recorded block (CUT or ⌘X / Ctrl+X) also takes the notes or hits underneath it. Cut never removes the instrument itself — only Delete track does.",
+      "Cutting or deleting a block removes the whole block, even the part outside the loop and a note still ringing past its end, so no small piece is left behind.",
     ],
     can: [
       "Record microphone and interface inputs, with takes and loop recording.",
