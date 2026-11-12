@@ -1,0 +1,48 @@
+import { describe, expect, it, vi } from 'vitest';
+import { OFFLINE_LIVE, scheduleStep } from './schedule-step';
+import { removeTakeAndMaterial } from './workflow';
+import { defaultPatch } from './presets';
+import type { Track, Transport } from './types';
+
+// 120 BPM: one step = 0.125 s. 8 bars = 128 steps.
+const tp = { bpm: 120, bars: 8, step: 0, playing: true, loop: true, loopStart: 0, loopEnd: 128, swing: 0, metronome: false } as unknown as Transport;
+const base = { color: 'grey', volume: 0.8, pan: 0, muted: false, solo: false, armed: false, frozen: false, hidden: false, input: 'none', bus: 'master' } as const;
+const note = (id: string, step: number, recordedEnd?: number) => ({ id, step, length: 1, pitch: 60, velocity: 1, ...(recordedEnd != null ? { recordedEnd } : {}) });
+const synth = (values: Partial<Track>): Track => ({ ...base, id: 's', name: 'ACID BASS', kind: 'instrument', steps: 32, patch: defaultPatch(), ...values } as Track);
+const fakeEngine = () => ({ tempo: 0, playNote: vi.fn(), playDrum: vi.fn(), playClip: vi.fn(), playSample: vi.fn(), playClick: vi.fn(), setPitchBend: vi.fn(), setModWheel: vi.fn() });
+
+describe('deleting a recorded synth block', () => {
+  // an 8-bar take: 128 steps × 0.125 s = 16 s, starting at step 0
+  const take = { id: 'take', name: 'ACID BASS TAKE 1', start: 0, offset: 0, duration: 16, length: 16, peaks: [], url: 'blob:take' };
+  it('removes the notes underneath the block, so no MIDI is left behind', () => {
+    const t = synth({ printedAudio: true, activeClipId: 'take', clips: [take], notes: [note('a', 4, 128), note('b', 100, 128)] });
+    const patch = removeTakeAndMaterial(t, 'take', 120, 8);
+    expect(patch.clips).toEqual([]);
+    expect(patch.notes).toEqual([]);
+    expect(patch.printedAudio).toBe(false);
+  });
+  it('keeps notes outside the deleted block', () => {
+    const short = { ...take, length: 2, duration: 2 }; // steps 0–16
+    const t = synth({ printedAudio: true, activeClipId: 'take', clips: [short], notes: [note('in', 4, 16), note('out', 40, 64)] });
+    expect(removeTakeAndMaterial(t, 'take', 120, 8).notes?.map((n) => n.id)).toEqual(['out']);
+  });
+  it('an audio track only loses the clip', () => {
+    const t = { ...base, id: 'v', name: 'VOX', kind: 'audio', steps: 16, clips: [take], activeClipId: 'take' } as Track;
+    expect(removeTakeAndMaterial(t, 'take', 120, 8)).toEqual({ clips: [], activeClipId: undefined });
+  });
+});
+
+describe('recorded synth notes', () => {
+  it('play once at their own position, not again every pattern length', () => {
+    const engine = fakeEngine();
+    const t = synth({ steps: 32, notes: [note('a', 4, 128)] });
+    for (let n = 0; n < 128; n++) scheduleStep(engine as never, [t], tp, n, n * 0.125, { ...OFFLINE_LIVE, lastScheduled: n ? n - 1 : null });
+    expect(engine.playNote).toHaveBeenCalledTimes(1);
+  });
+  it('drawn pattern notes still repeat every pattern length', () => {
+    const engine = fakeEngine();
+    const t = synth({ steps: 32, notes: [note('p', 4)] });
+    for (let n = 0; n < 128; n++) scheduleStep(engine as never, [t], tp, n, n * 0.125, { ...OFFLINE_LIVE, lastScheduled: n ? n - 1 : null });
+    expect(engine.playNote).toHaveBeenCalledTimes(4);
+  });
+});

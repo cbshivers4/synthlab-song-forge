@@ -43,6 +43,11 @@ export function deleteSelectedPart(track: Track | null | undefined, bpm: number,
   if (clip) return { clips: track.clips?.filter(c => c.id !== clip.id), activeClipId: undefined };
   const part = selectedPartBounds(track, bpm, bars, loop);
   if (!part) return null;
+  return eraseMaterial(track, part, bars);
+}
+
+/** Notes and drum hits inside [part) are erased; repeating material is expanded first so other bars survive. */
+function eraseMaterial(track: Track, part: [number, number], bars: number): Partial<Track> {
   const total = songSteps(bars);
   const expanded = unrollNotes(track.notes ?? [], track.steps || total, total);
   const split = cutNotesAt(cutNotesAt(expanded, part[0]).notes, part[1]).notes;
@@ -54,4 +59,19 @@ export function deleteSelectedPart(track: Track | null | undefined, bpm: number,
       return { ...pad, steps: Array.from({ length: total }, (_, i) => i >= part[0] && i < part[1] ? 0 : pad.steps[i % length] ?? 0), probability: repeat(pad.probability), stepPitch: repeat(pad.stepPitch), stepDecay: repeat(pad.stepDecay), flam: repeat(pad.flam), retrig: repeat(pad.retrig), glitch: repeat(pad.glitch) };
     }) } : {}),
   };
+}
+/**
+ * Deleting a recorded take (waveform block) on an instrument, drum or sampler channel also erases the
+ * notes/hits it was recorded from inside the block's span, so nothing is left hiding underneath.
+ * Audio-only channels just lose the clip.
+ */
+export function removeTakeAndMaterial(track: Track, clipId: string, bpm: number, bars: number): Partial<Track> {
+  const clip = track.clips?.find((c) => c.id === clipId);
+  const clips = (track.clips ?? []).filter((c) => c.id !== clipId);
+  const base: Partial<Track> = { clips, activeClipId: track.activeClipId === clipId ? undefined : track.activeClipId };
+  const noteKind = track.kind === 'instrument' || track.kind === 'midi' || track.kind === 'drum' || track.kind === 'sampler';
+  if (!clip || !noteKind || !timelineUsesWaveform(track)) return base;
+  const from = clip.start ?? 0;
+  const part: [number, number] = [from, from + clipSeconds(clip) / stepSeconds(bpm)];
+  return { ...base, ...eraseMaterial(track, part, bars), ...(clips.length ? {} : { printedAudio: false }) };
 }

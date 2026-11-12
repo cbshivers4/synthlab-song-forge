@@ -18,8 +18,8 @@ export interface ScheduleLive {
   pickupClip: (clipId: string) => boolean;
   /** a hit just played live into this take was already heard */
   liveHit: (trackId: string, padId: string, step: number) => boolean;
-  /** a note played live into this take (or replaced by it) was already heard */
-  skipNote: (noteId: string) => boolean;
+  /** a note played live into this take (or replaced by it) was already heard; `when` is the audio time it would sound */
+  skipNote: (noteId: string, when: number) => boolean;
 }
 
 export const OFFLINE_LIVE: ScheduleLive = { lastScheduled: null, pickupClip: () => false, liveHit: () => false, skipNote: () => false };
@@ -64,6 +64,8 @@ export function scheduleStep(engine: Engine, list: Track[], tp: Transport, n: nu
   // swing pushes every off-beat 16th later, up to half a step — the shuffle
   // a drum machine gives you. Arrangement clips keep their exact position.
   const swung = when + (n % 2 === 1 ? Math.min(0.9, Math.max(0, tp.swing ?? 0)) * 0.5 * stepDur : 0);
+  // recorded notes (recordedEnd set) are absolute song positions: they play once, where the timeline draws them
+  const abs = n % totalSteps;
   for (const t of list) {
     if (t.muted || t.deviceBypassed || t.frozen || (anySolo && !t.solo)) continue;
     const len = Math.max(1, t.steps);
@@ -154,8 +156,8 @@ export function scheduleStep(engine: Engine, list: Track[], tp: Transport, n: nu
         // recorded notes keep a sub-step fraction for quantize; the
         // scheduler fires on whole steps only, so compare the floored step
         const step0 = Math.floor(note.step);
-        if (live.skipNote(note.id)) continue;
-        if (step0 % len === s && (note.recordedEnd == null || (n >= step0 && n < note.recordedEnd))) triggerNote(engine, t, note.pitch, note.length * stepDur, note.velocity, swung + (note.step - step0) * stepDur);
+        if (live.skipNote(note.id, when)) continue;
+        if (note.recordedEnd != null ? step0 === abs && abs < note.recordedEnd : step0 % len === s) triggerNote(engine, t, note.pitch, note.length * stepDur, note.velocity, swung + (note.step - step0) * stepDur);
       }
     } else if (t.patch && t.notes) {
       // piano-roll pitch-bend / mod-wheel lanes, interpolated per step
@@ -164,14 +166,14 @@ export function scheduleStep(engine: Engine, list: Track[], tp: Transport, n: nu
       const mod = laneValueAt(t.modLane, s);
       if (mod != null) engine.setModWheel(t.id, mod, swung);
       if (t.patch.arp.on) {
-        scheduleArpStep(engine, t, n, s, len, when, swung, stepDur, live);
+        scheduleArpStep(engine, t, n, abs, s, len, when, swung, stepDur, live);
         continue;
       }
       for (const note of t.notes) {
         const step0 = Math.floor(note.step);
         // notes played live into this take were already heard — don't double them
-        if (live.skipNote(note.id)) continue;
-        if (step0 % len !== s || (note.recordedEnd != null && (n < step0 || n >= note.recordedEnd))) continue;
+        if (live.skipNote(note.id, when)) continue;
+        if (note.recordedEnd != null ? step0 !== abs || abs >= note.recordedEnd : step0 % len !== s) continue;
         engine.playNote(t.id, t.patch, note.pitch + (t.octave ?? 0) * 12, note.length * stepDur, note.velocity, swung + (note.step - step0) * stepDur);
       }
     }
@@ -187,7 +189,7 @@ export function scheduleStep(engine: Engine, list: Track[], tp: Transport, n: nu
  * that moment (a chord is arpeggiated, not repeated), through the shared rhythm/note pattern.
  * Ticks count from the newest held note's start, so a pattern restarts with each new chord.
  */
-function scheduleArpStep(engine: Engine, t: Track, n: number, s: number, len: number, when: number, swung: number, stepDur: number, live: ScheduleLive) {
+function scheduleArpStep(engine: Engine, t: Track, n: number, abs: number, s: number, len: number, when: number, swung: number, stepDur: number, live: ScheduleLive) {
   const patch = t.patch as SynthPatch;
   const arp = patch.arp;
   const arpStep = arpStepSeconds(arp, stepDur);
@@ -201,10 +203,10 @@ function scheduleArpStep(engine: Engine, t: Track, n: number, s: number, len: nu
     const held: { pitch: number; vel: number; start: number }[] = [];
     for (const note of t.notes ?? []) {
       const step0 = Math.floor(note.step);
-      if (note.recordedEnd != null && (n < step0 || n >= note.recordedEnd)) continue;
-      const since = (((loopPos - (step0 % len)) % len) + len) % len;
-      if (since >= note.length - 1e-6) continue;
-      if (live.skipNote(note.id)) continue;
+      if (note.recordedEnd != null && (abs < step0 || abs >= note.recordedEnd)) continue;
+      const since = note.recordedEnd != null ? abs + (pos - n) - step0 : (((loopPos - (step0 % len)) % len) + len) % len;
+      if (since < 0 || since >= note.length - 1e-6) continue;
+      if (live.skipNote(note.id, when)) continue;
       held.push({ pitch: note.pitch, vel: note.velocity, start: pos - since });
     }
     if (held.length === 0) continue;

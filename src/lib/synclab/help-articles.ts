@@ -99,15 +99,18 @@ export const KNOWLEDGE_BASE: Article[] = [
       "Press REC in the transport. With Count-in on, the bars you chose click first and the song starts exactly on the next beat 1. Your microphone is already listening during the count-in, so you can come in right on the first beat.",
       "Without a count-in, SYNCLAB waits until the microphone is listening (usually a split second) before the song starts, so the first beat is never cut off.",
       "Loop recording keeps every pass as its own take so you can pick the best one; punch in/out limits recording to the loop.",
+      "Recording a synth captures the notes you play. With Overdub on, recording keeps going round the loop and everything you played keeps playing, so you can layer pass after pass. When you stop, the waveform block is drawn from your notes.",
+      "Deleting a recorded synth or drum block also deletes the notes or hits underneath it. Undo brings them back.",
     ],
     can: [
       "Record microphone and interface inputs, with takes and loop recording.",
-      "Choose Replace (new recording replaces what's there) or Overdub (stacks on top).",
+      "Choose Replace (new recording replaces what's there) or Overdub (stacks on top; on a synth it keeps looping so you can layer passes).",
       "Correct for your device's recording delay in Settings → Audio.",
     ],
     cant: [
       "A browser can't change your interface's buffer size or sample rate.",
       "If the meter goes red the sound is clipping — turn the gain down on your interface; SYNCLAB can't undo clipping after it's recorded.",
+      "In Replace mode a synth take still stops at the loop end. Synths played from outside hardware record notes only, with no waveform.",
     ],
   },
   {

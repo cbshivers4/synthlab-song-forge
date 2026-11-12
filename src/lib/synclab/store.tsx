@@ -45,6 +45,7 @@ import { manualSwitchPatch, switchEdge, switchStateAt, writeSwitchStep } from ".
 import { scheduleStep as scheduleSongStep, triggerNote } from "./schedule-step";
 import { shownPassIndex, splitLoopPasses } from "./loop-takes";
 import { getPlayStep, setPlayStep } from "./playhead";
+import { removeTakeAndMaterial } from "./workflow";
 import { isLiveParam, laneReads, laneWrites, liveValue, movedLiveParams, valueAt, writePoint } from "./automation-write";
 import { padNote } from "./drum-notes";
 import { markLiveHit, isLiveHit, clearLiveHits, neighbourLiveHits } from "./live-take";
@@ -97,6 +98,14 @@ function liveSound(t: Track): Track {
   // Fade out the printed take now so it doesn't double with the live notes that replace it.
   queueMicrotask(() => getEngine().stopSamples(t.id));
   return { ...t, printedAudio: false };
+}
+
+/**
+ * Synth channels record their notes only; the waveform is rendered from those notes when the take
+ * lands. Drums, samplers, outside hardware and Live Keys channels still print their live output.
+ */
+function synthTake(t: Track): boolean {
+  return (t.kind === "instrument" || t.kind === "midi") && !!t.patch && !t.keyboardist && !isExternal(t.id);
 }
 
 /** Seconds of song audio queued ahead on the audio clock (see the scheduler). */
@@ -541,7 +550,10 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const selectedIdRef = useRef(selectedId);
   selectedIdRef.current = selectedId;
   const heldRef = useRef(new Map<string, { ids: string[]; trackId: string; t0: number; startStep: number }>());
-  const recordedNoteIdsRef = useRef(new Set<string>());
+  /** notes played live into the current take → audio-clock time they were heard */
+  const recordedNoteIdsRef = useRef(new Map<string, number>());
+  /** A synth take records notes only (no live print); the waveform is rendered from the notes when it lands. */
+  const midiTakeRef = useRef<{ trackId: string; passes: number } | null>(null);
   /** Older notes inside the region being re-recorded (replace mode): silent while recording, removed when the take lands. */
   const replacedNoteIdsRef = useRef(new Set<string>());
   // last scheduled step + its audio-clock time, so note capture can stamp the
@@ -1045,7 +1057,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
               }, tp.loop ? loopRegion(tp) : [0, songSteps(tp.bars)]);
               return note ? [note] : [];
             });
-            notes.forEach((note) => recordedNoteIdsRef.current.add(note.id));
+            notes.forEach((note) => recordedNoteIdsRef.current.set(note.id, engine.ctx?.currentTime ?? 0));
             heldRef.current.set(heldKey, { ids: notes.map((note) => note.id), trackId: target.id, t0: performance.now(), startStep: at });
             setTracks((ts) =>
               ts.map((t) => (t.id === target.id ? { ...t, notes: [...(t.notes ?? []), ...notes] } : t)),
@@ -1095,7 +1107,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (transport.recording) {
       takeTokenRef.current += 1;
-      recordedNoteIdsRef.current = new Set();
+      recordedNoteIdsRef.current = new Map();
       clearLiveHits();
     }
   }, [transport.recording]);
@@ -1164,7 +1176,16 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         lastScheduled,
         pickupClip: (id) => pickupClipIdsRef.current.delete(id),
         liveHit: isLiveHit,
-        skipNote: (id) => recordedNoteIdsRef.current.has(id) || replacedNoteIdsRef.current.has(id),
+        skipNote: (id, when) => {
+          if (replacedNoteIdsRef.current.has(id)) return true;
+          const heardAt = recordedNoteIdsRef.current.get(id);
+          if (heardAt === undefined) return false;
+          // Overdubbing a synth: what you played in an earlier pass plays again one loop later.
+          if (!midiTakeRef.current) return true;
+          const tpl = transportRef.current;
+          const [lo, hi] = loopRegion(tpl);
+          return when - heardAt < (hi - lo) * stepSeconds(tpl.bpm) * 0.5;
+        },
       });
 
     /** Everything that should happen the moment a step is actually heard. */
@@ -1523,6 +1544,95 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     });
   }, [updateTrack]);
 
+  /**
+   * Lands a synth take: the notes you played are the take. Its waveform is rendered offline from
+   * those notes (every overdub pass included) through a flat copy of the channel, so playing the
+   * block back through the real channel sounds like the notes once — no doubled effects or fader.
+   */
+  const landMidiTake = useCallback(async (take: { trackId: string; passes: number }, heardEnd: number) => {
+    // state updates from note-offs/held notes must reach tracksRef before reading it
+    await new Promise((r) => window.setTimeout(r, 0));
+    const target = tracksRef.current.find((t) => t.id === take.trackId);
+    if (!target) return;
+    const tp = transportRef.current;
+    const stepDur = stepSeconds(tp.bpm);
+    const [lo, hi] = loopRegion(tp);
+    const captured = recordedNoteIdsRef.current;
+    const replacedIds = replacedNoteIdsRef.current;
+    const start = take.passes > 0 ? lo : Math.max(lo, Math.min(hi - 1, Math.floor(recStartStepRef.current)));
+    const rawEnd = take.passes > 0 ? hi : Math.max(start + 1, Math.ceil(heardEnd));
+    const end = Math.min(hi, Math.ceil(rawEnd / STEPS_PER_BEAT) * STEPS_PER_BEAT);
+    const barSteps = stepsPerBar();
+    const notes = (target.notes ?? []).filter((n) => !replacedIds.has(n.id)).map((n) => captured.has(n.id) ? {
+      ...n, recordedEnd: end, length: Math.max(0.25, Math.min(n.length, end - n.step)),
+    } : n);
+    const lastCaptured = notes.reduce((m, n) => (captured.has(n.id) ? Math.max(m, Math.floor(n.step) + 1) : m), 0);
+    const steps = lastCaptured > target.steps ? Math.ceil(end / barSteps) * barSteps : target.steps;
+    const played = notes.some((n) => captured.has(n.id));
+    const inRegion = notes.some((n) => n.step < end && n.step + n.length > start);
+    const landNotesOnly = (printedAudio: boolean) =>
+      setTracks((ts) => ts.map((t) => (t.id === take.trackId ? { ...t, notes, steps, recording: false, printedAudio } : t)));
+    if (!played && !replacedIds.size) {
+      landNotesOnly(!!target.printedAudio);
+      toast("No notes were played", { description: `Nothing was recorded on ${target.name}.` });
+      return;
+    }
+    if (!inRegion || isExternal(target.id)) {
+      // nothing left to draw (or the sound comes from outside hardware): the notes are the take
+      landNotesOnly(false);
+      toast.success(`${target.name} notes recorded`);
+      return;
+    }
+    const flat: Track = {
+      ...target, notes, steps, volume: 1, gain: 1, pan: 0, plugins: [], sends: { reverb: 0, delay: 0, chorus: 0 },
+      automation: [], muted: false, solo: false, deviceBypassed: false, frozen: false, printedAudio: false,
+      clips: [], recording: false, bus: "master", vca: undefined, muteEvents: undefined, soloEvents: undefined,
+    };
+    const engine = getEngine();
+    const ctx = engine.init();
+    const { renderSong } = await import("./song-render");
+    const cap = await renderSong({
+      tracks: [flat], transport: tp, buses: {}, vcas: {}, auxReturns: {}, fxChains: {},
+      startStep: start, lengthSteps: end - start, tail: 0, sampleRate: ctx.sampleRate,
+    });
+    if (!cap) {
+      landNotesOnly(false);
+      toast.success(`${target.name} notes recorded`, { description: "This browser can't draw the waveform; the notes play the part." });
+      return;
+    }
+    const url = URL.createObjectURL(encodeWav(cap));
+    await engine.ensureBuffer(url);
+    const frames = cap.left.length;
+    const duration = frames / cap.sampleRate;
+    const buckets = Math.min(1600, Math.max(160, Math.ceil(duration * 80)));
+    const peaks = Array.from({ length: buckets }, (_, b) => {
+      const from = Math.floor((b * frames) / buckets);
+      const to = Math.floor(((b + 1) * frames) / buckets);
+      let peak = 0;
+      for (let i = from; i < to; i++) peak = Math.max(peak, Math.abs(cap.left[i] ?? 0), Math.abs(cap.right[i] ?? 0));
+      return peak;
+    });
+    const latest = tracksRef.current.find((t) => t.id === take.trackId) ?? target;
+    const clip: AudioClip = {
+      id: uid(), name: `${target.name} TAKE ${(latest.clips?.length ?? 0) + 1}`,
+      peaks, duration, url, start, offset: 0, length: Math.min(duration, (end - start) * stepDur), gain: 1,
+    };
+    // The rendered take already holds every note in its bars, so older takes there step aside
+    // (kept as alternatives on the new block) instead of stacking and doubling.
+    const alts = coveredTakes(latest.clips ?? [], start, end, stepDur);
+    pickupClipIdsRef.current.add(clip.id);
+    setTracks((ts) => ts.map((t) => (t.id === take.trackId ? {
+      ...t, notes, steps, recording: false,
+      clips: [...replaceTakeRegion(t.clips ?? [], start, end, stepDur), alts.length ? { ...clip, alts } : clip],
+      activeClipId: clip.id, printedAudio: true,
+    } : t)));
+    toast.success(`${clip.name} recorded`, {
+      description: take.passes > 0
+        ? `${take.passes + 1} passes layered into one take. Delete the block to remove its notes too.`
+        : "Double-click the waveform to edit it; switch to Notes to edit the pattern.",
+    });
+  }, []);
+
   const finishTrackRecording = useCallback(async () => {
     const engine = getEngine();
     /** Nothing more is pending for this pass: let notes and hits play normally again. */
@@ -1532,13 +1642,14 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       const token = ++takeTokenRef.current;
       window.setTimeout(() => {
         if (token !== takeTokenRef.current) return;
-        recordedNoteIdsRef.current = new Set();
+        recordedNoteIdsRef.current = new Map();
         replacedNoteIdsRef.current = new Set();
         clearLiveHits();
       }, 80);
       setTracks((ts) => ts.map((t) => (t.recording && (t.kind === "instrument" || t.kind === "midi" || t.kind === "drum") ? { ...t, recording: false } : t)));
     };
-    if (!engine.isTrackRecording) {
+    const midiTake = midiTakeRef.current;
+    if (!engine.isTrackRecording && !midiTake) {
       releaseTake();
       return;
     }
@@ -1554,6 +1665,18 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       const end = regionEnd >= held.startStep ? regionEnd : regionEnd + songSteps(tp.bars);
       const length = Math.max(0.25, end - held.startStep);
       setTracks((ts) => ts.map((t) => t.id === held.trackId ? { ...t, notes: (t.notes ?? []).map((n) => held.ids.includes(n.id) ? { ...n, length } : n) } : t));
+    }
+    if (midiTake) {
+      try {
+        await landMidiTake(midiTake, tp.playing ? getPlayStep() : endStep);
+      } catch (err) {
+        markTakeFailed();
+        toast.error("Take couldn't be kept", { description: err instanceof Error ? err.message : undefined });
+      } finally {
+        midiTakeRef.current = null;
+        releaseTake();
+      }
+      return;
     }
     let landed = false;
     const printStartedAt = engine.trackRecStartedAt;
@@ -1626,7 +1749,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       releaseTake();
       if (!landed) pickupClipIdsRef.current.clear();
     }
-  }, []);
+  }, [landMidiTake]);
 
   const finalizeRecording = useMemo(() => createRecordingFinalizer(
     () => pendingInputStartRef.current,
@@ -1654,7 +1777,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     punchRef.current = {
       start: (at: number) => {
         const engine = getEngine();
-        if (engine.isRecording || engine.isTrackRecording) return;
+        if (engine.isRecording || engine.isTrackRecording || midiTakeRef.current) return;
         const target = tracksRef.current.find((t) => t.armed && (t.kind === "audio" || t.kind === "ai-vocal"));
         if (!target) {
           // Instrument, drum and sampler channels punch in too: notes and their printed take start at the marker.
@@ -1667,7 +1790,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             ? new Set()
             : new Set((note.notes ?? []).filter((n) => n.step >= at && n.step < to).map((n) => n.id));
           printPreRollRef.current = false;
-          try {
+          if (synthTake(note)) midiTakeRef.current = { trackId: note.id, passes: 0 };
+          else try {
             engine.startTrackRecording(note.id);
           } catch (err) {
             toast.error("Could not record this channel", { description: err instanceof Error ? err.message : undefined });
@@ -1700,11 +1824,21 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       const engine = getEngine();
       const audio = engine.isRecording;
       const inst = engine.isTrackRecording;
-      if (!audio && !inst) return;
-      if (audio && !inst) {
-        // Microphone takes keep recording through the loop: each pass becomes its own take.
-        loopPassesRef.current += 1;
-        if (loopPassesRef.current === 1) toast("Recording the next pass", { description: "Each time round the loop is kept as its own take. Press Stop when you're done." });
+      const midi = midiTakeRef.current;
+      if (!audio && !inst && !midi) return;
+      // Overdub on a synth keeps going round the loop: each pass layers on top of what you played.
+      const tpl = transportRef.current;
+      const layering = !!midi && !!tpl.overdub && !tpl.replace;
+      if (layering) {
+        midi.passes += 1;
+        if (midi.passes === 1 && !audio) toast("Overdubbing the next pass", { description: "What you just played keeps playing — add more on top. Press Stop when you're done." });
+      }
+      if (!inst && (audio || layering)) {
+        if (audio) {
+          // Microphone takes keep recording through the loop: each pass becomes its own take.
+          loopPassesRef.current += 1;
+          if (loopPassesRef.current === 1) toast("Recording the next pass", { description: "Each time round the loop is kept as its own take. Press Stop when you're done." });
+        }
         return;
       }
       void endRecording();
@@ -1921,7 +2055,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       const stepPos = heardStepPos();
       const note = capturedNote({ id: uid(), step: Math.max(0, stepPos), length: 1, pitch: midi, velocity }, tp.loop ? loopRegion(tp) : [0, songSteps(tp.bars)]);
       if (!note) return;
-      recordedNoteIdsRef.current.add(note.id);
+      recordedNoteIdsRef.current.set(note.id, getEngine().ctx?.currentTime ?? 0);
       setTracks((ts) => ts.map((x) => (x.id === t.id ? { ...x, notes: [...(x.notes ?? []), note] } : x)));
     };
     const stepBack = (from: "past" | "future") => {
@@ -2579,7 +2713,11 @@ export function StudioProvider({ children }: { children: ReactNode }) {
               }
               // Printing starts just before the song does; that lead-in is trimmed when the take lands.
               printPreRollRef.current = !transportRef.current.playing;
-              try {
+              const notesOnly = synthTake(armedNote);
+              if (notesOnly) {
+                printPreRollRef.current = false;
+                midiTakeRef.current = { trackId: armedNote.id, passes: 0 };
+              } else try {
                 engine.startTrackRecording(armedNote.id);
               } catch (err) {
                 printPreRollRef.current = false;
@@ -2587,8 +2725,10 @@ export function StudioProvider({ children }: { children: ReactNode }) {
                 return;
               }
               updateTrack(armedNote.id, { recording: true, ...(armedNote.kind === "drum" ? { patternRegion: transportRef.current.loop ? loopRegion(transportRef.current) : undefined } : {}) });
-              toast("Recording notes and audio", {
-                description: `Playing ${armedNote.name} captures an editable pattern and waveform.`,
+              toast(notesOnly ? "Recording notes" : "Recording notes and audio", {
+                description: notesOnly
+                  ? `Play ${armedNote.name}. Its waveform is drawn from your notes when you stop${transportRef.current.overdub && !transportRef.current.replace ? "; Overdub keeps looping so you can layer passes" : ""}.`
+                  : `Playing ${armedNote.name} captures an editable pattern and waveform.`,
               });
             }
             if (!armedAudio && !armedNote) {
@@ -2831,18 +2971,11 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       previewAutomation: (trackId, param, value) => {
         getEngine().automate(trackId, { [param]: value });
       },
-      removeClip: (trackId, clipId) =>
-        setTracks((ts) =>
-          ts.map((t) =>
-            t.id === trackId
-              ? {
-                  ...t,
-                  clips: (t.clips ?? []).filter((c) => c.id !== clipId),
-                  activeClipId: t.activeClipId === clipId ? undefined : t.activeClipId,
-                }
-              : t,
-          ),
-        ),
+      removeClip: (trackId, clipId) => {
+        const tp = transportRef.current;
+        // a recorded take takes its notes/hits with it, so no hidden MIDI is left under a deleted block
+        setTracks((ts) => ts.map((t) => (t.id === trackId ? { ...t, ...removeTakeAndMaterial(t, clipId, tp.bpm, tp.bars) } : t)));
+      },
       savePreset: (name) => {
         const t = tracks.find((x) => x.id === selectedId);
         if (t?.patch) setUserPresets((p) => [...p, { ...structuredClone(t.patch!), name }]);
