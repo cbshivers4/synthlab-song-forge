@@ -5,7 +5,7 @@
  * textures (deterministic synthesis, cached per sample rate) or your own sample.
  */
 
-export type GranularSource = "glass" | "choir" | "strings" | "bell" | "wind" | "sample";
+export type GranularSource = "glass" | "choir" | "strings" | "bell" | "wind" | "piano" | "pluck" | "sample";
 export type GrainShape = "smooth" | "triangle" | "sharp";
 
 export interface GranularPatch {
@@ -50,6 +50,8 @@ export const GRANULAR_SOURCES: { id: GranularSource; label: string }[] = [
   { id: "strings", label: "Tape Strings" },
   { id: "bell", label: "Steel Bell" },
   { id: "wind", label: "Wind Noise" },
+  { id: "piano", label: "Struck Piano" },
+  { id: "pluck", label: "Plucked String" },
   { id: "sample", label: "My sample" },
 ];
 
@@ -127,6 +129,47 @@ export const GRANULAR_PRESETS: { name: string; set: Partial<GranularPatch> }[] =
   { name: "Granular Low Choir Freeze", set: { source: "choir", pitch: -12, freeze: true, position: 0.7, size: 300, density: 16, cutoff: 2500, attack: 1, release: 2.5 } },
   { name: "Granular Shattered Glass", set: { source: "glass", shape: "sharp", size: 20, density: 60, spray: 0.7, pitchSpread: 2, stereo: 1, attack: 0.002, release: 0.9, cutoff: 12000 } },
   { name: "Granular Slow Motion Strings", set: { source: "strings", scan: 0.01, size: 450, density: 9, spray: 0.1, attack: 1.5, release: 3, cutoff: 3000 } },
+  // ---- grain library: clouds, freezes, swarms, stutters, reversed grains, granular leads and basses ----
+  { name: "Granular Pollen Cloud", set: { source: "glass", size: 22, density: 95, spray: 0.85, pitchSpread: 0.4, stereo: 1, attack: 0.4, release: 1.8, cutoff: 9000 } },
+  { name: "Granular Frozen Piano", set: { source: "piano", freeze: true, position: 0.05, size: 240, density: 26, spray: 0.04, attack: 0.9, release: 2.6, stereo: 0.7 } },
+  { name: "Granular Piano Dust", set: { source: "piano", size: 18, density: 85, spray: 0.9, pitchSpread: 0.2, stereo: 1, attack: 0.05, release: 1.4, cutoff: 7000 } },
+  { name: "Granular Broken Piano", set: { source: "piano", shape: "sharp", size: 28, density: 14, spray: 0.7, reverse: 0.35, attack: 0.002, release: 0.5, stereo: 0.9 } },
+  { name: "Granular Reverse Piano Swell", set: { source: "piano", reverse: 1, size: 360, density: 16, spray: 0.12, position: 0.08, attack: 2.2, release: 3, cutoff: 6000 } },
+  { name: "Granular Piano Octaves", set: { source: "piano", pitchSpread: 12, size: 130, density: 32, spray: 0.06, attack: 0.01, release: 1.6, stereo: 0.8 } },
+  { name: "Granular Harp Cloud", set: { source: "pluck", size: 70, density: 55, spray: 0.35, pitchSpread: 0.15, stereo: 1, attack: 0.004, release: 1.2 } },
+  { name: "Granular Frozen Pluck", set: { source: "pluck", freeze: true, position: 0.02, size: 200, density: 30, spray: 0.03, attack: 0.7, release: 2.2, cutoff: 5200 } },
+  { name: "Granular Koto Scatter", set: { source: "pluck", shape: "triangle", size: 45, density: 24, spray: 0.6, pitchSpread: 5, stereo: 1, attack: 0.002, release: 0.9 } },
+  { name: "Granular String Rain", set: { source: "pluck", shape: "sharp", size: 12, density: 70, spray: 1, pitchSpread: 0.3, stereo: 1, attack: 0.002, release: 0.7, cutoff: 11000 } },
+  { name: "Granular Grain Swarm", set: { source: "strings", size: 10, density: 120, spray: 0.75, pitchSpread: 0.8, stereo: 1, attack: 0.3, release: 1.5, cutoff: 8000 } },
+  { name: "Granular Time Freeze Choir", set: { source: "choir", freeze: true, position: 0.33, size: 420, density: 12, spray: 0.02, attack: 1.6, release: 3.4, cutoff: 4800 } },
+  { name: "Granular Cathedral Grains", set: { source: "choir", size: 380, density: 22, spray: 0.45, pitchSpread: 0.08, stereo: 1, attack: 2, release: 4.5, cutoff: 5500 } },
+  { name: "Granular Whisper Grains", set: { source: "choir", size: 16, density: 75, spray: 0.95, reverse: 0.5, stereo: 1, cutoff: 2400, resonance: 5, attack: 0.3, release: 1.2 } },
+  { name: "Granular Fifth Shimmer", set: { source: "glass", pitchSpread: 7, size: 260, density: 34, spray: 0.4, stereo: 1, reverse: 0.25, attack: 1.4, release: 3.2, cutoff: 14000 } },
+  { name: "Granular Icicle Spray", set: { source: "bell", pitch: 24, size: 9, density: 110, spray: 0.9, stereo: 1, attack: 0.002, release: 1.1, cutoff: 16000 } },
+  { name: "Granular Gamelan Grains", set: { source: "bell", shape: "triangle", size: 110, density: 12, spray: 0.55, pitchSpread: 3, stereo: 0.9, attack: 0.002, release: 2.2 } },
+  { name: "Granular Bowed Metal", set: { source: "bell", freeze: true, position: 0.5, size: 480, density: 18, spray: 0.08, attack: 1.8, release: 3.5, cutoff: 3200, resonance: 7 } },
+  { name: "Granular Underwater Cloud", set: { source: "glass", pitch: -12, size: 190, density: 40, spray: 0.6, cutoff: 700, resonance: 9, stereo: 1, attack: 0.9, release: 2.4 } },
+  { name: "Granular Subterranean", set: { source: "wind", pitch: -24, size: 460, density: 14, spray: 0.4, cutoff: 500, resonance: 3, attack: 2, release: 4 } },
+  { name: "Granular Sandstorm", set: { source: "wind", size: 8, density: 120, spray: 1, reverse: 0.5, stereo: 1, cutoff: 9000, resonance: 1.5, attack: 0.6, release: 1.4 } },
+  { name: "Granular Ocean Grains", set: { source: "wind", scan: 0.4, size: 300, density: 26, spray: 0.7, stereo: 1, cutoff: 1300, resonance: 2, attack: 1.8, release: 3.5 } },
+  { name: "Granular Stutter Choir", set: { source: "choir", shape: "sharp", freeze: true, position: 0.6, size: 40, density: 12, spray: 0, attack: 0.002, release: 0.25 } },
+  { name: "Granular Gated Glass", set: { source: "glass", shape: "sharp", freeze: true, size: 55, density: 8, spray: 0, attack: 0.002, release: 0.35, stereo: 0.3 } },
+  { name: "Granular Glitch Piano", set: { source: "piano", shape: "sharp", freeze: true, position: 0.02, size: 14, density: 30, spray: 0.25, pitchSpread: 12, attack: 0.002, release: 0.3, stereo: 1 } },
+  { name: "Granular Backwards Choir", set: { source: "choir", reverse: 1, scan: -0.2, size: 260, density: 24, spray: 0.3, attack: 1.4, release: 2.5 } },
+  { name: "Granular Tape Ghosts", set: { source: "strings", reverse: 0.6, scan: -0.05, pitchSpread: 1.2, size: 340, density: 11, spray: 0.5, cutoff: 2600, attack: 1, release: 3 } },
+  { name: "Granular Riser Cloud", set: { source: "wind", scan: 0.8, pitchSpread: 4, size: 120, density: 60, spray: 0.6, stereo: 1, cutoff: 12000, resonance: 4, attack: 3.5, release: 1.2 } },
+  { name: "Granular Particle Lead", set: { source: "strings", pitch: 12, shape: "triangle", size: 34, density: 90, spray: 0.08, pitchSpread: 0.05, attack: 0.01, release: 0.5, cutoff: 6500, resonance: 3 } },
+  { name: "Granular Glass Lead", set: { source: "glass", pitch: 12, size: 60, density: 70, spray: 0.03, attack: 0.02, release: 0.7, cutoff: 10000, stereo: 0.4 } },
+  { name: "Granular Grain Bass", set: { source: "strings", pitch: -24, shape: "triangle", size: 45, density: 75, spray: 0.02, pitchSpread: 0, attack: 0.004, release: 0.35, cutoff: 1100, resonance: 4, stereo: 0.1 } },
+  { name: "Granular Pluck Bass", set: { source: "pluck", pitch: -12, size: 90, density: 50, spray: 0.02, attack: 0.002, release: 0.4, cutoff: 1600, resonance: 2.5, stereo: 0.1 } },
+  { name: "Granular Music Box Cloud", set: { source: "bell", pitch: 12, shape: "triangle", size: 75, density: 20, spray: 0.4, reverse: 0.15, stereo: 1, attack: 0.003, release: 2.8, cutoff: 9000 } },
+  { name: "Granular Broken Radio", set: { source: "choir", size: 20, density: 45, spray: 0.8, pitchSpread: 2, reverse: 0.4, cutoff: 3200, resonance: 12, stereo: 0.6, attack: 0.1, release: 0.9 } },
+  { name: "Granular Slow Bloom", set: { source: "strings", scan: 0.03, size: 420, density: 20, spray: 0.35, pitchSpread: 0.2, stereo: 1, attack: 3.8, release: 5, cutoff: 7500 } },
+  { name: "Granular Cloud Keys", set: { source: "piano", size: 160, density: 36, spray: 0.22, stereo: 0.9, attack: 0.01, release: 2.2, cutoff: 8500 } },
+  { name: "Granular Vapor Choir", set: { source: "choir", pitch: 12, size: 220, density: 30, spray: 0.65, pitchSpread: 0.3, stereo: 1, cutoff: 7000, attack: 1.2, release: 3 } },
+  { name: "Granular Detroit Night Drone", set: { source: "strings", pitch: -12, freeze: true, position: 0.8, size: 500, density: 10, spray: 0.12, pitchSpread: 7, cutoff: 1400, resonance: 5, attack: 2.5, release: 4.5 } },
+  { name: "Granular Fireflies", set: { source: "glass", pitch: 24, shape: "sharp", size: 6, density: 35, spray: 1, pitchSpread: 1, stereo: 1, attack: 0.002, release: 1.6, cutoff: 15000 } },
+  { name: "Granular Scatter Arp", set: { source: "pluck", shape: "sharp", size: 24, density: 9, spray: 0.9, pitchSpread: 12, stereo: 1, attack: 0.002, release: 0.4, cutoff: 9000 } },
 ];
 
 /** Sound type for each grain preset, so the preset browser can sort them (Pad, Choir, Bell, Texture…). */
@@ -164,6 +207,46 @@ export const GRANULAR_PRESET_TYPES: Record<string, string> = {
   "Granular Low Choir Freeze": "Choir",
   "Granular Shattered Glass": "FX",
   "Granular Slow Motion Strings": "Pad",
+  "Granular Pollen Cloud": "Texture",
+  "Granular Frozen Piano": "Pad",
+  "Granular Piano Dust": "Texture",
+  "Granular Broken Piano": "Rhythmic",
+  "Granular Reverse Piano Swell": "FX",
+  "Granular Piano Octaves": "Keyboard",
+  "Granular Harp Cloud": "Pluck",
+  "Granular Frozen Pluck": "Pad",
+  "Granular Koto Scatter": "Pluck",
+  "Granular String Rain": "Rhythmic",
+  "Granular Grain Swarm": "Texture",
+  "Granular Time Freeze Choir": "Choir",
+  "Granular Cathedral Grains": "Choir",
+  "Granular Whisper Grains": "Texture",
+  "Granular Fifth Shimmer": "Pad",
+  "Granular Icicle Spray": "Bell",
+  "Granular Gamelan Grains": "Bell",
+  "Granular Bowed Metal": "Drone",
+  "Granular Underwater Cloud": "Texture",
+  "Granular Subterranean": "Drone",
+  "Granular Sandstorm": "Texture",
+  "Granular Ocean Grains": "Texture",
+  "Granular Stutter Choir": "Rhythmic",
+  "Granular Gated Glass": "Rhythmic",
+  "Granular Glitch Piano": "Rhythmic",
+  "Granular Backwards Choir": "FX",
+  "Granular Tape Ghosts": "FX",
+  "Granular Riser Cloud": "FX",
+  "Granular Particle Lead": "Lead",
+  "Granular Glass Lead": "Lead",
+  "Granular Grain Bass": "Bass",
+  "Granular Pluck Bass": "Bass",
+  "Granular Music Box Cloud": "Bell",
+  "Granular Broken Radio": "Texture",
+  "Granular Slow Bloom": "Pad",
+  "Granular Cloud Keys": "Keyboard",
+  "Granular Vapor Choir": "Choir",
+  "Granular Detroit Night Drone": "Drone",
+  "Granular Fireflies": "Texture",
+  "Granular Scatter Arp": "Rhythmic",
 };
 
 export function granularFromPreset(name: string): GranularPatch | null {
@@ -280,6 +363,41 @@ export function synthSource(kind: Exclude<GranularSource, "sample">, sampleRate:
     for (const st of strikes) {
       const off = Math.floor(st * sampleRate);
       for (let i = off; i < n; i++) out[i] = out[i]! + strike[i - off]!;
+    }
+  } else if (kind === "piano") {
+    // struck piano string: slightly stretched partials (inharmonic like real strings), bright attack,
+    // the upper partials die first; struck again every second so grains always find a hammer hit
+    const B = 0.0004;
+    const strike = new Float32Array(Math.floor(sampleRate));
+    for (let h = 1; h <= 14; h++) {
+      const f = f0 * h * Math.sqrt(1 + B * h * h);
+      if (f >= sampleRate / 2) break;
+      const amp = (1 / h) * (h === 1 ? 1 : 0.9) * Math.exp(-((h - 3) ** 2) / 40);
+      const decay = 1.6 + h * 0.55;
+      for (let i = 0; i < strike.length; i++) {
+        const t = i / sampleRate;
+        strike[i] = strike[i]! + amp * Math.exp(-decay * t) * Math.sin(tau * f * t + h);
+      }
+    }
+    for (let i = 0; i < Math.min(strike.length, 120); i++) strike[i] = strike[i]! + (r() * 2 - 1) * 0.25 * (1 - i / 120); // hammer thump
+    for (let st = 0; st < seconds; st++) {
+      const off = Math.floor(st * sampleRate);
+      for (let i = 0; i < strike.length && off + i < n; i++) out[off + i] = out[off + i]! + strike[i]!;
+    }
+  } else if (kind === "pluck") {
+    // plucked string (Karplus-Strong): a burst of noise in a tuned delay loop with a soft low-pass,
+    // plucked again every half second
+    const period = sampleRate / f0;
+    const len = Math.max(2, Math.round(period));
+    const loop = new Float32Array(len);
+    let w = 0;
+    for (let i = 0; i < n; i++) {
+      if (i % Math.floor(sampleRate / 2) === 0) for (let k = 0; k < len; k++) loop[k] = r() * 2 - 1;
+      const a = loop[w]!, b = loop[(w + 1) % len]!;
+      const v = 0.497 * (a + b);
+      loop[w] = v;
+      out[i] = a;
+      w = (w + 1) % len;
     }
   } else {
     // wind: noise through a slowly sweeping resonant band (state-variable filter)

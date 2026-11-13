@@ -40,7 +40,7 @@ describe("Granular Synth", () => {
   });
 
   it("built-in sources are real, clean sound", () => {
-    for (const kind of ["glass", "choir", "strings", "bell", "wind"] as const) {
+    for (const kind of ["glass", "choir", "strings", "bell", "wind", "piano", "pluck"] as const) {
       const d = synthSource(kind, 8000);
       let peak = 0;
       for (const v of d) { expect(Number.isFinite(v)).toBe(true); peak = Math.max(peak, Math.abs(v)); }
@@ -49,8 +49,8 @@ describe("Granular Synth", () => {
     }
   });
 
-  it("has 33 presets that each load a grain cloud", () => {
-    expect(GRANULAR_PRESETS).toHaveLength(33);
+  it("has 73 presets that each load a grain cloud", () => {
+    expect(GRANULAR_PRESETS).toHaveLength(73);
     for (const p of GRANULAR_PRESETS) expect(applyPreset(p.name).granular, p.name).toBeTruthy();
   });
 });
