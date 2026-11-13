@@ -419,7 +419,8 @@ export function DrumMachine({ track }: { track: Track }) {
           <Button variant="outline" size="icon" className="size-12" aria-label="Next pattern steps" disabled={currentStepPage === stepPages - 1} onClick={() => setStepPage(Math.min(stepPages - 1, currentStepPage + 1))}><ChevronRight /></Button>
         </div>
       )}
-      <div aria-label="Drum pattern steps" className="drum-steps max-h-48 space-y-1 overflow-auto" hidden={!isMobile || phoneView !== "steps"}>
+      {/* Built only when shown: an always-hidden copy of the grid was redrawn on every edit. */}
+      {isMobile && phoneView === "steps" && <div aria-label="Drum pattern steps" className="drum-steps max-h-48 space-y-1 overflow-auto" hidden={!isMobile || phoneView !== "steps"}>
         {pads.map((pad) => (
           <div key={pad.id} className="space-y-1" ref={(el) => { if (el) rowRefs.current.set(pad.id, el); else rowRefs.current.delete(pad.id); }}>
             <div className="flex items-center gap-2">
@@ -483,7 +484,7 @@ export function DrumMachine({ track }: { track: Track }) {
              )}
           </div>
         ))}
-      </div>
+      </div>}
 
       {/* Toolbar */}
       <div hidden={!isMobile && phoneView !== "kit"} className="drum-kit-tools flex flex-wrap items-center gap-2">

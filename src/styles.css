@@ -5138,3 +5138,6 @@ html.phone-console-active [role="option"] { min-height: 44px; font-size: 15px; }
 [data-step-live="true"] {
   border-color: var(--neon) !important;
 }
+.acid-step[data-step-live="true"] {
+  background: color-mix(in oklab, var(--primary) 25%, transparent);
+}

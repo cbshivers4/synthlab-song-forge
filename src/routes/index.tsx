@@ -2,7 +2,7 @@ import type { CSSProperties } from "react";
 import { usePlayStep } from "@/lib/synclab/playhead";
 import { ToolErrorBoundary } from "@/components/studio/ToolErrorBoundary";
 import { PhoneOrientation } from "@/components/studio/RotateGate";
-import { useEffect, useRef, useState } from "react";
+import { Activity, useEffect, useRef, useState } from "react";
 import { TrackSettingsDialog, openTrackSettings } from "@/components/studio/TrackSettingsDialog";
 import { useShortcuts } from "@/components/studio/useShortcuts";
 import { barBeat } from "@/lib/synclab/timebase";
@@ -557,7 +557,11 @@ function StudioWorkspace() {
           {isMobile && mobileView === "create" && !panel && !beatMode && <MobileCreate onBeatMode={() => setBeatMode(true)} onMore={() => setMoreSignal((n) => n + 1)} />}
           <h1 className="sr-only">SYNCLAB Studio — browser digital audio workstation</h1>
           {!isMobile && <TimelineTopBar />}
-          <Timeline />
+          {/* While an editor fills the workspace the timeline is hidden; Activity keeps its state but stops
+              redrawing it on every edit, which otherwise stalled the page during playback. */}
+          <Activity mode={!isMobile && panel && !workspace.split && !mixerDock ? "hidden" : "visible"}>
+            <Timeline />
+          </Activity>
           {!isMobile && panel && workspace.split && !mixerDock && <SplitHandle />}
           {mixerDock && <MixerDockHandle />}
           <SafePanels float={float} setFloat={setFloat} />

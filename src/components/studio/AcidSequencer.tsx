@@ -1,5 +1,5 @@
-import { usePlayStep } from "@/lib/synclab/playhead";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import { useStepLights } from "./use-step-lights";
 import { useStudio } from "@/lib/synclab/store";
 import { uid } from "@/lib/synclab/presets";
 import type { MidiNote, Track } from "@/lib/synclab/types";
@@ -11,11 +11,11 @@ interface Step { pitch: number; on: boolean; accent: boolean; slide: boolean }
 
 /** TD-3-style 16-step pattern: step write, accent, slide, rest, transpose. Reads/writes the track's real notes. */
 export function AcidSequencer({ track }: { track: Track }) {
-  const liveStep = usePlayStep();
   const { setNotes, previewNote, transport } = useStudio();
+  const rootRef = useRef<HTMLDivElement>(null);
+  useStepLights(rootRef, transport.playing);
   const [cursor, setCursor] = useState(0);
   const [octave, setOctave] = useState(2); // C2 = 36
-  const playStep = transport.playing ? Math.floor(liveStep) % 16 : -1;
 
   const steps: Step[] = useMemo(() => {
     const out: Step[] = Array.from({ length: 16 }, () => ({ pitch: 36, on: false, accent: false, slide: false }));
@@ -47,7 +47,7 @@ export function AcidSequencer({ track }: { track: Track }) {
     `rounded-[3px] border px-2 py-1 font-mono text-[10px] ${active ? "border-primary bg-primary font-bold text-primary-foreground" : "border-border text-muted-foreground hover:text-foreground"}`;
 
   return (
-    <div className="space-y-3 rounded-md border border-border bg-surface/70 p-3" aria-label="TD-3 step sequencer">
+    <div ref={rootRef} className="space-y-3 rounded-md border border-border bg-surface/70 p-3" aria-label="TD-3 step sequencer">
       <div className="flex flex-wrap items-center gap-2">
         <h3 className="label-xs text-primary">TD-3 STEP WRITE</h3>
         <span className="text-[10px] text-muted-foreground">Tap a step, then a note key — the cursor advances like the TD-3.</span>
@@ -66,12 +66,14 @@ export function AcidSequencer({ track }: { track: Track }) {
           <button
             key={i}
             type="button"
+            data-step-index={i}
+            data-step-period={16}
             aria-label={`Step ${i + 1}${s.on ? ` ${noteName(s.pitch)}` : " rest"}`}
             aria-pressed={cursor === i}
             onClick={() => setCursor(i)}
             className={`flex flex-col items-center gap-0.5 rounded-[3px] border p-1 font-mono text-[9px] ${
               cursor === i ? "border-primary" : "border-border"
-            } ${playStep === i ? "bg-primary/25" : s.on ? "bg-surface-2" : "bg-surface"}`}
+            } acid-step ${s.on ? "bg-surface-2" : "bg-surface"}`}
           >
             <span className="text-muted-foreground">{i + 1}</span>
             <span className={s.on ? "text-foreground" : "text-muted-foreground"}>{s.on ? noteName(s.pitch) : "—"}</span>

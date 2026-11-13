@@ -1,4 +1,5 @@
-import { getPlayStep, usePlayStep } from "@/lib/synclab/playhead";
+import { getPlayStep } from "@/lib/synclab/playhead";
+import { useStepLights } from "./use-step-lights";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Disc3, Grid2x2, Mic, Minus, Play, Plus, Settings2, Shuffle, SlidersHorizontal, Square, Waves, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -54,9 +55,10 @@ function buzz(ms = 12) {
  * same project state as the desktop studio — no separate engine, no demo mode.
  */
 export function MobileBeat({ onClose }: { onClose: () => void }) {
-  const liveStep = usePlayStep();
   const { tracks, addTrack, updatePad, generateBeat, transport, setTransport, togglePlay, stop, updateTrack, addClip, previewClip, setPanel } =
     useStudio();
+  const rootRef = useRef<HTMLDivElement>(null);
+  useStepLights(rootRef, transport.playing);
   const [tab, setTab] = useState<Tab>("pads");
   const [padIdx, setPadIdx] = useState(0);
   const [page, setPage] = useState(0);
@@ -301,7 +303,7 @@ export function MobileBeat({ onClose }: { onClose: () => void }) {
   const bpm = transport.bpm;
 
   return (
-    <div className="mobile-beat fixed inset-0 z-50 flex flex-col bg-background">
+    <div ref={rootRef} className="mobile-beat fixed inset-0 z-50 flex flex-col bg-background">
       {/* Transport — big targets, always visible */}
       <header className="mobile-beat-header grid shrink-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 border-b-2 border-border bg-surface-2/70 px-3 py-2">
         <div className="flex items-center gap-2">
@@ -427,15 +429,16 @@ export function MobileBeat({ onClose }: { onClose: () => void }) {
               {Array.from({ length: Math.min(16, stepCount - pageStart) }, (_, n) => {
                 const i = pageStart + n;
                 const v = pad.steps[i] ?? 0;
-                const live = transport.playing && liveStep === i % 16;
                 return (
                   <button
                     key={i}
+                    data-step-index={i % 16}
+                    data-step-period={16}
                     aria-label={`${pad.name} step ${i + 1}`}
                     onClick={() => cycleStep(i)}
                     className="flex h-16 touch-none items-end justify-between rounded-xl border-2 p-2 font-mono text-[10px] select-none active:scale-95"
                     style={{
-                      borderColor: live ? "var(--neon)" : v > 0 ? padColor(padIdx) : "var(--color-border)",
+                      borderColor: v > 0 ? padColor(padIdx) : "var(--color-border)",
                       background:
                         v > 0
                           ? `color-mix(in oklab, ${padColor(padIdx)} ${20 + v * 55}%, transparent)`
