@@ -273,3 +273,14 @@
 - [x] Every arp/sequence preset gets its own rate, rhythm and riff (shared live/song/export arp)
 - [x] Song playback arpeggiates held chords; chord mode for stab sequences
 - [x] Modelled piano engine (grand, bright, felt, upright, honky-tonk, tine EP, reed EP, toy) + Piano presets; Live Keys pianos use it
+
+## Request 2026-11-13 (settings, DJ, synths, browser, open source, customizing, drummer, Studio View)
+- [ ] Settings: hide audio interface details unless an interface is connected
+- [ ] DJ Decks: show the record being placed on the deck, moving/scrolling waveform, browser scrolling to the chosen song (waiting on answer)
+- [ ] Modular Tech + Granular: many more presets; truly granular sounds
+- [ ] Modular Tech: more advanced, technical modules
+- [ ] Logic-style browser: type to find sounds/presets/effects fast
+- [ ] Open source / usable by Claude Code, Codex and similar (waiting on answer)
+- [ ] Reaper-style customizing: swap in different mixer/reel/synth designs (waiting on answer)
+- [ ] Live Drummer: real-looking drum kit that visibly plays
+- [ ] Studio View: show connected guitar/bass/external synth; back view shows Bluetooth/cable connections (waiting on answer)
