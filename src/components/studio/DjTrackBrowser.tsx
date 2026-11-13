@@ -7,7 +7,9 @@ import { getPlaylists } from "@/lib/synclab/dj-playlist-store";
 import { getTrackInfo } from "@/lib/synclab/dj-track-info";
 import { splitArtistTitle } from "@/lib/synclab/track-tags";
 import type { PlaylistTrack } from "@/lib/synclab/dj-playlist";
-import { DJ_TRACK_DRAG, isOnDeck, loadPlaylistTrack } from "./DjPlaylist";
+import { DJ_TRACK_DRAG, deckLabel, isOnDeck, loadPlaylistTrack } from "./DjPlaylist";
+import { useFoundRow } from "./dj-found";
+import "./dj-replay.css";
 import { getDjMidi } from "@/lib/synclab/dj-midi";
 import { TimelineVScrollbar } from "./timeline/VScrollbar";
 
@@ -32,6 +34,7 @@ export function DjTrackBrowser() {
   const [loading, setLoading] = useState<DeckId | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  useFoundRow(listRef);
 
   useEffect(() => { try { if (localStorage.getItem(OPEN_KEY) === "0") setOpen(false); } catch { /* private mode */ } }, []);
   useEffect(() => { void s.init(); }, [s]);
@@ -99,7 +102,7 @@ export function DjTrackBrowser() {
                       ? (deckBpm > 0 || ti?.bpmFrom === "deck" ? "Tempo detected by the deck" : ti?.bpmFrom === "tag" ? "Tempo from the file's tag" : "Tempo measured on this device")
                       : ti?.scan === "failed" ? "Couldn't measure this file's tempo" : "Measuring the tempo…";
                     return (
-                      <li key={t.id} className="dj-browser-row" data-on={decks.join("") || undefined} aria-selected={selected === t.id} draggable
+                      <li key={t.id} className="dj-browser-row" data-track-name={t.name} data-track-label={deckLabel(t)} data-on={decks.join("") || undefined} aria-selected={selected === t.id} draggable
                         onClick={() => midi.setCursor(i)}
                         onDragStart={(e) => { e.dataTransfer.setData("application/synclab", JSON.stringify({ type: DJ_TRACK_DRAG, id: t.id })); e.dataTransfer.effectAllowed = "copy"; }}>
                         <span className="dj-browser-num">{i + 1}</span>

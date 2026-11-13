@@ -1,0 +1,36 @@
+/* A new record is placed onto the platter: it comes in from above the deck, lands, settles. */
+@keyframes dj-record-drop {
+  0% { transform: translate(-38%, -62%) scale(1.22) rotate(-24deg); opacity: 0; filter: drop-shadow(0 18px 18px oklch(0 0 0 / 0.65)); }
+  18% { opacity: 1; }
+  62% { transform: translate(0, 0) scale(1.05) rotate(0); filter: drop-shadow(0 8px 10px oklch(0 0 0 / 0.55)); }
+  80% { transform: scale(0.985); }
+  100% { transform: none; filter: none; }
+}
+.dj-vinyl[data-drop="1"] { animation: dj-record-drop 900ms cubic-bezier(0.22, 0.9, 0.3, 1) both; }
+.dj-record-title {
+  position: absolute; left: 8%; right: 8%; top: 8%; overflow: hidden; text-align: center; white-space: nowrap; text-overflow: ellipsis;
+  font-family: var(--font-display); font-size: 7px; line-height: 1.1; letter-spacing: 0.04em; color: oklch(0.12 0 0); pointer-events: none;
+}
+
+/* The song being loaded lights up in the track list / playlist and is scrolled into view. */
+@keyframes dj-row-found {
+  0%, 100% { box-shadow: inset 0 0 0 0 transparent; }
+  15%, 70% { box-shadow: inset 4px 0 0 0 var(--neon), inset 0 0 0 1px color-mix(in oklab, var(--neon) 70%, transparent); background: color-mix(in oklab, var(--neon) 18%, transparent); }
+}
+[data-found="1"] { animation: dj-row-found 1.6s ease-out both; }
+
+/* Replay: the decks only show the recorded performance; hands off until it ends or you stop it. */
+.dj-device[data-replay="1"] .dj-waves,
+.dj-device[data-replay="1"] .dj-console { pointer-events: none; }
+.dj-replay-banner {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 6px;
+  border: 1px solid color-mix(in oklab, var(--neon) 60%, transparent); background: color-mix(in oklab, var(--neon) 12%, var(--surface));
+  color: var(--foreground); font-size: 12px;
+}
+.dj-replay-banner b { font-family: var(--font-display); letter-spacing: 0.08em; color: var(--neon); }
+.dj-replay-bar { position: relative; flex: 1 1 120px; height: 4px; min-width: 80px; border-radius: 2px; background: var(--surface-2); overflow: hidden; }
+.dj-replay-bar > i { position: absolute; inset: 0 auto 0 0; width: calc(var(--p, 0) * 100%); background: var(--neon); }
+
+@media (prefers-reduced-motion: reduce) {
+  .dj-vinyl[data-drop="1"], [data-found="1"] { animation-duration: 1ms; }
+}

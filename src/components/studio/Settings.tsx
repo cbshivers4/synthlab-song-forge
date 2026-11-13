@@ -33,6 +33,7 @@ import { openExport } from "@/components/studio/ExportDialog";
 import { DesktopPanel } from "@/components/studio/DesktopPanel";
 import { PluginManager } from "@/components/studio/PluginManager";
 import { AudioInterfaceCard } from "@/components/studio/AudioInterfaceCard";
+import { connectedInterface } from "@/lib/synclab/audio-interface-detect";
 import { BluetoothDevices } from "@/components/studio/BluetoothDevices";
 import { replayMobileTour, saveMobileAccessibility, useMobileAccessibility } from "@/lib/synclab/mobile-accessibility";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -255,6 +256,7 @@ export function Settings() {
   const [inputs, setInputs] = useState<{ id: string; label: string }[]>([]);
   const [outputs, setOutputs] = useState<{ id: string; label: string }[]>([]);
   const [scanning, setScanning] = useState(false);
+  const interfaceName = connectedInterface(inputs, outputs, p.inputDevice);
   const mobilePrefs = useMobileAccessibility();
   const [hapticsAvailable, setHapticsAvailable] = useState(false);
   useEffect(() => { setHapticsAvailable(typeof navigator !== "undefined" && typeof navigator.vibrate === "function"); }, []);
@@ -429,22 +431,26 @@ export function Settings() {
               .catch((e: unknown) => toast.error("Couldn't change output", { description: e instanceof Error ? e.message : "This browser plays through your system output — pick the Bluetooth device in system sound settings." }));
           }}
         />
-        <div className="mb-4">
-          <AudioInterfaceCard
-            inputs={inputs}
-            outputs={outputs}
-            inputDevice={p.inputDevice}
-            channel={inChan}
-            sampleRate={getEngine().ctx ? getEngine().sampleRate : 0}
-            scanning={scanning}
-          />
-        </div>
+        {/* Interface details only when one is actually plugged in — built-in mics and Bluetooth aren't interfaces. */}
+        {interfaceName && (
+          <div className="mb-4">
+            <AudioInterfaceCard
+              inputs={inputs}
+              outputs={outputs}
+              inputDevice={p.inputDevice}
+              interfaceName={interfaceName}
+              channel={inChan}
+              sampleRate={getEngine().ctx ? getEngine().sampleRate : 0}
+              scanning={scanning}
+            />
+          </div>
+        )}
         <Row
           label="Input device"
           hint={
             inputs.length
               ? "Recording, sampling and Hum to Beat all use this input"
-              : "Press Detect devices to list your audio interface (Volt 1, etc.)"
+              : "Press Detect devices to list your microphones and inputs"
           }
         >
           <Pick
@@ -458,6 +464,7 @@ export function Settings() {
             }}
           />
         </Row>
+        {interfaceName && (
         <Row label="Input channel" hint="Pick input 1 or 2 of your interface, or record both as stereo">
           <Pick
             value={inChan === "in1" ? "Input 1 (mono)" : inChan === "in2" ? "Input 2 (mono)" : "Stereo (1+2)"}
@@ -470,6 +477,7 @@ export function Settings() {
             }}
           />
         </Row>
+        )}
         <Row label="Input gain" hint={`${inGain > 0 ? "+" : ""}${inGain} dB — applied before the meter and the recording`}>
           <Slider
             className="w-40"

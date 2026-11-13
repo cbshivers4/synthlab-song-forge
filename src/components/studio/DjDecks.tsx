@@ -54,7 +54,8 @@ export function DjDecks() {
 function DjDesk() {
   useDjVersion();
   const dj = getDj();
-  const anyPlaying = dj.A.state.playing || dj.B.state.playing;
+  const replay = dj.replaying;
+  const anyPlaying = dj.A.state.playing || dj.B.state.playing || replay;
   const phone = useIsLandscapePhone();
   const [listOpen, setListOpen] = useState(false);
   const [phonesOpen, setPhonesOpen] = useState(false);
@@ -71,7 +72,8 @@ function DjDesk() {
     return () => { offDj(); offMidi(); midi.loader = null; };
   }, [dj]);
   return (
-    <section ref={deskRef} className="dj-device relative space-y-2 rounded-md border border-border p-2 sm:p-3" aria-label="DJ decks">
+    <section ref={deskRef} className="dj-device relative space-y-2 rounded-md border border-border p-2 sm:p-3" aria-label="DJ decks" data-replay={replay ? "1" : undefined}>
+      {replay && <ReplayBanner />}
       {!phone && (
         <header className="flex flex-wrap items-center gap-2">
           <Disc3 className="size-5 text-primary" />
@@ -116,12 +118,13 @@ function ScrollingWave({ id, active }: { id: DeckId; active: boolean }) {
     if (!g) return;
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     g.clearRect(0, 0, w, h);
-    const wave = deck.wave;
+    const wave = deck.shownWave;
+    const shown = deck.shown;
     const mid = h / 2;
     const low = cssVar(c, "--dj-low", "#e0413a"), md = cssVar(c, "--dj-mid", "#4ccf5a"), hi = cssVar(c, "--dj-high", "#3f8bff");
     const grid = cssVar(c, "--dj-grid", "rgba(255,255,255,.18)"), head = cssVar(c, "--playhead", "#fff");
     if (wave) {
-      const pos = deck.position();
+      const pos = deck.shownPosition();
       const span = 8; // seconds shown
       const pxPerSec = w / span;
       const start = pos - span / 2;
@@ -134,10 +137,10 @@ function ScrollingWave({ id, active }: { id: DeckId; active: boolean }) {
         g.fillStyle = md; const b = scale(m + hh); g.fillRect(x, mid - b, 1, b * 2);
         g.fillStyle = hi; const d = scale(hh); g.fillRect(x, mid - d, 1, d * 2);
       }
-      const bpm = deck.state.bpm;
+      const bpm = shown.bpm;
       if (bpm > 0) {
         const beat = 60 / bpm;
-        const first = deck.state.firstBeat;
+        const first = shown.firstBeat;
         let n = Math.ceil((start - first) / beat);
         for (let t = first + n * beat; t < start + span; t += beat, n++) {
           const x = (t - start) * pxPerSec;
@@ -145,12 +148,12 @@ function ScrollingWave({ id, active }: { id: DeckId; active: boolean }) {
           g.fillRect(Math.round(x), n % 4 === 0 ? 0 : h * 0.72, n % 4 === 0 ? 2 : 1, n % 4 === 0 ? h : h * 0.28);
         }
       }
-      const loop = deck.state.loop;
+      const loop = shown.loop;
       if (loop) {
         g.fillStyle = cssVar(c, "--dj-loop", "rgba(255,200,0,.18)");
         g.fillRect((loop.start - start) * pxPerSec, 0, (loop.end - loop.start) * pxPerSec, h);
       }
-      deck.state.hotCues.forEach((cue, i) => {
+      shown.hotCues.forEach((cue, i) => {
         if (cue == null) return;
         const x = (cue - start) * pxPerSec;
         if (x < 0 || x > w) return;
@@ -197,18 +200,20 @@ function ScrollingWave({ id, active }: { id: DeckId; active: boolean }) {
 
 function Overview({ id }: { id: DeckId }) {
   const canvas = useRef<HTMLCanvasElement>(null);
-  const deck = getDj().deck(id);
-  useFrame(deck.state.playing, () => {
+  const dj = getDj();
+  const deck = dj.deck(id);
+  useFrame(deck.shown.playing || dj.replaying, () => {
     const c = canvas.current;
-    const ov = deck.overview;
+    const ov = deck.shownOverview;
+    const dur = deck.shownDuration;
     if (!c) return;
     const w = c.clientWidth, h = c.clientHeight;
     if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
     const g = c.getContext("2d");
     if (!g) return;
     g.clearRect(0, 0, w, h);
-    if (!ov || !deck.buffer) return;
-    const played = deck.position() / deck.buffer.duration;
+    if (!ov || !(dur > 0)) return;
+    const played = deck.shownPosition() / dur;
     const fg = cssVar(c, "--dj-overview", "#8fd6e0"), dim = cssVar(c, "--dj-overview-played", "rgba(143,214,224,.35)");
     for (let x = 0; x < w; x++) {
       const v = ov[Math.floor((x / w) * ov.length)] ?? 0;
@@ -216,7 +221,7 @@ function Overview({ id }: { id: DeckId }) {
       g.fillStyle = x / w < played ? dim : fg;
       g.fillRect(x, (h - a) / 2, 1, a);
     }
-    deck.state.hotCues.forEach((cue, i) => { if (cue != null) { g.fillStyle = cssVar(c, `--dj-cue-${i + 1}`, "#f5a623"); g.fillRect((cue / deck.buffer!.duration) * w, 0, 2, h); } });
+    deck.shown.hotCues.forEach((cue, i) => { if (cue != null) { g.fillStyle = cssVar(c, `--dj-cue-${i + 1}`, "#f5a623"); g.fillRect((cue / dur) * w, 0, 2, h); } });
     g.fillStyle = cssVar(c, "--playhead", "#fff");
     g.fillRect(played * w - 1, 0, 2, h);
   });
@@ -232,7 +237,8 @@ function Overview({ id }: { id: DeckId }) {
 function DeckPanel({ id }: { id: DeckId }) {
   const dj = getDj();
   const deck = dj.deck(id);
-  const s = deck.state;
+  // shows the recorded performance during "Replay moves"; buttons act on the live deck
+  const s = deck.shown;
   const { tracks, transport, buses, vcas, auxReturns, fxChains } = useStudio();
   const fileRef = useRef<HTMLInputElement>(null);
   const [over, setOver] = useState(false);
@@ -267,7 +273,7 @@ function DeckPanel({ id }: { id: DeckId }) {
       if (local) void loadFile(local.file);
     } catch { /* not a file */ }
   };
-  const pos = deck.position();
+  const pos = deck.shownPosition();
   const pct = (s.pitch * 100).toFixed(1);
   const phone = useIsLandscapePhone();
   const loadRow = (
@@ -353,7 +359,7 @@ function DeckPanel({ id }: { id: DeckId }) {
           <p className="font-mono text-[11px] text-muted-foreground">{s.name ? `${clock(pos)} / -${clock(s.duration - pos)}` : "MP3 · WAV · AAC · FLAC"}</p>
         </div>
         <div className="dj-bpm" title="Detected tempo × pitch">
-          <b>{s.bpm ? deck.effectiveBpm.toFixed(1) : "—"}</b>
+          <b>{s.bpm ? deck.shownEffectiveBpm.toFixed(1) : "—"}</b>
           <span>{s.pitch >= 0 ? "+" : ""}{pct}%</span>
         </div>
       </div>
@@ -471,12 +477,12 @@ function MixerPanel({ onPlaylist, onPhones, onHardware }: { active: boolean; onP
   );
   const phone = useIsLandscapePhone();
   const cueBtn = (id: DeckId) => (
-    <button type="button" className="djm-cue" data-deck={id} aria-pressed={dj.deck(id).state.phones}
+    <button type="button" className="djm-cue" data-deck={id} aria-pressed={dj.deck(id).shown.phones}
       onClick={() => togglePhonesCue(id, phone ? onPhones : undefined)} aria-label={`Deck ${id} headphone cue`} title="Hear this deck in your headphones">{phone ? <>CUE<b className="dj-cue-deck">{id}</b></> : "CUE"}</button>
   );
   const knobs = (id: DeckId) => {
     const deck = dj.deck(id);
-    const s = deck.state;
+    const s = deck.shown;
     const k = phone ? { size: 26, className: "dj-knob" } : { size: 34, className: "djm-knob" };
     if (!phone) {
       return (
@@ -506,13 +512,13 @@ function MixerPanel({ onPlaylist, onPhones, onHardware }: { active: boolean; onP
     <div className="dj-fader-row">
       {withMeter && meter(id)}
       {!withMeter && <FaderScale />}
-      <Slider orientation="vertical" className="dj-vfader" min={0} max={1} step={0.01} value={[dj.deck(id).state.fader]} onValueChange={([v = 0]) => dj.deck(id).setFader(v)} aria-label={`Deck ${id} volume`} />
+      <Slider orientation="vertical" className="dj-vfader" min={0} max={1} step={0.01} value={[dj.deck(id).shown.fader]} onValueChange={([v = 0]) => dj.deck(id).setFader(v)} aria-label={`Deck ${id} volume`} />
     </div>
   );
   const xfader = (
     <div className="dj-xfader">
       <span className="dj-label">{phone ? "A" : "◀ A"}</span>
-      <div className="djm-xgrill"><Slider min={-1} max={1} step={0.01} value={[dj.state.crossfader]} onValueChange={([v = 0]) => dj.setCrossfader(v)} aria-label="Crossfader" className="dj-xfader-slider" /></div>
+      <div className="djm-xgrill"><Slider min={-1} max={1} step={0.01} value={[dj.shownMix.crossfader]} onValueChange={([v = 0]) => dj.setCrossfader(v)} aria-label="Crossfader" className="dj-xfader-slider" /></div>
       <span className="dj-label">{phone ? "B" : "B ▶"}</span>
       <button type="button" className="dj-range" onClick={() => dj.setCrossfader(0)} title="Centre the crossfader">◆</button>
     </div>
@@ -528,7 +534,7 @@ function MixerPanel({ onPlaylist, onPhones, onHardware }: { active: boolean; onP
             {fader("A")}
           </div>
           <div className="dj-phone-master">
-            <Knob label="MASTER" value={dj.state.master} min={0} max={1.2} onChange={(v) => dj.setMaster(v)} defaultValue={0.9} size={26} className="dj-knob is-wide" format={(v) => `${Math.round(v * 100)}%`} />
+            <Knob label="MASTER" value={dj.shownMix.master} min={0} max={1.2} onChange={(v) => dj.setMaster(v)} defaultValue={0.9} size={26} className="dj-knob is-wide" format={(v) => `${Math.round(v * 100)}%`} />
             {meter("M")}
           </div>
           <div className="dj-phone-strip" data-deck="B" role="group" aria-label="Deck B controls (right turntable)">
@@ -561,7 +567,7 @@ function MixerPanel({ onPlaylist, onPhones, onHardware }: { active: boolean; onP
       <div className="djm-top">
         {channel("A")}
         <div className="djm-center">
-          <Knob label="MASTER LEVEL" value={dj.state.master} min={0} max={1.2} onChange={(v) => dj.setMaster(v)} defaultValue={0.9} size={36} className="djm-knob" format={(v) => `${Math.round(v * 100)}%`} />
+          <Knob label="MASTER LEVEL" value={dj.shownMix.master} min={0} max={1.2} onChange={(v) => dj.setMaster(v)} defaultValue={0.9} size={36} className="djm-knob" format={(v) => `${Math.round(v * 100)}%`} />
           <div className="djm-bridge" aria-label="Level meters">
             <div className="djm-bridge-head" aria-hidden><span>CH1</span><span>MASTER</span><span>CH2</span></div>
             <div className="djm-bridge-meters">{meter("A")}{meter("M", true)}{meter("B")}</div>
@@ -621,10 +627,35 @@ function RecordPanel() {
         <>
           <Button className="dj-btn" variant="outline" disabled={!!busy} onClick={() => void save("mp3")} aria-label="Save the mix as MP3"><Download className="size-4" />MP3</Button>
           <Button className="dj-btn" variant="outline" disabled={!!busy} onClick={() => void save("wav")} aria-label="Save the mix as WAV"><Download className="size-4" />WAV</Button>
+          {dj.canReplay && (
+            <Button className="dj-btn" variant="outline" aria-pressed={dj.replaying} disabled={!!busy}
+              onClick={() => {
+                if (dj.replaying) { dj.stopReplay(); return; }
+                try { dj.startReplay(); } catch (e) { toast((e as Error).message); }
+              }}
+              aria-label={dj.replaying ? "Stop the replay" : "Replay my moves with the recorded mix"} title="Watch your set again: the records, waveforms, knobs and faders move exactly as you played them">
+              {dj.replaying ? <Square className="size-4 fill-current" /> : <Play className="size-4 fill-current" />}<span className="dj-btn-text">{dj.replaying ? "Stop replay" : "Replay moves"}</span>
+            </Button>
+          )}
           <Button className="dj-btn" variant="ghost" disabled={!!busy} onClick={() => dj.discardRecording()} aria-label="Discard recording"><Trash2 className="size-4" /></Button>
         </>
       )}
       {busy && <span className="text-xs text-muted-foreground">{busy}</span>}
+    </div>
+  );
+}
+
+/** Shown while a recorded mix replays: the decks are only showing what you did, so hands are off until it ends. */
+function ReplayBanner() {
+  const dj = getDj();
+  const total = dj.recordedSeconds;
+  const at = dj.replaySeconds;
+  return (
+    <div className="dj-replay-banner" role="status">
+      <b>REPLAY</b>
+      <span>Watching your recorded set — {clock(at)} / {clock(total)}</span>
+      <span className="dj-replay-bar" aria-hidden style={{ "--p": total > 0 ? Math.min(1, at / total).toFixed(4) : "0" } as CSSProperties}><i /></span>
+      <Button size="sm" variant="secondary" className="dj-btn" onClick={() => dj.stopReplay()}><Square className="size-3.5 fill-current" />Stop replay</Button>
     </div>
   );
 }

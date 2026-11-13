@@ -8,6 +8,8 @@ type Props = {
   inputs: DeviceOption[];
   outputs: DeviceOption[];
   inputDevice: string;
+  /** Name of the interface that is plugged in; the card is only shown when there is one. */
+  interfaceName: string;
   channel: "in1" | "in2" | "stereo";
   sampleRate: number;
   scanning: boolean;
@@ -56,12 +58,12 @@ function Stat({ label, value }: { label: string; value: string }) {
  * picture shows when the label matches, otherwise a generic front panel is
  * drawn with the real name.
  */
-export function AudioInterfaceCard({ inputs, outputs, inputDevice, channel, sampleRate, scanning }: Props) {
+export function AudioInterfaceCard({ inputs, outputs, inputDevice, interfaceName, channel, sampleRate, scanning }: Props) {
   const apple = useIsAppleMobile();
-  const current = inputDevice === "System default" ? null : inputs.find((d) => d.label === inputDevice) ?? null;
-  const label = current?.label ?? "System default input";
-  const isVolt = /volt/i.test(current?.label ?? "");
-  const active = Boolean(current) || inputDevice !== "System default";
+  const current = inputs.find((d) => d.label === inputDevice) ?? null;
+  const label = interfaceName;
+  const isVolt = /volt/i.test(interfaceName);
+  const active = true;
   return (
     <div className="flex flex-col overflow-hidden rounded-lg border border-border bg-surface sm:flex-row">
       <div className="relative h-36 w-full shrink-0 overflow-hidden bg-background sm:h-44 sm:w-60">
@@ -76,7 +78,7 @@ export function AudioInterfaceCard({ inputs, outputs, inputDevice, channel, samp
             active ? "border-primary/60 bg-primary/15 text-primary" : "border-border bg-surface text-muted-foreground"
           )}
         >
-          {isVolt ? "Volt · 1 in / 2 out" : active ? "Interface" : "No interface detected"}
+          {isVolt ? "Volt · 1 in / 2 out" : "Interface connected"}
         </span>
         <span className="absolute bottom-2 left-2 rounded-sm border border-border bg-surface px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
           {channel === "in1" ? "IN 1" : channel === "in2" ? "IN 2" : "IN 1 + 2"}
@@ -88,9 +90,9 @@ export function AudioInterfaceCard({ inputs, outputs, inputDevice, channel, samp
           <div className="truncate text-[11px] text-muted-foreground">
             {isVolt
               ? "USB audio interface — mic input, headphones and monitor out"
-              : current
-                ? "USB audio device — recording, sampling and Hum to Beat use this input"
-                : "Playing and recording through your computer's chosen audio device"}
+              : current && current.label.includes(interfaceName)
+                ? "Audio interface — recording, sampling and Hum to Beat use this input"
+                : "Audio interface connected — pick it as the Input device below to record from it"}
           </div>
         </div>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -105,9 +107,7 @@ export function AudioInterfaceCard({ inputs, outputs, inputDevice, channel, samp
         <div className="truncate text-[10px] text-muted-foreground">
           {scanning
             ? "Reading your audio devices…"
-            : inputs.length
-              ? "The drawing follows the interface named above when the browser recognizes it."
-              : "Press Detect devices below to show your interface here."}
+            : "The drawing follows the interface named above when the browser recognizes it."}
         </div>
         {/* iPad/iPhone route audio per app in Control Centre, so the picker above cannot move sound there. */}
         {apple && (

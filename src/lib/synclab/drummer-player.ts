@@ -44,7 +44,8 @@ class DrummerPlayer {
   private ignoreSong = false;
   /** "song": wait for the song clock, never free-run */
   private waitSince: number | null = null;
-  private hitListeners = new Set<(role: DrumRole, vel: number) => void>();
+  /** (role, velocity, audio-clock time the hit sounds) — told when the hit is scheduled, ~0.3 s early */
+  private hitListeners = new Set<(role: DrumRole, vel: number, when: number) => void>();
   private nextStep = 0;
   private nextTime = 0;
   private lastTime = 0;
@@ -150,7 +151,7 @@ class DrummerPlayer {
 
   subscribe(fn: () => void) { this.listeners.add(fn); return () => void this.listeners.delete(fn); }
   /** Called as each hit is heard (for the drum set picture). */
-  onHit(fn: (role: DrumRole, vel: number) => void) { this.hitListeners.add(fn); return () => void this.hitListeners.delete(fn); }
+  onHit(fn: (role: DrumRole, vel: number, when: number) => void) { this.hitListeners.add(fn); return () => void this.hitListeners.delete(fn); }
   private emit() { this.listeners.forEach((l) => l()); }
 
   /** Put a queued fill/break/crash on the right bar relative to what is playing now. */
@@ -271,10 +272,11 @@ class DrummerPlayer {
       if (!target || target.pad.muted || (padSolo && !target.pad.solo)) continue;
       const pad = target.pitch ? { ...target.pad, pitch: target.pad.pitch + target.pitch } : target.pad;
       const n = Math.max(1, Math.min(4, h.retrig ?? 1));
-      for (let k = 0; k < n; k++) engine.playDrum(t.id, pad, h.vel * (n > 1 ? 0.75 + 0.25 * (k / n) : 1), swung + (k * dur) / n);
-      if (this.hitListeners.size) {
-        const role = h.role, vel = h.vel;
-        setTimeout(() => this.hitListeners.forEach((l) => l(role, vel)), Math.max(0, (swung - (engine.ctx?.currentTime ?? swung)) * 1000));
+      for (let k = 0; k < n; k++) {
+        const vel = h.vel * (n > 1 ? 0.75 + 0.25 * (k / n) : 1), when = swung + (k * dur) / n;
+        engine.playDrum(t.id, pad, vel, when);
+        // the kit picture queues this and moves the piece when the audio clock gets there (one per retrigger)
+        this.hitListeners.forEach((l) => l(h.role, vel, when));
       }
     }
   }

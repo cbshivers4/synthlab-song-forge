@@ -3,6 +3,7 @@ import { getEngine } from "./audio-engine";
 import { findCoverArt } from "./cover-art";
 import { bandWave, beatPhase, crossfade, detectBpm, eqDb, filterFor, phaseShift, phonesBlend, phonesRoute, snapToBeat, speedFactor, syncRate, wavFromPcm16, type BandWave, type PhonesMode } from "./dj";
 import { ScratchVoice } from "./dj-scratch";
+import { frameAt, loadsUsed, pushFrame, type DeckFrame, type MixFrame } from "./dj-moves";
 import { isAppleMobile } from "./mic";
 
 /**
@@ -64,6 +65,8 @@ export interface DeckState {
   phones: boolean;
   /** turntable speed button */
   rpm: 33 | 45;
+  /** counts up on every successful load (also a reload of the same song) — drives the record-drop animation */
+  loadSeq: number;
 }
 export interface MixState {
   crossfader: number; master: number; recording: boolean; recSeconds: number; hasMix: boolean; recLimit: number;
@@ -77,6 +80,11 @@ export function canPickPhonesDevice() {
 }
 
 const REC_LIMIT = 30 * 60;
+/** Each successful load on either deck gets the next number, so replay knows which record was on. */
+let loadCounter = 0;
+/** What a load put on the deck, kept a while so a replayed mix can show earlier records and waveforms. */
+interface LoadInfo { name: string; wave: BandWave | null; overview: Float32Array | null; duration: number; bpm: number; firstBeat: number; art: string | null }
+const KEEP_LOADS = 16;
 const captureCode = `class DjCapture extends AudioWorkletProcessor {
   constructor() { super(); this.on = false; this.buf = new Int16Array(16384); this.n = 0;
     this.port.onmessage = ({ data }) => { if (data === 'start') { this.n = 0; this.on = true; } if (data === 'stop') { this.flush(); this.on = false; } }; }
@@ -103,7 +111,7 @@ class Deck {
 
   constructor(private ctx: AudioContext, id: DeckId, out: AudioNode, cueOut: AudioNode, private onChange: () => void) {
     this.state = { id, name: null, loading: false, error: null, duration: 0, bpm: 0, firstBeat: 0, playing: false, pitch: 0, range: 0.08, cue: 0,
-      hotCues: [null, null, null, null], loop: null, gain: 1, eq: { high: 0.5, mid: 0.5, low: 0.5 }, filter: 0.5, fader: 0.85, art: null, artFrom: null, phones: false, rpm: 33 };
+      hotCues: [null, null, null, null], loop: null, gain: 1, eq: { high: 0.5, mid: 0.5, low: 0.5 }, filter: 0.5, fader: 0.85, art: null, artFrom: null, phones: false, rpm: 33, loadSeq: 0 };
     this.trim = ctx.createGain();
     this.low = ctx.createBiquadFilter(); this.low.type = "lowshelf"; this.low.frequency.value = 250;
     this.mid = ctx.createBiquadFilter(); this.mid.type = "peaking"; this.mid.frequency.value = 1100; this.mid.Q.value = 0.8;
@@ -166,7 +174,9 @@ class Deck {
       this.overview = overviewOf(this.wave.peak, 900);
       this.buffer = buf;
       this.offset = firstBeat;
-      this.state = { ...this.state, loading: false, duration: buf.duration, bpm, firstBeat, cue: firstBeat, pitch: 0 };
+      const loadSeq = ++loadCounter;
+      this.state = { ...this.state, loading: false, duration: buf.duration, bpm, firstBeat, cue: firstBeat, pitch: 0, loadSeq };
+      this.remember(loadSeq);
     } catch {
       this.buffer = null; this.wave = null; this.overview = null;
       this.state = { ...this.state, loading: false, name: null, error: `Couldn't read ${name} — try an MP3, WAV, AAC or FLAC file.` };
@@ -318,7 +328,52 @@ class Deck {
     this.state = { ...this.state, art: image ? URL.createObjectURL(image) : null, artFrom: image ? "you" : null };
     this.onChange();
   }
-  private releaseArt() { if (this.state.art) URL.revokeObjectURL(this.state.art); }
+  /** A picture still shown by a remembered load (for replay) is freed when that load is forgotten. */
+  private releaseArt() {
+    const art = this.state.art;
+    if (art && ![...this.loads.values()].some((l) => l.art === art)) URL.revokeObjectURL(art);
+  }
+
+  // ---- replay of a recorded mix: what the deck SHOWS (never changes what it plays) ----
+  readonly loads = new Map<number, LoadInfo>();
+  /** set by the mixer while a recorded mix replays */
+  replayFrame: (() => DeckFrame | null) | null = null;
+  /** loads a recorded mix still needs, so they aren't forgotten */
+  keepLoads: Set<number> = new Set();
+  private remember(seq: number) {
+    const s = this.state;
+    this.loads.set(seq, { name: s.name ?? "", wave: this.wave, overview: this.overview, duration: s.duration, bpm: s.bpm, firstBeat: s.firstBeat, art: s.art });
+    for (const [k, l] of this.loads) {
+      if (this.loads.size <= KEEP_LOADS) break;
+      if (k === seq || this.keepLoads.has(k)) continue;
+      this.loads.delete(k);
+      if (l.art && l.art !== this.state.art && ![...this.loads.values()].some((x) => x.art === l.art)) URL.revokeObjectURL(l.art);
+    }
+  }
+  /** Snapshot for the move recorder. */
+  frame(): DeckFrame {
+    const s = this.state;
+    return { load: s.loadSeq, name: s.name, playing: s.playing, pos: this.position(), pitch: s.pitch, gain: s.gain, eq: s.eq, filter: s.filter,
+      fader: s.fader, loop: s.loop, phones: s.phones, rpm: s.rpm };
+  }
+  private replayed(): { f: DeckFrame; l: LoadInfo | undefined } | null {
+    const f = this.replayFrame?.();
+    return f ? { f, l: this.loads.get(f.load) } : null;
+  }
+  /** The state to draw: the live deck, or the recorded performance during a replay. */
+  get shown(): DeckState {
+    const r = this.replayed();
+    if (!r) return this.state;
+    const { f, l } = r;
+    return { ...this.state, name: f.load ? l?.name ?? f.name : null, loading: false, error: null, playing: f.playing, pitch: f.pitch, gain: f.gain, eq: f.eq,
+      filter: f.filter, fader: f.fader, loop: f.loop, phones: f.phones, rpm: f.rpm, loadSeq: f.load, art: l?.art ?? null, artFrom: l?.art ? "file" : null,
+      duration: l?.duration ?? 0, bpm: l?.bpm ?? 0, firstBeat: l?.firstBeat ?? 0, hotCues: [null, null, null, null] };
+  }
+  shownPosition(): number { const r = this.replayed(); return r ? r.f.pos : this.position(); }
+  get shownWave(): BandWave | null { const r = this.replayed(); return r ? r.l?.wave ?? null : this.wave; }
+  get shownOverview(): Float32Array | null { const r = this.replayed(); return r ? r.l?.overview ?? null : this.overview; }
+  get shownDuration(): number { const r = this.replayed(); return r ? r.l?.duration ?? 0 : this.buffer?.duration ?? 0; }
+  get shownEffectiveBpm(): number { const s = this.shown; return s.bpm * (1 + s.pitch) * speedFactor(s.rpm); }
 
   private reanchor(pos: number) {
     this.offset = pos;
@@ -386,6 +441,13 @@ class DjMixer {
   private recFrames = 0;
   private moduleReady: Promise<void> | null = null;
   version = 0;
+  // the DJ's moves while recording, for "Replay moves"
+  private moves: MixFrame[] = [];
+  private recT0 = 0;
+  private moveTimer: ReturnType<typeof setInterval> | null = null;
+  private replaySrc: AudioBufferSourceNode | null = null;
+  private replayT0 = 0;
+  private replayTimer: ReturnType<typeof setInterval> | null = null;
 
   constructor() {
     this.ctx = getEngine().init();
@@ -492,14 +554,23 @@ class DjMixer {
       };
     }
     this.chunks = []; this.recFrames = 0;
+    this.stopReplay();
     this.mix = { ...this.mix, recording: true, recSeconds: 0, hasMix: false };
     this.recNode.port.postMessage("start");
+    this.moves = []; this.recT0 = this.ctx.currentTime;
+    this.snapshot();
+    if (this.moveTimer) clearInterval(this.moveTimer);
+    this.moveTimer = setInterval(() => this.snapshot(), 50);
     this.emit();
   }
 
   stopRecording() {
     if (!this.mix.recording) return;
     this.recNode?.port.postMessage("stop");
+    this.snapshot();
+    if (this.moveTimer) { clearInterval(this.moveTimer); this.moveTimer = null; }
+    const keep = loadsUsed(this.moves);
+    this.A.keepLoads = keep; this.B.keepLoads = keep;
     this.mix = { ...this.mix, recording: false, hasMix: this.recFrames > 0 };
     this.emit();
   }
@@ -530,10 +601,77 @@ class DjMixer {
     return new Blob(parts, { type: "audio/mpeg" });
   }
 
-  discardRecording() { this.chunks = []; this.recFrames = 0; this.mix = { ...this.mix, hasMix: false, recSeconds: 0 }; this.emit(); }
+  discardRecording() {
+    this.stopReplay();
+    this.chunks = []; this.recFrames = 0; this.moves = [];
+    this.A.keepLoads = new Set(); this.B.keepLoads = new Set();
+    this.mix = { ...this.mix, hasMix: false, recSeconds: 0 }; this.emit();
+  }
+
+  private snapshot() {
+    if (!this.mix.recording) return;
+    pushFrame(this.moves, { t: this.ctx.currentTime - this.recT0, A: this.A.frame(), B: this.B.frame(), crossfader: this.mix.crossfader, master: this.mix.master });
+  }
+
+  /** True once a recorded mix has moves to watch again. */
+  get canReplay() { return this.moves.length > 0 && this.mix.hasMix && !this.mix.recording; }
+  get replaying() { return this.replaySrc != null; }
+  /** Seconds into the replayed mix. */
+  get replaySeconds() { return this.replaySrc ? Math.max(0, this.ctx.currentTime - this.replayT0) : 0; }
+  private replayAt(): MixFrame | null { return this.replaySrc ? frameAt(this.moves, this.ctx.currentTime - this.replayT0) : null; }
+  /** Crossfader / master as drawn: live, or the recorded ones during a replay. */
+  get shownMix(): MixState {
+    const f = this.replayAt();
+    return f ? { ...this.mix, crossfader: f.crossfader, master: f.master } : this.mix;
+  }
+
+  /**
+   * Plays the recorded mix and shows the decks, records, knobs and faders moving exactly as you
+   * played them. Only the picture follows the recording: the decks themselves aren't touched, so
+   * when the replay ends (or you stop it) everything is as you left it.
+   */
+  startReplay() {
+    if (!this.canReplay) throw new Error("Record a mix first — your moves are captured while it records.");
+    if (this.A.state.playing || this.B.state.playing) throw new Error("Stop both decks first, so the replay isn't mixed with live music.");
+    this.stopReplay();
+    if (this.ctx.state !== "running") void this.ctx.resume().catch(() => undefined);
+    const frames = this.recFrames;
+    const buf = this.ctx.createBuffer(2, Math.max(1, frames), this.ctx.sampleRate);
+    const l = buf.getChannelData(0), r = buf.getChannelData(1);
+    let i = 0;
+    for (const c of this.chunks) for (let k = 0; k + 1 < c.length && i < frames; k += 2, i++) { l[i] = c[k]! / 32768; r[i] = c[k + 1]! / 32768; }
+    const src = this.ctx.createBufferSource();
+    src.buffer = buf;
+    src.connect(this.ctx.destination);
+    src.connect(this.masterMeter.input);
+    src.onended = () => { if (this.replaySrc === src) this.stopReplay(); };
+    this.replayT0 = this.ctx.currentTime + 0.05;
+    src.start(this.replayT0);
+    this.replaySrc = src;
+    const at = () => this.replayAt();
+    this.A.replayFrame = () => at()?.A ?? null;
+    this.B.replayFrame = () => at()?.B ?? null;
+    // knobs and faders follow the recording at 20 fps
+    this.replayTimer = setInterval(() => this.emit(), 50);
+    this.emit();
+  }
+  stopReplay() {
+    const src = this.replaySrc;
+    if (!src) return;
+    this.replaySrc = null;
+    try { src.stop(); } catch { /* ended */ }
+    try { src.disconnect(); } catch { /* gone */ }
+    if (this.replayTimer) { clearInterval(this.replayTimer); this.replayTimer = null; }
+    this.A.replayFrame = null; this.B.replayFrame = null;
+    this.emit();
+  }
 
   subscribe(fn: () => void) { this.listeners.add(fn); return () => void this.listeners.delete(fn); }
-  private emit() { this.version++; this.listeners.forEach((l) => l()); }
+  private emit() {
+    this.version++;
+    if (this.mix.recording) this.snapshot();
+    this.listeners.forEach((l) => l());
+  }
 }
 
 let mixer: DjMixer | null = null;

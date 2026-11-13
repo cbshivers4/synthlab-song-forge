@@ -6,6 +6,7 @@ import { getDj, type DeckId } from "@/lib/synclab/dj-engine";
 import { angleDelta, armFraction, DEG_PER_SEC, scrubTo } from "@/lib/synclab/dj";
 import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
 import { useFrame } from "./dj-frame";
+import "./dj-replay.css";
 
 /**
  * A silver direct-drive turntable per deck (classic club-turntable layout): strobe-dotted platter,
@@ -19,15 +20,20 @@ import { useFrame } from "./dj-frame";
  * start, near the label = end); the music is silent while the arm is lifted.
  */
 export function Turntable({ id, compact = false }: { id: DeckId; compact?: boolean }) {
-  const deck = getDj().deck(id);
-  const s = deck.state;
+  const dj = getDj();
+  const deck = dj.deck(id);
+  // during "Replay moves" this is the recorded performance, otherwise the live deck
+  const s = deck.shown;
+  const replay = dj.replaying;
+  // the record already on the deck when the panel opens isn't dropped again; every later load is
+  const mountSeq = useRef(s.loadSeq);
   const platter = useRef<HTMLDivElement>(null);
   const arm = useRef<HTMLDivElement>(null);
   const pic = useRef<HTMLInputElement>(null);
-  useFrame(s.playing, () => {
-    const pos = deck.position();
+  useFrame(s.playing || replay, () => {
+    const pos = deck.shownPosition();
     if (platter.current) platter.current.style.transform = `rotate(${((pos * DEG_PER_SEC) % 360).toFixed(1)}deg)`;
-    const dur = deck.buffer?.duration ?? 0;
+    const dur = deck.shownDuration;
     arm.current?.style.setProperty("--arm-p", dur > 0 ? (pos / dur).toFixed(4) : "0");
   });
   const unlock = () => { void getEngine().init().resume?.(); };
@@ -39,7 +45,7 @@ export function Turntable({ id, compact = false }: { id: DeckId; compact?: boole
     return (Math.atan2(p.y - (r.top + r.height / 2), p.x - (r.left + r.width / 2)) * 180) / Math.PI;
   };
   const onDown = (e: React.PointerEvent) => {
-    if (!deck.buffer || !platter.current || (e.pointerType === "mouse" && e.button !== 0)) return;
+    if (replay || !deck.buffer || !platter.current || (e.pointerType === "mouse" && e.button !== 0)) return;
     const p = canvasPoint(e.clientX, e.clientY);
     spin.current = { id: e.pointerId, x: p.x, y: p.y, angle: angleAt(e), t: e.timeStamp, on: false, moved: false };
   };
@@ -93,7 +99,7 @@ export function Turntable({ id, compact = false }: { id: DeckId; compact?: boole
     deck.dragTo(f * deck.buffer.duration);
   };
   const onArmDown = (e: React.PointerEvent) => {
-    if (!deck.buffer || (e.pointerType === "mouse" && e.button !== 0)) return;
+    if (replay || !deck.buffer || (e.pointerType === "mouse" && e.button !== 0)) return;
     e.stopPropagation();
     (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
     unlock();
@@ -111,17 +117,19 @@ export function Turntable({ id, compact = false }: { id: DeckId; compact?: boole
   const choose = (f: File | undefined) => { if (f && f.type.startsWith("image/")) deck.setArt(f); };
   const labelTitle = s.art ? (s.artFrom === "file" ? "Cover picture from the file — tap to choose your own" : "Your picture — tap to change it") : "Tap to put a picture on this record";
   return (
-    <div className="dj-turntable" data-deck={id} data-playing={s.playing ? "1" : "0"} data-loaded={s.name ? "1" : "0"}>
+    <div className="dj-turntable" data-replay={replay ? "1" : undefined} data-deck={id} data-playing={s.playing ? "1" : "0"} data-loaded={s.name ? "1" : "0"}>
       <div className="dj-plinth">
         <div ref={platter} className="dj-platter" data-grab={s.name ? "1" : "0"} title={s.name ? "Turn the record by hand — back to wind back to the start, forward to move ahead" : undefined}
           onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} onClickCapture={swallowClick}>
           <span className="dj-strobe" aria-hidden />
           <span className="dj-strobe is-inner" aria-hidden />
-          <div className="dj-vinyl" aria-hidden={!s.name}>
+          {/* keyed by the load: every new record is placed onto the platter (also when a replay changes records) */}
+          <div key={s.loadSeq} className="dj-vinyl" data-drop={s.loadSeq && s.loadSeq !== mountSeq.current ? "1" : undefined} aria-hidden={!s.name}>
             <button type="button" className="dj-record-label" onClick={() => pic.current?.click()} title={labelTitle} aria-label={`Deck ${id} record picture — ${labelTitle}`}>
               {s.art ? <img src={s.art} alt="" draggable={false} /> : (
                 <span className="dj-record-blank">
                   <img src={synclabLogoAsset.url} alt="" draggable={false} />
+                  {s.name && <small className="dj-record-title">{s.name}</small>}
                   <b>{id}</b>
                 </span>
               )}

@@ -1,9 +1,57 @@
-import { useEffect, useMemo, useRef, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { getDrummer } from "@/lib/synclab/drummer-player";
 import { padForRole, PIECE_OF, type DrumGenre, type DrummerSettings } from "@/lib/synclab/drummer";
 import { KIT_VIEWBOX, kitHue, kitLayoutFor, pieceForRole, type KitPiece } from "@/lib/synclab/drum-kit-layout";
 import type { Track } from "@/lib/synclab/types";
+import { ACOUSTIC_TAP, acousticPieceFor, HitQueue, swingFor, type AcousticPiece } from "@/lib/synclab/kit-hits";
+import type { DrumRole } from "@/lib/synclab/drummer";
+import { RealDrumKit } from "./RealDrumKit";
+
+const ACOUSTIC_LABEL: Record<AcousticPiece, string> = {
+  kick: "Kick drum", snare: "Snare", hat: "Hi-hat", crash1: "Crash (left)", crash2: "Crash (right)", ride: "Ride",
+  tomHi: "High tom", tomMid: "Mid tom", tomLo: "Floor tom (low)", cowbell: "Cowbell", tamb: "Tambourine",
+};
+
+/** Moves one piece of the real drum set the way a hit moves it (Web Animations — no re-render). */
+function strike(root: SVGSVGElement | null, piece: AcousticPiece, vel: number, open?: boolean) {
+  const el = root?.querySelector<SVGGElement>(`[data-kp="${piece}"]`);
+  if (!el || typeof el.animate !== "function") return;
+  const a = swingFor(vel);
+  const glow = el.querySelectorAll<SVGElement>("[data-glow]");
+  const flash = (peak: number, ms: number) => glow.forEach((g) => g.animate([{ opacity: peak }, { opacity: 0 }], { duration: ms, easing: "ease-out" }));
+  const kind = el.getAttribute("data-kind");
+  if (kind === "cymbal") {
+    el.animate([
+      { transform: "rotate(0deg) scaleY(1)" },
+      { transform: `rotate(${-8 * a}deg) scaleY(${1 - 0.35 * a})`, offset: 0.08 },
+      { transform: `rotate(${5 * a}deg) scaleY(${1 + 0.2 * a})`, offset: 0.3 },
+      { transform: `rotate(${-3 * a}deg) scaleY(${1 - 0.1 * a})`, offset: 0.55 },
+      { transform: `rotate(${1.2 * a}deg)`, offset: 0.78 },
+      { transform: "rotate(0deg) scaleY(1)" },
+    ], { duration: piece === "ride" ? 650 : 900 + 300 * a, easing: "ease-out" });
+    flash(0.55 * a, 420);
+  } else if (kind === "hat") {
+    const top = el.querySelector<SVGGElement>("[data-hat-top]");
+    if (open) top?.animate([{ transform: "translateY(0)" }, { transform: `translateY(${-6 - 3 * a}px) rotate(${-4 * a}deg)`, offset: 0.12 },
+      { transform: `translateY(${-6 - 3 * a}px) rotate(${2 * a}deg)`, offset: 0.6 }, { transform: "translateY(0)" }], { duration: 420, easing: "ease-out" });
+    else top?.animate([{ transform: "translateY(0) rotate(0)" }, { transform: `translateY(1px) rotate(${-3 * a}deg)`, offset: 0.2 }, { transform: "translateY(0) rotate(0)" }], { duration: 170, easing: "ease-out" });
+    flash(0.5 * a, open ? 380 : 160);
+  } else if (kind === "kick") {
+    el.querySelector<SVGGElement>("[data-head]")?.animate([{ transform: "scale(1)" }, { transform: `scale(${1 + 0.035 * a})`, offset: 0.25 }, { transform: "scale(1)" }],
+      { duration: 160, easing: "ease-out" });
+    el.animate([{ transform: "translateY(0)" }, { transform: `translateY(${1.6 * a}px)`, offset: 0.3 }, { transform: "translateY(0)" }], { duration: 150 });
+    flash(0.35 * a, 200);
+  } else if (kind === "drum") {
+    el.querySelector<SVGGElement>("[data-head]")?.animate([{ transform: "scaleY(1)" }, { transform: `scaleY(${1 - 0.18 * a})`, offset: 0.25 }, { transform: "scaleY(1)" }],
+      { duration: 150, easing: "ease-out" });
+    el.animate([{ transform: "translateY(0)" }, { transform: `translateY(${1.8 * a}px)`, offset: 0.3 }, { transform: "translateY(0)" }], { duration: 140 });
+    flash(0.6 * a, 200);
+  } else {
+    el.animate([{ transform: "rotate(0)" }, { transform: `rotate(${-10 * a}deg)`, offset: 0.25 }, { transform: `rotate(${6 * a}deg)`, offset: 0.6 }, { transform: "rotate(0)" }], { duration: 260 });
+    flash(0.5 * a, 220);
+  }
+}
 
 /**
  * The drummer's drum set: a different setup per genre group and a different finish per style.
@@ -13,7 +61,14 @@ import type { Track } from "@/lib/synclab/types";
 export function DrumKitView({ track, genre, settings }: { track: Track; genre: DrumGenre; settings: DrummerSettings }) {
   const layout = kitLayoutFor(genre.group);
   const svg = useRef<SVGSVGElement>(null);
+  const realRef = useRef<HTMLDivElement>(null);
   const pads = track.pads ?? [];
+  // band, rock and jazz styles always show the real drum set; the other styles can switch to it
+  const acoustic = layout.style === "band" || layout.style === "rock" || layout.style === "jazz";
+  const [setView, setSetView] = useState(false);
+  const real = acoustic || setView;
+  const realRefMirror = useRef(real);
+  realRefMirror.current = real;
 
   const flash = (id: string, vel: number) => {
     const el = svg.current?.querySelector<SVGGElement>(`[data-piece="${id}"]`);
@@ -29,14 +84,51 @@ export function DrumKitView({ track, genre, settings }: { track: Track; genre: D
     );
   };
 
+  // Hits arrive when they're scheduled (~0.3 s early) with the time you'll hear them; queue them and
+  // move the piece when the audio clock gets there, checked every animation frame.
   useEffect(() => {
     const player = getDrummer();
-    return player.onHit((role, vel) => {
-      if (player.trackId !== track.id) return;
-      const piece = pieceForRole(layout, role);
-      if (piece) flash(piece.id, vel);
-    });
+    const queue = new HitQueue();
+    let crashes = 0;
+    const show = (role: DrumRole, vel: number) => {
+      if (realRefMirror.current) {
+        const m = acousticPieceFor(role, role === "crash" ? crashes++ : 0);
+        strike(realRef.current?.querySelector("svg") ?? null, m.piece, vel, m.open);
+      } else {
+        const piece = pieceForRole(layout, role);
+        if (piece) flash(piece.id, vel);
+      }
+    };
+    const off = player.onHit((role, vel, when) => { if (player.trackId === track.id) queue.push({ at: when, role, vel }); });
+    let raf = 0;
+    const tick = () => {
+      const now = getEngine().ctx?.currentTime ?? 0;
+      for (const h of queue.drain(now)) show(h.role, h.vel);
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => { off(); cancelAnimationFrame(raf); queue.clear(); };
   }, [layout, track.id]);
+
+  const playRoles = (roles: DrumRole[]) => {
+    const engine = getEngine();
+    engine.init();
+    for (const role of roles) {
+      const target = padForRole(pads, role);
+      if (!target) continue;
+      const pad = target.pitch ? { ...target.pad, pitch: target.pad.pitch + target.pitch } : target.pad;
+      engine.playDrum(track.id, pad, 0.9);
+      return true;
+    }
+    return false;
+  };
+  const tapReal = (piece: AcousticPiece) => {
+    if (playRoles(ACOUSTIC_TAP[piece])) strike(realRef.current?.querySelector("svg") ?? null, piece, 0.9, false);
+  };
+  const realInfo = (piece: AcousticPiece) => {
+    const roles = ACOUSTIC_TAP[piece];
+    return { label: ACOUSTIC_LABEL[piece], can: roles.some((r) => padForRole(pads, r)), off: roles.every((r) => settings.pieces[PIECE_OF[r]] === false) };
+  };
 
   const tap = (piece: KitPiece) => {
     const engine = getEngine();
@@ -54,8 +146,25 @@ export function DrumKitView({ track, genre, settings }: { track: Track; genre: D
   const style = { "--kit-hue": String(kitHue(genre.id)) } as CSSProperties;
   const playable = useMemo(() => new Set(layout.pieces.filter((x) => x.roles.some((r) => padForRole(pads, r))).map((x) => x.id)), [layout, pads]);
 
+  const switcher = !acoustic && (
+    <button type="button" className="kit-view-switch rounded-sm border border-border bg-surface px-2 py-0.5 font-mono text-[10px] uppercase tracking-widest text-foreground"
+      aria-pressed={setView} onClick={() => setSetView((v) => !v)} title="Show this style on a real drum set, or on its own setup">
+      {setView ? `Show ${layout.name.toLowerCase()}` : "Show drum set"}
+    </button>
+  );
+  if (real) {
+    const finish = layout.style === "rock" ? "sparkle" : layout.style === "jazz" ? "wood" : "lacquer";
+    return (
+      <div ref={realRef} className="kit-view" data-kit={layout.style} data-kit-real="1" style={style}>
+        {switcher}
+        <RealDrumKit finish={finish} label={genre.label} info={realInfo} onTap={tapReal} />
+        <span className="kit-caption">Drum set · watch it play · tap a drum or cymbal to hear it</span>
+      </div>
+    );
+  }
   return (
     <div className="kit-view" data-kit={layout.style} style={style}>
+      {switcher}
       <svg ref={svg} viewBox={`0 0 ${KIT_VIEWBOX.w} ${KIT_VIEWBOX.h}`} className="kit-svg" role="group" aria-label={`${genre.label} ${layout.name} — tap a drum to hear it`}>
         <rect className="kit-floor" x="0" y={KIT_VIEWBOX.h - 10} width={KIT_VIEWBOX.w} height="10" rx="3" />
         {layout.style === "pads" && <PadStation label={genre.label} />}

@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useFoundRow } from "./dj-found";
+import "./dj-replay.css";
 import { toast } from "sonner";
 import { ArrowDown, ArrowUp, FilePlus2, ListMusic, Pencil, Plus, Save, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -55,6 +57,7 @@ export function DjPlaylist({ sheet = false, onClose }: { sheet?: boolean; onClos
   const s = usePlaylists();
   const fileRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  useFoundRow(listRef);
   const [over, setOver] = useState(false);
   const [busy, setBusy] = useState(false);
   const [confirm, setConfirm] = useState<Confirm | null>(null);
@@ -180,7 +183,7 @@ export function DjPlaylist({ sheet = false, onClose }: { sheet?: boolean; onClos
             {s.tracks.map((t, i) => {
               const on = onDeck(t);
               return (
-                <li key={t.id} className="dj-pl-row" data-on={on.join("") || undefined} draggable
+                <li key={t.id} className="dj-pl-row" data-track-name={t.name} data-track-label={deckLabel(t)} data-on={on.join("") || undefined} draggable
                   onDragStart={(e) => { e.dataTransfer.setData("application/synclab", JSON.stringify({ type: DJ_TRACK_DRAG, id: t.id })); e.dataTransfer.effectAllowed = "copy"; }}>
                   <span className="dj-pl-num">{i + 1}</span>
                   <span className="dj-pl-name truncate" title={t.name}>{t.name}</span>
