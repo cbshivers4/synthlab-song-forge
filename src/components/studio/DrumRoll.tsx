@@ -1,4 +1,4 @@
-import { usePlayStep } from "@/lib/synclab/playhead";
+import { useStepLights } from "./use-step-lights";
 /**
  * Drum roll — the piano roll for a drum track.
  *
@@ -32,7 +32,6 @@ import { hasFlam, rollSize } from "@/lib/synclab/drum-fills";
 const VELOCITIES = [0, 0.35, 0.7, 1] as const;
 
 export function DrumRoll({ track, initialFull = false }: { track: Track; initialFull?: boolean }) {
-  const liveStep = usePlayStep();
   const isMobile = useIsMobile();
   const fit = useIsLandscapePhone();
   const [noteScope, setNoteScope] = useState<'one' | 'all'>('all');
@@ -50,6 +49,7 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
   const [boxing, setBoxing] = useState(false);
   const hitClip = useRef<{ rows: number[][]; width: number } | null>(null);
   const gridRef = useRef<HTMLDivElement>(null);
+  useStepLights(gridRef, transport.playing);
   const rowRefs = useRef(new Map<string, HTMLDivElement>());
   const [visibleRows, setVisibleRows] = useState([1, rows.length]);
   const [widePhone, setWidePhone] = useState(false);
@@ -389,11 +389,12 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
                   <div className="flex flex-1 gap-[2px] px-1 py-1">
                     {visibleSteps.map((i) => {
                       const v = steps[i] ?? 0;
-                      const playing = transport.playing && liveStep % total === i;
                       const chance = pad.probability?.[i] ?? 1;
                       return (
                         <Button variant="ghost"
                           key={i}
+                          data-step-index={i}
+                          data-step-period={total}
                           aria-label={`${pad.name} step ${i + 1}${v > 0 ? `, velocity ${Math.round(v * 100)}%` : ", empty"}`}
                            aria-pressed={selected === pad.id && view.step === i}
                           title={
@@ -404,7 +405,7 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
                            className={`drum-step relative h-6 min-w-0 flex-1 rounded-[3px] border p-0 transition-all ${selected === pad.id && view.step === i ? "ring-2 ring-primary ring-inset" : ""} ${inBox(rows.findIndex((row) => row.pad.id === pad.id), i) ? "outline outline-2 -outline-offset-2 outline-primary" : ""}`}
                           style={{
                             minWidth: 10,
-                            borderColor: playing ? "var(--neon)" : "var(--color-border)",
+                            borderColor: "var(--color-border)",
                             opacity: v > 0 ? 0.4 + v * 0.6 : 1,
                             background:
                               v > 0

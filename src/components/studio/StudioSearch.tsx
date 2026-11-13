@@ -74,7 +74,9 @@ export function StudioSearch() {
         <kbd className="ml-auto rounded bg-background/60 px-1 text-[10px]">⌘K</kbd>
       </button>
 
-      <CommandDialog open={open} onOpenChange={setOpen}>
+      {/* The list (every preset, kit and effect) is only built while the search is open; building it on
+          every edit slowed the whole studio down during playback. */}
+      {open && <CommandDialog open={open} onOpenChange={setOpen}>
         <CommandInput placeholder="Search panels, tracks, presets, kits, effects…" />
         <CommandList>
           <CommandEmpty>Nothing matched that.</CommandEmpty>
@@ -153,7 +155,7 @@ export function StudioSearch() {
             ))}
           </CommandGroup>
         </CommandList>
-      </CommandDialog>
+      </CommandDialog>}
     </>
   );
 }

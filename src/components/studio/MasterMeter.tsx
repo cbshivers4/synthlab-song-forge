@@ -1,4 +1,5 @@
 import { levelColor, peakOf, spectrumColor, dbColor, LEVEL_GREEN, LEVEL_ORANGE, LEVEL_RED } from "@/lib/synclab/level-colors";
+import { elementSize } from "@/lib/display-cache";
 import { useEffect, useRef, useState } from "react";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { waveformDisplayGain } from "@/lib/synclab/signal-display";
@@ -58,7 +59,7 @@ export function MasterMeter() {
 
     const size = (cv: HTMLCanvasElement) => {
       const dpr = window.devicePixelRatio || 1;
-      const w = cv.clientWidth, h = cv.clientHeight;
+      const { w, h } = elementSize(cv);
       if (cv.width !== Math.round(w * dpr)) cv.width = Math.round(w * dpr);
       if (cv.height !== Math.round(h * dpr)) cv.height = Math.round(h * dpr);
       const c = cv.getContext("2d")!;

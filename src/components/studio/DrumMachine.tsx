@@ -1,4 +1,5 @@
-import { getPlayStep, usePlayStep } from "@/lib/synclab/playhead";
+import { getPlayStep } from "@/lib/synclab/playhead";
+import { useStepLights } from "./use-step-lights";
 import { useEffect, useRef, useState } from "react";
 import { peekDrumEditorView, useDrumEditorView } from "@/lib/synclab/drum-editor-view";
 import { stepsPerBar, getBeatsPerBar, stepSeconds } from "@/lib/synclab/timebase";
@@ -89,7 +90,6 @@ function Section({ title, active, children }: { title: string; active?: boolean;
 }
 
 export function DrumMachine({ track }: { track: Track }) {
-  const liveStep = usePlayStep();
   const isMobile = useIsMobile();
   const landscape = useIsLandscapePhone();
   const [phoneView, setPhoneView] = useState("roll");
@@ -106,6 +106,8 @@ export function DrumMachine({ track }: { track: Track }) {
     return () => query.removeEventListener("change", read);
   }, []);
   const { updatePad, updateTrack, setStepCount, addPad, generateBeat, transport, togglePlay, stop } = useStudio();
+  const stepLightsRef = useRef<HTMLDivElement>(null);
+  useStepLights(stepLightsRef, transport.playing);
   useEffect(() => {
     const initialized = initializeDrumBanks(track);
     if (initialized) updateTrack(track.id, initialized);
@@ -338,7 +340,7 @@ export function DrumMachine({ track }: { track: Track }) {
   const skin = useSkin("drums");
   const drop = useImageDrop("drums");
   return (
-    <div className="drum-machine drum-hardware hardware-device studio-wallpaper space-y-3 rounded-md p-3" data-phone-view={isMobile ? phoneView : undefined} data-sideways={isMobile && landscape ? "true" : undefined} data-studio-panel="drums" style={skinBackground(skin)} {...drop}>
+    <div ref={stepLightsRef} className="drum-machine drum-hardware hardware-device studio-wallpaper space-y-3 rounded-md p-3" data-phone-view={isMobile ? phoneView : undefined} data-sideways={isMobile && landscape ? "true" : undefined} data-studio-panel="drums" style={skinBackground(skin)} {...drop}>
       <div className="flex items-center justify-between gap-2"><span className="label-xs">SYNCLAB · DRUM MACHINE</span><HardwareBypass track={track} /></div>
       <div className="grid grid-cols-4 gap-1" role="tablist" aria-label="Drum machine views">
         {([['roll', 'Drum roll'], ['pads', 'Play pads'], ['sound', 'Sound'], ['kit', 'Kit']] as const).map(([id, label]) => <Button key={id} role="tab" aria-selected={phoneView === id} variant={phoneView === id ? "default" : "secondary"} className="h-12 min-w-0 px-1" onClick={() => setPhoneView(id)}>{label}</Button>)}
@@ -438,6 +440,8 @@ export function DrumMachine({ track }: { track: Track }) {
                   const v = pad.steps[i] ?? 0;
                   return <Button variant="ghost"
                     key={i}
+                    data-step-index={i}
+                    data-step-period={Math.max(1, pad.steps.length)}
                     aria-label={`${pad.name} step ${i + 1}`}
                     aria-pressed={selectedStep?.padId === pad.id && selectedStep.index === i}
                      onClick={() => {
@@ -449,8 +453,7 @@ export function DrumMachine({ track }: { track: Track }) {
                     className="relative h-6 min-w-0 flex-1 rounded-[3px] border p-0 transition-all"
                     style={{
                       minWidth: isMobile ? undefined : 12,
-                      borderColor:
-                        transport.playing && liveStep % Math.max(1, pad.steps.length) === i ? "var(--neon)" : "var(--color-border)",
+                      borderColor: "var(--color-border)",
                       opacity: v > 0 ? 0.35 + v * 0.65 : 1,
                       background:
                         v > 0

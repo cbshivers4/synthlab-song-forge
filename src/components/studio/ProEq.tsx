@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { cachedStyle, elementSize } from "@/lib/display-cache";
 import { ExpandScopeButton } from "./ExpandScopeButton";
 import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
 import { EqGrid } from "./EqGrid";
@@ -101,8 +102,7 @@ export function ProEq({ trackId, plugin }: { trackId: string; plugin: PluginInst
       const canvas = canvasRef.current;
       const box = boxRef.current;
       if (canvas && box) {
-        const w = box.clientWidth;
-        const h = box.clientHeight;
+        const { w, h } = elementSize(box);
         const dpr = window.devicePixelRatio || 1;
         if (canvas.width !== w * dpr || canvas.height !== h * dpr) {
           canvas.width = w * dpr;
@@ -112,7 +112,7 @@ export function ProEq({ trackId, plugin }: { trackId: string; plugin: PluginInst
         if (g) {
           g.setTransform(dpr, 0, 0, dpr, 0, 0);
           g.clearRect(0, 0, w, h);
-          const colors = getComputedStyle(canvas);
+          const colors = cachedStyle(canvas);
 
           // spectrum
           const spec = getEngine().getEqSpectrum(plugin.id);

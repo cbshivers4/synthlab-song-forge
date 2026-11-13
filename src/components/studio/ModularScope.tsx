@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { cachedStyle, elementSize } from "@/lib/display-cache";
 import { modularScopeId, readModularScope } from '@/lib/synclab/modular-scopes';
 import { waveformDisplayGain } from '@/lib/synclab/signal-display';
 import { ExpandScopeButton } from './ExpandScopeButton';
@@ -11,10 +12,10 @@ export function ModularScope({ trackId, moduleId, label }: { trackId: string; mo
       if (!canvas) return;
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
-      const w = canvas.clientWidth, h = canvas.clientHeight, dpr = window.devicePixelRatio || 1;
+      const { w, h } = elementSize(canvas), dpr = window.devicePixelRatio || 1;
       canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      const colors = getComputedStyle(canvas);
+      const colors = cachedStyle(canvas);
       ctx.strokeStyle = colors.getPropertyValue('--display-grid').trim();
       ctx.lineWidth = 1;
       for (let i = 1; i < 4; i++) {

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { cachedStyle, elementSize } from "@/lib/display-cache";
 import { createPortal } from "react-dom";
 import { Activity, BarChart3, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -66,12 +67,12 @@ export function ScopeWindow() {
       const ctx = cv.getContext("2d");
       if (!ctx) return;
       const dpr = window.devicePixelRatio || 1;
-      const w = cv.clientWidth, h = cv.clientHeight;
+      const { w, h } = elementSize(cv);
       if (!w || !h) return;
       if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); hold = null; }
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, w, h);
-      const css = getComputedStyle(cv);
+      const css = cachedStyle(cv);
       const grid = css.getPropertyValue("--scope-grid").trim();
       const minor = css.getPropertyValue("--scope-grid-minor").trim();
       const trace = css.getPropertyValue("--scope-trace").trim();

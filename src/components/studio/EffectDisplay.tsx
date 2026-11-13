@@ -1,4 +1,5 @@
 import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
+import { cachedStyle, elementSize } from "@/lib/display-cache";
 import { ExpandScopeButton } from "./ExpandScopeButton";
 import { levelColor, peakOf, spectrumColor, dbColor, LEVEL_GREEN, LEVEL_ORANGE, LEVEL_RED } from "@/lib/synclab/level-colors";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -505,8 +506,7 @@ export function EffectDisplay({
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
       const dpr = window.devicePixelRatio || 1;
-      const w = box.clientWidth;
-      const h = box.clientHeight;
+      const { w, h } = elementSize(box);
       if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) {
         canvas.width = Math.round(w * dpr);
         canvas.height = Math.round(h * dpr);
@@ -514,7 +514,7 @@ export function EffectDisplay({
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, w, h);
 
-      const colors = getComputedStyle(canvas);
+      const colors = cachedStyle(canvas);
       ctx.strokeStyle = colors.getPropertyValue("--display-grid").trim();
       ctx.lineWidth = 1;
       for (let i = 1; i < 4; i++) {

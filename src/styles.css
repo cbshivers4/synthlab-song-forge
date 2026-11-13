@@ -5133,3 +5133,8 @@ html.phone-console-active [role="option"] { min-height: 44px; font-size: 15px; }
 [data-device-kind="vocaltune"] { --device-accent: var(--primary); }
 [data-device-kind="mustang"] { --device-accent: var(--clip-drum); }
 [data-device-kind="vumeter"], [data-device-kind="tuner"], [data-device-kind="tonegen"] { --device-accent: var(--foreground); }
+
+/* Step under the playhead (set directly by useStepLights, no editor re-render per step). */
+[data-step-live="true"] {
+  border-color: var(--neon) !important;
+}

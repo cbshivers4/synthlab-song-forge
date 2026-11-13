@@ -92,7 +92,7 @@ export function removeTakeAndMaterial(track: Track, clipId: string, bpm: number,
  * erased; otherwise every clip, note and drum hit goes to the clipboard and the channel is
  * left empty, keeping its instrument, sound, effects and mixer settings.
  */
-export function cutTrackMaterial(track: Track, bpm: number, bars: number, loop?: [number, number]): { clipboard: Track; patch: Partial<Track> } {
+export function cutTrackMaterial(track: Track, bpm: number, bars: number, loop?: [number, number]): { clipboard: Track; patch: Partial<Track>; span?: [number, number] } {
   const clone = structuredCloneSafe(track);
   const clip = selectedClip(track);
   const part = clip ? null : selectedPartBounds(track, bpm, bars, loop);
@@ -108,7 +108,7 @@ export function cutTrackMaterial(track: Track, bpm: number, bars: number, loop?:
       steps: Math.max(1, Math.ceil(part[1] - part[0])),
       ...(hasHits ? { patternRegion: part } : {}),
     };
-    return { clipboard, patch: eraseMaterial(track, part, bars) };
+    return { clipboard, patch: eraseMaterial(track, part, bars), span: part };
   }
   return {
     clipboard: clone,

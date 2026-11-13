@@ -1,4 +1,5 @@
 import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
+import { cssVarOf } from "@/lib/display-cache";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { Knob } from "../Knob";
 import { getEngine } from "@/lib/synclab/audio-engine";
@@ -101,8 +102,9 @@ export function EqCurve({
   const [activeBand, setActiveBand] = useState<number | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const waveRef = useRef<SVGPathElement>(null);
+  // 20 fps like every other display, with the colour read from a cache: a 60 fps loop that read
+  // styles every frame on every channel stalled the page and made playback stumble.
   useEffect(() => {
-    let raf = 0;
     const draw = () => {
       const node = waveRef.current;
       if (node) {
@@ -119,13 +121,13 @@ export function EqCurve({
             wavePath += `${wavePath ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)} `;
           }
           node.setAttribute("d", wavePath);
-          node.setAttribute("stroke", getComputedStyle(node).getPropertyValue("--display-wave").trim());
+          node.setAttribute("stroke", cssVarOf(node, "--display-wave"));
         }
       }
-      raf = requestAnimationFrame(draw);
     };
-    raf = requestAnimationFrame(draw);
-    return () => cancelAnimationFrame(raf);
+    draw();
+    const timer = window.setInterval(draw, 50);
+    return () => window.clearInterval(timer);
   }, [scopeId]);
   const onPointerDown = (band: number) => (e: React.PointerEvent) => {
     e.stopPropagation();

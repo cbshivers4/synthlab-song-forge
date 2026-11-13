@@ -14,7 +14,7 @@ import { markTakeFailed } from "./take-status";
 import { setSongClock } from "./song-clock";
 import { sendClockForStep, sendTransportStart, sendTransportStop } from "./midi-clock";
 import { INPUT_CHANGED_EVENT, INPUT_FALLBACK_EVENT, INPUT_LOST_EVENT } from "./mic";
-import { drumCopySpan, materialEnd, pasteTrackContent, timelinePasteStep } from "./arrangement-edit";
+import { drumCopySpan, materialEnd, noteCopy, pasteTrackContent, timelinePasteStep } from "./arrangement-edit";
 
 /** Drum/sampler tracks can hold values the browser cannot deep-copy; fall back so copy never silently fails. */
 function cloneTrack(t: Track): Track {
@@ -551,6 +551,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   midiLearnRef.current = midiLearn;
   const [clipboardName, setClipboardName] = useState<string | null>(null);
   const clipboardRef = useRef<Track | null>(null);
+  /** The copied part's edges on the timeline, so a paste keeps every note's place in the bar. */
+  const clipboardSpanRef = useRef<[number, number] | null>(null);
   const [clipClipboardName, setClipClipboardName] = useState<string | null>(null);
   const clipClipboardRef = useRef<AudioClip | null>(null);
   const selectedIdRef = useRef(selectedId);
@@ -2449,10 +2451,19 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         const src = tracksRef.current.find((t) => t.id === id);
         if (!src) return;
         clipboardRef.current = cloneTrack(src);
+        clipboardSpanRef.current = null;
+        const tp = transportRef.current;
+        const shown: [number, number] = tp.loop ? loopRegion(tp) : [0, songSteps(tp.bars)];
         // A drum beat copies the part you see (or the selected part), at its full length.
         if (src.kind === "drum" && !src.printedAudio && src.pads?.some((p) => p.steps.some((v) => v > 0))) {
-          const tp = transportRef.current;
-          clipboardRef.current.patternRegion = drumCopySpan(src, tp.loop ? loopRegion(tp) : [0, songSteps(tp.bars)]);
+          clipboardRef.current.patternRegion = drumCopySpan(src, shown);
+        } else if (!src.printedAudio && src.notes?.length) {
+          // A repeating synth part copies every repeat the timeline draws, not just one loop of it.
+          const copy = noteCopy(src, shown);
+          if (copy) {
+            clipboardRef.current.notes = copy.notes;
+            clipboardSpanRef.current = copy.span;
+          }
         }
         clipClipboardRef.current = null;
         setClipClipboardName(null);
@@ -2464,8 +2475,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         if (!src) return;
         // Cut takes the material, never the channel: the instrument stays so you can keep playing it.
         const tp = transportRef.current;
-        const { clipboard, patch } = cutTrackMaterial(src, tp.bpm, tp.bars, tp.loop ? loopRegion(tp) : undefined);
+        const { clipboard, patch, span } = cutTrackMaterial(src, tp.bpm, tp.bars, tp.loop ? loopRegion(tp) : undefined);
         clipboardRef.current = clipboard;
+        clipboardSpanRef.current = span && clipboard.notes?.length && !clipboard.pads?.some((p) => p.steps.some((v) => v > 0)) ? span : null;
         clipClipboardRef.current = null;
         setClipClipboardName(null);
         setClipboardName(src.name);
@@ -2483,7 +2495,12 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         // Pasting drums onto a synth (or vice versa) makes a new matching channel instead of failing.
         const mismatched = !!target && (src.notes?.length || src.pads?.some(p => p.steps.some(v => v > 0))) && src.kind !== target.kind;
         if (target && !mismatched) {
-          const pasted = pasteTrackContent(target, src, timelinePasteStep(transportRef.current.step, destinationStep), stepSeconds(transportRef.current.bpm));
+          const tp = transportRef.current;
+          const span = clipboardSpanRef.current;
+          const pasted = pasteTrackContent(target, src, timelinePasteStep(tp.step, destinationStep), stepSeconds(tp.bpm), {
+            shownEnd: songSteps(tp.bars),
+            ...(span ? { origin: span[0], length: span[1] - span[0] } : {}),
+          });
           setTracks(ts => ts.map(t => t.id === target.id ? pasted : t));
           setTransportState(tp => ({ ...tp, bars: Math.max(tp.bars, barsForSteps(materialEnd(pasted, stepSeconds(tp.bpm)))) }));
           return;

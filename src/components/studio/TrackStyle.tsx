@@ -1,4 +1,4 @@
-import type { ComponentType } from "react";
+import { useState, type ComponentType } from "react";
 import {
   Activity,
   AudioLines,
@@ -290,10 +290,13 @@ export function TrackStylePicker({
   align?: "start" | "center" | "end";
 }) {
   const { updateTrack } = useStudio();
+  // The colour and icon grids are only built while the picker is open: every track row and mixer
+  // strip has one, and rebuilding them all on each fader or knob move stalled playback.
+  const [open, setOpen] = useState(false);
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>{children}</PopoverTrigger>
-      <PopoverContent
+      {open && <PopoverContent
         align={align}
         className="w-[268px] space-y-3 p-3"
         onClick={(e) => e.stopPropagation()}
@@ -358,7 +361,7 @@ export function TrackStylePicker({
             Automatic icon
           </button>
         </div>
-      </PopoverContent>
+      </PopoverContent>}
     </Popover>
   );
 }

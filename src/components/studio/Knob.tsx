@@ -73,7 +73,11 @@ export function Knob({ label, value, min = 0, max = 1, step = 0.01, unit = "", s
       if (!start.current) return;
       const y = canvasPoint(e.clientX, e.clientY).y;
       const delta = (start.current.y - y) / (e.shiftKey ? 640 : 160);
-      onChange(knobStep(start.current.v + delta * (max - min), min, max, step));
+      const next = knobStep(start.current.v + delta * (max - min), min, max, step);
+      // Moves that land on the same step change nothing; skipping them avoids redrawing the studio.
+      if (next === latest.current.value) return;
+      latest.current = { ...latest.current, value: next };
+      onChange(next);
     },
     [max, min, onChange, step],
   );

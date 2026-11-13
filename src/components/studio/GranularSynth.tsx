@@ -5,6 +5,7 @@
  * track's patch.granular, so presets, MIDI learn and held notes share it.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
+import { cachedStyle, elementSize } from "@/lib/display-cache";
 import { toast } from "sonner";
 import { Snowflake, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -91,11 +92,11 @@ export function GranularSynth({ track }: { track: Track }) {
       const c = canvasRef.current;
       if (!c) return;
       const dpr = window.devicePixelRatio || 1;
-      const w = c.clientWidth, h = c.clientHeight;
+      const { w, h } = elementSize(c);
       if (c.width !== Math.round(w * dpr)) { c.width = Math.round(w * dpr); c.height = Math.round(h * dpr); }
       const x = c.getContext("2d");
       if (!x) return;
-      const css = getComputedStyle(c);
+      const css = cachedStyle(c);
       const ink = css.getPropertyValue("--granular-ink").trim() || "red";
       const dim = css.getPropertyValue("--granular-dim").trim() || "gray";
       const hot = css.getPropertyValue("--granular-hot").trim() || "white";

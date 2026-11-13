@@ -1,6 +1,8 @@
-import type { AudioClip, Track } from './types';
+import type { AudioClip, MidiNote, Track } from './types';
 import { clipRate, clipSeconds } from './types';
 import { uid } from './presets';
+import { unrollNotes } from './note-cuts';
+import { stepsPerBar } from './timebase';
 
 /** A clicked destination is independent of the moving transport playhead. */
 export function timelinePasteStep(playhead: number, destination?: number): number {
@@ -15,24 +17,50 @@ function drumSpan(t: Track): [number, number] {
   return t.patternRegion ? [Math.max(0, t.patternRegion[0]), Math.max(t.patternRegion[0], t.patternRegion[1])] : [0, len];
 }
 
+export interface PasteOptions {
+  /** Left edge of the copied part (not its first note), so pasted notes keep their place in the bar. */
+  origin?: number;
+  /** Length of the copied part in steps. */
+  length?: number;
+  /**
+   * The song end the timeline shows before the paste. Repeating material already on the target is
+   * kept exactly as it looked up to there, so a paste further out never shifts or re-tiles it.
+   */
+  shownEnd?: number;
+}
+
 /** Paste material, not channel settings; even the source channel is a valid target. */
-export function pasteTrackContent(target: Track, source: Track, at: number, stepDuration: number): Track {
+export function pasteTrackContent(target: Track, source: Track, at: number, stepDuration: number, opts: PasteOptions = {}): Track {
   const drumSource = hasHits(source);
   const [srcA, srcB] = drumSpan(source);
-  const origin = Math.min(...(source.clips ?? []).map(c => c.start ?? 0), ...(source.notes ?? []).map(n => n.step), ...(drumSource ? [srcA] : []));
-  const shift = Math.max(0, at) - (Number.isFinite(origin) ? origin : 0);
+  const first = Math.min(...(source.clips ?? []).map(c => c.start ?? 0), ...(source.notes ?? []).map(n => n.step), ...(drumSource ? [srcA] : []));
+  const origin = opts.origin ?? (Number.isFinite(first) ? first : 0);
+  const shift = Math.max(0, at) - origin;
   const clips = (source.clips ?? []).map(c => ({ ...structuredClone(c), id: uid(), start: (c.start ?? 0) + shift }));
-  const sourceLength = drumSource ? srcB - srcA : source.steps;
+  const sourceLength = opts.length ?? (drumSource ? srcB - srcA : source.steps);
   const end = Math.max(at + sourceLength, ...clips.map(c => (c.start ?? 0) + clipSeconds(c) / stepDuration), ...(source.notes ?? []).map(n => n.step + shift + n.length));
   const notes = (source.notes ?? []).map(n => ({ ...n, id: uid(), step: n.step + shift, recordedEnd: n.recordedEnd !== undefined ? n.recordedEnd + shift : end }));
-  const steps = Math.max(target.steps, Math.ceil(end));
+  let steps = Math.max(target.steps, Math.ceil(end));
+  // A repeating synth pattern loops every `steps`. Growing that length would make it repeat at a new,
+  // off-bar spot (bars 2-4 go quiet, bar 6 replays bar 1), so it is first written out as it was
+  // shown, and the loop length stays a whole number of bars.
+  let kept = target.notes ?? [];
+  if (notes.length && kept.some(n => n.recordedEnd == null)) {
+    const shown = Math.max(target.steps, opts.shownEnd ?? target.steps);
+    const spb = stepsPerBar();
+    steps = Math.ceil(Math.max(steps, shown) / spb) * spb;
+    if (steps !== target.steps) kept = unrollNotes(kept, target.steps, shown);
+  }
   const start = Math.max(0, Math.round(at));
   // A pattern region hides and silences hits outside it, so pasted drums must widen it;
   // hits it already hid are inaudible and invisible, so they are cleared rather than revealed.
   const region = target.patternRegion;
+  // A looping beat is kept as far as the timeline showed it; past that the bars before the paste stay empty.
+  const shownDrums = region ? undefined : opts.shownEnd;
   const pads = target.pads?.map((pad, i) => {
     const values = Array.from({ length: steps }, (_, s) =>
-      region && (s < region[0] || s >= region[1]) ? 0 : pad.steps[s % Math.max(1, pad.steps.length)] ?? 0);
+      (region && (s < region[0] || s >= region[1])) || (shownDrums != null && s >= Math.max(shownDrums, pad.steps.length))
+        ? 0 : pad.steps[s % Math.max(1, pad.steps.length)] ?? 0);
     const src = source.pads?.[i]?.steps ?? [];
     // The timeline tiles a short pattern across its part, so copy the tiled hits: the copy is as long as the part you see.
     for (let s = srcA; s < srcB; s++) { const v = src[s % Math.max(1, src.length)] ?? 0; if (v > 0) values[start + s - srcA] = v; }
@@ -40,13 +68,29 @@ export function pasteTrackContent(target: Track, source: Track, at: number, step
   });
   const pastedDrums = !!pads && drumSource;
   const patternRegion: [number, number] | undefined = pastedDrums
-    ? [region ? Math.min(region[0], start) : 0, Math.max(region?.[1] ?? 0, start + sourceLength)]
+    ? [region ? Math.min(region[0], start) : 0, Math.max(region?.[1] ?? shownDrums ?? 0, start + sourceLength)]
     : target.patternRegion;
   // Like a pasted synth take, a pasted beat is its own part: cut marks at both edges separate it.
   const cuts = pastedDrums ? [...new Set([...(target.cuts ?? []), start, start + sourceLength])].sort((a, b) => a - b) : target.cuts;
-  return { ...target, steps, notes: [...(target.notes ?? []), ...notes], clips: [...(target.clips ?? []), ...clips], pads, patternRegion, cuts,
+  return { ...target, steps, notes: [...kept, ...notes], clips: [...(target.clips ?? []), ...clips], pads, patternRegion, cuts,
     activeClipId: clips[0]?.id ?? target.activeClipId,
     ...(clips.length && ['instrument', 'midi', 'drum', 'sampler'].includes(target.kind) ? { printedAudio: true } : {}) };
+}
+
+/**
+ * What a copy of a note channel takes: the part you see (or the selected part between cut marks).
+ * A repeating pattern is written out across that part, so the copy is as long as what the timeline
+ * draws and keeps each note's place in the bar. Returns null when every note is already a recorded
+ * (absolute) take, which copies as-is.
+ */
+export function noteCopy(track: Track, shown: [number, number]): { notes: MidiNote[]; span: [number, number] } | null {
+  const notes = track.notes ?? [];
+  if (!notes.some(n => n.recordedEnd == null)) return null;
+  const span = drumCopySpan(track, shown);
+  const inside = unrollNotes(notes, track.steps || span[1], span[1])
+    .filter(n => n.step >= span[0] - 0.001 && n.step < span[1] - 0.001)
+    .map(n => ({ ...n, length: Math.min(n.length, span[1] - n.step), recordedEnd: n.recordedEnd ?? span[1] }));
+  return { notes: inside, span };
 }
 
 /**

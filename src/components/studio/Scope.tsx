@@ -1,4 +1,5 @@
 import { levelColor, peakOf, spectrumColor, dbColor, LEVEL_GREEN, LEVEL_ORANGE, LEVEL_RED } from "@/lib/synclab/level-colors";
+import { cssVarOf, elementSize, releaseElementSize } from "@/lib/display-cache";
 import { useEffect, useRef, useState } from "react";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { Button } from "@/components/ui/button";
@@ -36,8 +37,7 @@ export function Scope({
       const ctx = cv.getContext("2d");
       if (!ctx) return;
       const dpr = window.devicePixelRatio || 1;
-      const w = cv.clientWidth;
-      const h = cv.clientHeight;
+      const { w, h } = elementSize(cv);
       if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) {
         cv.width = Math.round(w * dpr);
         cv.height = Math.round(h * dpr);
@@ -46,7 +46,7 @@ export function Scope({
       ctx.clearRect(0, 0, w, h);
 
       // grid
-      ctx.strokeStyle = getComputedStyle(cv).getPropertyValue("--border").trim();
+      ctx.strokeStyle = cssVarOf(cv, "--border");
       ctx.lineWidth = 1;
       for (let i = 1; i < 4; i++) {
         const y = (h * i) / 4;
@@ -61,7 +61,7 @@ export function Scope({
         const data = engine.getScopeWave(scopeId);
         const peak = peakOf(data);
         const displayGain = waveformDisplayGain(peak);
-        ctx.strokeStyle = getComputedStyle(cv).getPropertyValue("--display-wave").trim();
+        ctx.strokeStyle = cssVarOf(cv, "--display-wave");
         ctx.lineWidth = 1.4;
         ctx.beginPath();
         if (data) {
@@ -81,7 +81,7 @@ export function Scope({
         if (data) {
           const grad = ctx.createLinearGradient(0, 0, 0, h);
           let top = -120; for (let i = 0; i < data.length; i++) if ((data[i] ?? -120) > top) top = data[i] ?? -120;
-          grad.addColorStop(0, getComputedStyle(cv).getPropertyValue("--display-wave").trim());
+          grad.addColorStop(0, cssVarOf(cv, "--display-wave"));
           grad.addColorStop(1, "transparent");
           ctx.fillStyle = grad;
           ctx.beginPath();
@@ -103,7 +103,8 @@ export function Scope({
     };
     draw();
     const timer = window.setInterval(draw, 50);
-    return () => window.clearInterval(timer);
+    const canvas = ref.current;
+    return () => { window.clearInterval(timer); releaseElementSize(canvas); };
   }, [scopeId]);
 
   if (compact) {
