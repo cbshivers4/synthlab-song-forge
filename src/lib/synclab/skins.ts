@@ -114,6 +114,10 @@ export function savePreset(name: string) {
   list.push({ id: crypto.randomUUID(), name: name.trim() || `Theme ${list.length + 1}`, skins: readSkins() });
   write(PRESET_KEY, list);
 }
+/** Replace every panel skin at once (used when loading a look pack). */
+export function replaceSkins(skins: Skins) {
+  write(KEY, skins);
+}
 export function applyPreset(id: string) {
   const p = readPresets().find((x) => x.id === id);
   if (p) write(KEY, p.skins);

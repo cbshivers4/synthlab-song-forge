@@ -275,12 +275,13 @@
 - [x] Modelled piano engine (grand, bright, felt, upright, honky-tonk, tine EP, reed EP, toy) + Piano presets; Live Keys pianos use it
 
 ## Request 2026-11-13 (settings, DJ, synths, browser, open source, customizing, drummer, Studio View)
-- [ ] Settings: hide audio interface details unless an interface is connected
-- [ ] DJ Decks: show the record being placed on the deck, moving/scrolling waveform, browser scrolling to the chosen song (waiting on answer)
-- [ ] Modular Tech + Granular: many more presets; truly granular sounds
-- [ ] Modular Tech: more advanced, technical modules
-- [ ] Logic-style browser: type to find sounds/presets/effects fast
-- [ ] Open source / usable by Claude Code, Codex and similar (waiting on answer)
-- [ ] Reaper-style customizing: swap in different mixer/reel/synth designs (waiting on answer)
-- [ ] Live Drummer: real-looking drum kit that visibly plays
-- [ ] Studio View: show connected guitar/bass/external synth; back view shows Bluetooth/cable connections (waiting on answer)
+- [x] Settings: hide audio interface details unless an interface is connected
+- [x] DJ Decks: record drops onto the platter, replay of recorded moves, list finds the loaded song
+- [x] Modular Tech + Granular: many more presets; truly granular sounds
+- [x] Modular Tech: more advanced, technical modules
+- [x] Logic-style browser: type to find sounds/presets/effects fast
+- [ ] Open source / usable by Claude Code, Codex and similar (waiting on Christopher: licence + whether assistants should also control the app)
+- [x] Reaper-style customizing: shareable look packs (theme, panel skins, mixer finish)
+- [ ] Swappable device designs beyond skins (new mixer/reel/synth layouts) — waiting on Christopher for which designs
+- [x] Live Drummer: real-looking drum kit that visibly plays
+- [x] Studio View: connected gear shelf + back-view USB/Bluetooth/cable links
