@@ -37,6 +37,9 @@ export const HELP_EVENT = "synclab:help";
 export type HelpTab = "help" | "support" | "problem" | "about" | "admin";
 export const openHelp = (tab: HelpTab = "help") =>
   window.dispatchEvent(new CustomEvent(HELP_EVENT, { detail: tab }));
+/** Opens Help with one article expanded (used by the library search). */
+export const openHelpArticle = (articleId: string) =>
+  window.dispatchEvent(new CustomEvent(HELP_EVENT, { detail: { tab: "help", article: articleId } }));
 
 const SUPPORT_CATEGORIES = [
   "Account",
@@ -127,8 +130,10 @@ export function HelpCenter() {
 
   useEffect(() => {
     const onOpen = (e: Event) => {
-      const detail = (e as CustomEvent<HelpTab>).detail;
-      setTab(detail ?? "help");
+      const detail = (e as CustomEvent<HelpTab | { tab: HelpTab; article: string }>).detail;
+      if (detail && typeof detail === "object") {
+        setTab(detail.tab); setQuery(""); setHelpCat("All"); setOpenArticle(detail.article);
+      } else setTab(detail ?? "help");
       setOpen(true);
     };
     window.addEventListener(HELP_EVENT, onOpen);
