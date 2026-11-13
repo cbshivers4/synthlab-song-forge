@@ -929,7 +929,7 @@ export const KNOWLEDGE_BASE: Article[] = [
       "MACRO: one knob with an OUT and an opposite INV output, so one turn can move several cables at once.",
       "COMB RESONATOR: a tuned feedback filter that rings at the note you play — plucks, metal and bowed tones from noise.",
     ],
-    can: ["Load 40 new racks built on these devices (Seq, Chaos, Comb, Follower, Macro, Ring and Gate names) from PRESET RACKS or the library search."],
+    can: ["Load 40 new racks built on these devices (Seq, Chaos, Comb, Follower, Macro, Ring and Gate names) from the PRESET window at the top of the synth (sorted by sound type and by rack device) or the library search."],
     cant: [
       "Run the sequencer from the song clock — it starts with each note.",
       "Ring the comb above about 340 Hz in a browser: higher notes ring an octave or two lower, still in tune.",

@@ -5,14 +5,12 @@ import { Button } from "@/components/ui/button";
 import { canvasPoint } from "@/lib/synclab/canvas-point";
 import { useStudio } from "@/lib/synclab/store";
 import {
-  CABLE_COLORS, MODULAR_PRESETS, initModularPatch, MODULE_DEFS, cableId, newModule, normalizeModular,
+  CABLE_COLORS, MODULE_DEFS, cableId, newModule, normalizeModular,
   type CableColor, type ModModule, type ModuleType, type ModularPatch, type PortRef,
 } from "@/lib/synclab/modular";
 import type { SynthPatch, Track } from "@/lib/synclab/types";
 import { MODULAR_SCOPE_TYPES } from '@/lib/synclab/modular-scopes';
 import { ModularScope } from './ModularScope';
-import { PresetNavigator } from './PresetNavigator';
-import { HardwareBypass } from './HardwareBypass';
 
 const SHORT: Record<string, string> = { sine: "SIN", triangle: "TRI", sawtooth: "SAW", square: "SQR", lowpass: "LP", highpass: "HP", bandpass: "BP", white: "WHT", pink: "PNK" };
 const pkey = (p: PortRef) => `${p.module}|${p.port}`;
@@ -29,22 +27,12 @@ export function ModularSynth({ track }: { track: Track }) {
   const patch = track.patch as SynthPatch;
   const m: ModularPatch = normalizeModular(patch.modular);
   const [pending, setPending] = useState<PortRef | null>(null);
-  const [rackPreset, setRackPreset] = useState("");
   const [color, setColor] = useState<CableColor>("red");
   const boxRef = useRef<HTMLDivElement>(null);
   const cableRef = useRef<SVGSVGElement>(null);
   const [lines, setLines] = useState<{ id: string; d: string; color: CableColor; a: { x: number; y: number }; b: { x: number; y: number } }[]>([]);
 
   const save = (next: ModularPatch) => updatePatch(track.id, { modular: next });
-  const selectRackPreset = (name: string) => {
-    const preset = MODULAR_PRESETS.find(p => p.name === name);
-    if (!preset) return;
-    const modular = structuredClone(preset.modular);
-    setRackPreset(name);
-    setPending(null);
-    save(modular);
-    previewNote(track.id, 48, 0.75, false, { ...patch, modular });
-  };
   const label = (p: PortRef) => {
     const mod = m.modules.find((x) => x.id === p.module);
     if (!mod) return p.port;
@@ -161,25 +149,6 @@ export function ModularSynth({ track }: { track: Track }) {
 
   return (
     <div className="modular-workstation space-y-2">
-      <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Patched rack presets">
-        <span className="label-xs mr-1">PRESET RACKS</span>
-        <HardwareBypass track={track} name="Modular Tech" />
-        <PresetNavigator label="modular rack preset" options={MODULAR_PRESETS.map(p => p.name)} current={rackPreset} onSelect={selectRackPreset}>
-          <span className="max-w-48 truncate font-mono text-xs text-primary" aria-live="polite">{rackPreset.replace("Modular Tech ", "") || "Custom rack"}</span>
-        </PresetNavigator>
-        <Button variant="ghost" type="button" aria-label="Initialize modular patch" onClick={() => {
-          const modular = initModularPatch();
-          setRackPreset("");
-          setPending(null);
-          save(modular);
-          previewNote(track.id, 48, 0.75, false, { ...patch, modular });
-        }} className="modular-add font-bold">INITIALIZE</Button>
-        {MODULAR_PRESETS.map((p) => (
-          <Button variant="ghost" key={p.name} type="button" onClick={() => selectRackPreset(p.name)} className="modular-add">
-            {p.name.replace("Modular Tech ", "")}
-          </Button>
-        ))}
-      </div>
       <div className="flex flex-wrap items-center gap-1.5" aria-label="Add devices to the rack">
         <span className="label-xs mr-1">ADD DEVICE</span>
         {(Object.keys(MODULE_DEFS) as ModuleType[]).map((t) => (

@@ -84,9 +84,24 @@ export function classifyPreset(entry: PresetEntry, granularTypes: Record<string,
     const style = /^TD-3 Electro\b/.test(entry.name) ? "Electro" : /^TD-3 Techno\b/.test(entry.name) ? "Techno" : undefined;
     return style ? { type: TYPE_ALIASES[label], style } : { type: TYPE_ALIASES[label] };
   }
-  if (label === "Modular Tech") return { type: soundTypeFromName(entry.name.replace(/^Modular Tech /, "")) };
+  if (label === "Modular Tech") return modularClass(entry.name);
   // Anything else is a genre group (Detroit Techno, Rave, Retro…): keep it as the style, sort by sound.
   return { type: soundTypeFromName(entry.name), style: label };
+}
+
+/** Modular Tech racks: the main rack device they're built on (Step Sequencer, Chaos…) is the second list. */
+const MODULAR_DEVICES: Record<string, string> = {
+  Seq: "Step Sequencer", Chaos: "Chaos", Comb: "Comb Resonator", Follower: "Envelope Follower",
+  Macro: "Macro", Ring: "Ring Modulator", Gate: "Gate",
+};
+export const MODULAR_CLASSIC_RACKS = "Classic Racks";
+function modularClass(name: string): { type: string; style: string } {
+  const rest = name.replace(/^Modular Tech /, "");
+  const family = /^(\w+) /.exec(rest)?.[1] ?? "";
+  const device = MODULAR_DEVICES[family];
+  const sound = device ? rest.slice(family.length + 1) : rest;
+  const type = soundTypeFromName(sound);
+  return { type: type === "Synth" ? soundTypeFromName(rest) : type, style: device ?? MODULAR_CLASSIC_RACKS };
 }
 
 export function presetBrowserIndex(factory: PresetEntry[], mine: string[] = [], granularTypes: Record<string, string> = {}): PresetBrowserIndex {

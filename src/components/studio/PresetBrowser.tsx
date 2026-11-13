@@ -13,7 +13,7 @@ type Pick = { kind: "all" } | { kind: "type" | "style" | "mine"; label: string }
  * Clicking a preset loads and auditions it through the same callback as the arrows and favorite keys,
  * and the browser stays open so several sounds can be tried in a row.
  */
-export function PresetBrowser({ index, current, onSelect }: { index: PresetBrowserIndex; current: string; onSelect: (name: string) => void }) {
+export function PresetBrowser({ index, current, onSelect, styleHeading = "Style" }: { index: PresetBrowserIndex; current: string; onSelect: (name: string) => void; styleHeading?: string }) {
   const [open, setOpen] = useState(false);
   const [pick, setPick] = useState<Pick>({ kind: "all" });
   const [query, setQuery] = useState("");
@@ -79,7 +79,7 @@ export function PresetBrowser({ index, current, onSelect }: { index: PresetBrows
             {index.mine.length > 0 && <Cat kind="mine" label="My Presets" count={index.mine.length} />}
             <Heading>Sound type</Heading>
             {index.types.map((g) => <Cat key={g.label} kind="type" label={g.label} count={g.items.length} />)}
-            {index.styles.length > 0 && <><Heading>Style</Heading>{index.styles.map((g) => <Cat key={g.label} kind="style" label={g.label} count={g.items.length} />)}</>}
+            {index.styles.length > 0 && <><Heading>{styleHeading}</Heading>{index.styles.map((g) => <Cat key={g.label} kind="style" label={g.label} count={g.items.length} />)}</>}
           </nav>
           <div className="flex min-w-0 flex-1 flex-col">
             <div className="flex items-center justify-between border-b border-border px-3 py-1.5">

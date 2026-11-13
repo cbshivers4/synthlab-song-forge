@@ -51,6 +51,17 @@ describe("synth preset browser categories", () => {
     expect(typeOf("modular", "Modular Tech Kick")).toBe("Percussive");
   });
 
+  it("groups Modular Tech racks by the device they're built on", () => {
+    const styleOf = (name: string) => indexFor("modular").styles.find((g) => g.items.includes(name))?.label;
+    expect(styleOf("Modular Tech Seq Bass Detroit")).toBe("Step Sequencer");
+    expect(typeOf("modular", "Modular Tech Seq Bass Detroit")).toBe("Bass");
+    expect(styleOf("Modular Tech Chaos Storm Lead")).toBe("Chaos");
+    expect(styleOf("Modular Tech Comb Steel Drum")).toBe("Comb Resonator");
+    expect(styleOf("Modular Tech Wobble Bass")).toBe("Classic Racks");
+    const racks = SYNTH_PRESETS.filter((p) => presetMatchesSynth(p.category, "modular")).length;
+    expect(indexFor("modular").styles.reduce((n, g) => n + g.items.length, 0)).toBe(racks);
+  });
+
   it("lists My Presets last in the arrow order", () => {
     const idx = presetBrowserIndex([{ name: "Poly Synth Brass", category: "Poly Synth · Brass" }], ["My Lead"]);
     expect(idx.order).toEqual(["Poly Synth Brass", "My Lead"]);

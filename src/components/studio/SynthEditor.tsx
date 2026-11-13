@@ -210,7 +210,7 @@ function SynthTrackEditor({ track }: { track: Track }) {
       <div className="synth-preset-deck flex flex-wrap items-center gap-2">
         <HardwareBypass track={track} />
         <PresetNavigator label="synth preset" options={presetIndex.order} current={patch.name} onSelect={selectPreset}>
-          <PresetBrowser index={presetIndex} current={patch.name} onSelect={selectPreset} />
+          <PresetBrowser index={presetIndex} current={patch.name} onSelect={selectPreset} styleHeading={synthStyle === "modular" ? "Rack device" : "Style"} />
         </PresetNavigator>
         <Input
           value={presetName}
