@@ -1,47 +1,46 @@
-/* Real-looking acoustic drum set (Live Drummer). Artwork colours are scoped here. */
+/* Real-looking acoustic drum set (Live Drummer), studio-photo look: black shells, white heads,
+   brass cymbals, chrome hardware on a light floor. Artwork colours are scoped here. */
 .kr-svg {
-  --kr-bronze-hi: oklch(0.93 0.09 88); --kr-bronze: oklch(0.78 0.13 75); --kr-bronze-lo: oklch(0.52 0.1 62);
-  --kr-chrome-hi: oklch(0.98 0 0); --kr-chrome: oklch(0.74 0.01 250); --kr-chrome-lo: oklch(0.42 0.01 250);
-  --kr-shell-hi: oklch(0.62 0.17 var(--kit-hue, 25)); --kr-shell: oklch(0.46 0.17 var(--kit-hue, 25)); --kr-shell-lo: oklch(0.26 0.11 var(--kit-hue, 25));
-  --kr-head-hi: oklch(0.98 0.01 90); --kr-head: oklch(0.86 0.02 85);
-  --kr-reso-hi: oklch(0.3 0.01 260); --kr-reso: oklch(0.12 0.005 260);
-  --kr-rug-hi: oklch(0.38 0.07 30); --kr-rug: oklch(0.22 0.05 30);
-  --kr-wall-hi: oklch(0.24 0.01 260); --kr-wall: oklch(0.12 0.005 260);
-  display: block; width: 100%; height: auto; max-height: 380px; overflow: visible; touch-action: manipulation; user-select: none; -webkit-user-select: none;
+  --kr-floor-hi: oklch(0.98 0 0); --kr-floor: oklch(0.92 0.003 260); --kr-floor-lo: oklch(0.8 0.006 260);
+  --kr-shadow: oklch(0.25 0.01 260 / 0.32);
+  --kr-bronze-hi: oklch(0.94 0.08 95); --kr-bronze: oklch(0.8 0.11 88); --kr-bronze-lo: oklch(0.6 0.1 78);
+  --kr-chrome-hi: oklch(0.99 0 0); --kr-chrome: oklch(0.8 0.005 250); --kr-chrome-lo: oklch(0.45 0.01 250);
+  --kr-shell-hi: oklch(0.42 0.01 260); --kr-shell: oklch(0.17 0.005 260); --kr-shell-lo: oklch(0.07 0 0);
+  --kr-head-hi: oklch(0.995 0 0); --kr-head: oklch(0.95 0.003 250); --kr-head-lo: oklch(0.8 0.006 250);
+  display: block; width: 100%; height: auto; max-height: 440px; overflow: visible; touch-action: manipulation; user-select: none; -webkit-user-select: none;
 }
-.kr-svg[data-finish="sparkle"] { --kr-shell-hi: oklch(0.36 0.01 260); --kr-shell: oklch(0.2 0.005 260); --kr-shell-lo: oklch(0.1 0 0); --kr-rug-hi: oklch(0.32 0.02 260); --kr-rug: oklch(0.18 0.01 260); }
-.kr-svg[data-finish="wood"] { --kr-shell-hi: oklch(0.68 0.11 62); --kr-shell: oklch(0.52 0.11 55); --kr-shell-lo: oklch(0.32 0.08 45); --kr-reso-hi: oklch(0.9 0.02 85); --kr-reso: oklch(0.8 0.03 80); --kr-wall-hi: oklch(0.26 0.04 40); --kr-wall: oklch(0.12 0.02 40); }
-.kr-wall { fill: var(--kr-wall); }
-.kr-svg[data-finish] .kr-wall { fill: color-mix(in oklab, var(--kr-wall-hi) 40%, var(--kr-wall)); }
-.kr-rug-border { fill: none; stroke: color-mix(in oklab, var(--kr-rug-hi) 60%, var(--kr-bronze)); stroke-width: 1.2; stroke-dasharray: 6 4; opacity: 0.55; }
-.kr-stand { stroke: var(--kr-chrome); stroke-width: 2.6; stroke-linecap: round; fill: none; }
-.kr-stand.is-thick { stroke-width: 4; }
-.kr-pedal { fill: var(--kr-chrome-lo); stroke: var(--kr-chrome); stroke-width: 0.8; }
-.kr-cym { stroke: var(--kr-bronze-lo); stroke-width: 0.6; }
-.kr-cym-edge { fill: var(--kr-bronze-lo); opacity: 0.9; }
-.kr-lathe { fill: none; stroke: var(--kr-bronze-lo); stroke-width: 0.5; opacity: 0.45; }
-.kr-shine { fill: none; stroke: var(--kr-bronze-hi); stroke-width: 2; stroke-linecap: round; opacity: 0.55; }
-.kr-shell { stroke: oklch(0 0 0 / 0.5); stroke-width: 0.8; }
-.kr-flake { fill: oklch(1 0 0 / 0.35); }
+.kr-svg[data-finish="sparkle"] { --kr-shell-hi: oklch(0.5 0.02 260); --kr-shell: oklch(0.22 0.01 260); }
+.kr-svg[data-finish="wood"] { --kr-shell-hi: oklch(0.7 0.11 62); --kr-shell: oklch(0.52 0.11 55); --kr-shell-lo: oklch(0.3 0.08 45); }
+.kr-shadow { fill: var(--kr-shadow); }
+.kr-stand { fill: none; stroke: var(--kr-chrome-lo); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+.kr-stand.is-thick { stroke-width: 5.5; }
+.kr-stand-core { fill: none; stroke: var(--kr-chrome-hi); stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; opacity: 0.9; }
+.kr-stand-core.is-thick { stroke: var(--kr-chrome-lo); stroke-width: 3.5; opacity: 1; }
+.kr-pedal { fill: var(--kr-shell); stroke: var(--kr-chrome); stroke-width: 1; }
+.kr-cym { stroke: var(--kr-bronze-lo); stroke-width: 0.8; }
+.kr-cym-edge { fill: var(--kr-bronze-lo); }
+.kr-lathe { fill: none; stroke: var(--kr-bronze-lo); stroke-width: 0.7; opacity: 0.4; }
+.kr-spoke { fill: var(--kr-bronze-hi); opacity: 0.35; }
+.kr-nut { fill: var(--kr-shell); stroke: var(--kr-chrome); stroke-width: 1; }
+.kr-shell { stroke: oklch(0 0 0 / 0.6); stroke-width: 0.8; }
+.kr-gloss { fill: none; stroke: oklch(1 0 0 / 0.22); stroke-width: 3; stroke-linecap: round; }
+.kr-flake { fill: oklch(1 0 0 / 0.4); }
 .kr-grain { fill: none; stroke: oklch(0.25 0.06 40 / 0.35); stroke-width: 0.6; }
-.kr-head { stroke: oklch(0 0 0 / 0.25); stroke-width: 0.6; }
-.kr-head-dot { fill: oklch(0.2 0 0 / 0.12); }
-.kr-hoop { fill: none; stroke-width: 2.6; }
-.kr-hoop-line { fill: none; stroke-width: 2.4; }
-.kr-rod { stroke: var(--kr-chrome-hi); stroke-width: 1; opacity: 0.85; }
-.kr-lug { stroke: oklch(0 0 0 / 0.35); stroke-width: 0.4; }
-.kr-kick-hoop { fill: none; stroke: color-mix(in oklab, var(--kr-shell-hi) 70%, var(--kr-bronze)); stroke-width: 7; }
-.kr-reso { stroke: oklch(0 0 0 / 0.4); stroke-width: 1; }
-.kr-reso-ring { fill: none; stroke: var(--kr-bronze); stroke-width: 1.2; opacity: 0.6; }
-.kr-logo { font-family: var(--font-display); font-size: 21px; font-weight: 800; letter-spacing: 0.12em; fill: var(--kr-bronze-hi); }
-.kr-svg[data-finish="wood"] .kr-logo { fill: oklch(0.25 0.03 50); }
-.kr-logo-sub { font-family: var(--font-mono); font-size: 7px; letter-spacing: 0.14em; fill: var(--kr-chrome); }
-.kr-port { fill: oklch(0.05 0 0); stroke: var(--kr-chrome); stroke-width: 1.4; }
-.kr-cowbell { stroke: oklch(0 0 0 / 0.4); stroke-width: 0.6; }
+.kr-head { stroke: oklch(0.55 0.005 250 / 0.6); stroke-width: 0.8; }
+.kr-hoop { fill: none; stroke: var(--kr-chrome-lo); stroke-width: 3; }
+.kr-hoop-hi { fill: none; stroke: var(--kr-chrome-hi); stroke-width: 1; opacity: 0.9; }
+.kr-hoop-line { fill: none; stroke: var(--kr-chrome); stroke-width: 2.2; }
+.kr-rod { stroke: var(--kr-chrome-hi); stroke-width: 1; opacity: 0.7; }
+.kr-lug { stroke: oklch(0 0 0 / 0.45); stroke-width: 0.5; }
+.kr-kick-hoop { fill: var(--kr-shell-lo); stroke: var(--kr-chrome); stroke-width: 1.4; }
+.kr-head-logo { font-family: var(--font-mono); font-size: 6.5px; letter-spacing: 0.14em; fill: oklch(0.45 0.005 250 / 0.7); }
+.kr-beater { fill: oklch(0.3 0.005 250); stroke: var(--kr-chrome); stroke-width: 1; }
+.kr-cowbell { stroke: oklch(0 0 0 / 0.45); stroke-width: 0.6; }
 .kr-cowbell-mouth { fill: oklch(0.08 0 0); }
-.kr-tamb { fill: color-mix(in oklab, var(--kr-shell) 60%, oklch(0.2 0 0)); stroke: var(--kr-chrome); stroke-width: 0.8; }
+.kr-tamb { fill: var(--kr-shell); stroke: var(--kr-chrome); stroke-width: 0.8; }
 /* lights up when hit (DrumKitView animates opacity) */
-.kr-glow { fill: oklch(1 0.03 90); opacity: 0; pointer-events: none; mix-blend-mode: screen; }
+.kr-glow { fill: oklch(1 0.05 95); opacity: 0; pointer-events: none; mix-blend-mode: screen; }
+.kr-glow.is-head { fill: oklch(0.72 0.12 200); mix-blend-mode: multiply; }
 .kr-anim, [data-hat-top] { transform-box: fill-box; transform-origin: center; }
 [data-kind="kick"] { transform-origin: center; }
 .kr-piece { cursor: pointer; outline: none; }
@@ -50,3 +49,4 @@
 .kr-piece.is-empty { cursor: default; opacity: 0.75; }
 .kit-view[data-kit-real="1"] { padding: 4px; }
 .kit-view-switch { position: absolute; top: 6px; left: 6px; z-index: 1; }
+.phone-console .kr-svg { max-height: 300px; }
