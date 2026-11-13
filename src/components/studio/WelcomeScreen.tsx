@@ -71,14 +71,17 @@ const APPLE_ICON = (
   </svg>
 );
 
-export function WelcomeScreen() {
+/** `next` is a validated same-origin path (an assistant's connect request) to return to after signing in. */
+export function WelcomeScreen({ next }: { next?: string | undefined } = {}) {
   const { setStage, setSignedIn } = useApp();
+  const returnUrl = () => (next ? new URL(next, window.location.origin).href : window.location.origin);
   const [mode, setMode] = useState<"signin" | "signup" | "forgot" | "magic" | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
 
   const enterStudio = () => {
+    if (next) { window.location.assign(next); return; }
     setSignedIn(true);
     setStage("start");
   };
@@ -126,7 +129,7 @@ export function WelcomeScreen() {
       if (mode === "magic") {
         const { error } = await supabase.auth.signInWithOtp({
           email,
-          options: { emailRedirectTo: window.location.origin },
+          options: { emailRedirectTo: returnUrl() },
         });
         if (error) throw error;
         toast.success("Check your email", { description: "We sent a sign-in link. Open it on this device — no password needed." });
@@ -137,7 +140,7 @@ export function WelcomeScreen() {
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: window.location.origin },
+          options: { emailRedirectTo: returnUrl() },
         });
         if (error) throw error;
         if (!data.session) {
@@ -158,7 +161,7 @@ export function WelcomeScreen() {
   const oauth = async (provider: "google" | "apple") => {
     try {
       const result = await lovable.auth.signInWithOAuth(provider, {
-        redirect_uri: window.location.origin,
+        redirect_uri: returnUrl(),
       });
       if (result.error) {
         toast.error(result.error.message ?? "Sign-in failed");

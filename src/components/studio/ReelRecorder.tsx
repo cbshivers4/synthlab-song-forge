@@ -16,6 +16,8 @@ import { encodeAiff, encodeFlac, encodeWavDepth } from "@/lib/synclab/export-for
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { uid } from "@/lib/synclab/presets";
 import { Knob } from "./Knob";
+import { REEL_DESIGNS, reelDesign, setReelDesign, useReelDesign } from "@/lib/synclab/reel-designs";
+import "./reel-designs.css";
 
 const clock = (s: number) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(Math.floor(s % 60)).padStart(2, "0")}.${Math.floor((s % 1) * 10)}`;
 function Reel({ moving, right, fill = 0.5, angle = 0 }: { moving: boolean; right?: boolean; fill?: number; angle?: number }) {
@@ -53,6 +55,8 @@ export function ReelRecorder() {
   const state = useSyncExternalStore(recorder.subscribe, recorder.getSnapshot, recorder.getSnapshot);
   const { addTrack, addClip, transport } = useStudio();
   const [look, setLook] = useState<"reel" | "simple">("reel");
+  const designId = useReelDesign();
+  const design = reelDesign(designId);
   // The deck is always an independent tape machine; "Song master" is only an audio source.
   const songSource = state.source === "song";
   const fileInput = useRef<HTMLInputElement>(null);
@@ -92,10 +96,11 @@ export function ReelRecorder() {
     } catch (error) { toast.error(error instanceof Error ? error.message : "Could not save tape."); }
     finally { setSaving(false); }
   };
-  return <section className={`reel-recorder mx-auto w-full max-w-[900px]${skinned ? " studio-wallpaper" : ""}`} data-deck-look={look} aria-label="Reel-to-reel recorder" data-skin-panel="reel" style={skinBackground(skin)} {...skinDrop}>
+  return <section className={`reel-recorder mx-auto w-full max-w-[900px]${skinned ? " studio-wallpaper" : ""}`} data-deck-look={look} data-reel-design={design.id} aria-label="Reel-to-reel recorder" data-skin-panel="reel" style={skinBackground(skin)} {...skinDrop}>
       <SkinControls skinKey="reel" image />
-    <header className="tape-brand flex flex-wrap items-center justify-between gap-2 px-4 py-3"><div><h2 className="font-display text-lg font-semibold">SYNCLAB <span className="text-primary">R2R</span></h2><p className="font-mono text-[10px] text-muted-foreground">STEREO TAPE RECORDER · DETROIT</p></div><span role="status" className={`font-mono text-xs ${recording ? "text-destructive" : "text-primary"}`}>{state.busy ? "PREPARING" : saving ? "SAVING" : recording ? "RECORDING" : state.mode.toUpperCase()}</span>
-      <div className="flex gap-1" role="group" aria-label="Recorder look"><Button size="sm" variant={look === "reel" ? "default" : "outline"} aria-pressed={look === "reel"} onClick={() => setLook("reel")}>Reel-to-reel</Button><Button size="sm" variant={look === "simple" ? "default" : "outline"} aria-pressed={look === "simple"} onClick={() => setLook("simple")}>QuickTime style</Button></div></header>
+    <header className="tape-brand flex flex-wrap items-center justify-between gap-2 px-4 py-3"><div><h2 className="font-display text-lg font-semibold">SYNCLAB <span className="text-primary">R2R</span></h2><p className="font-mono text-[10px] text-muted-foreground">{design.model}</p></div><span role="status" className={`font-mono text-xs ${recording ? "text-destructive" : "text-primary"}`}>{state.busy ? "PREPARING" : saving ? "SAVING" : recording ? "RECORDING" : state.mode.toUpperCase()}</span>
+      <div className="flex gap-1" role="group" aria-label="Recorder look"><Button size="sm" variant={look === "reel" ? "default" : "outline"} aria-pressed={look === "reel"} onClick={() => setLook("reel")}>Reel-to-reel</Button><Button size="sm" variant={look === "simple" ? "default" : "outline"} aria-pressed={look === "simple"} onClick={() => setLook("simple")}>QuickTime style</Button></div>
+      {look === "reel" && <label className="reel-design-picker flex items-center gap-2 font-mono text-[10px] uppercase tracking-wider">Machine<select value={design.id} onChange={(e) => setReelDesign(e.target.value)} aria-label="Reel-to-reel design" title={design.blurb} className="h-8 rounded border border-input bg-background px-2 font-sans text-xs normal-case tracking-normal text-foreground">{REEL_DESIGNS.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</select></label>}</header>
     {look === "simple" ? <div className="flex flex-col items-center gap-4 border-t border-border bg-card px-4 py-6">
       <output aria-label="Recording time" className="font-mono text-4xl tabular-nums text-foreground">{clock(state.position)}</output>
       <div className="flex w-full max-w-md items-center gap-4">
@@ -115,7 +120,7 @@ export function ReelRecorder() {
 
     <div className="tape-deck" data-moving={active} data-rewinding={rewinding} style={{ "--tape-roll-time": rewinding ? "0.15s" : `${0.6 / state.speed}s` } as CSSProperties}><div className="tape-reels"><Reel moving={active} fill={1 - progress} angle={angles.supply} /><Reel moving={active} right fill={progress} angle={angles.takeUp} /></div>
       <svg className="tape-path" viewBox="0 0 600 80" aria-hidden="true"><path d="M88 5L176 60H424L512 5" /><path className="tape-motion" d="M88 5L176 60H424L512 5" /><circle cx="176" cy="60" r="13" /><circle cx="424" cy="60" r="13" /><rect x="267" y="41" width="66" height="24" rx="3" /><path d="M286 45V60M302 45V60M318 45V60" /></svg>
-      <div className="tape-head-assembly" aria-hidden="true"><span className="tape-guide left" /><div className="tape-head-cover"><span>SYNCLAB</span><strong>PRECISION STEREO HEAD</strong><small>R2R · DIRECT DRIVE</small></div><span className="tape-guide right" /><span className="tape-capstan" /></div>
+      <div className="tape-head-assembly" aria-hidden="true"><span className="tape-guide left" /><div className="tape-head-cover"><span>SYNCLAB</span><strong>{design.head[0]}</strong><small>{design.head[1]}</small></div><span className="tape-guide right" /><span className="tape-capstan" /></div>
       <div className="tape-display flex flex-wrap items-center justify-between gap-3"><span className="font-mono text-xs">{state.source === "song" ? "SONG MASTER" : "MIC / LINE"}</span><output aria-label="Tape counter" className="font-mono text-2xl text-primary">{clock(state.position)}</output><span aria-label="Tape length" className="font-mono text-xs text-muted-foreground">{clock(state.duration)}</span></div>
     </div>
     <div className="tape-console"><div className="tape-meter-pair grid grid-cols-2 gap-3"><TapeMeter channel="L" level={state.levelL} clipped={state.clipped} reset={recorder.resetClip} /><TapeMeter channel="R" level={state.levelR} clipped={state.clipped} reset={recorder.resetClip} /></div>

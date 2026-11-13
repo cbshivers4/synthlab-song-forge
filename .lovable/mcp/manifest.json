@@ -1,0 +1,191 @@
+{
+  "version": 1,
+  "sdk_version": "3.5.0",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://gbwxyctbdcfnauirdwwm.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "synclab-app",
+      "version": "1.0.0",
+      "title": "Synclab App"
+    },
+    "tools": [
+      {
+        "name": "list_projects",
+        "title": "List saved projects",
+        "description": "List the signed-in user's saved SYNCLAB projects, newest first, with tempo, key and time signature.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "search": {
+              "description": "Only projects whose name contains this text.",
+              "type": "string",
+              "maxLength": 100
+            },
+            "limit": {
+              "description": "How many projects to return (default 25).",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_project",
+        "title": "Get project details",
+        "description": "Describe one saved project: tempo, bars, song sections, notes and each track's type, instrument sound, level, pan, mute/solo and effects.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "project_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "description": "Project ID from list_projects."
+            }
+          },
+          "required": [
+            "project_id"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "rename_project",
+        "title": "Rename a project",
+        "description": "Rename one of the signed-in user's saved projects. Needs a plan that can save projects.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "project_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "description": "Project ID from list_projects."
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80,
+              "description": "The new project name."
+            }
+          },
+          "required": [
+            "project_id",
+            "name"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_media",
+        "title": "List media library",
+        "description": "List items in the signed-in user's SYNCLAB library (uploaded and exported audio/video, saved sounds and presets).",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "kind": {
+              "description": "Only this kind of item, e.g. audio, video, preset.",
+              "type": "string",
+              "maxLength": 40
+            },
+            "limit": {
+              "description": "How many items to return (default 50).",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_plan",
+        "title": "Get subscription plan",
+        "description": "Show the signed-in user's SYNCLAB subscription status and renewal date (read-only; billing changes happen in the app).",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "search_help",
+        "title": "Search SYNCLAB help",
+        "description": "Search the SYNCLAB Help Center and return the best matching articles: how to use a feature, what it can do and what it can't.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200,
+              "description": "What to look up, e.g. \"record vocals\", \"DJ decks\", \"MIDI keyboard\"."
+            },
+            "limit": {
+              "description": "How many articles to return in full (default 2).",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 5
+            }
+          },
+          "required": [
+            "query"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}

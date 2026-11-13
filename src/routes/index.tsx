@@ -58,6 +58,7 @@ import { AppUpdateBanner } from "@/components/studio/AppUpdateBanner";
 import { DesktopWebsiteStatus } from "@/components/studio/DesktopWebsiteStatus";
 import { ReferenceAnalyzer } from "@/components/studio/ReferenceAnalyzer";
 import { LiveView } from "@/components/studio/LiveView";
+import { StudioAgentTools } from "@/components/studio/StudioAgentTools";
 import { LiveLooperView } from "@/components/studio/LiveLooperView";
 import { ExternalApps } from "@/components/studio/ExternalApps";
 import { HumToBeat } from "@/components/studio/HumToBeat";
@@ -541,11 +542,12 @@ function StudioWorkspace() {
   }, [isMobile, mobileAccessibility]);
   if (isMobile) return <>
     <PhoneStudio><SafePanels float={float} setFloat={setFloat} /></PhoneStudio>
-    <TrackSettingsDialog /><DeviceSetup /><ExportDialog /><MidiClockFollow /><DrummerBridge /><KeysBridge /><ScopeWindow />
+    <TrackSettingsDialog /><DeviceSetup /><ExportDialog /><MidiClockFollow /><DrummerBridge /><KeysBridge /><ScopeWindow /><StudioAgentTools />
   </>;
   return (
     <div className={`arrangement-workspace flex h-[100dvh] flex-col overflow-hidden ${landscape ? "landscape-prod" : ""} ${landscape && landscapeTools ? "landscape-tools" : ""} ${isMobile ? "mobile-studio" : ""} ${isMobile && mobileAccessibility.extraLargeControls ? "mobile-controls-xl" : ""} ${isMobile && mobileAccessibility.increasedText ? "mobile-text-xl" : ""} ${isMobile && mobileAccessibility.highContrast ? "mobile-high-contrast" : ""}`}>
       {!isMobile && <MenuBar />}
+      <StudioAgentTools />
       <div className="flex min-h-0 flex-1">
         {!isMobile && <ToolsRail />}
         {landscape && <MobileNav landscape toolsOpen={landscapeTools} onToggleTools={() => setLandscapeTools((v) => !v)} onBeatMode={() => setBeatMode(true)} view={mobileView} setView={setMobileView} moreSignal={moreSignal} />}
