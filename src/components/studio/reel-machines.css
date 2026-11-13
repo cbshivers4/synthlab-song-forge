@@ -1,0 +1,74 @@
+/* Swappable reel-to-reel machine faces (reel-designs.ts). Presentation only: every design keeps the
+   same controls, meters and tape engine; "classic" is the original deck in styles.css. */
+.reel-recorder[data-deck-look="reel"] .reel-design-picker { color: var(--tape-deck-ink); }
+
+/* Studio Master — warm grey console machine, black keys, red counter */
+.reel-recorder[data-deck-look="reel"][data-reel-design="studio"] {
+  --tape-deck-face: oklch(0.78 0.018 80);
+  --tape-deck-light: oklch(0.9 0.015 85);
+  --tape-deck-ink: oklch(0.2 0.012 60);
+  --tape-deck-groove: oklch(0.48 0.015 70);
+  --tape-deck-brush: linear-gradient(transparent, transparent);
+  border-color: oklch(0.3 0.008 250);
+  border-inline-width: 22px;
+}
+.reel-recorder[data-reel-design="studio"] .tape-head-cover { background: linear-gradient(180deg, oklch(0.36 0.03 245), oklch(0.27 0.03 245)); color: oklch(0.92 0.01 85); border-color: oklch(0.2 0.02 245); }
+.reel-recorder[data-reel-design="studio"] .tape-buttons button { background: linear-gradient(180deg, oklch(0.3 0.005 250), oklch(0.17 0.004 250)) !important; color: oklch(0.95 0 0) !important; border-color: oklch(0.1 0 0) !important; }
+.reel-recorder[data-reel-design="studio"] .tape-buttons button[aria-label^="Record"] { color: oklch(0.7 0.22 27) !important; }
+.reel-recorder[data-reel-design="studio"] .tape-display output { color: oklch(0.68 0.24 27) !important; text-shadow: 0 0 6px oklch(0.6 0.24 27 / 0.7); }
+.reel-recorder[data-reel-design="studio"] .reel-stop-hi { stop-color: oklch(0.9 0.01 85); }
+.reel-recorder[data-reel-design="studio"] .reel-stop-mid { stop-color: oklch(0.62 0.012 80); }
+.reel-recorder[data-reel-design="studio"] .reel-stop-lo { stop-color: oklch(0.36 0.01 70); }
+
+/* Broadcast Silver — bright brushed aluminium over a smoked deck, amber counter */
+.reel-recorder[data-deck-look="reel"][data-reel-design="broadcast"] {
+  --tape-deck-face: oklch(0.86 0.004 250);
+  --tape-deck-light: oklch(0.97 0.002 250);
+  --tape-deck-ink: oklch(0.18 0.006 250);
+  --tape-deck-groove: oklch(0.55 0.006 250);
+  --tape-deck-brush: repeating-linear-gradient(90deg, transparent 0 1px, color-mix(in oklab, var(--tape-deck-ink) 7%, transparent) 1px 2px);
+  border-color: oklch(0.62 0.004 250);
+  border-block-color: oklch(0.42 0.004 250);
+}
+.reel-recorder[data-deck-look="reel"][data-reel-design="broadcast"] .tape-deck { background: linear-gradient(180deg, oklch(0.24 0.008 250), oklch(0.16 0.006 250)); }
+.reel-recorder[data-reel-design="broadcast"] .tape-deck .tape-display { color: oklch(0.9 0.004 250); }
+.reel-recorder[data-reel-design="broadcast"] .tape-deck .tape-display .text-muted-foreground { color: oklch(0.7 0.004 250); }
+.reel-recorder[data-reel-design="broadcast"] .tape-head-cover { background: linear-gradient(180deg, oklch(0.32 0.01 250 / 0.92), oklch(0.18 0.01 250 / 0.95)); color: oklch(0.9 0.004 250); border-color: oklch(0.55 0.006 250); }
+.reel-recorder[data-reel-design="broadcast"] .tape-display output { color: oklch(0.8 0.17 70) !important; text-shadow: 0 0 6px oklch(0.75 0.17 70 / 0.6); }
+
+/* Midnight Black — black anodised face, gold trim, gold-tinted reels */
+.reel-recorder[data-deck-look="reel"][data-reel-design="midnight"] {
+  --tape-deck-face: oklch(0.2 0.006 250);
+  --tape-deck-light: oklch(0.32 0.008 250);
+  --tape-deck-ink: oklch(0.84 0.1 85);
+  --tape-deck-groove: oklch(0.5 0.08 80);
+  --tape-deck-brush: repeating-linear-gradient(0deg, transparent 0 2px, oklch(1 0 0 / 0.025) 2px 3px);
+  border-color: oklch(0.12 0.004 250);
+  border-block-color: oklch(0.6 0.1 85);
+}
+.reel-recorder[data-reel-design="midnight"] .tape-head-cover { background: linear-gradient(180deg, oklch(0.3 0.01 250), oklch(0.14 0.006 250)); color: oklch(0.86 0.11 85); border-color: oklch(0.55 0.09 80); }
+.reel-recorder[data-reel-design="midnight"] .tape-buttons button { background: linear-gradient(180deg, oklch(0.28 0.006 250), oklch(0.15 0.004 250)) !important; color: oklch(0.86 0.11 85) !important; border-color: oklch(0.5 0.08 80) !important; }
+.reel-recorder[data-reel-design="midnight"] .tape-buttons button[aria-label^="Record"] { color: oklch(0.7 0.22 27) !important; }
+.reel-recorder[data-reel-design="midnight"] .tape-display output { color: oklch(0.82 0.16 75) !important; text-shadow: 0 0 6px oklch(0.78 0.16 75 / 0.6); }
+.reel-recorder[data-reel-design="midnight"] .reel-stop-hi { stop-color: oklch(0.92 0.09 88); }
+.reel-recorder[data-reel-design="midnight"] .reel-stop-mid { stop-color: oklch(0.7 0.1 80); }
+.reel-recorder[data-reel-design="midnight"] .reel-stop-lo { stop-color: oklch(0.42 0.08 70); }
+
+/* Field Portable — gunmetal location recorder, leather straps, smaller reels */
+.reel-recorder[data-deck-look="reel"][data-reel-design="field"] {
+  --tape-deck-face: oklch(0.44 0.008 240);
+  --tape-deck-light: oklch(0.6 0.008 240);
+  --tape-deck-ink: oklch(0.95 0.004 240);
+  --tape-deck-groove: oklch(0.28 0.008 240);
+  --tape-deck-brush: repeating-linear-gradient(45deg, transparent 0 3px, oklch(0 0 0 / 0.05) 3px 4px);
+  border-color: oklch(0.48 0.07 55);
+  border-inline-width: 20px;
+  border-block-color: oklch(0.32 0.05 50);
+  border-radius: 14px;
+}
+.reel-recorder[data-deck-look="reel"][data-reel-design="field"] .tape-reels { max-width: 560px; gap: 14%; }
+.reel-recorder[data-reel-design="field"] .tape-head-cover { background: linear-gradient(180deg, oklch(0.7 0.006 240), oklch(0.5 0.006 240)); color: oklch(0.15 0.006 240); border-radius: 6px; }
+.reel-recorder[data-reel-design="field"] .tape-display output { color: oklch(0.85 0.17 140) !important; }
+.reel-recorder[data-reel-design="field"] .reel-stop-hi { stop-color: oklch(0.82 0.004 240); }
+.reel-recorder[data-reel-design="field"] .reel-stop-mid { stop-color: oklch(0.55 0.006 240); }
+.reel-recorder[data-reel-design="field"] .reel-stop-lo { stop-color: oklch(0.3 0.006 240); }

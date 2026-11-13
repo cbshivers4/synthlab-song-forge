@@ -280,8 +280,10 @@
 - [x] Modular Tech + Granular: many more presets; truly granular sounds
 - [x] Modular Tech: more advanced, technical modules
 - [x] Logic-style browser: type to find sounds/presets/effects fast
-- [ ] Open source / usable by Claude Code, Codex and similar (waiting on Christopher: licence + whether assistants should also control the app)
+- [x] AI assistants can control the app: in-page studio tools + sign-in-protected connector (synclabsapp.com/mcp)
+- [ ] Open-source licence (waiting on Christopher: MIT, GPL or source-visible no-resell)
 - [x] Reaper-style customizing: shareable look packs (theme, panel skins, mixer finish)
-- [ ] Swappable device designs beyond skins (new mixer/reel/synth layouts) — waiting on Christopher for which designs
+- [x] Swappable designs, first device: reel-to-reel (5 machines, shared in look packs)
+- [ ] Next swappable designs (mixer, synths) — Christopher to choose / send reference pictures
 - [x] Live Drummer: real-looking drum kit that visibly plays
 - [x] Studio View: connected gear shelf + back-view USB/Bluetooth/cable links

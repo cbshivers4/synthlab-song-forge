@@ -79,3 +79,4 @@ Library search ranking lives in library-search.ts (pure, tested); StudioSearch b
 Studio gear (studio-gear.ts) combines browser-reported MIDI/audio devices with a device-only "plugged in" list; gear the browser can't see is always marked as added by the user, never presented as detected.
 Look packs (look-pack.ts) parse strictly — only CSS colours, embedded data-URL images, known panel keys and mixer styles survive — so shared files can change looks but never inject code or remote URLs.
 Modular seq/chaos voltages are scheduled per note on the audio clock like S&H; feedback combs keep a negative-dB lowpass and soft clip in the loop so loop gain stays below 1.
+Reel-to-reel designs (reel-designs.ts) are device-only machine faces scoped by data-reel-design CSS around one shared control set and tape engine, so switching design never touches audio; look packs carry the design id, validated against REEL_DESIGNS.

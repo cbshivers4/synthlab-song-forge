@@ -17,6 +17,7 @@ import {
 } from "@/lib/synclab/skins";
 import type { Theme, ThemeVars } from "@/lib/synclab/themes";
 import { buildLookPack, parseLookPack } from "@/lib/synclab/look-pack";
+import { REEL_DESIGNS, readReelDesign, setReelDesign } from "@/lib/synclab/reel-designs";
 import { CONSOLE_STYLES } from "@/components/studio/mixer/shared";
 import { toast } from "sonner";
 
@@ -148,7 +149,7 @@ function LookPackSection({ activeTheme, onTheme }: { activeTheme: Theme; onTheme
   const exportPack = () => {
     let style = "studiopro", solid: string | undefined;
     try { style = localStorage.getItem("synclab.mixer.style") ?? style; solid = localStorage.getItem("synclab.mixer.solid") ?? undefined; } catch { /* storage blocked */ }
-    const pack = buildLookPack(name, { name: activeTheme.name, vars: activeTheme.vars }, readSkins(), { style, ...(solid ? { solid } : {}) });
+    const pack = buildLookPack(name, { name: activeTheme.name, vars: activeTheme.vars }, readSkins(), { style, ...(solid ? { solid } : {}) }, { design: readReelDesign() });
     const url = URL.createObjectURL(new Blob([JSON.stringify(pack, null, 1)], { type: "application/json" }));
     const a = document.createElement("a");
     a.href = url; a.download = `${slug(pack.name) || "look"}.synclab-look.json`; a.click();
@@ -156,18 +157,19 @@ function LookPackSection({ activeTheme, onTheme }: { activeTheme: Theme; onTheme
     toast.success("Look pack saved", { description: "Share the file — anyone can load it in Appearance." });
   };
   const importPack = async (file: File) => {
-    const pack = parseLookPack(await file.text(), [...WALLPANEL_PANELS.map((p) => p.key), "shared", "sampler-keyboard", "synth-keyboard", "pads-keyboard", "video-keyboard", "keyboard"], CONSOLE_STYLES.map((c) => c.id));
+    const pack = parseLookPack(await file.text(), [...WALLPANEL_PANELS.map((p) => p.key), "shared", "sampler-keyboard", "synth-keyboard", "pads-keyboard", "video-keyboard", "keyboard"], CONSOLE_STYLES.map((c) => c.id), REEL_DESIGNS.map((d) => d.id));
     if ("error" in pack) { toast.error(pack.error); return; }
     if (pack.theme) onTheme({ id: `custom-${slug(pack.theme.name) || "imported"}`, name: pack.theme.name, vars: pack.theme.vars });
     try {
       if (pack.skins) replaceSkins(pack.skins);
+      if (pack.reel) setReelDesign(pack.reel.design);
       if (pack.mixer) { localStorage.setItem("synclab.mixer.style", pack.mixer.style); if (pack.mixer.solid) localStorage.setItem("synclab.mixer.solid", pack.mixer.solid); }
     } catch (e) { toast.error(e instanceof Error ? e.message : "Couldn't save this look on this device."); return; }
     toast.success(`${pack.name} loaded`, { description: pack.mixer ? "The mixer desk finish changes the next time the mixer opens." : undefined });
   };
   return <section className="panel p-3">
     <span className="label-xs flex items-center gap-1"><Palette className="size-3.5" /> Look packs</span>
-    <p className="mt-1 text-xs text-muted-foreground">Save your whole look — colours, panel pictures and key colours, mixer desk finish — to one file you can share, or load a look someone else made. Look packs only change how things look; they can't add new devices.</p>
+    <p className="mt-1 text-xs text-muted-foreground">Save your whole look — colours, panel pictures and key colours, mixer desk finish, reel-to-reel machine — to one file you can share, or load a look someone else made. Look packs only change how things look; they can't add new devices.</p>
     <div className="mt-2 flex flex-wrap items-center gap-2">
       <Input value={name} onChange={(e) => setName(e.target.value)} className="w-52" aria-label="Look pack name" />
       <Button size="sm" variant="secondary" onClick={exportPack}><Download className="size-3.5" />SAVE LOOK TO FILE</Button>

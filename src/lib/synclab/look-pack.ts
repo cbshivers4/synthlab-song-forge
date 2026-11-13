@@ -14,6 +14,8 @@ export interface LookPack {
   theme?: { name: string; vars: ThemeVars } | undefined;
   skins?: Skins | undefined;
   mixer?: { style: string; solid?: string | undefined } | undefined;
+  /** reel-to-reel machine design id (reel-designs.ts) */
+  reel?: { design: string } | undefined;
 }
 
 const THEME_KEYS: (keyof ThemeVars)[] = ["background", "surface", "surface2", "foreground", "muted", "border", "primary", "primaryFg", "accent", "clipAudio", "clipMidi", "clipDrum", "meter", "selection"];
@@ -31,12 +33,12 @@ export function safeColor(v: unknown): string | undefined {
 const safeImage = (v: unknown) => (typeof v === "string" && /^data:image\/(png|jpe?g|webp|gif);base64,[a-z0-9+/=]+$/i.test(v) && v.length < 6_000_000 ? v : undefined);
 const num = (v: unknown, lo: number, hi: number) => (typeof v === "number" && Number.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : undefined);
 
-export function buildLookPack(name: string, theme: { name: string; vars: ThemeVars }, skins: Skins, mixer: { style: string; solid?: string }): LookPack {
-  return { format: LOOK_FORMAT, version: 1, name: name.trim() || "My look", theme, skins, mixer };
+export function buildLookPack(name: string, theme: { name: string; vars: ThemeVars }, skins: Skins, mixer: { style: string; solid?: string }, reel?: { design: string }): LookPack {
+  return { format: LOOK_FORMAT, version: 1, name: name.trim() || "My look", theme, skins, mixer, ...(reel ? { reel } : {}) };
 }
 
 /** Returns a cleaned pack, or an error message a person can read. */
-export function parseLookPack(text: string, validSkinKeys: readonly SkinKey[], validMixerStyles: readonly string[]): LookPack | { error: string } {
+export function parseLookPack(text: string, validSkinKeys: readonly SkinKey[], validMixerStyles: readonly string[], validReelDesigns: readonly string[] = []): LookPack | { error: string } {
   let raw: unknown;
   try { raw = JSON.parse(text); } catch { return { error: "That file isn't a SYNCLAB look pack." }; }
   const o = raw as Record<string, unknown>;
@@ -70,5 +72,7 @@ export function parseLookPack(text: string, validSkinKeys: readonly SkinKey[], v
     const solid = safeColor(m["solid"]);
     pack.mixer = { style: m["style"], ...(solid ? { solid } : {}) };
   }
+  const r = o["reel"] as Record<string, unknown> | undefined;
+  if (r && typeof r === "object" && typeof r["design"] === "string" && validReelDesigns.includes(r["design"])) pack.reel = { design: r["design"] };
   return pack;
 }

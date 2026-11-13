@@ -889,6 +889,35 @@ export const KNOWLEDGE_BASE: Article[] = [
     cant: ["Add new devices, panels or code — look packs only change how things look, so a downloaded file can't do anything harmful.", "Use pictures from web addresses: only pictures stored inside the file load."],
   },
   {
+    id: "reel-designs",
+    category: "Recording",
+    title: "Reel-to-reel machine designs",
+    tags: "reel tape recorder design skin machine studer revox akai nagra look customize",
+    body: [
+      "Open the Reel-to-Reel Recorder. With the Reel-to-reel look on, pick a machine from the MACHINE menu at the top: Silver Stereo, Studio Master, Broadcast Silver, Midnight Black or Field Portable.",
+      "Every machine has the same buttons, meters, knobs and tape. Only the face, frame, reel metal, head cover and counter colour change.",
+      "Your choice stays on this device and is saved inside look packs, so you can share it.",
+    ],
+    can: ["Switch machines at any time, even while the tape is playing or recording — the sound and the tape don't change."],
+    cant: ["Change how the tape sounds by changing the machine — use Tone, Saturation and Tape speed for that.", "Load your own machine artwork yet; panel wallpaper still works on any machine."],
+  },
+  {
+    id: "ai-assistants",
+    category: "Getting started",
+    title: "Let AI assistants use SYNCLAB",
+    tags: "ai assistant claude chatgpt codex mcp agent connect control automation",
+    body: [
+      "Two ways in. In an AI browser that supports page tools, the assistant can run the open studio: read your tracks, play and stop, change tempo, loop and metronome, add tracks, move faders, pan, mute, solo and arm, open screens, search the library and load sounds, kits and effects.",
+      "In assistants that connect to apps (like Claude), add SYNCLAB as a connector using the address synclabsapp.com/mcp. You'll sign in and tap Allow. The assistant can then list and describe your saved projects, rename them, list your media library and plan, and search this Help Center.",
+    ],
+    can: ["Have an assistant set up a session for you: \"add a drum track with an 808 kit and put a dub delay on it\".", "Ask an assistant about your saved projects from anywhere, without opening the studio."],
+    cant: [
+      "Delete tracks or projects, buy anything or share your work — those actions stay with you.",
+      "Play or record sound through the connector: sound only happens in the open studio.",
+      "Page tools only work in AI browsers that support them; a normal browser ignores them.",
+    ],
+  },
+  {
     id: "modular-advanced",
     category: "Synths & keys",
     title: "Modular Tech: sequencer, chaos, follower, macro and comb",
