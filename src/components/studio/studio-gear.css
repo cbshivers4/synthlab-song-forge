@@ -1,0 +1,14 @@
+/* Connected gear shelf (Studio View front) and wireless cables (back). Semantic tokens only. */
+.studio-gear-shelf { max-width: 1240px; margin: 10px auto 0; border: 1px solid var(--border); border-radius: 8px; background: color-mix(in oklab, var(--surface) 82%, transparent); backdrop-filter: blur(4px); }
+.studio-gear-head { display: flex; align-items: center; gap: 10px; padding: 6px 8px; }
+.studio-gear-row { display: flex; flex-wrap: wrap; gap: 10px; padding: 0 8px 8px; }
+.studio-gear-item { display: flex; width: 150px; flex-direction: column; align-items: center; gap: 2px; padding: 6px; border: 1px solid var(--border); border-radius: 6px; background: color-mix(in oklab, var(--surface-2) 70%, transparent); }
+.studio-gear-item .studio-instrument-art { width: 100%; height: 92px; }
+.studio-gear-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; font-weight: 600; }
+.studio-gear-link { display: inline-flex; align-items: center; gap: 4px; border-radius: 999px; padding: 1px 7px; font-family: var(--font-mono, ui-monospace); font-size: 9px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted-foreground); border: 1px solid var(--border); }
+.studio-gear-link[data-link="bluetooth"] { color: var(--primary); border-color: color-mix(in oklab, var(--primary) 55%, transparent); }
+.studio-gear-link[data-link="cable"] { color: var(--foreground); }
+.studio-rear-gear { display: flex; flex-wrap: wrap; align-items: end; justify-content: center; gap: 14px; margin: 14px auto 0; max-width: 1240px; }
+.studio-rear-gear .studio-back-unit { min-width: 150px; }
+.modular-cable.is-wireless { stroke-dasharray: 2 9; stroke-width: 3; }
+.studio-rear-wireless-tag { font-family: var(--font-mono, ui-monospace); font-size: 9px; fill: var(--primary); }

@@ -7,6 +7,8 @@ import type { Track } from "@/lib/synclab/types";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { Scope } from "./Scope";
 import { StudioBack } from "./StudioBack";
+import { StudioGearShelf } from "./StudioGear";
+import "./studio-gear.css";
 import roomImage from "@/assets/studio-room.jpg";
 
 function InstrumentDrawing({ track }: { track: Track }) {
@@ -211,6 +213,7 @@ export function StudioView() {
             <div className="studio-rack-vent" aria-hidden="true" />
           </div>}
         </div>
+        <StudioGearShelf />
       </div>
     </div>
     </>}

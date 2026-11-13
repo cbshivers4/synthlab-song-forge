@@ -8,6 +8,8 @@ import { useStudio } from "@/lib/synclab/store";
 import type { PluginInstance, Track } from "@/lib/synclab/types";
 import { toast } from "sonner";
 import roomImage from "@/assets/studio-room.jpg";
+import { useConnectedGear, LinkIcon } from "./StudioGear";
+import { LINK_LABEL } from "@/lib/synclab/studio-gear";
 
 /**
  * Reason-style rear of the studio rack. Every cable mirrors the real signal
@@ -27,6 +29,8 @@ type Wire = {
   /** What unplugging this wire does. */
   unplug?: (() => void) | undefined;
   fixed?: boolean;
+  /** Bluetooth / network: drawn as a dotted wireless link, not a cable */
+  wireless?: boolean;
 };
 
 const pkey = (p: JackRef) => `${p.device}|${p.port}`;
@@ -40,6 +44,8 @@ const busIn = (b: string): JackRef => ({ device: `bus:${b}`, port: "in" });
 
 export function StudioBack() {
   const { tracks, togglePluginBypass, updateTrack } = useStudio();
+  const { gear, interfaceName } = useConnectedGear();
+  const gearKey = gear.map((g) => g.id).join(",");
   const [pending, setPending] = useState<JackRef | null>(null);
   const [selectedWire, setSelectedWire] = useState<string | null>(null);
   const [listOpen, setListOpen] = useState(false);
@@ -50,7 +56,7 @@ export function StudioBack() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [overview, setOverview] = useState(true);
   const [view, setView] = useState({ phone: false, scale: 1, width: 760, height: 0 });
-  const [lines, setLines] = useState<{ id: string; d: string; color: CableColor; selected: boolean }[]>([]);
+  const [lines, setLines] = useState<{ id: string; d: string; color: CableColor; selected: boolean; wireless?: boolean | undefined }[]>([]);
 
   // Scale the measured room and its cables together, never their individual jacks.
   useLayoutEffect(() => {
@@ -127,6 +133,22 @@ export function StudioBack() {
     { id: "master>monitor-r", from: { device: "master", port: "out" }, to: { device: "monitor-r", port: "in" }, color: "blue", label: "Master → Right studio monitor", fixed: true },
     { id: "master>reel", from: { device: "master", port: "out" }, to: { device: "reel", port: "in" }, color: "purple", label: "Master → Reel-to-reel input", fixed: true },
   );
+  // connected gear: how each piece reaches the computer (reported USB/Bluetooth/network, or a declared cable into the interface)
+  const cabled = gear.filter((g) => g.link === "cable");
+  const ifaceInputs = Array.from(new Set(cabled.map((g) => Number(g.detail.match(/Input (\d+)/)?.[1] ?? 1)))).sort((a, b) => a - b);
+  const hasInterface = !!interfaceName || cabled.length > 0;
+  for (const g of gear) {
+    if (g.kind === "interface") continue;
+    const from = { device: `gear:${g.id}`, port: "out" };
+    if (g.link === "cable") {
+      const n = Number(g.detail.match(/Input (\d+)/)?.[1] ?? 1);
+      wires.push({ id: `${g.id}>iface:${n}`, from, to: { device: "interface", port: `in:${n}` }, color: "orange", label: `${g.name} → ${g.detail.split("→ ")[1] ?? `Input ${n}`} (${g.detail.split(" →")[0]})`, fixed: true });
+    } else {
+      wires.push({ id: `${g.id}>computer`, from, to: { device: "computer", port: g.link }, color: g.link === "bluetooth" ? "purple" : g.link === "network" ? "green" : "blue", label: `${g.name} → Computer (${g.detail})`, fixed: true, wireless: g.link === "bluetooth" || g.link === "network" });
+    }
+  }
+  if (hasInterface) wires.push({ id: "interface>computer", from: { device: "interface", port: "usb" }, to: { device: "computer", port: "usb" }, color: "blue", label: `${interfaceName ?? "Audio interface"} → Computer (USB cable)`, fixed: true });
+  const computerPorts = Array.from(new Set(["usb", ...gear.filter((g) => g.link === "bluetooth" || g.link === "network").map((g) => g.link)]));
 
   // ---- re-patch: turn a new connection into a real routing change ----
   const connect = (to: JackRef, from: JackRef | null = pending) => {
@@ -170,6 +192,7 @@ export function StudioBack() {
           const a = pos(w.from), b = pos(w.to);
           if (!a || !b) return [];
           const sag = Math.max(a.y, b.y) + 26 + (wires.indexOf(w) % 7) * 9;
+          if (w.wireless) return [{ id: w.id, color: w.color, selected: selectedWire === w.id, wireless: true, d: `M${a.x},${a.y} Q${(a.x + b.x) / 2},${Math.min(a.y, b.y) - 60} ${b.x},${b.y}` }];
           return [{ id: w.id, color: w.color, selected: selectedWire === w.id, d: `M${a.x},${a.y} C${a.x},${sag} ${b.x},${sag} ${b.x},${b.y}` }];
         }),
       );
@@ -183,7 +206,7 @@ export function StudioBack() {
       window.clearTimeout(t);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tracks, selectedWire]);
+  }, [tracks, selectedWire, gearKey]);
 
   const jack = (p: JackRef, out: boolean, text: string, disabled = false) => {
     const isPending = !!pending && pkey(pending) === pkey(p);
@@ -303,14 +326,19 @@ export function StudioBack() {
           </div>
         </section>
         </div>
+        {(gear.length > 0 || hasInterface) && <div className="studio-rear-gear" aria-label="Connected gear and how it is connected">
+          {gear.filter((g) => g.kind !== "interface").map((g) => unit(`gear:${g.id}`, g.name, `${LINK_LABEL[g.link].toUpperCase()} · ${g.reported ? "REPORTED" : "ADDED BY YOU"}`, jack({ device: `gear:${g.id}`, port: "out" }, true, g.link === "cable" ? "OUT" : LINK_LABEL[g.link].toUpperCase(), true)))}
+          {hasInterface && unit("interface", interfaceName ?? "AUDIO INTERFACE", interfaceName ? "USB AUDIO INTERFACE" : "NOT REPORTED RIGHT NOW", <>{ifaceInputs.map((n) => jack({ device: "interface", port: `in:${n}` }, false, `IN ${n}`, true))}{jack({ device: "interface", port: "usb" }, true, "USB", true)}</>, !interfaceName)}
+          {unit("computer", "COMPUTER", "THIS DEVICE", <>{computerPorts.map((p) => <span key={p} className="contents">{jack({ device: "computer", port: p }, false, p === "usb" ? "USB" : p === "bluetooth" ? "BT" : "NET", true)}</span>)}</>)}
+        </div>}
 
         <svg className="pointer-events-none absolute inset-0 size-full overflow-visible" aria-hidden>
           {lines.map((l) => (
             <g key={l.id}>
               <title>{wires.find(w => w.id === l.id)?.label}</title>
-              <path d={l.d} className="modular-cable-shadow" />
-              <path d={l.d} className={`modular-cable cable-${l.color} ${l.selected ? "is-selected" : ""}`} style={l.selected ? { strokeWidth: 6 } : undefined} />
-              <path d={l.d} className="modular-cable-sheen" />
+              {!l.wireless && <path d={l.d} className="modular-cable-shadow" />}
+              <path d={l.d} className={`modular-cable cable-${l.color} ${l.selected ? "is-selected" : ""} ${l.wireless ? "is-wireless" : ""}`} style={l.selected ? { strokeWidth: 6 } : undefined} />
+              {!l.wireless && <path d={l.d} className="modular-cable-sheen" />}
               <path d={l.d} className="studio-rear-cable-hit" onClick={() => setSelectedWire(selectedWire === l.id ? null : l.id)} />
             </g>
           ))}
