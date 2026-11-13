@@ -1,6 +1,6 @@
 import type { ModuleType } from './modular';
 
-export const MODULAR_SCOPE_TYPES: readonly ModuleType[] = ['vco', 'sub', 'vcf', 'fold', 'drive', 'delay', 'output'];
+export const MODULAR_SCOPE_TYPES: readonly ModuleType[] = ['vco', 'sub', 'vcf', 'fold', 'drive', 'delay', 'comb', 'output'];
 const taps = new Map<string, Set<AnalyserNode>>();
 export const modularScopeId = (trackId: string, moduleId: string) => `${trackId}:${moduleId}`;
 

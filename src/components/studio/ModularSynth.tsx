@@ -19,6 +19,8 @@ const pkey = (p: PortRef) => `${p.module}|${p.port}`;
 const DEVICE_SERIES: Partial<Record<ModuleType, string>> = {
   sub: "S-01 • ANALOG LOW END", formant: "VF-03 • RESONANT VOICE", phaser: "PA-04 • FOUR STAGES",
   compressor: "D-05 • DYNAMICS PROCESSOR", stereo: "SM-02 • PAN MODULATOR", attenuverter: "CV-02 • BIPOLAR UTILITY",
+  seq: "SQ-08 • 8-STEP PITCH + GATE", chaos: "CH-01 • LOGISTIC CHAOS", follower: "EF-01 • ENVELOPE FOLLOWER",
+  macro: "MC-01 • ONE KNOB, MANY CABLES", comb: "CR-02 • TUNED COMB RESONATOR",
 };
 
 /** Empty Eurorack-style case: add devices, then tap an output jack and an input jack to run a coloured cable. */

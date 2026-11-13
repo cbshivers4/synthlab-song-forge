@@ -1,6 +1,6 @@
 /** Modular Tech Synth: an empty rack you fill with devices, then wire with coloured patch cables. */
 
-export type ModuleType = "vco" | "noise" | "lfo" | "env" | "vcf" | "vca" | "mixer" | "drive" | "delay" | "output" | "fold" | "ring" | "sh" | "chorus" | "reverb" | "sub" | "formant" | "phaser" | "compressor" | "stereo" | "attenuverter";
+export type ModuleType = "vco" | "noise" | "lfo" | "env" | "vcf" | "vca" | "mixer" | "drive" | "delay" | "output" | "fold" | "ring" | "sh" | "chorus" | "reverb" | "sub" | "formant" | "phaser" | "compressor" | "stereo" | "attenuverter" | "seq" | "chaos" | "follower" | "macro" | "comb";
 export type CableColor = "red" | "orange" | "yellow" | "green" | "blue" | "purple" | "white";
 export const CABLE_COLORS: CableColor[] = ["red", "orange", "yellow", "green", "blue", "purple", "white"];
 
@@ -105,6 +105,33 @@ export const MODULE_DEFS: Record<ModuleType, ModuleDef> = {
     { id: "amount", label: "POLARITY", min: -2, max: 2, step: 0.01, def: 1 },
     { id: "offset", label: "OFFSET", min: -1, max: 1, step: 0.01, def: 0 },
   ], inputs: [{ id: "in", label: "CV IN", kind: "audio" }], outputs: [{ id: "out", label: "CV OUT" }] },
+  seq: { type: "seq", label: "STEP SEQUENCER", hp: 2, params: [
+    ...[1, 2, 3, 4, 5, 6, 7, 8].map((i) => ({ id: `s${i}`, label: `STEP ${i}`, min: -12, max: 12, step: 1, unit: "st", def: 0 })),
+    { id: "rate", label: "RATE", min: 0.5, max: 24, step: 0.5, unit: "Hz", def: 6 },
+    { id: "length", label: "LENGTH", min: 1, max: 8, step: 1, def: 8 },
+    { id: "glide", label: "GLIDE", min: 0, max: 0.25, step: 0.005, unit: "s", def: 0 },
+    { id: "gate", label: "GATE", min: 0.05, max: 1, step: 0.01, def: 0.5 },
+  ], inputs: [], outputs: [{ id: "out", label: "PITCH" }, { id: "gate", label: "GATE" }] },
+  chaos: { type: "chaos", label: "CHAOS", hp: 1, params: [
+    { id: "rate", label: "RATE", min: 0.05, max: 30, step: 0.05, unit: "Hz", def: 3 },
+    { id: "chaos", label: "CHAOS", min: 3.4, max: 4, step: 0.005, def: 3.9 },
+    { id: "smooth", label: "SMOOTH", min: 0, max: 1, step: 0.01, def: 0.6 },
+    { id: "range", label: "RANGE", min: 0, max: 1, step: 0.01, def: 1 },
+  ], inputs: [], outputs: [{ id: "out", label: "OUT" }] },
+  follower: { type: "follower", label: "ENV FOLLOWER", hp: 1, params: [
+    { id: "smooth", label: "SPEED", min: 1, max: 60, step: 0.5, unit: "Hz", def: 12 },
+    { id: "gain", label: "GAIN", min: 0, max: 6, step: 0.01, def: 2 },
+  ], inputs: [{ id: "in", label: "IN", kind: "audio" }], outputs: [{ id: "out", label: "CV OUT" }] },
+  macro: { type: "macro", label: "MACRO", hp: 1, params: [
+    { id: "value", label: "MACRO", min: 0, max: 1, step: 0.01, def: 0.5 },
+    { id: "amount", label: "RANGE", min: -1, max: 1, step: 0.01, def: 1 },
+  ], inputs: [], outputs: [{ id: "out", label: "OUT" }, { id: "inv", label: "INV" }] },
+  comb: { type: "comb", label: "COMB RESONATOR", hp: 2, params: [
+    { id: "tune", label: "TUNE", min: 0.25, max: 4, step: 0.01, unit: "×", def: 1 },
+    { id: "feedback", label: "FEEDBACK", min: 0, max: 0.98, step: 0.01, def: 0.85 },
+    { id: "damp", label: "DAMP", min: 400, max: 16000, step: 10, unit: "Hz", def: 6000 },
+    { id: "mix", label: "BLEND", min: 0, max: 1, step: 0.01, def: 0.8 },
+  ], inputs: [{ id: "in", label: "IN", kind: "audio" }, { id: "feedback", label: "FDBK CV", kind: "param", scale: 0.3 }], outputs: [{ id: "out", label: "OUT" }] },
   output: { type: "output", label: "OUTPUT", hp: 1, params: [{ id: "level", label: "LEVEL", min: 0, max: 1, step: 0.01, def: 0.7 }],
     inputs: [{ id: "in", label: "IN", kind: "audio" }, { id: "pan", label: "PAN CV", kind: "param", scale: 1 }], outputs: [] },
 };
@@ -389,6 +416,64 @@ export function playModularVoice(ctx: BaseAudioContext, dest: AudioNode, raw: un
         input.connect(smooth).connect(output); offset.connect(output); sources.push(offset);
         ins.set(key(mod.id, "in"), input); outs.set(key(mod.id, "out"), output); break;
       }
+      case "seq": {
+        // per-note step sequence: PITCH (octave units: 1 = 12 semitones, so ×1 into a VCO PITCH plays the steps in tune) and GATE pulses
+        const pitch = ctx.createConstantSource(), gate = ctx.createConstantSource();
+        const rate = Math.max(0.5, num(mod, "rate")), len = Math.max(1, Math.min(8, Math.round(num(mod, "length"))));
+        const glide = num(mod, "glide"), gateLen = Math.max(0.05, Math.min(1, num(mod, "gate"))) / rate;
+        pitch.offset.setValueAtTime(num(mod, "s1") / 12, t0);
+        gate.offset.setValueAtTime(0, t0);
+        let k = 0;
+        for (let t = t0; t < stopAt; t += 1 / rate, k++) {
+          const v = num(mod, `s${(k % len) + 1}`) / 12;
+          if (glide > 0 && k > 0) pitch.offset.setTargetAtTime(v, t, glide / 3); else pitch.offset.setValueAtTime(v, t);
+          gate.offset.setValueAtTime(1, t); gate.offset.setValueAtTime(0, Math.min(stopAt, t + gateLen));
+        }
+        sources.push(pitch, gate); outs.set(key(mod.id, "out"), pitch); outs.set(key(mod.id, "gate"), gate); break;
+      }
+      case "chaos": {
+        // logistic-map chaos: steady at low CHAOS, wild near 4; SMOOTH glides between values
+        const s = ctx.createConstantSource(); const rate = Math.max(0.05, num(mod, "rate")), r = num(mod, "chaos"), range = num(mod, "range");
+        const smooth = num(mod, "smooth"); let x = 0.1 + Math.random() * 0.8;
+        s.offset.setValueAtTime((x * 2 - 1) * range, t0);
+        for (let t = t0 + 1 / rate; t < stopAt; t += 1 / rate) {
+          x = r * x * (1 - x); if (x <= 0 || x >= 1) x = 0.37;
+          const v = (x * 2 - 1) * range;
+          if (smooth > 0) s.offset.linearRampToValueAtTime(v, t); else s.offset.setValueAtTime(v, t);
+        }
+        sources.push(s); outs.set(key(mod.id, "out"), s); break;
+      }
+      case "follower": {
+        // rectify, then smooth: the loudness of what comes in, as CV
+        const input = ctx.createGain(), rect = ctx.createWaveShaper(), lp = ctx.createBiquadFilter(), out = ctx.createGain();
+        const curve = new Float32Array(1025); for (let i = 0; i < curve.length; i++) curve[i] = Math.abs(i / 512 - 1); rect.curve = curve;
+        lp.type = "lowpass"; lp.frequency.value = num(mod, "smooth"); lp.Q.value = 0.5; out.gain.value = num(mod, "gain");
+        input.connect(rect).connect(lp).connect(out);
+        ins.set(key(mod.id, "in"), input); outs.set(key(mod.id, "out"), out); break;
+      }
+      case "macro": {
+        const s = ctx.createConstantSource(), inv = ctx.createConstantSource();
+        const v = num(mod, "value"), a = num(mod, "amount");
+        s.offset.value = v * a; inv.offset.value = (1 - v) * a;
+        sources.push(s, inv); outs.set(key(mod.id, "out"), s); outs.set(key(mod.id, "inv"), inv); break;
+      }
+      case "comb": {
+        // tuned feedback comb: rings at the note (×TUNE). A feedback loop can't be shorter than one
+        // 128-sample block in the browser, so high notes ring an octave (or two) lower — still in tune.
+        const input = ctx.createGain(), dl = ctx.createDelay(1), fb = ctx.createGain(), damp = ctx.createBiquadFilter();
+        const wet = ctx.createGain(), dry = ctx.createGain(), out = ctx.createGain();
+        let period = 1 / Math.max(1, freq * num(mod, "tune"));
+        const minLoop = 128 / ctx.sampleRate;
+        while (period < minLoop) period *= 2;
+        dl.delayTime.value = period; fb.gain.value = Math.min(0.97, num(mod, "feedback"));
+        // Web Audio lowpass Q is a dB peak: keep it negative so the loop gain never exceeds FEEDBACK,
+        // and a soft clipper in the loop stops patched feedback CV from running away
+        damp.type = "lowpass"; damp.frequency.value = num(mod, "damp"); damp.Q.value = -6;
+        const safe = ctx.createWaveShaper(); safe.curve = driveCurve(0.02);
+        const mix = num(mod, "mix"); wet.gain.value = mix; dry.gain.value = 1 - mix;
+        input.connect(dl); dl.connect(damp).connect(safe).connect(fb).connect(dl); damp.connect(wet).connect(out); input.connect(dry).connect(out);
+        ins.set(key(mod.id, "in"), input); ins.set(key(mod.id, "feedback"), fb.gain); outs.set(key(mod.id, "out"), out); break;
+      }
       case "output": {
         const i = ctx.createGain(); const pan = ctx.createStereoPanner(); const o = ctx.createGain();
         pan.pan.value = num(mod, "pan");
@@ -472,5 +557,135 @@ export const MODULAR_PRESETS: { name: string; modular: ModularPatch }[] = [
 ];
 
 /** Fresh starting patch: VCO → VCF → VCA (envelope) → output, default knob settings. */
+/* ---- advanced racks: step sequencers, chaos, envelope followers, macros and comb resonators ---- */
+type SeqSteps = [number, number, number, number, number, number, number, number];
+const steps = (v: SeqSteps) => Object.fromEntries(v.map((x, i) => [`s${i + 1}`, x]));
+const ADVANCED: { name: string; modular: ModularPatch }[] = [];
+const add = (name: string, spec: Spec) => ADVANCED.push({ name: `Modular Tech ${name}`, modular: build(spec) });
+
+// 1 · Sequenced basses: the step sequencer plays the bassline from one held note, its GATE opens the filter each step
+([
+  ["Seq Bass Detroit", [0, 0, 12, 0, 3, 0, 7, 10], 8, "sawtooth", 380, 14, 0],
+  ["Seq Bass Rubber", [0, 7, 0, 5, 0, 3, 0, -2], 6, "square", 520, 9, 0.04],
+  ["Seq Bass Rolling", [0, 0, 0, 12, 0, 0, 10, 12], 10, "sawtooth", 260, 18, 0],
+  ["Seq Bass Minor Walk", [0, 3, 5, 7, 10, 7, 5, 3], 5, "triangle", 900, 6, 0.06],
+  ["Seq Bass Offbeat Sub", [-12, 0, -12, 0, -12, 0, -12, 3], 8, "sine", 1400, 2, 0],
+] as const).forEach(([name, st, rate, wave, cutoff, res, glide]) => add(name, {
+  mods: [["sq", "seq", { ...steps([...st] as SeqSteps), rate, glide, gate: 0.45 }], ["v1", "vco", { wave, octave: -1 }], ["sub", "sub", { level: 0.5 }], ["m", "mixer"],
+    ["f", "vcf", { cutoff, resonance: res }], ["a", "vca"], ["e1", "env", { attack: 0.003, decay: 0.4, sustain: 0.8, release: 0.2 }], ["dr", "drive", { amount: 0.35 }], ["o", "output", { level: 0.6 }]],
+  cables: [["sq", "out", "v1", "pitch", 1, "yellow"], ["sq", "out", "sub", "pitch", 1, "yellow"], ["v1", "out", "m", "in1", 0.8, "red"], ["sub", "out", "m", "in2", 0.7, "orange"],
+    ["m", "out", "f", "in", 1, "white"], ["sq", "gate", "f", "cutoff", 0.35, "green"], ["f", "out", "a", "in", 1, "white"], ["e1", "out", "a", "cv", 1, "yellow"], ["a", "out", "dr", "in", 1, "blue"], ["dr", "out", "o", "in", 1, "white"]],
+}));
+
+// 2 · Sequenced leads and arps: steps transpose a bright VCO, gate drives the VCA, delay echoes it
+([
+  ["Seq Arp Crystal", [0, 7, 12, 19, 24, 19, 12, 7].map((x) => Math.min(12, x)), 12, "triangle", 0.25, 6000],
+  ["Seq Arp Minor Ninth", [0, 3, 7, 10, 12, 10, 7, 3], 10, "sawtooth", 0.33, 3800],
+  ["Seq Lead Acid Steps", [0, 12, 0, 10, 0, 7, 12, 3], 8, "sawtooth", 0.4, 1600],
+  ["Seq Arp Pentatonic", [0, 2, 4, 7, 9, 12, 9, 7], 14, "square", 0.2, 5200],
+  ["Seq Lead Glide Riff", [0, -2, 0, 3, 5, 3, 0, -5], 6, "sawtooth", 0.5, 2600],
+] as const).forEach(([name, st, rate, wave, gate, cutoff]) => add(name, {
+  mods: [["sq", "seq", { ...steps([...st] as SeqSteps), rate, gate, glide: name.includes("Glide") ? 0.08 : 0 }], ["v1", "vco", { wave }], ["v2", "vco", { wave: "sine", octave: 1 }],
+    ["m", "mixer"], ["f", "vcf", { cutoff, resonance: 5 }], ["a", "vca"], ["d", "delay", { time: 0.28, feedback: 0.45, mix: 0.35 }], ["o", "output", { level: 0.55 }]],
+  cables: [["sq", "out", "v1", "pitch", 1, "yellow"], ["sq", "out", "v2", "pitch", 1, "yellow"], ["v1", "out", "m", "in1", 0.8, "red"], ["v2", "out", "m", "in2", 0.3, "orange"],
+    ["m", "out", "f", "in", 1, "white"], ["f", "out", "a", "in", 1, "white"], ["sq", "gate", "a", "cv", 1, "green"], ["a", "out", "d", "in", 1, "blue"], ["d", "out", "o", "in", 1, "white"]],
+}));
+
+// 3 · Chaos textures: a chaos generator wanders the wavefolder and filter so no two notes move alike
+([
+  ["Chaos Folded Pad", 0.6, 3.7, 0.9, 1600, 0.8],
+  ["Chaos Storm Lead", 9, 3.98, 0.2, 2600, 0.4],
+  ["Chaos Glass Drift", 0.25, 3.55, 1, 5200, 0.7],
+  ["Chaos Machine Talk", 14, 3.92, 0, 1200, 0.3],
+  ["Chaos Swamp Drone", 1.4, 3.85, 0.7, 700, 1],
+] as const).forEach(([name, rate, chaos, smooth, cutoff, att]) => add(name, {
+  mods: [["v1", "vco", { wave: "triangle" }], ["v2", "vco", { wave: "sawtooth", fine: 9, octave: name.includes("Drone") ? -1 : 0 }], ["m", "mixer"], ["ch", "chaos", { rate, chaos, smooth }],
+    ["x", "fold", { folds: 0.5, gain: 1.4 }], ["f", "vcf", { cutoff, resonance: 3 }], ["e1", "env", { attack: att, decay: 0.8, sustain: 0.85, release: 1.6 }], ["a", "vca"],
+    ["r", "reverb", { size: 2.4, mix: 0.35 }], ["o", "output", { level: name.includes("Machine") ? 0.28 : 0.5 }]],
+  cables: [["v1", "out", "m", "in1", 0.7, "red"], ["v2", "out", "m", "in2", 0.5, "orange"], ["m", "out", "x", "in", 1, "white"], ["ch", "out", "x", "gain", 0.8, "purple"],
+    ["x", "out", "f", "in", 1, "white"], ["ch", "out", "f", "cutoff", 0.25, "blue"], ...VOICE.filter((c) => c[2] !== "o"), ["a", "out", "r", "in", 1, "green"], ["r", "out", "o", "in", 1, "white"]],
+}));
+
+// 4 · Comb resonators: noise or a pulse excites a tuned comb — plucks, metal, bowed tones
+([
+  ["Comb Pluck Harp", "noise", 1, 0.93, 5200, 0.002, 0.25],
+  ["Comb Steel Drum", "pulse", 2, 0.9, 7000, 0.001, 0.4],
+  ["Comb Bowed Metal", "noise", 1.5, 0.97, 3000, 0.4, 0.9],
+  ["Comb Dark Koto", "noise", 1, 0.88, 1800, 0.001, 0.18],
+  ["Comb Glass Ping", "pulse", 4, 0.95, 12000, 0.001, 0.6],
+] as const).forEach(([name, exc, tune, feedback, damp, attack, decay]) => add(name, {
+  mods: [exc === "noise" ? ["x", "noise", { color: "white" }] : ["x", "vco", { wave: "square", octave: 0 }],
+    ["e2", "env", { attack, decay: Math.min(0.08, decay / 4), sustain: name.includes("Bowed") ? 0.25 : 0, release: 0.05 }], ["ex", "vca"],
+    ["cb", "comb", { tune, feedback, damp, mix: 0.9 }], ["e1", "env", { attack: 0.001, decay, sustain: name.includes("Bowed") ? 0.7 : 0.2, release: decay * 2 }], ["a", "vca"],
+    ["r", "reverb", { size: 1.8, mix: 0.25 }], ["o", "output", { level: 0.6 }]],
+  cables: [["x", "out", "ex", "in", 1, "red"], ["e2", "out", "ex", "cv", 1, "orange"], ["ex", "out", "cb", "in", 1, "white"], ["cb", "out", "a", "in", 1, "white"],
+    ["e1", "out", "a", "cv", 1, "yellow"], ["a", "out", "r", "in", 1, "green"], ["r", "out", "o", "in", 1, "white"]],
+}));
+
+// 5 · Envelope follower: the sound's own loudness moves the filter (auto-wah) or the vowel
+([
+  ["Follower Auto Wah", "vcf", 18, 3, "sawtooth"],
+  ["Follower Talking Bass", "formant", 10, 2.5, "square"],
+  ["Follower Pumping Pad", "vcf", 4, 4, "sawtooth"],
+  ["Follower Funk Clav", "vcf", 30, 2, "square"],
+  ["Follower Vowel Sweep", "formant", 6, 3.5, "sawtooth"],
+] as const).forEach(([name, target, speed, gain, wave]) => add(name, {
+  mods: [["v1", "vco", { wave, octave: name.includes("Bass") ? -1 : 0 }], ["l", "lfo", { rate: name.includes("Pumping") ? 2 : 5.5, wave: "square", depth: 0.6 }], ["pre", "vca", { bias: 0.4 }],
+    ["fo", "follower", { smooth: speed, gain }],
+    target === "vcf" ? ["t", "vcf", { cutoff: 350, resonance: 14, type: "lowpass" }] : ["t", "formant", { vowel: "O", resonance: 9 }],
+    ["e1", "env", { attack: 0.004, decay: 0.3, sustain: 0.7, release: 0.3 }], ["a", "vca"], ["o", "output", { level: target === "vcf" ? 0.9 : 1.8 }]],
+  cables: [["v1", "out", "pre", "in", 1, "red"], ["l", "out", "pre", "cv", 0.6, "blue"], ["pre", "out", "t", "in", 1, "white"], ["pre", "out", "fo", "in", 1, "orange"],
+    [ "fo", "out", "t", target === "vcf" ? "cutoff" : "shift", target === "vcf" ? 0.5 : 0.8, "purple"], ["t", "out", "a", "in", 1, "white"], ["e1", "out", "a", "cv", 1, "yellow"], ["a", "out", "o", "in", 1, "white"]],
+}));
+
+// 6 · Macro morphs: one MACRO knob moves fold, filter and blend together (and its INV output the other way)
+([
+  ["Macro Morph Pad", 0.3, "sawtooth", 1800],
+  ["Macro Grit Bass", 0.7, "square", 500],
+  ["Macro Bright Brass", 0.55, "sawtooth", 2400],
+  ["Macro Hollow Keys", 0.2, "triangle", 3200],
+  ["Macro Snarl Lead", 0.85, "sawtooth", 1400],
+] as const).forEach(([name, value, wave, cutoff]) => add(name, {
+  mods: [["mc", "macro", { value }], ["v1", "vco", { wave, octave: name.includes("Bass") ? -1 : 0 }], ["v2", "vco", { wave: "square", fine: -7, octave: name.includes("Bass") ? -1 : 0 }],
+    ["m", "mixer"], ["x", "fold", { folds: 0.4, gain: 0.8 }], ["f", "vcf", { cutoff, resonance: 6 }], ["e1", "env", { attack: name.includes("Pad") ? 0.6 : 0.005, decay: 0.5, sustain: 0.75, release: 0.5 }],
+    ["a", "vca"], ["ch", "chorus", { mix: 0.4 }], ["o", "output", { level: 0.5 }]],
+  cables: [["v1", "out", "m", "in1", 0.7, "red"], ["v2", "out", "m", "in2", 0.5, "orange"], ["m", "out", "x", "in", 1, "white"],
+    ["mc", "out", "x", "gain", 1.2, "purple"], ["mc", "out", "f", "cutoff", 0.4, "blue"], ["mc", "inv", "v2", "level", -0.6, "green"],
+    ["x", "out", "f", "in", 1, "white"], ...VOICE.filter((c) => c[2] !== "o"), ["a", "out", "ch", "in", 1, "green"], ["ch", "out", "o", "in", 1, "white"]],
+}));
+
+// 7 · Ring & FM bells: ring modulation with a second VCO for clangorous, inharmonic tones
+([
+  ["Ring Bell Tower", 2.76, 1.4, 6000],
+  ["Ring Robot Voice", 1.5, 0.3, 2200],
+  ["Ring Gong Hit", 3.4, 2.5, 4000],
+  ["Ring Alien Lead", 1.01, 0.5, 3500],
+  ["Ring Tin Pluck", 5.2, 0.35, 9000],
+] as const).forEach(([name, ratio, decay, cutoff]) => add(name, {
+  mods: [["v1", "vco", { wave: "sine" }], ["v2", "vco", { wave: "sine", octave: Math.floor(Math.log2(ratio)), fine: Math.round(1200 * Math.log2(ratio / 2 ** Math.floor(Math.log2(ratio)))) % 100, semitone: Math.floor((1200 * Math.log2(ratio / 2 ** Math.floor(Math.log2(ratio)))) / 100) }],
+    ["rm", "ring", { mix: 1 }], ["f", "vcf", { cutoff, resonance: 1.5 }], ["e1", "env", { attack: 0.001, decay, sustain: name.includes("Lead") || name.includes("Robot") ? 0.7 : 0, release: decay }],
+    ["a", "vca"], ["d", "delay", { time: 0.42, feedback: 0.35, mix: 0.25 }], ["o", "output", { level: 0.6 }]],
+  cables: [["v1", "out", "rm", "in", 1, "red"], ["v2", "out", "rm", "mod", 1, "orange"], ["rm", "out", "f", "in", 1, "white"], ...VOICE.filter((c) => c[2] !== "o"),
+    ["a", "out", "d", "in", 1, "green"], ["d", "out", "o", "in", 1, "white"]],
+}));
+
+// 8 · Rhythmic gates and S&H: random or sequenced CV slices a pad into patterns
+([
+  ["Gate Trance Chop", 16, [12, 0, 12, 12, 0, 12, 12, 0], 0.4],
+  ["Gate Dub Stab Steps", 6, [0, 0, 7, 0, 0, 5, 0, 3], 0.25],
+  ["Gate Half Time Pulse", 4, [0, 0, 0, 0, 0, 0, 0, 0], 0.8],
+  ["Gate Random Bleeps", 10, [0, 12, 7, 19 - 7, 3, 10, 5, 12], 0.15],
+  ["Gate Shuffle Chords", 8, [0, 0, 5, 0, 0, 7, 0, 0], 0.55],
+] as const).forEach(([name, rate, st, gate]) => add(name, {
+  mods: [["sq", "seq", { ...steps([...st] as SeqSteps), rate, gate, length: 8 }], ["v1", "vco", { wave: "sawtooth" }], ["v2", "vco", { wave: "sawtooth", fine: 14 }], ["v3", "vco", { wave: "square", semitone: 7 }],
+    ["m", "mixer"], ["sh", "sh", { rate: rate / 2, range: 0.4 }], ["f", "vcf", { cutoff: 1800, resonance: 8 }], ["a", "vca"], ["e1", "env", { attack: 0.01, decay: 1, sustain: 1, release: 0.4 }],
+    ["fin", "vca"], ["st", "stereo", { rate: 0.3, depth: 0.6 }], ["o", "output", { level: 0.5 }]],
+  cables: [["v1", "out", "m", "in1", 0.6, "red"], ["v2", "out", "m", "in2", 0.6, "orange"], ["v3", "out", "m", "in3", 0.4, "yellow"],
+    ["sq", "out", "v1", "pitch", 1, "yellow"], ["sq", "out", "v2", "pitch", 1, "yellow"], ["sq", "out", "v3", "pitch", 1, "yellow"],
+    ["m", "out", "f", "in", 1, "white"], ["sh", "out", "f", "cutoff", 0.25, "blue"], ["f", "out", "a", "in", 1, "white"], ["sq", "gate", "a", "cv", 1, "green"],
+    ["a", "out", "fin", "in", 1, "white"], ["e1", "out", "fin", "cv", 1, "yellow"], ["fin", "out", "st", "in", 1, "purple"], ["st", "out", "o", "in", 1, "white"]],
+}));
+MODULAR_PRESETS.push(...ADVANCED);
+
 export const initModularPatch = (): ModularPatch =>
   structuredClone(MODULAR_PRESETS.find((p) => p.name === "Modular Tech Basic Voice")?.modular ?? emptyModular());
