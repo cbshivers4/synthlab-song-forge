@@ -14,6 +14,7 @@ import { peaksOf, separateStems } from "@/lib/synclab/stems";
 import { encodeWav } from "@/lib/synclab/bounce";
 import { generateStemFn } from "@/utils/generate-stem.functions";
 import { isolatePart, partForInstrument } from "@/lib/synclab/ai-isolate";
+import { decodeAudioFile } from "@/lib/synclab/aiff-decode";
 
 const TEMPLATES: { group: string; items: string[] }[] = [
   { group: "Drums", items: ["Drums", "Percussion", "Trap hi-hats", "House drums"] },
@@ -58,14 +59,14 @@ export function StemGenerator() {
       const bytes = Uint8Array.from(atob(res.mp3), (c) => c.charCodeAt(0));
       const blob = new Blob([bytes], { type: "audio/mpeg" });
       const ctx = new AudioContext();
-      const raw = await ctx.decodeAudioData(await blob.arrayBuffer());
+      const raw = await decodeAudioFile(ctx, await blob.arrayBuffer());
       // The AI music model sometimes adds other parts, so isolate only the requested instrument.
       // First choice: AI separation (Demucs) keeps just that part. Fallback: on-device spectral cleaning.
       setCleaning(true);
       const part = partForInstrument(instrument);
       let left: Float32Array, right: Float32Array, sr = raw.sampleRate, how = "";
       try {
-        const iso = await ctx.decodeAudioData(await (await isolatePart(blob, part)).arrayBuffer());
+        const iso = await decodeAudioFile(ctx, await (await isolatePart(blob, part)).arrayBuffer());
         left = iso.getChannelData(0).slice(); right = (iso.numberOfChannels > 1 ? iso.getChannelData(1) : iso.getChannelData(0)).slice(); sr = iso.sampleRate;
         how = "AI separated the " + part + " part" + (part === "other" ? " (everything except drums, bass and vocals)" : "") + "; other instruments in that group can remain.";
         announceAiUse();

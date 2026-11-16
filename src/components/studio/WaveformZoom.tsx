@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { sidewaysCanvas } from "@/lib/synclab/canvas-point";
 import { getEngine } from "@/lib/synclab/audio-engine";
+import { decodeAudioFile } from "@/lib/synclab/aiff-decode";
 
 /** Source-relative coordinates from the visible, scrolled (and possibly rotated) waveform. */
 export function waveformFraction(el: HTMLElement, clientX: number, clientY: number) {
@@ -23,7 +24,7 @@ export function useWaveformDetail(url: string, fallback: number[]) {
       try {
         const response = await fetch(url, { signal: controller.signal });
         if (!response.ok) return;
-        const buffer = await getEngine().init().decodeAudioData(await response.arrayBuffer());
+        const buffer = await decodeAudioFile(getEngine().init(), await response.arrayBuffer());
         const count = Math.min(16384, buffer.length);
         const peaks = Array.from({ length: count }, () => 0);
         for (let channel = 0; channel < buffer.numberOfChannels; channel++) {

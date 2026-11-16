@@ -1,5 +1,6 @@
 import { getEngine } from "./audio-engine";
 import { canShareFile, downloadBlob, encodeWav, shareFile, type Capture } from "./bounce";
+import { decodeAudioFile } from "./aiff-decode";
 
 /** Copies a time range of a decoded buffer into a stereo capture (mono is duplicated). */
 export function captureFromBuffer(buf: AudioBuffer, startSec = 0, endSec = buf.duration, reverse = false): Capture | null {
@@ -17,7 +18,7 @@ export async function captureFromUrl(url: string, start = 0, end = 1, reverse = 
   const ctx = getEngine().init();
   const res = await fetch(url);
   if (!res.ok) throw new Error("The sample could not be read.");
-  const buf = await ctx.decodeAudioData(await res.arrayBuffer());
+  const buf = await decodeAudioFile(ctx, await res.arrayBuffer());
   return captureFromBuffer(buf, start * buf.duration, end * buf.duration, reverse);
 }
 

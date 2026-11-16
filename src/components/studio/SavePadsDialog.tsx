@@ -7,13 +7,14 @@ import { getEngine } from "@/lib/synclab/audio-engine";
 import { encodeMp3 } from "@/lib/synclab/bounce";
 import { buildZip, downloadBlob } from "@/lib/synclab/zip";
 import type { SavedPad } from "@/lib/synclab/pad-session";
+import { decodeAudioFile } from "@/lib/synclab/aiff-decode";
 
 /** Encodes each pad's trimmed sample as MP3 and saves it (share sheet on phones, downloads on computers). */
 async function savePads(list: { index: number; pad: SavedPad }[]) {
   const ctx = getEngine().init();
   const files: File[] = [];
   for (const { index, pad } of list) {
-    const buf = await ctx.decodeAudioData(await (await fetch(pad.url)).arrayBuffer());
+    const buf = await decodeAudioFile(ctx, await (await fetch(pad.url)).arrayBuffer());
     const a = Math.floor((pad.start ?? 0) * buf.length);
     const b = Math.max(a + 1, Math.floor((pad.end ?? 1) * buf.length));
     const left = buf.getChannelData(0).slice(a, b);

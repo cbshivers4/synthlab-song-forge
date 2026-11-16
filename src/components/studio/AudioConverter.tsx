@@ -9,6 +9,7 @@ import { useSkin } from "@/lib/synclab/skins";
 import { CONVERSION_FORMATS, conversionFilename, conversionSupported, convertAudio, type ConversionFormat } from "@/lib/synclab/audio-converter";
 import { canShareFile, downloadBlob, shareFile, type Capture } from "@/lib/synclab/bounce";
 import { retainMediaInBackground } from "@/lib/synclab/media-library";
+import { decodeAudioFile } from "@/lib/synclab/aiff-decode";
 
 type Source = { name: string; capture: Capture; peaks: number[]; duration: number };
 export function AudioConverter() {
@@ -35,7 +36,7 @@ export function AudioConverter() {
     let ctx: AudioContext | undefined;
     try {
       ctx = new AudioContext();
-      const decoded = await ctx.decodeAudioData(await file.arrayBuffer());
+      const decoded = await decodeAudioFile(ctx, await file.arrayBuffer());
       if (generation.current !== token) return;
       const left = decoded.getChannelData(0).slice();
       const right = decoded.getChannelData(Math.min(1, decoded.numberOfChannels - 1)).slice();
@@ -47,8 +48,10 @@ export function AudioConverter() {
       });
       setSource({ name: file.name, capture: { left, right, sampleRate: decoded.sampleRate }, peaks, duration: decoded.duration });
       retainMediaInBackground(file, file.name);
-    } catch {
-      if (generation.current === token) setIssue("Your device could not read this audio file. M4A/AAC support varies by browser; try Safari or another supported audio file.");
+    } catch (error) {
+      // AIFF reader errors already say exactly what's wrong (e.g. an unsupported compression).
+      const reason = error instanceof Error && /AIFF|no audio/.test(error.message) ? error.message : "Your device could not read this audio file. WAV, MP3, AIFF and FLAC open everywhere; M4A/AAC and Ogg depend on your browser.";
+      if (generation.current === token) setIssue(reason);
     } finally {
       if (ctx) await ctx.close();
       if (generation.current === token) setBusy(null);

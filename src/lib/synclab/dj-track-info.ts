@@ -10,6 +10,7 @@
 import { TEST_MODE } from "./test-mode";
 import { detectBpm } from "./dj";
 import { id3Size, mp4Tags, readTrackTags, type TrackTags } from "./track-tags";
+import { decodeAudioFile } from "./aiff-decode";
 
 export type BpmFrom = "tag" | "deck" | "scan";
 export interface TrackInfo {
@@ -59,7 +60,7 @@ export async function readBlobTags(blob: Blob): Promise<TrackTags> {
 async function measureBpm(blob: Blob): Promise<number | null> {
   if (typeof OfflineAudioContext === "undefined") return null;
   const ctx = new OfflineAudioContext(1, 1, 22050);
-  const buf = await ctx.decodeAudioData(await blob.arrayBuffer());
+  const buf = await decodeAudioFile(ctx, await blob.arrayBuffer());
   const chans = Array.from({ length: buf.numberOfChannels }, (_, c) => buf.getChannelData(c));
   const mono = new Float32Array(buf.length);
   for (const ch of chans) for (let i = 0; i < ch.length; i++) mono[i] = (mono[i] ?? 0) + (ch[i] ?? 0) / chans.length;

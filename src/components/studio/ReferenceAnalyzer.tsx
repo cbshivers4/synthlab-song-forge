@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { analyzeReferenceBuffer, type ReferenceAnalysisResult } from "@/lib/synclab/reference-analysis";
 import { toast } from "sonner";
 import { retainMediaInBackground } from "@/lib/synclab/media-library";
+import { decodeAudioFile } from "@/lib/synclab/aiff-decode";
 
 function formatTime(seconds: number) {
   const minutes = Math.floor(seconds / 60);
@@ -48,7 +49,7 @@ export function ReferenceAnalyzer() {
     retainMediaInBackground(file, file.name);
     try {
       const context = new AudioContext();
-      const buffer = await context.decodeAudioData(await file.arrayBuffer());
+      const buffer = await decodeAudioFile(context, await file.arrayBuffer());
       const analysis = analyzeReferenceBuffer(buffer);
       await context.close();
       clear();

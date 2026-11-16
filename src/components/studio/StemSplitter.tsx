@@ -12,6 +12,7 @@ import { GeneratedWaveform } from "./GeneratedWaveform";
 import { useServerFn } from "@tanstack/react-start";
 import { cancelStemSplitFn, checkStemSplitFn, fetchStemFn, startStemSplitFn } from "@/utils/stem-split.functions";
 import { AiUsesLeft, announceAiUse } from "./AiUsesLeft";
+import { decodeAudioFile } from "@/lib/synclab/aiff-decode";
 
 const MAX_AI_BYTES = 40 * 1024 * 1024;
 const toBase64 = async (blob: Blob) => {
@@ -55,7 +56,7 @@ export function StemSplitter() {
 
   const decode = async (data: ArrayBuffer) => {
     const ctx = new AudioContext();
-    try { return await ctx.decodeAudioData(data); } finally { void ctx.close(); }
+    try { return await decodeAudioFile(ctx, data); } finally { void ctx.close(); }
   };
 
   const loadFile = async (file?: File) => {

@@ -2,6 +2,7 @@ import { getEngine } from "./audio-engine";
 import { openMic, releaseMic, getInputChannel } from "./mic";
 import type { Capture } from "./bounce";
 import { clampTapePosition, joinTapeChunks, tapeCurve } from "./reel-audio";
+import { decodeAudioFile } from "./aiff-decode";
 
 export type TapeMode = "stopped" | "recording" | "playing" | "paused" | "rewinding";
 export interface TapeState {
@@ -247,7 +248,7 @@ class ReelRecorder {
     if (this.state.busy || this.state.mode === "recording") return;
     void import("./media-library").then(({ retainMediaInBackground }) => retainMediaInBackground(file, file.name));
     this.update({ busy: true, error: null }); this.stopPlayer();
-    try { const buffer = await this.context().decodeAudioData(await file.arrayBuffer()); this.capture = { left: buffer.getChannelData(0).slice(), right: buffer.getChannelData(buffer.numberOfChannels > 1 ? 1 : 0).slice(), sampleRate: buffer.sampleRate }; this.reversed = null; this.update({ name: file.name.replace(/\.[^.]+$/, ""), mode: "stopped", position: 0, duration: buffer.duration, hasTape: true, clipped: false }); }
+    try { const buffer = await decodeAudioFile(this.context(), await file.arrayBuffer()); this.capture = { left: buffer.getChannelData(0).slice(), right: buffer.getChannelData(buffer.numberOfChannels > 1 ? 1 : 0).slice(), sampleRate: buffer.sampleRate }; this.reversed = null; this.update({ name: file.name.replace(/\.[^.]+$/, ""), mode: "stopped", position: 0, duration: buffer.duration, hasTape: true, clipped: false }); }
     catch { this.update({ mode: "stopped", error: "This audio file cannot be decoded in your browser. Try WAV or MP3." }); }
     finally { this.update({ busy: false }); }
   };

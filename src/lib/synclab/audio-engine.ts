@@ -19,6 +19,7 @@ import { isExternal, sendExternalNote, stopExternalNotes } from "./external-midi
 import { keysSnapshot, subscribeKeys } from "./active-keys";
 import type { DrumKitId, DrumPad, PluginInstance, SynthPatch, Track } from "./types";
 import { getInputChannel, getInputGainDb, getOutputDevice, isAppleMobile, openMicOrThrow, outputRoutingHint, preferredRecordingMime, releaseMic } from "./mic";
+import { decodeAudioFile } from "./aiff-decode";
 
 type KitVoice = {
   kick: [number, number, number, OscillatorType];
@@ -2326,7 +2327,7 @@ export class SyncLabEngine {
 
   async peaksFromFile(file: File | Blob) {
     const ctx = this.init();
-    const buf = await ctx.decodeAudioData(await file.arrayBuffer());
+    const buf = await decodeAudioFile(ctx, await file.arrayBuffer());
     const data = buf.getChannelData(0);
     const buckets = 160;
     const size = Math.max(1, Math.floor(data.length / buckets));
@@ -2365,7 +2366,7 @@ export class SyncLabEngine {
   async loadSampleFile(file: File | Blob, name: string) {
     const ctx = this.init();
     const raw = await (file as File).arrayBuffer();
-    const buf = await ctx.decodeAudioData(raw.slice(0));
+    const buf = await decodeAudioFile(ctx, raw.slice(0));
     // Only files that really decode are kept in the account library.
     if (file instanceof File && /\.(mp3|mp4)$/i.test(file.name)) {
       void import("./media-library").then(({ retainMediaInBackground }) => retainMediaInBackground(file, file.name));
@@ -2580,7 +2581,7 @@ export class SyncLabEngine {
     if (cached) return cached;
     try {
       const res = await fetch(url);
-      const buf = await this.init().decodeAudioData(await res.arrayBuffer());
+      const buf = await decodeAudioFile(this.init(), await res.arrayBuffer());
       this.sampleBuffers.set(url, this.centered(buf));
       return buf;
     } catch {

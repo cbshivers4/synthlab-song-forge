@@ -31,6 +31,7 @@ import { useSkin } from "@/lib/synclab/skins";
 import { getPadBank, setPadBank, type SavedPad } from "@/lib/synclab/pad-session";
 import { detectSampleChops } from "@/lib/synclab/sample-chops";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { decodeAudioFile } from "@/lib/synclab/aiff-decode";
 
 const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 const noteName = (m: number) => `${NOTE_NAMES[((m % 12) + 12) % 12]}${Math.floor(m / 12) - 1}`;
@@ -319,7 +320,7 @@ export function Sampler() {
     try {
       const pv = await getWarp(t);
       if (!pv) throw new Error("none");
-      const buffer = await ctx.decodeAudioData(await pv.blob.arrayBuffer());
+      const buffer = await decodeAudioFile(ctx, await pv.blob.arrayBuffer());
       const source = ctx.createBufferSource();
       source.buffer = buffer;
       source.loop = true;
@@ -422,7 +423,7 @@ export function Sampler() {
     if (!track || !s) return;
     setChopBusy(true);
     try {
-      const buffer = await getEngine().init().decodeAudioData(await (await fetch(s.url)).arrayBuffer());
+      const buffer = await decodeAudioFile(getEngine().init(), await (await fetch(s.url)).arrayBuffer());
       const channels = Array.from({ length: buffer.numberOfChannels }, (_, i) => buffer.getChannelData(i));
       const slices = detectSampleChops(channels, buffer.sampleRate, s.start, s.end, sensitivity);
       updateSampler(track.id, { slices });
@@ -466,7 +467,7 @@ export function Sampler() {
   const renderChops = async () => {
     if (!track || !s || chops.length === 0) return [];
     const ctx = getEngine().init();
-    const buf = await ctx.decodeAudioData(await (await fetch(s.url)).arrayBuffer());
+    const buf = await decodeAudioFile(ctx, await (await fetch(s.url)).arrayBuffer());
     centerOneSided(buf);
     const sr = buf.sampleRate;
     return chops.map((c, i) => {

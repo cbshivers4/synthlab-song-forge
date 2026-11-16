@@ -81,3 +81,5 @@ Look packs (look-pack.ts) parse strictly — only CSS colours, embedded data-URL
 Modular seq/chaos voltages are scheduled per note on the audio clock like S&H; feedback combs keep a negative-dB lowpass and soft clip in the loop so loop gain stays below 1.
 Reel-to-reel designs (reel-designs.ts) are device-only machine faces scoped by data-reel-design CSS around one shared control set and tape engine, so switching design never touches audio; look packs carry the design id, validated against REEL_DESIGNS.
 Bass Generator is a Bassline-Generator-style player in bassline-player.ts: deterministic seeded on-beat/off-beat source phrases (2 banks × 64) mixed into one mono line, with variators, Note Range, Minorness and shift applied there, so the note display, previews and timeline notes all come from currentLine/blgNotes; hand edits (pattern.edits) replace the generated line until a generator control changes.
+
+Audio file loading goes through decodeAudioFile (aiff-decode.ts), which reads AIFF/AIFF-C itself and passes everything else to decodeAudioData, because only Safari decodes AIFF natively.

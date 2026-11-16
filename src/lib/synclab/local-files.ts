@@ -1,6 +1,7 @@
 import { getEngine } from "./audio-engine";
 import { uid } from "./presets";
 import type { AudioClip as Clip } from "./types";
+import { decodeAudioFile } from "./aiff-decode";
 
 /** Audio files read from a folder on the user's computer (kept in memory for this session only). */
 export type LocalFile = { id: string; name: string; path: string; size: number; file: File };
@@ -187,7 +188,7 @@ export async function playPreview(id: string) {
   const engine = getEngine();
   const ctx = engine.init();
   if (ctx.state === "suspended") await ctx.resume();
-  const buf = await ctx.decodeAudioData(await lf.file.arrayBuffer());
+  const buf = await decodeAudioFile(ctx, await lf.file.arrayBuffer());
   const src = ctx.createBufferSource();
   src.buffer = buf;
   if (!analyser) {

@@ -13,12 +13,13 @@ import { peaksOf } from "@/lib/synclab/stems";
 import { openMic, preferredRecordingMime, releaseMic } from "@/lib/synclab/mic";
 import { convertVoice, VOICE_PRESETS, type VoicePreset } from "@/lib/synclab/voice-convert";
 import { retainMediaInBackground } from "@/lib/synclab/media-library";
+import { decodeAudioFile } from "@/lib/synclab/aiff-decode";
 
 type Source = { name: string; buffer: AudioBuffer; start: number };
 
 async function decode(data: ArrayBuffer) {
   const ctx = new AudioContext();
-  try { return await ctx.decodeAudioData(data); } finally { void ctx.close(); }
+  try { return await decodeAudioFile(ctx, data); } finally { void ctx.close(); }
 }
 
 export function VoiceConverter() {

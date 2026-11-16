@@ -5,6 +5,7 @@ import { bandWave, beatPhase, crossfade, detectBpm, eqDb, filterFor, phaseShift,
 import { ScratchVoice } from "./dj-scratch";
 import { frameAt, loadsUsed, pushFrame, type DeckFrame, type MixFrame } from "./dj-moves";
 import { isAppleMobile } from "./mic";
+import { decodeAudioFile } from "./aiff-decode";
 
 /**
  * DJ decks: two players, a 3-band EQ + filter per channel, channel faders, an equal-power
@@ -164,7 +165,7 @@ class Deck {
       // read the cover picture before the decoder takes the bytes
       const cover = findCoverArt(new Uint8Array(bytes));
       if (cover) this.state = { ...this.state, art: URL.createObjectURL(new Blob([cover.data.slice().buffer as ArrayBuffer], { type: cover.mime })), artFrom: "file" };
-      const buf = await this.ctx.decodeAudioData(bytes);
+      const buf = await decodeAudioFile(this.ctx, bytes);
       const chans = Array.from({ length: buf.numberOfChannels }, (_, c) => buf.getChannelData(c));
       const mono = new Float32Array(buf.length);
       for (const ch of chans) for (let i = 0; i < ch.length; i++) mono[i] = (mono[i] ?? 0) + (ch[i] ?? 0) / chans.length;
