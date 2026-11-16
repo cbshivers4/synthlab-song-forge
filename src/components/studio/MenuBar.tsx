@@ -193,6 +193,25 @@ export function MenuBar({ phone = false }: { phone?: boolean } = {}) {
     }
   };
 
+  const [tplOpen, setTplOpen] = useState(false);
+  const [tplName, setTplName] = useState("");
+  const openSaveTemplate = () => {
+    setTplName(project?.name ?? "My template");
+    setTplOpen(true);
+  };
+  const confirmSaveTemplate = () => {
+    const name = tplName.trim() || "My template";
+    try {
+      saveUserTemplate(name, snapshot());
+      setTplOpen(false);
+      toast.success(`Saved “${name}” as a template`, {
+        description: "It shows up under Your templates on the start screen.",
+      });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not save that template");
+    }
+  };
+
   const needTrack = (fn: (id: string) => void) => () => {
     if (!selected) {
       toast("Select a track first", { description: "Click a track name in the timeline, then try again." });
@@ -311,20 +330,8 @@ export function MenuBar({ phone = false }: { phone?: boolean } = {}) {
             <MenubarItem onClick={openSaveAs}>
               Save As…
             </MenubarItem>
-            <MenubarItem
-              onClick={() => {
-                try {
-                  const name = project?.name ?? "My template";
-                  saveUserTemplate(name, snapshot());
-                  toast.success(`Saved “${name}” as a template`, {
-                    description: "It shows up under Your templates on the start screen.",
-                  });
-                } catch (error) {
-                  toast.error(error instanceof Error ? error.message : "Could not save that template");
-                }
-              }}
-            >
-              Save Template
+            <MenubarItem onClick={openSaveTemplate}>
+              Save Template…
             </MenubarItem>
             <MenubarSeparator />
             <MenubarItem onClick={() => importRef.current?.click()}>Import Audio…</MenubarItem>
@@ -592,6 +599,29 @@ export function MenuBar({ phone = false }: { phone?: boolean } = {}) {
           <DialogFooter>
             <Button variant="ghost" onClick={() => setSaveAsOpen(false)}>Cancel</Button>
             <Button onClick={() => void confirmSaveAs()}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={tplOpen} onOpenChange={setTplOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Save as Template</DialogTitle>
+            <DialogDescription>Give this template a name. A template with the same name is replaced.</DialogDescription>
+          </DialogHeader>
+          <Input
+            value={tplName}
+            placeholder="Template name"
+            aria-label="Template name"
+            autoFocus
+            maxLength={80}
+            onChange={(e) => setTplName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") confirmSaveTemplate();
+            }}
+          />
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setTplOpen(false)}>Cancel</Button>
+            <Button onClick={confirmSaveTemplate}>Save template</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
