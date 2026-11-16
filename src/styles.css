@@ -2929,6 +2929,96 @@ body:has(.phone-console) [data-sonner-toast] button { pointer-events: auto; }
 .modular-workstation .modular-module[data-module-type="reverb"] { border-top: 6px double var(--hardware-silver); }
 .modular-workstation .modular-module .hardware-knob-label { overflow-wrap: anywhere; white-space: normal; min-height: 24px; display: grid; place-items: center; }
 
+/* Each Modular Tech device type has its own panel colour (face + accent stripe), like a mixed-brand Eurorack case. Presentation only. */
+:root {
+  --modular-face-vco: oklch(0.78 0.14 65);
+  --modular-accent-vco: oklch(0.45 0.13 45);
+  --modular-face-sub: oklch(0.36 0.11 45);
+  --modular-accent-sub: oklch(0.75 0.16 55);
+  --modular-face-noise: oklch(0.93 0.015 90);
+  --modular-accent-noise: oklch(0.3 0.01 90);
+  --modular-face-lfo: oklch(0.36 0.14 345);
+  --modular-accent-lfo: oklch(0.75 0.17 345);
+  --modular-face-env: oklch(0.86 0.15 95);
+  --modular-accent-env: oklch(0.4 0.08 80);
+  --modular-face-vcf: oklch(0.42 0.12 150);
+  --modular-accent-vcf: oklch(0.82 0.17 150);
+  --modular-face-vca: oklch(0.75 0.07 240);
+  --modular-accent-vca: oklch(0.35 0.1 250);
+  --modular-face-mixer: oklch(0.83 0.004 250);
+  --modular-accent-mixer: oklch(0.3 0.005 250);
+  --modular-face-drive: oklch(0.43 0.17 25);
+  --modular-accent-drive: oklch(0.8 0.15 45);
+  --modular-face-delay: oklch(0.3 0.08 265);
+  --modular-accent-delay: oklch(0.75 0.15 350);
+  --modular-face-output: oklch(0.24 0.01 250);
+  --modular-accent-output: oklch(0.85 0.005 250);
+  --modular-face-fold: oklch(0.25 0.06 20);
+  --modular-accent-fold: oklch(0.85 0.13 70);
+  --modular-face-ring: oklch(0.42 0.14 260);
+  --modular-accent-ring: oklch(0.85 0.08 220);
+  --modular-face-sh: oklch(0.89 0.13 110);
+  --modular-accent-sh: oklch(0.4 0.1 120);
+  --modular-face-chorus: oklch(0.42 0.14 300);
+  --modular-accent-chorus: oklch(0.85 0.1 300);
+  --modular-face-reverb: oklch(0.17 0.01 250);
+  --modular-accent-reverb: oklch(0.85 0.12 190);
+  --modular-face-formant: oklch(0.83 0.08 0);
+  --modular-accent-formant: oklch(0.45 0.15 0);
+  --modular-face-phaser: oklch(0.38 0.08 190);
+  --modular-accent-phaser: oklch(0.85 0.1 185);
+  --modular-face-compressor: oklch(0.33 0.006 250);
+  --modular-accent-compressor: oklch(0.82 0.16 75);
+  --modular-face-stereo: oklch(0.31 0.09 285);
+  --modular-accent-stereo: oklch(0.8 0.13 330);
+  --modular-face-attenuverter: oklch(0.85 0.08 165);
+  --modular-accent-attenuverter: oklch(0.35 0.08 170);
+  --modular-face-seq: oklch(0.83 0.16 130);
+  --modular-accent-seq: oklch(0.35 0.1 135);
+  --modular-face-chaos: oklch(0.3 0.12 10);
+  --modular-accent-chaos: oklch(0.8 0.17 30);
+  --modular-face-follower: oklch(0.8 0.09 220);
+  --modular-accent-follower: oklch(0.35 0.11 235);
+  --modular-face-macro: oklch(0.74 0.11 80);
+  --modular-accent-macro: oklch(0.32 0.06 70);
+  --modular-face-comb: oklch(0.55 0.11 50);
+  --modular-accent-comb: oklch(0.9 0.06 70);
+}
+.modular-workstation .modular-module[data-module-type="vco"] { --module-face: var(--modular-face-vco); --module-accent: var(--modular-accent-vco); --module-ink: var(--modular-ink); --module-muted: var(--modular-ink); }
+.modular-workstation .modular-module[data-module-type="sub"] { --module-face: var(--modular-face-sub); --module-accent: var(--modular-accent-sub); --module-ink: var(--hardware-ink); --module-muted: var(--hardware-silver); }
+.modular-workstation .modular-module[data-module-type="noise"] { --module-face: var(--modular-face-noise); --module-accent: var(--modular-accent-noise); --module-ink: var(--modular-ink); --module-muted: var(--modular-ink); }
+.modular-workstation .modular-module[data-module-type="lfo"] { --module-face: var(--modular-face-lfo); --module-accent: var(--modular-accent-lfo); --module-ink: var(--hardware-ink); --module-muted: var(--hardware-silver); }
+.modular-workstation .modular-module[data-module-type="env"] { --module-face: var(--modular-face-env); --module-accent: var(--modular-accent-env); --module-ink: var(--modular-ink); --module-muted: var(--modular-ink); }
+.modular-workstation .modular-module[data-module-type="vcf"] { --module-face: var(--modular-face-vcf); --module-accent: var(--modular-accent-vcf); --module-ink: var(--hardware-ink); --module-muted: var(--hardware-silver); }
+.modular-workstation .modular-module[data-module-type="vca"] { --module-face: var(--modular-face-vca); --module-accent: var(--modular-accent-vca); --module-ink: var(--modular-ink); --module-muted: var(--modular-ink); }
+.modular-workstation .modular-module[data-module-type="mixer"] { --module-face: var(--modular-face-mixer); --module-accent: var(--modular-accent-mixer); --module-ink: var(--modular-ink); --module-muted: var(--modular-ink); }
+.modular-workstation .modular-module[data-module-type="drive"] { --module-face: var(--modular-face-drive); --module-accent: var(--modular-accent-drive); --module-ink: var(--hardware-ink); --module-muted: var(--hardware-silver); }
+.modular-workstation .modular-module[data-module-type="delay"] { --module-face: var(--modular-face-delay); --module-accent: var(--modular-accent-delay); --module-ink: var(--hardware-ink); --module-muted: var(--hardware-silver); }
+.modular-workstation .modular-module[data-module-type="output"] { --module-face: var(--modular-face-output); --module-accent: var(--modular-accent-output); --module-ink: var(--hardware-ink); --module-muted: var(--hardware-silver); }
+.modular-workstation .modular-module[data-module-type="fold"] { --module-face: var(--modular-face-fold); --module-accent: var(--modular-accent-fold); --module-ink: var(--hardware-ink); --module-muted: var(--hardware-silver); }
+.modular-workstation .modular-module[data-module-type="ring"] { --module-face: var(--modular-face-ring); --module-accent: var(--modular-accent-ring); --module-ink: var(--hardware-ink); --module-muted: var(--hardware-silver); }
+.modular-workstation .modular-module[data-module-type="sh"] { --module-face: var(--modular-face-sh); --module-accent: var(--modular-accent-sh); --module-ink: var(--modular-ink); --module-muted: var(--modular-ink); }
+.modular-workstation .modular-module[data-module-type="chorus"] { --module-face: var(--modular-face-chorus); --module-accent: var(--modular-accent-chorus); --module-ink: var(--hardware-ink); --module-muted: var(--hardware-silver); }
+.modular-workstation .modular-module[data-module-type="reverb"] { --module-face: var(--modular-face-reverb); --module-accent: var(--modular-accent-reverb); --module-ink: var(--hardware-ink); --module-muted: var(--hardware-silver); }
+.modular-workstation .modular-module[data-module-type="formant"] { --module-face: var(--modular-face-formant); --module-accent: var(--modular-accent-formant); --module-ink: var(--modular-ink); --module-muted: var(--modular-ink); }
+.modular-workstation .modular-module[data-module-type="phaser"] { --module-face: var(--modular-face-phaser); --module-accent: var(--modular-accent-phaser); --module-ink: var(--hardware-ink); --module-muted: var(--hardware-silver); }
+.modular-workstation .modular-module[data-module-type="compressor"] { --module-face: var(--modular-face-compressor); --module-accent: var(--modular-accent-compressor); --module-ink: var(--hardware-ink); --module-muted: var(--hardware-silver); }
+.modular-workstation .modular-module[data-module-type="stereo"] { --module-face: var(--modular-face-stereo); --module-accent: var(--modular-accent-stereo); --module-ink: var(--hardware-ink); --module-muted: var(--hardware-silver); }
+.modular-workstation .modular-module[data-module-type="attenuverter"] { --module-face: var(--modular-face-attenuverter); --module-accent: var(--modular-accent-attenuverter); --module-ink: var(--modular-ink); --module-muted: var(--modular-ink); }
+.modular-workstation .modular-module[data-module-type="seq"] { --module-face: var(--modular-face-seq); --module-accent: var(--modular-accent-seq); --module-ink: var(--modular-ink); --module-muted: var(--modular-ink); }
+.modular-workstation .modular-module[data-module-type="chaos"] { --module-face: var(--modular-face-chaos); --module-accent: var(--modular-accent-chaos); --module-ink: var(--hardware-ink); --module-muted: var(--hardware-silver); }
+.modular-workstation .modular-module[data-module-type="follower"] { --module-face: var(--modular-face-follower); --module-accent: var(--modular-accent-follower); --module-ink: var(--modular-ink); --module-muted: var(--modular-ink); }
+.modular-workstation .modular-module[data-module-type="macro"] { --module-face: var(--modular-face-macro); --module-accent: var(--modular-accent-macro); --module-ink: var(--modular-ink); --module-muted: var(--modular-ink); }
+.modular-workstation .modular-module[data-module-type="comb"] { --module-face: var(--modular-face-comb); --module-accent: var(--modular-accent-comb); --module-ink: var(--hardware-ink); --module-muted: var(--hardware-silver); }
+.modular-workstation .modular-module[data-module-type] { background: var(--fx-brush-fine), linear-gradient(180deg, color-mix(in oklab, var(--module-face) 88%, white), var(--module-face) 22%, color-mix(in oklab, var(--module-face) 82%, black)); border-top-color: var(--module-accent); border-top-width: 6px; color: var(--module-ink); --foreground: var(--module-ink); --muted-foreground: var(--module-muted); --hardware-scale: var(--module-ink); --hardware-mark: var(--module-ink); }
+.modular-workstation .modular-module[data-module-type] .modular-module-header { border-bottom-color: var(--module-accent); }
+.modular-workstation .modular-module[data-module-type] .modular-model-plate { background: var(--module-accent); color: var(--module-face); border: 0; font-weight: 700; }
+.modular-workstation .modular-module[data-module-type] .modular-jack-label, .modular-workstation .modular-module[data-module-type] .label-xs { color: var(--module-ink); }
+.modular-workstation .modular-module[data-module-type] .modular-switch { color: var(--module-ink); border-color: color-mix(in oklab, var(--module-ink) 40%, transparent); }
+.modular-workstation .modular-module[data-module-type] .modular-switch.is-on { background: var(--module-accent); color: var(--module-face); border-color: var(--module-accent); }
+.modular-workstation .modular-module[data-module-type] .hardware-knob-pointer i { background: var(--module-accent); }
+.modular-workstation .modular-module[data-module-type] .modular-jacks { border-color: color-mix(in oklab, var(--module-ink) 30%, transparent); }
+
 /* Reference-inspired silver stereo tape deck; processing stays in the shared recorder. */
 :root {
   --tape-deck-face: oklch(0.8 0.009 155);
@@ -4846,29 +4936,28 @@ html.phone-console-active [role="option"] { min-height: 44px; font-size: 15px; }
 .synth-hardware.synth-hardware[data-synth-style="poly"] .synth-card-head:not(#synth-look) { padding-block: 6px; text-align: center; justify-content: center; }
 .synth-hardware.synth-hardware[data-synth-style="poly"] .synth-card-head .rounded-full { background: var(--primary); }
 
-/* Modular Tech / Vital: dark rounded module cards with purple, orange or teal accents. */
+/* Modular Tech / Vital: rounded module cards, each device type in its own panel colour (--module-face/--module-accent per type). */
 .synth-hardware.synth-hardware[data-synth-style="modular"] .synth-badge { border-left: 5px solid var(--primary); font-weight: 700; letter-spacing: 0.1em; }
 .synth-hardware.synth-hardware[data-synth-style="modular"] .modular-case:not(#synth-look) { background: oklch(0.15 0.01 285) !important; border: 1px solid oklch(0.3 0.012 285) !important; border-image: none !important; border-radius: 10px; }
 .synth-hardware.synth-hardware[data-synth-style="modular"] .modular-rail:not(#synth-look) { height: 4px; background: oklch(0.26 0.012 285) !important; border-radius: 2px; }
 .synth-hardware.synth-hardware[data-synth-style="modular"] .modular-module-grid:not(#synth-look) { background: transparent !important; }
 .synth-hardware.synth-hardware[data-synth-style="modular"] .modular-module:not(#synth-look) {
-  --vital-mod: var(--primary);
-  background: var(--look-card) !important; border: 1px solid oklch(0.34 0.012 285) !important; border-top: 3px solid var(--vital-mod) !important;
-  border-radius: 8px !important; box-shadow: none !important;
-  --module-ink: var(--look-ink); --foreground: var(--look-ink); --muted-foreground: var(--look-dim); --hardware-scale: var(--look-dim);
-  --knob-accent: var(--vital-mod); color: var(--look-ink) !important;
+  --vital-mod: var(--module-accent, var(--primary));
+  background: linear-gradient(180deg, color-mix(in oklab, var(--module-face, var(--look-card)) 86%, white), var(--module-face, var(--look-card)) 18%, color-mix(in oklab, var(--module-face, var(--look-card)) 80%, black)) !important;
+  border: 1px solid color-mix(in oklab, var(--module-face, var(--look-card)) 60%, black) !important; border-top: 5px solid var(--vital-mod) !important;
+  border-radius: 8px !important; box-shadow: inset 0 1px 0 color-mix(in oklab, white 30%, transparent), 0 2px 6px oklch(0 0 0 / 0.45) !important;
+  --foreground: var(--module-ink, var(--look-ink)); --muted-foreground: var(--module-muted, var(--look-dim)); --hardware-scale: var(--module-muted, var(--look-dim));
+  --knob-accent: var(--vital-mod); color: var(--module-ink, var(--look-ink)) !important;
 }
-.synth-hardware.synth-hardware[data-synth-style="modular"] .modular-module:is([data-module-type="vcf"], [data-module-type="bandpass"], [data-module-type="formant"], [data-module-type="drive"], [data-module-type="fold"], [data-module-type="ring"]):not(#synth-look) { --vital-mod: var(--vital-orange); }
-.synth-hardware.synth-hardware[data-synth-style="modular"] .modular-module:is([data-module-type="lfo"], [data-module-type="env"], [data-module-type="sh"], [data-module-type="vca"], [data-module-type="attenuverter"]):not(#synth-look) { --vital-mod: var(--vital-teal); }
-.synth-hardware.synth-hardware[data-synth-style="modular"] .modular-module :is(h4, .label-xs, .modular-jack-label, .modular-model-plate):not(#synth-look) { color: var(--look-ink) !important; background: transparent !important; }
+.synth-hardware.synth-hardware[data-synth-style="modular"] .modular-module :is(h4, .label-xs, .modular-jack-label, .modular-model-plate, .hardware-knob-label):not(#synth-look) { color: var(--module-ink, var(--look-ink)) !important; background: transparent !important; }
 .synth-hardware.synth-hardware[data-synth-style="modular"] .modular-module h4:not(#synth-look) { color: var(--vital-mod) !important; }
-.synth-hardware.synth-hardware[data-synth-style="modular"] .modular-module :is(.modular-model-plate, .modular-module-header, .modular-jacks, .modular-knob-bank):not(#synth-look) { border-color: oklch(0.36 0.012 285) !important; }
+.synth-hardware.synth-hardware[data-synth-style="modular"] .modular-module :is(.modular-model-plate, .modular-module-header, .modular-jacks, .modular-knob-bank):not(#synth-look) { border-color: color-mix(in oklab, var(--module-ink, var(--look-ink)) 28%, transparent) !important; }
 .synth-hardware.synth-hardware[data-synth-style="modular"] .modular-rate-window:not(#synth-look) { background: oklch(0.17 0.01 285); border: 1px solid oklch(0.36 0.012 285); border-radius: 6px; color: var(--vital-teal); box-shadow: none; }
 .synth-hardware.synth-hardware[data-synth-style="modular"] .modular-scope-window:not(#synth-look) { background: oklch(0.15 0.01 285); border: 1px solid oklch(0.36 0.012 285); border-radius: 6px; }
 .synth-hardware.synth-hardware[data-synth-style="modular"] .modular-jack:not(#synth-look) { background: radial-gradient(circle, oklch(0.07 0 0) 0 30%, oklch(0.5 0.012 285) 32% 52%, oklch(0.3 0.012 285) 56%); }
 .synth-hardware.synth-hardware[data-synth-style="modular"] .modular-screw:not(#synth-look) { background: oklch(0.36 0.012 285); color: var(--look-ink); }
 .synth-hardware.synth-hardware[data-synth-style="modular"] .modular-switch:not(#synth-look) { background: oklch(0.2 0.01 285); color: var(--look-ink); border-color: oklch(0.36 0.012 285); }
-.synth-hardware.synth-hardware[data-synth-style="modular"] .modular-switch.is-on:not(#synth-look) { background: var(--vital-mod, var(--primary)); color: var(--primary-foreground); }
+.synth-hardware.synth-hardware[data-synth-style="modular"] .modular-switch.is-on:not(#synth-look) { background: var(--vital-mod, var(--primary)); color: var(--module-face, var(--primary-foreground)); }
 
 /* Granular / CR8: dark frame, white rounded deck, pink sample display with white wave,
    light-blue middle section and a grey section with black knobs. */

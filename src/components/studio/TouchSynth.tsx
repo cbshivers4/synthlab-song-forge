@@ -140,8 +140,8 @@ export function TouchSynth({ track }: { track: Track }) {
     litTimers.current.forEach(t => window.clearTimeout(t));
   }, []);
 
+  // Changing sounds, parts or sets never stops the loops or a held pad: the loop clock and pad read latest.current every step.
   const selectSound = (name: string) => {
-    stopPad();
     const patch = applyPreset(name);
     const gate = ARP_PROGRAM_GATES[name];
     const touch = { ...latest.current.settings, sounds: { ...latest.current.settings.sounds, [lane.id]: name }, ...(gate ? { gateArp: gate } : {}) };
@@ -253,7 +253,9 @@ export function TouchSynth({ track }: { track: Track }) {
             getEngine().playDrum(now.track.id, drumPad(l.drums[drum] ?? 'kick', now.settings.kit), n.vel);
             flashDrum(drum);
           } else if (now.track.patch) {
-            const sound = applyPreset(now.settings.sounds?.[l.id] ?? l.sound);
+            const soundName = now.settings.sounds?.[l.id] ?? l.sound;
+            // The part being edited plays the live track patch (that sound plus any knob tweaks) so edits are heard while the loop runs.
+            const sound = l.id === now.lane.id && now.track.patch.name === soundName ? now.track.patch : applyPreset(soundName);
             const toned = n.tone != null ? { cutoff: touchCutoff(n.tone), resonance: 1 + n.tone * 5 } : {};
             const patch = { ...sound, ...toned, voiceMode: 'poly' as const, arp: { ...now.track.patch.arp, on: false } };
             now.previewNote(now.track.id, n.pitch, n.length * stepDur, false, patch);
@@ -305,8 +307,8 @@ export function TouchSynth({ track }: { track: Track }) {
   const applySet = (name: string, incoming: TouchLoops, extra: { scale?: string; root?: number; bars?: number; sounds?: Record<string, string>; kit?: string }, onlyLane: boolean) => {
     const s = latest.current;
     if (anyNotes(s.loops, onlyLane ? s.lane.id : undefined) && !window.confirm(`Replace ${onlyLane ? 'part ' + (PART_LETTERS[TOUCH_LANES.indexOf(s.lane)] ?? '') : 'all five parts'} with ${name}?`)) return;
-    stopPad();
-    stopLoops();
+    // Keep the loop clock (and any held pad) running so a new set takes over on the next step; only an in-progress recording pass ends.
+    if (recStart.current != null) { recStart.current = null; setRecording(false); }
     const sounds = onlyLane ? { ...s.settings.sounds, ...(extra.sounds?.[s.lane.id] ? { [s.lane.id]: extra.sounds[s.lane.id]! } : {}) } : { ...s.settings.sounds, ...extra.sounds };
     const nextSettings = {
       ...s.settings,
@@ -488,7 +490,7 @@ export function TouchSynth({ track }: { track: Track }) {
           const selected = l.id === lane.id;
           const off = !!muted[l.id];
           return <div key={l.id} className="kaoss-part flex min-w-0 items-stretch rounded-md" data-selected={selected || undefined} data-muted={off || undefined} style={{ '--part': l.color } as CSSProperties}>
-            <button type="button" role="tab" aria-selected={selected} onClick={() => { stopPad(); updatePatch(track.id, { ...(!l.drums ? applyPreset(laneSound(l.id)) : {}), touch: { ...latest.current.settings, lane: l.id, octave: l.octave } }); }}
+            <button type="button" role="tab" aria-selected={selected} onClick={() => { updatePatch(track.id, { ...(!l.drums ? applyPreset(laneSound(l.id)) : {}), touch: { ...latest.current.settings, lane: l.id, octave: l.octave } }); }}
               className="flex min-w-0 flex-1 items-center gap-1.5 px-1.5 py-1.5 text-left font-mono">
               <span className="kaoss-part-letter grid size-6 shrink-0 place-items-center rounded-sm text-xs font-bold">{PART_LETTERS[i]}</span>
               <span className="min-w-0">
