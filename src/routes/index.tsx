@@ -359,6 +359,9 @@ function Panels({ float, setFloat }: { float: FloatState; setFloat: (f: (p: Floa
       {panel === "reel-recorder" && <ReelRecorder />}{panel === "video-sampler" && <VideoSampler />}
       {panel === "mixer" && <Mixer dockControls={workspace.mixerDock ? (
         <span className="mixer-dock-controls ml-1 flex shrink-0 items-center gap-1 border-l border-border pl-2">
+          <Button size="sm" variant="ghost" className="h-6 gap-1 px-2 font-mono text-[9px] uppercase tracking-wider" title="Show the effects and scope for the selected instrument instead of the mixer" onClick={() => setPanel(null)}>
+            <Piano className="size-3" /> Effects &amp; scope
+          </Button>
           <Button size="sm" variant="ghost" className="h-6 gap-1 px-2 font-mono text-[9px] uppercase tracking-wider" title="Open the mixer in its own window — drag it to your second monitor"
             onClick={() => { if (popOutPanel("mixer")) setPanel(null); else toast.error("Window blocked", { description: "Allow pop-ups for SYNCLAB in your browser, then try Pop out again." }); }}>
             <ArrowUpFromLine className="size-3" /> Pop out

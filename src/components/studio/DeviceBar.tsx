@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { isPadSamplerTrack } from "@/lib/synclab/track-editor";
 import { effectBrand, effectForm, groupByCategory } from "@/lib/synclab/effect-catalog";
-import { ChevronDown, ChevronUp, Disc3, AudioLines, Music2, Piano, Plus, Power, X } from "lucide-react";
+import { ChevronDown, ChevronUp, SlidersHorizontal, Disc3, AudioLines, Music2, Piano, Plus, Power, X } from "lucide-react";
 import { useStudio } from "@/lib/synclab/store";
+import { setWorkspacePrefs } from "@/lib/synclab/workspace-prefs";
 import { BUILT_IN_PLUGINS } from "@/lib/synclab/plugins";
 import type { PluginInstance, Track } from "@/lib/synclab/types";
 import { Knob } from "./Knob";
@@ -152,10 +153,32 @@ export function DeviceBar() {
         >
           · {track.name}
         </button>
+        <div className="ml-auto flex items-center gap-0.5 rounded-sm border border-border p-0.5" role="group" aria-label="Bottom panel view">
+          <Button
+            size="sm"
+            variant="secondary"
+            className="h-5 px-2 font-mono text-[9px] uppercase tracking-wider"
+            aria-pressed
+            title="Effects and scope for the selected instrument"
+            onClick={() => setCollapsed(false)}
+          >
+            Effects & scope
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-5 gap-1 px-2 font-mono text-[9px] uppercase tracking-wider"
+            aria-pressed={false}
+            title="Show the mixer under the timeline (F3)"
+            onClick={() => { setWorkspacePrefs({ mixerDock: true }); setPanel("mixer"); }}
+          >
+            <SlidersHorizontal className="size-3" /> Mixer
+          </Button>
+        </div>
         <Button
           size="icon"
           variant="ghost"
-          className="ml-auto size-6"
+          className="size-6"
           onClick={() => setCollapsed((c) => !c)}
           aria-label={collapsed ? "Show device chain" : "Hide device chain"}
         >
