@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const USER_TABLES = [
+  "stem_split_jobs",
   "cloud_projects",
   "library_items",
   "subscriptions",
