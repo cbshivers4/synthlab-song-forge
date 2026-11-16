@@ -81,5 +81,13 @@ export function useLoopPreview() {
 
   useEffect(() => () => { token.current++; release(); }, []);
 
-  return { playing, play, stop };
+  /** Where the looping preview is right now, 0–1 through the loop (null when silent). For step lights. */
+  const phase = useCallback((): number | null => {
+    const cur = sourceRef.current;
+    const now = getEngine().ctx?.currentTime;
+    if (!cur || now == null || !(cur.loopSec > 0) || now < cur.startedAt) return null;
+    return ((now - cur.startedAt) % cur.loopSec) / cur.loopSec;
+  }, []);
+
+  return { playing, play, stop, phase };
 }

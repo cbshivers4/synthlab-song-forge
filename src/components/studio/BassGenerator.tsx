@@ -1,6 +1,6 @@
 import { SkinControls, skinBackground, useImageDrop } from "@/components/studio/SkinControls";
 import { useSkin } from "@/lib/synclab/skins";
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { usePreviewTrack } from "@/lib/synclab/use-preview-track";
 import { PreviewButtons } from "./PreviewButtons";
 import { PatternWaveform } from "./PatternWaveform";
@@ -9,15 +9,35 @@ import { Button } from "@/components/ui/button";
 import { useStudio } from "@/lib/synclab/store";
 import { getBeatsPerBar } from "@/lib/synclab/timebase";
 import { SYNTH_PRESETS, applyPreset } from "@/lib/synclab/presets";
-import { BassStepEditor } from "./BassStepEditor";
-import { BASS_PATTERN_PRESETS, patternToNotes, filterHalf, type BassPattern, type BeatHalf } from "@/lib/synclab/bass-pattern";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { useLoopPreview } from "@/lib/synclab/use-loop-preview";
+import { activeSongClock } from "@/lib/synclab/song-clock";
 import { useIsLandscapePhone } from "@/hooks/use-mobile";
-import { Play, Square } from "lucide-react";
+import { Copy, Dices, Play, RotateCcw, Square, Trash2 } from "lucide-react";
+import { cleanBassPatch, NOTE_NAMES, PROGRESSIONS, rootsFromKey, rootsFromTracks } from "@/lib/synclab/bass-gen";
+import {
+  BLG_GENRES, BLG_PRESETS, BLG_RATES, blgNotes, clampSteps, currentLine, defaultBlgPattern, presetPattern, randomLane, randomizeBlg, rateLen,
+  type BlgPattern, type BlgRate,
+} from "@/lib/synclab/bassline-player";
+import { BlgDiamond, BlgLanePanel, BlgNoteDisplay, BlgStepper } from "./BasslineParts";
 
 const BASS_SOUNDS = SYNTH_PRESETS.filter((p) => p.category === "Bass").map((p) => p.name);
-import { BASS_STYLES, BASS_TEMPLATES, cleanBassPatch, generateBass, riffBass, varyBass, NOTE_NAMES, PROGRESSIONS, rootsFromKey, rootsFromTracks, type BassStyle } from "@/lib/synclab/bass-gen";
+const SLOTS = 8;
+
+interface Session {
+  slots: BlgPattern[]; slot: number; names: (string | null)[]; octave: number; sound: string; bars: number;
+  follow: boolean; minorKey: boolean; prog: string;
+}
+// Kept for this visit to the studio so switching panels doesn't lose your patterns (not saved in the project).
+let session: Session | null = null;
+const freshSession = (): Session => {
+  const first = BLG_PRESETS.find((p) => p.id === "detroit-strings")!;
+  return {
+    slots: Array.from({ length: SLOTS }, (_, i) => (i === 0 ? presetPattern(first) : defaultBlgPattern(first.pattern.root))),
+    slot: 0, names: Array.from({ length: SLOTS }, (_, i) => (i === 0 ? first.label : null)), octave: first.octave, sound: first.sound, bars: 4,
+    follow: false, minorKey: true, prog: "1-1-1-1",
+  };
+};
 
 export function BassGenerator() {
   const skin = useSkin("bass");
@@ -25,242 +45,282 @@ export function BassGenerator() {
   const skinned = !!(skin.image || skin.color);
   const { tracks, transport, addTrack, updateTrack, setTransport } = useStudio();
   const barSteps = getBeatsPerBar() * 4;
-  const [style, setStyle] = useState<BassStyle>("roots");
-  const [bars, setBars] = useState(4);
-  const [follow, setFollow] = useState(true);
-  const [tonic, setTonic] = useState(9);
-  const [minor, setMinor] = useState(true);
-  const [prog, setProg] = useState(PROGRESSIONS[0]!.id);
-  const [sound, setSound] = useState("Sub Bass");
-  const [octave, setOctave] = useState(1);
+  const [s, setS] = useState<Session>(() => session ?? freshSession());
+  useEffect(() => { session = s; }, [s]);
+  const pat = s.slots[s.slot]!;
+  const set = (patch: Partial<Session>) => setS((cur) => ({ ...cur, ...patch }));
+  /** Change the current pattern. Generator moves replace hand edits; `keepEdits` is for note-display edits. */
+  const setPat = (patch: Partial<BlgPattern>, keepEdits = false) =>
+    setS((cur) => {
+      const slots = cur.slots.slice();
+      const p = slots[cur.slot]!;
+      slots[cur.slot] = { ...p, ...patch, edits: keepEdits || "edits" in patch ? (patch.edits ?? (keepEdits ? p.edits : null)) : null };
+      return { ...cur, slots };
+    });
 
-  const detected = useMemo(() => rootsFromTracks(tracks, bars, barSteps), [tracks, bars, barSteps]);
+  const detected = useMemo(() => rootsFromTracks(tracks, s.bars, barSteps), [tracks, s.bars, barSteps]);
   const hasSong = detected.some((r) => r !== null);
-  const useSong = follow && hasSong;
+  const useSong = s.follow && hasSong;
+  const rootsPerBar = useMemo(() => {
+    if (useSong) {
+      let last = detected.find((r) => r !== null) ?? pat.root;
+      return detected.map((r) => (r === null ? last : (last = r)));
+    }
+    return rootsFromKey(pat.root, s.minorKey, PROGRESSIONS.find((p) => p.id === s.prog)!.degrees, s.bars);
+  }, [useSong, detected, pat.root, s.minorKey, s.prog, s.bars]);
 
-  const roots = useMemo(() => {
-    const fromKey = rootsFromKey(tonic, minor, PROGRESSIONS.find((p) => p.id === prog)!.degrees, bars);
-    if (!useSong) return fromKey;
-    // fill bars with no chords from the previous detected root
-    let last = detected.find((r) => r !== null) ?? tonic;
-    return detected.map((r) => (r === null ? last : (last = r)));
-  }, [useSong, detected, tonic, minor, prog, bars]);
+  const line = useMemo(() => currentLine(pat), [pat]);
+  const notes = useMemo(() => blgNotes(pat, { bars: s.bars, barSteps, octave: s.octave, rootsPerBar }), [pat, s.bars, barSteps, s.octave, rootsPerBar]);
+  // Knob drags change the line many times a second; the sound preview and waveform follow once it settles.
+  const [settled, setSettled] = useState(notes);
+  useEffect(() => { const t = setTimeout(() => setSettled(notes), 160); return () => clearTimeout(t); }, [notes]);
 
-  const [mode, setMode] = useState<"auto" | "write">("auto");
-  const [pattern, setPattern] = useState<BassPattern>(() => BASS_PATTERN_PRESETS[0]!.steps);
-  const [half, setHalf] = useState<BeatHalf>("both");
-  const [target, setTarget] = useState("new");
-  const synthTracks = tracks.filter((t) => t.kind === "instrument");
-  const written = useMemo(() => (mode === "write" ? patternToNotes(filterHalf(pattern, half), roots, barSteps, octave, minor) : null), [mode, pattern, half, roots, barSteps, octave, minor]);
+  const drawPatch = useMemo(() => cleanBassPatch(applyPreset(s.sound)), [s.sound]);
+  const name = s.names[s.slot] ?? `Pattern ${s.slot + 1}`;
+  const label = name.toUpperCase();
+  const total = s.bars * barSteps;
+  const loopBars = (clampSteps(pat.steps) * rateLen(pat.rate)) / barSteps;
+
   const pv = usePreviewTrack();
-  const label = BASS_STYLES.find((s) => s.id === style)!.label.toUpperCase();
-  const [template, setTemplate] = useState<string | null>(null);
-  // A template keeps its own riff while its pattern is selected; picking another pattern uses that pattern.
-  const riffOf = BASS_TEMPLATES.find((x) => x.id === template && x.style === style)?.riff;
-  const plainLine = () => (riffOf ? riffBass(roots, riffOf, barSteps, octave) : generateBass(roots, style, barSteps, octave));
-  const signature = `${roots.join(",")}|${style}|${octave}|${barSteps}|${riffOf ? template : ""}`;
-  const [made, setMade] = useState<{ notes: ReturnType<typeof generateBass>; signature: string } | null>(null);
-  const generated = written ?? (made && made.signature === signature ? made.notes : null);
-  const [variation, setVariation] = useState(0);
-  const generate = () => {
-    // Pressing again with the same settings makes a new variation; changing settings starts from the plain line.
-    const v = made && made.signature === signature ? variation + 1 : 0;
-    setVariation(v);
-    const notes = varyBass(plainLine(), v, minor, barSteps);
-    setMade({ notes, signature });
-    toast.success(v ? `Bassline variation ${v}` : "Bassline generated", { description: `${notes.length} notes over ${bars} bars — preview it or add it to the timeline.` });
+  const [target, setTarget] = useState("new");
+  const synthTracks = tracks.filter((t) => t.kind === "instrument" && !t.name.startsWith("PREVIEW · "));
+  const build = (trackName: string, withSound = s.sound) => {
+    const id = addTrack("instrument", trackName, withSound, { keepPanel: true });
+    updateTrack(id, { steps: total, notes: settled, patch: cleanBassPatch(applyPreset(withSound)) });
+    return id;
   };
-  const applyTemplate = (id: string) => {
-    const t = BASS_TEMPLATES.find((x) => x.id === id);
-    if (!t) return;
-    setTemplate(id);
-    setStyle(t.style); setSound(t.sound); setOctave(t.octave);
-    setTonic(t.tonic); setMinor(t.minor); setProg(t.prog); setFollow(false);
-    const degrees = PROGRESSIONS.find((p) => p.id === t.prog)!.degrees;
-    const r = rootsFromKey(t.tonic, t.minor, degrees, bars);
-    const notes = riffBass(r, t.riff, barSteps, t.octave);
-    setVariation(0);
-    setMade({ notes, signature: `${r.join(",")}|${t.style}|${t.octave}|${barSteps}|${t.id}` });
-    toast.success(`${t.label} bassline generated`, { description: `${notes.length} notes in ${NOTE_NAMES[t.tonic]} ${t.minor ? "minor" : "major"} — check the waveform, then preview or add it.` });
-  };
-  const activeTemplate = BASS_TEMPLATES.find((t) => t.id === template);
-  // The picture is drawn with the exact cleaned sound the track plays, not the raw preset.
-  const drawPatch = useMemo(() => cleanBassPatch(applyPreset(sound)), [sound]);
-  const build = (name: string, withSound = sound) => {
-    const notes = generated ?? plainLine();
-    const id = addTrack("instrument", name, withSound, { keepPanel: true });
-    updateTrack(id, { steps: bars * barSteps, notes, patch: cleanBassPatch(applyPreset(withSound)) });
-    return { id, notes };
-  };
-  // A new pattern while previewing plays straight away, so what you hear is what gets added.
   const { previewing, update: updatePreview } = pv;
-  const sentToPreview = useRef<{ notes: unknown } | null>(null);
+  const sent = useRef<unknown>(null);
   useEffect(() => {
-    if (!previewing) { sentToPreview.current = null; return; }
-    // The first pass records what the preview started with; later passes push regenerated notes.
-    if (sentToPreview.current === null) { sentToPreview.current = { notes: generated }; return; }
-    if (!generated || sentToPreview.current.notes === generated) return;
-    sentToPreview.current = { notes: generated };
-    updatePreview({ notes: generated, steps: bars * barSteps });
-  }, [previewing, generated, bars, barSteps, updatePreview]);
-  const preview = (withSound?: string) => pv.start((n) => build(n(`BASS · ${label}`), withSound ?? sound).id);
-  // Phone: Preview plays only the bassline, looped — the song on the timeline stays silent.
+    if (!previewing) { sent.current = null; return; }
+    if (sent.current === null) { sent.current = settled; return; }
+    if (sent.current === settled) return;
+    sent.current = settled;
+    updatePreview({ notes: settled, steps: total });
+  }, [previewing, settled, total, updatePreview]);
+  const preview = (withSound?: string) => pv.start((n) => build(n(`BASS · ${label}`), withSound ?? s.sound));
+
   const phone = useIsLandscapePhone();
   const solo = useLoopPreview();
-  const soloNotes = generated ?? plainLine();
-  const soloKey = `${JSON.stringify(soloNotes)}|${sound}|${bars}|${barSteps}|${transport.bpm}`;
+  const soloKey = `${JSON.stringify(settled)}|${s.sound}|${total}|${transport.bpm}`;
   const soloPlayed = useRef("");
   const playSolo = () => {
     soloPlayed.current = soloKey;
-    void solo.play({ notes: soloNotes, patch: drawPatch, steps: bars * barSteps }, transport.bpm)
+    void solo.play({ notes: settled, patch: drawPatch, steps: total }, transport.bpm)
       .catch(() => toast.error("Preview unavailable", { description: "This browser couldn't play the bassline preview." }));
   };
   useEffect(() => {
-    // A new pattern or sound while the solo preview loops switches straight away.
     if (!solo.playing || soloPlayed.current === soloKey) return;
     playSolo();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- soloKey captures every input playSolo reads
   }, [soloKey, solo.playing]);
+
   const create = () => {
     solo.stop();
     const dest = synthTracks.find((t) => t.id === target);
     if (dest) {
       pv.stop();
-      const notes = generated ?? plainLine();
-      updateTrack(dest.id, { steps: bars * barSteps, notes });
+      updateTrack(dest.id, { steps: total, notes });
       toast.success(`Bassline sent to ${dest.name}`, { description: `${notes.length} notes, played by that track's own sound.` });
       return;
     }
     if (pv.keep(`BASS · ${label}`)) { toast.success("Bassline added"); return; }
-    const { notes } = build(`BASS · ${label}`);
+    const id = addTrack("instrument", `BASS · ${label}`, s.sound, { keepPanel: true });
+    updateTrack(id, { steps: total, notes, patch: cleanBassPatch(applyPreset(s.sound)) });
     toast.success("Bassline added", { description: `${notes.length} notes — edit them in the piano roll.` });
   };
 
-  const chip = (on: boolean) => `min-h-11 rounded-md border px-3 text-sm ${on ? "border-primary bg-primary/15 text-primary" : "border-border text-muted-foreground hover:text-foreground"}`;
+  const presetIdx = BLG_PRESETS.findIndex((p) => p.label === s.names[s.slot]);
+  const loadPreset = (i: number) => {
+    const p = BLG_PRESETS[(i + BLG_PRESETS.length) % BLG_PRESETS.length]!;
+    setS((cur) => {
+      const slots = cur.slots.slice(); slots[cur.slot] = presetPattern(p);
+      const names = cur.names.slice(); names[cur.slot] = p.label;
+      return { ...cur, slots, names, sound: p.sound, octave: p.octave };
+    });
+    toast.success(p.label, {
+      description: `${p.genre} · ${p.sound}${transport.bpm !== p.bpm ? ` · usually ${p.bpm} BPM` : ""}`,
+      action: transport.bpm !== p.bpm ? { label: `Use ${p.bpm} BPM`, onClick: () => setTransport({ bpm: p.bpm }) } : undefined,
+    });
+  };
+  const rename = (n: string | null) => setS((cur) => { const names = cur.names.slice(); names[cur.slot] = n; return { ...cur, names }; });
+  const randomize = () => { setPat(randomizeBlg(pat)); rename("Random"); };
+  const copyToNext = () => {
+    const to = (s.slot + 1) % SLOTS;
+    setS((cur) => {
+      const slots = cur.slots.slice(); const p = slots[cur.slot]!;
+      slots[to] = { ...p, on: { ...p.on }, off: { ...p.off }, edits: p.edits ? p.edits.map((c) => (c ? { ...c } : null)) : null };
+      const names = cur.names.slice(); names[to] = cur.names[cur.slot] ?? null;
+      return { ...cur, slots, names, slot: to };
+    });
+    toast.success(`Copied to pattern ${to + 1}`, { description: "Change it there to make a variation." });
+  };
+
+  const audition = (iv: number) => {
+    const e = getEngine(); e.init();
+    e.playNote("bassgen-audition", drawPatch, Math.max(12, 12 * (s.octave + 1) + pat.root + iv), 0.25, 0.85);
+  };
+
+  // Step light: where the bass is in the pattern while a preview plays (20 fps, drawn straight on the display).
+  const playPos = (): number | null => {
+    const L = clampSteps(pat.steps), rl = rateLen(pat.rate);
+    let at: number | null = null;
+    const ph = solo.playing ? solo.phase() : null;
+    if (ph != null) at = ph * total;
+    else if (pv.previewing) {
+      const now = getEngine().ctx?.currentTime;
+      const c = now == null ? null : activeSongClock(now);
+      if (c && now != null) at = (((c.step + (now - c.time) / c.dur) % total) + total) % total;
+    }
+    return at == null ? null : Math.floor(at / rl) % L;
+  };
 
   return (
-    <section className={`bassgen-device space-y-4 rounded-md border border-border bg-surface-1 p-4${skinned ? " studio-wallpaper" : ""}`} data-skin-panel="bass" style={skinBackground(skin)} {...skinDrop}>
+    <section className={`bassgen-device blg space-y-3 rounded-md border border-border bg-surface-1 p-4${skinned ? " studio-wallpaper" : ""}`} data-skin-panel="bass" style={skinBackground(skin)} {...skinDrop}>
       <SkinControls skinKey="bass" image />
-      <header>
-        <h2 className="bassgen-brand">SYNCLAB <b>Bassline Generator</b></h2>
-        <p className="text-xs text-muted-foreground">Writes a bassline from music theory — following the chords already in your song, or a key and progression you pick. No AI credits used.</p>
-      </header>
-
-      <div className="bassgen-display" aria-live="polite">
-        <span className="bassgen-display-key">{useSong ? "FOLLOWING YOUR CHORDS" : `${NOTE_NAMES[tonic]} ${minor ? "MINOR" : "MAJOR"}`}</span>
-        <span className="bassgen-display-roots">{roots.map((r) => NOTE_NAMES[r]).join(" → ")}</span>
-        <span className="bassgen-display-meta">{label} · {bars} BARS · {sound.toUpperCase()}</span>
-      </div>
-
-      <div className="space-y-2">
-        <p className="font-mono text-xs font-bold tracking-widest text-muted-foreground">GENRE TEMPLATES</p>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
-          {BASS_TEMPLATES.map((t) => (
-            <button key={t.id} type="button" onClick={() => applyTemplate(t.id)} aria-pressed={template === t.id}
-              className={`min-h-14 rounded-md border p-2 text-left ${template === t.id ? "border-primary bg-primary/15" : "border-border hover:border-primary/60"}`}>
-              <span className="block text-sm font-medium">{t.label}</span>
-              <span className="block font-mono text-[10px] text-muted-foreground">{t.bpm} BPM · {t.sound}</span>
-            </button>
+      <header className="flex flex-wrap items-end justify-between gap-2">
+        <div>
+          <h2 className="bassgen-brand">SYNCLAB <b>Bassline Generator</b></h2>
+          <p className="text-xs text-muted-foreground">Mix built-in on-beat and off-beat bass phrases, vary them, then edit any note. Music theory only — no AI credits used.</p>
+        </div>
+        <div className="blg-patterns" role="radiogroup" aria-label="Pattern slot">
+          <span className="blg-label">PATTERN</span>
+          {Array.from({ length: SLOTS }, (_, i) => (
+            <button key={i} type="button" role="radio" aria-checked={s.slot === i} title={s.names[i] ?? `Pattern ${i + 1}`}
+              onClick={() => set({ slot: i })} className={`blg-slot${s.slot === i ? " is-on" : ""}${s.names[i] || s.slots[i]!.edits ? " has-data" : ""}`}>{i + 1}</button>
           ))}
         </div>
-        {activeTemplate && transport.bpm !== activeTemplate.bpm && (
-          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-            {activeTemplate.label} usually runs at {activeTemplate.bpm} BPM (your song is {transport.bpm}).
-            <Button size="sm" variant="outline" onClick={() => setTransport({ bpm: activeTemplate.bpm })}>Use {activeTemplate.bpm} BPM</Button>
-          </div>
-        )}
+      </header>
+
+      <div className="blg-lcd-row">
+        <label className="blg-lcd">
+          <span className="blg-label">PATCH</span>
+          <span className="flex items-center gap-1">
+            <button type="button" className="blg-arrow" aria-label="Previous patch" onClick={() => loadPreset(presetIdx < 0 ? -1 : presetIdx - 1)}>◀</button>
+            <select aria-label="Bassline patch" value={presetIdx < 0 ? "" : BLG_PRESETS[presetIdx]!.id} onChange={(e) => loadPreset(BLG_PRESETS.findIndex((p) => p.id === e.target.value))} className="blg-select min-w-44">
+              {presetIdx < 0 && <option value="">{name}</option>}
+              {BLG_GENRES.map((g) => (
+                <optgroup key={g} label={g}>
+                  {BLG_PRESETS.filter((p) => p.genre === g).map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
+                </optgroup>
+              ))}
+            </select>
+            <button type="button" className="blg-arrow" aria-label="Next patch" onClick={() => loadPreset(presetIdx + 1)}>▶</button>
+          </span>
+        </label>
+        <label className="blg-lcd">
+          <span className="blg-label">ROOT</span>
+          <select aria-label="Root note" value={pat.root} disabled={useSong} onChange={(e) => setPat({ root: Number(e.target.value) }, true)} className="blg-select">
+            {NOTE_NAMES.map((n, i) => <option key={n} value={i}>{n}</option>)}
+          </select>
+        </label>
+        <label className="blg-lcd">
+          <span className="blg-label">OCTAVE</span>
+          <select aria-label="Octave" value={s.octave} onChange={(e) => set({ octave: Number(e.target.value) })} className="blg-select">
+            <option value={0}>0 · very low</option><option value={1}>1 · low</option><option value={2}>2 · mid</option><option value={3}>3 · high</option>
+          </select>
+        </label>
+        <BlgStepper label="STEPS" value={clampSteps(pat.steps)} min={16} max={64} onChange={(v) => setPat({ steps: v })} />
+        <label className="blg-lcd">
+          <span className="blg-label">RATE</span>
+          <select aria-label="Rate" value={pat.rate} onChange={(e) => setPat({ rate: e.target.value as BlgRate }, true)} className="blg-select">
+            {BLG_RATES.map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}
+          </select>
+        </label>
+        <BlgStepper label="SHUFFLE" value={pat.shuffle} min={50} max={75} format={(v) => (v <= 50 ? "OFF" : `${v}%`)} onChange={(v) => setPat({ shuffle: v }, true)} />
+        <BlgStepper label="SHIFT" value={pat.shift} min={-32} max={32} format={(v) => (v > 0 ? `+${v}` : String(v))} onChange={(v) => setPat({ shift: v })} />
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        {BASS_STYLES.map((s) => <button key={s.id} type="button" title={s.hint} onClick={() => setStyle(s.id)} className={chip(style === s.id)}>{s.label}</button>)}
+      <div className="blg-generator">
+        <BlgLanePanel lane="on" title="ON-BEAT" value={pat.on} onChange={(on) => setPat({ on })} onDice={() => setPat({ on: randomLane("on") })} />
+        <div className="blg-center">
+          <BlgDiamond on={pat.on.index} off={pat.off.index} onAmount={pat.on.amount} offAmount={pat.off.amount}
+            onChange={(on, off) => setPat({ on: { ...pat.on, index: on }, off: { ...pat.off, index: off } })} />
+          <div className="blg-center-controls">
+            <BlgStepper label="NOTE RANGE" value={Math.round(pat.range * 100)} min={-100} max={100} step={10} format={(v) => (v === 0 ? "0" : v > 0 ? `+${v}%` : `${v}%`)} onChange={(v) => setPat({ range: v / 100 })} />
+            <div className="blg-lcd">
+              <span className="blg-label">MINORNESS</span>
+              <span className="blg-minor" role="radiogroup" aria-label="Minorness">
+                {[0, 1, 2, 3, 4].map((m) => (
+                  <button key={m} type="button" role="radio" aria-checked={pat.minorness === m} onClick={() => setPat({ minorness: m })}
+                    title={["Off — major intervals kept", "Minor 7ths", "+ minor 3rds", "+ minor 6ths", "+ minor 2nds (darkest)"][m]}
+                    className={`blg-minor-led${pat.minorness >= m && m > 0 ? " is-on" : ""}${pat.minorness === m ? " is-sel" : ""}`}>{m}</button>
+                ))}
+              </span>
+            </div>
+          </div>
+          <Button size="lg" className="min-h-12 w-full" onClick={randomize}><Dices className="size-4" /> Randomize</Button>
+        </div>
+        <BlgLanePanel lane="off" title="OFF-BEAT" value={pat.off} onChange={(off) => setPat({ off })} onDice={() => setPat({ off: randomLane("off") })} />
+      </div>
+
+      <div className="space-y-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="blg-label">NOTE DISPLAY</span>
+          <span className="text-xs text-muted-foreground">Tap or drag to draw notes, tap a note to remove it. Green = on-beat, blue = off-beat.</span>
+          {pat.edits && <span className="blg-edited">EDITED</span>}
+          <span className="ml-auto flex flex-wrap gap-1">
+            {pat.edits && <Button size="sm" variant="secondary" className="min-h-10" onClick={() => setPat({ edits: null })}><RotateCcw className="size-3.5" /> Back to generated</Button>}
+            <Button size="sm" variant="secondary" className="min-h-10" onClick={() => setPat({ edits: line.map(() => null) }, true)}><Trash2 className="size-3.5" /> Clear notes</Button>
+            <Button size="sm" variant="secondary" className="min-h-10" onClick={copyToNext}><Copy className="size-3.5" /> Copy to pattern {((s.slot + 1) % SLOTS) + 1}</Button>
+          </span>
+        </div>
+        <BlgNoteDisplay line={line} root={pat.root} onEdit={(edits) => setPat({ edits }, true)} onAudition={audition} playPos={playPos} />
       </div>
 
       <div className="flex flex-wrap items-center gap-2 text-sm">
-        <button type="button" className={chip(useSong)} disabled={!hasSong} onClick={() => setFollow(true)}>Follow my chords</button>
-        <button type="button" className={chip(!useSong)} onClick={() => setFollow(false)}>Pick a key</button>
-        {!hasSong && <span className="text-xs text-muted-foreground">No chords found yet — using a key.</span>}
-      </div>
-
-      {!useSong && (
-        <div className="flex flex-wrap gap-2">
-          <select value={tonic} onChange={(e) => setTonic(Number(e.target.value))} aria-label="Key" className="min-h-12 rounded-md border border-border bg-surface-2 px-3 text-sm">
-            {NOTE_NAMES.map((n, i) => <option key={n} value={i}>{n}</option>)}
-          </select>
-          <select value={minor ? "min" : "maj"} onChange={(e) => setMinor(e.target.value === "min")} aria-label="Scale" className="min-h-12 rounded-md border border-border bg-surface-2 px-3 text-sm">
-            <option value="min">Minor</option><option value="maj">Major</option>
-          </select>
-          <select value={prog} onChange={(e) => setProg(e.target.value)} aria-label="Progression" className="min-h-12 rounded-md border border-border bg-surface-2 px-3 text-sm">
-            {PROGRESSIONS.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
-          </select>
-        </div>
-      )}
-
-      <div className="flex flex-wrap items-center gap-2">
-        <select value={bars} onChange={(e) => setBars(Number(e.target.value))} aria-label="Bars" className="min-h-12 rounded-md border border-border bg-surface-2 px-3 text-sm">
-          {[2, 4, 8].map((b) => <option key={b} value={b}>{b} bars</option>)}
+        <span className="blg-label">CHORDS</span>
+        <button type="button" className={chip(useSong)} disabled={!hasSong} onClick={() => set({ follow: true })}>Follow my chords</button>
+        <button type="button" className={chip(!useSong)} onClick={() => set({ follow: false })}>Progression</button>
+        {!useSong && (
+          <>
+            <select value={s.minorKey ? "min" : "maj"} onChange={(e) => set({ minorKey: e.target.value === "min" })} aria-label="Key scale" className="min-h-11 rounded-md border border-border bg-surface-2 px-3 text-sm">
+              <option value="min">{NOTE_NAMES[pat.root]} minor</option><option value="maj">{NOTE_NAMES[pat.root]} major</option>
+            </select>
+            <select value={s.prog} onChange={(e) => set({ prog: e.target.value })} aria-label="Progression" className="min-h-11 rounded-md border border-border bg-surface-2 px-3 text-sm">
+              {PROGRESSIONS.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
+            </select>
+          </>
+        )}
+        {!hasSong && <span className="text-xs text-muted-foreground">No chords in your song yet.</span>}
+        <select value={s.bars} onChange={(e) => set({ bars: Number(e.target.value) })} aria-label="Bars" className="min-h-11 rounded-md border border-border bg-surface-2 px-3 text-sm">
+          {[1, 2, 4, 8, 16].map((b) => <option key={b} value={b}>{b} bar{b > 1 ? "s" : ""} on the timeline</option>)}
         </select>
-        <select value={octave} onChange={(e) => setOctave(Number(e.target.value))} aria-label="Octave" className="min-h-12 rounded-md border border-border bg-surface-2 px-3 text-sm">
-          <option value={0}>Very low (C0)</option><option value={1}>Low (C1)</option><option value={2}>Mid (C2)</option>
-        </select>
+        <span className="font-mono text-[11px] text-muted-foreground">
+          {rootsPerBar.map((r) => NOTE_NAMES[r]).join(" → ")} · pattern is {Number(loopBars.toFixed(2))} bar{loopBars === 1 ? "" : "s"} long{loopBars > s.bars ? " (only the start fits)" : ""}
+        </span>
       </div>
 
       <div className="space-y-2">
-        <p className="font-mono text-xs font-bold tracking-widest text-muted-foreground">BASS SOUND · {BASS_SOUNDS.length} TO PICK FROM</p>
+        <p className="blg-label">BASS SOUND · {BASS_SOUNDS.length} TO PICK FROM</p>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-6" role="radiogroup" aria-label="Bass sound">
-          {BASS_SOUNDS.map((s) => (
-            <button key={s} type="button" role="radio" aria-checked={sound === s}
-              onClick={() => { setSound(s); if (pv.previewing) { pv.stop(); setTimeout(() => preview(s), 60); } }}
-              className={`min-h-11 rounded-md border px-2 text-left text-sm ${sound === s ? "border-primary bg-primary/15 text-primary" : "border-border text-muted-foreground hover:text-foreground"}`}>{s}</button>
+          {BASS_SOUNDS.map((snd) => (
+            <button key={snd} type="button" role="radio" aria-checked={s.sound === snd}
+              onClick={() => { set({ sound: snd }); if (pv.previewing) { pv.stop(); setTimeout(() => preview(snd), 60); } }}
+              className={`min-h-11 rounded-md border px-2 text-left text-sm ${s.sound === snd ? "border-primary bg-primary/15 text-primary" : "border-border text-muted-foreground hover:text-foreground"}`}>{snd}</button>
           ))}
         </div>
-        <p className="text-xs text-muted-foreground">Pick a sound, then press Preview to hear your bassline with it. Changing the sound while previewing switches it right away.</p>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <button type="button" aria-pressed={mode === "write"} className={chip(mode === "write")} onClick={() => setMode(mode === "write" ? "auto" : "write")}>Write my own notes</button>
-      </div>
-      {mode === "write" && (
-        <BassStepEditor pattern={pattern} onChange={setPattern} tonic={useSong ? (roots[0] ?? tonic) : tonic} minor={minor} half={half} onHalf={setHalf}
-          onAudition={(semis) => { const e = getEngine(); e.init(); e.playNote("bassgen-audition", drawPatch, 12 * (octave + 1) + (useSong ? (roots[0] ?? tonic) : tonic) + semis, 0.25, 0.85); }} />
-      )}
-
-      <div className="flex flex-wrap items-center gap-2">
-        <Button size="lg" className="min-h-12" onClick={() => { setMode("auto"); generate(); }}>{generated && mode === "auto" ? "Regenerate (new variation)" : "Generate bassline"}</Button>
-        {generated && <span className="font-mono text-xs text-muted-foreground">{generated.length} notes ready</span>}
-      </div>
-      {generated && mode === "auto" && (
-        <div className="bassgen-grid" role="img" aria-label={`Generated bassline: ${generated.length} notes over ${bars} bars`}>
-          {Array.from({ length: bars * barSteps }, (_, i) => {
-            const note = generated.find((n) => i >= n.step && i < n.step + n.length);
-            const start = generated.find((n) => n.step === i);
-            return (
-              <span
-                key={i}
-                className={`bassgen-cell${note ? " is-on" : ""}${start ? " is-start" : ""}${i % barSteps === 0 ? " is-bar" : ""}`}
-                style={note ? ({ "--cell-level": String(0.35 + note.velocity * 0.65) } as CSSProperties) : undefined}
-              />
-            );
-          })}
-        </div>
-      )}
-      {generated && <PatternWaveform pattern={{ notes: generated, instrument: sound, patch: drawPatch, steps: bars * barSteps }} bpm={transport.bpm} label="Generated bassline waveform" closeUp color="var(--display-cyan)" />}
+      <PatternWaveform pattern={{ notes: settled, instrument: s.sound, patch: drawPatch, steps: total }} bpm={transport.bpm} label="Bassline waveform" closeUp color="var(--display-cyan)" />
       <label className="flex flex-wrap items-center gap-2 text-sm">
-        <span className="font-mono text-xs font-bold tracking-widest text-muted-foreground">SEND TO</span>
+        <span className="blg-label">SEND TO</span>
         <select aria-label="Send bassline to" value={target} onChange={(e) => setTarget(e.target.value)} className="min-h-11 rounded-md border border-border bg-surface-2 px-3 text-sm">
-          <option value="new">New bass track ({sound})</option>
+          <option value="new">New bass track ({s.sound})</option>
           {synthTracks.map((t) => <option key={t.id} value={t.id}>{t.name} — replaces its notes</option>)}
         </select>
+        <span className="font-mono text-xs text-muted-foreground">{notes.length} notes over {s.bars} bar{s.bars > 1 ? "s" : ""}</span>
       </label>
-      {phone ? (
-        <div className="flex flex-wrap gap-2">
-          {solo.playing
-            ? <Button size="lg" variant="destructive" className="min-h-12" onClick={solo.stop}><Square className="size-4 fill-current" /> Stop preview</Button>
-            : <Button size="lg" variant="secondary" className="min-h-12" onClick={playSolo} title="Plays only the bassline, looped — it doesn't start your song, and stays in time with it if the song is already playing"><Play className="size-4" /> Preview bass only</Button>}
-          <Button size="lg" className="min-h-12" onClick={create}>{target === "new" ? "Add bassline to timeline" : "Send notes to track"}</Button>
-        </div>
-      ) : (
-        <PreviewButtons pv={pv} onPreview={() => preview()} onAdd={create} addLabel={target === "new" ? "Add bassline to timeline" : "Send notes to track"} />
-      )}
+      <div className="flex flex-wrap gap-2">
+        {solo.playing
+          ? <Button size="lg" variant="destructive" className="min-h-12" onClick={solo.stop}><Square className="size-4 fill-current" /> Stop run</Button>
+          : <Button size="lg" variant="secondary" className="min-h-12" onClick={playSolo} title="Plays only the bassline, looped — it doesn't start your song, and stays in time with it if the song is already playing"><Play className="size-4" /> Run (bass only)</Button>}
+        {phone
+          ? <Button size="lg" className="min-h-12" onClick={create}>{target === "new" ? "Add bassline to timeline" : "Send notes to track"}</Button>
+          : <PreviewButtons pv={pv} onPreview={() => { solo.stop(); preview(); }} onAdd={create} addLabel={target === "new" ? "Add bassline to timeline" : "Send notes to track"} />}
+      </div>
     </section>
   );
 }
+
+const chip = (on: boolean) => `min-h-11 rounded-md border px-3 text-sm ${on ? "border-primary bg-primary/15 text-primary" : "border-border text-muted-foreground hover:text-foreground"}`;

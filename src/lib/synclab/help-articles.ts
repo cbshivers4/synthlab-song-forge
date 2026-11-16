@@ -293,16 +293,23 @@ export const KNOWLEDGE_BASE: Article[] = [
   },
   {
     id: "bass-generator", category: "Synths & keys", title: "Bass Generator",
-    tags: "bass generator bassline 303 steps presets shift send to",
+    tags: "bass generator bassline player on-beat off-beat diamond variator minorness note range shuffle shift patterns patch send to",
     body: [
-      "Pick a template or preset — each has its own bass melody. Edit the 16 or 32 steps, use SHIFT ◀ ▶ to move the pattern, and SEND TO a track.",
+      "The Bassline Generator mixes two built-in phrase banks: ON-BEAT lines (green, notes on the 8th-note grid) and OFF-BEAT lines (blue, the 16ths in between). Drag the dot in the diamond, or the two PATTERN sliders, from sparse root notes up to busy melodic lines. Each lane has bank A or B, VELOCITY (all the way down turns it off), LENGTH, and a VARIATOR that swaps in other phrases during the cycle by AMOUNT.",
+      "Across the top: PATCH (34 genre starting points), ROOT, OCTAVE, STEPS (16–64), RATE, SHUFFLE and SHIFT. NOTE RANGE stretches or shrinks the jumps away from the root, and MINORNESS 1–4 turns 7ths, then 3rds, 6ths and 2nds minor. There are 8 PATTERN slots, and Copy to pattern makes a variation in the next one.",
+      "The NOTE DISPLAY shows the exact line. Tap or drag to draw notes, tap a note to remove it, drag the velocity bars, and use TIE → to slide into the next note. Back to generated returns to the generator's line.",
     ],
     can: [
-      "Make clean (undistorted) basslines and edit every step.",
-      "Send the pattern to the timeline.",
-      "Generate, preview and add basslines while your song is playing or recording — nothing stops. Pressing Generate again during a preview swaps in the new line in time, without jumping back to the start.",
+      "Follow the chords in your song, or play over a progression you pick.",
+      "Run the bass on its own or preview it with your song; the step light shows where it is. Changes swap in on time.",
+      "Add the line to the timeline or send its notes to an existing synth track. You can then edit it in the piano roll.",
+      "Randomize everything, or only one lane with its dice button.",
     ],
-    cant: ["It writes bass patterns only; it doesn't make drums or chords."],
+    cant: [
+      "Moving any generator control (diamond, sliders, knobs, variator, steps, shift, range, minorness) replaces your hand edits. Root, rate and shuffle keep them.",
+      "The 8 pattern slots last while the studio is open; they aren't saved in the project. Add a pattern to the timeline to keep it.",
+      "It writes bass notes only, no drums or chords.",
+    ],
   },
   {
     id: "live-keys", category: "Synths & keys", title: "Live Keys (virtual keyboard player)",
