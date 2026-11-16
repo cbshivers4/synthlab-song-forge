@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useMaybeApp } from "@/lib/synclab/app-state";
+import { SUPPORT_EMAIL } from "@/lib/synclab/contact";
 import {
   EMPTY_SETTINGS,
   HELP_CATEGORIES,
@@ -147,7 +148,7 @@ export function HelpCenter() {
       setUserId(u?.id ?? null);
       // The founder signs in with Gmail but handles support from the SYNCLAB address.
       const account = (u?.email ?? "").toLowerCase();
-      const replyEmail = account === "cbshivers@gmail.com" ? "info@synclabsapp.com" : (u?.email ?? "");
+      const replyEmail = account === "cbshivers@gmail.com" ? SUPPORT_EMAIL : (u?.email ?? "");
       setEmail((prev) => (prev && prev.toLowerCase() !== "cbshivers@gmail.com" ? prev : replyEmail));
       void isSupportAdmin(u?.id).then(setAdmin);
     });

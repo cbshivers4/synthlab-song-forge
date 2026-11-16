@@ -3,6 +3,8 @@
  * what it can do and — honestly — what it can't do (browser, phone or provider limits).
  * Shipped with the app so help works offline.
  */
+import { SUPPORT_EMAIL } from "./contact";
+
 export const HELP_CATEGORIES = [
   "Getting started",
   "Recording",
@@ -845,7 +847,7 @@ export const KNOWLEDGE_BASE: Article[] = [
   {
     id: "support", category: "Account & billing", title: "Getting help",
     tags: "support contact email problem bug report",
-    body: ["Use Contact Support or Report a Problem in this window, or email info@synclabsapp.com."],
+    body: [`Use Contact Support or Report a Problem in this window, or email ${SUPPORT_EMAIL}.`],
     can: ["Attach device details to a report (you can read them before sending)."],
     cant: ["Tickets need you to be signed in."],
   },
