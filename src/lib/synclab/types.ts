@@ -94,7 +94,7 @@ export interface FilterStage {
 }
 
 export interface SynthPatch {
-  touch?: { root: number; octave: number; scale: string; rate: number; gate: number; lane?: string; loops?: Record<string, { step: number; pitch: number; length: number; vel: number }[]>; /** One instrument per lane/column, keyed by lane id. */ sounds?: Record<string, string> };
+  touch?: { root: number; octave: number; scale: string; rate: number; gate: number; lane?: string; loops?: Record<string, { step: number; pitch: number; length: number; vel: number; tone?: number }[]>; /** One instrument per lane/column, keyed by lane id. */ sounds?: Record<string, string>; /** Drum kit for the drums part. */ kit?: DrumKitId; /** Loop length in bars (1, 2 or 4; missing = 2). */ bars?: number; /** Pad width in octaves (1-4; missing = 2). */ range?: number; /** Gate-arp rhythm played while holding the pad. */ gateArp?: string; /** Parts silenced in loop playback. */ muted?: Record<string, boolean> };
   name: string;
   oscillators: OscillatorParams[];
   noise: number;

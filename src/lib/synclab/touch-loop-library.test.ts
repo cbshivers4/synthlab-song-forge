@@ -3,9 +3,9 @@ import { genreLoops, loadGenreLoops, TOUCH_LOOP_GENRES, TOUCH_LOOP_LIBRARY } fro
 import { TOUCH_LANES, TOUCH_SCALES } from './touch-synth';
 
 describe('Touch Synth genre loops', () => {
-  it('offers 32 distinct compositions across 16 genres with all five lanes populated', () => {
-    expect(TOUCH_LOOP_LIBRARY).toHaveLength(32);
-    expect(TOUCH_LOOP_GENRES).toHaveLength(16);
+  it('offers 68 distinct compositions across 34 genres with all five lanes populated', () => {
+    expect(TOUCH_LOOP_LIBRARY).toHaveLength(68);
+    expect(TOUCH_LOOP_GENRES).toHaveLength(34);
     const signatures = TOUCH_LOOP_LIBRARY.map(p => {
       const loops = genreLoops(p, 0);
       for (const lane of TOUCH_LANES) {
@@ -20,7 +20,7 @@ describe('Touch Synth genre loops', () => {
       }
       return JSON.stringify(loops);
     });
-    expect(new Set(signatures).size).toBe(32);
+    expect(new Set(signatures).size).toBe(68);
   });
   it('loading a single lane retains every other recorded note', () => {
     const note = { step: 5, pitch: 60, length: 1, vel: .9 };

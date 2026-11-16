@@ -5223,3 +5223,40 @@ html.phone-console-active [role="option"] { min-height: 44px; font-size: 15px; }
 .blg .blg-tie:disabled { background: oklch(0.16 0.02 215); }
 .blg .blg-tie.is-on { background: var(--bass-teal); color: oklch(0.15 0.02 250); }
 .blg .blg-display-legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 4px; font-family: var(--font-mono); font-size: 10px; color: oklch(0.7 0.05 200); }
+
+/* Touch Synth — pocket loop-synth face: dark shell, glowing square grid, lit part keys and a step LED strip. */
+.kaoss-face {
+  background: linear-gradient(180deg, color-mix(in oklab, var(--card) 92%, var(--foreground) 8%), var(--card));
+  border: 1px solid color-mix(in oklab, var(--lane) 35%, var(--border));
+  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--foreground) 10%, transparent), 0 8px 24px rgb(0 0 0 / 0.35);
+}
+.kaoss-lcd {
+  background: color-mix(in oklab, var(--background) 80%, var(--lane) 8%);
+  color: color-mix(in oklab, var(--lane) 70%, var(--foreground));
+  border: 1px solid color-mix(in oklab, var(--lane) 30%, transparent);
+  text-shadow: 0 0 6px color-mix(in oklab, var(--lane) 55%, transparent);
+}
+.kaoss-pad {
+  background: radial-gradient(circle at 50% 120%, color-mix(in oklab, var(--lane) 14%, var(--background)), var(--background) 70%);
+  border: 2px solid color-mix(in oklab, var(--lane) 50%, var(--border));
+}
+.kaoss-cell {
+  background: color-mix(in oklab, var(--foreground) 6%, transparent);
+  transition: background-color 420ms ease-out, box-shadow 420ms ease-out;
+}
+.kaoss-cell[data-lit] {
+  background: var(--cell-color, var(--lane));
+  box-shadow: 0 0 10px var(--cell-color, var(--lane));
+  transition: none;
+}
+.kaoss-marker { border-color: var(--lane); background: color-mix(in oklab, var(--lane) 20%, transparent); }
+.kaoss-marker[data-active] { background: var(--lane); box-shadow: 0 0 16px var(--lane); }
+.kaoss-led { background: color-mix(in oklab, var(--foreground) 10%, transparent); }
+.kaoss-led[data-beat] { background: color-mix(in oklab, var(--foreground) 22%, transparent); }
+.kaoss-led[data-on] { background: var(--lane); box-shadow: 0 0 6px var(--lane); }
+.kaoss-part { border: 1px solid color-mix(in oklab, var(--part) 40%, var(--border)); color: var(--muted-foreground); background: color-mix(in oklab, var(--part) 6%, var(--background)); }
+.kaoss-part:hover { color: var(--foreground); }
+.kaoss-part[data-selected] { color: var(--foreground); background: color-mix(in oklab, var(--part) 22%, var(--background)); border-color: var(--part); }
+.kaoss-part[data-muted] { opacity: 0.55; }
+.kaoss-part-letter { background: color-mix(in oklab, var(--part) 30%, transparent); color: var(--foreground); }
+.kaoss-part[data-selected] .kaoss-part-letter { background: var(--part); color: var(--background); box-shadow: 0 0 8px var(--part); }

@@ -283,15 +283,22 @@ export const KNOWLEDGE_BASE: Article[] = [
   },
   {
     id: "touch-synth", category: "Synths & keys", title: "Touch Synth",
-    tags: "touch synth lanes loops genre grid",
+    tags: "touch synth kaossilator ikaossilator loop sets genre pad gate arp hold scale range parts create my sets",
     body: [
-      "Touch Synth has five lanes, including separate coloured drum columns, plus genre loops. Tap the grid to add or remove notes, then Send to timeline.",
+      "Touch Synth works like a pocket loop synth: slide on the pad to play — left to right is pitch (always in your key and scale), bottom to top is tone. It has five parts, A Drums, B Bass, C Poly, D Melody and E Stabs/Arp, each with its own sound.",
+      "Sounds are grouped LEAD, ACOUSTIC, BASS, CHORD, ARP / GATE and SE / FX (142 sounds), and the drums part picks from 26 drum kits. GATE ARP turns a held finger into a rhythm or arpeggio locked to the loop; HOLD keeps it playing after you lift your finger. RANGE sets how many octaves the pad covers, and there are 31 scales.",
+      "LOOP SETS has 68 ready-made sets in 34 genres; each loads its own sounds, drum kit and key. Create writes a brand-new set in the chosen genre. Save to My Sets keeps your own sets, and Use BPM switches the song to the set's tempo.",
     ],
     can: [
-      "Load genre loops and edit each note.",
-      "Overdub while the loop plays and send the result to the timeline.",
+      "Record loop, then play on the pad while it loops to add notes (the tone you played is replayed too).",
+      "Mute any part, hold Hold to erase to wipe notes as the loop passes, and choose 1, 2 or 4 bars.",
+      "Edit single notes in the grid underneath, then Send to timeline (muted parts are left out).",
     ],
-    cant: ["On phone it lives under Synth, not Sounds."],
+    cant: [
+      "My Sets are kept on this device and browser; the set you're working on is saved inside the song.",
+      "Loading a set doesn't change the song tempo until you press Use BPM.",
+      "On phone it lives under Synth, not Sounds.",
+    ],
   },
   {
     id: "bass-generator", category: "Synths & keys", title: "Bass Generator",
