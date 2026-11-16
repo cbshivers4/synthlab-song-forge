@@ -181,6 +181,9 @@ function SynthTrackEditor({ track }: { track: Track }) {
   const { updatePatch, savePreset, loadPreset, userPresets, previewNote } = useStudio();
   const [presetName, setPresetName] = useState("");
   const [showKeyboard, setShowKeyboard] = useState(true);
+  // Hooks must run on every render, so they sit above the early return below.
+  const skin = useSkin("synth");
+  const drop = useImageDrop("synth");
   const patch = track.patch as SynthPatch;
   if (!patch) return null;
   const set = (p: Partial<SynthPatch>) => updatePatch(track.id, p);
@@ -200,8 +203,6 @@ function SynthTrackEditor({ track }: { track: Track }) {
     loadPreset(track.id, name);
     previewNote(track.id, 60, 0.75, false, selectedPatch);
   };
-  const skin = useSkin("synth");
-  const drop = useImageDrop("synth");
   return (
     <div className="studio-wallpaper hardware-device synth-hardware space-y-4 rounded-md p-3" data-studio-panel="synth" data-synth-style={synthStyle} style={skinBackground(skin)} {...drop}>
       <div className="synth-badge" aria-hidden>{patch.granular ? "GRANULAR SYNTH · GRAIN CLOUD" : patch.modular ? "MODULAR TECH SYNTH" : patch.name.startsWith("TD-3") || /ACID/i.test(track.name) ? "ACID BASS · TD-3 STYLE" : patch.name.startsWith("Poly Synth") || /POLY/i.test(track.name) ? "POLY SYNTH · 8 VOICE" : "SPEC 4 · ANALOG MODELING SYNTH"}</div>

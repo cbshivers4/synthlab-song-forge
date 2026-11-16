@@ -39,6 +39,30 @@ export const deleteMyAccount = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const { userId } = context;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { paddleFetch } = await import("@/lib/paddle.server");
+
+    // Stop billing first: deleting our rows does not cancel the subscription at Paddle.
+    const { data: subs, error: subsError } = await supabaseAdmin
+      .from("subscriptions")
+      .select("paddle_subscription_id, environment, status")
+      .eq("user_id", userId)
+      .neq("status", "canceled");
+    if (subsError) {
+      console.error("account deletion: could not read subscriptions", subsError);
+      throw new Error("Could not check your subscription. Please try again.");
+    }
+    for (const sub of subs ?? []) {
+      const env = sub.environment === "live" ? "live" : "sandbox";
+      const res = await paddleFetch(env, `/subscriptions/${encodeURIComponent(sub.paddle_subscription_id)}/cancel`, {
+        method: "POST",
+        body: JSON.stringify({ effective_from: "immediately" }),
+      });
+      // 404 / already-canceled means there is nothing left to stop.
+      if (!res.ok && res.status !== 404 && res.status !== 409) {
+        console.error(`account deletion: Paddle cancel failed [${res.status}]`, await res.text().catch(() => ""));
+        throw new Error("Could not cancel your subscription, so your account was not deleted. Please try again.");
+      }
+    }
 
     for (const table of USER_TABLES) {
       const { error } = await supabaseAdmin.from(table).delete().eq("user_id", userId);

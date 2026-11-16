@@ -63,7 +63,7 @@ export function ExternalApps() {
     }
   };
 
-  const useForRecording = (d: AudioDeviceInfo) => {
+  const chooseForRecording = (d: AudioDeviceInfo) => {
     setPreferredInput(d.id);
     toast.success(`Recording input set to ${d.label}`, { description: "Arm an audio track and press record to capture the app's sound." });
   };
@@ -108,7 +108,7 @@ export function ExternalApps() {
                 </span>
               )}
               <Button size="sm" variant="ghost" className="h-6 text-[11px]" onClick={() => void listen(d)}>{listenId === d.id ? "Stop meter" : "Meter"}</Button>
-              <Button size="sm" variant="secondary" className="h-6 text-[11px]" onClick={() => useForRecording(d)}>Use for recording</Button>
+              <Button size="sm" variant="secondary" className="h-6 text-[11px]" onClick={() => chooseForRecording(d)}>Use for recording</Button>
             </div>
           ))}
         </div>
