@@ -25,7 +25,7 @@ function PrivacyRoute() {
       <p>
         SYNCLAB is based in Detroit, Michigan, USA. We are the <strong>data controller</strong> for the personal data described
         here, which means we decide why and how it is used. Contact:{" "}
-        <strong>info@synclabsapp.com</strong>.
+        <strong>christopherbshivers@gmail.com</strong>.
       </p>
 
       <h2>What we collect and why</h2>
@@ -101,7 +101,7 @@ function PrivacyRoute() {
       <p>
         Depending on where you live, you may request access to your data, correction, deletion,
         restriction, portability, or object to processing based on legitimate interests, and withdraw
-        consent at any time. Email <strong>info@synclabsapp.com</strong> and we will
+        consent at any time. Email <strong>christopherbshivers@gmail.com</strong> and we will
         respond within one month. UK/EEA users also have the right to complain to their local data
         protection
         authority.

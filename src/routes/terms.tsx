@@ -28,7 +28,7 @@ function TermsRoute() {
       <p>
         SYNCLAB ("SYNCLAB", "we", "us") is a sole proprietorship based in Detroit, Michigan, United
         States. These terms form an agreement between you and SYNCLAB. Questions:{" "}
-        <strong>info@synclabsapp.com</strong>.
+        <strong>christopherbshivers@gmail.com</strong>.
       </p>
 
       <h2>1. Acceptance</h2>
@@ -74,7 +74,7 @@ function TermsRoute() {
       </p>
       <p>
         Rights holders may report infringing material to{" "}
-        <strong>info@synclabsapp.com</strong>; we
+        <strong>christopherbshivers@gmail.com</strong>; we
         will review takedown requests and may remove content or suspend accounts for repeated
         infringement.
       </p>
