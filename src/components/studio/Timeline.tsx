@@ -141,15 +141,21 @@ export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandl
       const b = { ...b0, x: b0.x - (sc?.scrollLeft ?? 0), y: b0.y - (sc?.scrollTop ?? 0) };
       const box = { l: Math.min(b.x, ev.clientX), r: Math.max(b.x, ev.clientX), t: Math.min(b.y, ev.clientY), btm: Math.max(b.y, ev.clientY) };
       const hit = (r: DOMRect) => r.left < box.r && r.right > box.l && r.top < box.btm && r.bottom > box.t;
-      const picks: { trackId: string; clipId?: string }[] = [];
+      const picks: { trackId: string; clipId?: string; span?: [number, number] }[] = [];
       for (const lane of document.querySelectorAll<HTMLElement>("[data-lane-track]")) {
         if (!hit(lane.getBoundingClientRect())) continue;
         const clip = [...lane.querySelectorAll<HTMLElement>("[data-audio-clip]")].find((c) => hit(c.getBoundingClientRect()));
-        const content = clip || [...lane.querySelectorAll<HTMLElement>(".arrangement-clip")].find((c) => hit(c.getBoundingClientRect()));
-        if (!content) continue;
+        // Every block the box touches on this channel: Copy/Cut take exactly those bars, nothing more.
+        const blocks = [...lane.querySelectorAll<HTMLElement>(".arrangement-clip")].filter((c) => hit(c.getBoundingClientRect()));
+        if (!clip && !blocks.length) continue;
         const trackId = lane.dataset["laneTrack"];
         const clipId = clip?.dataset["audioClip"];
-        if (trackId) picks.push(clipId ? { trackId, clipId } : { trackId });
+        const edges = blocks.flatMap((c) => {
+          const a = Number(c.dataset["partStart"]), z = Number(c.dataset["partEnd"]);
+          return c.dataset["partStart"] != null && Number.isFinite(a) && Number.isFinite(z) && z > a ? [[a, z] as const] : [];
+        });
+        const span: [number, number] | undefined = edges.length ? [Math.min(...edges.map((e) => e[0])), Math.max(...edges.map((e) => e[1]))] : undefined;
+        if (trackId) picks.push({ trackId, ...(clipId ? { clipId } : {}), ...(span ? { span } : {}) });
       }
       // A plain box starts a fresh highlight, like a DAW; modifiers add to what's picked.
       if (!b.add) clearTimelineSelection();

@@ -14,7 +14,7 @@ import { markTakeFailed } from "./take-status";
 import { setSongClock } from "./song-clock";
 import { sendClockForStep, sendTransportStart, sendTransportStop } from "./midi-clock";
 import { INPUT_CHANGED_EVENT, INPUT_FALLBACK_EVENT, INPUT_LOST_EVENT } from "./mic";
-import { clipboardOrigin, drumCopySpan, livePasteStep, materialEnd, multiPasteSteps, noteCopy, pasteTrackContent } from "./arrangement-edit";
+import { clipboardOrigin, copyPartSpan, drumCopySpan, livePasteStep, materialEnd, multiPasteSteps, noteCopy, pasteTrackContent } from "./arrangement-edit";
 
 /** Drum/sampler tracks can hold values the browser cannot deep-copy; fall back so copy never silently fails. */
 function cloneTrack(t: Track): Track {
@@ -314,7 +314,7 @@ interface StudioApi extends StudioState {
   selectAll: () => void;
   toggleSelectId: (id: string) => void;
   /** Mouse box selection: select these channels and their boxed clips. */
-  selectBoxed: (picks: { trackId: string; clipId?: string }[], add: boolean) => void;
+  selectBoxed: (picks: { trackId: string; clipId?: string; span?: [number, number] }[], add: boolean) => void;
   /** Mouse drag down the channel names: highlight exactly these channels; the anchor stays the current channel. */
   paintSelectIds: (ids: string[], anchorId: string | null) => void;
   /** Click outside the timeline: drop highlighted clips/parts and extra checked channels (the current channel stays). */
@@ -562,6 +562,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const clipboardRef = useRef<Track | null>(null);
   /** The copied part's edges on the timeline, so a paste keeps every note's place in the bar. */
   const clipboardSpanRef = useRef<[number, number] | null>(null);
+  /** Bars a selection box covered on each channel (steps), so Copy/Cut take exactly those blocks. */
+  const boxSpansRef = useRef(new Map<string, [number, number]>());
   /** Several tracks copied together (2+), each pasted back onto its own channel. */
   const multiClipboardRef = useRef<{ trackId: string; track: Track; span: [number, number] | null }[] | null>(null);
   const [clipClipboardName, setClipClipboardName] = useState<string | null>(null);
@@ -1910,9 +1912,14 @@ export function StudioProvider({ children }: { children: ReactNode }) {
 
   /** Copy what the timeline shows on one channel: the full drum beat / every synth repeat in view. */
   const copyEntry = (src: Track) => {
+    const tp = transportRef.current;
+    const boxed = boxSpansRef.current.get(src.id);
+    if (boxed) {
+      const part = copyPartSpan(cloneTrack(src), boxed, stepSeconds(tp.bpm));
+      return { trackId: src.id, track: part.track, span: part.span as [number, number] | null };
+    }
     const track = cloneTrack(src);
     let span: [number, number] | null = null;
-    const tp = transportRef.current;
     const shown: [number, number] = tp.loop ? loopRegion(tp) : [0, songSteps(tp.bars)];
     if (src.kind === "drum" && !src.printedAudio && src.pads?.some((p) => p.steps.some((v) => v > 0))) {
       track.patternRegion = drumCopySpan(src, shown);
@@ -1948,12 +1955,13 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     const tp = transportRef.current;
     const patches = new Map<string, Partial<Track>>();
     const entries = picked.map((src) => {
-      const { clipboard, patch, span } = cutTrackMaterial(src, tp.bpm, tp.bars, tp.loop ? loopRegion(tp) : undefined);
+      const { clipboard, patch, span } = cutTrackMaterial(src, tp.bpm, tp.bars, tp.loop ? loopRegion(tp) : undefined, boxSpansRef.current.get(src.id));
       patches.set(src.id, patch);
       const noteSpan = span && clipboard.notes?.length && !clipboard.pads?.some((p) => p.steps.some((v) => v > 0)) ? span : null;
       return { trackId: src.id, track: clipboard, span: noteSpan };
     });
     const name = fillClipboard(entries);
+    for (const src of picked) boxSpansRef.current.delete(src.id);
     setTracks((ts) => ts.map((t) => (patches.has(t.id) ? { ...t, ...patches.get(t.id) } : t)));
     toast("Cut", { description: `${name} — the channels stay; the cut parts are on the clipboard.` });
   };
@@ -2412,6 +2420,12 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       selectBoxed: (picks, add) => {
         if (!picks.length) return;
         const ids = picks.map((p) => p.trackId);
+        if (!add) boxSpansRef.current.clear();
+        for (const p of picks) {
+          if (!p.span) { boxSpansRef.current.delete(p.trackId); continue; }
+          const was = add ? boxSpansRef.current.get(p.trackId) : undefined;
+          boxSpansRef.current.set(p.trackId, was ? [Math.min(was[0], p.span[0]), Math.max(was[1], p.span[1])] : p.span);
+        }
         setSelectedIds((s) => (add ? [...new Set([...s, ...ids])] : ids));
         setSelectedId(ids[ids.length - 1] ?? null);
         const clipFor = new Map(picks.filter((p) => p.clipId).map((p) => [p.trackId, p.clipId]));
@@ -2419,11 +2433,13 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       },
       paintSelectIds: (ids, anchorId) => {
         if (!ids.length) return;
+        boxSpansRef.current.clear();
         setSelectedIds(ids);
         const keep = anchorId && ids.includes(anchorId) ? anchorId : ids[ids.length - 1];
         if (keep) setSelectedId(keep);
       },
       clearTimelineSelection: () => {
+        boxSpansRef.current.clear();
         const keep = selectedIdRef.current;
         setSelectedIds((ids) => (ids.length === (keep ? 1 : 0) && (!keep || ids[0] === keep) ? ids : keep ? [keep] : []));
         if (!tracksRef.current.some((t) => t.activeClipId != null || t.activeRegion != null)) return;

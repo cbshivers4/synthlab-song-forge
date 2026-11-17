@@ -95,7 +95,15 @@ export function pasteTrackContent(target: Track, source: Track, at: number, step
     ? [region ? Math.min(region[0], start) : 0, Math.max(region?.[1] ?? shownDrums ?? 0, start + sourceLength)]
     : target.patternRegion;
   // Like a pasted synth take, a pasted beat is its own part: cut marks at both edges separate it.
-  const cuts = pastedDrums ? [...new Set([...(target.cuts ?? []), start, start + sourceLength])].sort((a, b) => a - b) : target.cuts;
+  // Cut marks inside the copied span come along too, so 1-, 2- or 4-bar blocks paste as the same
+  // separate blocks instead of merging into one long part.
+  const innerCuts = (from: number, to: number) => (source.cuts ?? []).filter(c => c > from + 0.001 && c < from + sourceLength - 0.001).map(c => c - from + to);
+  const noteBlocks = !pastedDrums && notes.length > 0 && opts.length != null ? innerCuts(origin, at) : [];
+  const cuts = pastedDrums
+    ? [...new Set([...(target.cuts ?? []), start, start + sourceLength, ...innerCuts(srcA, start)])].sort((a, b) => a - b)
+    : noteBlocks.length
+      ? [...new Set([...(target.cuts ?? []), at, at + sourceLength, ...noteBlocks])].filter(c => c > 0).sort((a, b) => a - b)
+      : target.cuts;
   return { ...target, steps, notes: [...kept, ...notes], clips: [...(target.clips ?? []), ...clips], pads, patternRegion, cuts,
     activeClipId: clips[0]?.id ?? target.activeClipId,
     ...(clips.length && ['instrument', 'midi', 'drum', 'sampler'].includes(target.kind) ? { printedAudio: true } : {}) };
@@ -115,6 +123,32 @@ export function noteCopy(track: Track, shown: [number, number]): { notes: MidiNo
     .filter(n => n.step >= span[0] - 0.001 && n.step < span[1] - 0.001)
     .map(n => ({ ...n, length: Math.min(n.length, span[1] - n.step), recordedEnd: n.recordedEnd ?? span[1] }));
   return { notes: inside, span };
+}
+
+/**
+ * Copy only the blocks a selection box covered on one channel: `span` is the union of those blocks.
+ * Beats narrow to the span (their cut marks stay, so each block pastes as its own block), note
+ * patterns are written out inside it, and audio blocks outside it are left behind.
+ */
+export function copyPartSpan(track: Track, span: [number, number], stepDuration: number): { track: Track; span: [number, number] } {
+  const lo = track.patternRegion ? Math.max(span[0], track.patternRegion[0]) : span[0];
+  const hi = track.patternRegion ? Math.min(span[1], track.patternRegion[1]) : span[1];
+  const part: [number, number] = [lo, Math.max(lo, hi)];
+  const notes = track.notes?.length
+    ? unrollNotes(track.notes, track.steps || part[1], part[1])
+      .filter(n => n.step >= part[0] - 0.001 && n.step < part[1] - 0.001)
+      .map(n => ({ ...n, length: Math.min(n.length, part[1] - n.step), recordedEnd: Math.min(n.recordedEnd ?? part[1], part[1]) }))
+    : track.notes;
+  const clips = track.clips?.filter(c => {
+    const a = c.start ?? 0, b = a + clipSeconds(c) / stepDuration;
+    return a < part[1] - 0.001 && b > part[0] + 0.001;
+  });
+  return {
+    track: { ...track, notes, clips, activeClipId: clips?.some(c => c.id === track.activeClipId) ? track.activeClipId : clips?.[0]?.id,
+      cuts: track.cuts?.filter(c => c > part[0] && c < part[1]),
+      ...(hasHits(track) ? { patternRegion: part } : {}) },
+    span: part,
+  };
 }
 
 /**

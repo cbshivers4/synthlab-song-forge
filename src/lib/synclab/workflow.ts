@@ -92,10 +92,14 @@ export function removeTakeAndMaterial(track: Track, clipId: string, bpm: number,
  * erased; otherwise every clip, note and drum hit goes to the clipboard and the channel is
  * left empty, keeping its instrument, sound, effects and mixer settings.
  */
-export function cutTrackMaterial(track: Track, bpm: number, bars: number, loop?: [number, number]): { clipboard: Track; patch: Partial<Track>; span?: [number, number] } {
+export function cutTrackMaterial(track: Track, bpm: number, bars: number, loop?: [number, number], boxed?: [number, number]): { clipboard: Track; patch: Partial<Track>; span?: [number, number] } {
   const clone = structuredCloneSafe(track);
   const clip = selectedClip(track);
-  const part = clip ? null : selectedPartBounds(track, bpm, bars, loop);
+  // A selection box names the blocks to cut; otherwise the selected part (or the whole channel).
+  const boxPart: [number, number] | null = boxed && track.patternRegion
+    ? [Math.max(boxed[0], track.patternRegion[0]), Math.min(boxed[1], track.patternRegion[1])]
+    : boxed ?? null;
+  const part = clip ? null : boxPart && boxPart[1] > boxPart[0] ? boxPart : selectedPartBounds(track, bpm, bars, loop);
   if (part) {
     const total = songSteps(bars);
     const expanded = unrollNotes(track.notes ?? [], track.steps || total, total);
@@ -103,7 +107,8 @@ export function cutTrackMaterial(track: Track, bpm: number, bars: number, loop?:
     const inside = split.filter((note) => note.step >= part[0] && note.step < part[1]);
     const hasHits = !!track.pads?.some((pad) => pad.steps.some((v) => v > 0));
     const clipboard: Track = {
-      ...clone, clips: [], activeClipId: undefined, cuts: undefined, activeRegion: undefined, printedAudio: false,
+      // Cut marks inside the part come along, so its separate blocks paste back as separate blocks.
+      ...clone, clips: [], activeClipId: undefined, cuts: track.cuts?.filter((c) => c > part[0] && c < part[1]), activeRegion: undefined, printedAudio: false,
       notes: inside.map((note) => ({ ...note, recordedEnd: note.recordedEnd != null ? Math.min(note.recordedEnd, part[1]) : part[1] })),
       steps: Math.max(1, Math.ceil(part[1] - part[0])),
       ...(hasHits ? { patternRegion: part } : {}),

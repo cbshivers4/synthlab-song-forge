@@ -297,6 +297,8 @@ export function Waveform({ track }: { track: Track }) {
           <div
             key={clip.id}
             data-audio-clip={clip.id}
+            data-part-start={start}
+            data-part-end={start + steps}
             data-selected={active}
             data-cutting={cutting}
             className="arrangement-clip group absolute inset-y-1 flex touch-none flex-col overflow-hidden rounded-[2px] border transition-colors"
@@ -522,6 +524,8 @@ function MidiClip({ track }: { track: Track }) {
     if (regionNotes.length === 0) return null;
     const active = track.activeRegion != null && track.activeRegion >= a - 0.001 && track.activeRegion < b - 0.001;
     return <div key={a}
+      data-part-start={a}
+      data-part-end={b}
       data-note-region={active ? "active" : "part"}
       data-selected={active}
       className="arrangement-clip arrangement-midi absolute inset-y-1 flex cursor-grab flex-col overflow-hidden rounded-[2px] border active:cursor-grabbing"
@@ -777,7 +781,7 @@ function DrumClip({ track }: { track: Track }) {
       if (hits === 0) return null;
       const active = track.activeRegion != null && track.activeRegion >= a - 0.001 && track.activeRegion < b - 0.001;
       return (
-        <div key={a} data-selected={active} data-note-region={active ? "active" : "part"}
+        <div key={a} data-part-start={a} data-part-end={b} data-selected={active} data-note-region={active ? "active" : "part"}
           className="arrangement-clip absolute inset-y-1 flex flex-col overflow-hidden rounded-[2px] border"
           onPointerDown={(e) => { deselect.down(e, active); updateTrack(track.id, { activeRegion: a }); select(track.id); beginPartDrag(e, a, b); }}
           onClick={deselect.click}
