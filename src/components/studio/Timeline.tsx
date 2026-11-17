@@ -2,7 +2,7 @@ import { TimelineVScrollbar } from "./timeline/VScrollbar";
 import { TimelineHScrollbar } from "./timeline/HScrollbar";
 import { HEADER_WIDTH, clampHeaderWidth } from "./timeline/header-width";
 import { getPlayStep, subscribePlayStep } from "@/lib/synclab/playhead";
-import { Fragment, useEffect, useRef, useState, type CSSProperties } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { songSteps } from "@/lib/synclab/timebase";
 import { useIsLandscapePhone } from "@/hooks/use-mobile";
 import { PhonePages } from "./PhonePages";
@@ -23,6 +23,7 @@ import { mergePaintSelection, paintTrackRange } from "@/lib/synclab/track-paint"
 import { EditToolbar, TimelineOptionsPanel } from "./timeline/EditToolbar";
 import { Ruler, SongPlayhead, TimelineOverview } from "./timeline/Ruler";
 import { FolderRow, TrackRow } from "./timeline/TrackRow";
+import { SelectionMenu } from "./timeline/SelectionMenu";
 import { readDrag, synclabLogo } from "./timeline/shared";
 import { zoomAround } from "./timeline/drop-position";
 import { useColorPrefs } from "@/lib/synclab/color-prefs";
@@ -37,23 +38,39 @@ function boxStartsPlain(target: HTMLElement, editTool: string): boolean {
   return Boolean(target.closest("[data-lane]") || target.closest("[data-new-channel-drop]"));
 }
 
+/** A press on the lane of one of the picked tracks (blocks included), but not on its controls. */
+function pressOnPickedLane(target: HTMLElement, picked: string[]): boolean {
+  if (target.closest("button,input,textarea,select,a,[role='slider'],[role='menu'],[role='menuitem'],[role='separator'],[contenteditable],[data-trim-handle]")) return false;
+  const id = target.closest<HTMLElement>("[data-lane-track]")?.dataset["laneTrack"];
+  return Boolean(id && picked.includes(id));
+}
+
 /** Pop-ups and the menu bar act on the timeline selection, so pressing them must not clear it. */
 const KEEP_SELECTION = "[data-radix-popper-content-wrapper],[role='menu'],[role='menubar'],[role='dialog'],[role='alertdialog'],[role='listbox'],[data-sonner-toaster],.app-menu,[data-keep-timeline-selection]";
 
 export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandlesVisible = true, pageScroll = false }: { phonePaged?: boolean; desktopStyle?: boolean; resizeHandlesVisible?: boolean; pageScroll?: boolean }) {
   const { tracks, transport, addTrack, addClip, setPanel, loadSample, folders, renameFolder, removeFolder, toggleFolderCollapsed, setTransport, moveTrackToIndex, selectBoxed, clearTimelineSelection, selectedIds, paintSelectIds, editTool } = useStudio();
+  // Pop-up with Copy / Cut / Paste where a selection ends (box drag, name drag, or a press on picked tracks).
+  const [selMenu, setSelMenu] = useState<{ x: number; y: number } | null>(null);
+  const closeSelMenu = useCallback(() => setSelMenu(null), []);
   const logoPrefs = useColorPrefs();
   // Mouse drag a box over the lanes to highlight blocks across channels (Studio Pro style):
   // a plain drag starts on empty lane space or the empty area under the tracks and replaces the
   // highlight; Shift/Ctrl/⌘ add to it, and Ctrl/⌘ may start on a block too.
   const [clipBox, setClipBox] = useState<{ x0: number; y0: number; x1: number; y1: number } | null>(null);
-  const clipBoxRef = useRef<{ x: number; y: number; add: boolean; active: boolean } | null>(null);
+  const clipBoxRef = useRef<{ x: number; y: number; add: boolean; active: boolean; menu?: boolean } | null>(null);
   const onBoxDown = (e: React.PointerEvent) => {
-    if (e.pointerType !== "mouse" || e.button !== 0) return;
+    if (e.pointerType !== "mouse") return;
     const target = e.target as HTMLElement;
     const modifier = e.shiftKey || e.ctrlKey || e.metaKey;
-    const plain = boxStartsPlain(target, editTool);
+    // With several tracks picked, pressing on one of their blocks/lanes keeps the group: a click opens the
+    // selection menu instead of collapsing to that one channel; a drag draws a new box.
+    const onPicked = !modifier && editTool === "select" && selectedIds.length > 1 && pressOnPickedLane(target, selectedIds);
+    if (onPicked && e.button === 2) { e.stopPropagation(); return; }
+    if (e.button !== 0) return;
+    const plain = onPicked || boxStartsPlain(target, editTool);
     if (!plain && !modifier) return;
+    if (onPicked) e.stopPropagation();
     if (!plain) {
       if (!target.closest("[data-lane]") || target.closest("button,input,[role='slider']")) return;
       // Shift on a clip stays the fine-drag modifier; Ctrl/Cmd boxes from anywhere
@@ -63,7 +80,7 @@ export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandl
     }
     const sc = scrollRef.current;
     // Start point is kept in scrolled-content terms so the box stays anchored while the tracks scroll.
-    clipBoxRef.current = { x: e.clientX + (sc?.scrollLeft ?? 0), y: e.clientY + (sc?.scrollTop ?? 0), add: modifier, active: false };
+    clipBoxRef.current = { x: e.clientX + (sc?.scrollLeft ?? 0), y: e.clientY + (sc?.scrollTop ?? 0), add: modifier, active: false, menu: onPicked };
     let last = { x: e.clientX, y: e.clientY };
     let raf = 0;
     const draw = () => {
@@ -110,7 +127,16 @@ export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandl
       const b0 = clipBoxRef.current;
       clipBoxRef.current = null;
       setClipBox(null);
-      if (!b0?.active) return;
+      const swallowClick = () => {
+        const swallow = (ce: MouseEvent) => { ce.stopPropagation(); ce.preventDefault(); };
+        window.addEventListener("click", swallow, { capture: true, once: true });
+        window.setTimeout(() => window.removeEventListener("click", swallow, { capture: true }), 50);
+      };
+      if (!b0?.active) {
+        // A plain click on picked tracks: keep them and offer Copy / Cut / Paste right there.
+        if (b0?.menu) { swallowClick(); setSelMenu({ x: ev.clientX, y: ev.clientY }); }
+        return;
+      }
       document.body.style.userSelect = "";
       const b = { ...b0, x: b0.x - (sc?.scrollLeft ?? 0), y: b0.y - (sc?.scrollTop ?? 0) };
       const box = { l: Math.min(b.x, ev.clientX), r: Math.max(b.x, ev.clientX), t: Math.min(b.y, ev.clientY), btm: Math.max(b.y, ev.clientY) };
@@ -128,10 +154,9 @@ export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandl
       // A plain box starts a fresh highlight, like a DAW; modifiers add to what's picked.
       if (!b.add) clearTimelineSelection();
       selectBoxed(picks, b.add);
+      if (picks.length) setSelMenu({ x: ev.clientX, y: ev.clientY });
       // swallow the click that follows the drag so it doesn't toggle a channel
-      const swallow = (ce: MouseEvent) => { ce.stopPropagation(); ce.preventDefault(); };
-      window.addEventListener("click", swallow, { capture: true, once: true });
-      window.setTimeout(() => window.removeEventListener("click", swallow, { capture: true }), 50);
+      swallowClick();
     };
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", up);
@@ -251,6 +276,7 @@ export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandl
       const add = e.ctrlKey || e.metaKey || e.shiftKey;
       const ids = rows().map((r) => r.dataset["trackRow"]).filter((id): id is string => Boolean(id));
       paintRef.current = { anchor, base: add ? current : [], add, x: e.clientX, y: e.clientY, moved: false };
+      let lastPaint = { x: e.clientX, y: e.clientY };
       document.body.style.userSelect = "none";
       const move = (ev: PointerEvent) => {
         const p = paintRef.current;
@@ -263,7 +289,8 @@ export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandl
         p.moved = true;
         paint(mergePaintSelection(p.base, run, p.add), p.anchor);
       };
-      const up = () => {
+      const up = (ev: PointerEvent) => {
+        lastPaint = { x: ev.clientX, y: ev.clientY };
         window.removeEventListener("pointermove", move);
         window.removeEventListener("pointerup", up);
         window.removeEventListener("pointercancel", up);
@@ -271,6 +298,7 @@ export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandl
         const p = paintRef.current;
         paintRef.current = null;
         if (!p?.moved) return;
+        setSelMenu({ x: lastPaint.x, y: lastPaint.y });
         // Swallow the click the drag ends on so it can't open a channel menu or collapse the highlight.
         const swallow = (ce: MouseEvent) => { ce.stopPropagation(); ce.preventDefault(); };
         window.addEventListener("click", swallow, { capture: true, once: true });
@@ -280,8 +308,19 @@ export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandl
       window.addEventListener("pointerup", up);
       window.addEventListener("pointercancel", up);
     };
+    // Right-click on any picked track opens the selection menu instead of collapsing to one channel.
+    const onContext = (e: MouseEvent) => {
+      const { selectedIds: current } = paintStateRef.current;
+      if (current.length < 2) return;
+      const id = (e.target as HTMLElement).closest<HTMLElement>("[data-track-row]")?.dataset["trackRow"];
+      if (!id || !current.includes(id)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      setSelMenu({ x: e.clientX, y: e.clientY });
+    };
     el.addEventListener("pointerdown", onDown, true);
-    return () => el.removeEventListener("pointerdown", onDown, true);
+    el.addEventListener("contextmenu", onContext, true);
+    return () => { el.removeEventListener("pointerdown", onDown, true); el.removeEventListener("contextmenu", onContext, true); };
   }, []);
 
   // Grabbing the white playhead line inside the track lanes moves song position.
@@ -355,6 +394,7 @@ export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandl
           {!phonePaged && <SectionLane />}
         </div>
       </div>
+      {selMenu && <SelectionMenu at={selMenu} onClose={closeSelMenu} />}
       {clipBox && <div aria-hidden className="pointer-events-none fixed z-50 border border-primary bg-primary/15" style={{ left: clipBox.x0, top: clipBox.y0, width: clipBox.x1 - clipBox.x0, height: clipBox.y1 - clipBox.y0 }} />}
       <div id="timeline-scroll" ref={scrollRef} onPointerDownCapture={onBoxDown} aria-label="Horizontal timeline" className={`relative overflow-auto overscroll-x-contain ${pageScroll ? "" : "min-h-0 flex-1"}`}>
         <div className="min-w-[720px]" style={{ width: `max(${zoom * 100}%, ${transport.bars * (phone ? 96 * zoom : 32) + headerWidth}px)` }}>
