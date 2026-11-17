@@ -905,6 +905,20 @@ export const KNOWLEDGE_BASE: Article[] = [
     cant: ["Add new devices, panels or code — look packs only change how things look, so a downloaded file can't do anything harmful.", "Use pictures from web addresses: only pictures stored inside the file load."],
   },
   {
+    id: "menu-track-colours",
+    category: "Getting started",
+    title: "Menu colours, track colours and the timeline logo",
+    tags: "menu colour color custom track name header logo synclab timeline appearance tint",
+    body: [
+      "Change a track's colour with the coloured icon next to its name. The whole name area on the left of the timeline changes to that colour too.",
+      "Open Appearance → Menu & timeline colours (or tap Menu & logo colours… in the track colour picker). Choose MY OWN MENU COLOURS and pick a ready-made set or your own background, text and highlight colours. Every menu on every device, instrument, the mixer and the timeline uses them.",
+      "Leave 'Track menus use the track's colour' ticked so a track's menus take that track's colour.",
+      "Under SYNCLAB logo in the timeline, choose MY COLOUR, pick a colour and set how bright the logo behind your tracks is.",
+    ],
+    can: ["Keep these colours on this device without changing your songs.", "Go back to the original look any time with RESET COLOURS."],
+    cant: ["Save menu and logo colours inside look pack files yet."],
+  },
+  {
     id: "reel-designs",
     category: "Recording",
     title: "Reel-to-reel machine designs",

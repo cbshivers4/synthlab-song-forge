@@ -37,6 +37,7 @@ import { getEngine } from "@/lib/synclab/audio-engine";
 import { downloadBlob, encodeWav } from "@/lib/synclab/bounce";
 import { freshCloudUrl } from "@/lib/synclab/cloud";
 import { TrackIcon, TrackStylePicker } from "@/components/studio/TrackStyle";
+import { trackMenuStyle } from "@/lib/synclab/color-prefs";
 import { TrackNotes } from "@/components/studio/TrackNotes";
 import { AutomationRow } from "./AutomationRow";
 import { Lane, VcaLevel, Waveform } from "./clips";
@@ -517,6 +518,8 @@ export function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track:
       <div className="track-color-stripe sticky left-0 z-[35] w-1 shrink-0" style={{ background: track.color, opacity: isSelected ? 1 : 0.65 }} />
       <div
         className="track-touch-header relative min-w-0 w-[calc(var(--timeline-header-width)_-_4px)] shrink-0 space-y-1 border-r border-border bg-surface px-2 py-1.5"
+        data-track-tint
+        style={{ "--track-tint": track.color } as CSSProperties}
         onPointerDown={startPhoneGesture}
         onPointerMove={movePhoneGesture}
         onPointerUp={endPhoneGesture}
@@ -627,7 +630,7 @@ export function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track:
                 <MoreVertical className="size-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="timeline-channel-menu min-w-56">
+            <DropdownMenuContent align="end" className="timeline-channel-menu track-tinted-menu min-w-56" style={trackMenuStyle(track.color)}>
               <DropdownMenuLabel>{track.name}</DropdownMenuLabel>
               <DropdownMenuItem onClick={() => {
                 if (track.kind === "instrument" || track.kind === "midi") { select(track.id); setPanel("piano"); }
@@ -1046,7 +1049,7 @@ export function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track:
                 )}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="min-w-56">
+            <DropdownMenuContent align="start" className="track-tinted-menu min-w-56" style={trackMenuStyle(track.color)}>
               <DropdownMenuLabel className="label-xs">Show automation lane</DropdownMenuLabel>
               {(["volume", "pan", "sendReverb", "sendDelay"] as AutomationParam[]).map((param) => {
                 const visible = (track.automation ?? []).some((lane) => lane.param === param);
@@ -1084,7 +1087,7 @@ export function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track:
             <SelectTrigger className="h-7 min-w-0 flex-1 text-[11px]">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="track-tinted-menu" style={trackMenuStyle(track.color)}>
               {INPUTS.map((i) => (
                 <SelectItem key={i} value={i} className="text-xs">
                   {i}
@@ -1370,7 +1373,8 @@ function TrackFxMenu({ track }: { track: Track }) {
       </PopoverTrigger>
       <PopoverContent
         align="start"
-        className="max-h-[70vh] w-[min(92vw,360px)] overflow-y-auto p-3"
+        className="track-tinted-menu max-h-[70vh] w-[min(92vw,360px)] overflow-y-auto p-3"
+        style={trackMenuStyle(track.color)}
         onInteractOutside={(e) => { if ((e.target as HTMLElement | null)?.closest?.("[role=dialog]")) e.preventDefault(); }}
         onClick={(e) => e.stopPropagation()}
       >

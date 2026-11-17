@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { Check, Download, ImagePlus, Palette, Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,17 @@ import type { Theme, ThemeVars } from "@/lib/synclab/themes";
 import { buildLookPack, parseLookPack } from "@/lib/synclab/look-pack";
 import { REEL_DESIGNS, readReelDesign, setReelDesign } from "@/lib/synclab/reel-designs";
 import { CONSOLE_STYLES } from "@/components/studio/mixer/shared";
+import {
+  COLOR_PREFS_DEFAULTS,
+  inkFor,
+  LOGO_STRENGTH_MAX,
+  LOGO_STRENGTH_MIN,
+  resetColorPrefs,
+  setColorPrefs,
+  useColorPrefs,
+  type ColorPrefs,
+} from "@/lib/synclab/color-prefs";
+import synclabLogoAsset from "@/assets/synclab-logo-neon.jpg.asset.json";
 import { toast } from "sonner";
 
 /** One picture, chosen once, shown behind the studio panels you tick. */
@@ -180,6 +191,128 @@ function LookPackSection({ activeTheme, onTheme }: { activeTheme: Theme; onTheme
   </section>;
 }
 
+
+/** Quick colour presets for menus: background, text, highlight. */
+const MENU_PRESETS: { name: string; bg: string; fg: string; hl: string }[] = [
+  { name: "Graphite", bg: "#1c2330", fg: "#eef2f6", hl: "#45c8b5" },
+  { name: "Midnight", bg: "#0f1226", fg: "#e8ecff", hl: "#7c8cff" },
+  { name: "Motor City", bg: "#1a1414", fg: "#f6eee8", hl: "#e0503a" },
+  { name: "Neon", bg: "#120a1c", fg: "#f3e8ff", hl: "#d046ff" },
+  { name: "Forest", bg: "#0f1d16", fg: "#e6f4ec", hl: "#4fd17f" },
+  { name: "Gold", bg: "#1d1810", fg: "#fbf3e2", hl: "#e8b33a" },
+  { name: "Silver", bg: "#d9dde2", fg: "#1a1d22", hl: "#2f6fd6" },
+  { name: "Paper", bg: "#f6f3ec", fg: "#22201c", hl: "#c2552d" },
+];
+
+const LOGO_PRESETS = ["#45c8b5", "#ffffff", "#e0503a", "#e8b33a", "#d046ff", "#4fa3ff", "#4fd17f", "#ff6fae"];
+
+function ColorField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <label className="flex items-center gap-2 rounded-md border border-border px-2 py-1.5">
+      <input type="color" aria-label={label} value={value} onChange={(e) => onChange(e.target.value)}
+        className="size-7 cursor-pointer rounded border-0 bg-transparent p-0" />
+      <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{label}</span>
+    </label>
+  );
+}
+
+/** Menu colours for every device, instrument and timeline menu, track-coloured menus, and the timeline logo colour. */
+export function MenuColorsSection() {
+  const prefs = useColorPrefs();
+  const set = (patch: Partial<ColorPrefs>) => setColorPrefs(patch);
+  const logo = synclabLogoAsset.url;
+  return (
+    <section className="panel p-3" data-menu-color-settings>
+      <span className="label-xs flex items-center gap-1"><Palette className="size-3.5" /> Menu &amp; timeline colours</span>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Pick the colours of every menu — on all devices, instruments, the mixer and the timeline. These colours are saved on
+        this device only, not in your songs.
+      </p>
+
+      <div className="mt-3 space-y-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button size="sm" variant={prefs.menuCustom ? "ghost" : "secondary"} onClick={() => set({ menuCustom: false })}>THEME MENU COLOURS</Button>
+          <Button size="sm" variant={prefs.menuCustom ? "secondary" : "ghost"} onClick={() => set({ menuCustom: true })}>MY OWN MENU COLOURS</Button>
+        </div>
+        {prefs.menuCustom && (
+          <>
+            <div className="flex flex-wrap gap-1.5">
+              {MENU_PRESETS.map((m) => (
+                <button key={m.name} type="button" onClick={() => set({ menuBg: m.bg, menuText: m.fg, menuHighlight: m.hl })}
+                  aria-label={`${m.name} menu colours`}
+                  className="flex items-center gap-1.5 rounded-md border px-2 py-1 font-mono text-[10px] uppercase tracking-widest"
+                  style={{ background: m.bg, color: m.fg, borderColor: m.hl }}>
+                  <span className="size-2.5 rounded-full" style={{ background: m.hl }} />{m.name}
+                </button>
+              ))}
+            </div>
+            <div className="grid gap-2 sm:grid-cols-3">
+              <ColorField label="Menu background" value={prefs.menuBg} onChange={(v) => set({ menuBg: v })} />
+              <ColorField label="Menu text" value={prefs.menuText} onChange={(v) => set({ menuText: v })} />
+              <ColorField label="Menu highlight" value={prefs.menuHighlight} onChange={(v) => set({ menuHighlight: v })} />
+            </div>
+            {/* Live sample drawn with the chosen colours. */}
+            <div aria-label="Menu preview" className="w-56 rounded-md border p-1 text-sm shadow-md"
+              style={{ background: prefs.menuBg, color: prefs.menuText, borderColor: `color-mix(in oklab, ${prefs.menuText} 22%, ${prefs.menuBg})` }}>
+              <div className="px-2 py-1.5 text-xs font-semibold">PREVIEW</div>
+              <div className="rounded-sm px-2 py-1.5" style={{ background: prefs.menuHighlight, color: inkFor(prefs.menuHighlight) }}>Highlighted item</div>
+              <div className="px-2 py-1.5">Menu item</div>
+              <div className="px-2 py-1.5" style={{ color: `color-mix(in oklab, ${prefs.menuText} 65%, ${prefs.menuBg})` }}>Secondary text</div>
+            </div>
+          </>
+        )}
+        <label className="flex items-center gap-2 text-xs">
+          <input type="checkbox" className="size-4 accent-primary" checked={prefs.menuTrackTint}
+            onChange={(e) => set({ menuTrackTint: e.target.checked })} aria-label="Track menus use the track colour" />
+          Track menus use the track&apos;s colour (timeline and mixer channel menus, colour picker)
+        </label>
+      </div>
+
+      <div className="mt-4 space-y-2 border-t border-border pt-3">
+        <span className="label-xs">SYNCLAB logo in the timeline</span>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button size="sm" variant={prefs.logoMode === "original" ? "secondary" : "ghost"} onClick={() => set({ logoMode: "original" })}>ORIGINAL</Button>
+          <Button size="sm" variant={prefs.logoMode === "custom" ? "secondary" : "ghost"} onClick={() => set({ logoMode: "custom" })}>MY COLOUR</Button>
+          {prefs.logoMode === "custom" && (
+            <>
+              {LOGO_PRESETS.map((c) => (
+                <button key={c} type="button" aria-label={`Logo colour ${c}`} onClick={() => set({ logoColor: c })}
+                  className={`size-6 rounded-full border ${prefs.logoColor === c ? "border-foreground ring-2 ring-foreground/40" : "border-border"}`}
+                  style={{ background: c }} />
+              ))}
+              <ColorField label="Logo colour" value={prefs.logoColor} onChange={(v) => set({ logoColor: v })} />
+            </>
+          )}
+        </div>
+        <label className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+          Logo brightness
+          <input type="range" aria-label="Timeline logo brightness" min={LOGO_STRENGTH_MIN} max={LOGO_STRENGTH_MAX} step={0.01}
+            value={prefs.logoStrength} onChange={(e) => set({ logoStrength: Number(e.target.value) })} className="w-40" />
+          {Math.round(prefs.logoStrength * 100)}%
+        </label>
+        {/* Preview at full brightness so the colour is easy to judge. */}
+        <div className="flex h-28 w-28 items-center justify-center rounded-md border border-border bg-background">
+          {prefs.logoMode === "custom" ? (
+            <div aria-label="Logo preview" className="size-24" style={{
+              background: prefs.logoColor,
+              maskImage: `url(${logo})`, WebkitMaskImage: `url(${logo})`,
+              maskMode: "luminance", WebkitMaskSourceType: "luminance",
+              maskSize: "contain", WebkitMaskSize: "contain", maskRepeat: "no-repeat", WebkitMaskRepeat: "no-repeat",
+            } as CSSProperties} />
+          ) : (
+            <img src={logo} alt="Logo preview" className="size-24 rounded" />
+          )}
+        </div>
+      </div>
+
+      <div className="mt-3">
+        <Button size="sm" variant="ghost" disabled={JSON.stringify(prefs) === JSON.stringify(COLOR_PREFS_DEFAULTS)}
+          onClick={() => { resetColorPrefs(); toast.success("Menu and logo colours reset"); }}>RESET COLOURS</Button>
+      </div>
+    </section>
+  );
+}
+
 export function Appearance() {
   const { allThemes, themeId, setThemeId, activeTheme, saveCustomTheme, deleteCustomTheme, customThemes, mode, setMode } =
     useApp();
@@ -195,6 +328,7 @@ export function Appearance() {
 
   return (
     <div className="space-y-4">
+      <MenuColorsSection />
       <WallpaperSection />
       <LookPackSection activeTheme={activeTheme} onTheme={(t) => { saveCustomTheme(t); setThemeId(t.id); }} />
       <section>

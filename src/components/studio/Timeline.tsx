@@ -24,9 +24,11 @@ import { Ruler, SongPlayhead, TimelineOverview } from "./timeline/Ruler";
 import { FolderRow, TrackRow } from "./timeline/TrackRow";
 import { readDrag, synclabLogo } from "./timeline/shared";
 import { zoomAround } from "./timeline/drop-position";
+import { useColorPrefs } from "@/lib/synclab/color-prefs";
 
 export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandlesVisible = true, pageScroll = false }: { phonePaged?: boolean; desktopStyle?: boolean; resizeHandlesVisible?: boolean; pageScroll?: boolean }) {
   const { tracks, transport, addTrack, addClip, setPanel, loadSample, folders, renameFolder, removeFolder, toggleFolderCollapsed, setTransport, moveTrackToIndex, selectBoxed } = useStudio();
+  const logoPrefs = useColorPrefs();
   // Shift/Ctrl + mouse drag over the lanes boxes clips across channels
   const [clipBox, setClipBox] = useState<{ x0: number; y0: number; x1: number; y1: number } | null>(null);
   const clipBoxRef = useRef<{ x: number; y: number; add: boolean; active: boolean } | null>(null);
@@ -206,11 +208,28 @@ export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandl
         <div className="min-w-[720px]" style={{ width: `max(${zoom * 100}%, ${transport.bars * (phone ? 96 * zoom : 32) + headerWidth}px)` }}>
         {/* SYNCLAB watermark, low and centred in the empty workspace */}
         <div className="pointer-events-none sticky top-[68%] z-0 h-0" aria-hidden="true">
-          <img
-            src={synclabLogo}
-            alt=""
-            className="absolute left-1/2 top-0 w-[min(360px,38%)] -translate-x-[calc(50%-147px)] -translate-y-1/2 select-none opacity-[0.06]"
-          />
+          {logoPrefs.logoMode === "custom" ? (
+            <div
+              data-timeline-logo="custom"
+              className="absolute left-1/2 top-0 aspect-square w-[min(360px,38%)] -translate-x-[calc(50%-147px)] -translate-y-1/2 select-none"
+              style={{
+                background: logoPrefs.logoColor,
+                opacity: logoPrefs.logoStrength,
+                maskImage: `url(${synclabLogo})`, WebkitMaskImage: `url(${synclabLogo})`,
+                maskMode: "luminance", WebkitMaskSourceType: "luminance",
+                maskSize: "contain", WebkitMaskSize: "contain",
+                maskRepeat: "no-repeat", WebkitMaskRepeat: "no-repeat",
+              } as CSSProperties}
+            />
+          ) : (
+            <img
+              src={synclabLogo}
+              alt=""
+              data-timeline-logo="original"
+              className="absolute left-1/2 top-0 w-[min(360px,38%)] -translate-x-[calc(50%-147px)] -translate-y-1/2 select-none"
+              style={{ opacity: logoPrefs.logoStrength }}
+            />
+          )}
         </div>
         <div ref={rowsRef} className="relative" data-timeline-track-rows>
         {shownTracks.map((t) => {

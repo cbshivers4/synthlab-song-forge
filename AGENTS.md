@@ -63,3 +63,4 @@ Live Drummer, Live Keys and DJ Decks keep audio state in module singletons (drum
 - Live-captured notes (computer keys, on-screen keys, MIDI) snap to transport.quantize via snapRecordedStep unless transport.snapRecording === false, so synth takes and their rendered waveform start on grid lines.
 Desktop timeline sits in React Activity, hidden while an editor fills the workspace, so edits don't re-render the invisible arrangement during playback.
 AI assistants: the app-hosted MCP server (src/lib/mcp, OAuth, caller-scoped client so RLS applies) only reads/renames saved account data; live studio control is WebMCP in StudioAgentTools, which calls the same store/library actions as the UI (library-actions.ts) and never deletes, pays or shares.
+Menu/track-menu/timeline-logo colours are device-only prefs in color-prefs.ts applied as <html> attributes; every shared menu surface carries .app-menu so portalled menus follow them without per-component styling.

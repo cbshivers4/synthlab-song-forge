@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { useIsMobile } from "@/hooks/use-mobile";
 import { refreshPreferences, PREFS_EVENT } from "./preferences";
 import { applyThemeVars, THEMES, themeById, type Theme, type ThemeVars } from "./themes";
+import { startColorPrefs } from "./color-prefs";
 
 export type Stage = "welcome" | "start" | "studio";
 export type UiMode = "simple" | "advanced";
@@ -79,6 +80,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [recents, setRecents] = useState<ProjectMeta[]>([]);
   const [project, setProjectState] = useState<ProjectMeta | null>(null);
   const [signedIn, setSignedIn] = useState(false);
+
+  // Custom menu colours, track-coloured menus and the timeline logo colour (device-only).
+  useEffect(() => startColorPrefs(), []);
 
   // hydrate after mount so SSR markup matches
   useEffect(() => {

@@ -40,7 +40,7 @@ export function TrackSearch() {
         className="h-12 w-full min-w-0 rounded-md border border-border bg-background/70 pl-9 pr-3 font-display text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
       />
       {open && q.trim() && (
-        <div role="listbox" className="absolute left-0 right-0 top-full z-50 mt-1 max-h-64 overflow-y-auto rounded-md border border-border bg-popover p-1 shadow-lg">
+        <div role="listbox" className="app-menu absolute left-0 right-0 top-full z-50 mt-1 max-h-64 overflow-y-auto rounded-md border border-border bg-popover p-1 shadow-lg">
           {matches.length === 0 ? (
             <div className="px-3 py-2 text-sm text-muted-foreground">No tracks match</div>
           ) : matches.map((t) => (

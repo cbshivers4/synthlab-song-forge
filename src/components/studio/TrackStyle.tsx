@@ -38,6 +38,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useStudio } from "@/lib/synclab/store";
 import { cn } from "@/lib/utils";
+import { trackMenuStyle } from "@/lib/synclab/color-prefs";
 import type { Track } from "@/lib/synclab/types";
 
 /** Colours a track or channel can be painted with — shared by timeline and mixer. */
@@ -289,7 +290,7 @@ export function TrackStylePicker({
   children: React.ReactNode;
   align?: "start" | "center" | "end";
 }) {
-  const { updateTrack } = useStudio();
+  const { updateTrack, setPanel } = useStudio();
   // The colour and icon grids are only built while the picker is open: every track row and mixer
   // strip has one, and rebuilding them all on each fader or knob move stalled playback.
   const [open, setOpen] = useState(false);
@@ -298,7 +299,8 @@ export function TrackStylePicker({
       <PopoverTrigger asChild>{children}</PopoverTrigger>
       {open && <PopoverContent
         align={align}
-        className="w-[268px] space-y-3 p-3"
+        className="track-tinted-menu w-[268px] space-y-3 p-3"
+        style={trackMenuStyle(track.color)}
         onClick={(e) => e.stopPropagation()}
         onPointerDown={(e) => e.stopPropagation()}
       >
@@ -361,6 +363,13 @@ export function TrackStylePicker({
             Automatic icon
           </button>
         </div>
+        <button
+          type="button"
+          onClick={() => { setOpen(false); setPanel("appearance"); }}
+          className="w-full rounded-md border border-border py-1 font-mono text-[9px] uppercase tracking-widest text-muted-foreground hover:border-primary hover:text-foreground"
+        >
+          Menu &amp; logo colours…
+        </button>
       </PopoverContent>}
     </Popover>
   );

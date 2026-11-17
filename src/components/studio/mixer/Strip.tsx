@@ -7,6 +7,7 @@ import { Slider } from "@/components/ui/slider";
 import { Knob } from "../Knob";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { trackMenuStyle } from "@/lib/synclab/color-prefs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useStudio } from "@/lib/synclab/store";
 import { useApp } from "@/lib/synclab/app-state";
@@ -40,7 +41,7 @@ function ChannelMenu({ t }: { t: Track }) {
           <MoreVertical className="size-4" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="mx-channel-menu w-56 space-y-2 p-3" onClick={(e) => e.stopPropagation()}>
+      <PopoverContent align="start" className="mx-channel-menu track-tinted-menu w-56 space-y-2 p-3" style={trackMenuStyle(t.color)} onClick={(e) => e.stopPropagation()}>
         <div className="label-xs">Channel</div>
         <input
           aria-label={`${t.name} channel name`} value={t.name}
