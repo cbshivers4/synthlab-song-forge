@@ -192,7 +192,7 @@ export const KNOWLEDGE_BASE: Article[] = [
     tags: "clip cut razor split paste copy duplicate move fade quantize mono stereo trim extend",
     body: [
       "Use the cut tool to split a clip exactly where the guide line shows. Drag clips to move them to another time or track.",
-      "Move a note block or beat part to another track: drag it up or down onto that track's lane (a dashed outline shows where it lands), or tap the block and choose To track above / To track below. The track menu also has Move part to… for the selected part.",
+      "Move a note block or beat part to another track: drag it up or down onto that track's lane (a dashed outline shows where it lands), or tap the block and choose Move part to… in the track menu.",
       "To delete one block, tap it and press Delete in the small menu next to it (or Delete selected part in the track menu). Only that block goes; the rest of the track stays.",
       "Copy, then Paste places the material at the playhead on the selected track and keeps that track's settings. Duplicate track makes a full copy of the channel.",
       "In the audio clip editor you can quantize a recording to the beat, add fades, and make a mono or stereo copy.",
@@ -206,7 +206,7 @@ export const KNOWLEDGE_BASE: Article[] = [
     cant: [
       "Edits never change your original file — they only change how it plays.",
       "Note blocks only move onto synth, MIDI or sampler tracks that show notes, and beat parts only onto drum tracks. Drum hits land on the same kind of drum; hits with no matching drum on the other kit are left out (you'll see how many).",
-      "On a phone, dragging a block up or down may scroll the timeline instead — use To track above / below in the block's menu.",
+      "On a phone, dragging a block up or down may scroll the timeline instead — use Move part to… in the track menu.",
       "Very large stretches will sound processed.",
     ],
   },

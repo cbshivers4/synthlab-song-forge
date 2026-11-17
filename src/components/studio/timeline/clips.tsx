@@ -1,6 +1,5 @@
 import type { CSSProperties } from "react";
 import { getPlayStep, usePlayStep } from "@/lib/synclab/playhead";
-import { deleteSelectedPart } from '@/lib/synclab/workflow';
 import { boundedRegions, loopRegion } from "@/lib/synclab/recording-region";
 import { timelineUsesWaveform } from "@/lib/synclab/timeline-content";
 import { drumPartRoom, moveDrumPart, rightEdgeEdit, stretchDrumPart, trimDrumPart } from "@/lib/synclab/arrangement-edit";
@@ -17,8 +16,8 @@ import { ClipEditor } from "@/components/studio/ClipEditor";
 import { clipRate, clipSeconds } from "@/lib/synclab/types";
 import { visibleClipPeaks } from "@/lib/synclab/clip-peaks";
 import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
-import { DrumHitWave, EMPTY_PEAKS, NOTE_NAMES, PartMenu, type PartMove } from "./shared";
-import { neighbourPartTarget, partFamily } from "@/lib/synclab/track-move";
+import { DrumHitWave, EMPTY_PEAKS, NOTE_NAMES } from "./shared";
+import { partFamily } from "@/lib/synclab/track-move";
 
 /** Track id of the timeline lane under a canvas point (hit-tests lane bounds, not the floating block). */
 function laneTrackAt(x: number, y: number): string | undefined {
@@ -33,7 +32,7 @@ function markDropRow(id: string | undefined) {
   document.querySelectorAll<HTMLElement>("[data-track-row]").forEach((row) => row.classList.toggle("track-drop-target", !!id && row.dataset["trackRow"] === id));
 }
 
-/** Sends one note block / beat part to another channel, with the menu's "To track above/below" entries. */
+/** Sends one note block / beat part to another channel when it is dragged onto that lane. */
 function usePartMoves(track: Track) {
   const { tracks, movePartToTrack } = useStudio();
   const live = useRef(tracks);
@@ -57,16 +56,12 @@ function usePartMoves(track: Track) {
     toast.success(`Block moved to ${dest.name}`, r.unmatched ? { description: `${r.unmatched} hits had no matching drum on ${dest.name} and were left out.` } : undefined);
     return true;
   };
-  const moves = (a: number, b: number): PartMove[] => ([-1, 1] as const).flatMap((dir) => {
-    const dest = neighbourPartTarget(live.current, track.id, dir);
-    return dest ? [{ dir, label: `${dir < 0 ? "track above" : "track below"} · ${dest.name}`, onClick: () => { sendPart(dest.id, a, b, a); } }] : [];
-  });
-  return { sendPart, moves, canTake };
+  return { sendPart, canTake };
 }
 
 /** Audio lane: every clip sits at its own bar position and can be moved, trimmed and dragged between tracks. */
 export function Waveform({ track }: { track: Track }) {
-  const { setActiveClip, removeClip, updateTrack, moveClipToNew, stretchClip, setTransport, transport, tracks, editTool } = useStudio();
+  const { setActiveClip, updateTrack, moveClipToNew, stretchClip, setTransport, transport, tracks, editTool } = useStudio();
   const cutting = editTool === "split" || editTool === "razor";
   const [editingId, setEditingId] = useState<string | null>(null);
   const clips = track.clips ?? [];
@@ -320,7 +315,6 @@ export function Waveform({ track }: { track: Track }) {
               </button>
 
             </div>
-            {active && <PartMenu label={clip.name} onDelete={() => removeClip(track.id, clip.id)} />}
 
             <div className="min-h-0 w-full flex-1 px-1 pb-1">
               <WaveformView peaks={peaks} color="var(--arrangement-wave)" grid={false} label={`${clip.name} waveform`} />
@@ -530,7 +524,6 @@ function MidiClip({ track }: { track: Track }) {
         <span className="min-w-0 flex-1 truncate font-mono text-[9px] font-semibold">{track.name}</span>
 
       </div>
-      {active && <PartMenu label={`${track.name} part`} moves={partMoves.moves(a, b)} onDelete={() => { const patch = deleteSelectedPart(track, transport.bpm, transport.bars, transport.loop ? loopRegion(transport) : undefined); if (patch) updateTrack(track.id, patch); toast.success("Part deleted"); }} />}
       <div className="relative min-h-0 flex-1">
         {Array.from({ length: rows }).map((_, r) => <div key={r} className="arrangement-note-grid absolute inset-x-0 border-t" style={{ top: `${r / rows * 100}%` }} />)}
         {Array.from({ length: reps }).flatMap((_, rep) => regionNotes.map((n) => {
@@ -776,8 +769,6 @@ function DrumClip({ track }: { track: Track }) {
             <span className="min-w-0 flex-1 truncate font-mono text-[9px] font-semibold">{track.name} · {track.drumChain?.on && track.drumChain.items.length ? `CHAIN ${track.drumChain.items.map((i) => `${i.slot + 1}×${i.bars}`).join(" → ")}` : `${hits} HITS`}</span>
 
           </div>
-          {active && <PartMenu label={`${track.name} beat part`} moves={partMoves.moves(a, b)} onDelete={() => { const patch = deleteSelectedPart(track, transport.bpm, transport.bars, transport.loop ? loopRegion(transport) : undefined); if (patch) updateTrack(track.id, patch);
-                toast.success("Beat part deleted"); }} />}
           <div className="relative min-h-0 flex-1"><DrumHitWave pads={part} steps={hi - lo} total={hi - lo} tone="text-[var(--arrangement-ink)]" /></div>
           <div
             onPointerDown={(e) => beginPartTrim(e, a, b, "left")}
