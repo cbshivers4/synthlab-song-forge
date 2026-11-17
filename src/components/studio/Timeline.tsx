@@ -27,38 +27,58 @@ import { readDrag, synclabLogo } from "./timeline/shared";
 import { zoomAround } from "./timeline/drop-position";
 import { useColorPrefs } from "@/lib/synclab/color-prefs";
 
+/** A plain (no modifier) mouse drag draws the selection box only from empty space: an empty part of a
+ *  lane with the Select tool, or the empty area under the last track — never from a block, a control or
+ *  the channel-name column, which keep their own drags. */
+function boxStartsPlain(target: HTMLElement, editTool: string): boolean {
+  if (editTool !== "select") return false;
+  if (target.closest("button,input,textarea,select,a,[role='slider'],[role='menu'],[role='menuitem'],[role='separator'],[draggable='true'],[contenteditable]")) return false;
+  if (target.closest(".arrangement-clip,[data-audio-clip]")) return false;
+  return Boolean(target.closest("[data-lane]") || target.closest("[data-new-channel-drop]"));
+}
+
 /** Pop-ups and the menu bar act on the timeline selection, so pressing them must not clear it. */
 const KEEP_SELECTION = "[data-radix-popper-content-wrapper],[role='menu'],[role='menubar'],[role='dialog'],[role='alertdialog'],[role='listbox'],[data-sonner-toaster],.app-menu,[data-keep-timeline-selection]";
 
 export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandlesVisible = true, pageScroll = false }: { phonePaged?: boolean; desktopStyle?: boolean; resizeHandlesVisible?: boolean; pageScroll?: boolean }) {
-  const { tracks, transport, addTrack, addClip, setPanel, loadSample, folders, renameFolder, removeFolder, toggleFolderCollapsed, setTransport, moveTrackToIndex, selectBoxed, clearTimelineSelection, selectedIds, paintSelectIds } = useStudio();
+  const { tracks, transport, addTrack, addClip, setPanel, loadSample, folders, renameFolder, removeFolder, toggleFolderCollapsed, setTransport, moveTrackToIndex, selectBoxed, clearTimelineSelection, selectedIds, paintSelectIds, editTool } = useStudio();
   const logoPrefs = useColorPrefs();
-  // Shift/Ctrl + mouse drag over the lanes boxes clips across channels
+  // Mouse drag a box over the lanes to highlight blocks across channels (Studio Pro style):
+  // a plain drag starts on empty lane space or the empty area under the tracks and replaces the
+  // highlight; Shift/Ctrl/⌘ add to it, and Ctrl/⌘ may start on a block too.
   const [clipBox, setClipBox] = useState<{ x0: number; y0: number; x1: number; y1: number } | null>(null);
   const clipBoxRef = useRef<{ x: number; y: number; add: boolean; active: boolean } | null>(null);
   const onBoxDown = (e: React.PointerEvent) => {
-    if (e.pointerType !== "mouse" || e.button !== 0 || !(e.shiftKey || e.ctrlKey || e.metaKey)) return;
+    if (e.pointerType !== "mouse" || e.button !== 0) return;
     const target = e.target as HTMLElement;
-    if (!target.closest("[data-lane]") || target.closest("button,input,[role='slider']")) return;
-    // Shift on a clip stays the fine-drag modifier; Ctrl/Cmd boxes from anywhere
-    if (!(e.ctrlKey || e.metaKey) && target.closest(".arrangement-clip")) return;
-    e.preventDefault();
-    e.stopPropagation();
-    clipBoxRef.current = { x: e.clientX, y: e.clientY, add: true, active: false };
+    const modifier = e.shiftKey || e.ctrlKey || e.metaKey;
+    const plain = boxStartsPlain(target, editTool);
+    if (!plain && !modifier) return;
+    if (!plain) {
+      if (!target.closest("[data-lane]") || target.closest("button,input,[role='slider']")) return;
+      // Shift on a clip stays the fine-drag modifier; Ctrl/Cmd boxes from anywhere
+      if (!(e.ctrlKey || e.metaKey) && target.closest(".arrangement-clip")) return;
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    clipBoxRef.current = { x: e.clientX, y: e.clientY, add: modifier, active: false };
     const move = (ev: PointerEvent) => {
       const b = clipBoxRef.current;
       if (!b) return;
       if (!b.active && Math.hypot(ev.clientX - b.x, ev.clientY - b.y) < 5) return;
+      if (!b.active) document.body.style.userSelect = "none";
       b.active = true;
       setClipBox({ x0: Math.min(b.x, ev.clientX), y0: Math.min(b.y, ev.clientY), x1: Math.max(b.x, ev.clientX), y1: Math.max(b.y, ev.clientY) });
     };
     const up = (ev: PointerEvent) => {
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", up);
       const b = clipBoxRef.current;
       clipBoxRef.current = null;
       setClipBox(null);
       if (!b?.active) return;
+      document.body.style.userSelect = "";
       const box = { l: Math.min(b.x, ev.clientX), r: Math.max(b.x, ev.clientX), t: Math.min(b.y, ev.clientY), btm: Math.max(b.y, ev.clientY) };
       const hit = (r: DOMRect) => r.left < box.r && r.right > box.l && r.top < box.btm && r.bottom > box.t;
       const picks: { trackId: string; clipId?: string }[] = [];
@@ -71,6 +91,8 @@ export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandl
         const clipId = clip?.dataset["audioClip"];
         if (trackId) picks.push(clipId ? { trackId, clipId } : { trackId });
       }
+      // A plain box starts a fresh highlight, like a DAW; modifiers add to what's picked.
+      if (!b.add) clearTimelineSelection();
       selectBoxed(picks, b.add);
       // swallow the click that follows the drag so it doesn't toggle a channel
       const swallow = (ce: MouseEvent) => { ce.stopPropagation(); ce.preventDefault(); };
@@ -79,6 +101,7 @@ export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandl
     };
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", up);
   };
   // A press anywhere outside the timeline drops its highlighted clips/parts. Menus, dialogs and the
   // menu bar are excluded so Edit → Cut/Delete still act on the selection they were opened for.
