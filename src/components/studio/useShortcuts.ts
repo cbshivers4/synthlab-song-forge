@@ -103,6 +103,8 @@ export function useShortcuts() {
         }
         case 'copy': case 'cut': {
           if (!selected) break;
+          // Several ticked channels copy / cut together.
+          if (studio.selectedIds.length > 1) { (action === 'copy' ? studio.copyTracks : studio.cutTracks)(studio.selectedIds); break; }
           const clip = selectedClip(selected);
           if (clip) (action === 'copy' ? studio.copyClip : studio.cutClip)(selected.id, clip.id);
           else (action === 'copy' ? studio.copyTrack : studio.cutTrack)(selected.id);

@@ -10,7 +10,7 @@ import { loopRegion } from '@/lib/synclab/recording-region';
 import { barsForSteps, positionLabel } from '@/lib/synclab/timebase';
 
 export function WorkflowBar() {
-  const { selected, tracks, transport, setTransport, updateTrack, togglePlay, toggleRecord, stop, setPanel, panel, copyClip, cutClip, pasteClip, clipClipboardName, removeClip, swapTake, razorAt } = useStudio();
+  const { selected, tracks, transport, setTransport, updateTrack, togglePlay, toggleRecord, stop, setPanel, panel, copyClip, cutClip, pasteClip, clipClipboardName, removeClip, swapTake, razorAt, selectedIds, copyTracks, cutTracks, pasteTrack, clipboardName } = useStudio();
   const isPhone = useIsMobile();
   const clip = selectedClip(selected);
   const part = selectedPartBounds(selected, transport.bpm, transport.bars, transport.loop ? loopRegion(transport) : undefined);
@@ -18,6 +18,11 @@ export function WorkflowBar() {
   const armed = tracks.filter((track) => track.armed || track.recording);
   const targets = armed.length ? armed : selected ? [selected] : [];
   const bounds = loopRegion(transport);
+  // Ticked channels (2+) copy together; otherwise the selected channel.
+  const picked = selectedIds.length > 1 ? selectedIds : selected ? [selected.id] : [];
+  const copyNow = () => { if (clip && picked.length < 2 && selected) copyClip(selected.id, clip.id); else copyTracks(picked); };
+  const cutNow = () => { if (clip && picked.length < 2 && selected) cutClip(selected.id, clip.id); else cutTracks(picked); };
+  const pasteNow = () => { if (clipClipboardName) pasteClip(false, selected?.id); else pasteTrack(selected?.id); };
   const removePart = () => {
     if (!selected || !part) return;
     if (clip) { removeClip(selected.id, clip.id); return; }
@@ -35,12 +40,12 @@ export function WorkflowBar() {
         <Button size="sm" variant={selected?.armed ? 'default' : 'outline'} className="h-8 shrink-0 gap-1 px-2 text-[11px] font-bold tracking-wider" disabled={!selected || active} aria-label="Microphone" aria-pressed={!!selected?.armed} title="Microphone — arm the selected track for recording" onClick={() => { if (selected) updateTrack(selected.id, { armed: !selected.armed }); }}><Mic className="size-3.5" />MIC</Button>
         {isPhone && <Button size="icon" variant={active ? 'destructive' : 'outline'} className="size-8 shrink-0" disabled={!selected && !armed.length} aria-label={active ? 'Stop or cancel recording' : 'Record armed tracks'} title={active ? 'Stop or cancel recording' : 'Record armed tracks'} onClick={toggleRecord}><Circle className={cn('size-3.5 fill-current', isPhone && !active && 'text-destructive')} /></Button>}
       </div>
-      {selected && <div className="flex shrink-0 items-center gap-1 border-l border-border pl-2">
-        <span className="wf-name max-w-40 shrink-0 truncate pr-1 font-mono text-[10px] text-muted-foreground" title={clip?.name ?? selected.name}>{clip?.name ?? (part ? 'Selected part' : selected.name)}</span>
+      {selected && <div className="flex shrink-0 items-center gap-1 border-l border-border pl-2" data-keep-timeline-selection>
+        <span className="wf-name max-w-40 shrink-0 truncate pr-1 font-mono text-[10px] text-muted-foreground" title={picked.length > 1 ? 'Tick or untick the box beside a track name to change what is copied' : clip?.name ?? selected.name}>{picked.length > 1 ? `${picked.length} tracks selected` : clip?.name ?? (part ? 'Selected part' : selected.name)}</span>
         <Button size="icon" variant="ghost" className="size-8 shrink-0" aria-label="Split selected part at playhead" title="Split at playhead" onClick={() => razorAt(selected.id, getPlayStep())}><SquareSplitHorizontal className="size-3.5" /></Button>
-        <Button size="icon" variant="ghost" className="size-8 shrink-0" disabled={!clip} aria-label="Copy selected clip" title="Copy selected clip" onClick={() => { if (clip) copyClip(selected.id, clip.id); }}><Copy className="size-3.5" /></Button>
-        <Button size="sm" variant="ghost" className="h-8 shrink-0 gap-1 px-2 text-[11px] font-bold tracking-wider" disabled={!clip} aria-label="Cut selected clip" title="Cut selected clip; keep channel" onClick={() => { if (clip) cutClip(selected.id, clip.id); }}><ClipboardMinus className="size-3.5" />CUT</Button>
-        <Button size="icon" variant="ghost" className="size-8 shrink-0" disabled={!clipClipboardName} aria-label="Paste clip at playhead" title="Paste clip at playhead" onClick={() => pasteClip(false, selected.id)}><ClipboardPaste className="size-3.5" /></Button>
+        <Button size="sm" variant="ghost" className="h-8 shrink-0 gap-1 px-2 text-[11px] font-bold tracking-wider" aria-label={picked.length > 1 ? `Copy ${picked.length} selected tracks` : 'Copy selected track'} title="Copy (⌘C / Ctrl+C). Tick the box beside each track name to copy several tracks at once." onClick={copyNow}><Copy className="size-3.5" />COPY</Button>
+        <Button size="sm" variant="ghost" className="h-8 shrink-0 gap-1 px-2 text-[11px] font-bold tracking-wider" aria-label={picked.length > 1 ? `Cut ${picked.length} selected tracks` : 'Cut selected track'} title="Cut (⌘X / Ctrl+X); the channels stay" onClick={cutNow}><ClipboardMinus className="size-3.5" />CUT</Button>
+        <Button size="sm" variant="ghost" className="h-8 shrink-0 gap-1 px-2 text-[11px] font-bold tracking-wider" disabled={!clipClipboardName && !clipboardName} aria-label="Paste at playhead" title={transport.playing ? 'Paste at the nearest bar line (⌘V / Ctrl+V)' : 'Paste at the playhead (⌘V / Ctrl+V)'} onClick={pasteNow}><ClipboardPaste className="size-3.5" />PASTE</Button>
         <Button size="icon" variant="ghost" className="size-8 shrink-0 text-destructive" disabled={!part} aria-label="Delete selected part" title="Delete selected part; keep channel" onClick={removePart}><Trash2 className="size-3.5" /></Button>
         <Button size="sm" variant={transport.loop ? 'default' : 'outline'} aria-pressed={!!transport.loop} className="h-8 shrink-0 gap-1 px-2 text-[11px]" onClick={() => { if (transport.loop) { setTransport({ loop: false }); return; } if (!part || part[1] <= part[0]) { setTransport({ loop: true }); return; } setTransport({ loop: true, loopStart: part[0], loopEnd: part[1], ...(!transport.playing ? { step: part[0] } : {}), bars: Math.max(transport.bars, barsForSteps(part[1])) }); }}><Repeat className="size-3.5" />Loop selected part</Button>
         {clip?.alts?.length ? <Select value="current" onValueChange={(value) => { if (value !== 'current') swapTake(selected.id, clip.id, Number(value)); }}><SelectTrigger aria-label="Selected clip takes" className="h-8 w-40 shrink-0 text-[11px]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="current">Current take</SelectItem>{clip.alts.map((take, index) => <SelectItem key={`${take.id}-${index}`} value={String(index)}>Take {index + 1}: {take.name}</SelectItem>)}</SelectContent></Select> : null}

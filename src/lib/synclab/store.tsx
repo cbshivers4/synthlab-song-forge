@@ -14,7 +14,7 @@ import { markTakeFailed } from "./take-status";
 import { setSongClock } from "./song-clock";
 import { sendClockForStep, sendTransportStart, sendTransportStop } from "./midi-clock";
 import { INPUT_CHANGED_EVENT, INPUT_FALLBACK_EVENT, INPUT_LOST_EVENT } from "./mic";
-import { drumCopySpan, materialEnd, noteCopy, pasteTrackContent, timelinePasteStep } from "./arrangement-edit";
+import { clipboardOrigin, drumCopySpan, livePasteStep, materialEnd, multiPasteSteps, noteCopy, pasteTrackContent } from "./arrangement-edit";
 
 /** Drum/sampler tracks can hold values the browser cannot deep-copy; fall back so copy never silently fails. */
 function cloneTrack(t: Track): Track {
@@ -333,6 +333,9 @@ interface StudioApi extends StudioState {
   clipboardName: string | null;
   copyTrack: (id: string) => void;
   cutTrack: (id: string) => void;
+  /** Copy / cut the material of several channels at once; paste puts each back on its own channel. */
+  copyTracks: (ids: string[]) => void;
+  cutTracks: (ids: string[]) => void;
   pasteTrack: (targetId?: string, destinationStep?: number) => void;
   clipClipboardName: string | null;
   copyClip: (trackId: string, clipId: string) => void;
@@ -557,6 +560,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const clipboardRef = useRef<Track | null>(null);
   /** The copied part's edges on the timeline, so a paste keeps every note's place in the bar. */
   const clipboardSpanRef = useRef<[number, number] | null>(null);
+  /** Several tracks copied together (2+), each pasted back onto its own channel. */
+  const multiClipboardRef = useRef<{ trackId: string; track: Track; span: [number, number] | null }[] | null>(null);
   const [clipClipboardName, setClipClipboardName] = useState<string | null>(null);
   const clipClipboardRef = useRef<AudioClip | null>(null);
   const selectedIdRef = useRef(selectedId);
@@ -1901,6 +1906,89 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     };
   }, [finishRecording, finishTrackRecording, updateTrack, endRecording]);
 
+  /** Copy what the timeline shows on one channel: the full drum beat / every synth repeat in view. */
+  const copyEntry = (src: Track) => {
+    const track = cloneTrack(src);
+    let span: [number, number] | null = null;
+    const tp = transportRef.current;
+    const shown: [number, number] = tp.loop ? loopRegion(tp) : [0, songSteps(tp.bars)];
+    if (src.kind === "drum" && !src.printedAudio && src.pads?.some((p) => p.steps.some((v) => v > 0))) {
+      track.patternRegion = drumCopySpan(src, shown);
+    } else if (!src.printedAudio && src.notes?.length) {
+      const copy = noteCopy(src, shown);
+      if (copy) { track.notes = copy.notes; span = copy.span; }
+    }
+    return { trackId: src.id, track, span };
+  };
+  const fillClipboard = (entries: { trackId: string; track: Track; span: [number, number] | null }[]) => {
+    const first = entries[0]!;
+    clipboardRef.current = first.track;
+    clipboardSpanRef.current = first.span;
+    multiClipboardRef.current = entries.length > 1 ? entries : null;
+    clipClipboardRef.current = null;
+    setClipClipboardName(null);
+    const name = entries.length > 1 ? `${entries.length} tracks` : first.track.name;
+    setClipboardName(name);
+    return name;
+  };
+  /** Channels in timeline order, so a multi-track paste keeps them top to bottom. */
+  const pickTracks = (ids: string[]) => tracksRef.current.filter((t) => ids.includes(t.id));
+  const copyTracksImpl = (ids: string[]) => {
+    const picked = pickTracks(ids);
+    if (!picked.length) return;
+    const name = fillClipboard(picked.map(copyEntry));
+    toast("Copied", { description: `${name} on the clipboard — move the playhead and press ⌘V / Ctrl+V to paste.` });
+  };
+  const cutTracksImpl = (ids: string[]) => {
+    const picked = pickTracks(ids);
+    if (!picked.length) return;
+    // Cut takes the material, never the channel: the instrument stays so you can keep playing it.
+    const tp = transportRef.current;
+    const patches = new Map<string, Partial<Track>>();
+    const entries = picked.map((src) => {
+      const { clipboard, patch, span } = cutTrackMaterial(src, tp.bpm, tp.bars, tp.loop ? loopRegion(tp) : undefined);
+      patches.set(src.id, patch);
+      const noteSpan = span && clipboard.notes?.length && !clipboard.pads?.some((p) => p.steps.some((v) => v > 0)) ? span : null;
+      return { trackId: src.id, track: clipboard, span: noteSpan };
+    });
+    const name = fillClipboard(entries);
+    setTracks((ts) => ts.map((t) => (patches.has(t.id) ? { ...t, ...patches.get(t.id) } : t)));
+    toast("Cut", { description: `${name} — the channels stay; the cut parts are on the clipboard.` });
+  };
+  /** Paste every copied track back onto its own channel, all lined up at one spot. */
+  const pasteManyImpl = (destinationStep?: number) => {
+    const entries = multiClipboardRef.current;
+    if (!entries?.length) return;
+    const tp = transportRef.current;
+    const at = livePasteStep(tp.playing ? getPlayStep() : tp.step, !!tp.playing, destinationStep);
+    const steps = multiPasteSteps(entries.map((e) => clipboardOrigin(e.track, e.span)), at);
+    const stepDur = stepSeconds(tp.bpm);
+    const pasted = new Map<string, Track>();
+    const added: Track[] = [];
+    entries.forEach((entry, i) => {
+      const target = tracksRef.current.find((t) => t.id === entry.trackId);
+      if (target) {
+        pasted.set(target.id, pasteTrackContent(target, entry.track, steps[i] ?? at, stepDur, {
+          shownEnd: songSteps(tp.bars),
+          ...(entry.span ? { origin: entry.span[0], length: entry.span[1] - entry.span[0] } : {}),
+        }));
+        return;
+      }
+      // The original channel was deleted: bring it back as a copy.
+      const copy: Track = { ...cloneTrack(entry.track), id: uid(), name: `${entry.track.name} COPY`, recording: false };
+      if (copy.pads) copy.pads = copy.pads.map((p) => ({ ...p, id: uid() }));
+      if (copy.notes) copy.notes = copy.notes.map((n) => ({ ...n, id: uid() }));
+      if (copy.clips) copy.clips = copy.clips.map((c) => ({ ...c, id: uid() }));
+      if (copy.plugins) copy.plugins = copy.plugins.map((p) => ({ ...p, id: uid() }));
+      copy.activeClipId = copy.clips?.[0]?.id;
+      added.push(copy);
+    });
+    setTracks((ts) => [...ts.map((t) => pasted.get(t.id) ?? t), ...added]);
+    const end = Math.max(0, ...[...pasted.values()].map((t) => materialEnd(t, stepDur)));
+    setTransportState((s) => ({ ...s, bars: Math.max(s.bars, barsForSteps(end)) }));
+    toast.success(`Pasted ${entries.length} tracks`, { description: `At bar ${Math.floor(at / stepsPerBar()) + 1}, each on its own channel.` });
+  };
+
   /** Cut clips under a timeline position (steps). Each half keeps the right audio via offset/length and its own start. */
   const razorAtImpl = useCallback(
     (trackId: string, posSteps: number, quiet = false) => {
@@ -2504,47 +2592,18 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           return next;
         }),
       clipboardName,
-      copyTrack: (id) => {
-        const src = tracksRef.current.find((t) => t.id === id);
-        if (!src) return;
-        clipboardRef.current = cloneTrack(src);
-        clipboardSpanRef.current = null;
-        const tp = transportRef.current;
-        const shown: [number, number] = tp.loop ? loopRegion(tp) : [0, songSteps(tp.bars)];
-        // A drum beat copies the part you see (or the selected part), at its full length.
-        if (src.kind === "drum" && !src.printedAudio && src.pads?.some((p) => p.steps.some((v) => v > 0))) {
-          clipboardRef.current.patternRegion = drumCopySpan(src, shown);
-        } else if (!src.printedAudio && src.notes?.length) {
-          // A repeating synth part copies every repeat the timeline draws, not just one loop of it.
-          const copy = noteCopy(src, shown);
-          if (copy) {
-            clipboardRef.current.notes = copy.notes;
-            clipboardSpanRef.current = copy.span;
-          }
-        }
-        clipClipboardRef.current = null;
-        setClipClipboardName(null);
-        setClipboardName(src.name);
-        toast("Copied", { description: `${src.name} is on the clipboard — press ⌘V / Ctrl+V to paste.` });
-      },
-      cutTrack: (id) => {
-        const src = tracksRef.current.find((t) => t.id === id);
-        if (!src) return;
-        // Cut takes the material, never the channel: the instrument stays so you can keep playing it.
-        const tp = transportRef.current;
-        const { clipboard, patch, span } = cutTrackMaterial(src, tp.bpm, tp.bars, tp.loop ? loopRegion(tp) : undefined);
-        clipboardRef.current = clipboard;
-        clipboardSpanRef.current = span && clipboard.notes?.length && !clipboard.pads?.some((p) => p.steps.some((v) => v > 0)) ? span : null;
-        clipClipboardRef.current = null;
-        setClipClipboardName(null);
-        setClipboardName(src.name);
-        setTracks((ts) => ts.map((t) => (t.id === id ? { ...t, ...patch } : t)));
-        toast("Cut", { description: `${src.name} kept its channel — the cut part is on the clipboard.` });
-      },
+      copyTrack: (id) => copyTracksImpl([id]),
+      cutTrack: (id) => cutTracksImpl([id]),
+      copyTracks: (ids) => copyTracksImpl(ids),
+      cutTracks: (ids) => cutTracksImpl(ids),
       pasteTrack: (targetId, destinationStep) => {
         const src = clipboardRef.current;
         if (!src) {
           toast("Clipboard is empty", { description: "Copy a track first with ⌘C / Ctrl+C." });
+          return;
+        }
+        if (multiClipboardRef.current && multiClipboardRef.current.length > 1) {
+          pasteManyImpl(destinationStep);
           return;
         }
         const wantedId = targetId ?? selectedIdRef.current;
@@ -2554,7 +2613,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         if (target && !mismatched) {
           const tp = transportRef.current;
           const span = clipboardSpanRef.current;
-          const pasted = pasteTrackContent(target, src, timelinePasteStep(tp.step, destinationStep), stepSeconds(tp.bpm), {
+          const pasted = pasteTrackContent(target, src, livePasteStep(tp.playing ? getPlayStep() : tp.step, !!tp.playing, destinationStep), stepSeconds(tp.bpm), {
             shownEnd: songSteps(tp.bars),
             ...(span ? { origin: span[0], length: span[1] - span[0] } : {}),
           });
@@ -2583,6 +2642,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         if (!clip) return;
         clipClipboardRef.current = structuredClone(clip) as AudioClip;
         clipboardRef.current = null;
+        multiClipboardRef.current = null;
         setClipboardName(null);
         setClipClipboardName(clip.name);
         toast("Clip copied", { description: `${clip.name} — press ⌘V / Ctrl+V to paste it at the playhead.` });
@@ -2594,6 +2654,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         clipClipboardRef.current = structuredClone(clip) as AudioClip;
         setClipClipboardName(clip.name);
         clipboardRef.current = null;
+        multiClipboardRef.current = null;
         setClipboardName(null);
         // a recorded take takes its notes/hits with it, exactly like Delete, so no MIDI is left behind
         const tp = transportRef.current;
@@ -2616,7 +2677,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         const pasteStepDur = stepSeconds(transportRef.current.bpm);
         const endOf = (t: Track) =>
           (t.clips ?? []).reduce((m, c) => Math.max(m, (c.start ?? 0) + clipSeconds(c) / pasteStepDur), 0);
-        const at = atEnd ? endOf(target) : timelinePasteStep(transportRef.current.step, destinationStep);
+        const tpNow = transportRef.current;
+        const at = atEnd ? endOf(target) : livePasteStep(tpNow.playing ? getPlayStep() : tpNow.step, !!tpNow.playing, destinationStep);
         const clip: AudioClip = { ...(structuredClone(src) as AudioClip), id: uid(), start: at };
         const isNotes = target.kind === "drum" || target.kind === "instrument" || target.kind === "midi";
         // Paste onto the selected track itself; note tracks switch to WAVE so the audio plays there.

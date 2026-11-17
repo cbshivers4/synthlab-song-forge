@@ -54,6 +54,9 @@ export function MenuBar({ phone = false }: { phone?: boolean } = {}) {
     setTransport,
     copyTrack,
     cutTrack,
+    copyTracks,
+    cutTracks,
+    selectedIds,
     pasteTrack,
     clipboardName,
     editTool,
@@ -245,8 +248,8 @@ export function MenuBar({ phone = false }: { phone?: boolean } = {}) {
     "file:export": openExport,
     "edit:undo": undo,
     "edit:redo": redo,
-    "edit:cut": needTrack((id) => cutTrack(id)),
-    "edit:copy": needTrack((id) => copyTrack(id)),
+    "edit:cut": needTrack((id) => (selectedIds.length > 1 ? cutTracks(selectedIds) : cutTrack(id))),
+    "edit:copy": needTrack((id) => (selectedIds.length > 1 ? copyTracks(selectedIds) : copyTrack(id))),
     "edit:paste": pasteTrack,
     "edit:duplicate": needTrack((id) => duplicateTrack(id)),
     "edit:delete": needTrack((id) => removeTrack(id)),
@@ -355,11 +358,11 @@ export function MenuBar({ phone = false }: { phone?: boolean } = {}) {
               Redo <MenubarShortcut>⇧⌘Z</MenubarShortcut>
             </MenubarItem>
             <MenubarSeparator />
-            <MenubarItem onClick={needTrack((id) => cutTrack(id))}>
+            <MenubarItem onClick={needTrack((id) => (selectedIds.length > 1 ? cutTracks(selectedIds) : cutTrack(id)))}>
               Cut <MenubarShortcut>⌘X</MenubarShortcut>
             </MenubarItem>
-            <MenubarItem onClick={needTrack((id) => copyTrack(id))}>
-              Copy Track <MenubarShortcut>⌘C</MenubarShortcut>
+            <MenubarItem onClick={needTrack((id) => (selectedIds.length > 1 ? copyTracks(selectedIds) : copyTrack(id)))}>
+              {selectedIds.length > 1 ? `Copy ${selectedIds.length} Tracks` : "Copy Track"} <MenubarShortcut>⌘C</MenubarShortcut>
             </MenubarItem>
             <MenubarItem onClick={() => pasteTrack()}>
               Paste{clipboardName ? ` “${clipboardName}”` : ""} <MenubarShortcut>⌘V</MenubarShortcut>

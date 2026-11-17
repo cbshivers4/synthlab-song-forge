@@ -9,6 +9,30 @@ export function timelinePasteStep(playhead: number, destination?: number): numbe
   return Math.max(0, destination ?? playhead);
 }
 
+/**
+ * Where a paste lands. A clicked destination wins; while the song plays the moving playhead is
+ * rounded to the nearest bar line, so material pasted on the fly stays in time with the song.
+ */
+export function livePasteStep(playhead: number, playing: boolean, destination?: number, barSteps = stepsPerBar()): number {
+  if (destination != null) return Math.max(0, destination);
+  if (!playing) return Math.max(0, playhead);
+  return Math.max(0, Math.round(playhead / Math.max(1, barSteps)) * Math.max(1, barSteps));
+}
+
+/** Left edge of copied material on the timeline: its copied span, beat region, or first note/clip. */
+export function clipboardOrigin(source: Track, span?: [number, number] | null): number {
+  if (span) return span[0];
+  if (hasHits(source)) return drumSpan(source)[0];
+  const first = Math.min(...(source.clips ?? []).map(c => c.start ?? 0), ...(source.notes ?? []).map(n => n.step));
+  return Number.isFinite(first) ? first : 0;
+}
+
+/** Several copied tracks paste together: each keeps its distance from the earliest copied part. */
+export function multiPasteSteps(origins: number[], at: number): number[] {
+  const common = origins.length ? Math.min(...origins) : 0;
+  return origins.map(o => Math.max(0, at + o - common));
+}
+
 const hasHits = (t: Track) => !!t.pads?.some(p => p.steps.some(v => v > 0));
 
 /** The part of a drum pattern that actually plays: its pattern region, else the whole pattern. */

@@ -25,8 +25,8 @@ export function EditToolbar() {
     selected,
     selectedIds,
     tracks,
-    cutTrack,
-    copyTrack,
+    cutTracks,
+    copyTracks,
     pasteTrack,
     pasteClip,
     clipClipboardName,
@@ -252,7 +252,7 @@ export function EditToolbar() {
         className="h-6 gap-1 px-2 text-[10px]"
         disabled={targets.length === 0}
         title="Cut selection (⌘X / Ctrl+X)"
-        onClick={() => targets.forEach((id) => cutTrack(id))}
+        onClick={() => cutTracks(targets)}
       >
         <SquareScissors className="size-3" /> Cut
       </Button>
@@ -262,7 +262,7 @@ export function EditToolbar() {
         className="h-6 gap-1 px-2 text-[10px]"
         disabled={targets.length === 0}
         title="Copy selection (⌘C / Ctrl+C)"
-        onClick={() => targets[0] && copyTrack(targets[0])}
+        onClick={() => copyTracks(targets)}
       >
         <Copy className="size-3" /> Copy
       </Button>

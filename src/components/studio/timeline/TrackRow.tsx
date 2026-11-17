@@ -548,7 +548,7 @@ export function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track:
             onChange={() => toggleSelectId(track.id)}
             title={`Select ${track.name}`}
             aria-label={`Select ${track.name}`}
-            className="size-3.5 shrink-0 cursor-pointer accent-primary"
+            className="size-4 shrink-0 cursor-pointer accent-primary"
           />
           <span
             draggable
