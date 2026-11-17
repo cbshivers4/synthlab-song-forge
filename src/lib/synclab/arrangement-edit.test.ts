@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { materialEnd, pasteTrackContent, rightEdgeEdit, timelinePasteStep } from './arrangement-edit';
+import { materialEnd, pasteEndStep, pasteEndSteps, pasteTrackContent, rightEdgeEdit, timelinePasteStep } from './arrangement-edit';
 import type { Track } from './types';
 
 const track: Track = { id: 'audio', name: 'Take', kind: 'audio', color: 'grey', volume: 0.7, pan: 0.2, muted: false, solo: false, armed: false, frozen: false, hidden: false, input: 'none', bus: 'master', steps: 16, clips: [{ id: 'clip', name: 'Take', duration: 2, length: 2, peaks: [1], start: 0 }] };
@@ -80,5 +80,33 @@ describe('clip right edge', () => {
     const next = moveDrumPart(drums, 10, 14, 4);
     expect(next.pads?.[0]?.steps.slice(0, 14)).toEqual([1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
     expect(next.activeRegion).toBe(4);
+  });
+});
+
+describe('paste at end of track', () => {
+  const beat = (len: number, region: [number, number], cuts: number[]): Track => ({
+    ...track, id: 'hh', kind: 'drum', clips: [], steps: len, patternRegion: region, cuts,
+    pads: [{ id: 'p', name: 'HI-HAT', sample: 'hat', steps: Array.from({ length: len }, (_, s) => (s < 128 && s % 2 === 0 ? 1 : 0)) } as never],
+  });
+  it('ignores an empty one-step sliver after the last beat part', () => {
+    expect(pasteEndStep(beat(129, [0, 129], [16, 32, 48, 64, 80, 96, 112, 128, 129]), 0.125, 256)).toBe(128);
+  });
+  it('lands right after the last part on a clean beat', () => {
+    expect(pasteEndStep(beat(128, [0, 128], [16, 32, 48, 64, 80, 96, 112, 128]), 0.125, 256)).toBe(128);
+  });
+  it('keeps several pasted channels lined up after the latest end', () => {
+    expect(pasteEndSteps([0, 0, 0, 0], [128, 128, 128, 128])).toEqual([128, 128, 128, 128]);
+    expect(pasteEndSteps([0, 0], [128, 112])).toEqual([128, 128]);
+    expect(pasteEndSteps([0, 64], [64, 128])).toEqual([64, 128]);
+  });
+  it('never lands a clip copy a fraction of a step late', () => {
+    expect(pasteEndStep({ ...track, clips: [{ ...track.clips![0]!, duration: 15.99999, length: 15.99999 }] }, 0.125)).toBe(128);
+  });
+  it('a pasted beat drops the old cut marks inside the bars it covers', () => {
+    const hh = beat(129, [0, 129], [16, 32, 48, 64, 80, 96, 112, 128, 129]);
+    const copy = { ...hh, patternRegion: [0, 128] as [number, number], cuts: [16, 32, 48, 64, 80, 96, 112] };
+    const next = pasteTrackContent(hh, copy, 128, 0.125, { origin: 0, length: 128 });
+    expect(next.cuts).not.toContain(129);
+    expect(next.cuts).toContain(144);
   });
 });

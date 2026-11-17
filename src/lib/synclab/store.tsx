@@ -14,7 +14,7 @@ import { markTakeFailed } from "./take-status";
 import { setSongClock } from "./song-clock";
 import { sendClockForStep, sendTransportStart, sendTransportStop } from "./midi-clock";
 import { INPUT_CHANGED_EVENT, INPUT_FALLBACK_EVENT, INPUT_LOST_EVENT } from "./mic";
-import { clipboardOrigin, copyPartSpan, drumCopySpan, livePasteStep, materialEnd, multiPasteSteps, noteCopy, pasteTrackContent } from "./arrangement-edit";
+import { clipboardOrigin, copyPartSpan, drumCopySpan, livePasteStep, materialEnd, multiPasteSteps, noteCopy, pasteEndStep, pasteEndSteps, pasteTrackContent } from "./arrangement-edit";
 
 /** Drum/sampler tracks can hold values the browser cannot deep-copy; fall back so copy never silently fails. */
 function cloneTrack(t: Track): Track {
@@ -1973,14 +1973,12 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     const at = livePasteStep(tp.playing ? getPlayStep() : tp.step, !!tp.playing, destinationStep);
     const origins = entries.map((e) => clipboardOrigin(e.track, e.span));
     const stepDur = stepSeconds(tp.bpm);
-    // At end: each channel gets its copy right after its own last part, keeping the gaps between tracks.
-    const common = origins.length ? Math.min(...origins) : 0;
+    // At end: the copies stay lined up as copied, right after the channels' last parts, so the loops stay in time.
     const steps = atEnd
-      ? entries.map((entry, i) => {
+      ? pasteEndSteps(origins, entries.map((entry) => {
           const target = tracksRef.current.find((t) => t.id === entry.trackId);
-          const end = target ? materialEnd(target, stepDur, songSteps(tp.bars)) : at;
-          return Math.max(0, end + (origins[i] ?? 0) - common);
-        })
+          return target ? pasteEndStep(target, stepDur, songSteps(tp.bars)) : at;
+        }))
       : multiPasteSteps(origins, at);
     const pasted = new Map<string, Track>();
     const added: Track[] = [];
@@ -2005,7 +2003,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     setTracks((ts) => [...ts.map((t) => pasted.get(t.id) ?? t), ...added]);
     const end = Math.max(0, ...[...pasted.values()].map((t) => materialEnd(t, stepDur)));
     setTransportState((s) => ({ ...s, bars: Math.max(s.bars, barsForSteps(end)) }));
-    toast.success(`Pasted ${entries.length} tracks`, { description: atEnd ? "At the end of each channel." : `At bar ${Math.floor(at / stepsPerBar()) + 1}, each on its own channel.` });
+    toast.success(`Pasted ${entries.length} tracks`, { description: atEnd ? `Right after the last part, lined up at bar ${Math.floor(Math.min(...steps) / stepsPerBar()) + 1}.` : `At bar ${Math.floor(at / stepsPerBar()) + 1}, each on its own channel.` });
   };
 
   /** Cut clips under a timeline position (steps). Each half keeps the right audio via offset/length and its own start. */
@@ -2648,7 +2646,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           const span = clipboardSpanRef.current;
           const stepDur = stepSeconds(tp.bpm);
           const at = atEnd
-            ? materialEnd(target, stepDur, songSteps(tp.bars))
+            ? pasteEndStep(target, stepDur, songSteps(tp.bars))
             : livePasteStep(tp.playing ? getPlayStep() : tp.step, !!tp.playing, destinationStep);
           const pasted = pasteTrackContent(target, src, at, stepDur, {
             shownEnd: songSteps(tp.bars),
@@ -2715,7 +2713,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         const endOf = (t: Track) =>
           (t.clips ?? []).reduce((m, c) => Math.max(m, (c.start ?? 0) + clipSeconds(c) / pasteStepDur), 0);
         const tpNow = transportRef.current;
-        const at = atEnd ? endOf(target) : livePasteStep(tpNow.playing ? getPlayStep() : tpNow.step, !!tpNow.playing, destinationStep);
+        const at = atEnd ? Math.max(0, Math.ceil(endOf(target) - 0.02)) : livePasteStep(tpNow.playing ? getPlayStep() : tpNow.step, !!tpNow.playing, destinationStep);
         const clip: AudioClip = { ...(structuredClone(src) as AudioClip), id: uid(), start: at };
         const isNotes = target.kind === "drum" || target.kind === "instrument" || target.kind === "midi";
         // Paste onto the selected track itself; note tracks switch to WAVE so the audio plays there.

@@ -100,7 +100,8 @@ export function pasteTrackContent(target: Track, source: Track, at: number, step
   const innerCuts = (from: number, to: number) => (source.cuts ?? []).filter(c => c > from + 0.001 && c < from + sourceLength - 0.001).map(c => c - from + to);
   const noteBlocks = !pastedDrums && notes.length > 0 && opts.length != null ? innerCuts(origin, at) : [];
   const cuts = pastedDrums
-    ? [...new Set([...(target.cuts ?? []), start, start + sourceLength, ...innerCuts(srcA, start)])].sort((a, b) => a - b)
+    // The pasted beat replaces the bars it covers, so the target's old cut marks inside it go too.
+    ? [...new Set([...(target.cuts ?? []).filter(c => c <= start || c >= start + sourceLength), start, start + sourceLength, ...innerCuts(srcA, start)])].sort((a, b) => a - b)
     : noteBlocks.length
       ? [...new Set([...(target.cuts ?? []), at, at + sourceLength, ...noteBlocks])].filter(c => c > 0).sort((a, b) => a - b)
       : target.cuts;
@@ -161,6 +162,47 @@ export function materialEnd(track: Track, stepDuration: number, shownEnd?: numbe
   const drums = track.kind === 'drum' && hasHits(track) && !printed;
   const base = drums ? (track.patternRegion?.[1] ?? shownEnd ?? track.steps) : printed ? 0 : track.steps;
   return Math.max(base, ...(track.notes ?? []).map(n => n.step + n.length), ...(track.clips ?? []).map(c => (c.start ?? 0) + clipSeconds(c) / stepDuration));
+}
+
+/**
+ * Where "Paste at end" lands on a channel: right after its last part you can see and hear.
+ * Unlike materialEnd, empty slivers at the end of a beat (an empty block after the last hit)
+ * don't count, and the spot is a whole step, so a pasted copy never lands a fraction or a
+ * step late and drifts out of time with the other channels.
+ */
+export function pasteEndStep(track: Track, stepDuration: number, shownEnd?: number): number {
+  const printed = !!track.printedAudio && !!track.clips?.length;
+  let end = 0;
+  if (track.kind === 'drum' && hasHits(track) && !printed) {
+    const region = track.patternRegion;
+    if (!region) end = shownEnd ?? track.steps;
+    else {
+      let last = -1;
+      for (const pad of track.pads ?? []) {
+        const len = Math.max(1, pad.steps.length);
+        for (let s = Math.ceil(region[1]) - 1; s >= region[0] && s > last; s--) if ((pad.steps[s % len] ?? 0) > 0) { last = s; break; }
+      }
+      // The part holding the last hit ends at the next cut mark (or the beat's end).
+      end = last < 0 ? region[0] : Math.min(region[1], ...(track.cuts ?? []).filter(c => c > last + 0.001));
+    }
+  } else if (!printed && track.notes?.some(n => n.recordedEnd == null)) {
+    end = track.steps; // a repeating pattern ends at its loop length
+  }
+  end = Math.max(end,
+    ...(track.notes ?? []).map(n => n.step + n.length),
+    ...(track.clips ?? []).map(c => (c.start ?? 0) + clipSeconds(c) / stepDuration));
+  return Math.max(0, Math.ceil(end - 0.02));
+}
+
+/**
+ * Paste-at-end spots for several copied channels pasted together. They stay lined up exactly as
+ * copied (so the loops keep playing in time) and the group lands as early as possible without
+ * any channel's copy covering that channel's own last part.
+ */
+export function pasteEndSteps(origins: number[], ends: number[]): number[] {
+  const common = origins.length ? Math.min(...origins) : 0;
+  const at = Math.max(0, ...ends.map((e, i) => e - ((origins[i] ?? common) - common)));
+  return multiPasteSteps(origins, at);
 }
 
 /** Reveal source audio when available; beyond the source end, stretch the selected audio. */

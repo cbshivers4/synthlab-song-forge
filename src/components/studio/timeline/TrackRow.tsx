@@ -3,7 +3,7 @@ import { getPlayStep } from "@/lib/synclab/playhead";
 import { editorPanelFor } from "@/lib/synclab/track-editor";
 import { deleteSelectedPart, selectedClip, selectedPartBounds } from '@/lib/synclab/workflow';
 import { loopRegion } from "@/lib/synclab/recording-region";
-import { materialEnd } from "@/lib/synclab/arrangement-edit";
+import { pasteEndStep } from "@/lib/synclab/arrangement-edit";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { stepsPerBar, songSteps, stepSeconds, positionLabel } from "@/lib/synclab/timebase";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -662,7 +662,7 @@ export function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track:
               <DropdownMenuItem disabled={!hasClipboard} onClick={() => pasteAt()}><ClipboardPaste className="size-4" /> Paste at playhead</DropdownMenuItem>
               <DropdownMenuItem disabled={!hasClipboard} onClick={() => {
                 if (clipClipboardName) pasteClip(true, track.id);
-                else pasteTrack(track.id, Math.ceil(materialEnd(track, stepSeconds(fileStudio.transport.bpm), fileStudio.transport.loop ? loopRegion(fileStudio.transport)[1] : songSteps(fileStudio.transport.bars))));
+                else pasteTrack(track.id, (pasteEndStep(track, stepSeconds(fileStudio.transport.bpm), fileStudio.transport.loop ? loopRegion(fileStudio.transport)[1] : songSteps(fileStudio.transport.bars))));
               }}><ClipboardPaste className="size-4" /> Paste at end</DropdownMenuItem>
               <DropdownMenuItem disabled={!selectedPartBounds(track, fileStudio.transport.bpm, fileStudio.transport.bars, fileStudio.transport.loop ? loopRegion(fileStudio.transport) : undefined)} onClick={() => {
                 if (activeClip) fileStudio.removeClip(track.id, activeClip.id);
@@ -759,7 +759,7 @@ export function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track:
               <DropdownMenuItem onClick={() => pasteTrack(track.id)}>
                 <ClipboardPaste className="size-4" /> Paste track{clipboardName ? ` (${clipboardName})` : ""}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => pasteTrack(track.id, Math.ceil(materialEnd(track, stepSeconds(fileStudio.transport.bpm), fileStudio.transport.loop ? loopRegion(fileStudio.transport)[1] : songSteps(fileStudio.transport.bars))))}>
+              <DropdownMenuItem onClick={() => pasteTrack(track.id, (pasteEndStep(track, stepSeconds(fileStudio.transport.bpm), fileStudio.transport.loop ? loopRegion(fileStudio.transport)[1] : songSteps(fileStudio.transport.bars))))}>
                 <ClipboardPaste className="size-4" /> Paste track at end
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => updateTrack(track.id, { frozen: !track.frozen })}>
