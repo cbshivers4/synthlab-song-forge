@@ -38,6 +38,7 @@ import { downloadBlob, encodeWav } from "@/lib/synclab/bounce";
 import { freshCloudUrl } from "@/lib/synclab/cloud";
 import { TrackIcon, TrackStylePicker } from "@/components/studio/TrackStyle";
 import { trackMenuStyle } from "@/lib/synclab/color-prefs";
+import { mergePaintSelection, paintTrackRange } from "@/lib/synclab/track-paint";
 import { TrackNotes } from "@/components/studio/TrackNotes";
 import { AutomationRow } from "./AutomationRow";
 import { Lane, VcaLevel, Waveform } from "./clips";
@@ -45,7 +46,7 @@ import { GRID_OPTIONS, INPUTS, SYNTH_CHOICES, TRACK_BUSES, TimelineCutGuide, cut
 
 export function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track: Track; index: number; headerWidth: number; setHeaderWidth: (width: number) => void }) {
   const isMobile = useIsMobile();
-  const { selectedId, selectedIds, select, toggleSelectId, updateTrack, removeTrack, duplicateTrack, moveTrack, moveTrackToIndex, moveTrackToNew, setPanel, changeInstrument, installedPlugins, addPlugin, editTool, splitClipAt, razorAt, toggleStep, toggleAutomationLane, copyTrack, cutTrack, pasteTrack, clipboardName, copyClip, cutClip, pasteClip, clipClipboardName, clearTrackContent, folders, addFolder, assignTrackFolder, swapTake, stretchClip } =
+  const { selectedId, selectedIds, select, toggleSelectId, paintSelectIds, updateTrack, removeTrack, duplicateTrack, moveTrack, moveTrackToIndex, moveTrackToNew, setPanel, changeInstrument, installedPlugins, addPlugin, editTool, splitClipAt, razorAt, toggleStep, toggleAutomationLane, copyTrack, cutTrack, pasteTrack, clipboardName, copyClip, cutClip, pasteClip, clipClipboardName, clearTrackContent, folders, addFolder, assignTrackFolder, swapTake, stretchClip } =
     useStudio();
   const { transport, setNotes, loadSample, fxChains, tracks: allTracks } = useStudio();
   const fileStudio = useStudio();
@@ -396,6 +397,19 @@ export function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track:
     if (timer) window.clearTimeout(timer);
   }, []);
 
+  /** Channels as their rows are shown on screen, top to bottom. */
+  const shownTrackIds = () =>
+    Array.from(document.querySelectorAll<HTMLElement>("[data-track-row]"))
+      .map((row) => row.dataset["trackRow"])
+      .filter((id): id is string => Boolean(id));
+
+  /** Ctrl/⌘/Shift-click a channel name to highlight the run from the current channel to this one. */
+  const rangeFromAnchor = () => {
+    const anchor = selectedId ?? track.id;
+    const run = paintTrackRange(shownTrackIds(), anchor, track.id);
+    if (run.length) paintSelectIds(mergePaintSelection(selectedIds, run, true), anchor);
+  };
+
   /** Drag the strip under a lane to make that track taller or shorter. */
   const resizeHeight = (e: React.PointerEvent) => {
     e.preventDefault();
@@ -532,6 +546,7 @@ export function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track:
         onClick={(e) => {
           // Synth channels select the note editor; their instrument opens only by an explicit action.
           if (e.metaKey || e.ctrlKey) return;
+          if (e.shiftKey) { e.preventDefault(); e.stopPropagation(); rangeFromAnchor(); return; }
           // Menu clicks bubble here through React portals (Clear track, Open instrument…) — they must never open the piano roll.
           if (!e.currentTarget.contains(e.target as Node)) return;
           const el = e.target as HTMLElement;
@@ -591,6 +606,7 @@ export function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track:
           ) : (
             <Button variant="ghost" className="h-6 min-w-0 flex-1 justify-start px-0 py-0 text-left font-display text-[11px] font-semibold" title={track.name} onClick={(e) => {
               e.stopPropagation();
+              if (e.shiftKey) { e.preventDefault(); rangeFromAnchor(); return; }
               selectForEditing();
             }}>
               <span className="truncate">{index + 1}. {track.name}</span>

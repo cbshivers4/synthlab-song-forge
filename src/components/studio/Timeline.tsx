@@ -19,6 +19,7 @@ import { AddTrackMenu } from "@/components/studio/AddTrackMenu";
 import { TrackSearch } from "@/components/studio/TrackSearch";
 import type { Track } from "@/lib/synclab/types";
 import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
+import { mergePaintSelection, paintTrackRange } from "@/lib/synclab/track-paint";
 import { EditToolbar, TimelineOptionsPanel } from "./timeline/EditToolbar";
 import { Ruler, SongPlayhead, TimelineOverview } from "./timeline/Ruler";
 import { FolderRow, TrackRow } from "./timeline/TrackRow";
@@ -30,7 +31,7 @@ import { useColorPrefs } from "@/lib/synclab/color-prefs";
 const KEEP_SELECTION = "[data-radix-popper-content-wrapper],[role='menu'],[role='menubar'],[role='dialog'],[role='alertdialog'],[role='listbox'],[data-sonner-toaster],.app-menu,[data-keep-timeline-selection]";
 
 export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandlesVisible = true, pageScroll = false }: { phonePaged?: boolean; desktopStyle?: boolean; resizeHandlesVisible?: boolean; pageScroll?: boolean }) {
-  const { tracks, transport, addTrack, addClip, setPanel, loadSample, folders, renameFolder, removeFolder, toggleFolderCollapsed, setTransport, moveTrackToIndex, selectBoxed, clearTimelineSelection } = useStudio();
+  const { tracks, transport, addTrack, addClip, setPanel, loadSample, folders, renameFolder, removeFolder, toggleFolderCollapsed, setTransport, moveTrackToIndex, selectBoxed, clearTimelineSelection, selectedIds, paintSelectIds } = useStudio();
   const logoPrefs = useColorPrefs();
   // Shift/Ctrl + mouse drag over the lanes boxes clips across channels
   const [clipBox, setClipBox] = useState<{ x0: number; y0: number; x1: number; y1: number } | null>(null);
@@ -158,6 +159,73 @@ export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandl
   const timelineHeaderRef = useRef<HTMLDivElement>(null);
   const rowsRef = useRef<HTMLDivElement>(null);
   const shownTracks = tracks;
+
+  // Press in the channel-name column and drag: every channel you pass over is highlighted,
+  // so COPY / CUT / PASTE take that whole group. A native capture listener is used because
+  // channel-name buttons (colour picker, rename) stop pointer events before React sees them.
+  const paintRef = useRef<{ anchor: string; base: string[]; add: boolean; x: number; y: number; moved: boolean } | null>(null);
+  const paintStateRef = useRef({ selectedIds, paintSelectIds });
+  paintStateRef.current = { selectedIds, paintSelectIds };
+  useEffect(() => {
+    const el = rowsRef.current;
+    if (!el) return;
+    const rows = () => Array.from(el.querySelectorAll<HTMLElement>("[data-track-row]"));
+    const rowAt = (clientX: number, clientY: number) => {
+      const pt = canvasPoint(clientX, clientY);
+      return rows().find((r) => {
+        const rect = canvasRect(r);
+        return pt.y >= rect.top && pt.y < rect.bottom;
+      });
+    };
+    const onDown = (e: PointerEvent) => {
+      if (e.pointerType !== "mouse" || e.button !== 0) return;
+      const target = e.target as HTMLElement;
+      // The rename box, sliders and the ⋮⋮ reorder handle keep their own pointer use; the tick box may start a drag.
+      if (target.closest("input:not([type='checkbox']),[draggable='true'],[role='slider'],[role='combobox'],[contenteditable]")) return;
+      const row = rowAt(e.clientX, e.clientY);
+      if (!row) return;
+      const anchor = row.dataset["trackRow"];
+      if (!anchor) return;
+      // Only from the channel-name column: drags in the lanes keep their own meaning.
+      const headerW = parseFloat(getComputedStyle(el).getPropertyValue("--timeline-header-width")) || 0;
+      const pt = canvasPoint(e.clientX, e.clientY);
+      if (headerW > 0 && pt.x > canvasRect(row).left + Math.max(24, headerW - 6)) return;
+      const { selectedIds: current, paintSelectIds: paint } = paintStateRef.current;
+      const add = e.ctrlKey || e.metaKey || e.shiftKey;
+      const ids = rows().map((r) => r.dataset["trackRow"]).filter((id): id is string => Boolean(id));
+      paintRef.current = { anchor, base: add ? current : [], add, x: e.clientX, y: e.clientY, moved: false };
+      document.body.style.userSelect = "none";
+      const move = (ev: PointerEvent) => {
+        const p = paintRef.current;
+        if (!p) return;
+        if (!p.moved && Math.hypot(ev.clientX - p.x, ev.clientY - p.y) < 5) return;
+        const overId = rowAt(ev.clientX, ev.clientY)?.dataset["trackRow"];
+        if (!overId) return;
+        const run = paintTrackRange(ids, p.anchor, overId);
+        if (!run.length) return;
+        p.moved = true;
+        paint(mergePaintSelection(p.base, run, p.add), p.anchor);
+      };
+      const up = () => {
+        window.removeEventListener("pointermove", move);
+        window.removeEventListener("pointerup", up);
+        window.removeEventListener("pointercancel", up);
+        document.body.style.userSelect = "";
+        const p = paintRef.current;
+        paintRef.current = null;
+        if (!p?.moved) return;
+        // Swallow the click the drag ends on so it can't open a channel menu or collapse the highlight.
+        const swallow = (ce: MouseEvent) => { ce.stopPropagation(); ce.preventDefault(); };
+        window.addEventListener("click", swallow, { capture: true, once: true });
+        window.setTimeout(() => window.removeEventListener("click", swallow, { capture: true }), 50);
+      };
+      window.addEventListener("pointermove", move);
+      window.addEventListener("pointerup", up);
+      window.addEventListener("pointercancel", up);
+    };
+    el.addEventListener("pointerdown", onDown, true);
+    return () => el.removeEventListener("pointerdown", onDown, true);
+  }, []);
 
   // Grabbing the white playhead line inside the track lanes moves song position.
   const stepFromRowsX = (clientX: number, clientY: number) => {

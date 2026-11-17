@@ -315,6 +315,8 @@ interface StudioApi extends StudioState {
   toggleSelectId: (id: string) => void;
   /** Mouse box selection: select these channels and their boxed clips. */
   selectBoxed: (picks: { trackId: string; clipId?: string }[], add: boolean) => void;
+  /** Mouse drag down the channel names: highlight exactly these channels; the anchor stays the current channel. */
+  paintSelectIds: (ids: string[], anchorId: string | null) => void;
   /** Click outside the timeline: drop highlighted clips/parts and extra checked channels (the current channel stays). */
   clearTimelineSelection: () => void;
   splitClipAt: (trackId: string, frac: number) => void;
@@ -2414,6 +2416,12 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         setSelectedId(ids[ids.length - 1] ?? null);
         const clipFor = new Map(picks.filter((p) => p.clipId).map((p) => [p.trackId, p.clipId]));
         if (clipFor.size) setTracks((ts) => ts.map((t) => (clipFor.has(t.id) ? { ...t, activeClipId: clipFor.get(t.id) } : t)));
+      },
+      paintSelectIds: (ids, anchorId) => {
+        if (!ids.length) return;
+        setSelectedIds(ids);
+        const keep = anchorId && ids.includes(anchorId) ? anchorId : ids[ids.length - 1];
+        if (keep) setSelectedId(keep);
       },
       clearTimelineSelection: () => {
         const keep = selectedIdRef.current;

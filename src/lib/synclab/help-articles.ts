@@ -195,7 +195,7 @@ export const KNOWLEDGE_BASE: Article[] = [
       "Move a note block or beat part to another track: drag it up or down onto that track's lane (a dashed outline shows where it lands), or tap the block and choose Move part to… in the track menu.",
       "To delete one block, tap it and press Delete in the small menu next to it (or Delete selected part in the track menu). Only that block goes; the rest of the track stays.",
       "Copy, then Paste places the material at the playhead on the selected track and keeps that track's settings. Duplicate track makes a full copy of the channel.",
-      "To copy several tracks at once, tick the small box beside each track name (or Ctrl/⌘-click the tracks), then press COPY in the bar above the timeline or ⌘C / Ctrl+C. Move the playhead and press PASTE or ⌘V / Ctrl+V: every track lands back on its own channel, lined up together.",
+      "To copy several tracks at once, press in the channel-name column and drag down over the channels you want — every one you pass over is highlighted. You can also tick the small box beside each track name, Ctrl/⌘-click a channel, or Shift-click to highlight the run from the current channel. Then press COPY in the bar above the timeline or ⌘C / Ctrl+C. Move the playhead and press PASTE or ⌘V / Ctrl+V: every track lands back on its own channel, lined up together.",
       "Copy and paste work while the song is playing too. A paste during playback lands on the nearest bar line so it stays in time; when the song is stopped it lands exactly at the playhead.",
       "In the audio clip editor you can quantize a recording to the beat, add fades, and make a mono or stereo copy.",
     ],

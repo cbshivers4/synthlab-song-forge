@@ -10,6 +10,7 @@ Sampler whole-sample preview is click/keyboard activated and never captures note
 Phone channel/project naming shares a screen-aligned NameEditDialog counter-rotated inside the body portal and measured by VisualViewport, keeping native keyboard typing visible without rotating the studio. Recording position derives from the shared transport and phone recording follows the timeline without changing playback.
 
 Timeline selection exposes shared track actions; synth taps open the piano roll while empty-lane taps with copied material offer a snapped destination independently of the playhead. Portal events and drag movement must not trigger editor selection.
+Mouse drag down the channel-name column paints a contiguous highlight through the shared store (paintSelectIds keeps the anchor as the current channel, range math in lib/synclab/track-paint.ts); a painted drag must swallow the click it ends on so it never opens the channel menu, and touch gestures keep their existing header behaviour.
 
 PianoRoll owns focused note shortcuts and a session-only note clipboard; single-tap Draw, Select and Erase modes use loop-bounded helpers. Coordinate mapping derives visible canvas bounds so native phone scrolling does not displace note edits; deletion only removes explicit selections.
 PianoRoll keeps horizontal navigation above the grid and a shared-width draggable ruler for its placement cursor; stopped ruler seeks use the existing transport, while playback/recording placement never interrupts audio.
