@@ -13,7 +13,7 @@ export const SHORTCUTS = [
   { id: "right", group: "Transport", keys: "→", key: "ArrowRight", description: "Move the playhead forward one quarter-note beat." },
   { id: "leftStep", group: "Transport", keys: "Shift + ←", key: "ArrowLeft", shift: true, description: "Move the playhead back one sixteenth-note step." },
   { id: "rightStep", group: "Transport", keys: "Shift + →", key: "ArrowRight", shift: true, description: "Move the playhead forward one sixteenth-note step." },
-  { id: "stop", group: "Transport", keys: "Escape", key: "Escape", description: "Stop playback (dialogs handle Escape first)." },
+  { id: "stop", group: "Transport", keys: "Escape", key: "Escape", description: "Stop playback; when stopped, unselect highlighted timeline blocks (dialogs handle Escape first)." },
   { id: "save", group: "Project & editing", keys: "Mod + S", key: "s", mod: true, description: "Manually save the current project." },
   { id: "undo", group: "Project & editing", keys: "Mod + Z", key: "z", mod: true, description: "Undo the last edit." },
   { id: "redo", group: "Project & editing", keys: "Mod + Shift + Z", key: "z", mod: true, shift: true, description: "Redo an undone edit." },

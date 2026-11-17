@@ -59,10 +59,26 @@ function usePartMoves(track: Track) {
   return { sendPart, canTake };
 }
 
+/** A plain click (no drag) on a block that was already selected deselects the timeline, like a DAW. */
+function useClickToDeselect() {
+  const { clearTimelineSelection } = useStudio();
+  const press = useRef<{ x: number; y: number } | null>(null);
+  return {
+    down: (e: React.PointerEvent, wasActive: boolean) => { press.current = wasActive ? { x: e.clientX, y: e.clientY } : null; },
+    click: (e: React.MouseEvent) => {
+      e.stopPropagation();
+      const p = press.current;
+      press.current = null;
+      if (p && e.detail <= 1 && Math.hypot(e.clientX - p.x, e.clientY - p.y) < 5) clearTimelineSelection();
+    },
+  };
+}
+
 /** Audio lane: every clip sits at its own bar position and can be moved, trimmed and dragged between tracks. */
 export function Waveform({ track }: { track: Track }) {
   const { setActiveClip, updateTrack, moveClipToNew, stretchClip, setTransport, transport, tracks, editTool } = useStudio();
   const cutting = editTool === "split" || editTool === "razor";
+  const deselect = useClickToDeselect();
   const [editingId, setEditingId] = useState<string | null>(null);
   const clips = track.clips ?? [];
   const total = songSteps(transport.bars);
@@ -286,10 +302,11 @@ export function Waveform({ track }: { track: Track }) {
             className="arrangement-clip group absolute inset-y-1 flex touch-none flex-col overflow-hidden rounded-[2px] border transition-colors"
             style={{ left: `${left}%`, width: `max(0px, calc(${width}% - 2px))`, ...(clip.color ? { "--clip-audio": clip.color, "--color-clip-audio": clip.color } : {}) } as CSSProperties}
             onPointerDown={(e) => {
+              deselect.down(e, active);
               setActiveClip(track.id, clip.id);
               beginDrag(e, clip, "move");
             }}
-            onClick={(e) => e.stopPropagation()}
+            onClick={deselect.click}
             onDoubleClick={(e) => {
               e.stopPropagation();
               setEditingId(clip.id);
@@ -341,6 +358,7 @@ export function Waveform({ track }: { track: Track }) {
 
 function MidiClip({ track }: { track: Track }) {
   const { setPanel, select, transport, updateTrack } = useStudio();
+  const deselect = useClickToDeselect();
   const partMoves = usePartMoves(track);
   const notes = track.notes ?? [];
   const cuts = track.cuts ?? [];
@@ -509,13 +527,14 @@ function MidiClip({ track }: { track: Track }) {
       className="arrangement-clip arrangement-midi absolute inset-y-1 flex cursor-grab flex-col overflow-hidden rounded-[2px] border active:cursor-grabbing"
       style={{ left: `${a / total * 100}%`, width: `calc(${(b - a) / total * 100}% - 1px)` }}
       onPointerDown={(e) => {
+        deselect.down(e, active);
         updateTrack(track.id, { activeRegion: a });
         select(track.id);
         // A part between cut marks moves on its own; an uncut pattern moves as a whole.
         if (cuts.length > 0) beginRegionDrag(e, a, b);
         else beginPatternDrag(e);
       }}
-      onClick={(e) => e.stopPropagation()}
+      onClick={deselect.click}
       onDoubleClick={() => { select(track.id); setPanel("piano"); }}
       title={`${track.name} — drag to move, pull the edges to trim, double-click to edit notes`}
     >
@@ -566,6 +585,7 @@ export function VcaLevel({ track }: { track: Track }) {
 
 function DrumClip({ track }: { track: Track }) {
   const { setPanel, select, transport, updateTrack } = useStudio();
+  const deselect = useClickToDeselect();
   const partMoves = usePartMoves(track);
   /** Drag the pattern along the grid: every pad's hits rotate by the same
    *  snapped step amount, so the whole beat shifts to a new grid position. */
@@ -759,8 +779,8 @@ function DrumClip({ track }: { track: Track }) {
       return (
         <div key={a} data-selected={active} data-note-region={active ? "active" : "part"}
           className="arrangement-clip absolute inset-y-1 flex flex-col overflow-hidden rounded-[2px] border"
-          onPointerDown={(e) => { updateTrack(track.id, { activeRegion: a }); select(track.id); beginPartDrag(e, a, b); }}
-          onClick={(e) => e.stopPropagation()}
+          onPointerDown={(e) => { deselect.down(e, active); updateTrack(track.id, { activeRegion: a }); select(track.id); beginPartDrag(e, a, b); }}
+          onClick={deselect.click}
           onDoubleClick={() => { select(track.id); setPanel("drums"); }}
           style={{ left: `${a / total * 100}%`, width: `calc(${(b - a) / total * 100}% - 1px)`, cursor: "grab", touchAction: "none" }}
           title={`${track.name} beat part — drag to move, pull the left edge to trim, the right edge to stretch (Alt + right edge trims), double-click to open the drum machine`}>

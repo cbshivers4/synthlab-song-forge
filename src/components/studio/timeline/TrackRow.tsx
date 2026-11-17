@@ -1155,6 +1155,8 @@ export function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track:
           if (editTool === "select") {
             if (!e.currentTarget.contains(e.target as Node)) return;
             e.stopPropagation();
+            // Clicking empty lane space drops any highlighted blocks, like a DAW.
+            fileStudio.clearTimelineSelection();
             const rect = canvasRect(e.currentTarget);
             const point = canvasPoint(e.clientX, e.clientY);
             const grid = transport.snap ?? 1;

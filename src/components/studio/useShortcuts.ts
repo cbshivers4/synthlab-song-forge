@@ -61,7 +61,11 @@ export function useShortcuts() {
       const move = (amount: number) => studio.setTransport({ step: Math.max(0, Math.min(songSteps(transport.bars) - 1, getPlayStep() + amount)) });
       switch (action) {
         case 'play': studio.togglePlay(); break;
-        case 'stop': void studio.stop(); break;
+        case 'stop':
+          // Escape while stopped first drops highlighted timeline blocks; while playing it stops, as before.
+          if (e.key === 'Escape' && !transport.playing && tracks.some((t) => t.activeClipId != null || t.activeRegion != null)) studio.clearTimelineSelection();
+          else void studio.stop();
+          break;
         case 'record': studio.toggleRecord(); break;
         case 'loop': studio.setTransport({ loop: !transport.loop }); break;
         case 'click': studio.setTransport({ metronome: !transport.metronome }); break;

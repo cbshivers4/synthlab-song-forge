@@ -283,7 +283,7 @@ export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandl
           <SongPlayhead totalSteps={totalSteps} onDragStart={dragSongPlayhead} onMove={(step) => setTransport({ step })} />
         </div>
         </div>
-        <div data-new-channel-drop className="min-h-28 transition-colors">
+        <div data-new-channel-drop className="min-h-28 transition-colors" onPointerDown={() => clearTimelineSelection()}>
         <div className="flex items-center gap-3 px-2 pt-2">
           <AddTrackMenu size="sm" />
           <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
