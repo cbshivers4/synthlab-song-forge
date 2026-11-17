@@ -1806,7 +1806,7 @@ body:has(.payment-test-banner) .phone-console.mobile-studio { height: calc(100dv
 }
 .arrangement-clip[data-selected="true"] { background: var(--arrangement-clip-selected); border-color: var(--playhead); box-shadow: var(--arrangement-selection-shadow); z-index: 2; }
 .arrangement-clip[data-cutting="true"], .arrangement-clip[data-cutting="true"] * { pointer-events: none; }
-.arrangement-clip { border-inline-color: var(--playhead); }
+/* Clip edges stay the clip's own darker shade; white belongs to selection only (track or clip). */
 .arrangement-clip-name { background: var(--arrangement-clip-label); color: var(--arrangement-text); }
 .arrangement-clip[data-selected="true"] .arrangement-clip-name { background: color-mix(in oklab, var(--arrangement-clip-label) 70%, var(--playhead)); color: var(--arrangement-ink); }
 .arrangement-clip-name button { color: inherit; }
