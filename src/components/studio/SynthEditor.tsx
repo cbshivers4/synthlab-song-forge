@@ -28,6 +28,7 @@ import { GRANULAR_PRESET_TYPES, defaultGranular } from "@/lib/synclab/granular";
 import { AcidSequencer } from "./AcidSequencer";
 import { PresetNavigator } from "./PresetNavigator";
 import { HardwareBypass } from "./HardwareBypass";
+import { SynthHoldButton } from "./SynthHoldButton";
 import { FavoritePresetKeys } from "./FavoritePresetKeys";
 import { ARP_NOTE_PATTERNS, ARP_RHYTHMS } from "@/lib/synclab/arp-pattern";
 import { PIANO_MODELS, type PianoModel } from "@/lib/synclab/piano-voice";
@@ -210,6 +211,7 @@ function SynthTrackEditor({ track }: { track: Track }) {
       <MidiLearnStrip id={track.id} label={`${track.name} — every knob below also has its own MIDI button`} />
       <div className="synth-preset-deck flex flex-wrap items-center gap-2">
         <HardwareBypass track={track} />
+        <SynthHoldButton track={track} />
         <PresetNavigator label="synth preset" options={presetIndex.order} current={patch.name} onSelect={selectPreset}>
           <PresetBrowser index={presetIndex} current={patch.name} onSelect={selectPreset} styleHeading={synthStyle === "modular" ? "Rack device" : "Style"} />
         </PresetNavigator>

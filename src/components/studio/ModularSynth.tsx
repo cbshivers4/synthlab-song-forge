@@ -60,7 +60,7 @@ export function ModularSynth({ track }: { track: Track }) {
     if (!m.cables.some((c) => pkey(c.from) === pkey(pending) && pkey(c.to) === pkey(to)))
       save({ ...m, cables: [...m.cables, { id: cableId(), from: pending, to, amount: 0.8, color }] });
     setPending(null);
-    previewNote(track.id, 48);
+    previewNote(track.id, 48, undefined, false);
   };
 
   useLayoutEffect(() => {

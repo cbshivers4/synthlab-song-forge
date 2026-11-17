@@ -94,6 +94,14 @@ export function arpLiveRelease(trackId: string, pitch: number) {
   if (pool && h && pool.engine.ctx) h.until = Math.min(h.until, pool.engine.ctx.currentTime);
 }
 
+/** Lets go of every held key in a channel's arp (HOLD switched off). */
+export function arpReleaseAll(trackId: string) {
+  const pool = pools.get(trackId);
+  const now = pool?.engine.ctx?.currentTime;
+  if (!pool || now === undefined) return;
+  for (const h of pool.held.values()) h.until = Math.min(h.until, now);
+}
+
 /** Stop all live arps (Stop button / panic). */
 export function stopLiveArps() {
   for (const p of pools.values()) if (p.timer) clearInterval(p.timer);

@@ -38,7 +38,7 @@ export function AcidSequencer({ track }: { track: Track }) {
 
   const writeNote = (semi: number) => {
     const pitch = (octave + 1) * 12 + semi;
-    previewNote(track.id, pitch);
+    previewNote(track.id, pitch, undefined, false);
     edit(cursor, { pitch, on: true });
     setCursor((c) => (c + 1) % 16);
   };

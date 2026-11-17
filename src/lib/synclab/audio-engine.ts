@@ -10,6 +10,7 @@ import { phasedHarmonics } from "./oscillator-phase";
 import { envelopePoints } from "./live-envelope";
 import { renderVintageDrum } from "./vintage-drums";
 import { playModularVoice } from "./modular";
+import { HELD_NOTE_SECONDS } from "./synth-hold";
 import { pianoBuffer, warmPiano } from "./piano-voice";
 import { GRANULAR_ROOT, builtInSource, playGranularVoice, warmBuiltInSource, type GranularPatch, type GranularVoice } from "./granular";
 import { MODULAR_SCOPE_TYPES, attachModularScope, modularScopeId } from './modular-scopes';
@@ -1970,6 +1971,7 @@ export class SyncLabEngine {
       this.granularVoices.delete(id);
     }
     for (const id of ids) {
+      this.heldVoices.delete(id);
       this.stopSamples(id);
       const now = this.ctx?.currentTime ?? 0;
       this.monoVoice.get(id)?.stop(now);
@@ -1998,7 +2000,7 @@ export class SyncLabEngine {
     return log.filter((g) => g.at <= now && g.at + g.length >= now).map((g) => ({ position: g.position, progress: (now - g.at) / g.length, reverse: g.reverse }));
   }
 
-  private playGranular(trackId: string, dest: AudioNode, g: GranularPatch, midi: number, duration: number, velocity: number, t0: number) {
+  private playGranular(trackId: string, dest: AudioNode, g: GranularPatch, midi: number, duration: number, velocity: number, t0: number, held = false) {
     const ctx = this.ctx as BaseAudioContext | null;
     if (!ctx) return;
     this.granularLive.set(trackId, g);
@@ -2018,7 +2020,8 @@ export class SyncLabEngine {
     const set = this.granularVoices.get(trackId) ?? new Set<GranularVoice>();
     set.add(voice);
     this.granularVoices.set(trackId, set);
-    setTimeout(() => { set.delete(voice); }, Math.max(0, voice.end - ctx.currentTime) * 1000 + 300);
+    const timer = setTimeout(() => { set.delete(voice); }, Math.max(0, voice.end - ctx.currentTime) * 1000 + 300);
+    if (held) this.registerHeld(trackId, midi, (t) => { voice.stop(t); clearTimeout(timer); set.delete(voice); });
   }
 
   /* ---------------- pulse wave cache ---------------- */
@@ -2765,6 +2768,25 @@ export class SyncLabEngine {
   }
 
   private liveVoices = new Map<string, Set<{ end: number; patch: SynthPatch; update: (patch: SynthPatch, time: number) => void }>>();
+  /** Notes latched by a synth's HOLD switch, each with its own release. */
+  private heldVoices = new Map<string, { midi: number; release: (t: number) => void }[]>();
+  private registerHeld(trackId: string, midi: number, release: (t: number) => void) {
+    const list = this.heldVoices.get(trackId) ?? [];
+    list.push({ midi, release });
+    this.heldVoices.set(trackId, list);
+  }
+  /** Lets go of HOLD-latched notes on a channel (only `midi` when given), through each note's release. */
+  releaseHeld(trackId: string, midi?: number) {
+    const list = this.heldVoices.get(trackId);
+    if (!list?.length || !this.ctx) return;
+    const now = this.ctx.currentTime;
+    const keep: typeof list = [];
+    for (const v of list) {
+      if (midi === undefined || v.midi === midi) { try { v.release(now); } catch { /* already gone */ } }
+      else keep.push(v);
+    }
+    if (keep.length) this.heldVoices.set(trackId, keep); else this.heldVoices.delete(trackId);
+  }
   private liveDrums = new Map<string, Set<{ end: number; pad: DrumPad; update: (pad: DrumPad, time: number) => void }>>();
 
   /** Update nodes already sounding, without triggering or capturing another note. */
@@ -2866,8 +2888,10 @@ export class SyncLabEngine {
       return;
     }
     const ch = this.playbackChannel(trackId);
+    // HOLD-latched notes are only ever played live; offline renders use real note lengths.
+    const held = duration >= HELD_NOTE_SECONDS && !(typeof OfflineAudioContext !== "undefined" && ctx instanceof OfflineAudioContext);
     if (patch.granular) {
-      this.playGranular(trackId, ch.input, patch.granular, midi, duration, velocity, t0);
+      this.playGranular(trackId, ch.input, patch.granular, midi, duration, velocity, t0, held);
       return;
     }
     if (patch.modular) {
@@ -2876,9 +2900,19 @@ export class SyncLabEngine {
       gate.connect(ch.input);
       const gates = this.modularGates.get(trackId) ?? new Set<GainNode>();
       gates.add(gate); this.modularGates.set(trackId, gates);
+      let stopSources: ((at: number) => void) | null = null;
       const life = playModularVoice(ctx, gate, patch.modular, midi, duration, velocity, t0, this.pitchMod(trackId).sum, (mod, output) =>
-        !(typeof OfflineAudioContext !== 'undefined' && ctx instanceof OfflineAudioContext) && MODULAR_SCOPE_TYPES.includes(mod.type) ? attachModularScope(ctx, modularScopeId(trackId, mod.id), output) : undefined);
-      setTimeout(() => { gates.delete(gate); try { gate.disconnect(); } catch { /* gone */ } }, (t0 - ctx.currentTime + life + 0.2) * 1000);
+        !(typeof OfflineAudioContext !== 'undefined' && ctx instanceof OfflineAudioContext) && MODULAR_SCOPE_TYPES.includes(mod.type) ? attachModularScope(ctx, modularScopeId(trackId, mod.id), output) : undefined,
+        (stop) => { stopSources = stop; });
+      const retire = () => { gates.delete(gate); try { gate.disconnect(); } catch { /* gone */ } };
+      const timer = setTimeout(retire, (t0 - ctx.currentTime + life + 0.2) * 1000);
+      if (held) this.registerHeld(trackId, midi, (t) => {
+        holdAt(gate.gain, t);
+        gate.gain.setTargetAtTime(0, t, 0.06);
+        stopSources?.(t + 0.4);
+        clearTimeout(timer);
+        setTimeout(retire, 600);
+      });
       return;
     }
     const life = duration + patch.amp.release + 0.25;
@@ -2963,6 +2997,7 @@ export class SyncLabEngine {
     // flanger / phaser colouring before the voice output
     let tail: AudioNode = shaper;
     const voiceFx = new Map<string, (value: number, time: number) => void>();
+    const fxStops: ((t: number) => void)[] = [];
     const crushAmt = clamp(patch.fx.bitcrush ?? 0, 0, 1);
     {
       // bit-depth reduction: 12 bits down to 2 bits
@@ -2995,6 +3030,7 @@ export class SyncLabEngine {
       lg.connect(d.delayTime);
       lfo.start(t0);
       lfo.stop(t0 + life);
+      fxStops.push((t) => { try { lfo.stop(t); } catch { /* done */ } });
       const wet = ctx.createGain();
       wet.gain.value = flanger * 0.7;
       voiceFx.set("flanger", (v, time) => { wet.gain.setTargetAtTime(v * 0.7, time, 0.015); lg.gain.setTargetAtTime(v * 0.003, time, 0.015); });
@@ -3379,6 +3415,20 @@ export class SyncLabEngine {
       }
     } };
     active.add(voice); this.liveVoices.set(trackId, active);
+    if (held) this.registerHeld(trackId, midi, (t) => {
+      // Let go like a key release: the amp and filter envelopes run their release from here.
+      const rel = Math.max(0.02, voice.patch.amp.release);
+      active.delete(voice); // knob moves during the tail must not re-open the envelope
+      holdAt(voiceOut.gain, t);
+      voiceOut.gain.setTargetAtTime(0.0001, t, rel / 5);
+      holdAt(filter.frequency, t);
+      filter.frequency.setTargetAtTime(cutoffBase, t, Math.max(0.02, voice.patch.filterEnv.release));
+      const end = t + rel + 0.1;
+      for (const n of nodes) { try { n.stop(end); } catch { /* already stopped */ } }
+      for (const m of runningMods) m.stop(end);
+      for (const stop of fxStops) stop(end);
+      voice.end = end;
+    });
     const cleanupSource = nodes[0];
     cleanupSource?.addEventListener("ended", () => {
       active.delete(voice);

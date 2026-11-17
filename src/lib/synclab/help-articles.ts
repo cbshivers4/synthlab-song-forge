@@ -905,6 +905,21 @@ export const KNOWLEDGE_BASE: Article[] = [
     cant: ["Add new devices, panels or code — look packs only change how things look, so a downloaded file can't do anything harmful.", "Use pictures from web addresses: only pictures stored inside the file load."],
   },
   {
+    id: "synth-hold",
+    category: "Synths & keys",
+    title: "HOLD on synths: keep notes sounding",
+    tags: "hold latch sustain pedal synth drone pad chord arp keep notes ringing",
+    body: [
+      "Every synth has a HOLD button next to BYPASS at the top of its panel.",
+      "Turn HOLD on, then play notes on your MIDI keyboard, the on-screen keys or your computer keys. Each note keeps sounding after you let go, like holding down a sustain pedal. Its key stays lit.",
+      "Play the same key again to restart that note. Turn HOLD off, or press Stop, to let every held note go. They fade out with the synth's own release.",
+      "With ARP on, HOLD keeps the arpeggio running after you let go of the keys.",
+      "While recording, a held note is recorded as long as it really sounded: until you turn HOLD off, play that key again, or stop recording.",
+    ],
+    can: ["Hold notes on Spec 4, Poly Synth, Acid Bass, pianos, Touch Synth keys, Granular Synth and Modular Tech.", "Hold a different set of notes on each synth."],
+    cant: ["Remember HOLD in your saved song; it switches off when you reload.", "Hold notes on samplers or drum machines.", "Hold a note longer than 10 minutes."],
+  },
+  {
     id: "menu-track-colours",
     category: "Getting started",
     title: "Menu colours, track colours and the timeline logo",

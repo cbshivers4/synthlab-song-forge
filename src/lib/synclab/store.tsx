@@ -52,7 +52,8 @@ import { isLiveParam, laneReads, laneWrites, liveValue, movedLiveParams, valueAt
 import { padNote } from "./drum-notes";
 import { markLiveHit, isLiveHit, clearLiveHits, neighbourLiveHits } from "./live-take";
 import { keyDown, keyUp } from "./active-keys";
-import { arpLiveRelease, stopLiveArps } from "./live-arp";
+import { arpLiveRelease, arpReleaseAll, stopLiveArps } from "./live-arp";
+import { HELD_NOTE_SECONDS, holdApplies, latchPitch, onHoldRelease, releaseLatched } from "./synth-hold";
 import { controllerAutoMap } from "./controller-profiles";
 import type { CloudSession } from "./cloud";
 import type {
@@ -558,7 +559,37 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const clipClipboardRef = useRef<AudioClip | null>(null);
   const selectedIdRef = useRef(selectedId);
   selectedIdRef.current = selectedId;
-  const heldRef = useRef(new Map<string, { ids: string[]; trackId: string; t0: number; startStep: number }>());
+  /** Recorded live notes still sounding: keys held down, and notes latched by a synth's HOLD (`latched`). */
+  const heldRef = useRef(new Map<string, { ids: string[]; trackId: string; t0: number; startStep: number; pitch?: number; latched?: boolean; base?: number }>());
+  /** Gives a recorded live note the length it was actually held for (bounded by the loop being recorded). */
+  const finishHeldNote = (held: { ids: string[]; trackId: string; t0: number; startStep: number; base?: number }) => {
+    const tp = transportRef.current;
+    const stepDur = stepSeconds(tp.bpm);
+    const elapsed = Math.round(((performance.now() - held.t0) / 1000 / stepDur) * 4) / 4;
+    // A held note may cross bar lines, but never the end of the loop region being recorded.
+    const regionEnd = tp.loop && (tp.loopEnd ?? 0) > (tp.loopStart ?? 0) ? (tp.loopEnd ?? 0) : Number.POSITIVE_INFINITY;
+    // never shorter than the note you heard, so the take keeps its ring-out
+    const steps = Math.max(0.25, Math.min(heardNoteSteps(held.base ?? LIVE_MIDI_NOTE_SECONDS, stepDur, elapsed), regionEnd - held.startStep));
+    setTracks((ts) => ts.map((t) => (t.id === held.trackId ? { ...t, notes: (t.notes ?? []).map((n) => (held.ids.includes(n.id) ? { ...n, length: steps } : n)) } : t)));
+  };
+  /** Ends HOLD-latched recorded notes on a channel (only `pitch` when given). */
+  const finishLatchedNotes = (trackId: string, pitch?: number) => {
+    for (const [key, held] of heldRef.current) {
+      if (!held.latched || held.trackId !== trackId || (pitch !== undefined && held.pitch !== pitch)) continue;
+      heldRef.current.delete(key);
+      finishHeldNote(held);
+    }
+  };
+  /** Playing a key again while HOLD is on lets go of that key's latched note first, like a retrigger. */
+  const retriggerHeld = (t: Track, pitch: number) => {
+    const engine = getEngine();
+    for (const p of processMidiThroughPlugins(pitch + (t.octave ?? 0) * 12, t.plugins)) {
+      engine.releaseHeld(t.id, p);
+      if (isExternal(t.id)) externalNoteOff(t.id, p);
+    }
+    finishLatchedNotes(t.id, pitch);
+    latchPitch(t.id, pitch);
+  };
   /** notes played live into the current take → audio-clock time they were heard */
   const recordedNoteIdsRef = useRef(new Map<string, number>());
   /** A synth take records notes only (no live print); the waveform is rendered from the notes when it lands. */
@@ -1041,16 +1072,18 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         engine.init();
         const tp = transportRef.current;
         const stepDur = stepSeconds(tp.bpm);
+        const holding = holdApplies(target);
         if (type === "on") {
-          keyDown(pitch, 30000);
+          keyDown(pitch, holding ? HELD_NOTE_SECONDS * 1000 : 30000);
           setMidiLearning(true);
           engine.syncMixIfChanged(tracksRef.current);
+          if (holding) retriggerHeld(target, pitch);
           if (isExternal(target.id) && !target.patch?.arp?.on) {
             // External instruments hold the note until the key is released, like a real keyboard.
             const anySolo = tracksRef.current.some((t) => t.solo);
             const audible = !target.muted && !target.deviceBypassed && (!anySolo || target.solo);
             if (audible) for (const p of processMidiThroughPlugins(pitch + (target.octave ?? 0) * 12, target.plugins)) externalNoteOn(target.id, p, Math.max(0.15, velocity));
-          } else triggerNote(engine, target, pitch, LIVE_MIDI_NOTE_SECONDS, Math.max(0.15, velocity), undefined, 30);
+          } else triggerNote(engine, target, pitch, holding ? HELD_NOTE_SECONDS : LIVE_MIDI_NOTE_SECONDS, Math.max(0.15, velocity), undefined, holding ? HELD_NOTE_SECONDS : 30);
           if (tp.recording && target.recording) {
             const pitches = processMidiThroughPlugins(pitch, target.plugins);
             const heard = heardStepPos();
@@ -1066,33 +1099,28 @@ export function StudioProvider({ children }: { children: ReactNode }) {
               return note ? [note] : [];
             });
             notes.forEach((note) => recordedNoteIdsRef.current.set(note.id, engine.ctx?.currentTime ?? 0));
-            heldRef.current.set(heldKey, { ids: notes.map((note) => note.id), trackId: target.id, t0: performance.now(), startStep: at });
+            heldRef.current.set(heldKey, { ids: notes.map((note) => note.id), trackId: target.id, t0: performance.now(), startStep: at, pitch });
             setTracks((ts) =>
               ts.map((t) => (t.id === target.id ? { ...t, notes: [...(t.notes ?? []), ...notes] } : t)),
             );
           }
         } else {
-          keyUp(pitch);
-          for (const p of processMidiThroughPlugins(pitch + (target.octave ?? 0) * 12, target.plugins)) { arpLiveRelease(target.id, p); externalNoteOff(target.id, p); }
           setMidiLearning(false);
           const held = heldRef.current.get(heldKey);
+          if (holding) {
+            // HOLD keeps the note (and its key light) going after the key comes up; the recorded
+            // note gets its length when HOLD lets go.
+            if (held) {
+              heldRef.current.delete(heldKey);
+              heldRef.current.set(`latch:${held.trackId}:${held.ids[0] ?? uid()}`, { ...held, latched: true });
+            }
+            return;
+          }
+          keyUp(pitch);
+          for (const p of processMidiThroughPlugins(pitch + (target.octave ?? 0) * 12, target.plugins)) { arpLiveRelease(target.id, p); externalNoteOff(target.id, p); }
           if (!held) return;
           heldRef.current.delete(heldKey);
-          const elapsed = Math.round(((performance.now() - held.t0) / 1000 / stepDur) * 4) / 4;
-          // A held note may cross bar lines, but never the end of the loop
-          // region being recorded.
-          const regionEnd = tp.loop && (tp.loopEnd ?? 0) > (tp.loopStart ?? 0)
-            ? (tp.loopEnd ?? 0)
-            : Number.POSITIVE_INFINITY;
-          // never shorter than the note you heard, so the take keeps its ring-out
-          const steps = Math.max(0.25, Math.min(heardNoteSteps(LIVE_MIDI_NOTE_SECONDS, stepDur, elapsed), regionEnd - held.startStep));
-          setTracks((ts) =>
-            ts.map((t) =>
-              t.id === held.trackId
-                ? { ...t, notes: (t.notes ?? []).map((n) => (held.ids.includes(n.id) ? { ...n, length: steps } : n)) }
-                : t,
-            ),
-          );
+          finishHeldNote(held);
         }
       });
     });
@@ -1101,6 +1129,21 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       off();
     };
   }, [midiInputId, midiInputs]);
+
+  // A synth's HOLD letting go (switched off, or Stop): release its latched voices, arp keys,
+  // external hardware notes and key lights, and give recorded notes their held length.
+  useEffect(() => onHoldRelease((trackId, pitches) => {
+    const engine = getEngine();
+    engine.releaseHeld(trackId);
+    arpReleaseAll(trackId);
+    const t = tracksRef.current.find((x) => x.id === trackId);
+    for (const pitch of pitches) {
+      keyUp(pitch);
+      if (t && isExternal(trackId)) for (const p of processMidiThroughPlugins(pitch + (t.octave ?? 0) * 12, t.plugins)) externalNoteOff(trackId, p);
+    }
+    finishLatchedNotes(trackId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), []);
 
   useEffect(() => {
     if (typeof window !== "undefined" && getEngine().ctx) {
@@ -2055,11 +2098,11 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const api: StudioApi = useMemo(() => {
     const selected = tracks.find((t) => t.id === selectedId) ?? null;
     /** Writes a note into the armed recording track without sounding it. */
-    const capture = (trackId: string, midi: number, velocity: number, seconds = PREVIEW_NOTE_SECONDS) => {
+    const capture = (trackId: string, midi: number, velocity: number, seconds = PREVIEW_NOTE_SECONDS): MidiNote | null => {
       const tp = transportRef.current;
       const t = tracksRef.current.find((x) => x.id === trackId);
-      if (!t || !tp.recording || !t.recording) return;
-      if (t.kind !== "instrument" && t.kind !== "midi" && t.kind !== "sampler") return;
+      if (!t || !tp.recording || !t.recording) return null;
+      if (t.kind !== "instrument" && t.kind !== "midi" && t.kind !== "sampler") return null;
       // stamp the true sub-step position you heard, so the take keeps the
       // player's timing — quantize then has something real to snap
       const heard = heardStepPos();
@@ -2069,9 +2112,10 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       // the note keeps the length it sounded live, so playback isn't chopped short (gated)
       const length = heardNoteSteps(seconds, stepSeconds(tp.bpm));
       const note = capturedNote({ id: uid(), step: Math.max(0, stepPos), length, pitch: midi, velocity }, tp.loop ? loopRegion(tp) : [0, songSteps(tp.bars)]);
-      if (!note) return;
+      if (!note) return null;
       recordedNoteIdsRef.current.set(note.id, getEngine().ctx?.currentTime ?? 0);
       setTracks((ts) => ts.map((x) => (x.id === t.id ? { ...x, notes: [...(x.notes ?? []), note] } : x)));
+      return note;
     };
     const stepBack = (from: "past" | "future") => {
       if (from === "past") pendingHistoryRef.current?.();
@@ -2839,7 +2883,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           void endRecording();
         }
       },
-      stop: () => { stopLiveArps(); return endRecording(true); },
+      stop: () => { stopLiveArps(); releaseLatched(); return endRecording(true); },
       changeInstrument: (trackId, preset) =>
         setTracks((ts) =>
           ts.map((t) =>
@@ -3064,10 +3108,14 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         const engine = getEngine();
         engine.init();
         engine.syncMixIfChanged(tracksRef.current);
-        if (t) triggerNote(engine, previewTrack(t, patch), midi, duration, 0.9);
-        keyDown(midi);
+        // HOLD latches played notes (never preset auditions, which pass capture off or their own patch).
+        const holding = !!t && shouldCapture && !patch && holdApplies(t);
+        if (t && holding) retriggerHeld(t, midi);
+        if (t) triggerNote(engine, previewTrack(t, patch), midi, holding ? HELD_NOTE_SECONDS : duration, 0.9, undefined, holding ? HELD_NOTE_SECONDS : undefined);
+        keyDown(midi, holding ? HELD_NOTE_SECONDS * 1000 : undefined);
         // Notes played on screen are captured while the transport records.
-        if (t && shouldCapture) capture(t.id, midi, 0.9, duration);
+        const note = t && shouldCapture ? capture(t.id, midi, 0.9, duration) : null;
+        if (t && note && holding) heldRef.current.set(`latch:${t.id}:${note.id}`, { ids: [note.id], trackId: t.id, t0: performance.now(), startStep: note.step, pitch: midi, latched: true, base: duration });
       },
       captureNote: (trackId, midi, velocity = 0.9) => {
         capture(trackId, midi, velocity);

@@ -237,7 +237,7 @@ const driveCurve = (k: number) => {
 };
 
 /** Builds one voice of the rack for a note. Unpatched modules make no sound; only what reaches an OUTPUT is heard. */
-export function playModularVoice(ctx: BaseAudioContext, dest: AudioNode, raw: unknown, midi: number, duration: number, velocity: number, t0: number, pitchBus?: AudioNode, observeOutput?: (mod: ModModule, source: AudioNode) => (() => void) | undefined): number {
+export function playModularVoice(ctx: BaseAudioContext, dest: AudioNode, raw: unknown, midi: number, duration: number, velocity: number, t0: number, pitchBus?: AudioNode, observeOutput?: (mod: ModModule, source: AudioNode) => (() => void) | undefined, onStop?: (stop: (at: number) => void) => void): number {
   const m = normalizeModular(raw);
   const num = (mod: ModModule, k: string) => Number(mod.params[k] ?? MODULE_DEFS[mod.type].params.find((p) => p.id === k)?.def ?? 0);
   const str = (mod: ModModule, k: string) => String(mod.params[k] ?? MODULE_DEFS[mod.type].params.find((p) => p.id === k)?.def ?? "");
@@ -511,6 +511,8 @@ export function playModularVoice(ctx: BaseAudioContext, dest: AudioNode, raw: un
     s.start(t0); s.stop(stopAt);
   }
   for (const f of finals) { f.gain.setValueAtTime(f.gain.value, stopAt - 0.03); f.gain.linearRampToValueAtTime(0, stopAt); }
+  // Lets a HOLD-latched voice end early: the caller fades its gate first, then the sources stop.
+  onStop?.((at) => { for (const s of sources) { try { s.stop(at); } catch { /* not started */ } } });
   return life;
 }
 
