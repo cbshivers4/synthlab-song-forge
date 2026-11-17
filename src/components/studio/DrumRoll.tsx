@@ -345,7 +345,7 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
       <div className={fit ? "drum-roll-grid-wrap" : "contents"}>
       {/* Sideways phone: both pan axes (the canvas is rotated, so one-axis panning blocks the swipe), plus a visible scroll bar. */}
       <div ref={gridRef} id={fit ? "drum-roll-scroll" : undefined} onScroll={readRows} aria-label="Drum roll grid" className={`overflow-auto rounded-[2px] border border-border bg-background ${fit ? "" : "mb-1.5 "}${full ? "max-h-[78dvh]" : fit ? "" : isMobile ? "max-h-[45dvh] touch-pan-y" : ""}`}>
-        <div className={fit ? "drum-fit-rows" : isMobile && !full ? "w-full" : isMobile ? "" : "min-w-[640px]"} style={fit ? { gridTemplateRows: `24px repeat(${rows.length}, minmax(34px, 1fr))`, ["--drum-fit-rows" as string]: rows.length } : isMobile && full ? { minWidth: 212 + total * (50 * view.zoom) } : undefined}>
+        <div className={fit ? "drum-fit-rows" : isMobile && !full ? "w-full" : isMobile ? "" : "drum-roll-sheet"} style={fit ? { gridTemplateRows: `24px repeat(${rows.length}, minmax(34px, 1fr))`, ["--drum-fit-rows" as string]: rows.length } : isMobile && full ? { minWidth: 212 + total * (50 * view.zoom) } : isMobile ? undefined : { ["--drum-steps" as string]: total }}>
           {/* bar numbers */}
           <div className="sticky top-0 z-10 flex border-b border-border bg-surface-2">
             <div className="drum-roll-label-header w-32 shrink-0 border-r border-border px-2 py-0.5 font-mono text-[8px] uppercase tracking-widest text-muted-foreground">

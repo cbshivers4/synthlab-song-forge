@@ -315,6 +315,8 @@ interface StudioApi extends StudioState {
   toggleSelectId: (id: string) => void;
   /** Mouse box selection: select these channels and their boxed clips. */
   selectBoxed: (picks: { trackId: string; clipId?: string }[], add: boolean) => void;
+  /** Click outside the timeline: drop highlighted clips/parts and extra checked channels (the current channel stays). */
+  clearTimelineSelection: () => void;
   splitClipAt: (trackId: string, frac: number) => void;
   razorAt: (trackId: string, posSteps: number) => void;
   splitAtPlayhead: () => void;
@@ -2324,6 +2326,15 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         setSelectedId(ids[ids.length - 1] ?? null);
         const clipFor = new Map(picks.filter((p) => p.clipId).map((p) => [p.trackId, p.clipId]));
         if (clipFor.size) setTracks((ts) => ts.map((t) => (clipFor.has(t.id) ? { ...t, activeClipId: clipFor.get(t.id) } : t)));
+      },
+      clearTimelineSelection: () => {
+        const keep = selectedIdRef.current;
+        setSelectedIds((ids) => (ids.length === (keep ? 1 : 0) && (!keep || ids[0] === keep) ? ids : keep ? [keep] : []));
+        if (!tracksRef.current.some((t) => t.activeClipId != null || t.activeRegion != null)) return;
+        // Deselecting is not an edit: land any pending edit in history first, then skip this one.
+        pendingHistoryRef.current?.();
+        applyingRef.current = true;
+        setTracks((ts) => ts.map((t) => (t.activeClipId != null || t.activeRegion != null ? { ...t, activeClipId: undefined, activeRegion: undefined } : t)));
       },
       toggleSelectId: (id) =>
         setSelectedIds((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id])),

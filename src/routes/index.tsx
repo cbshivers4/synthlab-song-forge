@@ -543,6 +543,24 @@ function StudioWorkspace() {
     root.classList.toggle("mobile-high-contrast", isMobile && mobileAccessibility.highContrast);
     return () => root.classList.remove("mobile-controls-xl", "mobile-text-xl", "mobile-high-contrast");
   }, [isMobile, mobileAccessibility]);
+  // CSS hides the timeline as soon as an editor takes over; Activity pauses it a moment later, so a
+  // timeline menu whose item opened the editor finishes its closing animation and unmounts first
+  // (a hidden Activity disconnects that listener and would leave the menu stuck on screen).
+  const timelineCovered = !isMobile && !!panel && !workspace.split && !mixerDock;
+  const [timelineHidden, setTimelineHidden] = useState(timelineCovered);
+  useEffect(() => {
+    if (!timelineCovered) { setTimelineHidden(false); return; }
+    // Wait until no menu is still playing its closing animation (checked a few times, then hide anyway).
+    let tries = 0;
+    let id = 0;
+    const tryHide = () => {
+      tries += 1;
+      if (tries < 12 && document.querySelector('.app-menu[data-state="closed"]')) { id = window.setTimeout(tryHide, 150); return; }
+      setTimelineHidden(true);
+    };
+    id = window.setTimeout(tryHide, 300);
+    return () => window.clearTimeout(id);
+  }, [timelineCovered]);
   if (isMobile) return <>
     <PhoneStudio><SafePanels float={float} setFloat={setFloat} /></PhoneStudio>
     <TrackSettingsDialog /><DeviceSetup /><ExportDialog /><MidiClockFollow /><DrummerBridge /><KeysBridge /><ScopeWindow /><StudioAgentTools />
@@ -564,7 +582,7 @@ function StudioWorkspace() {
           {!isMobile && <TimelineTopBar />}
           {/* While an editor fills the workspace the timeline is hidden; Activity keeps its state but stops
               redrawing it on every edit, which otherwise stalled the page during playback. */}
-          <Activity mode={!isMobile && panel && !workspace.split && !mixerDock ? "hidden" : "visible"}>
+          <Activity mode={timelineCovered && timelineHidden ? "hidden" : "visible"}>
             <Timeline />
           </Activity>
           {!isMobile && panel && workspace.split && !mixerDock && <SplitHandle />}

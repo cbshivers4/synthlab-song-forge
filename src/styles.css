@@ -2430,8 +2430,8 @@ body:has(.phone-console) [data-sonner-toast] button { pointer-events: auto; }
 .drum-machine:not([data-phone-view]) { padding: 6px; }
 .drum-machine:not([data-phone-view]) > [role="tablist"] button { height: 28px; min-height: 28px; }
 .drum-machine:not([data-phone-view]) .drum-skin { position: static; }
-.drum-machine:not([data-phone-view]) .drum-roll [aria-label="Drum roll grid"] { max-height: none; overflow: visible; }
-.drum-machine:not([data-phone-view]) .drum-roll [aria-label="Drum roll grid"] > div { min-width: 0; }
+.drum-machine:not([data-phone-view]) .drum-roll [aria-label="Drum roll grid"] { max-height: none; overflow-x: auto; overflow-y: hidden; }
+.drum-machine:not([data-phone-view]) .drum-roll [aria-label="Drum roll grid"] > div:not(.drum-roll-sheet) { min-width: 0; }
 .drum-machine:not([data-phone-view]) [data-desktop-view="sound"] .drum-pad-grid,
 .drum-machine:not([data-phone-view]) [data-desktop-view="sound"] .drum-side-banks { display: none; }
 .drum-machine:not([data-phone-view]) [data-desktop-view="sound"] .drum-sound-controls { width: 100%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -5399,3 +5399,11 @@ html:not([data-track-menus="off"]) .app-menu.track-tinted-menu {
 /* Synth HOLD switch: a small LED that lights while notes are latched on. */
 .synth-hold-button .synth-hold-led { width: 6px; height: 6px; border-radius: 9999px; background: color-mix(in oklab, var(--foreground) 25%, transparent); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--background) 60%, transparent); }
 .synth-hold-button[data-on="true"] .synth-hold-led { background: var(--primary-foreground); box-shadow: 0 0 6px var(--primary-foreground); }
+
+/* Desktop drum roll: every step keeps one size however many bars there are (square to the row height);
+   longer patterns scroll sideways under pinned drum names instead of squeezing the boxes. */
+.drum-roll-sheet { min-width: max(640px, calc(170px + var(--drum-steps, 16) * (var(--dr-row, 30px) - 2px))); }
+.drum-roll-sheet .drum-roll-label-header,
+.drum-roll-sheet .drum-row-name { position: sticky; left: 0; z-index: 4; background: var(--surface-2); }
+.drum-roll-sheet .drum-roll-label-header { width: calc(8rem + var(--dr-row, 30px) + 2px); }
+.drum-roll-sheet .drum-row-mute { position: sticky; left: calc(8rem + 4px); z-index: 4; box-shadow: -4px 0 0 0 var(--surface-2), 4px 0 0 0 var(--surface-2); }

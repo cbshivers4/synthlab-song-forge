@@ -26,8 +26,11 @@ import { readDrag, synclabLogo } from "./timeline/shared";
 import { zoomAround } from "./timeline/drop-position";
 import { useColorPrefs } from "@/lib/synclab/color-prefs";
 
+/** Pop-ups and the menu bar act on the timeline selection, so pressing them must not clear it. */
+const KEEP_SELECTION = "[data-radix-popper-content-wrapper],[role='menu'],[role='menubar'],[role='dialog'],[role='alertdialog'],[role='listbox'],[data-sonner-toaster],.app-menu,[data-keep-timeline-selection]";
+
 export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandlesVisible = true, pageScroll = false }: { phonePaged?: boolean; desktopStyle?: boolean; resizeHandlesVisible?: boolean; pageScroll?: boolean }) {
-  const { tracks, transport, addTrack, addClip, setPanel, loadSample, folders, renameFolder, removeFolder, toggleFolderCollapsed, setTransport, moveTrackToIndex, selectBoxed } = useStudio();
+  const { tracks, transport, addTrack, addClip, setPanel, loadSample, folders, renameFolder, removeFolder, toggleFolderCollapsed, setTransport, moveTrackToIndex, selectBoxed, clearTimelineSelection } = useStudio();
   const logoPrefs = useColorPrefs();
   // Shift/Ctrl + mouse drag over the lanes boxes clips across channels
   const [clipBox, setClipBox] = useState<{ x0: number; y0: number; x1: number; y1: number } | null>(null);
@@ -76,6 +79,22 @@ export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandl
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", up);
   };
+  // A press anywhere outside the timeline drops its highlighted clips/parts. Menus, dialogs and the
+  // menu bar are excluded so Edit → Cut/Delete still act on the selection they were opened for.
+  const sectionRef = useRef<HTMLElement>(null);
+  const clearRef = useRef(clearTimelineSelection);
+  clearRef.current = clearTimelineSelection;
+  useEffect(() => {
+    const onDown = (e: PointerEvent) => {
+      const target = e.target;
+      if (!(target instanceof Element) || target === document.documentElement || target === document.body) return;
+      if (sectionRef.current?.contains(target)) return;
+      if (target.closest(KEEP_SELECTION)) return;
+      clearRef.current();
+    };
+    window.addEventListener("pointerdown", onDown, true);
+    return () => window.removeEventListener("pointerdown", onDown, true);
+  }, []);
   const phone = useIsLandscapePhone();
   const totalSteps = songSteps(transport.bars);
   const [over, setOver] = useState(false);
@@ -194,7 +213,7 @@ export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandl
     return subscribePlayStep(follow);
   }, [transport.follow, transport.playing, transport.recording, totalSteps, phone, headerWidth]);
   return (
-    <section data-desktop-style={desktopStyle} data-page-scroll={pageScroll} data-resize-handles={resizeHandlesVisible} style={{ "--timeline-header-width": `${headerWidth}px` } as CSSProperties} className={`arrangement-timeline mobile-timeline relative flex min-w-0 flex-col border-x border-b border-border bg-background/60 ${pageScroll ? "" : "min-h-[210px] flex-1 overflow-hidden"}`}>
+    <section ref={sectionRef} data-desktop-style={desktopStyle} data-page-scroll={pageScroll} data-resize-handles={resizeHandlesVisible} style={{ "--timeline-header-width": `${headerWidth}px` } as CSSProperties} className={`arrangement-timeline mobile-timeline relative flex min-w-0 flex-col border-x border-b border-border bg-background/60 ${pageScroll ? "" : "min-h-[210px] flex-1 overflow-hidden"}`}>
       <WorkflowBar />
       {phonePaged ? <div className="phone-timeline-heading grid h-14 shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-border bg-surface/50 px-3"><TrackSearch /><div className="flex gap-1"><Popover><PopoverTrigger asChild><Button variant="outline" className="h-12 gap-1.5 px-3 font-display text-xs font-semibold tracking-wide" aria-label="Timeline quick tools"><Settings2 className="size-4" /> TOOLS</Button></PopoverTrigger><PopoverContent className="phone-edit-menu flex h-[min(80dvh,440px)] w-[min(90vw,720px)] flex-col overflow-hidden p-0"><div className="shrink-0 border-b border-border px-3 py-2.5 font-display text-sm font-semibold">Timeline tools</div><PhonePages name="Timeline tools"><div className="p-1"><h3 className="px-2 pb-1 pt-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Song length &amp; export</h3><div className="px-2 pb-2"><TimelineOptionsPanel /></div><h3 className="px-2 pb-1 pt-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Edit &amp; arrange</h3><EditToolbar /><h3 className="border-t border-border px-2 pb-1 pt-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Song parts</h3><SectionLane /></div></PhonePages></PopoverContent></Popover><AddTrackMenu size="sm" /></div></div> : <EditToolbar />}
       <div className="shrink-0 overflow-hidden">
