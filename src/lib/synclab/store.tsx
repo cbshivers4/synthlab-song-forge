@@ -338,7 +338,7 @@ interface StudioApi extends StudioState {
   /** Copy / cut the material of several channels at once; paste puts each back on its own channel. */
   copyTracks: (ids: string[]) => void;
   cutTracks: (ids: string[]) => void;
-  pasteTrack: (targetId?: string, destinationStep?: number) => void;
+  pasteTrack: (targetId?: string, destinationStep?: number, atEnd?: boolean) => void;
   clipClipboardName: string | null;
   copyClip: (trackId: string, clipId: string) => void;
   cutClip: (trackId: string, clipId: string) => void;
@@ -1966,13 +1966,22 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     toast("Cut", { description: `${name} — the channels stay; the cut parts are on the clipboard.` });
   };
   /** Paste every copied track back onto its own channel, all lined up at one spot. */
-  const pasteManyImpl = (destinationStep?: number) => {
+  const pasteManyImpl = (destinationStep?: number, atEnd = false) => {
     const entries = multiClipboardRef.current;
     if (!entries?.length) return;
     const tp = transportRef.current;
     const at = livePasteStep(tp.playing ? getPlayStep() : tp.step, !!tp.playing, destinationStep);
-    const steps = multiPasteSteps(entries.map((e) => clipboardOrigin(e.track, e.span)), at);
+    const origins = entries.map((e) => clipboardOrigin(e.track, e.span));
     const stepDur = stepSeconds(tp.bpm);
+    // At end: each channel gets its copy right after its own last part, keeping the gaps between tracks.
+    const common = origins.length ? Math.min(...origins) : 0;
+    const steps = atEnd
+      ? entries.map((entry, i) => {
+          const target = tracksRef.current.find((t) => t.id === entry.trackId);
+          const end = target ? materialEnd(target, stepDur, songSteps(tp.bars)) : at;
+          return Math.max(0, end + origins[i] - common);
+        })
+      : multiPasteSteps(origins, at);
     const pasted = new Map<string, Track>();
     const added: Track[] = [];
     entries.forEach((entry, i) => {
@@ -1996,7 +2005,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     setTracks((ts) => [...ts.map((t) => pasted.get(t.id) ?? t), ...added]);
     const end = Math.max(0, ...[...pasted.values()].map((t) => materialEnd(t, stepDur)));
     setTransportState((s) => ({ ...s, bars: Math.max(s.bars, barsForSteps(end)) }));
-    toast.success(`Pasted ${entries.length} tracks`, { description: `At bar ${Math.floor(at / stepsPerBar()) + 1}, each on its own channel.` });
+    toast.success(`Pasted ${entries.length} tracks`, { description: atEnd ? "At the end of each channel." : `At bar ${Math.floor(at / stepsPerBar()) + 1}, each on its own channel.` });
   };
 
   /** Cut clips under a timeline position (steps). Each half keeps the right audio via offset/length and its own start. */
@@ -2620,14 +2629,14 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       cutTrack: (id) => cutTracksImpl([id]),
       copyTracks: (ids) => copyTracksImpl(ids),
       cutTracks: (ids) => cutTracksImpl(ids),
-      pasteTrack: (targetId, destinationStep) => {
+      pasteTrack: (targetId, destinationStep, atEnd) => {
         const src = clipboardRef.current;
         if (!src) {
           toast("Clipboard is empty", { description: "Copy a track first with ⌘C / Ctrl+C." });
           return;
         }
         if (multiClipboardRef.current && multiClipboardRef.current.length > 1) {
-          pasteManyImpl(destinationStep);
+          pasteManyImpl(destinationStep, atEnd);
           return;
         }
         const wantedId = targetId ?? selectedIdRef.current;
@@ -2637,7 +2646,11 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         if (target && !mismatched) {
           const tp = transportRef.current;
           const span = clipboardSpanRef.current;
-          const pasted = pasteTrackContent(target, src, livePasteStep(tp.playing ? getPlayStep() : tp.step, !!tp.playing, destinationStep), stepSeconds(tp.bpm), {
+          const stepDur = stepSeconds(tp.bpm);
+          const at = atEnd
+            ? materialEnd(target, stepDur, songSteps(tp.bars))
+            : livePasteStep(tp.playing ? getPlayStep() : tp.step, !!tp.playing, destinationStep);
+          const pasted = pasteTrackContent(target, src, at, stepDur, {
             shownEnd: songSteps(tp.bars),
             ...(span ? { origin: span[0], length: span[1] - span[0] } : {}),
           });

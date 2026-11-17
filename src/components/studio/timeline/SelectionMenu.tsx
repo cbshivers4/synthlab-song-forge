@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { ClipboardMinus, ClipboardPaste, Copy, X } from "lucide-react";
+import { ArrowRightToLine, ClipboardMinus, ClipboardPaste, Copy, X } from "lucide-react";
 import { useStudio } from "@/lib/synclab/store";
 import { selectedClip } from "@/lib/synclab/workflow";
 
@@ -23,6 +23,7 @@ export function SelectionMenu({ at, onClose }: { at: { x: number; y: number }; o
   const copy = run(() => { if (clip && selected) copyClip(selected.id, clip.id); else copyTracks(picked); });
   const cut = run(() => { if (clip && selected) cutClip(selected.id, clip.id); else cutTracks(picked); });
   const paste = run(() => { if (clipClipboardName) pasteClip(false, selected?.id); else pasteTrack(selected?.id); });
+  const pasteAtEnd = run(() => { if (clipClipboardName) pasteClip(true, selected?.id); else pasteTrack(selected?.id, undefined, true); });
   const canPaste = Boolean(clipClipboardName || clipboardName);
   const left = Math.max(8, Math.min(at.x + 6, window.innerWidth - 216));
   const top = Math.max(8, Math.min(at.y + 6, window.innerHeight - 200));
@@ -35,6 +36,7 @@ export function SelectionMenu({ at, onClose }: { at: { x: number; y: number }; o
       <button type="button" role="menuitem" autoFocus className={item} onClick={copy}><Copy className="size-3.5" />Copy<span className="ml-auto font-mono text-[10px] text-muted-foreground">⌘C</span></button>
       <button type="button" role="menuitem" className={item} onClick={cut}><ClipboardMinus className="size-3.5" />Cut<span className="ml-auto font-mono text-[10px] text-muted-foreground">⌘X</span></button>
       <button type="button" role="menuitem" className={item} disabled={!canPaste} onClick={paste}><ClipboardPaste className="size-3.5" />{transport.playing ? "Paste at next bar" : "Paste at playhead"}<span className="ml-auto font-mono text-[10px] text-muted-foreground">⌘V</span></button>
+      <button type="button" role="menuitem" className={item} disabled={!canPaste} onClick={pasteAtEnd}><ArrowRightToLine className="size-3.5" />Paste at end of track</button>
       <div className="my-1 h-px bg-border" />
       <button type="button" role="menuitem" className={item} onClick={run(clearTimelineSelection)}><X className="size-3.5" />Unselect</button>
     </div>
