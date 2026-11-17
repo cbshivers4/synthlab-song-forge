@@ -1979,7 +1979,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       ? entries.map((entry, i) => {
           const target = tracksRef.current.find((t) => t.id === entry.trackId);
           const end = target ? materialEnd(target, stepDur, songSteps(tp.bars)) : at;
-          return Math.max(0, end + origins[i] - common);
+          return Math.max(0, end + (origins[i] ?? 0) - common);
         })
       : multiPasteSteps(origins, at);
     const pasted = new Map<string, Track>();
