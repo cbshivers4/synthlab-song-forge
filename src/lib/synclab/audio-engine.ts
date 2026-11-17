@@ -17,6 +17,7 @@ import { playbackPreferences } from "./preferences";
 import { encodeWav } from "./bounce";
 import { isExternal, sendExternalNote, stopExternalNotes } from "./external-midi";
 import { clampTrim } from "./trim-gain";
+import { drumMakeup, drumVelocityGain } from "./drum-levels";
 import { keysSnapshot, subscribeKeys } from "./active-keys";
 import type { DrumKitId, DrumPad, PluginInstance, SynthPatch, Track } from "./types";
 import { getInputChannel, getInputGainDb, getOutputDevice, isAppleMobile, openMicOrThrow, outputRoutingHint, preferredRecordingMime, releaseMic } from "./mic";
@@ -254,7 +255,7 @@ export class SyncLabEngine {
   /** Master, send returns and buses. Shared by the live context and offline song renders. */
   protected buildGraph(ctx: BaseAudioContext) {
     const master = ctx.createGain();
-    master.gain.value = this.busStates["master"]?.muted ? 0 : 0.85 * (this.busStates["master"]?.volume ?? 1);
+    master.gain.value = this.busStates["master"]?.muted ? 0 : (this.busStates["master"]?.volume ?? 1) * clampTrim(this.busStates["master"]?.gain);
     const analyser = ctx.createAnalyser();
     analyser.fftSize = 1024;
     master.connect(analyser);
@@ -511,7 +512,7 @@ export class SyncLabEngine {
     // The master fader controls the complete mix, including every bus and FX return.
     // The "master" routing bus stays at unity so direct tracks are not attenuated twice.
     if (id === "master") {
-      this.master?.gain.setTargetAtTime(muted ? 0 : 0.85 * clamp(volume, 0, 2) * clampTrim(gain), this.ctx.currentTime, 0.02);
+      this.master?.gain.setTargetAtTime(muted ? 0 : clamp(volume, 0, 2) * clampTrim(gain), this.ctx.currentTime, 0.02);
       return;
     }
     this.busNode(id).gain.setTargetAtTime(muted ? 0 : clamp(volume, 0, 2), this.ctx.currentTime, 0.02);
@@ -3451,7 +3452,8 @@ export class SyncLabEngine {
     out.gain.value = pad.volume;
     const p = ctx.createStereoPanner();
     p.pan.value = clamp(pad.pan, -1, 1);
-    const vol = velocity;
+    // gentle velocity curve; built-in voices get makeup below so they peak like normalized samples
+    const vol = drumVelocityGain(velocity);
     const tune = Math.pow(2, pad.pitch / 12);
     const dec = 0.1 + pad.decay;
 
@@ -3543,7 +3545,10 @@ export class SyncLabEngine {
     env.gain.setValueAtTime(1, t + atk + hold);
     env.gain.exponentialRampToValueAtTime(0.0001, t + atk + hold + rel);
     node.connect(env);
-    env.connect(p);
+    const makeup = ctx.createGain();
+    makeup.gain.value = drumMakeup(pad.kit, pad.kind, pad.voice);
+    env.connect(makeup);
+    makeup.connect(p);
     p.connect(ch.input);
 
     // user sample on this pad: play the real audio through the same shaping chain
@@ -3573,6 +3578,8 @@ export class SyncLabEngine {
     };
     const sampleBuf = pad.sampleUrl ? (pad.reverse ? this.reversed(pad.sampleUrl) : this.sampleBuffers.get(pad.sampleUrl)) : undefined;
     if (sampleBuf) {
+      // the user's own sample keeps its recorded level
+      makeup.gain.value = 1;
       const src = ctx.createBufferSource();
       src.buffer = sampleBuf;
       src.playbackRate.value = tune;

@@ -84,3 +84,4 @@ Bass Generator is a Bassline-Generator-style player in bassline-player.ts: deter
 
 Audio file loading goes through decodeAudioFile (aiff-decode.ts), which reads AIFF/AIFF-C itself and passes everything else to decodeAudioData, because only Safari decodes AIFF natively.
 Live playback schedules muted/soloed-out channels (ScheduleLive.includeSilenced) and silences them at the channel fader, so unmute/solo changes are heard immediately; exports and MIDI files still skip them.
+Built-in drum voices get per-voice makeup from drum-levels.ts (measured table) so they peak near 0 dBFS like normalized samples, with a square-root velocity curve; user pad samples keep their level, and the master carries no hidden attenuation, so a lone channel reads the same on the master.
