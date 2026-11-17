@@ -201,7 +201,7 @@ html[data-reduce-motion] *, html[data-reduce-motion] *::before, html[data-reduce
   --arrangement-wave: color-mix(in oklab, var(--clip-audio) 35%, var(--arrangement-ink));
   --arrangement-clip-face: var(--clip-audio);
   --arrangement-clip-selected: color-mix(in oklab, var(--clip-audio) 48%, var(--playhead));
-  --arrangement-clip-edge: color-mix(in oklab, var(--clip-audio) 65%, var(--arrangement-ink));
+  --arrangement-clip-edge: color-mix(in oklab, var(--clip-audio) 88%, var(--arrangement-ink));
   --arrangement-clip-label: color-mix(in oklab, var(--clip-audio) 68%, var(--arrangement-ink));
   --arrangement-selection-shadow: inset 0 0 0 1px var(--playhead);
 }
@@ -1800,7 +1800,7 @@ body:has(.payment-test-banner) .phone-console.mobile-studio { height: calc(100dv
   --arrangement-wave: color-mix(in oklab, var(--clip-audio) 35%, var(--arrangement-ink));
   --arrangement-clip-face: var(--clip-audio);
   --arrangement-clip-selected: color-mix(in oklab, var(--clip-audio) 48%, var(--playhead));
-  --arrangement-clip-edge: color-mix(in oklab, var(--clip-audio) 65%, var(--arrangement-ink));
+  --arrangement-clip-edge: color-mix(in oklab, var(--clip-audio) 88%, var(--arrangement-ink));
   --arrangement-clip-label: color-mix(in oklab, var(--clip-audio) 68%, var(--arrangement-ink));
   background: var(--arrangement-clip-face); border-color: var(--arrangement-clip-edge); color: var(--arrangement-wave);
 }

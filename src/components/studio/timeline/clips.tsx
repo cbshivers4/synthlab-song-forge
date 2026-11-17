@@ -302,7 +302,7 @@ export function Waveform({ track }: { track: Track }) {
             data-selected={active}
             data-cutting={cutting}
             className="arrangement-clip group absolute inset-y-1 flex touch-none flex-col overflow-hidden rounded-[2px] border transition-colors"
-            style={{ left: `${left}%`, width: `max(0px, calc(${width}% - 2px))`, ...(clip.color ? { "--clip-audio": clip.color, "--color-clip-audio": clip.color } : {}) } as CSSProperties}
+            style={{ left: `${left}%`, width: `max(0px, ${width}%)`, ...(clip.color ? { "--clip-audio": clip.color, "--color-clip-audio": clip.color } : {}) } as CSSProperties}
             onPointerDown={(e) => {
               deselect.down(e, active);
               setActiveClip(track.id, clip.id);
@@ -487,7 +487,7 @@ function MidiClip({ track }: { track: Track }) {
       if (side === "left") na = Math.max(lo, Math.min(b - 0.25, a + d));
       else nb = Math.min(hi, Math.max(a + 0.25, b + d));
       block.style.left = `${(na / total) * 100}%`;
-      block.style.width = `calc(${((nb - na) / total) * 100}% - 1px)`;
+      block.style.width = `${((nb - na) / total) * 100}%`;
     };
     const onUp = () => {
       window.removeEventListener("pointermove", onMove);
@@ -529,7 +529,7 @@ function MidiClip({ track }: { track: Track }) {
       data-note-region={active ? "active" : "part"}
       data-selected={active}
       className="arrangement-clip arrangement-midi absolute inset-y-1 flex cursor-grab flex-col overflow-hidden rounded-[2px] border active:cursor-grabbing"
-      style={{ left: `${a / total * 100}%`, width: `calc(${(b - a) / total * 100}% - 1px)` }}
+      style={{ left: `${a / total * 100}%`, width: `${(b - a) / total * 100}%` }}
       onPointerDown={(e) => {
         deselect.down(e, active);
         updateTrack(track.id, { activeRegion: a });
@@ -718,7 +718,7 @@ function DrumClip({ track }: { track: Track }) {
       if (side === "left") na = Math.max(lo, Math.min(b - 1, a + d));
       else nb = Math.min(hi, Math.max(a + 1, b + d));
       block.style.left = `${(na / total) * 100}%`;
-      block.style.width = `calc(${((nb - na) / total) * 100}% - 1px)`;
+      block.style.width = `${((nb - na) / total) * 100}%`;
     };
     const onUp = () => {
       window.removeEventListener("pointermove", onMove);
@@ -755,7 +755,7 @@ function DrumClip({ track }: { track: Track }) {
     const onMove = (ev: PointerEvent) => {
       const raw = b - a + (canvasPoint(ev.clientX, ev.clientY).x - x0) / Math.max(0.0001, perStep);
       len = Math.max(grid, Math.min(maxLen, Math.round(raw / grid) * grid));
-      block.style.width = `${len * perStep - 1}px`;
+      block.style.width = `${len * perStep}px`;
       block.dataset["bars"] = `${+(len / stepsPerBar()).toFixed(2)} BARS · STRETCH`;
     };
     const onUp = () => {
@@ -786,7 +786,7 @@ function DrumClip({ track }: { track: Track }) {
           onPointerDown={(e) => { deselect.down(e, active); updateTrack(track.id, { activeRegion: a }); select(track.id); beginPartDrag(e, a, b); }}
           onClick={deselect.click}
           onDoubleClick={() => { select(track.id); setPanel("drums"); }}
-          style={{ left: `${a / total * 100}%`, width: `calc(${(b - a) / total * 100}% - 1px)`, cursor: "grab", touchAction: "none" }}
+          style={{ left: `${a / total * 100}%`, width: `${(b - a) / total * 100}%`, cursor: "grab", touchAction: "none" }}
           title={`${track.name} beat part — drag to move, pull the left edge to trim, the right edge to stretch (Alt + right edge trims), double-click to open the drum machine`}>
           <div className="arrangement-clip-name flex h-[17px] shrink-0 items-center gap-1 px-1.5">
             <Disc3 className="size-2.5 shrink-0" />
