@@ -58,6 +58,25 @@ export function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track:
   const [confirm, setConfirm] = useState(false);
   const [dropping, setDropping] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  // The channel menu opens beside the pointer: a 1×1 anchor (the menu's trigger) is moved to the
+  // press point before the menu mounts, so Radix places it there instead of under the ⋮ button.
+  const headerRef = useRef<HTMLDivElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const [menuAt, setMenuAt] = useState<{ x: number; y: number } | null>(null);
+  const menuSourceRef = useRef<"button" | "pointer" | "item">("pointer");
+  const openMenuAt = (x: number, y: number, source: "button" | "pointer" = "pointer") => {
+    const head = headerRef.current;
+    if (head) { const r = canvasRect(head); setMenuAt({ x: x - r.left, y: y - r.top }); }
+    else setMenuAt(null);
+    menuSourceRef.current = source;
+    setMenuOpen(true);
+  };
+  const openMenuFromButton = () => {
+    const el = menuButtonRef.current;
+    if (!el) { menuSourceRef.current = "button"; setMenuOpen(true); return; }
+    const r = canvasRect(el);
+    openMenuAt(r.left, r.top, "button");
+  };
   const [makingFile, setMakingFile] = useState(false);
   const [pastePosition, setPastePosition] = useState<number | null>(null);
   const clipTapRef = useRef<{ x: number; y: number } | null>(null);
@@ -74,7 +93,9 @@ export function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track:
     else if (track.kind === "instrument" || track.kind === "midi") setPanel("piano");
     else openEditor();
   };
-  const selectForEditing = () => {
+  const menuTapRef = useRef<{ x: number; y: number } | null>(null);
+  const selectForEditing = (at?: { x: number; y: number }) => {
+    if (at) menuTapRef.current = at;
     select(track.id);
     setPastePosition(null);
     if (tapTimerRef.current !== null) {
@@ -84,7 +105,13 @@ export function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track:
       openRoll();
       return;
     }
-    tapTimerRef.current = window.setTimeout(() => { tapTimerRef.current = null; setMenuOpen(true); }, 300);
+    tapTimerRef.current = window.setTimeout(() => {
+      tapTimerRef.current = null;
+      const tap = menuTapRef.current;
+      menuTapRef.current = null;
+      if (tap) openMenuAt(tap.x, tap.y);
+      else openMenuFromButton();
+    }, 300);
   };
   const gestureRef = useRef<{ x: number; y: number; timer: number | null; moved: boolean } | null>(null);
   const suppressClickRef = useRef(false);
@@ -348,7 +375,7 @@ export function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track:
     gesture.timer = window.setTimeout(() => {
       suppressClickRef.current = true;
       select(track.id);
-      setMenuOpen(true);
+      openMenuAt(gesture.x, gesture.y);
       navigator.vibrate?.(18);
     }, 550);
     gestureRef.current = gesture;
@@ -500,7 +527,7 @@ export function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track:
         const end = canvasPoint(e.clientX, e.clientY);
         if (Math.hypot(end.x - start.x, end.y - start.y) > 6) return;
         // Finish the existing part-selection handler before opening its editor/menu.
-        window.setTimeout(selectForEditing, 0);
+        window.setTimeout(() => selectForEditing({ x: end.x, y: end.y }), 0);
       }}
       onClick={(e) => {
         if (!e.currentTarget.contains(e.target as Node)) return;
@@ -515,12 +542,13 @@ export function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track:
         // Clicks from the track menu arrive through a portal; they act on their own and never jump to the piano roll.
         if (!e.currentTarget.contains(e.target as Node)) return;
         const target = e.target as HTMLElement;
-        if (!target.closest("button,input,textarea,select,[role='slider'],[role='combobox'],[role='menuitem'],[role='menu'],[data-cut-tool]")) selectForEditing();
+        if (!target.closest("button,input,textarea,select,[role='slider'],[role='combobox'],[role='menuitem'],[role='menu'],[data-cut-tool]")) selectForEditing(canvasPoint(e.clientX, e.clientY));
       }}
       onContextMenu={(e) => {
         e.preventDefault();
         select(track.id);
-        setMenuOpen(true);
+        const p = canvasPoint(e.clientX, e.clientY);
+        openMenuAt(p.x, p.y);
       }}
       onDragOver={(e) => {
         e.preventDefault();
@@ -533,6 +561,7 @@ export function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track:
       <div
         className="track-touch-header relative min-w-0 w-[calc(var(--timeline-header-width)_-_4px)] shrink-0 space-y-1 border-r border-border bg-surface px-2 py-1.5"
         data-track-tint
+        ref={headerRef}
         style={{ "--track-tint": track.color } as CSSProperties}
         onPointerDown={startPhoneGesture}
         onPointerMove={movePhoneGesture}
@@ -552,7 +581,7 @@ export function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track:
           const el = e.target as HTMLElement;
           if (el.closest("button,input,[role='slider'],[role='combobox'],[role='menuitem'],[role='menu']")) return;
           e.stopPropagation();
-          selectForEditing();
+          selectForEditing(canvasPoint(e.clientX, e.clientY));
         }}
       >
         <div className="flex min-w-0 flex-wrap items-center gap-1">
@@ -607,7 +636,7 @@ export function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track:
             <Button variant="ghost" className="h-6 min-w-0 flex-1 justify-start px-0 py-0 text-left font-display text-[11px] font-semibold" title={track.name} onClick={(e) => {
               e.stopPropagation();
               if (e.shiftKey) { e.preventDefault(); rangeFromAnchor(); return; }
-              selectForEditing();
+              selectForEditing(canvasPoint(e.clientX, e.clientY));
             }}>
               <span className="truncate">{index + 1}. {track.name}</span>
             </Button>
@@ -641,12 +670,36 @@ export function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track:
           <TrackNotes track={track} className="ml-auto" />
           {/* Not modal: a tapped block's own quick menu (Delete / move to another track) must stay clickable while this is open. */}
           <DropdownMenu modal={false} open={menuOpen} onOpenChange={setMenuOpen}>
+            {/* 1×1 anchor the menu is placed against; openMenuAt moves it to the press point. */}
             <DropdownMenuTrigger asChild>
-              <Button size="icon" variant="ghost" className={`channel-menu-trigger ${isMobile ? "size-8" : "size-6"} shrink-0 touch-manipulation`} aria-label="Track menu" title={`${track.name} channel menu`} onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
-                <MoreVertical className="size-4" />
-              </Button>
+              <span aria-hidden className="pointer-events-none absolute size-px" style={{ left: menuAt?.x ?? 0, top: menuAt?.y ?? 0 }} />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="timeline-channel-menu track-tinted-menu min-w-56" style={trackMenuStyle(track.color)}>
+            <Button
+              ref={menuButtonRef}
+              size="icon"
+              variant="ghost"
+              className={`channel-menu-trigger ${isMobile ? "size-8" : "size-6"} shrink-0 touch-manipulation`}
+              aria-label="Track menu"
+              aria-haspopup="menu"
+              aria-expanded={menuOpen}
+              title={`${track.name} channel menu`}
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => { e.stopPropagation(); openMenuFromButton(); }}
+            >
+              <MoreVertical className="size-4" />
+            </Button>
+            <DropdownMenuContent
+              side="bottom"
+              align="start"
+              sideOffset={6}
+              collisionPadding={8}
+              onClickCapture={() => { menuSourceRef.current = "item"; }}
+              onCloseAutoFocus={(e) => {
+                if (menuSourceRef.current === "button") { e.preventDefault(); menuButtonRef.current?.focus(); }
+              }}
+              className="timeline-channel-menu track-tinted-menu min-w-56"
+              style={trackMenuStyle(track.color)}
+            >
               <DropdownMenuLabel>{track.name}</DropdownMenuLabel>
               <DropdownMenuItem onClick={() => {
                 if (track.kind === "instrument" || track.kind === "midi") { select(track.id); setPanel("piano"); }
@@ -1193,7 +1246,10 @@ export function TrackRow({ track, index, headerWidth, setHeaderWidth }: { track:
               openRoll();
               return;
             }
-            tapTimerRef.current = window.setTimeout(() => { tapTimerRef.current = null; setMenuOpen(true); }, 300);
+            tapTimerRef.current = window.setTimeout(() => {
+              tapTimerRef.current = null;
+              openMenuAt(point.x, point.y);
+            }, 300);
             return;
           }
           if (editTool === "split" || editTool === "razor") {
