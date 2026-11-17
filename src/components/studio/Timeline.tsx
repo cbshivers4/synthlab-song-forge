@@ -87,8 +87,16 @@ export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandl
   useEffect(() => {
     const onDown = (e: PointerEvent) => {
       const target = e.target;
-      if (!(target instanceof Element) || target === document.documentElement || target === document.body) return;
-      if (sectionRef.current?.contains(target)) return;
+      const section = sectionRef.current;
+      if (!(target instanceof Element) || !section) return;
+      if (target === document.documentElement || target === document.body) {
+        // An open menu blocks the page, so the press lands on <body>: judge it by where it was.
+        const r = section.getBoundingClientRect();
+        if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) return;
+        clearRef.current();
+        return;
+      }
+      if (section.contains(target)) return;
       if (target.closest(KEEP_SELECTION)) return;
       clearRef.current();
     };
