@@ -16,6 +16,7 @@ import { MODULAR_SCOPE_TYPES, attachModularScope, modularScopeId } from './modul
 import { playbackPreferences } from "./preferences";
 import { encodeWav } from "./bounce";
 import { isExternal, sendExternalNote, stopExternalNotes } from "./external-midi";
+import { clampTrim } from "./trim-gain";
 import { keysSnapshot, subscribeKeys } from "./active-keys";
 import type { DrumKitId, DrumPad, PluginInstance, SynthPatch, Track } from "./types";
 import { getInputChannel, getInputGainDb, getOutputDevice, isAppleMobile, openMicOrThrow, outputRoutingHint, preferredRecordingMime, releaseMic } from "./mic";
@@ -510,7 +511,7 @@ export class SyncLabEngine {
     // The master fader controls the complete mix, including every bus and FX return.
     // The "master" routing bus stays at unity so direct tracks are not attenuated twice.
     if (id === "master") {
-      this.master?.gain.setTargetAtTime(muted ? 0 : 0.85 * clamp(volume, 0, 2) * clamp(gain, 0, 2), this.ctx.currentTime, 0.02);
+      this.master?.gain.setTargetAtTime(muted ? 0 : 0.85 * clamp(volume, 0, 2) * clampTrim(gain), this.ctx.currentTime, 0.02);
       return;
     }
     this.busNode(id).gain.setTargetAtTime(muted ? 0 : clamp(volume, 0, 2), this.ctx.currentTime, 0.02);
@@ -1903,7 +1904,7 @@ export class SyncLabEngine {
       }
       if (t.vca) this.trackVcas.set(t.id, t.vca);
       else this.trackVcas.delete(t.id);
-      ch.trim.gain.setTargetAtTime(clamp(t.gain ?? 1, 0, 2), this.ctx.currentTime, 0.02);
+      ch.trim.gain.setTargetAtTime(clampTrim(t.gain), this.ctx.currentTime, 0.02);
       ch.gain.gain.setTargetAtTime(audible && !vca?.muted ? t.volume * (vca?.volume ?? 1) : 0, this.ctx.currentTime, 0.02);
       for (const send of [ch.synthReverbScale, ch.synthChorusScale]) {
         send.gain.setTargetAtTime(audible && !vca?.muted ? clamp(t.volume * (vca?.volume ?? 1), 0, 2) : 0, this.ctx.currentTime, 0.02);

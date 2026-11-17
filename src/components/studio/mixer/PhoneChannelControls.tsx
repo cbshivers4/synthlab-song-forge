@@ -1,4 +1,5 @@
 import { FADER_MAX_GAIN } from "@/lib/synclab/fader-taper";
+import { TRIM_MAX_DB, TRIM_MIN_DB, trimDb, trimGain, trimKnobText } from "@/lib/synclab/trim-gain";
 import { useState, type CSSProperties, type ReactNode } from "react";
 import { ChevronLeft, ChevronRight, MoreHorizontal, NotebookPen, Palette, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -178,11 +179,11 @@ function TrackSound({ t, color }: { t: Track; color: string }) {
     <Panel>
       <Section title="Input gain & pan">
         <div className="flex items-center justify-around gap-3">
-          <Knob label="Gain" ariaLabel={`${t.name} gain`} value={t.gain ?? 1} min={0} max={2} step={0.01} unit="×" defaultValue={1} size={KNOB} onChange={(v) => updateTrack(t.id, { gain: v })} midiTarget={{ id: t.id, param: "gain" }} />
+          <Knob label="Gain" ariaLabel={`${t.name} gain`} value={trimDb(t.gain)} min={TRIM_MIN_DB} max={TRIM_MAX_DB} step={0.5} defaultValue={0} format={trimKnobText} size={KNOB} onChange={(db) => updateTrack(t.id, { gain: trimGain(db) })} midiTarget={{ id: t.id, param: "gain" }} />
           <Knob label="Pan" ariaLabel={`${t.name} pan`} value={t.pan} min={-1} max={1} step={0.01} defaultValue={0} format={panText} size={KNOB} onChange={(v) => updateTrack(t.id, { pan: v })} />
         </div>
         <div className="mt-2 grid grid-cols-2 gap-1.5">
-          <BigButton onClick={() => updateTrack(t.id, { gain: 1 })}>Gain 1×</BigButton>
+          <BigButton onClick={() => updateTrack(t.id, { gain: 1 })}>Gain 0 dB</BigButton>
           <BigButton onClick={() => updateTrack(t.id, { pan: 0 })}>Pan centre</BigButton>
         </div>
       </Section>
@@ -336,11 +337,11 @@ function MasterPanel({ color }: { color: string }) {
         <Panel>
           <Section title="Master gain & stereo width">
             <div className="flex items-center justify-around gap-3">
-              <Knob label="Gain" ariaLabel="Master gain" value={buses.master.gain ?? 1} min={0} max={2} step={0.01} unit="×" defaultValue={1} size={KNOB} onChange={(v) => setBus("master", { gain: v })} midiTarget={{ id: "master", param: "gain" }} />
+              <Knob label="Gain" ariaLabel="Master gain" value={trimDb(buses.master.gain)} min={TRIM_MIN_DB} max={TRIM_MAX_DB} step={0.5} defaultValue={0} format={trimKnobText} size={KNOB} onChange={(db) => setBus("master", { gain: trimGain(db) })} midiTarget={{ id: "master", param: "gain" }} />
               <Knob label="Width" ariaLabel="Master stereo width" value={width.get("width", 1)} min={0} max={2} step={0.01} defaultValue={1} format={(n) => (n === 0 ? "MONO" : `${Math.round(n * 100)}%`)} size={KNOB} onChange={(v) => width.set("width", v)} />
             </div>
             <div className="mt-2 grid grid-cols-2 gap-1.5">
-              <BigButton onClick={() => setBus("master", { gain: 1 })}>Gain 1×</BigButton>
+              <BigButton onClick={() => setBus("master", { gain: 1 })}>Gain 0 dB</BigButton>
               <BigButton on={buses.master.muted} onClick={() => setBus("master", { muted: !buses.master.muted })} className={buses.master.muted ? "border-amber-500 bg-amber-500 text-black" : undefined}>
                 {buses.master.muted ? "Muted" : "Mute master"}
               </BigButton>

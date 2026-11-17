@@ -83,3 +83,4 @@ Reel-to-reel designs (reel-designs.ts) are device-only machine faces scoped by d
 Bass Generator is a Bassline-Generator-style player in bassline-player.ts: deterministic seeded on-beat/off-beat source phrases (2 banks × 64) mixed into one mono line, with variators, Note Range, Minorness and shift applied there, so the note display, previews and timeline notes all come from currentLine/blgNotes; hand edits (pattern.edits) replace the generated line until a generator control changes.
 
 Audio file loading goes through decodeAudioFile (aiff-decode.ts), which reads AIFF/AIFF-C itself and passes everything else to decodeAudioData, because only Safari decodes AIFF natively.
+Live playback schedules muted/soloed-out channels (ScheduleLive.includeSilenced) and silences them at the channel fader, so unmute/solo changes are heard immediately; exports and MIDI files still skip them.

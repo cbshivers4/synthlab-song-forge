@@ -9,6 +9,7 @@ import { TrackIcon, TrackStylePicker } from "@/components/studio/TrackStyle";
 import type { AuxId, BusId, Track, VcaId } from "@/lib/synclab/types";
 import { cn } from "@/lib/utils";
 import { clearClip, reportLevel, useClipped } from "@/lib/synclab/clip-monitor";
+import { TRIM_MAX_DB, TRIM_MIN_DB, trimDb, trimGain, trimKnobText, trimText } from "@/lib/synclab/trim-gain";
 
 export const BUSES: BusId[] = ["drums", "vocals", "instruments", "synths", "fx", "master"];
 export const DB_TICKS = [6, 0, -6, -12, -24, -48];
@@ -161,22 +162,22 @@ export function Meter({ id, level, tall }: { id: string; level: number; tall?: b
 /** Pre-fader GAIN trim at the top of every channel strip — real input gain into the channel. */
 export function ChannelGain({ t, narrow }: { t: Track; narrow?: boolean }) {
   const { updateTrack } = useStudio();
-  const gain = t.gain ?? 1;
   return (
     <div
       className="mx-header-gain flex shrink-0 items-center justify-center"
       onClick={(e) => e.stopPropagation()}
-      title={`Input trim ${gain.toFixed(2)}× — before the fader and effects`}
+      title={`Input gain ${trimText(t.gain)} (−24 to +24 dB) — before the fader and effects · double-click for 0 dB`}
     >
       <Knob
         label={`${t.name} gain`}
-        value={gain}
-        min={0}
-        max={2}
-        step={0.01}
-        unit="×"
+        value={trimDb(t.gain)}
+        min={TRIM_MIN_DB}
+        max={TRIM_MAX_DB}
+        step={0.5}
+        defaultValue={0}
+        format={trimKnobText}
         size={narrow ? 26 : 30}
-        onChange={(v) => updateTrack(t.id, { gain: v })}
+        onChange={(db) => updateTrack(t.id, { gain: trimGain(db) })}
         midiTarget={{ id: t.id, param: "gain" }}
       />
     </div>

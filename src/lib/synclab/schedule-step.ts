@@ -20,6 +20,10 @@ export interface ScheduleLive {
   liveHit: (trackId: string, padId: string, step: number) => boolean;
   /** a note played live into this take (or replaced by it) was already heard; `when` is the audio time it would sound */
   skipNote: (noteId: string, when: number) => boolean;
+  /** Live playback keeps muted / soloed-out channels running behind their silent fader, so
+   *  unmuting (or clearing solo) is heard instantly instead of after the look-ahead and the
+   *  next note. Exports and MIDI files leave them out entirely. */
+  includeSilenced?: boolean;
 }
 
 export const OFFLINE_LIVE: ScheduleLive = { lastScheduled: null, pickupClip: () => false, liveHit: () => false, skipNote: () => false };
@@ -67,7 +71,8 @@ export function scheduleStep(engine: Engine, list: Track[], tp: Transport, n: nu
   // recorded notes (recordedEnd set) are absolute song positions: they play once, where the timeline draws them
   const abs = n % totalSteps;
   for (const t of list) {
-    if (t.muted || t.deviceBypassed || t.frozen || (anySolo && !t.solo)) continue;
+    if (t.deviceBypassed || t.frozen) continue;
+    if (!live.includeSilenced && (t.muted || (anySolo && !t.solo))) continue;
     const len = Math.max(1, t.steps);
     const s = n % len;
     // arrangement clips fire at their own position on the timeline

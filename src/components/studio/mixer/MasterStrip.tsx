@@ -1,4 +1,5 @@
 import { faderGain, faderPosition } from "@/lib/synclab/fader-taper";
+import { TRIM_MAX_DB, TRIM_MIN_DB, trimDb, trimGain, trimKnobText, trimText } from "@/lib/synclab/trim-gain";
 import { availableEffects } from "@/lib/synclab/effect-catalog";
 import { EffectPicker } from "../EffectPicker";
 import { useEffect, useRef, type CSSProperties } from "react";
@@ -256,23 +257,24 @@ export function MasterStrip({ level: peak }: { level: number }) {
             </button>
           </PopoverTrigger>
           <PopoverContent align="end" className="w-56 p-3">
-            <MidiLearnBlock id="master" params={["volume", "mute"]} />
+            <MidiLearnBlock id="master" params={["volume", "mute", "gain"]} />
           </PopoverContent>
         </Popover>
         <ChevronRight className="size-3.5 shrink-0" aria-hidden />
       <div
         className="mx-header-gain flex shrink-0 items-center justify-center"
-        title={`Master input trim ${(master.gain ?? 1).toFixed(2)}× — before the master fader`}
+        title={`Master input gain ${trimText(master.gain)} (−24 to +24 dB) — before the master fader · double-click for 0 dB`}
       >
         <Knob
           label="Master gain"
-          value={master.gain ?? 1}
-          min={0}
-          max={2}
-          step={0.01}
-          unit="×"
+          value={trimDb(master.gain)}
+          min={TRIM_MIN_DB}
+          max={TRIM_MAX_DB}
+          step={0.5}
+          defaultValue={0}
+          format={trimKnobText}
           size={30}
-          onChange={(v) => setBus("master", { gain: v })}
+          onChange={(db) => setBus("master", { gain: trimGain(db) })}
           midiTarget={{ id: "master", param: "gain" }}
         />
       </div>

@@ -28,6 +28,7 @@ import { appendDrumPad } from "./drum-banks";
 import { learnedDrumPad } from "./drum-midi";
 import { timelineUsesWaveform } from "./timeline-content";
 import { ccAction } from "./midi-actions";
+import { trimFromCc } from "./trim-gain";
 import { previewTrack } from "./note-preview";
 import { bendCents, playbackPreferences } from "./preferences";
 import { toast } from "sonner";
@@ -796,7 +797,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
            }
           if (target.id === "master") {
             if (target.param === "volume") setBuses((b) => ({ ...b, master: { ...b.master, volume: faderGain(v) } }));
-            else if (target.param === "gain") setBuses((b) => ({ ...b, master: { ...b.master, gain: ccRange(v, 0, 2, 0.01) } }));
+            else if (target.param === "gain") setBuses((b) => ({ ...b, master: { ...b.master, gain: trimFromCc(v) } }));
             else if (target.param === "mute" && v >= 0.5) setBuses((b) => ({ ...b, master: { ...b.master, muted: !b.master.muted } }));
             return;
            }
@@ -906,7 +907,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
                 ? target.param === "volume"
                   ? { ...t, volume: faderGain(v) }
                   : target.param === "gain"
-                    ? { ...t, gain: ccRange(v, 0, 2, 0.01) }
+                    ? { ...t, gain: trimFromCc(v) }
                     : target.param === "pan"
                       ? { ...t, pan: v * 2 - 1 }
                       : target.param === "mute"
@@ -1182,6 +1183,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     const scheduleStep = (n: number, when: number) =>
       scheduleSongStep(engine, tracksRef.current, transportRef.current, n, when, {
         lastScheduled,
+        includeSilenced: true,
         pickupClip: (id) => pickupClipIdsRef.current.delete(id),
         liveHit: isLiveHit,
         skipNote: (id, when) => {
