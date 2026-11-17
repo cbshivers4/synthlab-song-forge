@@ -61,24 +61,58 @@ export function Timeline({ phonePaged = false, desktopStyle = false, resizeHandl
       e.preventDefault();
       e.stopPropagation();
     }
-    clipBoxRef.current = { x: e.clientX, y: e.clientY, add: modifier, active: false };
+    const sc = scrollRef.current;
+    // Start point is kept in scrolled-content terms so the box stays anchored while the tracks scroll.
+    clipBoxRef.current = { x: e.clientX + (sc?.scrollLeft ?? 0), y: e.clientY + (sc?.scrollTop ?? 0), add: modifier, active: false };
+    let last = { x: e.clientX, y: e.clientY };
+    let raf = 0;
+    const draw = () => {
+      const b = clipBoxRef.current;
+      if (!b || !b.active) return;
+      const sx = b.x - (sc?.scrollLeft ?? 0), sy = b.y - (sc?.scrollTop ?? 0);
+      setClipBox({ x0: Math.min(sx, last.x), y0: Math.min(sy, last.y), x1: Math.max(sx, last.x), y1: Math.max(sy, last.y) });
+    };
+    // Near the top/bottom (or left/right) edge of the tracks, keep scrolling while the box is held there.
+    const edgeScroll = () => {
+      raf = 0;
+      const b = clipBoxRef.current;
+      if (!b?.active || !sc) return;
+      const r = sc.getBoundingClientRect();
+      const EDGE = 48;
+      const speed = (d: number) => Math.ceil(((EDGE - Math.max(0, d)) / EDGE) * 18);
+      let dy = 0, dx = 0;
+      if (last.y < r.top + EDGE) dy = -speed(last.y - r.top);
+      else if (last.y > r.bottom - EDGE) dy = speed(r.bottom - last.y);
+      if (last.x > r.right - EDGE) dx = speed(r.right - last.x);
+      else if (last.x < r.left + headerWidth + EDGE && sc.scrollLeft > 0) dx = -speed(last.x - r.left - headerWidth);
+      if (!dx && !dy) return;
+      const before = [sc.scrollLeft, sc.scrollTop];
+      sc.scrollBy(dx, dy);
+      if (sc.scrollLeft === before[0] && sc.scrollTop === before[1]) return;
+      draw();
+      raf = requestAnimationFrame(edgeScroll);
+    };
     const move = (ev: PointerEvent) => {
       const b = clipBoxRef.current;
       if (!b) return;
-      if (!b.active && Math.hypot(ev.clientX - b.x, ev.clientY - b.y) < 5) return;
+      last = { x: ev.clientX, y: ev.clientY };
+      if (!b.active && Math.hypot(ev.clientX + (sc?.scrollLeft ?? 0) - b.x, ev.clientY + (sc?.scrollTop ?? 0) - b.y) < 5) return;
       if (!b.active) document.body.style.userSelect = "none";
       b.active = true;
-      setClipBox({ x0: Math.min(b.x, ev.clientX), y0: Math.min(b.y, ev.clientY), x1: Math.max(b.x, ev.clientX), y1: Math.max(b.y, ev.clientY) });
+      draw();
+      if (!raf) raf = requestAnimationFrame(edgeScroll);
     };
     const up = (ev: PointerEvent) => {
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", up);
       window.removeEventListener("pointercancel", up);
-      const b = clipBoxRef.current;
+      if (raf) cancelAnimationFrame(raf);
+      const b0 = clipBoxRef.current;
       clipBoxRef.current = null;
       setClipBox(null);
-      if (!b?.active) return;
+      if (!b0?.active) return;
       document.body.style.userSelect = "";
+      const b = { ...b0, x: b0.x - (sc?.scrollLeft ?? 0), y: b0.y - (sc?.scrollTop ?? 0) };
       const box = { l: Math.min(b.x, ev.clientX), r: Math.max(b.x, ev.clientX), t: Math.min(b.y, ev.clientY), btm: Math.max(b.y, ev.clientY) };
       const hit = (r: DOMRect) => r.left < box.r && r.right > box.l && r.top < box.btm && r.bottom > box.t;
       const picks: { trackId: string; clipId?: string }[] = [];
