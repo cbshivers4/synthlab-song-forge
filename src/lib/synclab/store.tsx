@@ -39,7 +39,7 @@ import { TRACK_COLORS, applyPreset, defaultPads, defaultPatch, uid } from "./pre
 import { moveClipToNewIn, movePartBetweenTracks, moveTrackToIndexIn, moveTrackToNewIn } from "./track-move";
 import { BUILT_IN_PLUGINS, instantiate, processMidiThroughPlugins, withDefaultParams } from "./plugins";
 import { insertRigDevice } from "./guitar-rig";
-import { getMidiAccess, listInputs, listOutputs, midiSupported, midiUnsupportedMessage, subscribe, type MidiPortInfo } from "./midi";
+import { claimControllerMidi, getMidiAccess, listInputs, listOutputs, midiInputEnabled, midiSupported, midiUnsupportedMessage, subscribe, type MidiPortInfo } from "./midi";
 import { getPadBank, setPadBank } from "./pad-session";
 import { getLooper } from "./live-looper";
 import { getReelRecorder } from "./reel-recorder";
@@ -54,7 +54,9 @@ import { markLiveHit, isLiveHit, clearLiveHits, neighbourLiveHits } from "./live
 import { keyDown, keyUp } from "./active-keys";
 import { arpLiveRelease, arpReleaseAll, stopLiveArps } from "./live-arp";
 import { HELD_NOTE_SECONDS, holdApplies, latchPitch, onHoldRelease, releaseLatched } from "./synth-hold";
-import { controllerAutoButton, controllerAutoMap, shiftStripBank, stripTrackIndex } from "./controller-profiles";
+import { controllerAutoButton, controllerAutoMap, resolveController, shiftStripBank, stripTrackIndex, withKnownSurfaces, type RemoteButton, type StripParam } from "./controller-profiles";
+import { mackieAction } from "./mackie-control";
+import { describeRaw, noteSurfaceEvent } from "./surface-monitor";
 import type { CloudSession } from "./cloud";
 import type {
   AudioClip,
@@ -129,6 +131,17 @@ export interface MidiTarget {
 export const midiTargetKey = (t: MidiTarget) => `${t.id}:${t.param}`;
 const MIDI_MAP_KEY = "synclab.midimap";
 const MIDI_INPUT_KEY = "synclab.midi.input";
+/** Port names of known mixer surfaces the user switched off, so plugging them back in respects that. */
+const MIDI_OFF_KEY = "synclab.midi.switched-off";
+const readSwitchedOff = (): string[] => {
+  try {
+    const v: unknown = JSON.parse(window.localStorage.getItem(MIDI_OFF_KEY) ?? "[]");
+    return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
+  } catch { return []; }
+};
+const writeSwitchedOff = (names: string[]) => {
+  try { window.localStorage.setItem(MIDI_OFF_KEY, JSON.stringify(names)); } catch { /* storage unavailable */ }
+};
 
 /** Preserve the untouched portions of an older take when a new recording covers only part of it. */
 /** Snaps where a finished take lands to the edit grid (defaults to the nearest step). */
@@ -544,6 +557,10 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       return null;
     }
   });
+  const midiInputIdRef = useRef(midiInputId);
+  midiInputIdRef.current = midiInputId;
+  /** Inputs whose surface is in a Mackie Control DAW mode (seen sending fader pitch bend or button notes). */
+  const mackiePortsRef = useRef(new Set<string>());
   const [midiLearning, setMidiLearning] = useState(false);
   // Hardware mixer control: CC number -> mixer target, remembered between sessions.
   const [midiMap, setMidiMap] = useState<Record<string, MidiTarget>>(() => {
@@ -724,6 +741,15 @@ export function StudioProvider({ children }: { children: ReactNode }) {
 
   // Remember which controller the user picked in Settings.
   const setMidiInputPersist = useCallback((id: string | null) => {
+    // Remember surfaces the user switched off, so a hot-plug never turns them back on.
+    const prev = midiInputIdRef.current;
+    const off = new Set(readSwitchedOff());
+    for (const p of midiInputsRef.current) {
+      const was = midiInputEnabled(prev, p.id), now = midiInputEnabled(id, p.id);
+      if (was && !now) off.add(p.name);
+      else if (now) off.delete(p.name);
+    }
+    writeSwitchedOff([...off]);
     setMidiInputId(id);
     try {
       if (id) window.localStorage.setItem(MIDI_INPUT_KEY, id);
@@ -732,6 +758,17 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       /* storage unavailable */
     }
   }, []);
+
+  // A known mixer surface (Korg nanoKONTROL…) plugged in after choosing only some devices is
+  // turned on automatically, unless the user switched it off before.
+  useEffect(() => {
+    if (!midiInputs.length) return;
+    const cur = midiInputIdRef.current;
+    const next = withKnownSurfaces(cur, midiInputs, readSwitchedOff());
+    if (next === cur) return;
+    setMidiInputId(next);
+    try { if (next) window.localStorage.setItem(MIDI_INPUT_KEY, next); } catch { /* storage unavailable */ }
+  }, [midiInputs]);
 
   // Live MIDI controller input: plays the armed/selected instrument and
   // records notes onto it while the transport is recording.
@@ -742,8 +779,105 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     }
     let off = () => {};
     let cancelled = false;
+    let offSurface = () => {};
     void getMidiAccess().then((a) => {
       if (cancelled) return;
+      // Mixer-surface helpers shared by the CC (Assignable) layout and Mackie Control DAW modes.
+      const runButton = (button: RemoteButton) => {
+        const studio = apiRef.current;
+        const tp = transportRef.current;
+        const bar = stepsPerBar();
+        if (button === "play") studio?.togglePlay();
+        else if (button === "stop") void studio?.stop();
+        else if (button === "record") studio?.toggleRecord();
+        else if (button === "loop") setTransportState((s) => ({ ...s, loop: !s.loop }));
+        else if (button === "start") { if (!tp.playing && !tp.recording) setTransportState((s) => ({ ...s, step: s.loop ? (s.loopStart ?? 0) : 0 })); }
+        else if (button === "rewind" || button === "forward") {
+          if (!tp.playing && !tp.recording) setTransportState((s) => {
+            const at = s.step ?? 0;
+            const next = button === "rewind" ? Math.ceil(at / bar - 1) * bar : Math.floor(at / bar + 1) * bar;
+            return { ...s, step: Math.max(0, Math.min(songSteps(s.bars) - 1, next)) };
+          });
+        } else {
+          const bank = shiftStripBank(button === "bank-next" ? 1 : -1, tracksRef.current.length);
+          toast(`Controller: tracks ${bank * 8 + 1}–${bank * 8 + 8}`);
+        }
+      };
+      const runStrip = (strip: number, param: StripParam, v: number) => {
+        const track = tracksRef.current[stripTrackIndex(strip)];
+        if (!track) return;
+        if ((param === "solo" || param === "mute" || param === "arm" || param === "select") && v < 0.5) return; // toggle on press only
+        if (param === "select") { setSelectedId(track.id); return; }
+        setTracks((ts) => ts.map((t) => {
+          if (t.id !== track.id) return t;
+          if (param === "volume") return { ...t, volume: faderGain(v) };
+          if (param === "pan") return { ...t, pan: v * 2 - 1 };
+          if (param === "solo") return { ...t, ...manualSwitchPatch({ solo: !t.solo }, isTakingSwitches()) };
+          if (param === "mute") return { ...t, ...manualSwitchPatch({ muted: !t.muted }, isTakingSwitches()) };
+          return { ...t, armed: !t.armed };
+        }));
+      };
+      const BUTTON_LABEL: Record<RemoteButton, string> = { play: "Play", stop: "Stop", record: "Record", start: "Go to start", rewind: "One bar back", forward: "One bar forward", loop: "Loop on/off", "bank-prev": "Tracks ◀", "bank-next": "Tracks ▶" };
+      const stripLabel = (strip: number, param: string) => {
+        const i = stripTrackIndex(strip);
+        const t = tracksRef.current[i];
+        return `Track ${i + 1}${t ? ` (${t.name})` : " (no track there)"} ${param}`;
+      };
+      // Known mixer surfaces: report every message in Settings, and decode Mackie Control DAW modes
+      // (faders = pitch bend, buttons = notes) before notes could play an instrument.
+      offSurface = claimControllerMidi((m) => {
+        const profile = resolveController(m.portName);
+        if (!profile?.map) {
+          noteSurfaceEvent({ port: m.portName || "MIDI input", raw: describeRaw(m.status, m.d1, m.d2), action: "No mixer layout for this device — notes play instruments, other controls need MIDI Learn" });
+          return false;
+        }
+        const cmd = m.status & 0xf0;
+        const ch = m.status & 0x0f;
+        const raw = describeRaw(m.status, m.d1, m.d2);
+        const port = m.portName || profile.model;
+        if (profile.mackie && profile.port.test(m.portName) && (cmd === 0xe0 || cmd === 0x90 || cmd === 0x80) && !mackiePortsRef.current.has(m.inputId)) {
+          mackiePortsRef.current.add(m.inputId);
+          toast(`${profile.model}: DAW mode detected`, { description: "Using its Mackie Control layout — faders, knobs and buttons control tracks 1–8." });
+        }
+        const mackie = mackiePortsRef.current.has(m.inputId);
+        const mode = mackie ? "DAW mode (Mackie Control)" : "Assignable (CC)";
+        const learnedKey = cmd === 0xb0 ? `${ch}:${m.d1}` : cmd === 0x90 || cmd === 0x80 ? `n:${ch}:${m.d1}` : null;
+        if (midiLearnRef.current || (learnedKey && midiMapRef.current[learnedKey])) {
+          noteSurfaceEvent({ port, raw, mode, action: midiLearnRef.current ? "MIDI Learn" : "Your MIDI Learn assignment" });
+          return false;
+        }
+        if (!mackie) {
+          let action = "Not used by the mixer layout";
+          if (cmd === 0xb0) {
+            const b = controllerAutoButton(m.portName, m.d1);
+            const hit = controllerAutoMap(m.portName, m.d1);
+            if (b) action = BUTTON_LABEL[b];
+            else if (hit) action = stripLabel(hit.strip, hit.param);
+          }
+          noteSurfaceEvent({ port, raw, mode, action });
+          return false;
+        }
+        const act = mackieAction(m.status, m.d1, m.d2);
+        let action = "Not used";
+        if (act?.kind === "volume") { runStrip(act.strip, "volume", act.value); action = stripLabel(act.strip, "volume"); }
+        else if (act?.kind === "pan") {
+          const track = tracksRef.current[stripTrackIndex(act.strip)];
+          if (track) setTracks((ts) => ts.map((t) => t.id === track.id ? { ...t, pan: Math.max(-1, Math.min(1, (t.pan ?? 0) + act.delta)) } : t));
+          action = stripLabel(act.strip, "pan");
+        } else if (act?.kind === "switch") { runStrip(act.strip, act.param, 1); action = stripLabel(act.strip, act.param); }
+        else if (act?.kind === "master") { setBuses((b) => ({ ...b, master: { ...b.master, volume: faderGain(act.value) } })); action = "Master volume"; }
+        else if (act?.kind === "button") { runButton(act.button); action = BUTTON_LABEL[act.button]; }
+        else if (act?.kind === "jog") {
+          const tp = transportRef.current;
+          if (!tp.playing && !tp.recording) {
+            const beat = Math.max(1, Math.round(stepsPerBar() / Math.max(1, tp.beatsPerBar ?? 4)));
+            setTransportState((s) => ({ ...s, step: Math.max(0, Math.min(songSteps(s.bars) - 1, (s.step ?? 0) + act.dir * beat)) }));
+          }
+          action = act.dir > 0 ? "Jog: one beat forward" : "Jog: one beat back";
+        } else if (act?.kind === "ignore") action = "Button released / not used";
+        noteSurfaceEvent({ port, raw, mode, action });
+        return true; // a Mackie-mode surface never plays notes or bends synths
+      });
       off = subscribe(a, midiInputId, (msg, inputId) => {
         const triggerLearnedDrum = (target: MidiTarget, velocity: number) => {
           const hit = learnedDrumPad(tracksRef.current, target);
@@ -791,25 +925,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             const portName = midiInputsRef.current.find((p) => p.id === inputId)?.name;
             const button = controllerAutoButton(portName, msg.cc);
             if (button) {
-              if (msg.value < 0.5) return; // act on press only
-              const studio = apiRef.current;
-              const tp = transportRef.current;
-              const bar = stepsPerBar();
-              if (button === "play") studio?.togglePlay();
-              else if (button === "stop") void studio?.stop();
-              else if (button === "record") studio?.toggleRecord();
-              else if (button === "loop") setTransportState((s) => ({ ...s, loop: !s.loop }));
-              else if (button === "start") { if (!tp.playing && !tp.recording) setTransportState((s) => ({ ...s, step: s.loop ? (s.loopStart ?? 0) : 0 })); }
-              else if (button === "rewind" || button === "forward") {
-                if (!tp.playing && !tp.recording) setTransportState((s) => {
-                  const at = s.step ?? 0;
-                  const next = button === "rewind" ? Math.ceil(at / bar - 1) * bar : Math.floor(at / bar + 1) * bar;
-                  return { ...s, step: Math.max(0, Math.min(songSteps(s.bars) - 1, next)) };
-                });
-              } else {
-                const bank = shiftStripBank(button === "bank-next" ? 1 : -1, tracksRef.current.length);
-                toast(`Controller: tracks ${bank * 8 + 1}–${bank * 8 + 8}`);
-              }
+              if (msg.value >= 0.5) runButton(button); // act on press only
               return;
             }
             const hit = controllerAutoMap(portName, msg.cc);
@@ -822,19 +938,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
               if (ext) sendExternalCc(ext.id, msg.cc, msg.value);
               return;
             }
-            const track = tracksRef.current[stripTrackIndex(hit.strip)];
-            if (!track) return;
-            const v = msg.value;
-            if ((hit.param === "solo" || hit.param === "mute" || hit.param === "arm" || hit.param === "select") && v < 0.5) return; // toggle on press only
-            if (hit.param === "select") { setSelectedId(track.id); return; }
-            setTracks((ts) => ts.map((t) => {
-              if (t.id !== track.id) return t;
-              if (hit.param === "volume") return { ...t, volume: faderGain(v) };
-              if (hit.param === "pan") return { ...t, pan: v * 2 - 1 };
-              if (hit.param === "solo") return { ...t, ...manualSwitchPatch({ solo: !t.solo }, isTakingSwitches()) };
-              if (hit.param === "mute") return { ...t, ...manualSwitchPatch({ muted: !t.muted }, isTakingSwitches()) };
-              return { ...t, armed: !t.armed };
-            }));
+            runStrip(hit.strip, hit.param, msg.value);
             return;
           }
           const v = msg.value;
@@ -1163,6 +1267,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
       off();
+      offSurface();
     };
   }, [midiInputId, midiInputs]);
 

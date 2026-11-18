@@ -6,6 +6,20 @@ import { useStudio } from "@/lib/synclab/store";
 import { CONTROLLERS, chosenControllerId, setChosenControllerId } from "@/lib/synclab/controller-profiles";
 import { midiSupported, midiUnsupportedMessage, midiInputEnabled, toggleMidiInput } from "@/lib/synclab/midi";
 import { ControllerLibrary, DevicePicture } from "./ControllerLibrary";
+import { useSurfaceEvent } from "@/lib/synclab/surface-monitor";
+
+/** Live readout of the last thing a controller sent, so you can tell whether it reaches the app. */
+function LastControllerMessage() {
+  const event = useSurfaceEvent();
+  return <div role="status" aria-live="polite" className="border border-border bg-surface px-3 py-3 text-sm">
+    <div className="text-xs font-semibold">Last message from your controller</div>
+    {event ? <div className="mt-1 space-y-0.5">
+      <div className="break-words font-medium">{event.port}{event.mode ? <span className="text-muted-foreground"> · {event.mode}</span> : null}</div>
+      <div className="font-mono text-xs text-muted-foreground">{event.raw}</div>
+      <div className="text-xs text-primary">→ {event.action}</div>
+    </div> : <p className="mt-1 text-xs text-muted-foreground">Nothing received yet. Move a fader or press a button — if nothing shows up here, the controller isn't reaching the app: check the cable, that its input is enabled below, and that you're using Chrome or Edge.</p>}
+  </div>;
+}
 
 export function MidiSettingsPanel({ onDetect }: { onDetect: () => void }) {
   const { midiInputs, midiOutputs, midiInputId, setMidiInput } = useStudio();
@@ -46,6 +60,7 @@ export function MidiSettingsPanel({ onDetect }: { onDetect: () => void }) {
         {!midiInputs.length && <div className="px-3 py-5 text-sm text-muted-foreground">No connected MIDI inputs reported.</div>}
       </div>
     </div>
+    <LastControllerMessage />
     {!supported && <p role="status" className="text-sm text-muted-foreground">{midiUnsupportedMessage()}</p>}
     <div className="flex flex-wrap gap-2">
       <ControllerLibrary trigger={<Button variant="outline" size="sm">Edit controller profile</Button>} />

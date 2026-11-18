@@ -30,6 +30,8 @@ export type ControllerProfile = {
   map: Record<number, AutoMapHit> | null;
   /** Transport / bank buttons by CC, when the factory layout has them. */
   buttons?: Record<number, RemoteButton>;
+  /** The device also has DAW modes that speak Mackie Control (faders = pitch bend, buttons = notes). */
+  mackie?: boolean;
   summary: string;
 };
 
@@ -52,7 +54,8 @@ export const CONTROLLERS: ControllerProfile[] = [
     },
     // Korg's factory scene 1 (Assignable mode) transport section.
     buttons: { 80: "play", 63: "stop", 81: "record", 62: "start", 58: "rewind", 59: "forward", 54: "loop", 60: "bank-prev", 61: "bank-next" },
-    summary: "Factory scene 1, set up automatically: faders = volume, knobs = pan, M / S / R = mute, solo, record-arm and SELECT picks the channel for tracks 1–8. PLAY, STOP, REC, |◀ (go to start), ◀◀ / ▶▶ (one bar back / forward) and CYCLE (loop) run the transport; TRACK ◀ / ▶ switch to tracks 9–16 and back. Your own MIDI Learn assignments win over these.",
+    mackie: true,
+    summary: "Works in Assignable mode (factory scene 1) and in Korg's DAW modes (Studio One, Cubase, Live, SONAR, Digital Performer — Mackie Control), detected automatically: faders = volume, knobs = pan, M / S / R = mute, solo, record-arm and SELECT picks the channel for tracks 1–8. PLAY, STOP, REC, |◀ (go to start), ◀◀ / ▶▶ (one bar back / forward) and CYCLE (loop) run the transport; TRACK ◀ / ▶ switch to tracks 9–16 and back. Pro Tools (HUI) mode is not supported. Your own MIDI Learn assignments win over these.",
   },
   {
     id: "korg-nanokey-studio", maker: "Korg", model: "nanoKEY Studio",
@@ -67,6 +70,7 @@ export const CONTROLLERS: ControllerProfile[] = [
     look: { faders: 8, knobs: 8, pads: 0, keys: 0, buttons: 24, body: "#1b1c1f", accent: "#e8e8e8" },
     map: { ...range(seq(0), "volume"), ...range(seq(16), "pan"), ...range(seq(32), "solo"), ...range(seq(48), "mute"), ...range(seq(64), "arm") },
     buttons: { 41: "play", 42: "stop", 45: "record", 43: "rewind", 44: "forward", 46: "loop", 58: "bank-prev", 59: "bank-next" },
+    mackie: true,
     summary: "Faders = volume, knobs = pan, S / M / R = solo, mute, arm for tracks 1–8; transport buttons play, stop, record, move a bar and loop; TRACK ◀ / ▶ switch banks of 8.",
   },
   {
@@ -188,3 +192,25 @@ export function shiftStripBank(dir: 1 | -1, trackCount: number): number {
 }
 /** Track index a hardware strip controls in the current bank. */
 export const stripTrackIndex = (strip: number) => stripBank * 8 + strip;
+
+/** Whether this port's controller can be in a Mackie Control DAW mode. */
+export const controllerSpeaksMackie = (portName: string | undefined) => !!resolveController(portName)?.mackie;
+
+/** A known mixer surface (one with a factory layout) by port name, ignoring the manual profile choice. */
+export const isKnownSurface = (portName: string) => CONTROLLERS.some((c) => !!c.map && c.port.test(portName));
+
+/**
+ * Turn on newly connected mixer surfaces (e.g. a nanoKONTROL plugged in after choosing only a
+ * keyboard) unless the user switched that device off. "All devices" and "none" stay as chosen.
+ * Returns the selection unchanged when nothing needs adding.
+ */
+export function withKnownSurfaces(selection: string | null, ports: { id: string; name: string }[], switchedOff: string[]): string | null {
+  if (selection === null || selection === "all") return selection;
+  let ids: string[];
+  try {
+    const parsed: unknown = JSON.parse(selection);
+    ids = Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === "string") : [selection];
+  } catch { ids = [selection]; }
+  const add = ports.filter((p) => !ids.includes(p.id) && isKnownSurface(p.name) && !switchedOff.includes(p.name));
+  return add.length ? JSON.stringify([...ids, ...add.map((p) => p.id)]) : selection;
+}
