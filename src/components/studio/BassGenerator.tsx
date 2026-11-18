@@ -7,7 +7,8 @@ import { PatternWaveform } from "./PatternWaveform";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useStudio } from "@/lib/synclab/store";
-import { getBeatsPerBar } from "@/lib/synclab/timebase";
+import { getBeatsPerBar, stepSeconds } from "@/lib/synclab/timebase";
+import { fitBassline, songContentBars } from "@/lib/synclab/bass-fit";
 import { SYNTH_PRESETS, applyPreset } from "@/lib/synclab/presets";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { useLoopPreview } from "@/lib/synclab/use-loop-preview";
@@ -84,9 +85,17 @@ export function BassGenerator() {
   const pv = usePreviewTrack();
   const [target, setTarget] = useState("new");
   const synthTracks = tracks.filter((t) => t.kind === "instrument" && !t.name.startsWith("PREVIEW · "));
+  // The bassline fills only the bars your song already has (an 8-bar beat gets 8 bars of bass),
+  // or the whole song when the timeline is still empty; it never runs past the song end.
+  const contentBars = useMemo(
+    () => songContentBars(tracks, barSteps, stepSeconds(transport.bpm), transport.bars, target !== "new" ? [target] : []),
+    [tracks, barSteps, transport.bpm, transport.bars, target],
+  );
+  const fillBars = Math.min(transport.bars, contentBars || transport.bars);
+  const fit = (n: typeof notes) => fitBassline(n, total, fillBars, transport.bars, barSteps);
   const build = (trackName: string, withSound = s.sound) => {
     const id = addTrack("instrument", trackName, withSound, { keepPanel: true });
-    updateTrack(id, { steps: total, notes: settled, patch: cleanBassPatch(applyPreset(withSound)) });
+    updateTrack(id, { ...fit(settled), patch: cleanBassPatch(applyPreset(withSound)) });
     return id;
   };
   const { previewing, update: updatePreview } = pv;
@@ -96,8 +105,8 @@ export function BassGenerator() {
     if (sent.current === null) { sent.current = settled; return; }
     if (sent.current === settled) return;
     sent.current = settled;
-    updatePreview({ notes: settled, steps: total });
-  }, [previewing, settled, total, updatePreview]);
+    updatePreview(fitBassline(settled, total, fillBars, transport.bars, barSteps));
+  }, [previewing, settled, total, fillBars, transport.bars, barSteps, updatePreview]);
   const preview = (withSound?: string) => pv.start((n) => build(n(`BASS · ${label}`), withSound ?? s.sound));
 
   const phone = useIsLandscapePhone();
@@ -120,14 +129,14 @@ export function BassGenerator() {
     const dest = synthTracks.find((t) => t.id === target);
     if (dest) {
       pv.stop();
-      updateTrack(dest.id, { steps: total, notes });
-      toast.success(`Bassline sent to ${dest.name}`, { description: `${notes.length} notes, played by that track's own sound.` });
+      updateTrack(dest.id, fit(notes));
+      toast.success(`Bassline sent to ${dest.name}`, { description: `Fills ${fillBars} bar${fillBars > 1 ? "s" : ""}, played by that track's own sound.` });
       return;
     }
     if (pv.keep(`BASS · ${label}`)) { toast.success("Bassline added"); return; }
     const id = addTrack("instrument", `BASS · ${label}`, s.sound, { keepPanel: true });
-    updateTrack(id, { steps: total, notes, patch: cleanBassPatch(applyPreset(s.sound)) });
-    toast.success("Bassline added", { description: `${notes.length} notes — edit them in the piano roll.` });
+    updateTrack(id, { ...fit(notes), patch: cleanBassPatch(applyPreset(s.sound)) });
+    toast.success("Bassline added", { description: `Fills ${fillBars} bar${fillBars > 1 ? "s" : ""} to match your song — edit the notes in the piano roll.` });
   };
 
   const presetIdx = BLG_PRESETS.findIndex((p) => p.label === s.names[s.slot]);
@@ -284,8 +293,11 @@ export function BassGenerator() {
         )}
         {!hasSong && <span className="text-xs text-muted-foreground">No chords in your song yet.</span>}
         <select value={s.bars} onChange={(e) => set({ bars: Number(e.target.value) })} aria-label="Bars" className="min-h-11 rounded-md border border-border bg-surface-2 px-3 text-sm">
-          {[1, 2, 4, 8, 16].map((b) => <option key={b} value={b}>{b} bar{b > 1 ? "s" : ""} on the timeline</option>)}
+          {[1, 2, 4, 8, 16].map((b) => <option key={b} value={b}>{b}-bar phrase</option>)}
         </select>
+        <span className="font-mono text-[11px] text-foreground">
+          FILLS {fillBars} BAR{fillBars > 1 ? "S" : ""} · {contentBars ? "AS LONG AS YOUR SONG" : "WHOLE SONG"}
+        </span>
         <span className="font-mono text-[11px] text-muted-foreground">
           {rootsPerBar.map((r) => NOTE_NAMES[r]).join(" → ")} · pattern is {Number(loopBars.toFixed(2))} bar{loopBars === 1 ? "" : "s"} long{loopBars > s.bars ? " (only the start fits)" : ""}
         </span>

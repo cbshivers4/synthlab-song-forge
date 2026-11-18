@@ -2,7 +2,7 @@ import type { AudioClip, MidiNote, Track } from './types';
 import { clipRate, clipSeconds } from './types';
 import { uid } from './presets';
 import { unrollNotes } from './note-cuts';
-import { stepsPerBar } from './timebase';
+import { STEPS_PER_BEAT, stepsPerBar } from './timebase';
 
 /** A clicked destination is independent of the moving transport playhead. */
 export function timelinePasteStep(playhead: number, destination?: number): number {
@@ -38,7 +38,24 @@ const hasHits = (t: Track) => !!t.pads?.some(p => p.steps.some(v => v > 0));
 /** The part of a drum pattern that actually plays: its pattern region, else the whole pattern. */
 function drumSpan(t: Track): [number, number] {
   const len = Math.max(1, t.pads?.[0]?.steps.length ?? t.steps);
-  return t.patternRegion ? [Math.max(0, t.patternRegion[0]), Math.max(t.patternRegion[0], t.patternRegion[1])] : [0, len];
+  return t.patternRegion ? tidyDrumSpan(t, [Math.max(0, t.patternRegion[0]), Math.max(t.patternRegion[0], t.patternRegion[1])]) : [0, len];
+}
+
+/**
+ * A beat whose end pokes a few silent steps past a bar line (4 bars + 1 step) copies and pastes
+ * as if it ended on that bar line, so the copy lands on the beat and stays in time with the other
+ * channels instead of drifting a step later every repeat. Hits in the overhang keep it as is.
+ */
+export function tidyDrumSpan(track: Track, span: [number, number], barSteps = stepsPerBar()): [number, number] {
+  const [a, b] = span;
+  if (!hasHits(track) || b - a <= barSteps) return span;
+  const line = Math.floor((b + 0.001) / barSteps) * barSteps;
+  if (b - line < 0.001 || b - line >= STEPS_PER_BEAT || line <= a) return span;
+  for (const pad of track.pads ?? []) {
+    const len = Math.max(1, pad.steps.length);
+    for (let s = line; s < Math.ceil(b); s++) if ((pad.steps[s % len] ?? 0) > 0) return span;
+  }
+  return [a, line];
 }
 
 export interface PasteOptions {
@@ -134,7 +151,7 @@ export function noteCopy(track: Track, shown: [number, number]): { notes: MidiNo
 export function copyPartSpan(track: Track, span: [number, number], stepDuration: number): { track: Track; span: [number, number] } {
   const lo = track.patternRegion ? Math.max(span[0], track.patternRegion[0]) : span[0];
   const hi = track.patternRegion ? Math.min(span[1], track.patternRegion[1]) : span[1];
-  const part: [number, number] = [lo, Math.max(lo, hi)];
+  const part: [number, number] = hasHits(track) ? tidyDrumSpan(track, [lo, Math.max(lo, hi)]) : [lo, Math.max(lo, hi)];
   const notes = track.notes?.length
     ? unrollNotes(track.notes, track.steps || part[1], part[1])
       .filter(n => n.step >= part[0] - 0.001 && n.step < part[1] - 0.001)
@@ -183,10 +200,13 @@ export function pasteEndStep(track: Track, stepDuration: number, shownEnd?: numb
         for (let s = Math.ceil(region[1]) - 1; s >= region[0] && s > last; s--) if ((pad.steps[s % len] ?? 0) > 0) { last = s; break; }
       }
       // The part holding the last hit ends at the next cut mark (or the beat's end).
-      end = last < 0 ? region[0] : Math.min(region[1], ...(track.cuts ?? []).filter(c => c > last + 0.001));
+      const partEnd = last < 0 ? region[0] : Math.min(region[1], ...(track.cuts ?? []).filter(c => c > last + 0.001));
+      const partStart = Math.max(region[0], ...(track.cuts ?? []).filter(c => c <= last + 0.001));
+      end = last < 0 ? partEnd : tidyDrumSpan(track, [partStart, partEnd])[1];
     }
   } else if (!printed && track.notes?.some(n => n.recordedEnd == null)) {
-    end = track.steps; // a repeating pattern ends at its loop length
+    // A repeating pattern ends at its loop length; once cut into parts its notes sit where they play.
+    end = track.cuts?.length ? 0 : track.steps;
   }
   end = Math.max(end,
     ...(track.notes ?? []).map(n => n.step + n.length),
@@ -246,9 +266,9 @@ export function drumCopySpan(track: Track, shown: [number, number]): [number, nu
   const edges = [bounds[0], ...cuts, bounds[1]];
   const at = track.activeRegion;
   if (at != null && cuts.length) {
-    for (let i = 0; i < edges.length - 1; i++) if (at >= edges[i]! - 0.001 && at < edges[i + 1]! - 0.001) return [edges[i]!, edges[i + 1]!];
+    for (let i = 0; i < edges.length - 1; i++) if (at >= edges[i]! - 0.001 && at < edges[i + 1]! - 0.001) return tidyDrumSpan(track, [edges[i]!, edges[i + 1]!]);
   }
-  return bounds;
+  return tidyDrumSpan(track, bounds);
 }
 
 /**
