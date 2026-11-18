@@ -32,6 +32,8 @@ export type ControllerProfile = {
   buttons?: Record<number, RemoteButton>;
   /** The device also has DAW modes that speak Mackie Control (faders = pitch bend, buttons = notes). */
   mackie?: boolean;
+  /** CC the jog wheel sends in the factory (Assignable) layout. */
+  jog?: number;
   summary: string;
 };
 
@@ -55,7 +57,8 @@ export const CONTROLLERS: ControllerProfile[] = [
     // Korg's factory scene 1 (Assignable mode) transport section.
     buttons: { 80: "play", 63: "stop", 81: "record", 62: "start", 58: "rewind", 59: "forward", 54: "loop", 60: "bank-prev", 61: "bank-next" },
     mackie: true,
-    summary: "Works in Assignable mode (factory scene 1) and in Korg's DAW modes (Studio One, Cubase, Live, SONAR, Digital Performer — Mackie Control), detected automatically: faders = volume, knobs = pan, M / S / R = mute, solo, record-arm and SELECT picks the channel for tracks 1–8. PLAY, STOP, REC, |◀ (go to start), ◀◀ / ▶▶ (one bar back / forward) and CYCLE (loop) run the transport; TRACK ◀ / ▶ switch to tracks 9–16 and back. Pro Tools (HUI) mode is not supported. Your own MIDI Learn assignments win over these.",
+    jog: 86,
+    summary: "Works in Assignable mode (factory scene 1) and in Korg's DAW modes (Studio One, Cubase, Live, SONAR, Digital Performer — Mackie Control), detected automatically: faders = volume, knobs = pan, M / S / R = mute, solo, record-arm and SELECT picks the channel for tracks 1–8. PLAY, STOP, REC, |◀ (go to start), ◀◀ / ▶▶ (one bar back / forward) and CYCLE (loop) run the transport — STOP once stops where you are, again goes back to the start; the jog wheel moves the playhead by beats; TRACK ◀ / ▶ switch to tracks 9–16 and back. Pro Tools (HUI) mode is not supported. Your own MIDI Learn assignments win over these.",
   },
   {
     id: "korg-nanokey-studio", maker: "Korg", model: "nanoKEY Studio",

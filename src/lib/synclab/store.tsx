@@ -55,7 +55,7 @@ import { keyDown, keyUp } from "./active-keys";
 import { arpLiveRelease, arpReleaseAll, stopLiveArps } from "./live-arp";
 import { HELD_NOTE_SECONDS, holdApplies, latchPitch, onHoldRelease, releaseLatched } from "./synth-hold";
 import { controllerAutoButton, controllerAutoMap, resolveController, shiftStripBank, stripTrackIndex, withKnownSurfaces, type RemoteButton, type StripParam } from "./controller-profiles";
-import { mackieAction } from "./mackie-control";
+import { joggedStep, jogTicks, mackieAction, stopPress } from "./mackie-control";
 import { describeRaw, noteSurfaceEvent } from "./surface-monitor";
 import type { CloudSession } from "./cloud";
 import type {
@@ -505,6 +505,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const recAudioStartRef = useRef<number | null>(null);
   /** Step and audio-clock time the song actually started (set by the scheduler), for lining takes up. */
   const songStartRef = useRef<{ step: number; time: number } | null>(null);
+  /** A jump while playing (controller jog wheel): the step clock restarts from here. */
+  const seekStepRef = useRef<number | null>(null);
+  const [seekTick, setSeekTick] = useState(0);
   /** Audio-clock time the next playback start must land on (the count-in's downbeat). */
   const startAtRef = useRef<number | null>(null);
   /** The mic / channel-print recorder was started before the song, so its lead-in is trimmed. */
@@ -780,6 +783,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     let off = () => {};
     let cancelled = false;
     let offSurface = () => {};
+    let jogPending = 0;
+    let jogTimer: number | null = null;
+    const jogLast = new Map<string, number>();
     void getMidiAccess().then((a) => {
       if (cancelled) return;
       // Mixer-surface helpers shared by the CC (Assignable) layout and Mackie Control DAW modes.
@@ -788,7 +794,16 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         const tp = transportRef.current;
         const bar = stepsPerBar();
         if (button === "play") studio?.togglePlay();
-        else if (button === "stop") void studio?.stop();
+        else if (button === "stop") {
+          // Like Studio Pro: first press stops where you are, a second press goes back to the start.
+          const press = stopPress({ playing: !!tp.playing, recording: !!tp.recording || tp.countInLeft != null });
+          if (press === "end-take") void studio?.stop();
+          else if (press === "stop-here") {
+            stopLiveArps();
+            releaseLatched();
+            setTransportState((s) => ({ ...s, playing: false, paused: false }));
+          } else setTransportState((s) => ({ ...s, paused: false, step: 0 }));
+        }
         else if (button === "record") studio?.toggleRecord();
         else if (button === "loop") setTransportState((s) => ({ ...s, loop: !s.loop }));
         else if (button === "start") { if (!tp.playing && !tp.recording) setTransportState((s) => ({ ...s, step: s.loop ? (s.loopStart ?? 0) : 0 })); }
@@ -816,6 +831,32 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           if (param === "mute") return { ...t, ...manualSwitchPatch({ muted: !t.muted }, isTakingSwitches()) };
           return { ...t, armed: !t.armed };
         }));
+      };
+      // Jog wheel: clicks are gathered for a moment so a fast spin is one smooth move, not dozens of seeks.
+      const jog = (ticks: number) => {
+        if (!ticks || transportRef.current.recording) return;
+        jogPending += ticks;
+        // While playing, wait until the wheel rests, then restart playback once from the new beat.
+        const playing = !!transportRef.current.playing;
+        if (jogTimer != null) {
+          if (!playing) return;
+          window.clearTimeout(jogTimer);
+        }
+        jogTimer = window.setTimeout(() => {
+          jogTimer = null;
+          const n = jogPending;
+          jogPending = 0;
+          const tp = transportRef.current;
+          if (tp.recording) return;
+          const beat = Math.round(stepsPerBar() / Math.max(1, tp.beatsPerBar ?? 4));
+          const target = joggedStep(tp.step ?? 0, n, beat, songSteps(tp.bars));
+          if (tp.playing) {
+            seekStepRef.current = target;
+            setPlayStep(target);
+            setSeekTick((x) => x + 1);
+          }
+          setTransportState((s) => ({ ...s, step: target }));
+        }, playing ? 180 : 40);
       };
       const BUTTON_LABEL: Record<RemoteButton, string> = { play: "Play", stop: "Stop", record: "Record", start: "Go to start", rewind: "One bar back", forward: "One bar forward", loop: "Loop on/off", "bank-prev": "Tracks ◀", "bank-next": "Tracks ▶" };
       const stripLabel = (strip: number, param: string) => {
@@ -846,6 +887,13 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           noteSurfaceEvent({ port, raw, mode, action: midiLearnRef.current ? "MIDI Learn" : "Your MIDI Learn assignment" });
           return false;
         }
+        if (!mackie && cmd === 0xb0 && profile.jog === m.d1) {
+          const ticks = jogTicks(m.d2, jogLast.get(m.inputId));
+          jogLast.set(m.inputId, m.d2);
+          jog(ticks);
+          noteSurfaceEvent({ port, raw, mode, action: ticks > 0 ? "Jog: playhead forward" : ticks < 0 ? "Jog: playhead back" : "Jog wheel" });
+          return true;
+        }
         if (!mackie) {
           let action = "Not used by the mixer layout";
           if (cmd === 0xb0) {
@@ -868,12 +916,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         else if (act?.kind === "master") { setBuses((b) => ({ ...b, master: { ...b.master, volume: faderGain(act.value) } })); action = "Master volume"; }
         else if (act?.kind === "button") { runButton(act.button); action = BUTTON_LABEL[act.button]; }
         else if (act?.kind === "jog") {
-          const tp = transportRef.current;
-          if (!tp.playing && !tp.recording) {
-            const beat = Math.max(1, Math.round(stepsPerBar() / Math.max(1, tp.beatsPerBar ?? 4)));
-            setTransportState((s) => ({ ...s, step: Math.max(0, Math.min(songSteps(s.bars) - 1, (s.step ?? 0) + act.dir * beat)) }));
-          }
-          action = act.dir > 0 ? "Jog: one beat forward" : "Jog: one beat back";
+          jog(act.ticks);
+          action = act.ticks > 0 ? "Jog: playhead forward" : "Jog: playhead back";
         } else if (act?.kind === "ignore") action = "Button released / not used";
         noteSurfaceEvent({ port, raw, mode, action });
         return true; // a Mackie-mode surface never plays notes or bends synths
@@ -1268,6 +1312,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       cancelled = true;
       off();
       offSurface();
+      if (jogTimer != null) window.clearTimeout(jogTimer);
     };
   }, [midiInputId, midiInputs]);
 
@@ -1349,7 +1394,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     // everything already handed to the audio clock keeps playing on time through that.
     const LOOKAHEAD = SCHEDULE_AHEAD;
     const TICK = 20; // ms between scheduler passes
-    let step = transportRef.current.step ?? 0;
+    let step = seekStepRef.current ?? transportRef.current.step ?? 0;
+    seekStepRef.current = null;
     // After a count-in the song starts exactly on its downbeat; otherwise as soon as possible.
     const wanted = startAtRef.current;
     startAtRef.current = null;
@@ -1542,7 +1588,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       engine.silenceChannels(tracksRef.current.map((track) => track.id));
       engine.removeChannel("metronome");
     };
-  }, [transport.playing]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [transport.playing, seekTick]);
 
 
   // MIDI clock out: Start/Continue when the song starts, Stop when it stops.

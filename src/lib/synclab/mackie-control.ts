@@ -10,7 +10,7 @@ export type SurfaceAction =
   | { kind: "switch"; strip: number; param: "arm" | "solo" | "mute" | "select" }
   | { kind: "master"; value: number }
   | { kind: "button"; button: RemoteButton }
-  | { kind: "jog"; dir: 1 | -1 }
+  | { kind: "jog"; ticks: number }
   /** A Mackie message the app deliberately swallows (button release, fader touch, unused keys). */
   | { kind: "ignore" };
 
@@ -46,7 +46,7 @@ export function mackieAction(status: number, d1: number, d2: number): SurfaceAct
       const sign = d2 & 0x40 ? -1 : 1;
       return { kind: "pan", strip: d1 - 16, delta: sign * steps * PAN_STEP };
     }
-    if (d1 === 60) return { kind: "jog", dir: d2 & 0x40 ? -1 : 1 };
+    if (d1 === 60) return { kind: "jog", ticks: (d2 & 0x40 ? -1 : 1) * Math.max(1, d2 & 0x3f) };
     return null;
   }
   if (cmd === 0x90 || cmd === 0x80) {
@@ -60,4 +60,35 @@ export function mackieAction(status: number, d1: number, d2: number): SurfaceAct
     return button ? { kind: "button", button } : { kind: "ignore" };
   }
   return null;
+}
+
+/**
+ * Jog wheel turn from an Assignable-mode CC, in clicks (+ = clockwise). Handles the Korg's
+ * relative settings (1…15 / 113…127 two's complement, 65…79 sign-magnitude, 64 = centre) and
+ * falls back to the change from the last absolute position, wrapping round.
+ */
+export function jogTicks(value: number, last: number | undefined): number {
+  const cap = (n: number) => Math.max(-8, Math.min(8, n));
+  if (value === 64) return 0;
+  if (value >= 1 && value <= 15) return cap(value);
+  if (value >= 113) return cap(value - 128);
+  if (value >= 65 && value <= 79) return cap(-(value - 64));
+  if (last == null) return 0;
+  let d = value - last;
+  if (d > 64) d -= 128;
+  if (d < -64) d += 128;
+  return cap(d);
+}
+
+/** Where the playhead lands after a jog: whole beats, inside the song. */
+export function joggedStep(step: number, ticks: number, beatSteps: number, songSteps: number): number {
+  const beat = Math.max(1, beatSteps);
+  const next = (Math.round(step / beat) + ticks) * beat;
+  return Math.max(0, Math.min(Math.max(0, songSteps - 1), next));
+}
+
+/** Korg STOP: the first press stops where you are; pressing it again while stopped goes back to the start. */
+export function stopPress(t: { playing: boolean; recording: boolean }): "end-take" | "stop-here" | "to-start" {
+  if (t.recording) return "end-take";
+  return t.playing ? "stop-here" : "to-start";
 }
