@@ -73,6 +73,7 @@ export function PianoRoll({ track }: { track: Track }) {
   const noteElement = useRef<HTMLElement | null>(null);
   const noteAnchor = useRef({ getBoundingClientRect: () => noteElement.current?.getBoundingClientRect() ?? new DOMRect() });
   const noteMoved = useRef(false);
+  const toggleOff = useRef<string | null>(null);
   const [trackOct, setTrackOct] = useState(0);
   const gridRef = useRef<HTMLDivElement | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -184,12 +185,13 @@ export function PianoRoll({ track }: { track: Track }) {
     noteMoved.current = resize;
     setNoteMenu(false);
     if (mode === "erase") { del(n.id); return; }
-    if ((multi || e.shiftKey || e.ctrlKey || e.metaKey) && !resize) {
-      setSel(s => s.includes(n.id) ? s.filter(id => id !== n.id) : [...s, n.id]);
-      return;
-    }
+    // Multi-select / Shift / Ctrl: pressing a note adds it to the group (or, if it was already
+    // picked, takes it out on release) — but dragging moves the whole group instead.
+    const adding = (multi || e.shiftKey || e.ctrlKey || e.metaKey) && !resize;
+    const picked = sel.includes(n.id);
+    toggleOff.current = adding && picked ? n.id : null;
     e.currentTarget.setPointerCapture(e.pointerId);
-    const ids = sel.includes(n.id) ? sel : [n.id];
+    const ids = adding ? (picked ? sel : [...sel, n.id]) : picked ? sel : [n.id];
     setSel(ids);
     setCursor(n.step);
     const pt = canvasPoint(e.clientX, e.clientY);
@@ -230,6 +232,9 @@ export function PianoRoll({ track }: { track: Track }) {
   };
 
   const endDrag = () => {
+    const off = toggleOff.current;
+    toggleOff.current = null;
+    if (off && drag.current && !noteMoved.current) setSel(s => s.filter(id => id !== off));
     drag.current = null;
     const m = marq.current;
     marq.current = null;
@@ -322,6 +327,7 @@ export function PianoRoll({ track }: { track: Track }) {
           </Button>
         ))}
         <span className="px-1 font-mono text-xs text-muted-foreground">{sel.length} selected · Step {cursor + 1}</span>
+        <span className="hidden whitespace-nowrap px-1 font-mono text-[10px] text-muted-foreground md:inline" aria-live="polite">{sel.length > 1 ? 'Drag any picked note to move the group · arrow keys nudge' : 'Drag across empty space to pick a group of notes'}</span>
         <Button variant="ghost" size="icon" className="size-10" aria-label="Undo note edit" disabled={!canUndo} onClick={undo}><Undo2 className="size-4" /></Button>
         <Button variant="ghost" size="icon" className="size-10" aria-label="Redo note edit" disabled={!canRedo} onClick={redo}><Redo2 className="size-4" /></Button>
         <Button variant="ghost" size="icon" className="size-10" aria-label="Zoom out notes" disabled={zoom <= 1} onClick={() => setZoom(z => Math.max(1,z / 2))}><ZoomOut className="size-4" /></Button>
