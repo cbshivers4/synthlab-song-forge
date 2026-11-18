@@ -12,17 +12,18 @@ describe('selected-part workflow', () => {
     expect(patch?.clips?.map(c => c.id)).toEqual(['b']);
     expect(patch).not.toHaveProperty('id');
   });
-  it('erases one bar of repeating notes without erasing other bars', () => {
+  it('deletes the whole song-long note block even when the loop covers only some bars', () => {
     const patch = deleteSelectedPart(track({ kind: 'instrument', steps: 16, activeRegion: 0, notes: [{ id: 'n', step: 0, length: 1, pitch: 60, velocity: 1 }] }), 120, 4, [16, 32]);
-    expect(patch?.notes?.map(n => n.step)).toEqual([0, 32, 48]);
-    expect(patch?.steps).toBe(64);
+    expect(patch?.notes).toEqual([]);
   });
-  it('erases one drum loop without muting the repeated beat in sibling bars', () => {
+  it('a second Delete on what is left of a block still removes it (nothing hides under the loop)', () => {
+    const left = track({ kind: 'instrument', steps: 64, activeRegion: 0, notes: [{ id: 'n', step: 40, length: 1, pitch: 60, velocity: 1 }] });
+    expect(deleteSelectedPart(left, 120, 4, [0, 32])?.notes).toEqual([]);
+  });
+  it('deletes the whole drum block it was asked to, loop or not', () => {
     const t = track({ kind: 'drum', activeRegion: 0, steps: 16, pads: [{ id: 'kick', steps: [1, 0, 0, 0] }] as Track['pads'] });
     const patch = deleteSelectedPart(t, 120, 4, [16, 32]);
-    expect(patch?.pads?.[0]?.steps[0]).toBe(1);
-    expect(patch?.pads?.[0]?.steps[16]).toBe(0);
-    expect(patch?.pads?.[0]?.steps[32]).toBe(1);
+    expect(patch?.pads?.[0]?.steps.some(v => v > 0)).toBe(false);
   });
   it('never treats an unselected first audio clip as the selected part', () => {
     const t = track({ clips: [{ id: 'clip', name: 'Take', duration: 2, peaks: [] }] });

@@ -26,9 +26,10 @@ export function selectedPartBounds(track: Track | null | undefined, bpm: number,
   const raw = regionAt(track.cuts, songSteps(bars), track.activeRegion);
   const notes = track.notes ?? [];
   const recordedOnly = notes.length > 0 && notes.every((note) => note.recordedEnd != null) && !track.patternRegion;
-  // A cut block, or a recorded take of notes, is exactly what the timeline draws, so it is deleted
-  // whole wherever the loop is; only an uncut, song-long pattern is narrowed to the loop so other bars survive.
-  const region: [number, number] = loop && !track.cuts?.length && !recordedOnly ? [Math.max(raw[0], loop[0]), Math.min(raw[1], loop[1])] : raw;
+  // The part is exactly the block the timeline draws, wherever the loop markers are: narrowing a
+  // song-long block to the loop left its later bars behind as a block that Delete could never reach.
+  void loop;
+  const region: [number, number] = raw;
   if (region[1] <= region[0]) return null;
   if (track.patternRegion) return [Math.max(region[0], track.patternRegion[0]), Math.min(region[1], track.patternRegion[1])];
   if (recordedOnly) {
