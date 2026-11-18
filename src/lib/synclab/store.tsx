@@ -2591,6 +2591,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         setTracks((ts) => ts.map((t) => (t.id === trackId ? { ...t, folderId: folderId ?? undefined } : t))),
       setPanel,
       select: (id) => {
+        // Picking one channel (clicking a block, lane or name) replaces any earlier box selection,
+        // so Copy/Cut act on what was just clicked instead of the old boxed bars.
+        boxSpansRef.current.clear();
         setSelectedId(id);
         setSelectedIds([id]);
       },
