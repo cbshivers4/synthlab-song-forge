@@ -21,7 +21,7 @@ function cloneTrack(t: Track): Track {
   try { return structuredClone(t); } catch { return JSON.parse(JSON.stringify(t)) as Track; }
 }
 import { createRecordingFinalizer } from "./recording-finalizer";
-import { capturedNote, heardNoteSteps, loopRegion, nextPlayStep, snapRecordedStep } from "./recording-region";
+import { capturedNote, heardNoteSteps, isLoopWrap, loopKeepsRecording, loopRegion, nextPlayStep, snapRecordedStep } from "./recording-region";
 import { liveNoteTarget } from "./live-note-target";
 import { editDrumPads, type DrumBulkEdit } from "./drum-bulk";
 import { appendDrumPad } from "./drum-banks";
@@ -518,7 +518,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const punchRef = useRef<{ start: (at: number) => void; stop: () => void } | null>(null);
   /** loop wraps during the current microphone take; each wrap starts another pass */
   const loopPassesRef = useRef(0);
-  const loopStopRef = useRef<(() => void) | null>(null);
+  /** called when the loop start is heard; `ending` = the scheduler already held back the next pass */
+  const loopStopRef = useRef<((ending?: boolean) => void) | null>(null);
 
   const [sections, setSections] = useState<SongSection[]>([]);
   const [projectNotes, setProjectNotes] = useState("");
@@ -626,6 +627,17 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const recordedNoteIdsRef = useRef(new Map<string, number>());
   /** A synth take records notes only (no live print); the waveform is rendered from the notes when it lands. */
   const midiTakeRef = useRef<{ trackId: string; passes: number } | null>(null);
+  /** set when a take ends at the loop end: the take runs to this step, not where the playhead jumped */
+  const loopEndStepRef = useRef<number | null>(null);
+  /** Overdub keeps a take going round the loop; everything else ends (and stops playback) at the loop end. */
+  const takeInProgress = () => {
+    const e = getEngine();
+    return e.isRecording || e.isTrackRecording || !!midiTakeRef.current;
+  };
+  const recordingKeepsLooping = () => {
+    const e = getEngine();
+    return loopKeepsRecording(transportRef.current, { mic: e.isRecording, print: e.isTrackRecording, synth: !!midiTakeRef.current });
+  };
   /** Older notes inside the region being re-recorded (replace mode): silent while recording, removed when the take lands. */
   const replacedNoteIdsRef = useRef(new Set<string>());
   // last scheduled step + its audio-clock time, so note capture can stamp the
@@ -1405,6 +1417,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     // a stale clock from the last run must not place notes played before the downbeat
     lastStepRef.current = null;
     let cancelled = false;
+    /** the take ends at the loop end: the next pass is never queued, so nothing recorded plays back */
+    let heldAtLoopEnd = false;
     let lastScheduled: number | null = null;
     /** steps already handed to the audio clock, drained by the visual loop */
     const queue: { step: number; time: number }[] = [];
@@ -1442,7 +1456,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       // a loop wrap ends the take: recording never runs past the selected bars
       if (tp.loop && prevAt >= 0 && at < prevAt) {
         const lo = Math.max(0, Math.min(totalSteps - 1, tp.loopStart ?? 0));
-        if (at === lo) loopStopRef.current?.();
+        if (at === lo) loopStopRef.current?.(heldAtLoopEnd);
       }
       prevAt = at;
       // punch in / out: the take starts and stops itself at the markers
@@ -1534,7 +1548,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     };
 
     const pump = () => {
-      if (cancelled) return;
+      if (cancelled || heldAtLoopEnd) return;
       const now = ctx.currentTime;
       // After a stall longer than the look-ahead, steps that are already too late are skipped
       // along the song grid (never rescheduled from the heard step, which would play the steps
@@ -1557,6 +1571,13 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         const tp = transportRef.current;
         const total = songSteps(tp.bars);
         const stepDur = stepSeconds(tp.bpm);
+        if (tp.recording && isLoopWrap(lastScheduled, step % total, tp) && takeInProgress() && !recordingKeepsLooping()) {
+          // Recording stops at the loop end: queue only the playhead's arrival at the loop start
+          // (which ends the take and stops playback), never the sound of the next pass.
+          queue.push({ step: step % total, time: nextTime });
+          heldAtLoopEnd = true;
+          break;
+        }
         scheduleStep(step, nextTime);
         lastScheduled = step % total;
         queue.push({ step: step % total, time: nextTime });
@@ -1650,7 +1671,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   armedInputRef.current = armedInputId;
   const monitorOnRef = useRef(monitorOn);
   monitorOnRef.current = monitorOn;
-  const endRecordingRef = useRef<((rewind?: boolean) => Promise<void>) | null>(null);
+  const endRecordingRef = useRef<((rewind?: boolean | number) => Promise<void>) | null>(null);
   useEffect(() => {
     const reopen = () => {
       const engine = getEngine();
@@ -1897,7 +1918,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     // Held MIDI notes cannot extend past the end of the recorded region:
     // the loop end when looping, otherwise where the transport stopped.
     const tp = transportRef.current;
-    const endStep = tp.step;
+    const endStep = loopEndStepRef.current ?? tp.step;
     const regionEnd = tp.loop && (tp.loopEnd ?? 0) > (tp.loopStart ?? 0)
       ? (tp.loopEnd ?? 0)
       : endStep;
@@ -1909,7 +1930,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     }
     if (midiTake) {
       try {
-        await landMidiTake(midiTake, tp.playing ? getPlayStep() : endStep);
+        await landMidiTake(midiTake, loopEndStepRef.current ?? (tp.playing ? getPlayStep() : endStep));
       } catch (err) {
         markTakeFailed();
         toast.error("Take couldn't be kept", { description: err instanceof Error ? err.message : undefined });
@@ -1997,18 +2018,21 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     async () => { await Promise.all([finishRecording(), finishTrackRecording()]); },
   ), [finishRecording, finishTrackRecording]);
 
-  const endRecording = useCallback(async (rewind = false) => {
+  /** `rewind`: true stops and returns to the start; a step number stops and parks the playhead there. */
+  const endRecording = useCallback(async (rewind: boolean | number = false) => {
+    const stopping = rewind !== false;
     recordingGenerationRef.current += 1;
     finalizingRef.current = true;
     if (countInTimerRef.current != null) window.clearInterval(countInTimerRef.current);
     countInTimerRef.current = null;
-    transportRef.current = { ...transportRef.current, playing: rewind ? false : transportRef.current.playing, recording: false, countInLeft: null };
+    transportRef.current = { ...transportRef.current, playing: stopping ? false : transportRef.current.playing, recording: false, countInLeft: null };
     setTransportState(transportRef.current);
     try { await finalizeRecording(); }
     finally {
       finalizingRef.current = false;
+      loopEndStepRef.current = null;
       setTracks(ts => ts.map(t => t.recording ? { ...t, recording: false } : t));
-      if (rewind) setTransportState(s => ({ ...s, playing: false, paused: false, step: 0 }));
+      if (stopping) setTransportState(s => ({ ...s, playing: false, paused: false, step: typeof rewind === "number" ? rewind : 0 }));
     }
   }, [finalizeRecording]);
   endRecordingRef.current = endRecording;
@@ -2061,29 +2085,38 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         void endRecording();
       },
     };
-    loopStopRef.current = () => {
+    loopStopRef.current = (ending = false) => {
       const engine = getEngine();
       const audio = engine.isRecording;
       const inst = engine.isTrackRecording;
       const midi = midiTakeRef.current;
-      if (!audio && !inst && !midi) return;
-      // Overdub on a synth keeps going round the loop: each pass layers on top of what you played.
       const tpl = transportRef.current;
-      const layering = !!midi && !!tpl.overdub && !tpl.replace;
-      if (layering) {
-        midi.passes += 1;
-        if (midi.passes === 1 && !audio) toast("Overdubbing the next pass", { description: "What you just played keeps playing — add more on top. Press Stop when you're done." });
+      if (!audio && !inst && !midi) {
+        // the next pass was already held back: never leave the song "playing" in silence
+        if (ending) void endRecording(loopRegion(tpl)[0]);
+        return;
       }
-      if (!inst && (audio || layering)) {
+      if (!ending && recordingKeepsLooping()) {
+        // Overdub keeps going round the loop: a synth layers each pass on top of what you played,
+        // a microphone take keeps recording and each pass becomes its own take.
+        if (midi) {
+          midi.passes += 1;
+          if (midi.passes === 1 && !audio) toast("Overdubbing the next pass", { description: "What you just played keeps playing — add more on top. Press Stop when you're done." });
+        }
         if (audio) {
-          // Microphone takes keep recording through the loop: each pass becomes its own take.
           loopPassesRef.current += 1;
           if (loopPassesRef.current === 1) toast("Recording the next pass", { description: "Each time round the loop is kept as its own take. Press Stop when you're done." });
         }
         return;
       }
-      void endRecording();
-      toast("Recording stopped at the loop end", { description: "Takes stay inside the bars you selected." });
+      // Replace (and printed drum/instrument takes): the take ends at the loop end and playback
+      // stops with it, so what you just recorded never starts playing back on its own.
+      const [lo, hi] = loopRegion(tpl);
+      loopEndStepRef.current = hi;
+      stopLiveArps();
+      releaseLatched();
+      void endRecording(lo);
+      toast("Recording stopped at the loop end", { description: "Playback stopped too. Press Play to hear your take." });
     };
   }, [finishRecording, finishTrackRecording, updateTrack, endRecording]);
 

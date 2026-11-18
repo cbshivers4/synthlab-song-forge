@@ -16,6 +16,24 @@ export function nextPlayStep(step: number, tp: Pick<Transport, 'bars' | 'loop' |
   return next >= total ? 0 : next;
 }
 /**
+ * Does a take keep going when the loop jumps back to its start? Only Overdub keeps going round
+ * (microphone passes, layered synth notes); Replace ends the take and playback at the loop end so
+ * nothing you just recorded plays back on its own. Printed drum/instrument takes always end there.
+ */
+export function loopKeepsRecording(
+  tp: Pick<Transport, 'overdub' | 'replace'>,
+  rec: { mic: boolean; print: boolean; synth: boolean },
+): boolean {
+  if (rec.print || (!rec.mic && !rec.synth)) return false;
+  return !!tp.overdub && !tp.replace;
+}
+/** True when `step` is the loop start right after the loop's last step was scheduled (the next pass begins). */
+export function isLoopWrap(prev: number | null, step: number, tp: Pick<Transport, 'bars' | 'loop' | 'loopStart' | 'loopEnd'>): boolean {
+  if (!tp.loop || prev == null) return false;
+  const [lo, hi] = loopRegion(tp);
+  return step === lo && prev === hi - 1;
+}
+/**
  * Length (in steps, quarter-step resolution) of a note you heard for `seconds` live.
  * A recorded note keeps that length, so the take rings out like the note you played
  * instead of being chopped to one step. A held key may make it longer, never shorter.
