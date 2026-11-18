@@ -29,7 +29,7 @@ import { flamPad, mutateDrumPad, rollPad } from "./drum-fill-actions";
 import { HitMarks } from "./DrumHitMarks";
 import { hasFlam, rollSize } from "@/lib/synclab/drum-fills";
 import { stepsPerBar } from "@/lib/synclab/timebase";
-import { drumLengthOptions, trimSilentDrumOverhang } from "@/lib/synclab/drum-roll-length";
+import { clearAllHits, drumLengthOptions, dropHitsOutsideBlock, trimSilentDrumOverhang } from "@/lib/synclab/drum-roll-length";
 
 const VELOCITIES = [0, 0.35, 0.7, 1] as const;
 
@@ -46,6 +46,10 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
   // A silent stray step past a bar line made the roll one bar longer than its timeline block.
   const overhang = trimSilentDrumOverhang(track, barSteps);
   useEffect(() => { if (overhang) updateTrack(track.id, overhang); }, [overhang?.steps, track.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Hits past the end of a cut/looped block never play; the roll ends where the block ends.
+  const outside = overhang ? null : dropHitsOutsideBlock(track);
+  const outsideKey = outside ? `${outside.steps}:${track.patternRegion?.join("-")}:${track.pads?.reduce((n, p) => n + p.steps.filter((v) => v > 0).length, 0)}` : "";
+  useEffect(() => { if (outside) updateTrack(track.id, outside); }, [outsideKey, track.id]); // eslint-disable-line react-hooks/exhaustive-deps
   const { view, updateView, ready } = useDrumEditorView(track.id);
   const selected = view.padId;
   const setSelected = (padId: string | null) => updateView({ padId });
@@ -235,7 +239,7 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
   const tools = (pad: DrumPad) => {
     const steps = rowSteps(pad);
     return {
-      clear: () => write(pad, { steps: steps.map(() => 0) }),
+      clear: () => updatePad(track.id, pad.id, { steps: steps.map(() => 0) }), // clearing a row takes all of it, not just the loop
       accent: () => write(pad, { steps: steps.map((v, i) => (v > 0 ? (i % 4 === 0 ? 1 : Math.min(v, 0.6)) : 0)) }),
       humanize: () =>
         write(pad, {
@@ -318,7 +322,7 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
           size="sm"
           variant="ghost"
           className="h-7 text-[10px]"
-          onClick={() => pads.forEach((p) => tools(p).clear())}
+          onClick={() => updateTrack(track.id, clearAllHits(track))}
         >
           CLEAR ALL
         </Button>

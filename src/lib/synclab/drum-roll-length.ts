@@ -51,3 +51,44 @@ export function trimSilentDrumOverhang(track: Track, barSteps: number): Partial<
     ...(track.cuts?.length ? { cuts: [...new Set(track.cuts.map((c) => (c > end && c <= total ? end : c)))].sort((a, b) => a - b) } : {}),
   };
 }
+
+/**
+ * Hits outside a beat's pattern region never play and the timeline doesn't draw them, but the drum
+ * roll still showed them (a 4-bar loop with notes after bar 4). Drop them, and end the pattern where
+ * its block ends so the roll is exactly as long as the block. Returns null when nothing is hidden.
+ */
+export function dropHitsOutsideBlock(track: Track): Partial<Track> | null {
+  const region = track.patternRegion;
+  if (track.kind !== "drum" || !region || track.printedAudio || track.drumChain?.on) return null;
+  const total = Math.max(1, track.steps || 16);
+  const [lo, hi] = [Math.max(0, Math.round(region[0])), Math.round(region[1])];
+  // A pattern shorter than its block repeats inside it, so every step plays somewhere.
+  if (hi > total || hi <= lo) return null;
+  const end = hi;
+  const hidden = (track.pads ?? []).some((p) => p.steps.some((v, i) => v > 0 && (i < lo || i >= end)));
+  if (!hidden && total === end) return null;
+  const fit = <T,>(a: T[] | undefined, empty: T) => (a ? Array.from({ length: end }, (_, i) => (i < lo ? empty : (a[i] ?? empty))) : a);
+  return {
+    steps: end,
+    pads: (track.pads ?? []).map((p) => ({
+      ...p,
+      steps: fit(p.steps, 0) ?? p.steps,
+      probability: fit(p.probability, 1),
+      stepPitch: fit(p.stepPitch, 0),
+      stepDecay: fit(p.stepDecay, 1),
+      flam: fit(p.flam, 0),
+      retrig: fit(p.retrig, 1),
+      glitch: fit(p.glitch, 0),
+    })),
+  };
+}
+
+/** Clear all: every hit on every drum row goes, whatever the loop markers say. */
+export function clearAllHits(track: Track): Partial<Track> {
+  return {
+    pads: (track.pads ?? []).map((p) => ({
+      ...p, steps: p.steps.map(() => 0),
+      probability: undefined, stepPitch: undefined, stepDecay: undefined, flam: undefined, retrig: undefined, glitch: undefined,
+    })),
+  };
+}

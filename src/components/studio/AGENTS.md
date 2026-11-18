@@ -125,3 +125,5 @@ A press outside the timeline section (menus, dialogs, listboxes and the menu bar
 Desktop DrumRoll steps keep one square size (--dr-row) at any pattern length; .drum-roll-sheet widens the grid so long patterns scroll sideways under sticky drum names/mutes rather than shrinking the boxes.
 
 Multi-track copy/cut (copyTracks/cutTracks) store one clipboard entry per ticked channel and paste each back onto its own channel with multiPasteSteps keeping their relative offsets; paste during playback uses livePasteStep (nearest bar line) so live pastes stay in time.
+
+DrumRoll shows what plays: it trims silent sub-beat overhangs and hits outside patternRegion (drum-roll-length.ts; the scheduler never plays them), counts bars like the timeline ruler, and Clear all/row clear ignore loop markers while other step edits stay loop-bounded.
