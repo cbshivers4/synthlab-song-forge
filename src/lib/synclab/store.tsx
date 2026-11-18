@@ -54,7 +54,7 @@ import { markLiveHit, isLiveHit, clearLiveHits, neighbourLiveHits } from "./live
 import { keyDown, keyUp } from "./active-keys";
 import { arpLiveRelease, arpReleaseAll, stopLiveArps } from "./live-arp";
 import { HELD_NOTE_SECONDS, holdApplies, latchPitch, onHoldRelease, releaseLatched } from "./synth-hold";
-import { controllerAutoMap } from "./controller-profiles";
+import { controllerAutoButton, controllerAutoMap, shiftStripBank, stripTrackIndex } from "./controller-profiles";
 import type { CloudSession } from "./cloud";
 import type {
   AudioClip,
@@ -498,6 +498,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const micPreRollRef = useRef(false);
   const printPreRollRef = useRef(false);
   /** punch recording hooks, filled in once the record helpers exist */
+  const apiRef = useRef<StudioApi | null>(null);
   const punchRef = useRef<{ start: (at: number) => void; stop: () => void } | null>(null);
   /** loop wraps during the current microphone take; each wrap starts another pass */
   const loopPassesRef = useRef(0);
@@ -788,6 +789,29 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           if (!target) {
             // Korg 8-channel mixer: faders, knobs and S/M/R buttons follow track order automatically.
             const portName = midiInputsRef.current.find((p) => p.id === inputId)?.name;
+            const button = controllerAutoButton(portName, msg.cc);
+            if (button) {
+              if (msg.value < 0.5) return; // act on press only
+              const studio = apiRef.current;
+              const tp = transportRef.current;
+              const bar = stepsPerBar();
+              if (button === "play") studio?.togglePlay();
+              else if (button === "stop") void studio?.stop();
+              else if (button === "record") studio?.toggleRecord();
+              else if (button === "loop") setTransportState((s) => ({ ...s, loop: !s.loop }));
+              else if (button === "start") { if (!tp.playing && !tp.recording) setTransportState((s) => ({ ...s, step: s.loop ? (s.loopStart ?? 0) : 0 })); }
+              else if (button === "rewind" || button === "forward") {
+                if (!tp.playing && !tp.recording) setTransportState((s) => {
+                  const at = s.step ?? 0;
+                  const next = button === "rewind" ? Math.ceil(at / bar - 1) * bar : Math.floor(at / bar + 1) * bar;
+                  return { ...s, step: Math.max(0, Math.min(songSteps(s.bars) - 1, next)) };
+                });
+              } else {
+                const bank = shiftStripBank(button === "bank-next" ? 1 : -1, tracksRef.current.length);
+                toast(`Controller: tracks ${bank * 8 + 1}–${bank * 8 + 8}`);
+              }
+              return;
+            }
             const hit = controllerAutoMap(portName, msg.cc);
             if (!hit) {
               // Unmapped knobs, mod wheel and sustain pedal play the external instrument the keyboard is playing.
@@ -798,10 +822,11 @@ export function StudioProvider({ children }: { children: ReactNode }) {
               if (ext) sendExternalCc(ext.id, msg.cc, msg.value);
               return;
             }
-            const track = tracksRef.current[hit.strip];
+            const track = tracksRef.current[stripTrackIndex(hit.strip)];
             if (!track) return;
             const v = msg.value;
-            if ((hit.param === "solo" || hit.param === "mute" || hit.param === "arm") && v < 0.5) return; // toggle on press only
+            if ((hit.param === "solo" || hit.param === "mute" || hit.param === "arm" || hit.param === "select") && v < 0.5) return; // toggle on press only
+            if (hit.param === "select") { setSelectedId(track.id); return; }
             setTracks((ts) => ts.map((t) => {
               if (t.id !== track.id) return t;
               if (hit.param === "volume") return { ...t, volume: faderGain(v) };
@@ -3397,6 +3422,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   }, [tracks, transport, selectedId, selectedIds, editTool, panel, userPresets, buses, vcas, auxReturns, sections, projectNotes, folders, installedPlugins, fxChains, midiInputs, midiOutputs, midiInputId, midiLearning, midiMap, midiLearn, clipboardName, clipClipboardName, enableMidi, setMidiInputPersist, updateTrack, finishRecording, finishTrackRecording, endRecording, splitClipAtImpl, razorAtImpl, buildSnapshot, applySession, historyTick, automationHistoryTick, savedAt]);
 
 
+  apiRef.current = api; // hardware transport buttons call the newest actions
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>;
 }
 

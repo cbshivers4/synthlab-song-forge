@@ -3,8 +3,10 @@
 // Devices without a known fixed layout are listed as "learn" — their keys play
 // notes and any knob can be assigned with MIDI Learn, but nothing is auto-mapped.
 
-export type StripParam = "volume" | "pan" | "solo" | "mute" | "arm";
+export type StripParam = "volume" | "pan" | "solo" | "mute" | "arm" | "select";
 export type AutoMapHit = { strip: number; param: StripParam };
+/** Transport and bank buttons a controller's factory layout sends (pressed = value ≥ 64). */
+export type RemoteButton = "play" | "stop" | "record" | "start" | "rewind" | "forward" | "loop" | "bank-prev" | "bank-next";
 
 export type DeviceLook = {
   /** Number of faders, knobs, pads and piano keys drawn in the illustration. */
@@ -26,6 +28,8 @@ export type ControllerProfile = {
   look: DeviceLook;
   /** Per-CC mapping, or null when the device is MIDI Learn only. */
   map: Record<number, AutoMapHit> | null;
+  /** Transport / bank buttons by CC, when the factory layout has them. */
+  buttons?: Record<number, RemoteButton>;
   summary: string;
 };
 
@@ -44,8 +48,11 @@ export const CONTROLLERS: ControllerProfile[] = [
       ...range(seq(21), "mute"),
       ...range([29, 30, 31, 33, 34, 35, 36, 37], "solo"),
       ...range(seq(38), "arm"),
+      ...range(seq(46), "select"),
     },
-    summary: "Factory scene: faders = volume, knobs = pan, M / S / R = mute, solo, arm for tracks 1–8. Any other knob, fader or button can be assigned with MIDI Learn.",
+    // Korg's factory scene 1 (Assignable mode) transport section.
+    buttons: { 80: "play", 63: "stop", 81: "record", 62: "start", 58: "rewind", 59: "forward", 54: "loop", 60: "bank-prev", 61: "bank-next" },
+    summary: "Factory scene 1, set up automatically: faders = volume, knobs = pan, M / S / R = mute, solo, record-arm and SELECT picks the channel for tracks 1–8. PLAY, STOP, REC, |◀ (go to start), ◀◀ / ▶▶ (one bar back / forward) and CYCLE (loop) run the transport; TRACK ◀ / ▶ switch to tracks 9–16 and back. Your own MIDI Learn assignments win over these.",
   },
   {
     id: "korg-nanokey-studio", maker: "Korg", model: "nanoKEY Studio",
@@ -59,7 +66,8 @@ export const CONTROLLERS: ControllerProfile[] = [
     port: /nano\s*kontrol\s*2/i,
     look: { faders: 8, knobs: 8, pads: 0, keys: 0, buttons: 24, body: "#1b1c1f", accent: "#e8e8e8" },
     map: { ...range(seq(0), "volume"), ...range(seq(16), "pan"), ...range(seq(32), "solo"), ...range(seq(48), "mute"), ...range(seq(64), "arm") },
-    summary: "Faders = volume, knobs = pan, S / M / R = solo, mute, arm for tracks 1–8.",
+    buttons: { 41: "play", 42: "stop", 45: "record", 43: "rewind", 44: "forward", 46: "loop", 58: "bank-prev", 59: "bank-next" },
+    summary: "Faders = volume, knobs = pan, S / M / R = solo, mute, arm for tracks 1–8; transport buttons play, stop, record, move a bar and loop; TRACK ◀ / ▶ switch banks of 8.",
   },
   {
     id: "korg-nanokontrol", maker: "Korg", model: "nanoKONTROL (original)",
@@ -164,3 +172,19 @@ export function resolveController(portName: string | undefined): ControllerProfi
 export function controllerAutoMap(portName: string | undefined, cc: number): AutoMapHit | null {
   return resolveController(portName)?.map?.[cc] ?? null;
 }
+
+export function controllerAutoButton(portName: string | undefined, cc: number): RemoteButton | null {
+  return resolveController(portName)?.buttons?.[cc] ?? null;
+}
+
+/** Which bank of 8 tracks the hardware strips control (0 = tracks 1–8). Session-only. */
+let stripBank = 0;
+export const getStripBank = () => stripBank;
+/** Move the strips to the next/previous 8 tracks, never past the last track. Returns the new bank. */
+export function shiftStripBank(dir: 1 | -1, trackCount: number): number {
+  const last = Math.max(0, Math.ceil(trackCount / 8) - 1);
+  stripBank = Math.max(0, Math.min(last, stripBank + dir));
+  return stripBank;
+}
+/** Track index a hardware strip controls in the current bank. */
+export const stripTrackIndex = (strip: number) => stripBank * 8 + strip;
