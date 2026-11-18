@@ -21,3 +21,11 @@ export function movePianoNotes(notes: MidiNote[], ids: string[], steps: number, 
   const pitchDelta = Math.max(-Math.min(...selected.map(n => n.pitch)), Math.min(semitones, 127 - Math.max(...selected.map(n => n.pitch))));
   return notes.map(n => ids.includes(n.id) ? { ...n, step: n.step + delta, pitch: n.pitch + pitchDelta } : n);
 }
+/** Copies of the picked notes placed straight after them (same pitches and gaps), kept inside the loop. */
+export function duplicatePianoNotes(notes: MidiNote[], ids: string[], bounds: [number, number]): MidiNote[] {
+  const picked = notes.filter(n => ids.includes(n.id));
+  if (!picked.length) return [];
+  const start = Math.min(...picked.map(n => n.step));
+  const end = Math.max(...picked.map(n => n.step + n.length));
+  return pastePianoNotes(picked, Math.ceil(end - start) + start, bounds);
+}

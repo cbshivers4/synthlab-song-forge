@@ -16,7 +16,7 @@ A plain mouse drag from empty lane space or the empty area under the tracks (Sel
 
 PianoRoll owns focused note shortcuts and a session-only note clipboard; single-tap Draw, Select and Erase modes use loop-bounded helpers. Coordinate mapping derives visible canvas bounds so native phone scrolling does not displace note edits; deletion only removes explicit selections.
 PianoRoll keeps horizontal navigation above the grid and a shared-width draggable ruler for its placement cursor; stopped ruler seeks use the existing transport, while playback/recording placement never interrupts audio.
-Track selection menus remain in the mounted piano editor for synths; existing-note clicks open anchored actions only after a stationary selection, preserving drag and multi-select. Loop button highlighting follows transport.loop rather than matching selected-part bounds.
+Track selection menus remain in the mounted piano editor for synths; existing-note clicks open anchored actions only after a stationary selection, preserving drag and multi-select. The note menu also opens at the pointer (menuPoint virtual anchor) after a finished box selection and on right-click of empty grid; its move buttons keep it open and reuse movePianoNotes, Duplicate after uses duplicatePianoNotes, so menu, keys and drags share the same loop-bounded helpers. Loop button highlighting follows transport.loop rather than matching selected-part bounds.
 
 EQ and Pro EQ share EqGrid and scoped eq-workstation/eq-chart tokens for their frequency-display presentation; keep response paths parameter-derived and analyser drawing at 20 fps, without changing DSP or adding simulated spectra.
 

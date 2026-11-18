@@ -1,6 +1,6 @@
 import { getPlayStep, usePlayStep } from "@/lib/synclab/playhead";
-import { ClipboardPaste, Copy, MousePointer2, Pencil, Scissors, Trash2, Undo2, Redo2, ZoomIn, ZoomOut, ChevronLeft, ChevronRight } from "lucide-react";
-import { movePianoNotes, pastePianoNotes } from "@/lib/synclab/piano-edit";
+import { ClipboardPaste, Copy, CopyPlus, MousePointer2, Pencil, Scissors, Trash2, Undo2, Redo2, ZoomIn, ZoomOut, ChevronLeft, ChevronRight, ArrowLeft, ArrowRight, ArrowUp, ArrowDown, X } from "lucide-react";
+import { duplicatePianoNotes, movePianoNotes, pastePianoNotes } from "@/lib/synclab/piano-edit";
 import { capturedNote, loopRegion } from "@/lib/synclab/recording-region";
 import { canvasPoint } from "@/lib/synclab/canvas-point";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
@@ -71,7 +71,11 @@ export function PianoRoll({ track }: { track: Track }) {
     return () => window.removeEventListener('synclab:selected-track-menu', open);
   }, [track.id]);
   const noteElement = useRef<HTMLElement | null>(null);
-  const noteAnchor = useRef({ getBoundingClientRect: () => noteElement.current?.getBoundingClientRect() ?? new DOMRect() });
+  /** Where the note menu opens when it isn't attached to one note (after a box selection or a right-click). */
+  const menuPoint = useRef<{ x: number; y: number } | null>(null);
+  const noteAnchor = useRef({ getBoundingClientRect: () => menuPoint.current ? new DOMRect(menuPoint.current.x, menuPoint.current.y, 1, 1) : noteElement.current?.getBoundingClientRect() ?? new DOMRect() });
+  const openMenuAt = (x: number, y: number) => { menuPoint.current = { x, y }; noteElement.current = null; setNoteMenu(true); };
+  const openMenuOnNote = (el: HTMLElement) => { menuPoint.current = null; noteElement.current = el; setNoteMenu(true); };
   const noteMoved = useRef(false);
   const toggleOff = useRef<string | null>(null);
   const [trackOct, setTrackOct] = useState(0);
@@ -231,7 +235,7 @@ export function PianoRoll({ track }: { track: Track }) {
     }
   };
 
-  const endDrag = () => {
+  const endDrag = (e?: React.PointerEvent) => {
     const off = toggleOff.current;
     toggleOff.current = null;
     if (off && drag.current && !noteMoved.current) setSel(s => s.filter(id => id !== off));
@@ -249,7 +253,10 @@ export function PianoRoll({ track }: { track: Track }) {
         const pTop = pitches[Math.min(ROWS - 1, Math.max(0, Math.floor(marquee.y0 / ROW_H)))] ?? low;
         const pBot = pitches[Math.min(ROWS - 1, Math.max(0, Math.floor(marquee.y1 / ROW_H)))] ?? low;
         const boxed = notes.filter((n) => n.step < s1 && n.step + n.length > s0 && n.pitch <= pTop && n.pitch >= pBot).map((n) => n.id);
-        setSel((prev) => (m.add ? [...new Set([...prev, ...boxed])] : boxed));
+        const next = m.add ? [...new Set([...sel, ...boxed])] : boxed;
+        setSel(next);
+        // A finished box selection opens the note menu beside the pointer.
+        if (next.length && e) openMenuAt(e.clientX, e.clientY);
       }
     }
     setMarquee(null);
@@ -263,6 +270,13 @@ export function PianoRoll({ track }: { track: Track }) {
     setClipboardCount(noteClipboard.length);
     if (cut) deleteSelected();
   };
+  const duplicate = () => {
+    const copies = duplicatePianoNotes(notes, sel, loopRegion(transport));
+    if (!copies.length) return;
+    setNotes(track.id, [...notes, ...copies]);
+    setSel(copies.map(n => n.id));
+  };
+  const nudge = (stepsBy: number, semis: number) => { if (sel.length) setNotes(track.id, movePianoNotes(notes, sel, stepsBy, semis, loopRegion(transport))); };
   const paste = () => {
     const pasted = pastePianoNotes(noteClipboard, cursor, loopRegion(transport));
     if (!pasted.length) return;
@@ -312,8 +326,27 @@ export function PianoRoll({ track }: { track: Track }) {
       <Popover open={noteMenu} onOpenChange={setNoteMenu}>
         <PopoverAnchor virtualRef={noteAnchor} />
         <PopoverContent aria-label="Selected note actions" className="w-56 space-y-1 p-2" onOpenAutoFocus={e => e.preventDefault()} onCloseAutoFocus={e => e.preventDefault()} onPointerDown={e => e.stopPropagation()} onClick={e => e.stopPropagation()}>
-          <div className="border-b border-border px-2 py-1 font-mono text-xs">{sel.length} selected · Step {cursor + 1}</div>
-          {([{ label: 'Copy notes', icon: Copy, run: () => copySelected() }, { label: 'Cut notes', icon: Scissors, run: () => copySelected(true) }, { label: 'Paste at playhead', icon: ClipboardPaste, run: paste, disabled: !clipboardCount }, { label: 'Delete notes', icon: Trash2, run: deleteSelected }] as const).map(action => <Button key={action.label} variant="ghost" className="h-10 w-full justify-start gap-2 text-xs" disabled={'disabled' in action && action.disabled} onClick={() => { action.run(); setNoteMenu(false); }}><action.icon className="size-4" />{action.label}</Button>)}
+          <div className="border-b border-border px-2 py-1 font-mono text-xs">{sel.length ? `${sel.length} note${sel.length === 1 ? '' : 's'} selected` : 'No notes selected'} · Step {cursor + 1}</div>
+          {([
+            { label: 'Copy', icon: Copy, run: () => copySelected(), disabled: !sel.length, keys: '⌘C' },
+            { label: 'Cut', icon: Scissors, run: () => copySelected(true), disabled: !sel.length, keys: '⌘X' },
+            { label: 'Paste at cursor', icon: ClipboardPaste, run: paste, disabled: !clipboardCount, keys: '⌘V' },
+            { label: 'Duplicate after', icon: CopyPlus, run: duplicate, disabled: !sel.length, keys: '' },
+          ] as const).map(action => <Button key={action.label} variant="ghost" className="h-9 w-full justify-start gap-2 text-xs" disabled={action.disabled} onClick={() => { action.run(); setNoteMenu(false); }}><action.icon className="size-4" />{action.label}{action.keys && <span className="ml-auto font-mono text-[10px] text-muted-foreground">{action.keys}</span>}</Button>)}
+          <div className="border-t border-border px-2 pt-2 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Move notes</div>
+          <div className="grid grid-cols-4 gap-1 px-1" role="group" aria-label="Move selected notes">
+            <Button variant="outline" size="sm" className="h-9" disabled={!sel.length} aria-label="Move earlier" title="Earlier (one grid step)" onClick={() => nudge(-grid, 0)}><ArrowLeft className="size-4" /></Button>
+            <Button variant="outline" size="sm" className="h-9" disabled={!sel.length} aria-label="Move later" title="Later (one grid step)" onClick={() => nudge(grid, 0)}><ArrowRight className="size-4" /></Button>
+            <Button variant="outline" size="sm" className="h-9" disabled={!sel.length} aria-label="Move up a semitone" title="Up a semitone" onClick={() => nudge(0, 1)}><ArrowUp className="size-4" /></Button>
+            <Button variant="outline" size="sm" className="h-9" disabled={!sel.length} aria-label="Move down a semitone" title="Down a semitone" onClick={() => nudge(0, -1)}><ArrowDown className="size-4" /></Button>
+            <Button variant="outline" size="sm" className="col-span-2 h-9 text-[11px]" disabled={!sel.length} onClick={() => nudge(0, 12)}>Octave +</Button>
+            <Button variant="outline" size="sm" className="col-span-2 h-9 text-[11px]" disabled={!sel.length} onClick={() => nudge(0, -12)}>Octave −</Button>
+          </div>
+          <p className="px-2 text-[10px] leading-snug text-muted-foreground">Or drag any selected note — the whole group moves.</p>
+          <div className="border-t border-border pt-1" />
+          <Button variant="ghost" className="h-9 w-full justify-start gap-2 text-xs" disabled={!notes.length} onClick={() => setSel(notes.map(n => n.id))}><MousePointer2 className="size-4" />Select all<span className="ml-auto font-mono text-[10px] text-muted-foreground">⌘A</span></Button>
+          <Button variant="ghost" className="h-9 w-full justify-start gap-2 text-xs" disabled={!sel.length} onClick={() => { setSel([]); setNoteMenu(false); }}><X className="size-4" />Unselect</Button>
+          <Button variant="ghost" className="h-9 w-full justify-start gap-2 text-xs text-destructive" disabled={!sel.length} onClick={() => { deleteSelected(); setNoteMenu(false); }}><Trash2 className="size-4" />Delete notes<span className="ml-auto font-mono text-[10px] text-muted-foreground">Del</span></Button>
         </PopoverContent>
       </Popover>
       <div className="sticky top-0 z-20 flex flex-wrap items-center gap-1 border-b border-border bg-surface-2 p-1" role="toolbar" aria-label="Note editing">
@@ -664,6 +697,13 @@ export function PianoRoll({ track }: { track: Track }) {
             className="relative select-none bg-background"
             style={{ height: ROWS * ROW_H }}
             onClick={addNote}
+            onContextMenu={(e) => {
+              // Right-click empty grid: the note menu (paste here, select all, or act on the selection).
+              e.preventDefault();
+              const p = posFromEvent(e);
+              if (p) setCursor(p.step);
+              openMenuAt(e.clientX, e.clientY);
+            }}
             onPointerDown={(e) => {
               // the mouse can box-select in any mode; touch keeps Select mode for it
               if (mode !== "select" && !(e.pointerType === "mouse" && mode === "draw")) return;
@@ -716,15 +756,14 @@ export function PianoRoll({ track }: { track: Track }) {
                   data-note={n.id}
                   data-selected={selected}
                   role="button" aria-label={`${NOTE_NAMES[n.pitch % 12]}${Math.floor(n.pitch / 12) - 1} note at step ${n.step + 1}`} aria-pressed={selected}
-                  onClick={e => { e.stopPropagation(); if (mode === 'erase' || noteMoved.current || multi || e.shiftKey || e.ctrlKey || e.metaKey) return; noteElement.current = e.currentTarget; setNoteMenu(true); }}
+                  onClick={e => { e.stopPropagation(); if (mode === 'erase' || noteMoved.current || multi || e.shiftKey || e.ctrlKey || e.metaKey) return; openMenuOnNote(e.currentTarget); }}
                   onPointerDown={(e) => onNoteDown(e, n, false)}
                   onContextMenu={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
                     setSel(sel.includes(n.id) ? sel : [n.id]);
                     setCursor(n.step);
-                    noteElement.current = e.currentTarget;
-                    setNoteMenu(true);
+                    openMenuAt(e.clientX, e.clientY);
                   }}
                   className="absolute touch-none rounded-[1px] border border-clip-midi-dark/60 bg-clip-midi shadow-sm"
                   style={{

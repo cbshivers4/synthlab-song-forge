@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { movePianoNotes, pastePianoNotes } from './piano-edit';
+import { duplicatePianoNotes, movePianoNotes, pastePianoNotes } from './piano-edit';
 const notes = [{ id: 'a', step: 4, pitch: 60, length: 2, velocity: 0.8 }, { id: 'b', step: 8, pitch: 64, length: 2, velocity: 0.7 }];
 it('pastes selected notes at the cursor with their relative timing and new IDs', () => {
   const pasted = pastePianoNotes(notes, 16, [0, 32]);
@@ -27,5 +27,21 @@ describe("moving a group of notes", () => {
   it("never pulls a group that sits outside the loop into it", () => {
     const moved = movePianoNotes([n("a", 40), n("b", 44)], ["a", "b"], 0, 1, [0, 16]);
     expect(moved.map((x) => x.step)).toEqual([40, 44]);
+  });
+});
+
+describe("Duplicate after (piano roll note menu)", () => {
+  it("places copies of the picked notes right after them, keeping pitches and gaps", () => {
+    const notes = [
+      { id: "a", step: 4, length: 2, pitch: 60, velocity: 0.8 },
+      { id: "b", step: 6, length: 2, pitch: 64, velocity: 0.8 },
+      { id: "c", step: 20, length: 1, pitch: 40, velocity: 0.8 },
+    ];
+    const copies = duplicatePianoNotes(notes, ["a", "b"], [0, 64]);
+    expect(copies.map(n => [n.step, n.pitch])).toEqual([[8, 60], [10, 64]]);
+    expect(copies.every(n => n.id !== "a" && n.id !== "b")).toBe(true);
+  });
+  it("does nothing when no notes are picked", () => {
+    expect(duplicatePianoNotes([{ id: "a", step: 0, length: 1, pitch: 60, velocity: 1 }], [], [0, 16])).toEqual([]);
   });
 });
