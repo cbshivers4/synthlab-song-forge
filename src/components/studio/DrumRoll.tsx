@@ -28,6 +28,8 @@ import { DrumBulkControls } from "./DrumBulkControls";
 import { flamPad, mutateDrumPad, rollPad } from "./drum-fill-actions";
 import { HitMarks } from "./DrumHitMarks";
 import { hasFlam, rollSize } from "@/lib/synclab/drum-fills";
+import { stepsPerBar } from "@/lib/synclab/timebase";
+import { drumLengthOptions, trimSilentDrumOverhang } from "@/lib/synclab/drum-roll-length";
 
 const VELOCITIES = [0, 0.35, 0.7, 1] as const;
 
@@ -39,6 +41,11 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
   const pads = track.pads ?? [];
   const rows = drumRows(pads);
   const total = Math.max(1, track.steps || 16);
+  const barSteps = stepsPerBar();
+  const lengthOptions = drumLengthOptions(total, transport.bars ?? 4, barSteps);
+  // A silent stray step past a bar line made the roll one bar longer than its timeline block.
+  const overhang = trimSilentDrumOverhang(track, barSteps);
+  useEffect(() => { if (overhang) updateTrack(track.id, overhang); }, [overhang?.steps, track.id]); // eslint-disable-line react-hooks/exhaustive-deps
   const { view, updateView, ready } = useDrumEditorView(track.id);
   const selected = view.padId;
   const setSelected = (padId: string | null) => updateView({ padId });
@@ -278,13 +285,13 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
       <div className="drum-roll-toolbar flex flex-nowrap items-center gap-2 overflow-x-auto rounded-sm border border-border bg-surface/60 p-1.5 [&>*]:shrink-0">
         <span className="label-xs whitespace-nowrap px-1" title={track.name}>DRUM ROLL</span>
         <Select value={String(total)} onValueChange={(v) => setStepCount(track.id, Number(v))}>
-          <SelectTrigger className="h-7 w-24 text-[10px]">
+          <SelectTrigger className="h-7 w-28 text-[10px]" aria-label="Drum pattern length" title={`Pattern length — your song is ${transport.bars ?? 4} bars`}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {[16, 32, 64].map((s) => (
+            {lengthOptions.map(({ steps: s, label }) => (
               <SelectItem key={s} value={String(s)}>
-                {s} steps
+                {label}
               </SelectItem>
             ))}
           </SelectContent>
@@ -353,8 +360,9 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
             </div>
             <div className="flex flex-1 gap-[2px] px-1 py-0.5">
               {visibleSteps.map((i) => (
-                <div key={i} className={`flex-1 text-center font-mono text-muted-foreground ${isMobile ? "text-xs" : "text-[7px]"}`}>
-                  {isMobile ? i + 1 : i % 4 === 0 ? i / 4 + 1 : ""}
+                <div key={i} className={`min-w-0 flex-1 text-center font-mono ${i % barSteps === 0 ? "font-semibold text-foreground" : "text-muted-foreground"} ${isMobile ? "text-xs" : i % barSteps === 0 ? "text-[9px]" : "text-[7px]"}`}>
+                  {/* Bar numbers match the timeline ruler; beats are dots, so a 4-bar beat reads 1–4 here too. */}
+                  {i % barSteps === 0 ? Math.floor(i / barSteps) + 1 : isMobile ? (i % barSteps) + 1 : i % 4 === 0 ? "·" : ""}
                 </div>
               ))}
             </div>
@@ -406,6 +414,7 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
                           style={{
                             minWidth: 10,
                             borderColor: "var(--color-border)",
+                            ...(i % barSteps === 0 && i > 0 ? { borderLeftColor: "var(--color-muted-foreground)", borderLeftWidth: 2 } : {}),
                             opacity: v > 0 ? 0.4 + v * 0.6 : 1,
                             background:
                               v > 0
