@@ -844,6 +844,14 @@ function DrumClip({ track }: { track: Track }) {
 // start to the playhead. No live waveform — the real waveform appears when the take is finished.
 function RecordingClip({ track }: { track: Track }) {
   const { transport } = useStudio();
+  // Nothing is being recorded yet during the count-in (or while the song waits to start):
+  // the red take only appears once the song is actually rolling.
+  if (transport.countInLeft != null || !transport.playing || !transport.recording) return null;
+  return <RecordingTake track={track} />;
+}
+
+function RecordingTake({ track }: { track: Track }) {
+  const { transport } = useStudio();
   const total = songSteps(transport.bars);
   const liveStep = usePlayStep();
   const startRef = useRef(getPlayStep());
