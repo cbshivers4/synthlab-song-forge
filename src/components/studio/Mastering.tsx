@@ -2,6 +2,8 @@ import { SkinControls, skinBackground, useImageDrop } from "@/components/studio/
 import { useSkin } from "@/lib/synclab/skins";
 import { useEffect, useRef, useState } from "react";
 import { Download, Gauge, Play, Square } from "lucide-react";
+import { MasterDevices } from "@/components/studio/mastering/MasterDevices";
+import { ListenRooms } from "@/components/studio/mastering/ListenRooms";
 import { Button } from "@/components/ui/button";
 import { Knob } from "@/components/studio/Knob";
 import { Switch } from "@/components/ui/switch";
@@ -67,10 +69,7 @@ export function Mastering() {
   const [capture, setCapture] = useState<Capture | null>(null);
   const [before, setBefore] = useState<LoudnessReport | null>(null);
   const [result, setResult] = useState<MasterResult | null>(null);
-  const [compare, setCompare] = useState<"master" | "original">("master");
   const timer = useRef<number | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [playing, setPlaying] = useState(false);
 
   const safeName = (project?.name ?? "synclab-master").replace(/[^\w\-. ]+/g, "").trim() || "synclab-master";
   const barSeconds = (60 / transport.bpm) * (transport.beatsPerBar ?? 4);
@@ -79,7 +78,6 @@ export function Mastering() {
 
   useEffect(() => () => {
     if (timer.current) window.clearInterval(timer.current);
-    audioRef.current?.pause();
   }, []);
 
   const set = (k: keyof MasterSettings, v: number | boolean) => {
@@ -134,25 +132,6 @@ export function Mastering() {
       setElapsed(t);
       if (t >= total) void finishCapture(engine.stopCapture());
     }, 100);
-  };
-
-  const audition = () => {
-    const cap = compare === "master" ? result?.audio : capture;
-    if (!cap) return;
-    audioRef.current?.pause();
-    if (playing) {
-      setPlaying(false);
-      return;
-    }
-    const url = URL.createObjectURL(encodeWav(cap));
-    const el = new Audio(url);
-    el.onended = () => {
-      setPlaying(false);
-      URL.revokeObjectURL(url);
-    };
-    audioRef.current = el;
-    void el.play();
-    setPlaying(true);
   };
 
   const { requirePro } = usePlan();
@@ -246,6 +225,13 @@ export function Mastering() {
         </div>
       </div>
 
+      <MasterDevices
+        settings={settings}
+        set={set}
+        commit={(next) => capture && void runMaster(capture, next ?? settings)}
+        reductionDb={result?.reductionDb}
+      />
+
       {(before || result) && (
         <div className="space-y-2">
           <div className="label-xs">Measured</div>
@@ -274,29 +260,7 @@ export function Mastering() {
 
       {result && (
         <div className="flex flex-wrap items-center gap-2 rounded-sm border border-border bg-surface-2/60 p-2">
-          <div className="flex overflow-hidden rounded-sm border border-border">
-            {(["original", "master"] as const).map((m) => (
-              <button
-                key={m}
-                type="button"
-                onClick={() => {
-                  setCompare(m);
-                  audioRef.current?.pause();
-                  setPlaying(false);
-                }}
-                className={cn(
-                  "px-2 py-1 font-mono text-[10px] uppercase",
-                  compare === m ? "bg-primary text-primary-foreground" : "bg-surface-2 text-muted-foreground",
-                )}
-              >
-                {m}
-              </button>
-            ))}
-          </div>
-          <Button size="sm" variant="outline" className="h-8 gap-1.5" onClick={audition}>
-            {playing ? <Square className="size-3.5" /> : <Play className="size-3.5" />}
-            {playing ? "Stop" : `Listen to ${compare}`}
-          </Button>
+          <span className="label-xs">Mastered file</span>
           <Button size="sm" variant="outline" className="ml-auto h-8 gap-1.5" onClick={() => save("wav")}>
             <Download className="size-3.5" /> WAV
           </Button>
@@ -305,6 +269,8 @@ export function Mastering() {
           </Button>
         </div>
       )}
+
+      <ListenRooms original={capture} mastered={result?.audio ?? null} />
 
       <p className="text-[10px] leading-relaxed text-muted-foreground">
         This is real measuring and processing done on your device — loudness is read the same way streaming services read it, and the

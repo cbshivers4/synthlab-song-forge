@@ -34,6 +34,52 @@ export interface MasterSettings {
   monoBass: number;
   /** add TPDF dither for 16-bit delivery */
   dither: boolean;
+
+  /* ---- advanced devices (each off by default, so the quick controls sound the same) ---- */
+  /** Mastering EQ: low shelf, two bells, high shelf */
+  eqOn: boolean;
+  eqLowFreq: number;
+  eqLowGain: number;
+  eqLmFreq: number;
+  eqLmGain: number;
+  eqLmQ: number;
+  eqHmFreq: number;
+  eqHmGain: number;
+  eqHmQ: number;
+  eqHighFreq: number;
+  eqHighGain: number;
+  /** Multiband dynamics: replaces the Glue knob while on */
+  mbOn: boolean;
+  mbLowX: number;
+  mbHighX: number;
+  mbLowThr: number;
+  mbLowRatio: number;
+  mbLowGain: number;
+  mbMidThr: number;
+  mbMidRatio: number;
+  mbMidGain: number;
+  mbHighThr: number;
+  mbHighRatio: number;
+  mbHighGain: number;
+  /** ms */
+  mbAttack: number;
+  /** ms */
+  mbRelease: number;
+  /** Stereo imager: width per band (1 = unchanged), multiplies the Width knob */
+  imgOn: boolean;
+  imgLowX: number;
+  imgHighX: number;
+  imgLow: number;
+  imgMid: number;
+  imgHigh: number;
+  /** Harmonic exciter: saturated top end blended in parallel */
+  excOn: boolean;
+  excFreq: number;
+  excAmount: number;
+  excMix: number;
+  /** Maximizer (final true-peak limiter) timing, ms */
+  limLookahead: number;
+  limRelease: number;
 }
 
 export const MASTER_DEFAULTS: MasterSettings = {
@@ -47,6 +93,43 @@ export const MASTER_DEFAULTS: MasterSettings = {
   highpass: 28,
   monoBass: 120,
   dither: false,
+  eqOn: false,
+  eqLowFreq: 100,
+  eqLowGain: 0,
+  eqLmFreq: 400,
+  eqLmGain: 0,
+  eqLmQ: 1,
+  eqHmFreq: 3000,
+  eqHmGain: 0,
+  eqHmQ: 1,
+  eqHighFreq: 12000,
+  eqHighGain: 0,
+  mbOn: false,
+  mbLowX: 200,
+  mbHighX: 3000,
+  mbLowThr: -20,
+  mbLowRatio: 2.5,
+  mbLowGain: 0,
+  mbMidThr: -18,
+  mbMidRatio: 2,
+  mbMidGain: 0,
+  mbHighThr: -22,
+  mbHighRatio: 2,
+  mbHighGain: 0,
+  mbAttack: 12,
+  mbRelease: 180,
+  imgOn: false,
+  imgLowX: 250,
+  imgHighX: 4000,
+  imgLow: 1,
+  imgMid: 1,
+  imgHigh: 1,
+  excOn: false,
+  excFreq: 5000,
+  excAmount: 0.4,
+  excMix: 0.2,
+  limLookahead: 2,
+  limRelease: 60,
 };
 
 export interface MasterPreset {
@@ -257,7 +340,13 @@ function driveCurve(amount: number) {
 }
 
 /** Look-ahead brickwall limiter with true-peak aware gain reduction. */
-export function brickwall(cap: Capture, ceiling: number, lookaheadMs = 2, releaseMs = 60): Capture {
+export function brickwall(
+  cap: Capture,
+  ceiling: number,
+  lookaheadMs = 2,
+  releaseMs = 60,
+  stats?: { minGain: number },
+): Capture {
   const sr = cap.sampleRate;
   const look = Math.max(1, Math.round((lookaheadMs / 1000) * sr));
   const rel = Math.max(1, Math.round((releaseMs / 1000) * sr));
@@ -282,6 +371,7 @@ export function brickwall(cap: Capture, ceiling: number, lookaheadMs = 2, releas
       if (n2 < target) target = n2;
     }
     gain = target < gain ? target : target + (gain - target) * relCoef;
+    if (stats && gain < stats.minGain) stats.minGain = gain;
     const idx = i - look < 0 ? 0 : i - look;
     outL[i] = (cap.left[idx] ?? 0) * gain;
     outR[i] = (cap.right[idx] ?? 0) * gain;
@@ -311,6 +401,15 @@ function ditherInPlace(cap: Capture) {
     cap.left[i] = (cap.left[i] ?? 0) + n;
     cap.right[i] = (cap.right[i] ?? 0) + n;
   }
+}
+
+/** Butterworth section; two in a row make a Linkwitz-Riley crossover. */
+function lr(ctx: BaseAudioContext, type: BiquadFilterType, freq: number) {
+  const f = ctx.createBiquadFilter();
+  f.type = type;
+  f.frequency.value = freq;
+  f.Q.value = Math.SQRT1_2;
+  return f;
 }
 
 /** Tone shaping, mono bass, width, glue compression and drive, rendered offline. */
@@ -348,9 +447,28 @@ async function renderChain(cap: Capture, s: MasterSettings): Promise<Capture> {
     chain(high);
   }
 
+  // Mastering EQ device
+  if (s.eqOn) {
+    const bands: Array<{ type: BiquadFilterType; f: number; g: number; q?: number }> = [
+      { type: "lowshelf", f: s.eqLowFreq, g: s.eqLowGain },
+      { type: "peaking", f: s.eqLmFreq, g: s.eqLmGain, q: s.eqLmQ },
+      { type: "peaking", f: s.eqHmFreq, g: s.eqHmGain, q: s.eqHmQ },
+      { type: "highshelf", f: s.eqHighFreq, g: s.eqHighGain },
+    ];
+    for (const b of bands) {
+      if (b.g === 0) continue;
+      const f = ctx.createBiquadFilter();
+      f.type = b.type;
+      f.frequency.value = b.f;
+      f.gain.value = b.g;
+      if (b.q) f.Q.value = b.q;
+      chain(f);
+    }
+  }
+
   // stereo width with a mono-bass guard: side signal is width-scaled and
   // high-passed so the low end stays centred and translates on any system.
-  if (s.width !== 1 || s.monoBass > 0) {
+  if (s.width !== 1 || s.monoBass > 0 || s.imgOn) {
     const splitter = ctx.createChannelSplitter(2);
     const merger = ctx.createChannelMerger(2);
     node.connect(splitter);
@@ -377,6 +495,29 @@ async function renderChain(cap: Capture, s: MasterSettings): Promise<Capture> {
       side.connect(hp);
       sideOut = hp;
     }
+    // stereo imager: widen or narrow lows, mids and highs separately
+    if (s.imgOn) {
+      const sum = ctx.createGain();
+      const bandsIn: Array<{ filters: BiquadFilterNode[]; width: number }> = [
+        { filters: [lr(ctx, "lowpass", s.imgLowX), lr(ctx, "lowpass", s.imgLowX)], width: s.imgLow },
+        {
+          filters: [lr(ctx, "highpass", s.imgLowX), lr(ctx, "highpass", s.imgLowX), lr(ctx, "lowpass", s.imgHighX), lr(ctx, "lowpass", s.imgHighX)],
+          width: s.imgMid,
+        },
+        { filters: [lr(ctx, "highpass", s.imgHighX), lr(ctx, "highpass", s.imgHighX)], width: s.imgHigh },
+      ];
+      for (const band of bandsIn) {
+        let head: AudioNode = sideOut;
+        for (const f of band.filters) {
+          head.connect(f);
+          head = f;
+        }
+        const g = ctx.createGain();
+        g.gain.value = Math.max(0, band.width);
+        head.connect(g).connect(sum);
+      }
+      sideOut = sum;
+    }
     const widthGain = ctx.createGain();
     widthGain.gain.value = Math.max(0, s.width);
     sideOut.connect(widthGain);
@@ -392,8 +533,37 @@ async function renderChain(cap: Capture, s: MasterSettings): Promise<Capture> {
     node = merger;
   }
 
-  // three-band glue compression
-  if (s.glue > 0) {
+  // three-band glue compression — the Multiband device takes over its settings while on
+  if (s.mbOn) {
+    const sum = ctx.createGain();
+    const bands = [
+      { filters: [lr(ctx, "lowpass", s.mbLowX), lr(ctx, "lowpass", s.mbLowX)], thr: s.mbLowThr, ratio: s.mbLowRatio, gain: s.mbLowGain },
+      {
+        filters: [lr(ctx, "highpass", s.mbLowX), lr(ctx, "highpass", s.mbLowX), lr(ctx, "lowpass", s.mbHighX), lr(ctx, "lowpass", s.mbHighX)],
+        thr: s.mbMidThr,
+        ratio: s.mbMidRatio,
+        gain: s.mbMidGain,
+      },
+      { filters: [lr(ctx, "highpass", s.mbHighX), lr(ctx, "highpass", s.mbHighX)], thr: s.mbHighThr, ratio: s.mbHighRatio, gain: s.mbHighGain },
+    ];
+    for (const band of bands) {
+      let head: AudioNode = node;
+      for (const f of band.filters) {
+        head.connect(f);
+        head = f;
+      }
+      const comp = ctx.createDynamicsCompressor();
+      comp.threshold.value = band.thr;
+      comp.knee.value = 8;
+      comp.ratio.value = Math.max(1, band.ratio);
+      comp.attack.value = Math.max(0.001, s.mbAttack / 1000);
+      comp.release.value = Math.max(0.01, s.mbRelease / 1000);
+      const makeup = ctx.createGain();
+      makeup.gain.value = Math.pow(10, band.gain / 20);
+      head.connect(comp).connect(makeup).connect(sum);
+    }
+    node = sum;
+  } else if (s.glue > 0) {
     const sum = ctx.createGain();
     const bands: Array<{ filters: BiquadFilterNode[]; ratio: number; threshold: number }> = [];
     const mk = (type: BiquadFilterType, freq: number) => {
@@ -425,6 +595,21 @@ async function renderChain(cap: Capture, s: MasterSettings): Promise<Capture> {
     node = sum;
   }
 
+  // harmonic exciter: saturate only the top end and blend it back in parallel
+  if (s.excOn && s.excMix > 0) {
+    const sum = ctx.createGain();
+    node.connect(sum);
+    const hp1 = lr(ctx, "highpass", s.excFreq);
+    const shaper = ctx.createWaveShaper();
+    shaper.curve = driveCurve(Math.max(0.05, s.excAmount));
+    shaper.oversample = "4x";
+    const hp2 = lr(ctx, "highpass", s.excFreq);
+    const wet = ctx.createGain();
+    wet.gain.value = s.excMix;
+    node.connect(hp1).connect(shaper).connect(hp2).connect(wet).connect(sum);
+    node = sum;
+  }
+
   if (s.drive > 0) {
     const shaper = ctx.createWaveShaper();
     shaper.curve = driveCurve(s.drive);
@@ -446,14 +631,20 @@ export interface MasterResult {
   after: LoudnessReport;
   /** gain the loudness match applied, in dB */
   matchDb: number;
+  /** deepest gain reduction the maximizer applied, in dB (0 = never touched) */
+  reductionDb: number;
 }
 
 /** Run the full mastering pass and report the loudness before and after. */
 export async function master(
   cap: Capture,
-  settings: MasterSettings,
+  input: MasterSettings,
   onProgress?: (stage: string, pct: number) => void,
 ): Promise<MasterResult> {
+  const settings: MasterSettings = { ...MASTER_DEFAULTS, ...input };
+  const look = settings.limLookahead;
+  const rel = settings.limRelease;
+  let stats = { minGain: 1 };
   onProgress?.("Measuring your mix", 0.05);
   const before = await measure(cap);
 
@@ -473,7 +664,7 @@ export async function master(
   }
 
   onProgress?.("Holding the peak ceiling", 0.8);
-  const limited = brickwall(levelled, ceiling);
+  const limited = brickwall(levelled, ceiling, look, rel, stats);
   if (settings.dither) ditherInPlace(limited);
 
   onProgress?.("Checking the result", 0.92);
@@ -482,15 +673,17 @@ export async function master(
   // limiting eats a little loudness — one correction pass lands on the target
   if (Number.isFinite(after.lufs) && Math.abs(after.lufs - settings.targetLufs) > 0.4) {
     const trim = Math.max(-6, Math.min(6, settings.targetLufs - after.lufs));
-    const retried = brickwall(applyGain(levelled, Math.pow(10, (matchDb + trim) / 20)), ceiling);
+    const retryStats = { minGain: 1 };
+    const retried = brickwall(applyGain(levelled, Math.pow(10, (matchDb + trim) / 20)), ceiling, look, rel, retryStats);
     if (settings.dither) ditherInPlace(retried);
     const check = await measure(retried);
     if (Math.abs(check.lufs - settings.targetLufs) < Math.abs(after.lufs - settings.targetLufs)) {
       final = retried;
       after = check;
       matchDb += trim;
+      stats = retryStats;
     }
   }
   onProgress?.("Done", 1);
-  return { audio: final, before, after, matchDb };
+  return { audio: final, before, after, matchDb, reductionDb: -db(stats.minGain) };
 }

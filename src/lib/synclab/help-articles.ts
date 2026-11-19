@@ -589,12 +589,17 @@ export const KNOWLEDGE_BASE: Article[] = [
   },
   {
     id: "mastering", category: "Mixing & effects", title: "Mastering",
-    tags: "master mastering loudness lufs limiter club streaming",
+    tags: "master mastering loudness lufs limiter club streaming multiband imager exciter maximizer car walkman theater sound check",
     body: [
-      "Mastering measures loudness and peaks, then applies EQ, width, glue, drive and limiting. Presets cover streaming, club and vocal-forward targets; A/B compares with the plain mix.",
+      "Mastering measures loudness and peaks, then applies EQ, width, glue, drive and limiting. Presets cover streaming, club and vocal-forward targets.",
+      "Mastering devices add a 4-band Master EQ, 3-band Multiband dynamics (replaces Glue while on), a Stereo Imager with width per band, an Exciter for top-end harmonics and Maximizer timing with a gain-reduction readout. Switch each device On, then turn its knobs; the master re-renders when you let go.",
+      "Sound Check plays the original or mastered song as it would sound on studio monitors, a car stereo, club PA, Walkman, home stereo, movie theater, phone, earbuds, laptop, TV, FM radio or Bluetooth speaker. Switch places while it plays, loop it, tap the bar to jump, and turn background noise on or off.",
     ],
-    can: ["Master your song and export the mastered file."],
-    cant: ["Saving the mastered file needs the trial or a plan."],
+    can: ["Master your song and export the mastered file.", "Check how the master holds up on other systems before you release it."],
+    cant: [
+      "Saving the mastered file needs the trial or a plan.",
+      "Sound Check places are modelled from typical speakers and rooms, not measured from a real car or club, and they are never saved into your file.",
+    ],
   },
   {
     id: "studio-view", category: "Mixing & effects", title: "Studio View",
