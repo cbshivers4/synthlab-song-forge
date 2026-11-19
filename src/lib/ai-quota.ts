@@ -17,7 +17,16 @@ export async function reserveAiUse(supabase: unknown, tool: string): Promise<Res
   return { ok: true, id: r.id, remaining: r.remaining };
 }
 
-/** Gives the use back when the AI service failed without producing anything. */
-export async function refundAiUse(supabase: unknown, id: string) {
-  await (supabase as Rpc).rpc("refund_ai_use", { _id: id });
+/**
+ * Gives the use back when the AI service failed without producing anything.
+ * Runs with the server's admin client on purpose: the database only lets the service role
+ * refund, so a signed-in browser can't call it to dodge the daily limit.
+ */
+export async function refundAiUse(_supabase: unknown, id: string) {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await (supabaseAdmin as unknown as Rpc).rpc("refund_ai_use", { _id: id });
+  } catch (err) {
+    console.error("ai quota: refund failed", err);
+  }
 }

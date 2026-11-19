@@ -43,6 +43,13 @@
       "when": 1794833464694,
       "tag": "0005_migration",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1795106059039,
+      "tag": "0006_close_ai_limit_and_founder_gaps",
+      "breakpoints": true
     }
   ]
 }
